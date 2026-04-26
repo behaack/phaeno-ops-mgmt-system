@@ -1,0 +1,254 @@
+# Phaeno-Portal
+
+## Overview
+
+Phaeno-Portal is a comprehensive web application project that combines a robust .NET backend with a modern, responsive React frontend. The project aims to provide a portal for phaeno-related functionalities, leveraging the latest technologies for optimal performance and developer experience.
+
+## Architecture
+
+### Backend
+
+The backend is built using .NET 10, providing a solid foundation for enterprise-grade applications.
+
+- **Solution Structure**:
+  - `app`: Main application project containing the core business logic, APIs, and services
+  - `test`: Unit testing project to ensure code quality and reliability
+
+#### Backend File Structure
+
+The backend follows the same general folder system as the reference Phaeno API project.
+
+```
+backend/app/
+├── Common/
+│   └── Exceptions/
+├── Features/
+│   └── <FeatureName>/
+│       ├── DTOs/
+│       └── Endpoints/
+├── Infrastructure/
+│   ├── Api/
+│   └── Persistence/
+├── Middleware/
+└── Program.cs
+```
+
+- `Common/`: Shared cross-feature primitives such as domain exceptions.
+- `Features/`: Feature folders that own their DTOs, endpoint mapping, workflows, and later feature-specific services.
+- `Infrastructure/Api/`: API response envelopes, metadata factories, error mapping, and response filters.
+- `Infrastructure/Persistence/`: EF Core `AppDbContext`, PostgreSQL configuration, design-time migration factory, and migrations.
+- `Middleware/`: HTTP middleware such as API exception handling.
+
+#### Backend API Response And Error Shape
+
+API responses use the same envelope model as the reference API:
+
+```json
+{
+  "success": true,
+  "data": {},
+  "error": null,
+  "meta": {
+    "requestId": "request-id",
+    "timestampUtc": "2026-04-25T00:00:00+00:00"
+  }
+}
+```
+
+- Successful responses use `ApiResponse<T>.Ok(data, meta)`.
+- Failed responses use `ApiResponse<T>.Fail(error, meta)`.
+- Errors use `ApiError` with `type`, `code`, `message`, optional `details`, and optional `param`.
+- Domain exceptions map through `ApiErrorMapper`; unhandled exceptions return an `api_error/internal_error` envelope.
+- API exception handling is applied under `/api` through `ApiExceptionMiddleware`.
+
+#### Backend Persistence And Migrations
+
+The backend uses Entity Framework Core with PostgreSQL through the Npgsql provider.
+
+- Runtime DbContext: `Infrastructure/Persistence/AppDbContext.cs`
+- Design-time migrations factory: `Infrastructure/Persistence/DesignTimeAppDbContextFactory.cs`
+- Migrations folder: `Infrastructure/Persistence/Migrations`
+- Default PostgreSQL schema: `portal`
+- EF migrations history table: `portal.__ef_migrations_history`
+- Connection string key: `ConnectionStrings:DefaultConnection`
+
+Use environment configuration for non-development database credentials. In ASP.NET Core configuration, the connection string can be supplied with `ConnectionStrings__DefaultConnection`.
+
+#### Concurrency, Auditing, And Entity Lifecycle
+
+Mutable persisted entities use optimistic concurrency. Entities that participate implement `IConcurrency` and expose a numeric `Version` property. EF Core maps `Version` as a concurrency token, and the centralized save interceptor increments it on updates. API responses should include `Version` so clients can send the version they last read when update endpoints are added. EF concurrency failures map to `409 Conflict` with a reload-and-retry message.
+
+Auditing is centralized in EF persistence, not endpoint code. Audited entities implement `IAudit`; the save interceptor stamps `CreatedAt`, `CreatedByUserId`, `UpdatedAt`, and `UpdatedByUserId`, and writes append-only `AuditEvent` rows in the same transaction as the business change. Audit events capture entity name, entity id, operation, organization id when available, actor user id when available, request id, timestamp, and field-level changes in PostgreSQL `jsonb`. Sensitive fields such as password hashes must be omitted from audit diffs.
+
+Users and organizations are not hard-deleted in normal product workflows. Users are deactivated with `IsActive = false`; organizations are made inactive with `IsActive = false`. Hard deletion is reserved for explicit administrative purge workflows that account for retention, privacy, and referential integrity. Organization-to-user relationships must not cascade delete users.
+
+Common migration commands from `backend/`:
+
+```powershell
+dotnet tool restore
+dotnet dotnet-ef migrations add <MigrationName> --project .\app\PhaenoPortal.App.csproj --startup-project .\app\PhaenoPortal.App.csproj --output-dir Infrastructure\Persistence\Migrations
+dotnet dotnet-ef database update --project .\app\PhaenoPortal.App.csproj --startup-project .\app\PhaenoPortal.App.csproj
+dotnet dotnet-ef migrations list --project .\app\PhaenoPortal.App.csproj --startup-project .\app\PhaenoPortal.App.csproj
+```
+
+### Frontend
+
+The frontend utilizes cutting-edge React technologies for a seamless user experience.
+
+- **Framework**: Tan Stack Start for full-stack React applications
+- **Data Fetching**: Tan Stack Query for efficient server state management
+- **HTTP Client**: Axios for making API requests
+- **Form Handling**: React Hook Form for performant and flexible form management
+- **UI Components**: Shadcn for beautiful, accessible, and customizable UI components
+- **Package Manager**: pnpm
+
+#### Frontend File Structure
+
+The frontend is organized around thin routes, reusable shared components, feature modules, and a dedicated API layer.
+
+```
+frontend/src/
+├── api/
+├── components/
+├── features/
+├── integrations/
+├── lib/
+├── routes/
+├── shims/
+└── styles.css
+```
+
+- `routes/`: TanStack file routes only; route files should stay thin and delegate page UI to features.
+- `api/`: API clients and HTTP integration code.
+- `components/`: Shared layout, navigation, primitive, and reusable UI components.
+- `features/`: Feature-specific UI, schema, state, and workflow components.
+- `integrations/`: Framework and library integration setup.
+- `lib/`: Small shared utilities that are not feature-specific.
+
+#### Frontend UI Standards
+
+- Build with small focused components wherever practical.
+- Use Shadcn components for consistent, accessible UI primitives.
+- All components must comply with WCAG 2.2 Level AA.
+- UI must be responsive by default and verified on mobile and desktop for primary workflows.
+- Use a modest amount of purposeful animation for feedback and orientation.
+- Respect `prefers-reduced-motion` for motion-sensitive users.
+- Use token-based CSS variables for theming, reskinning, and light/dark mode support.
+- Make generous use of lucide icons where they improve scanning, recognition, and workflow clarity.
+- Icons must not be the only accessible name for a control unless the control has an explicit `aria-label`, tooltip, or equivalent accessible text.
+- Forms must use React Hook Form and follow the required field structure: Label*, Control, Error.
+
+#### Toolbar And Navigation Standards
+
+- The application toolbar includes a main menu for primary navigation on desktop layouts.
+- The toolbar includes a user dropdown menu for user identification, display settings, and secondary menu items.
+- In mobile layouts, primary navigation items move into the user dropdown menu.
+- Navigation and menu controls must be keyboard accessible and expose appropriate roles, names, and focus states.
+
+## Security Model
+
+The application implements a multi-tenant architecture with role-based access control and invite-only user onboarding.
+
+- **User Types**:
+  - Phaeno: Internal users with administrative privileges
+  - Customers: End-users accessing the portal services
+  - Partners: External collaborators with limited access
+- **Invite Model**:
+  - Invitations are sent via email and include a secure token
+  - Invitees click the invitation link and are taken to a registration page
+  - The registration page collects important information such as password
+  - Invitation tokens may expire after a configurable number of days
+  - Organization Admins can invite new users into their own organization
+  - Phaeno users with the proper role can invite users into an organization
+  - Only Phaeno users can create new organizations
+  - Phaeno can assign a customer organization to a partner
+  - A partner assigned a customer organization may invite users for those customer organizations
+- **Authentication**: Undecided between cookie-based and JWT token authentication
+- **Two-Factor Authentication (2FA)**: Support for authenticator apps and email-based 2FA
+- **Testing**: Vitest for unit tests, Playwright for end-to-end (e2e) tests
+- **Styling**: Token-based CSS system with light/dark mode support for easy reskinning
+
+## Technologies Used
+
+- **Backend**: .NET 10
+- **Database**: PostgreSQL with Entity Framework Core and EF migrations
+- **Frontend**: React, TypeScript, Tan Stack Start, Tan Stack Query, Axios, React Hook Form, Shadcn
+- **Testing**: Vitest (frontend unit tests), xUnit/.NET testing framework (backend), Playwright (e2e tests designed for parallel execution)
+- **Accessibility Testing**: Axe checks through Playwright for primary frontend pages
+- **Styling**: CSS with design tokens, light/dark mode support
+- **Configuration**: Backend settings stored in `appsettings.json` and environment-specific overrides, not hard coded in code
+- **Build Tools**: Vite, TanStack Start, pnpm
+- **Deployment**: (To be planned)
+
+## Project Structure
+
+```
+phaeno-portal/
+├── README.md
+├── AGENT.md
+├── backend/
+│   ├── app/
+│   │   ├── Common/
+│   │   ├── Features/
+│   │   ├── Infrastructure/
+│   │   │   ├── Api/
+│   │   │   └── Persistence/
+│   │   └── Middleware/
+│   └── test/
+└── frontend/
+    ├── src/
+    │   ├── api/
+    │   ├── components/
+    │   ├── features/
+    │   ├── integrations/
+    │   ├── lib/
+    │   ├── routes/
+    │   └── styles.css
+    ├── e2e/
+    ├── tests/
+    ├── package.json
+    └── pnpm-lock.yaml
+```
+
+## Getting Started
+
+### Prerequisites
+
+- .NET 10 SDK
+- Node.js (latest LTS)
+- pnpm
+
+### Backend Setup
+
+1. Navigate to the backend directory
+2. Restore dependencies: `dotnet restore PhaenoPortal.slnx`
+3. Restore local tools: `dotnet tool restore`
+4. Configure PostgreSQL through `ConnectionStrings:DefaultConnection`
+5. Apply migrations: `dotnet dotnet-ef database update --project .\app\PhaenoPortal.App.csproj --startup-project .\app\PhaenoPortal.App.csproj`
+6. Build the solution: `dotnet build PhaenoPortal.slnx`
+7. Run tests: `dotnet test PhaenoPortal.slnx`
+
+### Frontend Setup
+
+1. Navigate to the frontend directory
+2. Install dependencies: `pnpm install`
+3. Start the development server: `pnpm run dev`
+
+## Development Guidelines
+
+- Follow .NET coding standards for backend development
+- Use TypeScript for frontend code
+- Maintain test coverage above 80%
+- Use meaningful commit messages
+- Document API endpoints and components
+- Run lint periodically during frontend work to catch code quality issues early
+- Run frontend verification with `pnpm run lint`, `pnpm run typecheck`, `pnpm run test`, and `pnpm run test:e2e`
+- Treat automated accessibility checks as a required gate, not a substitute for manual WCAG review
+
+## Contributing
+
+Please read the AGENT.md file for detailed engagement rules and guidelines.
+
+## License
+
+(To be determined)

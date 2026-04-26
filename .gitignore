@@ -1,0 +1,32 @@
+# Build output
+**/bin/
+**/obj/
+**/dist/
+**/build/
+**/.output/
+**/.tanstack/
+
+# Dependencies
+**/node_modules/
+
+# Test and coverage output
+**/coverage/
+**/test-results/
+**/playwright-report/
+
+# Local configuration and secrets
+.env
+.env.*
+!.env.example
+!.env.sample
+appsettings.Development.json
+
+# IDE and OS files
+.vs/
+.vscode/
+*.user
+*.suo
+*.userosscache
+*.sln.docstates
+.DS_Store
+Thumbs.db
