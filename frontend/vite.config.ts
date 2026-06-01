@@ -1,4 +1,4 @@
-import { defineConfig } from 'vite'
+import { defineConfig } from 'vitest/config'
 import { fileURLToPath } from 'node:url'
 
 import { tanstackStart } from '@tanstack/react-start/plugin/vite'
@@ -16,6 +16,13 @@ const config = defineConfig({
     },
   },
   plugins: [tailwindcss(), tanstackStart(), viteReact()],
+  test: {
+    environment: 'jsdom',
+    globals: true,
+    setupFiles: ['./tests/setup.ts'],
+    include: ['tests/**/*.test.{ts,tsx}', 'src/**/*.test.{ts,tsx}'],
+    css: true,
+  },
 })
 
 export default config

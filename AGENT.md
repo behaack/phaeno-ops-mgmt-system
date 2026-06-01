@@ -99,6 +99,7 @@ This document outlines the ground rules and guidelines for engaging with the Pha
 
 - Keep backend code in the `backend/` directory with `app/` and `test/` subprojects
 - Place frontend code in the `frontend/` directory
+- Store all planning documents in the repository-level `/PLANS` directory
 - Use appropriate folder structures within each project
 - Avoid mixing backend and frontend code
 
@@ -109,6 +110,15 @@ This document outlines the ground rules and guidelines for engaging with the Pha
 - Submit pull requests for code review
 - Ensure all tests pass before merging
 - Update documentation as needed
+- Do not run a build after each edit; defer builds until they are explicitly requested or there is a clear batch of changes ready to verify
+- Do not run lint automatically after each build
+- Do not run tests unless explicitly requested
+- Keep a running frontend unit/component test plan in `PLANS/FRONTEND-TEST-PLAN.md`
+- Keep a running backend test plan in `PLANS/BACKEND-TEST-PLAN.md`
+- Keep a running Playwright e2e test plan in `PLANS/E2E-TEST-PLAN.md`
+- Each test plan must include a checklist of tests that have been created
+- Update the relevant test plan when tests are added, changed, or intentionally deferred
+- Only execute the test plan when explicitly requested
 
 ### 5. Communication Guidelines
 
@@ -123,6 +133,11 @@ This document outlines the ground rules and guidelines for engaging with the Pha
 - For .NET: Use dotnet CLI, Visual Studio or VS Code
 - For React: Use pnpm and VS Code with React extensions
 - Leverage Tan Stack Start for development and building
+- Root-level pnpm scripts delegate common frontend tasks:
+  - `pnpm dev` or `pnpm dev:web` starts the web dev server
+  - `pnpm lint`, `pnpm lint:ci`, and `pnpm lint:fix` run frontend lint commands
+  - `pnpm test` or `pnpm test:vitest` runs frontend Vitest tests
+  - `pnpm test:e2e`, `pnpm test:e2e:headed`, and `pnpm test:e2e:ui` run frontend Playwright e2e tests
 - Do not perform git operations unless asked to
 - Do not perform ef migration operations unless asked to
 
@@ -138,8 +153,9 @@ This document outlines the ground rules and guidelines for engaging with the Pha
 - Validate token-based CSS system for consistent theming and reskinning
 - Test authentication flows, authorization rules, and 2FA functionality
 - Run automated accessibility checks for primary frontend pages and manually review keyboard, screen reader semantics, focus order, contrast, and responsive behavior for any component changes
-- Run lint periodically while working to catch code quality issues early
-- For frontend changes, run `pnpm run lint`, `pnpm run typecheck`, `pnpm run test`, and `pnpm run test:e2e` from `frontend/`
+- Track intended and created tests in the relevant running test plan before executing them
+- Execute test plans, test commands, lint, typecheck, and e2e suites only when requested
+- For frontend changes, the standard requested verification commands are `pnpm run lint`, `pnpm run typecheck`, `pnpm run test`, and `pnpm run test:e2e` from `frontend/`
 
 ### 8. Continuous Learning
 

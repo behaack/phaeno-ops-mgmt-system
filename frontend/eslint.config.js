@@ -11,6 +11,7 @@ export default tseslint.config(
       'node_modules/**',
       'playwright-report/**',
       'test-results/**',
+      'coverage/**',
       'src/routeTree.gen.ts',
     ],
   },
@@ -38,6 +39,25 @@ export default tseslint.config(
       'react-hooks/rules-of-hooks': 'error',
       'react-hooks/exhaustive-deps': 'warn',
       'jsx-a11y/anchor-is-valid': 'off',
+    },
+  },
+  {
+    files: ['tests/**/*.{ts,tsx}', 'src/**/*.test.{ts,tsx}'],
+    languageOptions: {
+      globals: {
+        ...globals.browser,
+        ...globals.node,
+        ...globals.vitest,
+      },
+    },
+  },
+  {
+    files: ['e2e/**/*.{ts,tsx}'],
+    languageOptions: {
+      globals: {
+        ...globals.browser,
+        ...globals.node,
+      },
     },
   },
 )
