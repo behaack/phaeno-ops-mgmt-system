@@ -30,7 +30,7 @@ public static class OrganizationEndpoints
             throw new OrganizationAlreadyExistsException(request.Name);
         }
 
-        var organization = new Organization(request.Name, request.Description);
+        var organization = new Organization(request.Name, request.Kind, request.Description);
 
         dbContext.Organizations.Add(organization);
         await dbContext.SaveChangesAsync();
@@ -40,6 +40,7 @@ public static class OrganizationEndpoints
             Id = organization.Id,
             Name = organization.Name,
             Description = organization.Description,
+            Kind = organization.Kind,
             IsActive = organization.IsActive,
             CreatedAt = organization.CreatedAt,
             UpdatedAt = organization.UpdatedAt,
@@ -68,6 +69,7 @@ public static class OrganizationEndpoints
             Id = organization.Id,
             Name = organization.Name,
             Description = organization.Description,
+            Kind = organization.Kind,
             IsActive = organization.IsActive,
             CreatedAt = organization.CreatedAt,
             UpdatedAt = organization.UpdatedAt,
@@ -92,6 +94,7 @@ public static class OrganizationEndpoints
             Id = o.Id,
             Name = o.Name,
             Description = o.Description,
+            Kind = o.Kind,
             IsActive = o.IsActive,
             CreatedAt = o.CreatedAt,
             UpdatedAt = o.UpdatedAt,

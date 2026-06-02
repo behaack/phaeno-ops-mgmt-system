@@ -9,12 +9,14 @@ export default defineConfig({
   reporter: 'list',
   outputDir: './test-results',
   use: {
-    baseURL: 'http://127.0.0.1:3000',
+    baseURL: 'https://127.0.0.1:3000',
+    ignoreHTTPSErrors: true,
     trace: 'on-first-retry',
   },
   webServer: {
     command: 'node node_modules/vite/bin/vite.js dev --host 127.0.0.1 --port 3000',
-    url: 'http://127.0.0.1:3000',
+    url: 'https://127.0.0.1:3000',
+    ignoreHTTPSErrors: true,
     reuseExistingServer: !process.env.CI,
   },
   projects: [

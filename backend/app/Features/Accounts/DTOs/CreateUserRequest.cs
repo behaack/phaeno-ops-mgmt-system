@@ -26,7 +26,7 @@ public sealed record CreateUserRequest
     public required string LastName { get; init; }
 
     /// <summary>
-    /// Password for the user account.
+    /// Indicates whether the user can administer users in their own organization.
     /// </summary>
-    public required string Password { get; init; }
+    public bool IsOrganizationAdmin { get; init; }
 }

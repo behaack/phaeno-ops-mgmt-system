@@ -40,12 +40,22 @@ public sealed class User : IAudit, IConcurrency
     /// <summary>
     /// Hashed password for the user.
     /// </summary>
-    public string PasswordHash { get; private set; } = null!;
+    public string? PasswordHash { get; private set; }
 
     /// <summary>
     /// Indicates whether the user account is active.
     /// </summary>
     public bool IsActive { get; private set; } = true;
+
+    /// <summary>
+    /// Indicates whether the user can administer users in their own organization.
+    /// </summary>
+    public bool IsOrganizationAdmin { get; private set; }
+
+    /// <summary>
+    /// Invitation-first lifecycle status for the user account.
+    /// </summary>
+    public UserAccountStatus Status { get; private set; } = UserAccountStatus.Invited;
 
     /// <summary>
     /// Date and time when the user was created.
@@ -77,6 +87,12 @@ public sealed class User : IAudit, IConcurrency
     /// </summary>
     public DateTime? LastLoginAt { get; private set; }
 
+    public DateTime InvitedAt { get; private set; } = DateTime.UtcNow;
+
+    public Guid? InvitedByUserId { get; private set; }
+
+    public DateTime? InvitationAcceptedAt { get; private set; }
+
     /// <summary>
     /// Creates a new user instance.
     /// </summary>
@@ -92,13 +108,15 @@ public sealed class User : IAudit, IConcurrency
         string email,
         string firstName,
         string lastName,
-        string passwordHash)
+        bool isOrganizationAdmin,
+        Guid? invitedByUserId = null)
     {
         OrganizationId = organizationId;
         Email = email;
         FirstName = firstName;
         LastName = lastName;
-        PasswordHash = passwordHash;
+        IsOrganizationAdmin = isOrganizationAdmin;
+        InvitedByUserId = invitedByUserId;
     }
 
     /// <summary>
@@ -110,6 +128,11 @@ public sealed class User : IAudit, IConcurrency
         LastName = lastName;
     }
 
+    public void SetOrganizationAdmin(bool isOrganizationAdmin)
+    {
+        IsOrganizationAdmin = isOrganizationAdmin;
+    }
+
     /// <summary>
     /// Updates the user's password hash.
     /// </summary>
@@ -118,12 +141,23 @@ public sealed class User : IAudit, IConcurrency
         PasswordHash = passwordHash;
     }
 
+    public void AcceptInvitation(string firstName, string lastName, string passwordHash)
+    {
+        FirstName = firstName;
+        LastName = lastName;
+        PasswordHash = passwordHash;
+        Status = UserAccountStatus.Active;
+        IsActive = true;
+        InvitationAcceptedAt = DateTime.UtcNow;
+    }
+
     /// <summary>
     /// Deactivates the user account.
     /// </summary>
     public void Deactivate()
     {
         IsActive = false;
+        Status = UserAccountStatus.Disabled;
     }
 
     /// <summary>
@@ -132,6 +166,32 @@ public sealed class User : IAudit, IConcurrency
     public void Activate()
     {
         IsActive = true;
+        Status = UserAccountStatus.Active;
+    }
+
+    public bool CanAccessOrganization(Guid organizationId)
+    {
+        if (Organization?.IsPhaeno() == true)
+        {
+            return true;
+        }
+
+        return OrganizationId == organizationId;
+    }
+
+    public bool CanManageUsersForOrganization(Guid organizationId)
+    {
+        if (OrganizationId == organizationId)
+        {
+            return IsOrganizationAdmin;
+        }
+
+        return Organization?.IsPhaeno() == true;
+    }
+
+    public bool CanManageCustomerOrganizations()
+    {
+        return Organization?.IsPhaeno() == true;
     }
 
     /// <summary>

@@ -1,5 +1,7 @@
 namespace PhaenoPortal.App.Features.Accounts.DTOs;
 
+using PhaenoPortal.App.Features.Accounts.Domain;
+
 /// <summary>
 /// Response DTO for user information.
 /// </summary>
@@ -36,6 +38,16 @@ public sealed record UserDto
     public required bool IsActive { get; init; }
 
     /// <summary>
+    /// Indicates whether the user can administer users in their own organization.
+    /// </summary>
+    public required bool IsOrganizationAdmin { get; init; }
+
+    /// <summary>
+    /// Invitation-first lifecycle status for the user account.
+    /// </summary>
+    public required UserAccountStatus Status { get; init; }
+
+    /// <summary>
     /// Date and time when the user was created.
     /// </summary>
     public required DateTime CreatedAt { get; init; }
@@ -49,6 +61,12 @@ public sealed record UserDto
     /// Date and time of the user's last login.
     /// </summary>
     public DateTime? LastLoginAt { get; init; }
+
+    public required DateTime InvitedAt { get; init; }
+
+    public Guid? InvitedByUserId { get; init; }
+
+    public DateTime? InvitationAcceptedAt { get; init; }
 
     /// <summary>
     /// Optimistic concurrency version.

@@ -134,7 +134,7 @@ This document outlines the ground rules and guidelines for engaging with the Pha
 - For React: Use pnpm and VS Code with React extensions
 - Leverage Tan Stack Start for development and building
 - Root-level pnpm scripts delegate common frontend tasks:
-  - `pnpm dev` or `pnpm dev:web` starts the web dev server
+  - `pnpm dev`, `pnpm dev:web`, or `pnpm dev:https` starts the HTTPS web dev server
   - `pnpm lint`, `pnpm lint:ci`, and `pnpm lint:fix` run frontend lint commands
   - `pnpm test` or `pnpm test:vitest` runs frontend Vitest tests
   - `pnpm test:e2e`, `pnpm test:e2e:headed`, and `pnpm test:e2e:ui` run frontend Playwright e2e tests

@@ -37,15 +37,12 @@ public static class UserEndpoints
             throw new UserAlreadyExistsException(request.Email);
         }
 
-        // In production, implement proper password hashing using BCrypt or similar
-        var passwordHash = HashPassword(request.Password);
-
         var user = new User(
             request.OrganizationId,
             request.Email,
             request.FirstName,
             request.LastName,
-            passwordHash);
+            request.IsOrganizationAdmin);
 
         dbContext.Users.Add(user);
         await dbContext.SaveChangesAsync();
@@ -58,9 +55,14 @@ public static class UserEndpoints
             FirstName = user.FirstName,
             LastName = user.LastName,
             IsActive = user.IsActive,
+            IsOrganizationAdmin = user.IsOrganizationAdmin,
+            Status = user.Status,
             CreatedAt = user.CreatedAt,
             UpdatedAt = user.UpdatedAt,
             LastLoginAt = user.LastLoginAt,
+            InvitedAt = user.InvitedAt,
+            InvitedByUserId = user.InvitedByUserId,
+            InvitationAcceptedAt = user.InvitationAcceptedAt,
             Version = user.Version
         };
 
@@ -89,9 +91,14 @@ public static class UserEndpoints
             FirstName = user.FirstName,
             LastName = user.LastName,
             IsActive = user.IsActive,
+            IsOrganizationAdmin = user.IsOrganizationAdmin,
+            Status = user.Status,
             CreatedAt = user.CreatedAt,
             UpdatedAt = user.UpdatedAt,
             LastLoginAt = user.LastLoginAt,
+            InvitedAt = user.InvitedAt,
+            InvitedByUserId = user.InvitedByUserId,
+            InvitationAcceptedAt = user.InvitationAcceptedAt,
             Version = user.Version
         };
 
@@ -125,25 +132,18 @@ public static class UserEndpoints
             FirstName = u.FirstName,
             LastName = u.LastName,
             IsActive = u.IsActive,
+            IsOrganizationAdmin = u.IsOrganizationAdmin,
+            Status = u.Status,
             CreatedAt = u.CreatedAt,
             UpdatedAt = u.UpdatedAt,
             LastLoginAt = u.LastLoginAt,
+            InvitedAt = u.InvitedAt,
+            InvitedByUserId = u.InvitedByUserId,
+            InvitationAcceptedAt = u.InvitationAcceptedAt,
             Version = u.Version
         }).ToList();
 
         return TypedResults.Ok(dtos);
-    }
-
-    /// <summary>
-    /// Simple password hashing utility. In production, use BCrypt or similar.
-    /// </summary>
-    private static string HashPassword(string password)
-    {
-        // TODO: Implement proper password hashing with BCrypt
-        // For now, this is a placeholder
-        using var sha256 = System.Security.Cryptography.SHA256.Create();
-        var hashedBytes = sha256.ComputeHash(System.Text.Encoding.UTF8.GetBytes(password));
-        return System.Convert.ToBase64String(hashedBytes);
     }
 
     /// <summary>

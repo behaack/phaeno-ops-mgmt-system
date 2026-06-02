@@ -23,6 +23,11 @@ public sealed class Organization : IAudit, IConcurrency
     public string? Description { get; private set; }
 
     /// <summary>
+    /// Authentication and authorization category for the organization.
+    /// </summary>
+    public OrganizationKind Kind { get; private set; } = OrganizationKind.Customer;
+
+    /// <summary>
     /// Date and time when the organization was created.
     /// </summary>
     public DateTime CreatedAt { get; private set; } = DateTime.UtcNow;
@@ -67,19 +72,34 @@ public sealed class Organization : IAudit, IConcurrency
     /// <summary>
     /// Creates a new organization instance.
     /// </summary>
-    public Organization(string name, string? description = null)
+    public Organization(
+        string name,
+        OrganizationKind kind = OrganizationKind.Customer,
+        string? description = null)
     {
         Name = name;
+        Kind = kind;
         Description = description;
     }
 
     /// <summary>
     /// Updates the organization's metadata.
     /// </summary>
-    public void Update(string name, string? description = null)
+    public void Update(string name, OrganizationKind kind, string? description = null)
     {
         Name = name;
+        Kind = kind;
         Description = description;
+    }
+
+    public bool IsPhaeno()
+    {
+        return Kind == OrganizationKind.Phaeno;
+    }
+
+    public bool IsCustomer()
+    {
+        return Kind == OrganizationKind.Customer;
     }
 
     public void Deactivate()

@@ -1,4 +1,5 @@
 import { defineConfig } from 'vitest/config'
+import { readFileSync } from 'node:fs'
 import { fileURLToPath } from 'node:url'
 
 import { tanstackStart } from '@tanstack/react-start/plugin/vite'
@@ -7,6 +8,14 @@ import viteReact from '@vitejs/plugin-react'
 import tailwindcss from '@tailwindcss/vite'
 
 const config = defineConfig({
+  server: {
+    host: '127.0.0.1',
+    port: 3000,
+    https: {
+      key: readFileSync(new URL('./certs/localhost-key.pem', import.meta.url)),
+      cert: readFileSync(new URL('./certs/localhost-cert.pem', import.meta.url)),
+    },
+  },
   resolve: {
     tsconfigPaths: true,
     alias: {

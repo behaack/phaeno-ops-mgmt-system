@@ -1,5 +1,7 @@
 namespace PhaenoPortal.App.Features.Accounts.DTOs;
 
+using PhaenoPortal.App.Features.Accounts.Domain;
+
 /// <summary>
 /// Request DTO for creating an organization.
 /// </summary>
@@ -14,4 +16,9 @@ public sealed record CreateOrganizationRequest
     /// Optional description of the organization.
     /// </summary>
     public string? Description { get; init; }
+
+    /// <summary>
+    /// Authentication and authorization category for the organization.
+    /// </summary>
+    public OrganizationKind Kind { get; init; } = OrganizationKind.Customer;
 }

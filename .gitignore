@@ -20,6 +20,9 @@
 !.env.example
 !.env.sample
 appsettings.Development.json
+frontend/certs/*.csr
+frontend/certs/*.pem
+frontend/certs/*.srl
 
 # IDE and OS files
 .vs/

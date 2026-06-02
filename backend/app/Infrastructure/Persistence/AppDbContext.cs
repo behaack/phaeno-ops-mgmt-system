@@ -36,6 +36,10 @@ public sealed class AppDbContext(
             entity.HasKey(e => e.Id);
             entity.Property(e => e.Name).IsRequired().HasMaxLength(255);
             entity.Property(e => e.Description).HasMaxLength(1000);
+            entity.Property(e => e.Kind)
+                .IsRequired()
+                .HasConversion<string>()
+                .HasMaxLength(50);
             entity.Property(e => e.IsActive).IsRequired();
             entity.Property(e => e.CreatedAt).IsRequired();
             entity.Property(e => e.CreatedByUserId);
@@ -61,12 +65,20 @@ public sealed class AppDbContext(
             entity.Property(e => e.Email).IsRequired().HasMaxLength(255);
             entity.Property(e => e.FirstName).IsRequired().HasMaxLength(100);
             entity.Property(e => e.LastName).IsRequired().HasMaxLength(100);
-            entity.Property(e => e.PasswordHash).IsRequired();
+            entity.Property(e => e.PasswordHash);
             entity.Property(e => e.IsActive).IsRequired();
+            entity.Property(e => e.IsOrganizationAdmin).IsRequired();
+            entity.Property(e => e.Status)
+                .IsRequired()
+                .HasConversion<string>()
+                .HasMaxLength(50);
             entity.Property(e => e.CreatedAt).IsRequired();
             entity.Property(e => e.CreatedByUserId);
             entity.Property(e => e.UpdatedAt).IsRequired();
             entity.Property(e => e.UpdatedByUserId);
+            entity.Property(e => e.InvitedAt).IsRequired();
+            entity.Property(e => e.InvitedByUserId);
+            entity.Property(e => e.InvitationAcceptedAt);
             entity.Property(e => e.Version)
                 .IsRequired()
                 .IsConcurrencyToken();
