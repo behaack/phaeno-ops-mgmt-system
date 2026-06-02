@@ -19,7 +19,9 @@ public sealed class AuditSaveChangesInterceptor(ICurrentUserContext currentUserC
 
     private static readonly HashSet<string> SensitiveProperties =
     [
-        "PasswordHash"
+        "PasswordHash",
+        "TokenHash",
+        "ExternalSubjectId"
     ];
 
     public override InterceptionResult<int> SavingChanges(

@@ -139,7 +139,6 @@ This document outlines the ground rules and guidelines for engaging with the Pha
   - `pnpm test` or `pnpm test:vitest` runs frontend Vitest tests
   - `pnpm test:e2e`, `pnpm test:e2e:headed`, and `pnpm test:e2e:ui` run frontend Playwright e2e tests
 - Do not perform git operations unless asked to
-- Do not perform ef migration operations unless asked to
 
 ### 7. Quality Assurance
 

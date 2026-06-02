@@ -1,8 +1,11 @@
 import { Link } from '@tanstack/react-router'
+import { SignInButton, SignOutButton } from '@clerk/react'
 import {
   Bell,
+  Check,
   ChevronDown,
   LifeBuoy,
+  LogIn,
   LogOut,
   Monitor,
   Moon,
@@ -14,6 +17,7 @@ import {
 import { mainMenuItems } from './navigation'
 import { type ThemeMode, useThemeMode } from './theme-mode'
 import { Avatar, AvatarFallback } from '#/components/ui/avatar'
+import { Button } from '#/components/ui/button'
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -25,6 +29,10 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '#/components/ui/dropdown-menu'
+import {
+  getSelectedMembership,
+  usePhaenoSession,
+} from '#/features/auth/session-context'
 
 const displayModes: readonly {
   label: string
@@ -38,6 +46,38 @@ const displayModes: readonly {
 
 export function UserMenu() {
   const { mode, setMode } = useThemeMode()
+  const {
+    authConfigured,
+    signedIn,
+    session,
+    selectedOrganizationId,
+    setSelectedOrganizationId,
+  } = usePhaenoSession()
+  const user = session?.user
+  const selectedMembership = getSelectedMembership(
+    session,
+    selectedOrganizationId,
+  )
+
+  if (!signedIn) {
+    if (!authConfigured) {
+      return (
+        <Button type="button" variant="outline" size="sm" disabled>
+          <LogIn aria-hidden="true" />
+          Sign in
+        </Button>
+      )
+    }
+
+    return (
+      <SignInButton mode="modal">
+        <Button type="button" variant="outline" size="sm">
+          <LogIn aria-hidden="true" />
+          Sign in
+        </Button>
+      </SignInButton>
+    )
+  }
 
   return (
     <DropdownMenu modal={false}>
@@ -46,20 +86,48 @@ export function UserMenu() {
         aria-label="Open user menu"
       >
         <Avatar size="sm">
-          <AvatarFallback>AM</AvatarFallback>
+          <AvatarFallback>{getInitials(user?.firstName, user?.lastName)}</AvatarFallback>
         </Avatar>
-        <span className="hidden max-w-32 truncate sm:inline">Alex Morgan</span>
+        <span className="hidden max-w-32 truncate sm:inline">
+          {user ? `${user.firstName} ${user.lastName}` : 'Signed in'}
+        </span>
         <ChevronDown aria-hidden="true" className="size-4" />
       </DropdownMenuTrigger>
       <DropdownMenuContent align="end" className="w-72">
         <DropdownMenuLabel>
           <span className="block text-sm font-medium text-foreground">
-            Alex Morgan
+            {user ? `${user.firstName} ${user.lastName}` : 'Signed in'}
           </span>
-          <span className="block truncate text-xs">
-            phaeno.admin@example.com
-          </span>
+          <span className="block truncate text-xs">{user?.email}</span>
         </DropdownMenuLabel>
+
+        {session?.memberships.length ? (
+          <>
+            <DropdownMenuSeparator />
+            <DropdownMenuLabel>Organization</DropdownMenuLabel>
+            <DropdownMenuGroup>
+              {session.memberships.map((membership) => (
+                <DropdownMenuItem
+                  key={membership.membershipId}
+                  onSelect={() =>
+                    setSelectedOrganizationId(membership.organizationId)
+                  }
+                >
+                  <Check
+                    className={
+                      selectedMembership?.membershipId === membership.membershipId
+                        ? 'opacity-100'
+                        : 'opacity-0'
+                    }
+                  />
+                  <span className="min-w-0 flex-1 truncate">
+                    {membership.organizationName}
+                  </span>
+                </DropdownMenuItem>
+              ))}
+            </DropdownMenuGroup>
+          </>
+        ) : null}
 
         <DropdownMenuSeparator className="md:hidden" />
         <DropdownMenuGroup className="md:hidden">
@@ -112,11 +180,19 @@ export function UserMenu() {
         </DropdownMenuGroup>
 
         <DropdownMenuSeparator />
-        <DropdownMenuItem variant="destructive">
-          <LogOut />
-          Sign out
-        </DropdownMenuItem>
+        <SignOutButton redirectUrl="/">
+          <DropdownMenuItem variant="destructive">
+            <LogOut />
+            Sign out
+          </DropdownMenuItem>
+        </SignOutButton>
       </DropdownMenuContent>
     </DropdownMenu>
   )
+}
+
+function getInitials(firstName?: string, lastName?: string) {
+  const first = firstName?.trim().charAt(0) ?? ''
+  const last = lastName?.trim().charAt(0) ?? ''
+  return `${first}${last}`.toUpperCase() || 'U'
 }

@@ -1,4 +1,5 @@
 import { zodResolver } from '@hookform/resolvers/zod'
+import { useMutation } from '@tanstack/react-query'
 import { Send } from 'lucide-react'
 import { useState } from 'react'
 import { useForm } from 'react-hook-form'
@@ -8,34 +9,43 @@ import {
   inviteSchema,
   type InviteFormValues,
 } from './invite-schema'
+import { createInvitation, type Invitation } from '#/api/invitations'
 import { Alert, AlertDescription, AlertTitle } from '#/components/ui/alert'
 import { Button } from '#/components/ui/button'
-import { Checkbox } from '#/components/ui/checkbox'
 import { Input } from '#/components/ui/input'
 import { Label } from '#/components/ui/label'
 
-const roles = ['Member', 'Organization Admin', 'Partner Liaison'] as const
+const roles = ['Member', 'Organization Admin'] as const
 
-export function InviteUserForm() {
-  const [submittedInvite, setSubmittedInvite] = useState<InviteFormValues>()
+export function InviteUserForm({ organizationId }: { organizationId: string }) {
+  const [submittedInvite, setSubmittedInvite] = useState<Invitation>()
   const {
     formState: { errors, isSubmitting },
     handleSubmit,
     register,
     reset,
-    setValue,
-    watch,
   } = useForm<InviteFormValues>({
     resolver: zodResolver(inviteSchema),
     defaultValues: inviteDefaults,
   })
 
-  const requiresTwoFactor = watch('requiresTwoFactor')
+  const createInvitationMutation = useMutation({
+    mutationFn: createInvitation,
+    onSuccess: (invitation) => {
+      setSubmittedInvite(invitation)
+      reset(inviteDefaults)
+    },
+  })
 
-  function onSubmit(values: InviteFormValues) {
-    setSubmittedInvite(values)
-    reset({ ...inviteDefaults, organization: values.organization })
+  async function onSubmit(values: InviteFormValues) {
+    await createInvitationMutation.mutateAsync({
+      organizationId,
+      email: values.email,
+      isOrganizationAdmin: values.role === 'Organization Admin',
+    })
   }
+
+  const isBusy = isSubmitting || createInvitationMutation.isPending
 
   return (
     <form className="space-y-4" onSubmit={handleSubmit(onSubmit)}>
@@ -53,29 +63,6 @@ export function InviteUserForm() {
         {errors.email ? (
           <p id="email-error" className="text-sm text-destructive" role="alert">
             {errors.email.message}
-          </p>
-        ) : null}
-      </div>
-
-      <div className="grid gap-2">
-        <Label htmlFor="organization">Organization *</Label>
-        <Input
-          id="organization"
-          placeholder="Acme Health"
-          required
-          aria-describedby={
-            errors.organization ? 'organization-error' : undefined
-          }
-          aria-invalid={errors.organization ? 'true' : 'false'}
-          {...register('organization')}
-        />
-        {errors.organization ? (
-          <p
-            id="organization-error"
-            className="text-sm text-destructive"
-            role="alert"
-          >
-            {errors.organization.message}
           </p>
         ) : null}
       </div>
@@ -103,38 +90,26 @@ export function InviteUserForm() {
         ) : null}
       </div>
 
-      <div className="flex items-center gap-3 rounded-lg border bg-muted/30 p-3">
-        <Checkbox
-          id="requiresTwoFactor"
-          checked={requiresTwoFactor}
-          aria-describedby="requiresTwoFactor-description"
-          onCheckedChange={(checked) =>
-            setValue('requiresTwoFactor', checked === true, {
-              shouldDirty: true,
-              shouldValidate: true,
-            })
-          }
-        />
-        <Label htmlFor="requiresTwoFactor" className="leading-5">
-          <span>Require two-factor setup before first portal access</span>
-          <span id="requiresTwoFactor-description" className="sr-only">
-            This requirement applies before the invited user can access the
-            portal.
-          </span>
-        </Label>
-      </div>
-
-      <Button type="submit" disabled={isSubmitting} className="w-full">
+      <Button type="submit" disabled={isBusy} className="w-full">
         <Send data-icon="inline-start" />
-        Send invite
+        {isBusy ? 'Sending invite' : 'Send invite'}
       </Button>
+
+      {createInvitationMutation.isError ? (
+        <Alert variant="destructive" role="alert">
+          <AlertTitle>Invite failed</AlertTitle>
+          <AlertDescription>
+            The invitation could not be sent. Check the email and try again.
+          </AlertDescription>
+        </Alert>
+      ) : null}
 
       {submittedInvite ? (
         <Alert role="status" aria-live="polite">
-          <AlertTitle>Invite staged</AlertTitle>
+          <AlertTitle>Invite sent</AlertTitle>
           <AlertDescription>
-            {submittedInvite.email} will be invited to{' '}
-            {submittedInvite.organization} as {submittedInvite.role}.
+            {submittedInvite.email} was invited as{' '}
+            {submittedInvite.isOrganizationAdmin ? 'Organization Admin' : 'Member'}.
           </AlertDescription>
         </Alert>
       ) : null}

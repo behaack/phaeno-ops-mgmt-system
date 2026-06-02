@@ -56,16 +56,62 @@ public class PersistenceTests
         Assert.Contains(
             userEntity.GetIndexes(),
             index => index.IsUnique
-                && index.Properties.Select(property => property.Name).SequenceEqual([nameof(User.Email)]));
+                && index.Properties.Select(property => property.Name).SequenceEqual([nameof(User.NormalizedEmail)]));
+        Assert.Contains(
+            userEntity.GetIndexes(),
+            index => index.IsUnique
+                && index.Properties.Select(property => property.Name).SequenceEqual([
+                    nameof(User.ExternalIdentityProvider),
+                    nameof(User.ExternalSubjectId)
+                ]));
         var userVersionProperty = userEntity.FindProperty(nameof(User.Version));
         Assert.NotNull(userVersionProperty);
         Assert.False(userVersionProperty.IsNullable);
         Assert.True(userVersionProperty.IsConcurrencyToken);
 
-        var organizationForeignKey = Assert.Single(
-            userEntity.GetForeignKeys(),
+        var membershipEntity = dbContext.Model.FindEntityType(typeof(OrganizationMembership));
+        Assert.NotNull(membershipEntity);
+        Assert.Equal("portal", membershipEntity.GetSchema());
+        Assert.Equal("OrganizationMemberships", membershipEntity.GetTableName());
+        Assert.Contains(
+            membershipEntity.GetIndexes(),
+            index => index.IsUnique
+                && index.Properties.Select(property => property.Name).SequenceEqual([
+                    nameof(OrganizationMembership.UserId),
+                    nameof(OrganizationMembership.OrganizationId)
+                ]));
+        var membershipVersionProperty = membershipEntity.FindProperty(nameof(OrganizationMembership.Version));
+        Assert.NotNull(membershipVersionProperty);
+        Assert.False(membershipVersionProperty.IsNullable);
+        Assert.True(membershipVersionProperty.IsConcurrencyToken);
+        Assert.Contains(
+            membershipEntity.GetForeignKeys(),
+            foreignKey => foreignKey.PrincipalEntityType.ClrType == typeof(User)
+                && foreignKey.DeleteBehavior == DeleteBehavior.Restrict);
+        Assert.Contains(
+            membershipEntity.GetForeignKeys(),
             foreignKey => foreignKey.PrincipalEntityType.ClrType == typeof(Organization));
-        Assert.Equal(DeleteBehavior.Restrict, organizationForeignKey.DeleteBehavior);
+
+        var invitationEntity = dbContext.Model.FindEntityType(typeof(OrganizationInvitation));
+        Assert.NotNull(invitationEntity);
+        Assert.Equal("portal", invitationEntity.GetSchema());
+        Assert.Equal("OrganizationInvitations", invitationEntity.GetTableName());
+        Assert.Contains(
+            invitationEntity.GetIndexes(),
+            index => index.IsUnique
+                && index.Properties.Select(property => property.Name).SequenceEqual([
+                    nameof(OrganizationInvitation.OrganizationId),
+                    nameof(OrganizationInvitation.NormalizedEmail),
+                    nameof(OrganizationInvitation.Status)
+                ]));
+        Assert.Contains(
+            invitationEntity.GetIndexes(),
+            index => index.IsUnique
+                && index.Properties.Select(property => property.Name).SequenceEqual([nameof(OrganizationInvitation.TokenHash)]));
+        var invitationVersionProperty = invitationEntity.FindProperty(nameof(OrganizationInvitation.Version));
+        Assert.NotNull(invitationVersionProperty);
+        Assert.False(invitationVersionProperty.IsNullable);
+        Assert.True(invitationVersionProperty.IsConcurrencyToken);
 
         var auditEventEntity = dbContext.Model.FindEntityType(typeof(AuditEvent));
         Assert.NotNull(auditEventEntity);

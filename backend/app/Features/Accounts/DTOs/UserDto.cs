@@ -13,14 +13,24 @@ public sealed record UserDto
     public required Guid Id { get; init; }
 
     /// <summary>
-    /// The organization this user belongs to.
-    /// </summary>
-    public required Guid OrganizationId { get; init; }
-
-    /// <summary>
     /// Email address of the user.
     /// </summary>
     public required string Email { get; init; }
+
+    /// <summary>
+    /// Normalized email address used for matching and uniqueness.
+    /// </summary>
+    public required string NormalizedEmail { get; init; }
+
+    /// <summary>
+    /// External identity provider linked to the user.
+    /// </summary>
+    public string? ExternalIdentityProvider { get; init; }
+
+    /// <summary>
+    /// External identity subject linked to the user.
+    /// </summary>
+    public string? ExternalSubjectId { get; init; }
 
     /// <summary>
     /// First name of the user.
@@ -36,11 +46,6 @@ public sealed record UserDto
     /// Indicates whether the user account is active.
     /// </summary>
     public required bool IsActive { get; init; }
-
-    /// <summary>
-    /// Indicates whether the user can administer users in their own organization.
-    /// </summary>
-    public required bool IsOrganizationAdmin { get; init; }
 
     /// <summary>
     /// Invitation-first lifecycle status for the user account.
@@ -62,14 +67,31 @@ public sealed record UserDto
     /// </summary>
     public DateTime? LastLoginAt { get; init; }
 
-    public required DateTime InvitedAt { get; init; }
-
-    public Guid? InvitedByUserId { get; init; }
-
-    public DateTime? InvitationAcceptedAt { get; init; }
+    public required IReadOnlyList<OrganizationMembershipDto> Memberships { get; init; }
 
     /// <summary>
     /// Optimistic concurrency version.
     /// </summary>
+    public required long Version { get; init; }
+}
+
+public sealed record OrganizationMembershipDto
+{
+    public required Guid Id { get; init; }
+
+    public required Guid OrganizationId { get; init; }
+
+    public string? OrganizationName { get; init; }
+
+    public OrganizationKind? OrganizationKind { get; init; }
+
+    public required bool IsActive { get; init; }
+
+    public required bool IsOrganizationAdmin { get; init; }
+
+    public required DateTime CreatedAt { get; init; }
+
+    public required DateTime UpdatedAt { get; init; }
+
     public required long Version { get; init; }
 }

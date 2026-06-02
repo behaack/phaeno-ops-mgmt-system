@@ -264,23 +264,26 @@ Do not execute this plan unless explicitly requested.
 
 ## Implementation Checklist
 
-- [ ] Add limited Clerk authentication integration and backend JWT validation.
-- [ ] Add external identity fields and normalized email uniqueness to users.
-- [ ] Refactor account model for multi-organization memberships.
-- [ ] Add membership lifecycle and authorization helpers.
-- [ ] Add selected organization request-context validation.
-- [ ] Add session/bootstrap endpoint.
-- [ ] Add invitation entity/model with hashed token support.
-- [ ] Add invitation create, resend, accept, decline, and revoke workflows.
-- [ ] Add Postmark email sender behind an abstraction.
-- [ ] Add bootstrap seed and one-time bootstrap Clerk linking.
-- [ ] Replace hard-delete account actions with inactive/status transitions.
-- [ ] Add explicit audit events for access-changing actions.
-- [ ] Update frontend Clerk auth integration.
-- [ ] Add `/accept-invite` frontend route and token scrubbing.
-- [ ] Add frontend access states and organization switcher behavior.
-- [ ] Add capability-driven action visibility.
-- [ ] Add backend tests for auth gates, invite lifecycle, membership lifecycle, and bootstrap.
+- [x] Add limited Clerk authentication integration and backend JWT validation.
+- [x] Add external identity fields and normalized email uniqueness to users.
+- [x] Refactor account model for multi-organization memberships.
+- [x] Add membership lifecycle and authorization helpers.
+- [x] Add selected organization request-context validation.
+- [x] Add session/bootstrap endpoint.
+- [x] Add invitation entity/model with hashed token support.
+- [x] Add invitation create, resend, accept, and decline workflows.
+- [x] Add invitation revoke workflow.
+- [x] Add email sender behind an abstraction.
+- [x] Add Postmark email sender implementation.
+- [x] Add bootstrap seed and one-time bootstrap Clerk linking.
+- [x] Replace hard-delete account actions with inactive/status transitions.
+- [x] Add explicit audit events for access-changing actions.
+- [x] Remove direct user creation from normal API workflows so membership access is invite-only.
+- [x] Update frontend Clerk auth integration.
+- [x] Add `/accept-invite` frontend route and token scrubbing.
+- [x] Add frontend access states and organization switcher behavior.
+- [x] Add capability-driven action visibility.
+- [x] Add backend tests for auth gates, invite lifecycle, membership lifecycle, and bootstrap.
 - [ ] Add frontend tests for auth states, invite flow, org selection, and hidden/visible actions.
 
 ## Deferred

@@ -58,9 +58,9 @@ public sealed class Organization : IAudit, IConcurrency
     public long Version { get; private set; } = 1;
 
     /// <summary>
-    /// Users that belong to this organization.
+    /// User memberships in this organization.
     /// </summary>
-    public ICollection<User> Users { get; } = [];
+    public ICollection<OrganizationMembership> Memberships { get; } = [];
 
     /// <summary>
     /// Creates a new organization instance.

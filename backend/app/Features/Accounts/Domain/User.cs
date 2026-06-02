@@ -13,19 +13,24 @@ public sealed class User : IAudit, IConcurrency
     public Guid Id { get; private set; } = Guid.NewGuid();
 
     /// <summary>
-    /// The organization this user belongs to.
-    /// </summary>
-    public Guid OrganizationId { get; private set; }
-
-    /// <summary>
-    /// Navigation property to the organization.
-    /// </summary>
-    public Organization? Organization { get; private set; }
-
-    /// <summary>
     /// Email address of the user.
     /// </summary>
     public string Email { get; private set; } = null!;
+
+    /// <summary>
+    /// Normalized email address used for identity matching and uniqueness.
+    /// </summary>
+    public string NormalizedEmail { get; private set; } = null!;
+
+    /// <summary>
+    /// External identity provider used for authentication after invite acceptance.
+    /// </summary>
+    public string? ExternalIdentityProvider { get; private set; }
+
+    /// <summary>
+    /// External provider subject identifier, such as a Clerk user ID.
+    /// </summary>
+    public string? ExternalSubjectId { get; private set; }
 
     /// <summary>
     /// First name of the user.
@@ -38,19 +43,9 @@ public sealed class User : IAudit, IConcurrency
     public string LastName { get; private set; } = null!;
 
     /// <summary>
-    /// Hashed password for the user.
-    /// </summary>
-    public string? PasswordHash { get; private set; }
-
-    /// <summary>
     /// Indicates whether the user account is active.
     /// </summary>
-    public bool IsActive { get; private set; } = true;
-
-    /// <summary>
-    /// Indicates whether the user can administer users in their own organization.
-    /// </summary>
-    public bool IsOrganizationAdmin { get; private set; }
+    public bool IsActive { get; private set; }
 
     /// <summary>
     /// Invitation-first lifecycle status for the user account.
@@ -87,11 +82,10 @@ public sealed class User : IAudit, IConcurrency
     /// </summary>
     public DateTime? LastLoginAt { get; private set; }
 
-    public DateTime InvitedAt { get; private set; } = DateTime.UtcNow;
-
-    public Guid? InvitedByUserId { get; private set; }
-
-    public DateTime? InvitationAcceptedAt { get; private set; }
+    /// <summary>
+    /// Organization memberships for this user.
+    /// </summary>
+    public ICollection<OrganizationMembership> Memberships { get; } = [];
 
     /// <summary>
     /// Creates a new user instance.
@@ -104,19 +98,13 @@ public sealed class User : IAudit, IConcurrency
     /// Creates a new user instance.
     /// </summary>
     public User(
-        Guid organizationId,
         string email,
         string firstName,
-        string lastName,
-        bool isOrganizationAdmin,
-        Guid? invitedByUserId = null)
+        string lastName)
     {
-        OrganizationId = organizationId;
-        Email = email;
+        SetEmail(email);
         FirstName = firstName;
         LastName = lastName;
-        IsOrganizationAdmin = isOrganizationAdmin;
-        InvitedByUserId = invitedByUserId;
     }
 
     /// <summary>
@@ -128,27 +116,38 @@ public sealed class User : IAudit, IConcurrency
         LastName = lastName;
     }
 
-    public void SetOrganizationAdmin(bool isOrganizationAdmin)
+    public static string NormalizeEmail(string email)
     {
-        IsOrganizationAdmin = isOrganizationAdmin;
+        return email.Trim().ToUpperInvariant();
     }
 
-    /// <summary>
-    /// Updates the user's password hash.
-    /// </summary>
-    public void UpdatePassword(string passwordHash)
+    public void LinkExternalIdentity(string provider, string subjectId)
     {
-        PasswordHash = passwordHash;
+        if (!string.IsNullOrWhiteSpace(ExternalIdentityProvider)
+            || !string.IsNullOrWhiteSpace(ExternalSubjectId))
+        {
+            throw new InvalidOperationException("User is already linked to an external identity.");
+        }
+
+        ExternalIdentityProvider = provider.Trim().ToLowerInvariant();
+        ExternalSubjectId = subjectId.Trim();
     }
 
-    public void AcceptInvitation(string firstName, string lastName, string passwordHash)
+    public void AcceptInvitation(string firstName, string lastName, string provider, string subjectId, DateTime utcNow)
     {
         FirstName = firstName;
         LastName = lastName;
-        PasswordHash = passwordHash;
+        if (string.IsNullOrWhiteSpace(ExternalSubjectId))
+        {
+            LinkExternalIdentity(provider, subjectId);
+        }
+        else if (!IsLinkedTo(provider, subjectId))
+        {
+            throw new InvalidOperationException("User is linked to a different external identity.");
+        }
+
         Status = UserAccountStatus.Active;
         IsActive = true;
-        InvitationAcceptedAt = DateTime.UtcNow;
     }
 
     /// <summary>
@@ -169,29 +168,9 @@ public sealed class User : IAudit, IConcurrency
         Status = UserAccountStatus.Active;
     }
 
-    public bool CanAccessOrganization(Guid organizationId)
+    public void RecordLogin(DateTime utcNow)
     {
-        if (Organization?.IsPhaeno() == true)
-        {
-            return true;
-        }
-
-        return OrganizationId == organizationId;
-    }
-
-    public bool CanManageUsersForOrganization(Guid organizationId)
-    {
-        if (OrganizationId == organizationId)
-        {
-            return IsOrganizationAdmin;
-        }
-
-        return Organization?.IsPhaeno() == true;
-    }
-
-    public bool CanManageCustomerOrganizations()
-    {
-        return Organization?.IsPhaeno() == true;
+        LastLoginAt = utcNow;
     }
 
     /// <summary>
@@ -199,7 +178,25 @@ public sealed class User : IAudit, IConcurrency
     /// </summary>
     public void RecordLogin()
     {
-        LastLoginAt = DateTime.UtcNow;
+        RecordLogin(DateTime.UtcNow);
+    }
+
+    private void SetEmail(string email)
+    {
+        Email = email.Trim();
+        NormalizedEmail = NormalizeEmail(email);
+    }    
+
+    public bool HasLinkedExternalIdentity()
+    {
+        return !string.IsNullOrWhiteSpace(ExternalIdentityProvider)
+            && !string.IsNullOrWhiteSpace(ExternalSubjectId);
+    }
+
+    public bool IsLinkedTo(string provider, string subjectId)
+    {
+        return string.Equals(ExternalIdentityProvider, provider.Trim().ToLowerInvariant(), StringComparison.Ordinal)
+            && string.Equals(ExternalSubjectId, subjectId.Trim(), StringComparison.Ordinal);
     }
 
     public void MarkCreated(DateTime utcNow, Guid? actorUserId)

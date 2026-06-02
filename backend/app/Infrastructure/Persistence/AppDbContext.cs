@@ -22,6 +22,16 @@ public sealed class AppDbContext(
     public DbSet<User> Users { get; set; }
 
     /// <summary>
+    /// Organization memberships in the system.
+    /// </summary>
+    public DbSet<OrganizationMembership> OrganizationMemberships { get; set; }
+
+    /// <summary>
+    /// Invitations to create or reactivate organization memberships.
+    /// </summary>
+    public DbSet<OrganizationInvitation> OrganizationInvitations { get; set; }
+
+    /// <summary>
     /// Append-only audit events for persisted entity changes.
     /// </summary>
     public DbSet<AuditEvent> AuditEvents { get; set; }
@@ -49,9 +59,9 @@ public sealed class AppDbContext(
                 .IsRequired()
                 .IsConcurrencyToken();
 
-            entity.HasMany(e => e.Users)
-                .WithOne(u => u.Organization)
-                .HasForeignKey(u => u.OrganizationId)
+            entity.HasMany(e => e.Memberships)
+                .WithOne(m => m.Organization)
+                .HasForeignKey(m => m.OrganizationId)
                 .OnDelete(DeleteBehavior.Restrict);
 
             // Create unique index on Name
@@ -63,11 +73,12 @@ public sealed class AppDbContext(
         {
             entity.HasKey(e => e.Id);
             entity.Property(e => e.Email).IsRequired().HasMaxLength(255);
+            entity.Property(e => e.NormalizedEmail).IsRequired().HasMaxLength(255);
+            entity.Property(e => e.ExternalIdentityProvider).HasMaxLength(100);
+            entity.Property(e => e.ExternalSubjectId).HasMaxLength(255);
             entity.Property(e => e.FirstName).IsRequired().HasMaxLength(100);
             entity.Property(e => e.LastName).IsRequired().HasMaxLength(100);
-            entity.Property(e => e.PasswordHash);
             entity.Property(e => e.IsActive).IsRequired();
-            entity.Property(e => e.IsOrganizationAdmin).IsRequired();
             entity.Property(e => e.Status)
                 .IsRequired()
                 .HasConversion<string>()
@@ -76,21 +87,77 @@ public sealed class AppDbContext(
             entity.Property(e => e.CreatedByUserId);
             entity.Property(e => e.UpdatedAt).IsRequired();
             entity.Property(e => e.UpdatedByUserId);
-            entity.Property(e => e.InvitedAt).IsRequired();
-            entity.Property(e => e.InvitedByUserId);
-            entity.Property(e => e.InvitationAcceptedAt);
+            entity.Property(e => e.LastLoginAt);
             entity.Property(e => e.Version)
                 .IsRequired()
                 .IsConcurrencyToken();
 
-            // Create unique index on Email
-            entity.HasIndex(e => e.Email).IsUnique();
+            entity.HasIndex(e => e.Email);
+            entity.HasIndex(e => e.NormalizedEmail).IsUnique();
+            entity.HasIndex(e => new { e.ExternalIdentityProvider, e.ExternalSubjectId })
+                .IsUnique()
+                .HasFilter("\"ExternalIdentityProvider\" IS NOT NULL AND \"ExternalSubjectId\" IS NOT NULL");
+        });
 
-            // Create index on OrganizationId for efficient filtering
+        modelBuilder.Entity<OrganizationMembership>(entity =>
+        {
+            entity.HasKey(e => e.Id);
+            entity.Property(e => e.IsOrganizationAdmin).IsRequired();
+            entity.Property(e => e.IsActive).IsRequired();
+            entity.Property(e => e.CreatedAt).IsRequired();
+            entity.Property(e => e.CreatedByUserId);
+            entity.Property(e => e.UpdatedAt).IsRequired();
+            entity.Property(e => e.UpdatedByUserId);
+            entity.Property(e => e.Version)
+                .IsRequired()
+                .IsConcurrencyToken();
+
+            entity.HasIndex(e => e.UserId);
             entity.HasIndex(e => e.OrganizationId);
+            entity.HasIndex(e => new { e.UserId, e.OrganizationId }).IsUnique();
+
+            entity.HasOne(e => e.User)
+                .WithMany(u => u.Memberships)
+                .HasForeignKey(e => e.UserId)
+                .OnDelete(DeleteBehavior.Restrict);
 
             entity.HasOne(e => e.Organization)
-                .WithMany(o => o.Users)
+                .WithMany(o => o.Memberships)
+                .HasForeignKey(e => e.OrganizationId)
+                .OnDelete(DeleteBehavior.Restrict);
+        });
+
+        modelBuilder.Entity<OrganizationInvitation>(entity =>
+        {
+            entity.HasKey(e => e.Id);
+            entity.Property(e => e.Email).IsRequired().HasMaxLength(255);
+            entity.Property(e => e.NormalizedEmail).IsRequired().HasMaxLength(255);
+            entity.Property(e => e.IsOrganizationAdmin).IsRequired();
+            entity.Property(e => e.TokenHash).IsRequired().HasMaxLength(512);
+            entity.Property(e => e.ExpiresAt).IsRequired();
+            entity.Property(e => e.Status)
+                .IsRequired()
+                .HasConversion<string>()
+                .HasMaxLength(50);
+            entity.Property(e => e.LastEmailProviderMessageId).HasMaxLength(255);
+            entity.Property(e => e.LastSendError).HasMaxLength(2000);
+            entity.Property(e => e.CreatedAt).IsRequired();
+            entity.Property(e => e.CreatedByUserId);
+            entity.Property(e => e.UpdatedAt).IsRequired();
+            entity.Property(e => e.UpdatedByUserId);
+            entity.Property(e => e.Version)
+                .IsRequired()
+                .IsConcurrencyToken();
+
+            entity.HasIndex(e => e.OrganizationId);
+            entity.HasIndex(e => e.NormalizedEmail);
+            entity.HasIndex(e => new { e.OrganizationId, e.NormalizedEmail, e.Status })
+                .IsUnique()
+                .HasFilter("\"Status\" = 'Pending'");
+            entity.HasIndex(e => e.TokenHash).IsUnique();
+
+            entity.HasOne(e => e.Organization)
+                .WithMany()
                 .HasForeignKey(e => e.OrganizationId)
                 .OnDelete(DeleteBehavior.Restrict);
         });

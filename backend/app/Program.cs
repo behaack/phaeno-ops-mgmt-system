@@ -1,6 +1,10 @@
 using System.Text.Json;
+using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.Extensions.Options;
+using Microsoft.IdentityModel.Tokens;
 using PhaenoPortal.App.Features.Accounts.Endpoints;
+using PhaenoPortal.App.Features.Accounts.Services;
 using PhaenoPortal.App.Features.Health.Endpoints;
 using PhaenoPortal.App.Infrastructure.Api;
 using PhaenoPortal.App.Infrastructure.Persistence;
@@ -9,6 +13,55 @@ using PhaenoPortal.App.Middleware;
 var builder = WebApplication.CreateBuilder(args);
 
 builder.Services.AddPersistence(builder.Configuration);
+builder.Services.Configure<ClerkOptions>(
+    builder.Configuration.GetSection(ClerkOptions.SectionName));
+builder.Services.Configure<BootstrapOptions>(
+    builder.Configuration.GetSection(BootstrapOptions.SectionName));
+builder.Services.Configure<InvitationOptions>(
+    builder.Configuration.GetSection(InvitationOptions.SectionName));
+builder.Services.Configure<PostmarkOptions>(
+    builder.Configuration.GetSection(PostmarkOptions.SectionName));
+builder.Services.AddSingleton<InvitationTokenService>();
+builder.Services.AddScoped<LoggingInvitationEmailSender>();
+builder.Services.AddHttpClient<PostmarkInvitationEmailSender>((services, httpClient) =>
+{
+    var postmarkOptions = services.GetRequiredService<IOptions<PostmarkOptions>>().Value;
+    httpClient.BaseAddress = new Uri(postmarkOptions.ApiBaseUrl.TrimEnd('/') + "/");
+});
+builder.Services.AddScoped<IInvitationEmailSender>(services =>
+{
+    var postmarkOptions = services.GetRequiredService<IOptions<PostmarkOptions>>().Value;
+    return postmarkOptions.IsConfigured
+        ? services.GetRequiredService<PostmarkInvitationEmailSender>()
+        : services.GetRequiredService<LoggingInvitationEmailSender>();
+});
+builder.Services.AddScoped<IExternalIdentityContext, ClaimsExternalIdentityContext>();
+
+var clerkOptions = builder.Configuration
+    .GetSection(ClerkOptions.SectionName)
+    .Get<ClerkOptions>() ?? new ClerkOptions();
+
+builder.Services
+    .AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
+    .AddJwtBearer(options =>
+    {
+        options.Authority = clerkOptions.Authority;
+        options.Audience = string.IsNullOrWhiteSpace(clerkOptions.Audience)
+            ? null
+            : clerkOptions.Audience;
+        options.RequireHttpsMetadata = clerkOptions.RequireHttpsMetadata;
+        options.TokenValidationParameters = new TokenValidationParameters
+        {
+            ValidateIssuer = true,
+            ValidIssuer = clerkOptions.Authority,
+            ValidateAudience = !string.IsNullOrWhiteSpace(clerkOptions.Audience),
+            ValidAudience = clerkOptions.Audience,
+            ValidateLifetime = true,
+            NameClaimType = "sub"
+        };
+    });
+
+builder.Services.AddAuthorization();
 
 builder.Services.Configure<ApiBehaviorOptions>(options =>
 {
@@ -53,7 +106,11 @@ builder.Services.Configure<MvcOptions>(options =>
 
 var app = builder.Build();
 
+await AccountsBootstrapSeeder.SeedAsync(app.Services);
+
 app.UseHttpsRedirection();
+app.UseAuthentication();
+app.UseAuthorization();
 
 app.UseWhen(
     ctx => ctx.Request.Path.StartsWithSegments("/api"),
@@ -67,6 +124,9 @@ var api = app.MapGroup("/api");
 api.MapHealthEndpoints();
 app.MapOrganizationEndpoints();
 app.MapUserEndpoints();
+app.MapInvitationEndpoints();
+app.MapMembershipEndpoints();
+app.MapSessionEndpoints();
 api.MapControllers();
 
 app.Run();

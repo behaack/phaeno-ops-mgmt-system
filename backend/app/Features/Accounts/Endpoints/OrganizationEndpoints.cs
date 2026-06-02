@@ -6,6 +6,7 @@ using Microsoft.EntityFrameworkCore;
 using PhaenoPortal.App.Common.Exceptions.Accounts;
 using PhaenoPortal.App.Features.Accounts.Domain;
 using PhaenoPortal.App.Features.Accounts.DTOs;
+using PhaenoPortal.App.Features.Accounts.Services;
 using PhaenoPortal.App.Infrastructure.Api;
 using PhaenoPortal.App.Infrastructure.Persistence;
 
@@ -83,10 +84,17 @@ public static class OrganizationEndpoints
     /// Lists all organizations.
     /// </summary>
     public static async Task<Ok<List<OrganizationDto>>> ListOrganizations(
-        AppDbContext dbContext)
+        AppDbContext dbContext,
+        [FromQuery] bool includeInactive = false)
     {
-        var organizations = await dbContext.Organizations
-            .OrderBy(o => o.CreatedAt)
+        var query = dbContext.Organizations.AsQueryable();
+        if (!includeInactive)
+        {
+            query = query.Where(o => o.IsActive);
+        }
+
+        var organizations = await query
+            .OrderBy(o => o.Name)
             .ToListAsync();
 
         var dtos = organizations.Select(o => new OrganizationDto
@@ -102,6 +110,98 @@ public static class OrganizationEndpoints
         }).ToList();
 
         return TypedResults.Ok(dtos);
+    }
+
+    public static async Task<IResult> DeactivateOrganization(
+        Guid id,
+        HttpContext httpContext,
+        AppDbContext dbContext,
+        IExternalIdentityContext externalIdentityContext,
+        CancellationToken cancellationToken)
+    {
+        var organization = await dbContext.Organizations.FindAsync([id], cancellationToken);
+        if (organization == null)
+        {
+            throw new OrganizationNotFoundException(id);
+        }
+
+        var actor = await AccountAccess.ReadActiveActorAsync(
+            httpContext,
+            dbContext,
+            externalIdentityContext,
+            cancellationToken);
+        if (actor == null || !AccountAccess.IsPlatformAdmin(actor))
+        {
+            return TypedResults.Forbid();
+        }
+
+        var wasActive = organization.IsActive;
+        organization.Deactivate();
+        if (wasActive)
+        {
+            AccountAudit.Add(
+                dbContext,
+                httpContext,
+                nameof(Organization),
+                organization.Id,
+                AccountAudit.OrganizationDeactivated,
+                organization.Id,
+                actor.Id,
+                new
+                {
+                    organization.Name,
+                    organization.Kind
+                });
+        }
+        await dbContext.SaveChangesAsync(cancellationToken);
+
+        return TypedResults.Ok(ToDto(organization));
+    }
+
+    public static async Task<IResult> ReactivateOrganization(
+        Guid id,
+        HttpContext httpContext,
+        AppDbContext dbContext,
+        IExternalIdentityContext externalIdentityContext,
+        CancellationToken cancellationToken)
+    {
+        var organization = await dbContext.Organizations.FindAsync([id], cancellationToken);
+        if (organization == null)
+        {
+            throw new OrganizationNotFoundException(id);
+        }
+
+        var actor = await AccountAccess.ReadActiveActorAsync(
+            httpContext,
+            dbContext,
+            externalIdentityContext,
+            cancellationToken);
+        if (actor == null || !AccountAccess.IsPlatformAdmin(actor))
+        {
+            return TypedResults.Forbid();
+        }
+
+        var wasInactive = !organization.IsActive;
+        organization.Activate();
+        if (wasInactive)
+        {
+            AccountAudit.Add(
+                dbContext,
+                httpContext,
+                nameof(Organization),
+                organization.Id,
+                AccountAudit.OrganizationReactivated,
+                organization.Id,
+                actor.Id,
+                new
+                {
+                    organization.Name,
+                    organization.Kind
+                });
+        }
+        await dbContext.SaveChangesAsync(cancellationToken);
+
+        return TypedResults.Ok(ToDto(organization));
     }
 
     /// <summary>
@@ -128,5 +228,38 @@ public static class OrganizationEndpoints
             .WithName("ListOrganizations")
             .WithSummary("List all organizations")
             .Produces<List<OrganizationDto>>(StatusCodes.Status200OK);
+
+        group.MapPost("/{id}/deactivate", DeactivateOrganization)
+            .WithName("DeactivateOrganization")
+            .WithSummary("Mark an organization inactive")
+            .RequireAuthorization()
+            .Produces<OrganizationDto>(StatusCodes.Status200OK)
+            .Produces(StatusCodes.Status401Unauthorized)
+            .Produces(StatusCodes.Status403Forbidden)
+            .Produces<ApiResponse<object>>(StatusCodes.Status409Conflict);
+
+        group.MapPost("/{id}/reactivate", ReactivateOrganization)
+            .WithName("ReactivateOrganization")
+            .WithSummary("Reactivate an inactive organization")
+            .RequireAuthorization()
+            .Produces<OrganizationDto>(StatusCodes.Status200OK)
+            .Produces(StatusCodes.Status401Unauthorized)
+            .Produces(StatusCodes.Status403Forbidden)
+            .Produces<ApiResponse<object>>(StatusCodes.Status409Conflict);
+    }
+
+    private static OrganizationDto ToDto(Organization organization)
+    {
+        return new OrganizationDto
+        {
+            Id = organization.Id,
+            Name = organization.Name,
+            Description = organization.Description,
+            Kind = organization.Kind,
+            IsActive = organization.IsActive,
+            CreatedAt = organization.CreatedAt,
+            UpdatedAt = organization.UpdatedAt,
+            Version = organization.Version
+        };
     }
 }
