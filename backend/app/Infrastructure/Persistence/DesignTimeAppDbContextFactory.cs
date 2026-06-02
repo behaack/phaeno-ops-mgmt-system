@@ -53,6 +53,12 @@ public sealed class DesignTimeAppDbContextFactory : IDesignTimeDbContextFactory<
             return appDirectory;
         }
 
+        string backendAppDirectory = Path.Combine(currentDirectory, "backend", "app");
+        if (File.Exists(Path.Combine(backendAppDirectory, "appsettings.json")))
+        {
+            return backendAppDirectory;
+        }
+
         throw new InvalidOperationException("Could not locate backend appsettings.json for EF Core design-time services.");
     }
 }

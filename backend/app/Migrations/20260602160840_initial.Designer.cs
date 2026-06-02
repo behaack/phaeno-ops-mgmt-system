@@ -9,11 +9,11 @@ using PhaenoPortal.App.Infrastructure.Persistence;
 
 #nullable disable
 
-namespace PhaenoPortal.App.Infrastructure.Persistence.Migrations
+namespace PhaenoPortal.App.Migrations
 {
     [DbContext(typeof(AppDbContext))]
-    [Migration("20260602003617_AddMembershipInvitations")]
-    partial class AddMembershipInvitations
+    [Migration("20260602160840_initial")]
+    partial class initial
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)

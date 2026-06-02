@@ -3,82 +3,83 @@ using Microsoft.EntityFrameworkCore.Migrations;
 
 #nullable disable
 
-namespace PhaenoPortal.App.Infrastructure.Persistence.Migrations
+namespace PhaenoPortal.App.Migrations
 {
     /// <inheritdoc />
-    public partial class AddMembershipInvitations : Migration
+    public partial class initial : Migration
     {
         /// <inheritdoc />
         protected override void Up(MigrationBuilder migrationBuilder)
         {
-            migrationBuilder.DropForeignKey(
-                name: "FK_Users_Organizations_OrganizationId",
+            migrationBuilder.EnsureSchema(
+                name: "portal");
+
+            migrationBuilder.CreateTable(
+                name: "AuditEvents",
                 schema: "portal",
-                table: "Users");
+                columns: table => new
+                {
+                    Id = table.Column<Guid>(type: "uuid", nullable: false),
+                    EntityName = table.Column<string>(type: "character varying(255)", maxLength: 255, nullable: false),
+                    EntityId = table.Column<string>(type: "character varying(255)", maxLength: 255, nullable: false),
+                    Operation = table.Column<string>(type: "character varying(50)", maxLength: 50, nullable: false),
+                    OrganizationId = table.Column<Guid>(type: "uuid", nullable: true),
+                    ActorUserId = table.Column<Guid>(type: "uuid", nullable: true),
+                    RequestId = table.Column<string>(type: "character varying(255)", maxLength: 255, nullable: true),
+                    OccurredAt = table.Column<DateTime>(type: "timestamp with time zone", nullable: false),
+                    ChangesJson = table.Column<string>(type: "jsonb", nullable: false)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_AuditEvents", x => x.Id);
+                });
 
-            migrationBuilder.DropIndex(
-                name: "IX_Users_Email",
+            migrationBuilder.CreateTable(
+                name: "Organizations",
                 schema: "portal",
-                table: "Users");
+                columns: table => new
+                {
+                    Id = table.Column<Guid>(type: "uuid", nullable: false),
+                    Name = table.Column<string>(type: "character varying(255)", maxLength: 255, nullable: false),
+                    Description = table.Column<string>(type: "character varying(1000)", maxLength: 1000, nullable: true),
+                    Kind = table.Column<string>(type: "character varying(50)", maxLength: 50, nullable: false),
+                    CreatedAt = table.Column<DateTime>(type: "timestamp with time zone", nullable: false),
+                    IsActive = table.Column<bool>(type: "boolean", nullable: false),
+                    CreatedByUserId = table.Column<Guid>(type: "uuid", nullable: true),
+                    UpdatedAt = table.Column<DateTime>(type: "timestamp with time zone", nullable: false),
+                    UpdatedByUserId = table.Column<Guid>(type: "uuid", nullable: true),
+                    Version = table.Column<long>(type: "bigint", nullable: false)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_Organizations", x => x.Id);
+                });
 
-            migrationBuilder.DropIndex(
-                name: "IX_Users_OrganizationId",
+            migrationBuilder.CreateTable(
+                name: "Users",
                 schema: "portal",
-                table: "Users");
-
-            migrationBuilder.DropColumn(
-                name: "PasswordHash",
-                schema: "portal",
-                table: "Users");
-
-            migrationBuilder.AddColumn<string>(
-                name: "ExternalIdentityProvider",
-                schema: "portal",
-                table: "Users",
-                type: "character varying(100)",
-                maxLength: 100,
-                nullable: true);
-
-            migrationBuilder.AddColumn<string>(
-                name: "ExternalSubjectId",
-                schema: "portal",
-                table: "Users",
-                type: "character varying(255)",
-                maxLength: 255,
-                nullable: true);
-
-            migrationBuilder.AddColumn<string>(
-                name: "NormalizedEmail",
-                schema: "portal",
-                table: "Users",
-                type: "character varying(255)",
-                maxLength: 255,
-                nullable: false,
-                defaultValue: "");
-
-            migrationBuilder.AddColumn<string>(
-                name: "Status",
-                schema: "portal",
-                table: "Users",
-                type: "character varying(50)",
-                maxLength: 50,
-                nullable: false,
-                defaultValue: "Invited");
-
-            migrationBuilder.AddColumn<string>(
-                name: "Kind",
-                schema: "portal",
-                table: "Organizations",
-                type: "character varying(50)",
-                maxLength: 50,
-                nullable: false,
-                defaultValue: "Customer");
-
-            migrationBuilder.Sql(
-                "UPDATE portal.\"Users\" SET \"NormalizedEmail\" = upper(btrim(\"Email\"));");
-
-            migrationBuilder.Sql(
-                "UPDATE portal.\"Users\" SET \"Status\" = CASE WHEN \"IsActive\" THEN 'Active' ELSE 'Disabled' END;");
+                columns: table => new
+                {
+                    Id = table.Column<Guid>(type: "uuid", nullable: false),
+                    Email = table.Column<string>(type: "character varying(255)", maxLength: 255, nullable: false),
+                    NormalizedEmail = table.Column<string>(type: "character varying(255)", maxLength: 255, nullable: false),
+                    ExternalIdentityProvider = table.Column<string>(type: "character varying(100)", maxLength: 100, nullable: true),
+                    ExternalSubjectId = table.Column<string>(type: "character varying(255)", maxLength: 255, nullable: true),
+                    FirstName = table.Column<string>(type: "character varying(100)", maxLength: 100, nullable: false),
+                    LastName = table.Column<string>(type: "character varying(100)", maxLength: 100, nullable: false),
+                    IsActive = table.Column<bool>(type: "boolean", nullable: false),
+                    Status = table.Column<string>(type: "character varying(50)", maxLength: 50, nullable: false),
+                    CreatedAt = table.Column<DateTime>(type: "timestamp with time zone", nullable: false),
+                    CreatedByUserId = table.Column<Guid>(type: "uuid", nullable: true),
+                    UpdatedAt = table.Column<DateTime>(type: "timestamp with time zone", nullable: false),
+                    UpdatedByUserId = table.Column<Guid>(type: "uuid", nullable: true),
+                    Version = table.Column<long>(type: "bigint", nullable: false),
+                    LastLoginAt = table.Column<DateTime>(type: "timestamp with time zone", nullable: true)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_Users", x => x.Id);
+                });
 
             migrationBuilder.CreateTable(
                 name: "OrganizationInvitations",
@@ -157,54 +158,29 @@ namespace PhaenoPortal.App.Infrastructure.Persistence.Migrations
                         onDelete: ReferentialAction.Restrict);
                 });
 
-            migrationBuilder.Sql(
-                """
-                INSERT INTO portal."OrganizationMemberships"
-                    ("Id", "UserId", "OrganizationId", "IsOrganizationAdmin", "IsActive", "CreatedAt", "CreatedByUserId", "UpdatedAt", "UpdatedByUserId", "Version")
-                SELECT
-                    "Id",
-                    "Id",
-                    "OrganizationId",
-                    "IsOrganizationAdmin",
-                    "IsActive",
-                    "CreatedAt",
-                    "CreatedByUserId",
-                    "UpdatedAt",
-                    "UpdatedByUserId",
-                    1
-                FROM portal."Users";
-                """);
-
-            migrationBuilder.DropColumn(
-                name: "OrganizationId",
+            migrationBuilder.CreateIndex(
+                name: "IX_AuditEvents_ActorUserId",
                 schema: "portal",
-                table: "Users");
-
-            migrationBuilder.DropColumn(
-                name: "IsOrganizationAdmin",
-                schema: "portal",
-                table: "Users");
+                table: "AuditEvents",
+                column: "ActorUserId");
 
             migrationBuilder.CreateIndex(
-                name: "IX_Users_Email",
+                name: "IX_AuditEvents_EntityName_EntityId",
                 schema: "portal",
-                table: "Users",
-                column: "Email");
+                table: "AuditEvents",
+                columns: new[] { "EntityName", "EntityId" });
 
             migrationBuilder.CreateIndex(
-                name: "IX_Users_ExternalIdentityProvider_ExternalSubjectId",
+                name: "IX_AuditEvents_OccurredAt",
                 schema: "portal",
-                table: "Users",
-                columns: new[] { "ExternalIdentityProvider", "ExternalSubjectId" },
-                unique: true,
-                filter: "\"ExternalIdentityProvider\" IS NOT NULL AND \"ExternalSubjectId\" IS NOT NULL");
+                table: "AuditEvents",
+                column: "OccurredAt");
 
             migrationBuilder.CreateIndex(
-                name: "IX_Users_NormalizedEmail",
+                name: "IX_AuditEvents_OrganizationId",
                 schema: "portal",
-                table: "Users",
-                column: "NormalizedEmail",
-                unique: true);
+                table: "AuditEvents",
+                column: "OrganizationId");
 
             migrationBuilder.CreateIndex(
                 name: "IX_OrganizationInvitations_NormalizedEmail",
@@ -251,122 +227,58 @@ namespace PhaenoPortal.App.Infrastructure.Persistence.Migrations
                 table: "OrganizationMemberships",
                 columns: new[] { "UserId", "OrganizationId" },
                 unique: true);
+
+            migrationBuilder.CreateIndex(
+                name: "IX_Organizations_Name",
+                schema: "portal",
+                table: "Organizations",
+                column: "Name",
+                unique: true);
+
+            migrationBuilder.CreateIndex(
+                name: "IX_Users_Email",
+                schema: "portal",
+                table: "Users",
+                column: "Email");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_Users_ExternalIdentityProvider_ExternalSubjectId",
+                schema: "portal",
+                table: "Users",
+                columns: new[] { "ExternalIdentityProvider", "ExternalSubjectId" },
+                unique: true,
+                filter: "\"ExternalIdentityProvider\" IS NOT NULL AND \"ExternalSubjectId\" IS NOT NULL");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_Users_NormalizedEmail",
+                schema: "portal",
+                table: "Users",
+                column: "NormalizedEmail",
+                unique: true);
         }
 
         /// <inheritdoc />
         protected override void Down(MigrationBuilder migrationBuilder)
         {
             migrationBuilder.DropTable(
-                name: "OrganizationInvitations",
+                name: "AuditEvents",
                 schema: "portal");
 
-            migrationBuilder.DropIndex(
-                name: "IX_Users_Email",
-                schema: "portal",
-                table: "Users");
-
-            migrationBuilder.DropIndex(
-                name: "IX_Users_ExternalIdentityProvider_ExternalSubjectId",
-                schema: "portal",
-                table: "Users");
-
-            migrationBuilder.DropIndex(
-                name: "IX_Users_NormalizedEmail",
-                schema: "portal",
-                table: "Users");
-
-            migrationBuilder.DropColumn(
-                name: "ExternalIdentityProvider",
-                schema: "portal",
-                table: "Users");
-
-            migrationBuilder.DropColumn(
-                name: "ExternalSubjectId",
-                schema: "portal",
-                table: "Users");
-
-            migrationBuilder.DropColumn(
-                name: "NormalizedEmail",
-                schema: "portal",
-                table: "Users");
-
-            migrationBuilder.DropColumn(
-                name: "Status",
-                schema: "portal",
-                table: "Users");
-
-            migrationBuilder.DropColumn(
-                name: "Kind",
-                schema: "portal",
-                table: "Organizations");
-
-            migrationBuilder.AddColumn<Guid>(
-                name: "OrganizationId",
-                schema: "portal",
-                table: "Users",
-                type: "uuid",
-                nullable: false,
-                defaultValue: new Guid("00000000-0000-0000-0000-000000000000"));
-
-            migrationBuilder.AddColumn<bool>(
-                name: "IsOrganizationAdmin",
-                schema: "portal",
-                table: "Users",
-                type: "boolean",
-                nullable: false,
-                defaultValue: false);
-
-            migrationBuilder.AddColumn<string>(
-                name: "PasswordHash",
-                schema: "portal",
-                table: "Users",
-                type: "text",
-                nullable: false,
-                defaultValue: "");
-
-            migrationBuilder.Sql(
-                """
-                UPDATE portal."Users" AS users
-                SET
-                    "OrganizationId" = memberships."OrganizationId",
-                    "IsOrganizationAdmin" = memberships."IsOrganizationAdmin"
-                FROM (
-                    SELECT DISTINCT ON ("UserId")
-                        "UserId",
-                        "OrganizationId",
-                        "IsOrganizationAdmin"
-                    FROM portal."OrganizationMemberships"
-                    ORDER BY "UserId", "IsActive" DESC, "CreatedAt"
-                ) AS memberships
-                WHERE users."Id" = memberships."UserId";
-                """);
+            migrationBuilder.DropTable(
+                name: "OrganizationInvitations",
+                schema: "portal");
 
             migrationBuilder.DropTable(
                 name: "OrganizationMemberships",
                 schema: "portal");
 
-            migrationBuilder.CreateIndex(
-                name: "IX_Users_Email",
-                schema: "portal",
-                table: "Users",
-                column: "Email",
-                unique: true);
+            migrationBuilder.DropTable(
+                name: "Organizations",
+                schema: "portal");
 
-            migrationBuilder.CreateIndex(
-                name: "IX_Users_OrganizationId",
-                schema: "portal",
-                table: "Users",
-                column: "OrganizationId");
-
-            migrationBuilder.AddForeignKey(
-                name: "FK_Users_Organizations_OrganizationId",
-                schema: "portal",
-                table: "Users",
-                column: "OrganizationId",
-                principalSchema: "portal",
-                principalTable: "Organizations",
-                principalColumn: "Id",
-                onDelete: ReferentialAction.Restrict);
+            migrationBuilder.DropTable(
+                name: "Users",
+                schema: "portal");
         }
     }
 }

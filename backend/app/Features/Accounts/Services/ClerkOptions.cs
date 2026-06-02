@@ -8,5 +8,9 @@ public sealed class ClerkOptions
 
     public string Audience { get; init; } = "";
 
+    public string PublishableKey { get; init; } = "";
+
+    public string SecretKey { get; init; } = "";
+
     public bool RequireHttpsMetadata { get; init; } = true;
 }

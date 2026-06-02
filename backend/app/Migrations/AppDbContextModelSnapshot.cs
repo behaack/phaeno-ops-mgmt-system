@@ -8,7 +8,7 @@ using PhaenoPortal.App.Infrastructure.Persistence;
 
 #nullable disable
 
-namespace PhaenoPortal.App.Infrastructure.Persistence.Migrations
+namespace PhaenoPortal.App.Migrations
 {
     [DbContext(typeof(AppDbContext))]
     partial class AppDbContextModelSnapshot : ModelSnapshot
