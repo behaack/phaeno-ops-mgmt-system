@@ -15,6 +15,13 @@ const config = defineConfig({
       key: readFileSync(new URL('./certs/localhost-key.pem', import.meta.url)),
       cert: readFileSync(new URL('./certs/localhost-cert.pem', import.meta.url)),
     },
+    proxy: {
+      '/api': {
+        target: 'https://localhost:44399',
+        changeOrigin: true,
+        secure: false,
+      },
+    },
   },
   resolve: {
     tsconfigPaths: true,

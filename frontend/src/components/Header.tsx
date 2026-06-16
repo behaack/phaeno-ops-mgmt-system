@@ -1,5 +1,4 @@
 import { Link } from '@tanstack/react-router'
-import { LayoutDashboard } from 'lucide-react'
 
 import { MainMenu } from './MainMenu'
 import { UserMenu } from './UserMenu'
@@ -11,10 +10,19 @@ export default function Header() {
         <div className="m-0 flex-shrink-0 text-base font-semibold">
           <Link
             to="/"
-            className="inline-flex items-center gap-2 rounded-lg border bg-card px-3 py-2 text-sm text-foreground no-underline"
+            className="inline-flex flex-col items-start gap-0.5 px-3 py-1 no-underline"
+            aria-label="Phaeno Portal home"
           >
-            <LayoutDashboard className="size-4 text-[var(--brand-blue)]" />
-            Phaeno Portal
+            <img
+              src="/phaeno124x40.webp"
+              alt="Phaeno"
+              width={124}
+              height={40}
+              className="h-10 w-[124px] object-contain"
+            />
+            <span className="text-[0.625rem] font-semibold tracking-[0.32em] text-foreground uppercase">
+              Portal
+            </span>
           </Link>
         </div>
 

@@ -194,6 +194,10 @@ html {
   transform: translateY(-1px);
 }
 
+.cl-footerAction {
+  display: none;
+}
+
 .soft-enter {
   animation: soft-enter 240ms ease-out both;
 }

@@ -1,0 +1,15 @@
+[2m8:08:27 PM[22m [31m[1m[vite][22m[39m [31mhttp proxy error: /api/health[39m
+AggregateError [ECONNREFUSED]: 
+    at internalConnectMultiple (node:net:1134:18)
+    at afterConnectMultiple (node:net:1715:7)
+[tanstack-router] These exports from "D:/__dev/phaeno-portal/frontend/src/routes/accept-invite.tsx" will not be code-split and will increase your bundle size:
+- AcceptInvitePage
+For the best optimization, these items should either have their export statements removed, or be imported from another location that is not a route file.
+[2m8:09:31 PM[22m [33m[1m[vite][22m[39m [33m[2m(client)[22m[39m [2m[console.warn] [22m[tanstack-router] These exports from "D:/__dev/phaeno-portal/frontend/src/routes/accept-invite.tsx" will not be code-split and will increase your bundle size:
+- AcceptInvitePage
+For the best optimization, these items should either have their export statements removed, or be imported from another location that is not a route file.
+[2m8:09:32 PM[22m [33m[1m[vite][22m[39m [33m[2m(client)[22m[39m [2m[console.warn] [22mClerk: Clerk has been loaded with development keys. Development instances have strict usage limits and should not be used when deploying your application to production. Learn more: https://clerk.com/docs/deployments/overview
+[2m8:09:51 PM[22m [33m[1m[vite][22m[39m [33m[2m(client)[22m[39m [2m[console.warn] [22m[tanstack-router] These exports from "D:/__dev/phaeno-portal/frontend/src/routes/accept-invite.tsx" will not be code-split and will increase your bundle size:
+- AcceptInvitePage
+For the best optimization, these items should either have their export statements removed, or be imported from another location that is not a route file.
+[2m8:09:51 PM[22m [33m[1m[vite][22m[39m [33m[2m(client)[22m[39m [2m[console.warn] [22mClerk: Clerk has been loaded with development keys. Development instances have strict usage limits and should not be used when deploying your application to production. Learn more: https://clerk.com/docs/deployments/overview

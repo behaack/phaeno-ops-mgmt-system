@@ -127,7 +127,7 @@ export function AcceptInvitePage() {
         icon={<ShieldAlert aria-hidden="true" className="size-5" />}
         footer={
           authConfigured ? (
-            <SignInButton mode="modal">
+            <SignInButton mode="modal" withSignUp={false}>
               <Button type="button">
                 <LogIn aria-hidden="true" />
                 Sign in

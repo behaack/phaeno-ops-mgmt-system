@@ -1,6 +1,6 @@
 import {
   ClerkProvider,
-  SignInButton,
+  SignIn,
   SignOutButton,
   useAuth,
 } from '@clerk/react'
@@ -14,7 +14,7 @@ import {
   useState,
   type ReactNode,
 } from 'react'
-import { LogIn, LogOut, ShieldAlert } from 'lucide-react'
+import { LogOut, ShieldAlert } from 'lucide-react'
 
 import { configureApiAuth } from '#/api/client'
 import {
@@ -50,7 +50,18 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }
 
   return (
-    <ClerkProvider publishableKey={publishableKey}>
+    <ClerkProvider
+      publishableKey={publishableKey}
+      appearance={{ elements: { footerAction: 'hidden' } }}
+      localization={{
+        signIn: {
+          start: {
+            title: 'Sign in to Phaeno Portal',
+            titleCombined: 'Sign in to Phaeno Portal',
+          },
+        },
+      }}
+    >
       <PhaenoSessionProvider>{children}</PhaenoSessionProvider>
     </ClerkProvider>
   )
@@ -167,20 +178,7 @@ export function AuthGate({ children }: { children: ReactNode }) {
   }
 
   if (!signedIn && authConfigured) {
-    return (
-      <AccessState
-        title="Sign in required"
-        description="Use your invited account to access Phaeno Portal."
-        action={
-          <SignInButton mode="modal">
-            <Button type="button">
-              <LogIn aria-hidden="true" />
-              Sign in
-            </Button>
-          </SignInButton>
-        }
-      />
-    )
+    return <SignInAccessState />
   }
 
   if (error) {
@@ -287,6 +285,24 @@ function AccessState({
         {action}
       </section>
     </main>
+  )
+}
+
+function SignInAccessState() {
+  return (
+    <main className="page-wrap flex flex-1 items-center justify-center px-4 py-8">
+      <section className="flex w-full max-w-xl justify-center">
+        <InlineSignIn />
+      </section>
+    </main>
+  )
+}
+
+function InlineSignIn() {
+  return (
+    <div className="phaeno-sign-in-form flex w-full justify-center pt-2">
+      <SignIn routing="hash" fallbackRedirectUrl="/" withSignUp={false} />
+    </div>
   )
 }
 

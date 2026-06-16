@@ -5,13 +5,9 @@ import {
   createRootRouteWithContext,
   useRouterState,
 } from '@tanstack/react-router'
-import { TanStackRouterDevtoolsPanel } from '@tanstack/react-router-devtools'
-import { TanStackDevtools } from '@tanstack/react-devtools'
 import Footer from '../components/Footer'
 import Header from '../components/Header'
 import { AuthGate, AuthProvider } from '#/features/auth/session-context'
-
-import TanStackQueryDevtools from '../integrations/tanstack-query/devtools'
 
 import appCss from '../styles.css?url'
 
@@ -55,27 +51,19 @@ function RootLayout() {
 
   return (
     <AuthProvider>
-      <Header />
-      {isInviteRoute ? (
-        <Outlet />
-      ) : (
-        <AuthGate>
-          <Outlet />
-        </AuthGate>
-      )}
-      <Footer />
-      <TanStackDevtools
-        config={{
-          position: 'bottom-right',
-        }}
-        plugins={[
-          {
-            name: 'Tanstack Router',
-            render: <TanStackRouterDevtoolsPanel />,
-          },
-          TanStackQueryDevtools,
-        ]}
-      />
+      <div className="flex min-h-screen flex-col">
+        <Header />
+        <div className="flex flex-1 flex-col">
+          {isInviteRoute ? (
+            <Outlet />
+          ) : (
+            <AuthGate>
+              <Outlet />
+            </AuthGate>
+          )}
+        </div>
+        <Footer />
+      </div>
     </AuthProvider>
   )
 }

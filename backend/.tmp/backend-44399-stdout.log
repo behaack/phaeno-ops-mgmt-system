@@ -1,0 +1,94 @@
+info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+      Executed DbCommand (45ms) [Parameters=[@organizationName='?'], CommandType='Text', CommandTimeout='30']
+      SELECT o.id, o.created_at, o.created_by_user_id, o.description, o.is_active, o.kind, o.name, o.updated_at, o.updated_by_user_id, o.version
+      FROM portal.organizations AS o
+      WHERE o.name = @organizationName AND o.kind = 'Phaeno'
+      LIMIT 1
+info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+      Executed DbCommand (4ms) [Parameters=[@normalizedEmail='?'], CommandType='Text', CommandTimeout='30']
+      SELECT u.id, u.created_at, u.created_by_user_id, u.email, u.external_identity_provider, u.external_subject_id, u.first_name, u.is_active, u.last_login_at, u.last_name, u.normalized_email, u.status, u.updated_at, u.updated_by_user_id, u.version
+      FROM portal.users AS u
+      WHERE u.normalized_email = @normalizedEmail
+      LIMIT 1
+info: System.Net.Http.HttpClient.ClerkBootstrapUserProvisioner.LogicalHandler[100]
+      Start processing HTTP request GET https://api.clerk.com/v1/users?*
+info: System.Net.Http.HttpClient.ClerkBootstrapUserProvisioner.ClientHandler[100]
+      Sending HTTP request GET https://api.clerk.com/v1/users?*
+info: System.Net.Http.HttpClient.ClerkBootstrapUserProvisioner.ClientHandler[101]
+      Received HTTP response headers after 381.7283ms - 200
+info: System.Net.Http.HttpClient.ClerkBootstrapUserProvisioner.LogicalHandler[101]
+      End processing HTTP request after 389.8937ms - 200
+info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+      Executed DbCommand (3ms) [Parameters=[@user_Id='?' (DbType = Guid), @organization_Id='?' (DbType = Guid)], CommandType='Text', CommandTimeout='30']
+      SELECT o.id, o.created_at, o.created_by_user_id, o.is_active, o.is_organization_admin, o.organization_id, o.updated_at, o.updated_by_user_id, o.user_id, o.version
+      FROM portal.organization_memberships AS o
+      WHERE o.user_id = @user_Id AND o.organization_id = @organization_Id
+      LIMIT 1
+info: Microsoft.Hosting.Lifetime[14]
+      Now listening on: https://localhost:44399
+info: Microsoft.Hosting.Lifetime[0]
+      Application started. Press Ctrl+C to shut down.
+info: Microsoft.Hosting.Lifetime[0]
+      Hosting environment: Development
+info: Microsoft.Hosting.Lifetime[0]
+      Content root path: D:\__dev\phaeno-portal\backend\app
+info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+      Executed DbCommand (2ms) [Parameters=[@identity_Provider='?', @identity_SubjectId='?'], CommandType='Text', CommandTimeout='30']
+      SELECT u0.id, u0.created_at, u0.created_by_user_id, u0.email, u0.external_identity_provider, u0.external_subject_id, u0.first_name, u0.is_active, u0.last_login_at, u0.last_name, u0.normalized_email, u0.status, u0.updated_at, u0.updated_by_user_id, u0.version, s.id, s.created_at, s.created_by_user_id, s.is_active, s.is_organization_admin, s.organization_id, s.updated_at, s.updated_by_user_id, s.user_id, s.version, s.id0, s.created_at0, s.created_by_user_id0, s.description, s.is_active0, s.kind, s.name, s.updated_at0, s.updated_by_user_id0, s.version0
+      FROM (
+          SELECT u.id, u.created_at, u.created_by_user_id, u.email, u.external_identity_provider, u.external_subject_id, u.first_name, u.is_active, u.last_login_at, u.last_name, u.normalized_email, u.status, u.updated_at, u.updated_by_user_id, u.version
+          FROM portal.users AS u
+          WHERE u.external_identity_provider = @identity_Provider AND u.external_subject_id = @identity_SubjectId
+          LIMIT 1
+      ) AS u0
+      LEFT JOIN (
+          SELECT o.id, o.created_at, o.created_by_user_id, o.is_active, o.is_organization_admin, o.organization_id, o.updated_at, o.updated_by_user_id, o.user_id, o.version, o0.id AS id0, o0.created_at AS created_at0, o0.created_by_user_id AS created_by_user_id0, o0.description, o0.is_active AS is_active0, o0.kind, o0.name, o0.updated_at AS updated_at0, o0.updated_by_user_id AS updated_by_user_id0, o0.version AS version0
+          FROM portal.organization_memberships AS o
+          INNER JOIN portal.organizations AS o0 ON o.organization_id = o0.id
+      ) AS s ON u0.id = s.user_id
+      ORDER BY u0.id, s.id
+info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+      Executed DbCommand (2ms) [Parameters=[@identity_Provider='?', @identity_SubjectId='?'], CommandType='Text', CommandTimeout='30']
+      SELECT u0.id, u0.created_at, u0.created_by_user_id, u0.email, u0.external_identity_provider, u0.external_subject_id, u0.first_name, u0.is_active, u0.last_login_at, u0.last_name, u0.normalized_email, u0.status, u0.updated_at, u0.updated_by_user_id, u0.version, s.id, s.created_at, s.created_by_user_id, s.is_active, s.is_organization_admin, s.organization_id, s.updated_at, s.updated_by_user_id, s.user_id, s.version, s.id0, s.created_at0, s.created_by_user_id0, s.description, s.is_active0, s.kind, s.name, s.updated_at0, s.updated_by_user_id0, s.version0
+      FROM (
+          SELECT u.id, u.created_at, u.created_by_user_id, u.email, u.external_identity_provider, u.external_subject_id, u.first_name, u.is_active, u.last_login_at, u.last_name, u.normalized_email, u.status, u.updated_at, u.updated_by_user_id, u.version
+          FROM portal.users AS u
+          WHERE u.external_identity_provider = @identity_Provider AND u.external_subject_id = @identity_SubjectId
+          LIMIT 1
+      ) AS u0
+      LEFT JOIN (
+          SELECT o.id, o.created_at, o.created_by_user_id, o.is_active, o.is_organization_admin, o.organization_id, o.updated_at, o.updated_by_user_id, o.user_id, o.version, o0.id AS id0, o0.created_at AS created_at0, o0.created_by_user_id AS created_by_user_id0, o0.description, o0.is_active AS is_active0, o0.kind, o0.name, o0.updated_at AS updated_at0, o0.updated_by_user_id AS updated_by_user_id0, o0.version AS version0
+          FROM portal.organization_memberships AS o
+          INNER JOIN portal.organizations AS o0 ON o.organization_id = o0.id
+      ) AS s ON u0.id = s.user_id
+      ORDER BY u0.id, s.id
+info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+      Executed DbCommand (2ms) [Parameters=[@identity_Provider='?', @identity_SubjectId='?'], CommandType='Text', CommandTimeout='30']
+      SELECT u0.id, u0.created_at, u0.created_by_user_id, u0.email, u0.external_identity_provider, u0.external_subject_id, u0.first_name, u0.is_active, u0.last_login_at, u0.last_name, u0.normalized_email, u0.status, u0.updated_at, u0.updated_by_user_id, u0.version, s.id, s.created_at, s.created_by_user_id, s.is_active, s.is_organization_admin, s.organization_id, s.updated_at, s.updated_by_user_id, s.user_id, s.version, s.id0, s.created_at0, s.created_by_user_id0, s.description, s.is_active0, s.kind, s.name, s.updated_at0, s.updated_by_user_id0, s.version0
+      FROM (
+          SELECT u.id, u.created_at, u.created_by_user_id, u.email, u.external_identity_provider, u.external_subject_id, u.first_name, u.is_active, u.last_login_at, u.last_name, u.normalized_email, u.status, u.updated_at, u.updated_by_user_id, u.version
+          FROM portal.users AS u
+          WHERE u.external_identity_provider = @identity_Provider AND u.external_subject_id = @identity_SubjectId
+          LIMIT 1
+      ) AS u0
+      LEFT JOIN (
+          SELECT o.id, o.created_at, o.created_by_user_id, o.is_active, o.is_organization_admin, o.organization_id, o.updated_at, o.updated_by_user_id, o.user_id, o.version, o0.id AS id0, o0.created_at AS created_at0, o0.created_by_user_id AS created_by_user_id0, o0.description, o0.is_active AS is_active0, o0.kind, o0.name, o0.updated_at AS updated_at0, o0.updated_by_user_id AS updated_by_user_id0, o0.version AS version0
+          FROM portal.organization_memberships AS o
+          INNER JOIN portal.organizations AS o0 ON o.organization_id = o0.id
+      ) AS s ON u0.id = s.user_id
+      ORDER BY u0.id, s.id
+info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+      Executed DbCommand (1ms) [Parameters=[@identity_Provider='?', @identity_SubjectId='?'], CommandType='Text', CommandTimeout='30']
+      SELECT u0.id, u0.created_at, u0.created_by_user_id, u0.email, u0.external_identity_provider, u0.external_subject_id, u0.first_name, u0.is_active, u0.last_login_at, u0.last_name, u0.normalized_email, u0.status, u0.updated_at, u0.updated_by_user_id, u0.version, s.id, s.created_at, s.created_by_user_id, s.is_active, s.is_organization_admin, s.organization_id, s.updated_at, s.updated_by_user_id, s.user_id, s.version, s.id0, s.created_at0, s.created_by_user_id0, s.description, s.is_active0, s.kind, s.name, s.updated_at0, s.updated_by_user_id0, s.version0
+      FROM (
+          SELECT u.id, u.created_at, u.created_by_user_id, u.email, u.external_identity_provider, u.external_subject_id, u.first_name, u.is_active, u.last_login_at, u.last_name, u.normalized_email, u.status, u.updated_at, u.updated_by_user_id, u.version
+          FROM portal.users AS u
+          WHERE u.external_identity_provider = @identity_Provider AND u.external_subject_id = @identity_SubjectId
+          LIMIT 1
+      ) AS u0
+      LEFT JOIN (
+          SELECT o.id, o.created_at, o.created_by_user_id, o.is_active, o.is_organization_admin, o.organization_id, o.updated_at, o.updated_by_user_id, o.user_id, o.version, o0.id AS id0, o0.created_at AS created_at0, o0.created_by_user_id AS created_by_user_id0, o0.description, o0.is_active AS is_active0, o0.kind, o0.name, o0.updated_at AS updated_at0, o0.updated_by_user_id AS updated_by_user_id0, o0.version AS version0
+          FROM portal.organization_memberships AS o
+          INNER JOIN portal.organizations AS o0 ON o.organization_id = o0.id
+      ) AS s ON u0.id = s.user_id
+      ORDER BY u0.id, s.id

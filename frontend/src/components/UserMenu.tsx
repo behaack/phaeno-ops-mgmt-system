@@ -1,11 +1,10 @@
 import { Link } from '@tanstack/react-router'
-import { SignInButton, SignOutButton } from '@clerk/react'
+import { SignOutButton } from '@clerk/react'
 import {
   Bell,
   Check,
   ChevronDown,
   LifeBuoy,
-  LogIn,
   LogOut,
   Monitor,
   Moon,
@@ -17,7 +16,6 @@ import {
 import { mainMenuItems } from './navigation'
 import { type ThemeMode, useThemeMode } from './theme-mode'
 import { Avatar, AvatarFallback } from '#/components/ui/avatar'
-import { Button } from '#/components/ui/button'
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -47,7 +45,6 @@ const displayModes: readonly {
 export function UserMenu() {
   const { mode, setMode } = useThemeMode()
   const {
-    authConfigured,
     signedIn,
     session,
     selectedOrganizationId,
@@ -60,23 +57,7 @@ export function UserMenu() {
   )
 
   if (!signedIn) {
-    if (!authConfigured) {
-      return (
-        <Button type="button" variant="outline" size="sm" disabled>
-          <LogIn aria-hidden="true" />
-          Sign in
-        </Button>
-      )
-    }
-
-    return (
-      <SignInButton mode="modal">
-        <Button type="button" variant="outline" size="sm">
-          <LogIn aria-hidden="true" />
-          Sign in
-        </Button>
-      </SignInButton>
-    )
+    return null
   }
 
   return (

@@ -1,0 +1,8 @@
+D:\__dev\phaeno-portal\backend\.tmp\build-obj\Debug\net10.0\PhaenoPortal.App.csproj.AssemblyReference.cache
+D:\__dev\phaeno-portal\backend\.tmp\build-obj\Debug\net10.0\rpswa.dswa.cache.json
+D:\__dev\phaeno-portal\backend\.tmp\build-obj\Debug\net10.0\PhaenoPortal.App.GeneratedMSBuildEditorConfig.editorconfig
+D:\__dev\phaeno-portal\backend\.tmp\build-obj\Debug\net10.0\PhaenoPortal.App.AssemblyInfoInputs.cache
+D:\__dev\phaeno-portal\backend\.tmp\build-obj\Debug\net10.0\PhaenoPortal.App.AssemblyInfo.cs
+D:\__dev\phaeno-portal\backend\.tmp\build-obj\Debug\net10.0\PhaenoPortal.App.csproj.CoreCompileInputs.cache
+D:\__dev\phaeno-portal\backend\.tmp\build-obj\Debug\net10.0\PhaenoPortal.App.MvcApplicationPartsAssemblyInfo.cache
+D:\__dev\phaeno-portal\backend\.tmp\build-obj\Debug\net10.0\PhaenoPortal.App.sourcelink.json

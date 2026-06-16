@@ -26,7 +26,7 @@ public sealed class ClaimsExternalIdentityContext : IExternalIdentityContext
             "true",
             StringComparison.OrdinalIgnoreCase);
 
-        if (string.IsNullOrWhiteSpace(subject) || string.IsNullOrWhiteSpace(email))
+        if (string.IsNullOrWhiteSpace(subject))
         {
             return null;
         }
@@ -34,7 +34,7 @@ public sealed class ClaimsExternalIdentityContext : IExternalIdentityContext
         return new ExternalIdentity(
             Provider: "clerk",
             SubjectId: subject,
-            Email: email,
+            Email: email ?? string.Empty,
             IsEmailVerified: emailVerified);
     }
 }
