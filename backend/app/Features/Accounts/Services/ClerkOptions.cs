@@ -4,6 +4,8 @@ public sealed class ClerkOptions
 {
     public const string SectionName = "Clerk";
 
+    public string ApiBaseUrl { get; init; } = "https://api.clerk.com/v1";
+
     public string Authority { get; init; } = "";
 
     public string Audience { get; init; } = "";

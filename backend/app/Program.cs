@@ -22,6 +22,13 @@ builder.Services.Configure<InvitationOptions>(
 builder.Services.Configure<PostmarkOptions>(
     builder.Configuration.GetSection(PostmarkOptions.SectionName));
 builder.Services.AddSingleton<InvitationTokenService>();
+builder.Services.AddHttpClient<ClerkBootstrapUserProvisioner>((services, httpClient) =>
+{
+    var clerkOptions = services.GetRequiredService<IOptions<ClerkOptions>>().Value;
+    httpClient.BaseAddress = new Uri(clerkOptions.ApiBaseUrl.TrimEnd('/') + "/");
+});
+builder.Services.AddScoped<IClerkBootstrapUserProvisioner>(
+    services => services.GetRequiredService<ClerkBootstrapUserProvisioner>());
 builder.Services.AddScoped<LoggingInvitationEmailSender>();
 builder.Services.AddHttpClient<PostmarkInvitationEmailSender>((services, httpClient) =>
 {

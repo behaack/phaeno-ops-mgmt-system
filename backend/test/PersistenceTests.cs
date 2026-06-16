@@ -36,7 +36,9 @@ public class PersistenceTests
         var organizationEntity = dbContext.Model.FindEntityType(typeof(Organization));
         Assert.NotNull(organizationEntity);
         Assert.Equal("portal", organizationEntity.GetSchema());
-        Assert.Equal("Organizations", organizationEntity.GetTableName());
+        Assert.Equal("organizations", organizationEntity.GetTableName());
+        Assert.Equal("id", organizationEntity.FindProperty(nameof(Organization.Id))?.GetColumnName());
+        Assert.Equal("is_active", organizationEntity.FindProperty(nameof(Organization.IsActive))?.GetColumnName());
         Assert.Contains(
             organizationEntity.GetIndexes(),
             index => index.IsUnique
@@ -52,7 +54,9 @@ public class PersistenceTests
         var userEntity = dbContext.Model.FindEntityType(typeof(User));
         Assert.NotNull(userEntity);
         Assert.Equal("portal", userEntity.GetSchema());
-        Assert.Equal("Users", userEntity.GetTableName());
+        Assert.Equal("users", userEntity.GetTableName());
+        Assert.Equal("id", userEntity.FindProperty(nameof(User.Id))?.GetColumnName());
+        Assert.Equal("normalized_email", userEntity.FindProperty(nameof(User.NormalizedEmail))?.GetColumnName());
         Assert.Contains(
             userEntity.GetIndexes(),
             index => index.IsUnique
@@ -72,7 +76,10 @@ public class PersistenceTests
         var membershipEntity = dbContext.Model.FindEntityType(typeof(OrganizationMembership));
         Assert.NotNull(membershipEntity);
         Assert.Equal("portal", membershipEntity.GetSchema());
-        Assert.Equal("OrganizationMemberships", membershipEntity.GetTableName());
+        Assert.Equal("organization_memberships", membershipEntity.GetTableName());
+        Assert.Equal("id", membershipEntity.FindProperty(nameof(OrganizationMembership.Id))?.GetColumnName());
+        Assert.Equal("user_id", membershipEntity.FindProperty(nameof(OrganizationMembership.UserId))?.GetColumnName());
+        Assert.Equal("organization_id", membershipEntity.FindProperty(nameof(OrganizationMembership.OrganizationId))?.GetColumnName());
         Assert.Contains(
             membershipEntity.GetIndexes(),
             index => index.IsUnique
@@ -95,7 +102,11 @@ public class PersistenceTests
         var invitationEntity = dbContext.Model.FindEntityType(typeof(OrganizationInvitation));
         Assert.NotNull(invitationEntity);
         Assert.Equal("portal", invitationEntity.GetSchema());
-        Assert.Equal("OrganizationInvitations", invitationEntity.GetTableName());
+        Assert.Equal("organization_invitations", invitationEntity.GetTableName());
+        Assert.Equal("id", invitationEntity.FindProperty(nameof(OrganizationInvitation.Id))?.GetColumnName());
+        Assert.Equal("organization_id", invitationEntity.FindProperty(nameof(OrganizationInvitation.OrganizationId))?.GetColumnName());
+        Assert.Equal("accepted_by_user_id", invitationEntity.FindProperty(nameof(OrganizationInvitation.AcceptedByUserId))?.GetColumnName());
+        Assert.Equal("revoked_by_user_id", invitationEntity.FindProperty(nameof(OrganizationInvitation.RevokedByUserId))?.GetColumnName());
         Assert.Contains(
             invitationEntity.GetIndexes(),
             index => index.IsUnique
@@ -116,7 +127,9 @@ public class PersistenceTests
         var auditEventEntity = dbContext.Model.FindEntityType(typeof(AuditEvent));
         Assert.NotNull(auditEventEntity);
         Assert.Equal("portal", auditEventEntity.GetSchema());
-        Assert.Equal("AuditEvents", auditEventEntity.GetTableName());
+        Assert.Equal("audit_events", auditEventEntity.GetTableName());
+        Assert.Equal("id", auditEventEntity.FindProperty(nameof(AuditEvent.Id))?.GetColumnName());
+        Assert.Equal("actor_user_id", auditEventEntity.FindProperty(nameof(AuditEvent.ActorUserId))?.GetColumnName());
         var changesJsonProperty = auditEventEntity.FindProperty(nameof(AuditEvent.ChangesJson));
         Assert.NotNull(changesJsonProperty);
         Assert.Equal("jsonb", changesJsonProperty.GetColumnType());

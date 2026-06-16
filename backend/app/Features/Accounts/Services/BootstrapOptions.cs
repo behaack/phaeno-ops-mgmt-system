@@ -11,4 +11,6 @@ public sealed class BootstrapOptions
     public string AdminFirstName { get; init; } = "Phaeno";
 
     public string AdminLastName { get; init; } = "Admin";
+
+    public string AdminPassword { get; init; } = "";
 }

@@ -2,6 +2,7 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Options;
 using PhaenoPortal.App.Features.Accounts.Domain;
 using PhaenoPortal.App.Infrastructure.Persistence.Auditing;
+using System.Text;
 
 namespace PhaenoPortal.App.Infrastructure.Persistence;
 
@@ -96,7 +97,7 @@ public sealed class AppDbContext(
             entity.HasIndex(e => e.NormalizedEmail).IsUnique();
             entity.HasIndex(e => new { e.ExternalIdentityProvider, e.ExternalSubjectId })
                 .IsUnique()
-                .HasFilter("\"ExternalIdentityProvider\" IS NOT NULL AND \"ExternalSubjectId\" IS NOT NULL");
+                .HasFilter("\"external_identity_provider\" IS NOT NULL AND \"external_subject_id\" IS NOT NULL");
         });
 
         modelBuilder.Entity<OrganizationMembership>(entity =>
@@ -153,7 +154,7 @@ public sealed class AppDbContext(
             entity.HasIndex(e => e.NormalizedEmail);
             entity.HasIndex(e => new { e.OrganizationId, e.NormalizedEmail, e.Status })
                 .IsUnique()
-                .HasFilter("\"Status\" = 'Pending'");
+                .HasFilter("\"status\" = 'Pending'");
             entity.HasIndex(e => e.TokenHash).IsUnique();
 
             entity.HasOne(e => e.Organization)
@@ -177,5 +178,55 @@ public sealed class AppDbContext(
             entity.HasIndex(e => e.ActorUserId);
             entity.HasIndex(e => e.OccurredAt);
         });
+
+        ApplySnakeCaseDatabaseNames(modelBuilder);
+    }
+
+    private static void ApplySnakeCaseDatabaseNames(ModelBuilder modelBuilder)
+    {
+        foreach (var entityType in modelBuilder.Model.GetEntityTypes())
+        {
+            var tableName = entityType.GetTableName();
+            if (!string.IsNullOrWhiteSpace(tableName))
+            {
+                entityType.SetTableName(ToSnakeCase(tableName));
+            }
+
+            foreach (var property in entityType.GetProperties())
+            {
+                property.SetColumnName(ToSnakeCase(property.Name));
+            }
+        }
+    }
+
+    private static string ToSnakeCase(string name)
+    {
+        if (string.IsNullOrWhiteSpace(name))
+        {
+            return name;
+        }
+
+        var builder = new StringBuilder(name.Length + 8);
+        for (var index = 0; index < name.Length; index++)
+        {
+            var character = name[index];
+            if (char.IsUpper(character))
+            {
+                if (index > 0
+                    && (char.IsLower(name[index - 1])
+                        || (index + 1 < name.Length && char.IsLower(name[index + 1]))))
+                {
+                    builder.Append('_');
+                }
+
+                builder.Append(char.ToLowerInvariant(character));
+            }
+            else
+            {
+                builder.Append(character);
+            }
+        }
+
+        return builder.ToString();
     }
 }

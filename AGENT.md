@@ -45,10 +45,18 @@ This document outlines the ground rules and guidelines for engaging with the Pha
 - Use role-based access control for Phaeno, Customer, and Partner user types
 - Store runtime configuration in `appsettings.json` and environment-specific configuration files rather than hard-coding values
 - Use PostgreSQL through EF Core for persistence
-- Keep EF migrations under `backend/app/Infrastructure/Persistence/Migrations`
+- Keep EF migrations under `backend/app/Migrations`
 - Use the local `dotnet-ef` tool manifest from `backend/`; restore it with `dotnet tool restore`
 - Do not hard-code non-development database credentials; use `ConnectionStrings:DefaultConnection` or `ConnectionStrings__DefaultConnection`
-- Run backend build/tests after persistence changes and create migrations for model changes
+- Use snake_case for all database table and column names.
+  - C# class and property names still use standard C# PascalCase, such as `TableName` and `FieldName`.
+  - EF mappings translate C# names to snake_case database identifiers, such as `table_name` and `field_name`.
+  - All primary key properties are named `Id` in C# and use UUID values in the database.
+  - Primary key columns are named `id`.
+  - Foreign key columns use `<referenced_table_or_role>_id`, such as `organization_id`, `user_id`, `created_by_user_id`, or `accepted_by_user_id`.
+  - Use a role-specific foreign key name when plain `<table>_id` would be ambiguous or misleading.
+- Do not create, remove, or apply EF migrations unless explicitly requested
+- Do not run EF migration commands unless explicitly requested, including `dotnet ef migrations add`, `dotnet ef migrations remove`, `dotnet ef database update`, Package Manager Console `Add-Migration`, or Package Manager Console `Update-Database`
 - Use optimistic concurrency for mutable persisted entities:
   - Entities that participate implement `IConcurrency`
   - EF maps `Version` as a concurrency token

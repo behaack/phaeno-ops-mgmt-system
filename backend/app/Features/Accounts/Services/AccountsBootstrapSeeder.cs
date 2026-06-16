@@ -20,6 +20,7 @@ public static class AccountsBootstrapSeeder
         }
 
         var dbContext = scope.ServiceProvider.GetRequiredService<AppDbContext>();
+        var clerkProvisioner = scope.ServiceProvider.GetRequiredService<IClerkBootstrapUserProvisioner>();
         var organizationName = string.IsNullOrWhiteSpace(options.PhaenoOrganizationName)
             ? "Phaeno"
             : options.PhaenoOrganizationName.Trim();
@@ -59,6 +60,18 @@ public static class AccountsBootstrapSeeder
         }
 
         user.Activate();
+        var clerkUser = await clerkProvisioner.EnsureUserAsync(options, cancellationToken);
+        if (clerkUser != null)
+        {
+            if (!user.HasLinkedExternalIdentity())
+            {
+                user.LinkExternalIdentity("clerk", clerkUser.UserId);
+            }
+            else if (!user.IsLinkedTo("clerk", clerkUser.UserId))
+            {
+                throw new InvalidOperationException("Bootstrap user is linked to a different Clerk user.");
+            }
+        }
 
         var membership = await dbContext.OrganizationMemberships
             .FirstOrDefaultAsync(
