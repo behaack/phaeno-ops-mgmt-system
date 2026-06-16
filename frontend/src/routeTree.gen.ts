@@ -9,11 +9,24 @@
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
 import { Route as rootRouteImport } from './routes/__root'
+import { Route as PhaenoUsersRouteImport } from './routes/phaeno-users'
+import { Route as CustomersRouteImport } from './routes/customers'
 import { Route as AcceptInviteRouteImport } from './routes/accept-invite'
 import { Route as AboutRouteImport } from './routes/about'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as DemoTanstackQueryRouteImport } from './routes/demo/tanstack-query'
+import { Route as CustomersCustomerIdRouteImport } from './routes/customers.$customerId'
 
+const PhaenoUsersRoute = PhaenoUsersRouteImport.update({
+  id: '/phaeno-users',
+  path: '/phaeno-users',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const CustomersRoute = CustomersRouteImport.update({
+  id: '/customers',
+  path: '/customers',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const AcceptInviteRoute = AcceptInviteRouteImport.update({
   id: '/accept-invite',
   path: '/accept-invite',
@@ -34,17 +47,28 @@ const DemoTanstackQueryRoute = DemoTanstackQueryRouteImport.update({
   path: '/demo/tanstack-query',
   getParentRoute: () => rootRouteImport,
 } as any)
+const CustomersCustomerIdRoute = CustomersCustomerIdRouteImport.update({
+  id: '/$customerId',
+  path: '/$customerId',
+  getParentRoute: () => CustomersRoute,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/about': typeof AboutRoute
   '/accept-invite': typeof AcceptInviteRoute
+  '/customers': typeof CustomersRouteWithChildren
+  '/phaeno-users': typeof PhaenoUsersRoute
+  '/customers/$customerId': typeof CustomersCustomerIdRoute
   '/demo/tanstack-query': typeof DemoTanstackQueryRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/about': typeof AboutRoute
   '/accept-invite': typeof AcceptInviteRoute
+  '/customers': typeof CustomersRouteWithChildren
+  '/phaeno-users': typeof PhaenoUsersRoute
+  '/customers/$customerId': typeof CustomersCustomerIdRoute
   '/demo/tanstack-query': typeof DemoTanstackQueryRoute
 }
 export interface FileRoutesById {
@@ -52,25 +76,66 @@ export interface FileRoutesById {
   '/': typeof IndexRoute
   '/about': typeof AboutRoute
   '/accept-invite': typeof AcceptInviteRoute
+  '/customers': typeof CustomersRouteWithChildren
+  '/phaeno-users': typeof PhaenoUsersRoute
+  '/customers/$customerId': typeof CustomersCustomerIdRoute
   '/demo/tanstack-query': typeof DemoTanstackQueryRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/' | '/about' | '/accept-invite' | '/demo/tanstack-query'
+  fullPaths:
+    | '/'
+    | '/about'
+    | '/accept-invite'
+    | '/customers'
+    | '/phaeno-users'
+    | '/customers/$customerId'
+    | '/demo/tanstack-query'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/about' | '/accept-invite' | '/demo/tanstack-query'
-  id: '__root__' | '/' | '/about' | '/accept-invite' | '/demo/tanstack-query'
+  to:
+    | '/'
+    | '/about'
+    | '/accept-invite'
+    | '/customers'
+    | '/phaeno-users'
+    | '/customers/$customerId'
+    | '/demo/tanstack-query'
+  id:
+    | '__root__'
+    | '/'
+    | '/about'
+    | '/accept-invite'
+    | '/customers'
+    | '/phaeno-users'
+    | '/customers/$customerId'
+    | '/demo/tanstack-query'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   AboutRoute: typeof AboutRoute
   AcceptInviteRoute: typeof AcceptInviteRoute
+  CustomersRoute: typeof CustomersRouteWithChildren
+  PhaenoUsersRoute: typeof PhaenoUsersRoute
   DemoTanstackQueryRoute: typeof DemoTanstackQueryRoute
 }
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
+    '/phaeno-users': {
+      id: '/phaeno-users'
+      path: '/phaeno-users'
+      fullPath: '/phaeno-users'
+      preLoaderRoute: typeof PhaenoUsersRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/customers': {
+      id: '/customers'
+      path: '/customers'
+      fullPath: '/customers'
+      preLoaderRoute: typeof CustomersRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/accept-invite': {
       id: '/accept-invite'
       path: '/accept-invite'
@@ -99,13 +164,34 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof DemoTanstackQueryRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/customers/$customerId': {
+      id: '/customers/$customerId'
+      path: '/$customerId'
+      fullPath: '/customers/$customerId'
+      preLoaderRoute: typeof CustomersCustomerIdRouteImport
+      parentRoute: typeof CustomersRoute
+    }
   }
 }
+
+interface CustomersRouteChildren {
+  CustomersCustomerIdRoute: typeof CustomersCustomerIdRoute
+}
+
+const CustomersRouteChildren: CustomersRouteChildren = {
+  CustomersCustomerIdRoute: CustomersCustomerIdRoute,
+}
+
+const CustomersRouteWithChildren = CustomersRoute._addFileChildren(
+  CustomersRouteChildren,
+)
 
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   AboutRoute: AboutRoute,
   AcceptInviteRoute: AcceptInviteRoute,
+  CustomersRoute: CustomersRouteWithChildren,
+  PhaenoUsersRoute: PhaenoUsersRoute,
   DemoTanstackQueryRoute: DemoTanstackQueryRoute,
 }
 export const routeTree = rootRouteImport

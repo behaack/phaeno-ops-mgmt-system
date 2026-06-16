@@ -28,6 +28,7 @@ const SELECTED_ORGANIZATION_STORAGE_KEY = 'phaeno.selectedOrganizationId'
 
 export type PhaenoSessionContextValue = {
   authConfigured: boolean
+  authProvider: 'clerk' | 'mock' | 'none'
   clerkLoaded: boolean
   signedIn: boolean
   session: SessionResponse | null
@@ -44,6 +45,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const publishableKey = import.meta.env.VITE_CLERK_PUBLISHABLE_KEY as
     | string
     | undefined
+  const useMockSession =
+    import.meta.env.DEV && import.meta.env.VITE_USE_MOCK_SESSION !== 'false'
+
+  if (useMockSession) {
+    return <MockSessionProvider>{children}</MockSessionProvider>
+  }
 
   if (!publishableKey) {
     return <AuthConfigurationMissing>{children}</AuthConfigurationMissing>
@@ -119,6 +126,7 @@ export function PhaenoSessionProvider({ children }: { children: ReactNode }) {
   const contextValue = useMemo<PhaenoSessionContextValue>(
     () => ({
       authConfigured: true,
+      authProvider: 'clerk',
       clerkLoaded: isLoaded,
       signedIn: Boolean(isSignedIn),
       session: sessionQuery.data ?? null,
@@ -217,6 +225,7 @@ export function usePhaenoSession() {
     return {
       clerkLoaded: false,
       authConfigured: false,
+      authProvider: 'none',
       signedIn: false,
       session: null,
       isLoading: false,
@@ -249,6 +258,7 @@ function AuthConfigurationMissing({ children }: { children: ReactNode }) {
     <PhaenoSessionContext.Provider
       value={{
         authConfigured: false,
+        authProvider: 'none',
         clerkLoaded: true,
         signedIn: false,
         session: null,
@@ -337,4 +347,80 @@ function readStoredSelectedOrganizationId() {
   }
 
   return window.localStorage.getItem(SELECTED_ORGANIZATION_STORAGE_KEY)
+}
+
+const mockSession: SessionResponse = {
+  state: 'ready',
+  user: {
+    id: 'mock-user-bill-haack',
+    email: 'bill.haack@phaeno.com',
+    firstName: 'Bill',
+    lastName: 'Haack',
+    status: 'Active',
+  },
+  memberships: [
+    {
+      membershipId: 'mock-membership-phaeno',
+      organizationId: 'mock-org-phaeno',
+      organizationName: 'Phaeno',
+      organizationKind: 'Phaeno',
+      isOrganizationAdmin: true,
+    },
+    {
+      membershipId: 'mock-membership-northline',
+      organizationId: 'mock-org-northline',
+      organizationName: 'Northline Labs',
+      organizationKind: 'Customer',
+      isOrganizationAdmin: true,
+    },
+    {
+      membershipId: 'mock-membership-valley',
+      organizationId: 'mock-org-valley',
+      organizationName: 'Valley Diagnostics',
+      organizationKind: 'Customer',
+      isOrganizationAdmin: false,
+    },
+  ],
+  isPlatformAdmin: true,
+  selectedOrganization: {
+    organizationId: 'mock-org-phaeno',
+    membershipId: 'mock-membership-phaeno',
+    isAvailable: true,
+  },
+  capabilities: {
+    canInviteUsers: true,
+    canManageMembers: true,
+    canChangeMemberRoles: true,
+    canLeaveOrganization: false,
+    canManageOrganizations: true,
+    canManageAllUsers: true,
+    canDisableUsers: true,
+  },
+}
+
+function MockSessionProvider({ children }: { children: ReactNode }) {
+  const [selectedOrganizationId, setSelectedOrganizationId] = useState<string | null>(
+    mockSession.selectedOrganization?.organizationId ?? null,
+  )
+
+  const contextValue = useMemo<PhaenoSessionContextValue>(
+    () => ({
+      authConfigured: true,
+      authProvider: 'mock',
+      clerkLoaded: true,
+      signedIn: true,
+      session: mockSession,
+      isLoading: false,
+      error: null,
+      selectedOrganizationId,
+      setSelectedOrganizationId,
+    }),
+    [selectedOrganizationId],
+  )
+
+  return (
+    <PhaenoSessionContext.Provider value={contextValue}>
+      {children}
+    </PhaenoSessionContext.Provider>
+  )
 }

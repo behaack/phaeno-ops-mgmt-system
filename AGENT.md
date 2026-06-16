@@ -85,6 +85,7 @@ This document outlines the ground rules and guidelines for engaging with the Pha
 - Implement end-to-end tests with Playwright for critical user flows
 - Design Playwright e2e tests to be parallel-safe and scalable
 - Ensure all components comply with WCAG 2.2 Level AA, including keyboard access, visible focus, semantic structure, accessible names, error identification, color contrast, target size where applicable, and reduced-motion support
+- Anything that a user clicks on to invoke an action should result in a pointer on hover
 - Use token-based CSS variables for theming and reskinning capability
 - Implement light/dark mode support using CSS custom properties
 - Make generous use of lucide icons where they improve scanning, recognition, and workflow clarity
