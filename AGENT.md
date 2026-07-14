@@ -77,7 +77,7 @@ This document outlines the ground rules and guidelines for engaging with the Pha
 #### Frontend (React/TypeScript)
 - Use TypeScript for all new code
 - Follow React best practices and hooks patterns
-- Utilize Tan Stack Query for data fetching
+- Use Tan Stack Query for server/API data fetching. Do not fetch API data directly inside components with ad hoc `fetch`/Axios calls unless there is a specific reason; wrap reads and mutations in query/mutation hooks so caching, loading, invalidation, and error handling stay consistent.
 - Implement forms using React Hook Form with consistent structure: Label*, Control, Error (* indicates required fields)
 - Create reusable UI components leveraging Shadcn where possible
 - Use Shadcn components for consistent UI
@@ -86,6 +86,8 @@ This document outlines the ground rules and guidelines for engaging with the Pha
 - Design Playwright e2e tests to be parallel-safe and scalable
 - Ensure all components comply with WCAG 2.2 Level AA, including keyboard access, visible focus, semantic structure, accessible names, error identification, color contrast, target size where applicable, and reduced-motion support
 - Anything that a user clicks on to invoke an action should result in a pointer on hover
+- Do not combine list and inline forms. Where there are list and list management, unless otherwise instructed, always use modal forms to add/edit items in the list.
+- Roles are additive. A user may be assigned multiple roles.
 - Use token-based CSS variables for theming and reskinning capability
 - Implement light/dark mode support using CSS custom properties
 - Make generous use of lucide icons where they improve scanning, recognition, and workflow clarity

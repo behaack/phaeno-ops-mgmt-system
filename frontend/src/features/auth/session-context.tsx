@@ -361,21 +361,21 @@ const mockSession: SessionResponse = {
   memberships: [
     {
       membershipId: 'mock-membership-phaeno',
-      organizationId: 'mock-org-phaeno',
+      organizationId: 'phaeno',
       organizationName: 'Phaeno',
       organizationKind: 'Phaeno',
       isOrganizationAdmin: true,
     },
     {
       membershipId: 'mock-membership-northline',
-      organizationId: 'mock-org-northline',
+      organizationId: 'northline-labs',
       organizationName: 'Northline Labs',
       organizationKind: 'Customer',
       isOrganizationAdmin: true,
     },
     {
       membershipId: 'mock-membership-valley',
-      organizationId: 'mock-org-valley',
+      organizationId: 'valley-diagnostics',
       organizationName: 'Valley Diagnostics',
       organizationKind: 'Customer',
       isOrganizationAdmin: false,
@@ -383,7 +383,7 @@ const mockSession: SessionResponse = {
   ],
   isPlatformAdmin: true,
   selectedOrganization: {
-    organizationId: 'mock-org-phaeno',
+    organizationId: 'phaeno',
     membershipId: 'mock-membership-phaeno',
     isAvailable: true,
   },

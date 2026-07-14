@@ -7,6 +7,7 @@ import {
 } from '@tanstack/react-router'
 import Footer from '../components/Footer'
 import Header from '../components/Header'
+import { MockAdminDataProvider } from '#/features/admin/mock-admin-data'
 import { AuthGate, AuthProvider } from '#/features/auth/session-context'
 
 import appCss from '../styles.css?url'
@@ -51,19 +52,21 @@ function RootLayout() {
 
   return (
     <AuthProvider>
-      <div className="flex min-h-screen flex-col">
-        <Header />
-        <div className="flex flex-1 flex-col">
-          {isInviteRoute ? (
-            <Outlet />
-          ) : (
-            <AuthGate>
+      <MockAdminDataProvider>
+        <div className="flex min-h-screen flex-col">
+          <Header />
+          <div className="flex flex-1 flex-col">
+            {isInviteRoute ? (
               <Outlet />
-            </AuthGate>
-          )}
+            ) : (
+              <AuthGate>
+                <Outlet />
+              </AuthGate>
+            )}
+          </div>
+          <Footer />
         </div>
-        <Footer />
-      </div>
+      </MockAdminDataProvider>
     </AuthProvider>
   )
 }

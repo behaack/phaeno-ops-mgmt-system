@@ -17,7 +17,7 @@ import {
 } from 'lucide-react'
 
 import {
-  canManagePhaenoUsers,
+  canManageUserScope,
   getVisibleMainMenuItems,
   isPhaenoEmployee,
 } from './navigation'
@@ -40,6 +40,10 @@ import {
   usePhaenoSession,
 } from '#/features/auth/session-context'
 import type { SessionMembership, SessionResponse } from '#/api/session'
+import {
+  useMockAdminData,
+  type CustomerRecord,
+} from '#/features/admin/mock-admin-data'
 import { cn } from '#/lib/utils'
 
 const displayModes: readonly {
@@ -68,40 +72,45 @@ export function UserMenu() {
     selectedOrganizationId,
     setSelectedOrganizationId,
   } = usePhaenoSession()
+  const { customers } = useMockAdminData()
   const user = session?.user
   const selectedMembership = getSelectedMembership(
     session,
     selectedOrganizationId,
   )
+  const selectedCustomer = customers.find(
+    (customer) => customer.id === selectedOrganizationId,
+  )
+  const selectedOrganizationKind =
+    selectedMembership?.organizationKind ?? (selectedCustomer ? 'Customer' : null)
   const visibleMenuItems = getVisibleMainMenuItems(session, {
+    selectedOrganizationKind,
     selectedMembership,
   })
-  const showPhaenoUserManagement = canManagePhaenoUsers(session)
+  const showUserManagement = canManageUserScope(
+    session,
+    selectedMembership,
+    selectedOrganizationKind,
+  )
   const canImpersonateCustomers =
     isPhaenoEmployee(session) &&
     Boolean(session?.capabilities.canManageOrganizations)
   const phaenoMembership = getPhaenoMembership(session)
-  const customerImpersonationMemberships = useMemo(
-    () => getCustomerImpersonationMemberships(session),
-    [session],
-  )
   const fallbackMembership =
     selectedMembership ?? phaenoMembership ?? session?.memberships[0] ?? null
   const currentCustomerImpersonation =
-    canImpersonateCustomers && selectedMembership?.organizationKind === 'Customer'
-      ? selectedMembership
+    canImpersonateCustomers && selectedCustomer
+      ? selectedCustomer
+      : canImpersonateCustomers &&
+          selectedMembership?.organizationKind === 'Customer'
+        ? selectedMembership
       : null
   const customerResults = useMemo(
-    () =>
-      filterOrganizationMemberships(
-        customerImpersonationMemberships,
-        organizationQuery,
-      ),
-    [customerImpersonationMemberships, organizationQuery],
+    () => filterCustomerOptions(customers, organizationQuery),
+    [customers, organizationQuery],
   )
   const activeCustomer = customerResults[activeCustomerIndex] ?? null
-  const showCustomerImpersonation =
-    canImpersonateCustomers && customerImpersonationMemberships.length > 0
+  const showCustomerImpersonation = canImpersonateCustomers && customers.length > 0
 
   useEffect(() => {
     if (!customerDropdownOpen) {
@@ -121,8 +130,8 @@ export function UserMenu() {
     return null
   }
 
-  function selectCustomerOrganization(membership: SessionMembership) {
-    setSelectedOrganizationId(membership.organizationId)
+  function selectCustomerOrganization(customer: CustomerRecord) {
+    setSelectedOrganizationId(customer.id)
     setOrganizationQuery('')
     setCustomerDropdownOpen(false)
   }
@@ -159,7 +168,7 @@ export function UserMenu() {
             <div className="space-y-1 px-1.5 py-1">
               {currentCustomerImpersonation ? (
                 <div className="px-1 text-sm text-foreground">
-                  {currentCustomerImpersonation.organizationName}
+                  {selectedCustomer?.name ?? selectedMembership?.organizationName}
                 </div>
               ) : null}
               <div className="relative">
@@ -168,7 +177,7 @@ export function UserMenu() {
                     customerDropdownOpen && activeCustomer
                       ? getCustomerOptionId(
                           customerOptionsId,
-                          activeCustomer.membershipId,
+                          activeCustomer.id,
                         )
                       : undefined
                   }
@@ -257,17 +266,14 @@ export function UserMenu() {
                     {customerResults.length > 0 ? (
                       customerResults.map((membership, index) => (
                         <button
-                          key={membership.membershipId}
+                          key={membership.id}
                           id={getCustomerOptionId(
                             customerOptionsId,
-                            membership.membershipId,
+                            membership.id,
                           )}
                           type="button"
                           role="option"
-                          aria-selected={
-                            currentCustomerImpersonation?.membershipId ===
-                            membership.membershipId
-                          }
+                          aria-selected={selectedCustomer?.id === membership.id}
                           className={cn(
                             'flex w-full items-center rounded-sm px-2 py-1.5 text-left text-sm outline-none hover:bg-accent hover:text-accent-foreground focus-visible:bg-accent focus-visible:text-accent-foreground',
                             index === activeCustomerIndex &&
@@ -278,10 +284,9 @@ export function UserMenu() {
                           onClick={() => selectCustomerOrganization(membership)}
                         >
                           <span className="min-w-0 flex-1 truncate">
-                            {membership.organizationName}
+                            {membership.name}
                           </span>
-                          {currentCustomerImpersonation?.membershipId ===
-                          membership.membershipId ? (
+                          {selectedCustomer?.id === membership.id ? (
                             <Check className="ml-2 size-4 shrink-0" />
                           ) : null}
                         </button>
@@ -361,7 +366,7 @@ export function UserMenu() {
 
         <DropdownMenuSeparator />
         <DropdownMenuGroup>
-          {showPhaenoUserManagement ? (
+          {showUserManagement ? (
             <DropdownMenuItem
               asChild
               className={
@@ -437,28 +442,22 @@ function getPhaenoMembership(session: SessionResponse | null) {
   )
 }
 
-function getCustomerImpersonationMemberships(session: SessionResponse | null) {
-  return (session?.memberships ?? []).filter(
-    (membership) => membership.organizationKind === 'Customer',
-  )
-}
-
 function getCustomerOptionId(optionsId: string, membershipId: string) {
   return `${optionsId}-${membershipId}`
 }
 
-function filterOrganizationMemberships(
-  memberships: readonly SessionMembership[],
+function filterCustomerOptions(
+  customers: readonly CustomerRecord[],
   query: string,
 ) {
   const normalizedQuery = query.trim().toLocaleLowerCase()
   if (!normalizedQuery) {
-    return memberships.slice(0, 12)
+    return customers.slice(0, 12)
   }
 
-  return memberships
-    .filter((membership) =>
-      membership.organizationName.toLocaleLowerCase().includes(normalizedQuery),
+  return customers
+    .filter((customer) =>
+      customer.name.toLocaleLowerCase().includes(normalizedQuery),
     )
     .slice(0, 12)
 }

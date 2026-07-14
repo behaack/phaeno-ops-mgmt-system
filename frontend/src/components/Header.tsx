@@ -6,13 +6,20 @@ import {
   getSelectedMembership,
   usePhaenoSession,
 } from '#/features/auth/session-context'
+import { useMockAdminData } from '#/features/admin/mock-admin-data'
 
 export default function Header() {
   const { signedIn, session, selectedOrganizationId } = usePhaenoSession()
+  const { customers } = useMockAdminData()
   const selectedMembership = getSelectedMembership(session, selectedOrganizationId)
+  const selectedCustomer = customers.find(
+    (customer) => customer.id === selectedOrganizationId,
+  )
   const impersonatedCustomer =
-    signedIn && selectedMembership?.organizationKind === 'Customer'
-      ? selectedMembership
+    signedIn && selectedCustomer
+      ? selectedCustomer
+      : signedIn && selectedMembership?.organizationKind === 'Customer'
+        ? selectedMembership
       : null
 
   return (
@@ -46,7 +53,7 @@ export default function Header() {
           <div className="absolute right-1/2 bottom-2 flex max-w-[calc(100%-1rem)] translate-x-1/2 items-center justify-center gap-1 text-center text-[0.6875rem] text-muted-foreground md:right-12 md:max-w-[min(24rem,calc(100%-4rem))] md:translate-x-0 md:justify-start md:text-left">
             <span className="shrink-0 font-medium">Acting as:</span>
             <span className="min-w-0 truncate font-medium text-foreground/80">
-              {impersonatedCustomer.organizationName}
+              {selectedCustomer?.name ?? selectedMembership?.organizationName}
             </span>
           </div>
         ) : null}

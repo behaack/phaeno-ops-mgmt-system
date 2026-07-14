@@ -5,16 +5,24 @@ import {
   getSelectedMembership,
   usePhaenoSession,
 } from '#/features/auth/session-context'
+import { useMockAdminData } from '#/features/admin/mock-admin-data'
 
 export function MainMenu() {
   const { signedIn, session, selectedOrganizationId } = usePhaenoSession()
+  const { customers } = useMockAdminData()
 
   if (!signedIn) {
     return null
   }
 
   const selectedMembership = getSelectedMembership(session, selectedOrganizationId)
+  const selectedOrganizationKind =
+    selectedMembership?.organizationKind ??
+    (customers.some((customer) => customer.id === selectedOrganizationId)
+      ? 'Customer'
+      : null)
   const visibleMenuItems = getVisibleMainMenuItems(session, {
+    selectedOrganizationKind,
     selectedMembership,
   })
 

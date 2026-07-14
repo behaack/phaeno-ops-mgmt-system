@@ -4,11 +4,18 @@ import {
   Building2,
   CalendarClock,
   ShieldCheck,
+  Trash2,
   Users,
   type LucideIcon,
 } from 'lucide-react'
+import { useState, type FormEvent, type ReactNode } from 'react'
 
-import { getCustomerById } from '#/features/customers/customer-data'
+import { UserManagementPanel } from '#/features/admin/UserManagementPanel'
+import {
+  useMockAdminData,
+  type CustomerRecord,
+  type CustomerStatus,
+} from '#/features/admin/mock-admin-data'
 import { Badge } from '#/components/ui/badge'
 import { Button } from '#/components/ui/button'
 import {
@@ -18,15 +25,42 @@ import {
   CardHeader,
   CardTitle,
 } from '#/components/ui/card'
+import { Input } from '#/components/ui/input'
+import { Label } from '#/components/ui/label'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '#/components/ui/tabs'
 
 export const Route = createFileRoute('/customers/$customerId')({
   component: CustomerDetailsPage,
 })
 
+type CustomerProfileFormState = {
+  name: string
+  status: CustomerStatus
+  users: string
+  partner: string
+  contact: string
+  securityContact: string
+  nextStep: string
+  lastReview: string
+}
+
+const customerRoleOptions = ['Organization admin', 'Member'] as const
+
 function CustomerDetailsPage() {
   const { customerId } = Route.useParams()
-  const customer = getCustomerById(customerId)
+  const {
+    addCustomerUser,
+    customerUsers,
+    customers,
+    deactivateCustomer,
+    deactivateCustomerUser,
+    updateCustomer,
+    updateCustomerUser,
+  } = useMockAdminData()
+  const customer = customers.find((item) => item.id === customerId) ?? null
+  const [profileForm, setProfileForm] = useState<CustomerProfileFormState>(() =>
+    customer ? customerToProfileForm(customer) : blankProfileForm(),
+  )
 
   if (!customer) {
     return (
@@ -49,6 +83,13 @@ function CustomerDetailsPage() {
         </Card>
       </main>
     )
+  }
+
+  const scopedUsers = customerUsers.filter((user) => user.customerId === customer.id)
+
+  function submitProfile(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault()
+    updateCustomer(customer.id, profileFormToInput(profileForm))
   }
 
   return (
@@ -74,7 +115,7 @@ function CustomerDetailsPage() {
         </Button>
       </section>
 
-      <section className="grid gap-4 lg:grid-cols-[minmax(0,1fr)_360px]">
+      <section className="grid gap-4 lg:grid-cols-[minmax(0,1fr)_380px]">
         <div className="space-y-4">
           <section className="grid gap-3 sm:grid-cols-3">
             <SummaryCard
@@ -141,22 +182,16 @@ function CustomerDetailsPage() {
                   <TabsTrigger value="activity">Activity</TabsTrigger>
                 </TabsList>
                 <TabsContent value="users" className="mt-4">
-                  <div className="space-y-3">
-                    {getMockCustomerUsers(customer.name).map((user) => (
-                      <div
-                        key={user.email}
-                        className="flex items-start justify-between gap-3 rounded-lg border bg-background p-3"
-                      >
-                        <div className="min-w-0">
-                          <p className="m-0 truncate font-medium">{user.name}</p>
-                          <p className="m-0 truncate text-xs text-muted-foreground">
-                            {user.email}
-                          </p>
-                        </div>
-                        <Badge variant="outline">{user.role}</Badge>
-                      </div>
-                    ))}
-                  </div>
+                  <UserManagementPanel
+                    addLabel="Add customer user"
+                    description={`Users who belong to ${customer.name}.`}
+                    onAddUser={(user) => addCustomerUser(customer.id, user)}
+                    onDeactivateUser={deactivateCustomerUser}
+                    onUpdateUser={updateCustomerUser}
+                    roleOptions={customerRoleOptions}
+                    title="Customer users"
+                    users={scopedUsers}
+                  />
                 </TabsContent>
                 <TabsContent value="access" className="mt-4">
                   <div className="space-y-3">
@@ -186,30 +221,153 @@ function CustomerDetailsPage() {
           </Card>
         </div>
 
-        <Card>
-          <CardHeader>
-            <CardTitle>Customer actions</CardTitle>
-            <CardDescription>
-              Mock actions for the customer-management workflow.
-            </CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-3">
-            <Button type="button" variant="outline" className="w-full justify-start">
-              <Building2 data-icon="inline-start" />
-              Edit customer profile
-            </Button>
-            <Button type="button" variant="outline" className="w-full justify-start">
-              <Users data-icon="inline-start" />
-              Manage customer users
-            </Button>
-            <Button type="button" variant="outline" className="w-full justify-start">
-              <ShieldCheck data-icon="inline-start" />
-              Review partner access
-            </Button>
-          </CardContent>
-        </Card>
+        <div className="space-y-4">
+          <Card>
+            <CardHeader>
+              <CardTitle>Edit customer</CardTitle>
+              <CardDescription>
+                Update the customer profile in mock state.
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <CustomerProfileForm
+                customer={customer}
+                formState={profileForm}
+                onChange={setProfileForm}
+                onSubmit={submitProfile}
+              />
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardHeader>
+              <CardTitle>Customer actions</CardTitle>
+              <CardDescription>
+                Mock actions for the customer-management workflow.
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-3">
+              <Button
+                type="button"
+                variant="destructive"
+                className="w-full justify-start"
+                onClick={() => deactivateCustomer(customer.id)}
+                disabled={customer.status === 'Inactive'}
+              >
+                <Trash2 data-icon="inline-start" />
+                Delete customer
+              </Button>
+              <Button
+                type="button"
+                variant="outline"
+                className="w-full justify-start"
+              >
+                <ShieldCheck data-icon="inline-start" />
+                Review partner access
+              </Button>
+            </CardContent>
+          </Card>
+        </div>
       </section>
     </main>
+  )
+}
+
+function CustomerProfileForm({
+  customer,
+  formState,
+  onChange,
+  onSubmit,
+}: {
+  customer: CustomerRecord
+  formState: CustomerProfileFormState
+  onChange: (state: CustomerProfileFormState) => void
+  onSubmit: (event: FormEvent<HTMLFormElement>) => void
+}) {
+  return (
+    <form className="space-y-4" onSubmit={onSubmit}>
+      <Field label="Name">
+        <Input
+          required
+          value={formState.name}
+          onChange={(event) => onChange({ ...formState, name: event.target.value })}
+        />
+      </Field>
+      <Field label="Status">
+        <select
+          className="h-8 w-full rounded-lg border border-input bg-background px-2.5 text-sm outline-none focus-visible:ring-3 focus-visible:ring-ring/50"
+          value={formState.status}
+          onChange={(event) =>
+            onChange({
+              ...formState,
+              status: event.target.value as CustomerStatus,
+            })
+          }
+        >
+          <option>Active</option>
+          <option>Review</option>
+          <option>Inactive</option>
+        </select>
+      </Field>
+      <Field label="Users">
+        <Input
+          min={0}
+          type="number"
+          value={formState.users}
+          onChange={(event) => onChange({ ...formState, users: event.target.value })}
+        />
+      </Field>
+      <Field label="Partner">
+        <Input
+          value={formState.partner}
+          onChange={(event) =>
+            onChange({ ...formState, partner: event.target.value })
+          }
+        />
+      </Field>
+      <Field label="Primary contact">
+        <Input
+          value={formState.contact}
+          onChange={(event) =>
+            onChange({ ...formState, contact: event.target.value })
+          }
+        />
+      </Field>
+      <Field label="Security contact">
+        <Input
+          value={formState.securityContact}
+          onChange={(event) =>
+            onChange({ ...formState, securityContact: event.target.value })
+          }
+        />
+      </Field>
+      <Field label="Next step">
+        <Input
+          value={formState.nextStep}
+          onChange={(event) =>
+            onChange({ ...formState, nextStep: event.target.value })
+          }
+        />
+      </Field>
+      <Field label="Last review">
+        <Input
+          value={formState.lastReview}
+          onChange={(event) =>
+            onChange({ ...formState, lastReview: event.target.value })
+          }
+        />
+      </Field>
+      <div className="flex flex-wrap justify-end gap-2">
+        <Button
+          type="button"
+          variant="outline"
+          onClick={() => onChange(customerToProfileForm(customer))}
+        >
+          Reset
+        </Button>
+        <Button type="submit">Save customer</Button>
+      </div>
+    </form>
   )
 }
 
@@ -219,6 +377,15 @@ function DetailItem({ label, value }: { label: string; value: string }) {
       <dt className="text-xs font-medium text-muted-foreground">{label}</dt>
       <dd className="m-0 mt-1 text-sm font-medium">{value}</dd>
     </div>
+  )
+}
+
+function Field({ children, label }: { children: ReactNode; label: string }) {
+  return (
+    <label className="grid gap-1.5">
+      <Label>{label}</Label>
+      {children}
+    </label>
   )
 }
 
@@ -246,24 +413,43 @@ function SummaryCard({
   )
 }
 
-function getMockCustomerUsers(customerName: string) {
-  return [
-    {
-      name: `${customerName.split(' ')[0]} Admin`,
-      email: `admin@${customerName.toLocaleLowerCase().replaceAll(' ', '')}.example`,
-      role: 'Admin',
-    },
-    {
-      name: 'Jordan Lee',
-      email: 'jordan.lee@example.com',
-      role: 'Member',
-    },
-    {
-      name: 'Sam Rivera',
-      email: 'sam.rivera@example.com',
-      role: 'Member',
-    },
-  ]
+function blankProfileForm(): CustomerProfileFormState {
+  return {
+    name: '',
+    status: 'Active',
+    users: '0',
+    partner: '',
+    contact: '',
+    securityContact: '',
+    nextStep: '',
+    lastReview: '',
+  }
+}
+
+function customerToProfileForm(customer: CustomerRecord): CustomerProfileFormState {
+  return {
+    name: customer.name,
+    status: customer.status,
+    users: `${customer.users}`,
+    partner: customer.partner,
+    contact: customer.contact,
+    securityContact: customer.securityContact,
+    nextStep: customer.nextStep,
+    lastReview: customer.lastReview,
+  }
+}
+
+function profileFormToInput(formState: CustomerProfileFormState) {
+  return {
+    name: formState.name.trim(),
+    status: formState.status,
+    users: Number(formState.users) || 0,
+    partner: formState.partner.trim() || 'Unassigned',
+    nextStep: formState.nextStep.trim() || 'No open next step',
+    contact: formState.contact.trim() || 'Not assigned',
+    securityContact: formState.securityContact.trim() || 'Not assigned',
+    lastReview: formState.lastReview.trim() || 'Not reviewed',
+  }
 }
 
 function getMockActivity(customerName: string) {

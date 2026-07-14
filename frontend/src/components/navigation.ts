@@ -8,6 +8,7 @@ import {
 import type { SessionMembership, SessionResponse } from '#/api/session'
 
 type NavigationContext = {
+  selectedOrganizationKind?: 'Phaeno' | 'Customer' | null
   selectedMembership?: SessionMembership | null
 }
 
@@ -35,7 +36,7 @@ export const mainMenuItems: readonly MainMenuItem[] = [
     icon: Building2,
     visibleWhen: (session, context) =>
       isPhaenoEmployee(session) &&
-      context.selectedMembership?.organizationKind !== 'Customer' &&
+      context.selectedOrganizationKind !== 'Customer' &&
       Boolean(session?.capabilities.canManageOrganizations),
   },
   {
@@ -63,6 +64,23 @@ export function canManagePhaenoUsers(session: SessionResponse | null) {
   return (
     isPhaenoEmployee(session) && Boolean(session?.capabilities.canManageAllUsers)
   )
+}
+
+export function canManageUserScope(
+  session: SessionResponse | null,
+  selectedMembership?: SessionMembership | null,
+  selectedOrganizationKind?: 'Phaeno' | 'Customer' | null,
+) {
+  if (selectedOrganizationKind === 'Customer') {
+    return (
+      (Boolean(selectedMembership?.isOrganizationAdmin) &&
+        Boolean(session?.capabilities.canManageMembers)) ||
+      (isPhaenoEmployee(session) &&
+        Boolean(session?.capabilities.canManageOrganizations))
+    )
+  }
+
+  return canManagePhaenoUsers(session)
 }
 
 export function isPhaenoEmployee(session: SessionResponse | null) {
