@@ -8,6 +8,7 @@ Use the smallest context set that covers the task.
 | Account, invitation, or access change | `docs/architecture.md`, `docs/business-rules.md`, `PLANS/AUTH-USER-SYSTEM-PLAN.md` |
 | Backend endpoint or persistence change | `README.md`, matching `backend/app/Features` code, API infrastructure, and backend test plan |
 | Frontend route or workflow | matching route and feature code, frontend test plan, and `ai/prompts/cross-stack-change.md` |
+| UI/UX, list, record detail, form, modal, feedback, responsive, i18n, privacy, or accessibility behavior | `docs/ui-ux-principles.md`, matching frontend code, and the relevant frontend/E2E plan |
 | File management, orders, or provisioning | the corresponding `PLANS/` file; treat proposed models as unimplemented |
 | Verification or handoff | `ai/playbooks/verification.md` and the relevant living test plan |
 
