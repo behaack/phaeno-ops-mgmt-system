@@ -68,7 +68,15 @@ public sealed class AuditSaveChangesInterceptor(ICurrentUserContext currentUserC
         {
             ApplyAuditStamp(entry, utcNow, actorUserId);
             ApplyConcurrencyVersion(entry);
+        }
 
+        // Audit stamps and concurrency versions are domain-method mutations made
+        // after EF's normal pre-save change-detection pass. Detect them explicitly
+        // so their new values are included in the generated INSERT/UPDATE SQL.
+        context.ChangeTracker.DetectChanges();
+
+        foreach (EntityEntry entry in entries)
+        {
             string changesJson = BuildChangesJson(entry);
             if (changesJson == "{}")
             {

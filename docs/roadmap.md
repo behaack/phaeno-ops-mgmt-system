@@ -10,8 +10,9 @@
 - `PLANS/ORGANIZATION-DATA-PROVISIONING-PLAN.md`: Phaeno source-sample registry,
   curated package governance, Prospect/Customer/Partner grants, and tenant
   access. The recommended first slice and EF migration are implemented, and the
-  migration is applied to the configured development database; actual
-  production data/profile approval remains a deployment-content step.
+  migration is applied to the configured development database. Its rollback-safe
+  PostgreSQL reference journey passes; actual production data/profile approval
+  remains a deployment-content step.
 
 ## Living test plans
 

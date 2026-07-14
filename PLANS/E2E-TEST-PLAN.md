@@ -18,9 +18,9 @@ Do not execute this test plan unless explicitly requested.
 - [ ] Mobile primary navigation moves into the user menu.
 - [ ] Database-backed synthetic reference journey - upload, ready, snapshot,
   publish, eligibility, explicit Prospect grant, tenant list/detail, file and
-  archive download, download history, cross-tenant denial, and revocation. Run
-  after the data-provisioning migration and isolated test database/storage are
-  approved.
+  archive download, download history, cross-tenant denial, and revocation. The
+  controller/PostgreSQL journey now passes; this remaining item is the full
+  browser, Clerk authentication middleware, and HTTP API-host path.
 
 ## Requested Execution Log
 

@@ -3,8 +3,9 @@
 Keep this file updated as organization-seeding, dataset, and external-tenant requirements
 are supplied and decisions are made.
 
-Do not execute this plan until the terminology and data-semantics gates are
-resolved and implementation is explicitly requested.
+The recommended first slice was explicitly requested and implemented. Future
+phases remain confirmation-gated and should continue from the recorded product
+decisions below.
 
 ## Status
 
@@ -19,6 +20,12 @@ resolved and implementation is explicitly requested.
   migration was applied to the configured development database on 2026-07-14,
   and EF reports no pending model changes. Applying it to any other environment
   remains an explicit deployment operation.
+- The repeatable PostgreSQL reference journey passes against the configured
+  development database with all fixture rows rolled back and managed fixture
+  files removed. It verifies source registration through publication, an
+  idempotent exact-version Prospect grant, tenant downloads and audit history,
+  cross-tenant non-discovery, and immediate revocation. Clerk JWT middleware
+  remains a separate integration boundary.
 - Real production sample data remains unavailable and is a production-content
   prerequisite, not an implementation blocker. Production defaults contain no
   speculative approved file kinds and reject synthetic fixture workflows.
@@ -1009,8 +1016,9 @@ new organization creation only after grant and retry behavior is reliable.
 Implementation checkpoint (2026-07-14): the application code, interfaces,
 unit/component coverage, and EF migration for this slice are present. Migration
 `20260714222254_AddOrganizationDataProvisioning` is applied to the configured
-development database. The authenticated database-backed reference journey
-remains a separate verification checkpoint.
+development database. The controller-level authenticated PostgreSQL reference
+journey passes with transaction rollback and isolated temporary storage. A full
+browser-to-Clerk-to-API run remains a separate authentication/E2E checkpoint.
 
 ## Verification Plan
 

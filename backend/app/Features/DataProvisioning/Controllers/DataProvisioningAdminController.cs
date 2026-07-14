@@ -156,6 +156,7 @@ public sealed class DataProvisioningAdminController(
                 stored.StorageKey);
             managedFile.RecordScan(scan.Status, scan.Message);
             source.Files.Add(managedFile);
+            dbContext.ManagedFiles.Add(managedFile);
             // Mark the aggregate modified so a concurrent ready/archive transition
             // cannot allow a late file insert into an immutable revision.
             source.MarkUpdated(DateTime.UtcNow, actor.Id);
@@ -348,6 +349,7 @@ public sealed class DataProvisioningAdminController(
         var manifest = DatasetManifestService.Build(version);
         version.SetManifest(manifest.ManifestJson, manifest.ContentChecksum);
         dataset.Versions.Add(version);
+        dbContext.CuratedDatasetVersions.Add(version);
         await dbContext.SaveChangesAsync(cancellationToken);
         return Created(string.Empty, DataProvisioningMappings.ToDto(version));
     }
@@ -385,7 +387,9 @@ public sealed class DataProvisioningAdminController(
             errors.Add("Every managed file must have a clean scan result.");
         }
         var manifest = DatasetManifestService.Build(version);
-        if (!string.Equals(manifest.ManifestJson, version.ManifestJson, StringComparison.Ordinal)
+        if (!DatasetManifestService.SemanticallyEquals(
+                manifest.ManifestJson,
+                version.ManifestJson)
             || !string.Equals(manifest.ContentChecksum, version.ContentChecksum, StringComparison.Ordinal))
         {
             errors.Add("The immutable manifest or checksum no longer matches the draft snapshot.");

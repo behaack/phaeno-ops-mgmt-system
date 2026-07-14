@@ -16,7 +16,8 @@ public static class DatasetManifestService
         {
             datasetVersion.SourceSampleId,
             datasetVersion.SourceRevision,
-            datasetVersion.SourceSnapshotAt,
+            SourceSnapshotAt = NormalizeDatabaseTimestamp(
+                datasetVersion.SourceSnapshotAt),
             datasetVersion.SampleLabel,
             datasetVersion.Description,
             datasetVersion.BiologicalContext,
@@ -27,11 +28,13 @@ public static class DatasetManifestService
             datasetVersion.OwnershipBasis,
             datasetVersion.OwnershipEvidenceReference,
             datasetVersion.OwnershipConfirmedByUserId,
-            datasetVersion.OwnershipConfirmedAt,
+            OwnershipConfirmedAt = NormalizeDatabaseTimestamp(
+                datasetVersion.OwnershipConfirmedAt),
             datasetVersion.DeidentificationMethod,
             datasetVersion.DeidentificationNotes,
             datasetVersion.DeidentificationConfirmedByUserId,
-            datasetVersion.DeidentificationConfirmedAt,
+            DeidentificationConfirmedAt = NormalizeDatabaseTimestamp(
+                datasetVersion.DeidentificationConfirmedAt),
             files = datasetVersion.Files
                 .OrderBy(file => file.FileName, StringComparer.Ordinal)
                 .ThenBy(file => file.Id)
@@ -51,5 +54,20 @@ public static class DatasetManifestService
                 SHA256.HashData(Encoding.UTF8.GetBytes(manifestJson)))
             .ToLowerInvariant();
         return (manifestJson, checksum);
+    }
+
+    public static bool SemanticallyEquals(string leftJson, string rightJson)
+    {
+        using var left = JsonDocument.Parse(leftJson);
+        using var right = JsonDocument.Parse(rightJson);
+        return JsonElement.DeepEquals(left.RootElement, right.RootElement);
+    }
+
+    private static DateTime NormalizeDatabaseTimestamp(DateTime value)
+    {
+        const long ticksPerMicrosecond = 10;
+        return new DateTime(
+            value.Ticks - (value.Ticks % ticksPerMicrosecond),
+            value.Kind);
     }
 }

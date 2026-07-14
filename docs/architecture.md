@@ -59,6 +59,12 @@ The EF mappings for this slice are implemented in migration
 configured development database on 2026-07-14. Other environments retain their
 normal explicit deployment and migration boundary.
 
+`backend/tools/PhaenoPortal.ReferenceJourney` verifies the first slice against
+PostgreSQL with authenticated application identities, request-scope tracking
+resets, transaction rollback, and isolated temporary managed storage. Curated
+manifests are stored as `jsonb`; publication therefore compares manifest JSON
+semantically and separately verifies the deterministic SHA-256 checksum.
+
 ## Frontend
 
 The frontend uses TanStack file routing with responsibility-based folders:

@@ -1,5 +1,6 @@
 namespace PhaenoPortal.Test;
 
+using System.Text.Json;
 using PhaenoPortal.App.Features.Accounts.Domain;
 using PhaenoPortal.App.Features.DataProvisioning.Domain;
 using PhaenoPortal.App.Features.DataProvisioning.Services;
@@ -49,6 +50,52 @@ public class DataProvisioningDomainTests
         Assert.Equal(source.Id, version.SourceSampleId);
         Assert.Equal(source.Revision, version.SourceRevision);
         Assert.Equal(source.Files.Single().Sha256, version.Files.Single().Sha256);
+    }
+
+    [Fact]
+    public void ManifestComparisonAcceptsJsonbKeyOrderingAndWhitespace()
+    {
+        const string applicationJson =
+            "{\"sourceSampleId\":\"sample-1\",\"files\":[{\"id\":\"file-1\",\"sizeBytes\":2}]}";
+        const string postgresqlJsonb =
+            "{\"files\": [{\"id\": \"file-1\", \"sizeBytes\": 2}], \"sourceSampleId\": \"sample-1\"}";
+
+        Assert.True(DatasetManifestService.SemanticallyEquals(
+            applicationJson,
+            postgresqlJsonb));
+        Assert.False(DatasetManifestService.SemanticallyEquals(
+            applicationJson,
+            postgresqlJsonb.Replace("file-1", "file-2", StringComparison.Ordinal)));
+    }
+
+    [Fact]
+    public void ManifestNormalizesTimestampsToPostgresqlMicrosecondPrecision()
+    {
+        var source = CreateReadySource();
+        var dataset = new CuratedDataset("Synthetic reference", "Fixture package");
+        var snapshotAt = new DateTime(
+            2026,
+            7,
+            14,
+            12,
+            0,
+            0,
+            DateTimeKind.Utc).AddTicks(7);
+        var version = new CuratedDatasetVersion(
+            dataset.Id,
+            versionNumber: 1,
+            source,
+            "Initial synthetic fixture",
+            snapshotAt);
+
+        var manifest = DatasetManifestService.Build(version);
+        using var document = JsonDocument.Parse(manifest.ManifestJson);
+
+        Assert.Equal(
+            snapshotAt.AddTicks(-7),
+            document.RootElement
+                .GetProperty("sourceSnapshotAt")
+                .GetDateTime());
     }
 
     [Fact]
