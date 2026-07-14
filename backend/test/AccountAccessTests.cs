@@ -59,6 +59,22 @@ public class AccountAccessTests
     }
 
     [Fact]
+    public void ProspectOrgAdminCanManageOwnProspectOrganizationMembers()
+    {
+        var organization = new Organization("Prospect", OrganizationKind.Prospect);
+        var user = new User("admin@example.com", "Prospect", "Admin");
+        user.Activate();
+        var membership = new OrganizationMembership(user.Id, organization.Id, isOrganizationAdmin: true);
+        AttachOrganization(membership, organization);
+        user.Memberships.Add(membership);
+
+        Assert.True(AccountAccess.CanManageOrganizationMembers(
+            user,
+            organization.Id,
+            organization.Kind));
+    }
+
+    [Fact]
     public void DisabledPlatformAdminCannotManageMembers()
     {
         var phaenoOrganization = new Organization("Phaeno", OrganizationKind.Phaeno);
@@ -76,6 +92,27 @@ public class AccountAccessTests
             user,
             customerOrganization.Id,
             customerOrganization.Kind));
+    }
+
+    [Fact]
+    public void ActiveProspectMemberCanViewOnlyOwnOrganizationDatasets()
+    {
+        var prospect = new Organization("Prospect", OrganizationKind.Prospect);
+        var otherProspect = new Organization("Other prospect", OrganizationKind.Prospect);
+        var user = new User("member@example.com", "Prospect", "Member");
+        user.Activate();
+        var membership = new OrganizationMembership(user.Id, prospect.Id, isOrganizationAdmin: false);
+        AttachOrganization(membership, prospect);
+        user.Memberships.Add(membership);
+
+        Assert.True(AccountAccess.CanViewOrganizationDatasets(user, prospect.Id));
+        Assert.False(AccountAccess.CanViewOrganizationDatasets(user, otherProspect.Id));
+
+        prospect.ConvertProspectTo(OrganizationKind.Partner);
+        Assert.True(AccountAccess.CanViewOrganizationDatasets(user, prospect.Id));
+
+        prospect.Deactivate();
+        Assert.False(AccountAccess.CanViewOrganizationDatasets(user, prospect.Id));
     }
 
     private static void AttachOrganization(OrganizationMembership membership, Organization organization)

@@ -14,7 +14,10 @@ import {
   CardHeader,
   CardTitle,
 } from '#/components/ui/card'
-import { isPhaenoEmployee } from '#/components/navigation'
+import {
+  isExternalOrganizationKind,
+  isPhaenoEmployee,
+} from '#/components/navigation'
 
 export const Route = createFileRoute('/phaeno-users')({
   component: UsersPage,
@@ -44,7 +47,7 @@ function UsersPage() {
   } = useMockAdminData()
 
   const selectedCustomerMembership =
-    selectedMembership?.organizationKind === 'Customer'
+    isExternalOrganizationKind(selectedMembership?.organizationKind)
       ? selectedMembership
       : null
   const selectedCustomer = customers.find(

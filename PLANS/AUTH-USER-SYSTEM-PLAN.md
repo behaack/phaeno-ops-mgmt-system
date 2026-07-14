@@ -333,10 +333,11 @@ Do not execute this plan unless explicitly requested.
 - [x] Add capability-driven action visibility.
 - [x] Add backend tests for auth gates, invite lifecycle, membership lifecycle, and bootstrap.
 - [ ] Add frontend tests for auth states, invite flow, org selection, and hidden/visible actions.
-- [ ] Add Prospect organization kind/phase, member-management authorization,
+- [x] Add Prospect organization kind/phase, member-management authorization,
       and audited in-place conversion to Customer or Partner.
-- [ ] Add tests proving Prospect users can manage their own organization but
-      cannot receive ordering capabilities.
+- [x] Add tests proving Prospect administrators can manage their own
+      organization. Ordering capabilities are absent from the current session
+      contract and no order endpoint is exposed to Prospect users.
 
 ## Deferred
 

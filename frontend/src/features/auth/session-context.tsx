@@ -78,8 +78,12 @@ export function PhaenoSessionProvider({ children }: { children: ReactNode }) {
   const { isLoaded, isSignedIn, getToken } = useAuth()
   const [selectedOrganizationId, setSelectedOrganizationIdState] = useState<
     string | null
-  >(() => readStoredSelectedOrganizationId())
+  >(null)
   const selectedOrganizationIdRef = useRef(selectedOrganizationId)
+
+  useEffect(() => {
+    setSelectedOrganizationIdState(readStoredSelectedOrganizationId())
+  }, [])
 
   useEffect(() => {
     selectedOrganizationIdRef.current = selectedOrganizationId
@@ -367,6 +371,13 @@ const mockSession: SessionResponse = {
       isOrganizationAdmin: true,
     },
     {
+      membershipId: 'mock-membership-prospect',
+      organizationId: '7dbd474b-c73f-4df4-a9c9-9f1a72b5341b',
+      organizationName: 'Helix Discovery Group',
+      organizationKind: 'Prospect',
+      isOrganizationAdmin: true,
+    },
+    {
       membershipId: 'mock-membership-northline',
       organizationId: 'northline-labs',
       organizationName: 'Northline Labs',
@@ -395,28 +406,71 @@ const mockSession: SessionResponse = {
     canManageOrganizations: true,
     canManageAllUsers: true,
     canDisableUsers: true,
+    canViewDatasetConfiguration: true,
+    canManageDatasetDrafts: true,
+    canPublishDatasets: true,
+    canProvisionOrganizationData: true,
+    canViewOrganizationDatasets: false,
   },
 }
 
 function MockSessionProvider({ children }: { children: ReactNode }) {
-  const [selectedOrganizationId, setSelectedOrganizationId] = useState<string | null>(
+  const [selectedOrganizationId, setSelectedOrganizationIdState] = useState<string | null>(
     mockSession.selectedOrganization?.organizationId ?? null,
   )
 
-  const contextValue = useMemo<PhaenoSessionContextValue>(
-    () => ({
+  useEffect(() => {
+    const storedOrganizationId = readStoredSelectedOrganizationId()
+    if (storedOrganizationId) {
+      setSelectedOrganizationIdState(storedOrganizationId)
+    }
+  }, [])
+
+  function setSelectedOrganizationId(organizationId: string | null) {
+    setSelectedOrganizationIdState(organizationId)
+    if (typeof window === 'undefined') return
+    if (organizationId) {
+      window.localStorage.setItem(SELECTED_ORGANIZATION_STORAGE_KEY, organizationId)
+    } else {
+      window.localStorage.removeItem(SELECTED_ORGANIZATION_STORAGE_KEY)
+    }
+  }
+
+  const contextValue = useMemo<PhaenoSessionContextValue>(() => {
+    const selectedMembership = mockSession.memberships.find(
+      (membership) => membership.organizationId === selectedOrganizationId,
+    )
+    const selectedIsExternal =
+      selectedMembership?.organizationKind === 'Prospect' ||
+      selectedMembership?.organizationKind === 'Customer' ||
+      selectedMembership?.organizationKind === 'Partner'
+    const contextualSession: SessionResponse = {
+      ...mockSession,
+      selectedOrganization: selectedMembership
+        ? {
+            organizationId: selectedMembership.organizationId,
+            membershipId: selectedMembership.membershipId,
+            isAvailable: true,
+          }
+        : null,
+      capabilities: {
+        ...mockSession.capabilities,
+        canViewOrganizationDatasets: selectedIsExternal,
+      },
+    }
+
+    return {
       authConfigured: true,
       authProvider: 'mock',
       clerkLoaded: true,
       signedIn: true,
-      session: mockSession,
+      session: contextualSession,
       isLoading: false,
       error: null,
       selectedOrganizationId,
       setSelectedOrganizationId,
-    }),
-    [selectedOrganizationId],
-  )
+    }
+  }, [selectedOrganizationId])
 
   return (
     <PhaenoSessionContext.Provider value={contextValue}>

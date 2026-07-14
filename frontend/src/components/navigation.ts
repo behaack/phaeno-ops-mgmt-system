@@ -1,14 +1,20 @@
 import {
   Activity,
   Building2,
+  Database,
+  Library,
   LayoutDashboard,
   type LucideIcon,
 } from 'lucide-react'
 
-import type { SessionMembership, SessionResponse } from '#/api/session'
+import type {
+  OrganizationKind,
+  SessionMembership,
+  SessionResponse,
+} from '#/api/session'
 
 type NavigationContext = {
-  selectedOrganizationKind?: 'Phaeno' | 'Customer' | null
+  selectedOrganizationKind?: OrganizationKind | null
   selectedMembership?: SessionMembership | null
 }
 
@@ -31,13 +37,30 @@ export const mainMenuItems: readonly MainMenuItem[] = [
     exact: true,
   },
   {
-    label: 'Customers',
+    label: 'Organizations',
     to: '/customers',
     icon: Building2,
     visibleWhen: (session, context) =>
       isPhaenoEmployee(session) &&
-      context.selectedOrganizationKind !== 'Customer' &&
+      context.selectedOrganizationKind === 'Phaeno' &&
       Boolean(session?.capabilities.canManageOrganizations),
+  },
+  {
+    label: 'Data provisioning',
+    to: '/data-provisioning',
+    icon: Database,
+    visibleWhen: (session, context) =>
+      isPhaenoEmployee(session) &&
+      context.selectedOrganizationKind === 'Phaeno' &&
+      Boolean(session?.capabilities.canViewDatasetConfiguration),
+  },
+  {
+    label: 'Data library',
+    to: '/data-library',
+    icon: Library,
+    visibleWhen: (session, context) =>
+      isExternalOrganizationKind(context.selectedOrganizationKind) &&
+      Boolean(session?.capabilities.canViewOrganizationDatasets),
   },
   {
     label: 'Project',
@@ -69,9 +92,9 @@ export function canManagePhaenoUsers(session: SessionResponse | null) {
 export function canManageUserScope(
   session: SessionResponse | null,
   selectedMembership?: SessionMembership | null,
-  selectedOrganizationKind?: 'Phaeno' | 'Customer' | null,
+  selectedOrganizationKind?: OrganizationKind | null,
 ) {
-  if (selectedOrganizationKind === 'Customer') {
+  if (isExternalOrganizationKind(selectedOrganizationKind)) {
     return (
       (Boolean(selectedMembership?.isOrganizationAdmin) &&
         Boolean(session?.capabilities.canManageMembers)) ||
@@ -81,6 +104,12 @@ export function canManageUserScope(
   }
 
   return canManagePhaenoUsers(session)
+}
+
+export function isExternalOrganizationKind(
+  kind: OrganizationKind | null | undefined,
+) {
+  return kind === 'Prospect' || kind === 'Customer' || kind === 'Partner'
 }
 
 export function isPhaenoEmployee(session: SessionResponse | null) {

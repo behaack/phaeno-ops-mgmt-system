@@ -10,16 +10,30 @@
 
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as PhaenoUsersRouteImport } from './routes/phaeno-users'
+import { Route as DataProvisioningRouteImport } from './routes/data-provisioning'
+import { Route as DataLibraryRouteImport } from './routes/data-library'
 import { Route as CustomersRouteImport } from './routes/customers'
 import { Route as AcceptInviteRouteImport } from './routes/accept-invite'
 import { Route as AboutRouteImport } from './routes/about'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as DemoTanstackQueryRouteImport } from './routes/demo/tanstack-query'
+import { Route as DataLibraryDatasetIdRouteImport } from './routes/data-library.$datasetId'
 import { Route as CustomersCustomerIdRouteImport } from './routes/customers.$customerId'
+import { Route as DataProvisioningSourcesSourceSampleIdRouteImport } from './routes/data-provisioning.sources.$sourceSampleId'
 
 const PhaenoUsersRoute = PhaenoUsersRouteImport.update({
   id: '/phaeno-users',
   path: '/phaeno-users',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const DataProvisioningRoute = DataProvisioningRouteImport.update({
+  id: '/data-provisioning',
+  path: '/data-provisioning',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const DataLibraryRoute = DataLibraryRouteImport.update({
+  id: '/data-library',
+  path: '/data-library',
   getParentRoute: () => rootRouteImport,
 } as any)
 const CustomersRoute = CustomersRouteImport.update({
@@ -47,29 +61,48 @@ const DemoTanstackQueryRoute = DemoTanstackQueryRouteImport.update({
   path: '/demo/tanstack-query',
   getParentRoute: () => rootRouteImport,
 } as any)
+const DataLibraryDatasetIdRoute = DataLibraryDatasetIdRouteImport.update({
+  id: '/$datasetId',
+  path: '/$datasetId',
+  getParentRoute: () => DataLibraryRoute,
+} as any)
 const CustomersCustomerIdRoute = CustomersCustomerIdRouteImport.update({
   id: '/$customerId',
   path: '/$customerId',
   getParentRoute: () => CustomersRoute,
 } as any)
+const DataProvisioningSourcesSourceSampleIdRoute =
+  DataProvisioningSourcesSourceSampleIdRouteImport.update({
+    id: '/sources/$sourceSampleId',
+    path: '/sources/$sourceSampleId',
+    getParentRoute: () => DataProvisioningRoute,
+  } as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/about': typeof AboutRoute
   '/accept-invite': typeof AcceptInviteRoute
   '/customers': typeof CustomersRouteWithChildren
+  '/data-library': typeof DataLibraryRouteWithChildren
+  '/data-provisioning': typeof DataProvisioningRouteWithChildren
   '/phaeno-users': typeof PhaenoUsersRoute
   '/customers/$customerId': typeof CustomersCustomerIdRoute
+  '/data-library/$datasetId': typeof DataLibraryDatasetIdRoute
   '/demo/tanstack-query': typeof DemoTanstackQueryRoute
+  '/data-provisioning/sources/$sourceSampleId': typeof DataProvisioningSourcesSourceSampleIdRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/about': typeof AboutRoute
   '/accept-invite': typeof AcceptInviteRoute
   '/customers': typeof CustomersRouteWithChildren
+  '/data-library': typeof DataLibraryRouteWithChildren
+  '/data-provisioning': typeof DataProvisioningRouteWithChildren
   '/phaeno-users': typeof PhaenoUsersRoute
   '/customers/$customerId': typeof CustomersCustomerIdRoute
+  '/data-library/$datasetId': typeof DataLibraryDatasetIdRoute
   '/demo/tanstack-query': typeof DemoTanstackQueryRoute
+  '/data-provisioning/sources/$sourceSampleId': typeof DataProvisioningSourcesSourceSampleIdRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -77,9 +110,13 @@ export interface FileRoutesById {
   '/about': typeof AboutRoute
   '/accept-invite': typeof AcceptInviteRoute
   '/customers': typeof CustomersRouteWithChildren
+  '/data-library': typeof DataLibraryRouteWithChildren
+  '/data-provisioning': typeof DataProvisioningRouteWithChildren
   '/phaeno-users': typeof PhaenoUsersRoute
   '/customers/$customerId': typeof CustomersCustomerIdRoute
+  '/data-library/$datasetId': typeof DataLibraryDatasetIdRoute
   '/demo/tanstack-query': typeof DemoTanstackQueryRoute
+  '/data-provisioning/sources/$sourceSampleId': typeof DataProvisioningSourcesSourceSampleIdRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -88,27 +125,39 @@ export interface FileRouteTypes {
     | '/about'
     | '/accept-invite'
     | '/customers'
+    | '/data-library'
+    | '/data-provisioning'
     | '/phaeno-users'
     | '/customers/$customerId'
+    | '/data-library/$datasetId'
     | '/demo/tanstack-query'
+    | '/data-provisioning/sources/$sourceSampleId'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
     | '/about'
     | '/accept-invite'
     | '/customers'
+    | '/data-library'
+    | '/data-provisioning'
     | '/phaeno-users'
     | '/customers/$customerId'
+    | '/data-library/$datasetId'
     | '/demo/tanstack-query'
+    | '/data-provisioning/sources/$sourceSampleId'
   id:
     | '__root__'
     | '/'
     | '/about'
     | '/accept-invite'
     | '/customers'
+    | '/data-library'
+    | '/data-provisioning'
     | '/phaeno-users'
     | '/customers/$customerId'
+    | '/data-library/$datasetId'
     | '/demo/tanstack-query'
+    | '/data-provisioning/sources/$sourceSampleId'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -116,6 +165,8 @@ export interface RootRouteChildren {
   AboutRoute: typeof AboutRoute
   AcceptInviteRoute: typeof AcceptInviteRoute
   CustomersRoute: typeof CustomersRouteWithChildren
+  DataLibraryRoute: typeof DataLibraryRouteWithChildren
+  DataProvisioningRoute: typeof DataProvisioningRouteWithChildren
   PhaenoUsersRoute: typeof PhaenoUsersRoute
   DemoTanstackQueryRoute: typeof DemoTanstackQueryRoute
 }
@@ -127,6 +178,20 @@ declare module '@tanstack/react-router' {
       path: '/phaeno-users'
       fullPath: '/phaeno-users'
       preLoaderRoute: typeof PhaenoUsersRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/data-provisioning': {
+      id: '/data-provisioning'
+      path: '/data-provisioning'
+      fullPath: '/data-provisioning'
+      preLoaderRoute: typeof DataProvisioningRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/data-library': {
+      id: '/data-library'
+      path: '/data-library'
+      fullPath: '/data-library'
+      preLoaderRoute: typeof DataLibraryRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/customers': {
@@ -164,12 +229,26 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof DemoTanstackQueryRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/data-library/$datasetId': {
+      id: '/data-library/$datasetId'
+      path: '/$datasetId'
+      fullPath: '/data-library/$datasetId'
+      preLoaderRoute: typeof DataLibraryDatasetIdRouteImport
+      parentRoute: typeof DataLibraryRoute
+    }
     '/customers/$customerId': {
       id: '/customers/$customerId'
       path: '/$customerId'
       fullPath: '/customers/$customerId'
       preLoaderRoute: typeof CustomersCustomerIdRouteImport
       parentRoute: typeof CustomersRoute
+    }
+    '/data-provisioning/sources/$sourceSampleId': {
+      id: '/data-provisioning/sources/$sourceSampleId'
+      path: '/sources/$sourceSampleId'
+      fullPath: '/data-provisioning/sources/$sourceSampleId'
+      preLoaderRoute: typeof DataProvisioningSourcesSourceSampleIdRouteImport
+      parentRoute: typeof DataProvisioningRoute
     }
   }
 }
@@ -186,11 +265,37 @@ const CustomersRouteWithChildren = CustomersRoute._addFileChildren(
   CustomersRouteChildren,
 )
 
+interface DataLibraryRouteChildren {
+  DataLibraryDatasetIdRoute: typeof DataLibraryDatasetIdRoute
+}
+
+const DataLibraryRouteChildren: DataLibraryRouteChildren = {
+  DataLibraryDatasetIdRoute: DataLibraryDatasetIdRoute,
+}
+
+const DataLibraryRouteWithChildren = DataLibraryRoute._addFileChildren(
+  DataLibraryRouteChildren,
+)
+
+interface DataProvisioningRouteChildren {
+  DataProvisioningSourcesSourceSampleIdRoute: typeof DataProvisioningSourcesSourceSampleIdRoute
+}
+
+const DataProvisioningRouteChildren: DataProvisioningRouteChildren = {
+  DataProvisioningSourcesSourceSampleIdRoute:
+    DataProvisioningSourcesSourceSampleIdRoute,
+}
+
+const DataProvisioningRouteWithChildren =
+  DataProvisioningRoute._addFileChildren(DataProvisioningRouteChildren)
+
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   AboutRoute: AboutRoute,
   AcceptInviteRoute: AcceptInviteRoute,
   CustomersRoute: CustomersRouteWithChildren,
+  DataLibraryRoute: DataLibraryRouteWithChildren,
+  DataProvisioningRoute: DataProvisioningRouteWithChildren,
   PhaenoUsersRoute: PhaenoUsersRoute,
   DemoTanstackQueryRoute: DemoTanstackQueryRoute,
 }

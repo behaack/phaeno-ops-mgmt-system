@@ -7,7 +7,7 @@ export type SessionState =
   | 'organization_unavailable'
   | 'ready'
 
-export type OrganizationKind = 'Phaeno' | 'Customer'
+export type OrganizationKind = 'Phaeno' | 'Prospect' | 'Customer' | 'Partner'
 
 export type SessionUser = {
   id: string
@@ -39,6 +39,11 @@ export type SessionCapabilities = {
   canManageOrganizations: boolean
   canManageAllUsers: boolean
   canDisableUsers: boolean
+  canViewDatasetConfiguration: boolean
+  canManageDatasetDrafts: boolean
+  canPublishDatasets: boolean
+  canProvisionOrganizationData: boolean
+  canViewOrganizationDatasets: boolean
 }
 
 export type SessionResponse = {

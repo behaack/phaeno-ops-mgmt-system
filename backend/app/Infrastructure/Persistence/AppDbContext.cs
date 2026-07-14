@@ -1,6 +1,8 @@
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Options;
 using PhaenoPortal.App.Features.Accounts.Domain;
+using PhaenoPortal.App.Features.DataProvisioning;
+using PhaenoPortal.App.Features.DataProvisioning.Domain;
 using PhaenoPortal.App.Infrastructure.Persistence.Auditing;
 using System.Text;
 
@@ -36,6 +38,22 @@ public sealed class AppDbContext(
     /// Append-only audit events for persisted entity changes.
     /// </summary>
     public DbSet<AuditEvent> AuditEvents { get; set; }
+
+    public DbSet<SourceSample> SourceSamples { get; set; }
+
+    public DbSet<ManagedFile> ManagedFiles { get; set; }
+
+    public DbSet<CuratedDataset> CuratedDatasets { get; set; }
+
+    public DbSet<CuratedDatasetVersion> CuratedDatasetVersions { get; set; }
+
+    public DbSet<CuratedDatasetVersionFile> CuratedDatasetVersionFiles { get; set; }
+
+    public DbSet<OrganizationDatasetGrant> OrganizationDatasetGrants { get; set; }
+
+    public DbSet<ProvisioningRun> ProvisioningRuns { get; set; }
+
+    public DbSet<DatasetDownloadAudit> DatasetDownloadAudits { get; set; }
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -178,6 +196,8 @@ public sealed class AppDbContext(
             entity.HasIndex(e => e.ActorUserId);
             entity.HasIndex(e => e.OccurredAt);
         });
+
+        DataProvisioningModelConfiguration.Configure(modelBuilder);
 
         ApplySnakeCaseDatabaseNames(modelBuilder);
     }

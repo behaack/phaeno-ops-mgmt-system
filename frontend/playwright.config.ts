@@ -1,5 +1,7 @@
 import { defineConfig, devices } from '@playwright/test'
 
+const port = Number(process.env.PLAYWRIGHT_PORT ?? 3000)
+
 export default defineConfig({
   testDir: './e2e',
   fullyParallel: true,
@@ -9,13 +11,13 @@ export default defineConfig({
   reporter: 'list',
   outputDir: './test-results',
   use: {
-    baseURL: 'https://127.0.0.1:3000',
+    baseURL: `https://127.0.0.1:${port}`,
     ignoreHTTPSErrors: true,
     trace: 'on-first-retry',
   },
   webServer: {
-    command: 'node node_modules/vite/bin/vite.js dev --host 127.0.0.1 --port 3000',
-    url: 'https://127.0.0.1:3000',
+    command: `node node_modules/vite/bin/vite.js dev --host 127.0.0.1 --port ${port}`,
+    url: `https://127.0.0.1:${port}`,
     ignoreHTTPSErrors: true,
     reuseExistingServer: !process.env.CI,
   },

@@ -1,4 +1,5 @@
 using System.Text.Json;
+using System.Text.Json.Serialization;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Options;
@@ -6,6 +7,7 @@ using Microsoft.IdentityModel.Tokens;
 using PhaenoPortal.App.Features.Accounts.Endpoints;
 using PhaenoPortal.App.Features.Accounts.Services;
 using PhaenoPortal.App.Features.Health.Endpoints;
+using PhaenoPortal.App.Features.DataProvisioning.Services;
 using PhaenoPortal.App.Infrastructure.Api;
 using PhaenoPortal.App.Infrastructure.Persistence;
 using PhaenoPortal.App.Middleware;
@@ -21,6 +23,33 @@ builder.Services.Configure<InvitationOptions>(
     builder.Configuration.GetSection(InvitationOptions.SectionName));
 builder.Services.Configure<PostmarkOptions>(
     builder.Configuration.GetSection(PostmarkOptions.SectionName));
+builder.Services.Configure<DataProvisioningOptions>(
+    builder.Configuration.GetSection(DataProvisioningOptions.SectionName));
+if (builder.Environment.IsDevelopment())
+{
+    var dataProvisioningSection = builder.Configuration.GetSection(
+        DataProvisioningOptions.SectionName);
+    builder.Services.PostConfigure<DataProvisioningOptions>(options =>
+    {
+        if (dataProvisioningSection[nameof(DataProvisioningOptions.EnableSyntheticFixtures)] == null)
+        {
+            options.EnableSyntheticFixtures = true;
+        }
+        if (dataProvisioningSection[nameof(DataProvisioningOptions.UseTrustedDevelopmentScanner)] == null)
+        {
+            options.UseTrustedDevelopmentScanner = true;
+        }
+        if (options.AllowedFileKinds.Count == 0)
+        {
+            options.AllowedFileKinds[".txt"] = "plain_text_fixture";
+            options.AllowedFileKinds[".csv"] = "tabular_fixture";
+            options.AllowedFileKinds[".json"] = "structured_fixture";
+        }
+    });
+}
+builder.Services.AddSingleton<DataProvisioningProfile>();
+builder.Services.AddSingleton<IManagedFileStorage, LocalManagedFileStorage>();
+builder.Services.AddSingleton<IManagedFileScanner, EnvironmentManagedFileScanner>();
 builder.Services.AddSingleton<InvitationTokenService>();
 builder.Services.AddHttpClient<ClerkBootstrapUserProvisioner>((services, httpClient) =>
 {
@@ -104,7 +133,15 @@ builder.Services
     {
         o.JsonSerializerOptions.PropertyNamingPolicy = JsonNamingPolicy.CamelCase;
         o.JsonSerializerOptions.DictionaryKeyPolicy = JsonNamingPolicy.CamelCase;
+        o.JsonSerializerOptions.Converters.Add(
+            new JsonStringEnumConverter(allowIntegerValues: false));
     });
+
+builder.Services.ConfigureHttpJsonOptions(o =>
+{
+    o.SerializerOptions.Converters.Add(
+        new JsonStringEnumConverter(allowIntegerValues: false));
+});
 
 builder.Services.Configure<MvcOptions>(options =>
 {

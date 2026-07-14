@@ -1,6 +1,8 @@
 namespace PhaenoPortal.App.Common.Exceptions.Conflict;
 
-public sealed class BadRequestException : ConflictException
+using PhaenoPortal.App.Common.Exceptions;
+
+public sealed class BadRequestException : DomainException
 {
     private const string DefaultMessage =
         "Bad request.";
@@ -13,4 +15,6 @@ public sealed class BadRequestException : ConflictException
 
     public override string ErrorCode =>
         "bad-request";
+
+    public override string ErrorType => "invalid_request";
 }

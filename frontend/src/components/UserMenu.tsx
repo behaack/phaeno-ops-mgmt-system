@@ -39,7 +39,7 @@ import {
   getSelectedMembership,
   usePhaenoSession,
 } from '#/features/auth/session-context'
-import type { SessionMembership, SessionResponse } from '#/api/session'
+import type { SessionResponse } from '#/api/session'
 import {
   useMockAdminData,
   type CustomerRecord,
@@ -102,7 +102,7 @@ export function UserMenu() {
     canImpersonateCustomers && selectedCustomer
       ? selectedCustomer
       : canImpersonateCustomers &&
-          selectedMembership?.organizationKind === 'Customer'
+          selectedMembership?.organizationKind !== 'Phaeno'
         ? selectedMembership
       : null
   const customerResults = useMemo(
@@ -164,7 +164,7 @@ export function UserMenu() {
         {showCustomerImpersonation ? (
           <>
             <DropdownMenuSeparator />
-            <DropdownMenuLabel>Customer impersonation</DropdownMenuLabel>
+            <DropdownMenuLabel>Organization context</DropdownMenuLabel>
             <div className="space-y-1 px-1.5 py-1">
               {currentCustomerImpersonation ? (
                 <div className="px-1 text-sm text-foreground">
@@ -184,7 +184,7 @@ export function UserMenu() {
                   aria-autocomplete="list"
                   aria-controls={customerOptionsId}
                   aria-expanded={customerDropdownOpen}
-                  aria-label="Search customers to impersonate"
+                  aria-label="Search organizations"
                   role="combobox"
                   value={organizationQuery}
                   onBlur={() => setCustomerDropdownOpen(false)}
@@ -293,7 +293,7 @@ export function UserMenu() {
                       ))
                     ) : (
                       <div className="px-2 py-1.5 text-sm text-muted-foreground">
-                        No customers found.
+                        No organizations found.
                       </div>
                     )}
                   </div>

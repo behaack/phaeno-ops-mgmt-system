@@ -31,6 +31,8 @@ public static class AccountAccess
             return null;
         }
 
+        httpContext.Items[Infrastructure.Persistence.Auditing.HttpCurrentUserContext.InternalUserIdItemKey] = user.Id;
+
         return user;
     }
 
@@ -63,5 +65,33 @@ public static class AccountAccess
     public static bool CanInviteToOrganization(User user, Guid organizationId, OrganizationKind organizationKind)
     {
         return CanManageOrganizationMembers(user, organizationId, organizationKind);
+    }
+
+    public static bool HasActiveMembership(User user, Guid organizationId)
+    {
+        return user.Memberships.Any(m =>
+            m.OrganizationId == organizationId
+            && m.IsActive
+            && m.Organization?.IsActive == true);
+    }
+
+    public static bool IsOrganizationAdmin(User user, Guid organizationId)
+    {
+        return user.Memberships.Any(m =>
+            m.OrganizationId == organizationId
+            && m.IsActive
+            && m.IsOrganizationAdmin
+            && m.Organization?.IsActive == true);
+    }
+
+    public static bool CanViewOrganizationDatasets(User user, Guid organizationId)
+    {
+        return user.IsActive
+            && user.Status == UserAccountStatus.Active
+            && user.Memberships.Any(m =>
+                m.OrganizationId == organizationId
+                && m.IsActive
+                && m.Organization is { IsActive: true } organization
+                && organization.IsExternalOrganization());
     }
 }

@@ -3,6 +3,7 @@ namespace PhaenoPortal.Test;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Options;
 using PhaenoPortal.App.Features.Accounts.Domain;
+using PhaenoPortal.App.Features.DataProvisioning.Domain;
 using PhaenoPortal.App.Infrastructure.Persistence.Auditing;
 using PhaenoPortal.App.Infrastructure.Persistence;
 
@@ -133,5 +134,61 @@ public class PersistenceTests
         var changesJsonProperty = auditEventEntity.FindProperty(nameof(AuditEvent.ChangesJson));
         Assert.NotNull(changesJsonProperty);
         Assert.Equal("jsonb", changesJsonProperty.GetColumnType());
+    }
+
+    [Fact]
+    public void AppDbContextMapsDataProvisioningEntitiesAndTenantBoundaries()
+    {
+        var dbContextOptions = new DbContextOptionsBuilder<AppDbContext>()
+            .UseNpgsql("Host=localhost;Database=phaeno_portal_test;Username=postgres;Password=postgres")
+            .Options;
+
+        using var dbContext = new AppDbContext(
+            dbContextOptions,
+            Options.Create(new PersistenceOptions { Schema = "portal" }));
+
+        var sourceEntity = dbContext.Model.FindEntityType(typeof(SourceSample));
+        Assert.NotNull(sourceEntity);
+        Assert.Equal("source_samples", sourceEntity.GetTableName());
+        Assert.True(sourceEntity.FindProperty(nameof(SourceSample.Version))?.IsConcurrencyToken);
+
+        var managedFileEntity = dbContext.Model.FindEntityType(typeof(ManagedFile));
+        Assert.NotNull(managedFileEntity);
+        Assert.Equal("managed_files", managedFileEntity.GetTableName());
+        Assert.Contains(
+            managedFileEntity.GetIndexes(),
+            index => index.IsUnique
+                && index.Properties.Select(property => property.Name)
+                    .SequenceEqual([nameof(ManagedFile.StorageKey)]));
+
+        var datasetEntity = dbContext.Model.FindEntityType(typeof(CuratedDataset));
+        Assert.NotNull(datasetEntity);
+        Assert.Equal("curated_datasets", datasetEntity.GetTableName());
+
+        var versionEntity = dbContext.Model.FindEntityType(typeof(CuratedDatasetVersion));
+        Assert.NotNull(versionEntity);
+        Assert.Equal("curated_dataset_versions", versionEntity.GetTableName());
+        Assert.Equal(
+            "jsonb",
+            versionEntity.FindProperty(nameof(CuratedDatasetVersion.ManifestJson))?.GetColumnType());
+
+        var grantEntity = dbContext.Model.FindEntityType(typeof(OrganizationDatasetGrant));
+        Assert.NotNull(grantEntity);
+        Assert.Equal("organization_dataset_grants", grantEntity.GetTableName());
+        Assert.Contains(
+            grantEntity.GetIndexes(),
+            index => index.IsUnique
+                && index.Properties.Select(property => property.Name).SequenceEqual([
+                    nameof(OrganizationDatasetGrant.OrganizationId),
+                    nameof(OrganizationDatasetGrant.CuratedDatasetId)
+                ])
+                && index.GetFilter() == "\"status\" = 'Active'");
+
+        Assert.Equal(
+            "provisioning_runs",
+            dbContext.Model.FindEntityType(typeof(ProvisioningRun))?.GetTableName());
+        Assert.Equal(
+            "dataset_download_audits",
+            dbContext.Model.FindEntityType(typeof(DatasetDownloadAudit))?.GetTableName());
     }
 }

@@ -8,9 +8,23 @@ resolved and implementation is explicitly requested.
 
 ## Status
 
-- Planning state: product rules are resolved for implementation. Real production
-  sample data is unavailable and is a production-content prerequisite, not an
-  implementation blocker.
+- Implementation state: the recommended first slice is implemented in source
+  code and automated unit/component coverage. It includes organization phases,
+  explicit session capabilities, the Phaeno source registry, environment-scoped
+  managed uploads and scan policy, immutable curated versions, eligibility,
+  idempotent exact-version grants, revocation, tenant-isolated metadata access,
+  audited file/archive downloads, and the Phaeno and tenant user interfaces.
+- Persistence mappings and migration
+  `20260714222254_AddOrganizationDataProvisioning` are implemented. The
+  migration was applied to the configured development database on 2026-07-14,
+  and EF reports no pending model changes. Applying it to any other environment
+  remains an explicit deployment operation.
+- Real production sample data remains unavailable and is a production-content
+  prerequisite, not an implementation blocker. Production defaults contain no
+  speculative approved file kinds and reject synthetic fixture workflows.
+- Quarantine/withdrawal closeout, explicit version upgrade, catalog-removal bulk
+  revocation, creation-flow package selection, and the other advanced-governance
+  items remain later implementation phases as already scoped below.
 - Requested outcomes:
   - seed a prospect, customer, or partner organization with data
   - give authorized Phaeno users a configuration area where datasets can be
@@ -992,6 +1006,12 @@ non-production fixture:
 Use an existing organization for this slice. Integrate automatic selection into
 new organization creation only after grant and retry behavior is reliable.
 
+Implementation checkpoint (2026-07-14): the application code, interfaces,
+unit/component coverage, and EF migration for this slice are present. Migration
+`20260714222254_AddOrganizationDataProvisioning` is applied to the configured
+development database. The authenticated database-backed reference journey
+remains a separate verification checkpoint.
+
 ## Verification Plan
 
 When implementation begins, update the running backend, frontend, and e2e test
@@ -1144,8 +1164,9 @@ publication checks.
 - Final profile-specific payload types, scientific validators, approved file
   kinds, and size limits when actual production data becomes available.
 - File-storage/scanning configuration and operational limits.
-- Persistence mappings and migrations; do not create or apply a migration until
-  migration work is explicitly requested.
+- Persistence mappings and migrations. The first-slice migration was created and
+  applied to the configured development database after explicit approval;
+  future migration creation or application remains confirmation-gated.
 
 ## Deferred Product Scope
 

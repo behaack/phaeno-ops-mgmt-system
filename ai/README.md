@@ -9,7 +9,7 @@ Use the smallest context set that covers the task.
 | Backend endpoint or persistence change | `README.md`, matching `backend/app/Features` code, API infrastructure, and backend test plan |
 | Frontend route or workflow | matching route and feature code, frontend test plan, and `ai/prompts/cross-stack-change.md` |
 | UI/UX, list, record detail, form, modal, feedback, responsive, i18n, privacy, or accessibility behavior | `docs/ui-ux-principles.md`, matching frontend code, and the relevant frontend/E2E plan |
-| File management, orders, or provisioning | the corresponding `PLANS/` file; treat proposed models as unimplemented |
+| File management, orders, or provisioning | the corresponding `PLANS/` file and current feature code; the provisioning first slice and EF migration are implemented, while order models remain proposed |
 | Verification or handoff | `ai/playbooks/verification.md` and the relevant living test plan |
 
 Durable facts belong in `docs/`. Active implementation state belongs in `PLANS/`. Temporary investigation notes should remain outside the durable docs unless they produce a confirmed decision.

@@ -15,6 +15,7 @@ public static class AccountAudit
     public const string UserReactivated = nameof(UserReactivated);
     public const string OrganizationDeactivated = nameof(OrganizationDeactivated);
     public const string OrganizationReactivated = nameof(OrganizationReactivated);
+    public const string ProspectConverted = nameof(ProspectConverted);
     public const string MembershipCreatedByInvite = nameof(MembershipCreatedByInvite);
     public const string MembershipReactivatedByInvite = nameof(MembershipReactivatedByInvite);
     public const string MembershipDeactivated = nameof(MembershipDeactivated);

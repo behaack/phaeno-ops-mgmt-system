@@ -125,6 +125,10 @@ public static class SessionEndpoints
         var memberships = GetActiveMemberships(user);
         var isPlatformAdmin = IsPlatformAdmin(user);
         var canManageSelectedMembers = selectedMembership?.IsOrganizationAdmin == true || isPlatformAdmin;
+        var canViewOrganizationDatasets = selectedMembership?.Organization is
+        {
+            IsActive: true
+        } selectedOrganization && selectedOrganization.IsExternalOrganization();
 
         return new SessionDto
         {
@@ -162,7 +166,12 @@ public static class SessionEndpoints
                 CanLeaveOrganization = selectedMembership != null,
                 CanManageOrganizations = isPlatformAdmin,
                 CanManageAllUsers = isPlatformAdmin,
-                CanDisableUsers = isPlatformAdmin
+                CanDisableUsers = isPlatformAdmin,
+                CanViewDatasetConfiguration = isPlatformAdmin,
+                CanManageDatasetDrafts = isPlatformAdmin,
+                CanPublishDatasets = isPlatformAdmin,
+                CanProvisionOrganizationData = isPlatformAdmin,
+                CanViewOrganizationDatasets = canViewOrganizationDatasets
             }
         };
     }
@@ -177,7 +186,12 @@ public static class SessionEndpoints
             CanLeaveOrganization = false,
             CanManageOrganizations = false,
             CanManageAllUsers = false,
-            CanDisableUsers = false
+            CanDisableUsers = false,
+            CanViewDatasetConfiguration = false,
+            CanManageDatasetDrafts = false,
+            CanPublishDatasets = false,
+            CanProvisionOrganizationData = false,
+            CanViewOrganizationDatasets = false
         };
     }
 

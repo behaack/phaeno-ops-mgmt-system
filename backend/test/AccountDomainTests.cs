@@ -6,6 +6,35 @@ using PhaenoPortal.App.Features.Accounts.Services;
 public class AccountDomainTests
 {
     [Fact]
+    public void NewExternalOrganizationDefaultsToProspectAndConvertsInPlace()
+    {
+        var organization = new Organization("Discovery account");
+        var id = organization.Id;
+
+        Assert.Equal(OrganizationKind.Prospect, organization.Kind);
+
+        organization.ConvertProspectTo(OrganizationKind.Customer);
+
+        Assert.Equal(id, organization.Id);
+        Assert.Equal(OrganizationKind.Customer, organization.Kind);
+        Assert.True(organization.IsActive);
+    }
+
+    [Fact]
+    public void ProspectCannotConvertToPhaenoOrConvertTwice()
+    {
+        var organization = new Organization("Discovery account");
+
+        Assert.Throws<InvalidOperationException>(() =>
+            organization.ConvertProspectTo(OrganizationKind.Phaeno));
+
+        organization.ConvertProspectTo(OrganizationKind.Partner);
+
+        Assert.Throws<InvalidOperationException>(() =>
+            organization.ConvertProspectTo(OrganizationKind.Customer));
+    }
+
+    [Fact]
     public void NewUserIsInvitedAndInactiveUntilAccepted()
     {
         var user = new User("PERSON@example.com ", "Pat", "Lee");

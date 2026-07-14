@@ -7,6 +7,7 @@ import {
   usePhaenoSession,
 } from '#/features/auth/session-context'
 import { useMockAdminData } from '#/features/admin/mock-admin-data'
+import { isExternalOrganizationKind } from './navigation'
 
 export default function Header() {
   const { signedIn, session, selectedOrganizationId } = usePhaenoSession()
@@ -18,7 +19,7 @@ export default function Header() {
   const impersonatedCustomer =
     signedIn && selectedCustomer
       ? selectedCustomer
-      : signedIn && selectedMembership?.organizationKind === 'Customer'
+      : signedIn && isExternalOrganizationKind(selectedMembership?.organizationKind)
         ? selectedMembership
       : null
 

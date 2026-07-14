@@ -67,4 +67,14 @@ public sealed record SessionCapabilitiesDto
     public required bool CanManageAllUsers { get; init; }
 
     public required bool CanDisableUsers { get; init; }
+
+    public required bool CanViewDatasetConfiguration { get; init; }
+
+    public required bool CanManageDatasetDrafts { get; init; }
+
+    public required bool CanPublishDatasets { get; init; }
+
+    public required bool CanProvisionOrganizationData { get; init; }
+
+    public required bool CanViewOrganizationDatasets { get; init; }
 }

@@ -22,11 +22,12 @@ public static class ApiErrorMapper
         if (exception is DomainException domain)
         {
             return (
-                StatusCodes.Status400BadRequest,
+                domain.StatusCode,
                 new ApiError(
-                    type: "invalid_request",
+                    type: domain.ErrorType,
                     code: domain.ErrorCode,
-                    message: domain.Message
+                    message: domain.Message,
+                    details: domain.Details
                 )
             );
         }

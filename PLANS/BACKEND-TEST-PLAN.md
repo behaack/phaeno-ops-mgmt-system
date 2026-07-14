@@ -9,6 +9,7 @@ Do not execute this test plan unless explicitly requested.
 - [x] `backend/test/PhaenoPortalMetadataTests.cs` - `HealthMetadataIdentifiesTheApi`.
 - [x] `backend/test/PersistenceTests.cs` - `AppDbContextUsesConfiguredDefaultSchema`.
 - [x] `backend/test/PersistenceTests.cs` - `AppDbContextMapsAccountEntities`.
+- [x] `backend/test/PersistenceTests.cs` - `AppDbContextMapsDataProvisioningEntitiesAndTenantBoundaries`.
 - [x] `backend/test/ApiResponseTests.cs` - `SuccessEnvelopeSerializesWithReferenceShape`.
 - [x] `backend/test/ApiResponseTests.cs` - `FailureEnvelopeSerializesWithReferenceShape`.
 - [x] `backend/test/ApiResponseTests.cs` - `DomainExceptionMapsLikeReferenceApi`.
@@ -25,6 +26,19 @@ Do not execute this test plan unless explicitly requested.
 - [x] `backend/test/AccountAccessTests.cs` - `PlatformAdminCanManageCustomerOrganizationMembers`.
 - [x] `backend/test/AccountAccessTests.cs` - `CustomerOrgAdminCannotManagePhaenoOrganizationMembers`.
 - [x] `backend/test/AccountAccessTests.cs` - `CustomerOrgAdminCanManageOwnCustomerOrganizationMembers`.
+- [x] `backend/test/AccountAccessTests.cs` - `ProspectOrgAdminCanManageOwnProspectOrganizationMembers`.
+- [x] `backend/test/AccountAccessTests.cs` - `ActiveProspectMemberCanViewOnlyOwnOrganizationDatasets`.
+- [x] `backend/test/AccountDomainTests.cs` - `NewExternalOrganizationDefaultsToProspectAndConvertsInPlace`.
+- [x] `backend/test/AccountDomainTests.cs` - `ProspectCannotConvertToPhaenoOrConvertTwice`.
+- [x] `backend/test/DataProvisioningDomainTests.cs` - `ReadySourceRevisionIsImmutable`.
+- [x] `backend/test/DataProvisioningDomainTests.cs` - `CuratedVersionSnapshotsReadySourceAndBuildsStableChecksum`.
+- [x] `backend/test/DataProvisioningDomainTests.cs` - `EligibilityAndGrantPinOnePublishedExactVersionUntilRevoked`.
+- [x] `backend/test/DataProvisioningProfileTests.cs` - production rejects
+  synthetic fixtures even when incorrectly enabled.
+- [x] `backend/test/DataProvisioningProfileTests.cs` - production never trusts
+  files without a scanner integration.
+- [x] `backend/test/DataProvisioningProfileTests.cs` - unconfigured scientific
+  file kinds are rejected.
 
 ## Deferred Tests
 
@@ -42,7 +56,21 @@ Do not execute this test plan unless explicitly requested.
 - [ ] Account domain model - cover Phaeno platform admins managing customer organizations through platform admin flows.
 - [ ] Account lifecycle - cover users, organizations, and memberships marked inactive rather than hard-deleted.
 - [ ] Bootstrap seed - cover first Phaeno organization/admin creation and one-time Clerk identity linking with database-backed tests.
+- [ ] Data provisioning endpoints - cover platform-admin-only source authoring,
+  publication, eligibility, assignment, revocation, and idempotent retry with a
+  database-backed API host after the migration is approved.
+- [ ] Managed files - cover authoritative checksum/size calculation, configured
+  file-kind rejection, scanner unavailable/rejected states, storage cleanup, and
+  missing-byte behavior with isolated temporary storage.
+- [ ] Tenant curated data - cover selected-organization enforcement, cross-tenant
+  404/403 behavior, immediate revocation/deactivation denial, individual and
+  archive audit records, and organization-admin-only download history.
+- [ ] Production policy - cover synthetic rejection and empty production
+  file-kind/scanner configuration at readiness, publication, eligibility, and
+  grant boundaries.
 
 ## Requested Execution Log
 
-- No requested backend test-plan executions recorded yet.
+- 2026-07-14: implementation verification ran `dotnet test
+  backend/PhaenoPortal.slnx`; all 43 tests passed. The existing lowercase
+  `initial` migration-name compiler warning remains unchanged.

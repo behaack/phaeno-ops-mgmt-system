@@ -20,5 +20,5 @@ public sealed record CreateOrganizationRequest
     /// <summary>
     /// Authentication and authorization category for the organization.
     /// </summary>
-    public OrganizationKind Kind { get; init; } = OrganizationKind.Customer;
+    public OrganizationKind Kind { get; init; } = OrganizationKind.Prospect;
 }

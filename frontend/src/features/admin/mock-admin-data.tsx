@@ -58,6 +58,17 @@ const MockAdminDataContext =
 
 const initialCustomers: CustomerRecord[] = [
   {
+    id: '7dbd474b-c73f-4df4-a9c9-9f1a72b5341b',
+    name: 'Helix Discovery Group',
+    status: 'Review',
+    users: 4,
+    partner: 'Prospect',
+    nextStep: 'Review curated sample data',
+    contact: 'Alex Morgan',
+    securityContact: 'security@helix.example',
+    lastReview: 'Jul 14, 2026',
+  },
+  {
     id: 'northline-labs',
     name: 'Northline Labs',
     status: 'Active',

@@ -25,7 +25,7 @@ public sealed class Organization : IAudit, IConcurrency
     /// <summary>
     /// Authentication and authorization category for the organization.
     /// </summary>
-    public OrganizationKind Kind { get; private set; } = OrganizationKind.Customer;
+    public OrganizationKind Kind { get; private set; } = OrganizationKind.Prospect;
 
     /// <summary>
     /// Date and time when the organization was created.
@@ -74,7 +74,7 @@ public sealed class Organization : IAudit, IConcurrency
     /// </summary>
     public Organization(
         string name,
-        OrganizationKind kind = OrganizationKind.Customer,
+        OrganizationKind kind = OrganizationKind.Prospect,
         string? description = null)
     {
         Name = name;
@@ -100,6 +100,38 @@ public sealed class Organization : IAudit, IConcurrency
     public bool IsCustomer()
     {
         return Kind == OrganizationKind.Customer;
+    }
+
+    public bool IsProspect()
+    {
+        return Kind == OrganizationKind.Prospect;
+    }
+
+    public bool IsPartner()
+    {
+        return Kind == OrganizationKind.Partner;
+    }
+
+    public bool IsExternalOrganization()
+    {
+        return Kind is OrganizationKind.Prospect
+            or OrganizationKind.Customer
+            or OrganizationKind.Partner;
+    }
+
+    public void ConvertProspectTo(OrganizationKind targetKind)
+    {
+        if (!IsProspect())
+        {
+            throw new InvalidOperationException("Only a Prospect organization can be converted.");
+        }
+
+        if (targetKind is not (OrganizationKind.Customer or OrganizationKind.Partner))
+        {
+            throw new InvalidOperationException("A Prospect can be converted only to a Customer or Partner.");
+        }
+
+        Kind = targetKind;
     }
 
     public void Deactivate()

@@ -4,7 +4,9 @@ namespace PhaenoPortal.App.Infrastructure.Persistence.Auditing;
 
 public sealed class HttpCurrentUserContext(IHttpContextAccessor httpContextAccessor) : ICurrentUserContext
 {
-    public Guid? UserId => ReadGuidClaim(
+    public const string InternalUserIdItemKey = "PhaenoPortal.InternalUserId";
+
+    public Guid? UserId => ReadInternalUserId() ?? ReadGuidClaim(
         ClaimTypes.NameIdentifier,
         "sub",
         "user_id");
@@ -14,6 +16,16 @@ public sealed class HttpCurrentUserContext(IHttpContextAccessor httpContextAcces
         "org_id");
 
     public string? RequestId => httpContextAccessor.HttpContext?.TraceIdentifier;
+
+    private Guid? ReadInternalUserId()
+    {
+        return httpContextAccessor.HttpContext?.Items.TryGetValue(
+            InternalUserIdItemKey,
+            out object? value) == true
+            && value is Guid internalUserId
+                ? internalUserId
+                : null;
+    }
 
     private Guid? ReadGuidClaim(params string[] claimTypes)
     {

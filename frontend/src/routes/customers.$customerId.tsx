@@ -85,11 +85,14 @@ function CustomerDetailsPage() {
     )
   }
 
-  const scopedUsers = customerUsers.filter((user) => user.customerId === customer.id)
+  const currentCustomer = customer
+  const scopedUsers = customerUsers.filter(
+    (user) => user.customerId === currentCustomer.id,
+  )
 
   function submitProfile(event: FormEvent<HTMLFormElement>) {
     event.preventDefault()
-    updateCustomer(customer.id, profileFormToInput(profileForm))
+    updateCustomer(currentCustomer.id, profileFormToInput(profileForm))
   }
 
   return (

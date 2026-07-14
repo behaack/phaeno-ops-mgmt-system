@@ -7,14 +7,27 @@ Do not execute this test plan unless explicitly requested.
 ## Created Tests
 
 - [x] `frontend/e2e/home.spec.ts` - `loads the portal starter dashboard`.
+- [x] `frontend/e2e/data-provisioning.spec.ts` - Phaeno mock context exposes the
+  source registry, curated catalog, and organization-grant surfaces.
+- [x] `frontend/e2e/data-provisioning.spec.ts` - Prospect mock context exposes
+  the Data Library without exposing connected data in mock mode.
 
 ## Deferred Tests
 
 - [ ] Automated WCAG AA accessibility check on the dashboard.
 - [ ] Mobile primary navigation moves into the user menu.
+- [ ] Database-backed synthetic reference journey - upload, ready, snapshot,
+  publish, eligibility, explicit Prospect grant, tenant list/detail, file and
+  archive download, download history, cross-tenant denial, and revocation. Run
+  after the data-provisioning migration and isolated test database/storage are
+  approved.
 
 ## Requested Execution Log
 
+- 2026-07-14: implementation verification ran `PLAYWRIGHT_PORT=3100 pnpm
+  run test:e2e` to avoid an unrelated local port-3000 process; all 6 Chromium
+  and mobile-Chromium tests passed. The existing TanStack warning about the
+  exported `AcceptInvitePage` route component remains unchanged.
 - 2026-06-01: User ran `pnpm test:e2e`; Playwright could not launch because Chromium was not installed locally.
 - 2026-06-01: User ran `pnpm test:e2e`; mobile navigation test failed because the user menu did not open after `tap()`. Updated the test to activate the menu with `click()` and wait for the menu before asserting menu items.
 - 2026-06-01: User ran `pnpm test:e2e`; dashboard accessibility test failed on light-theme color contrast, and the mobile user menu still did not open reliably. Darkened light-theme muted and primary colors, and made the user menu open state controlled.
