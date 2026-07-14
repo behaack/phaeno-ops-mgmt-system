@@ -185,7 +185,7 @@ The application implements a multi-tenant architecture with role-based access co
 ```
 phaeno-portal/
 ├── README.md
-├── AGENT.md
+├── AGENTS.md
 ├── backend/
 │   ├── app/
 │   │   ├── Common/
@@ -247,7 +247,7 @@ phaeno-portal/
 
 ## Contributing
 
-Please read the AGENT.md file for detailed engagement rules and guidelines.
+Please read `AGENTS.md` for repository working rules and `ai/README.md` for task-specific context.
 
 ## License
 
