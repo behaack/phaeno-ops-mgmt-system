@@ -218,6 +218,13 @@ If storage succeeds but the database save fails, delete the uploaded object. If
 the database succeeds but cleanup fails later, use a cleanup job to reconcile
 orphaned storage objects.
 
+The organization-data-provisioning first release also uploads approved files
+directly from a Phaeno-only source-sample draft. Those uploads use the same
+managed storage flow, server-derived storage keys, streaming checksum, file-kind
+validation, scan state, and reconciliation. The source revision cannot become
+ready until every referenced file passes the configured checks. External file
+references and imports are outside that release.
+
 ## Download Flow
 
 Endpoint:
@@ -237,6 +244,39 @@ Development local storage should stream through the API. Production S3 storage
 should generally return a short-lived pre-signed URL after authorization. For
 sensitive files, keep proxy-download mode available so the API remains the
 enforcement point.
+
+Content with an immediate revocation requirement, including curated Prospect
+sample packages, must use proxy-download mode or another delivery mechanism that
+can invalidate access immediately. A signed URL that remains usable after its
+grant is revoked does not satisfy that requirement.
+
+Curated sample packages support both an authorized individual-file download and
+one complete archive of the exact immutable package version. The complete
+archive includes the package manifest and every file in that version. Both
+download modes must pass the same current grant check and create distinct audit
+events.
+
+Every published curated-package version and its files are retained indefinitely,
+including superseded and retired versions. Normal retention cleanup must not
+delete those artifacts. A future exceptional purge process is the only planned
+deletion path.
+
+The first release does not automatically age-delete source-sample drafts. An
+authorized Phaeno user may explicitly discard only an unreferenced draft after
+destructive confirmation and a required reason. The audit record remains, and
+managed file bytes are removed only if no other record references them. Ready,
+archived, snapshotted, published, superseded, retired, quarantined, and withdrawn
+revisions are not normal retention-deletion candidates.
+
+An emergency curated-package quarantine immediately blocks every individual-file
+and complete-archive download for the affected immutable version, regardless of
+otherwise-active grants or cached tenant state. Files remain preserved for
+investigation, and previously downloaded copies cannot be recalled.
+
+A separate Phaeno-only investigation path may allow specifically authorized
+investigators to view or download quarantined files. Every investigation access
+requires a purpose or reason and a distinct audit event. This path must never be
+available through Customer, Prospect, Partner, or ordinary Phaeno access.
 
 ## Folder Endpoints
 
@@ -288,8 +328,15 @@ Minimum controls:
 - Sanitize download file names.
 - Enforce configured file size limits.
 - Enforce configured allowed content types.
+- Keep development/test fixture file-kind policy environment-scoped. Production
+  must not inherit or promote synthetic-fixture approvals and begins with only
+  explicitly configured Phaeno-approved scientific kinds.
+- Curated package publication uses a Phaeno-approved configurable file-kind
+  list and fails if any package file is unexpected, unsupported, or disallowed.
 - Use short TTLs for signed download URLs.
-- Consider adding an `IFileScanner` hook before activating uploaded files.
+- Provide an `IFileScanner` hook for managed scientific uploads. A source-sample
+  revision cannot become ready while any file is unscanned, scanning, failed, or
+  rejected; scanner unavailability is a blocking, retryable readiness error.
 
 ## Package Additions
 

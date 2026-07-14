@@ -5,7 +5,7 @@ Choose checks by changed surface. The detailed rule remains: do not run tests au
 ## Documentation only
 
 - Confirm every referenced path exists.
-- Search for contradictory terminology, especially partner/distributor and auth-provider wording.
+- Search for contradictory terminology, especially legacy distributor wording and auth-provider wording.
 - Run `git diff --check`.
 
 ## Backend

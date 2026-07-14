@@ -188,7 +188,7 @@ When a customer or procurement context adds requirements such as U.S. Section 50
 Internationalization is enabled with `en-US` as the only initially supported locale.
 
 - System-owner-only surfaces may remain US English and do not require translation catalogs.
-- Customer- and distributor-facing surfaces are fully internationalization-enabled even while `en-US` is their only translation.
+- Prospect-, customer-, and partner-facing surfaces are fully internationalization-enabled even while `en-US` is their only translation.
 - If any external role can access a surface, treat the entire surface as internationalized.
 - Components shared between internal and external surfaces are internationalized.
 - External labels, validation, errors, toasts, accessibility text, notifications, reports, and exports are included.
@@ -247,4 +247,3 @@ User-interface work is not complete until the rendered workflow has been checked
 - Verify keyboard operation, visible focus, names, errors, announcements, and modal focus behavior.
 - Use automated tests for stable behavior, but do not substitute unit or build success for browser verification of visual, responsive, focus, or navigation behavior.
 - Update this document when a genuinely reusable product pattern changes.
-

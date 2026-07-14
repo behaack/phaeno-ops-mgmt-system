@@ -12,5 +12,51 @@
 | API envelope | The standard `success`, `data`, `error`, and `meta` response shape. |
 | Audit event | An append-only record of a persisted entity change and its actor/request context. |
 | Concurrency version | The numeric version used to reject stale updates. |
-| Partner / Distributor | Planned external-organization vocabulary; not yet a current `OrganizationKind`. |
+| Prospect | A planned external tenant phase before an organization becomes a Customer or Partner. Prospect users may access assigned seed data and manage their organization's users, but may not order. |
+| Customer | An end-user organization that can place lab service orders, track submitted samples, and access resulting data released through the portal. |
+| Partner | An external organization that can order reagents and submit data to Phaeno for assembly, then download the assembled data/results for its customers. Not yet a current `OrganizationKind`. |
+| Lab service order | A Customer request involving physical sample submission, Phaeno accessioning and laboratory analysis, data processing, and portal delivery of resulting data. |
+| Sample accessioning | Phaeno's receipt and registration of a submitted physical sample so its laboratory progression is traceable. |
+| Reagent order | A Partner order for reagents supplied through Phaeno's fulfillment workflow. |
+| Data assembly request | A Partner submission of data for Phaeno processing and delivery of downloadable assembled data/results. |
+| Seed data | Phaeno-selected data granted to an organization independently of lab service results or data assembly inputs and outputs. |
+| Prospect-eligible sample data | Phaeno-owned, de-identified sample data approved for possible Prospect assignment; eligibility alone does not grant access. |
+| Synthetic reference fixture | A Phaeno-created, non-production sample fixture used to exercise the baseline source, curation, grant, and download workflow without claiming scientific validity. |
+| Prospect sample-data grant | Explicit view-and-download access assigned by an authorized Phaeno user from eligible sample data to one Prospect organization. |
+| External-organization curated-data grant | Explicit access assigned by Phaeno to one Prospect, Customer, or Partner organization for one exact curated package version; organization kind never grants access automatically. |
+| Grant revocation | An audited Phaeno action that immediately stops future portal viewing and downloading for the organization; it cannot recall prior downloads. |
+| Grant suspension | Temporary loss of access caused by organization inactivity; it does not revoke the grant, and reactivation restores non-revoked access. |
+| Package quarantine | An emergency cross-organization access block for every published version derived from a source with a de-identification, ownership, or sharing-rights concern; all evidence and history remain preserved for investigation, and clearance is allowed only after a documented safe outcome with no content change. |
+| Quarantine suspension | Temporary package-version inaccessibility that preserves organization grants; clearance restores only grants that remain active and non-revoked. |
+| Quarantine investigation access | Phaeno-only, purpose-limited, fully audited access to quarantined contents by a specifically authorized investigator. |
+| Quarantine closeout attestation | One affected organization administrator's recorded confirmation that local copies were deleted and downstream recipients were notified after an unsafe or no-longer-shareable disposition. |
+| Quarantine follow-up | Reminder and Phaeno review work for an outstanding organization closeout attestation, without automatic consequences for unrelated organization access. |
+| Incident attestation due date | The required, incident-specific date selected by Phaeno for affected organizations to complete quarantine closeout attestations. |
+| Recorded-by-Phaeno attestation | An organization closeout confirmation received outside the portal and entered by an authorized Phaeno user with the organization contact, evidence source, Phaeno actor, and timestamp preserved. |
+| Withdrawn package version | A permanently inaccessible version confirmed unsafe or unshareable; it cannot be cleared or granted again, remains preserved as evidence, and corrections require a new version. |
+| Active curated-data grant | A non-expiring organization grant that remains available until explicit Phaeno revocation, except while the organization is inactive. |
+| Catalog removal | Removal of a package's general Prospect eligibility; it prevents new grants without changing existing organization access. |
+| Catalog-wide revocation | An optional destructive catalog-removal action that revokes a package for every Customer, Prospect, and Partner organization with access. |
+| Package access notification | An administrator notification and portal activity event produced when Phaeno grants, upgrades, or revokes a curated package. |
+| Package download history | Tenant-scoped audit history showing the downloading user, package/version, and timestamp without recording package contents. |
+| Package retirement | An irreversible, non-deletion lifecycle action that permanently prevents new grants while preserving all existing grants, package data, and access. |
+| Published-version retention | Indefinite preservation of every published curated package version and its files, including superseded and retired versions, unless a future exceptional purge process is used. |
+| Curated sample package | The complete, read-only set of approved records and files Phaeno places in the curated area for one sample; an organization grant applies to the package as a whole. |
+| Internal Phaeno source sample | A Phaeno-owned sample created through the dedicated internal Phaeno sample workflow, separate from Customer lab-service samples and Partner data-assembly inputs or outputs, that may become eligible for curation after de-identification. |
+| Source-sample registry | The Phaeno-only workflow for registering an internal source sample, attaching approved data, and recording ownership and de-identification evidence before curation. |
+| Ready source-sample revision | A complete, atomically validated, immutable source-sample revision eligible to be snapshotted into a curated package draft. |
+| Source sample snapshot | The lineage-preserving copy of one selected Phaeno-owned sample's approved data used to create a curated package draft. |
+| De-identification eligibility | Required source-sample evidence that Phaeno owns the sample and de-identification is complete before curation can begin. |
+| Source-sample ownership evidence | The Phaeno ownership basis, confirmer, confirmation time, and non-sensitive evidence reference or notes required before a source revision can become ready. |
+| De-identification evidence | The confirmer, completion time, method or policy, and non-sensitive notes proving that de-identification was completed without retaining removed identifiers. |
+| Package presentation metadata | Phaeno-authored title, description, release notes, or explanatory text that describes a package without altering its snapshotted sample data. |
+| Curated package summary | The required portal-visible sample description, biological and assay context, analysis summary, QC status, and provenance published with every curated package. |
+| Curated package manifest | The checksummed inventory of all records and files in the complete downloadable source snapshot. |
+| Complete package archive | A downloadable bundle containing the manifest and every file in one exact immutable curated package version. |
+| Approved file kind | A Phaeno-approved scientific file format allowed in a curated package; an unapproved kind blocks publication. |
+| Curated-data terms | The portal's standard terms governing curated sample access; there is no separate package-specific acceptance in the initial workflow. |
+| Curated sample package version | An immutable snapshot of a curated sample package. Prospect grants remain pinned to the selected version until Phaeno explicitly upgrades them. |
+| Superseded grant version | A previously granted package version retained with its history after an explicit upgrade but no longer viewable or downloadable by the organization. |
+| Data ownership class | The authorization boundary distinguishing Phaeno-owned curated Prospect data from Customer- or Partner-owned operational data. |
+| Operational-data access | Member access to Customer- or Partner-owned samples, results, assembly inputs, or assembly outputs, managed by organization administrators with audited Phaeno support. |
 | Provisioning package | A proposed, not yet implemented, versioned dataset delivery concept in the data-provisioning plan. |

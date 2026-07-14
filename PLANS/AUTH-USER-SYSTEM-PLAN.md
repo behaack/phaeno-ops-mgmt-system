@@ -34,11 +34,16 @@ Do not execute this plan unless explicitly requested.
 - Replace single-organization user assumptions with an organization membership model.
 - A user has identity, profile, and global lifecycle fields.
 - An organization has tenant metadata, kind, and active/inactive status.
+- Prospect is a portal tenant phase that can later convert in place to Customer
+  or Partner while preserving organization identity and history.
 - A membership links a user to an organization and stores per-organization capability, initially org-admin or member.
 - Selected organization context is required for tenant-scoped requests.
 - Phaeno/platform admin access is based on an active admin membership in an active organization with kind `Phaeno`.
-- Phaeno admins manage customer organizations through platform admin screens, not by freely switching into customer org context.
-- Customer organization admins can see only users and memberships in their own organization.
+- Phaeno admins manage external organizations through platform admin screens,
+  not by freely switching into external organization context.
+- Prospect and customer organization admins can see only users and memberships
+  in their own organization. Partner behavior follows the eventual Partner
+  workflow, with the same tenant-isolation baseline.
 
 ## Identity Fields
 
@@ -79,7 +84,8 @@ Do not execute this plan unless explicitly requested.
 - New invite creation is rejected when the user already has an active membership in that organization.
 - Existing inactive memberships may be reactivated only through fresh invite acceptance.
 - Invites to globally disabled users are blocked until a Phaeno admin reactivates the user.
-- Customer organization admins can invite any email address to their own organization in v1. Approved-domain restrictions are deferred.
+- Prospect and customer organization admins can invite any email address to
+  their own organization in v1. Approved-domain restrictions are deferred.
 
 ## Invite Token Rules
 
@@ -207,7 +213,8 @@ Do not execute this plan unless explicitly requested.
 ## Admin Permissions
 
 - Phaeno admins can invite users to any organization.
-- Organization admins can invite users only to their own customer organization.
+- Prospect and customer organization admins can invite users only to their own
+  organization.
 - Organization admins cannot invite users into Phaeno/internal organizations.
 - Organization admins cannot grant Phaeno-level access.
 - Organization admins can mark memberships inactive for their own organization.
@@ -217,6 +224,45 @@ Do not execute this plan unless explicitly requested.
 - Users can leave an organization themselves unless they are the last active org admin.
 - Reactivating an inactive membership requires fresh invite acceptance.
 - Phaeno admins can mark an organization inactive even if it has active users or memberships.
+- Only an authorized Phaeno user can convert a Prospect organization to Customer
+  or Partner.
+- Prospect conversion preserves the organization, users, memberships, and audit
+  history rather than creating a new tenant.
+- Prospect conversion also preserves every curated-package grant and pinned
+  version without automatic additions, replacements, upgrades, or revocations.
+- Prospect memberships never grant ordering capabilities.
+- Customer capabilities may allow lab service ordering, sample-progress
+  tracking, and access to released laboratory data.
+- Partner capabilities may allow reagent ordering, data assembly submission,
+  and download of completed assembly outputs.
+- Prospect organization administrators manage their users but cannot assign
+  sample-data access. Only an authorized Phaeno user can manage the eligible
+  Prospect sample-data catalog or grant sample data to a Prospect organization.
+- Prospect users may view and download sample data actively granted to their
+  selected organization. Download access never follows from catalog eligibility
+  alone.
+- Revoking a curated Prospect package grant immediately blocks portal viewing
+  and downloading for every organization member.
+- Organization deactivation suspends access to curated packages without
+  revoking their grants. Reactivation restores access to still-active,
+  non-revoked grants for eligible active members.
+- Curated sample-package grants do not expire and remain authorized until
+  Phaeno explicitly revokes them.
+- An authorized Phaeno user removing a package from the eligible catalog may
+  optionally revoke that package for every Customer, Prospect, and Partner
+  organization. Bulk revocation is audited and blocks access immediately.
+- Every active organization member can access Phaeno-owned curated Prospect
+  packages granted to that organization, including after conversion.
+- Customer- or Partner-owned operational data follows Customer/Partner access
+  rules and must not inherit the organization-wide Prospect-data rule.
+- Backend authorization derives the access policy from the data's ownership and
+  classification, not merely the organization's current phase.
+- Customer and Partner organization administrators manage member access to
+  their organization-owned operational data. Authorized Phaeno administrators
+  may assist, with every access change audited.
+- Organization administrators can view curated package download history only
+  for their own organization. Authorized Phaeno users may review it across
+  organizations.
 
 ## Bootstrap
 
@@ -248,9 +294,11 @@ Do not execute this plan unless explicitly requested.
   - user globally reactivated
   - organization marked inactive
   - organization reactivated
+  - Prospect converted to Customer or Partner
   - membership created or reactivated by invite acceptance
   - membership marked inactive
   - membership admin capability changed
+  - Customer/Partner operational-data access granted or revoked
   - user leaves organization
   - bootstrap identity linked
 
@@ -285,6 +333,10 @@ Do not execute this plan unless explicitly requested.
 - [x] Add capability-driven action visibility.
 - [x] Add backend tests for auth gates, invite lifecycle, membership lifecycle, and bootstrap.
 - [ ] Add frontend tests for auth states, invite flow, org selection, and hidden/visible actions.
+- [ ] Add Prospect organization kind/phase, member-management authorization,
+      and audited in-place conversion to Customer or Partner.
+- [ ] Add tests proving Prospect users can manage their own organization but
+      cannot receive ordering capabilities.
 
 ## Deferred
 

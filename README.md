@@ -151,8 +151,9 @@ The application implements a multi-tenant architecture with role-based access co
 
 - **User Types**:
   - Phaeno: Internal users with administrative privileges
-  - Customers: End-users accessing the portal services
-  - Partners: External collaborators with limited access
+  - Prospects: Pre-customer/partner organizations whose users can access sample data explicitly assigned by Phaeno and manage their organization users, but cannot order
+  - Customers: End users that place lab service orders, submit samples, track laboratory progress, and access resulting data
+  - Partners: External organizations that order reagents or submit data to Phaeno for assembly and download the assembled data/results for their customers
 - **Invite Model**:
   - Invitations are sent via email and include a secure token
   - Invitees click the invitation link and are taken to a registration page

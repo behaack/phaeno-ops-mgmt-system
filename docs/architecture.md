@@ -30,7 +30,28 @@ All `/api` failures should use the existing error envelope. Persistence applies 
 
 Clerk is the external identity provider in the current code. The API validates Clerk JWTs and resolves provider plus subject to an internal `User`. Product authorization comes from active internal organization memberships; external identity claims do not replace tenant checks.
 
-The current persisted organization kinds are `Phaeno` and `Customer`. A partner/distributor model is described in older guidance and newer plans but is not represented by the current `OrganizationKind` enum. Treat that as planned domain work, not implemented architecture.
+The current persisted organization kinds are `Phaeno` and `Customer`. Prospect
+and Partner are confirmed product concepts but are not represented by the
+current `OrganizationKind` enum. A Prospect is a tenant phase that can convert
+in place to Customer or Partner. `Distributor` is not a separate product term.
+Treat Prospect and Partner as planned domain work, not implemented architecture.
+
+The planned first organization-data-provisioning release also requires a minimal
+Phaeno-only source-sample registry because the current repository has no sample
+entity or sample workflow. The registry will hold internal sample metadata,
+approved managed data attachments, ownership evidence, de-identification
+evidence, and curation readiness. It is not a Customer lab accessioning system
+or Partner data-assembly workflow.
+Approved source files are uploaded directly through the portal's managed file
+storage abstraction; the initial release has no external file-reference or
+import integration. A complete ready source revision is immutable and is the
+only revision eligible for a curated snapshot.
+
+Implementation does not depend on a real sample artifact. Development and tests
+use an explicitly synthetic fixture plus test-only file-kind policy. Production
+rejects synthetic sources and starts without speculative approved scientific
+file kinds; Phaeno must configure actual profile/file policy before publishing
+real packages.
 
 ## Frontend
 

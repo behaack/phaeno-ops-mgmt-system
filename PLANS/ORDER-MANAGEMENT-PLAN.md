@@ -9,9 +9,44 @@ resolved and implementation is explicitly requested.
 ## Status
 
 - Planning state: discovery; business details are pending.
-- Requested outcome: allow a customer to place orders in Phaeno Portal.
+- Requested outcomes:
+  - allow Customers to place lab service orders and track their samples
+  - allow Partners to place reagent orders
+  - allow Partners to submit data for Phaeno data assembly and retrieve the
+    assembled data/results
+- Confirmed boundary: Prospect organizations cannot view, create, or place
+  orders, including Prospect organization administrators.
 - No catalog, pricing, approval, payment, fulfillment, or notification behavior
   is assumed yet.
+
+## Confirmed Product Workflows
+
+### Customer Lab Service Order
+
+- A Customer is an end user of Phaeno laboratory services.
+- A Customer places a lab service order through the portal.
+- The order involves submission of physical samples to Phaeno's laboratory.
+- Phaeno receives and accessions the samples.
+- Phaeno analyzes the samples in the laboratory.
+- Phaeno processes the resulting data.
+- Resulting data is made available to the Customer through the portal.
+- The Customer can track the progress of its samples through the portal.
+
+### Partner Reagent Order
+
+- A Partner can place orders for reagents through the portal.
+- Reagent ordering is a distinct commercial and fulfillment workflow from a
+  Customer lab service order.
+
+### Partner Data Assembly Submission
+
+- A Partner can submit data to Phaeno for data assembly.
+- Phaeno processes the submitted data through a data-assembly workflow.
+- The assembled data/results produced by Phaeno are made available for the
+  Partner to download and provide to its own customers.
+
+These are three distinct workflows. Do not force them into one generic `Order`
+entity, status model, or form merely because each begins with a submission.
 
 ## Current Repository Baseline
 
@@ -30,10 +65,22 @@ resolved and implementation is explicitly requested.
 
 ## Planning Principles
 
-- An order belongs to exactly one customer organization.
-- The backend derives the customer organization from validated selected-tenant
+- A Customer lab service order belongs to exactly one Customer organization.
+- A Partner reagent order and data assembly submission belong to exactly one
+  Partner organization.
+- Prospect organizations are ineligible for every order read and write
+  capability. Conversion to Customer does not retroactively create orders.
+- The backend derives the owning organization from validated selected-tenant
   context; it does not trust an arbitrary organization id supplied in an order
   payload.
+- Sample tracking is sample-specific because samples within one lab service
+  order may progress independently.
+- Laboratory accessioning, analysis, data processing, and data availability are
+  explicit traceable stages; they are not one generic "processing" flag.
+- Data assembly inputs and outputs are operational records, not seed datasets.
+- Customer lab-order samples/results and Partner assembly inputs/results are
+  Customer- or Partner-owned operational data. Their access rules are separate
+  from the organization-wide rule for Phaeno-owned curated Prospect data.
 - Only a user with an explicit order-placement capability may submit an order.
   Being an organization admin alone should not implicitly grant commercial
   authority unless that is an intentional product decision.
@@ -53,23 +100,28 @@ creating a migration.
 
 ### Commercial Flow
 
-- Who receives and fulfills an order: Phaeno, a distributor, a partner, or a
-  destination selected per order?
-- Can only customer organizations order, or can distributors also order?
-- Is there one catalog or a customer/distributor-specific catalog?
+- Which Customer users may create and submit lab service orders?
+- Which Partner users may place reagent orders or submit data for assembly?
+- Are lab services and reagents organization-specific or drawn from shared
+  catalogs?
 - Are prices shown in the portal? If so, are they contractual, tiered, quoted,
   promotional, or calculated elsewhere?
-- Does an order require customer-side approval before placement?
-- Does Phaeno or a distributor review/accept an order after placement?
+- Does either order type require organization-side approval before placement?
+- What Phaeno review or acceptance occurs for lab service orders, reagent
+  orders, and data assembly submissions?
 - Are purchase-order numbers, cost centers, requisition numbers, or attachments
   required?
 
 ### Order Contents
 
-- What is ordered: products, kits, tests, services, subscriptions, data access,
-  or another item type?
-- Which item attributes must be captured, such as SKU, quantity, unit,
-  configuration, requested date, or instructions?
+- Which lab service, sample metadata, submission instructions, and requested
+  analyses are required for a lab service order?
+- Which sample identifiers are Customer-provided, Phaeno-generated during
+  accessioning, or both?
+- Which reagent identifiers, quantities, units, and configurations are required
+  for a Partner reagent order?
+- Which file formats, metadata, validation, and assembly instructions are
+  required for a Partner data assembly submission?
 - Are partial quantities, backorders, substitutions, or recurring orders
   supported?
 - May users save drafts, duplicate past orders, upload orders, or reorder?
@@ -77,14 +129,19 @@ creating a migration.
 
 ### Shipping, Billing, And Fulfillment
 
-- Are shipping and billing addresses selected from managed address books or
-  entered per order?
+- How are physical samples shipped or delivered to Phaeno, and what receipt or
+  chain-of-custody information must Customers see?
+- How are reagents shipped to Partners, and are shipping and billing addresses
+  selected from managed address books or entered per order?
 - Are tax, freight, discounts, currency, and payment terms calculated here or in
   an external system?
 - Is online payment in scope, or is ordering performed against invoice/contract
   terms?
-- Which fulfillment statuses and customer cancellation rules are required?
-- Is there an ERP, CRM, distributor, or fulfillment integration? Which system is
+- Which cancellation, rejection, insufficient-sample, rework, and partial-
+  completion rules apply to lab orders and individual samples?
+- Which reagent fulfillment, backorder, and cancellation rules apply?
+- Which data assembly rejection, correction, and resubmission rules apply?
+- Is there an ERP, CRM, partner, or fulfillment integration? Which system is
   the source of truth after submission?
 
 ### Communications And Reporting
@@ -99,34 +156,56 @@ creating a migration.
 
 ## Proposed Domain Direction
 
-The following is a starting shape, not a final schema. Omit fields and entities
-that the discovery gate does not justify.
+Use separate feature-owned aggregates for the three workflows. Share small
+primitives only where their meaning and lifecycle are genuinely identical.
 
-### Order
+### LabServiceOrder
 
 Candidate responsibilities:
 
-- server-generated `Id` and human-readable `OrderNumber`
-- owning `CustomerOrganizationId`
-- optional receiving/fulfilling organization or external destination
+- server-generated identity and human-readable order number
+- owning Customer organization
+- requested lab service and submission instructions
 - `Status`
 - customer reference such as purchase-order number, if required
 - submitted-by user and placement timestamp
-- currency and monetary totals only if the portal owns price calculation
-- immutable placement snapshot or an immutable placed revision
+- immutable submitted-order snapshot
 - optional external-system identifiers and synchronization state
 - audit fields and concurrency `Version`
 
-### OrderLine
+### LabSample
+
+Each submitted sample is a traceable child record with its own progression:
+
+- parent lab service order
+- Customer-provided sample identifier and required sample metadata
+- Phaeno accession identifier assigned at receipt
+- current sample status and timestamps for traceable stages
+- requested analysis and processing context
+- result/data availability without exposing storage details
+- rejection, exception, or rework reason when applicable
+
+### PartnerReagentOrder
 
 Candidate responsibilities:
 
-- parent order id
-- stable catalog/product reference when one exists
-- item identifier, description, unit, and configuration snapshot
-- requested quantity
-- unit price, adjustments, tax, and line total only when in scope
-- line-level fulfillment status only when partial fulfillment is required
+- owning Partner organization and ordering user
+- reagent line snapshots, quantities, units, and configuration
+- shipping, billing, price, and payment facts only when confirmed in scope
+- placement and fulfillment status/history
+- external fulfillment identifiers when applicable
+- audit fields and concurrency `Version`
+
+### DataAssemblyRequest
+
+Candidate responsibilities:
+
+- owning Partner organization and submitting user
+- submitted input files/data and immutable intake manifest
+- assembly instructions and validation results
+- processing status, version/provenance, and exception history
+- completed assembled data/results authorized to that Partner
+- audit fields and concurrency `Version`
 
 ### Supporting Models
 
@@ -134,21 +213,28 @@ Add only when justified by requirements:
 
 - `CatalogItem` and organization-specific availability/pricing
 - `OrderAddressSnapshot`
-- `OrderStatusEvent` for an append-only customer-visible timeline
+- workflow-specific status events for append-only Customer/Partner timelines
 - `OrderAttachment` integrated with the file-management design
 - `OrderIntegrationAttempt` or an outbox message for reliable external delivery
 - `OrderApproval` for customer-side or Phaeno-side approval
+- `SampleStatusEvent` for sample-level laboratory traceability
+- `AssemblyInput` and `AssemblyOutput` integrated with managed file storage
 
 ## Status Model Direction
 
-Do not finalize statuses before fulfillment requirements are known. A minimal
-starting distinction is:
+Do not finalize statuses before laboratory and fulfillment requirements are
+known. Candidate stage families are:
 
-- `Draft`: customer-editable and not yet committed.
-- `Placed`: customer submission succeeded and the snapshot is immutable.
+- Lab service order: draft, submitted, awaiting samples, in progress, results
+  available, completed, cancelled.
+- Individual lab sample: expected, received, accessioned, in lab analysis, data
+  processing, data available, completed, rejected or otherwise blocked.
+- Reagent order: draft, placed, accepted, processing, shipped/fulfilled,
+  cancelled or rejected.
+- Data assembly request: draft, submitted, intake validation, processing,
+  output available, completed, rejected or cancelled.
 
-Possible later states include `PendingApproval`, `Accepted`, `Rejected`,
-`Processing`, `PartiallyFulfilled`, `Fulfilled`, and `Cancelled`. Each transition
+Exact terms and transition rules require further discovery. Each transition
 must define:
 
 - authorized actor and tenant context
@@ -163,32 +249,40 @@ must define:
 Define capability booleans in session output rather than relying on frontend
 role-name checks. Candidate capabilities are:
 
-- `CanViewOrders`
-- `CanCreateOrderDrafts`
-- `CanPlaceOrders`
-- `CanCancelOrders`
-- `CanManageOrders`
+- `CanViewLabServiceOrders`
+- `CanCreateLabServiceOrders`
+- `CanSubmitLabServiceOrders`
+- `CanViewSampleProgress`
+- `CanPlaceReagentOrders`
+- `CanSubmitDataAssemblyRequests`
+- `CanDownloadDataAssemblyOutputs`
+- Phaeno operational capabilities for accessioning, lab progress, data
+  processing, reagent fulfillment, and assembly processing
 
 Expected boundaries:
 
 - Customer users see only orders owned by their selected customer organization.
+- Customer users see sample progress and released data only for their selected
+  Customer organization.
+- Prospect users do not receive order capabilities or order navigation.
+- Partner users see only reagent orders, assembly submissions, and downloadable
+  outputs owned by their selected Partner organization.
+- Customer and Partner organization administrators manage member access to
+  their organization-owned samples, results, assembly inputs, and assembly
+  outputs. Authorized Phaeno administrators may provide audited support.
 - Phaeno order operators use an explicit cross-customer operational view.
-- A distributor/partner view is deferred until the organization terminology,
-  assignment model, and fulfillment responsibility are decided.
 - Backend authorization is mandatory even when the UI hides unavailable
   actions.
 
 ## API Direction
 
-Final paths and payloads follow the resolved workflow. A likely REST shape is:
+Final paths and payloads follow the resolved workflows. Keep endpoint groups
+separate for:
 
-- `GET /api/orders`
-- `POST /api/orders` to create a draft
-- `GET /api/orders/{id}`
-- `PATCH /api/orders/{id}` to edit an allowed draft
-- `POST /api/orders/{id}/place`
-- `POST /api/orders/{id}/cancel`
-- Phaeno-only status transition endpoints or commands as required
+- Customer lab service orders and sample tracking
+- Partner reagent orders and fulfillment status
+- Partner data assembly requests, inputs, progress, and outputs
+- Phaeno-only accessioning and workflow-transition commands
 
 Contract requirements:
 
@@ -205,14 +299,19 @@ Contract requirements:
 
 Customer-facing surfaces will likely include:
 
-- an Orders navigation item visible only when the selected organization and
-  user have order access
-- an order list with status, number, submitted date, and relevant total or item
-  summary
-- a dedicated create/edit workflow rather than an inline form in the list
+- a Lab services navigation item visible only to eligible Customer users
+- a lab service order list and dedicated create/review workflow
+- a lab service order workspace with samples and their individual progress
+- clear receipt/accession, analysis, processing, and data-availability stages
 - a review step that shows the exact placement snapshot
-- an order detail page with status history and available actions
+- resulting data access from the relevant order/sample workspace
 - accessible confirmation and error recovery for placement
+
+Partner-facing surfaces will likely include:
+
+- a Reagent orders list, create/review workflow, detail, and fulfillment history
+- a Data assembly list and dedicated submission workflow with file validation
+- durable assembly progress, correction requests, and completed output downloads
 
 Phaeno-facing surfaces will likely include:
 
@@ -241,17 +340,17 @@ confirmation. Do not use inline create/edit forms inside order lists.
 
 ## Implementation Phases
 
-1. Complete the discovery gate and write the accepted workflow, state machine,
-   permissions, and integration ownership into this plan.
+1. Complete discovery for the Customer lab service order and sample lifecycle,
+   Partner reagent fulfillment, and Partner data assembly workflow.
 2. Define API examples, validation rules, and an implementation-ready data
    model; review tenant and audit boundaries.
 3. Add backend domain entities, persistence mappings, and a migration only when
    migration work is explicitly requested.
-4. Add customer-scoped draft, placement, list, and detail endpoints with unit
-   and integration tests.
-5. Add the customer order list, create/review flow, and detail UI using real API
-   hooks.
-6. Add Phaeno operational order management if required.
+4. Implement Customer lab service order submission and sample tracking as one
+   validated vertical slice.
+5. Implement Partner reagent ordering as a separate vertical slice.
+6. Implement Partner data assembly submission and output delivery as a separate
+   vertical slice backed by managed file storage.
 7. Add notifications and external integrations behind durable delivery
    boundaries.
 8. Add reporting, exports, advanced fulfillment, and convenience workflows only
@@ -263,7 +362,12 @@ When implementation begins, update the running backend, frontend, and e2e test
 plans with concrete cases. At minimum cover:
 
 - tenant isolation for list, detail, edit, placement, and cancellation
+- sample-level progress isolation and traceability across multi-sample orders
+- Customer access to completed lab data without access to another Customer's data
+- Partner reagent ordering without Customer lab-service capabilities
+- Partner assembly input/output isolation and authorized downloads
 - capability gates for customer and Phaeno actors
+- denial of all order list, detail, draft, and placement access for Prospects
 - draft validation and server-side item revalidation
 - idempotent placement under retries and concurrent requests
 - immutable placed-order snapshots
@@ -280,10 +384,13 @@ Do not run tests or execute the test plans until explicitly requested.
 ## Definition Of Ready For Implementation
 
 - The discovery gate is answered.
-- The ordering party, receiving party, and fulfillment source of truth are named.
-- The item/catalog and price sources of truth are named.
-- Required fields and validations are documented with representative examples.
-- The status transition table and cancellation rules are approved.
+- Required lab services, sample metadata, accessioning rules, laboratory stages,
+  and data-release rules are documented with representative examples.
+- Reagent catalog, fulfillment, shipping, and commercial rules are documented.
+- Data assembly inputs, validation, processing, and downloadable outputs are
+  documented with representative examples.
+- The three workflow transition tables and cancellation/rejection rules are
+  approved.
 - Authorization capabilities and Phaeno operational roles are approved.
 - Payment, tax, shipping, notification, and integration scope is explicit.
 - API contracts and acceptance scenarios are reviewed.
@@ -293,8 +400,9 @@ Do not run tests or execute the test plans until explicitly requested.
 - Final data schema and migration shape.
 - Final API payloads and endpoint list.
 - Catalog and pricing administration.
-- Distributor/partner fulfillment workflows.
+- Detailed reagent fulfillment workflows.
+- Detailed laboratory accessioning and processing rules.
+- Detailed data assembly input and output rules.
 - Payment processing.
 - Shipping, tax, invoicing, and ERP/CRM integrations.
 - Notifications, exports, reporting, and document generation.
-

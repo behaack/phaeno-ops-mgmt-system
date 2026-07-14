@@ -26,9 +26,221 @@ Status: observed in project guidance and persistence rules.
 
 Users and organizations are deactivated for normal product workflows. Hard deletion requires a separately approved purge/retention design.
 
+## 2026-07-14: Partner is the external-organization product term
+
+Status: confirmed by the Product Owner; implementation is still planned.
+
+Use `Partner`, not `Distributor`, in product language. The partner workflow and
+its eventual persistence and authorization model remain to be defined in the
+data-provisioning plan.
+
+## 2026-07-14: Prospect is a portal tenant phase
+
+Status: confirmed by the Product Owner; implementation is still planned.
+
+A Prospect organization can have users, manage its own users, and access seed
+data assigned by Phaeno. Prospects cannot order. Conversion to Customer or
+Partner preserves the organization and its history rather than replacing it.
+Existing seed-data access remains unless Phaeno explicitly removes or replaces
+it.
+Conversion preserves all existing curated-package grants and exact pinned
+versions. It performs no automatic grant additions, replacements, upgrades, or
+revocations.
+
+Prospect sample-data access has two levels. Authorized Phaeno users maintain the
+catalog of sample data generally eligible for Prospect access, then explicitly
+grant a selected subset to each Prospect organization. Catalog eligibility does
+not grant access, and Prospects cannot self-assign data. Only Phaeno-owned,
+de-identified sample data may enter the eligible catalog; Customer and Partner
+operational data is excluded. Prospect users may view and download granted
+sample data, and each download is tenant-authorized and audited.
+Authorized Phaeno users may explicitly grant the same Phaeno-owned curated
+packages to Customer or Partner organizations. Organization phase or kind never
+grants package access automatically.
+The first implementation uses the confirmed baseline curated-sample contract.
+Development and automated tests use an explicitly synthetic Phaeno-created
+fixture. It is not evidence of scientific validity and cannot be published,
+marked externally eligible, or granted in production. Production begins with no
+speculative approved scientific file kinds; Phaeno must explicitly configure
+and approve actual kinds and profile rules before real data can become ready or
+published.
+Authorized organization users may download either an individual file or a
+complete archive containing the manifest and every file in the exact immutable
+package version. Both download modes are separately audited.
+The same authorized Phaeno user may curate, approve, publish, and assign the
+package; a separate approver is not required.
+Package creation selects an existing Phaeno-owned sample and snapshots its
+approved data into a curated draft. Source changes never mutate the snapshot;
+Phaeno explicitly creates a new package version when needed.
+Eligible source samples originate only from a dedicated internal Phaeno sample
+workflow, separate from Customer lab-service work and Partner data-assembly
+work. Customer or Partner operational data is never reused automatically. Any
+future reuse requires a separately approved, explicit ownership-and-consent
+process.
+The first release includes a minimal Phaeno-only source-sample registry because
+the current portal has no source-sample model or workflow. Authorized staff
+register the sample, attach approved data, and record ownership and
+de-identification evidence before curation. The registry is not a Customer lab
+or Partner assembly workflow.
+Approved files are uploaded directly into managed portal storage; external file
+references/imports are deferred. Marking a complete source revision ready
+validates all metadata, evidence, files, scans, and checksums atomically and
+makes the revision immutable. Only an unreferenced draft may be discarded, with
+destructive confirmation, a reason, and preserved audit history.
+The source sample must already be marked de-identified. Curation validates and
+records that evidence but does not perform de-identification.
+Ownership evidence records the Phaeno ownership basis, confirming Phaeno user,
+confirmation timestamp, and a non-sensitive evidence reference or notes. No
+second approver is required.
+The evidence records the authorized Phaeno user who confirmed de-identification,
+the completion timestamp, the method or policy used, and optional non-sensitive
+notes. It must not reproduce removed identifiers, and no second approver is
+required.
+A suspected de-identification failure or loss or uncertainty of Phaeno's
+ownership or right to share requires immediate quarantine of every published
+version derived from the affected source across all organizations. Quarantine
+overrides all grants, blocks viewing and downloading, requires a reason, notifies
+affected organization administrators, and preserves the package, files,
+lineage, grants, and audit history for investigation. Earlier downloads cannot
+be recalled.
+The administrator notice identifies the high-level concern category, confirms
+blocked access, and provides prior-download guidance. It does not expose
+internal evidence, suspected identifiers, or investigation details.
+While the investigation is open, affected organizations are instructed to stop
+using or sharing prior downloads, isolate local copies, and await Phaeno's final
+instructions. The interim notice does not require deletion before the final
+disposition.
+A confirmed unsafe or no-longer-shareable disposition requires one
+administrator per affected organization to attest that local copies were
+deleted and downstream recipients were notified. Phaeno records the attestation
+and follow-up status but does not claim technical verification of deletion.
+The affected version then becomes permanently `Withdrawn`. It can never regain
+tenant access or receive new grants, remains preserved internally as evidence,
+and any corrected content requires a new version.
+Outstanding closeout attestations generate administrator reminders and remain
+visible for Phaeno follow-up. They do not automatically deactivate the
+organization or block unrelated packages or operational data; broader action
+requires an explicit Phaeno decision.
+Each confirmed-unsafe incident has a required attestation due date selected by
+an authorized Phaeno user. Reminders and overdue status follow that date rather
+than a universal product deadline.
+An authorized Phaeno user may record an attestation received outside the portal.
+It is marked `Recorded by Phaeno`, identifies the organization contact and
+evidence source, and retains the Phaeno actor and timestamp without impersonating
+an organization user.
+An authorized Phaeno user may clear quarantine only after a documented
+investigation confirms that the immutable version is safe and unchanged. The
+clearance requires a reason and audit record. Any content correction requires a
+new package version.
+Quarantine suspends rather than revokes grants. Clearance automatically restores
+still-active, non-revoked grants, never reactivates a grant revoked during the
+investigation, and notifies administrators of organizations whose access
+resumes.
+Specifically authorized Phaeno investigators may view or download quarantined
+contents after recording a purpose or reason. Every investigation access is
+audited. Customer, Prospect, Partner, and ordinary Phaeno access remains blocked.
+Supplemental data files or records cannot be added. Curators may add descriptive
+presentation metadata that does not alter the sample-data snapshot.
+Every published package includes a portal-visible summary with the sample
+description, biological and assay context, analysis summary, QC status, and
+provenance, plus a checksummed manifest and the complete downloadable source
+snapshot. Dataset-specific metadata may extend this minimum set.
+The initial portal shows the summary, scientific context, QC, provenance,
+manifest, and file metadata but does not preview scientific file contents
+in-browser. Generic or specialized scientific viewers are deferred.
+Curated package publication accepts only file kinds on a Phaeno-approved
+configurable list. Any unexpected, unsupported, or disallowed kind blocks
+publication. Development/test fixture approvals never flow into production.
+Publication is atomic. Any failed required metadata, file, checksum, scan,
+schema, or policy check leaves the entire package version in draft for
+correction and retry. No partial version becomes visible or grantable.
+
+Phaeno defines a complete package for each sample in a curated area. A grant
+provides access to all data in that curated package; per-file access is not
+configured separately for each Prospect. The grant is frozen to one immutable
+package version. New versions never roll out automatically; an authorized
+Phaeno user must explicitly upgrade a Prospect's grant.
+An explicit upgrade atomically makes the new version the organization's only
+portal-viewable and downloadable version. The superseded version and its
+grant/download history remain preserved internally, but organization users can
+no longer access its files.
+Curated contents remain read-only in the portal. Organizations may view and
+download them but cannot edit, customize, or create package versions.
+
+Revoking a curated package grant immediately stops portal viewing and
+downloading for every user in the organization. Previously downloaded copies
+cannot be recalled. Delivery must therefore remain revocable rather than depend
+on long-lived signed URLs.
+
+Organization deactivation suspends curated-data access without changing the
+underlying grants. Reactivation restores every still-active, non-revoked grant;
+revoked grants remain unavailable.
+Curated sample-package grants do not expire automatically and remain active
+until Phaeno explicitly revokes them.
+Removing a package from the generally eligible catalog prevents new assignments
+but leaves all existing organization grants unchanged.
+At removal time, the authorized Phaeno user is offered a separate option to
+revoke the package for all Customer, Prospect, and Partner organizations. That
+choice shows the affected scope, requires confirmation, and blocks portal access
+immediately.
+
+A curated package is optional during Prospect creation. If none is selected,
+the Phaeno user receives a non-blocking warning and explicitly continues. Users
+may still be invited and see a clear no-data-assigned state until Phaeno grants
+a package.
+Prospect organization creation commits independently from optional package
+grants. A failed grant leaves a valid organization with a visible idempotently
+retryable failure and no access to that package; it never rolls back or
+deactivates the organization or prevents invitations.
+
+Curated sample packages are not permanently deleted through the normal
+configuration interface. Retirement is distinct from catalog removal and grant
+revocation. Retirement permanently prevents new grants while preserving all
+existing grants, files, and access.
+Retirement cannot be reversed; future availability requires a new package or
+version.
+Every published package version and its files are retained indefinitely,
+including superseded and retired versions. Normal retention cleanup cannot
+delete them. A future exceptional purge process is the only planned deletion
+path; unpublished-draft cleanup remains a separate later decision.
+
+Active organization administrators are notified when Phaeno grants, upgrades,
+or revokes a curated package, and the event appears in portal activity. Ordinary
+members are not emailed. Notification delivery does not control whether the
+access change commits.
+
+Organization administrators can view per-user curated package download history
+for their own organization. Authorized Phaeno users can review history across
+organizations. Audit records identify the user, package/version, and timestamp
+without storing package contents.
+
+The portal's standard terms govern curated sample viewing and downloading. The
+initial workflow has no separate package-specific click-through agreement.
+
+All active organization users can access Phaeno-owned curated Prospect packages
+granted to their organization, including after conversion. Customer- or
+Partner-owned operational data follows Customer/Partner access rules instead.
+Authorization is based on data ownership/classification rather than changing
+the access policy of preserved Prospect packages at conversion.
+Customer and Partner organization administrators manage access to their own
+operational data. Authorized Phaeno administrators may assist, and every access
+change is audited.
+
+## 2026-07-14: Customer and Partner service workflows are distinct
+
+Status: confirmed by the Product Owner; implementation is still planned.
+
+Customers place lab service orders involving physical sample submission,
+accessioning, laboratory analysis, data processing, and portal delivery of
+resulting data. Customers track their samples through the portal. Partners place
+reagent orders and submit data for Phaeno assembly, then retrieve completed
+assembled data/results for availability to their own customers. These workflows remain
+separate from seed-data provisioning.
+
 ## Open decisions
 
-- Final partner-versus-distributor terminology and its relationship to `OrganizationKind`.
+- Partner workflow and customer assignments.
+- Any exceptional curated-package purge process.
 - File storage provider and lifecycle details.
 - Order ownership, fulfillment, and billing semantics.
 - Production hosting and deployment workflow.
