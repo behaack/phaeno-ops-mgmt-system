@@ -73,6 +73,11 @@ Do not execute this test plan unless explicitly requested.
 
 ## Requested Execution Log
 
+- 2026-07-14: system-documentation catch-up verification ran `pnpm run
+  typecheck`, focused ESLint for the documentation registry, and the registry
+  Vitest file; typecheck and lint passed and all 4 registry tests passed. Static
+  checks also confirmed six portable MDX guides per audience and valid relative
+  Markdown links.
 - 2026-07-14: documentation implementation verification ran `pnpm run lint`,
   `pnpm run typecheck`, and `pnpm run test`; lint and typecheck passed and all
   24 tests in 9 files passed. The Vite client and SSR production build also
