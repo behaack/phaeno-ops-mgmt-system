@@ -1,0 +1,49 @@
+# Statuses and recovery
+
+Treat operational work, QuickBooks synchronization, notifications, file scanning, and file release as separate lifecycles. Recover the failed lifecycle without rewriting accepted scope or creating duplicate external documents.
+
+## Triage order operations
+
+Use Customer lab, Partner reagent, and Partner assembly queues to find work by its current status. Prioritize:
+
+1. scan or safety failures that block intake or release;
+2. payment or release-state conflicts that affect a ready result;
+3. commercial records marked **Failed** or **Needs attention**;
+4. Customer- or Partner-visible holds and requested corrections;
+5. notifications that remain pending or failed.
+
+The overall order status is not sufficient evidence. Check sample or shipment progress, the current quote, commercial document, scan state, release state, cancellation request, and notification record separately.
+
+## Recover QuickBooks synchronization
+
+Integration records progress through **Pending**, **Processing**, **Succeeded**, **Failed**, or **Needs attention**.
+
+1. Open the authorized operational record and identify the failed operation.
+2. Confirm the portal record still represents the intended business action.
+3. Correct runtime connectivity, item mapping, customer mapping, or other configuration without changing the immutable accepted snapshot.
+4. Retry the existing durable integration command.
+5. Confirm a single QuickBooks document and the expected portal state before closing the item.
+
+Do not create a replacement order or manually duplicate an estimate or invoice as a retry strategy. Idempotency protects the normal retry path; bypassing it can create conflicting commercial records.
+
+## Recover files and releases
+
+Files progress through **Pending**, **Scanning**, **Clean**, **Rejected**, **Failed**, or **Unavailable** scan states. Only clean files can continue to a valid release state.
+
+- Investigate a rejected scan as a safety event; do not mark it clean manually.
+- Retry a failed or unavailable scan only after the scanner or storage dependency is healthy.
+- Keep output **Internal** while review is incomplete.
+- Use **Ready** when operational review is complete, **Payment hold** when commercial release is blocked, and **Released** only when every applicable gate passes.
+- Use **Withdrawn** when a previously available file must no longer be delivered; preserve the record and audit history.
+
+Credit approval permits Net 30 release for the applicable Customer lab or Partner assembly workflow. Without credit, QuickBooks payment confirmation is required. Do not use an order-status change to bypass this rule.
+
+## Recover notifications
+
+Notification records use **Pending**, **Sending**, **Sent**, and **Failed**. Correct the delivery configuration or address, then retry the existing durable message. Confirm the final delivery state and avoid sending a separate untracked message as though it were the portal notification.
+
+## Respect terminal and superseded states
+
+Do not retry business actions that are rejected, declined, cancelled, withdrawn, or based on an expired or superseded quote. Start the documented replacement workflow when new scope, a new quote, or a corrected input revision is required.
+
+For escalation, record the portal identifiers, lifecycle and visible status, safe error category, timestamps, retry count, and whether the external dependency is healthy. Keep credentials, webhook secrets, access tokens, Customer-confidential data, protected health information, and raw scientific files out of tickets and browser-bundled documentation.

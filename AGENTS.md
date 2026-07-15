@@ -34,6 +34,7 @@ Keep the owner focused on scientific meaning, sequencing and laboratory workflow
 
 - Read `ai/README.md` for the task-to-context map.
 - Read `docs/ui-ux-principles.md` before adding or changing a user-facing workflow, list, record workspace, form, modal, control, feedback pattern, responsive behavior, or accessibility behavior.
+- Read `docs/user-documentation.md` before changing user-visible behavior or the in-portal help system.
 - Read the relevant file in `docs/plans/` before changing an area that already has a plan.
 - Prefer current code and tests over older prose when they disagree, and record the disagreement instead of silently choosing a new direction.
 
@@ -74,6 +75,16 @@ Keep the owner focused on scientific meaning, sequencing and laboratory workflow
 - Keep `docs/plans/BACKEND-TEST-PLAN.md`, `docs/plans/FRONTEND-TEST-PLAN.md`, and `docs/plans/E2E-TEST-PLAN.md` current when tests are added, changed, or intentionally deferred.
 - Do not treat proposed Partner/Distributor, file-management, order, or provisioning models as implemented behavior.
 - Do not run tests or full test plans unless requested; batch verification at a logical checkpoint.
+
+## User documentation
+
+- Treat user documentation as part of the feature. When user-visible behavior changes, review and update the affected guide in the same change.
+- Keep distinct guide sets for Customer, Partner, and Phaeno users. Do not merge audience-specific permissions, commercial terms, or operational instructions into generic prose.
+- Store localized Customer and Partner help in `frontend/src/content/docs/{locale}/{audience}` and US-English Phaeno help in `frontend/src/content/docs/phaeno`. Keep locale, audience, slug, title, summary, section, and review date in the documentation registry. Customer and Partner guides follow the portal internationalization policy; Phaeno-only guides may remain US English.
+- Keep MDX portable: use Markdown prose in content files and put routing, metadata, styling, components, and application logic in TypeScript. Do not add arbitrary imports, API calls, secrets, credentials, customer-confidential details, or internal investigation notes to MDX.
+- Treat filtering of browser-bundled guides as audience-specific navigation, not an authorization or confidentiality boundary. Keep all static help safe to distribute; confidential procedures require backend-authorized delivery.
+- Document current implemented behavior only. Keep proposed behavior in the owning plan until it ships.
+- When documentation navigation, audience access, or rendering changes, update the relevant frontend and E2E tests and their living test plans.
 
 ## Verification
 

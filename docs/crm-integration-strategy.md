@@ -1,14 +1,28 @@
 # CRM Integration Strategy
 
+## Status
+
+This document is an unapproved reference for evaluating a possible future CRM
+boundary. Phaeno Portal has no CRM integration today, no CRM product has been
+selected, and HubSpot is not an approved dependency or implementation target.
+QuickBooks Online is the only implemented external business system.
+
+Nothing below describes current Portal behavior or authorizes implementation.
+Before any CRM work begins, product discovery must establish the relationship
+workflow, minimum data exchange, ownership rules, cost, privacy constraints,
+and measurable need. An approved plan must replace or explicitly adopt the
+relevant parts of this reference.
+
 ## Purpose
 
-The Phaeno Portal will not implement its own Customer Relationship Management
-(CRM) system. Instead, it will integrate with a best-of-breed third-party CRM,
-with HubSpot as the initial target implementation.
+If Phaeno later needs a Customer Relationship Management (CRM) system, prefer
+evaluating a specialized product over recreating generic sales and marketing
+capabilities in the Portal. HubSpot is one candidate used to make this reference
+concrete, not a selected provider.
 
-This approach keeps the Portal team focused on Phaeno's unique scientific and
-operational workflows while relying on mature CRM capabilities for sales,
-business development, investor relations, and customer communications.
+Any future approach should keep Portal development focused on Phaeno's unique
+scientific and operational workflows and leave current Portal workflows
+independent of a CRM.
 
 ## Guiding Principles
 
@@ -33,10 +47,14 @@ business development, investor relations, and customer communications.
      scientific and operational domains.
 4. **Share only the minimum necessary data.**
    - Send relationship records and operational summaries to the CRM.
-   - Keep scientific, laboratory, and regulated data in the Portal and future
-     LIMS.
+   - Keep scientific, laboratory, and regulated data in the Portal and approved
+     scientific storage.
 
-## System Responsibilities
+## Hypothetical Future Responsibilities
+
+The responsibilities in this section are a design hypothesis for a future
+discovery process. Some named Portal concepts are not implemented and must not
+be inferred as current product capabilities.
 
 ### Phaeno Portal (Operational System of Record)
 
@@ -57,10 +75,10 @@ The Portal owns:
 The Portal remains the authoritative platform for Phaeno's scientific and
 operational workflows.
 
-### CRM (Relationship System)
+### Possible CRM (Relationship System)
 
-The initial target is **HubSpot CRM**. Possible future alternatives include
-Odoo CRM, Salesforce, and Microsoft Dynamics.
+Candidate products could include HubSpot, Odoo CRM, Salesforce, or Microsoft
+Dynamics. No candidate is currently preferred or selected.
 
 The CRM owns:
 
@@ -78,7 +96,7 @@ The CRM owns:
 ## Integration Architecture
 
 ```text
-                    HubSpot CRM
+                    Candidate CRM
                   (Relationships)
                          ▲
                          │ REST API / Webhooks
@@ -89,7 +107,7 @@ The CRM owns:
                   Phaeno Portal
              (Scientific Operations)
                          │
-                    Future LIMS
+             Possible future LIMS
 ```
 
 The Portal orchestrates exchanges with the CRM through an integration boundary.
@@ -180,8 +198,8 @@ the CRM record is missing, merged, or replaced.
 
 ## Scientific Data Excluded from the CRM
 
-The following data must remain exclusively within the Portal, approved
-scientific storage, and the future LIMS:
+The following data must remain exclusively within the Portal and approved
+scientific storage unless a separately approved future boundary says otherwise:
 
 - Sequencing data
 - FASTQ files
@@ -216,14 +234,15 @@ commercial context.
 
 ## Phased Implementation Plan
 
-### Phase 1: Foundational HubSpot Integration
+### Phase 1: Foundational Provider Integration
 
-- Configure HubSpot authentication and secrets outside source control.
-- Implement the CRM provider boundary and HubSpot adapter.
-- Synchronize Portal organizations to HubSpot companies.
+- Select a provider only after an approved product and data-ownership decision.
+- Configure provider authentication and secrets outside source control.
+- Implement the CRM provider boundary and selected-provider adapter.
+- Synchronize approved Portal organization facts to provider companies.
 - Synchronize approved primary-contact fields.
 - Store the CRM provider and external company identifier.
-- Add an internal deep link to the HubSpot company record.
+- Add an internal deep link to the provider company record.
 - Add idempotency, retry, audit, and reconciliation support.
 
 ### Phase 2: Commercial Context and Customer Summaries
@@ -285,18 +304,18 @@ public interface ICrmProvider
 }
 ```
 
-The application contract should use provider-neutral models. The HubSpot adapter
-is responsible for translating those models to HubSpot objects, properties,
+The application contract should use provider-neutral models. A selected-provider
+adapter would translate those models to provider objects, properties,
 associations, and API behavior.
 
 ## Architectural Rule
 
 > **The Phaeno Portal owns scientific and operational workflows. Generic
-> business capabilities—including CRM, accounting, marketing, and payroll—are
-> integrated from specialized third-party systems rather than reimplemented,
-> unless they provide a clear competitive advantage. This keeps engineering
-> focused on Phaeno's unique domain and minimizes long-term maintenance.**
+> business capabilities may be integrated from specialized third-party systems
+> only after the product need and ownership boundary are approved. QuickBooks
+> Online is the only such system in the current architecture.**
 
-The Portal must not become a CRM. Its responsibility is to manage the scientific
-and operational lifecycle of customer work. Commercial relationship management
-remains the responsibility of a dedicated CRM platform.
+The Portal must not become a CRM by accident. Its responsibility is to manage
+the implemented scientific and operational lifecycle of Customer and Partner
+work. Commercial relationship management is not currently represented by an
+external CRM platform.

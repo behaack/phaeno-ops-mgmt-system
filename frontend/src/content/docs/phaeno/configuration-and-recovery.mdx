@@ -1,0 +1,31 @@
+# Configuration and integration recovery
+
+Order configuration controls the active scientific, Partner, commercial, release, and integration rules used by new work. Changes must be audited and should not rewrite immutable order snapshots.
+
+## Maintain commercial configuration
+
+Synchronize active QuickBooks Online billable items into the portal and link them to portal analyses, Partner reagent offerings, or assembly profiles. QuickBooks item names and base prices are read-only projections.
+
+Configure Partner reagent availability, negotiated price, currency, effective period, quantity rules, and shipping restrictions for each eligible Partner. Overlapping active price periods for the same Partner and item are not allowed.
+
+Configure Customer laboratory and Partner assembly credit separately. Approval means Net 30 release under the applicable workflow; absence of approval means QuickBooks payment confirmation is required before download.
+
+Set the default quote-validity period in configuration. The initial default is 30 days, and an issued quote snapshots its own expiration.
+
+## Maintain scientific configuration
+
+Analysis definitions describe required Customer sample fields, instructions, expected outputs, and linked quoteable items. Assembly profiles describe Partner metadata, allowed files, validation, expected output contract, availability, and linked quoteable items.
+
+Deactivate configuration that must not be used for new work. Existing orders keep their accepted definitions, profile versions, prices, currency, and commercial snapshots.
+
+## Monitor QuickBooks Online
+
+QuickBooks is authoritative for estimates, invoices, adjustments, tax, freight, discounts, balances, paid status, and hosted payment links. The portal should never be used to edit those facts independently.
+
+When a synchronization is pending or failed, inspect the authorized integration record, correct the configuration or connectivity problem, and retry the existing durable command. Idempotency prevents duplicate portal work and QuickBooks documents.
+
+Keep OAuth credentials and webhook secrets in approved runtime configuration. Never place them in source, documentation, logs, notes, or support messages.
+
+## Activate production dependencies
+
+Before production use, confirm approved storage and malware scanning, QuickBooks credentials and webhook validation, notification delivery, active scientific profiles, Partner offerings and prices, credit decisions, quote validity, and operational ownership. A successful application build alone does not prove these external production dependencies are ready.

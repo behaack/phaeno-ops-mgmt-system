@@ -3,6 +3,7 @@ import { readFileSync } from 'node:fs'
 import { fileURLToPath } from 'node:url'
 
 import { tanstackStart } from '@tanstack/react-start/plugin/vite'
+import mdx from '@mdx-js/rollup'
 
 import viteReact from '@vitejs/plugin-react'
 import tailwindcss from '@tailwindcss/vite'
@@ -31,7 +32,12 @@ const config = defineConfig({
       ),
     },
   },
-  plugins: [tailwindcss(), tanstackStart(), viteReact()],
+  plugins: [
+    { enforce: 'pre', ...mdx() },
+    tailwindcss(),
+    tanstackStart(),
+    viteReact({ include: /\.(js|jsx|md|mdx|ts|tsx)$/ }),
+  ],
   test: {
     environment: 'jsdom',
     globals: true,

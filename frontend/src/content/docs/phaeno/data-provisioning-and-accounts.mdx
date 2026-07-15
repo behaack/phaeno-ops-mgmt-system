@@ -1,0 +1,31 @@
+# Data provisioning and accounts
+
+Phaeno controls organization access and the lifecycle of Phaeno-owned source samples and curated package versions. Customer and Partner operational data is a separate access class and is never automatically reused for curated packages.
+
+## Manage organizations and memberships
+
+Create invitations by email for the intended organization and member or administrator access. Each invite creates one organization membership after the authenticated email accepts it. Do not assign a normal membership directly.
+
+Prospect conversion preserves the organization, users, memberships, grants, and audit history while changing the organization to Customer or Partner. Prospect memberships never gain ordering capabilities before conversion.
+
+Deactivate memberships and users instead of deleting them. Organization administrators manage their own memberships; Phaeno administrators control global user disablement and organization status.
+
+## Prepare source samples
+
+Register Phaeno-owned source material, required metadata, evidence, and managed files. Uploads must satisfy validation and clean-scan requirements before a source revision becomes ready. Ready revisions are immutable; corrections create a new revision.
+
+## Publish curated packages
+
+Build a curated package from a ready source revision, add portal-facing context, verify quality and policy checks, and publish an immutable version. Publication is atomic: failed checks leave an editable draft and expose no partial version.
+
+## Grant exact versions
+
+Grant an eligible exact package version to a specific Prospect, Customer, or Partner organization. Organization kind never grants access automatically. Publishing a new version does not upgrade existing grants; perform an explicit exact-version upgrade.
+
+Revocation immediately blocks future access but cannot recall downloads. Retirement prevents new grants while preserving existing access. Removing a version from the Prospect catalog does not revoke existing grants unless the operator explicitly chooses that separate action.
+
+## Handle governance events
+
+Quarantine immediately overrides all grants for the affected source and blocks tenant viewing and downloading while preserving evidence and history. Provide Customer-safe instructions for affected organizations; keep internal evidence restricted.
+
+If a version is confirmed unsafe, track the required administrator attestations and reminders. Phaeno may record an attestation on an organization’s behalf, but the record must identify that Phaeno entered it. Clearing quarantine restores access only for grants that remain active and otherwise eligible.

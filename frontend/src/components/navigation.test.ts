@@ -94,6 +94,34 @@ describe('order navigation permissions', () => {
   })
 })
 
+describe('documentation navigation permissions', () => {
+  it.each<OrganizationKind>(['Customer', 'Partner', 'Phaeno'])(
+    'shows Documentation for an active %s organization context',
+    (kind) => {
+      const session = createSession(kind, {})
+
+      const labels = getVisibleMainMenuItems(session, {
+        selectedOrganizationKind: kind,
+        selectedMembership:
+          kind === 'Phaeno' ? session.memberships[0] : session.memberships[1],
+      }).map((item) => item.label)
+
+      expect(labels).toContain('Documentation')
+    },
+  )
+
+  it('does not show Documentation in a Prospect organization context', () => {
+    const session = createSession('Prospect', {})
+
+    const labels = getVisibleMainMenuItems(session, {
+      selectedOrganizationKind: 'Prospect',
+      selectedMembership: session.memberships[1],
+    }).map((item) => item.label)
+
+    expect(labels).not.toContain('Documentation')
+  })
+})
+
 function createSession(
   selectedKind: OrganizationKind,
   capabilityOverrides: Partial<SessionResponse['capabilities']>,

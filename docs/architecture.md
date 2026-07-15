@@ -10,6 +10,8 @@ Browser
   -> Clerk authentication and bearer token
   -> ASP.NET Core API (`backend/app`)
   -> PostgreSQL through EF Core
+  -> local managed-file storage in the current development implementation
+  -> QuickBooks Online and Postmark through configured adapters
 ```
 
 The frontend and API are separate build units. The root `package.json` delegates common frontend commands; the backend solution lives at `backend/PhaenoPortal.slnx`.
@@ -22,6 +24,10 @@ The API targets .NET 10 and is organized by feature:
 - `Features/DataProvisioning`: Phaeno source samples, managed-file metadata,
   immutable curated versions, exact-version organization grants, provisioning
   runs, tenant access, and download audit.
+- `Features/OrderManagement`: Customer laboratory-service jobs and sample
+  results, Partner reagent orders and fulfillment, Partner data-assembly
+  requests and output releases, operational queues, configuration, QuickBooks
+  integration, notifications, and durable retry records.
 - `Features/Health`: health endpoint.
 - `Infrastructure/Api`: response envelope, metadata, error mapping, and response filter.
 - `Infrastructure/Persistence`: `AppDbContext`, mappings, save interceptors, and PostgreSQL configuration.
@@ -65,6 +71,27 @@ resets, transaction rollback, and isolated temporary managed storage. Curated
 manifests are stored as `jsonb`; publication therefore compares manifest JSON
 semantically and separately verifies the deterministic SHA-256 checksum.
 
+## Order management and commercial integration
+
+Phaeno Portal is the operational source of truth for Customer laboratory work,
+Partner reagent fulfillment, and Partner data assembly. There is no external
+ERP or LIMS in the implemented architecture. QuickBooks Online is the only
+commercial system and remains authoritative for billable items, estimates,
+invoices, adjustments, tax, freight, discounts, balances, payment status, and
+hosted payment links.
+
+Order aggregates retain immutable input, quote, price, profile, result/output,
+shipment, and commercial snapshots. Operational state, QuickBooks sync state,
+payment state, and file-release state remain separate. Durable integration and
+notification records are dispatched by hosted services and retried without
+recreating the local order or duplicating the intended external document.
+
+The current development implementation uses local operational file storage and
+an environment scanner abstraction. Real production storage, malware scanning,
+scientific analysis definitions, assembly profiles, Partner shipping rules,
+QuickBooks credentials/webhooks, and notification configuration remain explicit
+production-activation inputs rather than source-controlled defaults.
+
 ## Frontend
 
 The frontend uses TanStack file routing with responsibility-based folders:
@@ -78,8 +105,25 @@ The frontend uses TanStack file routing with responsibility-based folders:
 
 TanStack Query owns server state. Axios is the HTTP transport. React Hook Form
 and Zod own forms and validation. Implemented routes include the dashboard,
-organization/customer administration, Phaeno users, invitation acceptance,
-Phaeno data provisioning and source workspaces, and the tenant Data Library.
+organization administration, Phaeno users, invitation acceptance, Phaeno data
+provisioning and source workspaces, tenant Data Library, Customer lab services,
+Partner reagent ordering, Partner data assembly, Phaeno order operations and
+configuration, and the in-portal documentation system.
+
+Invitation acceptance and the scientific, provisioning, and order workflows use
+connected API clients. The current organization and user administration screens
+still use session-only mock data; they demonstrate the intended authorization
+and UI boundary but are not a durable administration client. The backend account
+APIs remain the source of truth until those screens are connected.
+
+User documentation is authored as portable MDX. Customer and Partner content is
+stored by locale, with `en-US` as the only current locale; Phaeno-only content
+may remain US English. The frontend registry owns audience, locale, slug,
+summary, section, order, and review metadata. The selected organization filters
+the offered guide set, while Phaeno users may view external guides for support.
+Because the current corpus is compiled into browser assets, it contains no
+confidential procedures. Future help search will use a backend index with
+authenticated audience and locale filtering.
 
 ## Configuration and deployment
 
@@ -91,11 +135,23 @@ Phaeno data provisioning and source workspaces, and the tenant Data Library.
   approved-file-kind map, synthetic-fixture policy, and scanner mode. Production
   defaults block synthetic content and configure no approved scientific kinds
   or trusted scanner.
-- Deployment is not yet documented as an established production path. Do not infer a target from the Phaeno Website or another repository.
+- Order management: `OrderManagement` storage root, file-size limit,
+  approved-file-kind map, and scanner mode.
+- Commercial integration: `QuickBooks` environment, company/realm, OAuth, API,
+  and webhook-verification settings. The HTTP adapter is used only when the
+  required company and OAuth settings are present; otherwise local development
+  uses the logging adapter.
+- Frontend authentication and API routing: `VITE_CLERK_PUBLISHABLE_KEY`,
+  `VITE_API_BASE_URL`, and the development-only `VITE_USE_MOCK_SESSION` switch.
+- Deployment is not yet an established production path. Current operational and
+  activation boundaries are recorded in `docs/operations-readiness.md`; do not
+  infer a target from the Phaeno Website or another repository.
 
 ## Authoritative references
 
 - `AGENTS.md`: canonical repository working rules.
 - `README.md`: setup, API envelope, and persistence overview.
 - `docs/plans/AUTH-USER-SYSTEM-PLAN.md`: account-system decisions and remaining work.
+- `docs/user-documentation.md`: help authoring, audience, locale, and search rules.
+- `docs/operations-readiness.md`: current runtime and production-activation boundary.
 - Current source and tests: final authority for implemented behavior.

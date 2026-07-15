@@ -24,11 +24,18 @@
 - Audited entities receive centralized create/update metadata and append-only `AuditEvent` records.
 - Password hashes, tokens, secrets, and unnecessary personal data must not appear in audit diffs.
 
-## Current versus planned vocabulary
+## Current implementation boundary
 
-The current code implements `Phaeno` and `Customer` organizations. Prospect,
-Partner, file management, order management, and organization data provisioning
-are plan-level concepts. `Distributor` is not a separate product term.
+The current code implements `Phaeno`, `Prospect`, `Customer`, and `Partner`
+organizations; invite-only multi-organization membership; Phaeno-owned curated
+data provisioning; Customer laboratory services; Partner reagent ordering;
+Partner data assembly; and Phaeno operational/configuration workspaces.
+`Distributor` is not a separate product term.
+
+The general shared-folder/file-management model, production storage and malware
+scanning, real production scientific definitions and profiles, production
+QuickBooks/Postmark configuration, CRM or LIMS integration, and an established
+production deployment path are not implemented production capabilities.
 
 Confirmed Prospect rules:
 
@@ -216,6 +223,51 @@ Confirmed Prospect rules:
   assembled data/results for availability to the Partner's customers.
 - Seed data is separate from lab service results and data assembly inputs or
   outputs.
+- Active Customer and Partner organization administrators create and submit or
+  place work, accept applicable quotes or commercial changes, request
+  cancellations, and manage their own organization memberships. Active
+  non-admin members have read, progress, and eligible released-file access.
+- Prospect memberships never grant ordering capabilities.
+- Customer laboratory work and Partner data assembly are priced per job through
+  immutable Phaeno-issued quotes. Partner reagents use active,
+  organization-specific negotiated pricing. A Partner never sees or uses
+  another Partner's offering or price.
+- Quote visibility and acceptance require a successfully synchronized
+  QuickBooks estimate. The default quote-validity period is 30 days and can be
+  changed in Phaeno configuration; each issued quote snapshots its expiration.
+- QuickBooks Online is the only implemented commercial system. There is no ERP
+  or LIMS. QuickBooks owns catalog base facts, estimates, invoices, adjustments,
+  tax, freight, discounts, balances, terms, paid status, and hosted payment
+  links. The portal owns operational workflow and immutable commercial links.
+- Customer laboratory credit and Partner assembly credit are separate audited
+  organization settings. Approved credit uses Net 30 release. Without approved
+  credit, completed result/output downloads remain blocked until QuickBooks
+  confirms payment.
+- Scientific completion and commercial release are separate. A ready file is
+  downloadable only after its scan, checksum, provenance/QC, membership,
+  commercial-sync, credit/payment, and release rules pass.
+- Customer laboratory result availability is sample-specific. A
+  credit-approved Customer may receive an eligible sample result while other
+  samples remain in progress; a non-credit Customer waits for the completed job
+  invoice to be paid before any job result is released.
+- Partner reagent placement requires an active Partner offering, valid quantity,
+  active negotiated price, selected active shipping address, and purchase-order
+  number. Placement snapshots those facts and revalidates them on the server.
+- Reagent substitutions and total-increasing post-placement changes require
+  explicit Partner-administrator approval. Partial shipments and backorders
+  preserve shipped and remaining quantities, shipment, tracking, lot, and
+  expiration history.
+- Partner data-assembly submission creates an immutable input revision under an
+  active Partner-allowed profile. Corrections create a new revision. Approved
+  outputs are immutable releases tied to the accepted input/profile and are
+  downloaded by the Partner for its own downstream delivery.
+- Drafts may be discarded or withdrawn within their allowed pre-acceptance
+  boundary. After acceptance, cancellation is a request decided by Phaeno;
+  completed work, shipped quantities, prior revisions/releases, and financial
+  history remain preserved.
+- The initial order workflows are not a protected-health-information intake
+  workflow. Direct identifiers must not be placed in fields, notes, filenames,
+  uploads, logs, notifications, audit diffs, or QuickBooks memo fields.
 
 Continued workflow, activation, and ownership requirements are recorded in:
 

@@ -2,7 +2,21 @@
 
 ## Overview
 
-Phaeno-Portal is a comprehensive web application project that combines a robust .NET backend with a modern, responsive React frontend. The project aims to provide a portal for phaeno-related functionalities, leveraging the latest technologies for optimal performance and developer experience.
+Phaeno Portal is a multi-tenant application for invite-only organization access,
+Phaeno-owned curated-data provisioning, Customer laboratory services, Partner
+reagent orders, Partner data assembly, Phaeno operational/configuration work,
+and QuickBooks Online commercial synchronization. The repository contains a
+.NET API and a responsive React/TanStack frontend.
+
+## Documentation map
+
+- `docs/architecture.md`: implemented system shape and ownership boundaries.
+- `docs/business-rules.md`: durable product and authorization rules.
+- `docs/decisions.md`: settled technical and product decisions.
+- `docs/glossary.md`: repository domain language.
+- `docs/user-documentation.md`: role-specific MDX help authoring policy.
+- `docs/operations-readiness.md`: current runtime and production-activation boundary.
+- `docs/plans/`: implementation state and living backend, frontend, and E2E test plans.
 
 ## Architecture
 
@@ -35,6 +49,7 @@ backend/app/
 
 - `Common/`: Shared cross-feature primitives such as domain exceptions.
 - `Features/`: Feature folders that own their DTOs, endpoint mapping, workflows, and later feature-specific services.
+- Implemented feature areas are Accounts, Data Provisioning, Health, and Order Management.
 - `Infrastructure/Api/`: API response envelopes, metadata factories, error mapping, and response filters.
 - `Infrastructure/Persistence/`: EF Core `AppDbContext`, PostgreSQL configuration, design-time migration factory, and migrations.
 - `Middleware/`: HTTP middleware such as API exception handling.
@@ -110,6 +125,7 @@ The frontend is organized around thin routes, reusable shared components, featur
 frontend/src/
 ├── api/
 ├── components/
+├── content/docs/
 ├── features/
 ├── integrations/
 ├── lib/
@@ -121,6 +137,7 @@ frontend/src/
 - `routes/`: TanStack file routes only; route files should stay thin and delegate page UI to features.
 - `api/`: API clients and HTTP integration code.
 - `components/`: Shared layout, navigation, primitive, and reusable UI components.
+- `content/docs/`: Portable MDX help content organized by external locale and audience, plus US-English Phaeno guides.
 - `features/`: Feature-specific UI, schema, state, and workflow components.
 - `integrations/`: Framework and library integration setup.
 - `lib/`: Small shared utilities that are not feature-specific.
@@ -147,7 +164,11 @@ frontend/src/
 
 ## Security Model
 
-The application implements a multi-tenant architecture with role-based access control and invite-only user onboarding.
+The application implements tenant-scoped authorization with invite-only
+onboarding. Clerk authenticates the person and issues the JWT; the API resolves
+that external subject to its own active `User`, memberships, selected
+organization, and capabilities. Frontend visibility is not an authorization
+boundary.
 
 - **User Types**:
   - Phaeno: Internal users with administrative privileges
@@ -155,17 +176,16 @@ The application implements a multi-tenant architecture with role-based access co
   - Customers: End users that place lab service orders, submit samples, track laboratory progress, and access resulting data
   - Partners: External organizations that order reagents or submit data to Phaeno for assembly and download the assembled data/results for their customers
 - **Invite Model**:
-  - Invitations are sent via email and include a secure token
-  - Invitees click the invitation link and are taken to a registration page
-  - The registration page collects important information such as password
-  - Invitation tokens may expire after a configurable number of days
-  - Organization Admins can invite new users into their own organization
-  - Phaeno users with the proper role can invite users into an organization
-  - Only Phaeno users can create new organizations
-  - Phaeno can assign a customer organization to a partner
-  - A partner assigned a customer organization may invite users for those customer organizations
-- **Authentication**: Undecided between cookie-based and JWT token authentication
-- **Two-Factor Authentication (2FA)**: Support for authenticator apps and email-based 2FA
+  - Invitations are organization-scoped, email-bound, time-limited, and carry a single-use raw token only in the invitation link.
+  - The invite page captures and scrubs the token, requires Clerk authentication, then verifies the authenticated email before showing organization or role details.
+  - Acceptance creates or reactivates one internal organization membership; it does not collect or store a portal password.
+  - The authorization model permits eligible external organization administrators to manage invitations and memberships only for their selected organization, while authorized Phaeno users manage organizations and platform access. The current organization/user administration screens are mock-backed previews and are not yet connected to those durable API workflows.
+  - Users and organizations are deactivated rather than normally deleted. Reactivating an inactive membership requires a fresh invitation.
+- **Authentication**: Clerk-issued bearer JWTs validated by the ASP.NET Core API.
+- **Multi-factor authentication**: Owned by the configured Clerk authentication policy; the portal does not implement or claim a separate 2FA system.
+- **Tenant enforcement**: Every tenant read, write, file download, and commercial action is scoped by the authenticated internal user and active selected membership.
+- **Commercial boundary**: QuickBooks Online is the only implemented external commercial system. There is no ERP or LIMS integration in the running application.
+- **Help boundary**: Customer and Partner help is locale-ready and audience-filtered in the UI. Because current MDX is browser-bundled, it contains no confidential procedures; future search must enforce audience and locale in the backend.
 - **Testing**: Vitest for unit tests, Playwright for end-to-end (e2e) tests
 - **Styling**: Token-based CSS system with light/dark mode support for easy reskinning
 
@@ -179,7 +199,7 @@ The application implements a multi-tenant architecture with role-based access co
 - **Styling**: CSS with design tokens, light/dark mode support
 - **Configuration**: Backend settings stored in `appsettings.json` and environment-specific overrides, not hard coded in code
 - **Build Tools**: Vite, TanStack Start, pnpm
-- **Deployment**: (To be planned)
+- **Deployment**: Runtime requirements and production activation gates are recorded in `docs/operations-readiness.md`; a platform-specific production deployment runbook is not yet approved.
 
 ## Project Structure
 

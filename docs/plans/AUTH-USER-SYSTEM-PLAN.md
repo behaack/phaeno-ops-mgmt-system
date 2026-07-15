@@ -4,6 +4,17 @@ Keep this file updated as authentication, authorization, user lifecycle, and inv
 
 Do not execute this plan unless explicitly requested.
 
+## Status
+
+- The backend account, session, organization, invitation, membership, user
+  lifecycle, audit, and Clerk-linking workflows are implemented.
+- The frontend session shell and invitation acceptance/decline route are
+  connected to the API.
+- The current organization and user administration screens remain mock-backed
+  session previews. Durable create/list/update, invitation resend/revoke,
+  membership role/deactivation, organization conversion, and global-user
+  lifecycle operations still require connected frontend work and coverage.
+
 ## Core Decisions
 
 - Use Clerk in a limited role for authentication only:
@@ -41,9 +52,9 @@ Do not execute this plan unless explicitly requested.
 - Phaeno/platform admin access is based on an active admin membership in an active organization with kind `Phaeno`.
 - Phaeno admins manage external organizations through platform admin screens,
   not by freely switching into external organization context.
-- Prospect and customer organization admins can see only users and memberships
-  in their own organization. Partner behavior follows the eventual Partner
-  workflow, with the same tenant-isolation baseline.
+- Prospect, Customer, and Partner organization administrators can see only users
+  and memberships in their own selected organization, with the same
+  tenant-isolation baseline.
 
 ## Identity Fields
 

@@ -28,15 +28,14 @@ Users and organizations are deactivated for normal product workflows. Hard delet
 
 ## 2026-07-14: Partner is the external-organization product term
 
-Status: confirmed by the Product Owner; implementation is still planned.
+Status: confirmed by the Product Owner and implemented.
 
-Use `Partner`, not `Distributor`, in product language. The partner workflow and
-its eventual persistence and authorization model remain to be defined in the
-data-provisioning plan.
+Use `Partner`, not `Distributor`, in product language. Partner persistence,
+membership authorization, reagent ordering, and data assembly are implemented.
 
 ## 2026-07-14: Prospect is a portal tenant phase
 
-Status: confirmed by the Product Owner; implementation is still planned.
+Status: confirmed by the Product Owner and implemented.
 
 A Prospect organization can have users, manage its own users, and access seed
 data assigned by Phaeno. Prospects cannot order. Conversion to Customer or
@@ -228,7 +227,7 @@ change is audited.
 
 ## 2026-07-14: Customer and Partner service workflows are distinct
 
-Status: confirmed by the Product Owner; implementation is still planned.
+Status: confirmed by the Product Owner and implemented for the approved initial release.
 
 Customers place lab service orders involving physical sample submission,
 accessioning, laboratory analysis, data processing, and portal delivery of
@@ -237,12 +236,45 @@ reagent orders and submit data for Phaeno assembly, then retrieve completed
 assembled data/results for availability to their own customers. These workflows remain
 separate from seed-data provisioning.
 
+## 2026-07-14: QuickBooks Online is the only commercial integration
+
+Status: confirmed by the Product Owner and implemented behind an adapter.
+
+Phaeno Portal owns laboratory, fulfillment, assembly, release, and operational
+workflow. QuickBooks Online owns billable items, estimates, invoices,
+adjustments, tax, freight, discounts, balances, terms, paid status, and hosted
+payment links. There is no ERP or LIMS in the implemented system.
+
+## 2026-07-14: Pricing and release depend on workflow and credit
+
+Status: confirmed by the Product Owner and implemented.
+
+Customer laboratory and Partner assembly work use immutable per-job quotes.
+Partner reagents use organization-specific negotiated prices. Customer lab
+credit and Partner assembly credit are separate audited settings: approved
+credit uses Net 30 release, while absence of approved credit blocks downloads
+until QuickBooks confirms payment. The configurable quote-validity default is
+30 days.
+
+## 2026-07-14: User help stays in the authenticated portal
+
+Status: implemented.
+
+The current help system uses portable MDX inside the TanStack portal rather than
+a separate Astro application. Customer and Partner content is locale-aware with
+`en-US` initially; Phaeno-only help may remain US English. Search is deferred to
+a backend index that must filter results by authenticated audience and locale.
+Browser-bundled help contains no confidential procedures.
+
 ## Open decisions
 
-- Partner workflow and customer assignments.
 - Any exceptional curated-package purge process.
-- File storage provider and lifecycle details.
-- Order ownership, fulfillment, and billing semantics.
-- Production hosting and deployment workflow.
+- Production storage, malware scanning, scientific file policies, analysis and
+  assembly profiles, Partner shipping restrictions, QuickBooks/Postmark
+  credentials, and sandbox validation.
+- Production hosting, deployment, monitoring, backup/restore, and rollback
+  workflow.
+- Backend help-search implementation, ranking, locale fallback, and reindexing.
+- Future CRM or LIMS selection only if an approved workflow later requires one.
 
 Open items belong in the relevant `docs/plans/` document until resolved.

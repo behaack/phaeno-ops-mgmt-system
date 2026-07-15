@@ -17,9 +17,18 @@ Do not execute this test plan unless explicitly requested.
   reagent ordering and data assembly.
 - [x] `frontend/e2e/order-management.spec.ts` - Phaeno mock context exposes
   operational queues and order configuration.
+- [x] `frontend/e2e/documentation.spec.ts` - Customer and Partner contexts are
+  offered their own guide set and cross-audience routes are denied, Phaeno can
+  switch among all three audience guides, MDX content renders on guide routes,
+  and Prospect direct access is denied.
 
 ## Deferred Tests
 
+- [ ] Database-backed organization and user administration journey - verify
+  Phaeno and external administrator scope, invitation delivery and acceptance,
+  resend/revoke, role and membership lifecycle, Prospect conversion, global
+  disable/reactivation, refresh persistence, and cross-tenant denial after the
+  current mock-backed administration screens are replaced.
 - [ ] Automated WCAG AA accessibility check on the dashboard.
 - [ ] Mobile primary navigation moves into the user menu.
 - [ ] Source-sample draft discard - verify destructive confirmation, required
@@ -41,6 +50,12 @@ Do not execute this test plan unless explicitly requested.
 
 ## Requested Execution Log
 
+- 2026-07-14: documentation verification ran `PLAYWRIGHT_PORT=3100 pnpm run
+  test:e2e -- documentation.spec.ts`; all 8 desktop/mobile Chromium scenarios
+  passed. A separate Playwright gut-check loaded the Customer help landing page
+  with meaningful content, 11 links, no Vite error overlay, and no console or
+  page errors. The pre-existing `AcceptInvitePage` route-export warning remains
+  unchanged.
 - 2026-07-14: order-management implementation verification ran
   `PLAYWRIGHT_PORT=3100 pnpm run test:e2e`; all 12 desktop/mobile Chromium tests
   passed. A separate Playwright gut-check loaded `/order-operations` with HTTP

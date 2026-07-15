@@ -1,0 +1,44 @@
+# Organization and user administration
+
+Phaeno administrators manage organizations and global access while Customer and Partner administrators manage membership only within their own organization. Access is invitation-based and every administrative change is audited.
+
+> **Current interface boundary:** the organization and user administration screens are session-only mock previews. They do not persist organization, invitation, membership, role, conversion, or lifecycle changes. Invitation acceptance and decline are connected, and the backend account workflows exist, but the normal durable administration client is not complete. Do not represent a preview-screen change as completed work.
+
+## Create and classify organizations
+
+Create the organization with the current business relationship:
+
+- **Prospect** for an external organization that may receive explicitly granted curated data but cannot order work.
+- **Customer** for organizations that request laboratory services.
+- **Partner** for organizations that order negotiated reagents or request data assembly.
+- **Phaeno** for internal platform operations.
+
+Do not use organization kind as a shortcut for data access. Curated package access always requires an explicit exact-version grant.
+
+## Invite administrators and members
+
+When the connected administration client is released, select the organization, invite the person’s exact sign-in email, and assign **Administrator** only when the person must authorize commercial work or manage membership; otherwise assign **Member**. Ask the recipient to sign in with the invited email and accept the invitation.
+
+Until then, follow the authorized Phaeno account-support process outside the mock screen and confirm the durable record before telling the user that an invitation or access change is complete.
+
+Do not create a normal membership directly. Invitation acceptance provides the user-facing consent point and the audit link between invitation, user, and membership.
+
+Resending a pending invitation rotates its private link and is subject to a cooldown. Revoke an invitation that should not be accepted. Never copy invitation tokens into tickets, documentation, or logs.
+
+## Convert a Prospect
+
+Convert a Prospect to Customer or Partner only after the business relationship is approved. Conversion preserves the organization identifier, users, memberships, grants, and audit history. It does not create an order, assign broad data access, or configure prices automatically.
+
+After conversion, complete the applicable operational setup: analysis availability and Customer credit for a Customer, or offerings, negotiated reagent pricing, assembly profiles, and Partner assembly credit for a Partner.
+
+## Deactivate and restore access
+
+Deactivate a membership to remove one organization relationship. Deactivate the user globally only when all portal access should stop. Deactivate an organization when none of its memberships should be usable.
+
+A deactivated membership is restored through a fresh invitation and acceptance. A globally disabled user must first be reactivated by an authorized Phaeno administrator. Preserve historical records; do not delete users, memberships, or organizations to resolve access problems.
+
+## Triage access safely
+
+Confirm the person’s email, session state, selected organization, active membership, role, and organization status. Use record identifiers and audit events to trace changes. Do not ask for passwords, sign-in codes, invitation tokens, browser storage, or another tenant’s records.
+
+If two administrators update the same record, the portal can reject the stale action. Reload the latest version, review the intervening change, and then make a deliberate new update rather than overwriting it.

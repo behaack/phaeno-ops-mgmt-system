@@ -309,13 +309,15 @@ entity, status model, or form merely because each begins with a submission.
 - Mutable records use optimistic concurrency and centralized auditing.
 - The current customer administration UI is mock-backed and must not be treated
   as a production order data source.
-- The repository has no order-management domain, QuickBooks integration, or
-  general production file service yet.
-- Organization data provisioning has a feature-scoped managed-file abstraction,
-  local storage, checksums, scan state, and audited downloads. Order management
-  may reuse the proven behavior, but it must not couple operational order data
-  to the data-provisioning aggregate. Implement or extract a general managed-
-  file boundary before production lab results or assembly inputs/outputs.
+- The repository implements the OrderManagement domain, QuickBooks provider
+  boundary, durable commercial and notification dispatch, operational file
+  records, local file storage adapter, scan and release states, and all three
+  confirmed workflow surfaces. Production QuickBooks, object storage, malware
+  scanning, and notification delivery still require approved runtime
+  configuration and validation.
+- Order-management files remain separate from the data-provisioning aggregate
+  while following the same environment-scoped storage, checksum, scan, audit,
+  and tenant-authorization principles.
 
 ## Planning Principles
 

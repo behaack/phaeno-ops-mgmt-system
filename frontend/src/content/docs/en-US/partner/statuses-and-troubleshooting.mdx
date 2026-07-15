@@ -1,0 +1,44 @@
+# Statuses and troubleshooting
+
+Partner work has separate operational, commercial, file-scan, and release statuses. A commercial synchronization problem does not erase the local order, and a completed workflow does not by itself mean every file is downloadable.
+
+## Reagent order statuses
+
+| Status | Meaning and next action |
+| --- | --- |
+| Draft | An administrator can continue editing or discard the order. |
+| Placed or under review | Phaeno is validating the frozen order and commercial terms. |
+| Accepted or processing | Phaeno accepted the order and fulfillment is underway. |
+| Partially shipped | Review shipments and the quantities still open or backordered. |
+| Shipped | All current quantities have shipment records; use the tracking details shown. |
+| On hold | Read the Partner-safe reason and complete the requested action. |
+| Cancellation requested | Phaeno is reviewing the request; shipped work is not erased. |
+| Fulfilled | Fulfillment is complete. |
+| Cancelled or rejected | The order will not proceed. Review the history and any QuickBooks adjustment. |
+
+A proposed substitution is a separate decision. A Partner administrator must approve it before Phaeno can replace the ordered reagent. A declined substitution preserves the original order facts.
+
+## Assembly request statuses
+
+**Draft** is editable. **Submitted** and **Intake validation** mean Phaeno is checking the frozen input revision. **Changes requested** requires a corrected revision. **Quote in preparation** and **Quote issued** cover job-specific pricing. After quote acceptance, **Placed/queued**, **Processing**, and **Output review** track work. **Output available** means an output exists but it may still have a release or payment gate. **On hold**, **Cancellation requested**, **Completed**, **Cancelled**, and **Rejected** describe the remaining outcomes.
+
+## Commercial and file states
+
+- A quote in **Sync pending** cannot be accepted until its QuickBooks Online estimate succeeds.
+- **Superseded** or **Expired** quotes cannot be accepted; review the current quote or request a new one.
+- Credit-approved Partner assembly work uses Net 30 release. Otherwise output remains on **Payment hold** until QuickBooks confirms payment.
+- Assembly inputs and outputs must complete validation and a clean scan. **Rejected**, **Failed**, or **Unavailable** scan states require Phaeno attention.
+- A file is downloadable only when its release status is **Released**. **Ready** does not bypass a payment gate, and **Withdrawn** files remain unavailable.
+
+Reagent orders use the negotiated price captured at placement. Assembly work uses an accepted per-job quote. QuickBooks remains authoritative for invoices, balances, paid status, tax, freight, discounts, and hosted payment links.
+
+## Troubleshoot common problems
+
+- **Cannot place a reagent order:** confirm the Partner organization, administrator role, active offering, quantity rules, shipping address, and purchase-order number.
+- **Cannot accept a quote:** confirm it is the current issued, unexpired quote and that QuickBooks synchronization succeeded.
+- **Upload rejected:** compare the file name, type, size, and metadata with the assembly profile. Do not repeatedly upload a file rejected by scanning.
+- **Output missing:** check output review, scan, release, and payment states separately.
+- **Order changed while open:** refresh and review the latest version before attempting the action again.
+- **Shipment incomplete:** review shipped and remaining quantities; a partial shipment can leave backordered units open.
+
+For support, provide the portal order or assembly reference, visible status, and last-action time. Do not send credentials, tokens, confidential data files, or customer information in a support message.

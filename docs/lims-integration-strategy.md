@@ -13,11 +13,11 @@ validated cutover.
 
 ## Purpose
 
-Phaeno Portal will integrate with a third-party LIMS when laboratory volume,
-traceability, quality, or regulatory requirements justify a dedicated laboratory
-execution system. The integration will let the Portal continue to own the
-customer-facing scientific operation while the LIMS owns detailed laboratory
-execution.
+If laboratory volume, traceability, quality, or regulatory requirements later
+justify a dedicated laboratory execution system, Phaeno may evaluate a
+third-party LIMS. Any integration would let the Portal continue to own the
+customer-facing scientific operation while an approved LIMS owns explicitly
+assigned laboratory execution detail.
 
 The intent is to avoid rebuilding mature LIMS capabilities inside the Portal
 while preserving a coherent Phaeno experience for customers and internal
@@ -54,7 +54,11 @@ operational teams.
    - Apply Phaeno's security, privacy, retention, and audit requirements to both
      outbound and inbound data.
 
-## System Responsibilities
+## Hypothetical Future Responsibilities
+
+The responsibilities below apply only after an approved product decision,
+vendor selection, implementation, validation, and ownership cutover. They do
+not describe the running application.
 
 ### Phaeno Portal (Customer-Facing Scientific Operations)
 

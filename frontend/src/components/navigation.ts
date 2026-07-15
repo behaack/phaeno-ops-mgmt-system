@@ -2,6 +2,7 @@ import {
   Activity,
   Building2,
   Database,
+  BookOpenText,
   Library,
   LayoutDashboard,
   ClipboardList,
@@ -106,6 +107,15 @@ export const mainMenuItems: readonly MainMenuItem[] = [
     visibleWhen: (session, context) =>
       context.selectedOrganizationKind === 'Phaeno' &&
       Boolean(session?.capabilities.canManageOrderConfiguration),
+  },
+  {
+    label: 'Documentation',
+    to: '/docs',
+    icon: BookOpenText,
+    visibleWhen: (_session, context) =>
+      context.selectedOrganizationKind === 'Customer' ||
+      context.selectedOrganizationKind === 'Partner' ||
+      context.selectedOrganizationKind === 'Phaeno',
   },
   {
     label: 'Project',

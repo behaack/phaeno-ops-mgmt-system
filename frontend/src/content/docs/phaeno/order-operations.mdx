@@ -1,0 +1,33 @@
+# Order operations
+
+Order operations unifies Customer laboratory work, Partner reagent fulfillment, and Partner data assembly without relying on an external ERP or LIMS. Phaeno Portal is the operational source of truth; QuickBooks Online owns commercial documents and payment facts.
+
+## Work from queues
+
+Use workflow type, status, hold, overdue, organization, assignment, and due-date filters to find work. Assign an owner and due date where the workflow supports it. Keep operational status, quote status, commercial synchronization, payment, and file release separate.
+
+Tenant users receive a curated timeline. Record a tenant-safe reason separately from internal notes whenever an action can be seen outside Phaeno.
+
+## Operate Customer laboratory jobs
+
+Review submitted samples and metadata, request corrections when required, and issue a per-job quote. Record sample receipt and accessioning, then advance each sample independently through laboratory work, processing, holds, result review, and completion.
+
+Release only scanned, checksummed, scientifically ready result artifacts. Credit-approved Customers can receive ready sample results under Net 30 after required synchronization. Without approved credit, no job result is downloadable until the completed invoice is paid in QuickBooks.
+
+## Fulfill Partner reagent orders
+
+Review the placed commercial snapshot before acceptance. Record holds or rejection with a Partner-safe reason. A substitution requires Partner-administrator approval, and a total increase requires commercial approval before acceptance.
+
+Create partial or complete shipments with quantities, backorders, carrier, service, tracking, lot, expiration, and packing-slip facts. Shipped quantities remain immutable. Invoice-on-shipment documents are handled through QuickBooks Online.
+
+## Process Partner data assembly
+
+Review the immutable input revision against the selected profile. Request targeted corrections or reject unsafe or unsupported work. Issue a per-job quote, queue accepted work, and record processing and quality review.
+
+Approve an immutable output manifest and files linked to the source revision and profile. Start completion-invoice synchronization, then apply the Partner assembly-credit or paid-status release gate before downloads.
+
+## Handle cancellation and recovery
+
+Preserve work already performed, shipped quantities, prior revisions, releases, and commercial history. Decide cancellation requests as approved, partially approved, or declined and synchronize any adjustment through QuickBooks.
+
+Failed QuickBooks or notification deliveries remain visible and retryable. Retry the durable integration event; do not recreate the order or manually duplicate a commercial document.

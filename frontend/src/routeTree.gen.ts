@@ -14,6 +14,7 @@ import { Route as PhaenoUsersRouteImport } from './routes/phaeno-users'
 import { Route as OrderOperationsRouteImport } from './routes/order-operations'
 import { Route as OrderConfigurationRouteImport } from './routes/order-configuration'
 import { Route as LabServicesRouteImport } from './routes/lab-services'
+import { Route as DocsRouteImport } from './routes/docs'
 import { Route as DataProvisioningRouteImport } from './routes/data-provisioning'
 import { Route as DataLibraryRouteImport } from './routes/data-library'
 import { Route as DataAssemblyRouteImport } from './routes/data-assembly'
@@ -33,6 +34,7 @@ import { Route as CustomersCustomerIdRouteImport } from './routes/customers.$cus
 import { Route as ReagentOrdersOrderIdEditRouteImport } from './routes/reagent-orders.$orderId.edit'
 import { Route as OrderOperationsWorkflowOrderIdRouteImport } from './routes/order-operations.$workflow.$orderId'
 import { Route as LabServicesOrderIdEditRouteImport } from './routes/lab-services.$orderId.edit'
+import { Route as DocsAudienceSlugRouteImport } from './routes/docs.$audience.$slug'
 import { Route as DataProvisioningSourcesSourceSampleIdRouteImport } from './routes/data-provisioning.sources.$sourceSampleId'
 import { Route as DataAssemblyRequestIdEditRouteImport } from './routes/data-assembly.$requestId.edit'
 
@@ -59,6 +61,11 @@ const OrderConfigurationRoute = OrderConfigurationRouteImport.update({
 const LabServicesRoute = LabServicesRouteImport.update({
   id: '/lab-services',
   path: '/lab-services',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const DocsRoute = DocsRouteImport.update({
+  id: '/docs',
+  path: '/docs',
   getParentRoute: () => rootRouteImport,
 } as any)
 const DataProvisioningRoute = DataProvisioningRouteImport.update({
@@ -158,6 +165,11 @@ const LabServicesOrderIdEditRoute = LabServicesOrderIdEditRouteImport.update({
   path: '/edit',
   getParentRoute: () => LabServicesOrderIdRoute,
 } as any)
+const DocsAudienceSlugRoute = DocsAudienceSlugRouteImport.update({
+  id: '/$audience/$slug',
+  path: '/$audience/$slug',
+  getParentRoute: () => DocsRoute,
+} as any)
 const DataProvisioningSourcesSourceSampleIdRoute =
   DataProvisioningSourcesSourceSampleIdRouteImport.update({
     id: '/sources/$sourceSampleId',
@@ -179,6 +191,7 @@ export interface FileRoutesByFullPath {
   '/data-assembly': typeof DataAssemblyRouteWithChildren
   '/data-library': typeof DataLibraryRouteWithChildren
   '/data-provisioning': typeof DataProvisioningRouteWithChildren
+  '/docs': typeof DocsRouteWithChildren
   '/lab-services': typeof LabServicesRouteWithChildren
   '/order-configuration': typeof OrderConfigurationRoute
   '/order-operations': typeof OrderOperationsRouteWithChildren
@@ -195,6 +208,7 @@ export interface FileRoutesByFullPath {
   '/reagent-orders/new': typeof ReagentOrdersNewRoute
   '/data-assembly/$requestId/edit': typeof DataAssemblyRequestIdEditRoute
   '/data-provisioning/sources/$sourceSampleId': typeof DataProvisioningSourcesSourceSampleIdRoute
+  '/docs/$audience/$slug': typeof DocsAudienceSlugRoute
   '/lab-services/$orderId/edit': typeof LabServicesOrderIdEditRoute
   '/order-operations/$workflow/$orderId': typeof OrderOperationsWorkflowOrderIdRoute
   '/reagent-orders/$orderId/edit': typeof ReagentOrdersOrderIdEditRoute
@@ -207,6 +221,7 @@ export interface FileRoutesByTo {
   '/data-assembly': typeof DataAssemblyRouteWithChildren
   '/data-library': typeof DataLibraryRouteWithChildren
   '/data-provisioning': typeof DataProvisioningRouteWithChildren
+  '/docs': typeof DocsRouteWithChildren
   '/lab-services': typeof LabServicesRouteWithChildren
   '/order-configuration': typeof OrderConfigurationRoute
   '/order-operations': typeof OrderOperationsRouteWithChildren
@@ -223,6 +238,7 @@ export interface FileRoutesByTo {
   '/reagent-orders/new': typeof ReagentOrdersNewRoute
   '/data-assembly/$requestId/edit': typeof DataAssemblyRequestIdEditRoute
   '/data-provisioning/sources/$sourceSampleId': typeof DataProvisioningSourcesSourceSampleIdRoute
+  '/docs/$audience/$slug': typeof DocsAudienceSlugRoute
   '/lab-services/$orderId/edit': typeof LabServicesOrderIdEditRoute
   '/order-operations/$workflow/$orderId': typeof OrderOperationsWorkflowOrderIdRoute
   '/reagent-orders/$orderId/edit': typeof ReagentOrdersOrderIdEditRoute
@@ -236,6 +252,7 @@ export interface FileRoutesById {
   '/data-assembly': typeof DataAssemblyRouteWithChildren
   '/data-library': typeof DataLibraryRouteWithChildren
   '/data-provisioning': typeof DataProvisioningRouteWithChildren
+  '/docs': typeof DocsRouteWithChildren
   '/lab-services': typeof LabServicesRouteWithChildren
   '/order-configuration': typeof OrderConfigurationRoute
   '/order-operations': typeof OrderOperationsRouteWithChildren
@@ -252,6 +269,7 @@ export interface FileRoutesById {
   '/reagent-orders/new': typeof ReagentOrdersNewRoute
   '/data-assembly/$requestId/edit': typeof DataAssemblyRequestIdEditRoute
   '/data-provisioning/sources/$sourceSampleId': typeof DataProvisioningSourcesSourceSampleIdRoute
+  '/docs/$audience/$slug': typeof DocsAudienceSlugRoute
   '/lab-services/$orderId/edit': typeof LabServicesOrderIdEditRoute
   '/order-operations/$workflow/$orderId': typeof OrderOperationsWorkflowOrderIdRoute
   '/reagent-orders/$orderId/edit': typeof ReagentOrdersOrderIdEditRoute
@@ -266,6 +284,7 @@ export interface FileRouteTypes {
     | '/data-assembly'
     | '/data-library'
     | '/data-provisioning'
+    | '/docs'
     | '/lab-services'
     | '/order-configuration'
     | '/order-operations'
@@ -282,6 +301,7 @@ export interface FileRouteTypes {
     | '/reagent-orders/new'
     | '/data-assembly/$requestId/edit'
     | '/data-provisioning/sources/$sourceSampleId'
+    | '/docs/$audience/$slug'
     | '/lab-services/$orderId/edit'
     | '/order-operations/$workflow/$orderId'
     | '/reagent-orders/$orderId/edit'
@@ -294,6 +314,7 @@ export interface FileRouteTypes {
     | '/data-assembly'
     | '/data-library'
     | '/data-provisioning'
+    | '/docs'
     | '/lab-services'
     | '/order-configuration'
     | '/order-operations'
@@ -310,6 +331,7 @@ export interface FileRouteTypes {
     | '/reagent-orders/new'
     | '/data-assembly/$requestId/edit'
     | '/data-provisioning/sources/$sourceSampleId'
+    | '/docs/$audience/$slug'
     | '/lab-services/$orderId/edit'
     | '/order-operations/$workflow/$orderId'
     | '/reagent-orders/$orderId/edit'
@@ -322,6 +344,7 @@ export interface FileRouteTypes {
     | '/data-assembly'
     | '/data-library'
     | '/data-provisioning'
+    | '/docs'
     | '/lab-services'
     | '/order-configuration'
     | '/order-operations'
@@ -338,6 +361,7 @@ export interface FileRouteTypes {
     | '/reagent-orders/new'
     | '/data-assembly/$requestId/edit'
     | '/data-provisioning/sources/$sourceSampleId'
+    | '/docs/$audience/$slug'
     | '/lab-services/$orderId/edit'
     | '/order-operations/$workflow/$orderId'
     | '/reagent-orders/$orderId/edit'
@@ -351,6 +375,7 @@ export interface RootRouteChildren {
   DataAssemblyRoute: typeof DataAssemblyRouteWithChildren
   DataLibraryRoute: typeof DataLibraryRouteWithChildren
   DataProvisioningRoute: typeof DataProvisioningRouteWithChildren
+  DocsRoute: typeof DocsRouteWithChildren
   LabServicesRoute: typeof LabServicesRouteWithChildren
   OrderConfigurationRoute: typeof OrderConfigurationRoute
   OrderOperationsRoute: typeof OrderOperationsRouteWithChildren
@@ -394,6 +419,13 @@ declare module '@tanstack/react-router' {
       path: '/lab-services'
       fullPath: '/lab-services'
       preLoaderRoute: typeof LabServicesRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/docs': {
+      id: '/docs'
+      path: '/docs'
+      fullPath: '/docs'
+      preLoaderRoute: typeof DocsRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/data-provisioning': {
@@ -529,6 +561,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof LabServicesOrderIdEditRouteImport
       parentRoute: typeof LabServicesOrderIdRoute
     }
+    '/docs/$audience/$slug': {
+      id: '/docs/$audience/$slug'
+      path: '/$audience/$slug'
+      fullPath: '/docs/$audience/$slug'
+      preLoaderRoute: typeof DocsAudienceSlugRouteImport
+      parentRoute: typeof DocsRoute
+    }
     '/data-provisioning/sources/$sourceSampleId': {
       id: '/data-provisioning/sources/$sourceSampleId'
       path: '/sources/$sourceSampleId'
@@ -609,6 +648,16 @@ const DataProvisioningRouteChildren: DataProvisioningRouteChildren = {
 const DataProvisioningRouteWithChildren =
   DataProvisioningRoute._addFileChildren(DataProvisioningRouteChildren)
 
+interface DocsRouteChildren {
+  DocsAudienceSlugRoute: typeof DocsAudienceSlugRoute
+}
+
+const DocsRouteChildren: DocsRouteChildren = {
+  DocsAudienceSlugRoute: DocsAudienceSlugRoute,
+}
+
+const DocsRouteWithChildren = DocsRoute._addFileChildren(DocsRouteChildren)
+
 interface LabServicesOrderIdRouteChildren {
   LabServicesOrderIdEditRoute: typeof LabServicesOrderIdEditRoute
 }
@@ -679,6 +728,7 @@ const rootRouteChildren: RootRouteChildren = {
   DataAssemblyRoute: DataAssemblyRouteWithChildren,
   DataLibraryRoute: DataLibraryRouteWithChildren,
   DataProvisioningRoute: DataProvisioningRouteWithChildren,
+  DocsRoute: DocsRouteWithChildren,
   LabServicesRoute: LabServicesRouteWithChildren,
   OrderConfigurationRoute: OrderConfigurationRoute,
   OrderOperationsRoute: OrderOperationsRouteWithChildren,

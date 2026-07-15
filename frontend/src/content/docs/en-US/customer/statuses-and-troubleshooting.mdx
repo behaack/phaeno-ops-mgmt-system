@@ -1,0 +1,46 @@
+# Statuses and troubleshooting
+
+A laboratory job, each sample, its quote, and each result file have separate statuses. Read them together: a job may remain in progress while one sample’s result is ready or held for payment.
+
+## Laboratory job statuses
+
+| Status | Meaning and next action |
+| --- | --- |
+| Draft request | An administrator can continue editing or discard the request. |
+| Submitted for quote | Phaeno is reviewing the submitted revision. |
+| Changes requested | Open the request details, correct the identified items, and submit a new revision. |
+| Quote in preparation | Phaeno is preparing job-specific pricing. No approval is available yet. |
+| Quote issued | An administrator can review and accept the current unexpired quote. |
+| Placed, awaiting samples | The quote was accepted; follow the job’s shipping instructions. |
+| In progress | Phaeno has begun the accepted work. Review individual sample statuses for detail. |
+| Results available | At least one result is ready. Its file may still be under a release or payment gate. |
+| On hold | Read the Customer-safe reason and complete the requested action or contact Phaeno. |
+| Cancellation requested | Phaeno is reviewing the request; work is not automatically cancelled. |
+| Completed | Accepted work and release handling are complete. |
+| Cancelled or declined | The job will not proceed. Review the history and any linked commercial adjustment. |
+
+## Sample statuses
+
+**Expected**, **Received**, and **Accessioned** track intake. **Lab analysis** and **Data processing** track active work. **Data available** means an output exists for that sample, while **Completed** means its processing is finished. **On hold** requires attention; **Rejected** means the submitted material cannot proceed under the current job.
+
+Sample release is independent. A clean result can be **Ready**, **Payment hold**, **Released**, or **Withdrawn**. Download is available only after release.
+
+## Quotes, payment, and QuickBooks
+
+- **Sync pending** means the portal is waiting for its QuickBooks Online estimate. The quote cannot be accepted yet.
+- **Issued** means the current quote is available for review.
+- **Superseded** means a newer quote replaced it.
+- **Expired** means its validity period ended; request a current quote.
+- **Accepted** records authorization for the quoted scope.
+
+Credit-approved Customer organizations receive Net 30 release. Without approved credit, result download remains on payment hold until QuickBooks Online confirms payment. Pay using the QuickBooks document or hosted payment link shown for the job; the portal does not accept or edit payment.
+
+## Troubleshoot a missing result
+
+1. Confirm the correct organization and laboratory job.
+2. Check the individual sample status rather than only the overall job.
+3. Check whether the result is still being scanned, is on payment hold, or was withdrawn.
+4. If payment was just completed, allow the QuickBooks status to refresh before retrying.
+5. Refresh the job before repeating an action. If the portal reports that the record changed, review the latest version instead of resubmitting stale information.
+
+Rejected or failed file scans require Phaeno review; do not repeatedly upload the same file unless Phaeno asks you to. For support, provide the portal job and sample references, the visible status, and the time of the last action. Do not include credentials, tokens, patient identifiers, or sensitive sample content.

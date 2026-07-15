@@ -15,6 +15,11 @@ Do not execute this test plan unless explicitly requested.
 - [x] `frontend/src/components/navigation.test.ts` - order navigation is scoped
   to Customer lab, Partner reagent/assembly, and Phaeno operations/configuration
   capabilities without leaking the other organization-kind surfaces.
+- [x] `frontend/src/components/navigation.test.ts` - Documentation navigation is
+  available only in Customer, Partner, and Phaeno organization contexts.
+- [x] `frontend/src/features/documentation/documentation-registry.test.ts` - the
+  six-guide Customer, Partner, and Phaeno registries expose unique, ordered,
+  backend-indexable metadata and resolve slugs only within their audience.
 - [x] `frontend/src/features/data-provisioning/DataProvisioningPage.test.tsx` -
   mock mode exposes the four Phaeno configuration surfaces without calling the
   secured API.
@@ -30,6 +35,11 @@ Do not execute this test plan unless explicitly requested.
 
 ## Deferred Tests
 
+- [ ] Connected organization/user administration - replace the current
+  mock-backed screens and cover tenant-scoped organization list/detail,
+  invitation create/list/resend/revoke, membership role/deactivation,
+  Prospect conversion, organization lifecycle, global user lifecycle,
+  optimistic concurrency, and durable refresh behavior against mocked APIs.
 - [ ] Auth shell - cover missing Clerk config, signed-out prompt, local unauthorized state, disabled state, no-active-memberships state, and ready state.
 - [ ] Organization switcher - cover auto-selecting one active membership, persisting selected organization, changing selected organization, and sending `X-Organization-Id`.
 - [ ] Invite acceptance page - cover token capture, URL scrubbing, authenticated accept, authenticated decline, and cleared token storage.
@@ -53,9 +63,20 @@ Do not execute this test plan unless explicitly requested.
   substitutions, backorders, immutable-document downloads, operational queue
   filters, notification recovery, and stale-version/error recovery with mocked
   APIs.
+- [ ] Backend-indexed help search - cover authenticated audience filtering,
+  Customer/Partner locale filtering, indexed metadata and headings, canonical
+  guide links, empty/error states, and stale-index recovery when the future
+  search API is implemented.
+- [ ] Customer and Partner help localization - add pseudolocale, text-expansion,
+  locale-aware review-date, complete-corpus, and language-fallback coverage when
+  a second external locale is implemented. Phaeno-only guides remain US English.
 
 ## Requested Execution Log
 
+- 2026-07-14: documentation implementation verification ran `pnpm run lint`,
+  `pnpm run typecheck`, and `pnpm run test`; lint and typecheck passed and all
+  24 tests in 9 files passed. The Vite client and SSR production build also
+  completed with the MDX corpus compiled successfully.
 - 2026-07-14: order-management implementation verification ran `pnpm run test`;
   all 16 tests in 8 files passed. `pnpm run lint` and `pnpm run typecheck` also
   passed, and the Vite client/SSR production build completed through the

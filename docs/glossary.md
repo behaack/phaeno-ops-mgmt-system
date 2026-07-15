@@ -4,7 +4,7 @@
 | --- | --- |
 | External identity | The Clerk-authenticated provider and subject pair presented by a bearer token. |
 | User | The portal-owned account record linked to an external identity. |
-| Organization | A tenant or platform organization. Current kinds are `Phaeno` and `Customer`. |
+| Organization | A tenant or platform organization. Current kinds are `Phaeno`, `Prospect`, `Customer`, and `Partner`. |
 | Organization membership | The access link between a user and an organization, including administrative grants. |
 | Platform administrator | A user whose active membership grants platform-wide administration. |
 | Organization administrator | A membership-level administrator who can manage an eligible organization's members and invitations. |
@@ -12,9 +12,9 @@
 | API envelope | The standard `success`, `data`, `error`, and `meta` response shape. |
 | Audit event | An append-only record of a persisted entity change and its actor/request context. |
 | Concurrency version | The numeric version used to reject stale updates. |
-| Prospect | A planned external tenant phase before an organization becomes a Customer or Partner. Prospect users may access assigned seed data and manage their organization's users, but may not order. |
+| Prospect | The external tenant phase before an organization becomes a Customer or Partner. Prospect users may access explicitly assigned curated data and manage their organization's users, but may not order. |
 | Customer | An end-user organization that can place lab service orders, track submitted samples, and access resulting data released through the portal. |
-| Partner | An external organization that can order reagents and submit data to Phaeno for assembly, then download the assembled data/results for its customers. Not yet a current `OrganizationKind`. |
+| Partner | An external organization that can order reagents and submit data to Phaeno for assembly, then download released assembled outputs for its customers. |
 | Lab service order | A Customer request involving physical sample submission, Phaeno accessioning and laboratory analysis, data processing, and portal delivery of resulting data. |
 | Sample accessioning | Phaeno's receipt and registration of a submitted physical sample so its laboratory progression is traceable. |
 | Reagent order | A Partner order for reagents supplied through Phaeno's fulfillment workflow. |
@@ -59,4 +59,19 @@
 | Superseded grant version | A previously granted package version retained with its history after an explicit upgrade but no longer viewable or downloadable by the organization. |
 | Data ownership class | The authorization boundary distinguishing Phaeno-owned curated Prospect data from Customer- or Partner-owned operational data. |
 | Operational-data access | Member access to Customer- or Partner-owned samples, results, assembly inputs, or assembly outputs, managed by organization administrators with audited Phaeno support. |
-| Provisioning package | A proposed, not yet implemented, versioned dataset delivery concept in the data-provisioning plan. |
+| Provisioning run | The audited, retryable record of an exact-version curated-data grant or upgrade attempt for an organization. |
+| Analysis definition | Phaeno configuration describing Customer sample requirements, instructions, expected results, and linked QuickBooks billable items. |
+| Assembly profile | Versioned Phaeno configuration describing Partner metadata, accepted file kinds, validation, expected output, Partner availability, and linked QuickBooks items. |
+| Partner reagent offering | The Partner-specific availability, negotiated price, currency, effective period, quantity rules, and shipping restrictions for a QuickBooks-linked reagent item. |
+| Immutable quote | A versioned per-job commercial offer whose scope, line items, price, currency, and expiration do not change after issuance. Later scope changes create a new quote or amendment. |
+| Quote validity | The period in which the current quote may be accepted. The initial configurable default is 30 days, and each quote snapshots its own expiration. |
+| Commercial document link | The durable association between a portal workflow and a QuickBooks estimate, invoice, adjustment, or payment link. |
+| Commercial synchronization | The durable, idempotent transfer or reconciliation of commercial facts between Phaeno Portal and QuickBooks Online. |
+| Credit-approved release | Net 30 release allowed by the applicable audited Customer-lab or Partner-assembly credit setting after required invoice synchronization. |
+| Payment release gate | A download block for an organization without applicable approved credit until QuickBooks confirms the completed invoice is paid. |
+| Operational status | The workflow's scientific, laboratory, fulfillment, or processing progress; it remains separate from quote, sync, payment, and file-release state. |
+| Result release | An immutable Customer sample-result version containing scanned, checksummed artifacts and scientific provenance/QC facts. |
+| Assembly input revision | An immutable snapshot of the Partner metadata and files submitted for one data-assembly intake review. Corrections create another revision. |
+| Assembly output release | An immutable manifest and file set tied to one accepted input revision and assembly profile, subject to the applicable commercial release gate. |
+| Reagent substitution | A Phaeno-proposed replacement that cannot be fulfilled until an authorized Partner administrator explicitly approves it. |
+| Backorder | The unshipped remainder of an accepted reagent-order quantity preserved after a partial shipment. |

@@ -271,10 +271,8 @@ application behavior.
 
 - `Partner` is the correct product term.
 - `Distributor` was used in error and is not a separate product concept.
-- Persisted `OrganizationKind` values remain `Phaeno` and `Customer`; Partner is
-  still planned domain work rather than implemented behavior.
-- Prospect is also planned domain work and is not yet represented by the
-  persisted organization model.
+- Persisted `OrganizationKind` values are `Phaeno`, `Prospect`, `Customer`, and
+  `Partner`. Prospect and Partner are implemented organization kinds.
 
 Before implementing partner-managed customer provisioning or delegation,
 document which customer organizations a Partner serves and what data access or
@@ -296,12 +294,13 @@ model and authorization rules.
 - Tenant-scoped requests use validated selected-organization context.
 - Mutable persisted records use optimistic concurrency and centralized audit
   events.
-- `docs/plans/FILE-MANAGEMENT-PLAN.md` already defines local/S3 storage abstractions
-  for managed binary files, but file management is not yet represented as an
-  implemented backend feature.
-- The current repository has no sample entity or source-sample workflow. The
-  minimal Phaeno-only source-sample registry is new planned work required by
-  this feature.
+- Data provisioning implements its feature-scoped managed-file abstraction,
+  local storage adapter, checksums, scan states, and audited downloads. A
+  production object-storage and malware-scanning activation remains an
+  environment-readiness gate.
+- The repository implements the Phaeno-only source-sample registry, immutable
+  source revisions, curated package versions, exact-version grants, and the
+  governance lifecycle described by this plan.
 
 ## Vocabulary For This Plan
 
