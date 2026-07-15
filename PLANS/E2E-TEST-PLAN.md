@@ -8,7 +8,7 @@ Do not execute this test plan unless explicitly requested.
 
 - [x] `frontend/e2e/home.spec.ts` - `loads the portal starter dashboard`.
 - [x] `frontend/e2e/data-provisioning.spec.ts` - Phaeno mock context exposes the
-  source registry, curated catalog, and organization-grant surfaces.
+  source registry, curated catalog, organization-grant, and governance surfaces.
 - [x] `frontend/e2e/data-provisioning.spec.ts` - Prospect mock context exposes
   the Data Library without exposing connected data in mock mode.
 
@@ -16,14 +16,25 @@ Do not execute this test plan unless explicitly requested.
 
 - [ ] Automated WCAG AA accessibility check on the dashboard.
 - [ ] Mobile primary navigation moves into the user menu.
+- [ ] Source-sample draft discard - verify destructive confirmation, required
+  reason, managed-file cleanup, registry return, and stale-version conflict
+  through the authenticated browser/API path.
 - [ ] Database-backed synthetic reference journey - upload, ready, snapshot,
   publish, eligibility, explicit Prospect grant, tenant list/detail, file and
   archive download, download history, cross-tenant denial, and revocation. The
   controller/PostgreSQL journey now passes; this remaining item is the full
   browser, Clerk authentication middleware, and HTTP API-host path.
+- [ ] Database-backed advanced provisioning and governance journey - exact
+  version upgrade, retirement with preserved access, catalog removal, optional
+  creation grant, quarantine denial, unchanged clearance, unsafe withdrawal,
+  administrator notice/activity, and tenant attestation.
 
 ## Requested Execution Log
 
+- 2026-07-14: completion-slice verification ran `PLAYWRIGHT_PORT=3100 pnpm
+  run test:e2e`; all 6 Chromium and mobile-Chromium tests passed. The existing
+  TanStack warning about the exported `AcceptInvitePage` route component remains
+  unchanged.
 - 2026-07-14: implementation verification ran `PLAYWRIGHT_PORT=3100 pnpm
   run test:e2e` to avoid an unrelated local port-3000 process; all 6 Chromium
   and mobile-Chromium tests passed. The existing TanStack warning about the

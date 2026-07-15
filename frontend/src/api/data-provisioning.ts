@@ -16,6 +16,32 @@ export type DatasetVersionStatus =
   | 'Withdrawn'
   | 'Retired'
 export type DatasetGrantStatus = 'Active' | 'Revoked' | 'Superseded'
+export type ProvisioningRunStatus = 'Pending' | 'Succeeded' | 'Failed'
+export type ProvisioningRunKind =
+  | 'Grant'
+  | 'Upgrade'
+  | 'BulkRevocation'
+  | 'OrganizationCreationGrant'
+export type GovernanceConcernCategory =
+  | 'Deidentification'
+  | 'Ownership'
+  | 'SharingRights'
+  | 'Other'
+export type GovernanceIncidentStatus = 'Open' | 'Cleared' | 'ConfirmedUnsafe'
+export type AffectedOrganizationStatus =
+  | 'Blocked'
+  | 'Resumed'
+  | 'AwaitingAttestation'
+  | 'Attested'
+  | 'Inactive'
+export type ProvisioningNoticeKind =
+  | 'Grant'
+  | 'Upgrade'
+  | 'Revocation'
+  | 'Quarantine'
+  | 'QuarantineCleared'
+  | 'Withdrawal'
+  | 'AttestationReminder'
 
 type ApiEnvelope<T> = {
   success: boolean
@@ -132,6 +158,98 @@ export type DatasetGrant = {
   grantedAt: string
   revokedAt: string | null
   revocationReason: string | null
+  supersededAt: string | null
+  version: number
+}
+
+export type ProvisioningResult = {
+  provisioningRunId: string
+  status: ProvisioningRunStatus
+  idempotencyKey: string
+  grant: DatasetGrant | null
+  failureCode: string | null
+  failureMessage: string | null
+}
+
+export type ProvisioningRun = {
+  id: string
+  organizationId: string
+  datasetVersionId: string
+  kind: ProvisioningRunKind
+  status: ProvisioningRunStatus
+  idempotencyKey: string
+  requestedAt: string
+  completedAt: string | null
+  grantId: string | null
+  previousGrantId: string | null
+  failureCode: string | null
+  failureMessage: string | null
+}
+
+export type ProvisioningNotice = {
+  id: string
+  kind: ProvisioningNoticeKind
+  subject: string
+  body: string
+  createdAt: string
+  incidentId: string | null
+}
+
+export type GovernanceAffectedOrganization = {
+  organizationId: string
+  organizationName: string
+  organizationKind: OrganizationKind
+  status: AffectedOrganizationStatus
+  affectedGrantCount: number
+  reminderCount: number
+  lastRemindedAt: string | null
+  attestedAt: string | null
+  attestationSource: 'SubmittedInPortal' | 'RecordedByPhaeno' | null
+  organizationContact: string | null
+  evidenceSource: string | null
+  attestationNotes: string | null
+  version: number
+}
+
+export type GovernanceFollowUp = {
+  id: string
+  organizationId: string | null
+  kind: string
+  notes: string
+  actorUserId: string
+  occurredAt: string
+}
+
+export type GovernanceIncident = {
+  id: string
+  sourceSampleId: string
+  sourceSampleLabel: string
+  category: GovernanceConcernCategory
+  status: GovernanceIncidentStatus
+  reason: string
+  externalGuidance: string
+  internalNotes: string
+  attestationDueAt: string
+  affectedDatasetVersionIds: string[]
+  affectedOrganizations: GovernanceAffectedOrganization[]
+  followUps: GovernanceFollowUp[]
+  resolvedAt: string | null
+  resolution: string | null
+  createdAt: string
+  version: number
+}
+
+export type TenantGovernanceIncident = {
+  id: string
+  category: GovernanceConcernCategory
+  status: GovernanceIncidentStatus
+  externalGuidance: string
+  attestationDueAt: string
+  organizationStatus: AffectedOrganizationStatus
+  reminderCount: number
+  lastRemindedAt: string | null
+  attestedAt: string | null
+  createdAt: string
   version: number
 }
 
@@ -239,6 +357,16 @@ export async function archiveSource(id: string, version: number) {
   return unwrap(response.data)
 }
 
+export async function discardSourceDraft(
+  id: string,
+  reason: string,
+  version: number,
+) {
+  await api.delete(`/data-provisioning/source-samples/${id}`, {
+    data: { reason, version },
+  })
+}
+
 export async function listDatasets() {
   const response = await api.get<ApiEnvelope<CuratedDataset[]>>(
     '/data-provisioning/datasets',
@@ -253,6 +381,39 @@ export async function createDataset(input: {
   const response = await api.post<ApiEnvelope<CuratedDataset>>(
     '/data-provisioning/datasets',
     input,
+  )
+  return unwrap(response.data)
+}
+
+export async function updateDataset(input: {
+  datasetId: string
+  name: string
+  description: string
+  version: number
+}) {
+  const response = await api.put<ApiEnvelope<CuratedDataset>>(
+    `/data-provisioning/datasets/${input.datasetId}`,
+    input,
+  )
+  return unwrap(response.data)
+}
+
+export async function deactivateDataset(input: {
+  datasetId: string
+  reason: string
+  version: number
+}) {
+  const response = await api.post<ApiEnvelope<CuratedDataset>>(
+    `/data-provisioning/datasets/${input.datasetId}/deactivate`,
+    { reason: input.reason, version: input.version },
+  )
+  return unwrap(response.data)
+}
+
+export async function reactivateDataset(datasetId: string, version: number) {
+  const response = await api.post<ApiEnvelope<CuratedDataset>>(
+    `/data-provisioning/datasets/${datasetId}/reactivate`,
+    { version },
   )
   return unwrap(response.data)
 }
@@ -283,6 +444,19 @@ export async function publishDatasetVersion(
   return unwrap(response.data)
 }
 
+export async function retireDatasetVersion(input: {
+  datasetId: string
+  datasetVersionId: string
+  reason: string
+  version: number
+}) {
+  const response = await api.post<ApiEnvelope<CuratedDatasetVersion>>(
+    `/data-provisioning/datasets/${input.datasetId}/versions/${input.datasetVersionId}/retire`,
+    { reason: input.reason, version: input.version },
+  )
+  return unwrap(response.data)
+}
+
 export async function setDatasetEligibility(
   dataset: CuratedDataset,
   datasetVersionId: string,
@@ -296,6 +470,18 @@ export async function setDatasetEligibility(
       version: dataset.version,
     },
   )
+  return unwrap(response.data)
+}
+
+export async function removeDatasetEligibility(input: {
+  datasetId: string
+  version: number
+  revokeAllActiveGrants: boolean
+  reason?: string
+}) {
+  const response = await api.post<
+    ApiEnvelope<{ dataset: CuratedDataset; revokedGrantCount: number }>
+  >(`/data-provisioning/datasets/${input.datasetId}/remove-eligibility`, input)
   return unwrap(response.data)
 }
 
@@ -316,12 +502,24 @@ export async function grantDataset(input: {
   datasetVersionId: string
   idempotencyKey: string
 }) {
-  const response = await api.post<
-    ApiEnvelope<{ grant: DatasetGrant; provisioningRunId: string }>
-  >(`/data-provisioning/organizations/${input.organizationId}/grants`, {
+  const response = await api.post<ApiEnvelope<ProvisioningResult>>(
+    `/data-provisioning/organizations/${input.organizationId}/grants`, {
     datasetVersionId: input.datasetVersionId,
     idempotencyKey: input.idempotencyKey,
   })
+  return unwrap(response.data)
+}
+
+export async function upgradeGrant(input: {
+  grantId: string
+  datasetVersionId: string
+  idempotencyKey: string
+  version: number
+}) {
+  const response = await api.post<ApiEnvelope<ProvisioningResult>>(
+    `/data-provisioning/grants/${input.grantId}/upgrade`,
+    input,
+  )
   return unwrap(response.data)
 }
 
@@ -335,6 +533,143 @@ export async function revokeGrant(input: {
     { reason: input.reason, version: input.version },
   )
   return unwrap(response.data)
+}
+
+export async function listProvisioningRuns(organizationId?: string) {
+  const response = await api.get<ApiEnvelope<ProvisioningRun[]>>(
+    '/data-provisioning/provisioning-runs',
+    { params: { organizationId } },
+  )
+  return unwrap(response.data)
+}
+
+export async function listProvisioningActivity(organizationId?: string) {
+  const response = await api.get<ApiEnvelope<ProvisioningNotice[]>>(
+    '/data-provisioning/activity',
+    { params: { organizationId } },
+  )
+  return unwrap(response.data)
+}
+
+export async function createProvisionedOrganization(input: {
+  name: string
+  description?: string
+  kind: Exclude<OrganizationKind, 'Phaeno'>
+  datasetVersionIds: string[]
+}) {
+  const response = await api.post<
+    ApiEnvelope<{ organization: Organization; packageGrants: ProvisioningResult[] }>
+  >('/data-provisioning/organizations', input)
+  return unwrap(response.data)
+}
+
+export async function listGovernanceIncidents(status?: GovernanceIncidentStatus) {
+  const response = await api.get<ApiEnvelope<GovernanceIncident[]>>(
+    '/data-provisioning/governance/incidents',
+    { params: { status } },
+  )
+  return unwrap(response.data)
+}
+
+export async function quarantineSource(input: {
+  sourceSampleId: string
+  category: GovernanceConcernCategory
+  reason: string
+  externalGuidance: string
+  internalNotes: string
+  attestationDueAt: string
+}) {
+  const response = await api.post<ApiEnvelope<GovernanceIncident>>(
+    `/data-provisioning/governance/source-samples/${input.sourceSampleId}/quarantine`,
+    input,
+  )
+  return unwrap(response.data)
+}
+
+export async function clearGovernanceIncident(input: {
+  incidentId: string
+  resolution: string
+  immutableContentConfirmedUnchanged: boolean
+  version: number
+}) {
+  const response = await api.post<ApiEnvelope<GovernanceIncident>>(
+    `/data-provisioning/governance/incidents/${input.incidentId}/clear`,
+    input,
+  )
+  return unwrap(response.data)
+}
+
+export async function withdrawGovernanceIncident(input: {
+  incidentId: string
+  resolution: string
+  version: number
+}) {
+  const response = await api.post<ApiEnvelope<GovernanceIncident>>(
+    `/data-provisioning/governance/incidents/${input.incidentId}/withdraw`,
+    input,
+  )
+  return unwrap(response.data)
+}
+
+export async function addGovernanceFollowUp(incidentId: string, notes: string) {
+  const response = await api.post<ApiEnvelope<GovernanceIncident>>(
+    `/data-provisioning/governance/incidents/${incidentId}/follow-ups`,
+    { notes },
+  )
+  return unwrap(response.data)
+}
+
+export async function remindAffectedOrganization(input: {
+  incidentId: string
+  organizationId: string
+  notes: string
+}) {
+  const response = await api.post<ApiEnvelope<GovernanceIncident>>(
+    `/data-provisioning/governance/incidents/${input.incidentId}/organizations/${input.organizationId}/remind`,
+    { notes: input.notes },
+  )
+  return unwrap(response.data)
+}
+
+export async function recordGovernanceAttestation(input: {
+  incidentId: string
+  organizationId: string
+  organizationContact: string
+  evidenceSource: string
+  notes: string
+  version: number
+}) {
+  const response = await api.post<ApiEnvelope<GovernanceIncident>>(
+    `/data-provisioning/governance/incidents/${input.incidentId}/organizations/${input.organizationId}/attestation`,
+    input,
+  )
+  return unwrap(response.data)
+}
+
+export async function downloadGovernanceInvestigationFile(input: {
+  incidentId: string
+  datasetVersionId: string
+  file: ManagedFile
+  reason: string
+}) {
+  await downloadBlob(
+    `/data-provisioning/governance/incidents/${input.incidentId}/versions/${input.datasetVersionId}/files/${input.file.id}`,
+    input.file.fileName,
+    { 'X-Investigation-Reason': input.reason },
+  )
+}
+
+export async function downloadGovernanceInvestigationArchive(input: {
+  incidentId: string
+  datasetVersionId: string
+  fileName: string
+  reason: string
+}) {
+  await downloadBlob(
+    `/data-provisioning/governance/incidents/${input.incidentId}/versions/${input.datasetVersionId}/archive`,
+    input.fileName,
+    { 'X-Investigation-Reason': input.reason },
+  )
 }
 
 export async function listTenantDatasets() {
@@ -352,6 +687,32 @@ export async function getTenantDataset(datasetId: string) {
 export async function listDownloadHistory() {
   const response = await api.get<ApiEnvelope<DownloadAudit[]>>(
     '/curated-data/downloads',
+  )
+  return unwrap(response.data)
+}
+
+export async function listTenantActivity() {
+  const response = await api.get<ApiEnvelope<ProvisioningNotice[]>>(
+    '/curated-data/activity',
+  )
+  return unwrap(response.data)
+}
+
+export async function listTenantGovernanceIncidents() {
+  const response = await api.get<ApiEnvelope<TenantGovernanceIncident[]>>(
+    '/curated-data/governance-incidents',
+  )
+  return unwrap(response.data)
+}
+
+export async function submitTenantGovernanceAttestation(input: {
+  incidentId: string
+  notes: string
+  version: number
+}) {
+  const response = await api.post<ApiEnvelope<TenantGovernanceIncident>>(
+    `/curated-data/governance-incidents/${input.incidentId}/attestation`,
+    { notes: input.notes, version: input.version },
   )
   return unwrap(response.data)
 }
@@ -389,8 +750,12 @@ function unwrap<T>(envelope: ApiEnvelope<T>) {
   return envelope.data
 }
 
-async function downloadBlob(url: string, fileName: string) {
-  const response = await api.get<Blob>(url, { responseType: 'blob' })
+async function downloadBlob(
+  url: string,
+  fileName: string,
+  headers?: Record<string, string>,
+) {
+  const response = await api.get<Blob>(url, { responseType: 'blob', headers })
   const objectUrl = window.URL.createObjectURL(response.data)
   const link = document.createElement('a')
   link.href = objectUrl

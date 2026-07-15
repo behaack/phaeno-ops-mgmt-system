@@ -29,6 +29,7 @@ describe('DataProvisioningPage', () => {
     expect(screen.getByRole('tab', { name: 'Source registry' })).toBeTruthy()
     expect(screen.getByRole('tab', { name: 'Curated catalog' })).toBeTruthy()
     expect(screen.getByRole('tab', { name: 'Organization grants' })).toBeTruthy()
+    expect(screen.getByRole('tab', { name: 'Governance' })).toBeTruthy()
     expect(
       screen.getByRole('button', { name: 'Register source' }),
     ).toHaveProperty('disabled', true)

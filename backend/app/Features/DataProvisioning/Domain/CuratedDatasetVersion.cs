@@ -129,6 +129,49 @@ public sealed class CuratedDatasetVersion : IAudit, IConcurrency
         PublishedAt = publishedAt;
     }
 
+    public void Retire()
+    {
+        if (Status != CuratedDatasetVersionStatus.Published)
+        {
+            throw new InvalidOperationException("Only a published dataset version can be retired.");
+        }
+
+        Status = CuratedDatasetVersionStatus.Retired;
+    }
+
+    public CuratedDatasetVersionStatus Quarantine()
+    {
+        if (Status is not (CuratedDatasetVersionStatus.Published or CuratedDatasetVersionStatus.Retired))
+        {
+            throw new InvalidOperationException("Only a published or retired dataset version can be quarantined.");
+        }
+
+        var priorStatus = Status;
+        Status = CuratedDatasetVersionStatus.Quarantined;
+        return priorStatus;
+    }
+
+    public void ClearQuarantine(CuratedDatasetVersionStatus priorStatus)
+    {
+        if (Status != CuratedDatasetVersionStatus.Quarantined
+            || priorStatus is not (CuratedDatasetVersionStatus.Published or CuratedDatasetVersionStatus.Retired))
+        {
+            throw new InvalidOperationException("The quarantined version cannot be restored to the requested status.");
+        }
+
+        Status = priorStatus;
+    }
+
+    public void Withdraw()
+    {
+        if (Status != CuratedDatasetVersionStatus.Quarantined)
+        {
+            throw new InvalidOperationException("Only a quarantined dataset version can be permanently withdrawn.");
+        }
+
+        Status = CuratedDatasetVersionStatus.Withdrawn;
+    }
+
     private void EnsureDraft()
     {
         if (Status != CuratedDatasetVersionStatus.Draft)

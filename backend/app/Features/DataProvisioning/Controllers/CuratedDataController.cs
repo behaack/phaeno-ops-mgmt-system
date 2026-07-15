@@ -175,6 +175,91 @@ public sealed class CuratedDataController(
         return downloads;
     }
 
+    [HttpGet("activity")]
+    public async Task<IReadOnlyList<DataProvisioningNoticeDto>> ListActivity(
+        CancellationToken cancellationToken)
+    {
+        var (_, organization) = await RequireTenantAccessAsync(
+            requireOrganizationAdmin: false,
+            cancellationToken);
+        var notices = await dbContext.DataProvisioningNotices
+            .AsNoTracking()
+            .Where(notice => notice.OrganizationId == organization.Id)
+            .OrderByDescending(notice => notice.CreatedAt)
+            .Take(500)
+            .ToListAsync(cancellationToken);
+        return notices.Select(DataProvisioningMappings.ToDto).ToList();
+    }
+
+    [HttpGet("governance-incidents")]
+    public async Task<IReadOnlyList<TenantGovernanceIncidentDto>> ListGovernanceIncidents(
+        CancellationToken cancellationToken)
+    {
+        var (_, organization) = await RequireTenantAccessAsync(
+            requireOrganizationAdmin: false,
+            cancellationToken);
+        var affectedOrganizations = await dbContext.DataGovernanceAffectedOrganizations
+            .AsNoTracking()
+            .Include(affected => affected.Incident)
+            .Where(affected => affected.OrganizationId == organization.Id)
+            .OrderByDescending(affected => affected.Incident.CreatedAt)
+            .Take(500)
+            .ToListAsync(cancellationToken);
+        return affectedOrganizations.Select(ToTenantIncidentDto).ToList();
+    }
+
+    [HttpPost("governance-incidents/{incidentId:guid}/attestation")]
+    public async Task<TenantGovernanceIncidentDto> SubmitGovernanceAttestation(
+        Guid incidentId,
+        [FromBody] TenantGovernanceAttestationRequest request,
+        CancellationToken cancellationToken)
+    {
+        var (actor, organization) = await RequireTenantAccessAsync(
+            requireOrganizationAdmin: true,
+            cancellationToken);
+        var affected = await dbContext.DataGovernanceAffectedOrganizations
+            .Include(item => item.Incident)
+            .FirstOrDefaultAsync(
+                item => item.IncidentId == incidentId
+                    && item.OrganizationId == organization.Id,
+                cancellationToken)
+            ?? throw NotFound(
+                "governance_incident_not_found",
+                "The governance incident is not assigned to the selected organization.");
+        if (affected.Version != request.Version)
+        {
+            throw new DbUpdateConcurrencyException();
+        }
+
+        var notes = RequireText(request.Notes, "notes", 4000);
+        var now = DateTime.UtcNow;
+        affected.Attest(
+            actor.Id,
+            AttestationSource.SubmittedInPortal,
+            actor.Email,
+            "Submitted in portal",
+            notes,
+            now);
+        dbContext.DataGovernanceFollowUps.Add(new DataGovernanceFollowUp(
+            affected.IncidentId,
+            organization.Id,
+            "AttestationSubmittedInPortal",
+            notes,
+            actor.Id,
+            now));
+        AccountAudit.Add(
+            dbContext,
+            HttpContext,
+            nameof(DataGovernanceAffectedOrganization),
+            affected.Id,
+            "DataGovernanceAttestationSubmitted",
+            organization.Id,
+            actor.Id,
+            new { affected.IncidentId });
+        await dbContext.SaveChangesAsync(cancellationToken);
+        return ToTenantIncidentDto(affected);
+    }
+
     private Task<(User Actor, Organization Organization)> RequireTenantAccessAsync(
         bool requireOrganizationAdmin,
         CancellationToken cancellationToken)
@@ -197,7 +282,8 @@ public sealed class CuratedDataController(
             .ThenInclude(file => file.ManagedFile)
             .Where(grant => grant.OrganizationId == organizationId
                 && grant.Status == OrganizationDatasetGrantStatus.Active
-                && grant.CuratedDatasetVersion.Status == CuratedDatasetVersionStatus.Published);
+                && (grant.CuratedDatasetVersion.Status == CuratedDatasetVersionStatus.Published
+                    || grant.CuratedDatasetVersion.Status == CuratedDatasetVersionStatus.Retired));
     }
 
     private async Task<OrganizationDatasetGrant> ReadAccessibleGrantAsync(
@@ -248,6 +334,45 @@ public sealed class CuratedDataController(
         var uniqueName = $"{baseName}-{versionFile.Id:N}{extension}";
         usedNames.Add(uniqueName);
         return uniqueName;
+    }
+
+    private static TenantGovernanceIncidentDto ToTenantIncidentDto(
+        DataGovernanceAffectedOrganization affected)
+    {
+        return new TenantGovernanceIncidentDto
+        {
+            Id = affected.IncidentId,
+            Category = affected.Incident.Category,
+            Status = affected.Incident.Status,
+            ExternalGuidance = affected.Incident.ExternalGuidance,
+            AttestationDueAt = affected.Incident.AttestationDueAt,
+            OrganizationStatus = affected.Status,
+            ReminderCount = affected.ReminderCount,
+            LastRemindedAt = affected.LastRemindedAt,
+            AttestedAt = affected.AttestedAt,
+            CreatedAt = affected.Incident.CreatedAt,
+            Version = affected.Version
+        };
+    }
+
+    private static string RequireText(string? value, string fieldName, int maximumLength)
+    {
+        if (string.IsNullOrWhiteSpace(value))
+        {
+            throw new DataProvisioningException(
+                "validation_error",
+                $"{fieldName} is required.");
+        }
+
+        var trimmed = value.Trim();
+        if (trimmed.Length > maximumLength)
+        {
+            throw new DataProvisioningException(
+                "validation_error",
+                $"{fieldName} must be {maximumLength} characters or fewer.");
+        }
+
+        return trimmed;
     }
 
     private static DataProvisioningException NotFound(string code, string message)

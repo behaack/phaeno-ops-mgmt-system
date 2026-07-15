@@ -142,7 +142,94 @@ public static class DataProvisioningMappings
             GrantedAt = grant.GrantedAt,
             RevokedAt = grant.RevokedAt,
             RevocationReason = grant.RevocationReason,
+            SupersededAt = grant.SupersededAt,
             Version = grant.Version
+        };
+    }
+
+    public static DataGovernanceIncidentDto ToDto(DataGovernanceIncident incident)
+    {
+        return new DataGovernanceIncidentDto
+        {
+            Id = incident.Id,
+            SourceSampleId = incident.SourceSampleId,
+            SourceSampleLabel = incident.SourceSample.Label,
+            Category = incident.Category,
+            Status = incident.Status,
+            Reason = incident.Reason,
+            ExternalGuidance = incident.ExternalGuidance,
+            InternalNotes = incident.InternalNotes,
+            AttestationDueAt = incident.AttestationDueAt,
+            AffectedDatasetVersionIds = incident.AffectedVersions
+                .Select(item => item.CuratedDatasetVersionId)
+                .ToList(),
+            AffectedOrganizations = incident.AffectedOrganizations
+                .OrderBy(item => item.Organization.Name)
+                .Select(item => new DataGovernanceAffectedOrganizationDto
+                {
+                    OrganizationId = item.OrganizationId,
+                    OrganizationName = item.Organization.Name,
+                    OrganizationKind = item.Organization.Kind,
+                    Status = item.Status,
+                    AffectedGrantCount = item.AffectedGrantCount,
+                    ReminderCount = item.ReminderCount,
+                    LastRemindedAt = item.LastRemindedAt,
+                    AttestedAt = item.AttestedAt,
+                    AttestationSource = item.AttestationSource,
+                    OrganizationContact = item.OrganizationContact,
+                    EvidenceSource = item.EvidenceSource,
+                    AttestationNotes = item.AttestationNotes,
+                    Version = item.Version
+                })
+                .ToList(),
+            FollowUps = incident.FollowUps
+                .OrderByDescending(item => item.OccurredAt)
+                .Select(item => new DataGovernanceFollowUpDto
+                {
+                    Id = item.Id,
+                    OrganizationId = item.OrganizationId,
+                    Kind = item.Kind,
+                    Notes = item.Notes,
+                    ActorUserId = item.ActorUserId,
+                    OccurredAt = item.OccurredAt
+                })
+                .ToList(),
+            ResolvedAt = incident.ResolvedAt,
+            Resolution = incident.Resolution,
+            CreatedAt = incident.CreatedAt,
+            Version = incident.Version
+        };
+    }
+
+    public static ProvisioningRunDto ToDto(ProvisioningRun run)
+    {
+        return new ProvisioningRunDto
+        {
+            Id = run.Id,
+            OrganizationId = run.OrganizationId,
+            DatasetVersionId = run.CuratedDatasetVersionId,
+            Kind = run.Kind,
+            Status = run.Status,
+            IdempotencyKey = run.IdempotencyKey,
+            RequestedAt = run.RequestedAt,
+            CompletedAt = run.CompletedAt,
+            GrantId = run.OrganizationDatasetGrantId,
+            PreviousGrantId = run.PreviousOrganizationDatasetGrantId,
+            FailureCode = run.FailureCode,
+            FailureMessage = run.FailureMessage
+        };
+    }
+
+    public static DataProvisioningNoticeDto ToDto(DataProvisioningNotice notice)
+    {
+        return new DataProvisioningNoticeDto
+        {
+            Id = notice.Id,
+            Kind = notice.Kind,
+            Subject = notice.Subject,
+            Body = notice.Body,
+            CreatedAt = notice.CreatedAt,
+            IncidentId = notice.IncidentId
         };
     }
 

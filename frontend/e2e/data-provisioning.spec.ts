@@ -11,6 +11,7 @@ test('shows the Phaeno data-provisioning workspace', async ({ page }) => {
   await expect(
     page.getByRole('tab', { name: 'Organization grants' }),
   ).toBeVisible()
+  await expect(page.getByRole('tab', { name: 'Governance' })).toBeVisible()
 })
 
 test('shows the Data Library in a Prospect organization context', async ({

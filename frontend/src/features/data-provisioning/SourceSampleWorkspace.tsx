@@ -1,14 +1,16 @@
 import { zodResolver } from '@hookform/resolvers/zod'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
-import { Link } from '@tanstack/react-router'
+import { Link, useNavigate } from '@tanstack/react-router'
 import {
   Archive,
   ArrowLeft,
   CheckCircle2,
+  Ellipsis,
   FileCheck2,
   FileUp,
   LockKeyhole,
   Save,
+  Trash2,
 } from 'lucide-react'
 import { useEffect, useState } from 'react'
 import { useForm } from 'react-hook-form'
@@ -16,6 +18,7 @@ import { z } from 'zod'
 
 import {
   archiveSource,
+  discardSourceDraft,
   getApiErrorMessage,
   getSourceSample,
   markSourceReady,
@@ -41,6 +44,12 @@ import {
   DialogHeader,
   DialogTitle,
 } from '#/components/ui/dialog'
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from '#/components/ui/dropdown-menu'
 import { Input } from '#/components/ui/input'
 import { usePhaenoSession } from '#/features/auth/session-context'
 
@@ -58,16 +67,23 @@ const metadataSchema = z.object({
   deidentificationNotes: z.string().trim().max(2000),
 })
 
+const discardSchema = z.object({
+  reason: requiredText('Reason', 2000),
+})
+
 type MetadataValues = z.infer<typeof metadataSchema>
+type DiscardValues = z.infer<typeof discardSchema>
 
 export function SourceSampleWorkspace({ sourceSampleId }: { sourceSampleId: string }) {
   const { authProvider, session } = usePhaenoSession()
   const queryClient = useQueryClient()
+  const navigate = useNavigate()
   const apiEnabled =
     authProvider !== 'mock' && Boolean(session?.capabilities.canManageDatasetDrafts)
   const [selectedFile, setSelectedFile] = useState<File | null>(null)
   const [readyOpen, setReadyOpen] = useState(false)
   const [archiveOpen, setArchiveOpen] = useState(false)
+  const [discardOpen, setDiscardOpen] = useState(false)
   const sourceQuery = useQuery({
     queryKey: ['data-provisioning', 'source-samples', sourceSampleId],
     queryFn: () => getSourceSample(sourceSampleId),
@@ -77,6 +93,10 @@ export function SourceSampleWorkspace({ sourceSampleId }: { sourceSampleId: stri
   const form = useForm<MetadataValues>({
     resolver: zodResolver(metadataSchema),
     defaultValues: emptyMetadata,
+  })
+  const discardForm = useForm<DiscardValues>({
+    resolver: zodResolver(discardSchema),
+    defaultValues: { reason: '' },
   })
 
   useEffect(() => {
@@ -132,6 +152,29 @@ export function SourceSampleWorkspace({ sourceSampleId }: { sourceSampleId: stri
       await refresh()
     },
   })
+  const discardMutation = useMutation({
+    mutationFn: (values: DiscardValues) =>
+      discardSourceDraft(sourceSampleId, values.reason, source!.version),
+    onSuccess: async () => {
+      discardForm.reset()
+      setDiscardOpen(false)
+      await navigate({ to: '/data-provisioning' })
+      queryClient.removeQueries({
+        queryKey: ['data-provisioning', 'source-samples', sourceSampleId],
+      })
+      await queryClient.invalidateQueries({
+        queryKey: ['data-provisioning', 'source-samples'],
+        exact: true,
+      })
+    },
+  })
+
+  function setDiscardDialogOpen(open: boolean) {
+    setDiscardOpen(open)
+    if (!open && !discardMutation.isPending) {
+      discardForm.reset()
+    }
+  }
 
   if (!apiEnabled) {
     return (
@@ -177,12 +220,30 @@ export function SourceSampleWorkspace({ sourceSampleId }: { sourceSampleId: stri
             Source revision {source.revision} · optimistic version {source.version}
           </p>
         </div>
-        {!isDraft ? (
+        {isDraft ? (
+          <DropdownMenu modal={false}>
+            <DropdownMenuTrigger asChild>
+              <Button type="button" variant="outline">
+                <Ellipsis data-icon="inline-start" />
+                Actions
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end">
+              <DropdownMenuItem
+                variant="destructive"
+                onSelect={() => setDiscardOpen(true)}
+              >
+                <Trash2 aria-hidden="true" />
+                Discard draft
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
+        ) : (
           <div className="flex items-center gap-2 rounded-lg border bg-muted/30 px-3 py-2 text-sm">
             <LockKeyhole aria-hidden="true" className="size-4" />
             Immutable revision
           </div>
-        ) : null}
+        )}
       </section>
 
       <div className="grid gap-5 xl:grid-cols-[minmax(0,1.45fr)_minmax(22rem,0.75fr)]">
@@ -331,6 +392,66 @@ export function SourceSampleWorkspace({ sourceSampleId }: { sourceSampleId: stri
 
       <ConfirmationDialog open={readyOpen} onOpenChange={setReadyOpen} title="Freeze this source revision?" description="The portal will validate the complete metadata, evidence, files, scans, and checksums atomically. A successful transition makes revision 1 immutable." confirmLabel="Validate and mark ready" pending={readyMutation.isPending} onConfirm={() => readyMutation.mutate()} />
       <ConfirmationDialog open={archiveOpen} onOpenChange={setArchiveOpen} title="Archive this source sample?" description="Archiving prevents new curated snapshots. Existing published package versions and organization grants are unchanged." confirmLabel="Archive source" pending={archiveMutation.isPending} onConfirm={() => archiveMutation.mutate()} />
+      <Dialog open={discardOpen} onOpenChange={setDiscardDialogOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Discard “{source.label}”?</DialogTitle>
+            <DialogDescription>
+              This permanently deletes this unreferenced draft, its metadata, and{' '}
+              {source.files.length} managed file{source.files.length === 1 ? '' : 's'}.
+              This action cannot be undone.
+            </DialogDescription>
+          </DialogHeader>
+          <form
+            className="space-y-4"
+            noValidate
+            onSubmit={discardForm.handleSubmit((values) =>
+              discardMutation.mutateAsync(values),
+            )}
+          >
+            <p className="m-0 text-sm text-muted-foreground">
+              <span className="text-destructive">*</span> Required field
+            </p>
+            <Field
+              label="Reason"
+              error={discardForm.formState.errors.reason?.message}
+              errorId="discard-reason-error"
+              required
+            >
+              <textarea
+                id="discard-reason"
+                className={textareaClass}
+                rows={4}
+                required
+                aria-invalid={Boolean(discardForm.formState.errors.reason)}
+                aria-describedby={
+                  discardForm.formState.errors.reason
+                    ? 'discard-reason-error'
+                    : undefined
+                }
+                {...discardForm.register('reason')}
+              />
+            </Field>
+            <ErrorAlert
+              error={discardMutation.error}
+              fallback="The draft could not be discarded. Reload the source and try again."
+            />
+            <DialogFooter>
+              <DialogClose asChild>
+                <Button type="button" variant="outline">Cancel</Button>
+              </DialogClose>
+              <Button
+                type="submit"
+                variant="destructive"
+                disabled={discardMutation.isPending}
+              >
+                <Trash2 data-icon="inline-start" />
+                {discardMutation.isPending ? 'Discarding' : 'Discard draft'}
+              </Button>
+            </DialogFooter>
+          </form>
+        </DialogContent>
+      </Dialog>
     </main>
   )
 }
@@ -339,8 +460,8 @@ function ConfirmationDialog({ open, onOpenChange, title, description, confirmLab
   return <Dialog open={open} onOpenChange={onOpenChange}><DialogContent><DialogHeader><DialogTitle>{title}</DialogTitle><DialogDescription>{description}</DialogDescription></DialogHeader><DialogFooter><DialogClose asChild><Button type="button" variant="outline">Cancel</Button></DialogClose><Button type="button" disabled={pending} onClick={onConfirm}>{pending ? 'Working' : confirmLabel}</Button></DialogFooter></DialogContent></Dialog>
 }
 
-function Field({ label, error, required, children }: { label: string; error?: string; required?: boolean; children: React.ReactNode }) {
-  return <label className="grid gap-1.5"><span className="text-sm font-medium">{label}{required ? <span className="text-destructive"> *</span> : null}</span>{children}{error ? <span className="text-sm text-destructive" role="alert">{error}</span> : null}</label>
+function Field({ label, error, errorId, required, children }: { label: string; error?: string; errorId?: string; required?: boolean; children: React.ReactNode }) {
+  return <label className="grid gap-1.5"><span className="text-sm font-medium">{label}{required ? <span className="text-destructive"> *</span> : null}</span>{children}{error ? <span id={errorId} className="text-sm text-destructive" role="alert">{error}</span> : null}</label>
 }
 
 function BackLink() {

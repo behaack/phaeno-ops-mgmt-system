@@ -190,5 +190,20 @@ public class PersistenceTests
         Assert.Equal(
             "dataset_download_audits",
             dbContext.Model.FindEntityType(typeof(DatasetDownloadAudit))?.GetTableName());
+        Assert.Equal(
+            "data_governance_incidents",
+            dbContext.Model.FindEntityType(typeof(DataGovernanceIncident))?.GetTableName());
+        Assert.Equal(
+            "data_governance_affected_versions",
+            dbContext.Model.FindEntityType(typeof(DataGovernanceAffectedVersion))?.GetTableName());
+        Assert.Equal(
+            "data_governance_affected_organizations",
+            dbContext.Model.FindEntityType(typeof(DataGovernanceAffectedOrganization))?.GetTableName());
+        Assert.Equal(
+            "data_governance_follow_ups",
+            dbContext.Model.FindEntityType(typeof(DataGovernanceFollowUp))?.GetTableName());
+        Assert.Equal(
+            "data_provisioning_notices",
+            dbContext.Model.FindEntityType(typeof(DataProvisioningNotice))?.GetTableName());
     }
 }

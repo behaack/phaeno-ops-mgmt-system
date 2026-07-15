@@ -1,6 +1,7 @@
 namespace PhaenoPortal.App.Features.DataProvisioning.DTOs;
 
 using PhaenoPortal.App.Features.Accounts.Domain;
+using PhaenoPortal.App.Features.Accounts.DTOs;
 using PhaenoPortal.App.Features.DataProvisioning.Domain;
 
 public sealed record CreateSourceSampleRequest
@@ -39,6 +40,13 @@ public sealed record UpdateSourceSampleRequest
 
 public sealed record VersionedCommandRequest
 {
+    public required long Version { get; init; }
+}
+
+public sealed record ReasonedVersionedCommandRequest
+{
+    public required string Reason { get; init; }
+
     public required long Version { get; init; }
 }
 
@@ -231,6 +239,110 @@ public sealed record GrantDatasetRequest
     public required string IdempotencyKey { get; init; }
 }
 
+public sealed record CreateProvisionedOrganizationRequest
+{
+    public required string Name { get; init; }
+
+    public string? Description { get; init; }
+
+    public OrganizationKind Kind { get; init; } = OrganizationKind.Prospect;
+
+    public IReadOnlyList<Guid> DatasetVersionIds { get; init; } = [];
+}
+
+public sealed record CreateProvisionedOrganizationResultDto
+{
+    public required OrganizationDto Organization { get; init; }
+
+    public required IReadOnlyList<ProvisioningResultDto> PackageGrants { get; init; }
+}
+
+public sealed record UpgradeDatasetGrantRequest
+{
+    public required Guid DatasetVersionId { get; init; }
+
+    public required string IdempotencyKey { get; init; }
+
+    public required long Version { get; init; }
+}
+
+public sealed record UpdateCuratedDatasetRequest
+{
+    public required string Name { get; init; }
+
+    public required string Description { get; init; }
+
+    public required long Version { get; init; }
+}
+
+public sealed record RemoveDatasetEligibilityRequest
+{
+    public required long Version { get; init; }
+
+    public bool RevokeAllActiveGrants { get; init; }
+
+    public string? Reason { get; init; }
+}
+
+public sealed record RemoveDatasetEligibilityResultDto
+{
+    public required CuratedDatasetDto Dataset { get; init; }
+
+    public required int RevokedGrantCount { get; init; }
+}
+
+public sealed record QuarantineSourceRequest
+{
+    public required DataGovernanceConcernCategory Category { get; init; }
+
+    public required string Reason { get; init; }
+
+    public required string ExternalGuidance { get; init; }
+
+    public required string InternalNotes { get; init; }
+
+    public required DateTime AttestationDueAt { get; init; }
+}
+
+public sealed record ClearGovernanceIncidentRequest
+{
+    public required string Resolution { get; init; }
+
+    public required bool ImmutableContentConfirmedUnchanged { get; init; }
+
+    public required long Version { get; init; }
+}
+
+public sealed record WithdrawGovernanceIncidentRequest
+{
+    public required string Resolution { get; init; }
+
+    public required long Version { get; init; }
+}
+
+public sealed record GovernanceFollowUpRequest
+{
+    public required string Notes { get; init; }
+}
+
+public sealed record GovernanceAttestationRequest
+{
+    public required string OrganizationContact { get; init; }
+
+    public required string EvidenceSource { get; init; }
+
+    public required string Notes { get; init; }
+
+    public required long Version { get; init; }
+}
+
+public sealed record TenantGovernanceAttestationRequest
+{
+    public required string Notes { get; init; }
+
+    public required long Version { get; init; }
+}
+
 public sealed record RevokeDatasetGrantRequest
 {
     public required string Reason { get; init; }
@@ -263,6 +375,154 @@ public sealed record DatasetGrantDto
     public DateTime? RevokedAt { get; init; }
 
     public string? RevocationReason { get; init; }
+
+    public DateTime? SupersededAt { get; init; }
+
+    public required long Version { get; init; }
+}
+
+public sealed record ProvisioningRunDto
+{
+    public required Guid Id { get; init; }
+
+    public required Guid OrganizationId { get; init; }
+
+    public required Guid DatasetVersionId { get; init; }
+
+    public required ProvisioningRunKind Kind { get; init; }
+
+    public required ProvisioningRunStatus Status { get; init; }
+
+    public required string IdempotencyKey { get; init; }
+
+    public required DateTime RequestedAt { get; init; }
+
+    public DateTime? CompletedAt { get; init; }
+
+    public Guid? GrantId { get; init; }
+
+    public Guid? PreviousGrantId { get; init; }
+
+    public string? FailureCode { get; init; }
+
+    public string? FailureMessage { get; init; }
+}
+
+public sealed record DataGovernanceAffectedOrganizationDto
+{
+    public required Guid OrganizationId { get; init; }
+
+    public required string OrganizationName { get; init; }
+
+    public required OrganizationKind OrganizationKind { get; init; }
+
+    public required AffectedOrganizationStatus Status { get; init; }
+
+    public required int AffectedGrantCount { get; init; }
+
+    public required int ReminderCount { get; init; }
+
+    public DateTime? LastRemindedAt { get; init; }
+
+    public DateTime? AttestedAt { get; init; }
+
+    public AttestationSource? AttestationSource { get; init; }
+
+    public string? OrganizationContact { get; init; }
+
+    public string? EvidenceSource { get; init; }
+
+    public string? AttestationNotes { get; init; }
+
+    public required long Version { get; init; }
+}
+
+public sealed record DataGovernanceFollowUpDto
+{
+    public required Guid Id { get; init; }
+
+    public Guid? OrganizationId { get; init; }
+
+    public required string Kind { get; init; }
+
+    public required string Notes { get; init; }
+
+    public required Guid ActorUserId { get; init; }
+
+    public required DateTime OccurredAt { get; init; }
+}
+
+public sealed record DataGovernanceIncidentDto
+{
+    public required Guid Id { get; init; }
+
+    public required Guid SourceSampleId { get; init; }
+
+    public required string SourceSampleLabel { get; init; }
+
+    public required DataGovernanceConcernCategory Category { get; init; }
+
+    public required DataGovernanceIncidentStatus Status { get; init; }
+
+    public required string Reason { get; init; }
+
+    public required string ExternalGuidance { get; init; }
+
+    public required string InternalNotes { get; init; }
+
+    public required DateTime AttestationDueAt { get; init; }
+
+    public required IReadOnlyList<Guid> AffectedDatasetVersionIds { get; init; }
+
+    public required IReadOnlyList<DataGovernanceAffectedOrganizationDto> AffectedOrganizations { get; init; }
+
+    public required IReadOnlyList<DataGovernanceFollowUpDto> FollowUps { get; init; }
+
+    public DateTime? ResolvedAt { get; init; }
+
+    public string? Resolution { get; init; }
+
+    public required DateTime CreatedAt { get; init; }
+
+    public required long Version { get; init; }
+}
+
+public sealed record DataProvisioningNoticeDto
+{
+    public required Guid Id { get; init; }
+
+    public required DataProvisioningNoticeKind Kind { get; init; }
+
+    public required string Subject { get; init; }
+
+    public required string Body { get; init; }
+
+    public required DateTime CreatedAt { get; init; }
+
+    public Guid? IncidentId { get; init; }
+}
+
+public sealed record TenantGovernanceIncidentDto
+{
+    public required Guid Id { get; init; }
+
+    public required DataGovernanceConcernCategory Category { get; init; }
+
+    public required DataGovernanceIncidentStatus Status { get; init; }
+
+    public required string ExternalGuidance { get; init; }
+
+    public required DateTime AttestationDueAt { get; init; }
+
+    public required AffectedOrganizationStatus OrganizationStatus { get; init; }
+
+    public required int ReminderCount { get; init; }
+
+    public DateTime? LastRemindedAt { get; init; }
+
+    public DateTime? AttestedAt { get; init; }
+
+    public required DateTime CreatedAt { get; init; }
 
     public required long Version { get; init; }
 }

@@ -50,6 +50,20 @@ if (builder.Environment.IsDevelopment())
 builder.Services.AddSingleton<DataProvisioningProfile>();
 builder.Services.AddSingleton<IManagedFileStorage, LocalManagedFileStorage>();
 builder.Services.AddSingleton<IManagedFileScanner, EnvironmentManagedFileScanner>();
+builder.Services.AddHttpClient<PostmarkDataProvisioningNoticeSender>((services, httpClient) =>
+{
+    var postmarkOptions = services.GetRequiredService<IOptions<PostmarkOptions>>().Value;
+    httpClient.BaseAddress = new Uri(postmarkOptions.ApiBaseUrl.TrimEnd('/') + "/");
+});
+builder.Services.AddScoped<LoggingDataProvisioningNoticeSender>();
+builder.Services.AddScoped<IDataProvisioningNoticeSender>(services =>
+{
+    var postmarkOptions = services.GetRequiredService<IOptions<PostmarkOptions>>().Value;
+    return postmarkOptions.IsConfigured
+        ? services.GetRequiredService<PostmarkDataProvisioningNoticeSender>()
+        : services.GetRequiredService<LoggingDataProvisioningNoticeSender>();
+});
+builder.Services.AddHostedService<DataProvisioningNoticeDispatcher>();
 builder.Services.AddSingleton<InvitationTokenService>();
 builder.Services.AddHttpClient<ClerkBootstrapUserProvisioner>((services, httpClient) =>
 {

@@ -73,6 +73,14 @@ public sealed class CuratedDataset : IAudit, IConcurrency
         EligibilityApprovedAt = null;
     }
 
+    public void Deactivate()
+    {
+        IsActive = false;
+        RemoveEligibility();
+    }
+
+    public void Reactivate() => IsActive = true;
+
     public void MarkCreated(DateTime utcNow, Guid? actorUserId)
     {
         CreatedAt = utcNow;

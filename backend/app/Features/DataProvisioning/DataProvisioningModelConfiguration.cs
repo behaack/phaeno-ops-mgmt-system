@@ -138,6 +138,7 @@ public static class DataProvisioningModelConfiguration
             entity.HasKey(e => e.Id);
             entity.Property(e => e.IdempotencyKey).IsRequired().HasMaxLength(255);
             entity.Property(e => e.Status).HasConversion<string>().HasMaxLength(50);
+            entity.Property(e => e.Kind).HasConversion<string>().HasMaxLength(50);
             entity.Property(e => e.FailureCode).HasMaxLength(100);
             entity.Property(e => e.FailureMessage).HasMaxLength(2000);
             entity.HasIndex(e => new { e.OrganizationId, e.IdempotencyKey }).IsUnique();
@@ -152,6 +153,10 @@ public static class DataProvisioningModelConfiguration
             entity.HasOne(e => e.OrganizationDatasetGrant)
                 .WithMany()
                 .HasForeignKey(e => e.OrganizationDatasetGrantId)
+                .OnDelete(DeleteBehavior.Restrict);
+            entity.HasOne<OrganizationDatasetGrant>()
+                .WithMany()
+                .HasForeignKey(e => e.PreviousOrganizationDatasetGrantId)
                 .OnDelete(DeleteBehavior.Restrict);
             ConfigureAudit(entity);
         });
@@ -184,6 +189,105 @@ public static class DataProvisioningModelConfiguration
             entity.HasOne<ManagedFile>()
                 .WithMany()
                 .HasForeignKey(e => e.ManagedFileId)
+                .OnDelete(DeleteBehavior.Restrict);
+        });
+
+        modelBuilder.Entity<DataGovernanceIncident>(entity =>
+        {
+            entity.HasKey(e => e.Id);
+            entity.Property(e => e.Category).HasConversion<string>().HasMaxLength(50);
+            entity.Property(e => e.Status).HasConversion<string>().HasMaxLength(50);
+            entity.Property(e => e.Reason).IsRequired().HasMaxLength(2000);
+            entity.Property(e => e.ExternalGuidance).IsRequired().HasMaxLength(4000);
+            entity.Property(e => e.InternalNotes).IsRequired().HasMaxLength(4000);
+            entity.Property(e => e.Resolution).HasMaxLength(4000);
+            entity.HasIndex(e => e.SourceSampleId);
+            entity.HasIndex(e => e.Status);
+            entity.HasOne(e => e.SourceSample)
+                .WithMany()
+                .HasForeignKey(e => e.SourceSampleId)
+                .OnDelete(DeleteBehavior.Restrict);
+            ConfigureAudit(entity);
+        });
+
+        modelBuilder.Entity<DataGovernanceAffectedVersion>(entity =>
+        {
+            entity.HasKey(e => e.Id);
+            entity.Property(e => e.PriorStatus).HasConversion<string>().HasMaxLength(50);
+            entity.HasIndex(e => new { e.IncidentId, e.CuratedDatasetVersionId }).IsUnique();
+            entity.HasOne(e => e.Incident)
+                .WithMany(e => e.AffectedVersions)
+                .HasForeignKey(e => e.IncidentId)
+                .OnDelete(DeleteBehavior.Restrict);
+            entity.HasOne(e => e.CuratedDatasetVersion)
+                .WithMany()
+                .HasForeignKey(e => e.CuratedDatasetVersionId)
+                .OnDelete(DeleteBehavior.Restrict);
+        });
+
+        modelBuilder.Entity<DataGovernanceAffectedOrganization>(entity =>
+        {
+            entity.HasKey(e => e.Id);
+            entity.Property(e => e.Status).HasConversion<string>().HasMaxLength(50);
+            entity.Property(e => e.AttestationSource).HasConversion<string>().HasMaxLength(50);
+            entity.Property(e => e.OrganizationContact).HasMaxLength(500);
+            entity.Property(e => e.EvidenceSource).HasMaxLength(1000);
+            entity.Property(e => e.AttestationNotes).HasMaxLength(4000);
+            entity.HasIndex(e => new { e.IncidentId, e.OrganizationId }).IsUnique();
+            entity.HasIndex(e => e.Status);
+            entity.HasOne(e => e.Incident)
+                .WithMany(e => e.AffectedOrganizations)
+                .HasForeignKey(e => e.IncidentId)
+                .OnDelete(DeleteBehavior.Restrict);
+            entity.HasOne(e => e.Organization)
+                .WithMany()
+                .HasForeignKey(e => e.OrganizationId)
+                .OnDelete(DeleteBehavior.Restrict);
+            ConfigureAudit(entity);
+        });
+
+        modelBuilder.Entity<DataGovernanceFollowUp>(entity =>
+        {
+            entity.HasKey(e => e.Id);
+            entity.Property(e => e.Kind).IsRequired().HasMaxLength(50);
+            entity.Property(e => e.Notes).IsRequired().HasMaxLength(4000);
+            entity.HasIndex(e => new { e.IncidentId, e.OccurredAt });
+            entity.HasIndex(e => e.OrganizationId);
+            entity.HasOne(e => e.Incident)
+                .WithMany(e => e.FollowUps)
+                .HasForeignKey(e => e.IncidentId)
+                .OnDelete(DeleteBehavior.Restrict);
+            entity.HasOne<Organization>()
+                .WithMany()
+                .HasForeignKey(e => e.OrganizationId)
+                .OnDelete(DeleteBehavior.Restrict);
+            entity.HasOne<User>()
+                .WithMany()
+                .HasForeignKey(e => e.ActorUserId)
+                .OnDelete(DeleteBehavior.Restrict);
+        });
+
+        modelBuilder.Entity<DataProvisioningNotice>(entity =>
+        {
+            entity.HasKey(e => e.Id);
+            entity.Property(e => e.Kind).HasConversion<string>().HasMaxLength(50);
+            entity.Property(e => e.Status).HasConversion<string>().HasMaxLength(50);
+            entity.Property(e => e.Subject).IsRequired().HasMaxLength(500);
+            entity.Property(e => e.Body).IsRequired().HasMaxLength(4000);
+            entity.Property(e => e.LastError).HasMaxLength(2000);
+            entity.HasIndex(e => new { e.Status, e.NextAttemptAt });
+            entity.HasIndex(e => new { e.OrganizationId, e.CreatedAt });
+            entity.HasOne(e => e.Organization)
+                .WithMany()
+                .HasForeignKey(e => e.OrganizationId)
+                .OnDelete(DeleteBehavior.Restrict);
+            entity.HasOne(e => e.Incident)
+                .WithMany()
+                .HasForeignKey(e => e.IncidentId)
+                .OnDelete(DeleteBehavior.Restrict);
+            entity.HasOne<OrganizationDatasetGrant>()
+                .WithMany()
+                .HasForeignKey(e => e.OrganizationDatasetGrantId)
                 .OnDelete(DeleteBehavior.Restrict);
         });
     }

@@ -20,6 +20,7 @@ import {
   getSelectedMembership,
   usePhaenoSession,
 } from '#/features/auth/session-context'
+import { GovernanceNoticePanel } from './GovernanceNoticePanel'
 
 export function DataLibraryPage() {
   const { authProvider, session, selectedOrganizationId } = usePhaenoSession()
@@ -77,6 +78,12 @@ export function DataLibraryPage() {
           <AlertDescription>{getApiErrorMessage(datasetsQuery.error, 'Try again or contact Phaeno support.')}</AlertDescription>
         </Alert>
       ) : null}
+
+      <GovernanceNoticePanel
+        apiEnabled={apiEnabled}
+        isOrganizationAdmin={Boolean(selectedMembership?.isOrganizationAdmin)}
+        selectedOrganizationId={selectedOrganizationId}
+      />
 
       <section className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
         {(datasetsQuery.data ?? []).map((dataset) => (

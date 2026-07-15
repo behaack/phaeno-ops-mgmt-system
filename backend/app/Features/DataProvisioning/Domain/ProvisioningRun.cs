@@ -20,6 +20,8 @@ public sealed class ProvisioningRun : IAudit, IConcurrency
 
     public ProvisioningRunStatus Status { get; private set; } = ProvisioningRunStatus.Pending;
 
+    public ProvisioningRunKind Kind { get; private set; } = ProvisioningRunKind.Grant;
+
     public Guid RequestedByUserId { get; private set; }
 
     public DateTime RequestedAt { get; private set; }
@@ -29,6 +31,8 @@ public sealed class ProvisioningRun : IAudit, IConcurrency
     public Guid? OrganizationDatasetGrantId { get; private set; }
 
     public OrganizationDatasetGrant? OrganizationDatasetGrant { get; private set; }
+
+    public Guid? PreviousOrganizationDatasetGrantId { get; private set; }
 
     public string? FailureCode { get; private set; }
 
@@ -53,7 +57,9 @@ public sealed class ProvisioningRun : IAudit, IConcurrency
         CuratedDatasetVersion curatedDatasetVersion,
         string idempotencyKey,
         Guid requestedByUserId,
-        DateTime requestedAt)
+        DateTime requestedAt,
+        ProvisioningRunKind kind = ProvisioningRunKind.Grant,
+        Guid? previousOrganizationDatasetGrantId = null)
     {
         OrganizationId = organization.Id;
         Organization = organization;
@@ -62,6 +68,8 @@ public sealed class ProvisioningRun : IAudit, IConcurrency
         IdempotencyKey = idempotencyKey.Trim();
         RequestedByUserId = requestedByUserId;
         RequestedAt = requestedAt;
+        Kind = kind;
+        PreviousOrganizationDatasetGrantId = previousOrganizationDatasetGrantId;
     }
 
     public void Succeed(Guid organizationDatasetGrantId, DateTime completedAt)

@@ -38,6 +38,62 @@ public enum ProvisioningRunStatus
     Failed = 3
 }
 
+public enum ProvisioningRunKind
+{
+    Grant = 1,
+    Upgrade = 2,
+    BulkRevocation = 3,
+    OrganizationCreationGrant = 4
+}
+
+public enum DataGovernanceConcernCategory
+{
+    Deidentification = 1,
+    Ownership = 2,
+    SharingRights = 3,
+    Other = 4
+}
+
+public enum DataGovernanceIncidentStatus
+{
+    Open = 1,
+    Cleared = 2,
+    ConfirmedUnsafe = 3
+}
+
+public enum AffectedOrganizationStatus
+{
+    Blocked = 1,
+    Resumed = 2,
+    AwaitingAttestation = 3,
+    Attested = 4,
+    Inactive = 5
+}
+
+public enum AttestationSource
+{
+    SubmittedInPortal = 1,
+    RecordedByPhaeno = 2
+}
+
+public enum DataProvisioningNoticeKind
+{
+    Grant = 1,
+    Upgrade = 2,
+    Revocation = 3,
+    Quarantine = 4,
+    QuarantineCleared = 5,
+    Withdrawal = 6,
+    AttestationReminder = 7
+}
+
+public enum DataProvisioningNoticeStatus
+{
+    Pending = 1,
+    Delivered = 2,
+    Failed = 3
+}
+
 public enum DatasetDownloadKind
 {
     File = 1,

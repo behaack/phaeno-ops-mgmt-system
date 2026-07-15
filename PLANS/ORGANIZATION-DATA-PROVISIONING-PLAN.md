@@ -3,22 +3,34 @@
 Keep this file updated as organization-seeding, dataset, and external-tenant requirements
 are supplied and decisions are made.
 
-The recommended first slice was explicitly requested and implemented. Future
-phases remain confirmation-gated and should continue from the recorded product
-decisions below.
+The recommended first slice and the remaining implementation phases are complete
+for the confirmed baseline curated-sample contract. Real production scientific
+content and approved file kinds remain a content-readiness gate, not unfinished
+application behavior.
 
 ## Status
 
-- Implementation state: the recommended first slice is implemented in source
-  code and automated unit/component coverage. It includes organization phases,
+- Implementation state: the confirmed provisioning plan is implemented in source
+  code with focused unit/component coverage. It includes organization phases,
   explicit session capabilities, the Phaeno source registry, environment-scoped
   managed uploads and scan policy, immutable curated versions, eligibility,
   idempotent exact-version grants, revocation, tenant-isolated metadata access,
-  audited file/archive downloads, and the Phaeno and tenant user interfaces.
-- Persistence mappings and migration
-  `20260714222254_AddOrganizationDataProvisioning` are implemented. The
-  migration was applied to the configured development database on 2026-07-14,
-  and EF reports no pending model changes. Applying it to any other environment
+  audited file/archive downloads, and the Phaeno and tenant user interfaces. The
+  source workspace exposes audited, reason-required discard for an unreferenced
+  draft and returns the curator to the registry after managed-byte cleanup.
+- The completion slice adds dataset metadata and active-state management,
+  version retirement, catalog removal with optional bulk revocation, atomic
+  exact-version upgrades, organization creation with optional package grants,
+  provisioning history/retry, durable organization notices, and tenant activity.
+- Source-wide governance now supports immediate cross-organization quarantine,
+  separate unchanged-content clearance and confirmed-unsafe withdrawal,
+  Phaeno-only purpose-audited investigation downloads, affected-organization
+  tracking, reminders, and portal or Phaeno-recorded attestations. Customer APIs
+  expose only external guidance and never internal investigation notes.
+- Persistence migrations `20260714222254_AddOrganizationDataProvisioning` and
+  `20260714232458_CompleteDataProvisioningGovernance` are implemented and applied
+  to the configured development database on 2026-07-14. EF reports no pending
+  migrations. Applying them to any shared, staging, or production environment
   remains an explicit deployment operation.
 - The repeatable PostgreSQL reference journey passes against the configured
   development database with all fixture rows rolled back and managed fixture
@@ -29,9 +41,6 @@ decisions below.
 - Real production sample data remains unavailable and is a production-content
   prerequisite, not an implementation blocker. Production defaults contain no
   speculative approved file kinds and reject synthetic fixture workflows.
-- Quarantine/withdrawal closeout, explicit version upgrade, catalog-removal bulk
-  revocation, creation-flow package selection, and the other advanced-governance
-  items remain later implementation phases as already scoped below.
 - Requested outcomes:
   - seed a prospect, customer, or partner organization with data
   - give authorized Phaeno users a configuration area where datasets can be
@@ -975,15 +984,16 @@ Contract requirements:
 5. Finalize the domain model, API contracts, permission capabilities, and
    synchronous/asynchronous transaction boundary.
 6. Add definitions, immutable versions, grants, provisioning runs, persistence,
-   and a migration only when migration work is explicitly requested.
+   and migrations with the persisted model.
 7. Implement the first dataset-type adapter and Phaeno dataset/version
    configuration UI.
 8. Implement organization grant/provisioning commands, progress/history UI, and
    the new-organization workflow integration.
 9. Add prospect/customer/partner dataset access UI and file integration as
    required.
-10. Add version upgrades, packages, bulk assignment, and advanced governance
-   only after the first dataset type is proven.
+10. Add version upgrades, optional organization-creation package assignment,
+    bulk revocation, and advanced governance after the first dataset type is
+    proven. Generic bulk assignment and scheduled rollout remain deferred scope.
 
 ## Recommended First Slice
 
@@ -1172,9 +1182,10 @@ publication checks.
 - Final profile-specific payload types, scientific validators, approved file
   kinds, and size limits when actual production data becomes available.
 - File-storage/scanning configuration and operational limits.
-- Persistence mappings and migrations. The first-slice migration was created and
-  applied to the configured development database after explicit approval;
-  future migration creation or application remains confirmation-gated.
+- Persistence mappings and migrations. Create required EF migrations and apply
+  them to the configured local development database with the authorized model
+  change; removing migrations or applying them to shared, staging, or production
+  databases remains confirmation-gated.
 
 ## Deferred Product Scope
 

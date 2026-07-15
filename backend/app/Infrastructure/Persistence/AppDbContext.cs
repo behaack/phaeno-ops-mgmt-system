@@ -55,6 +55,16 @@ public sealed class AppDbContext(
 
     public DbSet<DatasetDownloadAudit> DatasetDownloadAudits { get; set; }
 
+    public DbSet<DataGovernanceIncident> DataGovernanceIncidents { get; set; }
+
+    public DbSet<DataGovernanceAffectedVersion> DataGovernanceAffectedVersions { get; set; }
+
+    public DbSet<DataGovernanceAffectedOrganization> DataGovernanceAffectedOrganizations { get; set; }
+
+    public DbSet<DataGovernanceFollowUp> DataGovernanceFollowUps { get; set; }
+
+    public DbSet<DataProvisioningNotice> DataProvisioningNotices { get; set; }
+
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
         modelBuilder.HasDefaultSchema(this.persistenceOptions.Schema);

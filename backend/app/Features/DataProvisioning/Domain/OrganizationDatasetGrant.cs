@@ -32,6 +32,10 @@ public sealed class OrganizationDatasetGrant : IAudit, IConcurrency
 
     public string? RevocationReason { get; private set; }
 
+    public DateTime? SupersededAt { get; private set; }
+
+    public Guid? SupersededByUserId { get; private set; }
+
     public DateTime CreatedAt { get; private set; } = DateTime.UtcNow;
 
     public Guid? CreatedByUserId { get; private set; }
@@ -74,6 +78,18 @@ public sealed class OrganizationDatasetGrant : IAudit, IConcurrency
         RevocationReason = reason.Trim();
         RevokedByUserId = actorUserId;
         RevokedAt = revokedAt;
+    }
+
+    public void Supersede(Guid actorUserId, DateTime supersededAt)
+    {
+        if (Status != OrganizationDatasetGrantStatus.Active)
+        {
+            throw new InvalidOperationException("Only an active grant can be superseded.");
+        }
+
+        Status = OrganizationDatasetGrantStatus.Superseded;
+        SupersededByUserId = actorUserId;
+        SupersededAt = supersededAt;
     }
 
     public void MarkCreated(DateTime utcNow, Guid? actorUserId)

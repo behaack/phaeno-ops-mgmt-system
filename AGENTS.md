@@ -24,7 +24,7 @@ Every feature begins with product discovery. Before implementation, identify the
 - Make technical decisions autonomously when they do not materially affect product behavior, business outcomes, regulatory or compliance obligations, cost, or user experience.
 - Escalate only true product tradeoffs, reduced to the smallest clear decision with a recommendation and default.
 - Do not present technical alternatives for their own sake. Record consequential engineering decisions in the repository's established planning or decision documents.
-- This autonomy does not expand task scope or override existing rules requiring confirmation for migrations, authentication, dependencies, deployments, Git operations, or other high-impact changes.
+- This autonomy does not expand task scope or override existing rules requiring confirmation for shared-database migrations, authentication, dependencies, deployments, Git operations, or other high-impact changes.
 
 ### Phaeno Portal Scientific Workflow Focus
 
@@ -54,7 +54,7 @@ Keep the owner focused on scientific meaning, sequencing and laboratory workflow
 - Preserve optimistic concurrency, centralized audit stamping, and soft-deactivation rules for users and organizations.
 - Use snake_case database identifiers, UUID primary keys named `Id` in C#, and unambiguous role-specific foreign-key names.
 - Keep runtime configuration and credentials out of source; use `ConnectionStrings:DefaultConnection` and environment-specific settings.
-- Do not create, remove, or apply EF migrations unless explicitly requested.
+- Create EF migrations when an authorized implementation changes the persisted model, and apply them to the configured local development database after appropriate verification. Get explicit approval before removing a migration or applying one to any shared, staging, or production database.
 - Do not add dependencies, change auth, or change a cross-app contract without a short plan and explicit scope.
 - Do not stage, commit, or perform other Git mutations unless asked.
 

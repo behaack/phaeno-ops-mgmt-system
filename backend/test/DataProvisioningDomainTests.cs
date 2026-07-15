@@ -137,6 +137,112 @@ public class DataProvisioningDomainTests
         Assert.Equal("Prospect request", grant.RevocationReason);
     }
 
+    [Fact]
+    public void GrantUpgradeSupersedesPriorExactVersionWithoutErasingHistory()
+    {
+        var source = CreateReadySource();
+        var dataset = new CuratedDataset("Synthetic reference", "Fixture package");
+        var now = new DateTime(2026, 7, 14, 12, 0, 0, DateTimeKind.Utc);
+        var actorId = Guid.NewGuid();
+        var firstVersion = CreatePublishedVersion(dataset, source, 1, actorId, now);
+        var secondVersion = CreatePublishedVersion(dataset, source, 2, actorId, now.AddMinutes(1));
+        dataset.SetEligibleVersion(secondVersion, actorId, now.AddMinutes(1));
+        var prospect = new Organization("Prospect", OrganizationKind.Prospect);
+        var priorGrant = new OrganizationDatasetGrant(
+            prospect,
+            dataset,
+            firstVersion,
+            actorId,
+            now);
+
+        priorGrant.Supersede(actorId, now.AddMinutes(2));
+        var replacement = new OrganizationDatasetGrant(
+            prospect,
+            dataset,
+            secondVersion,
+            actorId,
+            now.AddMinutes(2));
+
+        Assert.Equal(OrganizationDatasetGrantStatus.Superseded, priorGrant.Status);
+        Assert.Equal(now.AddMinutes(2), priorGrant.SupersededAt);
+        Assert.Equal(OrganizationDatasetGrantStatus.Active, replacement.Status);
+        Assert.Equal(secondVersion.Id, replacement.CuratedDatasetVersionId);
+    }
+
+    [Fact]
+    public void GovernanceQuarantineCanRestoreUnchangedContentOrWithdrawUnsafeContent()
+    {
+        var source = CreateReadySource();
+        var dataset = new CuratedDataset("Synthetic reference", "Fixture package");
+        var actorId = Guid.NewGuid();
+        var now = new DateTime(2026, 7, 14, 12, 0, 0, DateTimeKind.Utc);
+        var clearableVersion = CreatePublishedVersion(dataset, source, 1, actorId, now);
+        var priorStatus = clearableVersion.Quarantine();
+
+        clearableVersion.ClearQuarantine(priorStatus);
+
+        Assert.Equal(CuratedDatasetVersionStatus.Published, clearableVersion.Status);
+
+        var unsafeVersion = CreatePublishedVersion(dataset, source, 2, actorId, now.AddMinutes(1));
+        unsafeVersion.Quarantine();
+        unsafeVersion.Withdraw();
+
+        Assert.Equal(CuratedDatasetVersionStatus.Withdrawn, unsafeVersion.Status);
+        Assert.Throws<InvalidOperationException>(() =>
+            unsafeVersion.ClearQuarantine(CuratedDatasetVersionStatus.Published));
+    }
+
+    [Fact]
+    public void AffectedOrganizationAttestationPreservesEvidenceAndClosesOutstandingStatus()
+    {
+        var organization = new Organization("Prospect", OrganizationKind.Prospect);
+        var actorId = Guid.NewGuid();
+        var now = new DateTime(2026, 7, 14, 12, 0, 0, DateTimeKind.Utc);
+        var affected = new DataGovernanceAffectedOrganization(
+            Guid.NewGuid(),
+            organization,
+            affectedGrantCount: 2);
+        affected.RequireAttestation();
+        affected.RecordReminder(now);
+
+        affected.Attest(
+            actorId,
+            AttestationSource.SubmittedInPortal,
+            "admin@example.test",
+            "Submitted in portal",
+            "Deleted all downloaded copies.",
+            now.AddMinutes(1));
+
+        Assert.Equal(AffectedOrganizationStatus.Attested, affected.Status);
+        Assert.Equal(1, affected.ReminderCount);
+        Assert.Equal(AttestationSource.SubmittedInPortal, affected.AttestationSource);
+        Assert.Equal("Deleted all downloaded copies.", affected.AttestationNotes);
+    }
+
+    private static CuratedDatasetVersion CreatePublishedVersion(
+        CuratedDataset dataset,
+        SourceSample source,
+        int versionNumber,
+        Guid actorId,
+        DateTime now)
+    {
+        var version = new CuratedDatasetVersion(
+            dataset.Id,
+            versionNumber,
+            source,
+            $"Version {versionNumber}",
+            now);
+        foreach (var file in source.Files)
+        {
+            version.Files.Add(new CuratedDatasetVersionFile(version.Id, file));
+        }
+
+        var manifest = DatasetManifestService.Build(version);
+        version.SetManifest(manifest.ManifestJson, manifest.ContentChecksum);
+        version.Publish(actorId, now);
+        return version;
+    }
+
     private static SourceSample CreateReadySource()
     {
         var actorId = Guid.NewGuid();

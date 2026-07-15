@@ -35,6 +35,12 @@ Do not execute this test plan unless explicitly requested.
 - [x] `backend/test/DataProvisioningDomainTests.cs` - `ManifestComparisonAcceptsJsonbKeyOrderingAndWhitespace`.
 - [x] `backend/test/DataProvisioningDomainTests.cs` - `ManifestNormalizesTimestampsToPostgresqlMicrosecondPrecision`.
 - [x] `backend/test/DataProvisioningDomainTests.cs` - `EligibilityAndGrantPinOnePublishedExactVersionUntilRevoked`.
+- [x] `backend/test/DataProvisioningDomainTests.cs` -
+  `GrantUpgradeSupersedesPriorExactVersionWithoutErasingHistory`.
+- [x] `backend/test/DataProvisioningDomainTests.cs` -
+  `GovernanceQuarantineCanRestoreUnchangedContentOrWithdrawUnsafeContent`.
+- [x] `backend/test/DataProvisioningDomainTests.cs` -
+  `AffectedOrganizationAttestationPreservesEvidenceAndClosesOutstandingStatus`.
 - [x] `backend/test/DataProvisioningProfileTests.cs` - production rejects
   synthetic fixtures even when incorrectly enabled.
 - [x] `backend/test/DataProvisioningProfileTests.cs` - production never trusts
@@ -79,9 +85,19 @@ Do not execute this test plan unless explicitly requested.
 - [ ] Production policy - cover synthetic rejection and empty production
   file-kind/scanner configuration at readiness, publication, eligibility, and
   grant boundaries.
+- [ ] Advanced provisioning HTTP workflows - cover organization creation with
+  optional grants, retry, exact-version upgrade, retirement, catalog removal,
+  bulk revocation, durable notice dispatch/retry, and retired-grant access.
+- [ ] Governance HTTP workflows - cover source-wide quarantine, publication
+  denial during an open incident, internal-note non-disclosure, unchanged-content
+  clearance, unsafe withdrawal, investigation-purpose audit, reminders, and both
+  attestation sources with database-backed authorization coverage.
 
 ## Requested Execution Log
 
+- 2026-07-14: completion-slice verification ran `dotnet test
+  backend/PhaenoPortal.slnx --no-restore`; all 48 tests passed with no skips or
+  failures.
 - 2026-07-14: next-slice verification ran `dotnet test
   backend/PhaenoPortal.slnx --artifacts-path backend/.tmp/reference-artifacts`;
   all 45 tests passed. Isolated artifacts avoided the app DLL held by the
