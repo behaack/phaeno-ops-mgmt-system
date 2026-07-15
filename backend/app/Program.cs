@@ -2,12 +2,15 @@ using System.Text.Json;
 using System.Text.Json.Serialization;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.RateLimiting;
 using Microsoft.Extensions.Options;
 using Microsoft.IdentityModel.Tokens;
+using System.Threading.RateLimiting;
 using PhaenoPortal.App.Features.Accounts.Endpoints;
 using PhaenoPortal.App.Features.Accounts.Services;
 using PhaenoPortal.App.Features.Health.Endpoints;
 using PhaenoPortal.App.Features.DataProvisioning.Services;
+using PhaenoPortal.App.Features.OrderManagement.Services;
 using PhaenoPortal.App.Infrastructure.Api;
 using PhaenoPortal.App.Infrastructure.Persistence;
 using PhaenoPortal.App.Middleware;
@@ -25,6 +28,10 @@ builder.Services.Configure<PostmarkOptions>(
     builder.Configuration.GetSection(PostmarkOptions.SectionName));
 builder.Services.Configure<DataProvisioningOptions>(
     builder.Configuration.GetSection(DataProvisioningOptions.SectionName));
+builder.Services.Configure<OrderManagementOptions>(
+    builder.Configuration.GetSection(OrderManagementOptions.SectionName));
+builder.Services.Configure<QuickBooksOptions>(
+    builder.Configuration.GetSection(QuickBooksOptions.SectionName));
 if (builder.Environment.IsDevelopment())
 {
     var dataProvisioningSection = builder.Configuration.GetSection(
@@ -46,10 +53,53 @@ if (builder.Environment.IsDevelopment())
             options.AllowedFileKinds[".json"] = "structured_fixture";
         }
     });
+    var orderManagementSection = builder.Configuration.GetSection(
+        OrderManagementOptions.SectionName);
+    builder.Services.PostConfigure<OrderManagementOptions>(options =>
+    {
+        if (orderManagementSection[nameof(OrderManagementOptions.UseTrustedDevelopmentScanner)] == null)
+        {
+            options.UseTrustedDevelopmentScanner = true;
+        }
+        if (options.AllowedFileKinds.Count == 0)
+        {
+            options.AllowedFileKinds[".txt"] = "plain_text_fixture";
+            options.AllowedFileKinds[".csv"] = "tabular_fixture";
+            options.AllowedFileKinds[".json"] = "structured_fixture";
+            options.AllowedFileKinds[".pdf"] = "report";
+            options.AllowedFileKinds[".zip"] = "data_archive";
+        }
+    });
 }
 builder.Services.AddSingleton<DataProvisioningProfile>();
 builder.Services.AddSingleton<IManagedFileStorage, LocalManagedFileStorage>();
 builder.Services.AddSingleton<IManagedFileScanner, EnvironmentManagedFileScanner>();
+builder.Services.AddSingleton<IOperationalFileStorage, LocalOperationalFileStorage>();
+builder.Services.AddSingleton<IOperationalFileScanner, EnvironmentOperationalFileScanner>();
+builder.Services.AddScoped<OrderRequestContext>();
+builder.Services.AddScoped<OrderIdempotencyService>();
+builder.Services.AddHttpClient("QuickBooksOAuth");
+builder.Services.AddSingleton(services => new QuickBooksAccessTokenProvider(
+    services.GetRequiredService<IHttpClientFactory>().CreateClient("QuickBooksOAuth"),
+    services.GetRequiredService<IOptions<QuickBooksOptions>>()));
+builder.Services.AddHttpClient<HttpQuickBooksGateway>();
+builder.Services.AddScoped<LoggingQuickBooksGateway>();
+builder.Services.AddScoped<IQuickBooksGateway>(services =>
+    services.GetRequiredService<IOptions<QuickBooksOptions>>().Value.IsConfigured
+        ? services.GetRequiredService<HttpQuickBooksGateway>()
+        : services.GetRequiredService<LoggingQuickBooksGateway>());
+builder.Services.AddHostedService<OrderIntegrationDispatcher>();
+builder.Services.AddHttpClient<PostmarkOrderNotificationSender>((services, httpClient) =>
+{
+    var postmarkOptions = services.GetRequiredService<IOptions<PostmarkOptions>>().Value;
+    httpClient.BaseAddress = new Uri(postmarkOptions.ApiBaseUrl.TrimEnd('/') + "/");
+});
+builder.Services.AddScoped<LoggingOrderNotificationSender>();
+builder.Services.AddScoped<IOrderNotificationSender>(services =>
+    services.GetRequiredService<IOptions<PostmarkOptions>>().Value.IsConfigured
+        ? services.GetRequiredService<PostmarkOrderNotificationSender>()
+        : services.GetRequiredService<LoggingOrderNotificationSender>());
+builder.Services.AddHostedService<OrderNotificationDispatcher>();
 builder.Services.AddHttpClient<PostmarkDataProvisioningNoticeSender>((services, httpClient) =>
 {
     var postmarkOptions = services.GetRequiredService<IOptions<PostmarkOptions>>().Value;
@@ -112,6 +162,27 @@ builder.Services
     });
 
 builder.Services.AddAuthorization();
+builder.Services.AddRateLimiter(options =>
+{
+    options.AddPolicy("api", httpContext => RateLimitPartition.GetFixedWindowLimiter(
+        httpContext.User.FindFirst("sub")?.Value
+            ?? httpContext.Connection.RemoteIpAddress?.ToString()
+            ?? "anonymous",
+        _ => new FixedWindowRateLimiterOptions
+        {
+            PermitLimit = 180,
+            Window = TimeSpan.FromMinutes(1),
+            QueueLimit = 0,
+            AutoReplenishment = true
+        }));
+    options.OnRejected = async (context, cancellationToken) =>
+    {
+        context.HttpContext.Response.StatusCode = StatusCodes.Status429TooManyRequests;
+        await context.HttpContext.Response.WriteAsJsonAsync(ApiResponse<object>.Fail(
+            new ApiError("rate_limit", "too_many_requests", "Too many requests. Wait briefly and try again."),
+            ApiMetaFactory.Create(context.HttpContext)), cancellationToken);
+    };
+});
 
 builder.Services.Configure<ApiBehaviorOptions>(options =>
 {
@@ -168,6 +239,7 @@ await AccountsBootstrapSeeder.SeedAsync(app.Services);
 
 app.UseHttpsRedirection();
 app.UseAuthentication();
+app.UseRateLimiter();
 app.UseAuthorization();
 
 app.UseWhen(
@@ -185,6 +257,6 @@ app.MapUserEndpoints();
 app.MapInvitationEndpoints();
 app.MapMembershipEndpoints();
 app.MapSessionEndpoints();
-api.MapControllers();
+api.MapControllers().RequireRateLimiting("api");
 
 app.Run();

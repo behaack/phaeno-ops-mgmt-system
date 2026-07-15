@@ -12,6 +12,9 @@ Do not execute this test plan unless explicitly requested.
   provisioning and hides the tenant Data Library.
 - [x] `frontend/src/components/navigation.test.ts` - Prospect, Customer, and
   Partner contexts show the Data Library and hide Phaeno provisioning.
+- [x] `frontend/src/components/navigation.test.ts` - order navigation is scoped
+  to Customer lab, Partner reagent/assembly, and Phaeno operations/configuration
+  capabilities without leaking the other organization-kind surfaces.
 - [x] `frontend/src/features/data-provisioning/DataProvisioningPage.test.tsx` -
   mock mode exposes the four Phaeno configuration surfaces without calling the
   secured API.
@@ -45,9 +48,18 @@ Do not execute this test plan unless explicitly requested.
 - [ ] Tenant Data Library - cover granted package cards, metadata/manifest
   detail, authenticated file/archive downloads, error feedback, and
   organization-admin history isolation with mocked API responses.
+- [ ] Order workflow components - cover resumable drafts, profile-driven
+  metadata, quote acceptance/expiry, upload and scan feedback, payment holds,
+  substitutions, backorders, immutable-document downloads, operational queue
+  filters, notification recovery, and stale-version/error recovery with mocked
+  APIs.
 
 ## Requested Execution Log
 
+- 2026-07-14: order-management implementation verification ran `pnpm run test`;
+  all 16 tests in 8 files passed. `pnpm run lint` and `pnpm run typecheck` also
+  passed, and the Vite client/SSR production build completed through the
+  installed Node entry point.
 - 2026-07-14: completion-slice verification ran `pnpm run test`; all 11 tests
   in 7 files passed.
 - 2026-07-14: implementation verification ran `pnpm run test`; all 9 tests in 5

@@ -7,6 +7,7 @@ import {
   PhaenoSessionContext,
   type PhaenoSessionContextValue,
 } from '#/features/auth/session-context'
+import { noSessionCapabilities } from '#/test-helpers/session'
 
 describe('DataProvisioningPage', () => {
   it('shows the Phaeno configuration surfaces without calling the API in mock mode', () => {
@@ -67,6 +68,7 @@ function createPlatformContext(): PhaenoSessionContextValue {
         isAvailable: true,
       },
       capabilities: {
+        ...noSessionCapabilities,
         canInviteUsers: true,
         canManageMembers: true,
         canChangeMemberRoles: true,

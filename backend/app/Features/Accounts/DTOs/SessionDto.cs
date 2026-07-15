@@ -77,4 +77,56 @@ public sealed record SessionCapabilitiesDto
     public required bool CanProvisionOrganizationData { get; init; }
 
     public required bool CanViewOrganizationDatasets { get; init; }
+
+    public required bool CanViewLabServiceOrders { get; init; }
+
+    public required bool CanCreateLabServiceRequests { get; init; }
+
+    public required bool CanSubmitLabServiceRequests { get; init; }
+
+    public required bool CanAcceptLabServiceQuotes { get; init; }
+
+    public required bool CanRequestLabServiceCancellation { get; init; }
+
+    public required bool CanViewSampleProgress { get; init; }
+
+    public required bool CanDownloadLabResults { get; init; }
+
+    public required bool CanViewReagentOrders { get; init; }
+
+    public required bool CanCreateReagentOrders { get; init; }
+
+    public required bool CanPlaceReagentOrders { get; init; }
+
+    public required bool CanApproveReagentSubstitutions { get; init; }
+
+    public required bool CanRequestReagentCancellation { get; init; }
+
+    public required bool CanViewDataAssemblyRequests { get; init; }
+
+    public required bool CanCreateDataAssemblyRequests { get; init; }
+
+    public required bool CanSubmitDataAssemblyRequests { get; init; }
+
+    public required bool CanAcceptDataAssemblyQuotes { get; init; }
+
+    public required bool CanRequestDataAssemblyCancellation { get; init; }
+
+    public required bool CanDownloadDataAssemblyOutputs { get; init; }
+
+    public required bool CanViewAllOperationalOrders { get; init; }
+
+    public required bool CanManageOrderConfiguration { get; init; }
+
+    public required bool CanQuoteLabServiceWork { get; init; }
+
+    public required bool CanManageLabOperations { get; init; }
+
+    public required bool CanManageReagentFulfillment { get; init; }
+
+    public required bool CanManageDataAssembly { get; init; }
+
+    public required bool CanManageOrderIntegrations { get; init; }
+
+    public required bool CanViewOrderAudit { get; init; }
 }

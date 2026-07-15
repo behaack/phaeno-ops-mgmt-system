@@ -44,6 +44,32 @@ export type SessionCapabilities = {
   canPublishDatasets: boolean
   canProvisionOrganizationData: boolean
   canViewOrganizationDatasets: boolean
+  canViewLabServiceOrders: boolean
+  canCreateLabServiceRequests: boolean
+  canSubmitLabServiceRequests: boolean
+  canAcceptLabServiceQuotes: boolean
+  canRequestLabServiceCancellation: boolean
+  canViewSampleProgress: boolean
+  canDownloadLabResults: boolean
+  canViewReagentOrders: boolean
+  canCreateReagentOrders: boolean
+  canPlaceReagentOrders: boolean
+  canApproveReagentSubstitutions: boolean
+  canRequestReagentCancellation: boolean
+  canViewDataAssemblyRequests: boolean
+  canCreateDataAssemblyRequests: boolean
+  canSubmitDataAssemblyRequests: boolean
+  canAcceptDataAssemblyQuotes: boolean
+  canRequestDataAssemblyCancellation: boolean
+  canDownloadDataAssemblyOutputs: boolean
+  canViewAllOperationalOrders: boolean
+  canManageOrderConfiguration: boolean
+  canQuoteLabServiceWork: boolean
+  canManageLabOperations: boolean
+  canManageReagentFulfillment: boolean
+  canManageDataAssembly: boolean
+  canManageOrderIntegrations: boolean
+  canViewOrderAudit: boolean
 }
 
 export type SessionResponse = {

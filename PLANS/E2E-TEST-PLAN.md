@@ -11,6 +11,12 @@ Do not execute this test plan unless explicitly requested.
   source registry, curated catalog, organization-grant, and governance surfaces.
 - [x] `frontend/e2e/data-provisioning.spec.ts` - Prospect mock context exposes
   the Data Library without exposing connected data in mock mode.
+- [x] `frontend/e2e/order-management.spec.ts` - Customer mock context exposes
+  laboratory services and request creation.
+- [x] `frontend/e2e/order-management.spec.ts` - Partner mock context exposes
+  reagent ordering and data assembly.
+- [x] `frontend/e2e/order-management.spec.ts` - Phaeno mock context exposes
+  operational queues and order configuration.
 
 ## Deferred Tests
 
@@ -28,9 +34,19 @@ Do not execute this test plan unless explicitly requested.
   version upgrade, retirement with preserved access, catalog removal, optional
   creation grant, quarantine denial, unchanged clearance, unsafe withdrawal,
   administrator notice/activity, and tenant attestation.
+- [ ] Database-backed order-management journeys - execute the approved Customer
+  admin/member, Partner admin/member, Prospect denial, Phaeno operations,
+  payment hold, QuickBooks failure, two-tenant isolation, keyboard, and narrow
+  viewport scenarios through real authentication and API persistence.
 
 ## Requested Execution Log
 
+- 2026-07-14: order-management implementation verification ran
+  `PLAYWRIGHT_PORT=3100 pnpm run test:e2e`; all 12 desktop/mobile Chromium tests
+  passed. A separate Playwright gut-check loaded `/order-operations` with HTTP
+  200, meaningful content, 19 interactive controls, no Vite error overlay, and
+  no console errors. The pre-existing `AcceptInvitePage` route-export warning
+  remains unchanged.
 - 2026-07-14: completion-slice verification ran `PLAYWRIGHT_PORT=3100 pnpm
   run test:e2e`; all 6 Chromium and mobile-Chromium tests passed. The existing
   TanStack warning about the exported `AcceptInvitePage` route component remains

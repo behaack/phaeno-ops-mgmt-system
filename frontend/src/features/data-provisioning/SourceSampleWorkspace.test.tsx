@@ -8,6 +8,7 @@ import {
   PhaenoSessionContext,
   type PhaenoSessionContextValue,
 } from '#/features/auth/session-context'
+import { noSessionCapabilities } from '#/test-helpers/session'
 
 const mocks = vi.hoisted(() => ({
   archiveSource: vi.fn(),
@@ -162,6 +163,7 @@ function createPlatformContext(): PhaenoSessionContextValue {
         isAvailable: true,
       },
       capabilities: {
+        ...noSessionCapabilities,
         canInviteUsers: true,
         canManageMembers: true,
         canChangeMemberRoles: true,

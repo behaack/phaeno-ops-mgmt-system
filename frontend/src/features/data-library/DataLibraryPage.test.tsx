@@ -7,6 +7,7 @@ import {
   PhaenoSessionContext,
   type PhaenoSessionContextValue,
 } from '#/features/auth/session-context'
+import { noSessionCapabilities } from '#/test-helpers/session'
 
 describe('DataLibraryPage', () => {
   it('explains that connected tenant data is paused in mock mode', () => {
@@ -43,6 +44,7 @@ describe('DataLibraryPage', () => {
           isAvailable: true,
         },
         capabilities: {
+          ...noSessionCapabilities,
           canInviteUsers: false,
           canManageMembers: false,
           canChangeMemberRoles: false,

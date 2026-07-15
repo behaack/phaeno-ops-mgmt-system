@@ -4,6 +4,11 @@ import {
   Database,
   Library,
   LayoutDashboard,
+  ClipboardList,
+  FlaskConical,
+  Package,
+  Settings,
+  Workflow,
   type LucideIcon,
 } from 'lucide-react'
 
@@ -61,6 +66,46 @@ export const mainMenuItems: readonly MainMenuItem[] = [
     visibleWhen: (session, context) =>
       isExternalOrganizationKind(context.selectedOrganizationKind) &&
       Boolean(session?.capabilities.canViewOrganizationDatasets),
+  },
+  {
+    label: 'Lab services',
+    to: '/lab-services',
+    icon: FlaskConical,
+    visibleWhen: (session, context) =>
+      context.selectedOrganizationKind === 'Customer' &&
+      Boolean(session?.capabilities.canViewLabServiceOrders),
+  },
+  {
+    label: 'Reagent orders',
+    to: '/reagent-orders',
+    icon: Package,
+    visibleWhen: (session, context) =>
+      context.selectedOrganizationKind === 'Partner' &&
+      Boolean(session?.capabilities.canViewReagentOrders),
+  },
+  {
+    label: 'Data assembly',
+    to: '/data-assembly',
+    icon: Workflow,
+    visibleWhen: (session, context) =>
+      context.selectedOrganizationKind === 'Partner' &&
+      Boolean(session?.capabilities.canViewDataAssemblyRequests),
+  },
+  {
+    label: 'Order operations',
+    to: '/order-operations',
+    icon: ClipboardList,
+    visibleWhen: (session, context) =>
+      context.selectedOrganizationKind === 'Phaeno' &&
+      Boolean(session?.capabilities.canViewAllOperationalOrders),
+  },
+  {
+    label: 'Order configuration',
+    to: '/order-configuration',
+    icon: Settings,
+    visibleWhen: (session, context) =>
+      context.selectedOrganizationKind === 'Phaeno' &&
+      Boolean(session?.capabilities.canManageOrderConfiguration),
   },
   {
     label: 'Project',

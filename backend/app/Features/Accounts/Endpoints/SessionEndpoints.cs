@@ -129,6 +129,12 @@ public static class SessionEndpoints
         {
             IsActive: true
         } selectedOrganization && selectedOrganization.IsExternalOrganization();
+        var selectedKind = selectedMembership?.Organization?.Kind;
+        var isSelectedOrganizationAdmin = selectedMembership?.IsOrganizationAdmin == true;
+        var canViewLabOrders = selectedKind == OrganizationKind.Customer;
+        var canManageLabOrders = canViewLabOrders && isSelectedOrganizationAdmin;
+        var canViewPartnerOrders = selectedKind == OrganizationKind.Partner;
+        var canManagePartnerOrders = canViewPartnerOrders && isSelectedOrganizationAdmin;
 
         return new SessionDto
         {
@@ -171,7 +177,33 @@ public static class SessionEndpoints
                 CanManageDatasetDrafts = isPlatformAdmin,
                 CanPublishDatasets = isPlatformAdmin,
                 CanProvisionOrganizationData = isPlatformAdmin,
-                CanViewOrganizationDatasets = canViewOrganizationDatasets
+                CanViewOrganizationDatasets = canViewOrganizationDatasets,
+                CanViewLabServiceOrders = canViewLabOrders,
+                CanCreateLabServiceRequests = canManageLabOrders,
+                CanSubmitLabServiceRequests = canManageLabOrders,
+                CanAcceptLabServiceQuotes = canManageLabOrders,
+                CanRequestLabServiceCancellation = canManageLabOrders,
+                CanViewSampleProgress = canViewLabOrders,
+                CanDownloadLabResults = canViewLabOrders,
+                CanViewReagentOrders = canViewPartnerOrders,
+                CanCreateReagentOrders = canManagePartnerOrders,
+                CanPlaceReagentOrders = canManagePartnerOrders,
+                CanApproveReagentSubstitutions = canManagePartnerOrders,
+                CanRequestReagentCancellation = canManagePartnerOrders,
+                CanViewDataAssemblyRequests = canViewPartnerOrders,
+                CanCreateDataAssemblyRequests = canManagePartnerOrders,
+                CanSubmitDataAssemblyRequests = canManagePartnerOrders,
+                CanAcceptDataAssemblyQuotes = canManagePartnerOrders,
+                CanRequestDataAssemblyCancellation = canManagePartnerOrders,
+                CanDownloadDataAssemblyOutputs = canViewPartnerOrders,
+                CanViewAllOperationalOrders = isPlatformAdmin,
+                CanManageOrderConfiguration = isPlatformAdmin,
+                CanQuoteLabServiceWork = isPlatformAdmin,
+                CanManageLabOperations = isPlatformAdmin,
+                CanManageReagentFulfillment = isPlatformAdmin,
+                CanManageDataAssembly = isPlatformAdmin,
+                CanManageOrderIntegrations = isPlatformAdmin,
+                CanViewOrderAudit = isPlatformAdmin
             }
         };
     }
@@ -191,7 +223,33 @@ public static class SessionEndpoints
             CanManageDatasetDrafts = false,
             CanPublishDatasets = false,
             CanProvisionOrganizationData = false,
-            CanViewOrganizationDatasets = false
+            CanViewOrganizationDatasets = false,
+            CanViewLabServiceOrders = false,
+            CanCreateLabServiceRequests = false,
+            CanSubmitLabServiceRequests = false,
+            CanAcceptLabServiceQuotes = false,
+            CanRequestLabServiceCancellation = false,
+            CanViewSampleProgress = false,
+            CanDownloadLabResults = false,
+            CanViewReagentOrders = false,
+            CanCreateReagentOrders = false,
+            CanPlaceReagentOrders = false,
+            CanApproveReagentSubstitutions = false,
+            CanRequestReagentCancellation = false,
+            CanViewDataAssemblyRequests = false,
+            CanCreateDataAssemblyRequests = false,
+            CanSubmitDataAssemblyRequests = false,
+            CanAcceptDataAssemblyQuotes = false,
+            CanRequestDataAssemblyCancellation = false,
+            CanDownloadDataAssemblyOutputs = false,
+            CanViewAllOperationalOrders = false,
+            CanManageOrderConfiguration = false,
+            CanQuoteLabServiceWork = false,
+            CanManageLabOperations = false,
+            CanManageReagentFulfillment = false,
+            CanManageDataAssembly = false,
+            CanManageOrderIntegrations = false,
+            CanViewOrderAudit = false
         };
     }
 

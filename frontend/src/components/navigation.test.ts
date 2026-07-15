@@ -42,6 +42,58 @@ describe('data navigation permissions', () => {
   )
 })
 
+describe('order navigation permissions', () => {
+  it('shows laboratory services only in an authorized Customer context', () => {
+    const session = createSession('Customer', {
+      canViewLabServiceOrders: true,
+    })
+
+    const labels = getVisibleMainMenuItems(session, {
+      selectedOrganizationKind: 'Customer',
+      selectedMembership: session.memberships[1],
+    }).map((item) => item.label)
+
+    expect(labels).toContain('Lab services')
+    expect(labels).not.toContain('Reagent orders')
+    expect(labels).not.toContain('Data assembly')
+    expect(labels).not.toContain('Order operations')
+  })
+
+  it('shows reagent and assembly work only in an authorized Partner context', () => {
+    const session = createSession('Partner', {
+      canViewReagentOrders: true,
+      canViewDataAssemblyRequests: true,
+    })
+
+    const labels = getVisibleMainMenuItems(session, {
+      selectedOrganizationKind: 'Partner',
+      selectedMembership: session.memberships[1],
+    }).map((item) => item.label)
+
+    expect(labels).toContain('Reagent orders')
+    expect(labels).toContain('Data assembly')
+    expect(labels).not.toContain('Lab services')
+    expect(labels).not.toContain('Order configuration')
+  })
+
+  it('shows operations and configuration only in the authorized Phaeno context', () => {
+    const session = createSession('Phaeno', {
+      canViewAllOperationalOrders: true,
+      canManageOrderConfiguration: true,
+    })
+
+    const labels = getVisibleMainMenuItems(session, {
+      selectedOrganizationKind: 'Phaeno',
+      selectedMembership: session.memberships[0],
+    }).map((item) => item.label)
+
+    expect(labels).toContain('Order operations')
+    expect(labels).toContain('Order configuration')
+    expect(labels).not.toContain('Lab services')
+    expect(labels).not.toContain('Reagent orders')
+  })
+})
+
 function createSession(
   selectedKind: OrganizationKind,
   capabilityOverrides: Partial<SessionResponse['capabilities']>,
@@ -97,6 +149,32 @@ function createSession(
       canPublishDatasets: false,
       canProvisionOrganizationData: false,
       canViewOrganizationDatasets: false,
+      canViewLabServiceOrders: false,
+      canCreateLabServiceRequests: false,
+      canSubmitLabServiceRequests: false,
+      canAcceptLabServiceQuotes: false,
+      canRequestLabServiceCancellation: false,
+      canViewSampleProgress: false,
+      canDownloadLabResults: false,
+      canViewReagentOrders: false,
+      canCreateReagentOrders: false,
+      canPlaceReagentOrders: false,
+      canApproveReagentSubstitutions: false,
+      canRequestReagentCancellation: false,
+      canViewDataAssemblyRequests: false,
+      canCreateDataAssemblyRequests: false,
+      canSubmitDataAssemblyRequests: false,
+      canAcceptDataAssemblyQuotes: false,
+      canRequestDataAssemblyCancellation: false,
+      canDownloadDataAssemblyOutputs: false,
+      canViewAllOperationalOrders: false,
+      canManageOrderConfiguration: false,
+      canQuoteLabServiceWork: false,
+      canManageLabOperations: false,
+      canManageReagentFulfillment: false,
+      canManageDataAssembly: false,
+      canManageOrderIntegrations: false,
+      canViewOrderAudit: false,
       ...capabilityOverrides,
     },
   }

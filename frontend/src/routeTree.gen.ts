@@ -9,21 +9,56 @@
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
 import { Route as rootRouteImport } from './routes/__root'
+import { Route as ReagentOrdersRouteImport } from './routes/reagent-orders'
 import { Route as PhaenoUsersRouteImport } from './routes/phaeno-users'
+import { Route as OrderOperationsRouteImport } from './routes/order-operations'
+import { Route as OrderConfigurationRouteImport } from './routes/order-configuration'
+import { Route as LabServicesRouteImport } from './routes/lab-services'
 import { Route as DataProvisioningRouteImport } from './routes/data-provisioning'
 import { Route as DataLibraryRouteImport } from './routes/data-library'
+import { Route as DataAssemblyRouteImport } from './routes/data-assembly'
 import { Route as CustomersRouteImport } from './routes/customers'
 import { Route as AcceptInviteRouteImport } from './routes/accept-invite'
 import { Route as AboutRouteImport } from './routes/about'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as ReagentOrdersNewRouteImport } from './routes/reagent-orders.new'
+import { Route as ReagentOrdersOrderIdRouteImport } from './routes/reagent-orders.$orderId'
+import { Route as LabServicesNewRouteImport } from './routes/lab-services.new'
+import { Route as LabServicesOrderIdRouteImport } from './routes/lab-services.$orderId'
 import { Route as DemoTanstackQueryRouteImport } from './routes/demo/tanstack-query'
 import { Route as DataLibraryDatasetIdRouteImport } from './routes/data-library.$datasetId'
+import { Route as DataAssemblyNewRouteImport } from './routes/data-assembly.new'
+import { Route as DataAssemblyRequestIdRouteImport } from './routes/data-assembly.$requestId'
 import { Route as CustomersCustomerIdRouteImport } from './routes/customers.$customerId'
+import { Route as ReagentOrdersOrderIdEditRouteImport } from './routes/reagent-orders.$orderId.edit'
+import { Route as OrderOperationsWorkflowOrderIdRouteImport } from './routes/order-operations.$workflow.$orderId'
+import { Route as LabServicesOrderIdEditRouteImport } from './routes/lab-services.$orderId.edit'
 import { Route as DataProvisioningSourcesSourceSampleIdRouteImport } from './routes/data-provisioning.sources.$sourceSampleId'
+import { Route as DataAssemblyRequestIdEditRouteImport } from './routes/data-assembly.$requestId.edit'
 
+const ReagentOrdersRoute = ReagentOrdersRouteImport.update({
+  id: '/reagent-orders',
+  path: '/reagent-orders',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const PhaenoUsersRoute = PhaenoUsersRouteImport.update({
   id: '/phaeno-users',
   path: '/phaeno-users',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const OrderOperationsRoute = OrderOperationsRouteImport.update({
+  id: '/order-operations',
+  path: '/order-operations',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const OrderConfigurationRoute = OrderConfigurationRouteImport.update({
+  id: '/order-configuration',
+  path: '/order-configuration',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const LabServicesRoute = LabServicesRouteImport.update({
+  id: '/lab-services',
+  path: '/lab-services',
   getParentRoute: () => rootRouteImport,
 } as any)
 const DataProvisioningRoute = DataProvisioningRouteImport.update({
@@ -34,6 +69,11 @@ const DataProvisioningRoute = DataProvisioningRouteImport.update({
 const DataLibraryRoute = DataLibraryRouteImport.update({
   id: '/data-library',
   path: '/data-library',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const DataAssemblyRoute = DataAssemblyRouteImport.update({
+  id: '/data-assembly',
+  path: '/data-assembly',
   getParentRoute: () => rootRouteImport,
 } as any)
 const CustomersRoute = CustomersRouteImport.update({
@@ -56,6 +96,26 @@ const IndexRoute = IndexRouteImport.update({
   path: '/',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ReagentOrdersNewRoute = ReagentOrdersNewRouteImport.update({
+  id: '/new',
+  path: '/new',
+  getParentRoute: () => ReagentOrdersRoute,
+} as any)
+const ReagentOrdersOrderIdRoute = ReagentOrdersOrderIdRouteImport.update({
+  id: '/$orderId',
+  path: '/$orderId',
+  getParentRoute: () => ReagentOrdersRoute,
+} as any)
+const LabServicesNewRoute = LabServicesNewRouteImport.update({
+  id: '/new',
+  path: '/new',
+  getParentRoute: () => LabServicesRoute,
+} as any)
+const LabServicesOrderIdRoute = LabServicesOrderIdRouteImport.update({
+  id: '/$orderId',
+  path: '/$orderId',
+  getParentRoute: () => LabServicesRoute,
+} as any)
 const DemoTanstackQueryRoute = DemoTanstackQueryRouteImport.update({
   id: '/demo/tanstack-query',
   path: '/demo/tanstack-query',
@@ -66,10 +126,37 @@ const DataLibraryDatasetIdRoute = DataLibraryDatasetIdRouteImport.update({
   path: '/$datasetId',
   getParentRoute: () => DataLibraryRoute,
 } as any)
+const DataAssemblyNewRoute = DataAssemblyNewRouteImport.update({
+  id: '/new',
+  path: '/new',
+  getParentRoute: () => DataAssemblyRoute,
+} as any)
+const DataAssemblyRequestIdRoute = DataAssemblyRequestIdRouteImport.update({
+  id: '/$requestId',
+  path: '/$requestId',
+  getParentRoute: () => DataAssemblyRoute,
+} as any)
 const CustomersCustomerIdRoute = CustomersCustomerIdRouteImport.update({
   id: '/$customerId',
   path: '/$customerId',
   getParentRoute: () => CustomersRoute,
+} as any)
+const ReagentOrdersOrderIdEditRoute =
+  ReagentOrdersOrderIdEditRouteImport.update({
+    id: '/edit',
+    path: '/edit',
+    getParentRoute: () => ReagentOrdersOrderIdRoute,
+  } as any)
+const OrderOperationsWorkflowOrderIdRoute =
+  OrderOperationsWorkflowOrderIdRouteImport.update({
+    id: '/$workflow/$orderId',
+    path: '/$workflow/$orderId',
+    getParentRoute: () => OrderOperationsRoute,
+  } as any)
+const LabServicesOrderIdEditRoute = LabServicesOrderIdEditRouteImport.update({
+  id: '/edit',
+  path: '/edit',
+  getParentRoute: () => LabServicesOrderIdRoute,
 } as any)
 const DataProvisioningSourcesSourceSampleIdRoute =
   DataProvisioningSourcesSourceSampleIdRouteImport.update({
@@ -77,32 +164,68 @@ const DataProvisioningSourcesSourceSampleIdRoute =
     path: '/sources/$sourceSampleId',
     getParentRoute: () => DataProvisioningRoute,
   } as any)
+const DataAssemblyRequestIdEditRoute =
+  DataAssemblyRequestIdEditRouteImport.update({
+    id: '/edit',
+    path: '/edit',
+    getParentRoute: () => DataAssemblyRequestIdRoute,
+  } as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/about': typeof AboutRoute
   '/accept-invite': typeof AcceptInviteRoute
   '/customers': typeof CustomersRouteWithChildren
+  '/data-assembly': typeof DataAssemblyRouteWithChildren
   '/data-library': typeof DataLibraryRouteWithChildren
   '/data-provisioning': typeof DataProvisioningRouteWithChildren
+  '/lab-services': typeof LabServicesRouteWithChildren
+  '/order-configuration': typeof OrderConfigurationRoute
+  '/order-operations': typeof OrderOperationsRouteWithChildren
   '/phaeno-users': typeof PhaenoUsersRoute
+  '/reagent-orders': typeof ReagentOrdersRouteWithChildren
   '/customers/$customerId': typeof CustomersCustomerIdRoute
+  '/data-assembly/$requestId': typeof DataAssemblyRequestIdRouteWithChildren
+  '/data-assembly/new': typeof DataAssemblyNewRoute
   '/data-library/$datasetId': typeof DataLibraryDatasetIdRoute
   '/demo/tanstack-query': typeof DemoTanstackQueryRoute
+  '/lab-services/$orderId': typeof LabServicesOrderIdRouteWithChildren
+  '/lab-services/new': typeof LabServicesNewRoute
+  '/reagent-orders/$orderId': typeof ReagentOrdersOrderIdRouteWithChildren
+  '/reagent-orders/new': typeof ReagentOrdersNewRoute
+  '/data-assembly/$requestId/edit': typeof DataAssemblyRequestIdEditRoute
   '/data-provisioning/sources/$sourceSampleId': typeof DataProvisioningSourcesSourceSampleIdRoute
+  '/lab-services/$orderId/edit': typeof LabServicesOrderIdEditRoute
+  '/order-operations/$workflow/$orderId': typeof OrderOperationsWorkflowOrderIdRoute
+  '/reagent-orders/$orderId/edit': typeof ReagentOrdersOrderIdEditRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/about': typeof AboutRoute
   '/accept-invite': typeof AcceptInviteRoute
   '/customers': typeof CustomersRouteWithChildren
+  '/data-assembly': typeof DataAssemblyRouteWithChildren
   '/data-library': typeof DataLibraryRouteWithChildren
   '/data-provisioning': typeof DataProvisioningRouteWithChildren
+  '/lab-services': typeof LabServicesRouteWithChildren
+  '/order-configuration': typeof OrderConfigurationRoute
+  '/order-operations': typeof OrderOperationsRouteWithChildren
   '/phaeno-users': typeof PhaenoUsersRoute
+  '/reagent-orders': typeof ReagentOrdersRouteWithChildren
   '/customers/$customerId': typeof CustomersCustomerIdRoute
+  '/data-assembly/$requestId': typeof DataAssemblyRequestIdRouteWithChildren
+  '/data-assembly/new': typeof DataAssemblyNewRoute
   '/data-library/$datasetId': typeof DataLibraryDatasetIdRoute
   '/demo/tanstack-query': typeof DemoTanstackQueryRoute
+  '/lab-services/$orderId': typeof LabServicesOrderIdRouteWithChildren
+  '/lab-services/new': typeof LabServicesNewRoute
+  '/reagent-orders/$orderId': typeof ReagentOrdersOrderIdRouteWithChildren
+  '/reagent-orders/new': typeof ReagentOrdersNewRoute
+  '/data-assembly/$requestId/edit': typeof DataAssemblyRequestIdEditRoute
   '/data-provisioning/sources/$sourceSampleId': typeof DataProvisioningSourcesSourceSampleIdRoute
+  '/lab-services/$orderId/edit': typeof LabServicesOrderIdEditRoute
+  '/order-operations/$workflow/$orderId': typeof OrderOperationsWorkflowOrderIdRoute
+  '/reagent-orders/$orderId/edit': typeof ReagentOrdersOrderIdEditRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -110,13 +233,28 @@ export interface FileRoutesById {
   '/about': typeof AboutRoute
   '/accept-invite': typeof AcceptInviteRoute
   '/customers': typeof CustomersRouteWithChildren
+  '/data-assembly': typeof DataAssemblyRouteWithChildren
   '/data-library': typeof DataLibraryRouteWithChildren
   '/data-provisioning': typeof DataProvisioningRouteWithChildren
+  '/lab-services': typeof LabServicesRouteWithChildren
+  '/order-configuration': typeof OrderConfigurationRoute
+  '/order-operations': typeof OrderOperationsRouteWithChildren
   '/phaeno-users': typeof PhaenoUsersRoute
+  '/reagent-orders': typeof ReagentOrdersRouteWithChildren
   '/customers/$customerId': typeof CustomersCustomerIdRoute
+  '/data-assembly/$requestId': typeof DataAssemblyRequestIdRouteWithChildren
+  '/data-assembly/new': typeof DataAssemblyNewRoute
   '/data-library/$datasetId': typeof DataLibraryDatasetIdRoute
   '/demo/tanstack-query': typeof DemoTanstackQueryRoute
+  '/lab-services/$orderId': typeof LabServicesOrderIdRouteWithChildren
+  '/lab-services/new': typeof LabServicesNewRoute
+  '/reagent-orders/$orderId': typeof ReagentOrdersOrderIdRouteWithChildren
+  '/reagent-orders/new': typeof ReagentOrdersNewRoute
+  '/data-assembly/$requestId/edit': typeof DataAssemblyRequestIdEditRoute
   '/data-provisioning/sources/$sourceSampleId': typeof DataProvisioningSourcesSourceSampleIdRoute
+  '/lab-services/$orderId/edit': typeof LabServicesOrderIdEditRoute
+  '/order-operations/$workflow/$orderId': typeof OrderOperationsWorkflowOrderIdRoute
+  '/reagent-orders/$orderId/edit': typeof ReagentOrdersOrderIdEditRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -125,39 +263,84 @@ export interface FileRouteTypes {
     | '/about'
     | '/accept-invite'
     | '/customers'
+    | '/data-assembly'
     | '/data-library'
     | '/data-provisioning'
+    | '/lab-services'
+    | '/order-configuration'
+    | '/order-operations'
     | '/phaeno-users'
+    | '/reagent-orders'
     | '/customers/$customerId'
+    | '/data-assembly/$requestId'
+    | '/data-assembly/new'
     | '/data-library/$datasetId'
     | '/demo/tanstack-query'
+    | '/lab-services/$orderId'
+    | '/lab-services/new'
+    | '/reagent-orders/$orderId'
+    | '/reagent-orders/new'
+    | '/data-assembly/$requestId/edit'
     | '/data-provisioning/sources/$sourceSampleId'
+    | '/lab-services/$orderId/edit'
+    | '/order-operations/$workflow/$orderId'
+    | '/reagent-orders/$orderId/edit'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
     | '/about'
     | '/accept-invite'
     | '/customers'
+    | '/data-assembly'
     | '/data-library'
     | '/data-provisioning'
+    | '/lab-services'
+    | '/order-configuration'
+    | '/order-operations'
     | '/phaeno-users'
+    | '/reagent-orders'
     | '/customers/$customerId'
+    | '/data-assembly/$requestId'
+    | '/data-assembly/new'
     | '/data-library/$datasetId'
     | '/demo/tanstack-query'
+    | '/lab-services/$orderId'
+    | '/lab-services/new'
+    | '/reagent-orders/$orderId'
+    | '/reagent-orders/new'
+    | '/data-assembly/$requestId/edit'
     | '/data-provisioning/sources/$sourceSampleId'
+    | '/lab-services/$orderId/edit'
+    | '/order-operations/$workflow/$orderId'
+    | '/reagent-orders/$orderId/edit'
   id:
     | '__root__'
     | '/'
     | '/about'
     | '/accept-invite'
     | '/customers'
+    | '/data-assembly'
     | '/data-library'
     | '/data-provisioning'
+    | '/lab-services'
+    | '/order-configuration'
+    | '/order-operations'
     | '/phaeno-users'
+    | '/reagent-orders'
     | '/customers/$customerId'
+    | '/data-assembly/$requestId'
+    | '/data-assembly/new'
     | '/data-library/$datasetId'
     | '/demo/tanstack-query'
+    | '/lab-services/$orderId'
+    | '/lab-services/new'
+    | '/reagent-orders/$orderId'
+    | '/reagent-orders/new'
+    | '/data-assembly/$requestId/edit'
     | '/data-provisioning/sources/$sourceSampleId'
+    | '/lab-services/$orderId/edit'
+    | '/order-operations/$workflow/$orderId'
+    | '/reagent-orders/$orderId/edit'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -165,19 +348,52 @@ export interface RootRouteChildren {
   AboutRoute: typeof AboutRoute
   AcceptInviteRoute: typeof AcceptInviteRoute
   CustomersRoute: typeof CustomersRouteWithChildren
+  DataAssemblyRoute: typeof DataAssemblyRouteWithChildren
   DataLibraryRoute: typeof DataLibraryRouteWithChildren
   DataProvisioningRoute: typeof DataProvisioningRouteWithChildren
+  LabServicesRoute: typeof LabServicesRouteWithChildren
+  OrderConfigurationRoute: typeof OrderConfigurationRoute
+  OrderOperationsRoute: typeof OrderOperationsRouteWithChildren
   PhaenoUsersRoute: typeof PhaenoUsersRoute
+  ReagentOrdersRoute: typeof ReagentOrdersRouteWithChildren
   DemoTanstackQueryRoute: typeof DemoTanstackQueryRoute
 }
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
+    '/reagent-orders': {
+      id: '/reagent-orders'
+      path: '/reagent-orders'
+      fullPath: '/reagent-orders'
+      preLoaderRoute: typeof ReagentOrdersRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/phaeno-users': {
       id: '/phaeno-users'
       path: '/phaeno-users'
       fullPath: '/phaeno-users'
       preLoaderRoute: typeof PhaenoUsersRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/order-operations': {
+      id: '/order-operations'
+      path: '/order-operations'
+      fullPath: '/order-operations'
+      preLoaderRoute: typeof OrderOperationsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/order-configuration': {
+      id: '/order-configuration'
+      path: '/order-configuration'
+      fullPath: '/order-configuration'
+      preLoaderRoute: typeof OrderConfigurationRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/lab-services': {
+      id: '/lab-services'
+      path: '/lab-services'
+      fullPath: '/lab-services'
+      preLoaderRoute: typeof LabServicesRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/data-provisioning': {
@@ -192,6 +408,13 @@ declare module '@tanstack/react-router' {
       path: '/data-library'
       fullPath: '/data-library'
       preLoaderRoute: typeof DataLibraryRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/data-assembly': {
+      id: '/data-assembly'
+      path: '/data-assembly'
+      fullPath: '/data-assembly'
+      preLoaderRoute: typeof DataAssemblyRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/customers': {
@@ -222,6 +445,34 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof IndexRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/reagent-orders/new': {
+      id: '/reagent-orders/new'
+      path: '/new'
+      fullPath: '/reagent-orders/new'
+      preLoaderRoute: typeof ReagentOrdersNewRouteImport
+      parentRoute: typeof ReagentOrdersRoute
+    }
+    '/reagent-orders/$orderId': {
+      id: '/reagent-orders/$orderId'
+      path: '/$orderId'
+      fullPath: '/reagent-orders/$orderId'
+      preLoaderRoute: typeof ReagentOrdersOrderIdRouteImport
+      parentRoute: typeof ReagentOrdersRoute
+    }
+    '/lab-services/new': {
+      id: '/lab-services/new'
+      path: '/new'
+      fullPath: '/lab-services/new'
+      preLoaderRoute: typeof LabServicesNewRouteImport
+      parentRoute: typeof LabServicesRoute
+    }
+    '/lab-services/$orderId': {
+      id: '/lab-services/$orderId'
+      path: '/$orderId'
+      fullPath: '/lab-services/$orderId'
+      preLoaderRoute: typeof LabServicesOrderIdRouteImport
+      parentRoute: typeof LabServicesRoute
+    }
     '/demo/tanstack-query': {
       id: '/demo/tanstack-query'
       path: '/demo/tanstack-query'
@@ -236,6 +487,20 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof DataLibraryDatasetIdRouteImport
       parentRoute: typeof DataLibraryRoute
     }
+    '/data-assembly/new': {
+      id: '/data-assembly/new'
+      path: '/new'
+      fullPath: '/data-assembly/new'
+      preLoaderRoute: typeof DataAssemblyNewRouteImport
+      parentRoute: typeof DataAssemblyRoute
+    }
+    '/data-assembly/$requestId': {
+      id: '/data-assembly/$requestId'
+      path: '/$requestId'
+      fullPath: '/data-assembly/$requestId'
+      preLoaderRoute: typeof DataAssemblyRequestIdRouteImport
+      parentRoute: typeof DataAssemblyRoute
+    }
     '/customers/$customerId': {
       id: '/customers/$customerId'
       path: '/$customerId'
@@ -243,12 +508,40 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof CustomersCustomerIdRouteImport
       parentRoute: typeof CustomersRoute
     }
+    '/reagent-orders/$orderId/edit': {
+      id: '/reagent-orders/$orderId/edit'
+      path: '/edit'
+      fullPath: '/reagent-orders/$orderId/edit'
+      preLoaderRoute: typeof ReagentOrdersOrderIdEditRouteImport
+      parentRoute: typeof ReagentOrdersOrderIdRoute
+    }
+    '/order-operations/$workflow/$orderId': {
+      id: '/order-operations/$workflow/$orderId'
+      path: '/$workflow/$orderId'
+      fullPath: '/order-operations/$workflow/$orderId'
+      preLoaderRoute: typeof OrderOperationsWorkflowOrderIdRouteImport
+      parentRoute: typeof OrderOperationsRoute
+    }
+    '/lab-services/$orderId/edit': {
+      id: '/lab-services/$orderId/edit'
+      path: '/edit'
+      fullPath: '/lab-services/$orderId/edit'
+      preLoaderRoute: typeof LabServicesOrderIdEditRouteImport
+      parentRoute: typeof LabServicesOrderIdRoute
+    }
     '/data-provisioning/sources/$sourceSampleId': {
       id: '/data-provisioning/sources/$sourceSampleId'
       path: '/sources/$sourceSampleId'
       fullPath: '/data-provisioning/sources/$sourceSampleId'
       preLoaderRoute: typeof DataProvisioningSourcesSourceSampleIdRouteImport
       parentRoute: typeof DataProvisioningRoute
+    }
+    '/data-assembly/$requestId/edit': {
+      id: '/data-assembly/$requestId/edit'
+      path: '/edit'
+      fullPath: '/data-assembly/$requestId/edit'
+      preLoaderRoute: typeof DataAssemblyRequestIdEditRouteImport
+      parentRoute: typeof DataAssemblyRequestIdRoute
     }
   }
 }
@@ -263,6 +556,33 @@ const CustomersRouteChildren: CustomersRouteChildren = {
 
 const CustomersRouteWithChildren = CustomersRoute._addFileChildren(
   CustomersRouteChildren,
+)
+
+interface DataAssemblyRequestIdRouteChildren {
+  DataAssemblyRequestIdEditRoute: typeof DataAssemblyRequestIdEditRoute
+}
+
+const DataAssemblyRequestIdRouteChildren: DataAssemblyRequestIdRouteChildren = {
+  DataAssemblyRequestIdEditRoute: DataAssemblyRequestIdEditRoute,
+}
+
+const DataAssemblyRequestIdRouteWithChildren =
+  DataAssemblyRequestIdRoute._addFileChildren(
+    DataAssemblyRequestIdRouteChildren,
+  )
+
+interface DataAssemblyRouteChildren {
+  DataAssemblyRequestIdRoute: typeof DataAssemblyRequestIdRouteWithChildren
+  DataAssemblyNewRoute: typeof DataAssemblyNewRoute
+}
+
+const DataAssemblyRouteChildren: DataAssemblyRouteChildren = {
+  DataAssemblyRequestIdRoute: DataAssemblyRequestIdRouteWithChildren,
+  DataAssemblyNewRoute: DataAssemblyNewRoute,
+}
+
+const DataAssemblyRouteWithChildren = DataAssemblyRoute._addFileChildren(
+  DataAssemblyRouteChildren,
 )
 
 interface DataLibraryRouteChildren {
@@ -289,14 +609,81 @@ const DataProvisioningRouteChildren: DataProvisioningRouteChildren = {
 const DataProvisioningRouteWithChildren =
   DataProvisioningRoute._addFileChildren(DataProvisioningRouteChildren)
 
+interface LabServicesOrderIdRouteChildren {
+  LabServicesOrderIdEditRoute: typeof LabServicesOrderIdEditRoute
+}
+
+const LabServicesOrderIdRouteChildren: LabServicesOrderIdRouteChildren = {
+  LabServicesOrderIdEditRoute: LabServicesOrderIdEditRoute,
+}
+
+const LabServicesOrderIdRouteWithChildren =
+  LabServicesOrderIdRoute._addFileChildren(LabServicesOrderIdRouteChildren)
+
+interface LabServicesRouteChildren {
+  LabServicesOrderIdRoute: typeof LabServicesOrderIdRouteWithChildren
+  LabServicesNewRoute: typeof LabServicesNewRoute
+}
+
+const LabServicesRouteChildren: LabServicesRouteChildren = {
+  LabServicesOrderIdRoute: LabServicesOrderIdRouteWithChildren,
+  LabServicesNewRoute: LabServicesNewRoute,
+}
+
+const LabServicesRouteWithChildren = LabServicesRoute._addFileChildren(
+  LabServicesRouteChildren,
+)
+
+interface OrderOperationsRouteChildren {
+  OrderOperationsWorkflowOrderIdRoute: typeof OrderOperationsWorkflowOrderIdRoute
+}
+
+const OrderOperationsRouteChildren: OrderOperationsRouteChildren = {
+  OrderOperationsWorkflowOrderIdRoute: OrderOperationsWorkflowOrderIdRoute,
+}
+
+const OrderOperationsRouteWithChildren = OrderOperationsRoute._addFileChildren(
+  OrderOperationsRouteChildren,
+)
+
+interface ReagentOrdersOrderIdRouteChildren {
+  ReagentOrdersOrderIdEditRoute: typeof ReagentOrdersOrderIdEditRoute
+}
+
+const ReagentOrdersOrderIdRouteChildren: ReagentOrdersOrderIdRouteChildren = {
+  ReagentOrdersOrderIdEditRoute: ReagentOrdersOrderIdEditRoute,
+}
+
+const ReagentOrdersOrderIdRouteWithChildren =
+  ReagentOrdersOrderIdRoute._addFileChildren(ReagentOrdersOrderIdRouteChildren)
+
+interface ReagentOrdersRouteChildren {
+  ReagentOrdersOrderIdRoute: typeof ReagentOrdersOrderIdRouteWithChildren
+  ReagentOrdersNewRoute: typeof ReagentOrdersNewRoute
+}
+
+const ReagentOrdersRouteChildren: ReagentOrdersRouteChildren = {
+  ReagentOrdersOrderIdRoute: ReagentOrdersOrderIdRouteWithChildren,
+  ReagentOrdersNewRoute: ReagentOrdersNewRoute,
+}
+
+const ReagentOrdersRouteWithChildren = ReagentOrdersRoute._addFileChildren(
+  ReagentOrdersRouteChildren,
+)
+
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   AboutRoute: AboutRoute,
   AcceptInviteRoute: AcceptInviteRoute,
   CustomersRoute: CustomersRouteWithChildren,
+  DataAssemblyRoute: DataAssemblyRouteWithChildren,
   DataLibraryRoute: DataLibraryRouteWithChildren,
   DataProvisioningRoute: DataProvisioningRouteWithChildren,
+  LabServicesRoute: LabServicesRouteWithChildren,
+  OrderConfigurationRoute: OrderConfigurationRoute,
+  OrderOperationsRoute: OrderOperationsRouteWithChildren,
   PhaenoUsersRoute: PhaenoUsersRoute,
+  ReagentOrdersRoute: ReagentOrdersRouteWithChildren,
   DemoTanstackQueryRoute: DemoTanstackQueryRoute,
 }
 export const routeTree = rootRouteImport

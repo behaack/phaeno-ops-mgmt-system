@@ -3,6 +3,8 @@ using Microsoft.Extensions.Options;
 using PhaenoPortal.App.Features.Accounts.Domain;
 using PhaenoPortal.App.Features.DataProvisioning;
 using PhaenoPortal.App.Features.DataProvisioning.Domain;
+using PhaenoPortal.App.Features.OrderManagement;
+using PhaenoPortal.App.Features.OrderManagement.Domain;
 using PhaenoPortal.App.Infrastructure.Persistence.Auditing;
 using System.Text;
 
@@ -64,6 +66,37 @@ public sealed class AppDbContext(
     public DbSet<DataGovernanceFollowUp> DataGovernanceFollowUps { get; set; }
 
     public DbSet<DataProvisioningNotice> DataProvisioningNotices { get; set; }
+
+    public DbSet<QboCatalogItem> QboCatalogItems { get; set; }
+    public DbSet<AnalysisDefinition> AnalysisDefinitions { get; set; }
+    public DbSet<PartnerReagentOffering> PartnerReagentOfferings { get; set; }
+    public DbSet<AssemblyProfile> AssemblyProfiles { get; set; }
+    public DbSet<OrganizationCommercialProfile> OrganizationCommercialProfiles { get; set; }
+    public DbSet<OrderSystemConfiguration> OrderSystemConfigurations { get; set; }
+    public DbSet<CommercialDocumentLink> CommercialDocumentLinks { get; set; }
+    public DbSet<OrderOutboxMessage> OrderOutboxMessages { get; set; }
+    public DbSet<OrderIdempotencyRecord> OrderIdempotencyRecords { get; set; }
+    public DbSet<ManagedOperationalFile> ManagedOperationalFiles { get; set; }
+    public DbSet<OperationalFileDownload> OperationalFileDownloads { get; set; }
+    public DbSet<OrderNotification> OrderNotifications { get; set; }
+    public DbSet<OrderStatusEvent> OrderStatusEvents { get; set; }
+    public DbSet<OrderCancellationRequest> OrderCancellationRequests { get; set; }
+    public DbSet<LabServiceOrder> LabServiceOrders { get; set; }
+    public DbSet<LabServiceRequestRevision> LabServiceRequestRevisions { get; set; }
+    public DbSet<LabSample> LabSamples { get; set; }
+    public DbSet<LabServiceQuote> LabServiceQuotes { get; set; }
+    public DbSet<LabResultRelease> LabResultReleases { get; set; }
+    public DbSet<PartnerShippingAddress> PartnerShippingAddresses { get; set; }
+    public DbSet<PartnerReagentOrder> PartnerReagentOrders { get; set; }
+    public DbSet<PartnerReagentOrderLine> PartnerReagentOrderLines { get; set; }
+    public DbSet<ReagentShipment> ReagentShipments { get; set; }
+    public DbSet<ReagentShipmentLine> ReagentShipmentLines { get; set; }
+    public DbSet<ReagentOrderAdjustment> ReagentOrderAdjustments { get; set; }
+    public DbSet<DataAssemblyRequest> DataAssemblyRequests { get; set; }
+    public DbSet<AssemblyInputRevision> AssemblyInputRevisions { get; set; }
+    public DbSet<DataAssemblyQuote> DataAssemblyQuotes { get; set; }
+    public DbSet<AssemblyProcessingRun> AssemblyProcessingRuns { get; set; }
+    public DbSet<AssemblyOutputRelease> AssemblyOutputReleases { get; set; }
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -208,6 +241,7 @@ public sealed class AppDbContext(
         });
 
         DataProvisioningModelConfiguration.Configure(modelBuilder);
+        OrderManagementModelConfiguration.Configure(modelBuilder);
 
         ApplySnakeCaseDatabaseNames(modelBuilder);
     }

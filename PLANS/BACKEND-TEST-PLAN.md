@@ -47,6 +47,17 @@ Do not execute this test plan unless explicitly requested.
   files without a scanner integration.
 - [x] `backend/test/DataProvisioningProfileTests.cs` - unconfigured scientific
   file kinds are rejected.
+- [x] `backend/test/OrderManagementDomainTests.cs` - laboratory request/quote
+  transitions, immutable request revisions, sample stages, and quote expiry.
+- [x] `backend/test/OrderManagementDomainTests.cs` - negotiated reagent price
+  snapshots, effective quantity rules, destination restrictions, immutable
+  placement confirmation, approved substitutions, partial shipment, and
+  partial cancellation behavior.
+- [x] `backend/test/OrderManagementDomainTests.cs` - assembly input-revision,
+  quote, placement, and processing continuity.
+- [x] `backend/test/OrderManagementDomainTests.cs` - operational-file scan and
+  release gating, separate lab/assembly credit decisions, configurable quote
+  validity, and failed-notification manual recovery.
 
 ## Created Database Verification
 
@@ -78,6 +89,21 @@ Do not execute this test plan unless explicitly requested.
 - [ ] Managed files - add endpoint coverage for configured file-kind rejection,
   scanner unavailable/rejected states, and missing-byte behavior. The reference
   journey covers authoritative checksum/size and isolated storage cleanup.
+- [ ] Order-management authenticated HTTP/PostgreSQL journey - cover Customer,
+  Partner, Prospect, Phaeno, cross-tenant non-discovery, optimistic concurrency,
+  idempotency, file ownership, download audit, and outbox atomicity through the
+  real API host.
+- [ ] QuickBooks adapter contract suite - cover catalog/payment synchronization,
+  estimates, invoices, credits, partial-shipment invoices, webhook replay and
+  signature rejection, bounded retry, and reconciliation mismatches against a
+  fake or sandbox company.
+- [ ] Notification dispatcher integration suite - cover acting-admin versus
+  all-admin recipient rules, Postmark failure, bounded retry, and manual retry.
+
+## Requested Execution Log
+
+- 2026-07-14: order-management implementation verification ran `dotnet test
+  backend/PhaenoPortal.slnx --no-restore`; all 63 tests passed.
 - [ ] Tenant curated data - add selected-organization missing/invalid cases,
   deactivation denial, and non-admin download-history denial. The reference
   journey covers cross-tenant non-discovery, revocation, individual/archive

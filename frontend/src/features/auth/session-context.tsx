@@ -391,6 +391,13 @@ const mockSession: SessionResponse = {
       organizationKind: 'Customer',
       isOrganizationAdmin: false,
     },
+    {
+      membershipId: 'mock-membership-partner',
+      organizationId: 'genome-partner',
+      organizationName: 'Genome Partner Network',
+      organizationKind: 'Partner',
+      isOrganizationAdmin: true,
+    },
   ],
   isPlatformAdmin: true,
   selectedOrganization: {
@@ -411,6 +418,32 @@ const mockSession: SessionResponse = {
     canPublishDatasets: true,
     canProvisionOrganizationData: true,
     canViewOrganizationDatasets: false,
+    canViewLabServiceOrders: false,
+    canCreateLabServiceRequests: false,
+    canSubmitLabServiceRequests: false,
+    canAcceptLabServiceQuotes: false,
+    canRequestLabServiceCancellation: false,
+    canViewSampleProgress: false,
+    canDownloadLabResults: false,
+    canViewReagentOrders: false,
+    canCreateReagentOrders: false,
+    canPlaceReagentOrders: false,
+    canApproveReagentSubstitutions: false,
+    canRequestReagentCancellation: false,
+    canViewDataAssemblyRequests: false,
+    canCreateDataAssemblyRequests: false,
+    canSubmitDataAssemblyRequests: false,
+    canAcceptDataAssemblyQuotes: false,
+    canRequestDataAssemblyCancellation: false,
+    canDownloadDataAssemblyOutputs: false,
+    canViewAllOperationalOrders: true,
+    canManageOrderConfiguration: true,
+    canQuoteLabServiceWork: true,
+    canManageLabOperations: true,
+    canManageReagentFulfillment: true,
+    canManageDataAssembly: true,
+    canManageOrderIntegrations: true,
+    canViewOrderAudit: true,
   },
 }
 
@@ -456,6 +489,44 @@ function MockSessionProvider({ children }: { children: ReactNode }) {
       capabilities: {
         ...mockSession.capabilities,
         canViewOrganizationDatasets: selectedIsExternal,
+        canViewLabServiceOrders: selectedMembership?.organizationKind === 'Customer',
+        canCreateLabServiceRequests:
+          selectedMembership?.organizationKind === 'Customer' && selectedMembership.isOrganizationAdmin,
+        canSubmitLabServiceRequests:
+          selectedMembership?.organizationKind === 'Customer' && selectedMembership.isOrganizationAdmin,
+        canAcceptLabServiceQuotes:
+          selectedMembership?.organizationKind === 'Customer' && selectedMembership.isOrganizationAdmin,
+        canRequestLabServiceCancellation:
+          selectedMembership?.organizationKind === 'Customer' && selectedMembership.isOrganizationAdmin,
+        canViewSampleProgress: selectedMembership?.organizationKind === 'Customer',
+        canDownloadLabResults: selectedMembership?.organizationKind === 'Customer',
+        canViewReagentOrders: selectedMembership?.organizationKind === 'Partner',
+        canCreateReagentOrders:
+          selectedMembership?.organizationKind === 'Partner' && selectedMembership.isOrganizationAdmin,
+        canPlaceReagentOrders:
+          selectedMembership?.organizationKind === 'Partner' && selectedMembership.isOrganizationAdmin,
+        canApproveReagentSubstitutions:
+          selectedMembership?.organizationKind === 'Partner' && selectedMembership.isOrganizationAdmin,
+        canRequestReagentCancellation:
+          selectedMembership?.organizationKind === 'Partner' && selectedMembership.isOrganizationAdmin,
+        canViewDataAssemblyRequests: selectedMembership?.organizationKind === 'Partner',
+        canCreateDataAssemblyRequests:
+          selectedMembership?.organizationKind === 'Partner' && selectedMembership.isOrganizationAdmin,
+        canSubmitDataAssemblyRequests:
+          selectedMembership?.organizationKind === 'Partner' && selectedMembership.isOrganizationAdmin,
+        canAcceptDataAssemblyQuotes:
+          selectedMembership?.organizationKind === 'Partner' && selectedMembership.isOrganizationAdmin,
+        canRequestDataAssemblyCancellation:
+          selectedMembership?.organizationKind === 'Partner' && selectedMembership.isOrganizationAdmin,
+        canDownloadDataAssemblyOutputs: selectedMembership?.organizationKind === 'Partner',
+        canViewAllOperationalOrders: selectedMembership?.organizationKind === 'Phaeno',
+        canManageOrderConfiguration: selectedMembership?.organizationKind === 'Phaeno',
+        canQuoteLabServiceWork: selectedMembership?.organizationKind === 'Phaeno',
+        canManageLabOperations: selectedMembership?.organizationKind === 'Phaeno',
+        canManageReagentFulfillment: selectedMembership?.organizationKind === 'Phaeno',
+        canManageDataAssembly: selectedMembership?.organizationKind === 'Phaeno',
+        canManageOrderIntegrations: selectedMembership?.organizationKind === 'Phaeno',
+        canViewOrderAudit: selectedMembership?.organizationKind === 'Phaeno',
       },
     }
 
