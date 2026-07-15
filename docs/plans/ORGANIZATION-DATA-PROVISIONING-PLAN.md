@@ -296,7 +296,7 @@ model and authorization rules.
 - Tenant-scoped requests use validated selected-organization context.
 - Mutable persisted records use optimistic concurrency and centralized audit
   events.
-- `PLANS/FILE-MANAGEMENT-PLAN.md` already defines local/S3 storage abstractions
+- `docs/plans/FILE-MANAGEMENT-PLAN.md` already defines local/S3 storage abstractions
   for managed binary files, but file management is not yet represented as an
   implemented backend feature.
 - The current repository has no sample entity or source-sample workflow. The
@@ -868,7 +868,7 @@ Contract requirements:
 ## File-Management Integration
 
 - Reuse `IFileStorage`, `FileRecord`, versioning, signed-download, checksum, and
-  retention direction from `PLANS/FILE-MANAGEMENT-PLAN.md` for binary payloads.
+  retention direction from `docs/plans/FILE-MANAGEMENT-PLAN.md` for binary payloads.
 - Upload source-sample files directly into managed storage. Compute checksums and
   record file kind, size, and scan state server-side; do not accept client-
   supplied storage keys or checksums as authoritative.

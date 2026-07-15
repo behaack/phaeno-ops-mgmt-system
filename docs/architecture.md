@@ -97,5 +97,5 @@ Phaeno data provisioning and source workspaces, and the tenant Data Library.
 
 - `AGENTS.md`: canonical repository working rules.
 - `README.md`: setup, API envelope, and persistence overview.
-- `PLANS/AUTH-USER-SYSTEM-PLAN.md`: account-system decisions and remaining work.
+- `docs/plans/AUTH-USER-SYSTEM-PLAN.md`: account-system decisions and remaining work.
 - Current source and tests: final authority for implemented behavior.

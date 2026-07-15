@@ -217,11 +217,10 @@ Confirmed Prospect rules:
 - Seed data is separate from lab service results and data assembly inputs or
   outputs.
 
-Before implementing these areas, resolve the remaining workflow and ownership
-questions recorded in:
+Continued workflow, activation, and ownership requirements are recorded in:
 
-- `PLANS/ORGANIZATION-DATA-PROVISIONING-PLAN.md`
-- `PLANS/FILE-MANAGEMENT-PLAN.md`
-- `PLANS/ORDER-MANAGEMENT-PLAN.md`
+- `docs/plans/ORGANIZATION-DATA-PROVISIONING-PLAN.md`
+- `docs/plans/FILE-MANAGEMENT-PLAN.md`
+- `docs/plans/ORDER-MANAGEMENT-PLAN.md`
 
-Do not promote proposed entities or statuses from those plans into this file until code and tests establish them.
+Treat any remaining proposed entities or statuses in those plans as unimplemented until code and tests establish them.

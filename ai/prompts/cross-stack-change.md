@@ -5,7 +5,7 @@ Inspect the current Phaeno Portal implementation for this request.
 
 Before editing:
 - read AGENTS.md and the task-specific context identified by ai/README.md;
-- identify the owning PLANS document;
+- identify the owning `docs/plans/` document;
 - trace the current backend endpoint/domain/persistence path and frontend route/query/form path;
 - list tenant-authorization, audit, concurrency, and invitation implications;
 - distinguish implemented behavior from proposed plan content.

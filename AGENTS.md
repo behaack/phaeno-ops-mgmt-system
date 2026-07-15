@@ -34,7 +34,7 @@ Keep the owner focused on scientific meaning, sequencing and laboratory workflow
 
 - Read `ai/README.md` for the task-to-context map.
 - Read `docs/ui-ux-principles.md` before adding or changing a user-facing workflow, list, record workspace, form, modal, control, feedback pattern, responsive behavior, or accessibility behavior.
-- Read the relevant file in `PLANS/` before changing an area that already has a plan.
+- Read the relevant file in `docs/plans/` before changing an area that already has a plan.
 - Prefer current code and tests over older prose when they disagree, and record the disagreement instead of silently choosing a new direction.
 
 ## Current architecture
@@ -43,7 +43,7 @@ Keep the owner focused on scientific meaning, sequencing and laboratory workflow
 - `backend/test`: xUnit tests for the API and domain behavior.
 - `frontend`: React 19, TypeScript, TanStack Start/Router/Query, Axios, React Hook Form, Zod, Tailwind 4, and shadcn/Radix primitives.
 - Authentication currently uses Clerk-issued JWTs. The API maps the external subject to its own `User`, organization memberships, and authorization rules.
-- `PLANS/` is the authoritative home for active feature and test plans.
+- `docs/plans/` is the authoritative home for active feature and test plans.
 
 ## Working rules
 
@@ -70,8 +70,8 @@ Keep the owner focused on scientific meaning, sequencing and laboratory workflow
 
 ## Planning and tests
 
-- Keep implementation plans in `PLANS/` and update the owning plan as decisions or scope change.
-- Keep `PLANS/BACKEND-TEST-PLAN.md`, `PLANS/FRONTEND-TEST-PLAN.md`, and `PLANS/E2E-TEST-PLAN.md` current when tests are added, changed, or intentionally deferred.
+- Keep implementation plans in `docs/plans/` and update the owning plan as decisions or scope change.
+- Keep `docs/plans/BACKEND-TEST-PLAN.md`, `docs/plans/FRONTEND-TEST-PLAN.md`, and `docs/plans/E2E-TEST-PLAN.md` current when tests are added, changed, or intentionally deferred.
 - Do not treat proposed Partner/Distributor, file-management, order, or provisioning models as implemented behavior.
 - Do not run tests or full test plans unless requested; batch verification at a logical checkpoint.
 

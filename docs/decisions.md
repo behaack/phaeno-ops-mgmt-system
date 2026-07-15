@@ -245,4 +245,4 @@ separate from seed-data provisioning.
 - Order ownership, fulfillment, and billing semantics.
 - Production hosting and deployment workflow.
 
-Open items belong in the relevant `PLANS/` document until resolved.
+Open items belong in the relevant `docs/plans/` document until resolved.
