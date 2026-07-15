@@ -21,18 +21,22 @@ export function MainMenu() {
     (customers.some((customer) => customer.id === selectedOrganizationId)
       ? 'Customer'
       : null)
-  const visibleMenuItems = getVisibleMainMenuItems(session, {
-    selectedOrganizationKind,
-    selectedMembership,
-  })
+  const visibleMenuItems = getVisibleMainMenuItems(
+    session,
+    {
+      selectedOrganizationKind,
+      selectedMembership,
+    },
+    'workspace',
+  )
 
   return (
-    <div className="hidden items-center gap-4 text-sm font-medium md:ml-auto md:flex">
+    <div className="hidden items-center gap-1 text-sm font-medium md:ml-auto md:flex lg:gap-2">
       {visibleMenuItems.map((item) => (
         <Link
           key={item.to}
           to={item.to}
-          className="nav-link"
+          className="nav-link whitespace-nowrap"
           activeProps={{ className: 'nav-link is-active' }}
           activeOptions={item.exact ? { exact: true } : undefined}
         >

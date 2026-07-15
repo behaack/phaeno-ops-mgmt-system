@@ -122,6 +122,37 @@ describe('documentation navigation permissions', () => {
   })
 })
 
+describe('navigation placement', () => {
+  it('keeps frequent Phaeno work in the toolbar and moves secondary destinations to the menu', () => {
+    const session = createSession('Phaeno', {
+      canManageOrganizations: true,
+      canViewDatasetConfiguration: true,
+      canViewAllOperationalOrders: true,
+      canManageOrderConfiguration: true,
+    })
+    const context = {
+      selectedOrganizationKind: 'Phaeno' as const,
+      selectedMembership: session.memberships[0],
+    }
+
+    expect(
+      getVisibleMainMenuItems(session, context, 'workspace').map(
+        (item) => item.label,
+      ),
+    ).toEqual(['Dashboard', 'Data provisioning', 'Order operations'])
+    expect(
+      getVisibleMainMenuItems(session, context, 'administration').map(
+        (item) => item.label,
+      ),
+    ).toEqual(['Organizations', 'Order configuration'])
+    expect(
+      getVisibleMainMenuItems(session, context, 'resources').map(
+        (item) => item.label,
+      ),
+    ).toEqual(['Documentation', 'Project', 'Query demo'])
+  })
+})
+
 function createSession(
   selectedKind: OrganizationKind,
   capabilityOverrides: Partial<SessionResponse['capabilities']>,

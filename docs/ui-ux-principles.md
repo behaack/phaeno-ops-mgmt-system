@@ -84,6 +84,9 @@ Use a dedicated page when a task has several meaningful sections or steps, needs
 - Use drawers for supplemental viewing and quick context, not primary data entry.
 - Avoid nested modals. One controlled exception is allowed when a user must create a missing related record without abandoning the parent workflow.
 - Modal headers, close controls, and action footers remain visible while long bodies scroll.
+- When a modal dialog or application menu is open, lock the underlying page at
+  its current position. Only the active overlay may scroll, and closing it
+  restores the page without a position jump.
 - Warn before closing or navigating away from a dirty form.
 
 ## Forms and controls

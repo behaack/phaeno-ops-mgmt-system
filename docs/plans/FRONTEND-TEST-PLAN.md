@@ -17,6 +17,9 @@ Do not execute this test plan unless explicitly requested.
   capabilities without leaking the other organization-kind surfaces.
 - [x] `frontend/src/components/navigation.test.ts` - Documentation navigation is
   available only in Customer, Partner, and Phaeno organization contexts.
+- [x] `frontend/src/components/navigation.test.ts` - frequent workspace routes
+  remain in the desktop toolbar while administration and resource routes move
+  to the user dropdown without changing permission filtering.
 - [x] `frontend/src/features/documentation/documentation-registry.test.ts` - the
   six-guide Customer, Partner, and Phaeno registries expose unique, ordered,
   backend-indexable metadata and resolve slugs only within their audience.

@@ -7,6 +7,17 @@ Do not execute this test plan unless explicitly requested.
 ## Created Tests
 
 - [x] `frontend/e2e/home.spec.ts` - `loads the portal starter dashboard`.
+- [x] `frontend/e2e/home.spec.ts` - desktop keeps frequent workspace routes in
+  the toolbar, desktop and mobile expose grouped administration/resources in
+  the user menu, and the three display choices share one compact row directly
+  after user identification with a brand-accent selected treatment distinct
+  from active navigation and a separate focus-ring treatment;
+  organization search
+  participates in Arrow Up/Down menu navigation while preserving keyboard
+  control of its suggestions, and Escape closes suggestions before a second
+  Escape closes the menu; the open menu locks background scrolling.
+- [x] `frontend/e2e/home.spec.ts` - shared modal dialogs lock background page
+  scrolling and restore it when closed.
 - [x] `frontend/e2e/data-provisioning.spec.ts` - Phaeno mock context exposes the
   source registry, curated catalog, organization-grant, and governance surfaces.
 - [x] `frontend/e2e/data-provisioning.spec.ts` - Prospect mock context exposes

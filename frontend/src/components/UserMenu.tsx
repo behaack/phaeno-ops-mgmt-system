@@ -2,18 +2,14 @@ import { Link, useRouterState } from '@tanstack/react-router'
 import { SignOutButton } from '@clerk/react'
 import { useEffect, useId, useMemo, useState } from 'react'
 import {
-  Bell,
   Check,
   ChevronDown,
-  LifeBuoy,
   LogOut,
   Menu,
   Monitor,
   Moon,
-  Settings,
   Sun,
   UsersRound,
-  UserCircle,
 } from 'lucide-react'
 
 import {
@@ -83,10 +79,25 @@ export function UserMenu() {
   )
   const selectedOrganizationKind =
     selectedMembership?.organizationKind ?? (selectedCustomer ? 'Customer' : null)
-  const visibleMenuItems = getVisibleMainMenuItems(session, {
+  const navigationContext = {
     selectedOrganizationKind,
     selectedMembership,
-  })
+  }
+  const workspaceMenuItems = getVisibleMainMenuItems(
+    session,
+    navigationContext,
+    'workspace',
+  )
+  const administrationMenuItems = getVisibleMainMenuItems(
+    session,
+    navigationContext,
+    'administration',
+  )
+  const resourceMenuItems = getVisibleMainMenuItems(
+    session,
+    navigationContext,
+    'resources',
+  )
   const showUserManagement = canManageUserScope(
     session,
     selectedMembership,
@@ -137,14 +148,25 @@ export function UserMenu() {
   }
 
   return (
-    <DropdownMenu modal={false}>
+    <DropdownMenu modal>
       <DropdownMenuTrigger
         className="inline-flex size-9 shrink-0 items-center justify-center rounded-lg border border-border bg-background text-foreground transition-all outline-none hover:bg-muted focus-visible:ring-3 focus-visible:ring-ring/50 disabled:pointer-events-none disabled:opacity-50"
         aria-label="Open user menu"
       >
         <Menu aria-hidden="true" className="size-5" />
       </DropdownMenuTrigger>
-      <DropdownMenuContent align="end" className="w-80">
+      <DropdownMenuContent
+        align="end"
+        className="w-80"
+        onEscapeKeyDown={(event) => {
+          if (!customerDropdownOpen) {
+            return
+          }
+
+          event.preventDefault()
+          setCustomerDropdownOpen(false)
+        }}
+      >
         <DropdownMenuLabel>
           <span className="flex min-w-0 items-center gap-2">
             <Avatar size="sm">
@@ -161,6 +183,26 @@ export function UserMenu() {
           </span>
         </DropdownMenuLabel>
 
+        <DropdownMenuSeparator />
+        <DropdownMenuLabel>Display</DropdownMenuLabel>
+        <DropdownMenuRadioGroup
+          value={mode}
+          onValueChange={(value) => setMode(value as ThemeMode)}
+          className="grid grid-cols-3 gap-1"
+        >
+          {displayModes.map((displayMode) => (
+            <DropdownMenuRadioItem
+              key={displayMode.value}
+              value={displayMode.value}
+              aria-label={`Use ${displayMode.label.toLowerCase()} theme`}
+              className="justify-center gap-1 px-2 py-2 pr-2 focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-inset data-[state=checked]:bg-accent data-[state=checked]:text-accent-foreground data-[state=checked]:ring-1 data-[state=checked]:ring-accent-foreground/25 data-[state=checked]:focus-visible:ring-2 data-[state=checked]:focus-visible:ring-ring [&_[data-slot=dropdown-menu-radio-item-indicator]]:hidden"
+            >
+              <displayMode.icon />
+              <span>{displayMode.label}</span>
+            </DropdownMenuRadioItem>
+          ))}
+        </DropdownMenuRadioGroup>
+
         {showCustomerImpersonation ? (
           <>
             <DropdownMenuSeparator />
@@ -172,87 +214,108 @@ export function UserMenu() {
                 </div>
               ) : null}
               <div className="relative">
-                <Input
-                  aria-activedescendant={
-                    customerDropdownOpen && activeCustomer
-                      ? getCustomerOptionId(
-                          customerOptionsId,
-                          activeCustomer.id,
-                        )
-                      : undefined
-                  }
-                  aria-autocomplete="list"
-                  aria-controls={customerOptionsId}
-                  aria-expanded={customerDropdownOpen}
-                  aria-label="Search organizations"
-                  role="combobox"
-                  value={organizationQuery}
-                  onBlur={() => setCustomerDropdownOpen(false)}
-                  onChange={(event) => {
-                    setOrganizationQuery(event.target.value)
-                    setCustomerDropdownOpen(true)
-                    setActiveCustomerIndex(0)
-                  }}
-                  onFocus={() => {
-                    setCustomerDropdownOpen(true)
-                    setActiveCustomerIndex(0)
-                  }}
-                  onKeyDown={(event) => {
-                    event.stopPropagation()
-                    if (event.key === 'Escape') {
-                      setCustomerDropdownOpen(false)
-                      return
+                <DropdownMenuItem
+                  asChild
+                  className="h-8 cursor-text px-2.5 py-0 pr-8 focus:bg-transparent focus:text-foreground"
+                  onSelect={(event) => event.preventDefault()}
+                >
+                  <Input
+                    aria-activedescendant={
+                      customerDropdownOpen && activeCustomer
+                        ? getCustomerOptionId(
+                            customerOptionsId,
+                            activeCustomer.id,
+                          )
+                        : undefined
                     }
-
-                    if (event.key === 'ArrowDown') {
-                      event.preventDefault()
-                      if (!customerDropdownOpen) {
-                        setCustomerDropdownOpen(true)
-                        setActiveCustomerIndex(0)
+                    aria-autocomplete="list"
+                    aria-controls={customerOptionsId}
+                    aria-expanded={customerDropdownOpen}
+                    aria-label="Search organizations"
+                    role="combobox"
+                    value={organizationQuery}
+                    onBlur={() => setCustomerDropdownOpen(false)}
+                    onChange={(event) => {
+                      setOrganizationQuery(event.target.value)
+                      setCustomerDropdownOpen(true)
+                      setActiveCustomerIndex(0)
+                    }}
+                    onClick={() => {
+                      setCustomerDropdownOpen(true)
+                      setActiveCustomerIndex(0)
+                    }}
+                    onFocus={() => setActiveCustomerIndex(0)}
+                    onKeyDown={(event) => {
+                      if (event.key === 'Escape') {
+                        if (customerDropdownOpen) {
+                          event.preventDefault()
+                          event.stopPropagation()
+                          setCustomerDropdownOpen(false)
+                        }
                         return
                       }
 
-                      setCustomerDropdownOpen(true)
-                      setActiveCustomerIndex((currentIndex) =>
-                        customerResults.length === 0 ||
-                        currentIndex >= customerResults.length - 1
-                          ? 0
-                          : currentIndex + 1,
-                      )
-                      return
-                    }
+                      if (event.key === 'ArrowDown') {
+                        if (!customerDropdownOpen) {
+                          return
+                        }
 
-                    if (event.key === 'ArrowUp') {
-                      event.preventDefault()
-                      if (!customerDropdownOpen) {
-                        setCustomerDropdownOpen(true)
-                        setActiveCustomerIndex(
-                          Math.max(customerResults.length - 1, 0),
+                        event.preventDefault()
+                        event.stopPropagation()
+                        setActiveCustomerIndex((currentIndex) =>
+                          customerResults.length === 0 ||
+                          currentIndex >= customerResults.length - 1
+                            ? 0
+                            : currentIndex + 1,
                         )
                         return
                       }
 
-                      setCustomerDropdownOpen(true)
-                      setActiveCustomerIndex((currentIndex) =>
-                        customerResults.length === 0 || currentIndex <= 0
-                          ? Math.max(customerResults.length - 1, 0)
-                          : currentIndex - 1,
-                      )
-                      return
-                    }
+                      if (event.key === 'ArrowUp') {
+                        if (!customerDropdownOpen) {
+                          return
+                        }
 
-                    if (
-                      event.key === 'Enter' &&
-                      customerDropdownOpen &&
-                      activeCustomer
-                    ) {
-                      event.preventDefault()
-                      selectCustomerOrganization(activeCustomer)
-                    }
-                  }}
-                  placeholder="Search customers..."
-                  className="h-8 pr-8"
-                />
+                        event.preventDefault()
+                        event.stopPropagation()
+                        setActiveCustomerIndex((currentIndex) =>
+                          customerResults.length === 0 || currentIndex <= 0
+                            ? Math.max(customerResults.length - 1, 0)
+                            : currentIndex - 1,
+                        )
+                        return
+                      }
+
+                      if (event.key === 'Enter') {
+                        event.preventDefault()
+                        event.stopPropagation()
+                        if (customerDropdownOpen && activeCustomer) {
+                          selectCustomerOrganization(activeCustomer)
+                        } else {
+                          setCustomerDropdownOpen(true)
+                          setActiveCustomerIndex(0)
+                        }
+                        return
+                      }
+
+                      if (
+                        event.key.length === 1 ||
+                        [
+                          'Backspace',
+                          'Delete',
+                          'Home',
+                          'End',
+                          'ArrowLeft',
+                          'ArrowRight',
+                        ].includes(event.key)
+                      ) {
+                        event.stopPropagation()
+                      }
+                    }}
+                    placeholder="Search customers..."
+                    className="h-8 pr-8"
+                  />
+                </DropdownMenuItem>
                 <ChevronDown
                   aria-hidden="true"
                   className="pointer-events-none absolute top-1/2 right-2 size-4 -translate-y-1/2 text-muted-foreground"
@@ -326,78 +389,93 @@ export function UserMenu() {
           </>
         ) : null}
 
-        <DropdownMenuSeparator className="md:hidden" />
-        <DropdownMenuGroup className="md:hidden">
-          <DropdownMenuLabel>Main menu</DropdownMenuLabel>
-          {visibleMenuItems.map((item) => (
-            <DropdownMenuItem
-              key={item.to}
-              asChild
-              className={
-                isRouteActive(currentPath, item.to, item.exact)
-                  ? activeDropdownItemClass
-                  : undefined
-              }
-            >
-              <Link to={item.to}>
-                <item.icon />
-                {item.label}
-              </Link>
-            </DropdownMenuItem>
-          ))}
-        </DropdownMenuGroup>
+        <div className="md:hidden">
+          <DropdownMenuSeparator />
+          <DropdownMenuGroup>
+            <DropdownMenuLabel>Workspace</DropdownMenuLabel>
+            {workspaceMenuItems.map((item) => (
+              <DropdownMenuItem
+                key={item.to}
+                asChild
+                className={
+                  isRouteActive(currentPath, item.to, item.exact)
+                    ? activeDropdownItemClass
+                    : undefined
+                }
+              >
+                <Link to={item.to}>
+                  <item.icon />
+                  {item.label}
+                </Link>
+              </DropdownMenuItem>
+            ))}
+          </DropdownMenuGroup>
+        </div>
 
-        <DropdownMenuSeparator />
-        <DropdownMenuLabel>Display</DropdownMenuLabel>
-        <DropdownMenuRadioGroup
-          value={mode}
-          onValueChange={(value) => setMode(value as ThemeMode)}
-        >
-          {displayModes.map((displayMode) => (
-            <DropdownMenuRadioItem
-              key={displayMode.value}
-              value={displayMode.value}
-            >
-              <displayMode.icon />
-              {displayMode.label}
-            </DropdownMenuRadioItem>
-          ))}
-        </DropdownMenuRadioGroup>
+        {administrationMenuItems.length > 0 || showUserManagement ? (
+          <>
+            <DropdownMenuSeparator />
+            <DropdownMenuGroup>
+              <DropdownMenuLabel>Administration</DropdownMenuLabel>
+              {administrationMenuItems.map((item) => (
+                <DropdownMenuItem
+                  key={item.to}
+                  asChild
+                  className={
+                    isRouteActive(currentPath, item.to, item.exact)
+                      ? activeDropdownItemClass
+                      : undefined
+                  }
+                >
+                  <Link to={item.to}>
+                    <item.icon />
+                    {item.label}
+                  </Link>
+                </DropdownMenuItem>
+              ))}
+              {showUserManagement ? (
+                <DropdownMenuItem
+                  asChild
+                  className={
+                    isRouteActive(currentPath, '/phaeno-users', true)
+                      ? activeDropdownItemClass
+                      : undefined
+                  }
+                >
+                  <Link to="/phaeno-users">
+                    <UsersRound />
+                    User management
+                  </Link>
+                </DropdownMenuItem>
+              ) : null}
+            </DropdownMenuGroup>
+          </>
+        ) : null}
 
-        <DropdownMenuSeparator />
-        <DropdownMenuGroup>
-          {showUserManagement ? (
-            <DropdownMenuItem
-              asChild
-              className={
-                isRouteActive(currentPath, '/phaeno-users', true)
-                  ? activeDropdownItemClass
-                  : undefined
-              }
-            >
-              <Link to="/phaeno-users">
-                <UsersRound />
-                User management
-              </Link>
-            </DropdownMenuItem>
-          ) : null}
-          <DropdownMenuItem>
-            <UserCircle />
-            Profile
-          </DropdownMenuItem>
-          <DropdownMenuItem>
-            <Bell />
-            Notifications
-          </DropdownMenuItem>
-          <DropdownMenuItem>
-            <Settings />
-            Settings
-          </DropdownMenuItem>
-          <DropdownMenuItem>
-            <LifeBuoy />
-            Support
-          </DropdownMenuItem>
-        </DropdownMenuGroup>
+        {resourceMenuItems.length > 0 ? (
+          <>
+            <DropdownMenuSeparator />
+            <DropdownMenuGroup>
+              <DropdownMenuLabel>Resources</DropdownMenuLabel>
+              {resourceMenuItems.map((item) => (
+                <DropdownMenuItem
+                  key={item.to}
+                  asChild
+                  className={
+                    isRouteActive(currentPath, item.to, item.exact)
+                      ? activeDropdownItemClass
+                      : undefined
+                  }
+                >
+                  <Link to={item.to}>
+                    <item.icon />
+                    {item.label}
+                  </Link>
+                </DropdownMenuItem>
+              ))}
+            </DropdownMenuGroup>
+          </>
+        ) : null}
 
         <DropdownMenuSeparator />
         {authProvider === 'clerk' ? (

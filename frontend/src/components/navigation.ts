@@ -24,10 +24,13 @@ type NavigationContext = {
   selectedMembership?: SessionMembership | null
 }
 
+export type NavigationGroup = 'workspace' | 'administration' | 'resources'
+
 type MainMenuItem = {
   label: string
   to: string
   icon: LucideIcon
+  group: NavigationGroup
   exact?: boolean
   visibleWhen?: (
     session: SessionResponse | null,
@@ -40,12 +43,14 @@ export const mainMenuItems: readonly MainMenuItem[] = [
     label: 'Dashboard',
     to: '/',
     icon: LayoutDashboard,
+    group: 'workspace',
     exact: true,
   },
   {
     label: 'Organizations',
     to: '/customers',
     icon: Building2,
+    group: 'administration',
     visibleWhen: (session, context) =>
       isPhaenoEmployee(session) &&
       context.selectedOrganizationKind === 'Phaeno' &&
@@ -55,6 +60,7 @@ export const mainMenuItems: readonly MainMenuItem[] = [
     label: 'Data provisioning',
     to: '/data-provisioning',
     icon: Database,
+    group: 'workspace',
     visibleWhen: (session, context) =>
       isPhaenoEmployee(session) &&
       context.selectedOrganizationKind === 'Phaeno' &&
@@ -64,6 +70,7 @@ export const mainMenuItems: readonly MainMenuItem[] = [
     label: 'Data library',
     to: '/data-library',
     icon: Library,
+    group: 'workspace',
     visibleWhen: (session, context) =>
       isExternalOrganizationKind(context.selectedOrganizationKind) &&
       Boolean(session?.capabilities.canViewOrganizationDatasets),
@@ -72,6 +79,7 @@ export const mainMenuItems: readonly MainMenuItem[] = [
     label: 'Lab services',
     to: '/lab-services',
     icon: FlaskConical,
+    group: 'workspace',
     visibleWhen: (session, context) =>
       context.selectedOrganizationKind === 'Customer' &&
       Boolean(session?.capabilities.canViewLabServiceOrders),
@@ -80,6 +88,7 @@ export const mainMenuItems: readonly MainMenuItem[] = [
     label: 'Reagent orders',
     to: '/reagent-orders',
     icon: Package,
+    group: 'workspace',
     visibleWhen: (session, context) =>
       context.selectedOrganizationKind === 'Partner' &&
       Boolean(session?.capabilities.canViewReagentOrders),
@@ -88,6 +97,7 @@ export const mainMenuItems: readonly MainMenuItem[] = [
     label: 'Data assembly',
     to: '/data-assembly',
     icon: Workflow,
+    group: 'workspace',
     visibleWhen: (session, context) =>
       context.selectedOrganizationKind === 'Partner' &&
       Boolean(session?.capabilities.canViewDataAssemblyRequests),
@@ -96,6 +106,7 @@ export const mainMenuItems: readonly MainMenuItem[] = [
     label: 'Order operations',
     to: '/order-operations',
     icon: ClipboardList,
+    group: 'workspace',
     visibleWhen: (session, context) =>
       context.selectedOrganizationKind === 'Phaeno' &&
       Boolean(session?.capabilities.canViewAllOperationalOrders),
@@ -104,6 +115,7 @@ export const mainMenuItems: readonly MainMenuItem[] = [
     label: 'Order configuration',
     to: '/order-configuration',
     icon: Settings,
+    group: 'administration',
     visibleWhen: (session, context) =>
       context.selectedOrganizationKind === 'Phaeno' &&
       Boolean(session?.capabilities.canManageOrderConfiguration),
@@ -112,6 +124,7 @@ export const mainMenuItems: readonly MainMenuItem[] = [
     label: 'Documentation',
     to: '/docs',
     icon: BookOpenText,
+    group: 'resources',
     visibleWhen: (_session, context) =>
       context.selectedOrganizationKind === 'Customer' ||
       context.selectedOrganizationKind === 'Partner' ||
@@ -121,20 +134,25 @@ export const mainMenuItems: readonly MainMenuItem[] = [
     label: 'Project',
     to: '/about',
     icon: LayoutDashboard,
+    group: 'resources',
   },
   {
     label: 'Query demo',
     to: '/demo/tanstack-query',
     icon: Activity,
+    group: 'resources',
   },
 ] as const
 
 export function getVisibleMainMenuItems(
   session: SessionResponse | null,
   context: NavigationContext = {},
+  group?: NavigationGroup,
 ) {
   return mainMenuItems.filter(
-    (item) => item.visibleWhen?.(session, context) ?? true,
+    (item) =>
+      (!group || item.group === group) &&
+      (item.visibleWhen?.(session, context) ?? true),
   )
 }
 
