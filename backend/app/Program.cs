@@ -257,6 +257,6 @@ app.MapUserEndpoints();
 app.MapInvitationEndpoints();
 app.MapMembershipEndpoints();
 app.MapSessionEndpoints();
-api.MapControllers().RequireRateLimiting("api");
+app.MapControllers().RequireRateLimiting("api");
 
 app.Run();

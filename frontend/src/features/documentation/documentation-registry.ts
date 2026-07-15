@@ -211,10 +211,10 @@ export const documentationEntries: readonly DocumentationEntry[] = [
     locale: null,
     slug: 'organization-and-user-administration',
     title: 'Organization and user administration',
-    summary: 'Understand organization and user administration rules, procedures, and the current mock-interface boundary.',
+    summary: 'Manage organizations, Portal requests, readiness, service entitlements, invitations, and access.',
     section: 'Platform operations',
     order: 20,
-    reviewedAt: '2026-07-14',
+    reviewedAt: '2026-07-15',
     Content: PhaenoOrganizationAndUserAdministration,
   },
   {

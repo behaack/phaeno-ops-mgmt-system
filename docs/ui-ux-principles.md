@@ -47,6 +47,20 @@ Use task-oriented entry points with record-centered workspaces.
 - Returning from a record preserves list filters, sorting, pagination, and scroll position.
 - Keep related records in the primary record's context when that supports the user's workflow.
 
+## Standard record-management flow
+
+Use the same list, create, view, and edit flow for major records throughout the application unless a documented product or domain constraint requires an exception.
+
+1. **List:** the index page is for finding, comparing, filtering, and selecting records. It does not contain a create or edit form.
+2. **Create:** the primary create action opens a modal when creating one bounded record. Use a dedicated creation page only when the task meets the complexity criteria below.
+3. **View:** selecting the record's primary identifier opens a dedicated, stable detail route. A modal, drawer, expanded row, or inline panel does not replace the detail workspace for a major record.
+4. **Edit:** an explicit action from either the list or detail workspace opens a modal for a bounded one-record edit. Use a dedicated edit page when editing has several meaningful sections or steps, requires extensive context, or must be resumable.
+5. **Return:** closing a modal restores focus to its invoking action. Returning from details restores the user's list context, including filters, sorting, pagination, and scroll position.
+
+Detail workspaces are view-first. Do not mount a full edit form permanently beside a list or as the default state of a detail page. Related child-record collections inside a detail workspace follow the same rule: list or summary first, modal create/edit, and a dedicated detail route when the child is itself a major record.
+
+This is the application-wide default for new work and for touched existing workflows. Record an exception in the owning plan with the product, scientific, safety, or workflow reason; implementation convenience is not a valid exception.
+
 ## Lists and tables
 
 Use tables by default for structured scientific and business records that users compare across common attributes.
@@ -73,6 +87,7 @@ Use one coherent, view-first workspace for a major record.
 - Use simple rows and dividers for related records instead of layers of nested cards.
 - Keep record identity and essential status visible while users move among related information.
 - Editing is an intentional action. Do not make every field permanently editable.
+- Do not place the record's full edit form on the detail page by default; open the bounded edit modal or navigate to a justified dedicated edit route.
 
 ## Modals, pages, drawers, and inline editing
 
@@ -81,6 +96,7 @@ Use a modal for a bounded task that creates or edits one clearly defined record,
 Use a dedicated page when a task has several meaningful sections or steps, needs extensive context, comparison, uploads, or review, changes multiple related records, has significant consequences, or needs resumability and a stable URL.
 
 - Do not place data-entry forms inline in lists.
+- Do not use a modal or drawer as the primary detail workspace for a major record.
 - Use drawers for supplemental viewing and quick context, not primary data entry.
 - Avoid nested modals. One controlled exception is allowed when a user must create a missing related record without abandoning the parent workflow.
 - Modal headers, close controls, and action footers remain visible while long bodies scroll.
@@ -248,5 +264,6 @@ User-interface work is not complete until the rendered workflow has been checked
 - Verify desktop and the applicable tablet and phone behaviors.
 - Verify light and dark themes when the surface supports them.
 - Verify keyboard operation, visible focus, names, errors, announcements, and modal focus behavior.
+- For record-management work, verify the complete list-to-create, list-to-detail, list/detail-to-edit, close/focus-return, and detail-to-list-state-restoration flow, or document why a product-approved exception applies.
 - Use automated tests for stable behavior, but do not substitute unit or build success for browser verification of visual, responsive, focus, or navigation behavior.
 - Update this document when a genuinely reusable product pattern changes.

@@ -1,8 +1,6 @@
 # Organization and user administration
 
-Phaeno administrators manage organizations and global access while Customer and Partner administrators manage membership only within their own organization. Access is invitation-based and every administrative change is audited.
-
-> **Current interface boundary:** the organization and user administration screens are session-only mock previews. They do not persist organization, invitation, membership, role, conversion, or lifecycle changes. Invitation acceptance and decline are connected, and the backend account workflows exist, but the normal durable administration client is not complete. Do not represent a preview-screen change as completed work.
+Phaeno administrators manage organizations, Portal readiness, service entitlements, integration requests, and global access. Customer and Partner administrators manage membership only within their own organization. Access is invitation-based and every administrative change is audited.
 
 ## Create and classify organizations
 
@@ -10,16 +8,26 @@ Create the organization with the current business relationship:
 
 - **Prospect** for an external organization that may receive explicitly granted curated data but cannot order work.
 - **Customer** for organizations that request laboratory services.
-- **Partner** for organizations that order negotiated reagents or request data assembly.
+- **Partner** for organizations that submit specimens for PSeq Lab Service or purchase the PSeq Kit, which includes data assembly.
 - **Phaeno** for internal platform operations.
 
-Do not use organization kind as a shortcut for data access. Curated package access always requires an explicit exact-version grant.
+Do not use organization kind or Portal readiness as a shortcut for access. Curated package access requires an exact-version grant, member access requires an accepted invitation, and commercial work requires a current service entitlement.
+
+Open **Organizations** to search the durable organization directory. Use **New organization** or a row's **Edit** action to open the bounded modal. Select the organization name to open its dedicated workspace.
+
+Record readiness as **Not reviewed**, **Pending**, **Ready**, or **Blocked**, with an internal note when useful. Readiness describes operational setup; it does not invite a user, activate a service, or place an order.
+
+## Review Portal requests
+
+Use the Portal request queue to record onboarding, evaluation, service, relationship, Sales-assisted order, and offboarding handoffs. Requests entered directly in the Portal are marked **Manual**. HubSpot-originated requests will use the same durable queue after the paid-tier integration is enabled.
+
+Approve or decline a pending request with a reason. Approval records the decision only. Complete each approved organization, invitation, entitlement, or order change through its owning workflow, verify the outcome, and then use **Mark applied** to record what was completed. When the request was submitted before an organization existed, select the completed organization while marking it applied; this links the request to that organization’s history. This separation prevents a review click from silently granting access or creating commercial work.
+
+Never put specimen, scientific, downstream-customer, credential, or other sensitive operational details in a HubSpot reference or request summary.
 
 ## Invite administrators and members
 
-When the connected administration client is released, select the organization, invite the person’s exact sign-in email, and assign **Administrator** only when the person must authorize commercial work or manage membership; otherwise assign **Member**. Ask the recipient to sign in with the invited email and accept the invitation.
-
-Until then, follow the authorized Phaeno account-support process outside the mock screen and confirm the durable record before telling the user that an invitation or access change is complete.
+Open the organization’s **Members** tab, invite the person’s exact sign-in email, and assign **Administrator** only when the person must authorize commercial work or manage membership; otherwise assign **Member**. Ask the recipient to sign in with the invited email and accept the invitation.
 
 Do not create a normal membership directly. Invitation acceptance provides the user-facing consent point and the audit link between invitation, user, and membership.
 
@@ -31,9 +39,25 @@ Convert a Prospect to Customer or Partner only after the business relationship i
 
 After conversion, complete the applicable operational setup: analysis availability and Customer credit for a Customer, or offerings, negotiated reagent pricing, assembly profiles, and Partner assembly credit for a Partner.
 
+## Manage service entitlements
+
+Use the organization’s **Services** tab to record dated commercial permission:
+
+- Customers may receive **PSeq Lab Service**.
+- Partners may receive **PSeq Lab Service** and **PSeq Kit**.
+- Prospects and Phaeno organizations do not receive commercial service entitlements.
+
+Set configuration to **Pending**, **Ready**, or **Blocked**. A service is usable only when its entitlement is effective and configuration is Ready. Overlapping periods for the same service are rejected.
+
+When the entitlement implements an approved Portal request, select that request as its source. The selector shows only approved or applied requests for this organization that include the selected service. Leave the source blank only for a documented manual exception; do not attach an onboarding-only request to a service entitlement.
+
+Use **End now** instead of deleting an entitlement. Review the consequence dialog and record why the entitlement is ending. The Portal retains and displays that reason with the ended entitlement.
+
+PSeq Kit includes kit fulfillment followed by data submission and assembly. Do not create a separate data-assembly entitlement or sell data assembly without the kit.
+
 ## Deactivate and restore access
 
-Deactivate a membership to remove one organization relationship. Deactivate the user globally only when all portal access should stop. Deactivate an organization when none of its memberships should be usable.
+Deactivate a membership to remove one organization relationship. Deactivate the user globally only when all portal access should stop. Deactivate an organization when none of its memberships should be usable. Organization and membership deactivation each open a consequence dialog; verify the named organization or person before confirming.
 
 A deactivated membership is restored through a fresh invitation and acceptance. A globally disabled user must first be reactivated by an authorized Phaeno administrator. Preserve historical records; do not delete users, memberships, or organizations to resolve access problems.
 

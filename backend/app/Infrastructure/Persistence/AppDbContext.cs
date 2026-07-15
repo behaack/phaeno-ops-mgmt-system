@@ -5,6 +5,8 @@ using PhaenoPortal.App.Features.DataProvisioning;
 using PhaenoPortal.App.Features.DataProvisioning.Domain;
 using PhaenoPortal.App.Features.OrderManagement;
 using PhaenoPortal.App.Features.OrderManagement.Domain;
+using PhaenoPortal.App.Features.RelationshipManagement;
+using PhaenoPortal.App.Features.RelationshipManagement.Domain;
 using PhaenoPortal.App.Infrastructure.Persistence.Auditing;
 using System.Text;
 
@@ -97,6 +99,9 @@ public sealed class AppDbContext(
     public DbSet<DataAssemblyQuote> DataAssemblyQuotes { get; set; }
     public DbSet<AssemblyProcessingRun> AssemblyProcessingRuns { get; set; }
     public DbSet<AssemblyOutputRelease> AssemblyOutputReleases { get; set; }
+    public DbSet<OrganizationServiceEntitlement> OrganizationServiceEntitlements { get; set; }
+    public DbSet<PortalIntegrationRequest> PortalIntegrationRequests { get; set; }
+    public DbSet<PortalIntegrationRequestService> PortalIntegrationRequestServices { get; set; }
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -112,6 +117,11 @@ public sealed class AppDbContext(
                 .IsRequired()
                 .HasConversion<string>()
                 .HasMaxLength(50);
+            entity.Property(e => e.PortalReadiness)
+                .IsRequired()
+                .HasConversion<string>()
+                .HasMaxLength(50);
+            entity.Property(e => e.PortalReadinessNote).HasMaxLength(2000);
             entity.Property(e => e.IsActive).IsRequired();
             entity.Property(e => e.CreatedAt).IsRequired();
             entity.Property(e => e.CreatedByUserId);
@@ -242,6 +252,7 @@ public sealed class AppDbContext(
 
         DataProvisioningModelConfiguration.Configure(modelBuilder);
         OrderManagementModelConfiguration.Configure(modelBuilder);
+        RelationshipManagementModelConfiguration.Configure(modelBuilder);
 
         ApplySnakeCaseDatabaseNames(modelBuilder);
     }

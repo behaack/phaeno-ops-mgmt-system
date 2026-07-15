@@ -1,0 +1,22 @@
+{
+  "uid": "PhaenoPortalIntegration_app",
+  "type": "app",
+  "config": {
+    "description": "Private integration between Phaeno Portal and Phaeno's HubSpot account.",
+    "name": "Phaeno Portal Integration",
+    "distribution": "private",
+    "auth": {
+      "type": "static",
+      "requiredScopes": [
+        "oauth"
+      ],
+      "optionalScopes": [],
+      "conditionallyRequiredScopes": []
+    },
+    "permittedUrls": {
+      "fetch": [],
+      "iframe": [],
+      "img": []
+    }
+  }
+}

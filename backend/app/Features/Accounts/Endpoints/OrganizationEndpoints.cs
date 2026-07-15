@@ -50,7 +50,13 @@ public static class OrganizationEndpoints
             throw new OrganizationAlreadyExistsException(request.Name);
         }
 
+        if (request.PortalReadinessNote?.Trim().Length > 2000)
+        {
+            throw new OrganizationConversionException("Portal readiness note cannot exceed 2000 characters.");
+        }
+
         var organization = new Organization(request.Name, request.Kind, request.Description);
+        organization.UpdatePortalReadiness(request.PortalReadiness, request.PortalReadinessNote);
 
         dbContext.Organizations.Add(organization);
         await dbContext.SaveChangesAsync(cancellationToken);
@@ -61,6 +67,8 @@ public static class OrganizationEndpoints
             Name = organization.Name,
             Description = organization.Description,
             Kind = organization.Kind,
+            PortalReadiness = organization.PortalReadiness,
+            PortalReadinessNote = organization.PortalReadinessNote,
             IsActive = organization.IsActive,
             CreatedAt = organization.CreatedAt,
             UpdatedAt = organization.UpdatedAt,
@@ -105,6 +113,8 @@ public static class OrganizationEndpoints
             Name = organization.Name,
             Description = organization.Description,
             Kind = organization.Kind,
+            PortalReadiness = organization.PortalReadiness,
+            PortalReadinessNote = organization.PortalReadinessNote,
             IsActive = organization.IsActive,
             CreatedAt = organization.CreatedAt,
             UpdatedAt = organization.UpdatedAt,
@@ -149,6 +159,8 @@ public static class OrganizationEndpoints
             Name = o.Name,
             Description = o.Description,
             Kind = o.Kind,
+            PortalReadiness = o.PortalReadiness,
+            PortalReadinessNote = o.PortalReadinessNote,
             IsActive = o.IsActive,
             CreatedAt = o.CreatedAt,
             UpdatedAt = o.UpdatedAt,
@@ -199,6 +211,65 @@ public static class OrganizationEndpoints
                     organization.Kind
                 });
         }
+        await dbContext.SaveChangesAsync(cancellationToken);
+
+        return TypedResults.Ok(ToDto(organization));
+    }
+
+    public static async Task<IResult> UpdateOrganization(
+        Guid id,
+        [FromBody] UpdateOrganizationRequest request,
+        HttpContext httpContext,
+        AppDbContext dbContext,
+        IExternalIdentityContext externalIdentityContext,
+        CancellationToken cancellationToken)
+    {
+        var organization = await dbContext.Organizations.FindAsync([id], cancellationToken);
+        if (organization == null)
+        {
+            throw new OrganizationNotFoundException(id);
+        }
+
+        var actor = await AccountAccess.ReadActiveActorAsync(
+            httpContext,
+            dbContext,
+            externalIdentityContext,
+            cancellationToken);
+        if (actor == null || !AccountAccess.IsPlatformAdmin(actor))
+        {
+            return TypedResults.Forbid();
+        }
+
+        if (organization.Version != request.Version)
+        {
+            throw new DbUpdateConcurrencyException();
+        }
+
+        var name = request.Name.Trim();
+        if (name.Length == 0 || name.Length > 255)
+        {
+            throw new OrganizationConversionException("Organization name is required and cannot exceed 255 characters.");
+        }
+
+        if (request.Description?.Trim().Length > 1000)
+        {
+            throw new OrganizationConversionException("Organization description cannot exceed 1000 characters.");
+        }
+
+        if (request.PortalReadinessNote?.Trim().Length > 2000)
+        {
+            throw new OrganizationConversionException("Portal readiness note cannot exceed 2000 characters.");
+        }
+
+        var duplicate = await dbContext.Organizations.AsNoTracking()
+            .AnyAsync(item => item.Id != id && item.Name == name, cancellationToken);
+        if (duplicate)
+        {
+            throw new OrganizationAlreadyExistsException(name);
+        }
+
+        organization.UpdateProfile(name, request.Description?.Trim());
+        organization.UpdatePortalReadiness(request.PortalReadiness, request.PortalReadinessNote);
         await dbContext.SaveChangesAsync(cancellationToken);
 
         return TypedResults.Ok(ToDto(organization));
@@ -339,6 +410,15 @@ public static class OrganizationEndpoints
             .RequireAuthorization()
             .Produces<List<OrganizationDto>>(StatusCodes.Status200OK);
 
+        group.MapPut("/{id}", UpdateOrganization)
+            .WithName("UpdateOrganization")
+            .WithSummary("Update organization profile and Portal readiness")
+            .RequireAuthorization()
+            .Produces<OrganizationDto>(StatusCodes.Status200OK)
+            .Produces(StatusCodes.Status401Unauthorized)
+            .Produces(StatusCodes.Status403Forbidden)
+            .Produces<ApiResponse<object>>(StatusCodes.Status409Conflict);
+
         group.MapPost("/{id}/deactivate", DeactivateOrganization)
             .WithName("DeactivateOrganization")
             .WithSummary("Mark an organization inactive")
@@ -375,6 +455,8 @@ public static class OrganizationEndpoints
             Name = organization.Name,
             Description = organization.Description,
             Kind = organization.Kind,
+            PortalReadiness = organization.PortalReadiness,
+            PortalReadinessNote = organization.PortalReadinessNote,
             IsActive = organization.IsActive,
             CreatedAt = organization.CreatedAt,
             UpdatedAt = organization.UpdatedAt,

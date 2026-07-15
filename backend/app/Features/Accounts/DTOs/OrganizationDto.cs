@@ -27,6 +27,10 @@ public sealed record OrganizationDto
     /// </summary>
     public required OrganizationKind Kind { get; init; }
 
+    public required PortalReadinessStatus PortalReadiness { get; init; }
+
+    public string? PortalReadinessNote { get; init; }
+
     /// <summary>
     /// Indicates whether the organization is active.
     /// </summary>

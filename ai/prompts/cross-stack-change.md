@@ -7,6 +7,7 @@ Before editing:
 - read AGENTS.md and the task-specific context identified by ai/README.md;
 - identify the owning `docs/plans/` document;
 - trace the current backend endpoint/domain/persistence path and frontend route/query/form path;
+- for any major record, map the list, create, detail, edit, and return behavior against the application-wide record-management flow in `docs/ui-ux-principles.md`, and identify any product-justified exception;
 - list tenant-authorization, audit, concurrency, and invitation implications;
 - distinguish implemented behavior from proposed plan content.
 

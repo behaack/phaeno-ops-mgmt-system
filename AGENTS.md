@@ -64,7 +64,7 @@ Keep the owner focused on scientific meaning, sequencing and laboratory workflow
 - `docs/ui-ux-principles.md` is authoritative for product-level UI/UX behavior and Codex's detailed design authority.
 - Meet WCAG 2.2 AA, including keyboard behavior, focus visibility, names, errors, contrast, and reduced motion.
 - Use semantic design tokens and keep light/dark themes working.
-- Use modals or dedicated edit surfaces for list management; do not place data-entry forms inline in lists.
+- Apply the application-wide record-management flow from `docs/ui-ux-principles.md`: lists are form-free discovery and management surfaces; a record's primary identifier opens its dedicated, view-first detail page; and bounded create/edit actions use modals from either surface. Use a dedicated create/edit page only when the documented complexity criteria apply, and record any exception in the owning plan.
 - Use pointer cursors for mouse-clickable actions and accessible labels for icon-only controls.
 - Keep required-field presentation consistent: label, required marker, control, and error.
 - Keep primary navigation in the desktop toolbar and move it into the user menu on narrow layouts; do not render duplicate navigation for one viewport.

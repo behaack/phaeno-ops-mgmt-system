@@ -71,6 +71,10 @@ application behavior.
 - Prospect-eligible sample data must be Phaeno-owned and de-identified.
 - Customer or Partner operational sample data is never eligible for the
   Prospect catalog.
+- Prospect Trial Project samples and results are confidential operational data
+  and are also never eligible for the Prospect catalog. Their submission and
+  access rules are owned by `PROSPECT-TRIAL-PROJECT-PLAN.md` rather than a
+  curated dataset grant.
 - Eligible source samples originate only from a dedicated internal Phaeno
   sample workflow that is separate from Customer lab-service work and Partner
   data-assembly work.
@@ -258,9 +262,12 @@ application behavior.
   portal-viewable and downloadable version for that organization. The
   superseded version, prior grant state, and download history remain preserved
   internally, but users cannot access its files after the upgrade.
-- Prospects cannot view, create, or place orders.
+- Prospects cannot view, create, or place orders. An approved Trial Project may
+  separately authorize bounded sample submission without creating an order or
+  granting ordering capability.
 - Conversion preserves the same organization, memberships, grants, audit
-  history, and stable identifiers; it does not create a replacement tenant.
+  history, Trial Projects, trial samples/results, and stable identifiers; it
+  does not create a replacement tenant.
 - Existing seed-data access remains after conversion to Customer or Partner
   unless Phaeno explicitly removes or replaces a grant.
 - Conversion does not add, replace, upgrade, or revoke curated-package grants.

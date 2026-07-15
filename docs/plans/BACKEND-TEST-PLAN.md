@@ -58,11 +58,17 @@ Do not execute this test plan unless explicitly requested.
 - [x] `backend/test/OrderManagementDomainTests.cs` - operational-file scan and
   release gating, separate lab/assembly credit decisions, configurable quote
   validity, and failed-notification manual recovery.
+- [x] `backend/test/RelationshipManagementDomainTests.cs` - an approved request
+  authorizes only its associated organization and requested service,
+  onboarding-only requests cannot source service entitlements, and entitlement
+  end reasons are required and retained.
 
 ## Created Database Verification
 
 - [x] `backend/tools/PhaenoPortal.ReferenceJourney` - controller-level
-  authenticated PostgreSQL journey covering synthetic source authoring,
+  authenticated PostgreSQL journey covering approved service-request source
+  enforcement, rejection of an onboarding-only source, usable entitlement
+  derivation, history-preserving entitlement end, synthetic source authoring,
   authoritative managed upload/scan, readiness, immutable snapshot/checksum,
   publication, eligibility, idempotent exact-version Prospect assignment,
   tenant list/detail and file/archive downloads, audit history, cross-tenant
@@ -70,6 +76,31 @@ Do not execute this test plan unless explicitly requested.
 
 ## Deferred Tests
 
+- [ ] HubSpot/Portal lifecycle - cover signed webhook intake, exact Company and
+  Deal correlation, duplicate/out-of-order delivery, pending onboarding with no
+  access, direct Customer/Partner creation, narrow Portal Prospect creation,
+  designated-admin invitation, service entitlements, Customer/Partner
+  reclassification, offboarding review, durable publication, reconciliation,
+  outage tolerance, and scientific-data exclusion.
+- [ ] HubSpot committed-sale publication - cover one HubSpot Order per committed
+  specimen, reagent, or assembly sale; no routine Deal creation; Company and
+  originating-Deal associations; amount/currency/status/payment summaries;
+  cancellation/refund history; retry without duplication; and QuickBooks/Portal
+  authority over inbound HubSpot edits.
+- [ ] Direct configured-price work - cover entitled Customer and Partner
+  specimen placement, Partner data-assembly placement, ineligible/custom-work
+  routing, immutable pricing snapshots, Partner downstream-identity omission,
+  post-placement scientific validation, and cross-tenant denial.
+- [ ] Prospect Trial Projects - cover idempotent HubSpot request intake, dual
+  approval, frozen scope/amendments, Prospect acceptance, project-specific
+  submit authorization, extracted-RNA-only validation, the five-sample cap,
+  deadlines/analyses, schedule updates without a fixed turnaround SLA, member
+  view-versus-submit behavior, the three-month default and approval-time access
+  override snapshot, default changes not rewriting approved projects, the
+  approved access clock starting only when the complete standard result package
+  is released, result release without payment, replacement lineage, terminal
+  states, HubSpot retry, conversion preservation, normal-order denial, and
+  cross-tenant metadata/file/result isolation.
 - [ ] Clerk JWT authentication - validate issuer, audience, signature, and expiry with integration-level test coverage.
 - [ ] Session/bootstrap endpoint - cover unauthorized, disabled, no active memberships, organization unavailable, and ready states with database-backed endpoint tests.
 - [ ] Invitation endpoints - cover create, resend cooldown, pending replacement, inactive organization rejection, disabled user rejection, and active membership rejection.
@@ -101,6 +132,23 @@ Do not execute this test plan unless explicitly requested.
   all-admin recipient rules, Postmark failure, bounded retry, and manual retry.
 
 ## Requested Execution Log
+
+- [ ] Remaining relationship management - cover platform-admin authorization,
+  organization creation with persisted readiness, organization summary
+  derivation, readiness concurrency, service eligibility by organization kind,
+  entitlement overlap and all effective boundaries, required
+  completed-organization association for a
+  pre-organization request, request state transitions, controller routing under
+  one `/api` prefix, and the guarantee that approval alone creates no
+  organization, invitation, entitlement, or order.
+- [ ] Remaining relationship management persistence - cover audit
+  actor/time/version stamping, existing-organization readiness migration
+  default, and request-number uniqueness.
+
+- 2026-07-15: portal hardening verification ran `dotnet test
+  backend/PhaenoPortal.slnx --no-restore`; all 66 tests passed. The rollback-only
+  PostgreSQL reference journey also passed with approved-request service
+  matching and history-preserving entitlement end coverage.
 
 - 2026-07-14: order-management implementation verification ran `dotnet test
   backend/PhaenoPortal.slnx --no-restore`; all 63 tests passed.

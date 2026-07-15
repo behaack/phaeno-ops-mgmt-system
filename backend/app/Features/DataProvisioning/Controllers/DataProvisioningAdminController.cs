@@ -131,6 +131,8 @@ public sealed class DataProvisioningAdminController(
                 Name = organization.Name,
                 Description = organization.Description,
                 Kind = organization.Kind,
+                PortalReadiness = organization.PortalReadiness,
+                PortalReadinessNote = organization.PortalReadinessNote,
                 IsActive = organization.IsActive,
                 CreatedAt = organization.CreatedAt,
                 UpdatedAt = organization.UpdatedAt,

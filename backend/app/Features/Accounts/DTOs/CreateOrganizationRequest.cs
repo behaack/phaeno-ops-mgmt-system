@@ -21,4 +21,8 @@ public sealed record CreateOrganizationRequest
     /// Authentication and authorization category for the organization.
     /// </summary>
     public OrganizationKind Kind { get; init; } = OrganizationKind.Prospect;
+
+    public PortalReadinessStatus PortalReadiness { get; init; } = PortalReadinessStatus.NotReviewed;
+
+    public string? PortalReadinessNote { get; init; }
 }

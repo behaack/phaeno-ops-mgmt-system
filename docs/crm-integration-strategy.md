@@ -2,27 +2,26 @@
 
 ## Status
 
-This document is an unapproved reference for evaluating a possible future CRM
-boundary. Phaeno Portal has no CRM integration today, no CRM product has been
-selected, and HubSpot is not an approved dependency or implementation target.
-QuickBooks Online is the only implemented external business system.
+This document is the approved durable boundary for a planned HubSpot
+integration. HubSpot is the selected relationship CRM and planned integration
+target. A non-production HubSpot developer project and private app shell now
+exist for Phase 0 proof. The HubSpot Free account also contains the approved
+ten-property Company, Contact, and Deal foundation recorded in the owning plan.
+The Free account has reached its ten-custom-property limit, and the app still
+has no CRM scopes, webhooks, runtime credentials, or Portal connection. Phaeno
+Portal still has no running CRM integration today, and QuickBooks Online
+remains the only implemented external business system.
 
 Nothing below describes current Portal behavior or authorizes implementation.
-Before any CRM work begins, product discovery must establish the relationship
-workflow, minimum data exchange, ownership rules, cost, privacy constraints,
-and measurable need. An approved plan must replace or explicitly adopt the
-relevant parts of this reference.
+`plans/HUBSPOT-PORTAL-LIFECYCLE-PLAN.md` owns the approved active workflow,
+field-boundary, implementation, verification, and production-readiness plan.
 
 ## Purpose
 
-If Phaeno later needs a Customer Relationship Management (CRM) system, prefer
-evaluating a specialized product over recreating generic sales and marketing
-capabilities in the Portal. HubSpot is one candidate used to make this reference
-concrete, not a selected provider.
-
-Any future approach should keep Portal development focused on Phaeno's unique
-scientific and operational workflows and leave current Portal workflows
-independent of a CRM.
+Use HubSpot for generic sales and relationship capabilities rather than
+recreating them in the Portal. Keep Portal development focused on Phaeno's
+unique scientific and operational workflows, and keep Portal workflows
+operational when HubSpot is unavailable.
 
 ## Guiding Principles
 
@@ -50,11 +49,10 @@ independent of a CRM.
    - Keep scientific, laboratory, and regulated data in the Portal and approved
      scientific storage.
 
-## Hypothetical Future Responsibilities
+## Approved Future Responsibilities
 
-The responsibilities in this section are a design hypothesis for a future
-discovery process. Some named Portal concepts are not implemented and must not
-be inferred as current product capabilities.
+Some named integration and Portal concepts are not implemented and must not be
+inferred as current product capabilities.
 
 ### Phaeno Portal (Operational System of Record)
 
@@ -75,12 +73,9 @@ The Portal owns:
 The Portal remains the authoritative platform for Phaeno's scientific and
 operational workflows.
 
-### Possible CRM (Relationship System)
+### HubSpot (Relationship System)
 
-Candidate products could include HubSpot, Odoo CRM, Salesforce, or Microsoft
-Dynamics. No candidate is currently preferred or selected.
-
-The CRM owns:
+HubSpot owns:
 
 - Companies
 - Relationship contacts
@@ -96,7 +91,7 @@ The CRM owns:
 ## Integration Architecture
 
 ```text
-                    Candidate CRM
+                       HubSpot
                   (Relationships)
                          ▲
                          │ REST API / Webhooks
@@ -117,14 +112,21 @@ synchronization must not prevent users from completing Portal workflows.
 
 ## Synchronization Goals
 
-### Customer Synchronization
+### Organization Linking And Onboarding
 
-When a customer organization is created in the Portal:
+Most HubSpot companies never receive Portal access. Ordinary onboarding starts
+with an explicit HubSpot request and becomes a pending Portal review; a stage
+change never directly grants access.
 
-- Create or match the corresponding CRM company.
-- Create or match the primary contact when one is present.
-- Store the CRM provider and external company identifier in the Portal.
-- Make synchronization idempotent so retries do not create duplicates.
+- Link one HubSpot Company to one stable Portal organization.
+- Create a Portal Prospect only for an approved evaluation tenant.
+- Create an approved direct buyer as a Customer or Partner without forcing it
+  through Portal Prospect.
+- Require an explicitly designated primary Portal administrator rather than
+  inviting the HubSpot Deal contact automatically.
+- Store exact HubSpot external identifiers in the Portal.
+- Make synchronization idempotent so retries do not create duplicate
+  organizations, invitations, entitlements, or requests.
 
 ### Contact Synchronization
 
@@ -136,21 +138,25 @@ Synchronize the relationship fields needed by both systems:
 - Title or role
 - Organization association
 
-The Portal remains authoritative for access, membership, and operational contact
-information. The CRM remains authoritative for sales activity and relationship
-context. Any bidirectional field synchronization must define a field-level
-owner and conflict rule before implementation.
+The Portal remains authoritative for access, membership, and operational
+contact information. HubSpot remains authoritative for sales activity and
+relationship context. Portal-created members do not automatically become
+HubSpot contacts. Any additional bidirectional field synchronization must
+define a field-level owner and conflict rule before implementation.
 
-### Customer Activity Summaries
+### Organization And Sales Summaries
 
-The Portal may publish non-scientific customer summaries to the CRM, including:
+The Portal may publish non-scientific organization and committed-sale summaries
+to HubSpot, including:
 
-- Number of active projects
-- Total samples received
-- Number of active sequencing runs
-- Most recent report date
-- Customer-since date
-- Customer status
+- Organization type and enabled services
+- Number of open orders or projects
+- Most recent committed sale and result-delivery dates
+- HubSpot Order amount, currency, and high-level status
+- HubSpot Order current expected completion date and schedule health
+- High-level QuickBooks invoice and payment status
+- Customer- or Partner-since date
+- Organization status
 - Last operational activity date
 
 These summaries allow the commercial team to understand account activity
@@ -158,7 +164,8 @@ without exposing raw scientific data.
 
 ### CRM Lookup from the Portal
 
-An internal customer workspace may display read-only CRM context such as:
+An internal organization workspace may display read-only HubSpot context such
+as:
 
 - A deep link to the CRM company record
 - Account owner
@@ -181,7 +188,7 @@ coupling CRM availability to Portal requests.
 | Data | System of record | Integration behavior |
 | --- | --- | --- |
 | Organizations | Portal | Publish identity and status to CRM |
-| Customer status | Portal | Publish summary to CRM |
+| Organization type, status, and services | Portal | Publish summary to HubSpot |
 | Operational contacts and access | Portal | Publish approved relationship fields |
 | Relationship contacts | CRM | Read or link when operationally useful |
 | Projects | Portal | Publish aggregate counts or status only |
@@ -215,9 +222,10 @@ scientific storage unless a separately approved future boundary says otherwise:
 
 Only approved operational summaries may cross the CRM integration boundary.
 
-## Future Customer Workspace
+## Future Internal Organization Workspace
 
-The Portal may provide a unified internal customer workspace with sections for:
+The Portal may provide a unified internal organization workspace with sections
+for:
 
 - Organization
 - Contacts
@@ -228,45 +236,38 @@ The Portal may provide a unified internal customer workspace with sections for:
 - Support
 - CRM summary
 
-This creates a Customer 360 view without reproducing CRM workflows. Portal data
-supplies the scientific and operational view; the CRM supplies limited
-commercial context.
+This creates a relationship and operations view without reproducing HubSpot
+workflows. Portal data supplies the scientific and operational view; HubSpot
+supplies limited commercial context.
 
 ## Phased Implementation Plan
 
-### Phase 1: Foundational Provider Integration
+### Phase 1: Organization Linking And Pending Onboarding
 
-- Select a provider only after an approved product and data-ownership decision.
-- Configure provider authentication and secrets outside source control.
-- Implement the CRM provider boundary and selected-provider adapter.
-- Synchronize approved Portal organization facts to provider companies.
-- Synchronize approved primary-contact fields.
-- Store the CRM provider and external company identifier.
-- Add an internal deep link to the provider company record.
-- Add idempotency, retry, audit, and reconciliation support.
+- Configure HubSpot authentication and secrets outside source control.
+- Implement the CRM provider boundary and HubSpot adapter.
+- Ingest explicit evaluation and Closed Won onboarding requests.
+- Store HubSpot Company, Contact, and Deal identifiers.
+- Add pending Phaeno review, designated-administrator invitation, internal deep
+  links, idempotency, retry, audit, and reconciliation support.
 
-### Phase 2: Commercial Context and Customer Summaries
+### Phase 2: Commercial Context And Committed Sales
 
-- Publish approved customer activity summaries.
-- Display the CRM account owner in internal Portal views.
-- Display a read-only opportunity-stage summary.
-- Display approved recent commercial activity metadata.
-- Process relevant HubSpot webhooks.
-- Add operational monitoring for failed or stale synchronization.
+- Publish every committed Portal sale as an associated HubSpot Order without
+  creating routine Deals.
+- Publish approved organization, service, operational, and high-level
+  QuickBooks payment summaries.
+- Display the HubSpot account owner and read-only commercial summary in
+  internal Portal views.
+- Process relevant HubSpot webhooks and monitor failed or stale synchronization.
 
-### Phase 3: Provider Portability
+### Phase 3: Account Lifecycle And Operational Hardening
 
-- Extract configuration and field mappings that remain HubSpot-specific.
-- Validate the provider abstraction against a second adapter or contract test
-  double.
-- Support replacing the configured CRM provider without changing Portal domain
-  workflows.
-- Add provider-neutral reconciliation and migration tooling if a vendor change
-  is planned.
-
-Provider portability does not require implementing multiple CRM integrations in
-advance. The abstraction should isolate the initial HubSpot integration while
-remaining no broader than proven Portal requirements.
+- Add custom-work and account-change requests, sales-assisted-order handoff,
+  service changes, Customer/Partner relationship changes, and offboarding.
+- Add dashboards, digests, exception alerts, reconciliation, and runbooks.
+- Keep HubSpot-specific field mapping isolated so Portal domains do not depend
+  on HubSpot models. Do not implement another provider without a proven need.
 
 ## Provider Abstraction
 
@@ -276,46 +277,45 @@ HubSpot SDK or HubSpot-specific models. An illustrative interface is:
 ```csharp
 public interface ICrmProvider
 {
-    Task<CrmCompany> CreateCompanyAsync(
-        CrmCompanyDraft company,
-        CancellationToken cancellationToken);
-
-    Task<CrmCompany> UpdateCompanyAsync(
-        string externalCompanyId,
-        CrmCompanyUpdate company,
-        CancellationToken cancellationToken);
-
     Task<CrmCompany?> GetCompanyAsync(
         string externalCompanyId,
         CancellationToken cancellationToken);
 
-    Task<CrmContact> CreateContactAsync(
-        CrmContactDraft contact,
-        CancellationToken cancellationToken);
-
-    Task<CrmContact> UpdateContactAsync(
+    Task<CrmContact?> GetContactAsync(
         string externalContactId,
-        CrmContactUpdate contact,
         CancellationToken cancellationToken);
 
-    Task<CrmOpportunitySummary?> GetOpportunitySummaryAsync(
+    Task<CrmDeal?> GetDealAsync(
+        string externalDealId,
+        CancellationToken cancellationToken);
+
+    Task PublishOrganizationSummaryAsync(
         string externalCompanyId,
+        CrmOrganizationSummary summary,
+        CancellationToken cancellationToken);
+
+    Task<CrmSale> UpsertCommittedSaleAsync(
+        CrmCommittedSale sale,
+        CancellationToken cancellationToken);
+
+    Task PublishIntegrationRequestStatusAsync(
+        CrmIntegrationRequestStatus status,
         CancellationToken cancellationToken);
 }
 ```
 
-The application contract should use provider-neutral models. A selected-provider
-adapter would translate those models to provider objects, properties,
-associations, and API behavior.
+The application contract should use provider-neutral models. The HubSpot
+adapter translates those models to Companies, Contacts, Deals, Orders, Line
+Items, properties, associations, and API behavior.
 
 ## Architectural Rule
 
-> **The Phaeno Portal owns scientific and operational workflows. Generic
-> business capabilities may be integrated from specialized third-party systems
-> only after the product need and ownership boundary are approved. QuickBooks
-> Online is the only such system in the current architecture.**
+> **HubSpot owns commercial relationships and pipeline. Phaeno Portal owns
+> tenant access, service readiness, scientific and operational workflows, and
+> committed operational records. QuickBooks Online owns the approved financial
+> facts. No system may silently grant access or overwrite another system's
+> authority.**
 
-The Portal must not become a CRM by accident. Its responsibility is to manage
-the implemented scientific and operational lifecycle of Customer and Partner
-work. Commercial relationship management is not currently represented by an
-external CRM platform.
+The Portal must not become a CRM by accident, and HubSpot must not become a
+scientific or authorization system. The integration remains unimplemented until
+the owning plan is explicitly authorized and verified.

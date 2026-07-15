@@ -33,13 +33,14 @@ Status: confirmed by the Product Owner and implemented.
 Use `Partner`, not `Distributor`, in product language. Partner persistence,
 membership authorization, reagent ordering, and data assembly are implemented.
 
-## 2026-07-14: Prospect is a portal tenant phase
+## 2026-07-14: Portal Prospect is an evaluation tenant phase
 
 Status: confirmed by the Product Owner and implemented.
 
-A Prospect organization can have users, manage its own users, and access seed
-data assigned by Phaeno. Prospects cannot order. Conversion to Customer or
-Partner preserves the organization and its history rather than replacing it.
+A Portal Prospect is an approved evaluation tenant, not every commercial
+prospect. It can have users, manage its own users, and access curated data
+assigned by Phaeno. Prospects cannot order. Conversion to Customer or Partner
+preserves the organization and its history rather than replacing it.
 Existing seed-data access remains unless Phaeno explicitly removes or replaces
 it.
 Conversion preserves all existing curated-package grants and exact pinned
@@ -266,6 +267,52 @@ a separate Astro application. Customer and Partner content is locale-aware with
 a backend index that must filter results by authenticated audience and locale.
 Browser-bundled help contains no confidential procedures.
 
+## 2026-07-15: HubSpot is the relationship CRM and Portal access is an explicit handoff
+
+Status: confirmed by the Product Owner for planning; not implemented.
+
+HubSpot owns companies, relationship contacts, account ownership, Deals,
+commercial qualification, and commercial outcomes. Most HubSpot companies never
+receive Portal access. A Portal Prospect is an approved evaluation tenant, not
+every HubSpot prospect. A buyer already approved to transact may be onboarded
+directly as Customer or Partner.
+
+Every ordinary onboarding request originates in HubSpot and becomes a pending
+Portal review. Closed Won satisfies commercial approval but cannot directly
+create access, invitations, service entitlements, relationship changes, or
+deactivation. Phaeno reviews operational and access readiness before applying
+the request. Portal-created users do not automatically become HubSpot contacts.
+
+## 2026-07-15: Customer and Partner are exclusive types with service entitlements
+
+Status: confirmed by the Product Owner for planning; not implemented.
+
+An organization is Customer or Partner, not both simultaneously. The same
+organization may change type at an explicit reviewed cutover while preserving
+users, work, results, identifiers, and audit history. Partner services are
+enabled independently. A Partner may be entitled to specimen processing,
+reagent ordering, data assembly, or any approved subset.
+
+Partner specimen work belongs to the Partner. Phaeno does not require, infer,
+or synchronize the Partner's downstream-customer identity. Optional Partner PO
+or project references are opaque Partner data.
+
+## 2026-07-15: Standard work is sold directly and custom work is Sales-assisted
+
+Status: confirmed by the Product Owner for planning; not implemented.
+
+Eligible Customers and Partners may commit to standard configured-price work
+directly in the Portal. Standard specimen processing and Partner data assembly
+must show the complete configured price before commitment; Partner reagents use
+active organization-specific negotiated pricing. Unsupported or negotiated
+work creates a HubSpot custom-work request instead of an order.
+
+Closed Won custom work creates a pending sales-assisted-order handoff for
+operational validation. It does not silently create active work. Every committed
+Portal sale is published to HubSpot as a relationship-safe Order summary, while
+routine direct sales do not create Deals. QuickBooks remains authoritative for
+financial facts, and scientific data never enters HubSpot.
+
 ## Open decisions
 
 - Any exceptional curated-package purge process.
@@ -275,6 +322,8 @@ Browser-bundled help contains no confidential procedures.
 - Production hosting, deployment, monitoring, backup/restore, and rollback
   workflow.
 - Backend help-search implementation, ranking, locale fallback, and reindexing.
-- Future CRM or LIMS selection only if an approved workflow later requires one.
+- Future LIMS selection only if an approved workflow later requires one.
+- HubSpot account capabilities, field mapping, configured-price service rules,
+  sandbox validation, and production activation remain in the owning plans.
 
 Open items belong in the relevant `docs/plans/` document until resolved.

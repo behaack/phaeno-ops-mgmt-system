@@ -1,10 +1,11 @@
 # Order Management Plan
 
-Keep this file updated as customer ordering requirements are supplied and
-decisions are made.
+Keep this file updated as Customer and Partner ordering requirements are
+supplied and decisions are made.
 
-Product discovery is complete. Implementation, local EF migration application,
-and test execution were explicitly requested on 2026-07-14.
+The initial-release discovery and implementation were completed on 2026-07-14.
+Product direction expanded on 2026-07-15 through the HubSpot lifecycle plan.
+Those new changes are not authorized for implementation by this plan alone.
 
 ## Status
 
@@ -12,6 +13,20 @@ and test execution were explicitly requested on 2026-07-14.
   the backend, frontend, and local PostgreSQL schema. Customer laboratory,
   Partner reagent, Partner data-assembly, and Phaeno operations/configuration
   surfaces are present.
+- Approved future direction: entitled Customers and Partners may place a
+  configured-price PSeq Lab Service directly; it always bundles specimen
+  processing with data assembly. An entitled Partner may place a PSeq Kit,
+  which always bundles its reagents/kits with data assembly. Data assembly is
+  not separately sellable because it has no value without the corresponding
+  PSeq Lab Service or PSeq Kit inputs.
+  Partners may submit specimens without identifying any downstream customer.
+  Bespoke work routes through HubSpot. These changes are not implemented.
+- Required pre-production alignment: the implemented standalone Partner
+  data-assembly commercial workflow is superseded. It must become the included,
+  kit-linked assembly phase of PSeq Kit; the existing Customer laboratory flow
+  must become PSeq Lab Service with its included assembly phase. Preserve the
+  operational records and validation where useful, but remove independent
+  assembly entitlement, pricing, quoting, placement, and ordering.
 - Local migrations `AddOrderManagement`, `AddOperationalAssignments`, and
   `CompleteOrderManagementSnapshots` were generated, inspected, and applied to
   the configured development database.
@@ -24,16 +39,22 @@ and test execution were explicitly requested on 2026-07-14.
   deployment configuration, runbooks, and the deferred authenticated database-
   backed/contract test suites recorded in the owning test plans.
 - Requested outcomes:
-  - allow Customers to place lab service orders and track their samples
-  - allow Partners to place reagent orders
-  - allow Partners to submit data for Phaeno data assembly and retrieve the
-    assembled data/results
+  - allow Customers and entitled Partners to place PSeq Lab Service and track
+    its specimen-processing and assembly phases
+  - allow entitled Partners to place PSeq Kit and submit the resulting data for
+    its included assembly phase
+  - allow entitled Partners to submit PSeq Lab Service specimens without
+    disclosing a downstream-customer identity
 - Confirmed boundary: Prospect organizations cannot view, create, or place
   orders, including Prospect organization administrators.
+- A separately approved Prospect Trial Project may authorize bounded sample
+  submission for no-charge try-before-you-buy work. It is not an order, quote,
+  invoice, or general Prospect capability and is owned by
+  `PROSPECT-TRIAL-PROJECT-PLAN.md`.
 - Initial ordering authority is organization-admin-only. Active Customer
   organization administrators may create and place Customer lab service orders;
-  active Partner organization administrators may create and place Partner
-  reagent orders and submit Partner data assembly requests.
+  active Partner organization administrators may create and place enabled
+  Partner specimen, reagent, and data-assembly work.
 - Active non-admin Customer and Partner members may view their selected
   organization's orders, track progress, and download released results or
   outputs, but they cannot create drafts, place orders, submit assembly work, or
@@ -41,9 +62,11 @@ and test execution were explicitly requested on 2026-07-14.
 - A separately assignable purchaser/order-placer role is deferred. The initial
   release intentionally uses the existing organization-admin boundary rather
   than adding a new membership permission model.
-- QuickBooks Online is the only existing external business system. There is no
-  separate order-management, ERP, CRM, LIMS, laboratory workflow, fulfillment,
-  invoicing, or contract-management system outside Phaeno Portal.
+- QuickBooks Online is the only implemented external business system. HubSpot
+  is the selected relationship CRM and planned integration target, but it is
+  not connected today. There is no separate order-management, ERP, LIMS,
+  laboratory workflow, fulfillment, invoicing, or contract-management system
+  outside Phaeno Portal.
 - Specifically, Phaeno has no ERP and no LIMS. QuickBooks Online must not be
   modeled as either one.
 - Do not design a handoff to an assumed external operational system. The portal
@@ -65,14 +88,139 @@ and test execution were explicitly requested on 2026-07-14.
 - Placement uses the active price for that Partner and snapshots the QuickBooks
   item reference, description, unit, quantity, negotiated unit price, and line
   total. QuickBooks receives the actual negotiated price used by the order.
-- Customer lab-service pricing is determined per job. A shared base price is not
-  a binding Customer price, and a Customer lab-service order cannot become a
-  placed commercial order until Phaeno has determined the price for that job and
-  the Customer has accepted it through the confirmed workflow.
+- In the current implementation, Customer lab-service pricing is determined per
+  job. The approved next direction adds configured-price placement for standard
+  work while retaining Sales-assisted pricing for bespoke work.
 - The approved catalog, pricing, approval, payment, fulfillment, file,
   notification, reporting, and retention defaults are defined below.
 
-## Confirmed Product Workflows
+## Approved Next Commercial Entry Direction
+
+`HUBSPOT-PORTAL-LIFECYCLE-PLAN.md` owns the end-to-end commercial handoff. When
+implementation is explicitly requested, this plan must be expanded into exact
+transition, pricing, API, migration, UI, and rollout changes before modifying
+the current order aggregates.
+
+- A direct Portal order is standard, configured, entitlement-checked work. The
+  complete price is shown before commitment and no Sales negotiation is needed.
+- Standard Customer and Partner PSeq Lab Service uses a configured bundle price
+  and places specimen processing plus data assembly as one commercial product.
+  Scientific intake validation still occurs before laboratory work begins.
+- The PSeq Lab Service selling unit is one accepted specimen. Commercial Line
+  Item quantity equals the accepted specimen count. Each configured offering
+  defines the processing and data output included per specimen. Unusual
+  specimens, output requirements, failed-input remediation, and bespoke
+  analysis route to Sales-assisted work.
+- Small standard PSeq Lab Service orders use the configured per-specimen price
+  without a customer-specific minimum batch charge. Phaeno may assign eligible
+  specimens from multiple customer orders to one internal laboratory batch to
+  economize operations. This never merges the customer orders, commercial
+  snapshots, HubSpot Orders, QuickBooks records, tenant ownership, files, or
+  results, and no external organization can discover another participant.
+- The published PSeq Lab Service turnaround window starts at Phaeno specimen
+  acceptance. Cross-customer batching must occur within that window and cannot
+  leave an accepted specimen waiting indefinitely. Each organization may see
+  only its own order progress and expected timing, never the internal batch
+  composition or another organization's participation.
+- Each PSeq Lab Service offering has its own published turnaround range. The
+  Portal displays that range before commitment and preserves it in the order's
+  commercial snapshot. It is an operating target, not a guaranteed service
+  level, unless the governing contract explicitly states otherwise.
+- Specimen acceptance calculates the target completion date and enables
+  internal at-risk alerts. A Phaeno user with `CanManageLabOperations` may
+  override the current expected completion date with a required reason. The
+  audit history preserves the original and revised dates, actor, timestamp, and
+  reason. The ordering organization sees its current expected timing without
+  receiving internal batch-composition information.
+- An override that moves the expected completion date later automatically
+  updates the Portal and emails the ordering organization with the revised date
+  and a customer-safe reason. An earlier date updates the Portal without an
+  email. The audit history retains the notification content and delivery state;
+  customer communication never reveals internal batch composition.
+- The controlled customer-facing reasons are `Laboratory scheduling
+  adjustment`, `Additional processing or quality review`, `Equipment or supply
+  interruption`, `Specimen or shipping issue`, `Customer action required`, and
+  `Other operational delay`. The last reason requires a customer-safe note.
+  Operations may record a separate internal note that is never copied to an
+  organization timeline, email, HubSpot, QuickBooks, or generated document.
+- Later-date notifications go to the order contact and active organization
+  administrators, with duplicate recipients suppressed. Notification failure
+  is visible and retryable to Phaeno but does not undo the authoritative date
+  revision.
+- HubSpot receives only the Order-level current expected completion date and
+  schedule health (`On track`, `At risk`, `Delayed`, or `Complete`). Delay
+  reason text, internal notes, specimen facts, and laboratory batch details do
+  not cross the CRM boundary.
+- TAT reporting retains the quoted offering range, original target date,
+  current expected date, override history, and actual completion date. An
+  override does not change the original-target performance baseline. The Portal
+  also measures receipt-to-acceptance separately from acceptance-to-completion
+  so intake delay remains visible.
+- Standard Partner PSeq Kit uses the active organization-specific negotiated
+  commercial bundle for its reagents/kits plus data assembly.
+- One PSeq Kit purchase creates one commercial order with two independently
+  tracked operational phases: kit fulfillment, followed by data submission and
+  assembly. The included assembly phase does not create another quote, order,
+  invoice, HubSpot Order, or commercial commitment.
+- Each purchased PSeq Kit unit includes exactly one assembly case for data
+  produced by that kit. Corrected or replacement files for the same case are
+  versioned resubmissions and do not consume another entitlement or create a
+  new commercial purchase.
+- Purchasing multiple PSeq Kit units creates the same number of separately
+  identified assembly cases. A Partner may submit the cases at different times;
+  each case has independent intake, processing, exception, completion, and
+  result-release state beneath the single commercial order.
+- An unused assembly case expires 90 days after its kit's labeled expiration
+  date. When no expiration is recorded, the fallback is 12 months after
+  shipment. The Portal shows the applicable deadline before and after purchase.
+  Authorized Phaeno staff may grant an audited extension with a reason; an
+  extension does not create a second sale or assembly entitlement.
+- Delivering every physical kit changes the order summary to `Kit fulfilled /
+  assembly pending` while any included assembly case remains open. The PSeq Kit
+  order becomes operationally `Completed` only after every included case has
+  results released, expires unused, or is formally cancelled. Financial and
+  payment status remains separately derived from QuickBooks.
+- Each PSeq Kit unit is invoiced through QuickBooks when it ships. A partial
+  shipment invoices only the shipped units and one commercial order may
+  therefore associate with multiple shipment invoices. Every invoice line
+  preserves the PSeq Kit bundle price, including its assembly entitlement;
+  data submission and assembly completion never create a second invoice.
+- An unused or expired assembly case does not automatically create a refund or
+  credit because assembly is not separately purchased. Any financial adjustment
+  applies to the PSeq Kit bundle and requires an approved return, defect,
+  cancellation, or documented commercial exception.
+- Replacing a defective or damaged PSeq Kit unit is an audited substitution
+  beneath the original commercial order. Its existing assembly case transfers
+  to the replacement kit; the original unit is marked replaced, and no extra
+  entitlement, sale, HubSpot Order, or invoice is created unless the Partner
+  purchases an additional unit.
+- The purchasing Partner organization remains the tenant owner of each PSeq Kit
+  unit, assembly case, submitted data, and released result even when the Partner
+  supplies the kit downstream. The entitlement cannot transfer to another
+  Portal tenant. An optional Partner reference remains opaque, and Phaeno does
+  not require or infer the downstream customer's identity.
+- The Portal may retain separate specimen, shipment, and assembly operational
+  records, states, assignments, and validation. Quotes, accepted commercial
+  snapshots, QuickBooks mapping, and HubSpot summaries must preserve the
+  approved PSeq Lab Service or PSeq Kit bundle instead of presenting its
+  components as separately purchased standard lines.
+- Data assembly is never a separately sold standard path. It is an included
+  operational phase of PSeq Lab Service or PSeq Kit.
+- Unsupported specimens, analyses, files, quantities, deliverables, discounts,
+  SLAs, or terms route to `Request custom work` and a HubSpot Deal.
+- Closed Won custom work creates a pending sales-assisted-order handoff for
+  Phaeno operational validation; it does not silently create active work.
+- Every committed Portal sale publishes a relationship-safe HubSpot Order
+  summary. Routine direct orders do not create HubSpot Deals.
+- Partner specimen work belongs to the Partner. The Portal neither requires nor
+  infers a downstream-customer identity; an optional PO or project reference is
+  opaque Partner data.
+
+## Implemented Initial-Release Workflows
+
+The workflows below describe current application behavior. Their manual
+per-job Customer and assembly pricing remains in force until the approved next
+commercial direction is implemented and verified.
 
 ### Customer Lab Service Order
 
@@ -325,7 +473,9 @@ entity, status model, or form merely because each begins with a submission.
 - A Partner reagent order and data assembly submission belong to exactly one
   Partner organization.
 - Prospect organizations are ineligible for every order read and write
-  capability. Conversion to Customer does not retroactively create orders.
+  capability. A project-specific Trial Project authorization may permit bounded
+  sample submission without granting order access. Conversion to Customer does
+  not retroactively create orders.
 - The backend derives the owning organization from validated selected-tenant
   context; it does not trust an arbitrary organization id supplied in an order
   payload.
@@ -337,6 +487,9 @@ entity, status model, or form merely because each begins with a submission.
 - Customer lab-order samples/results and Partner assembly inputs/results are
   Customer- or Partner-owned operational data. Their access rules are separate
   from the organization-wide rule for Phaeno-owned curated Prospect data.
+- Prospect Trial Project samples/results are also operational data with their
+  own organization- and project-scoped rules. They are not Customer orders and
+  are not curated Prospect sample packages.
 - Only an active organization administrator receives an order-placement or
   assembly-submission capability in the initial release. This is an intentional
   product decision; organization membership alone never grants commercial
@@ -358,6 +511,13 @@ entity, status model, or form merely because each begins with a submission.
 The discovery gate is closed. The following decisions are approved defaults for
 the initial release and replace the open questions previously held in this
 section.
+
+The later PSeq bundle decision above supersedes every statement in this section
+that treats Partner data assembly as a separately entitled, quoted, priced, or
+placed commercial service. Those statements continue to describe the current
+implemented workflow only; they are not production-approved behavior and must
+be translated into the included assembly phase of PSeq Kit during the required
+pre-production alignment.
 
 ### Commercial Flow
 
@@ -1232,6 +1392,13 @@ Execution checkpoint:
    and Phaeno operational views retain the complete authorized history.
 6. Deactivation or commercial/file hold blocks new access immediately without
    deleting historical records or previously recorded download events.
+7. A later PSeq Lab Service expected-date override requires a controlled
+   customer-safe reason, retains a separate private internal note, preserves the
+   original target, updates the tenant-safe timeline, and produces one
+   de-duplicated durable notification.
+8. Phaeno reporting distinguishes receipt-to-acceptance from
+   acceptance-to-completion, measures against the original target after an
+   override, and exports only Order-level schedule health to HubSpot.
 
 ## Verification Plan
 

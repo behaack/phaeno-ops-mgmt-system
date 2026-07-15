@@ -14,6 +14,9 @@ Do not execute this plan unless explicitly requested.
   session previews. Durable create/list/update, invitation resend/revoke,
   membership role/deactivation, organization conversion, and global-user
   lifecycle operations still require connected frontend work and coverage.
+- In the mock Customer administration preview, organization create and edit
+  actions use modal forms, and selecting an organization opens a dedicated,
+  view-first customer detail route.
 
 ## Core Decisions
 
@@ -45,8 +48,12 @@ Do not execute this plan unless explicitly requested.
 - Replace single-organization user assumptions with an organization membership model.
 - A user has identity, profile, and global lifecycle fields.
 - An organization has tenant metadata, kind, and active/inactive status.
-- Prospect is a portal tenant phase that can later convert in place to Customer
-  or Partner while preserving organization identity and history.
+- Portal Prospect is an approved evaluation tenant, not every commercially
+  interesting HubSpot company. A Portal Prospect can later convert in place to
+  Customer or Partner while preserving organization identity and history.
+- A company already approved to buy may be onboarded directly as a Customer or
+  Partner after the pending HubSpot-to-Portal review; it does not need to pass
+  through Portal Prospect.
 - A membership links a user to an organization and stores per-organization capability, initially org-admin or member.
 - Selected organization context is required for tenant-scoped requests.
 - Phaeno/platform admin access is based on an active admin membership in an active organization with kind `Phaeno`.
@@ -236,16 +243,31 @@ Do not execute this plan unless explicitly requested.
 - Reactivating an inactive membership requires fresh invite acceptance.
 - Phaeno admins can mark an organization inactive even if it has active users or memberships.
 - Only an authorized Phaeno user can convert a Prospect organization to Customer
-  or Partner.
+  or Partner or reclassify an existing Customer as Partner or Partner as
+  Customer. HubSpot supplies the approved commercial request; the Portal applies
+  it only after operational and access review.
 - Prospect conversion preserves the organization, users, memberships, and audit
   history rather than creating a new tenant.
 - Prospect conversion also preserves every curated-package grant and pinned
   version without automatic additions, replacements, upgrades, or revocations.
 - Prospect memberships never grant ordering capabilities.
+- An active Prospect organization administrator may submit samples only through
+  an approved, accepted, active Trial Project owned by the selected
+  organization and only within its frozen limits and submission window. This
+  project-specific authorization never grants an organization-wide ordering
+  capability. See `PROSPECT-TRIAL-PROJECT-PLAN.md`.
+- Active Prospect organization members may view their own organization's Trial
+  Projects, tenant-safe progress, and released results but cannot submit samples
+  in the initial release.
 - Customer capabilities may allow lab service ordering, sample-progress
   tracking, and access to released laboratory data.
 - Partner capabilities may allow reagent ordering, data assembly submission,
-  and download of completed assembly outputs.
+  entitled specimen processing, and download of completed assembly or specimen
+  outputs. Partner services are enabled independently; Partner kind alone does
+  not grant every Partner service.
+- HubSpot relationship contacts and Portal memberships are separate. Only the
+  designated initial Portal administrator is linked during onboarding; users
+  invited later in the Portal do not automatically become HubSpot contacts.
 - Prospect organization administrators manage their users but cannot assign
   sample-data access. Only an authorized Phaeno user can manage the eligible
   Prospect sample-data catalog or grant sample data to a Prospect organization.
@@ -266,6 +288,10 @@ Do not execute this plan unless explicitly requested.
   packages granted to that organization, including after conversion.
 - Customer- or Partner-owned operational data follows Customer/Partner access
   rules and must not inherit the organization-wide Prospect-data rule.
+- Prospect Trial Project samples and results are confidential,
+  organization-scoped operational data. They do not inherit the
+  organization-wide curated Prospect-package rule and remain scoped to the same
+  organization after conversion.
 - Backend authorization derives the access policy from the data's ownership and
   classification, not merely the organization's current phase.
 - Customer and Partner organization administrators manage member access to
@@ -349,6 +375,12 @@ Do not execute this plan unless explicitly requested.
 - [x] Add tests proving Prospect administrators can manage their own
       organization. Ordering capabilities are absent from the current session
       contract and no order endpoint is exposed to Prospect users.
+- [x] Replace the mock Phaeno organization directory/detail with the durable
+      organization, invitation, and membership APIs.
+- [x] Add operational Portal readiness without treating readiness as access or
+      service authorization.
+- [x] Add the Phaeno relationship-request queue and dated service-entitlement
+      administration foundation.
 
 ## Deferred
 

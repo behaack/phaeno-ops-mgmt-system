@@ -59,6 +59,17 @@ namespace PhaenoPortal.App.Migrations
                         .HasColumnType("character varying(255)")
                         .HasColumnName("name");
 
+                    b.Property<string>("PortalReadiness")
+                        .IsRequired()
+                        .HasMaxLength(50)
+                        .HasColumnType("character varying(50)")
+                        .HasColumnName("portal_readiness");
+
+                    b.Property<string>("PortalReadinessNote")
+                        .HasMaxLength(2000)
+                        .HasColumnType("character varying(2000)")
+                        .HasColumnName("portal_readiness_note");
+
                     b.Property<DateTime>("UpdatedAt")
                         .HasColumnType("timestamp with time zone")
                         .HasColumnName("updated_at");
@@ -4157,6 +4168,235 @@ namespace PhaenoPortal.App.Migrations
                     b.ToTable("reagent_shipment_lines", "portal");
                 });
 
+            modelBuilder.Entity("PhaenoPortal.App.Features.RelationshipManagement.Domain.OrganizationServiceEntitlement", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid")
+                        .HasColumnName("id");
+
+                    b.Property<Guid>("ApprovedByUserId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("approved_by_user_id");
+
+                    b.Property<string>("ConfigurationStatus")
+                        .IsRequired()
+                        .HasMaxLength(50)
+                        .HasColumnType("character varying(50)")
+                        .HasColumnName("configuration_status");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("created_at");
+
+                    b.Property<Guid?>("CreatedByUserId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("created_by_user_id");
+
+                    b.Property<DateTime>("EffectiveFrom")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("effective_from");
+
+                    b.Property<DateTime?>("EffectiveTo")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("effective_to");
+
+                    b.Property<string>("EndReason")
+                        .HasMaxLength(1000)
+                        .HasColumnType("character varying(1000)")
+                        .HasColumnName("end_reason");
+
+                    b.Property<string>("Notes")
+                        .HasMaxLength(2000)
+                        .HasColumnType("character varying(2000)")
+                        .HasColumnName("notes");
+
+                    b.Property<Guid>("OrganizationId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("organization_id");
+
+                    b.Property<string>("Service")
+                        .IsRequired()
+                        .HasMaxLength(50)
+                        .HasColumnType("character varying(50)")
+                        .HasColumnName("service");
+
+                    b.Property<Guid?>("SourceRequestId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("source_request_id");
+
+                    b.Property<DateTime>("UpdatedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("updated_at");
+
+                    b.Property<Guid?>("UpdatedByUserId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("updated_by_user_id");
+
+                    b.Property<long>("Version")
+                        .IsConcurrencyToken()
+                        .HasColumnType("bigint")
+                        .HasColumnName("version");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("SourceRequestId");
+
+                    b.HasIndex("OrganizationId", "Service", "EffectiveFrom");
+
+                    b.ToTable("organization_service_entitlements", "portal");
+                });
+
+            modelBuilder.Entity("PhaenoPortal.App.Features.RelationshipManagement.Domain.PortalIntegrationRequest", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid")
+                        .HasColumnName("id");
+
+                    b.Property<string>("ApplicationNotes")
+                        .HasMaxLength(2000)
+                        .HasColumnType("character varying(2000)")
+                        .HasColumnName("application_notes");
+
+                    b.Property<DateTime?>("AppliedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("applied_at");
+
+                    b.Property<Guid?>("AppliedByUserId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("applied_by_user_id");
+
+                    b.Property<string>("CandidateOrganizationName")
+                        .IsRequired()
+                        .HasMaxLength(255)
+                        .HasColumnType("character varying(255)")
+                        .HasColumnName("candidate_organization_name");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("created_at");
+
+                    b.Property<Guid?>("CreatedByUserId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("created_by_user_id");
+
+                    b.Property<string>("DecisionReason")
+                        .HasMaxLength(2000)
+                        .HasColumnType("character varying(2000)")
+                        .HasColumnName("decision_reason");
+
+                    b.Property<string>("InternalNotes")
+                        .HasMaxLength(4000)
+                        .HasColumnType("character varying(4000)")
+                        .HasColumnName("internal_notes");
+
+                    b.Property<Guid?>("OrganizationId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("organization_id");
+
+                    b.Property<string>("RequestNumber")
+                        .IsRequired()
+                        .HasMaxLength(50)
+                        .HasColumnType("character varying(50)")
+                        .HasColumnName("request_number");
+
+                    b.Property<string>("RequestType")
+                        .IsRequired()
+                        .HasMaxLength(50)
+                        .HasColumnType("character varying(50)")
+                        .HasColumnName("request_type");
+
+                    b.Property<Guid>("RequestedByUserId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("requested_by_user_id");
+
+                    b.Property<string>("RequestedOrganizationKind")
+                        .HasMaxLength(50)
+                        .HasColumnType("character varying(50)")
+                        .HasColumnName("requested_organization_kind");
+
+                    b.Property<DateTime?>("ReviewedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("reviewed_at");
+
+                    b.Property<Guid?>("ReviewedByUserId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("reviewed_by_user_id");
+
+                    b.Property<string>("Source")
+                        .IsRequired()
+                        .HasMaxLength(50)
+                        .HasColumnType("character varying(50)")
+                        .HasColumnName("source");
+
+                    b.Property<string>("SourceReference")
+                        .HasMaxLength(255)
+                        .HasColumnType("character varying(255)")
+                        .HasColumnName("source_reference");
+
+                    b.Property<string>("Status")
+                        .IsRequired()
+                        .HasMaxLength(50)
+                        .HasColumnType("character varying(50)")
+                        .HasColumnName("status");
+
+                    b.Property<string>("Summary")
+                        .IsRequired()
+                        .HasMaxLength(2000)
+                        .HasColumnType("character varying(2000)")
+                        .HasColumnName("summary");
+
+                    b.Property<DateTime>("UpdatedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("updated_at");
+
+                    b.Property<Guid?>("UpdatedByUserId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("updated_by_user_id");
+
+                    b.Property<long>("Version")
+                        .IsConcurrencyToken()
+                        .HasColumnType("bigint")
+                        .HasColumnName("version");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("OrganizationId");
+
+                    b.HasIndex("RequestNumber")
+                        .IsUnique();
+
+                    b.HasIndex("Status", "CreatedAt");
+
+                    b.ToTable("portal_integration_requests", "portal");
+                });
+
+            modelBuilder.Entity("PhaenoPortal.App.Features.RelationshipManagement.Domain.PortalIntegrationRequestService", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid")
+                        .HasColumnName("id");
+
+                    b.Property<Guid>("PortalIntegrationRequestId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("portal_integration_request_id");
+
+                    b.Property<string>("Service")
+                        .IsRequired()
+                        .HasMaxLength(50)
+                        .HasColumnType("character varying(50)")
+                        .HasColumnName("service");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("PortalIntegrationRequestId", "Service")
+                        .IsUnique();
+
+                    b.ToTable("portal_integration_request_services", "portal");
+                });
+
             modelBuilder.Entity("PhaenoPortal.App.Infrastructure.Persistence.Auditing.AuditEvent", b =>
                 {
                     b.Property<Guid>("Id")
@@ -4881,6 +5121,37 @@ namespace PhaenoPortal.App.Migrations
                         .IsRequired();
                 });
 
+            modelBuilder.Entity("PhaenoPortal.App.Features.RelationshipManagement.Domain.OrganizationServiceEntitlement", b =>
+                {
+                    b.HasOne("PhaenoPortal.App.Features.Accounts.Domain.Organization", null)
+                        .WithMany()
+                        .HasForeignKey("OrganizationId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("PhaenoPortal.App.Features.RelationshipManagement.Domain.PortalIntegrationRequest", null)
+                        .WithMany()
+                        .HasForeignKey("SourceRequestId")
+                        .OnDelete(DeleteBehavior.Restrict);
+                });
+
+            modelBuilder.Entity("PhaenoPortal.App.Features.RelationshipManagement.Domain.PortalIntegrationRequest", b =>
+                {
+                    b.HasOne("PhaenoPortal.App.Features.Accounts.Domain.Organization", null)
+                        .WithMany()
+                        .HasForeignKey("OrganizationId")
+                        .OnDelete(DeleteBehavior.Restrict);
+                });
+
+            modelBuilder.Entity("PhaenoPortal.App.Features.RelationshipManagement.Domain.PortalIntegrationRequestService", b =>
+                {
+                    b.HasOne("PhaenoPortal.App.Features.RelationshipManagement.Domain.PortalIntegrationRequest", null)
+                        .WithMany("RequestedServices")
+                        .HasForeignKey("PortalIntegrationRequestId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+                });
+
             modelBuilder.Entity("PhaenoPortal.App.Features.Accounts.Domain.Organization", b =>
                 {
                     b.Navigation("Memberships");
@@ -4945,6 +5216,11 @@ namespace PhaenoPortal.App.Migrations
             modelBuilder.Entity("PhaenoPortal.App.Features.OrderManagement.Domain.ReagentShipment", b =>
                 {
                     b.Navigation("Lines");
+                });
+
+            modelBuilder.Entity("PhaenoPortal.App.Features.RelationshipManagement.Domain.PortalIntegrationRequest", b =>
+                {
+                    b.Navigation("RequestedServices");
                 });
 #pragma warning restore 612, 618
         }

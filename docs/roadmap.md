@@ -11,8 +11,15 @@
 - `docs/plans/FILE-MANAGEMENT-PLAN.md`: storage abstraction, folders, versions, retention, and download audit.
 - `docs/plans/ORDER-MANAGEMENT-PLAN.md`: implemented Customer laboratory,
   Partner reagent, Partner data-assembly, and Phaeno operations/configuration
-  workflows; remaining items are explicit production-activation and expanded
-  integration-test gates.
+  workflows; approved next direction adds configured-price standard sales,
+  Partner specimen processing, and HubSpot committed-sale publication.
+- `docs/plans/HUBSPOT-PORTAL-LIFECYCLE-PLAN.md`: approved future end-to-end
+  HubSpot relationship, evaluation, onboarding, service-entitlement, direct and
+  Sales-assisted sale, relationship-change, and offboarding lifecycle. No CRM
+  integration is implemented.
+- `docs/plans/PROSPECT-TRIAL-PROJECT-PLAN.md`: approved future no-charge,
+  closed-ended Prospect Trial Project requested from HubSpot and governed in
+  the Portal. It is not implemented.
 - `docs/plans/ORGANIZATION-DATA-PROVISIONING-PLAN.md`: Phaeno source-sample registry,
   curated package governance, Prospect/Customer/Partner grants, and tenant
   access. The confirmed baseline and completion/governance slices are
@@ -28,16 +35,19 @@
 
 ## Durable product guidance
 
+- `docs/crm-integration-strategy.md`: approved HubSpot/Portal/QuickBooks system
+  ownership and data-boundary guidance; implementation state remains in the
+  owning lifecycle plan.
 - `docs/user-documentation.md`: authoring, audience, privacy, portability, and future search rules for the in-portal help system.
 - `docs/operations-readiness.md`: current runtime, configuration ownership,
   durable delivery, migration handling, and explicit production-activation gates.
 
-## Unapproved future references
+## Unapproved future reference
 
-- `docs/crm-integration-strategy.md` and `docs/lims-integration-strategy.md` are
-  evaluation references only. They are not roadmap commitments, no provider is
-  selected, and neither integration exists. QuickBooks Online is the only
-  implemented external business system.
+- `docs/lims-integration-strategy.md` is an evaluation reference only. No LIMS
+  provider is selected and no LIMS integration exists. QuickBooks Online is the
+  only implemented external business system; HubSpot is selected but not yet
+  connected.
 
 ## Maintenance rule
 

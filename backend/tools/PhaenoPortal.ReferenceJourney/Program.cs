@@ -14,6 +14,10 @@ using PhaenoPortal.App.Features.DataProvisioning.Controllers;
 using PhaenoPortal.App.Features.DataProvisioning.Domain;
 using PhaenoPortal.App.Features.DataProvisioning.DTOs;
 using PhaenoPortal.App.Features.DataProvisioning.Services;
+using PhaenoPortal.App.Features.RelationshipManagement.Controllers;
+using PhaenoPortal.App.Features.RelationshipManagement.Domain;
+using PhaenoPortal.App.Features.RelationshipManagement.DTOs;
+using PhaenoPortal.App.Features.RelationshipManagement.Services;
 using PhaenoPortal.App.Infrastructure.Persistence;
 using PhaenoPortal.App.Infrastructure.Persistence.Auditing;
 
@@ -54,7 +58,7 @@ internal static class ReferenceJourney
         {
             await RunJourneyAsync(connectionString, schema, storageRoot, runKey);
             Console.WriteLine(
-                "PASS: synthetic source, immutable publication, exact-version grant, tenant downloads, isolation, audit, revocation, and rollback.");
+                "PASS: relationship request and entitlement integrity, synthetic source, immutable publication, exact-version grant, tenant downloads, isolation, audit, revocation, and rollback.");
             return 0;
         }
         catch (Exception exception)
@@ -135,6 +139,12 @@ internal static class ReferenceJourney
                 dbContext,
                 runKey);
             currentUser.UserId = identities.PlatformAdminUserId;
+            var relationshipCustomerLabel = $"Reference Customer {runKey}";
+            await RunRelationshipLifecycleAsync(
+                dbContext,
+                identities.PlatformAdminSubject,
+                relationshipCustomerLabel);
+            ResetRequestScope(dbContext);
 
             var environment = new ReferenceWebHostEnvironment(storageRoot);
             var provisioningOptions = new DataProvisioningOptions
@@ -474,6 +484,10 @@ internal static class ReferenceJourney
                 !await dbContext.SourceSamples.AnyAsync(
                     item => item.Label == sourceLabel),
                 "The reference fixture rows remained after transaction rollback.");
+            Require(
+                !await dbContext.Organizations.AnyAsync(
+                    item => item.Name == relationshipCustomerLabel),
+                "The relationship reference rows remained after transaction rollback.");
         }
         finally
         {
@@ -482,6 +496,137 @@ internal static class ReferenceJourney
                 await transaction.RollbackAsync();
             }
         }
+    }
+
+    private static async Task RunRelationshipLifecycleAsync(
+        AppDbContext dbContext,
+        string platformAdminSubject,
+        string customerLabel)
+    {
+        var customer = new Organization(customerLabel, OrganizationKind.Customer);
+        dbContext.Organizations.Add(customer);
+        await dbContext.SaveChangesAsync();
+        var customerId = customer.Id;
+        ResetRequestScope(dbContext);
+
+        var controller = new RelationshipManagementController(
+            dbContext,
+            new ReferenceIdentityContext(platformAdminSubject))
+        {
+            ControllerContext = new ControllerContext
+            {
+                HttpContext = CreateHttpContext()
+            }
+        };
+
+        var onboardingRequest = ReadActionValue(
+            await controller.CreateRequest(
+                new CreatePortalIntegrationRequest
+                {
+                    OrganizationId = customerId,
+                    RequestType = PortalIntegrationRequestType.Onboarding,
+                    Summary = "Reference onboarding request without a service change."
+                },
+                CancellationToken.None));
+        ResetRequestScope(dbContext);
+        onboardingRequest = await controller.DecideRequest(
+            onboardingRequest.Id,
+            new DecidePortalIntegrationRequest
+            {
+                Approved = true,
+                Reason = "Reference onboarding approval.",
+                Version = onboardingRequest.Version
+            },
+            CancellationToken.None);
+        ResetRequestScope(dbContext);
+
+        var effectiveFrom = DateTime.UtcNow.AddMinutes(-5);
+        await ExpectRelationshipErrorAsync(
+            () => controller.CreateEntitlement(
+                customerId,
+                new CreateOrganizationServiceEntitlementRequest
+                {
+                    Service = PortalService.PSeqLabService,
+                    EffectiveFrom = effectiveFrom,
+                    ConfigurationStatus = EntitlementConfigurationStatus.Ready,
+                    SourceRequestId = onboardingRequest.Id
+                },
+                CancellationToken.None),
+            "source_request_not_eligible");
+        ResetRequestScope(dbContext);
+
+        var serviceRequest = ReadActionValue(
+            await controller.CreateRequest(
+                new CreatePortalIntegrationRequest
+                {
+                    OrganizationId = customerId,
+                    RequestType = PortalIntegrationRequestType.ServiceChange,
+                    Summary = "Reference PSeq Lab Service approval.",
+                    RequestedServices = [PortalService.PSeqLabService]
+                },
+                CancellationToken.None));
+        ResetRequestScope(dbContext);
+        serviceRequest = await controller.DecideRequest(
+            serviceRequest.Id,
+            new DecidePortalIntegrationRequest
+            {
+                Approved = true,
+                Reason = "Reference service approval.",
+                Version = serviceRequest.Version
+            },
+            CancellationToken.None);
+        ResetRequestScope(dbContext);
+
+        var entitlement = ReadActionValue(
+            await controller.CreateEntitlement(
+                customerId,
+                new CreateOrganizationServiceEntitlementRequest
+                {
+                    Service = PortalService.PSeqLabService,
+                    EffectiveFrom = effectiveFrom,
+                    ConfigurationStatus = EntitlementConfigurationStatus.Ready,
+                    SourceRequestId = serviceRequest.Id,
+                    Notes = "Reference entitlement."
+                },
+                CancellationToken.None));
+        Require(
+            entitlement.SourceRequestId == serviceRequest.Id
+                && entitlement.IsEffective
+                && entitlement.IsUsable,
+            "The approved service request did not produce a usable entitlement.");
+        ResetRequestScope(dbContext);
+
+        var activeSummary = await controller.GetOrganizationSummary(
+            customerId,
+            CancellationToken.None);
+        Require(
+            activeSummary.EffectiveServices.SequenceEqual(
+                [PortalService.PSeqLabService]),
+            "The organization summary did not expose the effective service.");
+        ResetRequestScope(dbContext);
+
+        const string endReason = "Reference commercial term ended.";
+        var ended = await controller.EndEntitlement(
+            customerId,
+            entitlement.Id,
+            new EndOrganizationServiceEntitlementRequest
+            {
+                EffectiveTo = DateTime.UtcNow,
+                Reason = endReason,
+                Version = entitlement.Version
+            },
+            CancellationToken.None);
+        Require(
+            ended.EndReason == endReason && !ended.IsEffective && !ended.IsUsable,
+            "The entitlement end reason or effective state was not retained.");
+        ResetRequestScope(dbContext);
+
+        var endedSummary = await controller.GetOrganizationSummary(
+            customerId,
+            CancellationToken.None);
+        Require(
+            endedSummary.EffectiveServices.Count == 0,
+            "The ended entitlement remained effective in the organization summary.");
     }
 
     private static async Task<ReferenceIdentities> SeedReferenceOrganizationsAsync(
@@ -660,6 +805,24 @@ internal static class ReferenceJourney
 
         throw new InvalidOperationException(
             $"Expected provisioning error '{expectedCode}'.");
+    }
+
+    private static async Task ExpectRelationshipErrorAsync<T>(
+        Func<Task<T>> action,
+        string expectedCode)
+    {
+        try
+        {
+            await action();
+        }
+        catch (RelationshipManagementException exception)
+            when (exception.ErrorCode == expectedCode)
+        {
+            return;
+        }
+
+        throw new InvalidOperationException(
+            $"Expected relationship management error '{expectedCode}'.");
     }
 
     private static void Require(bool condition, string failureMessage)

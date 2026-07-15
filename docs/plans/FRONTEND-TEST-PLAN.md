@@ -35,12 +35,40 @@ Do not execute this test plan unless explicitly requested.
 - [x] `frontend/src/features/data-library/GovernanceNoticePanel.test.tsx` - an
   organization administrator must provide remediation details and submits the
   current affected-organization concurrency version.
+- [x] `frontend/src/features/organizations/LifecycleActionDialog.test.tsx` -
+  organization deactivation names its access consequence, and entitlement end
+  requires and submits a retained reason.
+- [x] `frontend/src/features/organizations/EntitlementDialog.test.tsx` - the
+  approved source-request selector includes only requests for the current
+  organization and selected service while preserving a documented manual
+  exception.
 
 ## Deferred Tests
 
-- [ ] Connected organization/user administration - replace the current
-  mock-backed screens and cover tenant-scoped organization list/detail,
-  invitation create/list/resend/revoke, membership role/deactivation,
+- [ ] HubSpot lifecycle components - cover pending-request queues, exact proposed
+  changes, readiness review, internal-only HubSpot summary and deep links,
+  service-entitlement activation, relationship/offboarding warnings, retryable
+  sync failure, and complete hiding of HubSpot context from external users.
+- [ ] Direct and Sales-assisted sales - cover configured prices for eligible
+  Customer/Partner specimen and Partner assembly work, Partner service-specific
+  action visibility, Request custom work, Request account change, no
+  downstream-customer requirement, operational confirmation for Closed Won
+  handoffs, and durable failure feedback.
+- [ ] Prospect Trial Project components - cover Phaeno request review and dual
+  approval, frozen-scope preview/amendment, Prospect acceptance, bounded sample
+  submission for extracted RNA, the five-sample allowance and deadline states,
+  schedule-without-guaranteed-TAT messaging, standard FASTQ/FASTA/BAM
+  deliverables, the three-month result-access default and approval-time
+  override, access beginning with complete-package release rather than a
+  partial release, member view-only state, tenant-safe progress/results,
+  terminal-state reasons, HubSpot retry visibility, and continued hiding of normal
+  ordering actions.
+- [ ] Remaining connected organization/user administration - cover organization
+  list/detail, readiness persistence through create/edit, request queue
+  decisions, completed-organization selection for a pre-organization request,
+  accessible request-action and Prospect-conversion dialogs that close after
+  success, dated entitlement overlap validation,
+  invitation create/list/resend/revoke, membership role changes,
   Prospect conversion, organization lifecycle, global user lifecycle,
   optimistic concurrency, and durable refresh behavior against mocked APIs.
 - [ ] Auth shell - cover missing Clerk config, signed-out prompt, local unauthorized state, disabled state, no-active-memberships state, and ready state.
@@ -76,6 +104,10 @@ Do not execute this test plan unless explicitly requested.
 
 ## Requested Execution Log
 
+- 2026-07-15: portal hardening verification ran `pnpm run lint`, `pnpm run
+  typecheck`, `pnpm run test`, and `pnpm run build`; lint and typecheck passed,
+  all 28 tests in 11 files passed, and both client and SSR production builds
+  completed.
 - 2026-07-14: system-documentation catch-up verification ran `pnpm run
   typecheck`, focused ESLint for the documentation registry, and the registry
   Vitest file; typecheck and lint passed and all 4 registry tests passed. Static

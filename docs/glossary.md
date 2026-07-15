@@ -12,10 +12,16 @@
 | API envelope | The standard `success`, `data`, `error`, and `meta` response shape. |
 | Audit event | An append-only record of a persisted entity change and its actor/request context. |
 | Concurrency version | The numeric version used to reject stale updates. |
-| Prospect | The external tenant phase before an organization becomes a Customer or Partner. Prospect users may access explicitly assigned curated data and manage their organization's users, but may not order. |
+| HubSpot prospect | A commercially interesting company or contact managed in HubSpot. This does not create a Portal organization, invitation, or access. |
+| Portal Prospect | An approved evaluation tenant with Trial Project or explicitly granted curated-data access. It is not every HubSpot prospect and may later convert to Customer or Partner. |
 | Customer | An end-user organization that can place lab service orders, track submitted samples, and access resulting data released through the portal. |
-| Partner | An external organization that can order reagents and submit data to Phaeno for assembly, then download released assembled outputs for its customers. |
+| Partner | An external organization that may be entitled to submit specimens for Phaeno processing, order reagents, or submit data for assembly. Partner specimen work does not require downstream-customer identity. |
+| Service entitlement | An approved organization-specific capability controlling which Customer or Partner sales and operational workflows are available. Organization kind alone does not grant every service. |
+| Direct Portal sale | Standard configured work whose complete price and terms can be accepted in the Portal without Sales negotiation. |
+| Sales-assisted work | Bespoke or exceptional work managed as a HubSpot Deal before a pending operational handoff creates executable Portal work. |
+| HubSpot Order summary | The relationship-safe HubSpot record for one committed Portal sale. It is not the Portal operational record or the QuickBooks financial authority. |
 | Lab service order | A Customer request involving physical sample submission, Phaeno accessioning and laboratory analysis, data processing, and portal delivery of resulting data. |
+| Partner specimen-processing order | A Partner-owned request for Phaeno specimen processing. Phaeno does not require or infer the Partner's downstream-customer identity. |
 | Sample accessioning | Phaeno's receipt and registration of a submitted physical sample so its laboratory progression is traceable. |
 | Reagent order | A Partner order for reagents supplied through Phaeno's fulfillment workflow. |
 | Data assembly request | A Partner submission of data for Phaeno processing and delivery of downloadable assembled data/results. |

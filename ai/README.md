@@ -11,7 +11,10 @@ Use the smallest context set that covers the task.
 | UI/UX, list, record detail, form, modal, feedback, responsive, i18n, privacy, or accessibility behavior | `docs/ui-ux-principles.md`, matching frontend code, and the relevant frontend/E2E plan |
 | User-facing behavior or in-portal help | `docs/user-documentation.md`, the affected audience guides in `frontend/src/content/docs/`, matching feature code, and the relevant test plan |
 | File management, orders, or provisioning | the corresponding `docs/plans/` file and current feature code; provisioning and the order-management initial release are implemented, while production activation requirements remain tracked in their owning plans |
+| HubSpot, CRM, prospect onboarding, service entitlement, direct/custom sale, relationship change, or offboarding | `docs/crm-integration-strategy.md`, `docs/plans/HUBSPOT-PORTAL-LIFECYCLE-PLAN.md`, and `integrations/hubspot/`, then the affected account, Trial Project, order, or provisioning plan; the Phase 0 HubSpot project shell exists, but the runtime integration is not implemented |
 | Verification or handoff | `ai/playbooks/verification.md` and the relevant living test plan |
 | Runtime configuration, deployment boundary, integration recovery, or production readiness | `docs/operations-readiness.md`, `docs/architecture.md`, and the owning feature plan |
+
+For every major-record workflow, treat the standard list -> create/view/edit -> return flow in `docs/ui-ux-principles.md` as application-wide policy. Check the list, detail route, modal behavior, and focus/list-state restoration together rather than reviewing any one screen in isolation.
 
 Durable facts belong in `docs/`. Active implementation state belongs in `docs/plans/`. Temporary investigation notes should remain outside the durable docs unless they produce a confirmed decision.

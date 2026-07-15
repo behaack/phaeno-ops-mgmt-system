@@ -32,14 +32,51 @@ Do not execute this test plan unless explicitly requested.
   offered their own guide set and cross-audience routes are denied, Phaeno can
   switch among all three audience guides, MDX content renders on guide routes,
   and Prospect direct access is denied.
+- [x] `frontend/e2e/customers.spec.ts` - desktop and mobile organization
+  administration use accessible consequence dialogs for organization,
+  membership, and entitlement lifecycle actions; focus returns to the invoking
+  control, ended entitlements retain their reason, and the entitlement source
+  selector excludes an approved onboarding request that did not request the
+  selected service. Serious and critical Axe violations are checked in the
+  dialogs.
+
+## Manual Acceptance Evidence
+
+- 2026-07-15: a real-Clerk local browser journey proved manual request review,
+  creation and readiness persistence, designated-administrator invitation,
+  Prospect-to-Customer conversion with the organization identifier preserved,
+  association and application of the original request, and one usable PSeq Lab
+  Service entitlement. The rollback-only PostgreSQL reference journey now also
+  automates the service-source and entitlement-end integrity rules; the full
+  authenticated HTTP/browser journey remains deferred.
 
 ## Deferred Tests
 
+- [ ] HubSpot-to-Portal lifecycle journey - cover HubSpot-only company with no
+  Portal access, approved evaluation to Portal Prospect, Closed Won to pending
+  direct Customer/Partner onboarding, designated-admin invitation, selective
+  Partner services, existing-organization service change, Customer/Partner
+  reclassification, pending offboarding, webhook replay, retry, and HubSpot outage.
+- [ ] Direct/custom sales and HubSpot visibility journey - cover configured-price
+  Customer and Partner specimen placement, Partner reagent and assembly sales,
+  ineligible work routed to Sales, Closed Won operational handoff, one HubSpot
+  Order per commitment with payment summary, no routine Deal, no scientific or
+  downstream-customer data in HubSpot, and two-tenant isolation.
+- [ ] Prospect Trial Project journey - cover HubSpot-originated request, commercial
+  and scientific approval, Prospect invitation and acceptance, bounded sample
+  submission of up to five extracted-RNA samples, sixth-sample and wrong-type
+  denial, Phaeno receipt/processing, standard FASTQ/FASTA/BAM result release,
+  the three-month access default and an approved override both beginning only
+  with complete-package release, completion, explicit Customer or Partner
+  conversion, normal-order denial before conversion, and two-tenant isolation
+  for project metadata, samples, files, and results.
 - [ ] Database-backed organization and user administration journey - verify
   Phaeno and external administrator scope, invitation delivery and acceptance,
-  resend/revoke, role and membership lifecycle, Prospect conversion, global
-  disable/reactivation, refresh persistence, and cross-tenant denial after the
-  current mock-backed administration screens are replaced.
+  resend/revoke, role and membership lifecycle, Prospect conversion with stable
+  identity, readiness, request review without implicit provisioning,
+  pre-organization request association, action-dialog close behavior,
+  service-entitlement boundaries, global disable/reactivation, refresh
+  persistence, and cross-tenant denial.
 - [ ] Automated WCAG AA accessibility check on the dashboard.
 - [ ] Mobile primary navigation moves into the user menu.
 - [ ] Source-sample draft discard - verify destructive confirmation, required
@@ -61,6 +98,11 @@ Do not execute this test plan unless explicitly requested.
 
 ## Requested Execution Log
 
+- 2026-07-15: portal hardening verification ran `PLAYWRIGHT_PORT=3100 pnpm
+  run test:e2e`; all 28 desktop/mobile Chromium scenarios passed. The connected
+  organization cases exercised keyboard activation, focus return, narrow
+  layout, light/dark themes, and serious/critical Axe checks. The pre-existing
+  `AcceptInvitePage` route-export warning remains unchanged.
 - 2026-07-14: documentation verification ran `PLAYWRIGHT_PORT=3100 pnpm run
   test:e2e -- documentation.spec.ts`; all 8 desktop/mobile Chromium scenarios
   passed. A separate Playwright gut-check loaded the Customer help landing page

@@ -28,6 +28,16 @@ public sealed class Organization : IAudit, IConcurrency
     public OrganizationKind Kind { get; private set; } = OrganizationKind.Prospect;
 
     /// <summary>
+    /// Operational onboarding readiness. Readiness does not grant access or a service entitlement.
+    /// </summary>
+    public PortalReadinessStatus PortalReadiness { get; private set; } = PortalReadinessStatus.NotReviewed;
+
+    /// <summary>
+    /// Phaeno-only explanation for the current readiness state.
+    /// </summary>
+    public string? PortalReadinessNote { get; private set; }
+
+    /// <summary>
     /// Date and time when the organization was created.
     /// </summary>
     public DateTime CreatedAt { get; private set; } = DateTime.UtcNow;
@@ -90,6 +100,18 @@ public sealed class Organization : IAudit, IConcurrency
         Name = name;
         Kind = kind;
         Description = description;
+    }
+
+    public void UpdateProfile(string name, string? description = null)
+    {
+        Name = name;
+        Description = description;
+    }
+
+    public void UpdatePortalReadiness(PortalReadinessStatus status, string? note)
+    {
+        PortalReadiness = status;
+        PortalReadinessNote = string.IsNullOrWhiteSpace(note) ? null : note.Trim();
     }
 
     public bool IsPhaeno()

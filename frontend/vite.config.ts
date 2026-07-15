@@ -27,7 +27,16 @@ const config = defineConfig({
   resolve: {
     tsconfigPaths: true,
     alias: {
+      'use-sync-external-store/with-selector': fileURLToPath(
+        new URL('./src/shims/use-sync-external-store-with-selector.ts', import.meta.url),
+      ),
+      'use-sync-external-store/with-selector.js': fileURLToPath(
+        new URL('./src/shims/use-sync-external-store-with-selector.ts', import.meta.url),
+      ),
       'use-sync-external-store/shim/with-selector': fileURLToPath(
+        new URL('./src/shims/use-sync-external-store-with-selector.ts', import.meta.url),
+      ),
+      'use-sync-external-store/shim/with-selector.js': fileURLToPath(
         new URL('./src/shims/use-sync-external-store-with-selector.ts', import.meta.url),
       ),
     },

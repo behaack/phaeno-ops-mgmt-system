@@ -14,6 +14,7 @@ This document records how the application operates in the current repository and
 | Order files | Feature-owned local filesystem storage through `IOperationalFileStorage`. |
 | File scanning | Environment scanner abstractions. Development can trust configured fixture files; production defaults do not. |
 | Commercial integration | QuickBooks Online adapter. A logging gateway is used when the required QuickBooks configuration is absent. |
+| Relationship CRM | Not implemented. HubSpot is selected for the approved future lifecycle in `docs/plans/HUBSPOT-PORTAL-LIFECYCLE-PLAN.md`. |
 | Email and notices | Postmark when configured; logging senders otherwise. |
 | Background work | Hosted dispatchers retry order integrations, order notifications, and data-provisioning notices from durable database records. |
 | Help | Browser-bundled MDX with Customer/Partner locale metadata and Phaeno US-English content. Backend search is not implemented. |
@@ -45,6 +46,7 @@ Keep environment-specific values outside source control. `appsettings.Developmen
 | `DataProvisioning` | Storage root, upload limit, synthetic policy, scanner, allowed kinds | Synthetic fixtures rejected; real file policy, durable storage, and trusted scanner approved. |
 | `OrderManagement` | Operational storage root, upload limit, scanner, allowed kinds | Durable storage, trusted scanner, and real Customer/Partner file policy approved. |
 | `QuickBooks` | Environment, company/realm, OAuth, API, webhook verifier | Correct company, least-privilege credentials, webhook validation, sandbox journey, reconciliation, and rotation process approved. |
+| Planned `HubSpot` | Account/app identifiers, OAuth or private-app credentials, API, webhook verifier, and property mapping | Not present today. Before activation: least-privilege scopes, non-production proof, webhook validation, reconciliation, monitoring, and rotation approved. |
 | `VITE_CLERK_PUBLISHABLE_KEY` | Frontend Clerk instance | Matches the API's production Clerk configuration. |
 | `VITE_API_BASE_URL` | Frontend API base URL | Points to the approved API origin or reverse proxy. |
 | `VITE_USE_MOCK_SESSION` | Development mock session | Must not enable mock access in production. |
@@ -83,6 +85,10 @@ Production is not ready until all applicable gates are evidenced:
 - production storage and malware scanning for curated-data and order files;
 - approved scientific file kinds, Customer analyses, Partner assembly profiles, reagent offerings/prices, shipping rules, credit decisions, and quote validity;
 - QuickBooks sandbox end-to-end validation, production company connection, webhook verification, payment reconciliation, duplicate prevention, and credential rotation;
+- when the approved CRM plan enters scope, HubSpot non-production validation,
+  Company/Contact/Deal/Order mapping, webhook verification, duplicate
+  prevention, reconciliation, least-privilege credentials, Sales layouts, and
+  operational ownership;
 - Postmark sender/domain verification, template review, delivery/bounce monitoring, and retry ownership;
 - background-dispatcher monitoring and alerting for stale, failed, or repeatedly retried work;
 - tenant-isolation, file-download, payment-release, accessibility, narrow-viewport, and authenticated database-backed browser journeys;
@@ -96,5 +102,7 @@ Until these gates are complete, a passing local build or test suite demonstrates
 - A general shared-folder and file-version product outside the feature-owned file boundaries.
 - A confidential Phaeno runbook delivery system; browser-bundled help must remain distributable.
 - Backend-indexed help search and additional Customer/Partner locales.
-- CRM or LIMS integration unless an approved future workflow establishes the need.
+- HubSpot integration until the approved lifecycle plan is explicitly
+  implemented and production-validated.
+- LIMS integration unless an approved future workflow establishes the need.
 - Exceptional curated-package purge and any automated retention deletion workflow.
