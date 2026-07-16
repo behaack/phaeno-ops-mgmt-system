@@ -1,6 +1,7 @@
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Options;
-using PhaenoPortal.App.Features.Accounts.Domain;
+using PSeq.Operations.Commercial;
+using PSeq.Operations.Commercial.Accounts.Domain;
 using PhaenoPortal.App.Features.DataProvisioning;
 using PhaenoPortal.App.Features.DataProvisioning.Domain;
 using PhaenoPortal.App.Features.OrderManagement;
@@ -266,7 +267,10 @@ public sealed class PSeqOperationsDbContext(
             }
 
             var entityNamespace = entityType.ClrType.Namespace;
-            if (entityNamespace?.StartsWith("PhaenoPortal.App.", StringComparison.Ordinal) != true)
+            var belongsToCurrentCommercialModel =
+                entityType.ClrType.Assembly == typeof(CommercialAssembly).Assembly
+                || entityNamespace?.StartsWith("PhaenoPortal.App.", StringComparison.Ordinal) == true;
+            if (!belongsToCurrentCommercialModel)
             {
                 throw new InvalidOperationException(
                     $"Entity '{entityType.DisplayName()}' has no explicit schema ownership.");

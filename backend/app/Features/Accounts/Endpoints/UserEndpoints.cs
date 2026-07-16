@@ -2,9 +2,10 @@ namespace PhaenoPortal.App.Features.Accounts.Endpoints;
 
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using PSeq.Operations.Commercial.Accounts.Application;
 using PhaenoPortal.App.Common.Exceptions.Accounts;
 using PhaenoPortal.App.Common.Exceptions.Conflict;
-using PhaenoPortal.App.Features.Accounts.Domain;
+using PSeq.Operations.Commercial.Accounts.Domain;
 using PhaenoPortal.App.Features.Accounts.DTOs;
 using PhaenoPortal.App.Features.Accounts.Services;
 using PhaenoPortal.App.Infrastructure.Api;
@@ -37,7 +38,7 @@ public static class UserEndpoints
             return TypedResults.Forbid();
         }
 
-        if (actor.Id != user.Id && !AccountAccess.IsPlatformAdmin(actor))
+        if (actor.Id != user.Id && !AccountAuthorization.IsPlatformAdmin(actor))
         {
             return TypedResults.Forbid();
         }
@@ -73,8 +74,8 @@ public static class UserEndpoints
             return TypedResults.Forbid();
         }
 
-        var isPlatformAdmin = AccountAccess.IsPlatformAdmin(actor);
-        if (!AccountAccess.CanManageOrganizationMembers(actor, organization.Id, organization.Kind))
+        var isPlatformAdmin = AccountAuthorization.IsPlatformAdmin(actor);
+        if (!AccountAuthorization.CanManageOrganizationMembers(actor, organization.Id, organization.Kind))
         {
             return TypedResults.Forbid();
         }
@@ -120,12 +121,12 @@ public static class UserEndpoints
             externalIdentityContext,
             cancellationToken);
 
-        if (actor == null || !AccountAccess.IsPlatformAdmin(actor))
+        if (actor == null || !AccountAuthorization.IsPlatformAdmin(actor))
         {
             return TypedResults.Forbid();
         }
 
-        if (AccountAccess.IsPlatformAdmin(user))
+        if (AccountAuthorization.IsPlatformAdmin(user))
         {
             await EnsureNotLastActivePlatformAdminAsync(dbContext, cancellationToken);
         }
@@ -167,7 +168,7 @@ public static class UserEndpoints
             externalIdentityContext,
             cancellationToken);
 
-        if (actor == null || !AccountAccess.IsPlatformAdmin(actor))
+        if (actor == null || !AccountAuthorization.IsPlatformAdmin(actor))
         {
             return TypedResults.Forbid();
         }

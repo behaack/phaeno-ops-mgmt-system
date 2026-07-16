@@ -1,6 +1,7 @@
 namespace PhaenoPortal.App.Features.OrderManagement.Services;
 
-using PhaenoPortal.App.Features.Accounts.Domain;
+using PSeq.Operations.Commercial.Accounts.Application;
+using PSeq.Operations.Commercial.Accounts.Domain;
 using PhaenoPortal.App.Features.Accounts.Services;
 using PhaenoPortal.App.Infrastructure.Persistence;
 
@@ -78,7 +79,7 @@ public sealed class OrderRequestContext(
                 "An active portal user is required.",
                 StatusCodes.Status401Unauthorized);
 
-        if (!AccountAccess.IsPlatformAdmin(actor))
+        if (!AccountAuthorization.IsPlatformAdmin(actor))
         {
             throw new OrderManagementException(
                 "platform_capability_required",

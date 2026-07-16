@@ -1,5 +1,7 @@
 namespace PhaenoPortal.App.Features.Accounts.Services;
 
+using PSeq.Operations.Commercial.Accounts.Application;
+
 public sealed class LoggingInvitationEmailSender(
     ILogger<LoggingInvitationEmailSender> logger) : IInvitationEmailSender
 {

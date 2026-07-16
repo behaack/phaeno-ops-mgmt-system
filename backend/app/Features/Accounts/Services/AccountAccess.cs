@@ -1,7 +1,7 @@
 namespace PhaenoPortal.App.Features.Accounts.Services;
 
 using Microsoft.EntityFrameworkCore;
-using PhaenoPortal.App.Features.Accounts.Domain;
+using PSeq.Operations.Commercial.Accounts.Domain;
 using PhaenoPortal.App.Infrastructure.Persistence;
 
 public static class AccountAccess
@@ -34,64 +34,5 @@ public static class AccountAccess
         httpContext.Items[Infrastructure.Persistence.Auditing.HttpCurrentUserContext.InternalUserIdItemKey] = user.Id;
 
         return user;
-    }
-
-    public static bool IsPlatformAdmin(User user)
-    {
-        return user.IsActive
-            && user.Status == UserAccountStatus.Active
-            && user.Memberships.Any(m => m.GrantsPlatformAdmin());
-    }
-
-    public static bool CanManageOrganizationMembers(User user, Guid organizationId, OrganizationKind organizationKind)
-    {
-        if (IsPlatformAdmin(user))
-        {
-            return true;
-        }
-
-        if (organizationKind == OrganizationKind.Phaeno)
-        {
-            return false;
-        }
-
-        return user.Memberships.Any(m =>
-            m.OrganizationId == organizationId
-            && m.IsActive
-            && m.IsOrganizationAdmin
-            && m.Organization?.IsActive == true);
-    }
-
-    public static bool CanInviteToOrganization(User user, Guid organizationId, OrganizationKind organizationKind)
-    {
-        return CanManageOrganizationMembers(user, organizationId, organizationKind);
-    }
-
-    public static bool HasActiveMembership(User user, Guid organizationId)
-    {
-        return user.Memberships.Any(m =>
-            m.OrganizationId == organizationId
-            && m.IsActive
-            && m.Organization?.IsActive == true);
-    }
-
-    public static bool IsOrganizationAdmin(User user, Guid organizationId)
-    {
-        return user.Memberships.Any(m =>
-            m.OrganizationId == organizationId
-            && m.IsActive
-            && m.IsOrganizationAdmin
-            && m.Organization?.IsActive == true);
-    }
-
-    public static bool CanViewOrganizationDatasets(User user, Guid organizationId)
-    {
-        return user.IsActive
-            && user.Status == UserAccountStatus.Active
-            && user.Memberships.Any(m =>
-                m.OrganizationId == organizationId
-                && m.IsActive
-                && m.Organization is { IsActive: true } organization
-                && organization.IsExternalOrganization());
     }
 }

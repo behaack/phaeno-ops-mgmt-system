@@ -1,6 +1,6 @@
-namespace PhaenoPortal.App.Features.Accounts.Domain;
+namespace PSeq.Operations.Commercial.Accounts.Domain;
 
-using PhaenoPortal.App.Common.Persistence;
+using PSeq.Operations.Commercial.Common.Persistence;
 
 /// <summary>
 /// Represents a user in the system.

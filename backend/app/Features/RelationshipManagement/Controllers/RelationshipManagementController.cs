@@ -3,7 +3,8 @@ namespace PhaenoPortal.App.Features.RelationshipManagement.Controllers;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
-using PhaenoPortal.App.Features.Accounts.Domain;
+using PSeq.Operations.Commercial.Accounts.Application;
+using PSeq.Operations.Commercial.Accounts.Domain;
 using PhaenoPortal.App.Features.Accounts.Services;
 using PhaenoPortal.App.Features.RelationshipManagement.Domain;
 using PhaenoPortal.App.Features.RelationshipManagement.DTOs;
@@ -276,7 +277,7 @@ public sealed class RelationshipManagementController(
     private async Task<User> RequirePlatformAdminAsync(CancellationToken cancellationToken)
     {
         var actor = await AccountAccess.ReadActiveActorAsync(HttpContext, dbContext, externalIdentityContext, cancellationToken);
-        if (actor == null || !AccountAccess.IsPlatformAdmin(actor))
+        if (actor == null || !AccountAuthorization.IsPlatformAdmin(actor))
         {
             throw new RelationshipManagementException(
                 "relationship_administration_forbidden",

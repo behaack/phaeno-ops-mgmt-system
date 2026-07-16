@@ -3,7 +3,8 @@ namespace PhaenoPortal.App.Features.Accounts.Endpoints;
 using System.Text.Json;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Options;
-using PhaenoPortal.App.Features.Accounts.Domain;
+using PSeq.Operations.Commercial.Accounts.Application;
+using PSeq.Operations.Commercial.Accounts.Domain;
 using PhaenoPortal.App.Features.Accounts.DTOs;
 using PhaenoPortal.App.Features.Accounts.Services;
 using PhaenoPortal.App.Infrastructure.Persistence;
@@ -96,12 +97,12 @@ public static class SessionEndpoints
 
     internal static bool IsPlatformAdmin(User user)
     {
-        return AccountAccess.IsPlatformAdmin(user);
+        return AccountAuthorization.IsPlatformAdmin(user);
     }
 
     internal static bool CanInviteToOrganization(User user, Guid organizationId, OrganizationKind organizationKind)
     {
-        return AccountAccess.CanInviteToOrganization(user, organizationId, organizationKind);
+        return AccountAuthorization.CanInviteToOrganization(user, organizationId, organizationKind);
     }
 
     private static SessionDto UnauthorizedSession()

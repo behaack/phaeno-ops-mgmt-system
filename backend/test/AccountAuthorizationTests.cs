@@ -1,10 +1,10 @@
 namespace PhaenoPortal.Test;
 
 using System.Reflection;
-using PhaenoPortal.App.Features.Accounts.Domain;
-using PhaenoPortal.App.Features.Accounts.Services;
+using PSeq.Operations.Commercial.Accounts.Application;
+using PSeq.Operations.Commercial.Accounts.Domain;
 
-public class AccountAccessTests
+public class AccountAuthorizationTests
 {
     [Fact]
     public void PlatformAdminCanManageCustomerOrganizationMembers()
@@ -17,8 +17,8 @@ public class AccountAccessTests
         AttachOrganization(membership, phaenoOrganization);
         user.Memberships.Add(membership);
 
-        Assert.True(AccountAccess.IsPlatformAdmin(user));
-        Assert.True(AccountAccess.CanManageOrganizationMembers(
+        Assert.True(AccountAuthorization.IsPlatformAdmin(user));
+        Assert.True(AccountAuthorization.CanManageOrganizationMembers(
             user,
             customerOrganization.Id,
             customerOrganization.Kind));
@@ -35,8 +35,8 @@ public class AccountAccessTests
         AttachOrganization(membership, customerOrganization);
         user.Memberships.Add(membership);
 
-        Assert.False(AccountAccess.IsPlatformAdmin(user));
-        Assert.False(AccountAccess.CanManageOrganizationMembers(
+        Assert.False(AccountAuthorization.IsPlatformAdmin(user));
+        Assert.False(AccountAuthorization.CanManageOrganizationMembers(
             user,
             phaenoOrganization.Id,
             phaenoOrganization.Kind));
@@ -52,7 +52,7 @@ public class AccountAccessTests
         AttachOrganization(membership, organization);
         user.Memberships.Add(membership);
 
-        Assert.True(AccountAccess.CanManageOrganizationMembers(
+        Assert.True(AccountAuthorization.CanManageOrganizationMembers(
             user,
             organization.Id,
             organization.Kind));
@@ -68,7 +68,7 @@ public class AccountAccessTests
         AttachOrganization(membership, organization);
         user.Memberships.Add(membership);
 
-        Assert.True(AccountAccess.CanManageOrganizationMembers(
+        Assert.True(AccountAuthorization.CanManageOrganizationMembers(
             user,
             organization.Id,
             organization.Kind));
@@ -87,8 +87,8 @@ public class AccountAccessTests
 
         user.Deactivate();
 
-        Assert.False(AccountAccess.IsPlatformAdmin(user));
-        Assert.False(AccountAccess.CanManageOrganizationMembers(
+        Assert.False(AccountAuthorization.IsPlatformAdmin(user));
+        Assert.False(AccountAuthorization.CanManageOrganizationMembers(
             user,
             customerOrganization.Id,
             customerOrganization.Kind));
@@ -105,14 +105,14 @@ public class AccountAccessTests
         AttachOrganization(membership, prospect);
         user.Memberships.Add(membership);
 
-        Assert.True(AccountAccess.CanViewOrganizationDatasets(user, prospect.Id));
-        Assert.False(AccountAccess.CanViewOrganizationDatasets(user, otherProspect.Id));
+        Assert.True(AccountAuthorization.CanViewOrganizationDatasets(user, prospect.Id));
+        Assert.False(AccountAuthorization.CanViewOrganizationDatasets(user, otherProspect.Id));
 
         prospect.ConvertProspectTo(OrganizationKind.Partner);
-        Assert.True(AccountAccess.CanViewOrganizationDatasets(user, prospect.Id));
+        Assert.True(AccountAuthorization.CanViewOrganizationDatasets(user, prospect.Id));
 
         prospect.Deactivate();
-        Assert.False(AccountAccess.CanViewOrganizationDatasets(user, prospect.Id));
+        Assert.False(AccountAuthorization.CanViewOrganizationDatasets(user, prospect.Id));
     }
 
     private static void AttachOrganization(OrganizationMembership membership, Organization organization)

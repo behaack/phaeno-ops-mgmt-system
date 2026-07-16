@@ -8,6 +8,10 @@ Do not execute this plan unless explicitly requested.
 
 - The backend account, session, organization, invitation, membership, user
   lifecycle, audit, and Clerk-linking workflows are implemented.
+- Account domain entities, pure authorization policy, invitation-token logic,
+  and the invitation-delivery port now live in `PSeq.Operations.Commercial`.
+  The API retains HTTP contracts/endpoints, authenticated-actor lookup,
+  persistence orchestration, Clerk/Postmark adapters, and bootstrap composition.
 - The frontend session shell and invitation acceptance/decline route are
   connected to the API.
 - The current organization and user administration screens remain mock-backed

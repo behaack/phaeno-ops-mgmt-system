@@ -2,7 +2,7 @@ using System.Text.Json;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.ChangeTracking;
 using Microsoft.EntityFrameworkCore.Diagnostics;
-using PhaenoPortal.App.Common.Persistence;
+using PSeq.Operations.Commercial.Common.Persistence;
 
 namespace PhaenoPortal.App.Infrastructure.Persistence.Auditing;
 

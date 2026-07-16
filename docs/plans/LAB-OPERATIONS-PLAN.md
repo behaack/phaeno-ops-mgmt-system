@@ -41,9 +41,10 @@ deployment, or production activation.
   database and migration reset, solution/project restructure, and schema
   baseline sequence are recorded in
   `PSEQ-OPERATIONS-MIGRATION-PLAN.md`. The solution/project shell restructure
-  and single-context schema target are implemented. Feature extraction, the
-  destructive development reset, clean initial migration, and database rebuild
-  are not.
+  and single-context schema target are implemented. The Accounts
+  domain/application-policy slice is extracted into Commercial. Remaining
+  feature extraction, the destructive development reset, clean initial
+  migration, and database rebuild are not.
 
 ## Goal
 

@@ -3,7 +3,7 @@ namespace PhaenoPortal.App.Features.DataProvisioning.Controllers;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
-using PhaenoPortal.App.Features.Accounts.Domain;
+using PSeq.Operations.Commercial.Accounts.Domain;
 using PhaenoPortal.App.Features.Accounts.DTOs;
 using PhaenoPortal.App.Features.Accounts.Services;
 using PhaenoPortal.App.Features.DataProvisioning.Domain;
@@ -1022,7 +1022,7 @@ public sealed class DataProvisioningAdminController(
         return notices.Select(DataProvisioningMappings.ToDto).ToList();
     }
 
-    private Task<Features.Accounts.Domain.User> RequirePlatformAdminAsync(
+    private Task<User> RequirePlatformAdminAsync(
         CancellationToken cancellationToken)
     {
         return DataProvisioningAuthorization.RequirePlatformAdminAsync(
@@ -1166,7 +1166,7 @@ public sealed class DataProvisioningAdminController(
     }
 
     private static DataProvisioningNotice CreateNotice(
-        Features.Accounts.Domain.Organization organization,
+        Organization organization,
         DataProvisioningNoticeKind kind,
         string subject,
         string body,

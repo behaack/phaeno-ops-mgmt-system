@@ -18,9 +18,13 @@ The frontend and API are separate build units. The root `package.json` delegates
 
 ## Backend
 
-The API targets .NET 10 and is organized by feature:
+The backend targets .NET 10 as a modular monolith:
 
-- `Features/Accounts`: users, organizations, memberships, invitations, session projection, and Clerk integration.
+- `modules/PSeq.Operations.Commercial/Accounts`: users, organizations,
+  memberships, invitations, pure authorization policy, invitation-token logic,
+  and the invitation-delivery port.
+- `app/Features/Accounts`: HTTP endpoints/contracts, authenticated-actor lookup,
+  EF-backed orchestration, Clerk/Postmark adapters, and bootstrap composition.
 - `Features/DataProvisioning`: Phaeno source samples, managed-file metadata,
   immutable curated versions, exact-version organization grants, provisioning
   runs, tenant access, and download audit.
@@ -34,6 +38,10 @@ The API targets .NET 10 and is organized by feature:
 - `Middleware`: API exception handling.
 
 All `/api` failures should use the existing error envelope. Persistence applies auditing and optimistic concurrency centrally rather than in individual endpoints.
+
+The API references Commercial, while Commercial does not reference the API or
+Laboratory. Account domain rules therefore remain usable independently of the
+current HTTP, EF, Clerk, and Postmark adapters.
 
 ## Identity and authorization
 

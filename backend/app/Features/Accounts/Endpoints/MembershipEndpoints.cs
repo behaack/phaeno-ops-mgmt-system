@@ -2,8 +2,9 @@ namespace PhaenoPortal.App.Features.Accounts.Endpoints;
 
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using PSeq.Operations.Commercial.Accounts.Application;
 using PhaenoPortal.App.Common.Exceptions.Conflict;
-using PhaenoPortal.App.Features.Accounts.Domain;
+using PSeq.Operations.Commercial.Accounts.Domain;
 using PhaenoPortal.App.Features.Accounts.DTOs;
 using PhaenoPortal.App.Features.Accounts.Services;
 using PhaenoPortal.App.Infrastructure.Api;
@@ -220,7 +221,7 @@ public static class MembershipEndpoints
             return false;
         }
 
-        return AccountAccess.CanManageOrganizationMembers(
+        return AccountAuthorization.CanManageOrganizationMembers(
             actor,
             membership.OrganizationId,
             membership.Organization.Kind);

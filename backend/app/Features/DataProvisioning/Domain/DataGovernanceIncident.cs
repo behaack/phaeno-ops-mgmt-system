@@ -1,7 +1,7 @@
 namespace PhaenoPortal.App.Features.DataProvisioning.Domain;
 
-using PhaenoPortal.App.Common.Persistence;
-using PhaenoPortal.App.Features.Accounts.Domain;
+using PSeq.Operations.Commercial.Common.Persistence;
+using PSeq.Operations.Commercial.Accounts.Domain;
 
 public sealed class DataGovernanceIncident : IAudit, IConcurrency
 {

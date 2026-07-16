@@ -1,6 +1,6 @@
 namespace PhaenoPortal.App.Features.DataProvisioning.DTOs;
 
-using PhaenoPortal.App.Features.Accounts.Domain;
+using PSeq.Operations.Commercial.Accounts.Domain;
 using PhaenoPortal.App.Features.Accounts.DTOs;
 using PhaenoPortal.App.Features.DataProvisioning.Domain;
 

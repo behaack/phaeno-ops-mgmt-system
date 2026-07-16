@@ -1,7 +1,7 @@
 namespace PhaenoPortal.Test;
 
 using System.Reflection;
-using PhaenoPortal.App.Features.Accounts.Domain;
+using PSeq.Operations.Commercial.Accounts.Domain;
 using PhaenoPortal.App.Features.Accounts.Endpoints;
 
 public class SessionAccessTests

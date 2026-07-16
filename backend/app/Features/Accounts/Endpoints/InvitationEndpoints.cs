@@ -4,9 +4,10 @@ using Microsoft.AspNetCore.Http.HttpResults;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Options;
+using PSeq.Operations.Commercial.Accounts.Application;
 using PhaenoPortal.App.Common.Exceptions.Accounts;
 using PhaenoPortal.App.Common.Exceptions.Conflict;
-using PhaenoPortal.App.Features.Accounts.Domain;
+using PSeq.Operations.Commercial.Accounts.Domain;
 using PhaenoPortal.App.Features.Accounts.DTOs;
 using PhaenoPortal.App.Features.Accounts.Services;
 using PhaenoPortal.App.Infrastructure.Api;
@@ -47,7 +48,7 @@ public static class InvitationEndpoints
             return TypedResults.Forbid();
         }
 
-        if (!AccountAccess.CanInviteToOrganization(actor, organization.Id, organization.Kind))
+        if (!AccountAuthorization.CanInviteToOrganization(actor, organization.Id, organization.Kind))
         {
             return TypedResults.Forbid();
         }
@@ -179,7 +180,7 @@ public static class InvitationEndpoints
         }
 
         if (invitation.Organization == null
-            || !AccountAccess.CanInviteToOrganization(actor, invitation.OrganizationId, invitation.Organization.Kind))
+            || !AccountAuthorization.CanInviteToOrganization(actor, invitation.OrganizationId, invitation.Organization.Kind))
         {
             return TypedResults.Forbid();
         }
@@ -441,7 +442,7 @@ public static class InvitationEndpoints
         }
 
         if (invitation.Organization == null
-            || !AccountAccess.CanInviteToOrganization(actor, invitation.OrganizationId, invitation.Organization.Kind))
+            || !AccountAuthorization.CanInviteToOrganization(actor, invitation.OrganizationId, invitation.Organization.Kind))
         {
             return TypedResults.Forbid();
         }
@@ -486,7 +487,7 @@ public static class InvitationEndpoints
             return TypedResults.Forbid();
         }
 
-        var isPlatformAdmin = AccountAccess.IsPlatformAdmin(actor);
+        var isPlatformAdmin = AccountAuthorization.IsPlatformAdmin(actor);
         if (!isPlatformAdmin)
         {
             if (!organizationId.HasValue)
@@ -501,7 +502,7 @@ public static class InvitationEndpoints
                 throw new OrganizationNotFoundException(organizationId.Value);
             }
 
-            if (!AccountAccess.CanInviteToOrganization(actor, organization.Id, organization.Kind))
+            if (!AccountAuthorization.CanInviteToOrganization(actor, organization.Id, organization.Kind))
             {
                 return TypedResults.Forbid();
             }

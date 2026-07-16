@@ -1,4 +1,4 @@
-namespace PhaenoPortal.App.Features.Accounts.Services;
+namespace PSeq.Operations.Commercial.Accounts.Application;
 
 public interface IInvitationEmailSender
 {

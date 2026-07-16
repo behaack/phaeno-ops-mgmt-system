@@ -2,7 +2,7 @@ namespace PhaenoPortal.App.Features.Accounts.Services;
 
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Options;
-using PhaenoPortal.App.Features.Accounts.Domain;
+using PSeq.Operations.Commercial.Accounts.Domain;
 using PhaenoPortal.App.Infrastructure.Persistence;
 
 public static class AccountsBootstrapSeeder

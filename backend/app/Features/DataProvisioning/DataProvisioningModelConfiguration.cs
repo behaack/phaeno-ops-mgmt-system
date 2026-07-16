@@ -2,8 +2,8 @@ namespace PhaenoPortal.App.Features.DataProvisioning;
 
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
-using PhaenoPortal.App.Common.Persistence;
-using PhaenoPortal.App.Features.Accounts.Domain;
+using PSeq.Operations.Commercial.Common.Persistence;
+using PSeq.Operations.Commercial.Accounts.Domain;
 using PhaenoPortal.App.Features.DataProvisioning.Domain;
 
 public static class DataProvisioningModelConfiguration

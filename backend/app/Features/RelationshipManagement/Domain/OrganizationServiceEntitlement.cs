@@ -1,6 +1,6 @@
 namespace PhaenoPortal.App.Features.RelationshipManagement.Domain;
 
-using PhaenoPortal.App.Common.Persistence;
+using PSeq.Operations.Commercial.Common.Persistence;
 
 public sealed class OrganizationServiceEntitlement : IAudit, IConcurrency
 {

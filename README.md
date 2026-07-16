@@ -25,8 +25,10 @@ and QuickBooks Online commercial synchronization. The repository contains a
 The backend is built using .NET 10, providing a solid foundation for enterprise-grade applications.
 
 - **Solution Structure**:
-  - `app`: Main application project containing the core business logic, APIs, and services
-  - `test`: Unit testing project to ensure code quality and reliability
+  - `app`: API host, HTTP workflows, persistence composition, and external-system adapters
+  - `modules/PSeq.Operations.Commercial`: Commercial-owned domain and application logic
+  - `modules/PSeq.Operations.Laboratory`: reserved Laboratory Operations boundary
+  - `test`: combined unit, integration, and architecture tests
 
 #### Backend File Structure
 
@@ -48,8 +50,9 @@ backend/app/
 ```
 
 - `Common/`: Shared cross-feature primitives such as domain exceptions.
-- `Features/`: Feature folders that own their DTOs, endpoint mapping, workflows, and later feature-specific services.
+- `Features/`: API-owned DTOs, endpoint mapping, persistence access, and external-system adapters.
 - Implemented feature areas are Accounts, Data Provisioning, Health, and Order Management.
+- `modules/PSeq.Operations.Commercial/Accounts`: account domain entities, pure authorization policy, invitation-token logic, and the invitation-delivery port.
 - `Infrastructure/Api/`: API response envelopes, metadata factories, error mapping, and response filters.
 - `Infrastructure/Persistence/`: the single EF Core `PSeqOperationsDbContext`, PostgreSQL configuration, and design-time migration factory.
 - `Middleware/`: HTTP middleware such as API exception handling.

@@ -1,6 +1,6 @@
 namespace PhaenoPortal.App.Features.OrderManagement.Domain;
 
-using PhaenoPortal.App.Common.Persistence;
+using PSeq.Operations.Commercial.Common.Persistence;
 
 public sealed class OrderStatusEvent
 {

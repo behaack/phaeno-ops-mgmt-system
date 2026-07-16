@@ -1,6 +1,7 @@
 namespace PhaenoPortal.App.Features.DataProvisioning.Services;
 
-using PhaenoPortal.App.Features.Accounts.Domain;
+using PSeq.Operations.Commercial.Accounts.Application;
+using PSeq.Operations.Commercial.Accounts.Domain;
 using PhaenoPortal.App.Features.Accounts.Services;
 using PhaenoPortal.App.Infrastructure.Persistence;
 
@@ -19,7 +20,7 @@ public static class DataProvisioningAuthorization
             dbContext,
             externalIdentityContext,
             cancellationToken);
-        if (actor == null || !AccountAccess.IsPlatformAdmin(actor))
+        if (actor == null || !AccountAuthorization.IsPlatformAdmin(actor))
         {
             throw new DataProvisioningException(
                 "dataset_administration_forbidden",
@@ -63,7 +64,7 @@ public static class DataProvisioningAuthorization
             && m.IsActive
             && m.Organization?.IsActive == true);
         if (membership?.Organization == null
-            || !AccountAccess.CanViewOrganizationDatasets(actor, organizationId)
+            || !AccountAuthorization.CanViewOrganizationDatasets(actor, organizationId)
             || (requireOrganizationAdmin && !membership.IsOrganizationAdmin))
         {
             throw new DataProvisioningException(

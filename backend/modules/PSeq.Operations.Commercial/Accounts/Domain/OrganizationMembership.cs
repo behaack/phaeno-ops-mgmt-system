@@ -1,6 +1,6 @@
-namespace PhaenoPortal.App.Features.Accounts.Domain;
+namespace PSeq.Operations.Commercial.Accounts.Domain;
 
-using PhaenoPortal.App.Common.Persistence;
+using PSeq.Operations.Commercial.Common.Persistence;
 
 /// <summary>
 /// Links a user to an organization with organization-scoped capabilities.

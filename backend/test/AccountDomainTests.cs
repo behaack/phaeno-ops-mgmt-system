@@ -1,6 +1,7 @@
 namespace PhaenoPortal.Test;
 
-using PhaenoPortal.App.Features.Accounts.Domain;
+using PSeq.Operations.Commercial.Accounts.Application;
+using PSeq.Operations.Commercial.Accounts.Domain;
 using PhaenoPortal.App.Features.Accounts.Services;
 
 public class AccountDomainTests

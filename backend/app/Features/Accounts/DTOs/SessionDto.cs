@@ -1,6 +1,6 @@
 namespace PhaenoPortal.App.Features.Accounts.DTOs;
 
-using PhaenoPortal.App.Features.Accounts.Domain;
+using PSeq.Operations.Commercial.Accounts.Domain;
 
 public sealed record SessionDto
 {

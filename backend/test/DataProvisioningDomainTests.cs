@@ -1,7 +1,7 @@
 namespace PhaenoPortal.Test;
 
 using System.Text.Json;
-using PhaenoPortal.App.Features.Accounts.Domain;
+using PSeq.Operations.Commercial.Accounts.Domain;
 using PhaenoPortal.App.Features.DataProvisioning.Domain;
 using PhaenoPortal.App.Features.DataProvisioning.Services;
 

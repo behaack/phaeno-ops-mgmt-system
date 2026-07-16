@@ -1,4 +1,4 @@
-namespace PhaenoPortal.App.Features.Accounts.Domain;
+namespace PSeq.Operations.Commercial.Accounts.Domain;
 
 public enum PortalReadinessStatus
 {

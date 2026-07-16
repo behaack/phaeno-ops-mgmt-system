@@ -3,8 +3,9 @@ namespace PhaenoPortal.App.Features.Accounts.Endpoints;
 using Microsoft.AspNetCore.Http.HttpResults;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using PSeq.Operations.Commercial.Accounts.Application;
 using PhaenoPortal.App.Common.Exceptions.Accounts;
-using PhaenoPortal.App.Features.Accounts.Domain;
+using PSeq.Operations.Commercial.Accounts.Domain;
 using PhaenoPortal.App.Features.Accounts.DTOs;
 using PhaenoPortal.App.Features.Accounts.Services;
 using PhaenoPortal.App.Infrastructure.Api;
@@ -30,7 +31,7 @@ public static class OrganizationEndpoints
             dbContext,
             externalIdentityContext,
             cancellationToken);
-        if (actor == null || !AccountAccess.IsPlatformAdmin(actor))
+        if (actor == null || !AccountAuthorization.IsPlatformAdmin(actor))
         {
             return TypedResults.Forbid();
         }
@@ -101,8 +102,8 @@ public static class OrganizationEndpoints
             externalIdentityContext,
             cancellationToken);
         if (actor == null
-            || (!AccountAccess.IsPlatformAdmin(actor)
-                && !AccountAccess.HasActiveMembership(actor, organization.Id)))
+            || (!AccountAuthorization.IsPlatformAdmin(actor)
+                && !AccountAuthorization.HasActiveMembership(actor, organization.Id)))
         {
             return TypedResults.Forbid();
         }
@@ -138,7 +139,7 @@ public static class OrganizationEndpoints
             dbContext,
             externalIdentityContext,
             httpContext.RequestAborted);
-        if (actor == null || !AccountAccess.IsPlatformAdmin(actor))
+        if (actor == null || !AccountAuthorization.IsPlatformAdmin(actor))
         {
             return TypedResults.Forbid();
         }
@@ -188,7 +189,7 @@ public static class OrganizationEndpoints
             dbContext,
             externalIdentityContext,
             cancellationToken);
-        if (actor == null || !AccountAccess.IsPlatformAdmin(actor))
+        if (actor == null || !AccountAuthorization.IsPlatformAdmin(actor))
         {
             return TypedResults.Forbid();
         }
@@ -235,7 +236,7 @@ public static class OrganizationEndpoints
             dbContext,
             externalIdentityContext,
             cancellationToken);
-        if (actor == null || !AccountAccess.IsPlatformAdmin(actor))
+        if (actor == null || !AccountAuthorization.IsPlatformAdmin(actor))
         {
             return TypedResults.Forbid();
         }
@@ -293,7 +294,7 @@ public static class OrganizationEndpoints
             dbContext,
             externalIdentityContext,
             cancellationToken);
-        if (actor == null || !AccountAccess.IsPlatformAdmin(actor))
+        if (actor == null || !AccountAuthorization.IsPlatformAdmin(actor))
         {
             return TypedResults.Forbid();
         }
@@ -340,7 +341,7 @@ public static class OrganizationEndpoints
             dbContext,
             externalIdentityContext,
             cancellationToken);
-        if (actor == null || !AccountAccess.IsPlatformAdmin(actor))
+        if (actor == null || !AccountAuthorization.IsPlatformAdmin(actor))
         {
             return TypedResults.Forbid();
         }

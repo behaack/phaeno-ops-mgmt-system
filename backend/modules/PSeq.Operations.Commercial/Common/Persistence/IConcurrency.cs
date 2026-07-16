@@ -1,4 +1,4 @@
-namespace PhaenoPortal.App.Common.Persistence;
+namespace PSeq.Operations.Commercial.Common.Persistence;
 
 public interface IConcurrency
 {

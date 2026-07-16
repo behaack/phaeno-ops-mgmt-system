@@ -10,7 +10,7 @@ Do not execute this test plan unless explicitly requested.
 - [x] `backend/test/PersistenceTests.cs` - `PSeqOperationsDbContextMapsEveryCurrentEntityToCommercialSchema`.
 - [x] `backend/test/PersistenceTests.cs` - `PSeqOperationsDbContextMapsAccountEntities`.
 - [x] `backend/test/PersistenceTests.cs` - `PSeqOperationsDbContextMapsDataProvisioningEntitiesAndTenantBoundaries`.
-- [x] `backend/test/ModuleBoundaryTests.cs` - `CommercialAndLaboratoryAssembliesDoNotReferenceEachOther`.
+- [x] `backend/test/ModuleBoundaryTests.cs` - `CommercialAndLaboratoryAssembliesDoNotReferenceEachOtherOrApi`.
 - [x] `backend/test/ApiResponseTests.cs` - `SuccessEnvelopeSerializesWithReferenceShape`.
 - [x] `backend/test/ApiResponseTests.cs` - `FailureEnvelopeSerializesWithReferenceShape`.
 - [x] `backend/test/ApiResponseTests.cs` - `DomainExceptionMapsLikeReferenceApi`.
@@ -24,11 +24,11 @@ Do not execute this test plan unless explicitly requested.
 - [x] `backend/test/AccountDomainTests.cs` - `UserDeactivateDoesNotDeactivateMemberships`.
 - [x] `backend/test/ExternalIdentityContextTests.cs` - `ClaimsExternalIdentityContextReadsClerkSubjectAndVerifiedEmail`.
 - [x] `backend/test/ExternalIdentityContextTests.cs` - `ClaimsExternalIdentityContextReturnsNullForUnauthenticatedUser`.
-- [x] `backend/test/AccountAccessTests.cs` - `PlatformAdminCanManageCustomerOrganizationMembers`.
-- [x] `backend/test/AccountAccessTests.cs` - `CustomerOrgAdminCannotManagePhaenoOrganizationMembers`.
-- [x] `backend/test/AccountAccessTests.cs` - `CustomerOrgAdminCanManageOwnCustomerOrganizationMembers`.
-- [x] `backend/test/AccountAccessTests.cs` - `ProspectOrgAdminCanManageOwnProspectOrganizationMembers`.
-- [x] `backend/test/AccountAccessTests.cs` - `ActiveProspectMemberCanViewOnlyOwnOrganizationDatasets`.
+- [x] `backend/test/AccountAuthorizationTests.cs` - `PlatformAdminCanManageCustomerOrganizationMembers`.
+- [x] `backend/test/AccountAuthorizationTests.cs` - `CustomerOrgAdminCannotManagePhaenoOrganizationMembers`.
+- [x] `backend/test/AccountAuthorizationTests.cs` - `CustomerOrgAdminCanManageOwnCustomerOrganizationMembers`.
+- [x] `backend/test/AccountAuthorizationTests.cs` - `ProspectOrgAdminCanManageOwnProspectOrganizationMembers`.
+- [x] `backend/test/AccountAuthorizationTests.cs` - `ActiveProspectMemberCanViewOnlyOwnOrganizationDatasets`.
 - [x] `backend/test/AccountDomainTests.cs` - `NewExternalOrganizationDefaultsToProspectAndConvertsInPlace`.
 - [x] `backend/test/AccountDomainTests.cs` - `ProspectCannotConvertToPhaenoOrConvertTwice`.
 - [x] `backend/test/DataProvisioningDomainTests.cs` - `ReadySourceRevisionIsImmutable`.
