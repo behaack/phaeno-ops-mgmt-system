@@ -1,3 +1,3 @@
 using System.Runtime.CompilerServices;
 
-[assembly: InternalsVisibleTo("PhaenoPortal.Test")]
+[assembly: InternalsVisibleTo("PSeq.Operations.Test")]

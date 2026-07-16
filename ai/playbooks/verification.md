@@ -13,8 +13,8 @@ Choose checks by changed surface. The detailed rule remains: do not run tests au
 From the repository root:
 
 ```powershell
-dotnet build .\backend\PhaenoPortal.slnx
-dotnet test .\backend\PhaenoPortal.slnx
+dotnet build .\backend\PSeq.Operations.slnx
+dotnet test .\backend\PSeq.Operations.slnx
 ```
 
 For account changes, include focused coverage for authorization, tenant scope, invite lifecycle, audit behavior, and stale-version conflicts.

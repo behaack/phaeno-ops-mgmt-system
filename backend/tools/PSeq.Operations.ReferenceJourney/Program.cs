@@ -872,7 +872,7 @@ internal sealed class ReferenceWebHostEnvironment(string contentRoot)
     public string EnvironmentName { get; set; } = Environments.Development;
 
     public string ApplicationName { get; set; } =
-        "PhaenoPortal.ReferenceJourney";
+        "PSeq.Operations.ReferenceJourney";
 
     public string WebRootPath { get; set; } = contentRoot;
 

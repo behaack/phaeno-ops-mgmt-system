@@ -33,6 +33,14 @@ deployment, or production activation.
 - Phase 0 Steps 1 and 2 are complete. The evidence-backed current-state
   inventory and ownership classification are recorded in
   `LAB-OPERATIONS-INVENTORY.md`. No restructure or migration was performed.
+- Phase 0 Step 3 is complete as planning. The provider-neutral version 1
+  Commercial-to-Lab Operations boundary is recorded in
+  `LAB-OPERATIONS-CONTRACT.md`. It is not implemented.
+- Phase 0 Step 4 is complete as planning. The approved clean development
+  database and migration reset, solution/project restructure, and schema
+  baseline sequence are recorded in
+  `PSEQ-OPERATIONS-MIGRATION-PLAN.md`. The solution/project shell restructure
+  is implemented; the context, schema, migration, and database reset are not.
 
 ## Goal
 
@@ -86,6 +94,8 @@ The target architecture is:
 - one EF Core `DbContext`
 - one migration history and transaction boundary
 - two target database schemas: `commercial_ops` and `lab_ops`
+- the single EF migration-history table in PostgreSQL `public`, which contains
+  no business records
 - feature-owned EF configurations and module-owned write paths
 
 The intended backend project boundaries are:
@@ -97,17 +107,18 @@ The intended backend project boundaries are:
 4. `PSeq.Operations.Test` - contract, domain, integration, and architecture
    tests
 
-The existing Reference Journey tool remains a non-product utility. Exact
-project names and the sequence for moving the current `PhaenoPortal.App`
-features are engineering details to confirm during implementation planning.
-The separation may be introduced incrementally before any physical project
-move.
+The existing Reference Journey tool remains a non-product utility. The exact
+target layout and implementation sequence are defined in
+`PSEQ-OPERATIONS-MIGRATION-PLAN.md`.
 
-The running schema remains `portal`. Renaming it to `commercial_ops` and adding
-`lab_ops` require a separately approved, data-preserving migration. Two schemas
-are an ownership and maintenance boundary, not a security boundary.
-Authorization remains enforced by the API. The shared context must not become
-permission for features to mutate each other's entities directly.
+The running schema remains `portal`. The Product Owner approved deleting the
+disposable development database and current migration source, then generating
+a clean baseline with `commercial_ops` and `lab_ops`; no legacy data backfill
+is planned. That approval does not extend to staging, production, shared, or
+unexpectedly valuable data. Two business schemas are an ownership and
+maintenance boundary, not a security boundary. Authorization remains enforced
+by the API. The shared context must not become permission for features to
+mutate each other's entities directly.
 
 ## System Ownership
 
@@ -155,6 +166,10 @@ competing scientific file-management system.
 
 ## Replaceable Lab Operations Contract
 
+The planned version 1 commands, acknowledgments, projections, events,
+idempotency rules, and prohibited data are authoritative in
+`LAB-OPERATIONS-CONTRACT.md`.
+
 Commercial Operations must communicate through a provider-neutral Lab
 Operations application contract even while both modules run in the same
 process and share one database.
@@ -178,7 +193,8 @@ cover capabilities such as:
 - acknowledge receipt or rejection
 - return stable milestones and expected timing
 - raise an internal or customer-action-required exception
-- report scientific approval and an opaque released-output reference
+- report scientific approval and readiness; the minimum opaque output
+  reference is deferred until the pipeline/file boundary is defined
 
 Commands and events must have stable Phaeno identifiers, be idempotent, and be
 safe to retry and reconcile. Vendor authentication, identifiers, statuses,
@@ -546,15 +562,16 @@ remove competing internal write paths. The durable strategy is recorded in
 
 - Completed inventory and ownership-classification evidence is maintained in
   `LAB-OPERATIONS-INVENTORY.md`.
+- The completed planned version 1 provider contract is maintained in
+  `LAB-OPERATIONS-CONTRACT.md`.
+- The completed clean reset and restructuring design is maintained in
+  `PSEQ-OPERATIONS-MIGRATION-PLAN.md`.
 - Observe and document the real receipt, accession, reagent-preparation,
   library-preparation, batching, send-out, exception, and review workflows.
 - Define the minimum data capture that protects scientific work without adding
   unnecessary operator burden.
 - Inventory existing `LabServiceOrder`, `LabSample`, accession, QC, and release
   records in Order Management.
-- Design a data-preserving rename from `portal` to `commercial_ops` and the
-  introduction of the new `lab_ops` schema.
-- Define the first provider-neutral contract and stable milestone vocabulary.
 - Define barcode hardware, label, and degraded-mode needs.
 - Keep the pipeline and scientific file-management boundary explicitly open.
 

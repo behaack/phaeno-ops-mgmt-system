@@ -13,7 +13,7 @@ changes.
 
 ## Inventory Date and Evidence
 
-Inventory completed on 2026-07-16 from the current repository source:
+Inventory completed on 2026-07-16 from the pre-restructure repository source:
 
 - `backend/PhaenoPortal.slnx`
 - backend project files under `backend/app`, `backend/test`, and `backend/tools`
@@ -24,14 +24,18 @@ Inventory completed on 2026-07-16 from the current repository source:
 - `backend/test/OrderManagementDomainTests.cs`
 - current session capabilities in Accounts
 
-The working implementation remains authoritative until a separately approved
-restructure and data migration is implemented.
+Stage 1 of `PSEQ-OPERATIONS-MIGRATION-PLAN.md` subsequently renamed the
+solution, API/test/Reference Journey project shells, and added empty Commercial
+and Laboratory projects. It did not move feature code, rename namespaces or
+the context, change the EF model, or change the database. The working feature
+implementation remains authoritative until those later stages are delivered.
 
 ## Findings
 
-The current system is one deployable .NET web project with feature folders, one
-test project, one reference-journey tool, one React frontend, one EF Core
-`AppDbContext`, and one configured PostgreSQL schema named `portal`.
+The current system is one deployable .NET web project with feature folders,
+empty Commercial and Laboratory module shells, one test project, one
+reference-journey tool, one React frontend, one EF Core `AppDbContext`, and one
+configured PostgreSQL schema named `portal`.
 
 The principal boundary problem is not the modular-monolith deployment. It is
 that the current `OrderManagement` feature and `portal` schema jointly own:
@@ -58,24 +62,24 @@ this inventory.
 
 | Current | Target | Classification |
 | --- | --- | --- |
-| `backend/PhaenoPortal.slnx` | `backend/PSeq.Operations.slnx` | Rename the internal solution umbrella; external product remains Phaeno Portal. |
-| `PhaenoPortal.App` web project | `PSeq.Operations.Api` | Thin HTTP host and composition root after feature extraction. |
-| Accounts, Relationship Management, Data Provisioning, and commercial Order Management code | `PSeq.Operations.Commercial` | Commercial Operations module/class library. |
-| Internal laboratory execution code currently inside Order Management | `PSeq.Operations.Laboratory` | Lab Operations module/class library. |
-| `PhaenoPortal.Test` | `PSeq.Operations.Test` | Initial combined test project; separate test projects are unnecessary until size or dependency boundaries justify them. |
-| `PhaenoPortal.ReferenceJourney` | `PSeq.Operations.ReferenceJourney` | Rename when the solution restructuring is implemented. |
+| `backend/PhaenoPortal.slnx` | `backend/PSeq.Operations.slnx` | Stage 1 complete; external product remains Phaeno Portal. |
+| `PhaenoPortal.App` web project | `PSeq.Operations.Api` | Stage 1 shell rename complete; feature extraction remains pending. |
+| Accounts, Relationship Management, Data Provisioning, and commercial Order Management code | `PSeq.Operations.Commercial` | Empty project shell exists; code move remains pending. |
+| Internal laboratory execution code currently inside Order Management | `PSeq.Operations.Laboratory` | Empty project shell exists; Lab implementation remains pending. |
+| `PhaenoPortal.Test` | `PSeq.Operations.Test` | Stage 1 shell rename complete; remains the initial combined test project. |
+| `PhaenoPortal.ReferenceJourney` | `PSeq.Operations.ReferenceJourney` | Stage 1 rename complete. |
 | `PhaenoPortal.App.*` namespaces | `PSeq.Operations.Api.*`, `.Commercial.*`, and `.Laboratory.*` | Namespace follows the owning project. |
 | `AppDbContext` | `PSeqOperationsDbContext` | One context remains; configurations are module-owned. |
-| configured schema `portal` | `commercial_ops` | Rename the current business schema to match its domain rather than the external UI channel. |
+| configured schema `portal` | `commercial_ops` | Replace the current development schema through the approved clean baseline so its name matches the domain rather than the external UI channel. |
 | no laboratory schema | `lab_ops` | New schema reserved for internal Lab Operations-owned records. |
 | one `PersistenceOptions.Schema` setting | explicit Commercial, Lab Operations, and migration-history schema settings | A single default-schema setting is insufficient once mappings span two schemas. |
 | physical database naming based on Phaeno Portal | environment-specific PSeq Operations database naming | Keep one database. Apply naming when an environment is rebuilt or migrated; do not couple it to the entity split. |
 | React application and external title `Phaeno Portal` | retain `Phaeno Portal` | External product identity is not renamed. |
 
-The two target schemas are `commercial_ops` and `lab_ops`. The single EF
-migration-history table should ultimately live in `commercial_ops` unless the
-future migration design proves a better two-schema-compatible location. That
-placement is not executed or finalized by this document.
+The two target business schemas are `commercial_ops` and `lab_ops`. The
+completed reset design places the single EF migration-history table in
+PostgreSQL `public` as module-neutral technical infrastructure; `public` owns
+no business records. See `PSEQ-OPERATIONS-MIGRATION-PLAN.md`.
 
 ## Current Solution and Feature Classification
 
@@ -90,7 +94,7 @@ placement is not executed or finalized by this document.
 | EF context and migrations | `Infrastructure/Persistence`, `Migrations` | Shared API composition with module-owned mappings | Keep one context and migration stream; replace one default schema with explicit mappings. |
 | Audit interceptor and current `audit_events` table | `Infrastructure/Persistence/Auditing` | Shared infrastructure | Retain current behavior during restructuring. Whether Lab audit records remain shared or become Lab-owned is deferred to migration design. |
 | React frontend | `frontend` | One Phaeno Portal application | Retain one application; split feature ownership and navigation internally. |
-| Reference Journey tool | `backend/tools/PhaenoPortal.ReferenceJourney` | Shared verification utility | Retain and rename when project restructuring occurs. |
+| Reference Journey tool | `backend/tools/PSeq.Operations.ReferenceJourney` | Shared verification utility | Stage 1 rename complete; behavior remains unchanged. |
 
 ## Current Order Management Entity Classification
 
@@ -245,11 +249,9 @@ No role or authentication changes are authorized by this inventory.
 | --- | --- |
 | `backend/test/OrderManagementDomainTests.cs` | Split into Commercial order/kit/assembly-history tests and Laboratory execution tests when code moves. Preserve current tests until replacement coverage exists. |
 | frontend order status and navigation tests | Retain with Commercial Portal; add Lab workspace tests only with implementation. |
-| `AddOrderManagement` migration | Historical migration; never edit or relocate. |
-| `AddOperationalAssignments` migration | Historical migration; never edit or relocate. |
-| `CompleteOrderManagementSnapshots` migration | Historical migration; never edit or relocate. |
-| current model snapshot | Authoritative current model; update only through an approved migration. |
-| current migration-history table in `portal` | Preserve until the schema-transition migration is explicitly designed and approved. |
+| current seven migrations | Current development history. Delete them only as part of the approved disposable-database reset, then replace them with one reviewed initial PSeq Operations migration. |
+| current model snapshot | Current development snapshot. Delete it with the old migrations and regenerate it from the restructured model. |
+| current migration-history table in `portal` | Delete it with the approved disposable development database; the clean baseline uses `public.__ef_migrations_history`. |
 
 ## Records That Must Not Be Confused
 
@@ -300,10 +302,12 @@ project, and schema level:
 
 ## Explicitly Not Completed
 
-Per the approved scope, this inventory does not:
+This inventory itself does not:
 
-- define the `ILabOperationsProvider` contract
-- design the schema/data migration sequence
+- define the `ILabOperationsProvider` contract; that is recorded in
+  `LAB-OPERATIONS-CONTRACT.md`
+- design the reset/restructure sequence; that is recorded in
+  `PSEQ-OPERATIONS-MIGRATION-PLAN.md`
 - identify the first implementation slice
 - rename files, projects, namespaces, APIs, routes, entities, or schemas
 - create or apply an EF migration

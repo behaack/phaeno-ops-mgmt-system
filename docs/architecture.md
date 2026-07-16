@@ -14,7 +14,7 @@ Browser
   -> QuickBooks Online and Postmark through configured adapters
 ```
 
-The frontend and API are separate build units. The root `package.json` delegates common frontend commands; the backend solution lives at `backend/PhaenoPortal.slnx`.
+The frontend and API are separate build units. The root `package.json` delegates common frontend commands; the backend solution lives at `backend/PSeq.Operations.slnx`.
 
 ## Backend
 
@@ -65,7 +65,7 @@ The EF mappings for this slice are implemented in migration
 configured development database on 2026-07-14. Other environments retain their
 normal explicit deployment and migration boundary.
 
-`backend/tools/PhaenoPortal.ReferenceJourney` verifies the first slice against
+`backend/tools/PSeq.Operations.ReferenceJourney` verifies the first slice against
 PostgreSQL with authenticated application identities, request-scope tracking
 resets, transaction rollback, and isolated temporary managed storage. Curated
 manifests are stored as `jsonb`; publication therefore compares manifest JSON

@@ -1,0 +1,6 @@
+@PSeq.Operations.Api_HostAddress = http://localhost:5117
+
+GET {{PSeq.Operations.Api_HostAddress}}/weatherforecast/
+Accept: application/json
+
+###

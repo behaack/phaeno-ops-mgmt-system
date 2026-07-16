@@ -65,7 +65,7 @@ Do not execute this test plan unless explicitly requested.
 
 ## Created Database Verification
 
-- [x] `backend/tools/PhaenoPortal.ReferenceJourney` - controller-level
+- [x] `backend/tools/PSeq.Operations.ReferenceJourney` - controller-level
   authenticated PostgreSQL journey covering approved service-request source
   enforcement, rejection of an onboarding-only source, usable entitlement
   derivation, history-preserving entitlement end, synthetic source authoring,

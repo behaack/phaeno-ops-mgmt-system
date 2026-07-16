@@ -25,9 +25,9 @@ Phaeno Portal is the operational source of truth. QuickBooks Online is authorita
 ## Health and basic verification
 
 - API health: `GET /api/health` returns the standard API envelope with service name and `healthy` status. This is application dial tone, not proof that PostgreSQL, Clerk, QuickBooks, Postmark, storage, scanning, or background delivery is fully ready.
-- Backend build and tests: `dotnet build backend/PhaenoPortal.slnx` and `dotnet test backend/PhaenoPortal.slnx`.
+- Backend build and tests: `dotnet build backend/PSeq.Operations.slnx` and `dotnet test backend/PSeq.Operations.slnx`.
 - Frontend checks from `frontend/`: `pnpm run lint`, `pnpm run typecheck`, `pnpm run test`, `pnpm run build`, and `pnpm run test:e2e` when full browser verification is requested.
-- PostgreSQL reference journey: `backend/tools/PhaenoPortal.ReferenceJourney` exercises the curated-data baseline with rollback and isolated temporary storage.
+- PostgreSQL reference journey: `backend/tools/PSeq.Operations.ReferenceJourney` exercises the curated-data baseline with rollback and isolated temporary storage.
 
 The living backend, frontend, and E2E coverage boundaries are maintained in `docs/plans/BACKEND-TEST-PLAN.md`, `docs/plans/FRONTEND-TEST-PLAN.md`, and `docs/plans/E2E-TEST-PLAN.md`.
 

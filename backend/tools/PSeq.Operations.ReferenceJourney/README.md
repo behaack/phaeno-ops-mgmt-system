@@ -21,7 +21,7 @@ Set `PHAENO_PORTAL_REFERENCE_CONNECTION` to an isolated or development database
 that already has all migrations applied, then run:
 
 ```powershell
-dotnet run --project backend/tools/PhaenoPortal.ReferenceJourney/PhaenoPortal.ReferenceJourney.csproj
+dotnet run --project backend/tools/PSeq.Operations.ReferenceJourney/PSeq.Operations.ReferenceJourney.csproj
 ```
 
 `PHAENO_PORTAL_REFERENCE_SCHEMA` is optional and defaults to `portal`. Fixture

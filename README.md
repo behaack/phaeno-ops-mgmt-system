@@ -101,9 +101,9 @@ Common migration commands from `backend/`:
 
 ```powershell
 dotnet tool restore
-dotnet dotnet-ef migrations add <MigrationName> --project .\app\PhaenoPortal.App.csproj --startup-project .\app\PhaenoPortal.App.csproj --output-dir Infrastructure\Persistence\Migrations
-dotnet dotnet-ef database update --project .\app\PhaenoPortal.App.csproj --startup-project .\app\PhaenoPortal.App.csproj
-dotnet dotnet-ef migrations list --project .\app\PhaenoPortal.App.csproj --startup-project .\app\PhaenoPortal.App.csproj
+dotnet tool run dotnet-ef migrations add <MigrationName> --project .\app\PSeq.Operations.Api.csproj --startup-project .\app\PSeq.Operations.Api.csproj --output-dir Migrations
+dotnet tool run dotnet-ef database update --project .\app\PSeq.Operations.Api.csproj --startup-project .\app\PSeq.Operations.Api.csproj
+dotnet tool run dotnet-ef migrations list --project .\app\PSeq.Operations.Api.csproj --startup-project .\app\PSeq.Operations.Api.csproj
 ```
 
 ### Frontend
@@ -242,12 +242,12 @@ phaeno-portal/
 ### Backend Setup
 
 1. Navigate to the backend directory
-2. Restore dependencies: `dotnet restore PhaenoPortal.slnx`
+2. Restore dependencies: `dotnet restore PSeq.Operations.slnx`
 3. Restore local tools: `dotnet tool restore`
 4. Configure PostgreSQL through `ConnectionStrings:DefaultConnection`
-5. Apply migrations: `dotnet dotnet-ef database update --project .\app\PhaenoPortal.App.csproj --startup-project .\app\PhaenoPortal.App.csproj`
-6. Build the solution: `dotnet build PhaenoPortal.slnx`
-7. Run tests: `dotnet test PhaenoPortal.slnx`
+5. Apply migrations: `dotnet tool run dotnet-ef database update --project .\app\PSeq.Operations.Api.csproj --startup-project .\app\PSeq.Operations.Api.csproj`
+6. Build the solution: `dotnet build PSeq.Operations.slnx`
+7. Run tests: `dotnet test PSeq.Operations.slnx`
 
 ### Frontend Setup
 

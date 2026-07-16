@@ -1,0 +1,15 @@
+<Solution>
+  <Folder Name="/app/">
+    <Project Path="app/PSeq.Operations.Api.csproj" />
+  </Folder>
+  <Folder Name="/modules/">
+    <Project Path="modules/PSeq.Operations.Commercial/PSeq.Operations.Commercial.csproj" />
+    <Project Path="modules/PSeq.Operations.Laboratory/PSeq.Operations.Laboratory.csproj" />
+  </Folder>
+  <Folder Name="/test/">
+    <Project Path="test/PSeq.Operations.Test.csproj" />
+  </Folder>
+  <Folder Name="/tools/">
+    <Project Path="tools/PSeq.Operations.ReferenceJourney/PSeq.Operations.ReferenceJourney.csproj" />
+  </Folder>
+</Solution>

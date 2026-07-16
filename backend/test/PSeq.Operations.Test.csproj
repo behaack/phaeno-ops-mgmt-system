@@ -20,7 +20,9 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\app\PhaenoPortal.App.csproj" />
+    <ProjectReference Include="..\app\PSeq.Operations.Api.csproj" />
+    <ProjectReference Include="..\modules\PSeq.Operations.Commercial\PSeq.Operations.Commercial.csproj" />
+    <ProjectReference Include="..\modules\PSeq.Operations.Laboratory\PSeq.Operations.Laboratory.csproj" />
   </ItemGroup>
 
 </Project>

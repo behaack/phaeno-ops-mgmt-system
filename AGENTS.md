@@ -90,6 +90,6 @@ Keep the owner focused on scientific meaning, sequencing and laboratory workflow
 
 Run only the checks appropriate to the change and requested scope. Standard commands are:
 
-- Backend: `dotnet build backend/PhaenoPortal.slnx` and `dotnet test backend/PhaenoPortal.slnx`.
+- Backend: `dotnet build backend/PSeq.Operations.slnx` and `dotnet test backend/PSeq.Operations.slnx`.
 - Frontend: from `frontend/`, `pnpm run lint`, `pnpm run typecheck`, `pnpm run test`, and `pnpm run test:e2e`.
 - Documentation-only changes: check links, paths, and `git diff --check`; no application build is normally needed.

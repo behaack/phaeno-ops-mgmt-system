@@ -11,8 +11,10 @@ On 2026-07-16, `LAB-OPERATIONS-PLAN.md` established approved planning direction
 for separating Commercial Operations from an internal, replaceable Lab
 Operations module. That separation is not implemented. This plan remains
 authoritative for current behavior and commercial ordering; future laboratory
-execution changes must follow the Lab Operations plan and an explicitly
-approved, data-preserving migration.
+execution changes must follow the Lab Operations plan and the approved clean
+development reset/restructure plan. If any non-disposable records exist when
+that work begins, they require a new explicitly approved, data-preserving
+transition.
 
 ## Status
 
