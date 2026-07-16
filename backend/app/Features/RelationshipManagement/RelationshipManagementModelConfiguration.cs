@@ -2,7 +2,7 @@ namespace PhaenoPortal.App.Features.RelationshipManagement;
 
 using Microsoft.EntityFrameworkCore;
 using PSeq.Operations.Commercial.Accounts.Domain;
-using PhaenoPortal.App.Features.RelationshipManagement.Domain;
+using PSeq.Operations.Commercial.Relationships.Domain;
 
 public static class RelationshipManagementModelConfiguration
 {

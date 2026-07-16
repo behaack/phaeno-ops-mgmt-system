@@ -1,11 +1,23 @@
 namespace PhaenoPortal.Test;
 
 using PSeq.Operations.Commercial.Accounts.Domain;
-using PhaenoPortal.App.Features.RelationshipManagement.Domain;
+using PSeq.Operations.Commercial.Relationships.Application;
+using PSeq.Operations.Commercial.Relationships.Domain;
 
 public class RelationshipManagementDomainTests
 {
     private static readonly DateTime Now = new(2026, 7, 15, 12, 0, 0, DateTimeKind.Utc);
+
+    [Fact]
+    public void ServiceEligibilityFollowsOrganizationKind()
+    {
+        Assert.True(RelationshipPolicy.IsServiceAllowed(OrganizationKind.Customer, PortalService.PSeqLabService));
+        Assert.False(RelationshipPolicy.IsServiceAllowed(OrganizationKind.Customer, PortalService.PSeqKit));
+        Assert.True(RelationshipPolicy.IsServiceAllowed(OrganizationKind.Partner, PortalService.PSeqLabService));
+        Assert.True(RelationshipPolicy.IsServiceAllowed(OrganizationKind.Partner, PortalService.PSeqKit));
+        Assert.False(RelationshipPolicy.IsServiceAllowed(OrganizationKind.Prospect, PortalService.PSeqLabService));
+        Assert.False(RelationshipPolicy.IsServiceAllowed(OrganizationKind.Phaeno, PortalService.PSeqLabService));
+    }
 
     [Fact]
     public void ApprovedPreOrganizationRequestAuthorizesOnlyItsCompletedOrganizationAndService()

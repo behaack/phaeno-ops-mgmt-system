@@ -1,4 +1,4 @@
-namespace PhaenoPortal.App.Features.RelationshipManagement.Domain;
+namespace PSeq.Operations.Commercial.Relationships.Domain;
 
 using PSeq.Operations.Commercial.Common.Persistence;
 

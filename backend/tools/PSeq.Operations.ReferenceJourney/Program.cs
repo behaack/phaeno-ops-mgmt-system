@@ -15,9 +15,9 @@ using PhaenoPortal.App.Features.DataProvisioning.Domain;
 using PhaenoPortal.App.Features.DataProvisioning.DTOs;
 using PhaenoPortal.App.Features.DataProvisioning.Services;
 using PhaenoPortal.App.Features.RelationshipManagement.Controllers;
-using PhaenoPortal.App.Features.RelationshipManagement.Domain;
 using PhaenoPortal.App.Features.RelationshipManagement.DTOs;
 using PhaenoPortal.App.Features.RelationshipManagement.Services;
+using PSeq.Operations.Commercial.Relationships.Domain;
 using PhaenoPortal.App.Infrastructure.Persistence;
 using PhaenoPortal.App.Infrastructure.Persistence.Auditing;
 

@@ -5,8 +5,9 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using PSeq.Operations.Commercial.Accounts.Application;
 using PSeq.Operations.Commercial.Accounts.Domain;
+using PSeq.Operations.Commercial.Relationships.Application;
+using PSeq.Operations.Commercial.Relationships.Domain;
 using PhaenoPortal.App.Features.Accounts.Services;
-using PhaenoPortal.App.Features.RelationshipManagement.Domain;
 using PhaenoPortal.App.Features.RelationshipManagement.DTOs;
 using PhaenoPortal.App.Features.RelationshipManagement.Services;
 using PhaenoPortal.App.Infrastructure.Persistence;
@@ -350,13 +351,7 @@ public sealed class RelationshipManagementController(
 
     private static void EnsureServiceAllowed(OrganizationKind kind, PortalService service)
     {
-        var allowed = kind switch
-        {
-            OrganizationKind.Customer => service == PortalService.PSeqLabService,
-            OrganizationKind.Partner => service is PortalService.PSeqLabService or PortalService.PSeqKit,
-            _ => false
-        };
-        if (!allowed)
+        if (!RelationshipPolicy.IsServiceAllowed(kind, service))
         {
             throw new RelationshipManagementException(
                 "service_not_allowed_for_organization_kind",

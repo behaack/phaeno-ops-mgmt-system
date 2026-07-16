@@ -2,12 +2,12 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Options;
 using PSeq.Operations.Commercial;
 using PSeq.Operations.Commercial.Accounts.Domain;
+using PSeq.Operations.Commercial.Relationships.Domain;
 using PhaenoPortal.App.Features.DataProvisioning;
 using PhaenoPortal.App.Features.DataProvisioning.Domain;
 using PhaenoPortal.App.Features.OrderManagement;
 using PhaenoPortal.App.Features.OrderManagement.Domain;
 using PhaenoPortal.App.Features.RelationshipManagement;
-using PhaenoPortal.App.Features.RelationshipManagement.Domain;
 using PhaenoPortal.App.Infrastructure.Persistence.Auditing;
 using System.Text;
 

@@ -28,9 +28,10 @@
   `docs/plans/PSEQ-OPERATIONS-MIGRATION-PLAN.md` defines the approved clean
   development database/migration reset and restructuring sequence. The
   solution/project shells and single-context schema target are restructured,
-  and the Accounts domain/application-policy slice is extracted into
-  Commercial. Remaining feature extraction, the destructive development reset,
-  clean initial migration, and Lab module are not implemented. The automated
+  and the Accounts and Relationships domain/application-policy slices are
+  extracted into Commercial. Remaining feature extraction, the destructive
+  development reset, clean initial migration, and Lab module are not
+  implemented. The automated
   data pipeline and scientific file-management boundary is an explicit major
   TBD.
 - `docs/plans/PROSPECT-TRIAL-PROJECT-PLAN.md`: approved future no-charge,

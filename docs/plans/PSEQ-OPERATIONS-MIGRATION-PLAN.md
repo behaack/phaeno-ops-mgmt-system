@@ -23,12 +23,13 @@ authorize a reset of any shared environment.
 - The Stage 2 context/schema checkpoint is implemented: the single context is
   renamed, schema settings are explicit, every current entity targets
   `commercial_ops`, and architecture tests protect the module direction.
-- The first Stage 2 feature slice is implemented: Accounts domain entities,
-  pure authorization policy, invitation-token logic, the invitation-delivery
-  port, and audit/concurrency contracts live in Commercial. HTTP, EF,
-  Clerk/Postmark, and bootstrap adapters remain in the API.
-- Relationship Management, Data Provisioning, commercial Order Management,
-  and Laboratory-owned mappings remain pending.
+- The first two Stage 2 feature slices are implemented: Accounts and
+  Relationships domain entities and pure application policy live in Commercial,
+  along with Accounts' invitation-token logic, invitation-delivery port, and
+  audit/concurrency contracts. HTTP, EF mapping/orchestration, Clerk/Postmark,
+  bootstrap, and API error translation remain in the API.
+- Data Provisioning, commercial Order Management, and Laboratory-owned mappings
+  remain pending.
 - The database and seven historical migrations remain untouched. A temporary
   compile-only alias keeps their generated metadata buildable until Stage 3.
 - The automated data-pipeline and scientific file-management boundary remains
@@ -274,8 +275,9 @@ this stage.
 ### Stage 2 - Establish the New Context and Module Mappings
 
 Status: the context/schema checkpoint, initial architecture guard, and Accounts
-domain/application-policy extraction are implemented on 2026-07-16. The API
-retains account HTTP, EF, Clerk/Postmark, and bootstrap adapters as intended.
+and Relationships domain/application-policy extractions are implemented on
+2026-07-16. The API retains HTTP, EF mapping/orchestration, Clerk/Postmark,
+bootstrap, and API error-translation adapters as intended.
 Items 4, 6, and 7 plus the remaining feature slices in item 5 remain pending.
 The solution builds; the backend test suite remains pending an explicit test
 request under repository policy.
@@ -289,7 +291,8 @@ request under repository policy.
    small slices: Accounts, Relationship Management, Data Provisioning, then
    commercial Order Management.
    - Accounts domain and pure application policy: complete.
-   - Relationship Management: next.
+   - Relationship Management domain and pure application policy: complete.
+   - Data Provisioning: next.
 6. Keep HTTP composition, the shared context, and concrete persistence adapters
    in the API project.
 7. Add the Laboratory project shell and its registration boundary without

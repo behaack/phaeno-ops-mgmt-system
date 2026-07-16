@@ -1,7 +1,7 @@
-namespace PhaenoPortal.App.Features.RelationshipManagement.Domain;
+namespace PSeq.Operations.Commercial.Relationships.Domain;
 
-using PSeq.Operations.Commercial.Common.Persistence;
 using PSeq.Operations.Commercial.Accounts.Domain;
+using PSeq.Operations.Commercial.Common.Persistence;
 
 public sealed class PortalIntegrationRequest : IAudit, IConcurrency
 {

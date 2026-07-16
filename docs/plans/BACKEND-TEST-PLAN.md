@@ -62,7 +62,8 @@ Do not execute this test plan unless explicitly requested.
 - [x] `backend/test/RelationshipManagementDomainTests.cs` - an approved request
   authorizes only its associated organization and requested service,
   onboarding-only requests cannot source service entitlements, and entitlement
-  end reasons are required and retained.
+  end reasons are required and retained; service eligibility is covered for
+  Customer, Partner, Prospect, and Phaeno organizations.
 
 ## Created Database Verification
 

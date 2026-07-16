@@ -23,8 +23,12 @@ The backend targets .NET 10 as a modular monolith:
 - `modules/PSeq.Operations.Commercial/Accounts`: users, organizations,
   memberships, invitations, pure authorization policy, invitation-token logic,
   and the invitation-delivery port.
+- `modules/PSeq.Operations.Commercial/Relationships`: Portal integration
+  requests, organization service entitlements, and service-eligibility policy.
 - `app/Features/Accounts`: HTTP endpoints/contracts, authenticated-actor lookup,
   EF-backed orchestration, Clerk/Postmark adapters, and bootstrap composition.
+- `app/Features/RelationshipManagement`: HTTP contracts, EF mapping and
+  orchestration, authenticated-actor enforcement, and API error translation.
 - `Features/DataProvisioning`: Phaeno source samples, managed-file metadata,
   immutable curated versions, exact-version organization grants, provisioning
   runs, tenant access, and download audit.
@@ -40,8 +44,8 @@ The backend targets .NET 10 as a modular monolith:
 All `/api` failures should use the existing error envelope. Persistence applies auditing and optimistic concurrency centrally rather than in individual endpoints.
 
 The API references Commercial, while Commercial does not reference the API or
-Laboratory. Account domain rules therefore remain usable independently of the
-current HTTP, EF, Clerk, and Postmark adapters.
+Laboratory. Account and relationship domain rules therefore remain usable
+independently of the current HTTP, EF, Clerk, and Postmark adapters.
 
 ## Identity and authorization
 

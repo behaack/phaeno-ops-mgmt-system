@@ -1,7 +1,7 @@
 namespace PhaenoPortal.App.Features.RelationshipManagement.DTOs;
 
 using PSeq.Operations.Commercial.Accounts.Domain;
-using PhaenoPortal.App.Features.RelationshipManagement.Domain;
+using PSeq.Operations.Commercial.Relationships.Domain;
 
 public sealed record OrganizationRelationshipSummaryDto
 {
