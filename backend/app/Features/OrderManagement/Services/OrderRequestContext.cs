@@ -10,7 +10,7 @@ public sealed record OrderTenantContext(
     OrganizationMembership Membership);
 
 public sealed class OrderRequestContext(
-    AppDbContext dbContext,
+    PSeqOperationsDbContext dbContext,
     IExternalIdentityContext externalIdentityContext)
 {
     private const string SelectedOrganizationHeader = "X-Organization-Id";

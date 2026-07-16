@@ -8,7 +8,7 @@ This document records how the application operates in the current repository and
 | --- | --- |
 | Frontend | React 19 and TanStack Start, served by Vite in development and built as client plus SSR assets. |
 | API | .NET 10 ASP.NET Core application. |
-| Database | PostgreSQL through EF Core, default schema `portal`. |
+| Database | PostgreSQL through one EF Core `PSeqOperationsDbContext`. The target model maps current business records to `commercial_ops`, reserves `lab_ops`, and stores migration history in `public`; the disposable development reset is pending. |
 | Authentication | Clerk-issued bearer JWTs; application authorization comes from internal users, active memberships, and capabilities. |
 | Curated-data files | Feature-owned local filesystem storage through `IManagedFileStorage`. |
 | Order files | Feature-owned local filesystem storage through `IOperationalFileStorage`. |
@@ -38,7 +38,7 @@ Keep environment-specific values outside source control. `appsettings.Developmen
 | Section or variable | Purpose | Production expectation |
 | --- | --- | --- |
 | `ConnectionStrings:DefaultConnection` | PostgreSQL connection | Managed as a secret; TLS, backup, restore, and connection limits approved. |
-| `Persistence` | Schema and migration-history table | Stable before migration execution. |
+| `Persistence` | Commercial, Laboratory, and migration-history schemas plus the history table | Stable before migration execution; business schemas must be distinct from each other and from `public`. |
 | `Clerk` | JWT authority/audience and Clerk API access | Production Clerk instance and secrets; HTTPS metadata validation enabled. |
 | `Bootstrap` | One-time bootstrap link inputs | Disabled or cleared after the initial administrator is linked. |
 | `Invitations` | Token lifetime, resend cooldown, public URL | Public URL and expiry policy approved. |

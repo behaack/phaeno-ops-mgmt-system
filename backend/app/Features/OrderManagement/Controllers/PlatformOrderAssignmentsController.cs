@@ -11,7 +11,7 @@ using PhaenoPortal.App.Infrastructure.Persistence;
 [ApiController]
 [Authorize]
 [Route("api/platform/order-assignments")]
-public sealed class PlatformOrderAssignmentsController(AppDbContext dbContext, OrderRequestContext requestContext) : ControllerBase
+public sealed class PlatformOrderAssignmentsController(PSeqOperationsDbContext dbContext, OrderRequestContext requestContext) : ControllerBase
 {
     [HttpPut("{workflow}/{recordId:guid}")]
     public async Task<OperationalAssignmentDto> Update(string workflow, Guid recordId,

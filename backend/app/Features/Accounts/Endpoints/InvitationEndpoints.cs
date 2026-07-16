@@ -17,7 +17,7 @@ public static class InvitationEndpoints
     public static async Task<IResult> CreateInvitation(
         [FromBody] CreateInvitationRequest request,
         HttpContext httpContext,
-        AppDbContext dbContext,
+        PSeqOperationsDbContext dbContext,
         InvitationTokenService tokenService,
         IInvitationEmailSender emailSender,
         IExternalIdentityContext externalIdentityContext,
@@ -150,7 +150,7 @@ public static class InvitationEndpoints
     public static async Task<IResult> ResendInvitation(
         Guid id,
         HttpContext httpContext,
-        AppDbContext dbContext,
+        PSeqOperationsDbContext dbContext,
         InvitationTokenService tokenService,
         IInvitationEmailSender emailSender,
         IExternalIdentityContext externalIdentityContext,
@@ -237,7 +237,7 @@ public static class InvitationEndpoints
     public static async Task<IResult> AcceptInvitation(
         [FromBody] AcceptInvitationRequest request,
         HttpContext httpContext,
-        AppDbContext dbContext,
+        PSeqOperationsDbContext dbContext,
         InvitationTokenService tokenService,
         IExternalIdentityContext externalIdentityContext,
         CancellationToken cancellationToken)
@@ -359,7 +359,7 @@ public static class InvitationEndpoints
     public static async Task<IResult> DeclineInvitation(
         [FromBody] DeclineInvitationRequest request,
         HttpContext httpContext,
-        AppDbContext dbContext,
+        PSeqOperationsDbContext dbContext,
         InvitationTokenService tokenService,
         IExternalIdentityContext externalIdentityContext,
         CancellationToken cancellationToken)
@@ -416,7 +416,7 @@ public static class InvitationEndpoints
     public static async Task<IResult> RevokeInvitation(
         Guid id,
         HttpContext httpContext,
-        AppDbContext dbContext,
+        PSeqOperationsDbContext dbContext,
         IExternalIdentityContext externalIdentityContext,
         CancellationToken cancellationToken)
     {
@@ -468,7 +468,7 @@ public static class InvitationEndpoints
 
     public static async Task<IResult> ListInvitations(
         HttpContext httpContext,
-        AppDbContext dbContext,
+        PSeqOperationsDbContext dbContext,
         IExternalIdentityContext externalIdentityContext,
         [FromQuery] Guid? organizationId,
         [FromQuery] InvitationStatus? status,

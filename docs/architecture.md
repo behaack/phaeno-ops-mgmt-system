@@ -30,7 +30,7 @@ The API targets .NET 10 and is organized by feature:
   integration, notifications, and durable retry records.
 - `Features/Health`: health endpoint.
 - `Infrastructure/Api`: response envelope, metadata, error mapping, and response filter.
-- `Infrastructure/Persistence`: `AppDbContext`, mappings, save interceptors, and PostgreSQL configuration.
+- `Infrastructure/Persistence`: the single `PSeqOperationsDbContext`, mappings, save interceptors, and PostgreSQL configuration.
 - `Middleware`: API exception handling.
 
 All `/api` failures should use the existing error envelope. Persistence applies auditing and optimistic concurrency centrally rather than in individual endpoints.
@@ -128,7 +128,12 @@ authenticated audience and locale filtering.
 ## Configuration and deployment
 
 - Backend database: `ConnectionStrings:DefaultConnection` / `ConnectionStrings__DefaultConnection`.
-- Default PostgreSQL schema: `portal`.
+- PostgreSQL business schemas: current entities target `commercial_ops`; the
+  future Laboratory boundary reserves `lab_ops`; no default schema is used.
+- EF migration history: `public.__ef_migrations_history`.
+- Reset checkpoint: the disposable development database still uses the former
+  `portal` baseline and must not run with the new model until the approved clean
+  reset and initial migration are complete.
 - External identity: `Clerk` configuration.
 - Invitation delivery: Postmark when configured; logging sender otherwise.
 - Data provisioning: `DataProvisioning` storage root, size limit, environment

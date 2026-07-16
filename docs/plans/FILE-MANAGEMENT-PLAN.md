@@ -53,7 +53,7 @@ Add these feature and infrastructure areas:
 
 The existing backend already has the right foundation:
 
-- EF Core and Npgsql are configured in `AppDbContext`.
+- EF Core and Npgsql are configured through the single `PSeqOperationsDbContext`.
 - Persistence DI lives in `PersistenceServiceCollectionExtensions`.
 - API endpoints are mapped from `Program.cs`.
 

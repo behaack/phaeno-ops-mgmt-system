@@ -32,7 +32,7 @@ public sealed class DataProvisioningNoticeDispatcher(
     private async Task DispatchBatchAsync(CancellationToken cancellationToken)
     {
         await using var scope = scopeFactory.CreateAsyncScope();
-        var dbContext = scope.ServiceProvider.GetRequiredService<AppDbContext>();
+        var dbContext = scope.ServiceProvider.GetRequiredService<PSeqOperationsDbContext>();
         var sender = scope.ServiceProvider.GetRequiredService<IDataProvisioningNoticeSender>();
         var now = DateTime.UtcNow;
         var notices = await dbContext.DataProvisioningNotices

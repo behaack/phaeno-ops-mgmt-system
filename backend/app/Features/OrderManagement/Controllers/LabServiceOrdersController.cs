@@ -15,7 +15,7 @@ using PhaenoPortal.App.Infrastructure.Persistence;
 [Authorize]
 [Route("api/lab-service-orders")]
 public sealed class LabServiceOrdersController(
-    AppDbContext dbContext,
+    PSeqOperationsDbContext dbContext,
     OrderRequestContext requestContext,
     OrderIdempotencyService idempotency,
     IOperationalFileStorage fileStorage) : ControllerBase

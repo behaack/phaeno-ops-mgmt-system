@@ -12,11 +12,11 @@ using System.Text;
 
 namespace PhaenoPortal.App.Infrastructure.Persistence;
 
-public sealed class AppDbContext(
-    DbContextOptions<AppDbContext> options,
+public sealed class PSeqOperationsDbContext(
+    DbContextOptions<PSeqOperationsDbContext> options,
     IOptions<PersistenceOptions> persistenceOptions) : DbContext(options)
 {
-    private readonly PersistenceOptions persistenceOptions = persistenceOptions.Value;
+    private readonly PersistenceOptions persistenceOptions = persistenceOptions.Value.Validate();
 
     /// <summary>
     /// Organizations in the system.
@@ -105,8 +105,6 @@ public sealed class AppDbContext(
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
-        modelBuilder.HasDefaultSchema(this.persistenceOptions.Schema);
-
         // Configure Organization entity
         modelBuilder.Entity<Organization>(entity =>
         {
@@ -254,7 +252,39 @@ public sealed class AppDbContext(
         OrderManagementModelConfiguration.Configure(modelBuilder);
         RelationshipManagementModelConfiguration.Configure(modelBuilder);
 
+        ApplySchemaOwnership(modelBuilder);
         ApplySnakeCaseDatabaseNames(modelBuilder);
+    }
+
+    private void ApplySchemaOwnership(ModelBuilder modelBuilder)
+    {
+        foreach (var entityType in modelBuilder.Model.GetEntityTypes())
+        {
+            if (!string.IsNullOrWhiteSpace(entityType.GetSchema()))
+            {
+                continue;
+            }
+
+            var entityNamespace = entityType.ClrType.Namespace;
+            if (entityNamespace?.StartsWith("PhaenoPortal.App.", StringComparison.Ordinal) != true)
+            {
+                throw new InvalidOperationException(
+                    $"Entity '{entityType.DisplayName()}' has no explicit schema ownership.");
+            }
+
+            entityType.SetSchema(this.persistenceOptions.CommercialSchema);
+        }
+
+        var unmappedEntities = modelBuilder.Model.GetEntityTypes()
+            .Where(entityType => string.IsNullOrWhiteSpace(entityType.GetSchema()))
+            .Select(entityType => entityType.DisplayName())
+            .OrderBy(name => name)
+            .ToList();
+        if (unmappedEntities.Count > 0)
+        {
+            throw new InvalidOperationException(
+                $"Entities without schema ownership: {string.Join(", ", unmappedEntities)}.");
+        }
     }
 
     private static void ApplySnakeCaseDatabaseNames(ModelBuilder modelBuilder)

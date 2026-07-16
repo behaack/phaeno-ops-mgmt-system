@@ -16,7 +16,7 @@ using PhaenoPortal.App.Infrastructure.Persistence;
 [Authorize]
 [Route("api/data-provisioning/governance")]
 public sealed class DataGovernanceAdminController(
-    AppDbContext dbContext,
+    PSeqOperationsDbContext dbContext,
     IExternalIdentityContext externalIdentityContext,
     IManagedFileStorage fileStorage) : ControllerBase
 {

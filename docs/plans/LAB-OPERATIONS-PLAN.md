@@ -13,7 +13,8 @@ deployment, or production activation.
 - Planning direction approved on 2026-07-16.
 - Development state: not implemented as a separate Lab Operations module.
   Laboratory order, sample, accession, status, and release records currently
-  live inside the existing Order Management feature and the `portal` schema.
+  live inside the existing Order Management feature. The EF model now maps all
+  current business entities to `commercial_ops`; no Laboratory entities exist.
 - Target state: Phaeno operates a fit-for-purpose internal Lab Operations
   module behind a provider-neutral boundary. Commercial Operations remains
   customer-facing and can later replace the internal module with a third-party
@@ -40,7 +41,9 @@ deployment, or production activation.
   database and migration reset, solution/project restructure, and schema
   baseline sequence are recorded in
   `PSEQ-OPERATIONS-MIGRATION-PLAN.md`. The solution/project shell restructure
-  is implemented; the context, schema, migration, and database reset are not.
+  and single-context schema target are implemented. Feature extraction, the
+  destructive development reset, clean initial migration, and database rebuild
+  are not.
 
 ## Goal
 
@@ -111,14 +114,16 @@ The existing Reference Journey tool remains a non-product utility. The exact
 target layout and implementation sequence are defined in
 `PSEQ-OPERATIONS-MIGRATION-PLAN.md`.
 
-The running schema remains `portal`. The Product Owner approved deleting the
-disposable development database and current migration source, then generating
-a clean baseline with `commercial_ops` and `lab_ops`; no legacy data backfill
-is planned. That approval does not extend to staging, production, shared, or
-unexpectedly valuable data. Two business schemas are an ownership and
-maintenance boundary, not a security boundary. Authorization remains enforced
-by the API. The shared context must not become permission for features to
-mutate each other's entities directly.
+The EF model targets `commercial_ops`, reserves `lab_ops`, and places migration
+history in `public`; it no longer uses a default schema. The old disposable
+development database still has the `portal` baseline and must not run with this
+model. The Product Owner approved deleting that database and current migration
+source, then generating the clean baseline; no legacy data backfill is planned.
+That approval does not extend to staging, production, shared, or unexpectedly
+valuable data. Two business schemas are an ownership and maintenance boundary,
+not a security boundary. Authorization remains enforced by the API. The shared
+context must not become permission for features to mutate each other's entities
+directly.
 
 ## System Ownership
 

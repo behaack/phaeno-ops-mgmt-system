@@ -15,7 +15,7 @@ using PhaenoPortal.App.Infrastructure.Persistence;
 [Authorize]
 [Route("api/data-provisioning")]
 public sealed class DataProvisioningAdminController(
-    AppDbContext dbContext,
+    PSeqOperationsDbContext dbContext,
     IExternalIdentityContext externalIdentityContext,
     DataProvisioningProfile profile,
     IManagedFileStorage fileStorage,

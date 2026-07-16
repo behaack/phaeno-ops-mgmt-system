@@ -19,7 +19,7 @@ public static class AccountsBootstrapSeeder
             return;
         }
 
-        var dbContext = scope.ServiceProvider.GetRequiredService<AppDbContext>();
+        var dbContext = scope.ServiceProvider.GetRequiredService<PSeqOperationsDbContext>();
         var clerkProvisioner = scope.ServiceProvider.GetRequiredService<IClerkBootstrapUserProvisioner>();
         var organizationName = string.IsNullOrWhiteSpace(options.PhaenoOrganizationName)
             ? "Phaeno"

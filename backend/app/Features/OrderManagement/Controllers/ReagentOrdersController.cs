@@ -14,7 +14,7 @@ using PhaenoPortal.App.Infrastructure.Persistence;
 [Authorize]
 [Route("api/reagent-orders")]
 public sealed class ReagentOrdersController(
-    AppDbContext dbContext,
+    PSeqOperationsDbContext dbContext,
     OrderRequestContext requestContext,
     OrderIdempotencyService idempotency) : ControllerBase
 {

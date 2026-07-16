@@ -26,16 +26,20 @@ Inventory completed on 2026-07-16 from the pre-restructure repository source:
 
 Stage 1 of `PSEQ-OPERATIONS-MIGRATION-PLAN.md` subsequently renamed the
 solution, API/test/Reference Journey project shells, and added empty Commercial
-and Laboratory projects. It did not move feature code, rename namespaces or
-the context, change the EF model, or change the database. The working feature
+and Laboratory projects. The following context/schema checkpoint then renamed
+the single context, removed the default schema, and mapped every current entity
+to `commercial_ops`. It did not move feature code, create Laboratory entities,
+delete the old database, or replace the migrations. The working feature
 implementation remains authoritative until those later stages are delivered.
 
 ## Findings
 
 The current system is one deployable .NET web project with feature folders,
 empty Commercial and Laboratory module shells, one test project, one
-reference-journey tool, one React frontend, one EF Core `AppDbContext`, and one
-configured PostgreSQL schema named `portal`.
+reference-journey tool, one React frontend, and one EF Core
+`PSeqOperationsDbContext`. The current EF model targets `commercial_ops`,
+reserves `lab_ops`, and keeps migration history in `public`; the old disposable
+database still has the pre-reset `portal` baseline.
 
 The principal boundary problem is not the modular-monolith deployment. It is
 that the current `OrderManagement` feature and `portal` schema jointly own:
@@ -69,10 +73,10 @@ this inventory.
 | `PhaenoPortal.Test` | `PSeq.Operations.Test` | Stage 1 shell rename complete; remains the initial combined test project. |
 | `PhaenoPortal.ReferenceJourney` | `PSeq.Operations.ReferenceJourney` | Stage 1 rename complete. |
 | `PhaenoPortal.App.*` namespaces | `PSeq.Operations.Api.*`, `.Commercial.*`, and `.Laboratory.*` | Namespace follows the owning project. |
-| `AppDbContext` | `PSeqOperationsDbContext` | One context remains; configurations are module-owned. |
-| configured schema `portal` | `commercial_ops` | Replace the current development schema through the approved clean baseline so its name matches the domain rather than the external UI channel. |
-| no laboratory schema | `lab_ops` | New schema reserved for internal Lab Operations-owned records. |
-| one `PersistenceOptions.Schema` setting | explicit Commercial, Lab Operations, and migration-history schema settings | A single default-schema setting is insufficient once mappings span two schemas. |
+| `AppDbContext` | `PSeqOperationsDbContext` | Context rename complete; one context remains, while module-owned configurations remain pending. |
+| configured schema `portal` | `commercial_ops` | EF target mapping complete; physical replacement awaits the approved clean baseline. |
+| no laboratory schema | `lab_ops` | Setting is reserved; physical creation awaits the clean initial migration. |
+| one `PersistenceOptions.Schema` setting | explicit Commercial, Lab Operations, and migration-history schema settings | Implemented; validation requires three distinct snake-case identifiers. |
 | physical database naming based on Phaeno Portal | environment-specific PSeq Operations database naming | Keep one database. Apply naming when an environment is rebuilt or migrated; do not couple it to the entity split. |
 | React application and external title `Phaeno Portal` | retain `Phaeno Portal` | External product identity is not renamed. |
 
@@ -94,12 +98,13 @@ no business records. See `PSEQ-OPERATIONS-MIGRATION-PLAN.md`.
 | EF context and migrations | `Infrastructure/Persistence`, `Migrations` | Shared API composition with module-owned mappings | Keep one context and migration stream; replace one default schema with explicit mappings. |
 | Audit interceptor and current `audit_events` table | `Infrastructure/Persistence/Auditing` | Shared infrastructure | Retain current behavior during restructuring. Whether Lab audit records remain shared or become Lab-owned is deferred to migration design. |
 | React frontend | `frontend` | One Phaeno Portal application | Retain one application; split feature ownership and navigation internally. |
-| Reference Journey tool | `backend/tools/PSeq.Operations.ReferenceJourney` | Shared verification utility | Stage 1 rename complete; behavior remains unchanged. |
+| Reference Journey tool | `backend/tools/PSeq.Operations.ReferenceJourney` | Shared verification utility | Uses the renamed context and explicit schema settings; execution waits for the clean database baseline. |
 
 ## Current Order Management Entity Classification
 
-All entities below are currently mapped by `AppDbContext` into the `portal`
-schema. Table names shown are the current snake-case names.
+All entities below are currently mapped by `PSeqOperationsDbContext` into
+`commercial_ops`. The old development database still contains their pre-reset
+`portal` tables. Table names shown are the current snake-case names.
 
 ### Commercial Configuration and Integration
 

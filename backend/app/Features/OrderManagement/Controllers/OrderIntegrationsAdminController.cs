@@ -15,7 +15,7 @@ using PhaenoPortal.App.Infrastructure.Persistence;
 [ApiController]
 [Authorize]
 [Route("api/platform/order-integrations")]
-public sealed class OrderIntegrationsAdminController(AppDbContext dbContext, OrderRequestContext requestContext, OrderIdempotencyService idempotency) : ControllerBase
+public sealed class OrderIntegrationsAdminController(PSeqOperationsDbContext dbContext, OrderRequestContext requestContext, OrderIdempotencyService idempotency) : ControllerBase
 {
     [HttpGet]
     public async Task<PagedResult<IntegrationMessageDto>> List([FromQuery] string? status, [FromQuery] int page = 1,
@@ -68,7 +68,7 @@ public sealed class OrderIntegrationsAdminController(AppDbContext dbContext, Ord
 [ApiController]
 [Authorize]
 [Route("api/platform/order-notifications")]
-public sealed class OrderNotificationsAdminController(AppDbContext dbContext, OrderRequestContext requestContext, OrderIdempotencyService idempotency) : ControllerBase
+public sealed class OrderNotificationsAdminController(PSeqOperationsDbContext dbContext, OrderRequestContext requestContext, OrderIdempotencyService idempotency) : ControllerBase
 {
     [HttpGet]
     public async Task<PagedResult<NotificationMessageDto>> List([FromQuery] string? status, [FromQuery] int page = 1,
@@ -115,7 +115,7 @@ public sealed class OrderNotificationsAdminController(AppDbContext dbContext, Or
 [ApiController]
 [AllowAnonymous]
 [Route("api/integrations/quickbooks/webhook")]
-public sealed class QuickBooksWebhookController(AppDbContext dbContext, IOptions<QuickBooksOptions> options) : ControllerBase
+public sealed class QuickBooksWebhookController(PSeqOperationsDbContext dbContext, IOptions<QuickBooksOptions> options) : ControllerBase
 {
     [HttpPost]
     public async Task<IActionResult> Receive(CancellationToken cancellationToken)

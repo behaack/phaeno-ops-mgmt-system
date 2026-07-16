@@ -21,7 +21,7 @@ public static class OrganizationEndpoints
     public static async Task<IResult> CreateOrganization(
         [FromBody] CreateOrganizationRequest request,
         HttpContext httpContext,
-        AppDbContext dbContext,
+        PSeqOperationsDbContext dbContext,
         IExternalIdentityContext externalIdentityContext,
         CancellationToken cancellationToken)
     {
@@ -84,7 +84,7 @@ public static class OrganizationEndpoints
     public static async Task<IResult> GetOrganization(
         Guid id,
         HttpContext httpContext,
-        AppDbContext dbContext,
+        PSeqOperationsDbContext dbContext,
         IExternalIdentityContext externalIdentityContext,
         CancellationToken cancellationToken)
     {
@@ -129,7 +129,7 @@ public static class OrganizationEndpoints
     /// </summary>
     public static async Task<IResult> ListOrganizations(
         HttpContext httpContext,
-        AppDbContext dbContext,
+        PSeqOperationsDbContext dbContext,
         IExternalIdentityContext externalIdentityContext,
         [FromQuery] bool includeInactive = false)
     {
@@ -173,7 +173,7 @@ public static class OrganizationEndpoints
     public static async Task<IResult> DeactivateOrganization(
         Guid id,
         HttpContext httpContext,
-        AppDbContext dbContext,
+        PSeqOperationsDbContext dbContext,
         IExternalIdentityContext externalIdentityContext,
         CancellationToken cancellationToken)
     {
@@ -220,7 +220,7 @@ public static class OrganizationEndpoints
         Guid id,
         [FromBody] UpdateOrganizationRequest request,
         HttpContext httpContext,
-        AppDbContext dbContext,
+        PSeqOperationsDbContext dbContext,
         IExternalIdentityContext externalIdentityContext,
         CancellationToken cancellationToken)
     {
@@ -278,7 +278,7 @@ public static class OrganizationEndpoints
     public static async Task<IResult> ReactivateOrganization(
         Guid id,
         HttpContext httpContext,
-        AppDbContext dbContext,
+        PSeqOperationsDbContext dbContext,
         IExternalIdentityContext externalIdentityContext,
         CancellationToken cancellationToken)
     {
@@ -325,7 +325,7 @@ public static class OrganizationEndpoints
         Guid id,
         [FromBody] ConvertOrganizationRequest request,
         HttpContext httpContext,
-        AppDbContext dbContext,
+        PSeqOperationsDbContext dbContext,
         IExternalIdentityContext externalIdentityContext,
         CancellationToken cancellationToken)
     {

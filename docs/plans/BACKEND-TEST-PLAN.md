@@ -7,9 +7,10 @@ Do not execute this test plan unless explicitly requested.
 ## Created Tests
 
 - [x] `backend/test/PhaenoPortalMetadataTests.cs` - `HealthMetadataIdentifiesTheApi`.
-- [x] `backend/test/PersistenceTests.cs` - `AppDbContextUsesConfiguredDefaultSchema`.
-- [x] `backend/test/PersistenceTests.cs` - `AppDbContextMapsAccountEntities`.
-- [x] `backend/test/PersistenceTests.cs` - `AppDbContextMapsDataProvisioningEntitiesAndTenantBoundaries`.
+- [x] `backend/test/PersistenceTests.cs` - `PSeqOperationsDbContextMapsEveryCurrentEntityToCommercialSchema`.
+- [x] `backend/test/PersistenceTests.cs` - `PSeqOperationsDbContextMapsAccountEntities`.
+- [x] `backend/test/PersistenceTests.cs` - `PSeqOperationsDbContextMapsDataProvisioningEntitiesAndTenantBoundaries`.
+- [x] `backend/test/ModuleBoundaryTests.cs` - `CommercialAndLaboratoryAssembliesDoNotReferenceEachOther`.
 - [x] `backend/test/ApiResponseTests.cs` - `SuccessEnvelopeSerializesWithReferenceShape`.
 - [x] `backend/test/ApiResponseTests.cs` - `FailureEnvelopeSerializesWithReferenceShape`.
 - [x] `backend/test/ApiResponseTests.cs` - `DomainExceptionMapsLikeReferenceApi`.

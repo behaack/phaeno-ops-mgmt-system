@@ -4,9 +4,10 @@ using Microsoft.Extensions.Options;
 
 namespace PhaenoPortal.App.Infrastructure.Persistence;
 
-public sealed class DesignTimeAppDbContextFactory : IDesignTimeDbContextFactory<AppDbContext>
+public sealed class DesignTimePSeqOperationsDbContextFactory
+    : IDesignTimeDbContextFactory<PSeqOperationsDbContext>
 {
-    public AppDbContext CreateDbContext(string[] args)
+    public PSeqOperationsDbContext CreateDbContext(string[] args)
     {
         string environment = Environment.GetEnvironmentVariable("ASPNETCORE_ENVIRONMENT") ?? "Development";
         string basePath = ResolveAppSettingsPath();
@@ -21,6 +22,7 @@ public sealed class DesignTimeAppDbContextFactory : IDesignTimeDbContextFactory<
 
         var persistenceOptions = new PersistenceOptions();
         configuration.GetSection(PersistenceOptions.SectionName).Bind(persistenceOptions);
+        persistenceOptions.Validate();
 
         string? connectionString = configuration.GetConnectionString("DefaultConnection");
         if (string.IsNullOrWhiteSpace(connectionString))
@@ -28,14 +30,16 @@ public sealed class DesignTimeAppDbContextFactory : IDesignTimeDbContextFactory<
             throw new InvalidOperationException("Connection string 'DefaultConnection' is required for EF Core migrations.");
         }
 
-        var optionsBuilder = new DbContextOptionsBuilder<AppDbContext>();
+        var optionsBuilder = new DbContextOptionsBuilder<PSeqOperationsDbContext>();
         optionsBuilder.UseNpgsql(
             connectionString,
             npgsql => npgsql.MigrationsHistoryTable(
                 persistenceOptions.MigrationsHistoryTable,
-                persistenceOptions.Schema));
+                persistenceOptions.MigrationsHistorySchema));
 
-        return new AppDbContext(optionsBuilder.Options, Options.Create(persistenceOptions));
+        return new PSeqOperationsDbContext(
+            optionsBuilder.Options,
+            Options.Create(persistenceOptions));
     }
 
     private static string ResolveAppSettingsPath()

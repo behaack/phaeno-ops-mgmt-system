@@ -15,7 +15,7 @@ public static class SessionEndpoints
 
     public static async Task<IResult> GetSession(
         HttpContext httpContext,
-        AppDbContext dbContext,
+        PSeqOperationsDbContext dbContext,
         IExternalIdentityContext externalIdentityContext,
         IOptions<BootstrapOptions> bootstrapOptions,
         CancellationToken cancellationToken)
@@ -267,7 +267,7 @@ public static class SessionEndpoints
 
     private static async Task<User?> TryLinkBootstrapUserAsync(
         ExternalIdentity identity,
-        AppDbContext dbContext,
+        PSeqOperationsDbContext dbContext,
         BootstrapOptions bootstrapOptions,
         CancellationToken cancellationToken)
     {

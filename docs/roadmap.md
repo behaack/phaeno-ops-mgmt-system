@@ -27,9 +27,10 @@
   Commercial-to-Lab contract; and
   `docs/plans/PSEQ-OPERATIONS-MIGRATION-PLAN.md` defines the approved clean
   development database/migration reset and restructuring sequence. The
-  solution/project shells are restructured; the context/schema reset and Lab
-  module are not implemented. The automated data pipeline and scientific
-  file-management boundary is an explicit major TBD.
+  solution/project shells and single-context schema target are restructured;
+  feature extraction, the destructive development reset, clean initial
+  migration, and Lab module are not implemented. The automated data pipeline
+  and scientific file-management boundary is an explicit major TBD.
 - `docs/plans/PROSPECT-TRIAL-PROJECT-PLAN.md`: approved future no-charge,
   closed-ended Prospect Trial Project requested from HubSpot and governed in
   the Portal. It is not implemented.

@@ -12,7 +12,7 @@ using PhaenoPortal.App.Infrastructure.Persistence;
 [ApiController]
 [Authorize]
 [Route("api/partner-shipping-addresses")]
-public sealed class PartnerShippingAddressesController(AppDbContext dbContext, OrderRequestContext requestContext) : ControllerBase
+public sealed class PartnerShippingAddressesController(PSeqOperationsDbContext dbContext, OrderRequestContext requestContext) : ControllerBase
 {
     [HttpGet]
     public async Task<IReadOnlyList<ShippingAddressDto>> List(CancellationToken cancellationToken)

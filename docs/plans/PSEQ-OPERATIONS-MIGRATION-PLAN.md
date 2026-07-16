@@ -19,8 +19,13 @@ authorize a reset of any shared environment.
   be retained.
 - Stage 1 is implemented: the solution and project shells are renamed, empty
   Commercial and Laboratory projects exist, and live command paths are
-  updated. No namespace, context, schema, migration, database, or runtime
-  behavior has changed.
+  updated.
+- The Stage 2 context/schema checkpoint is implemented: the single context is
+  renamed, schema settings are explicit, every current entity targets
+  `commercial_ops`, and an architecture test protects the empty module shells.
+  Feature extraction and Laboratory-owned mappings remain pending.
+- The database and seven historical migrations remain untouched. A temporary
+  compile-only alias keeps their generated metadata buildable until Stage 3.
 - The automated data-pipeline and scientific file-management boundary remains
   explicitly unresolved and outside the reset.
 
@@ -183,8 +188,10 @@ still has exactly two business schemas.
 
 ### Context and Configuration
 
-Rename `AppDbContext` to `PSeqOperationsDbContext` after the old migrations are
-deleted. No compatibility context or alias is needed.
+`AppDbContext` is renamed to `PSeqOperationsDbContext`. Until the old migrations
+are deleted in Stage 3, a compile-only global type alias preserves their
+generated metadata. It does not register or create a second runtime context and
+will be deleted with the historical migrations.
 
 Replace the single ambiguous schema setting with:
 
@@ -261,10 +268,16 @@ this stage.
 
 ### Stage 2 - Establish the New Context and Module Mappings
 
+Status: the context/schema checkpoint (items 1-3 and the initial architecture
+guard from item 8) is implemented on 2026-07-16. Items 4-7 and deeper module
+architecture coverage remain pending. The solution builds; the backend test
+suite remains pending an explicit test request under repository policy.
+
 1. Rename the context to `PSeqOperationsDbContext`.
 2. Introduce explicit Commercial, Laboratory, and migration-history settings.
 3. Map every currently implemented entity explicitly to `commercial_ops`.
-4. Ensure the future Lab schema is created as part of the new baseline.
+4. Ensure the future Lab schema is created as part of the new baseline. Its
+   setting is reserved now; physical creation belongs to Stage 4.
 5. Move Commercial domain/application code into the Commercial project in
    small slices: Accounts, Relationship Management, Data Provisioning, then
    commercial Order Management.

@@ -14,12 +14,12 @@ public class AccountAuditTests
     [Fact]
     public void AddCreatesSemanticAuditEventWithRequestMetadata()
     {
-        var dbContextOptions = new DbContextOptionsBuilder<AppDbContext>()
+        var dbContextOptions = new DbContextOptionsBuilder<PSeqOperationsDbContext>()
             .UseNpgsql("Host=localhost;Database=phaeno_portal_test;Username=postgres;Password=postgres")
             .Options;
-        using var dbContext = new AppDbContext(
+        using var dbContext = new PSeqOperationsDbContext(
             dbContextOptions,
-            Options.Create(new PersistenceOptions { Schema = "portal" }));
+            Options.Create(new PersistenceOptions()));
         var httpContext = new DefaultHttpContext
         {
             TraceIdentifier = "request-123"

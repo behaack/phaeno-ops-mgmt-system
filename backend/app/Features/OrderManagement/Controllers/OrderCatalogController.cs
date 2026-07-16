@@ -11,7 +11,7 @@ using PhaenoPortal.App.Infrastructure.Persistence;
 [ApiController]
 [Authorize]
 [Route("api/order-catalog")]
-public sealed class OrderCatalogController(AppDbContext dbContext, OrderRequestContext requestContext) : ControllerBase
+public sealed class OrderCatalogController(PSeqOperationsDbContext dbContext, OrderRequestContext requestContext) : ControllerBase
 {
     [HttpGet("analyses")]
     public async Task<IReadOnlyList<AnalysisDefinitionDto>> Analyses(CancellationToken cancellationToken)

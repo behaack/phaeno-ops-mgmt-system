@@ -14,7 +14,7 @@ using PhaenoPortal.App.Infrastructure.Persistence;
 [Authorize]
 [Route("api/platform/data-assembly-requests")]
 public sealed class PlatformDataAssemblyRequestsController(
-    AppDbContext dbContext,
+    PSeqOperationsDbContext dbContext,
     OrderRequestContext requestContext,
     OrderIdempotencyService idempotency,
     IOperationalFileStorage fileStorage,

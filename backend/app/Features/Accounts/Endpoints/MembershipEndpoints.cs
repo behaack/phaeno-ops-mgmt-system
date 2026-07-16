@@ -15,7 +15,7 @@ public static class MembershipEndpoints
         Guid id,
         [FromBody] UpdateMembershipRoleRequest request,
         HttpContext httpContext,
-        AppDbContext dbContext,
+        PSeqOperationsDbContext dbContext,
         IExternalIdentityContext externalIdentityContext,
         CancellationToken cancellationToken)
     {
@@ -69,7 +69,7 @@ public static class MembershipEndpoints
     public static async Task<IResult> DeactivateMembership(
         Guid id,
         HttpContext httpContext,
-        AppDbContext dbContext,
+        PSeqOperationsDbContext dbContext,
         IExternalIdentityContext externalIdentityContext,
         CancellationToken cancellationToken)
     {
@@ -118,7 +118,7 @@ public static class MembershipEndpoints
     public static async Task<IResult> LeaveMembership(
         Guid id,
         HttpContext httpContext,
-        AppDbContext dbContext,
+        PSeqOperationsDbContext dbContext,
         IExternalIdentityContext externalIdentityContext,
         CancellationToken cancellationToken)
     {
@@ -196,7 +196,7 @@ public static class MembershipEndpoints
     }
 
     private static async Task<OrganizationMembership> LoadMembershipAsync(
-        AppDbContext dbContext,
+        PSeqOperationsDbContext dbContext,
         Guid id,
         CancellationToken cancellationToken)
     {
@@ -227,7 +227,7 @@ public static class MembershipEndpoints
     }
 
     private static async Task EnsureNotLastActiveOrganizationAdminAsync(
-        AppDbContext dbContext,
+        PSeqOperationsDbContext dbContext,
         OrganizationMembership membership,
         CancellationToken cancellationToken)
     {

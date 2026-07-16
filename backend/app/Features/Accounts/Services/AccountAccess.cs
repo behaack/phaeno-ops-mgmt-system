@@ -8,7 +8,7 @@ public static class AccountAccess
 {
     public static async Task<User?> ReadActiveActorAsync(
         HttpContext httpContext,
-        AppDbContext dbContext,
+        PSeqOperationsDbContext dbContext,
         IExternalIdentityContext externalIdentityContext,
         CancellationToken cancellationToken)
     {

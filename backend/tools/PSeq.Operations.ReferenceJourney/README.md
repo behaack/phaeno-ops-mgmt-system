@@ -17,13 +17,18 @@ signature middleware. It supplies authenticated external identities directly to
 the application authorization layer. JWT integration remains a separate test
 boundary.
 
-Set `PHAENO_PORTAL_REFERENCE_CONNECTION` to an isolated or development database
+Set `PSEQ_OPERATIONS_REFERENCE_CONNECTION` to an isolated or development database
 that already has all migrations applied, then run:
 
 ```powershell
 dotnet run --project backend/tools/PSeq.Operations.ReferenceJourney/PSeq.Operations.ReferenceJourney.csproj
 ```
 
-`PHAENO_PORTAL_REFERENCE_SCHEMA` is optional and defaults to `portal`. Fixture
-rows are enclosed in one transaction and rolled back. Uploaded fixture bytes
-use a run-specific temporary directory that is removed before exit.
+These schema overrides are optional:
+
+- `PSEQ_OPERATIONS_REFERENCE_COMMERCIAL_SCHEMA` defaults to `commercial_ops`.
+- `PSEQ_OPERATIONS_REFERENCE_LABORATORY_SCHEMA` defaults to `lab_ops`.
+- `PSEQ_OPERATIONS_REFERENCE_MIGRATIONS_HISTORY_SCHEMA` defaults to `public`.
+
+Fixture rows are enclosed in one transaction and rolled back. Uploaded fixture
+bytes use a run-specific temporary directory that is removed before exit.

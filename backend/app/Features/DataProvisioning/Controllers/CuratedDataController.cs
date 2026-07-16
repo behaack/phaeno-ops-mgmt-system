@@ -16,7 +16,7 @@ using PhaenoPortal.App.Infrastructure.Persistence;
 [Authorize]
 [Route("api/curated-data")]
 public sealed class CuratedDataController(
-    AppDbContext dbContext,
+    PSeqOperationsDbContext dbContext,
     IExternalIdentityContext externalIdentityContext,
     IManagedFileStorage fileStorage) : ControllerBase
 {

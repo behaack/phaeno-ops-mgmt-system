@@ -21,7 +21,7 @@ public static class UserEndpoints
     public static async Task<IResult> GetUser(
         Guid id,
         HttpContext httpContext,
-        AppDbContext dbContext,
+        PSeqOperationsDbContext dbContext,
         IExternalIdentityContext externalIdentityContext,
         CancellationToken cancellationToken)
     {
@@ -51,7 +51,7 @@ public static class UserEndpoints
     public static async Task<IResult> ListUsersInOrganization(
         Guid organizationId,
         HttpContext httpContext,
-        AppDbContext dbContext,
+        PSeqOperationsDbContext dbContext,
         IExternalIdentityContext externalIdentityContext,
         [FromQuery] bool includeInactive = false,
         CancellationToken cancellationToken = default)
@@ -109,7 +109,7 @@ public static class UserEndpoints
     public static async Task<IResult> DisableUser(
         Guid id,
         HttpContext httpContext,
-        AppDbContext dbContext,
+        PSeqOperationsDbContext dbContext,
         IExternalIdentityContext externalIdentityContext,
         CancellationToken cancellationToken)
     {
@@ -156,7 +156,7 @@ public static class UserEndpoints
     public static async Task<IResult> ReactivateUser(
         Guid id,
         HttpContext httpContext,
-        AppDbContext dbContext,
+        PSeqOperationsDbContext dbContext,
         IExternalIdentityContext externalIdentityContext,
         CancellationToken cancellationToken)
     {
@@ -275,7 +275,7 @@ public static class UserEndpoints
     }
 
     private static async Task<User> LoadUserAsync(
-        AppDbContext dbContext,
+        PSeqOperationsDbContext dbContext,
         Guid id,
         CancellationToken cancellationToken)
     {
@@ -293,7 +293,7 @@ public static class UserEndpoints
     }
 
     private static async Task EnsureNotLastActivePlatformAdminAsync(
-        AppDbContext dbContext,
+        PSeqOperationsDbContext dbContext,
         CancellationToken cancellationToken)
     {
         var platformAdminCount = await dbContext.OrganizationMemberships

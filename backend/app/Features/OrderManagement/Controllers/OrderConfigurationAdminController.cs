@@ -15,7 +15,7 @@ using PhaenoPortal.App.Infrastructure.Persistence;
 [Authorize]
 [Route("api/platform/order-configuration")]
 public sealed class OrderConfigurationAdminController(
-    AppDbContext dbContext,
+    PSeqOperationsDbContext dbContext,
     OrderRequestContext requestContext,
     OrderIdempotencyService idempotency,
     IWebHostEnvironment environment,

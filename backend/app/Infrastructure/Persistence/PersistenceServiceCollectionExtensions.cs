@@ -18,11 +18,12 @@ public static class PersistenceServiceCollectionExtensions
         services.AddScoped<ICurrentUserContext, HttpCurrentUserContext>();
         services.AddScoped<ISaveChangesInterceptor, AuditSaveChangesInterceptor>();
 
-        services.AddDbContext<AppDbContext>((serviceProvider, options) =>
+        services.AddDbContext<PSeqOperationsDbContext>((serviceProvider, options) =>
         {
             var persistenceOptions = serviceProvider
                 .GetRequiredService<IOptions<PersistenceOptions>>()
-                .Value;
+                .Value
+                .Validate();
 
             string? connectionString = configuration.GetConnectionString("DefaultConnection");
             if (string.IsNullOrWhiteSpace(connectionString))
@@ -34,7 +35,7 @@ public static class PersistenceServiceCollectionExtensions
                 connectionString,
                 npgsql => npgsql.MigrationsHistoryTable(
                     persistenceOptions.MigrationsHistoryTable,
-                    persistenceOptions.Schema));
+                    persistenceOptions.MigrationsHistorySchema));
 
             options.AddInterceptors(serviceProvider.GetServices<ISaveChangesInterceptor>());
         });

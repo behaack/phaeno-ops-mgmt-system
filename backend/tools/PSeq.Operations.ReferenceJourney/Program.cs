@@ -26,9 +26,13 @@ return await ReferenceJourney.RunAsync();
 internal static class ReferenceJourney
 {
     private const string ConnectionEnvironmentVariable =
-        "PHAENO_PORTAL_REFERENCE_CONNECTION";
-    private const string SchemaEnvironmentVariable =
-        "PHAENO_PORTAL_REFERENCE_SCHEMA";
+        "PSEQ_OPERATIONS_REFERENCE_CONNECTION";
+    private const string CommercialSchemaEnvironmentVariable =
+        "PSEQ_OPERATIONS_REFERENCE_COMMERCIAL_SCHEMA";
+    private const string LaboratorySchemaEnvironmentVariable =
+        "PSEQ_OPERATIONS_REFERENCE_LABORATORY_SCHEMA";
+    private const string MigrationsHistorySchemaEnvironmentVariable =
+        "PSEQ_OPERATIONS_REFERENCE_MIGRATIONS_HISTORY_SCHEMA";
 
     public static async Task<int> RunAsync()
     {
@@ -41,11 +45,15 @@ internal static class ReferenceJourney
             return 2;
         }
 
-        var schema = Environment.GetEnvironmentVariable(SchemaEnvironmentVariable);
-        if (string.IsNullOrWhiteSpace(schema))
-        {
-            schema = "portal";
-        }
+        var commercialSchema = ReadEnvironmentVariable(
+            CommercialSchemaEnvironmentVariable,
+            "commercial_ops");
+        var laboratorySchema = ReadEnvironmentVariable(
+            LaboratorySchemaEnvironmentVariable,
+            "lab_ops");
+        var migrationsHistorySchema = ReadEnvironmentVariable(
+            MigrationsHistorySchemaEnvironmentVariable,
+            "public");
 
         var runKey = Guid.NewGuid().ToString("N");
         var storageRoot = Path.Combine(
@@ -56,7 +64,13 @@ internal static class ReferenceJourney
 
         try
         {
-            await RunJourneyAsync(connectionString, schema, storageRoot, runKey);
+            await RunJourneyAsync(
+                connectionString,
+                commercialSchema,
+                laboratorySchema,
+                migrationsHistorySchema,
+                storageRoot,
+                runKey);
             Console.WriteLine(
                 "PASS: relationship request and entitlement integrity, synthetic source, immutable publication, exact-version grant, tenant downloads, isolation, audit, revocation, and rollback.");
             return 0;
@@ -98,25 +112,29 @@ internal static class ReferenceJourney
 
     private static async Task RunJourneyAsync(
         string connectionString,
-        string schema,
+        string commercialSchema,
+        string laboratorySchema,
+        string migrationsHistorySchema,
         string storageRoot,
         string runKey)
     {
         var currentUser = new MutableCurrentUserContext();
         var persistenceOptions = new PersistenceOptions
         {
-            Schema = schema
-        };
-        var dbOptions = new DbContextOptionsBuilder<AppDbContext>()
+            CommercialSchema = commercialSchema,
+            LaboratorySchema = laboratorySchema,
+            MigrationsHistorySchema = migrationsHistorySchema
+        }.Validate();
+        var dbOptions = new DbContextOptionsBuilder<PSeqOperationsDbContext>()
             .UseNpgsql(
                 connectionString,
                 npgsql => npgsql.MigrationsHistoryTable(
                     persistenceOptions.MigrationsHistoryTable,
-                    persistenceOptions.Schema))
+                    persistenceOptions.MigrationsHistorySchema))
             .AddInterceptors(new AuditSaveChangesInterceptor(currentUser))
             .Options;
 
-        await using var dbContext = new AppDbContext(
+        await using var dbContext = new PSeqOperationsDbContext(
             dbOptions,
             Options.Create(persistenceOptions));
         Require(
@@ -498,8 +516,14 @@ internal static class ReferenceJourney
         }
     }
 
+    private static string ReadEnvironmentVariable(string name, string defaultValue)
+    {
+        var value = Environment.GetEnvironmentVariable(name);
+        return string.IsNullOrWhiteSpace(value) ? defaultValue : value;
+    }
+
     private static async Task RunRelationshipLifecycleAsync(
-        AppDbContext dbContext,
+        PSeqOperationsDbContext dbContext,
         string platformAdminSubject,
         string customerLabel)
     {
@@ -630,7 +654,7 @@ internal static class ReferenceJourney
     }
 
     private static async Task<ReferenceIdentities> SeedReferenceOrganizationsAsync(
-        AppDbContext dbContext,
+        PSeqOperationsDbContext dbContext,
         string runKey)
     {
         var platformSubject = $"reference-admin-{runKey}";
@@ -701,7 +725,7 @@ internal static class ReferenceJourney
     }
 
     private static CuratedDataController CreateTenantController(
-        AppDbContext dbContext,
+        PSeqOperationsDbContext dbContext,
         IManagedFileStorage storage,
         string subject,
         Guid organizationId)
@@ -735,7 +759,7 @@ internal static class ReferenceJourney
         return context;
     }
 
-    private static void ResetRequestScope(AppDbContext dbContext)
+    private static void ResetRequestScope(PSeqOperationsDbContext dbContext)
     {
         dbContext.ChangeTracker.Clear();
     }

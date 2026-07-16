@@ -14,7 +14,7 @@ using PhaenoPortal.App.Infrastructure.Persistence;
 [Authorize]
 [Route("api/platform/relationships")]
 public sealed class RelationshipManagementController(
-    AppDbContext dbContext,
+    PSeqOperationsDbContext dbContext,
     IExternalIdentityContext externalIdentityContext) : ControllerBase
 {
     [HttpGet("organizations/{organizationId:guid}/summary")]

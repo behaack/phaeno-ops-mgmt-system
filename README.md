@@ -51,7 +51,7 @@ backend/app/
 - `Features/`: Feature folders that own their DTOs, endpoint mapping, workflows, and later feature-specific services.
 - Implemented feature areas are Accounts, Data Provisioning, Health, and Order Management.
 - `Infrastructure/Api/`: API response envelopes, metadata factories, error mapping, and response filters.
-- `Infrastructure/Persistence/`: EF Core `AppDbContext`, PostgreSQL configuration, design-time migration factory, and migrations.
+- `Infrastructure/Persistence/`: the single EF Core `PSeqOperationsDbContext`, PostgreSQL configuration, and design-time migration factory.
 - `Middleware/`: HTTP middleware such as API exception handling.
 
 #### Backend API Response And Error Shape
@@ -80,12 +80,18 @@ API responses use the same envelope model as the reference API:
 
 The backend uses Entity Framework Core with PostgreSQL through the Npgsql provider.
 
-- Runtime DbContext: `Infrastructure/Persistence/AppDbContext.cs`
-- Design-time migrations factory: `Infrastructure/Persistence/DesignTimeAppDbContextFactory.cs`
-- Migrations folder: `Infrastructure/Persistence/Migrations`
-- Default PostgreSQL schema: `portal`
-- EF migrations history table: `portal.__ef_migrations_history`
+- Runtime DbContext: `Infrastructure/Persistence/PSeqOperationsDbContext.cs`
+- Design-time migrations factory: `Infrastructure/Persistence/DesignTimePSeqOperationsDbContextFactory.cs`
+- Migrations folder: `Migrations`
+- Current business-model target: every implemented entity is explicitly mapped to `commercial_ops`; no default schema is used
+- Reserved Laboratory schema setting: `lab_ops` (the schema is created by the pending clean initial migration)
+- EF migrations history table: `public.__ef_migrations_history`
 - Connection string key: `ConnectionStrings:DefaultConnection`
+
+The context/schema code is ahead of the disposable development database during
+the approved reset sequence. Do not run the API or Reference Journey against
+the old `portal` database until the old database and migrations have been
+replaced by the clean baseline.
 
 Use environment configuration for non-development database credentials. In ASP.NET Core configuration, the connection string can be supplied with `ConnectionStrings__DefaultConnection`.
 

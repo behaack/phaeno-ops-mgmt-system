@@ -10,7 +10,7 @@ public static class DataProvisioningAuthorization
 
     public static async Task<User> RequirePlatformAdminAsync(
         HttpContext httpContext,
-        AppDbContext dbContext,
+        PSeqOperationsDbContext dbContext,
         IExternalIdentityContext externalIdentityContext,
         CancellationToken cancellationToken)
     {
@@ -32,7 +32,7 @@ public static class DataProvisioningAuthorization
 
     public static async Task<(User Actor, Organization Organization)> RequireTenantAccessAsync(
         HttpContext httpContext,
-        AppDbContext dbContext,
+        PSeqOperationsDbContext dbContext,
         IExternalIdentityContext externalIdentityContext,
         bool requireOrganizationAdmin,
         CancellationToken cancellationToken)

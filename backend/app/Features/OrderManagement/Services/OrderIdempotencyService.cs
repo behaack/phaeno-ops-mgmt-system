@@ -7,7 +7,7 @@ using Microsoft.EntityFrameworkCore;
 using PhaenoPortal.App.Features.OrderManagement.Domain;
 using PhaenoPortal.App.Infrastructure.Persistence;
 
-public sealed class OrderIdempotencyService(AppDbContext dbContext)
+public sealed class OrderIdempotencyService(PSeqOperationsDbContext dbContext)
 {
     private static readonly JsonSerializerOptions JsonOptions = new(JsonSerializerDefaults.Web);
 

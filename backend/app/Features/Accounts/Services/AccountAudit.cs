@@ -23,7 +23,7 @@ public static class AccountAudit
     public const string MembershipLeft = nameof(MembershipLeft);
 
     public static void Add(
-        AppDbContext dbContext,
+        PSeqOperationsDbContext dbContext,
         HttpContext httpContext,
         string entityName,
         Guid entityId,

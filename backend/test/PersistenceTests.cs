@@ -10,33 +10,28 @@ using PhaenoPortal.App.Infrastructure.Persistence;
 public class PersistenceTests
 {
     [Fact]
-    public void AppDbContextUsesConfiguredDefaultSchema()
+    public void PSeqOperationsDbContextMapsEveryCurrentEntityToCommercialSchema()
     {
-        var dbContextOptions = new DbContextOptionsBuilder<AppDbContext>()
-            .UseNpgsql("Host=localhost;Database=phaeno_portal_test;Username=postgres;Password=postgres")
-            .Options;
+        using var dbContext = CreateDbContext();
+        var entityTypes = dbContext.Model.GetEntityTypes().ToList();
 
-        using var dbContext = new AppDbContext(
-            dbContextOptions,
-            Options.Create(new PersistenceOptions { Schema = "portal" }));
-
-        Assert.Equal("portal", dbContext.Model.GetDefaultSchema());
+        Assert.Null(dbContext.Model.GetDefaultSchema());
+        Assert.NotEmpty(entityTypes);
+        Assert.All(
+            entityTypes,
+            entityType => Assert.Equal("commercial_ops", entityType.GetSchema()));
+        Assert.DoesNotContain(entityTypes, entityType => entityType.GetSchema() == "portal");
+        Assert.DoesNotContain(entityTypes, entityType => entityType.GetSchema() == "public");
     }
 
     [Fact]
-    public void AppDbContextMapsAccountEntities()
+    public void PSeqOperationsDbContextMapsAccountEntities()
     {
-        var dbContextOptions = new DbContextOptionsBuilder<AppDbContext>()
-            .UseNpgsql("Host=localhost;Database=phaeno_portal_test;Username=postgres;Password=postgres")
-            .Options;
-
-        using var dbContext = new AppDbContext(
-            dbContextOptions,
-            Options.Create(new PersistenceOptions { Schema = "portal" }));
+        using var dbContext = CreateDbContext();
 
         var organizationEntity = dbContext.Model.FindEntityType(typeof(Organization));
         Assert.NotNull(organizationEntity);
-        Assert.Equal("portal", organizationEntity.GetSchema());
+        Assert.Equal("commercial_ops", organizationEntity.GetSchema());
         Assert.Equal("organizations", organizationEntity.GetTableName());
         Assert.Equal("id", organizationEntity.FindProperty(nameof(Organization.Id))?.GetColumnName());
         Assert.Equal("is_active", organizationEntity.FindProperty(nameof(Organization.IsActive))?.GetColumnName());
@@ -54,7 +49,7 @@ public class PersistenceTests
 
         var userEntity = dbContext.Model.FindEntityType(typeof(User));
         Assert.NotNull(userEntity);
-        Assert.Equal("portal", userEntity.GetSchema());
+        Assert.Equal("commercial_ops", userEntity.GetSchema());
         Assert.Equal("users", userEntity.GetTableName());
         Assert.Equal("id", userEntity.FindProperty(nameof(User.Id))?.GetColumnName());
         Assert.Equal("normalized_email", userEntity.FindProperty(nameof(User.NormalizedEmail))?.GetColumnName());
@@ -76,7 +71,7 @@ public class PersistenceTests
 
         var membershipEntity = dbContext.Model.FindEntityType(typeof(OrganizationMembership));
         Assert.NotNull(membershipEntity);
-        Assert.Equal("portal", membershipEntity.GetSchema());
+        Assert.Equal("commercial_ops", membershipEntity.GetSchema());
         Assert.Equal("organization_memberships", membershipEntity.GetTableName());
         Assert.Equal("id", membershipEntity.FindProperty(nameof(OrganizationMembership.Id))?.GetColumnName());
         Assert.Equal("user_id", membershipEntity.FindProperty(nameof(OrganizationMembership.UserId))?.GetColumnName());
@@ -102,7 +97,7 @@ public class PersistenceTests
 
         var invitationEntity = dbContext.Model.FindEntityType(typeof(OrganizationInvitation));
         Assert.NotNull(invitationEntity);
-        Assert.Equal("portal", invitationEntity.GetSchema());
+        Assert.Equal("commercial_ops", invitationEntity.GetSchema());
         Assert.Equal("organization_invitations", invitationEntity.GetTableName());
         Assert.Equal("id", invitationEntity.FindProperty(nameof(OrganizationInvitation.Id))?.GetColumnName());
         Assert.Equal("organization_id", invitationEntity.FindProperty(nameof(OrganizationInvitation.OrganizationId))?.GetColumnName());
@@ -127,7 +122,7 @@ public class PersistenceTests
 
         var auditEventEntity = dbContext.Model.FindEntityType(typeof(AuditEvent));
         Assert.NotNull(auditEventEntity);
-        Assert.Equal("portal", auditEventEntity.GetSchema());
+        Assert.Equal("commercial_ops", auditEventEntity.GetSchema());
         Assert.Equal("audit_events", auditEventEntity.GetTableName());
         Assert.Equal("id", auditEventEntity.FindProperty(nameof(AuditEvent.Id))?.GetColumnName());
         Assert.Equal("actor_user_id", auditEventEntity.FindProperty(nameof(AuditEvent.ActorUserId))?.GetColumnName());
@@ -137,15 +132,9 @@ public class PersistenceTests
     }
 
     [Fact]
-    public void AppDbContextMapsDataProvisioningEntitiesAndTenantBoundaries()
+    public void PSeqOperationsDbContextMapsDataProvisioningEntitiesAndTenantBoundaries()
     {
-        var dbContextOptions = new DbContextOptionsBuilder<AppDbContext>()
-            .UseNpgsql("Host=localhost;Database=phaeno_portal_test;Username=postgres;Password=postgres")
-            .Options;
-
-        using var dbContext = new AppDbContext(
-            dbContextOptions,
-            Options.Create(new PersistenceOptions { Schema = "portal" }));
+        using var dbContext = CreateDbContext();
 
         var sourceEntity = dbContext.Model.FindEntityType(typeof(SourceSample));
         Assert.NotNull(sourceEntity);
@@ -205,5 +194,16 @@ public class PersistenceTests
         Assert.Equal(
             "data_provisioning_notices",
             dbContext.Model.FindEntityType(typeof(DataProvisioningNotice))?.GetTableName());
+    }
+
+    private static PSeqOperationsDbContext CreateDbContext()
+    {
+        var dbContextOptions = new DbContextOptionsBuilder<PSeqOperationsDbContext>()
+            .UseNpgsql("Host=localhost;Database=phaeno_portal_test;Username=postgres;Password=postgres")
+            .Options;
+
+        return new PSeqOperationsDbContext(
+            dbContextOptions,
+            Options.Create(new PersistenceOptions()));
     }
 }

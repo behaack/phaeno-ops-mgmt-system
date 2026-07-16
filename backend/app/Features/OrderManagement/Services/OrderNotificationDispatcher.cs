@@ -56,7 +56,7 @@ public sealed class OrderNotificationDispatcher(IServiceScopeFactory scopeFactor
             try
             {
                 using var scope = scopeFactory.CreateScope();
-                var dbContext = scope.ServiceProvider.GetRequiredService<AppDbContext>();
+                var dbContext = scope.ServiceProvider.GetRequiredService<PSeqOperationsDbContext>();
                 var ids = await dbContext.OrderNotifications.AsNoTracking()
                     .Where(item => (item.Status == OrderNotificationStatus.Pending || item.Status == OrderNotificationStatus.Failed)
                         && item.AttemptCount < 5 && item.NextAttemptAt <= DateTime.UtcNow)
@@ -72,7 +72,7 @@ public sealed class OrderNotificationDispatcher(IServiceScopeFactory scopeFactor
     private static async Task SendAsync(IServiceScopeFactory scopeFactory, Guid id, ILogger logger, CancellationToken cancellationToken)
     {
         using var scope = scopeFactory.CreateScope();
-        var dbContext = scope.ServiceProvider.GetRequiredService<AppDbContext>();
+        var dbContext = scope.ServiceProvider.GetRequiredService<PSeqOperationsDbContext>();
         var sender = scope.ServiceProvider.GetRequiredService<IOrderNotificationSender>();
         var item = await dbContext.OrderNotifications.FirstOrDefaultAsync(value => value.Id == id, cancellationToken);
         if (item == null || item.Status == OrderNotificationStatus.Sent || item.AttemptCount >= 5) return;

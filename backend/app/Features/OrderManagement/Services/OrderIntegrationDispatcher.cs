@@ -49,7 +49,7 @@ public sealed class OrderIntegrationDispatcher(
     private async Task<IReadOnlyList<Guid>> ReadPendingIdsAsync(CancellationToken cancellationToken)
     {
         using var scope = scopeFactory.CreateScope();
-        var dbContext = scope.ServiceProvider.GetRequiredService<AppDbContext>();
+        var dbContext = scope.ServiceProvider.GetRequiredService<PSeqOperationsDbContext>();
         var now = DateTime.UtcNow;
         return await dbContext.OrderOutboxMessages.AsNoTracking()
             .Where(message => (message.Status == IntegrationStatus.Pending || message.Status == IntegrationStatus.Failed)
@@ -63,7 +63,7 @@ public sealed class OrderIntegrationDispatcher(
     private async Task ProcessAsync(Guid messageId, CancellationToken cancellationToken)
     {
         using var scope = scopeFactory.CreateScope();
-        var dbContext = scope.ServiceProvider.GetRequiredService<AppDbContext>();
+        var dbContext = scope.ServiceProvider.GetRequiredService<PSeqOperationsDbContext>();
         var gateway = scope.ServiceProvider.GetRequiredService<IQuickBooksGateway>();
         var message = await dbContext.OrderOutboxMessages.FirstOrDefaultAsync(candidate => candidate.Id == messageId, cancellationToken);
         if (message == null || message.Status is IntegrationStatus.Succeeded or IntegrationStatus.NeedsAttention) return;
@@ -93,7 +93,7 @@ public sealed class OrderIntegrationDispatcher(
     }
 
     private static async Task DispatchAsync(
-        AppDbContext dbContext,
+        PSeqOperationsDbContext dbContext,
         IQuickBooksGateway gateway,
         OrderOutboxMessage message,
         CancellationToken cancellationToken)
@@ -117,7 +117,7 @@ public sealed class OrderIntegrationDispatcher(
         }
     }
 
-    private static async Task SyncCatalogAsync(AppDbContext dbContext, IQuickBooksGateway gateway, CancellationToken cancellationToken)
+    private static async Task SyncCatalogAsync(PSeqOperationsDbContext dbContext, IQuickBooksGateway gateway, CancellationToken cancellationToken)
     {
         var syncedAt = DateTime.UtcNow;
         var items = await gateway.FetchCatalogAsync(cancellationToken);
@@ -136,7 +136,7 @@ public sealed class OrderIntegrationDispatcher(
     }
 
     private static async Task CreateDocumentAsync(
-        AppDbContext dbContext,
+        PSeqOperationsDbContext dbContext,
         IQuickBooksGateway gateway,
         OrderOutboxMessage message,
         bool isEstimate,
@@ -183,7 +183,7 @@ public sealed class OrderIntegrationDispatcher(
         }
     }
 
-    private static async Task RefreshPaymentAsync(AppDbContext dbContext, IQuickBooksGateway gateway, OrderOutboxMessage message, CancellationToken cancellationToken)
+    private static async Task RefreshPaymentAsync(PSeqOperationsDbContext dbContext, IQuickBooksGateway gateway, OrderOutboxMessage message, CancellationToken cancellationToken)
     {
         var payload = JsonSerializer.Deserialize<PaymentRefreshOutboxPayload>(message.PayloadJson, JsonOptions)
             ?? throw new InvalidOperationException("The payment-refresh payload is invalid.");
@@ -199,7 +199,7 @@ public sealed class OrderIntegrationDispatcher(
         }
     }
 
-    private static async Task ApplyAssemblyReleaseGateAsync(AppDbContext dbContext, Guid requestId, decimal invoiceBalance, CancellationToken cancellationToken)
+    private static async Task ApplyAssemblyReleaseGateAsync(PSeqOperationsDbContext dbContext, Guid requestId, decimal invoiceBalance, CancellationToken cancellationToken)
     {
         var request = await dbContext.DataAssemblyRequests.AsNoTracking().FirstAsync(candidate => candidate.Id == requestId, cancellationToken);
         var profile = await dbContext.OrganizationCommercialProfiles.AsNoTracking().FirstOrDefaultAsync(candidate => candidate.OrganizationId == request.OrganizationId, cancellationToken);
@@ -216,7 +216,7 @@ public sealed class OrderIntegrationDispatcher(
         }
     }
 
-    private static async Task ReleaseLabPaymentHoldsAsync(AppDbContext dbContext, Guid orderId, CancellationToken cancellationToken)
+    private static async Task ReleaseLabPaymentHoldsAsync(PSeqOperationsDbContext dbContext, Guid orderId, CancellationToken cancellationToken)
     {
         var releases = await dbContext.LabResultReleases.Where(release => release.LabServiceOrderId == orderId && release.ReleaseStatus == FileReleaseStatus.PaymentHold).ToListAsync(cancellationToken);
         var files = await dbContext.ManagedOperationalFiles.Where(file => file.WorkflowId == orderId && file.Purpose == OperationalFilePurpose.LabResult && file.ReleaseStatus == FileReleaseStatus.PaymentHold).ToListAsync(cancellationToken);
@@ -224,7 +224,7 @@ public sealed class OrderIntegrationDispatcher(
         foreach (var file in files) file.Release(DateTime.UtcNow);
     }
 
-    private static async Task MarkDocumentFailedAsync(AppDbContext dbContext, OrderOutboxMessage message, CancellationToken cancellationToken)
+    private static async Task MarkDocumentFailedAsync(PSeqOperationsDbContext dbContext, OrderOutboxMessage message, CancellationToken cancellationToken)
     {
         if (message.Operation is not (IntegrationOperation.CreateEstimate or IntegrationOperation.CreateInvoice)) return;
         var payload = JsonSerializer.Deserialize<OrderDocumentOutboxPayload>(message.PayloadJson, JsonOptions);
