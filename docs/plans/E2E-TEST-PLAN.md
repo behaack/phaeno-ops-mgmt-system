@@ -98,6 +98,12 @@ Do not execute this test plan unless explicitly requested.
 
 ## Requested Execution Log
 
+- 2026-07-16: the first clean-baseline run inherited the developer's real-Clerk
+  local setting (`VITE_USE_MOCK_SESSION=false`) and correctly failed the suite's
+  mock-session precondition. The test-only rerun used
+  `VITE_USE_MOCK_SESSION=true` and `PLAYWRIGHT_PORT=3100`; all 28 desktop/mobile
+  Chromium scenarios passed. The pre-existing `AcceptInvitePage` route-export
+  warning remains unchanged.
 - 2026-07-15: portal hardening verification ran `PLAYWRIGHT_PORT=3100 pnpm
   run test:e2e`; all 28 desktop/mobile Chromium scenarios passed. The connected
   organization cases exercised keyboard activation, focus return, narrow

@@ -134,7 +134,7 @@ Do not execute this test plan unless explicitly requested.
 - [ ] Notification dispatcher integration suite - cover acting-admin versus
   all-admin recipient rules, Postmark failure, bounded retry, and manual retry.
 
-## Requested Execution Log
+## Remaining Coverage
 
 - [ ] Remaining relationship management - cover platform-admin authorization,
   organization creation with persisted readiness, organization summary
@@ -172,6 +172,13 @@ Do not execute this test plan unless explicitly requested.
 
 ## Requested Execution Log
 
+- 2026-07-16: clean-baseline verification ran `dotnet build
+  backend/PSeq.Operations.slnx --no-restore` and `dotnet test
+  backend/PSeq.Operations.slnx --no-build`; the build completed without warnings
+  or errors and all 69 tests passed with no skips or failures. The rebuilt local
+  Development database bootstrapped successfully, `/api/health` returned HTTP
+  200, and the PostgreSQL reference journey passed while preserving exact table
+  counts after rollback.
 - 2026-07-14: completion-slice verification ran `dotnet test
   backend/PhaenoPortal.slnx --no-restore`; all 48 tests passed with no skips or
   failures.

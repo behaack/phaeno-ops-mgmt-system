@@ -1,8 +1,8 @@
 # PSeq Operations Restructuring and Database Reset Plan
 
-This document defines the implementation sequence for restructuring the
-current backend as PSeq Operations and replacing the current development
-database and EF migration history with a clean baseline.
+This document records the completed implementation sequence for restructuring
+the backend as PSeq Operations and replacing the development database and EF
+migration history with a clean baseline.
 
 It is a planning artifact only. It does not itself delete a database, delete
 migration files, rename projects, create schemas, apply a migration, deploy, or
@@ -29,18 +29,49 @@ authorize a reset of any shared environment.
   EF mapping/orchestration, Clerk/Postmark, bootstrap, environment configuration,
   local file/scanner, notification dispatch, and API error translation remain
   in the API.
-- Commercial Order Management extraction is in progress. Commercial
+- Commercial Order Management extraction is complete at the approved safe
+  boundary. Commercial
   configuration/catalog, Partner kit ordering and fulfillment, commercial
   workflow/outbox/notification records, and environment-neutral QuickBooks and
   notification ports now live in Commercial. Immutable lab-service request
   revisions, lab-service/data-assembly quotes, and the external download audit
   are also extracted. Mixed order, sample, processing, managed-file, and release
-  records remain in the API pending their approved splits.
-- Laboratory-owned mappings remain pending.
-- The database and seven historical migrations remain untouched. A temporary
-  compile-only alias keeps their generated metadata buildable until Stage 3.
+  records remain in the API intentionally until their future approved splits.
+- The Laboratory project shell and assembly registration boundary exist without
+  inventing Laboratory entities or workflows.
+- The verified disposable Development database and seven historical migrations
+  were replaced on 2026-07-16 by one reviewed `InitialPSeqOperations` baseline.
+  `commercial_ops` contains all 51 current business tables, `lab_ops` exists and
+  is empty, and `public` contains only `__ef_migrations_history`.
+- The configured bootstrap, API health probe, rollback-safe Reference Journey,
+  69 backend tests, frontend lint/typecheck, 28 unit tests, client/SSR build,
+  and 28 desktop/mobile Playwright scenarios pass against this checkpoint.
 - The automated data-pipeline and scientific file-management boundary remains
   explicitly unresolved and outside the reset.
+
+## Reset Execution Record
+
+- Executed on 2026-07-16 from Git commit
+  `6e1bce9ecce9e3239fe1ad0ee5cab028c493ff42`; reset changes remained
+  uncommitted during execution.
+- Environment: `Development`.
+- Verified literal target: local PostgreSQL 18.3 at `localhost:5432`, database
+  `phaeno-portal`, resolved over loopback. No credential is recorded here.
+- Pre-reset state: legacy `portal` schema, 51 business tables plus its migration
+  history table, 23 local bootstrap/reference rows, and seven migration-history
+  rows. No customer, production, staging, shared, or retained record was found.
+- The workspace API process using the target was identified and stopped; the
+  final pre-delete check found no other connection or writer.
+- The exact database was deleted and confirmed absent before migration source
+  was replaced. No backup was retained because all discovered records were the
+  approved disposable local bootstrap/reference data.
+- New baseline: `20260716220428_InitialPSeqOperations`, EF Core 10.0.4.
+- Post-reset state: 51 `commercial_ops` tables, zero `lab_ops` tables, one
+  `public.__ef_migrations_history` table, 677 Commercial constraints, 194
+  Commercial indexes, and no Commercial sequence.
+- The configured bootstrap recreated one Phaeno organization, one linked user,
+  one administrator membership, and its audit records. The Reference Journey
+  then passed and restored every table to its pre-run row count.
 
 ## Objective
 
@@ -67,7 +98,8 @@ Instead it will:
 2. stop all processes that can connect to it
 3. delete the existing database
 4. delete the current EF migration source and model snapshot
-5. restructure the solution, projects, namespaces, context, and mappings
+5. restructure the solution, projects, module-owned namespaces, context, and
+   mappings
 6. generate one new `InitialPSeqOperations` migration
 7. create a new empty database from that migration
 8. reseed only approved development/reference data
@@ -107,9 +139,9 @@ The reset proceeds only when all of the following are true:
 If any condition fails, stop. Do not broaden the approval or substitute a
 different database.
 
-## Current Evidence Baseline
+## Pre-implementation Evidence Baseline
 
-The reset design accounts for these current facts:
+The reset design accounted for these facts recorded before implementation:
 
 - solution: `backend/PhaenoPortal.slnx`
 - web project: `backend/app/PhaenoPortal.App.csproj`
@@ -126,7 +158,8 @@ The reset design accounts for these current facts:
   backend test plan, and the Reference Journey README
 - no repository GitHub Actions workflow currently references the solution
 
-The implementation must refresh this inventory immediately before the reset.
+The inventory was refreshed immediately before the reset; the verified target
+and resulting state are recorded in the Reset Execution Record above.
 
 ## Target Solution Layout
 
@@ -255,10 +288,11 @@ development database. Uncertainty stops the reset.
 
 ### Stage 1 - Rename the Solution and Project Shells
 
-Status: implemented on 2026-07-16. The renamed five-project solution builds and
-EF discovers all seven unchanged migrations. The database and migrations were
-not changed. The backend test suite remains pending an explicit test request
-under repository policy.
+Status: implemented on 2026-07-16. At this interim checkpoint, the renamed
+five-project solution built and EF still discovered all seven unchanged
+migrations; the database and migration source were intentionally untouched.
+The later reset stages replaced that lineage, and the final 69-test backend
+suite passes.
 
 1. Rename the solution to `PSeq.Operations.slnx`.
 2. Rename the API and test project files in place.
@@ -281,15 +315,16 @@ this stage.
 
 ### Stage 2 - Establish the New Context and Module Mappings
 
-Status: the context/schema checkpoint, initial architecture guard, Accounts,
-Relationships, and Data Provisioning extractions, plus the first four commercial
-Order Management sub-slices are implemented on 2026-07-16. The API retains HTTP,
+Status: completed on 2026-07-16. The context/schema checkpoint, architecture
+guard, Accounts, Relationships, Data Provisioning, and all currently separable
+Commercial Order Management code are implemented. The API retains HTTP,
 EF mapping/orchestration, Clerk/Postmark/QuickBooks adapters,
 environment/configuration, local file/scanner, notification dispatch, and API
-error translation as intended.
-Items 4, 6, and 7 plus the remaining feature slices in item 5 remain pending.
-The solution builds; the backend test suite remains pending an explicit test
-request under repository policy.
+error translation as intended. Mixed order/sample/processing/file/release models
+remain at the current API/Commercial persistence boundary because moving them
+would falsely implement the deferred Laboratory or pipeline split. The empty
+Laboratory assembly marker is the registration boundary until real services are
+authorized. The solution builds and all 69 backend tests pass.
 
 1. Rename the context to `PSeqOperationsDbContext`.
 2. Introduce explicit Commercial, Laboratory, and migration-history settings.
@@ -302,7 +337,7 @@ request under repository policy.
    - Accounts domain and pure application policy: complete.
    - Relationship Management domain and pure application policy: complete.
    - Data Provisioning domain, pure application services, and ports: complete.
-   - Commercial Order Management: in progress.
+   - Commercial Order Management: complete at the approved safe boundary.
      - Configuration/catalog and Partner kit domain/rules: complete.
      - Commercial integration, outbox, notification, and workflow support:
        complete.
@@ -325,6 +360,10 @@ Gate:
 - no old migration or snapshot is used to judge the new model
 
 ### Stage 3 - Delete the Old Database and Migration History
+
+Status: completed on 2026-07-16 for the verified disposable Development target.
+The database was confirmed absent after deletion, the 15 historical migration
+and snapshot files were removed, and the temporary context alias was deleted.
 
 This is the destructive checkpoint explicitly approved for the disposable
 development target.
@@ -351,6 +390,11 @@ prefer reseeding the clean baseline rather than resurrecting the old model.
 
 ### Stage 4 - Generate the Clean Initial Migration
 
+Status: completed on 2026-07-16. The reviewed migration is
+`20260716220428_InitialPSeqOperations`; its idempotent SQL creates
+`commercial_ops`, empty `lab_ops`, and `public.__ef_migrations_history` without
+legacy migration IDs, `portal`, data-copy SQL, or backfill.
+
 1. Generate `InitialPSeqOperations` from the restructured model.
 2. Review the migration and model snapshot in full.
 3. Verify it creates `commercial_ops` and `lab_ops`.
@@ -365,6 +409,13 @@ implemented behavior plus the approved schema boundary. It must not pretend
 the future Laboratory entity split is already implemented.
 
 ### Stage 5 - Create and Seed the New Development Database
+
+Status: completed on 2026-07-16. The single baseline is applied, the configured
+bootstrap and API health probe pass, the Reference Journey passes with complete
+rollback, and backend/frontend verification passes. The first Playwright launch
+inherited the developer's real-Clerk local mode and therefore did not meet the
+suite's mock-session precondition; the established test-only mock-session
+override was then applied and all 28 scenarios passed.
 
 1. Create the development database with the approved PSeq Operations physical
    name, or retain the current physical name if environment configuration makes
@@ -457,7 +508,7 @@ under the old reset approval.
 
 ## Acceptance Outcomes
 
-The reset/restructure is complete only when:
+The reset/restructure is complete. The achieved outcomes are:
 
 - `PSeq.Operations.slnx` contains API, Commercial, Laboratory, and Test projects
   with the approved dependency direction

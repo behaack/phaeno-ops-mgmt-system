@@ -83,10 +83,10 @@ rejects synthetic sources and starts without speculative approved scientific
 file kinds; Phaeno must configure actual profile/file policy before publishing
 real packages.
 
-The EF mappings for this slice are implemented in migration
-`20260714222254_AddOrganizationDataProvisioning`. It was applied to the
-configured development database on 2026-07-14. Other environments retain their
-normal explicit deployment and migration boundary.
+The EF mappings for this slice are included in the clean
+`20260716220428_InitialPSeqOperations` baseline applied to the configured
+Development database on 2026-07-16. Other environments retain their normal
+explicit deployment and migration boundary.
 
 `backend/tools/PSeq.Operations.ReferenceJourney` verifies the first slice against
 PostgreSQL with authenticated application identities, request-scope tracking
@@ -154,9 +154,10 @@ authenticated audience and locale filtering.
 - PostgreSQL business schemas: current entities target `commercial_ops`; the
   future Laboratory boundary reserves `lab_ops`; no default schema is used.
 - EF migration history: `public.__ef_migrations_history`.
-- Reset checkpoint: the disposable development database still uses the former
-  `portal` baseline and must not run with the new model until the approved clean
-  reset and initial migration are complete.
+- Reset checkpoint: the disposable Development database was rebuilt on
+  2026-07-16 from the single reviewed
+  `20260716220428_InitialPSeqOperations` baseline. It contains no `portal`
+  schema.
 - External identity: `Clerk` configuration.
 - Invitation delivery: Postmark when configured; logging sender otherwise.
 - Data provisioning: `DataProvisioning` storage root, size limit, environment

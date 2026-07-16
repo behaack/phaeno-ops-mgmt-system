@@ -591,11 +591,14 @@ This contract does not define:
 - Laboratory operator commands and screens
 - protocol, material, equipment, batch, QC, or accession entity schemas
 - exact persistence tables for commands, mappings, events, or projections
-- the approved development reset from `portal` to the clean `commercial_ops`
-  baseline
-- creation of the `lab_ops` schema
+- the development reset from `portal` to the clean `commercial_ops` baseline,
+  which is governed by `PSEQ-OPERATIONS-MIGRATION-PLAN.md` and completed on
+  2026-07-16
+- creation of the empty `lab_ops` schema, which the same completed baseline
+  owns
 - pipeline/file-management ownership or integration
 - a third-party LIMS vendor or vendor payload mapping
 - authentication changes or new dependencies
 
-Those remain later planning and implementation steps.
+The remaining items are later planning and implementation steps. The completed
+reset and reserved schema do not make this provider contract implemented.

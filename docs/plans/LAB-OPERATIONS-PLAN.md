@@ -14,7 +14,8 @@ deployment, or production activation.
 - Development state: not implemented as a separate Lab Operations module.
   Laboratory order, sample, accession, status, and release records currently
   live inside the existing Order Management feature. The EF model now maps all
-  current business entities to `commercial_ops`; no Laboratory entities exist.
+  current business entities to `commercial_ops`; the clean Development baseline
+  creates an empty `lab_ops`, and no Laboratory entities exist.
 - Target state: Phaeno operates a fit-for-purpose internal Lab Operations
   module behind a provider-neutral boundary. Commercial Operations remains
   customer-facing and can later replace the internal module with a third-party
@@ -45,8 +46,9 @@ deployment, or production activation.
   Relationships, Data Provisioning, commercial configuration, Partner kit,
   integration, notification, workflow-support, request-revision, and quote
   slices plus the external download audit are extracted into Commercial. Mixed
-  Commercial/Laboratory/pipeline records, the destructive
-  development reset, clean initial migration, and database rebuild are not.
+  Commercial/Laboratory/pipeline records remain deferred. The disposable
+  Development reset, clean `InitialPSeqOperations` migration, database rebuild,
+  bootstrap, Reference Journey, and verification suites completed on 2026-07-16.
 
 ## Goal
 
@@ -586,10 +588,12 @@ remove competing internal write paths. The durable strategy is recorded in
 ### Phase 1 - Module and Contract Foundation
 
 - Establish Commercial and Laboratory module write boundaries.
-- Introduce the `lab_ops` schema through an approved EF migration.
+- Add the first Laboratory-owned entities to the already reserved `lab_ops`
+  schema through an approved additive EF migration.
 - Implement internal laboratory roles and authorization.
 - Implement idempotent work authorization and milestone projection.
-- Add architecture tests that prevent direct cross-module persistence access.
+- Extend the existing module-direction architecture tests to prevent direct
+  cross-module persistence access as Laboratory entities are introduced.
 - Preserve current customer-facing behavior during the transition.
 
 ### Phase 2 - Intake, Protocols, and Materials

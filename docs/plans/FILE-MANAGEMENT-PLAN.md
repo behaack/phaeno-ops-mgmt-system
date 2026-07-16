@@ -20,9 +20,9 @@ The organization-data-provisioning first slice now has a feature-scoped
 server-derived size and SHA-256 metadata, environment-approved file kinds,
 scan-state abstraction, reference-safe draft cleanup, tenant-authorized
 individual/archive downloads, and download audit records. Its feature-scoped EF
-mappings are included in migration
-`20260714222254_AddOrganizationDataProvisioning`, applied to the configured
-development database on 2026-07-14.
+mappings are included in the clean
+`20260716220428_InitialPSeqOperations` baseline applied to the configured
+Development database on 2026-07-16.
 
 This does not complete the general file-management plan or its proposed general
 folder/file schema. Production S3,

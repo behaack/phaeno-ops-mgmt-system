@@ -27,11 +27,12 @@ application behavior.
   Phaeno-only purpose-audited investigation downloads, affected-organization
   tracking, reminders, and portal or Phaeno-recorded attestations. Customer APIs
   expose only external guidance and never internal investigation notes.
-- Persistence migrations `20260714222254_AddOrganizationDataProvisioning` and
-  `20260714232458_CompleteDataProvisioningGovernance` are implemented and applied
-  to the configured development database on 2026-07-14. EF reports no pending
-  migrations. Applying them to any shared, staging, or production environment
-  remains an explicit deployment operation.
+- Provisioning persistence is included in the clean
+  `20260716220428_InitialPSeqOperations` baseline applied to the rebuilt
+  Development database. The former feature migrations were intentionally
+  replaced during the approved disposable-database reset. EF reports no pending
+  migrations. Applying the baseline to any shared, staging, or production
+  environment remains an explicit deployment operation.
 - The repeatable PostgreSQL reference journey passes against the configured
   development database with all fixture rows rolled back and managed fixture
   files removed. It verifies source registration through publication, an
@@ -1029,12 +1030,12 @@ non-production fixture:
 Use an existing organization for this slice. Integrate automatic selection into
 new organization creation only after grant and retry behavior is reliable.
 
-Implementation checkpoint (2026-07-14): the application code, interfaces,
-unit/component coverage, and EF migration for this slice are present. Migration
-`20260714222254_AddOrganizationDataProvisioning` is applied to the configured
-development database. The controller-level authenticated PostgreSQL reference
-journey passes with transaction rollback and isolated temporary storage. A full
-browser-to-Clerk-to-API run remains a separate authentication/E2E checkpoint.
+Implementation checkpoint refreshed on 2026-07-16: the application code,
+interfaces, unit/component coverage, and persistence mappings are present in the
+clean `InitialPSeqOperations` Development baseline. The controller-level
+authenticated PostgreSQL reference journey passes with transaction rollback and
+isolated temporary storage. A full browser-to-Clerk-to-API run remains a
+separate authentication/E2E checkpoint.
 
 ## Verification Plan
 

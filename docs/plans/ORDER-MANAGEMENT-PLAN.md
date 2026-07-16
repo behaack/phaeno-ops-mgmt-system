@@ -13,8 +13,9 @@ Operations module. The first four code-ownership slices are implemented:
 commercial configuration/catalog, Partner kit domain rules, commercial
 workflow/outbox/notification records, environment-neutral integration ports,
 immutable lab-service request revisions, and lab-service/data-assembly quotes
-plus the external download audit now live in Commercial. API adapters and mixed lab-service, assembly,
-file, and release records remain in the API pending their approved splits. This plan remains
+plus the external download audit now live in Commercial. API adapters and mixed
+lab-service, assembly, file, and release records remain in the API pending their
+approved splits. This plan remains
 authoritative for current behavior and commercial ordering; future laboratory
 execution changes must follow the Lab Operations plan and the approved clean
 development reset/restructure plan. If any non-disposable records exist when
@@ -41,9 +42,10 @@ transition.
   must become PSeq Lab Service with its included assembly phase. Preserve the
   operational records and validation where useful, but remove independent
   assembly entitlement, pricing, quoting, placement, and ordering.
-- Local migrations `AddOrderManagement`, `AddOperationalAssignments`, and
-  `CompleteOrderManagementSnapshots` were generated, inspected, and applied to
-  the configured development database.
+- Order Management persistence is included in the clean
+  `20260716220428_InitialPSeqOperations` baseline applied to the rebuilt
+  Development database. The former feature migrations were intentionally
+  replaced during the approved disposable-database reset.
 - Verification state: backend build/tests, frontend lint/typecheck/unit tests,
   client/SSR production build, desktop/mobile Playwright journeys, and a live
   browser error-overlay/console check pass at this checkpoint.

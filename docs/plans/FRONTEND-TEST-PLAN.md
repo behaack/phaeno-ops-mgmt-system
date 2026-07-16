@@ -104,6 +104,10 @@ Do not execute this test plan unless explicitly requested.
 
 ## Requested Execution Log
 
+- 2026-07-16: clean-baseline verification ran `pnpm run lint`, `pnpm run
+  typecheck`, `pnpm run test`, and `pnpm run build`; lint and typecheck passed,
+  all 28 tests in 11 files passed, and both client and SSR production builds
+  completed. Existing bundle-size and plugin-timing warnings remain advisory.
 - 2026-07-15: portal hardening verification ran `pnpm run lint`, `pnpm run
   typecheck`, `pnpm run test`, and `pnpm run build`; lint and typecheck passed,
   all 28 tests in 11 files passed, and both client and SSR production builds
