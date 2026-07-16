@@ -1,5 +1,6 @@
 namespace PhaenoPortal.Test;
 
+using PSeq.Operations.Commercial.OrderManagement.Domain;
 using PhaenoPortal.App.Features.OrderManagement.Domain;
 using PhaenoPortal.App.Features.OrderManagement.Services;
 

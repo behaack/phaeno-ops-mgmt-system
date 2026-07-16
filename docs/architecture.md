@@ -29,6 +29,10 @@ The backend targets .NET 10 as a modular monolith:
   managed-file metadata, immutable curated versions, exact-version grants,
   governance records, environment-neutral policy, deterministic manifest
   construction, and file/scanner/notification ports.
+- `modules/PSeq.Operations.Commercial/OrderManagement`: QuickBooks catalog and
+  commercial configuration records, Partner kit ordering and fulfillment,
+  commercial workflow/outbox/notification records, and environment-neutral
+  QuickBooks and notification ports.
 - `app/Features/Accounts`: HTTP endpoints/contracts, authenticated-actor lookup,
   EF-backed orchestration, Clerk/Postmark adapters, and bootstrap composition.
 - `app/Features/RelationshipManagement`: HTTP contracts, EF mapping and
@@ -36,10 +40,10 @@ The backend targets .NET 10 as a modular monolith:
 - `app/Features/DataProvisioning`: HTTP contracts, EF mapping/orchestration,
   tenant authorization, environment configuration, local file storage,
   scanner implementation, Postmark adapter, and notification dispatch.
-- `Features/OrderManagement`: Customer laboratory-service jobs and sample
-  results, Partner reagent orders and fulfillment, Partner data-assembly
-  requests and output releases, operational queues, configuration, QuickBooks
-  integration, notifications, and durable retry records.
+- `app/Features/OrderManagement`: HTTP/EF orchestration, QuickBooks/Postmark and
+  hosted-dispatch adapters, plus the current mixed laboratory-service,
+  data-assembly, operational-file, and release records awaiting their approved
+  splits.
 - `Features/Health`: health endpoint.
 - `Infrastructure/Api`: response envelope, metadata, error mapping, and response filter.
 - `Infrastructure/Persistence`: the single `PSeqOperationsDbContext`, mappings, save interceptors, and PostgreSQL configuration.
@@ -48,9 +52,10 @@ The backend targets .NET 10 as a modular monolith:
 All `/api` failures should use the existing error envelope. Persistence applies auditing and optimistic concurrency centrally rather than in individual endpoints.
 
 The API references Commercial, while Commercial does not reference the API or
-Laboratory. Account, relationship, and data-provisioning domain rules therefore
-remain usable independently of the current HTTP, EF, Clerk, and Postmark
-adapters.
+Laboratory. Extracted account, relationship, data-provisioning, commercial
+configuration, Partner kit, workflow, integration, and notification rules and
+ports therefore remain usable independently of the current HTTP, EF, Clerk,
+QuickBooks, and Postmark adapters.
 
 ## Identity and authorization
 

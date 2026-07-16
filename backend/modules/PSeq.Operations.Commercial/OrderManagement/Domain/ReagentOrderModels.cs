@@ -1,4 +1,4 @@
-namespace PhaenoPortal.App.Features.OrderManagement.Domain;
+namespace PSeq.Operations.Commercial.OrderManagement.Domain;
 
 using PSeq.Operations.Commercial.Common.Persistence;
 

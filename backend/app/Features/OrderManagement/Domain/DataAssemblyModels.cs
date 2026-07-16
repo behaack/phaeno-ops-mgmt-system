@@ -1,6 +1,7 @@
 namespace PhaenoPortal.App.Features.OrderManagement.Domain;
 
 using PSeq.Operations.Commercial.Common.Persistence;
+using PSeq.Operations.Commercial.OrderManagement.Domain;
 
 public sealed class DataAssemblyRequest : IAudit, IConcurrency
 {

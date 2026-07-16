@@ -5,14 +5,10 @@ using System.Text;
 using System.Text.Json;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Options;
+using PSeq.Operations.Commercial.OrderManagement.Application;
+using PSeq.Operations.Commercial.OrderManagement.Domain;
 using PhaenoPortal.App.Features.Accounts.Services;
-using PhaenoPortal.App.Features.OrderManagement.Domain;
 using PhaenoPortal.App.Infrastructure.Persistence;
-
-public interface IOrderNotificationSender
-{
-    Task SendAsync(IReadOnlyList<string> recipients, string subject, string body, CancellationToken cancellationToken);
-}
 
 public sealed class LoggingOrderNotificationSender(ILogger<LoggingOrderNotificationSender> logger) : IOrderNotificationSender
 {

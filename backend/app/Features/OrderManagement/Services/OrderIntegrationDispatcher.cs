@@ -2,6 +2,8 @@ namespace PhaenoPortal.App.Features.OrderManagement.Services;
 
 using System.Text.Json;
 using Microsoft.EntityFrameworkCore;
+using PSeq.Operations.Commercial.OrderManagement.Application;
+using PSeq.Operations.Commercial.OrderManagement.Domain;
 using PhaenoPortal.App.Features.OrderManagement.Domain;
 using PhaenoPortal.App.Infrastructure.Persistence;
 

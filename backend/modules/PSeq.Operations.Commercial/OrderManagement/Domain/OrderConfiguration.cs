@@ -1,4 +1,4 @@
-namespace PhaenoPortal.App.Features.OrderManagement.Domain;
+namespace PSeq.Operations.Commercial.OrderManagement.Domain;
 
 using PSeq.Operations.Commercial.Common.Persistence;
 
@@ -348,7 +348,7 @@ public sealed class OrderSystemConfiguration : IAudit, IConcurrency
     public void IncrementVersion() => Version++;
 }
 
-internal static class OrderText
+public static class OrderText
 {
     public static string Required(string? value, string name, int maxLength)
     {

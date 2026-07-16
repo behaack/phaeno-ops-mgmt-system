@@ -42,8 +42,9 @@ deployment, or production activation.
   baseline sequence are recorded in
   `PSEQ-OPERATIONS-MIGRATION-PLAN.md`. The solution/project shell restructure
   and single-context schema target are implemented. The Accounts,
-  Relationships, and Data Provisioning domain/application slices are extracted
-  into Commercial. Commercial Order Management extraction, the destructive
+  Relationships, Data Provisioning, commercial configuration, Partner kit,
+  integration, notification, and workflow-support slices are extracted into
+  Commercial. Mixed Commercial/Laboratory/pipeline records, the destructive
   development reset, clean initial migration, and database rebuild are not.
 
 ## Goal

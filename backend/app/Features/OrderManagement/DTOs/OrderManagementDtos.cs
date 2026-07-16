@@ -1,5 +1,6 @@
 namespace PhaenoPortal.App.Features.OrderManagement.DTOs;
 
+using PSeq.Operations.Commercial.OrderManagement.Domain;
 using PhaenoPortal.App.Features.OrderManagement.Domain;
 
 public sealed record PagedResult<T>(IReadOnlyList<T> Items, int Page, int PageSize, int TotalCount);

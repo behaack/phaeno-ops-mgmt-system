@@ -30,10 +30,14 @@ and Laboratory projects. The following context/schema checkpoint then renamed
 the single context, removed the default schema, and mapped every current entity
 to `commercial_ops`. The Accounts, Relationships, and Data Provisioning domain
 entities and pure application code were then moved into Commercial, along with
-their environment-neutral ports. The API retains HTTP, EF mapping/orchestration,
-Clerk/Postmark, bootstrap, environment configuration, local file/scanner,
-notification dispatch, and error-translation adapters. No Laboratory entities
-were created, and the old database and migrations remain unchanged.
+their environment-neutral ports. Commercial configuration/catalog, Partner kit
+ordering and fulfillment, commercial workflow/outbox/notification records, and
+environment-neutral QuickBooks/notification ports followed as the first two
+Order Management sub-slices. The API retains HTTP, EF mapping/orchestration,
+Clerk/Postmark/QuickBooks adapters, environment configuration, local
+file/scanner, hosted dispatch, mixed/deferred Order Management records, and
+error translation. No Laboratory entities were created, and the old
+database and migrations remain unchanged.
 
 ## Findings
 
@@ -71,7 +75,7 @@ this inventory.
 | --- | --- | --- |
 | `backend/PhaenoPortal.slnx` | `backend/PSeq.Operations.slnx` | Stage 1 complete; external product remains Phaeno Portal. |
 | `PhaenoPortal.App` web project | `PSeq.Operations.Api` | Stage 1 shell rename complete; Accounts HTTP/persistence/external adapters remain here by design. |
-| Accounts, Relationship Management, Data Provisioning, and commercial Order Management code | `PSeq.Operations.Commercial` | Accounts, Relationships, and Data Provisioning domain/application code moved; commercial Order Management remains pending. |
+| Accounts, Relationship Management, Data Provisioning, and commercial Order Management code | `PSeq.Operations.Commercial` | Accounts, Relationships, and Data Provisioning domain/application code moved. Commercial configuration/catalog, Partner kit, integration, notification, and workflow-support code moved; mixed/deferred Order Management records are pending. |
 | Internal laboratory execution code currently inside Order Management | `PSeq.Operations.Laboratory` | Empty project shell exists; Lab implementation remains pending. |
 | `PhaenoPortal.Test` | `PSeq.Operations.Test` | Stage 1 shell rename complete; remains the initial combined test project. |
 | `PhaenoPortal.ReferenceJourney` | `PSeq.Operations.ReferenceJourney` | Stage 1 rename complete. |
@@ -97,7 +101,7 @@ no business records. See `PSEQ-OPERATIONS-MIGRATION-PLAN.md`.
 | Relationship state and service entitlements | Commercial `Relationships` plus API `Features/RelationshipManagement` adapters | Commercial | Domain entities and service-eligibility policy are in Commercial; the API retains HTTP, EF mapping/orchestration, actor enforcement, and error translation. Entitlements authorize work; they do not become Lab records. |
 | Curated data provisioning | Commercial `DataProvisioning` plus API `Features/DataProvisioning` adapters | Commercial | Domain entities, pure policy, manifest construction, and file/scanner/notification ports are in Commercial; the API retains HTTP, EF, authorization, environment configuration, local storage/scanner, Postmark, and dispatch adapters. Its `SourceSample` is curated reference-data provenance, not a received customer laboratory specimen. |
 | Health endpoints | `Features/Health` | API host | Retain as deployment/runtime infrastructure. |
-| Order Management | `Features/OrderManagement` | Split | Commercial ordering remains Commercial; physical laboratory execution moves to Laboratory; pipeline/file records remain deferred. |
+| Order Management | Commercial `OrderManagement` plus API `Features/OrderManagement` | Split | Commercial configuration/catalog, Partner kit domain rules, commercial workflow/outbox/notification records, and environment-neutral vendor ports are in Commercial. API adapters, mixed lab execution, and deferred pipeline/file records remain pending their approved splits. |
 | EF context and migrations | `Infrastructure/Persistence`, `Migrations` | Shared API composition with module-owned mappings | Keep one context and migration stream; replace one default schema with explicit mappings. |
 | Audit interceptor and current `audit_events` table | `Infrastructure/Persistence/Auditing` | Shared infrastructure | Retain current behavior during restructuring. Whether Lab audit records remain shared or become Lab-owned is deferred to migration design. |
 | React frontend | `frontend` | One Phaeno Portal application | Retain one application; split feature ownership and navigation internally. |
@@ -190,10 +194,10 @@ The technical pipeline and file boundary is deliberately unresolved.
 | --- | --- | --- |
 | `OrderManagementModelConfiguration` | Split | Commercial and Laboratory projects each own their EF mappings; the shared context applies both. Explicit `ToTable` schemas replace reliance on one default schema. |
 | `OrderManagementDtos` | Split | Customer/order/release DTOs remain Commercial. Lab commands, work records, batches, QC, and roles receive Laboratory-owned contracts. Do not share the current mixed DTO wholesale. |
-| `QuickBooksGateway` | Commercial | Retain with QuickBooks catalog and financial document integration. |
-| `OrderIntegrationDispatcher` | Commercial | Retain for commercial outbox work. Do not reuse its vendor-specific operations as the Lab provider contract. |
-| `OrderNotificationDispatcher` | Commercial | Retain; external communication is Commercial-owned. |
-| `OrderIdempotencyService` | Commercial initially | Retain with current APIs. A generic host-level abstraction may be extracted later only if both modules prove the need. |
+| `QuickBooksGateway` | Commercial port plus API adapters | Request/result contracts and `IQuickBooksGateway` are in Commercial; OAuth, HTTP, and logging implementations remain in the API. |
+| `OrderIntegrationDispatcher` | API adapter for Commercial outbox | Commercial owns the outbox record and vendor port. EF polling, hosted execution, and vendor translation remain in the API; do not reuse vendor-specific operations as the Lab provider contract. |
+| `OrderNotificationDispatcher` | Commercial port plus API adapters | `IOrderNotificationSender` is in Commercial; Postmark/logging senders and hosted EF dispatch remain in the API. |
+| `OrderIdempotencyService` | Commercial record plus API persistence adapter | The idempotency record is in Commercial; the current HTTP/EF service remains in the API. A generic host-level abstraction may be extracted later only if both modules prove the need. |
 | `OrderRequestContext` | Commercial | Retain organization/tenant commercial request context. Internal Lab authorization must use Phaeno-user roles rather than pretending to be a Customer or Partner tenant. |
 | `OperationalFileServices` | Major pipeline/file TBD | Preserve current behavior and location until scientific file ownership is approved. |
 | `OrderManagementOptions` | Split | Commercial integration/file settings remain Commercial or deferred; new Lab settings belong to Laboratory. |

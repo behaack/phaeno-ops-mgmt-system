@@ -29,7 +29,13 @@ authorize a reset of any shared environment.
   EF mapping/orchestration, Clerk/Postmark, bootstrap, environment configuration,
   local file/scanner, notification dispatch, and API error translation remain
   in the API.
-- Commercial Order Management and Laboratory-owned mappings remain pending.
+- Commercial Order Management extraction is in progress. Commercial
+  configuration/catalog, Partner kit ordering and fulfillment, commercial
+  workflow/outbox/notification records, and environment-neutral QuickBooks and
+  notification ports now live in Commercial. Mixed lab-service, assembly,
+  operational-file, and release records remain in the API pending their
+  approved splits.
+- Laboratory-owned mappings remain pending.
 - The database and seven historical migrations remain untouched. A temporary
   compile-only alias keeps their generated metadata buildable until Stage 3.
 - The automated data-pipeline and scientific file-management boundary remains
@@ -274,11 +280,12 @@ this stage.
 
 ### Stage 2 - Establish the New Context and Module Mappings
 
-Status: the context/schema checkpoint, initial architecture guard, and Accounts,
-Relationships, and Data Provisioning domain/application extractions are
-implemented on 2026-07-16. The API retains HTTP, EF mapping/orchestration,
-Clerk/Postmark, bootstrap, environment/configuration, local file/scanner,
-notification dispatch, and API error-translation adapters as intended.
+Status: the context/schema checkpoint, initial architecture guard, Accounts,
+Relationships, and Data Provisioning extractions, plus the first two commercial
+Order Management sub-slices are implemented on 2026-07-16. The API retains HTTP,
+EF mapping/orchestration, Clerk/Postmark/QuickBooks adapters,
+environment/configuration, local file/scanner, notification dispatch, and API
+error translation as intended.
 Items 4, 6, and 7 plus the remaining feature slices in item 5 remain pending.
 The solution builds; the backend test suite remains pending an explicit test
 request under repository policy.
@@ -294,7 +301,12 @@ request under repository policy.
    - Accounts domain and pure application policy: complete.
    - Relationship Management domain and pure application policy: complete.
    - Data Provisioning domain, pure application services, and ports: complete.
-   - Commercial Order Management: next.
+   - Commercial Order Management: in progress.
+     - Configuration/catalog and Partner kit domain/rules: complete.
+     - Commercial integration, outbox, notification, and workflow support:
+       complete.
+     - Mixed lab-service, assembly, operational-file, and release records: wait
+       for their approved Commercial/Laboratory/pipeline splits.
 6. Keep HTTP composition, the shared context, and concrete persistence adapters
    in the API project.
 7. Add the Laboratory project shell and its registration boundary without

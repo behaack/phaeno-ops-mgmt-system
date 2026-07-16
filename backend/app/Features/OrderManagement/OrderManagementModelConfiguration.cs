@@ -4,6 +4,7 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 using PSeq.Operations.Commercial.Common.Persistence;
 using PSeq.Operations.Commercial.Accounts.Domain;
+using PSeq.Operations.Commercial.OrderManagement.Domain;
 using PhaenoPortal.App.Features.OrderManagement.Domain;
 
 public static class OrderManagementModelConfiguration
