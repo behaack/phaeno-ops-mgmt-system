@@ -9,10 +9,11 @@ Those new changes are not authorized for implementation by this plan alone.
 
 On 2026-07-16, `LAB-OPERATIONS-PLAN.md` established approved planning direction
 for separating Commercial Operations from an internal, replaceable Lab
-Operations module. The first two code-ownership slices are implemented:
+Operations module. The first four code-ownership slices are implemented:
 commercial configuration/catalog, Partner kit domain rules, commercial
-workflow/outbox/notification records, and environment-neutral integration
-ports now live in Commercial. API adapters and mixed lab-service, assembly,
+workflow/outbox/notification records, environment-neutral integration ports,
+immutable lab-service request revisions, and lab-service/data-assembly quotes
+plus the external download audit now live in Commercial. API adapters and mixed lab-service, assembly,
 file, and release records remain in the API pending their approved splits. This plan remains
 authoritative for current behavior and commercial ordering; future laboratory
 execution changes must follow the Lab Operations plan and the approved clean

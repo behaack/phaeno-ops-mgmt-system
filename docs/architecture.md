@@ -31,8 +31,9 @@ The backend targets .NET 10 as a modular monolith:
   construction, and file/scanner/notification ports.
 - `modules/PSeq.Operations.Commercial/OrderManagement`: QuickBooks catalog and
   commercial configuration records, Partner kit ordering and fulfillment,
-  commercial workflow/outbox/notification records, and environment-neutral
-  QuickBooks and notification ports.
+  immutable request revisions and quotes, external download audit, commercial
+  workflow/outbox/notification records, and environment-neutral QuickBooks and
+  notification ports.
 - `app/Features/Accounts`: HTTP endpoints/contracts, authenticated-actor lookup,
   EF-backed orchestration, Clerk/Postmark adapters, and bootstrap composition.
 - `app/Features/RelationshipManagement`: HTTP contracts, EF mapping and
@@ -53,9 +54,9 @@ All `/api` failures should use the existing error envelope. Persistence applies 
 
 The API references Commercial, while Commercial does not reference the API or
 Laboratory. Extracted account, relationship, data-provisioning, commercial
-configuration, Partner kit, workflow, integration, and notification rules and
-ports therefore remain usable independently of the current HTTP, EF, Clerk,
-QuickBooks, and Postmark adapters.
+configuration, Partner kit, request-revision, quote, workflow, integration, and
+notification rules, ports, and external download audit therefore remain usable
+independently of the current HTTP, EF, Clerk, QuickBooks, and Postmark adapters.
 
 ## Identity and authorization
 

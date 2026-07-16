@@ -68,3 +68,20 @@ public enum OrderNotificationStatus
     Sent,
     Failed
 }
+
+public enum QuoteStatus
+{
+    Draft,
+    SyncPending,
+    Issued,
+    Superseded,
+    Accepted,
+    Expired,
+    Declined
+}
+
+public enum QuotePurpose
+{
+    Initial,
+    Change
+}

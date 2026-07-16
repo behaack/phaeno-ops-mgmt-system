@@ -29,8 +29,9 @@
   development database/migration reset and restructuring sequence. The
   solution/project shells and single-context schema target are restructured,
   and the Accounts, Relationships, Data Provisioning, commercial configuration,
-  Partner kit, integration, notification, and workflow-support slices are
-  extracted into Commercial. Mixed Commercial/Laboratory/pipeline records, the
+  Partner kit, integration, notification, workflow-support, request-revision,
+  quote, and external-download-audit slices are extracted into Commercial. Mixed
+  Commercial/Laboratory/pipeline records, the
   destructive development reset, clean initial migration, and Lab module are
   not implemented. The automated
   data pipeline and scientific file-management boundary is an explicit major

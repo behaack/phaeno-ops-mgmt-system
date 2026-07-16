@@ -33,7 +33,9 @@ entities and pure application code were then moved into Commercial, along with
 their environment-neutral ports. Commercial configuration/catalog, Partner kit
 ordering and fulfillment, commercial workflow/outbox/notification records, and
 environment-neutral QuickBooks/notification ports followed as the first two
-Order Management sub-slices. The API retains HTTP, EF mapping/orchestration,
+Order Management sub-slices. Immutable lab-service request revisions and
+lab-service/data-assembly quotes are the third; external download audit is the
+fourth. The API retains HTTP, EF mapping/orchestration,
 Clerk/Postmark/QuickBooks adapters, environment configuration, local
 file/scanner, hosted dispatch, mixed/deferred Order Management records, and
 error translation. No Laboratory entities were created, and the old
@@ -75,7 +77,7 @@ this inventory.
 | --- | --- | --- |
 | `backend/PhaenoPortal.slnx` | `backend/PSeq.Operations.slnx` | Stage 1 complete; external product remains Phaeno Portal. |
 | `PhaenoPortal.App` web project | `PSeq.Operations.Api` | Stage 1 shell rename complete; Accounts HTTP/persistence/external adapters remain here by design. |
-| Accounts, Relationship Management, Data Provisioning, and commercial Order Management code | `PSeq.Operations.Commercial` | Accounts, Relationships, and Data Provisioning domain/application code moved. Commercial configuration/catalog, Partner kit, integration, notification, and workflow-support code moved; mixed/deferred Order Management records are pending. |
+| Accounts, Relationship Management, Data Provisioning, and commercial Order Management code | `PSeq.Operations.Commercial` | Accounts, Relationships, and Data Provisioning domain/application code moved. Commercial configuration/catalog, Partner kit, integration, notification, workflow-support, request-revision, quote, and external download-audit code moved; mixed/deferred Order Management records are pending. |
 | Internal laboratory execution code currently inside Order Management | `PSeq.Operations.Laboratory` | Empty project shell exists; Lab implementation remains pending. |
 | `PhaenoPortal.Test` | `PSeq.Operations.Test` | Stage 1 shell rename complete; remains the initial combined test project. |
 | `PhaenoPortal.ReferenceJourney` | `PSeq.Operations.ReferenceJourney` | Stage 1 rename complete. |
@@ -101,7 +103,7 @@ no business records. See `PSEQ-OPERATIONS-MIGRATION-PLAN.md`.
 | Relationship state and service entitlements | Commercial `Relationships` plus API `Features/RelationshipManagement` adapters | Commercial | Domain entities and service-eligibility policy are in Commercial; the API retains HTTP, EF mapping/orchestration, actor enforcement, and error translation. Entitlements authorize work; they do not become Lab records. |
 | Curated data provisioning | Commercial `DataProvisioning` plus API `Features/DataProvisioning` adapters | Commercial | Domain entities, pure policy, manifest construction, and file/scanner/notification ports are in Commercial; the API retains HTTP, EF, authorization, environment configuration, local storage/scanner, Postmark, and dispatch adapters. Its `SourceSample` is curated reference-data provenance, not a received customer laboratory specimen. |
 | Health endpoints | `Features/Health` | API host | Retain as deployment/runtime infrastructure. |
-| Order Management | Commercial `OrderManagement` plus API `Features/OrderManagement` | Split | Commercial configuration/catalog, Partner kit domain rules, commercial workflow/outbox/notification records, and environment-neutral vendor ports are in Commercial. API adapters, mixed lab execution, and deferred pipeline/file records remain pending their approved splits. |
+| Order Management | Commercial `OrderManagement` plus API `Features/OrderManagement` | Split | Commercial configuration/catalog, Partner kit domain rules, request revisions, quotes, external download audit, commercial workflow/outbox/notification records, and environment-neutral vendor ports are in Commercial. API adapters, mixed lab execution, and deferred pipeline/file records remain pending their approved splits. |
 | EF context and migrations | `Infrastructure/Persistence`, `Migrations` | Shared API composition with module-owned mappings | Keep one context and migration stream; replace one default schema with explicit mappings. |
 | Audit interceptor and current `audit_events` table | `Infrastructure/Persistence/Auditing` | Shared infrastructure | Retain current behavior during restructuring. Whether Lab audit records remain shared or become Lab-owned is deferred to migration design. |
 | React frontend | `frontend` | One Phaeno Portal application | Retain one application; split feature ownership and navigation internally. |
@@ -135,9 +137,9 @@ All entities below are currently mapped by `PSeqOperationsDbContext` into
 | Current entity/table | Target owner/schema | Disposition and target meaning |
 | --- | --- | --- |
 | `LabServiceOrder` / `lab_service_orders` | Split between Commercial / `commercial_ops` and Laboratory / `lab_ops` | Replace the mixed aggregate. Commercial retains organization, commercial order number, request/quote/placement/cancellation, customer status, and release relationship. Lab receives a new `LabWorkOrder` containing authorization and execution state. Do not move the current table wholesale. |
-| `LabServiceRequestRevision` / `lab_service_request_revisions` | Commercial / `commercial_ops` | Retain as the immutable customer submission/revision snapshot associated with the commercial order. Lab receives the authorized execution payload through the future contract. |
+| `LabServiceRequestRevision` / `lab_service_request_revisions` | Commercial / `commercial_ops` | Now lives in Commercial. Retain as the immutable customer submission/revision snapshot associated with the commercial order. Lab receives the authorized execution payload through the future contract. |
 | `LabSample` / `lab_samples` | Split between Commercial / `commercial_ops` and Laboratory / `lab_ops` | Commercial retains the submitted specimen reference, declared metadata, requested service, and inbound-shipment context. Lab receives new accession, specimen, container, location, intake-disposition, and execution records. Preserve stable correlation IDs; do not move this table intact. |
-| `LabServiceQuote` / `lab_service_quotes` | Commercial / `commercial_ops` | Retain and rename with the commercial order model if needed. It has no Lab Operations ownership. |
+| `LabServiceQuote` / `lab_service_quotes` | Commercial / `commercial_ops` | Now lives in Commercial. Retain and rename with the commercial order model if needed. It has no Lab Operations ownership. |
 | `LabResultRelease` / `lab_result_releases` | Split; current record remains in Commercial until pipeline TBD is resolved | Lab eventually owns scientific approval and `Ready for release`; Commercial owns the immutable customer release/version and visibility. Pipeline version, provenance, manifest, and file assumptions remain explicitly unassigned. Do not move this table in the first restructure. |
 
 ### Partner Kit/Reagent Commerce
@@ -164,11 +166,11 @@ The technical pipeline and file boundary is deliberately unresolved.
 | --- | --- | --- |
 | `DataAssemblyRequest` / `data_assembly_requests` | Commercial case plus deferred processing boundary | Preserve current data. Replace the standalone-sale aggregate with an included assembly case under its PSeq order only after the pipeline contract is defined. Do not move it to `lab_ops`. |
 | `AssemblyInputRevision` / `assembly_input_revisions` | Major pipeline/file TBD | Freeze and preserve. Ownership depends on the future customer-data intake and pipeline boundary. |
-| `DataAssemblyQuote` / `data_assembly_quotes` | Commercial history / `commercial_ops` | Retain historical records, then retire the standalone quote path when the bundle model is implemented. |
+| `DataAssemblyQuote` / `data_assembly_quotes` | Commercial history / `commercial_ops` | Now lives in Commercial. Retain historical records, then retire the standalone quote path when the bundle model is implemented. |
 | `AssemblyProcessingRun` / `assembly_processing_runs` | Major pipeline/file TBD | Freeze and preserve. Do not classify as Lab Operations merely because it processes scientific data. |
 | `AssemblyOutputRelease` / `assembly_output_releases` | Split between deferred pipeline output and Commercial release | Preserve current records. Commercial will own customer release; pipeline metadata remains TBD. |
 | `ManagedOperationalFile` / `managed_operational_files` | Major pipeline/file TBD; remain in current schema | Preserve current behavior. Do not move Lab-result or assembly files into `lab_ops` until ownership is approved. |
-| `OperationalFileDownload` / `operational_file_downloads` | Commercial access audit / `commercial_ops` | Retain with the external download surface, subject to the future file-management decision. |
+| `OperationalFileDownload` / `operational_file_downloads` | Commercial access audit / `commercial_ops` | Now lives in Commercial. Retain with the external download surface, subject to the future file-management decision. |
 
 ### Shared Status, Operation, and Rule Types
 
@@ -178,7 +180,7 @@ The technical pipeline and file boundary is deliberately unresolved.
 | `LabSampleStatus` | Split. Customer submission/visible milestone state remains Commercial; accession, container, disposition, and execution state becomes Laboratory. |
 | `ReagentOrderStatus` | Commercial; rename toward `PSeqKitOrderStatus`. |
 | `AssemblyRequestStatus` | Preserve for current behavior, then replace with included assembly-case state only after the pipeline boundary is defined. |
-| `QuoteStatus`, `QuotePurpose` | Commercial. |
+| `QuoteStatus`, `QuotePurpose` | Commercial; now live in the Commercial module. |
 | `CommercialDocumentKind` | Commercial. |
 | `IntegrationStatus`, `IntegrationOperation` | Commercial for the existing QuickBooks/notification outbox. Future Lab provider delivery requires its own neutral contract types. |
 | `OperationalFilePurpose`, `OperationalFileScanStatus`, `FileReleaseStatus` | Major pipeline/file TBD; preserve current behavior and do not move to Laboratory. |

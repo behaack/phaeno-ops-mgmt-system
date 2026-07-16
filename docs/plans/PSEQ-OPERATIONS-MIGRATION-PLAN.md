@@ -32,9 +32,10 @@ authorize a reset of any shared environment.
 - Commercial Order Management extraction is in progress. Commercial
   configuration/catalog, Partner kit ordering and fulfillment, commercial
   workflow/outbox/notification records, and environment-neutral QuickBooks and
-  notification ports now live in Commercial. Mixed lab-service, assembly,
-  operational-file, and release records remain in the API pending their
-  approved splits.
+  notification ports now live in Commercial. Immutable lab-service request
+  revisions, lab-service/data-assembly quotes, and the external download audit
+  are also extracted. Mixed order, sample, processing, managed-file, and release
+  records remain in the API pending their approved splits.
 - Laboratory-owned mappings remain pending.
 - The database and seven historical migrations remain untouched. A temporary
   compile-only alias keeps their generated metadata buildable until Stage 3.
@@ -281,7 +282,7 @@ this stage.
 ### Stage 2 - Establish the New Context and Module Mappings
 
 Status: the context/schema checkpoint, initial architecture guard, Accounts,
-Relationships, and Data Provisioning extractions, plus the first two commercial
+Relationships, and Data Provisioning extractions, plus the first four commercial
 Order Management sub-slices are implemented on 2026-07-16. The API retains HTTP,
 EF mapping/orchestration, Clerk/Postmark/QuickBooks adapters,
 environment/configuration, local file/scanner, notification dispatch, and API
@@ -305,8 +306,10 @@ request under repository policy.
      - Configuration/catalog and Partner kit domain/rules: complete.
      - Commercial integration, outbox, notification, and workflow support:
        complete.
-     - Mixed lab-service, assembly, operational-file, and release records: wait
-       for their approved Commercial/Laboratory/pipeline splits.
+     - Commercial request-revision and quote records: complete.
+     - External operational-file download audit: complete.
+     - Mixed order, sample, assembly-processing, managed-file, and release
+       records: wait for their approved Commercial/Laboratory/pipeline splits.
 6. Keep HTTP composition, the shared context, and concrete persistence adapters
    in the API project.
 7. Add the Laboratory project shell and its registration boundary without
