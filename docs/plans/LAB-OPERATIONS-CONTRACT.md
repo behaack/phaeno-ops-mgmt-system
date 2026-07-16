@@ -25,6 +25,12 @@ external integrations, or deployments.
 - Initial provider: `InternalLabOperationsProvider` is registered in the API and
   implements durable command replay, authorization creation/amendment,
   cancellation feasibility, and current work projection lookup.
+- Provider conformance coverage: four opt-in PostgreSQL tests in
+  `backend/test/LabOperationsProviderPostgresTests.cs` cover atomic persistence,
+  command replay/conflict, authorization changes, cancellation, projection
+  lookup, and organization isolation. They require the explicitly configured
+  migrated reference database and were compiled, but not executed, in this
+  slice.
 - Not yet implemented: Commercial projection persistence, event payload
   families/delivery, Laboratory role enforcement, operator execution workflows,
   or a connection to current customer workflows.
@@ -617,21 +623,31 @@ Commercial-owned, transport-neutral, defaults to contract version 1,
 represents partial cancellation, carries no commercial-pricing,
 Customer/Partner-branch, vendor, pipeline, or file implementation fields, and
 that the internal adapter implements the provider port. Database-backed
-provider conformance tests remain required before this transition is complete
-and must prove at least:
+provider conformance coverage is implemented as opt-in PostgreSQL tests. A
+passing execution against the migrated reference database remains required
+before this transition is complete. Current structural, domain, and provider
+coverage proves:
 
 - Customer and Partner authorizations produce indistinguishable Lab behavior
 - a Partner authorization works without downstream customer identity
 - repeated identical commands do not create duplicate work
 - reused command IDs with different payloads are rejected
-- stale authorization amendments are rejected
-- newer projections cannot be overwritten by older events
-- customer-action exceptions never expose internal notes automatically
+- safe authorization amendments persist while stale or unsafe changes are
+  rejected or sent to manual review
+- full pre-receipt cancellation and partial cancellation of mixed-intake work
+  preserve the received specimen
 - one organization's projection never contains another organization's data or
   batch participation
-- `ReadyForRelease` does not make a result externally visible
-- internal and future fake/external providers satisfy the same contract tests
 - no pipeline/file ownership is inferred by the v1 types
+
+When durable Lab-to-Commercial event delivery and Commercial projection
+persistence are implemented, additional conformance coverage must prove:
+
+- newer projections cannot be overwritten by older events
+- customer-action exceptions never expose internal notes automatically
+- `ReadyForRelease` does not make a result externally visible
+- a future fake or external provider satisfies the same contract scenarios as
+  the internal provider
 
 ## Explicitly Deferred
 

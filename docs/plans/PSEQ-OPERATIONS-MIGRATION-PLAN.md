@@ -53,7 +53,8 @@ authorize a reset of any shared environment.
   69 backend tests, frontend lint/typecheck, 28 unit tests, client/SSR build,
   and 28 desktop/mobile Playwright scenarios pass against this checkpoint.
   The later internal-provider slice has a clean build, EF/model/schema checks,
-  and API health probe; its added tests have not been executed because the test
+  and API health probe. Four opt-in PostgreSQL provider-conformance tests now
+  compile against this checkpoint; they have not been executed because the test
   plan requires an explicit request.
 - The automated data-pipeline and scientific file-management boundary remains
   explicitly unresolved and outside the reset.
@@ -490,7 +491,9 @@ When that implementation is authorized:
 4. generate an additive `AddLabOperationsFoundation` migration - complete
 5. implement the internal provider behind the approved boundary - complete;
    routing new Commercial work through it remains pending
-6. retire direct writes to the mixed Commercial laboratory fields only after
+6. add opt-in PostgreSQL provider-conformance coverage - created and compiled;
+   execution against the migrated reference database remains pending
+7. retire direct writes to the mixed Commercial laboratory fields only after
    replacement behavior and tests exist
 
 Because the reset starts without legacy records, no historical backfill is

@@ -79,6 +79,13 @@ Do not execute this test plan unless explicitly requested.
 
 ## Created Database Verification
 
+- [x] `backend/test/LabOperationsProviderPostgresTests.cs` - opt-in PostgreSQL
+  provider conformance coverage for atomic authorization creation, exact command
+  replay, conflicting command-ID reuse, safe/stale/unsafe amendments, full and
+  partial pre-receipt cancellation, current projection lookup, Commercial
+  organization isolation, and prohibited commercial-field leakage. The tests
+  use `PSEQ_OPERATIONS_REFERENCE_CONNECTION`, require an already migrated
+  database, and explicitly clean their run-specific Lab and audit fixtures.
 - [x] `backend/tools/PSeq.Operations.ReferenceJourney` - controller-level
   authenticated PostgreSQL journey covering approved service-request source
   enforcement, rejection of an onboarding-only source, usable entitlement
@@ -105,11 +112,6 @@ Do not execute this test plan unless explicitly requested.
   specimen placement, Partner data-assembly placement, ineligible/custom-work
   routing, immutable pricing snapshots, Partner downstream-identity omission,
   post-placement scientific validation, and cross-tenant denial.
-- [ ] Internal Lab Operations provider conformance - add database-backed coverage
-  for exact replay of identical commands, conflicting command-ID reuse, atomic
-  authorization creation, stale and unsafe amendments, full and partial
-  pre-receipt cancellation, and projection lookup without cross-organization or
-  commercial-field leakage.
 - [ ] Lab-to-Commercial projection delivery - when implemented, cover durable
   event replay, out-of-order projection rejection, exception audience filtering,
   and the guarantee that `ReadyForRelease` does not publish customer files.
