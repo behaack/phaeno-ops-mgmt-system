@@ -126,8 +126,7 @@ export const mainMenuItems: readonly MainMenuItem[] = [
     icon: BookOpenText,
     group: 'resources',
     visibleWhen: (_session, context) =>
-      context.selectedOrganizationKind === 'Customer' ||
-      context.selectedOrganizationKind === 'Partner' ||
+      isExternalOrganizationKind(context.selectedOrganizationKind) ||
       context.selectedOrganizationKind === 'Phaeno',
   },
   {

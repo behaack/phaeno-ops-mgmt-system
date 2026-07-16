@@ -1,6 +1,6 @@
 # Account and access
 
-Your Phaeno Portal access is created through an organization invitation. The selected organization and your role determine which Customer records and actions are available.
+Your Phaeno Portal access is created through an organization invitation. The current organization and your role determine which Customer records and actions are available.
 
 ## Accept an invitation
 
@@ -13,24 +13,24 @@ An invitation link is private and can expire, be revoked, or be replaced by a ne
 
 The portal does not collect or reset your sign-in password. Complete sign-in and account recovery through the identity service shown on the sign-in page.
 
-## Choose the correct organization
+## Confirm the current organization
 
-If you belong to more than one organization, use the organization switcher in the user menu before opening a job or Data Library record. The selected organization scopes every portal read and action.
+The user menu shows the organization active in your current session. That organization scopes every portal read and action.
 
-If an expected record or action is missing, confirm the selected organization before reporting a problem.
+Self-service switching between multiple external organization memberships is not currently available. If the wrong organization is shown, stop before opening a job or Data Library record and contact Phaeno. If an expected record or action is missing, confirm the current organization before reporting a problem.
 
 ## Understand roles
 
-- **Member** can review the selected Customer organization’s work and download files that have been released.
+- **Member** can review the current Customer organization’s work and download files that have been released.
 - **Administrator** can also create and submit laboratory requests, accept quotes, request cancellations, and manage organization membership.
 
-Actions remain hidden or unavailable when the selected organization or your role does not permit them. Phaeno can assist with access, but it cannot bypass the organization boundary to expose another Customer’s records.
+Actions remain hidden or unavailable when the current organization or your role does not permit them. Phaeno can assist with access, but it cannot bypass the organization boundary to expose another Customer’s records.
 
 ## Manage Customer members
 
-The authorization model allows Customer administrators to manage membership only for their selected organization. The current **User management** screen is a session-only preview: changes made there are not sent to the durable invitation and membership APIs.
+The authorization model allows Customer administrators to manage membership only for their current organization. The current **User management** screen is a session-only preview: changes made there are not sent to the durable invitation and membership APIs.
 
-Until the connected administration screen is released, contact Phaeno for durable invitation or membership changes. Provide the organization and person’s exact email, but never an invitation token. The durable workflow supports resending or revoking pending invitations, membership deactivation, and reactivation only through a fresh invitation and acceptance.
+Contact Phaeno for durable invitation or membership changes. Provide the organization and person’s exact email, but never an invitation token. The durable workflow supports resending or revoking pending invitations, membership deactivation, and reactivation only through a fresh invitation and acceptance.
 
 ## Resolve common access states
 
@@ -39,8 +39,9 @@ Until the connected administration screen is released, contact Phaeno for durabl
 | Invitation link unavailable | Ask an administrator to confirm the invitation is still pending and resend it. Use only the newest link. |
 | Email does not match | Sign out and use the email address that received the invitation, or request a corrected invitation. |
 | No active memberships | Ask your Customer administrator to coordinate a fresh invitation with Phaeno. |
-| Organization unavailable | Confirm the selected organization and ask Phaeno whether the organization is inactive. |
+| Wrong organization shown | Stop before opening records and contact Phaeno to verify the active membership. |
+| Organization unavailable | Ask Phaeno whether the organization is inactive. |
 | Account disabled | Contact Phaeno. A Customer administrator cannot override a globally disabled account. |
-| Expected action missing | Confirm the selected organization, then ask an administrator to review your role. |
+| Expected action missing | Confirm the current organization, then ask an administrator to review your role. |
 
 Never send a password, sign-in code, invitation token, or browser storage value in a support message.

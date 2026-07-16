@@ -28,10 +28,10 @@ Do not execute this test plan unless explicitly requested.
   reagent ordering and data assembly.
 - [x] `frontend/e2e/order-management.spec.ts` - Phaeno mock context exposes
   operational queues and order configuration.
-- [x] `frontend/e2e/documentation.spec.ts` - Customer and Partner contexts are
-  offered their own guide set and cross-audience routes are denied, Phaeno can
-  switch among all three audience guides, MDX content renders on guide routes,
-  and Prospect direct access is denied.
+- [x] `frontend/e2e/documentation.spec.ts` - Prospect, Customer, and Partner
+  contexts are offered their own guide set and cross-audience routes are
+  denied, Phaeno can switch among all four audience guide sets, and MDX content
+  renders on guide routes.
 - [x] `frontend/e2e/customers.spec.ts` - desktop and mobile organization
   administration use accessible consequence dialogs for organization,
   membership, and entitlement lifecycle actions; focus returns to the invoking

@@ -262,10 +262,10 @@ until QuickBooks confirms payment. The configurable quote-validity default is
 Status: implemented.
 
 The current help system uses portable MDX inside the TanStack portal rather than
-a separate Astro application. Customer and Partner content is locale-aware with
-`en-US` initially; Phaeno-only help may remain US English. Search is deferred to
-a backend index that must filter results by authenticated audience and locale.
-Browser-bundled help contains no confidential procedures.
+a separate Astro application. Prospect, Customer, and Partner content is
+locale-aware with `en-US` initially; Phaeno-only help may remain US English.
+Search is deferred to a backend index that must filter results by authenticated
+audience and locale. Browser-bundled help contains no confidential procedures.
 
 ## 2026-07-15: HubSpot is the relationship CRM and Portal access is an explicit handoff
 

@@ -150,20 +150,21 @@ provisioning and source workspaces, tenant Data Library, Customer lab services,
 Partner reagent ordering, Partner data assembly, Phaeno order operations and
 configuration, and the in-portal documentation system.
 
-Invitation acceptance and the scientific, provisioning, and order workflows use
-connected API clients. The current organization and user administration screens
-still use session-only mock data; they demonstrate the intended authorization
-and UI boundary but are not a durable administration client. The backend account
-APIs remain the source of truth until those screens are connected.
+Invitation acceptance and the scientific, provisioning, order, and organization
+administration workflows use connected API clients. The standalone user
+administration screen still uses session-only mock data; it demonstrates the
+intended authorization and UI boundary but is not a durable administration
+client. Organization workspaces use the backend account APIs for durable
+organization, request, entitlement, membership, and invitation changes.
 
-User documentation is authored as portable MDX. Customer and Partner content is
-stored by locale, with `en-US` as the only current locale; Phaeno-only content
-may remain US English. The frontend registry owns audience, locale, slug,
-summary, section, order, and review metadata. The selected organization filters
-the offered guide set, while Phaeno users may view external guides for support.
-Because the current corpus is compiled into browser assets, it contains no
-confidential procedures. Future help search will use a backend index with
-authenticated audience and locale filtering.
+User documentation is authored as portable MDX. Prospect, Customer, and Partner
+content is stored by locale, with `en-US` as the only current locale;
+Phaeno-only content may remain US English. The frontend registry owns audience,
+locale, slug, summary, section, order, and review metadata. The current
+organization filters the offered guide set, while Phaeno users may view all
+external guides for support. Because the current corpus is compiled into
+browser assets, it contains no confidential procedures. Future help search will
+use a backend index with authenticated audience and locale filtering.
 
 ## Configuration and deployment
 

@@ -21,13 +21,18 @@ const documentationMessagesByLocale = {
     missingGuideDescription:
       'This guide does not exist or is not available for the selected organization.',
     unavailableDescription:
-      'Select an active Customer, Partner, or Phaeno organization to open its guides.',
+      'Select an active Prospect, Customer, Partner, or Phaeno organization to open its guides.',
     documentationHeading: (audienceLabel: string) =>
       `${audienceLabel} documentation`,
     guidesNavigationLabel: (audienceLabel: string) =>
       `${audienceLabel} guides`,
     reviewed: (formattedDate: string) => `Reviewed ${formattedDate}`,
     audiences: {
+      prospect: {
+        label: 'Prospect',
+        description:
+          'Granted curated data, downloads, governance, organization access, and support.',
+      },
       customer: {
         label: 'Customer',
         description:

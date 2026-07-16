@@ -204,13 +204,13 @@ boundary.
   - Invitations are organization-scoped, email-bound, time-limited, and carry a single-use raw token only in the invitation link.
   - The invite page captures and scrubs the token, requires Clerk authentication, then verifies the authenticated email before showing organization or role details.
   - Acceptance creates or reactivates one internal organization membership; it does not collect or store a portal password.
-  - The authorization model permits eligible external organization administrators to manage invitations and memberships only for their selected organization, while authorized Phaeno users manage organizations and platform access. The current organization/user administration screens are mock-backed previews and are not yet connected to those durable API workflows.
+  - The authorization model permits eligible external organization administrators to manage invitations and memberships only for their selected organization, while authorized Phaeno users manage organizations and platform access. Phaeno organization workspaces are connected to the durable organization, invitation, membership, and entitlement APIs; the standalone User management screen remains a session-only preview.
   - Users and organizations are deactivated rather than normally deleted. Reactivating an inactive membership requires a fresh invitation.
 - **Authentication**: Clerk-issued bearer JWTs validated by the ASP.NET Core API.
 - **Multi-factor authentication**: Owned by the configured Clerk authentication policy; the portal does not implement or claim a separate 2FA system.
 - **Tenant enforcement**: Every tenant read, write, file download, and commercial action is scoped by the authenticated internal user and active selected membership.
 - **Commercial boundary**: QuickBooks Online is the only implemented external commercial system. There is no ERP or LIMS integration in the running application.
-- **Help boundary**: Customer and Partner help is locale-ready and audience-filtered in the UI. Because current MDX is browser-bundled, it contains no confidential procedures; future search must enforce audience and locale in the backend.
+- **Help boundary**: Prospect, Customer, and Partner help is locale-ready and audience-filtered in the UI. Because current MDX is browser-bundled, it contains no confidential procedures; future search must enforce audience and locale in the backend.
 - **Testing**: Vitest for unit tests, Playwright for end-to-end (e2e) tests
 - **Styling**: Token-based CSS system with light/dark mode support for easy reskinning
 

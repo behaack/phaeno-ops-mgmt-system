@@ -40,6 +40,7 @@ test('lets Phaeno support switch among all audience guides', async ({ page }) =>
   const audienceNavigation = page.getByRole('navigation', {
     name: 'Documentation audience',
   })
+  await expect(audienceNavigation.getByRole('link', { name: 'Prospect' })).toBeVisible()
   await expect(audienceNavigation.getByRole('link', { name: 'Customer' })).toBeVisible()
   await expect(audienceNavigation.getByRole('link', { name: 'Partner' })).toBeVisible()
   await expect(audienceNavigation.getByRole('link', { name: 'Phaeno' })).toBeVisible()
@@ -51,10 +52,17 @@ test('lets Phaeno support switch among all audience guides', async ({ page }) =>
   ).toBeVisible()
 })
 
-test('does not offer documentation to Prospect organizations', async ({ page }) => {
+test('shows Prospect guides and denies a cross-audience route', async ({ page }) => {
   await selectOrganization(page, '7dbd474b-c73f-4df4-a9c9-9f1a72b5341b')
   await page.goto('/docs')
 
+  await expect(
+    page.getByRole('heading', { name: 'Prospect documentation' }),
+  ).toBeVisible()
+  await expect(page.getByRole('link', { name: 'Use the Data Library' })).toBeVisible()
+  await expect(page.getByRole('navigation', { name: 'Documentation audience' })).toHaveCount(0)
+
+  await page.goto('/docs/customer/getting-started')
   await expect(
     page.getByRole('heading', { name: 'Documentation unavailable' }),
   ).toBeVisible()

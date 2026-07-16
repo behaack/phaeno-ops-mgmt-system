@@ -6,6 +6,12 @@ import CustomerGettingStarted from '#/content/docs/en-US/customer/getting-starte
 import CustomerLabServices from '#/content/docs/en-US/customer/lab-services.mdx'
 import CustomerResultsAndBilling from '#/content/docs/en-US/customer/results-and-billing.mdx'
 import CustomerStatusesAndTroubleshooting from '#/content/docs/en-US/customer/statuses-and-troubleshooting.mdx'
+import ProspectAccountAndAccess from '#/content/docs/en-US/prospect/account-and-access.mdx'
+import ProspectDataGovernanceAndDownloads from '#/content/docs/en-US/prospect/data-governance-and-downloads.mdx'
+import ProspectDataLibrary from '#/content/docs/en-US/prospect/data-library.mdx'
+import ProspectGettingStarted from '#/content/docs/en-US/prospect/getting-started.mdx'
+import ProspectOrganizationAndTransition from '#/content/docs/en-US/prospect/organization-and-transition.mdx'
+import ProspectStatusesAndTroubleshooting from '#/content/docs/en-US/prospect/statuses-and-troubleshooting.mdx'
 import PartnerAccountAndAccess from '#/content/docs/en-US/partner/account-and-access.mdx'
 import PartnerDataAndOrganization from '#/content/docs/en-US/partner/data-and-organization.mdx'
 import PartnerDataAssembly from '#/content/docs/en-US/partner/data-assembly.mdx'
@@ -24,6 +30,7 @@ import {
 } from './documentation-localization'
 
 export const documentationAudienceKeys = [
+  'prospect',
   'customer',
   'partner',
   'phaeno',
@@ -51,6 +58,9 @@ export const documentationAudiences: Record<
   DocumentationAudience,
   { landingSlug: string }
 > = {
+  prospect: {
+    landingSlug: 'getting-started',
+  },
   customer: {
     landingSlug: 'getting-started',
   },
@@ -64,14 +74,86 @@ export const documentationAudiences: Record<
 
 export const documentationEntries: readonly DocumentationEntry[] = [
   {
+    audience: 'prospect',
+    locale: 'en-US',
+    slug: 'getting-started',
+    title: 'Getting started',
+    summary:
+      'Confirm the current organization, understand Prospect access, and find granted data.',
+    section: 'Basics',
+    order: 10,
+    reviewedAt: '2026-07-16',
+    Content: ProspectGettingStarted,
+  },
+  {
+    audience: 'prospect',
+    locale: 'en-US',
+    slug: 'account-and-access',
+    title: 'Account and access',
+    summary:
+      'Accept invitations, confirm the current organization, understand roles, and resolve access problems.',
+    section: 'Basics',
+    order: 20,
+    reviewedAt: '2026-07-16',
+    Content: ProspectAccountAndAccess,
+  },
+  {
+    audience: 'prospect',
+    locale: 'en-US',
+    slug: 'data-library',
+    title: 'Use the Data Library',
+    summary:
+      'Review explicitly granted package versions and verify file or archive downloads.',
+    section: 'Data access',
+    order: 30,
+    reviewedAt: '2026-07-16',
+    Content: ProspectDataLibrary,
+  },
+  {
+    audience: 'prospect',
+    locale: 'en-US',
+    slug: 'data-governance-and-downloads',
+    title: 'Data governance and downloads',
+    summary:
+      'Understand revocation, quarantine, retirement, download history, and safe governance responses.',
+    section: 'Data access',
+    order: 40,
+    reviewedAt: '2026-07-16',
+    Content: ProspectDataGovernanceAndDownloads,
+  },
+  {
+    audience: 'prospect',
+    locale: 'en-US',
+    slug: 'organization-and-transition',
+    title: 'Organization access and transition',
+    summary:
+      'Understand membership boundaries and what changes when Phaeno converts a Prospect relationship.',
+    section: 'Organization',
+    order: 50,
+    reviewedAt: '2026-07-16',
+    Content: ProspectOrganizationAndTransition,
+  },
+  {
+    audience: 'prospect',
+    locale: 'en-US',
+    slug: 'statuses-and-troubleshooting',
+    title: 'Statuses and troubleshooting',
+    summary:
+      'Resolve common grant, package, download, checksum, organization, and access problems.',
+    section: 'Support',
+    order: 60,
+    reviewedAt: '2026-07-16',
+    Content: ProspectStatusesAndTroubleshooting,
+  },
+  {
     audience: 'customer',
     locale: 'en-US',
     slug: 'getting-started',
     title: 'Getting started',
-    summary: 'Choose the right organization, understand access, and find Customer work.',
+    summary: 'Confirm the current organization, understand access, and find Customer work.',
     section: 'Basics',
     order: 10,
-    reviewedAt: '2026-07-14',
+    reviewedAt: '2026-07-16',
     Content: CustomerGettingStarted,
   },
   {
@@ -79,10 +161,10 @@ export const documentationEntries: readonly DocumentationEntry[] = [
     locale: 'en-US',
     slug: 'account-and-access',
     title: 'Account and access',
-    summary: 'Accept invitations, select an organization, understand roles, and resolve access problems.',
+    summary: 'Accept invitations, confirm the current organization, understand roles, and resolve access problems.',
     section: 'Basics',
     order: 20,
-    reviewedAt: '2026-07-14',
+    reviewedAt: '2026-07-16',
     Content: CustomerAccountAndAccess,
   },
   {
@@ -93,7 +175,7 @@ export const documentationEntries: readonly DocumentationEntry[] = [
     summary: 'Create a request, submit samples, accept a quote, and track laboratory work.',
     section: 'Laboratory work',
     order: 30,
-    reviewedAt: '2026-07-14',
+    reviewedAt: '2026-07-16',
     Content: CustomerLabServices,
   },
   {
@@ -104,7 +186,7 @@ export const documentationEntries: readonly DocumentationEntry[] = [
     summary: 'Understand result readiness, credit and payment gates, and QuickBooks documents.',
     section: 'Laboratory work',
     order: 40,
-    reviewedAt: '2026-07-14',
+    reviewedAt: '2026-07-16',
     Content: CustomerResultsAndBilling,
   },
   {
@@ -115,7 +197,7 @@ export const documentationEntries: readonly DocumentationEntry[] = [
     summary: 'Use assigned data packages and understand Customer organization membership and its current interface boundary.',
     section: 'Data and access',
     order: 50,
-    reviewedAt: '2026-07-14',
+    reviewedAt: '2026-07-16',
     Content: CustomerDataAndOrganization,
   },
   {
@@ -126,7 +208,7 @@ export const documentationEntries: readonly DocumentationEntry[] = [
     summary: 'Interpret job, sample, quote, payment, scan, and release states and resolve common problems.',
     section: 'Support',
     order: 60,
-    reviewedAt: '2026-07-14',
+    reviewedAt: '2026-07-16',
     Content: CustomerStatusesAndTroubleshooting,
   },
   {
@@ -134,10 +216,10 @@ export const documentationEntries: readonly DocumentationEntry[] = [
     locale: 'en-US',
     slug: 'getting-started',
     title: 'Getting started',
-    summary: 'Choose the right Partner, understand access, and find Partner work.',
+    summary: 'Confirm the current Partner, understand access, and find Partner work.',
     section: 'Basics',
     order: 10,
-    reviewedAt: '2026-07-14',
+    reviewedAt: '2026-07-16',
     Content: PartnerGettingStarted,
   },
   {
@@ -145,10 +227,10 @@ export const documentationEntries: readonly DocumentationEntry[] = [
     locale: 'en-US',
     slug: 'account-and-access',
     title: 'Account and access',
-    summary: 'Accept invitations, select a Partner, understand roles, and resolve access problems.',
+    summary: 'Accept invitations, confirm the current Partner, understand roles, and resolve access problems.',
     section: 'Basics',
     order: 20,
-    reviewedAt: '2026-07-14',
+    reviewedAt: '2026-07-16',
     Content: PartnerAccountAndAccess,
   },
   {
@@ -159,7 +241,7 @@ export const documentationEntries: readonly DocumentationEntry[] = [
     summary: 'Use negotiated offerings, place orders, approve changes, and track shipments.',
     section: 'Partner work',
     order: 30,
-    reviewedAt: '2026-07-14',
+    reviewedAt: '2026-07-16',
     Content: PartnerReagentOrders,
   },
   {
@@ -170,7 +252,7 @@ export const documentationEntries: readonly DocumentationEntry[] = [
     summary: 'Submit inputs, accept a job quote, follow processing, and download outputs.',
     section: 'Partner work',
     order: 40,
-    reviewedAt: '2026-07-14',
+    reviewedAt: '2026-07-16',
     Content: PartnerDataAssembly,
   },
   {
@@ -181,7 +263,7 @@ export const documentationEntries: readonly DocumentationEntry[] = [
     summary: 'Use curated data, understand commercial documents, and understand Partner membership and its current interface boundary.',
     section: 'Data and access',
     order: 50,
-    reviewedAt: '2026-07-14',
+    reviewedAt: '2026-07-16',
     Content: PartnerDataAndOrganization,
   },
   {
@@ -192,7 +274,7 @@ export const documentationEntries: readonly DocumentationEntry[] = [
     summary: 'Interpret reagent, assembly, commercial, scan, shipment, and release states.',
     section: 'Support',
     order: 60,
-    reviewedAt: '2026-07-14',
+    reviewedAt: '2026-07-16',
     Content: PartnerStatusesAndTroubleshooting,
   },
   {
@@ -203,7 +285,7 @@ export const documentationEntries: readonly DocumentationEntry[] = [
     summary: 'Select the Phaeno workspace, find operational tools, and support users safely.',
     section: 'Basics',
     order: 10,
-    reviewedAt: '2026-07-14',
+    reviewedAt: '2026-07-16',
     Content: PhaenoGettingStarted,
   },
   {
@@ -214,7 +296,7 @@ export const documentationEntries: readonly DocumentationEntry[] = [
     summary: 'Manage organizations, Portal requests, readiness, service entitlements, invitations, and access.',
     section: 'Platform operations',
     order: 20,
-    reviewedAt: '2026-07-15',
+    reviewedAt: '2026-07-16',
     Content: PhaenoOrganizationAndUserAdministration,
   },
   {
@@ -225,7 +307,7 @@ export const documentationEntries: readonly DocumentationEntry[] = [
     summary: 'Manage organizations, source data, packages, grants, and governance events.',
     section: 'Platform operations',
     order: 30,
-    reviewedAt: '2026-07-14',
+    reviewedAt: '2026-07-16',
     Content: PhaenoDataProvisioningAndAccounts,
   },
   {
@@ -236,7 +318,7 @@ export const documentationEntries: readonly DocumentationEntry[] = [
     summary: 'Operate Customer lab, Partner reagent, and Partner assembly workflows.',
     section: 'Platform operations',
     order: 40,
-    reviewedAt: '2026-07-14',
+    reviewedAt: '2026-07-16',
     Content: PhaenoOrderOperations,
   },
   {
@@ -247,7 +329,7 @@ export const documentationEntries: readonly DocumentationEntry[] = [
     summary: 'Maintain scientific and commercial rules and recover durable integrations.',
     section: 'Platform operations',
     order: 50,
-    reviewedAt: '2026-07-14',
+    reviewedAt: '2026-07-16',
     Content: PhaenoConfigurationAndRecovery,
   },
   {
@@ -258,7 +340,7 @@ export const documentationEntries: readonly DocumentationEntry[] = [
     summary: 'Triage operational states and safely recover integrations, files, releases, and notifications.',
     section: 'Support',
     order: 60,
-    reviewedAt: '2026-07-14',
+    reviewedAt: '2026-07-16',
     Content: PhaenoStatusesAndRecovery,
   },
 ] as const

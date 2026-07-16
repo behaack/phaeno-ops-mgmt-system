@@ -1,6 +1,12 @@
 # Organization and user administration
 
-Phaeno administrators manage organizations, Portal readiness, service entitlements, integration requests, and global access. Customer and Partner administrators manage membership only within their own organization. Access is invitation-based and every administrative change is audited.
+Phaeno administrators manage organizations, Portal readiness, service entitlements, integration requests, and global access. Prospect, Customer, and Partner administrators manage membership only within their own organization. Access is invitation-based and every durable administrative change is audited.
+
+## Know which administration surface is durable
+
+The **Organizations** directory and each organization workspace are connected to the durable API. Changes to organization details, Portal requests, service entitlements, members, and invitations made in those workspaces persist and are audited.
+
+The standalone **User management** screen remains a session-only preview. Additions, role changes, deactivations, and reactivations made there do not persist. Use the connected organization workspace for organization-scoped members and invitations. Treat a global user lifecycle change as an authorized Phaeno support task until the standalone screen is connected; never tell a user that a preview-only change completed their request.
 
 ## Create and classify organizations
 
@@ -19,7 +25,7 @@ Record readiness as **Not reviewed**, **Pending**, **Ready**, or **Blocked**, wi
 
 ## Review Portal requests
 
-Use the Portal request queue to record onboarding, evaluation, service, relationship, Sales-assisted order, and offboarding handoffs. Requests entered directly in the Portal are marked **Manual**. HubSpot-originated requests will use the same durable queue after the paid-tier integration is enabled.
+Use the Portal request queue to record onboarding, evaluation, service, relationship, Sales-assisted order, and offboarding handoffs. Requests entered directly in the Portal are marked **Manual**. HubSpot-originated request intake is not connected in the current portal.
 
 Approve or decline a pending request with a reason. Approval records the decision only. Complete each approved organization, invitation, entitlement, or order change through its owning workflow, verify the outcome, and then use **Mark applied** to record what was completed. When the request was submitted before an organization existed, select the completed organization while marking it applied; this links the request to that organization’s history. This separation prevents a review click from silently granting access or creating commercial work.
 
@@ -57,9 +63,9 @@ PSeq Kit includes kit fulfillment followed by data submission and assembly. Do n
 
 ## Deactivate and restore access
 
-Deactivate a membership to remove one organization relationship. Deactivate the user globally only when all portal access should stop. Deactivate an organization when none of its memberships should be usable. Organization and membership deactivation each open a consequence dialog; verify the named organization or person before confirming.
+Deactivate a membership in the connected organization workspace to remove one organization relationship. Deactivate an organization when none of its memberships should be usable. Each action opens a consequence dialog; verify the named organization or person before confirming.
 
-A deactivated membership is restored through a fresh invitation and acceptance. A globally disabled user must first be reactivated by an authorized Phaeno administrator. Preserve historical records; do not delete users, memberships, or organizations to resolve access problems.
+A deactivated membership is restored through a fresh invitation and acceptance. When all portal access must stop, coordinate the durable global user change through the authorized Phaeno support process rather than the preview-only **User management** screen. A globally disabled user must be reactivated through that same authorized process before membership access can resume. Preserve historical records; do not delete users, memberships, or organizations to resolve access problems.
 
 ## Triage access safely
 

@@ -339,6 +339,8 @@ function getAudienceForOrganization(
   kind: OrganizationKind | null | undefined,
 ): DocumentationAudience | null {
   switch (kind) {
+    case 'Prospect':
+      return 'prospect'
     case 'Customer':
       return 'customer'
     case 'Partner':

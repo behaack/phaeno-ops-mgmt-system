@@ -38,9 +38,13 @@ describe('documentation registry', () => {
   })
 
   it('includes locale in external search identities but not internal Phaeno identities', () => {
+    const prospectGuide = getDocumentationEntry('prospect', 'getting-started')
     const customerGuide = getDocumentationEntry('customer', 'getting-started')
     const phaenoGuide = getDocumentationEntry('phaeno', 'getting-started')
 
+    expect(getDocumentationSearchIdentity(prospectGuide!)).toBe(
+      'prospect/en-US/getting-started',
+    )
     expect(getDocumentationSearchIdentity(customerGuide!)).toBe(
       'customer/en-US/getting-started',
     )
@@ -50,9 +54,13 @@ describe('documentation registry', () => {
   })
 
   it('resolves a guide only within its audience', () => {
+    expect(getDocumentationEntry('prospect', 'data-library')?.title).toBe(
+      'Use the Data Library',
+    )
     expect(getDocumentationEntry('customer', 'lab-services')?.title).toBe(
       'Request laboratory services',
     )
     expect(getDocumentationEntry('partner', 'lab-services')).toBeUndefined()
+    expect(getDocumentationEntry('prospect', 'lab-services')).toBeUndefined()
   })
 })
