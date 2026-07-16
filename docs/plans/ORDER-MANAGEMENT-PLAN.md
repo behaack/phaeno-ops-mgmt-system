@@ -7,6 +7,13 @@ The initial-release discovery and implementation were completed on 2026-07-14.
 Product direction expanded on 2026-07-15 through the HubSpot lifecycle plan.
 Those new changes are not authorized for implementation by this plan alone.
 
+On 2026-07-16, `LAB-OPERATIONS-PLAN.md` established approved planning direction
+for separating Commercial Operations from an internal, replaceable Lab
+Operations module. That separation is not implemented. This plan remains
+authoritative for current behavior and commercial ordering; future laboratory
+execution changes must follow the Lab Operations plan and an explicitly
+approved, data-preserving migration.
+
 ## Status
 
 - Development state: the approved initial-release workflows are implemented in
@@ -67,8 +74,10 @@ Those new changes are not authorized for implementation by this plan alone.
   not connected today. There is no separate order-management, ERP, LIMS,
   laboratory workflow, fulfillment, invoicing, or contract-management system
   outside Phaeno Portal.
-- Specifically, Phaeno has no ERP and no LIMS. QuickBooks Online must not be
-  modeled as either one.
+- Specifically, Phaeno currently has no ERP and no third-party LIMS. QuickBooks
+  Online must not be modeled as either one. A fit-for-purpose internal Lab
+  Operations module is approved planning direction in
+  `LAB-OPERATIONS-PLAN.md`, but is not implemented.
 - Do not design a handoff to an assumed external operational system. The portal
   is the operational system of record for confirmed ordering, sample receipt
   and accessioning, laboratory progress, data processing and release, reagent

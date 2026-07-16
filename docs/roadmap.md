@@ -17,6 +17,11 @@
   HubSpot relationship, evaluation, onboarding, service-entitlement, direct and
   Sales-assisted sale, relationship-change, and offboarding lifecycle. No CRM
   integration is implemented.
+- `docs/plans/LAB-OPERATIONS-PLAN.md`: approved future separation of Commercial
+  Operations from a fit-for-purpose internal Lab Operations module, including
+  versioned protocols, reagent and library preparation, outsourced NGS, and a
+  replaceable provider boundary. It is not implemented, and the automated data
+  pipeline and scientific file-management boundary is an explicit major TBD.
 - `docs/plans/PROSPECT-TRIAL-PROJECT-PLAN.md`: approved future no-charge,
   closed-ended Prospect Trial Project requested from HubSpot and governed in
   the Portal. It is not implemented.
@@ -38,16 +43,12 @@
 - `docs/crm-integration-strategy.md`: approved HubSpot/Portal/QuickBooks system
   ownership and data-boundary guidance; implementation state remains in the
   owning lifecycle plan.
+- `docs/lims-integration-strategy.md`: durable provider-neutral boundary for the
+  planned internal Lab Operations provider and any future third-party LIMS
+  replacement; implementation state remains in the Lab Operations plan.
 - `docs/user-documentation.md`: authoring, audience, privacy, portability, and future search rules for the in-portal help system.
 - `docs/operations-readiness.md`: current runtime, configuration ownership,
   durable delivery, migration handling, and explicit production-activation gates.
-
-## Unapproved future reference
-
-- `docs/lims-integration-strategy.md` is an evaluation reference only. No LIMS
-  provider is selected and no LIMS integration exists. QuickBooks Online is the
-  only implemented external business system; HubSpot is selected but not yet
-  connected.
 
 ## Maintenance rule
 

@@ -2,22 +2,27 @@
 
 ## Status
 
-This document is a placeholder for a future Laboratory Information Management
-System (LIMS) integration. No LIMS product has been selected, and this document
-does not authorize implementation or create a dependency on an assumed vendor.
+This document is the durable strategy for keeping laboratory execution
+replaceable. No third-party Laboratory Information Management System (LIMS)
+product has been selected, and this document does not authorize implementation
+or create a dependency on an assumed vendor.
 
-Today, Phaeno Portal remains the operational system of record for the laboratory
-workflows represented in the product. If Phaeno adopts a LIMS, the ownership
-boundary described here takes effect only through an explicitly planned and
-validated cutover.
+Today, Phaeno Portal remains the operational system of record for the
+laboratory workflows represented in the product. Approved planning direction
+in `plans/LAB-OPERATIONS-PLAN.md` introduces a fit-for-purpose internal Lab
+Operations provider behind the same boundary a future third-party LIMS would
+implement. That module and boundary are not yet implemented. Any ownership
+change still requires an explicitly planned, data-preserving, and validated
+cutover.
 
 ## Purpose
 
-If laboratory volume, traceability, quality, or regulatory requirements later
-justify a dedicated laboratory execution system, Phaeno may evaluate a
-third-party LIMS. Any integration would let the Portal continue to own the
-customer-facing scientific operation while an approved LIMS owns explicitly
-assigned laboratory execution detail.
+Phaeno will initially meet its small-scale execution needs with an internal Lab
+Operations module. If laboratory volume, traceability, quality, or future
+capabilities later justify a third-party system, Phaeno may replace that
+provider with a LIMS adapter. Commercial Operations continues to own the
+customer-facing scientific operation while the selected Lab Operations
+provider owns explicitly assigned laboratory execution detail.
 
 The intent is to avoid rebuilding mature LIMS capabilities inside the Portal
 while preserving a coherent Phaeno experience for customers and internal
@@ -30,10 +35,11 @@ operational teams.
    - Customers do not need direct LIMS access.
    - The Portal translates laboratory detail into appropriate customer-facing
      milestones and outcomes.
-2. **Keep laboratory execution in the LIMS.**
-   - The LIMS controls accessioning, custody, work execution, protocol versions,
-     QC capture, reagent traceability, and laboratory audit history.
-   - The Portal must not maintain a competing laboratory ledger after cutover.
+2. **Keep laboratory execution in the selected Lab Operations provider.**
+   - The initial internal provider, or a future LIMS after cutover, controls
+     accessioning, custody, work execution, protocol versions, QC capture,
+     reagent traceability, and laboratory audit history.
+   - Commercial Operations must not maintain a competing laboratory ledger.
 3. **Use explicit ownership at field and event level.**
    - Shared identifiers and status projections do not make a record jointly
      authoritative.
@@ -44,8 +50,8 @@ operational teams.
    - Exchanges should be durable, idempotent, retryable, and reconcilable.
    - A transient LIMS outage must not corrupt Portal state or create duplicate
      accessions or work requests.
-5. **Keep the vendor replaceable.**
-   - Portal domain code depends on provider-neutral contracts.
+5. **Keep the provider replaceable.**
+   - Commercial domain code depends on provider-neutral contracts.
    - Vendor models, authentication, webhooks, and field mappings remain inside
      an integration adapter.
 6. **Minimize transferred data.**
@@ -96,6 +102,11 @@ commercial context, customer permissions, report delivery, or the overall
 customer relationship.
 
 ## Integration Architecture
+
+Commercial Operations depends on the provider-neutral Lab Operations contract
+defined by `plans/LAB-OPERATIONS-PLAN.md`. The initial internal provider
+implements that contract in-process. The diagram below describes the additional
+adapter boundary if Phaeno later selects an external LIMS.
 
 ```text
  Customers and Phaeno Teams
@@ -286,41 +297,43 @@ phases should not be implemented speculatively.
 
 ## Provider Abstraction
 
-Portal application features should depend on provider-neutral commands and
-results rather than a vendor SDK or vendor record types. An illustrative
+Commercial application features should depend on provider-neutral commands and
+results rather than an internal Lab Operations data model, vendor SDK, or
+vendor record types. Both the initial internal provider and a future external
+adapter implement the same application-facing contract. An illustrative
 interface is:
 
 ```csharp
-public interface ILimsProvider
+public interface ILabOperationsProvider
 {
-    Task<LimsSubmissionResult> SubmitSampleAsync(
-        LimsSampleSubmission submission,
+    Task<LabWorkSubmissionResult> SubmitSampleAsync(
+        LabWorkSubmission submission,
         CancellationToken cancellationToken);
 
-    Task<LimsRequestResult> SubmitSequencingRequestAsync(
-        LimsSequencingRequest request,
+    Task<LabWorkRequestResult> SubmitSequencingRequestAsync(
+        LabSequencingRequest request,
         CancellationToken cancellationToken);
 
-    Task<LimsAmendmentResult> AmendSequencingRequestAsync(
-        string externalRequestId,
-        LimsSequencingRequestAmendment amendment,
+    Task<LabWorkAmendmentResult> AmendSequencingRequestAsync(
+        Guid labWorkRequestId,
+        LabSequencingRequestAmendment amendment,
         CancellationToken cancellationToken);
 
     Task CancelSequencingRequestAsync(
-        string externalRequestId,
+        Guid labWorkRequestId,
         string reason,
         CancellationToken cancellationToken);
 
-    Task<LimsSampleStatus?> GetSampleStatusAsync(
-        string externalAccessionId,
+    Task<LabSampleStatus?> GetSampleStatusAsync(
+        Guid accessionId,
         CancellationToken cancellationToken);
 
-    Task<LimsQcSummary?> GetQcSummaryAsync(
-        string externalAccessionId,
+    Task<LabQcSummary?> GetQcSummaryAsync(
+        Guid accessionId,
         CancellationToken cancellationToken);
 
-    Task<LimsRequestStatus?> GetSequencingRequestStatusAsync(
-        string externalRequestId,
+    Task<LabWorkRequestStatus?> GetSequencingRequestStatusAsync(
+        Guid labWorkRequestId,
         CancellationToken cancellationToken);
 }
 ```
@@ -379,9 +392,11 @@ not feature-list comparison alone.
 
 ## Architectural Rule
 
-> **Phaeno Portal owns customer-facing scientific operations. A future LIMS
-> owns laboratory execution. The integration connects those domains without
-> making either system a duplicate system of record.**
+> **Commercial Operations owns customer-facing scientific operations. The
+> selected Lab Operations provider owns laboratory execution. The provider
+> boundary connects those domains without making either one a duplicate system
+> of record.**
 
-Until a LIMS is selected and an ownership cutover is approved, current Portal
-plans and implemented workflows remain authoritative for existing behavior.
+Until the internal Lab Operations transition or a future LIMS ownership cutover
+is explicitly implemented, current Portal plans and implemented workflows
+remain authoritative for existing behavior.

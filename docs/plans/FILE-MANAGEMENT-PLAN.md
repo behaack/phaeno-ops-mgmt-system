@@ -1,5 +1,18 @@
 # File Management Plan
 
+## Scientific Pipeline Boundary
+
+This plan does not currently own raw NGS files, intermediate pipeline
+artifacts, pipeline orchestration, scientific provenance, or scientific-file
+retention. The boundary between generated NGS output, Phaeno's existing
+automated data pipeline, and customer output availability is an explicit major
+TBD in `LAB-OPERATIONS-PLAN.md`.
+
+Do not extend the general file-management design below into that scientific
+domain until the pipeline and file-ownership contract is separately approved.
+The Lab Operations plan currently assumes only that approved customer output
+files eventually become available for controlled release through the Portal.
+
 ## Current Implementation Boundary
 
 The organization-data-provisioning first slice now has a feature-scoped
