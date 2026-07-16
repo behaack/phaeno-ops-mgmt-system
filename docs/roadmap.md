@@ -20,8 +20,11 @@
 - `docs/plans/LAB-OPERATIONS-PLAN.md`: approved future separation of Commercial
   Operations from a fit-for-purpose internal Lab Operations module, including
   versioned protocols, reagent and library preparation, outsourced NGS, and a
-  replaceable provider boundary. It is not implemented, and the automated data
-  pipeline and scientific file-management boundary is an explicit major TBD.
+  replaceable provider boundary. Its companion
+  `docs/plans/LAB-OPERATIONS-INVENTORY.md` records the completed current-state
+  inventory and target ownership classification. The restructure is not
+  implemented, and the automated data pipeline and scientific file-management
+  boundary is an explicit major TBD.
 - `docs/plans/PROSPECT-TRIAL-PROJECT-PLAN.md`: approved future no-charge,
   closed-ended Prospect Trial Project requested from HubSpot and governed in
   the Portal. It is not implemented.

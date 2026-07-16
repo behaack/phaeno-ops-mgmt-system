@@ -30,6 +30,9 @@ deployment, or production activation.
   `ORDER-MANAGEMENT-PLAN.md` when implemented. That plan remains authoritative
   for commercial ordering, pricing, fulfillment, and current behavior until a
   separately approved migration is completed.
+- Phase 0 Steps 1 and 2 are complete. The evidence-backed current-state
+  inventory and ownership classification are recorded in
+  `LAB-OPERATIONS-INVENTORY.md`. No restructure or migration was performed.
 
 ## Goal
 
@@ -82,7 +85,7 @@ The target architecture is:
 - one PostgreSQL database
 - one EF Core `DbContext`
 - one migration history and transaction boundary
-- two database schemas: existing `portal` and new `lab_ops`
+- two target database schemas: `commercial_ops` and `lab_ops`
 - feature-owned EF configurations and module-owned write paths
 
 The intended backend project boundaries are:
@@ -100,7 +103,9 @@ features are engineering details to confirm during implementation planning.
 The separation may be introduced incrementally before any physical project
 move.
 
-Two schemas are an ownership and maintenance boundary, not a security boundary.
+The running schema remains `portal`. Renaming it to `commercial_ops` and adding
+`lab_ops` require a separately approved, data-preserving migration. Two schemas
+are an ownership and maintenance boundary, not a security boundary.
 Authorization remains enforced by the API. The shared context must not become
 permission for features to mutate each other's entities directly.
 
@@ -539,13 +544,16 @@ remove competing internal write paths. The durable strategy is recorded in
 
 ### Phase 0 - Operator Discovery and Migration Design
 
+- Completed inventory and ownership-classification evidence is maintained in
+  `LAB-OPERATIONS-INVENTORY.md`.
 - Observe and document the real receipt, accession, reagent-preparation,
   library-preparation, batching, send-out, exception, and review workflows.
 - Define the minimum data capture that protects scientific work without adding
   unnecessary operator burden.
 - Inventory existing `LabServiceOrder`, `LabSample`, accession, QC, and release
   records in Order Management.
-- Design a data-preserving transition from the `portal` schema to `lab_ops`.
+- Design a data-preserving rename from `portal` to `commercial_ops` and the
+  introduction of the new `lab_ops` schema.
 - Define the first provider-neutral contract and stable milestone vocabulary.
 - Define barcode hardware, label, and degraded-mode needs.
 - Keep the pipeline and scientific file-management boundary explicitly open.
@@ -639,4 +647,3 @@ When implementation is authorized:
   Customer, Partner, and Phaeno user guides only as behavior becomes real
 - keep `docs/lims-integration-strategy.md` provider-neutral and aligned with
   the internal-provider-first direction
-
