@@ -1,7 +1,8 @@
 namespace PhaenoPortal.App.Features.DataProvisioning.Services;
 
 using Microsoft.EntityFrameworkCore;
-using PhaenoPortal.App.Features.DataProvisioning.Domain;
+using PSeq.Operations.Commercial.DataProvisioning.Application;
+using PSeq.Operations.Commercial.DataProvisioning.Domain;
 using PhaenoPortal.App.Infrastructure.Persistence;
 
 public sealed class DataProvisioningNoticeDispatcher(

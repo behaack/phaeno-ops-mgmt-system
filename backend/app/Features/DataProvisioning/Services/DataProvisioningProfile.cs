@@ -1,6 +1,7 @@
 namespace PhaenoPortal.App.Features.DataProvisioning.Services;
 
 using Microsoft.Extensions.Options;
+using PSeq.Operations.Commercial.DataProvisioning.Application;
 
 public sealed class DataProvisioningProfile(
     IWebHostEnvironment environment,
@@ -10,27 +11,25 @@ public sealed class DataProvisioningProfile(
 
     public (string Extension, string FileKind) ResolveFileKind(string fileName)
     {
-        var extension = Path.GetExtension(fileName).ToLowerInvariant();
-        if (string.IsNullOrWhiteSpace(extension)
-            || !options.Value.AllowedFileKinds.TryGetValue(extension, out var fileKind)
-            || string.IsNullOrWhiteSpace(fileKind))
+        var approvedFileKind = DataProvisioningPolicy.ResolveApprovedFileKind(
+            fileName,
+            options.Value.AllowedFileKinds);
+        if (!approvedFileKind.HasValue)
         {
             throw new DataProvisioningException(
                 "file_kind_not_allowed",
                 "This file kind is not approved for the current environment.");
         }
 
-        return (extension, fileKind.Trim());
+        return approvedFileKind.Value;
     }
 
     public void EnsureSyntheticFixturesAllowed(bool isSynthetic)
     {
-        if (!isSynthetic)
-        {
-            return;
-        }
-
-        if (environment.IsProduction() || !options.Value.EnableSyntheticFixtures)
+        if (!DataProvisioningPolicy.CanUseSyntheticData(
+            isSynthetic,
+            environment.IsProduction(),
+            options.Value.EnableSyntheticFixtures))
         {
             throw new DataProvisioningException(
                 "synthetic_data_not_allowed",
@@ -40,7 +39,9 @@ public sealed class DataProvisioningProfile(
 
     public void EnsureExternalPublicationAllowed(bool isSynthetic)
     {
-        if (environment.IsProduction() && isSynthetic)
+        if (!DataProvisioningPolicy.CanPublishExternally(
+            isSynthetic,
+            environment.IsProduction()))
         {
             throw new DataProvisioningException(
                 "synthetic_data_not_publishable",

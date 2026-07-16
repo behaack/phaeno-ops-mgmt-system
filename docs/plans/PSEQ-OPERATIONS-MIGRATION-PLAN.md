@@ -23,13 +23,13 @@ authorize a reset of any shared environment.
 - The Stage 2 context/schema checkpoint is implemented: the single context is
   renamed, schema settings are explicit, every current entity targets
   `commercial_ops`, and architecture tests protect the module direction.
-- The first two Stage 2 feature slices are implemented: Accounts and
-  Relationships domain entities and pure application policy live in Commercial,
-  along with Accounts' invitation-token logic, invitation-delivery port, and
-  audit/concurrency contracts. HTTP, EF mapping/orchestration, Clerk/Postmark,
-  bootstrap, and API error translation remain in the API.
-- Data Provisioning, commercial Order Management, and Laboratory-owned mappings
-  remain pending.
+- The first three Stage 2 feature slices are implemented: Accounts,
+  Relationships, and Data Provisioning domain entities and pure application
+  code live in Commercial, along with their environment-neutral ports. HTTP,
+  EF mapping/orchestration, Clerk/Postmark, bootstrap, environment configuration,
+  local file/scanner, notification dispatch, and API error translation remain
+  in the API.
+- Commercial Order Management and Laboratory-owned mappings remain pending.
 - The database and seven historical migrations remain untouched. A temporary
   compile-only alias keeps their generated metadata buildable until Stage 3.
 - The automated data-pipeline and scientific file-management boundary remains
@@ -274,10 +274,11 @@ this stage.
 
 ### Stage 2 - Establish the New Context and Module Mappings
 
-Status: the context/schema checkpoint, initial architecture guard, and Accounts
-and Relationships domain/application-policy extractions are implemented on
-2026-07-16. The API retains HTTP, EF mapping/orchestration, Clerk/Postmark,
-bootstrap, and API error-translation adapters as intended.
+Status: the context/schema checkpoint, initial architecture guard, and Accounts,
+Relationships, and Data Provisioning domain/application extractions are
+implemented on 2026-07-16. The API retains HTTP, EF mapping/orchestration,
+Clerk/Postmark, bootstrap, environment/configuration, local file/scanner,
+notification dispatch, and API error-translation adapters as intended.
 Items 4, 6, and 7 plus the remaining feature slices in item 5 remain pending.
 The solution builds; the backend test suite remains pending an explicit test
 request under repository policy.
@@ -292,7 +293,8 @@ request under repository policy.
    commercial Order Management.
    - Accounts domain and pure application policy: complete.
    - Relationship Management domain and pure application policy: complete.
-   - Data Provisioning: next.
+   - Data Provisioning domain, pure application services, and ports: complete.
+   - Commercial Order Management: next.
 6. Keep HTTP composition, the shared context, and concrete persistence adapters
    in the API project.
 7. Add the Laboratory project shell and its registration boundary without

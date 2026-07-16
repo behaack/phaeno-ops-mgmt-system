@@ -1,5 +1,7 @@
 namespace PhaenoPortal.App.Features.DataProvisioning.Services;
 
+using PSeq.Operations.Commercial.DataProvisioning.Application;
+
 public sealed class LoggingDataProvisioningNoticeSender(
     ILogger<LoggingDataProvisioningNoticeSender> logger)
     : IDataProvisioningNoticeSender

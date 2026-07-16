@@ -28,12 +28,12 @@ Stage 1 of `PSEQ-OPERATIONS-MIGRATION-PLAN.md` subsequently renamed the
 solution, API/test/Reference Journey project shells, and added empty Commercial
 and Laboratory projects. The following context/schema checkpoint then renamed
 the single context, removed the default schema, and mapped every current entity
-to `commercial_ops`. The Accounts and Relationships domain entities and pure
-application policy were then moved into Commercial, along with Accounts'
-invitation-token logic, delivery port, and audit/concurrency contracts. The API
-retains HTTP, EF mapping/orchestration, Clerk/Postmark, bootstrap, and error
-translation adapters. No Laboratory entities were created, and the old
-database and migrations remain unchanged.
+to `commercial_ops`. The Accounts, Relationships, and Data Provisioning domain
+entities and pure application code were then moved into Commercial, along with
+their environment-neutral ports. The API retains HTTP, EF mapping/orchestration,
+Clerk/Postmark, bootstrap, environment configuration, local file/scanner,
+notification dispatch, and error-translation adapters. No Laboratory entities
+were created, and the old database and migrations remain unchanged.
 
 ## Findings
 
@@ -71,7 +71,7 @@ this inventory.
 | --- | --- | --- |
 | `backend/PhaenoPortal.slnx` | `backend/PSeq.Operations.slnx` | Stage 1 complete; external product remains Phaeno Portal. |
 | `PhaenoPortal.App` web project | `PSeq.Operations.Api` | Stage 1 shell rename complete; Accounts HTTP/persistence/external adapters remain here by design. |
-| Accounts, Relationship Management, Data Provisioning, and commercial Order Management code | `PSeq.Operations.Commercial` | Accounts and Relationships domain and pure application policy moved; remaining Commercial feature slices are pending. |
+| Accounts, Relationship Management, Data Provisioning, and commercial Order Management code | `PSeq.Operations.Commercial` | Accounts, Relationships, and Data Provisioning domain/application code moved; commercial Order Management remains pending. |
 | Internal laboratory execution code currently inside Order Management | `PSeq.Operations.Laboratory` | Empty project shell exists; Lab implementation remains pending. |
 | `PhaenoPortal.Test` | `PSeq.Operations.Test` | Stage 1 shell rename complete; remains the initial combined test project. |
 | `PhaenoPortal.ReferenceJourney` | `PSeq.Operations.ReferenceJourney` | Stage 1 rename complete. |
@@ -95,7 +95,7 @@ no business records. See `PSEQ-OPERATIONS-MIGRATION-PLAN.md`.
 | HTTP host, authentication wiring, API envelope, error mapping | `backend/app/Program.cs`, `Infrastructure/Api` | `PSeq.Operations.Api` | Retain as thin host/shared HTTP infrastructure. |
 | Accounts and Clerk identity mapping | Commercial `Accounts` plus API `Features/Accounts` adapters | Commercial | Domain entities and pure policy are in Commercial; the API retains HTTP, actor lookup, EF orchestration, Clerk/Postmark, and bootstrap adapters. Lab roles reuse internal users but remain Lab-owned authorization concepts. |
 | Relationship state and service entitlements | Commercial `Relationships` plus API `Features/RelationshipManagement` adapters | Commercial | Domain entities and service-eligibility policy are in Commercial; the API retains HTTP, EF mapping/orchestration, actor enforcement, and error translation. Entitlements authorize work; they do not become Lab records. |
-| Curated data provisioning | `Features/DataProvisioning` | Commercial | Retain outside Lab Operations. Its `SourceSample` is curated reference-data provenance, not a received customer laboratory specimen. |
+| Curated data provisioning | Commercial `DataProvisioning` plus API `Features/DataProvisioning` adapters | Commercial | Domain entities, pure policy, manifest construction, and file/scanner/notification ports are in Commercial; the API retains HTTP, EF, authorization, environment configuration, local storage/scanner, Postmark, and dispatch adapters. Its `SourceSample` is curated reference-data provenance, not a received customer laboratory specimen. |
 | Health endpoints | `Features/Health` | API host | Retain as deployment/runtime infrastructure. |
 | Order Management | `Features/OrderManagement` | Split | Commercial ordering remains Commercial; physical laboratory execution moves to Laboratory; pipeline/file records remain deferred. |
 | EF context and migrations | `Infrastructure/Persistence`, `Migrations` | Shared API composition with module-owned mappings | Keep one context and migration stream; replace one default schema with explicit mappings. |

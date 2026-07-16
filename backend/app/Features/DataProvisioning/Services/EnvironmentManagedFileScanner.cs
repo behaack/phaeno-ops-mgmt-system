@@ -1,17 +1,7 @@
 namespace PhaenoPortal.App.Features.DataProvisioning.Services;
 
-using PhaenoPortal.App.Features.DataProvisioning.Domain;
-
-public sealed record ManagedFileScanResult(
-    ManagedFileScanStatus Status,
-    string? Message);
-
-public interface IManagedFileScanner
-{
-    Task<ManagedFileScanResult> ScanAsync(
-        string storageKey,
-        CancellationToken cancellationToken);
-}
+using PSeq.Operations.Commercial.DataProvisioning.Application;
+using PSeq.Operations.Commercial.DataProvisioning.Domain;
 
 public sealed class EnvironmentManagedFileScanner(
     IWebHostEnvironment environment,

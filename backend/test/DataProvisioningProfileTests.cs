@@ -3,7 +3,7 @@ namespace PhaenoPortal.Test;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.Extensions.FileProviders;
 using Microsoft.Extensions.Options;
-using PhaenoPortal.App.Features.DataProvisioning.Domain;
+using PSeq.Operations.Commercial.DataProvisioning.Domain;
 using PhaenoPortal.App.Features.DataProvisioning.Services;
 
 public class DataProvisioningProfileTests

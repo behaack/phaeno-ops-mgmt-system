@@ -3,7 +3,7 @@ namespace PhaenoPortal.Test;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Options;
 using PSeq.Operations.Commercial.Accounts.Domain;
-using PhaenoPortal.App.Features.DataProvisioning.Domain;
+using PSeq.Operations.Commercial.DataProvisioning.Domain;
 using PhaenoPortal.App.Infrastructure.Persistence.Auditing;
 using PhaenoPortal.App.Infrastructure.Persistence;
 

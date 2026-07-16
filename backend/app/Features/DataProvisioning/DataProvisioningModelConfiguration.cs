@@ -4,7 +4,7 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 using PSeq.Operations.Commercial.Common.Persistence;
 using PSeq.Operations.Commercial.Accounts.Domain;
-using PhaenoPortal.App.Features.DataProvisioning.Domain;
+using PSeq.Operations.Commercial.DataProvisioning.Domain;
 
 public static class DataProvisioningModelConfiguration
 {

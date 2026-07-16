@@ -1,4 +1,4 @@
-namespace PhaenoPortal.App.Features.DataProvisioning.Domain;
+namespace PSeq.Operations.Commercial.DataProvisioning.Domain;
 
 public sealed class DatasetDownloadAudit
 {

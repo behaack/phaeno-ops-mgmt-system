@@ -1,4 +1,4 @@
-namespace PhaenoPortal.App.Features.DataProvisioning.Services;
+namespace PSeq.Operations.Commercial.DataProvisioning.Application;
 
 public sealed record StoredFileResult(
     string StorageKey,

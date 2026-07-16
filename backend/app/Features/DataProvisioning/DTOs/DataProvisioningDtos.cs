@@ -1,8 +1,8 @@
 namespace PhaenoPortal.App.Features.DataProvisioning.DTOs;
 
 using PSeq.Operations.Commercial.Accounts.Domain;
+using PSeq.Operations.Commercial.DataProvisioning.Domain;
 using PhaenoPortal.App.Features.Accounts.DTOs;
-using PhaenoPortal.App.Features.DataProvisioning.Domain;
 
 public sealed record CreateSourceSampleRequest
 {

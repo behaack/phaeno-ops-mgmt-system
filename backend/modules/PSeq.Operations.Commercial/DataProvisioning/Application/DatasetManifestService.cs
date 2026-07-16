@@ -1,9 +1,9 @@
-namespace PhaenoPortal.App.Features.DataProvisioning.Services;
+namespace PSeq.Operations.Commercial.DataProvisioning.Application;
 
 using System.Security.Cryptography;
 using System.Text;
 using System.Text.Json;
-using PhaenoPortal.App.Features.DataProvisioning.Domain;
+using PSeq.Operations.Commercial.DataProvisioning.Domain;
 
 public static class DatasetManifestService
 {

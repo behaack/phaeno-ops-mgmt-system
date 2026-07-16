@@ -54,6 +54,7 @@ backend/app/
 - Implemented feature areas are Accounts, Relationship Management, Data Provisioning, Health, and Order Management.
 - `modules/PSeq.Operations.Commercial/Accounts`: account domain entities, pure authorization policy, invitation-token logic, and the invitation-delivery port.
 - `modules/PSeq.Operations.Commercial/Relationships`: relationship requests, service entitlements, and service-eligibility policy.
+- `modules/PSeq.Operations.Commercial/DataProvisioning`: curated-data domain entities, environment-neutral policy, deterministic manifest construction, and file/notification ports.
 - `Infrastructure/Api/`: API response envelopes, metadata factories, error mapping, and response filters.
 - `Infrastructure/Persistence/`: the single EF Core `PSeqOperationsDbContext`, PostgreSQL configuration, and design-time migration factory.
 - `Middleware/`: HTTP middleware such as API exception handling.

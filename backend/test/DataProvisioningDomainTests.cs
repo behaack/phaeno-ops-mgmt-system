@@ -2,11 +2,28 @@ namespace PhaenoPortal.Test;
 
 using System.Text.Json;
 using PSeq.Operations.Commercial.Accounts.Domain;
-using PhaenoPortal.App.Features.DataProvisioning.Domain;
-using PhaenoPortal.App.Features.DataProvisioning.Services;
+using PSeq.Operations.Commercial.DataProvisioning.Application;
+using PSeq.Operations.Commercial.DataProvisioning.Domain;
 
 public class DataProvisioningDomainTests
 {
+    [Fact]
+    public void ProvisioningPolicyKeepsEnvironmentConfigurationOutsideTheDomain()
+    {
+        var allowedFileKinds = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase)
+        {
+            [".json"] = " structured_fixture "
+        };
+
+        Assert.Equal(
+            (".json", "structured_fixture"),
+            DataProvisioningPolicy.ResolveApprovedFileKind("SAMPLE.JSON", allowedFileKinds));
+        Assert.Null(DataProvisioningPolicy.ResolveApprovedFileKind("sample.fastq", allowedFileKinds));
+        Assert.True(DataProvisioningPolicy.CanUseSyntheticData(true, false, true));
+        Assert.False(DataProvisioningPolicy.CanUseSyntheticData(true, true, true));
+        Assert.False(DataProvisioningPolicy.CanPublishExternally(true, true));
+    }
+
     [Fact]
     public void ReadySourceRevisionIsImmutable()
     {
