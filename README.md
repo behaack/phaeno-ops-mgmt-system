@@ -27,7 +27,7 @@ The backend is built using .NET 10, providing a solid foundation for enterprise-
 - **Solution Structure**:
   - `app`: API host, HTTP workflows, persistence composition, and external-system adapters
   - `modules/PSeq.Operations.Commercial`: Commercial-owned domain and application logic
-  - `modules/PSeq.Operations.Laboratory`: reserved Laboratory Operations boundary
+  - `modules/PSeq.Operations.Laboratory`: Laboratory-owned persistence foundation
   - `test`: combined unit, integration, and architecture tests
 
 #### Backend File Structure
@@ -56,6 +56,16 @@ backend/app/
 - `modules/PSeq.Operations.Commercial/Relationships`: relationship requests, service entitlements, and service-eligibility policy.
 - `modules/PSeq.Operations.Commercial/DataProvisioning`: curated-data domain entities, environment-neutral policy, deterministic manifest construction, and file/notification ports.
 - `modules/PSeq.Operations.Commercial/OrderManagement`: commercial configuration/catalog, Partner kit ordering and fulfillment, request-revision and quote records, external download audit, commercial workflow and integration records, and environment-neutral QuickBooks/notification ports.
+- `modules/PSeq.Operations.Commercial/LabOperations`: the provider-neutral v1
+  Commercial-to-Lab command, acknowledgment, projection, event-envelope, and
+  provider-port types. No Lab execution or persistence is implemented there.
+- `modules/PSeq.Operations.Laboratory/Domain`: Lab work order, immutable
+  authorization version, specimen/accession, append-only work event, scientific
+  approval, and durable provider-command receipt foundations.
+- `Features/LabOperations`: EF mappings plus the in-process
+  `InternalLabOperationsProvider`. It validates and idempotently applies work
+  authorization, safe pre-execution amendments/cancellations, and current work
+  projection queries. Current customer order flows do not call it yet.
 - `Infrastructure/Api/`: API response envelopes, metadata factories, error mapping, and response filters.
 - `Infrastructure/Persistence/`: the single EF Core `PSeqOperationsDbContext`, PostgreSQL configuration, and design-time migration factory.
 - `Middleware/`: HTTP middleware such as API exception handling.
@@ -89,15 +99,18 @@ The backend uses Entity Framework Core with PostgreSQL through the Npgsql provid
 - Runtime DbContext: `Infrastructure/Persistence/PSeqOperationsDbContext.cs`
 - Design-time migrations factory: `Infrastructure/Persistence/DesignTimePSeqOperationsDbContextFactory.cs`
 - Migrations folder: `Migrations`
-- Current business-model target: every implemented entity is explicitly mapped to `commercial_ops`; no default schema is used
-- Reserved Laboratory schema setting: `lab_ops` (the schema is created by the pending clean initial migration)
+- Current business-model target: Commercial/current-flow entities map to
+  `commercial_ops`; Laboratory foundation entities map to `lab_ops`; no default
+  schema is used
+- Laboratory schema: `lab_ops`, with six explicitly mapped foundation tables
 - EF migrations history table: `public.__ef_migrations_history`
 - Connection string key: `ConnectionStrings:DefaultConnection`
 
-The context/schema code is ahead of the disposable development database during
-the approved reset sequence. Do not run the API or Reference Journey against
-the old `portal` database until the old database and migrations have been
-replaced by the clean baseline.
+The verified disposable Development database is named `phaeno_ops`. It was
+rebuilt on 2026-07-16 from `InitialPSeqOperations`, then extended by
+`AddLabOperationsFoundation` and `AddLabProviderCommandReceipts`. It contains 51
+current Commercial tables in `commercial_ops`, six Laboratory tables in
+`lab_ops`, and migration history in `public`; it has no `portal` schema.
 
 Use environment configuration for non-development database credentials. In ASP.NET Core configuration, the connection string can be supplied with `ConnectionStrings__DefaultConnection`.
 

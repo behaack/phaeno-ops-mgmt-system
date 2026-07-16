@@ -2,26 +2,72 @@ namespace PhaenoPortal.Test;
 
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Options;
+using PSeq.Operations.Commercial;
 using PSeq.Operations.Commercial.Accounts.Domain;
 using PSeq.Operations.Commercial.DataProvisioning.Domain;
+using PSeq.Operations.Laboratory;
+using PSeq.Operations.Laboratory.Domain;
 using PhaenoPortal.App.Infrastructure.Persistence.Auditing;
 using PhaenoPortal.App.Infrastructure.Persistence;
 
 public class PersistenceTests
 {
     [Fact]
-    public void PSeqOperationsDbContextMapsEveryCurrentEntityToCommercialSchema()
+    public void PSeqOperationsDbContextMapsEveryEntityToItsOwningSchema()
     {
         using var dbContext = CreateDbContext();
         var entityTypes = dbContext.Model.GetEntityTypes().ToList();
+        var commercialAssembly = typeof(CommercialAssembly).Assembly;
+        var laboratoryAssembly = typeof(LaboratoryAssembly).Assembly;
 
         Assert.Null(dbContext.Model.GetDefaultSchema());
         Assert.NotEmpty(entityTypes);
         Assert.All(
             entityTypes,
+            entityType => Assert.True(
+                entityType.GetSchema() is "commercial_ops" or "lab_ops"));
+        Assert.All(
+            entityTypes.Where(entityType => entityType.ClrType.Assembly == commercialAssembly),
             entityType => Assert.Equal("commercial_ops", entityType.GetSchema()));
+        Assert.All(
+            entityTypes.Where(entityType => entityType.ClrType.Assembly == laboratoryAssembly),
+            entityType => Assert.Equal("lab_ops", entityType.GetSchema()));
         Assert.DoesNotContain(entityTypes, entityType => entityType.GetSchema() == "portal");
         Assert.DoesNotContain(entityTypes, entityType => entityType.GetSchema() == "public");
+    }
+
+    [Fact]
+    public void PSeqOperationsDbContextMapsLaboratoryFoundationWithoutCommercialForeignKeys()
+    {
+        using var dbContext = CreateDbContext();
+        var laboratoryAssembly = typeof(LaboratoryAssembly).Assembly;
+        var laboratoryEntities = dbContext.Model.GetEntityTypes()
+            .Where(entityType => entityType.ClrType.Assembly == laboratoryAssembly)
+            .ToList();
+
+        Assert.Equal(6, laboratoryEntities.Count);
+        Assert.Equal(
+            "lab_work_orders",
+            dbContext.Model.FindEntityType(typeof(LabWorkOrder))?.GetTableName());
+        Assert.Equal(
+            "lab_work_authorization_versions",
+            dbContext.Model.FindEntityType(typeof(LabWorkAuthorizationVersion))?.GetTableName());
+        Assert.Equal(
+            "lab_specimens",
+            dbContext.Model.FindEntityType(typeof(LabSpecimen))?.GetTableName());
+        Assert.Equal(
+            "lab_work_events",
+            dbContext.Model.FindEntityType(typeof(LabWorkEvent))?.GetTableName());
+        Assert.Equal(
+            "lab_scientific_approvals",
+            dbContext.Model.FindEntityType(typeof(LabScientificApproval))?.GetTableName());
+        Assert.Equal(
+            "lab_provider_command_receipts",
+            dbContext.Model.FindEntityType(typeof(LabProviderCommandReceipt))?.GetTableName());
+        Assert.All(laboratoryEntities, entityType => Assert.Equal("lab_ops", entityType.GetSchema()));
+        Assert.DoesNotContain(
+            laboratoryEntities.SelectMany(entityType => entityType.GetForeignKeys()),
+            foreignKey => foreignKey.PrincipalEntityType.ClrType.Assembly != laboratoryAssembly);
     }
 
     [Fact]

@@ -11,11 +11,13 @@ deployment, or production activation.
 ## Status
 
 - Planning direction approved on 2026-07-16.
-- Development state: not implemented as a separate Lab Operations module.
-  Laboratory order, sample, accession, status, and release records currently
-  live inside the existing Order Management feature. The EF model now maps all
-  current business entities to `commercial_ops`; the clean Development baseline
-  creates an empty `lab_ops`, and no Laboratory entities exist.
+- Development state: the separate Lab Operations persistence foundation and
+  internal provider are implemented, but no Commercial or operator workflow
+  invokes the provider yet. Existing
+  customer order, quote, submission, status, and release behavior remains in
+  Order Management under `commercial_ops`. Six Laboratory-owned work,
+  authorization, specimen/accession, event, scientific-approval, and durable
+  command-receipt tables live in `lab_ops`.
 - Target state: Phaeno operates a fit-for-purpose internal Lab Operations
   module behind a provider-neutral boundary. Commercial Operations remains
   customer-facing and can later replace the internal module with a third-party
@@ -35,9 +37,14 @@ deployment, or production activation.
 - Phase 0 Steps 1 and 2 are complete. The evidence-backed current-state
   inventory and ownership classification are recorded in
   `LAB-OPERATIONS-INVENTORY.md`. No restructure or migration was performed.
-- Phase 0 Step 3 is complete as planning. The provider-neutral version 1
+- Phase 0 Step 3 is complete. The provider-neutral version 1
   Commercial-to-Lab Operations boundary is recorded in
-  `LAB-OPERATIONS-CONTRACT.md`. It is not implemented.
+  `LAB-OPERATIONS-CONTRACT.md`; its Commercial-owned core types and outbound
+  provider port are implemented. The Laboratory persistence foundation is also
+  implemented, and the registered internal provider handles durable
+  authorization/amendment/cancellation and projection lookup. Event delivery,
+  operator workspace, Laboratory roles, and customer-workflow connection do not
+  exist yet.
 - Phase 0 Step 4 is complete as planning. The approved clean development
   database and migration reset, solution/project restructure, and schema
   baseline sequence are recorded in
@@ -120,10 +127,9 @@ target layout and implementation sequence are defined in
 `PSEQ-OPERATIONS-MIGRATION-PLAN.md`.
 
 The EF model targets `commercial_ops`, reserves `lab_ops`, and places migration
-history in `public`; it no longer uses a default schema. The old disposable
-development database still has the `portal` baseline and must not run with this
-model. The Product Owner approved deleting that database and current migration
-source, then generating the clean baseline; no legacy data backfill is planned.
+history in `public`; it no longer uses a default schema. The verified disposable
+Development database and former migration chain were replaced on 2026-07-16 by
+the clean `InitialPSeqOperations` baseline; no legacy data backfill was needed.
 That approval does not extend to staging, production, shared, or unexpectedly
 valuable data. Two business schemas are an ownership and maintenance boundary,
 not a security boundary. Authorization remains enforced by the API. The shared
@@ -587,11 +593,22 @@ remove competing internal write paths. The durable strategy is recorded in
 
 ### Phase 1 - Module and Contract Foundation
 
-- Establish Commercial and Laboratory module write boundaries.
-- Add the first Laboratory-owned entities to the already reserved `lab_ops`
-  schema through an approved additive EF migration.
+- Current checkpoint: the Commercial-owned provider-neutral v1 core contract,
+  explicit schema guards, first Laboratory-owned persistence models, and the
+  registered idempotent internal provider are implemented without a
+  current-workflow connection. The verified local Development database is
+  `phaeno_ops`.
+- Complete: establish Commercial and Laboratory module write boundaries.
+- Complete: add the first Laboratory-owned work, immutable authorization,
+  specimen/accession, execution-event, and scientific-approval entities through
+  `AddLabOperationsFoundation`.
+- Complete: add durable provider-command receipts through
+  `AddLabProviderCommandReceipts` and implement authorization, safe
+  amendment/cancellation, exact retry replay, and current milestone projection
+  lookup.
 - Implement internal laboratory roles and authorization.
-- Implement idempotent work authorization and milestone projection.
+- Persist Commercial-owned milestone/exception projections and add durable
+  Lab-to-Commercial event delivery.
 - Extend the existing module-direction architecture tests to prevent direct
   cross-module persistence access as Laboratory entities are introduced.
 - Preserve current customer-facing behavior during the transition.
@@ -619,9 +636,10 @@ remove competing internal write paths. The durable strategy is recorded in
 - Connect only to the output-availability mechanism approved by the future
   pipeline and file-management decision.
 
-Each phase requires separately approved implementation scope and acceptance
-criteria. Do not create the `lab_ops` schema or migrate current records merely
-because this plan exists.
+Each remaining phase requires separately approved implementation scope and
+acceptance criteria. The six-table `lab_ops` foundation/provider store now
+exists; do not add more Laboratory tables or migrate current Commercial records
+merely because this plan exists.
 
 ## Acceptance Outcomes
 

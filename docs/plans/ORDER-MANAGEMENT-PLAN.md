@@ -46,6 +46,11 @@ transition.
   `20260716220428_InitialPSeqOperations` baseline applied to the rebuilt
   Development database. The former feature migrations were intentionally
   replaced during the approved disposable-database reset.
+- The Commercial-owned provider-neutral Lab Operations v1 core contract and
+  registered internal provider now exist, and six Laboratory-owned tables live
+  in `lab_ops`. No current order flow calls the provider. Existing mixed
+  laboratory records remain authoritative in `commercial_ops` until routing and
+  a data transition are separately implemented.
 - Verification state: backend build/tests, frontend lint/typecheck/unit tests,
   client/SSR production build, desktop/mobile Playwright journeys, and a live
   browser error-overlay/console check pass at this checkpoint.

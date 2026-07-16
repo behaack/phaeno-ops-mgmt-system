@@ -9,11 +9,11 @@ using PhaenoPortal.App.Features.OrderManagement.Domain;
 
 public static class OrderManagementModelConfiguration
 {
-    public static void Configure(ModelBuilder modelBuilder)
+    public static void Configure(ModelBuilder modelBuilder, string commercialSchema)
     {
         ConfigureCatalog(modelBuilder);
         ConfigureCommercial(modelBuilder);
-        ConfigureLab(modelBuilder);
+        ConfigureCommercialLabServiceRecords(modelBuilder, commercialSchema);
         ConfigureReagents(modelBuilder);
         ConfigureAssembly(modelBuilder);
         ConfigureWorkflowSupport(modelBuilder);
@@ -196,10 +196,13 @@ public static class OrderManagementModelConfiguration
         });
     }
 
-    private static void ConfigureLab(ModelBuilder modelBuilder)
+    private static void ConfigureCommercialLabServiceRecords(
+        ModelBuilder modelBuilder,
+        string commercialSchema)
     {
         modelBuilder.Entity<LabServiceOrder>(entity =>
         {
+            entity.ToTable("lab_service_orders", commercialSchema);
             entity.HasKey(e => e.Id);
             Text(entity.Property(e => e.OrderNumber), 50);
             Text(entity.Property(e => e.CustomerReference), 255, false);
@@ -219,6 +222,7 @@ public static class OrderManagementModelConfiguration
 
         modelBuilder.Entity<LabSample>(entity =>
         {
+            entity.ToTable("lab_samples", commercialSchema);
             entity.HasKey(e => e.Id);
             Text(entity.Property(e => e.CustomerSampleId), 255);
             Text(entity.Property(e => e.MaterialType), 255);
@@ -248,6 +252,7 @@ public static class OrderManagementModelConfiguration
 
         modelBuilder.Entity<LabServiceRequestRevision>(entity =>
         {
+            entity.ToTable("lab_service_request_revisions", commercialSchema);
             entity.HasKey(e => e.Id);
             Json(entity.Property(e => e.SnapshotJson));
             Text(entity.Property(e => e.CorrectionReason), 2000, false);
@@ -259,6 +264,7 @@ public static class OrderManagementModelConfiguration
 
         modelBuilder.Entity<LabServiceQuote>(entity =>
         {
+            entity.ToTable("lab_service_quotes", commercialSchema);
             entity.HasKey(e => e.Id);
             EnumText(entity.Property(e => e.Purpose));
             EnumText(entity.Property(e => e.Status));
@@ -273,6 +279,7 @@ public static class OrderManagementModelConfiguration
 
         modelBuilder.Entity<LabResultRelease>(entity =>
         {
+            entity.ToTable("lab_result_releases", commercialSchema);
             entity.HasKey(e => e.Id);
             Text(entity.Property(e => e.AnalysisProfile), 255);
             Text(entity.Property(e => e.PipelineVersion), 255);

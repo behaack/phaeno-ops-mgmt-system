@@ -8,11 +8,13 @@ using Microsoft.IdentityModel.Tokens;
 using System.Threading.RateLimiting;
 using PSeq.Operations.Commercial.Accounts.Application;
 using PSeq.Operations.Commercial.DataProvisioning.Application;
+using PSeq.Operations.Commercial.LabOperations.Application;
 using PSeq.Operations.Commercial.OrderManagement.Application;
 using PhaenoPortal.App.Features.Accounts.Endpoints;
 using PhaenoPortal.App.Features.Accounts.Services;
 using PhaenoPortal.App.Features.Health.Endpoints;
 using PhaenoPortal.App.Features.DataProvisioning.Services;
+using PhaenoPortal.App.Features.LabOperations.Services;
 using PhaenoPortal.App.Features.OrderManagement.Services;
 using PhaenoPortal.App.Infrastructure.Api;
 using PhaenoPortal.App.Infrastructure.Persistence;
@@ -81,6 +83,7 @@ builder.Services.AddSingleton<IOperationalFileStorage, LocalOperationalFileStora
 builder.Services.AddSingleton<IOperationalFileScanner, EnvironmentOperationalFileScanner>();
 builder.Services.AddScoped<OrderRequestContext>();
 builder.Services.AddScoped<OrderIdempotencyService>();
+builder.Services.AddScoped<ILabOperationsProvider, InternalLabOperationsProvider>();
 builder.Services.AddHttpClient("QuickBooksOAuth");
 builder.Services.AddSingleton(services => new QuickBooksAccessTokenProvider(
     services.GetRequiredService<IHttpClientFactory>().CreateClient("QuickBooksOAuth"),

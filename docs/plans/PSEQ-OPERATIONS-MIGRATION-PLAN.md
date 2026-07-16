@@ -37,15 +37,24 @@ authorize a reset of any shared environment.
   revisions, lab-service/data-assembly quotes, and the external download audit
   are also extracted. Mixed order, sample, processing, managed-file, and release
   records remain in the API intentionally until their future approved splits.
-- The Laboratory project shell and assembly registration boundary exist without
-  inventing Laboratory entities or workflows.
+- The Laboratory project now owns the first work-order, authorization-version,
+  specimen/accession, execution-event, and scientific-approval persistence
+  models plus durable provider-command receipts. The registered internal
+  provider uses them for idempotent authorization, safe amendment/cancellation,
+  and work-projection lookup; no current Commercial or operator workflow invokes
+  it yet.
 - The verified disposable Development database and seven historical migrations
-  were replaced on 2026-07-16 by one reviewed `InitialPSeqOperations` baseline.
-  `commercial_ops` contains all 51 current business tables, `lab_ops` exists and
-  is empty, and `public` contains only `__ef_migrations_history`.
+  were replaced on 2026-07-16 by `InitialPSeqOperations`. The database was then
+  renamed to `phaeno_ops` and extended by `AddLabOperationsFoundation` and
+  `AddLabProviderCommandReceipts`. `commercial_ops` contains 51 current-flow
+  tables, `lab_ops` contains six Laboratory tables, and `public` contains only
+  migration history.
 - The configured bootstrap, API health probe, rollback-safe Reference Journey,
   69 backend tests, frontend lint/typecheck, 28 unit tests, client/SSR build,
   and 28 desktop/mobile Playwright scenarios pass against this checkpoint.
+  The later internal-provider slice has a clean build, EF/model/schema checks,
+  and API health probe; its added tests have not been executed because the test
+  plan requires an explicit request.
 - The automated data-pipeline and scientific file-management boundary remains
   explicitly unresolved and outside the reset.
 
@@ -72,6 +81,28 @@ authorize a reset of any shared environment.
 - The configured bootstrap recreated one Phaeno organization, one linked user,
   one administrator membership, and its audit records. The Reference Journey
   then passed and restored every table to its pre-run row count.
+
+## Lab Foundation and Database Rename Execution Record
+
+- Executed on 2026-07-16 against the same verified local Development database.
+- Two idle DBeaver sessions were the only active connections; they were
+  terminated before the physical database rename.
+- The database was renamed from `phaeno-portal` to `phaeno_ops`; the old name was
+  confirmed absent and the ignored Development connection setting was updated
+  without exposing its credential.
+- `20260716223048_AddLabOperationsFoundation` creates only five `lab_ops` tables:
+  `lab_work_orders`, `lab_work_authorization_versions`, `lab_specimens`,
+  `lab_work_events`, and `lab_scientific_approvals`.
+- Existing customer/commercial Lab Service orders, request revisions, quotes,
+  submitted-sample records, and customer release records remain explicitly in
+  `commercial_ops`; the migration moves or rewrites no existing data.
+- Every foreign key originating in `lab_ops` targets another `lab_ops` table.
+- `20260716225818_AddLabProviderCommandReceipts` adds only
+  `lab_provider_command_receipts`, its indexes, and its optional internal foreign
+  key to `lab_work_orders`.
+- Every foreign key originating in `lab_ops` targets another `lab_ops` table.
+  All three migrations are applied, bootstrap row counts are preserved, and the
+  API health endpoint returns HTTP 200 using `phaeno_ops`.
 
 ## Objective
 
@@ -439,19 +470,26 @@ Gate:
 - authentication/bootstrap and tenant isolation still work
 - current user-visible behavior remains compatible
 
-### Stage 6 - Introduce the Real Lab Foundation Later
+### Stage 6 - Introduce the Lab Foundation and Internal Provider
 
-The database reset does not make the separate Lab module implemented.
+Status: foundation and initial internal provider completed on 2026-07-16. The Commercial-owned
+provider-neutral v1 core contract and `ILabOperationsProvider` port are
+implemented. Six Laboratory-owned persistence models map explicitly to
+`lab_ops` through `AddLabOperationsFoundation` and
+`AddLabProviderCommandReceipts`. `InternalLabOperationsProvider` is registered,
+but no operator workflow or current customer-workflow connection exists yet.
 
 When that implementation is authorized:
 
 1. introduce the provider-neutral contract from
-   `LAB-OPERATIONS-CONTRACT.md`
-2. add Laboratory-owned work-order, receipt, accession, container, event,
-   exception, and scientific-approval models
+   `LAB-OPERATIONS-CONTRACT.md` - core types and outbound port complete
+2. add Laboratory-owned work-order, authorization-version,
+   specimen/accession, event, and scientific-approval models - foundation
+   complete; container and exception models remain future workflow work
 3. add Commercial-owned authorization and projection models
-4. generate an additive `AddLabOperationsFoundation` migration
-5. move new work through the provider boundary
+4. generate an additive `AddLabOperationsFoundation` migration - complete
+5. implement the internal provider behind the approved boundary - complete;
+   routing new Commercial work through it remains pending
 6. retire direct writes to the mixed Commercial laboratory fields only after
    replacement behavior and tests exist
 
@@ -514,19 +552,22 @@ The reset/restructure is complete. The achieved outcomes are:
   with the approved dependency direction
 - `PSeqOperationsDbContext` is the single context
 - the old development database and seven-migration lineage are gone
-- one reviewed `InitialPSeqOperations` migration recreates an empty environment
-- `commercial_ops` owns all currently implemented business records
-- `lab_ops` exists for future Laboratory-owned records
+- one reviewed `InitialPSeqOperations` migration recreates the clean baseline,
+  and the two additive Lab migrations add only Laboratory-owned records
+- `commercial_ops` owns current customer/commercial workflow records
+- `lab_ops` owns the six-table Laboratory persistence/provider foundation
 - `public` owns only EF migration history
 - current Portal behavior works with freshly seeded data
-- the separate Lab module is still accurately described as planned, not shipped
+- the separate Lab persistence foundation and internal provider are shipped
+  while current-flow routing and operator workflows remain future work
 - the unresolved pipeline/file boundary remains unresolved
 
 ## Explicitly Deferred
 
 This plan does not authorize or settle:
 
-- the Lab Operations entity implementation beyond an empty schema boundary
+- Lab Operations entities beyond the work, authorization, specimen/accession,
+  event, and scientific-approval foundation
 - pipeline orchestration or scientific file ownership
 - raw, intermediate, or customer-output retention
 - a third-party LIMS vendor

@@ -2,7 +2,10 @@ using System.Text.Json;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.ChangeTracking;
 using Microsoft.EntityFrameworkCore.Diagnostics;
-using PSeq.Operations.Commercial.Common.Persistence;
+using CommercialAudit = PSeq.Operations.Commercial.Common.Persistence.IAudit;
+using CommercialConcurrency = PSeq.Operations.Commercial.Common.Persistence.IConcurrency;
+using LaboratoryAudit = PSeq.Operations.Laboratory.Common.Persistence.IAudit;
+using LaboratoryConcurrency = PSeq.Operations.Laboratory.Common.Persistence.IConcurrency;
 
 namespace PhaenoPortal.App.Infrastructure.Persistence.Auditing;
 
@@ -10,11 +13,11 @@ public sealed class AuditSaveChangesInterceptor(ICurrentUserContext currentUserC
 {
     private static readonly HashSet<string> AuditMetadataProperties =
     [
-        nameof(IAudit.CreatedAt),
-        nameof(IAudit.CreatedByUserId),
-        nameof(IAudit.UpdatedAt),
-        nameof(IAudit.UpdatedByUserId),
-        nameof(IConcurrency.Version)
+        nameof(CommercialAudit.CreatedAt),
+        nameof(CommercialAudit.CreatedByUserId),
+        nameof(CommercialAudit.UpdatedAt),
+        nameof(CommercialAudit.UpdatedByUserId),
+        nameof(CommercialConcurrency.Version)
     ];
 
     private static readonly HashSet<string> SensitiveProperties =
@@ -97,27 +100,48 @@ public sealed class AuditSaveChangesInterceptor(ICurrentUserContext currentUserC
 
     private static void ApplyAuditStamp(EntityEntry entry, DateTime utcNow, Guid? actorUserId)
     {
-        if (entry.Entity is not IAudit auditable)
+        if (entry.Entity is CommercialAudit commercialAuditable)
         {
-            return;
+            if (entry.State == EntityState.Added)
+            {
+                commercialAuditable.MarkCreated(utcNow, actorUserId);
+            }
+
+            if (entry.State is EntityState.Added or EntityState.Modified)
+            {
+                commercialAuditable.MarkUpdated(utcNow, actorUserId);
+            }
         }
 
-        if (entry.State == EntityState.Added)
+        if (entry.Entity is LaboratoryAudit laboratoryAuditable)
         {
-            auditable.MarkCreated(utcNow, actorUserId);
-        }
+            if (entry.State == EntityState.Added)
+            {
+                laboratoryAuditable.MarkCreated(utcNow, actorUserId);
+            }
 
-        if (entry.State is EntityState.Added or EntityState.Modified)
-        {
-            auditable.MarkUpdated(utcNow, actorUserId);
+            if (entry.State is EntityState.Added or EntityState.Modified)
+            {
+                laboratoryAuditable.MarkUpdated(utcNow, actorUserId);
+            }
         }
     }
 
     private static void ApplyConcurrencyVersion(EntityEntry entry)
     {
-        if (entry.State == EntityState.Modified && entry.Entity is IConcurrency concurrency)
+        if (entry.State != EntityState.Modified)
         {
-            concurrency.IncrementVersion();
+            return;
+        }
+
+        if (entry.Entity is CommercialConcurrency commercialConcurrency)
+        {
+            commercialConcurrency.IncrementVersion();
+        }
+
+        if (entry.Entity is LaboratoryConcurrency laboratoryConcurrency)
+        {
+            laboratoryConcurrency.IncrementVersion();
         }
     }
 
@@ -194,7 +218,7 @@ public sealed class AuditSaveChangesInterceptor(ICurrentUserContext currentUserC
     private static Guid? ReadOrganizationId(EntityEntry entry)
     {
         var organizationIdProperty = entry.Properties
-            .FirstOrDefault(property => property.Metadata.Name == "OrganizationId");
+            .FirstOrDefault(property => property.Metadata.Name is "OrganizationId" or "SubmittingOrganizationId");
 
         if (organizationIdProperty?.CurrentValue is Guid organizationId)
         {

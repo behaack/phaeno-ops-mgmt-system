@@ -5,7 +5,10 @@ using PSeq.Operations.Commercial.Accounts.Domain;
 using PSeq.Operations.Commercial.DataProvisioning.Domain;
 using PSeq.Operations.Commercial.OrderManagement.Domain;
 using PSeq.Operations.Commercial.Relationships.Domain;
+using PSeq.Operations.Laboratory;
+using PSeq.Operations.Laboratory.Domain;
 using PhaenoPortal.App.Features.DataProvisioning;
+using PhaenoPortal.App.Features.LabOperations;
 using PhaenoPortal.App.Features.OrderManagement;
 using PhaenoPortal.App.Features.OrderManagement.Domain;
 using PhaenoPortal.App.Features.RelationshipManagement;
@@ -104,6 +107,12 @@ public sealed class PSeqOperationsDbContext(
     public DbSet<OrganizationServiceEntitlement> OrganizationServiceEntitlements { get; set; }
     public DbSet<PortalIntegrationRequest> PortalIntegrationRequests { get; set; }
     public DbSet<PortalIntegrationRequestService> PortalIntegrationRequestServices { get; set; }
+    public DbSet<LabWorkOrder> LabWorkOrders { get; set; }
+    public DbSet<LabWorkAuthorizationVersion> LabWorkAuthorizationVersions { get; set; }
+    public DbSet<LabSpecimen> LabSpecimens { get; set; }
+    public DbSet<LabWorkEvent> LabWorkEvents { get; set; }
+    public DbSet<LabScientificApproval> LabScientificApprovals { get; set; }
+    public DbSet<LabProviderCommandReceipt> LabProviderCommandReceipts { get; set; }
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -251,8 +260,9 @@ public sealed class PSeqOperationsDbContext(
         });
 
         DataProvisioningModelConfiguration.Configure(modelBuilder);
-        OrderManagementModelConfiguration.Configure(modelBuilder);
+        OrderManagementModelConfiguration.Configure(modelBuilder, this.persistenceOptions.CommercialSchema);
         RelationshipManagementModelConfiguration.Configure(modelBuilder);
+        LabOperationsModelConfiguration.Configure(modelBuilder, this.persistenceOptions.LaboratorySchema);
 
         ApplySchemaOwnership(modelBuilder);
         ApplySnakeCaseDatabaseNames(modelBuilder);
@@ -260,16 +270,36 @@ public sealed class PSeqOperationsDbContext(
 
     private void ApplySchemaOwnership(ModelBuilder modelBuilder)
     {
+        var commercialAssembly = typeof(CommercialAssembly).Assembly;
+        var laboratoryAssembly = typeof(LaboratoryAssembly).Assembly;
+
         foreach (var entityType in modelBuilder.Model.GetEntityTypes())
         {
-            if (!string.IsNullOrWhiteSpace(entityType.GetSchema()))
+            var configuredSchema = entityType.GetSchema();
+            if (!string.IsNullOrWhiteSpace(configuredSchema))
             {
+                if (entityType.ClrType.Assembly == commercialAssembly
+                    && configuredSchema != this.persistenceOptions.CommercialSchema)
+                {
+                    throw new InvalidOperationException(
+                        $"Commercial entity '{entityType.DisplayName()}' must map to "
+                        + $"'{this.persistenceOptions.CommercialSchema}', not '{configuredSchema}'.");
+                }
+
+                if (entityType.ClrType.Assembly == laboratoryAssembly
+                    && configuredSchema != this.persistenceOptions.LaboratorySchema)
+                {
+                    throw new InvalidOperationException(
+                        $"Laboratory entity '{entityType.DisplayName()}' must map to "
+                        + $"'{this.persistenceOptions.LaboratorySchema}', not '{configuredSchema}'.");
+                }
+
                 continue;
             }
 
             var entityNamespace = entityType.ClrType.Namespace;
             var belongsToCurrentCommercialModel =
-                entityType.ClrType.Assembly == typeof(CommercialAssembly).Assembly
+                entityType.ClrType.Assembly == commercialAssembly
                 || entityNamespace?.StartsWith("PhaenoPortal.App.", StringComparison.Ordinal) == true;
             if (!belongsToCurrentCommercialModel)
             {

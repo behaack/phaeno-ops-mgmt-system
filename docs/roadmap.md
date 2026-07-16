@@ -23,8 +23,9 @@
   replaceable provider boundary. Its companion
   `docs/plans/LAB-OPERATIONS-INVENTORY.md` records the completed current-state
   inventory and target ownership classification;
-  `docs/plans/LAB-OPERATIONS-CONTRACT.md` defines the planned version 1
-  Commercial-to-Lab contract; and
+  `docs/plans/LAB-OPERATIONS-CONTRACT.md` defines the version 1
+  Commercial-to-Lab contract, whose Commercial-owned core types and outbound
+  provider port are implemented; and
   `docs/plans/PSEQ-OPERATIONS-MIGRATION-PLAN.md` defines the approved clean
   development database/migration reset and restructuring sequence. The
   solution/project shells and single-context schema target are restructured,
@@ -32,8 +33,13 @@
   Partner kit, integration, notification, workflow-support, request-revision,
   quote, and external-download-audit slices are extracted into Commercial. The
   disposable Development reset and single clean `InitialPSeqOperations`
-  migration are complete. Mixed Commercial/Laboratory/pipeline records and the
-  real Lab module remain future implementation. The automated
+  migration are complete. The local Development database is `phaeno_ops`, and
+  the two additive Lab migrations create six explicitly owned `lab_ops` tables.
+  The idempotent internal provider is registered but no current Commercial flow
+  invokes it. Mixed Commercial/Laboratory/pipeline records, Commercial
+  projection/event delivery, and operator workflows remain future
+  implementation.
+  The automated
   data pipeline and scientific file-management boundary is an explicit major
   TBD.
 - `docs/plans/PROSPECT-TRIAL-PROJECT-PLAN.md`: approved future no-charge,

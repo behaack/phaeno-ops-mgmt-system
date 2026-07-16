@@ -37,22 +37,27 @@ Order Management sub-slices. Immutable lab-service request revisions and
 lab-service/data-assembly quotes are the third; external download audit is the
 fourth. The API retains HTTP, EF mapping/orchestration,
 Clerk/Postmark/QuickBooks adapters, environment configuration, local
-file/scanner, hosted dispatch, mixed/deferred Order Management records, and
-error translation. No Laboratory entities were created, and the old
-database and seven-migration lineage were replaced on 2026-07-16 by the clean
-`InitialPSeqOperations` Development baseline.
+  file/scanner, hosted dispatch, mixed/deferred Order Management records, and
+  error translation. The old database and seven-migration lineage were replaced
+  on 2026-07-16 by `InitialPSeqOperations`. The database was then renamed to
+  `phaeno_ops`; `AddLabOperationsFoundation` added five Laboratory-owned
+  persistence tables and `AddLabProviderCommandReceipts` added the sixth without
+  moving existing Commercial records. The API now registers the internal
+  provider over those Lab-owned records, but current Commercial flows do not
+  invoke it.
 
 ## Findings
 
 The current system is one deployable .NET web project with feature folders,
-an active Commercial module plus an empty Laboratory module shell, one test
-project, one reference-journey tool, one React frontend, and one EF Core
-`PSeqOperationsDbContext`. The current EF model targets `commercial_ops`,
-creates an empty `lab_ops`, and keeps migration history in `public`; the rebuilt
-Development database contains no `portal` schema.
+an active Commercial module plus a Laboratory persistence/provider foundation,
+one test project, one reference-journey tool, one React frontend, and one EF Core
+`PSeqOperationsDbContext`. The current EF model maps 51 current-flow tables to
+`commercial_ops`, six Laboratory tables to `lab_ops`, and migration history to
+`public`; the `phaeno_ops` Development database contains no `portal` schema.
 
 The principal boundary problem is not the modular-monolith deployment. It is
-that the current `OrderManagement` feature and `portal` schema jointly own:
+that the current `OrderManagement` feature and legacy-shaped Commercial tables
+still jointly own:
 
 - customer and partner commercial ordering
 - quoting and QuickBooks integration
@@ -79,15 +84,15 @@ this inventory.
 | `backend/PhaenoPortal.slnx` | `backend/PSeq.Operations.slnx` | Stage 1 complete; external product remains Phaeno Portal. |
 | `PhaenoPortal.App` web project | `PSeq.Operations.Api` | Stage 1 shell rename complete; Accounts HTTP/persistence/external adapters remain here by design. |
 | Accounts, Relationship Management, Data Provisioning, and commercial Order Management code | `PSeq.Operations.Commercial` | Accounts, Relationships, and Data Provisioning domain/application code moved. Commercial configuration/catalog, Partner kit, integration, notification, workflow-support, request-revision, quote, and external download-audit code moved; mixed/deferred Order Management records are pending. |
-| Internal laboratory execution code currently inside Order Management | `PSeq.Operations.Laboratory` | Empty project shell exists; Lab implementation remains pending. |
+| Internal laboratory execution code currently inside Order Management | `PSeq.Operations.Laboratory` | Work, authorization, specimen/accession, event, scientific-approval, and durable command-receipt models exist. The internal provider is implemented in the API composition layer; operator workflows remain pending. |
 | `PhaenoPortal.Test` | `PSeq.Operations.Test` | Stage 1 shell rename complete; remains the initial combined test project. |
 | `PhaenoPortal.ReferenceJourney` | `PSeq.Operations.ReferenceJourney` | Stage 1 rename complete. |
 | `PhaenoPortal.App.*` namespaces | `PSeq.Operations.Api.*`, `.Commercial.*`, and `.Laboratory.*` | Namespace follows the owning project. |
 | `AppDbContext` | `PSeqOperationsDbContext` | Complete. One context remains; the API applies explicit entity mappings and enforces module schema ownership. |
 | configured schema `portal` | `commercial_ops` | Complete in the rebuilt Development database; all 51 current business tables are in `commercial_ops`. |
-| no laboratory schema | `lab_ops` | Complete as an empty reserved schema in the clean baseline; no Laboratory entities are implied. |
+| no laboratory schema | `lab_ops` | Complete with six explicitly owned foundation/provider tables; all their foreign keys remain inside `lab_ops`. |
 | one `PersistenceOptions.Schema` setting | explicit Commercial, Lab Operations, and migration-history schema settings | Implemented; validation requires three distinct snake-case identifiers. |
-| physical database naming based on Phaeno Portal | environment-specific PSeq Operations database naming | Keep one database. Apply naming when an environment is rebuilt or migrated; do not couple it to the entity split. |
+| physical database naming based on Phaeno Portal | `phaeno_ops` for local Development | Complete for the verified local database. Other environments retain their explicit deployment/configuration boundary. |
 | React application and external title `Phaeno Portal` | retain `Phaeno Portal` | External product identity is not renamed. |
 
 The two target business schemas are `commercial_ops` and `lab_ops`. The
@@ -105,6 +110,8 @@ no business records. See `PSEQ-OPERATIONS-MIGRATION-PLAN.md`.
 | Curated data provisioning | Commercial `DataProvisioning` plus API `Features/DataProvisioning` adapters | Commercial | Domain entities, pure policy, manifest construction, and file/scanner/notification ports are in Commercial; the API retains HTTP, EF, authorization, environment configuration, local storage/scanner, Postmark, and dispatch adapters. Its `SourceSample` is curated reference-data provenance, not a received customer laboratory specimen. |
 | Health endpoints | `Features/Health` | API host | Retain as deployment/runtime infrastructure. |
 | Order Management | Commercial `OrderManagement` plus API `Features/OrderManagement` | Split | Commercial configuration/catalog, Partner kit domain rules, request revisions, quotes, external download audit, commercial workflow/outbox/notification records, and environment-neutral vendor ports are in Commercial. API adapters, mixed lab execution, and deferred pipeline/file records remain pending their approved splits. |
+| Commercial-to-Lab application contract | Commercial `LabOperations/Application` | Commercial | Core v1 command, acknowledgment, cancellation outcome, projection, event-envelope, reason-code, and provider-port types are implemented. The API registers the internal adapter; no current Commercial workflow invokes it yet. |
+| Lab Operations persistence foundation and internal provider | Laboratory `Domain` plus API `Features/LabOperations` mappings/services | Laboratory | Six models map explicitly to `lab_ops`; they have no Commercial foreign keys. The provider durably applies authorization, safe amendment/cancellation, and projection lookup. Operator workflows remain pending. |
 | EF context and migrations | `Infrastructure/Persistence`, `Migrations` | Shared API composition with module-owned mappings | Keep one context and migration stream; replace one default schema with explicit mappings. |
 | Audit interceptor and current `audit_events` table | `Infrastructure/Persistence/Auditing` | Shared infrastructure | Retain current behavior during restructuring. Whether Lab audit records remain shared or become Lab-owned is deferred to migration design. |
 | React frontend | `frontend` | One Phaeno Portal application | Retain one application; split feature ownership and navigation internally. |
@@ -172,6 +179,20 @@ The technical pipeline and file boundary is deliberately unresolved.
 | `AssemblyOutputRelease` / `assembly_output_releases` | Split between deferred pipeline output and Commercial release | Preserve current records. Commercial will own customer release; pipeline metadata remains TBD. |
 | `ManagedOperationalFile` / `managed_operational_files` | Major pipeline/file TBD; remain in current schema | Preserve current behavior. Do not move Lab-result or assembly files into `lab_ops` until ownership is approved. |
 | `OperationalFileDownload` / `operational_file_downloads` | Commercial access audit / `commercial_ops` | Now lives in Commercial. Retain with the external download surface, subject to the future file-management decision. |
+
+### Laboratory Persistence Foundation
+
+These records establish physical ownership and durable internal-provider
+idempotency without reclassifying or routing the mixed current-flow tables.
+
+| Entity/table | Owner/schema | Current scope |
+| --- | --- | --- |
+| `LabWorkOrder` / `lab_work_orders` | Laboratory / `lab_ops` | Stable Laboratory work identity and current authorization/service version. |
+| `LabWorkAuthorizationVersion` / `lab_work_authorization_versions` | Laboratory / `lab_ops` | Immutable command snapshot and payload hash for retry/idempotency support. |
+| `LabSpecimen` / `lab_specimens` | Laboratory / `lab_ops` | Submitted-specimen correlation, physical receipt, accession number, intake disposition, and location. |
+| `LabWorkEvent` / `lab_work_events` | Laboratory / `lab_ops` | Append-only provider-neutral execution event record; it contains no pipeline/file fields. |
+| `LabScientificApproval` / `lab_scientific_approvals` | Laboratory / `lab_ops` | Versioned scientific readiness approval and permitted QC projection only; it does not release customer data. |
+| `LabProviderCommandReceipt` / `lab_provider_command_receipts` | Laboratory / `lab_ops` | Append-only command type, payload hash, disposition, and original serialized outcome for exact retry replay and conflicting command-ID detection. |
 
 ### Shared Status, Operation, and Rule Types
 
@@ -265,8 +286,10 @@ No role or authentication changes are authorized by this inventory.
 | `backend/test/OrderManagementDomainTests.cs` | Split into Commercial order/kit/assembly-history tests and Laboratory execution tests when code moves. Preserve current tests until replacement coverage exists. |
 | frontend order status and navigation tests | Retain with Commercial Portal; add Lab workspace tests only with implementation. |
 | `20260716220428_InitialPSeqOperations` | The single reviewed Development baseline; it replaced the seven former migrations during the approved reset. |
+| `20260716223048_AddLabOperationsFoundation` | Additive migration applied to `phaeno_ops`; creates only the five Laboratory-owned `lab_ops` tables and internal foreign keys. |
+| `20260716225818_AddLabProviderCommandReceipts` | Additive migration applied to `phaeno_ops`; creates only the Laboratory-owned durable receipt table, indexes, and optional internal work-order foreign key. |
 | `PSeqOperationsDbContextModelSnapshot.cs` | Current snapshot generated from the restructured model; EF reports no pending model changes. |
-| `public.__ef_migrations_history` | Current migration-history table containing the single clean baseline row. The rebuilt database has no `portal` schema. |
+| `public.__ef_migrations_history` | Current migration-history table containing the clean baseline and both additive Lab rows. The rebuilt database has no `portal` schema. |
 
 ## Records That Must Not Be Confused
 
@@ -317,15 +340,13 @@ project, and schema level:
 
 ## Explicitly Not Completed
 
-This inventory itself does not:
+The completed inventory, schema foundation, and internal provider do not:
 
-- define the `ILabOperationsProvider` contract; that is recorded in
-  `LAB-OPERATIONS-CONTRACT.md`
-- design the reset/restructure sequence; that is recorded in
-  `PSEQ-OPERATIONS-MIGRATION-PLAN.md`
-- identify the first implementation slice
-- rename files, projects, namespaces, APIs, routes, entities, or schemas
-- create or apply an EF migration
-- change application behavior or tests
+- route current Commercial order or Trial Project work into Laboratory
+- persist Commercial-owned milestone/exception projections or deliver events
+- implement Laboratory roles, operator APIs, or operator UI
+- transition or retire the current mixed Commercial laboratory records
+- settle pipeline, scientific file, protocol, material, equipment, batch, or
+  future LIMS-adapter ownership
 
-Those are later steps requiring separate authorization.
+Those remain later steps requiring separately approved scope.

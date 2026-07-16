@@ -11,8 +11,23 @@ external integrations, or deployments.
 
 - Contract direction approved through the Lab Operations planning decisions on
   2026-07-16.
-- Version: planned `v1`; not implemented.
-- Initial provider: internal Phaeno Lab Operations module in the same process.
+- Version: `v1` core application contract implemented on 2026-07-16 in
+  `PSeq.Operations.Commercial.LabOperations.Application`.
+- Implemented scope: transport-neutral authorization/amendment/cancellation
+  commands, acknowledgments and cancellation outcomes, work/exception
+  projections, stable enums and reason codes, the generic event envelope, and
+  the Commercial-owned `ILabOperationsProvider` port.
+- Laboratory persistence foundation: work orders, immutable authorization
+  versions, specimen/accession records, execution events, scientific approvals,
+  and durable provider-command receipts are implemented in `lab_ops` by
+  `20260716223048_AddLabOperationsFoundation` and
+  `20260716225818_AddLabProviderCommandReceipts`.
+- Initial provider: `InternalLabOperationsProvider` is registered in the API and
+  implements durable command replay, authorization creation/amendment,
+  cancellation feasibility, and current work projection lookup.
+- Not yet implemented: Commercial projection persistence, event payload
+  families/delivery, Laboratory role enforcement, operator execution workflows,
+  or a connection to current customer workflows.
 - Future provider: a third-party LIMS adapter implementing the same
   application-facing semantics.
 - Automated data-pipeline and scientific file-management ownership remains a
@@ -264,6 +279,27 @@ public sealed record LabCommandAcknowledgment(
     DateTime AcknowledgedAtUtc);
 ```
 
+Cancellation uses a distinct outcome because partial acceptance is meaningful:
+
+```csharp
+public enum LabCancellationDisposition
+{
+    Accepted,
+    PartiallyAccepted,
+    Rejected,
+    ManualReviewRequired
+}
+
+public sealed record LabCancellationOutcome(
+    Guid CommandId,
+    Guid CorrelationId,
+    LabCancellationDisposition Disposition,
+    Guid? LabWorkOrderId,
+    IReadOnlyList<Guid> AffectedSubmittedSpecimenIds,
+    string? ReasonCode,
+    DateTime AcknowledgedAtUtc);
+```
+
 `ReasonCode` is a controlled provider-neutral code. Vendor error messages,
 stack traces, internal notes, and customer-facing prose do not cross in this
 field.
@@ -278,6 +314,7 @@ Initial reason-code families include:
 - `cancellation_not_possible`
 - `manual_review_required`
 - `provider_unavailable`
+- `command_id_conflict`
 
 The exact code registry is implementation work and must remain small.
 
@@ -512,15 +549,21 @@ contract.
 
 ## Internal Provider Behavior
 
-`InternalLabOperationsProvider` will eventually:
+`InternalLabOperationsProvider` now:
 
 - validate the command independently of Commercial UI validation
 - create or match `LabWorkOrder` in `lab_ops`
 - preserve authorization versions
 - map submitted specimen IDs to future accessions without converting declared
   facts into observed facts
-- publish stable projections into Commercial-owned read models
-- enforce Laboratory roles for internal execution
+- store the original command outcome and payload hash so identical retries
+  return the original response and conflicting command-ID reuse is rejected
+- automatically amend or cancel only while affected specimens remain unreceived
+- return a provider-neutral current work projection for reconciliation
+
+It does not yet publish projections into Commercial-owned read models, deliver
+events, enforce future Laboratory operator roles, or receive commands from the
+current customer order flow.
 
 Commercial code references the contract assembly or neutral application types,
 not `PSeq.Operations.Laboratory` EF entities.
@@ -569,7 +612,13 @@ Lab Operations to Commercial must not send:
 
 ## Contract Tests Required Before Implementation Is Complete
 
-The eventual contract test suite must prove at least:
+The current structural and domain tests prove that the core contract is
+Commercial-owned, transport-neutral, defaults to contract version 1,
+represents partial cancellation, carries no commercial-pricing,
+Customer/Partner-branch, vendor, pipeline, or file implementation fields, and
+that the internal adapter implements the provider port. Database-backed
+provider conformance tests remain required before this transition is complete
+and must prove at least:
 
 - Customer and Partner authorizations produce indistinguishable Lab behavior
 - a Partner authorization works without downstream customer identity
@@ -590,15 +639,18 @@ This contract does not define:
 
 - Laboratory operator commands and screens
 - protocol, material, equipment, batch, QC, or accession entity schemas
-- exact persistence tables for commands, mappings, events, or projections
+- exact persistence tables for future provider mappings, event delivery, or
+  Commercial projections; durable internal command receipts are implemented
 - the development reset from `portal` to the clean `commercial_ops` baseline,
   which is governed by `PSEQ-OPERATIONS-MIGRATION-PLAN.md` and completed on
   2026-07-16
-- creation of the empty `lab_ops` schema, which the same completed baseline
-  owns
+- the `lab_ops` persistence foundation, which is governed by
+  `PSEQ-OPERATIONS-MIGRATION-PLAN.md` and implemented by the additive
+  `AddLabOperationsFoundation` migration
 - pipeline/file-management ownership or integration
 - a third-party LIMS vendor or vendor payload mapping
 - authentication changes or new dependencies
 
-The remaining items are later planning and implementation steps. The completed
-reset and reserved schema do not make this provider contract implemented.
+The remaining items are later planning and implementation steps. The registered
+provider does not make current customer routing, operator workflows, event
+delivery, or a future external LIMS adapter implemented.

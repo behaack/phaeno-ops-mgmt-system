@@ -45,6 +45,19 @@ The backend targets .NET 10 as a modular monolith:
   hosted-dispatch adapters, plus the current mixed laboratory-service,
   data-assembly, operational-file, and release records awaiting their approved
   splits.
+- `modules/PSeq.Operations.Commercial/LabOperations`: the Commercial-owned v1
+  outbound Lab Operations contract. Its transport-neutral command,
+  acknowledgment, projection, event-envelope, and provider-port types do not
+  reference API infrastructure, EF, Laboratory entities, vendors, or the
+  unresolved pipeline/file domain.
+- `modules/PSeq.Operations.Laboratory/Domain`: Laboratory-owned work order,
+  immutable authorization version, specimen/accession, append-only execution
+  event, scientific approval, and durable command-receipt foundations. Their EF
+  mappings are explicit and have only intra-`lab_ops` foreign keys.
+- `app/Features/LabOperations`: the API composition adapter implementing the
+  Commercial-owned provider port over Laboratory entities. Identical command
+  retries replay their durable outcome; unsafe amendments and cancellations
+  require manual review rather than rewriting received or active work.
 - `Features/Health`: health endpoint.
 - `Infrastructure/Api`: response envelope, metadata, error mapping, and response filter.
 - `Infrastructure/Persistence`: the single `PSeqOperationsDbContext`, mappings, save interceptors, and PostgreSQL configuration.
@@ -57,6 +70,10 @@ Laboratory. Extracted account, relationship, data-provisioning, commercial
 configuration, Partner kit, request-revision, quote, workflow, integration, and
 notification rules, ports, and external download audit therefore remain usable
 independently of the current HTTP, EF, Clerk, QuickBooks, and Postmark adapters.
+The Lab Operations provider port follows the same dependency direction. The
+registered internal provider writes only Laboratory-owned records and exposes a
+provider-neutral projection query. No current customer workflow calls it, and
+Commercial projection persistence and event delivery remain future work.
 
 ## Identity and authorization
 
@@ -150,14 +167,17 @@ authenticated audience and locale filtering.
 
 ## Configuration and deployment
 
-- Backend database: `ConnectionStrings:DefaultConnection` / `ConnectionStrings__DefaultConnection`.
-- PostgreSQL business schemas: current entities target `commercial_ops`; the
-  future Laboratory boundary reserves `lab_ops`; no default schema is used.
+- Backend database: `ConnectionStrings:DefaultConnection` /
+  `ConnectionStrings__DefaultConnection`; the verified local Development
+  database is `phaeno_ops`.
+- PostgreSQL business schemas: Commercial/current-flow entities target
+  `commercial_ops`; Laboratory foundation entities target `lab_ops`; no default
+  schema is used.
 - EF migration history: `public.__ef_migrations_history`.
-- Reset checkpoint: the disposable Development database was rebuilt on
-  2026-07-16 from the single reviewed
-  `20260716220428_InitialPSeqOperations` baseline. It contains no `portal`
-  schema.
+- Migration checkpoint: the disposable Development database was rebuilt on
+  2026-07-16 from `20260716220428_InitialPSeqOperations`, renamed to
+  `phaeno_ops`, and extended by
+  `20260716223048_AddLabOperationsFoundation`. It contains no `portal` schema.
 - External identity: `Clerk` configuration.
 - Invitation delivery: Postmark when configured; logging sender otherwise.
 - Data provisioning: `DataProvisioning` storage root, size limit, environment

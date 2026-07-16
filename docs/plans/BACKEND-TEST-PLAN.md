@@ -11,6 +11,17 @@ Do not execute this test plan unless explicitly requested.
 - [x] `backend/test/PersistenceTests.cs` - `PSeqOperationsDbContextMapsAccountEntities`.
 - [x] `backend/test/PersistenceTests.cs` - `PSeqOperationsDbContextMapsDataProvisioningEntitiesAndTenantBoundaries`.
 - [x] `backend/test/ModuleBoundaryTests.cs` - `CommercialAndLaboratoryAssembliesDoNotReferenceEachOtherOrApi`.
+- [x] `backend/test/LabOperationsContractTests.cs` - core v1 contract version,
+  Commercial ownership, transport neutrality, prohibited-field boundary, and
+  partial-cancellation representation, plus the internal adapter's provider-port
+  implementation.
+- [x] `backend/test/LabOperationsDomainTests.cs` - monotonic authorization
+  versions, receipt-before-accession behavior, controlled hold/rejection reasons,
+  immutable authorization payload hashes, pre-receipt cancellation boundaries,
+  work cancellation, and provider-command receipt matching.
+- [x] `backend/test/PersistenceTests.cs` - Commercial and Laboratory assembly
+  schema ownership, six Laboratory foundation/provider mappings, and no Laboratory
+  foreign key into a Commercial entity.
 - [x] `backend/test/ApiResponseTests.cs` - `SuccessEnvelopeSerializesWithReferenceShape`.
 - [x] `backend/test/ApiResponseTests.cs` - `FailureEnvelopeSerializesWithReferenceShape`.
 - [x] `backend/test/ApiResponseTests.cs` - `DomainExceptionMapsLikeReferenceApi`.
@@ -94,6 +105,14 @@ Do not execute this test plan unless explicitly requested.
   specimen placement, Partner data-assembly placement, ineligible/custom-work
   routing, immutable pricing snapshots, Partner downstream-identity omission,
   post-placement scientific validation, and cross-tenant denial.
+- [ ] Internal Lab Operations provider conformance - add database-backed coverage
+  for exact replay of identical commands, conflicting command-ID reuse, atomic
+  authorization creation, stale and unsafe amendments, full and partial
+  pre-receipt cancellation, and projection lookup without cross-organization or
+  commercial-field leakage.
+- [ ] Lab-to-Commercial projection delivery - when implemented, cover durable
+  event replay, out-of-order projection rejection, exception audience filtering,
+  and the guarantee that `ReadyForRelease` does not publish customer files.
 - [ ] Prospect Trial Projects - cover idempotent HubSpot request intake, dual
   approval, frozen scope/amendments, Prospect acceptance, project-specific
   submit authorization, extracted-RNA-only validation, the five-sample cap,

@@ -2,6 +2,7 @@
 using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 using PhaenoPortal.App.Infrastructure.Persistence;
@@ -11,9 +12,11 @@ using PhaenoPortal.App.Infrastructure.Persistence;
 namespace PSeq.Operations.Api.Migrations
 {
     [DbContext(typeof(PSeqOperationsDbContext))]
-    partial class PSeqOperationsDbContextModelSnapshot : ModelSnapshot
+    [Migration("20260716223048_AddLabOperationsFoundation")]
+    partial class AddLabOperationsFoundation
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -3488,77 +3491,6 @@ namespace PSeq.Operations.Api.Migrations
                     b.ToTable("portal_integration_request_services", "commercial_ops");
                 });
 
-            modelBuilder.Entity("PSeq.Operations.Laboratory.Domain.LabProviderCommandReceipt", b =>
-                {
-                    b.Property<Guid>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("uuid")
-                        .HasColumnName("id");
-
-                    b.Property<DateTime>("AcknowledgedAtUtc")
-                        .HasColumnType("timestamp with time zone")
-                        .HasColumnName("acknowledged_at_utc");
-
-                    b.Property<int?>("AppliedAuthorizationVersion")
-                        .HasColumnType("integer")
-                        .HasColumnName("applied_authorization_version");
-
-                    b.Property<Guid>("AuthorizationId")
-                        .HasColumnType("uuid")
-                        .HasColumnName("authorization_id");
-
-                    b.Property<Guid>("CommandId")
-                        .HasColumnType("uuid")
-                        .HasColumnName("command_id");
-
-                    b.Property<string>("CommandType")
-                        .IsRequired()
-                        .HasMaxLength(50)
-                        .HasColumnType("character varying(50)")
-                        .HasColumnName("command_type");
-
-                    b.Property<Guid>("CorrelationId")
-                        .HasColumnType("uuid")
-                        .HasColumnName("correlation_id");
-
-                    b.Property<string>("Disposition")
-                        .IsRequired()
-                        .HasMaxLength(50)
-                        .HasColumnType("character varying(50)")
-                        .HasColumnName("disposition");
-
-                    b.Property<Guid?>("LabWorkOrderId")
-                        .HasColumnType("uuid")
-                        .HasColumnName("lab_work_order_id");
-
-                    b.Property<string>("OutcomeJson")
-                        .IsRequired()
-                        .HasColumnType("jsonb")
-                        .HasColumnName("outcome_json");
-
-                    b.Property<string>("PayloadSha256")
-                        .IsRequired()
-                        .HasMaxLength(64)
-                        .HasColumnType("character varying(64)")
-                        .HasColumnName("payload_sha256");
-
-                    b.Property<string>("ReasonCode")
-                        .HasMaxLength(100)
-                        .HasColumnType("character varying(100)")
-                        .HasColumnName("reason_code");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("CommandId")
-                        .IsUnique();
-
-                    b.HasIndex("LabWorkOrderId");
-
-                    b.HasIndex("AuthorizationId", "AcknowledgedAtUtc");
-
-                    b.ToTable("lab_provider_command_receipts", "lab_ops");
-                });
-
             modelBuilder.Entity("PSeq.Operations.Laboratory.Domain.LabScientificApproval", b =>
                 {
                     b.Property<Guid>("Id")
@@ -5395,14 +5327,6 @@ namespace PSeq.Operations.Api.Migrations
                         .HasForeignKey("PortalIntegrationRequestId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
-                });
-
-            modelBuilder.Entity("PSeq.Operations.Laboratory.Domain.LabProviderCommandReceipt", b =>
-                {
-                    b.HasOne("PSeq.Operations.Laboratory.Domain.LabWorkOrder", null)
-                        .WithMany()
-                        .HasForeignKey("LabWorkOrderId")
-                        .OnDelete(DeleteBehavior.Restrict);
                 });
 
             modelBuilder.Entity("PSeq.Operations.Laboratory.Domain.LabScientificApproval", b =>
