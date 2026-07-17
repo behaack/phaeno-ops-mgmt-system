@@ -3,16 +3,17 @@
 Keep this file updated as Phaeno's internal laboratory workflows are designed
 and implemented.
 
-Do not execute this plan unless implementation is explicitly requested. This
-document records approved product direction and target architecture; it does
-not authorize a schema migration, project reorganization, dependency change,
-deployment, or production activation.
+This plan records the approved product direction, implemented application
+scope, and remaining validation and activation gates. It does not authorize a
+new schema migration, project reorganization, dependency change, deployment,
+or production activation.
 
 ## Status
 
 - Planning direction approved on 2026-07-16.
-- Development state: implementation is complete for the approved internal Lab
-  Operations scope. Customer quote acceptance atomically creates the
+- Current status: feature-complete for the approved internal Lab Operations
+  application scope; validation and production activation are incomplete.
+  Customer quote acceptance atomically creates the
   Commercial authorization and Laboratory work order; approved cancellation
   reaches Lab before Commercial commits it. Additive Lab roles, the operator
   workspace, durable Lab-to-Commercial projections, receipt/accession and
@@ -21,25 +22,25 @@ deployment, or production activation.
   and custody, exceptions, scientific approval, and the Ready-for-release
   handoff are implemented. Current Commercial file scanning, payment/credit,
   and publication remain separate.
-- Target state: Phaeno operates a fit-for-purpose internal Lab Operations
+- Architecture state: Phaeno operates a fit-for-purpose internal Lab Operations
   module behind a provider-neutral boundary. Commercial Operations remains
   customer-facing and can later replace the internal module with a third-party
   LIMS adapter without redesigning the customer or commercial workflows.
 - Initial scientific scope: small-scale reagent preparation, specimen receipt,
-  library preparation, outsourced NGS, and the handoff to Phaeno's existing
-  automated data pipeline.
+  library preparation, outsourced NGS, and scientific readiness before the
+  separately owned handoff to Phaeno's existing automated data pipeline.
 - Phaeno will not initially run NGS in-house.
 - The boundary from generated NGS files through Phaeno's automated pipeline,
   file management, retention, provenance, and output storage is a major TBD.
   This plan assumes only that approved customer output files eventually become
   available for release through the Portal.
 - This plan supersedes the laboratory-execution direction in
-  `ORDER-MANAGEMENT-PLAN.md` when implemented. That plan remains authoritative
-  for commercial ordering, pricing, fulfillment, and current behavior until a
-  separately approved migration is completed.
+  `ORDER-MANAGEMENT-PLAN.md`. That plan remains authoritative for commercial
+  ordering, pricing, fulfillment, files, payment, and publication.
 - Phase 0 Steps 1 and 2 are complete. The evidence-backed current-state
   inventory and ownership classification are recorded in
-  `LAB-OPERATIONS-INVENTORY.md`. No restructure or migration was performed.
+  `LAB-OPERATIONS-INVENTORY.md`. That file is a dated pre-implementation
+  snapshot; the restructure and migrations were completed afterward.
 - Phase 0 Step 3 is complete. The provider-neutral version 1
   Commercial-to-Lab Operations boundary is recorded in
   `LAB-OPERATIONS-CONTRACT.md`; its Commercial-owned core types and outbound
@@ -51,15 +52,21 @@ deployment, or production activation.
   projection, and isolation behavior plus replay-safe, monotonic, customer-safe
   projection delivery; they have a clean build and await an explicitly
   requested database execution.
-- Phase 0 Step 4 is complete as planning. The approved clean development
-  database and migration reset, solution/project restructure, and schema
-  baseline sequence are recorded in
+- Four additional opt-in PostgreSQL controller tests cover atomic
+  Commercial-to-Lab quote authorization, rollback after intermediate provider
+  persistence, accepted cancellation, and started-work veto without a partial
+  Commercial decision. They also have a clean build and await explicitly
+  requested database execution.
+- Phase 0 Step 4 is complete in design and local execution. The approved clean
+  development database and migration reset, solution/project restructure, and
+  schema baseline sequence are recorded in
   `PSEQ-OPERATIONS-MIGRATION-PLAN.md`. The solution/project shell restructure
   and single-context schema target are implemented. The Accounts,
   Relationships, Data Provisioning, commercial configuration, Partner kit,
   integration, notification, workflow-support, request-revision, and quote
-  slices plus the external download audit are extracted into Commercial. Mixed
-  Commercial/Laboratory/pipeline records remain deferred. The disposable
+  slices plus the external download audit are extracted into Commercial.
+  Commercial order, file, and release records remain Commercial-owned; the
+  pipeline/file boundary remains deferred. The disposable
   Development reset, clean `InitialPSeqOperations` migration, database rebuild,
   bootstrap, Reference Journey, and baseline verification suites completed on
   2026-07-16. The additive `CompleteLabOperations` and `AddLabQcProjection`
@@ -107,7 +114,8 @@ replacement by a third-party LIMS.
 - `PSeq Operations Platform` is the working internal umbrella name for the
   combined Commercial Operations and Lab Operations solution. A naming change
   is not required to begin implementation.
-- The target remains a modular monolith, not separately deployed services.
+- The implemented deployment shape remains a modular monolith, not separately
+  deployed services.
 
 ## Target Technical Boundary
 
@@ -122,7 +130,7 @@ The target architecture is:
   no business records
 - feature-owned EF configurations and module-owned write paths
 
-The intended backend project boundaries are:
+The implemented backend project boundaries are:
 
 1. `PSeq.Operations.Api` - thin HTTP host and composition root
 2. `PSeq.Operations.Commercial` - accounts, relationships, entitlements,
@@ -135,10 +143,12 @@ The existing Reference Journey tool remains a non-product utility. The exact
 target layout and implementation sequence are defined in
 `PSEQ-OPERATIONS-MIGRATION-PLAN.md`.
 
-The EF model targets `commercial_ops`, reserves `lab_ops`, and places migration
-history in `public`; it no longer uses a default schema. The verified disposable
+The EF model maps Commercial/current-flow and projection records to
+`commercial_ops`, Laboratory execution records to `lab_ops`, and migration
+history to `public`; it does not use a default schema. The verified disposable
 Development database and former migration chain were replaced on 2026-07-16 by
-the clean `InitialPSeqOperations` baseline; no legacy data backfill was needed.
+the clean `InitialPSeqOperations` baseline and five additive Lab migrations; no
+legacy data backfill was needed.
 That approval does not extend to staging, production, shared, or unexpectedly
 valuable data. Two business schemas are an ownership and maintenance boundary,
 not a security boundary. Authorization remains enforced by the API. The shared
@@ -622,6 +632,9 @@ remove competing internal write paths. The durable strategy is recorded in
 - Created: add opt-in database-backed provider and projection-delivery
   conformance coverage with run-specific cleanup. A passing execution against
   the migrated reference database remains a verification gate.
+- Created: add opt-in controller-path coverage for atomic quote authorization
+  and the Commercial-to-Lab cancellation handoff, including persisted-provider
+  rollback and started-work veto.
 - Complete: implement internal laboratory roles and authorization, including
   active-Phaeno-member eligibility, disabled/offboarded-user denial, exact
   additive capabilities, session projection, and platform-admin bootstrap.
@@ -678,8 +691,9 @@ the unresolved pipeline or scientific file domain.
 The initial Lab Operations capability is successful when:
 
 - an authorized PSeq Lab Service can be traced from commercial authorization
-  through receipt, protocol execution, outsourced NGS, scientific approval, and
-  customer release without exposing another organization
+  through receipt, protocol execution, outsourced NGS, scientific approval,
+  and the existing Commercial release gates without exposing another
+  organization
 - protocol changes create controlled versions without rewriting active or
   historical executions
 - operators can complete routine work without redundant entry of commercial,

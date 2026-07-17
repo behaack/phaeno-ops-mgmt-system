@@ -24,6 +24,11 @@ Each supported audience has a maintained guide set. The corpus covers the implem
 
 This is the documentation baseline for currently implemented workflows. A feature is not documentation-complete when its behavior, permissions, status transitions, business rules, failure states, or support path have changed without a corresponding guide update. Production deployment procedures and confidential incident runbooks remain separate operational artifacts; browser-bundled help must not contain secrets or restricted evidence.
 
+The current Phaeno corpus documents the feature-complete internal Lab
+Operations workflow and its Commercial release boundary. It is application
+help, not a validated laboratory SOP, label/scanner qualification record,
+external NGS provider runbook, or evidence of production activation.
+
 ## Source and routes
 
 - Prospect content: `frontend/src/content/docs/{locale}/prospect/*.mdx`

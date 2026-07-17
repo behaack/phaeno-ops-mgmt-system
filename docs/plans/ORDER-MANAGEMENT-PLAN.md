@@ -7,20 +7,14 @@ The initial-release discovery and implementation were completed on 2026-07-14.
 Product direction expanded on 2026-07-15 through the HubSpot lifecycle plan.
 Those new changes are not authorized for implementation by this plan alone.
 
-On 2026-07-16, `LAB-OPERATIONS-PLAN.md` established approved planning direction
-for separating Commercial Operations from an internal, replaceable Lab
-Operations module. The first four code-ownership slices are implemented:
-commercial configuration/catalog, Partner kit domain rules, commercial
-workflow/outbox/notification records, environment-neutral integration ports,
-immutable lab-service request revisions, and lab-service/data-assembly quotes
-plus the external download audit now live in Commercial. API adapters and mixed
-lab-service, assembly, file, and release records remain in the API pending their
-approved splits. This plan remains
-authoritative for current behavior and commercial ordering; future laboratory
-execution changes must follow the Lab Operations plan and the approved clean
-development reset/restructure plan. If any non-disposable records exist when
-that work begins, they require a new explicitly approved, data-preserving
-transition.
+On 2026-07-16, `LAB-OPERATIONS-PLAN.md` separated Commercial Operations from an
+internal, replaceable Lab Operations provider. That internal application scope
+is now feature-complete: accepted quote/cancellation handoff, roles, operator
+workflows, Laboratory persistence, and durable customer-safe projections are
+implemented. This plan remains authoritative for commercial ordering, pricing,
+files, payment, and publication; laboratory execution follows the Lab
+Operations plan and contract. Pipeline and scientific-file ownership remain a
+separate major TBD.
 
 ## Status
 
@@ -52,11 +46,14 @@ transition.
   exist. Twenty-two Laboratory-owned tables live in `lab_ops`; Commercial
   authorization/projection/receipt records remain in `commercial_ops`. Existing
   customer order, quote, file, payment, and publication records remain
-  authoritative in `commercial_ops` until routing and
-  a data transition are separately implemented.
-- Verification state: backend build/tests, frontend lint/typecheck/unit tests,
-  client/SSR production build, desktop/mobile Playwright journeys, and a live
-  browser error-overlay/console check pass at this checkpoint.
+  authoritative for their Commercial responsibilities in `commercial_ops`.
+- Verification state: the prior clean-baseline backend, frontend, and
+  desktop/mobile suites passed. The complete Lab slice has a clean backend
+  build, frontend lint/typecheck and client/SSR build, and applied local
+  migrations. Five opt-in provider/projection tests and four controller handoff
+  tests are authored and compile but have not been executed; the remaining Lab
+  API, frontend, and database-backed browser coverage stays in the living test
+  plans.
 - Production activation is not complete or implied. It still requires approved
   real scientific definitions/profiles and shipping rules, production storage
   and malware scanning, QuickBooks/Postmark credentials and sandbox validation,
@@ -92,9 +89,9 @@ transition.
   laboratory workflow, fulfillment, invoicing, or contract-management system
   outside Phaeno Portal.
 - Specifically, Phaeno currently has no ERP and no third-party LIMS. QuickBooks
-  Online must not be modeled as either one. A fit-for-purpose internal Lab
-  Operations module is approved planning direction in
-  `LAB-OPERATIONS-PLAN.md`, but is not implemented.
+  Online must not be modeled as either one. The fit-for-purpose internal Lab
+  Operations module in `LAB-OPERATIONS-PLAN.md` is implemented behind the
+  replaceable provider boundary.
 - Do not design a handoff to an assumed external operational system. The portal
   is the operational system of record for confirmed ordering, sample receipt
   and accessioning, laboratory progress, data processing and release, reagent
@@ -486,8 +483,9 @@ entity, status model, or form merely because each begins with a submission.
 - Frontend routes stay thin; feature UI belongs under
   `frontend/src/features` and API integration under `frontend/src/api`.
 - Mutable records use optimistic concurrency and centralized auditing.
-- The current customer administration UI is mock-backed and must not be treated
-  as a production order data source.
+- The connected Phaeno organization workspace is authoritative for durable
+  organization-scoped administration. The standalone global User management
+  preview is not a production order or account data source.
 - The repository implements the OrderManagement domain, QuickBooks provider
   boundary, durable commercial and notification dispatch, operational file
   records, local file storage adapter, scan and release states, and all three

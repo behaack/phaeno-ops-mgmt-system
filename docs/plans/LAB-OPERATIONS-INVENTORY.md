@@ -1,6 +1,13 @@
 # Lab Operations Current-State Inventory and Ownership Classification
 
-This document completes Steps 1 and 2 of Phase 0 in
+> **Historical Phase 0 snapshot:** This inventory was captured on 2026-07-16
+> before the complete Lab Operations implementation. Terms such as "current,"
+> "target," and "not completed" below are relative to that checkpoint. Do not
+> use this file as the current architecture or implementation status; use
+> `LAB-OPERATIONS-PLAN.md`, `LAB-OPERATIONS-CONTRACT.md`,
+> `PSEQ-OPERATIONS-MIGRATION-PLAN.md`, and current code instead.
+
+This document preserves Steps 1 and 2 of Phase 0 in
 `LAB-OPERATIONS-PLAN.md`:
 
 1. inventory the existing laboratory-related implementation
@@ -338,9 +345,10 @@ project, and schema level:
   `portal` schema to `commercial_ops`; new `lab_ops` schema; commercial reagent
   ordering toward PSeq Kit terminology.
 
-## Explicitly Not Completed
+## Explicitly Not Completed at This Snapshot
 
-The completed inventory, schema foundation, and internal provider do not:
+At this historical snapshot, the inventory, schema foundation, and initial
+internal provider did not:
 
 - route current Commercial order or Trial Project work into Laboratory
 - persist Commercial-owned milestone/exception projections or deliver events
@@ -349,4 +357,7 @@ The completed inventory, schema foundation, and internal provider do not:
 - settle pipeline, scientific file, protocol, material, equipment, batch, or
   future LIMS-adapter ownership
 
-Those remain later steps requiring separately approved scope.
+Those items were later implemented for the approved internal application scope
+except the intentionally unresolved pipeline/scientific-file boundary and a
+future external LIMS adapter. Current validation and production-activation
+gates remain in `LAB-OPERATIONS-PLAN.md`.

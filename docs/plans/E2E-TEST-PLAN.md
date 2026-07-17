@@ -4,6 +4,10 @@ Keep this file updated as Playwright e2e tests are created, changed, or intentio
 
 Do not execute this test plan unless explicitly requested.
 
+The internal Lab Operations journey is implemented in the application but its
+database-backed browser proof remains deferred below. Feature completion does
+not satisfy this production-activation gate.
+
 ## Created Tests
 
 - [x] `frontend/e2e/home.spec.ts` - `loads the portal starter dashboard`.

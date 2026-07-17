@@ -21,8 +21,17 @@
 | Sales-assisted work | Bespoke or exceptional work managed as a HubSpot Deal before a pending operational handoff creates executable Portal work. |
 | HubSpot Order summary | The relationship-safe HubSpot record for one committed Portal sale. It is not the Portal operational record or the QuickBooks financial authority. |
 | Lab service order | A Customer request involving physical sample submission, Phaeno accessioning and laboratory analysis, data processing, and portal delivery of resulting data. |
+| Commercial Operations | The domain that owns customer-facing orders, authorization, quotes, safe status projections, files, payment gates, and publication. It does not own detailed laboratory execution. |
+| Lab Operations | The Phaeno-only execution domain and replaceable provider that owns authorized laboratory work, receipt/accession, physical lineage, controlled protocols, materials/equipment, libraries/batches, NGS sendouts, exceptions, and scientific approval. |
+| Lab work authorization | The immutable, versioned Commercial permission for Lab Operations to perform a defined service for submitted specimens. It is not a quote or a laboratory work order. |
+| Lab work order | The Laboratory-owned execution record created from an accepted Commercial authorization. It is not the customer-facing lab service order. |
+| Laboratory role | An additive Phaeno-only assignment: Operator, Supervisor, Protocol Administrator, Scientific Reviewer, or Lab Operations Administrator. Active Phaeno membership is also required. |
 | Partner specimen-processing order | A Partner-owned request for Phaeno specimen processing. Phaeno does not require or infer the Partner's downstream-customer identity. |
 | Sample accessioning | Phaeno's receipt and registration of a submitted physical sample so its laboratory progression is traceable. |
+| Laboratory container | A physical submitted or derived material identity with barcode, label history, location, quantity, and parent-child lineage inside Lab Operations. |
+| Controlled protocol version | An approved, immutable execution definition pinned to assigned work so later protocol changes cannot rewrite active or historical execution. |
+| Lab projection | The Commercial-owned, customer-safe view of a Lab work milestone, schedule health, expected timing, action summary, and reviewer-permitted QC. It is not the Laboratory event ledger. |
+| Ready for release | Scientific approval milestone projected from Lab Operations to Commercial. It creates no file or download and does not bypass scan, payment/credit, or publication gates. |
 | Reagent order | A Partner order for reagents supplied through Phaeno's fulfillment workflow. |
 | Data assembly request | A Partner submission of data for Phaeno processing and delivery of downloadable assembled data/results. |
 | Seed data | Phaeno-selected data granted to an organization independently of lab service results or data assembly inputs and outputs. |

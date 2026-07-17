@@ -55,3 +55,7 @@ Approval moves the Lab work order to **Ready for release**. This is a scientific
 A Customer cancellation request stays in Commercial review until Phaeno decides it. When Phaeno approves cancellation, the portal asks Lab to cancel unreceived work before Commercial commits the decision. Started work requires a separate manual or specimen-level decision; do not force the Commercial order to cancelled when Lab reports that work already started.
 
 Lab projection events and Commercial receipts are durable and idempotent. If a Customer milestone is delayed, refresh the record and allow the dispatcher to retry. Do not recreate authorization, duplicate a work order, or manually copy Lab data into Commercial tables.
+
+## Operational readiness boundary
+
+This guide explains the portal workflow; it is not a laboratory SOP or evidence that a production process has been validated. Before production use, Phaeno must approve the actual minimum fields, labels, printers, scanners, reprint and degraded-mode procedures, external NGS provider identifiers and manifest/status exchange, and operational ownership. Use only approved procedures and configuration for real work.

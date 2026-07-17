@@ -5,8 +5,9 @@
 Phaeno Portal is a multi-tenant application for invite-only organization access,
 Phaeno-owned curated-data provisioning, Customer laboratory services, Partner
 reagent orders, Partner data assembly, Phaeno operational/configuration work,
-and QuickBooks Online commercial synchronization. The repository contains a
-.NET API and a responsive React/TanStack frontend.
+an internal Lab Operations application, and QuickBooks Online commercial
+synchronization. The repository contains a .NET API and a responsive
+React/TanStack frontend.
 
 ## Documentation map
 
@@ -51,21 +52,27 @@ backend/app/
 
 - `Common/`: Shared cross-feature primitives such as domain exceptions.
 - `Features/`: API-owned DTOs, endpoint mapping, persistence access, and external-system adapters.
-- Implemented feature areas are Accounts, Relationship Management, Data Provisioning, Health, and Order Management.
+- Implemented feature areas are Accounts, Relationship Management, Data
+  Provisioning, Health, Order Management, and Lab Operations.
 - `modules/PSeq.Operations.Commercial/Accounts`: account domain entities, pure authorization policy, invitation-token logic, and the invitation-delivery port.
 - `modules/PSeq.Operations.Commercial/Relationships`: relationship requests, service entitlements, and service-eligibility policy.
 - `modules/PSeq.Operations.Commercial/DataProvisioning`: curated-data domain entities, environment-neutral policy, deterministic manifest construction, and file/notification ports.
 - `modules/PSeq.Operations.Commercial/OrderManagement`: commercial configuration/catalog, Partner kit ordering and fulfillment, request-revision and quote records, external download audit, commercial workflow and integration records, and environment-neutral QuickBooks/notification ports.
 - `modules/PSeq.Operations.Commercial/LabOperations`: the provider-neutral v1
   Commercial-to-Lab command, acknowledgment, projection, event-envelope, and
-  provider-port types. No Lab execution or persistence is implemented there.
-- `modules/PSeq.Operations.Laboratory/Domain`: Lab work order, immutable
-  authorization version, specimen/accession, append-only work event, scientific
-  approval, and durable provider-command receipt foundations.
+  provider-port types. Commercial owns this boundary; Laboratory execution and
+  persistence do not leak into it.
+- `modules/PSeq.Operations.Laboratory/Domain`: Lab work orders, immutable
+  authorization versions, roles, specimens/accessions, containers and lineage,
+  protocols and execution, materials and equipment, libraries and batches,
+  NGS sendouts and custody, exceptions, append-only work events, scientific
+  approvals, and durable provider-command/outbox records.
 - `Features/LabOperations`: EF mappings plus the in-process
   `InternalLabOperationsProvider`. It validates and idempotently applies work
-  authorization, safe pre-execution amendments/cancellations, and current work
-  projection queries. Current customer order flows do not call it yet.
+  authorization, safe amendments/cancellations, and current work projection
+  queries. Accepted Customer quotes and approved cancellations use this
+  provider transactionally; role-aware operator APIs and the hosted dispatcher
+  project customer-safe Lab status back to Commercial Operations.
 - `Infrastructure/Api/`: API response envelopes, metadata factories, error mapping, and response filters.
 - `Infrastructure/Persistence/`: the single EF Core `PSeqOperationsDbContext`, PostgreSQL configuration, and design-time migration factory.
 - `Middleware/`: HTTP middleware such as API exception handling.
@@ -99,18 +106,20 @@ The backend uses Entity Framework Core with PostgreSQL through the Npgsql provid
 - Runtime DbContext: `Infrastructure/Persistence/PSeqOperationsDbContext.cs`
 - Design-time migrations factory: `Infrastructure/Persistence/DesignTimePSeqOperationsDbContextFactory.cs`
 - Migrations folder: `Migrations`
-- Current business-model target: Commercial/current-flow entities map to
-  `commercial_ops`; Laboratory foundation entities map to `lab_ops`; no default
-  schema is used
-- Laboratory schema: `lab_ops`, with six explicitly mapped foundation tables
+- Current business-model target: Commercial/current-flow and Lab projection
+  entities map to `commercial_ops`; Laboratory execution entities map to
+  `lab_ops`; no default schema is used
+- Laboratory schema: `lab_ops`, with 22 explicitly mapped Laboratory tables
 - EF migrations history table: `public.__ef_migrations_history`
 - Connection string key: `ConnectionStrings:DefaultConnection`
 
 The verified disposable Development database is named `phaeno_ops`. It was
 rebuilt on 2026-07-16 from `InitialPSeqOperations`, then extended by
-`AddLabOperationsFoundation` and `AddLabProviderCommandReceipts`. It contains 51
-current Commercial tables in `commercial_ops`, six Laboratory tables in
-`lab_ops`, and migration history in `public`; it has no `portal` schema.
+`AddLabOperationsFoundation`, `AddLabProviderCommandReceipts`,
+`CompleteLabOperations`, `AddLabQcProjection`, and
+`EnforceLabLibraryLineage`. The current model contains 54 tables in
+`commercial_ops`, 22 Laboratory tables in `lab_ops`, and migration history in
+`public`; it has no `portal` schema.
 
 Use environment configuration for non-development database credentials. In ASP.NET Core configuration, the connection string can be supplied with `ConnectionStrings__DefaultConnection`.
 
@@ -209,7 +218,10 @@ boundary.
 - **Authentication**: Clerk-issued bearer JWTs validated by the ASP.NET Core API.
 - **Multi-factor authentication**: Owned by the configured Clerk authentication policy; the portal does not implement or claim a separate 2FA system.
 - **Tenant enforcement**: Every tenant read, write, file download, and commercial action is scoped by the authenticated internal user and active selected membership.
-- **Commercial boundary**: QuickBooks Online is the only implemented external commercial system. There is no ERP or LIMS integration in the running application.
+- **Commercial boundary**: QuickBooks Online is the only implemented external
+  commercial system. There is no ERP or third-party LIMS integration in the
+  running application; internal laboratory execution is provided by the
+  replaceable Lab Operations module.
 - **Help boundary**: Prospect, Customer, and Partner help is locale-ready and audience-filtered in the UI. Because current MDX is browser-bundled, it contains no confidential procedures; future search must enforce audience and locale in the backend.
 - **Testing**: Vitest for unit tests, Playwright for end-to-end (e2e) tests
 - **Styling**: Token-based CSS system with light/dark mode support for easy reskinning

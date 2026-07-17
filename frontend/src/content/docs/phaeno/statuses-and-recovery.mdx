@@ -14,6 +14,12 @@ Use Customer lab, Partner reagent, and Partner assembly queues to find work by i
 
 The overall order status is not sufficient evidence. Check sample or shipment progress, the current quote, commercial document, scan state, release state, cancellation request, and notification record separately.
 
+## Recover Lab projections and exceptions
+
+Lab execution events are delivered durably to Commercial projections. If a Customer milestone, schedule, action request, or permitted QC summary is delayed, verify the Lab work order and event state, then retry the existing delivery path. Do not recreate the authorization, create a second work order, or copy Laboratory facts directly into Commercial records.
+
+Internal and Customer-action-required exceptions are separate. Resolve the existing blocking exception with an authorized Supervisor action and a retained resolution note. Never copy an internal investigation description into the Customer-safe summary. Ready for release is a scientific milestone only; recover file scanning, payment, and publication through their own lifecycles.
+
 ## Recover QuickBooks synchronization
 
 Integration records progress through **Pending**, **Processing**, **Succeeded**, **Failed**, or **Needs attention**.

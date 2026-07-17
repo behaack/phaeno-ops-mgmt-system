@@ -10,6 +10,9 @@ authorize a reset of any shared environment.
 
 ## Status
 
+- Current status: restructure, clean local reset, schema separation, and the
+  approved internal Lab Operations migrations are complete. Validation and
+  production activation are separate and incomplete.
 - Design completed on 2026-07-16 from the current repository and EF model.
 - The Product Owner approved starting over with migrations and deleting the old
   database rather than preserving its data.
@@ -35,8 +38,9 @@ authorize a reset of any shared environment.
   workflow/outbox/notification records, and environment-neutral QuickBooks and
   notification ports now live in Commercial. Immutable lab-service request
   revisions, lab-service/data-assembly quotes, and the external download audit
-  are also extracted. Mixed order, sample, processing, managed-file, and release
-  records remain in the API intentionally until their future approved splits.
+  are also extracted. Commercial order, submitted-sample, managed-file, and
+  release records remain in the API composition layer intentionally; assembly
+  processing stays there until pipeline/file ownership is approved.
 - The Laboratory project owns work authorization, specimen/accession, physical
   lineage, roles, protocols and execution, materials and equipment, libraries,
   batches, NGS sendouts/custody, exceptions, events, scientific approval, and
@@ -45,20 +49,20 @@ authorize a reset of any shared environment.
   Laboratory write paths; durable events update Commercial-owned projections.
 - The verified disposable Development database and seven historical migrations
   were replaced on 2026-07-16 by `InitialPSeqOperations`. The database was then
-  renamed to `phaeno_ops` and extended by `AddLabOperationsFoundation` and
+  renamed to `phaeno_ops` and extended by `AddLabOperationsFoundation`,
   `AddLabProviderCommandReceipts`, `CompleteLabOperations`,
   `AddLabQcProjection`, and `EnforceLabLibraryLineage`. `commercial_ops`
-  contains 54 current-flow and Lab-
-  projection tables, `lab_ops` contains 22 Laboratory tables, and `public` contains only
-  migration history.
+  contains 54 current-flow and Lab-projection tables, `lab_ops` contains 22
+  Laboratory tables, and `public` contains only migration history.
 - The configured bootstrap, API health probe, rollback-safe Reference Journey,
   69 backend tests, frontend lint/typecheck, 28 unit tests, client/SSR build,
   and 28 desktop/mobile Playwright scenarios pass against this checkpoint.
   The complete Lab Operations slice has a clean backend build, frontend lint
   and typecheck, EF/model/schema checks,
-  and API health probe. Five opt-in PostgreSQL provider/projection-conformance tests now
-  compile against this checkpoint; they have not been executed because the test
-  plan requires an explicit request.
+  and API health probe. Five opt-in PostgreSQL provider/projection-conformance
+  tests and four Commercial-to-Lab controller handoff tests now compile against
+  this checkpoint; they have not been executed because the test plan requires
+  an explicit request.
 - The automated data-pipeline and scientific file-management boundary remains
   explicitly unresolved and outside the reset.
 
@@ -307,6 +311,11 @@ additive implementation migration, not something to fake in an empty schema.
 
 ## Staged Implementation Sequence
 
+The stages below preserve the actual sequence and the state at each checkpoint.
+Words such as "current," "future," and "empty" inside a completed stage are
+checkpoint-relative; the status section and acceptance outcomes above and below
+describe the final implemented state.
+
 ### Stage 0 - Verify the Disposable Target
 
 1. Record the current Git commit and working-tree changes.
@@ -476,14 +485,13 @@ Gate:
 
 ### Stage 6 - Introduce the Lab Foundation and Internal Provider
 
-Status: foundation and initial internal provider completed on 2026-07-16. The Commercial-owned
-provider-neutral v1 core contract and `ILabOperationsProvider` port are
-implemented. Six Laboratory-owned persistence models map explicitly to
-`lab_ops` through `AddLabOperationsFoundation` and
-`AddLabProviderCommandReceipts`. `InternalLabOperationsProvider` is registered,
-but no operator workflow or current customer-workflow connection exists yet.
+Status: completed on 2026-07-16. The Commercial-owned provider-neutral v1
+contract and `ILabOperationsProvider` port, 22-table Laboratory model,
+registered internal provider, current Customer quote/cancellation handoff,
+operator workflow, roles, and durable projections are implemented through the
+five additive Lab migrations.
 
-When that implementation is authorized:
+Completed sequence:
 
 1. introduce the provider-neutral contract from
    `LAB-OPERATIONS-CONTRACT.md` - core types and outbound port complete
@@ -499,7 +507,8 @@ When that implementation is authorized:
 6. add opt-in PostgreSQL provider-conformance coverage - created and compiled;
    execution against the migrated reference database remains pending
 7. retire direct writes to the mixed Commercial laboratory fields only after
-   replacement behavior and tests exist
+   replacement behavior and tests exist - completed for Lab-owned execution;
+   Commercial order, file, payment, and publication records remain Commercial
 
 Because the reset starts without legacy records, no historical backfill is
 planned. If real work is entered before this stage ships, stop and design a
@@ -537,7 +546,7 @@ under the old reset approval.
 - tenant scoping and Phaeno internal authorization remain enforced
 - current quoting, order, kit, file, download, and release flows work against
   newly seeded data
-- Lab Operations UI and role behavior is represented as implemented only after
+- Lab Operations UI and role behavior is represented as implemented because
   the role-aware API, operator workspace, and local additive migrations exist
 - no pipeline/file ownership is implied
 

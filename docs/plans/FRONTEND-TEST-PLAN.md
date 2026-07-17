@@ -4,6 +4,11 @@ Keep this file updated as frontend tests are created, changed, or intentionally 
 
 Do not execute this test plan unless explicitly requested.
 
+The Lab Operations workspace is implemented, linted, typechecked, and included
+in a successful client/SSR build. Its focused component coverage below remains
+deferred, so the approved application scope is feature-complete but not
+verification- or production-activation-complete.
+
 ## Created Tests
 
 - [x] `frontend/tests/invite-schema.test.ts` - `inviteSchema` accepts a valid invite payload.

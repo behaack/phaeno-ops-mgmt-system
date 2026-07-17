@@ -4,6 +4,12 @@ Keep this file updated as backend tests are created, changed, or intentionally d
 
 Do not execute this test plan unless explicitly requested.
 
+Lab Operations is feature-complete for the approved internal application
+scope, not verification-complete. The five opt-in provider/projection tests and
+four opt-in Commercial handoff tests below are authored and compile but have
+not been executed. The deferred Lab API scenarios remain production-activation
+coverage, not missing application features.
+
 ## Created Tests
 
 - [x] `backend/test/PhaenoPortalMetadataTests.cs` - `HealthMetadataIdentifiesTheApi`.
@@ -96,6 +102,14 @@ Do not execute this test plan unless explicitly requested.
   The tests use `PSEQ_OPERATIONS_REFERENCE_CONNECTION`, require an already
   migrated database, and explicitly clean their run-specific Lab, Commercial
   projection, outbox, event-receipt, and audit fixtures.
+- [x] `backend/test/LabOperationsCommercialHandoffPostgresTests.cs` - opt-in
+  controller-path coverage proving quote acceptance atomically commits the
+  Commercial authorization and Lab work, provider rejection rolls both back
+  even after an intermediate save, accepted cancellation updates Commercial
+  and Lab together, and started Lab work vetoes the decision without partially
+  approving it. The fixture uses unique Customer/Phaeno identities and removes
+  its Commercial, Laboratory, account, idempotency, notification, and audit
+  records.
 - [x] `backend/tools/PSeq.Operations.ReferenceJourney` - controller-level
   authenticated PostgreSQL journey covering approved service-request source
   enforcement, rejection of an onboarding-only source, usable entitlement
@@ -122,8 +136,7 @@ Do not execute this test plan unless explicitly requested.
   specimen placement, Partner data-assembly placement, ineligible/custom-work
   routing, immutable pricing snapshots, Partner downstream-identity omission,
   post-placement scientific validation, and cross-tenant denial.
-- [ ] Complete Lab Operations API - cover atomic quote-acceptance authorization,
-  cancellation handoff, receipt/accession and
+- [ ] Complete Lab Operations API - cover receipt/accession and
   lineage validation, protocol lifecycle and pinned execution, QC/expiry/
   calibration gates, cross-order batching, sendout custody, exception
   resolution, scientific approval, and optimistic concurrency.
@@ -205,6 +218,10 @@ Do not execute this test plan unless explicitly requested.
 
 ## Requested Execution Log
 
+- 2026-07-16: the Commercial-to-Lab handoff slice added four opt-in PostgreSQL
+  controller scenarios and ran `dotnet build
+  backend/PSeq.Operations.slnx --no-restore`; all projects compiled without
+  warnings or errors. Test execution was not requested and was not run.
 - 2026-07-16: the Lab role-authorization slice added shared request/session
   capability policy and focused unit coverage, then ran `dotnet build
   backend/PSeq.Operations.slnx --no-restore`; all projects compiled without

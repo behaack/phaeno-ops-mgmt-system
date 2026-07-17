@@ -16,6 +16,11 @@ Do not execute this plan unless explicitly requested.
 - The current application does not implement Trial Projects. Existing code and
   authorization correctly prevent Prospects from viewing, creating, or placing
   orders.
+- The implemented Lab Operations v1 contract already reserves `TrialProject`
+  as an authorization source, but no Trial Project currently invokes it. A
+  future Trial Project implementation must route approved work through the
+  existing provider and Phaeno-only Lab roles rather than create a second
+  laboratory execution path.
 - HubSpot is the selected relationship CRM and planned integration target, but
   no CRM integration exists in the running application. The workflow must
   support a manual handoff before automation is required.
@@ -30,6 +35,9 @@ Do not execute this plan unless explicitly requested.
   conversion authorization.
 - `ORDER-MANAGEMENT-PLAN.md` owns Customer and Partner commercial ordering and
   preserves the rule that a Trial Project is not an order.
+- `LAB-OPERATIONS-PLAN.md` and `LAB-OPERATIONS-CONTRACT.md` own the implemented
+  provider boundary that a future approved Trial Project uses for laboratory
+  execution. They do not make Trial Projects implemented.
 - `ORGANIZATION-DATA-PROVISIONING-PLAN.md` owns Phaeno-curated sample packages,
   which remain separate from Prospect-supplied trial samples and results.
 - `BACKEND-TEST-PLAN.md`, `FRONTEND-TEST-PLAN.md`, and `E2E-TEST-PLAN.md` track
@@ -324,7 +332,8 @@ Rules:
   independent sample statuses, result provenance, file scanning, and release
   use the same scientific and security standards as Customer laboratory work.
 - The implementation may share operational services and UI components with
-  Customer lab-service workflows, but Trial Project records remain a distinct
+  Customer lab-service workflows and must use the existing Lab Operations
+  provider for approved execution, but Trial Project records remain a distinct
   aggregate and do not enter the commercial order state machine.
 - Each submitted sample belongs to exactly one Trial Project and one Prospect
   organization.

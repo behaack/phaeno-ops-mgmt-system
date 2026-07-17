@@ -14,13 +14,13 @@ Do not execute this plan unless explicitly requested.
   persistence orchestration, Clerk/Postmark adapters, and bootstrap composition.
 - The frontend session shell and invitation acceptance/decline route are
   connected to the API.
-- The current organization and user administration screens remain mock-backed
-  session previews. Durable create/list/update, invitation resend/revoke,
-  membership role/deactivation, organization conversion, and global-user
-  lifecycle operations still require connected frontend work and coverage.
-- In the mock Customer administration preview, organization create and edit
-  actions use modal forms, and selecting an organization opens a dedicated,
-  view-first customer detail route.
+- The Phaeno organization list/detail, request, entitlement, invitation,
+  membership, conversion, readiness, and lifecycle workspaces are connected to
+  durable APIs. The standalone global User management screen remains a
+  session-only preview; global-user lifecycle operations still require a
+  connected frontend and coverage.
+- Organization create and edit actions use modal forms, and selecting an
+  organization opens a dedicated, view-first detail route.
 
 ## Core Decisions
 

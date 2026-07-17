@@ -6,8 +6,9 @@
 
 - `docs/plans/AUTH-USER-SYSTEM-PLAN.md`: implemented backend account,
   invitation, authorization, bootstrap, and audit behavior; invitation
-  acceptance is connected, while the organization/user administration screens
-  remain mock-backed pending a durable frontend client.
+  acceptance and the Phaeno organization list/detail, request, entitlement,
+  invitation, membership, conversion, and lifecycle workspaces are connected.
+  The standalone global User management screen remains a session-only preview.
 - `docs/plans/FILE-MANAGEMENT-PLAN.md`: storage abstraction, folders, versions, retention, and download audit.
 - `docs/plans/ORDER-MANAGEMENT-PLAN.md`: implemented Customer laboratory,
   Partner reagent, Partner data-assembly, and Phaeno operations/configuration
@@ -17,31 +18,23 @@
   HubSpot relationship, evaluation, onboarding, service-entitlement, direct and
   Sales-assisted sale, relationship-change, and offboarding lifecycle. No CRM
   integration is implemented.
-- `docs/plans/LAB-OPERATIONS-PLAN.md`: approved future separation of Commercial
-  Operations from a fit-for-purpose internal Lab Operations module, including
-  versioned protocols, reagent and library preparation, outsourced NGS, and a
-  replaceable provider boundary. Its companion
-  `docs/plans/LAB-OPERATIONS-INVENTORY.md` records the completed current-state
-  inventory and target ownership classification;
-  `docs/plans/LAB-OPERATIONS-CONTRACT.md` defines the version 1
-  Commercial-to-Lab contract, whose Commercial-owned core types and outbound
-  provider port are implemented; and
-  `docs/plans/PSEQ-OPERATIONS-MIGRATION-PLAN.md` defines the approved clean
-  development database/migration reset and restructuring sequence. The
-  solution/project shells and single-context schema target are restructured,
-  and the Accounts, Relationships, Data Provisioning, commercial configuration,
-  Partner kit, integration, notification, workflow-support, request-revision,
-  quote, and external-download-audit slices are extracted into Commercial. The
-  disposable Development reset and single clean `InitialPSeqOperations`
-  migration are complete. The local Development database is `phaeno_ops`, and
-  the two additive Lab migrations create six explicitly owned `lab_ops` tables.
-  The idempotent internal provider is registered but no current Commercial flow
-  invokes it. Mixed Commercial/Laboratory/pipeline records, Commercial
-  projection/event delivery, and operator workflows remain future
-  implementation.
-  The automated
-  data pipeline and scientific file-management boundary is an explicit major
-  TBD.
+- `docs/plans/LAB-OPERATIONS-PLAN.md`: feature-complete approved internal Lab
+  Operations application, including Commercial authorization/cancellation
+  handoff, additive Lab roles, receipt/accession and lineage, controlled
+  protocols and execution, materials/equipment, libraries and cross-order
+  batches, provider-neutral outsourced NGS sendouts/custody, exceptions,
+  scientific approval, and durable customer-safe projections. Its companion
+  `docs/plans/LAB-OPERATIONS-INVENTORY.md` is dated Phase 0 evidence rather than
+  current architecture; `docs/plans/LAB-OPERATIONS-CONTRACT.md` governs the
+  implemented version 1 Commercial-to-Lab boundary; and
+  `docs/plans/PSEQ-OPERATIONS-MIGRATION-PLAN.md` records the completed clean
+  Development reset and restructure. The local database is `phaeno_ops`, with
+  54 tables in `commercial_ops`, 22 Laboratory tables in `lab_ops`, and EF
+  history in `public`. Validation and production activation remain incomplete:
+  database-backed Lab suites, representative bench/label/scanner work,
+  external NGS operating details, deployment, and production content are
+  gates. The automated data-pipeline and scientific file-management boundary
+  remains an explicit major TBD.
 - `docs/plans/PROSPECT-TRIAL-PROJECT-PLAN.md`: approved future no-charge,
   closed-ended Prospect Trial Project requested from HubSpot and governed in
   the Portal. It is not implemented.
@@ -64,8 +57,9 @@
   ownership and data-boundary guidance; implementation state remains in the
   owning lifecycle plan.
 - `docs/lims-integration-strategy.md`: durable provider-neutral boundary for the
-  planned internal Lab Operations provider and any future third-party LIMS
-  replacement; implementation state remains in the Lab Operations plan.
+  implemented internal Lab Operations provider and any future third-party LIMS
+  replacement; implementation and activation state remains in the Lab
+  Operations plan.
 - `docs/user-documentation.md`: authoring, audience, privacy, portability, and future search rules for the in-portal help system.
 - `docs/operations-readiness.md`: current runtime, configuration ownership,
   durable delivery, migration handling, and explicit production-activation gates.

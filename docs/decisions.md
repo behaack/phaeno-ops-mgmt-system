@@ -313,6 +313,26 @@ Portal sale is published to HubSpot as a relationship-safe Order summary, while
 routine direct sales do not create Deals. QuickBooks remains authoritative for
 financial facts, and scientific data never enters HubSpot.
 
+## 2026-07-16: Commercial and Laboratory execution are separate, replaceable domains
+
+Status: confirmed by the Product Owner and implemented for the approved
+internal Lab Operations application scope. Validation and production
+activation remain incomplete.
+
+Commercial Operations owns the Customer order, authorization, quote, customer-
+safe projection, files, payment, and publication. Laboratory owns work orders,
+receipt/accession, physical lineage, controlled execution, materials and
+equipment, libraries and batches, outsourced NGS sendouts/custody, exceptions,
+and scientific approval in `lab_ops`. Accepted quote authorization and approved
+cancellation cross the versioned provider boundary transactionally; durable
+events update Commercial projections without exposing the Laboratory schema.
+
+Ready for release is scientific readiness, not file publication. It creates no
+file or download and does not bypass Commercial scanning, credit/payment, or
+publication gates. The internal provider may later be replaced by a third-party
+LIMS only through an approved, data-preserving, validated cutover. Pipeline and
+scientific-file ownership remain deliberately unresolved.
+
 ## Open decisions
 
 - Any exceptional curated-package purge process.

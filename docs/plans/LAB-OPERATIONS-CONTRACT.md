@@ -3,14 +3,18 @@
 This document defines the version 1 application contract between
 Commercial Operations and Lab Operations.
 
-It is an architecture and implementation-planning artifact only. It does not
-authorize new projects, code, schemas, tables, migrations, dependencies,
-external integrations, or deployments.
+It governs the implemented version 1 application boundary and remains the
+design authority for compatible providers. It does not authorize new projects,
+contract versions, schemas, migrations, dependencies, external integrations,
+or deployments.
 
 ## Status
 
 - Contract direction approved through the Lab Operations planning decisions on
   2026-07-16.
+- Current status: implemented for the approved internal application scope;
+  database-backed conformance execution and production activation remain
+  incomplete.
 - Version: `v1` core application contract implemented on 2026-07-16 in
   `PSeq.Operations.Commercial.LabOperations.Application`.
 - Implemented scope: transport-neutral authorization/amendment/cancellation
@@ -33,6 +37,11 @@ external integrations, or deployments.
   customer-safe fields, and no-file publication at `ReadyForRelease`. They
   require the explicitly configured migrated reference database and were
   compiled, but not executed, in this slice.
+- Commercial handoff coverage: four additional opt-in PostgreSQL controller
+  tests prove atomic quote authorization, rollback after intermediate provider
+  persistence, accepted cancellation, and a started-work cancellation veto.
+  They compile against the migrated reference model and await explicitly
+  requested database execution.
 - Completed application integration: accepted customer quotes create the
   Commercial authorization and Lab work atomically; approved cancellations are
   checked by Lab before Commercial commits; durable events update idempotent,

@@ -8,19 +8,20 @@ product has been selected, and this document does not authorize implementation
 or create a dependency on an assumed vendor.
 
 Today, Phaeno Portal remains the operational system of record for the
-laboratory workflows represented in the product. Approved planning direction
-in `plans/LAB-OPERATIONS-PLAN.md` introduces a fit-for-purpose internal Lab
-Operations provider behind the same boundary a future third-party LIMS would
-implement. That module and boundary are not yet implemented. Any ownership
-change still requires an explicitly planned, data-preserving, and validated
-cutover.
+laboratory workflows represented in the product. The fit-for-purpose internal
+Lab Operations provider and its version 1 Commercial boundary are implemented
+as described in `plans/LAB-OPERATIONS-PLAN.md`. The approved internal
+application scope is feature-complete; representative bench validation,
+database-backed journey execution, deployment, and production activation are
+not complete. Any future ownership change to a third-party LIMS still requires
+an explicitly planned, data-preserving, and validated cutover.
 
 ## Purpose
 
-Phaeno will initially meet its small-scale execution needs with an internal Lab
-Operations module. If laboratory volume, traceability, quality, or future
-capabilities later justify a third-party system, Phaeno may replace that
-provider with a LIMS adapter. Commercial Operations continues to own the
+Phaeno's approved application now meets its small-scale execution needs with an
+internal Lab Operations module. If laboratory volume, traceability, quality,
+or future capabilities later justify a third-party system, Phaeno may replace
+that provider with a LIMS adapter. Commercial Operations continues to own the
 customer-facing scientific operation while the selected Lab Operations
 provider owns explicitly assigned laboratory execution detail.
 
@@ -237,9 +238,10 @@ The future integration should support:
 - Supporting scheduled reconciliation so missed webhooks or partial failures do
   not leave the systems permanently inconsistent
 
-Detailed scientific payloads, status vocabularies, retention rules, and release
-criteria remain discovery work. They must be defined with laboratory operators
-before implementation.
+Vendor-specific payloads, external status mappings, retention responsibilities,
+and cutover release criteria remain discovery work for a future LIMS. They must
+be defined with laboratory operators before an external adapter is implemented;
+this does not reopen the implemented internal provider contract.
 
 ## Phased Implementation Roadmap
 
@@ -258,7 +260,8 @@ before implementation.
 
 ### Phase 1: Integration Foundation
 
-- Implement `ILimsProvider` and an adapter for the selected LIMS.
+- Implement the selected LIMS adapter behind the existing
+  `ILabOperationsProvider` contract.
 - Configure credentials and secrets outside source control.
 - Add external-identifier mapping, idempotency, durable delivery, retry, audit,
   monitoring, and reconciliation support.
@@ -297,48 +300,34 @@ phases should not be implemented speculatively.
 
 ## Provider Abstraction
 
-Commercial application features should depend on provider-neutral commands and
+Commercial application features depend on provider-neutral commands and
 results rather than an internal Lab Operations data model, vendor SDK, or
-vendor record types. Both the initial internal provider and a future external
-adapter implement the same application-facing contract. An illustrative
+vendor record types. Both the current internal provider and a future external
+adapter implement the same application-facing contract. The implemented v1
 interface is:
 
 ```csharp
 public interface ILabOperationsProvider
 {
-    Task<LabWorkSubmissionResult> SubmitSampleAsync(
-        LabWorkSubmission submission,
+    Task<LabCommandAcknowledgment> AuthorizeWorkAsync(
+        AuthorizeLabWorkCommand command,
         CancellationToken cancellationToken);
 
-    Task<LabWorkRequestResult> SubmitSequencingRequestAsync(
-        LabSequencingRequest request,
+    Task<LabCommandAcknowledgment> AmendAuthorizationAsync(
+        AmendLabWorkAuthorizationCommand command,
         CancellationToken cancellationToken);
 
-    Task<LabWorkAmendmentResult> AmendSequencingRequestAsync(
-        Guid labWorkRequestId,
-        LabSequencingRequestAmendment amendment,
+    Task<LabCancellationOutcome> RequestCancellationAsync(
+        RequestLabWorkCancellationCommand command,
         CancellationToken cancellationToken);
 
-    Task CancelSequencingRequestAsync(
-        Guid labWorkRequestId,
-        string reason,
-        CancellationToken cancellationToken);
-
-    Task<LabSampleStatus?> GetSampleStatusAsync(
-        Guid accessionId,
-        CancellationToken cancellationToken);
-
-    Task<LabQcSummary?> GetQcSummaryAsync(
-        Guid accessionId,
-        CancellationToken cancellationToken);
-
-    Task<LabWorkRequestStatus?> GetSequencingRequestStatusAsync(
-        Guid labWorkRequestId,
+    Task<LabWorkProjection?> GetWorkProjectionAsync(
+        Guid authorizationId,
         CancellationToken cancellationToken);
 }
 ```
 
-The final contract should be no broader than proven workflows. Webhook
+The implemented contract should remain no broader than proven workflows. Webhook
 validation, pagination, rate limits, vendor statuses, and vendor-specific error
 handling belong in the selected adapter. Inbound events should be translated to
 provider-neutral integration messages before they affect Portal workflows.
@@ -397,6 +386,7 @@ not feature-list comparison alone.
 > boundary connects those domains without making either one a duplicate system
 > of record.**
 
-Until the internal Lab Operations transition or a future LIMS ownership cutover
-is explicitly implemented, current Portal plans and implemented workflows
-remain authoritative for existing behavior.
+The internal Lab Operations transition is implemented and current Portal
+plans, code, and workflows remain authoritative. A future LIMS must not become
+authoritative until its adapter, migration, parallel validation,
+reconciliation, and ownership cutover are explicitly approved and completed.

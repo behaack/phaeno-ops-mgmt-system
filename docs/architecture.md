@@ -42,9 +42,8 @@ The backend targets .NET 10 as a modular monolith:
   tenant authorization, environment configuration, local file storage,
   scanner implementation, Postmark adapter, and notification dispatch.
 - `app/Features/OrderManagement`: HTTP/EF orchestration, QuickBooks/Postmark and
-  hosted-dispatch adapters, plus the current mixed laboratory-service,
-  data-assembly, operational-file, and release records awaiting their approved
-  splits.
+  hosted-dispatch adapters, plus the Commercial-owned customer lab-service,
+  data-assembly, operational-file, and release records.
 - `modules/PSeq.Operations.Commercial/LabOperations`: the Commercial-owned v1
   outbound Lab Operations contract. Its transport-neutral command,
   acknowledgment, projection, event-envelope, and provider-port types do not
@@ -82,6 +81,12 @@ reaches Lab before Commercial commits the decision. Lab writes produce durable,
 versioned events; the hosted dispatcher applies idempotent Commercial
 projections and receipts. Ready for release and reviewer-permitted QC cross this
 boundary, but no Lab transition creates or publishes a file.
+
+The approved internal Lab Operations application scope is feature-complete in
+the repository. That statement does not mean production-ready: representative
+bench workflow, label/scanner and degraded-mode validation, database-backed Lab
+journeys, external NGS operating details, deployment, and operational content
+approval remain activation gates.
 
 ## Identity and authorization
 
@@ -195,7 +200,7 @@ use a backend index with authenticated audience and locale filtering.
   2026-07-16 from `20260716220428_InitialPSeqOperations`, renamed to
   `phaeno_ops`, and extended by `20260716223048_AddLabOperationsFoundation`,
   `20260716225818_AddLabProviderCommandReceipts`,
-  `20260716234233_CompleteLabOperations`, and
+  `20260716234233_CompleteLabOperations`,
   `20260716235343_AddLabQcProjection`, and
   `20260717000026_EnforceLabLibraryLineage`. It contains no `portal` schema.
 - External identity: `Clerk` configuration.

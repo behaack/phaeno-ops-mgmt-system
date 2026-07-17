@@ -29,13 +29,17 @@
 The current code implements `Phaeno`, `Prospect`, `Customer`, and `Partner`
 organizations; invite-only multi-organization membership; Phaeno-owned curated
 data provisioning; Customer laboratory services; Partner reagent ordering;
-Partner data assembly; and Phaeno operational/configuration workspaces.
+Partner data assembly; a Phaeno-only internal Lab Operations workflow; and
+Phaeno operational/configuration workspaces. The approved Lab application scope
+is feature-complete, while validation and production activation remain
+incomplete.
 `Distributor` is not a separate product term.
 
 The general shared-folder/file-management model, production storage and malware
 scanning, real production scientific definitions and profiles, production
-QuickBooks/Postmark configuration, CRM or LIMS integration, and an established
-production deployment path are not implemented production capabilities.
+QuickBooks/Postmark configuration, CRM or third-party LIMS integration, and an
+established production deployment path are not implemented production
+capabilities.
 
 Confirmed Prospect rules:
 

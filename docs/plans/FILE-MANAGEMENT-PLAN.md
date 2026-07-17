@@ -12,6 +12,10 @@ Do not extend the general file-management design below into that scientific
 domain until the pipeline and file-ownership contract is separately approved.
 The Lab Operations plan currently assumes only that approved customer output
 files eventually become available for controlled release through the Portal.
+The implemented `ReadyForRelease` transition deliberately creates no file,
+result release, pipeline run, or customer download. Existing Commercial scan,
+credit/payment, and publication gates remain authoritative until this
+scientific pipeline boundary is separately approved.
 
 ## Current Implementation Boundary
 
