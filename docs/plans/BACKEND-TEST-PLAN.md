@@ -14,8 +14,15 @@ batch entry now have focused unit and rollback-isolated PostgreSQL coverage.
 
 ## Created Tests
 
+- [x] `backend/test/PersistenceTests.cs` -
+  `PSeqOperationsDbContextMapsWebsiteEntitiesToWebsiteSchema` and the
+  all-entity schema assertion cover the Website-owned tables in the shared
+  portal context.
+- [x] `backend/test/WebsiteApiTests.cs` - sitemap URL discovery and
+  accent-normalization coverage for the public Website search path.
 - [x] `backend/test/PhaenoPortalMetadataTests.cs` - `HealthMetadataIdentifiesTheApi`.
-- [x] `backend/test/PersistenceTests.cs` - `PSeqOperationsDbContextMapsEveryCurrentEntityToCommercialSchema`.
+- [x] `backend/test/PersistenceTests.cs` -
+  `PSeqOperationsDbContextMapsEveryEntityToItsOwningSchema`.
 - [x] `backend/test/PersistenceTests.cs` - `PSeqOperationsDbContextMapsAccountEntities`.
 - [x] `backend/test/PersistenceTests.cs` - `PSeqOperationsDbContextMapsDataProvisioningEntitiesAndTenantBoundaries`.
 - [x] `backend/test/ModuleBoundaryTests.cs` - `CommercialAndLaboratoryAssembliesDoNotReferenceEachOtherOrApi`.

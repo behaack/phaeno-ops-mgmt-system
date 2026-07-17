@@ -9,9 +9,11 @@ Browser
   -> React/TanStack frontend (`frontend`)
   -> Clerk authentication and bearer token
   -> ASP.NET Core API (`backend/app`)
+Public Phaeno Website
+  -> anonymous `/api/v1/web-ops` endpoints in the same ASP.NET Core API
   -> PostgreSQL through EF Core
   -> local managed-file storage in the current development implementation
-  -> QuickBooks Online and Postmark through configured adapters
+  -> QuickBooks Online, Postmark, Mailgun, and Google reCAPTCHA through configured adapters
 ```
 
 The frontend and API are separate build units. The root `package.json` delegates common frontend commands; the backend solution lives at `backend/PSeq.Operations.slnx`.
@@ -62,6 +64,9 @@ The backend targets .NET 10 as a modular monolith:
   role-aware operator API and hosted outbox dispatcher compose Lab writes with
   Commercial-owned authorization, milestone, exception, timing, and permitted-
   QC projections without adding module references.
+- `app/Features/Website`: the anonymous Phaeno Website contract, shared-context
+  intake persistence, reCAPTCHA, Mailgun templates, public documents, sitemap
+  crawler, scheduled index rebuild, and Lucene search.
 - `Features/Health`: health endpoint.
 - `Infrastructure/Api`: response envelope, metadata, error mapping, and response filter.
 - `Infrastructure/Persistence`: the single `PSeqOperationsDbContext`, mappings, save interceptors, and PostgreSQL configuration.
@@ -195,8 +200,8 @@ use a backend index with authenticated audience and locale filtering.
   database is `phaeno_ops`.
 - PostgreSQL business schemas: Commercial/current-flow and Lab projection
   entities target `commercial_ops`; Laboratory execution entities target
-  `lab_ops`; no default
-  schema is used.
+  `lab_ops`; Website intake entities target `website`; no default schema is
+  used.
 - EF migration history: `public.__ef_migrations_history`.
 - Migration checkpoint: the disposable Development database was rebuilt on
   2026-07-16 from `20260716220428_InitialPSeqOperations`, renamed to
@@ -204,7 +209,9 @@ use a backend index with authenticated audience and locale filtering.
   `20260716225818_AddLabProviderCommandReceipts`,
   `20260716234233_CompleteLabOperations`,
   `20260716235343_AddLabQcProjection`, and
-  `20260717000026_EnforceLabLibraryLineage`. It contains no `portal` schema.
+  `20260717000026_EnforceLabLibraryLineage`; `AddWebsiteApi` is generated but
+  has not been applied as part of the code-consolidation work. The model
+  contains no `portal` schema.
 - External identity: `Clerk` configuration.
 - Invitation delivery: Postmark when configured; logging sender otherwise.
 - Data provisioning: `DataProvisioning` storage root, size limit, environment
@@ -217,6 +224,11 @@ use a backend index with authenticated audience and locale filtering.
   and webhook-verification settings. The HTTP adapter is used only when the
   required company and OAuth settings are present; otherwise local development
   uses the logging adapter.
+- Public Website API: `WebsiteApi`, `GoogleAuthSettings`,
+  `EmailServiceSettings`, `WebCrawlerSettings`, `WebSearchSettings`, and
+  `ChronJobs:IndexWebsite`; production cutover also requires the public
+  document volume, writable private index path, and the existing reCAPTCHA and
+  Mailgun secrets.
 - Frontend authentication and API routing: `VITE_CLERK_PUBLISHABLE_KEY`,
   `VITE_API_BASE_URL`, and the development-only `VITE_USE_MOCK_SESSION` switch.
 - Deployment is not yet an established production path. Current operational and

@@ -333,6 +333,24 @@ publication gates. The internal provider may later be replaced by a third-party
 LIMS only through an approved, data-preserving, validated cutover. Pipeline and
 scientific-file ownership remain deliberately unresolved.
 
+## 2026-07-17: The public Website API is hosted by Portal
+
+Status: confirmed by the Product Owner and implemented in code. Data and
+traffic cutover remain incomplete.
+
+Phaeno Portal owns the public Website search, contact, non-binding order
+inquiry, reCAPTCHA, Mailgun-template, crawler/index, database-ping, and public-
+document behavior under the existing `/api/v1/web-ops` and `/public`
+contracts. The Astro Website remains a separate application and switches its
+API base at deployment.
+
+Website contacts and inquiries use the shared `PSeqOperationsDbContext` but are
+explicitly isolated in the `website` PostgreSQL schema. They do not become
+Portal users, organizations, operational orders, or CRM contacts without a
+separate approved workflow. The standalone Website API remains the live
+rollback path until historical rows, credentials, files, traffic, and
+production smoke checks have been cut over and reconciled.
+
 ## Open decisions
 
 - Any exceptional curated-package purge process.

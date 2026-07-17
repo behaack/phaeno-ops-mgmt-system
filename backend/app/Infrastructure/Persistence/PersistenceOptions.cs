@@ -8,6 +8,8 @@ public sealed class PersistenceOptions
 
     public string LaboratorySchema { get; init; } = "lab_ops";
 
+    public string WebsiteSchema { get; init; } = "website";
+
     public string MigrationsHistorySchema { get; init; } = "public";
 
     public string MigrationsHistoryTable { get; init; } = "__ef_migrations_history";
@@ -16,6 +18,7 @@ public sealed class PersistenceOptions
     {
         ValidateIdentifier(CommercialSchema, nameof(CommercialSchema));
         ValidateIdentifier(LaboratorySchema, nameof(LaboratorySchema));
+        ValidateIdentifier(WebsiteSchema, nameof(WebsiteSchema));
         ValidateIdentifier(MigrationsHistorySchema, nameof(MigrationsHistorySchema));
         ValidateIdentifier(
             MigrationsHistoryTable,
@@ -26,12 +29,13 @@ public sealed class PersistenceOptions
         {
             CommercialSchema,
             LaboratorySchema,
+            WebsiteSchema,
             MigrationsHistorySchema
         };
-        if (schemas.Count != 3)
+        if (schemas.Count != 4)
         {
             throw new InvalidOperationException(
-                "Commercial, Laboratory, and migration-history schemas must be distinct.");
+                "Commercial, Laboratory, Website, and migration-history schemas must be distinct.");
         }
 
         return this;

@@ -9,6 +9,7 @@ using PSeq.Operations.Laboratory;
 using PSeq.Operations.Laboratory.Domain;
 using PhaenoPortal.App.Infrastructure.Persistence.Auditing;
 using PhaenoPortal.App.Infrastructure.Persistence;
+using PhaenoPortal.App.Features.Website.Entities;
 
 public class PersistenceTests
 {
@@ -25,15 +26,48 @@ public class PersistenceTests
         Assert.All(
             entityTypes,
             entityType => Assert.True(
-                entityType.GetSchema() is "commercial_ops" or "lab_ops"));
+                entityType.GetSchema() is "commercial_ops" or "lab_ops" or "website"));
         Assert.All(
             entityTypes.Where(entityType => entityType.ClrType.Assembly == commercialAssembly),
             entityType => Assert.Equal("commercial_ops", entityType.GetSchema()));
         Assert.All(
             entityTypes.Where(entityType => entityType.ClrType.Assembly == laboratoryAssembly),
             entityType => Assert.Equal("lab_ops", entityType.GetSchema()));
+        Assert.All(
+            entityTypes.Where(entityType =>
+                entityType.ClrType.Namespace?.StartsWith(
+                    "PhaenoPortal.App.Features.Website",
+                    StringComparison.Ordinal) == true),
+            entityType => Assert.Equal("website", entityType.GetSchema()));
         Assert.DoesNotContain(entityTypes, entityType => entityType.GetSchema() == "portal");
         Assert.DoesNotContain(entityTypes, entityType => entityType.GetSchema() == "public");
+    }
+
+    [Fact]
+    public void PSeqOperationsDbContextMapsWebsiteEntitiesToWebsiteSchema()
+    {
+        using var dbContext = CreateDbContext();
+
+        var contactEntity = dbContext.Model.FindEntityType(typeof(WebContact));
+        Assert.NotNull(contactEntity);
+        Assert.Equal("website", contactEntity.GetSchema());
+        Assert.Equal("web_contacts", contactEntity.GetTableName());
+        Assert.Equal(
+            "normalized_email",
+            contactEntity.FindProperty(nameof(WebContact.NormalizedEmail))?.GetColumnName());
+        Assert.Contains(
+            contactEntity.GetIndexes(),
+            index => index.IsUnique
+                && index.Properties.Select(property => property.Name)
+                    .SequenceEqual([nameof(WebContact.NormalizedEmail)]));
+
+        var orderEntity = dbContext.Model.FindEntityType(typeof(WebOrder));
+        Assert.NotNull(orderEntity);
+        Assert.Equal("website", orderEntity.GetSchema());
+        Assert.Equal("web_orders", orderEntity.GetTableName());
+        Assert.Equal(
+            "organization_name",
+            orderEntity.FindProperty(nameof(WebOrder.OrganizationName))?.GetColumnName());
     }
 
     [Fact]

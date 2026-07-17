@@ -13,6 +13,8 @@ using PhaenoPortal.App.Features.LabOperations;
 using PhaenoPortal.App.Features.OrderManagement;
 using PhaenoPortal.App.Features.OrderManagement.Domain;
 using PhaenoPortal.App.Features.RelationshipManagement;
+using PhaenoPortal.App.Features.Website;
+using PhaenoPortal.App.Features.Website.Entities;
 using PhaenoPortal.App.Infrastructure.Persistence.Auditing;
 using System.Text;
 
@@ -133,6 +135,8 @@ public sealed class PSeqOperationsDbContext(
     public DbSet<CommercialLabAuthorization> CommercialLabAuthorizations { get; set; }
     public DbSet<CommercialLabWorkProjection> CommercialLabWorkProjections { get; set; }
     public DbSet<LabOperationsEventReceipt> LabOperationsEventReceipts { get; set; }
+    public DbSet<WebContact> WebContacts { get; set; }
+    public DbSet<WebOrder> WebOrders { get; set; }
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -284,6 +288,7 @@ public sealed class PSeqOperationsDbContext(
         CommercialLabOperationsModelConfiguration.Configure(modelBuilder, this.persistenceOptions.CommercialSchema);
         RelationshipManagementModelConfiguration.Configure(modelBuilder);
         LabOperationsModelConfiguration.Configure(modelBuilder, this.persistenceOptions.LaboratorySchema);
+        WebsiteModelConfiguration.Configure(modelBuilder, this.persistenceOptions.WebsiteSchema);
 
         ApplySchemaOwnership(modelBuilder);
         ApplySnakeCaseDatabaseNames(modelBuilder);
@@ -293,10 +298,14 @@ public sealed class PSeqOperationsDbContext(
     {
         var commercialAssembly = typeof(CommercialAssembly).Assembly;
         var laboratoryAssembly = typeof(LaboratoryAssembly).Assembly;
+        const string websiteNamespace = "PhaenoPortal.App.Features.Website";
 
         foreach (var entityType in modelBuilder.Model.GetEntityTypes())
         {
             var configuredSchema = entityType.GetSchema();
+            var isWebsiteEntity = entityType.ClrType.Namespace?.StartsWith(
+                websiteNamespace,
+                StringComparison.Ordinal) == true;
             if (!string.IsNullOrWhiteSpace(configuredSchema))
             {
                 if (entityType.ClrType.Assembly == commercialAssembly
@@ -315,13 +324,22 @@ public sealed class PSeqOperationsDbContext(
                         + $"'{this.persistenceOptions.LaboratorySchema}', not '{configuredSchema}'.");
                 }
 
+                if (isWebsiteEntity
+                    && configuredSchema != this.persistenceOptions.WebsiteSchema)
+                {
+                    throw new InvalidOperationException(
+                        $"Website entity '{entityType.DisplayName()}' must map to "
+                        + $"'{this.persistenceOptions.WebsiteSchema}', not '{configuredSchema}'.");
+                }
+
                 continue;
             }
 
             var entityNamespace = entityType.ClrType.Namespace;
             var belongsToCurrentCommercialModel =
                 entityType.ClrType.Assembly == commercialAssembly
-                || entityNamespace?.StartsWith("PhaenoPortal.App.", StringComparison.Ordinal) == true;
+                || (entityNamespace?.StartsWith("PhaenoPortal.App.", StringComparison.Ordinal) == true
+                    && !isWebsiteEntity);
             if (!belongsToCurrentCommercialModel)
             {
                 throw new InvalidOperationException(

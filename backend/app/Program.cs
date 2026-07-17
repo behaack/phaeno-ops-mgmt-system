@@ -16,6 +16,7 @@ using PhaenoPortal.App.Features.Health.Endpoints;
 using PhaenoPortal.App.Features.DataProvisioning.Services;
 using PhaenoPortal.App.Features.LabOperations.Services;
 using PhaenoPortal.App.Features.OrderManagement.Services;
+using PhaenoPortal.App.Features.Website;
 using PhaenoPortal.App.Infrastructure.Api;
 using PhaenoPortal.App.Infrastructure.Persistence;
 using PhaenoPortal.App.Middleware;
@@ -23,6 +24,7 @@ using PhaenoPortal.App.Middleware;
 var builder = WebApplication.CreateBuilder(args);
 
 builder.Services.AddPersistence(builder.Configuration);
+builder.Services.AddWebsiteApi(builder.Configuration, builder.Environment);
 builder.Services.Configure<ClerkOptions>(
     builder.Configuration.GetSection(ClerkOptions.SectionName));
 builder.Services.Configure<BootstrapOptions>(
@@ -246,6 +248,8 @@ var app = builder.Build();
 await AccountsBootstrapSeeder.SeedAsync(app.Services);
 
 app.UseHttpsRedirection();
+app.UseWebsitePublicDocuments();
+app.UseCors();
 app.UseAuthentication();
 app.UseRateLimiter();
 app.UseAuthorization();

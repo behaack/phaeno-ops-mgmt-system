@@ -6,8 +6,9 @@ Phaeno Portal is a multi-tenant application for invite-only organization access,
 Phaeno-owned curated-data provisioning, Customer laboratory services, Partner
 reagent orders, Partner data assembly, Phaeno operational/configuration work,
 an internal Lab Operations application, and QuickBooks Online commercial
-synchronization. The repository contains a .NET API and a responsive
-React/TanStack frontend.
+synchronization. The API also serves the anonymous Phaeno Website search,
+contact, and inquiry contract. The repository contains a .NET API and a
+responsive React/TanStack frontend.
 
 ## Documentation map
 
@@ -53,7 +54,8 @@ backend/app/
 - `Common/`: Shared cross-feature primitives such as domain exceptions.
 - `Features/`: API-owned DTOs, endpoint mapping, persistence access, and external-system adapters.
 - Implemented feature areas are Accounts, Relationship Management, Data
-  Provisioning, Health, Order Management, and Lab Operations.
+  Provisioning, Health, Order Management, Lab Operations, and the public
+  Website API.
 - `modules/PSeq.Operations.Commercial/Accounts`: account domain entities, pure authorization policy, invitation-token logic, and the invitation-delivery port.
 - `modules/PSeq.Operations.Commercial/Relationships`: relationship requests, service entitlements, and service-eligibility policy.
 - `modules/PSeq.Operations.Commercial/DataProvisioning`: curated-data domain entities, environment-neutral policy, deterministic manifest construction, and file/notification ports.
@@ -73,6 +75,9 @@ backend/app/
   queries. Accepted Customer quotes and approved cancellations use this
   provider transactionally; role-aware operator APIs and the hosted dispatcher
   project customer-safe Lab status back to Commercial Operations.
+- `Features/Website`: anonymous versioned website endpoints, reCAPTCHA,
+  contact/order persistence, Mailgun notification adapters, public-document
+  hosting, sitemap crawling, and Lucene search indexing.
 - `Infrastructure/Api/`: API response envelopes, metadata factories, error mapping, and response filters.
 - `Infrastructure/Persistence/`: the single EF Core `PSeqOperationsDbContext`, PostgreSQL configuration, and design-time migration factory.
 - `Middleware/`: HTTP middleware such as API exception handling.
@@ -108,18 +113,19 @@ The backend uses Entity Framework Core with PostgreSQL through the Npgsql provid
 - Migrations folder: `Migrations`
 - Current business-model target: Commercial/current-flow and Lab projection
   entities map to `commercial_ops`; Laboratory execution entities map to
-  `lab_ops`; no default schema is used
+  `lab_ops`; Website intake entities map to `website`; no default schema is used
 - Laboratory schema: `lab_ops`, with 22 explicitly mapped Laboratory tables
 - EF migrations history table: `public.__ef_migrations_history`
 - Connection string key: `ConnectionStrings:DefaultConnection`
 
-The verified disposable Development database is named `phaeno_ops`. It was
-rebuilt on 2026-07-16 from `InitialPSeqOperations`, then extended by
+The verified pre-Website disposable Development database is named `phaeno_ops`.
+It was rebuilt on 2026-07-16 from `InitialPSeqOperations`, then extended by
 `AddLabOperationsFoundation`, `AddLabProviderCommandReceipts`,
-`CompleteLabOperations`, `AddLabQcProjection`, and
-`EnforceLabLibraryLineage`. The current model contains 54 tables in
-`commercial_ops`, 22 Laboratory tables in `lab_ops`, and migration history in
-`public`; it has no `portal` schema.
+`CompleteLabOperations`, `AddLabQcProjection`,
+and `EnforceLabLibraryLineage`. The generated `AddWebsiteApi` migration has not
+been applied by this work. The current model contains 54 tables in
+`commercial_ops`, 22 Laboratory tables in `lab_ops`, two Website tables in
+`website`, and migration history in `public`; it has no `portal` schema.
 
 Use environment configuration for non-development database credentials. In ASP.NET Core configuration, the connection string can be supplied with `ConnectionStrings__DefaultConnection`.
 

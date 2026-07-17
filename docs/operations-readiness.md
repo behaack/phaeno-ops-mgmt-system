@@ -8,7 +8,7 @@ This document records how the application operates in the current repository and
 | --- | --- |
 | Frontend | React 19 and TanStack Start, served by Vite in development and built as client plus SSR assets. |
 | API | .NET 10 ASP.NET Core application. |
-| Database | PostgreSQL through one EF Core `PSeqOperationsDbContext`. The verified local Development database is `phaeno_ops`; 54 Commercial/current-flow and Lab-projection tables map to `commercial_ops`, 22 Laboratory execution tables map to `lab_ops`, and migration history is stored in `public`. |
+| Database | PostgreSQL through one EF Core `PSeqOperationsDbContext`. The current model maps 54 Commercial/current-flow and Lab-projection tables to `commercial_ops`, 22 Laboratory execution tables to `lab_ops`, two public Website intake tables to `website`, and migration history to `public`; `AddWebsiteApi` has not been applied to a shared environment. |
 | Authentication | Clerk-issued bearer JWTs; application authorization comes from internal users, active memberships, and capabilities. |
 | Lab Operations | Feature-complete internal provider with additive Phaeno roles, operator APIs/workspace, receipt and accession, controlled execution, traceability, outsourced NGS sendouts, exceptions, scientific approval, and customer-safe Commercial projections. Production validation and activation remain incomplete. |
 | Curated-data files | Feature-owned local filesystem storage through `IManagedFileStorage`. |
@@ -16,8 +16,9 @@ This document records how the application operates in the current repository and
 | File scanning | Environment scanner abstractions. Development can trust configured fixture files; production defaults do not. |
 | Commercial integration | QuickBooks Online adapter. A logging gateway is used when the required QuickBooks configuration is absent. |
 | Relationship CRM | Not implemented. HubSpot is selected for the approved future lifecycle in `docs/plans/HUBSPOT-PORTAL-LIFECYCLE-PLAN.md`. |
-| Email and notices | Postmark when configured; logging senders otherwise. |
-| Background work | Hosted dispatchers retry order integrations, order notifications, data-provisioning notices, and Lab-to-Commercial projection delivery from durable database records. |
+| Email and notices | Portal transactional flows use Postmark when configured. Public Website contact/order templates use Mailgun when configured; logging senders are the local fallback. |
+| Public Website API | Anonymous `/api/v1/web-ops` search, database ping, contact, and order endpoints plus `/public` document hosting are implemented in Portal. Historical data and public traffic have not been cut over. |
+| Background work | Hosted dispatchers retry order integrations, order notifications, data-provisioning notices, and Lab-to-Commercial projection delivery. A hosted Website crawler rebuilds the Lucene index on its configured interval. |
 | Help | Browser-bundled MDX with Customer/Partner locale metadata and Phaeno US-English content. Backend search is not implemented. |
 | Organization/user administration UI | Invitation acceptance and Phaeno organization list/detail, request, entitlement, invitation, membership, conversion, and lifecycle workspaces use the durable APIs. The standalone global User management screen remains a session-only preview. |
 
@@ -25,7 +26,7 @@ Phaeno Portal is the operational source of truth. QuickBooks Online is authorita
 
 ## Health and basic verification
 
-- API health: `GET /api/health` returns the standard API envelope with service name and `healthy` status. This is application dial tone, not proof that PostgreSQL, Clerk, QuickBooks, Postmark, storage, scanning, or background delivery is fully ready.
+- API health: `GET /api/health` returns the standard API envelope with service name and `healthy` status. This is application dial tone, not proof that PostgreSQL, Clerk, QuickBooks, Postmark, Mailgun, reCAPTCHA, Website search/documents, storage, scanning, or background delivery is fully ready.
 - Backend build and tests: `dotnet build backend/PSeq.Operations.slnx` and `dotnet test backend/PSeq.Operations.slnx`.
 - Frontend checks from `frontend/`: `pnpm run lint`, `pnpm run typecheck`, `pnpm run test`, `pnpm run build`, and `pnpm run test:e2e` when full browser verification is requested.
 - PostgreSQL reference journey: `backend/tools/PSeq.Operations.ReferenceJourney` exercises the curated-data baseline with rollback and isolated temporary storage.
@@ -39,11 +40,13 @@ Keep environment-specific values outside source control. `appsettings.Developmen
 | Section or variable | Purpose | Production expectation |
 | --- | --- | --- |
 | `ConnectionStrings:DefaultConnection` | PostgreSQL connection | Managed as a secret; TLS, backup, restore, and connection limits approved. |
-| `Persistence` | Commercial, Laboratory, and migration-history schemas plus the history table | Stable before migration execution; business schemas must be distinct from each other and from `public`. |
+| `Persistence` | Commercial, Laboratory, Website, and migration-history schemas plus the history table | Stable before migration execution; business schemas must be distinct from each other and from `public`. |
 | `Clerk` | JWT authority/audience and Clerk API access | Production Clerk instance and secrets; HTTPS metadata validation enabled. |
 | `Bootstrap` | One-time bootstrap link inputs | Disabled or cleared after the initial administrator is linked. |
 | `Invitations` | Token lifetime, resend cooldown, public URL | Public URL and expiry policy approved. |
 | `Postmark` | Transactional sender | Verified sender/domain, production token, stream, delivery and failure monitoring. |
+| `WebsiteApi`, `GoogleAuthSettings`, and `EmailServiceSettings` | Public origins/documents, technical brief, Google reCAPTCHA Enterprise, and Mailgun templates | Existing production credentials and document volume transferred through the secret/storage platform; CORS, rejection, templates, and PDF delivery verified. |
+| `WebCrawlerSettings`, `WebSearchSettings`, and `ChronJobs:IndexWebsite` | Public-site crawl target, Lucene index path, and rebuild schedule | Durable writable index storage, successful initial crawl, monitoring, and representative search verified. |
 | `DataProvisioning` | Storage root, upload limit, synthetic policy, scanner, allowed kinds | Synthetic fixtures rejected; real file policy, durable storage, and trusted scanner approved. |
 | `OrderManagement` | Operational storage root, upload limit, scanner, allowed kinds | Durable storage, trusted scanner, and real Customer/Partner file policy approved. |
 | `QuickBooks` | Environment, company/realm, OAuth, API, webhook verifier | Correct company, least-privilege credentials, webhook validation, sandbox journey, reconciliation, and rotation process approved. |
@@ -64,6 +67,8 @@ Committed migrations currently cover:
 4. `CompleteLabOperations`.
 5. `AddLabQcProjection`.
 6. `EnforceLabLibraryLineage`.
+7. `AddWebsiteApi`, generated for the `website` schema and not applied to a
+   shared environment by the consolidation work.
 
 Use the repository-local EF tool manifest and commands documented in `README.md`. A migration committed or applied to one developer database is not proof that it ran in another environment. Before a shared-environment migration, record the target, backup/restore point, expected duration, application compatibility, verification query or smoke test, and rollback/forward-fix decision. Never apply a migration to shared, staging, or production data without explicit authorization.
 
@@ -99,6 +104,10 @@ Production is not ready until all applicable gates are evidenced:
   prevention, reconciliation, least-privilege credentials, Sales layouts, and
   operational ownership;
 - Postmark sender/domain verification, template review, delivery/bounce monitoring, and retry ownership;
+- Website historical-row copy with count/hash comparison, reCAPTCHA and
+  Mailgun secret transfer, public-document/index mounts, CORS, search,
+  technical-brief delivery, API-base/DNS or reverse-proxy switch, rollback
+  window, and standalone API retirement;
 - background-dispatcher monitoring and alerting for stale, failed, or repeatedly retried work;
 - tenant-isolation, file-download, payment-release, accessibility, narrow-viewport, and authenticated database-backed browser journeys;
 - successful execution of the opt-in PostgreSQL Lab provider/projection and
