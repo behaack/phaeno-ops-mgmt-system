@@ -12,7 +12,9 @@ or production activation.
 
 - Planning direction approved on 2026-07-16.
 - Current status: feature-complete for the approved internal Lab Operations
-  application scope; validation and production activation are incomplete.
+  application scope. Database-backed controller/provider verification is
+  complete; physical bench validation and production activation are
+  incomplete.
   Customer quote acceptance atomically creates the
   Commercial authorization and Laboratory work order; approved cancellation
   reaches Lab before Commercial commits it. Additive Lab roles, the operator
@@ -20,7 +22,11 @@ or production activation.
   physical lineage, controlled protocols and execution, materials and
   equipment, libraries and cross-order batches, provider-neutral NGS sendouts
   and custody, exceptions, scientific approval, and the Ready-for-release
-  handoff are implemented. The six workspace sections now use the shared
+  handoff are implemented. Barcode completion includes POMS-allocated
+  checksummed container identifiers, browser-rendered Code 39 labels,
+  reasoned print/reprint/failure history, exact scan lookup, and scan-first
+  QC-passed-library batch entry with duplicate and wrong-context rejection.
+  The six workspace sections now use the shared
   far-left sidebar beneath the toolbar, with a remembered pinned desktop rail
   and the same non-modal hover, keyboard, and click rail when narrow or
   unpinned. The POMS dashboard now includes a Phaeno-only Order Operations /
@@ -56,13 +62,19 @@ or production activation.
   workflow connection are now implemented. Five opt-in PostgreSQL conformance
   tests cover the provider's persistence, idempotency, amendment, cancellation,
   projection, and isolation behavior plus replay-safe, monotonic, customer-safe
-  projection delivery; they have a clean build and await an explicitly
-  requested database execution.
-- Four additional opt-in PostgreSQL controller tests cover atomic
+  projection delivery. All five passed against the migrated local `phaeno_ops`
+  database on 2026-07-16.
+- Five additional opt-in PostgreSQL controller tests cover atomic
   Commercial-to-Lab quote authorization, rollback after intermediate provider
-  persistence, accepted cancellation, and started-work veto without a partial
-  Commercial decision. They also have a clean build and await explicitly
-  requested database execution.
+  persistence, accepted cancellation, started-work veto without a partial
+  Commercial decision, and the rollback-isolated operator journey from assigned
+  roles and accession through Ready for release. All five passed against the
+  migrated local `phaeno_ops` database on 2026-07-16.
+- Software-side bench preflight and the remaining physical acceptance protocol
+  are recorded in `LAB-OPERATIONS-BENCH-VALIDATION.md`. Barcode allocation,
+  Code 39 rendering, reasoned print outcomes, scan lookup, scan-first batching,
+  lineage, and workflow evidence passed; real printer, scanner, label-stock,
+  degraded-mode, and operator observations remain pending.
 - Phase 0 Step 4 is complete in design and local execution. The approved clean
   development database and migration reset, solution/project restructure, and
   schema baseline sequence are recorded in
@@ -618,7 +630,8 @@ remove competing internal write paths. The durable strategy is recorded in
 - Complete: inventory existing `LabServiceOrder`, `LabSample`, accession, QC,
   and release records in Order Management.
 - Production gate: validate barcode hardware, labels, scanning, and degraded-
-  mode procedures with representative equipment.
+  mode procedures with representative equipment using
+  `LAB-OPERATIONS-BENCH-VALIDATION.md`.
 - Preserved boundary: keep pipeline and scientific file-management ownership
   explicitly open.
 
@@ -635,12 +648,13 @@ remove competing internal write paths. The durable strategy is recorded in
   `AddLabProviderCommandReceipts` and implement authorization, safe
   amendment/cancellation, exact retry replay, and current milestone projection
   lookup.
-- Created: add opt-in database-backed provider and projection-delivery
-  conformance coverage with run-specific cleanup. A passing execution against
-  the migrated reference database remains a verification gate.
-- Created: add opt-in controller-path coverage for atomic quote authorization
-  and the Commercial-to-Lab cancellation handoff, including persisted-provider
-  rollback and started-work veto.
+- Complete: opt-in database-backed provider and projection-delivery conformance
+  coverage passes against the migrated local reference database with
+  run-specific cleanup.
+- Complete: opt-in controller-path coverage passes for atomic quote
+  authorization, the Commercial-to-Lab cancellation handoff,
+  persisted-provider rollback, started-work veto, and the full
+  rollback-isolated operator journey.
 - Complete: implement internal laboratory roles and authorization, including
   active-Phaeno-member eligibility, disabled/offboarded-user denial, exact
   additive capabilities, session projection, and platform-admin bootstrap.
@@ -653,19 +667,23 @@ remove competing internal write paths. The durable strategy is recorded in
 
 ### Phase 2 - Intake, Protocols, and Materials
 
-- Complete: receipt, accession, containers, barcodes, label history, optional
-  retention, and intake disposition.
+- Complete: receipt, accession, containers, POMS-allocated checksummed
+  barcodes, browser-rendered Code 39 labels, reasoned print outcomes,
+  scan-first lookup, label history, optional retention, and intake disposition.
 - Complete: protocol authoring, approval, activation/retirement, pinned
   versioning, and execution.
 - Complete: material, prepared-reagent, lot, consumption, equipment,
   calibration, and QC records.
 - Production gate: validate minimum fields, labels, scanners, and degraded-mode
-  procedures with representative PSeq bench work before activation.
+  procedures with representative PSeq bench work before activation. The
+  software preflight is complete; the physical scenarios and exposed gaps are
+  tracked in `LAB-OPERATIONS-BENCH-VALIDATION.md`.
 
 ### Phase 3 - Library Preparation and NGS Send-Out
 
 - Complete: library lineage and preparation execution.
-- Complete: internal batching across authorized work orders.
+- Complete: internal batching across authorized work orders, including
+  scan-first QC-passed-library entry and duplicate/wrong-context rejection.
 - Complete: provider-neutral NGS send-out manifests, custody, provider identifiers, timing, and
   exception handling.
 - Complete in the application boundary: projections contain only authorization,
@@ -688,9 +706,9 @@ remove competing internal write paths. The durable strategy is recorded in
 
 The Product Owner authorized completion of the remaining phases on 2026-07-16.
 The application scope is complete. Production activation still requires the
-explicit bench-work, label/scanner, external-provider, database-backed test,
-deployment, and content gates recorded here; those gates do not expand Lab into
-the unresolved pipeline or scientific file domain.
+explicit physical bench-work, label/scanner, external-provider, authenticated
+browser, deployment, and content gates recorded here; those gates do not
+expand Lab into the unresolved pipeline or scientific file domain.
 
 ## Acceptance Outcomes
 
@@ -723,8 +741,10 @@ targets are imposed.
 1. **Pipeline and scientific file management:** ownership, storage, orchestration,
    provenance, retention, security, and output-availability contract.
 2. **Physical retention policy:** actual periods and service-specific rules.
-3. **Operator workflow validation:** minimum required fields, batch-entry
-   behavior, labels, scanners, and exception paths based on real bench work.
+3. **Operator workflow validation:** software preflight is complete; minimum
+   required fields, batch-entry behavior, labels, scanners, degraded mode, and
+   exception paths still require the physical acceptance session in
+   `LAB-OPERATIONS-BENCH-VALIDATION.md`.
 4. **External NGS provider details:** services, identifiers, manifest formats,
    status access, and returned-output handshake.
 5. **QuickBooks automation trigger:** revisit only when manual procurement

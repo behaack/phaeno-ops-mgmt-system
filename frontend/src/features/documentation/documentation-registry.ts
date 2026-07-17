@@ -366,10 +366,10 @@ export const documentationEntries: readonly DocumentationEntry[] = [
     slug: 'order-operations',
     overviewTitle: 'Overview and queue triage',
     title: 'Order operations',
-    summary: 'Operate Customer lab, Partner reagent, and Partner assembly workflows.',
+    summary: 'Operate Customer lab, Partner PSeq kit, and Partner assembly workflows.',
     section: 'Order operations',
     order: 40,
-    reviewedAt: '2026-07-16',
+    reviewedAt: '2026-07-17',
     Content: PhaenoOrderOperations,
   },
   {
@@ -536,7 +536,7 @@ export const documentationEntries: readonly DocumentationEntry[] = [
     summary: 'Maintain scientific and commercial rules and recover durable integrations.',
     section: 'Platform operations',
     order: 60,
-    reviewedAt: '2026-07-16',
+    reviewedAt: '2026-07-17',
     Content: PhaenoConfigurationAndRecovery,
   },
   {

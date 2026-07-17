@@ -162,6 +162,11 @@ public sealed partial class LabOperationsController
         if (batch.Status != LabBatchStatus.Draft) throw Conflict("batch_locked", "Only a draft batch can accept libraries.");
         var library = await dbContext.LabLibraries.SingleOrDefaultAsync(item => item.Id == request.LabLibraryId
             && item.LabWorkOrderId == request.LabWorkOrderId, cancellationToken) ?? throw Missing();
+        if (await dbContext.LabBatchMembers.AsNoTracking().AnyAsync(
+            item => item.LabOperationalBatchId == batch.Id
+                && item.LabLibraryId == library.Id,
+            cancellationToken))
+            throw Conflict("batch_member_duplicate", "This library is already in the selected batch.");
         if (library.Status != LabLibraryStatus.QcPassed)
             throw Conflict("library_qc_required", "Only a QC-passed library can be batched.");
         dbContext.LabBatchMembers.Add(new LabBatchMember(batch.Id, request.LabWorkOrderId, library.Id, DateTime.UtcNow));

@@ -25,7 +25,7 @@ Platform administrators retain bootstrap access. Only active Phaeno members can 
 ## Follow the work sequence
 
 1. Open the authorized work order and verify the expected specimens.
-2. Record receipt, accession, barcode, and initial physical container.
+2. Record receipt and accession; POMS assigns the authoritative barcode and creates the initial physical container.
 3. Apply the intake decision and preserve every derived-container relationship.
 4. Assign an active protocol version and record controlled execution.
 5. Capture material consumption, equipment use, library preparation, batching, and sendout custody as applicable.
@@ -35,5 +35,7 @@ Platform administrators retain bootstrap access. Only active Phaeno members can 
 Every transition preserves prior state. Do not repair mistakes by deleting containers, overwriting protocol versions, replacing shipment history, or duplicating work orders.
 
 ## Operational readiness boundary
+
+POMS now allocates checksummed Phaeno barcodes, renders Code 39 container labels, records reasoned print and failure history, supports scan-first container lookup, and adds eligible libraries to a draft batch by scan. These software controls do not prove that a particular printer, stock, scanner, browser, or environment is fit for production.
 
 This guide explains the portal workflow; it is not a laboratory SOP or evidence that a production process has been validated. Before production use, Phaeno must approve the actual minimum fields, labels, printers, scanners, reprint and degraded-mode procedures, external NGS provider identifiers and manifest/status exchange, and operational ownership. Use only approved procedures and configuration for real work.

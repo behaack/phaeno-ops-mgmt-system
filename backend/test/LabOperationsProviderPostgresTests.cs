@@ -11,6 +11,7 @@ using PhaenoPortal.App.Features.LabOperations.Services;
 using PhaenoPortal.App.Infrastructure.Persistence;
 using PhaenoPortal.App.Infrastructure.Persistence.Auditing;
 
+[Collection(PostgreSqlReferenceCollection.Name)]
 public class LabOperationsProviderPostgresTests
 {
     [PostgreSqlReferenceFact]
@@ -392,7 +393,11 @@ public class LabOperationsProviderPostgresTests
         Assert.Equal(
             "Please confirm the replacement specimen details.",
             finalProjection.CustomerSafeSummary);
-        Assert.Equal("{\"rin\":9.2}", finalProjection.PermittedQcProjectionJson);
+        using (var qcProjection = JsonDocument.Parse(
+                   Assert.IsType<string>(finalProjection.PermittedQcProjectionJson)))
+        {
+            Assert.Equal(9.2, qcProjection.RootElement.GetProperty("rin").GetDouble());
+        }
         Assert.Equal(3, await scope.DbContext.LabOperationsEventReceipts
             .CountAsync(item => item.AuthorizationId == authorizationId));
         Assert.All(

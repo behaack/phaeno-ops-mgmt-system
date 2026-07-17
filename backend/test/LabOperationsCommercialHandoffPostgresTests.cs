@@ -1,5 +1,6 @@
 namespace PhaenoPortal.Test;
 
+using System.Text.Json;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
@@ -10,6 +11,8 @@ using PSeq.Operations.Commercial.LabOperations.Domain;
 using PSeq.Operations.Commercial.OrderManagement.Domain;
 using PSeq.Operations.Laboratory.Domain;
 using PhaenoPortal.App.Features.Accounts.Services;
+using PhaenoPortal.App.Features.LabOperations.Controllers;
+using PhaenoPortal.App.Features.LabOperations.DTOs;
 using PhaenoPortal.App.Features.LabOperations.Services;
 using PhaenoPortal.App.Features.OrderManagement.Controllers;
 using PhaenoPortal.App.Features.OrderManagement.Domain;
@@ -18,6 +21,7 @@ using PhaenoPortal.App.Features.OrderManagement.Services;
 using PhaenoPortal.App.Infrastructure.Persistence;
 using PhaenoPortal.App.Infrastructure.Persistence.Auditing;
 
+[Collection(PostgreSqlReferenceCollection.Name)]
 public class LabOperationsCommercialHandoffPostgresTests
 {
     [PostgreSqlReferenceFact]
@@ -174,6 +178,402 @@ public class LabOperationsCommercialHandoffPostgresTests
             .CountAsync(item => item.AuthorizationId == authorization.AuthorizationId));
     }
 
+    [PostgreSqlReferenceFact]
+    public async Task AuthorizedOrderCompletesTheDatabaseBackedLabOperatorJourney()
+    {
+        await using var scope = await HandoffTestScope.CreateAsync();
+        var fixture = await scope.CreateQuotedOrderAsync();
+        await scope.AcceptQuoteAsync(
+            fixture,
+            new InternalLabOperationsProvider(scope.DbContext));
+
+        scope.DbContext.ChangeTracker.Clear();
+        var authorization = await scope.DbContext.CommercialLabAuthorizations
+            .AsNoTracking()
+            .SingleAsync(item => item.CommercialOrderId == fixture.OrderId);
+        var workOrderId = authorization.LabWorkOrderId;
+        Assert.NotNull(workOrderId);
+
+        await using var journey = await scope.DbContext.Database.BeginTransactionAsync();
+        try
+        {
+            var staff = await scope.CreateLabStaffAsync();
+            var administrator = scope.CreatePlatformLabController();
+            foreach (var role in new[]
+            {
+                LabRole.Operator,
+                LabRole.Supervisor,
+                LabRole.ProtocolAdministrator,
+                LabRole.ScientificReviewer
+            })
+            {
+                var assignment = await administrator.SetRole(
+                    staff.User.Id,
+                    role.ToString(),
+                    new SetLabRoleRequest(true, null),
+                    CancellationToken.None);
+                Assert.True(assignment.IsActive);
+            }
+
+            var lab = scope.CreateLabController(staff.Identity);
+            var protocol = await lab.CreateProtocol(
+                new CreateProtocolRequest(
+                    $"reference-prep-{Guid.NewGuid():N}",
+                    "Reference library preparation",
+                    "Database-backed verification protocol."),
+                CancellationToken.None);
+            protocol = await lab.CreateProtocolVersion(
+                protocol.Id,
+                new CreateProtocolVersionRequest(
+                    """{"steps":[{"key":"prepare-library","required":true}]}""",
+                    protocol.Version),
+                CancellationToken.None);
+            var protocolVersion = Assert.Single(protocol.Versions);
+            protocolVersion = await lab.TransitionProtocol(
+                protocolVersion.Id,
+                new ProtocolTransitionRequest("approve"),
+                CancellationToken.None);
+            protocolVersion = await lab.TransitionProtocol(
+                protocolVersion.Id,
+                new ProtocolTransitionRequest("activate"),
+                CancellationToken.None);
+            Assert.Equal(LabProtocolStatus.Active.ToString(), protocolVersion.Status);
+
+            var material = await lab.CreateMaterialLot(
+                new CreateMaterialLotRequest(
+                    LabMaterialLotKind.SupplierLot.ToString(),
+                    $"reference-kit-{Guid.NewGuid():N}",
+                    "Reference preparation kit",
+                    $"lot-{Guid.NewGuid():N}",
+                    "Reference supplier",
+                    """{"component":"library-prep"}""",
+                    DateTime.UtcNow.AddMonths(6),
+                    "Freezer A",
+                    100,
+                    "uL"),
+                CancellationToken.None);
+            material = await lab.RecordMaterialQc(
+                material.Id,
+                new MaterialQcRequest(
+                    LabQcDisposition.Passed.ToString(),
+                    """{"inspection":"passed"}""",
+                    material.Version),
+                CancellationToken.None);
+
+            var equipment = await lab.CreateEquipment(
+                new CreateEquipmentRequest(
+                    $"asset-{Guid.NewGuid():N}",
+                    "Reference thermal cycler",
+                    "ThermalCycler",
+                    "Bench 1",
+                    DateTime.UtcNow.AddDays(-1),
+                    DateTime.UtcNow.AddMonths(6)),
+                CancellationToken.None);
+
+            var work = await lab.WorkOrder(workOrderId.Value, CancellationToken.None);
+            var specimen = Assert.Single(work.Specimens);
+            work = await lab.ReceiveSpecimen(
+                workOrderId.Value,
+                specimen.Id,
+                new SpecimenReceiptRequest(
+                    DateTime.UtcNow,
+                    "Received intact and frozen",
+                    "Intake freezer",
+                    specimen.Version),
+                CancellationToken.None);
+            specimen = Assert.Single(work.Specimens);
+
+            var accessionNumber = $"ACC-{Guid.NewGuid():N}";
+            work = await lab.AccessionSpecimen(
+                workOrderId.Value,
+                specimen.Id,
+                new SpecimenAccessionRequest(
+                    accessionNumber,
+                    $"Submitted specimen {accessionNumber}",
+                    "Intake rack A",
+                    25,
+                    "uL",
+                    DateTime.UtcNow.AddYears(1),
+                    specimen.Version),
+                CancellationToken.None);
+            specimen = Assert.Single(work.Specimens);
+            work = await lab.SetSpecimenDisposition(
+                workOrderId.Value,
+                specimen.Id,
+                new SpecimenDispositionRequest(
+                    LabSpecimenIntakeDisposition.Accepted.ToString(),
+                    null,
+                    specimen.Version),
+                CancellationToken.None);
+            Assert.Equal(LabWorkOrderStatus.Received.ToString(), work.WorkOrder.Status);
+
+            var submittedContainer = Assert.Single(work.Containers);
+            Assert.StartsWith("PH-S-", submittedContainer.Barcode);
+            Assert.Equal(0, submittedContainer.LabelPrintCount);
+            var initialLabel = await lab.ContainerLabel(
+                submittedContainer.Id,
+                CancellationToken.None);
+            Assert.Empty(initialLabel.PrintHistory);
+            var initialPrint = await lab.PrintContainerLabel(
+                submittedContainer.Id,
+                new RecordLabelPrintRequest(
+                    "Initial accession label",
+                    "Succeeded",
+                    null),
+                CancellationToken.None);
+            submittedContainer = initialPrint.Container;
+            Assert.Equal(1, submittedContainer.LabelPrintCount);
+            Assert.Single(initialPrint.PrintHistory);
+            var reprint = await lab.PrintContainerLabel(
+                submittedContainer.Id,
+                new RecordLabelPrintRequest(
+                    "Original label damaged during handling",
+                    "Succeeded",
+                    null),
+                CancellationToken.None);
+            submittedContainer = reprint.Container;
+            Assert.Equal(2, submittedContainer.LabelPrintCount);
+            var failedPrint = await lab.PrintContainerLabel(
+                submittedContainer.Id,
+                new RecordLabelPrintRequest(
+                    "Replace damaged label",
+                    "Failed",
+                    "Printer was offline."),
+                CancellationToken.None);
+            Assert.Equal(2, failedPrint.Container.LabelPrintCount);
+            Assert.Equal(3, failedPrint.PrintHistory.Count);
+            Assert.Equal("Failed", failedPrint.PrintHistory[0].Outcome);
+            Assert.Equal("Printer was offline.", failedPrint.PrintHistory[0].FailureDetails);
+            var scannedSubmittedContainer = await lab.ScanContainer(
+                $"*{submittedContainer.Barcode.ToLowerInvariant()}*",
+                CancellationToken.None);
+            Assert.Equal(submittedContainer.Id, scannedSubmittedContainer.Container.Id);
+            Assert.Equal(accessionNumber, scannedSubmittedContainer.AccessionNumber);
+            var persistedSubmittedContainer = await scope.DbContext.LabContainers
+                .AsNoTracking()
+                .SingleAsync(item => item.Id == submittedContainer.Id);
+            Assert.Equal(staff.User.Id, persistedSubmittedContainer.LastLabelPrintedByUserId);
+            Assert.NotNull(persistedSubmittedContainer.LastLabelPrintedAtUtc);
+
+            var libraryContainer = await lab.CreateContainer(
+                workOrderId.Value,
+                new CreateContainerRequest(
+                    specimen.Id,
+                    submittedContainer.Id,
+                    LabContainerKind.Library.ToString(),
+                    "Reference library",
+                    "Library rack A",
+                    20,
+                    "uL",
+                    DateTime.UtcNow.AddYears(1)),
+                CancellationToken.None);
+
+            var execution = await lab.CreateExecution(
+                workOrderId.Value,
+                new CreateExecutionRequest(
+                    specimen.Id,
+                    protocolVersion.Id,
+                    staff.User.Id),
+                CancellationToken.None);
+            execution = await lab.TransitionExecution(
+                execution.Id,
+                new ExecutionTransitionRequest("start", null, null, execution.Version),
+                CancellationToken.None);
+            await lab.ConsumeMaterial(
+                execution.Id,
+                new ConsumeMaterialRequest(
+                    material.Id,
+                    libraryContainer.Id,
+                    10,
+                    "uL",
+                    material.Version),
+                CancellationToken.None);
+            await lab.RecordEquipmentUsage(
+                execution.Id,
+                new RecordEquipmentUsageRequest(
+                    equipment.Id,
+                    DateTime.UtcNow,
+                    "Reference run"),
+                CancellationToken.None);
+            execution = await lab.TransitionExecution(
+                execution.Id,
+                new ExecutionTransitionRequest(
+                    "complete",
+                    """{"yieldNg":125,"status":"passed"}""",
+                    null,
+                    execution.Version),
+                CancellationToken.None);
+            Assert.Equal(LabExecutionStatus.Completed.ToString(), execution.Status);
+
+            var library = await lab.CreateLibrary(
+                workOrderId.Value,
+                new CreateLibraryRequest(
+                    specimen.Id,
+                    submittedContainer.Id,
+                    libraryContainer.Id,
+                    execution.Id,
+                    $"library-{Guid.NewGuid():N}"),
+                CancellationToken.None);
+            library = await lab.RecordLibraryQc(
+                library.Id,
+                new LibraryQcRequest(
+                    true,
+                    """{"concentrationNgUl":12.5,"status":"passed"}""",
+                    library.Version),
+                CancellationToken.None);
+            var scannedLibrary = await lab.ScanContainer(
+                libraryContainer.Barcode,
+                CancellationToken.None);
+            Assert.Equal(library.Id, scannedLibrary.LabLibraryId);
+            Assert.Equal(LabLibraryStatus.QcPassed.ToString(), scannedLibrary.LibraryStatus);
+
+            var batch = await lab.CreateBatch(
+                new CreateBatchRequest(
+                    $"BATCH-{Guid.NewGuid():N}",
+                    "ExternalSequencing",
+                    "Reference database-backed journey."),
+                CancellationToken.None);
+            batch = await lab.AddBatchMember(
+                batch.Id,
+                new AddBatchMemberRequest(workOrderId.Value, library.Id),
+                CancellationToken.None);
+            var duplicate = await Assert.ThrowsAsync<OrderManagementException>(() =>
+                lab.AddBatchMember(
+                    batch.Id,
+                    new AddBatchMemberRequest(workOrderId.Value, library.Id),
+                    CancellationToken.None));
+            Assert.Equal("batch_member_duplicate", duplicate.ErrorCode);
+            batch = await lab.TransitionBatch(
+                batch.Id,
+                new BatchTransitionRequest("start", batch.Version),
+                CancellationToken.None);
+            batch = await lab.CreateSendout(
+                batch.Id,
+                new CreateSendoutRequest(
+                    "Reference sequencing provider",
+                    $"provider-{Guid.NewGuid():N}",
+                    $$"""{"batch":"{{batch.BatchNumber}}","container":"{{libraryContainer.Barcode}}"}""",
+                    DateTime.UtcNow.AddDays(10)),
+                CancellationToken.None);
+            Assert.NotNull(batch.SendoutId);
+            Assert.NotNull(batch.SendoutVersion);
+
+            batch = await lab.RecordCustody(
+                batch.SendoutId.Value,
+                new CustodyEventRequest(
+                    libraryContainer.Id,
+                    "handoff",
+                    "Reference sequencing provider",
+                    """{"condition":"sealed"}"""),
+                CancellationToken.None);
+            foreach (var status in new[]
+            {
+                LabNgsSendoutStatus.Shipped,
+                LabNgsSendoutStatus.ReceivedByProvider,
+                LabNgsSendoutStatus.Sequencing,
+                LabNgsSendoutStatus.Complete
+            })
+            {
+                batch = await lab.TransitionSendout(
+                    batch.SendoutId!.Value,
+                    new SendoutTransitionRequest(
+                        status.ToString(),
+                        batch.SendoutVersion!.Value),
+                    CancellationToken.None);
+            }
+            batch = await lab.TransitionBatch(
+                batch.Id,
+                new BatchTransitionRequest("complete", batch.Version),
+                CancellationToken.None);
+            Assert.Equal(LabBatchStatus.Complete.ToString(), batch.Status);
+
+            var exception = await lab.RaiseException(
+                workOrderId.Value,
+                new CreateExceptionRequest(
+                    specimen.Id,
+                    execution.Id,
+                    PSeq.Operations.Laboratory.Domain.LabExceptionAudience.CustomerActionRequired.ToString(),
+                    "reference-confirmation",
+                    "Confirm reference metadata",
+                    "Reference metadata must be confirmed before approval.",
+                    "Please confirm the submitted sample metadata.",
+                    true,
+                    DateTime.UtcNow.AddDays(2)),
+                CancellationToken.None);
+            exception = await lab.ResolveException(
+                exception.Id,
+                new ResolveExceptionRequest(
+                    "Reference metadata confirmed.",
+                    exception.Version),
+                CancellationToken.None);
+            Assert.Equal(LabExceptionStatus.Resolved.ToString(), exception.Status);
+
+            work = await lab.WorkOrder(workOrderId.Value, CancellationToken.None);
+            work = await lab.SetMilestone(
+                workOrderId.Value,
+                new WorkMilestoneRequest(
+                    LabWorkOrderStatus.ScientificReview.ToString(),
+                    work.WorkOrder.Version),
+                CancellationToken.None);
+            work = await lab.ApproveScientificReview(
+                workOrderId.Value,
+                new ScientificApprovalRequest(
+                    "reference-release",
+                    1,
+                    """{"rin":9.2,"libraryQc":"passed"}""",
+                    work.WorkOrder.Version),
+                CancellationToken.None);
+            Assert.Equal(LabWorkOrderStatus.ReadyForRelease.ToString(), work.WorkOrder.Status);
+            Assert.Single(work.ScientificApprovals);
+
+            await LabOperationsProjectionDispatcher.DispatchAsync(
+                scope.DbContext,
+                Microsoft.Extensions.Logging.Abstractions.NullLogger.Instance,
+                CancellationToken.None);
+            scope.DbContext.ChangeTracker.Clear();
+            var projection = await scope.DbContext.CommercialLabWorkProjections
+                .AsNoTracking()
+                .SingleAsync(item => item.AuthorizationId == authorization.AuthorizationId);
+            Assert.Equal(LabWorkMilestone.ReadyForRelease.ToString(), projection.Milestone);
+            Assert.Equal(0, projection.ActiveCustomerActionCount);
+            Assert.Null(projection.CustomerSafeSummary);
+            using (var qcProjection = JsonDocument.Parse(projection.PermittedQcProjectionJson!))
+            {
+                Assert.Equal(
+                    9.2,
+                    qcProjection.RootElement.GetProperty("rin").GetDouble(),
+                    3);
+            }
+
+            Assert.Equal(0, await scope.DbContext.ManagedOperationalFiles
+                .CountAsync(item => item.WorkflowId == fixture.OrderId));
+            Assert.Equal(0, await scope.DbContext.LabResultReleases
+                .CountAsync(item => item.LabServiceOrderId == fixture.OrderId));
+            var eventTypes = await scope.DbContext.LabWorkEvents
+                .AsNoTracking()
+                .Where(item => item.LabWorkOrderId == workOrderId.Value)
+                .Select(item => item.EventCode)
+                .ToListAsync();
+            Assert.Contains("SpecimenReceived", eventTypes);
+            Assert.Contains("SpecimenAccessioned", eventTypes);
+            Assert.Contains("ContainerLabelPrintSucceeded", eventTypes);
+            Assert.Contains("ContainerLabelPrintFailed", eventTypes);
+            Assert.Contains("ScientificApprovalRecorded", eventTypes);
+        }
+        finally
+        {
+            await journey.RollbackAsync();
+            scope.DbContext.ChangeTracker.Clear();
+        }
+
+        var persistedWork = await scope.DbContext.LabWorkOrders
+            .AsNoTracking()
+            .SingleAsync(item => item.Id == workOrderId.Value);
+        Assert.Equal(LabWorkOrderStatus.AwaitingSpecimens, persistedWork.Status);
+        Assert.Equal(0, await scope.DbContext.LabContainers
+            .CountAsync(item => item.LabWorkOrderId == workOrderId.Value));
+    }
+
     private sealed class HandoffTestScope : IAsyncDisposable
     {
         private const string ConnectionEnvironmentVariable =
@@ -300,7 +700,7 @@ public class LabOperationsCommercialHandoffPostgresTests
                 null,
                 null,
                 null,
-                "[]"));
+                JsonSerializer.Serialize(new[] { Guid.NewGuid() })));
             order.Submit(CustomerUser.Id, now);
             order.BeginQuotePreparation();
             var quote = new LabServiceQuote(
@@ -367,6 +767,44 @@ public class LabOperationsCommercialHandoffPostgresTests
                     "Cancellation approved."),
                 CancellationToken.None);
         }
+
+        public async Task<LabStaffFixture> CreateLabStaffAsync()
+        {
+            var platformOrganizationId = await DbContext.OrganizationMemberships
+                .Where(item => item.UserId == PlatformUser.Id)
+                .Select(item => item.OrganizationId)
+                .SingleAsync();
+            var suffix = Guid.NewGuid().ToString("N");
+            var identity = new ExternalIdentity(
+                "test",
+                $"lab-staff-{suffix}",
+                $"lab-staff-{suffix}@example.com",
+                true);
+            var user = CreateUser(identity);
+            var membership = new OrganizationMembership(
+                user.Id,
+                platformOrganizationId,
+                isOrganizationAdmin: false);
+            DbContext.AddRange(user, membership);
+            await DbContext.SaveChangesAsync();
+            return new LabStaffFixture(user, identity);
+        }
+
+        public LabOperationsController CreatePlatformLabController() =>
+            CreateLabController(platformIdentity);
+
+        public LabOperationsController CreateLabController(ExternalIdentity identity) =>
+            new(
+                DbContext,
+                new LabOperationsRequestContext(
+                    DbContext,
+                    new FixedIdentityContext(identity)))
+            {
+                ControllerContext = new ControllerContext
+                {
+                    HttpContext = new DefaultHttpContext()
+                }
+            };
 
         private LabServiceOrdersController CreateCustomerController(
             ILabOperationsProvider provider,
@@ -479,6 +917,7 @@ public class LabOperationsCommercialHandoffPostgresTests
 
     private sealed record QuotedOrderFixture(Guid OrderId, Guid QuoteId, long OrderVersion);
     private sealed record CancellationFixture(Guid Id, long OrderVersion);
+    private sealed record LabStaffFixture(User User, ExternalIdentity Identity);
 
     private sealed class FixedIdentityContext(ExternalIdentity identity)
         : IExternalIdentityContext

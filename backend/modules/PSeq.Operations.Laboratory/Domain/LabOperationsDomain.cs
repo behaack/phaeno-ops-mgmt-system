@@ -39,7 +39,7 @@ public abstract class LabAuditedEntity : IAudit, IConcurrency
     internal static string? Optional(string? value, int maximumLength = 4000)
     {
         var normalized = string.IsNullOrWhiteSpace(value) ? null : value.Trim();
-        return normalized?.Length <= maximumLength
+        return normalized is null || normalized.Length <= maximumLength
             ? normalized
             : throw new ArgumentException($"The value cannot exceed {maximumLength} characters.", nameof(value));
     }

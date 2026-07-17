@@ -10,13 +10,19 @@ Receipt does not accept the specimen for processing. It establishes custody and 
 
 ## Accession the specimen
 
-Accession only after receipt. Choose a unique accession number and barcode, then record location, quantity and unit when tracked, and an optional retention date. The accession action creates the initial submitted-specimen container and the first label-print record.
+Accession only after receipt. Choose a unique accession number, then record location, quantity and unit when tracked, and an optional retention date. POMS creates the initial submitted-specimen container and assigns its authoritative Phaeno barcode automatically. Customer and Partner label values may be retained as references, but never replace the Phaeno barcode.
 
-Verify the printed label against the on-screen accession and physical item before proceeding. A reprint adds a label-history event; it does not replace the container identity or erase the earlier print.
+The label window renders the current container identity as a Code 39 barcode through the browser and installed printer driver. Enter the reason, open the system print dialog, and inspect the physical label before choosing **Label printed**. POMS increments the print count only after that confirmation. If the label did not print correctly, enter the failure details and choose **Record failed attempt**; the failure remains in history without falsely counting a usable label.
+
+Every reprint requires a reason and renders the same current container identity. A reprint or failed attempt adds a separate history event; it does not replace the barcode or erase an earlier print. Verify readable text, barcode, accession, container, and adhesion using the approved bench procedure before processing continues.
+
+## Scan and locate a container
+
+Use **Work** > **Scan a container** to find the exact work order, accession, container status, location, parent barcode, and associated library. Place the cursor in the Phaeno barcode field and scan, or enter the complete barcode manually. Code 39 start and stop characters and letter case are normalized; an altered checksum, incomplete barcode, or unknown barcode is rejected without opening another record. The field returns focus after the result so repeated scans remain efficient.
 
 ## Preserve physical lineage
 
-Create child containers for aliquots, prepared reagents, libraries, or other derived materials. Select the immediate parent container and record the quantity and unit required by the approved procedure. The lineage must allow an operator to trace every derived container back to the submitted specimen.
+Create child containers for aliquots, prepared reagents, libraries, or other derived materials. Select the immediate parent container and record the quantity and unit required by the approved procedure. POMS assigns each child container its own barcode and opens its label window after creation. The lineage must allow an operator to scan a derived container and trace it through its immediate parent to the submitted specimen.
 
 Do not reuse a barcode, move material by editing its parent, or delete a container to repair history. Record the supported correction or new derived container.
 

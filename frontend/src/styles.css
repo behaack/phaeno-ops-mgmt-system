@@ -269,6 +269,33 @@ html {
   }
 }
 
+@media print {
+  @page {
+    size: 50mm 25mm;
+    margin: 0;
+  }
+
+  body * {
+    visibility: hidden !important;
+  }
+
+  .lab-label-print-surface,
+  .lab-label-print-surface * {
+    visibility: visible !important;
+  }
+
+  .lab-label-print-surface {
+    position: absolute;
+    inset: 0 auto auto 0;
+    width: 50mm;
+    height: 25mm;
+    overflow: hidden;
+    border: 0 !important;
+    border-radius: 0 !important;
+    padding: 2mm !important;
+  }
+}
+
 @media (prefers-reduced-motion: reduce) {
   *,
   *::before,

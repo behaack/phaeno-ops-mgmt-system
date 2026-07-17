@@ -13,8 +13,8 @@ or deployments.
 - Contract direction approved through the Lab Operations planning decisions on
   2026-07-16.
 - Current status: implemented for the approved internal application scope;
-  database-backed conformance execution and production activation remain
-  incomplete.
+  database-backed conformance execution passed on 2026-07-16; authenticated
+  browser, physical bench, and production activation remain incomplete.
 - Version: `v1` core application contract implemented on 2026-07-16 in
   `PSeq.Operations.Commercial.LabOperations.Application`.
 - Implemented scope: transport-neutral authorization/amendment/cancellation
@@ -35,13 +35,13 @@ or deployments.
   command replay/conflict, authorization changes, cancellation, projection
   lookup, organization isolation, event replay, out-of-order delivery,
   customer-safe fields, and no-file publication at `ReadyForRelease`. They
-  require the explicitly configured migrated reference database and were
-  compiled, but not executed, in this slice.
-- Commercial handoff coverage: four additional opt-in PostgreSQL controller
+  require the explicitly configured migrated reference database and all five
+  passed together on 2026-07-16.
+- Commercial handoff coverage: five additional opt-in PostgreSQL controller
   tests prove atomic quote authorization, rollback after intermediate provider
-  persistence, accepted cancellation, and a started-work cancellation veto.
-  They compile against the migrated reference model and await explicitly
-  requested database execution.
+  persistence, accepted cancellation, a started-work cancellation veto, and
+  the complete rollback-isolated operator journey through the customer-safe
+  Ready-for-release projection. All five passed together on 2026-07-16.
 - Completed application integration: accepted customer quotes create the
   Commercial authorization and Lab work atomically; approved cancellations are
   checked by Lab before Commercial commits; durable events update idempotent,
@@ -651,9 +651,9 @@ represents partial cancellation, carries no commercial-pricing,
 Customer/Partner-branch, vendor, pipeline, or file implementation fields, and
 that the internal adapter implements the provider port. Database-backed
 provider conformance coverage is implemented as opt-in PostgreSQL tests. Those
-database-backed tests have compiled but were not executed in this slice because
-test execution was not requested. The implemented coverage is intended to
-prove:
+database-backed tests passed against the migrated local `phaeno_ops` database
+on 2026-07-16. Together, the structural/domain checks and the passing
+database-backed scenarios establish:
 
 - Customer and Partner authorizations produce indistinguishable Lab behavior
 - a Partner authorization works without downstream customer identity
@@ -673,6 +673,15 @@ The database-backed projection-delivery test additionally covers:
 - customer-action exceptions never expose internal notes automatically
 - `ReadyForRelease` does not make a result externally visible
 - duplicate delivery after a durable receipt remains harmless
+
+The controller-path operator journey additionally covers additive role
+assignment, protocol approval/activation, receipt/accession, barcode print
+history, QC-gated material and calibrated-equipment use, library lineage,
+batch/sendout/custody records, exception resolution, scientific approval, and
+the absence of file or result publication at `ReadyForRelease`. Physical label
+printing and scanning remain governed by
+`LAB-OPERATIONS-BENCH-VALIDATION.md`; database evidence is not a substitute for
+that activation gate.
 
 A future fake or external provider must satisfy the same contract scenarios as
 the internal provider before a provider cutover.

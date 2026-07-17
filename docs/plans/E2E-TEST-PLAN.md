@@ -38,8 +38,10 @@ not satisfy this production-activation gate.
 - [x] `frontend/e2e/order-management.spec.ts` - Partner mock context exposes
   reagent ordering and data assembly.
 - [x] `frontend/e2e/order-management.spec.ts` - Phaeno mock context exposes
-  operational queues through the pinned wide-screen rail or accessible edge
-  tab on narrow screens, plus order configuration.
+  Lab, PSeq kits, Assembly, and Integrations operational queues through the
+  pinned wide-screen rail or accessible edge tab on narrow screens; Order
+  Configuration uses the same rail for Defaults, Analyses, PSeq kits,
+  Assembly, and Credit & QBO instead of an in-page tab row.
 - [x] `frontend/e2e/documentation.spec.ts` - Prospect, Customer, and Partner
   contexts are offered their own guide set, Phaeno is offered only Phaeno
   guides, the sidebar omits redundant audience controls and headings, every
@@ -67,6 +69,15 @@ not satisfy this production-activation gate.
   Service entitlement. The rollback-only PostgreSQL reference journey now also
   automates the service-source and entitlement-end integrity rules; the full
   authenticated HTTP/browser journey remains deferred.
+- 2026-07-16: a rollback-isolated controller/PostgreSQL journey passed the
+  database-backed Lab workflow from accepted Customer quote through assigned
+  roles, accession, protocol execution, resources, library/batch/sendout,
+  exception resolution, scientific approval, customer-safe projection, and
+  proof of no file publication. Barcode completion additionally proved
+  automatic submitted/derived identifiers, normalized exact lookup, reasoned
+  initial/reprint/failure history, and duplicate-safe scan-first batch entry.
+  This is API/controller/database evidence; it does not exercise Clerk
+  middleware, HTTP hosting, a real browser, or physical hardware.
 
 ## Deferred Tests
 
@@ -114,14 +125,35 @@ not satisfy this production-activation gate.
   payment hold, QuickBooks failure, two-tenant isolation, keyboard, and narrow
   viewport scenarios through real authentication and API persistence.
 - [ ] Database-backed Lab Operations journey - accept a Customer quote, prove
-  atomic Lab authorization, assign additive Lab roles, receive and accession a
-  specimen, execute an active protocol with QC-approved material and calibrated
-  equipment, prepare and batch a library, track an outsourced NGS sendout and
-  custody, resolve an exception, record scientific approval, verify the
-  Customer-safe projection, and prove that Ready for release publishes no file.
+  the already-passing controller/PostgreSQL workflow through real Clerk
+  authentication, the hosted HTTP API, and a browser. The controller/database
+  portion already proves atomic Lab authorization, additive Lab roles,
+  receipt/accession, barcode allocation/scan/print-outcome history, active
+  protocol execution with QC-approved material and calibrated equipment,
+  scan-first library batching, sendout/custody, exception resolution,
+  scientific approval, the Customer-safe projection, and no file publication
+  at Ready for release. Physical printer/scanner qualification remains a
+  manual bench gate.
 
 ## Requested Execution Log
 
+- 2026-07-17: the Phaeno Order Operations mock scenario now requires the PSeq
+  kits sidebar label. The Playwright suite was not executed because E2E
+  execution was not separately requested.
+- 2026-07-17: the Phaeno Order Configuration mock scenario was extended to
+  require the five shared-sidebar subjects and Defaults as the initial active
+  selection. The Playwright suite was not executed because E2E execution was
+  not separately requested.
+- 2026-07-16: the barcode software slice passed its full 41-test frontend
+  regression suite and 113-test backend/database suite. No mock Playwright
+  scenario can substantiate an authenticated hosted scan or physical
+  printer/scanner outcome, so the database-backed browser and hardware
+  journeys remain explicitly deferred above.
+- 2026-07-16: the home scenario was updated for the shared `Copyright © [year]
+  Phaeno Inc.` footer, the temporary support/policy placeholder, and removal of
+  framework/vendor promotion. A live browser check confirmed the rendered
+  footer; the Playwright suite was not executed because E2E execution was not
+  requested.
 - 2026-07-16: the Accounts scenarios were updated for the HubSpot-originated
   intake posture, explicit disconnected state, external-account-only directory,
   and removal of direct account/manual request entry points from the standard

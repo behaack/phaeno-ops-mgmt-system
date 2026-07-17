@@ -5,9 +5,10 @@ Keep this file updated as frontend tests are created, changed, or intentionally 
 Do not execute this test plan unless explicitly requested.
 
 The Lab Operations workspace is implemented, linted, typechecked, and included
-in a successful client/SSR build. Its focused component coverage below remains
-deferred, so the approved application scope is feature-complete but not
-verification- or production-activation-complete.
+in a successful client/SSR build. Barcode encoding, scan-first lookup/batch
+entry, and reasoned print-outcome behavior have focused component coverage.
+The remaining connected-workspace coverage below and physical bench acceptance
+remain incomplete production-activation gates.
 
 ## Created Tests
 
@@ -58,6 +59,20 @@ verification- or production-activation-complete.
   approved source-request selector includes only requests for the current
   organization and selected service while preserving a documented manual
   exception.
+- [x] `frontend/src/features/lab-operations/Code39Barcode.test.tsx` - POMS
+  barcodes encode with Code 39 start/stop characters and unsupported
+  characters are rejected rather than rendered ambiguously.
+- [x] `frontend/src/features/lab-operations/LabBarcodeScanner.test.tsx` - exact
+  container lookup presents the linked work context and scan-first batch entry
+  rejects a non-library container without changing membership.
+- [x] `frontend/src/features/lab-operations/LabLabelDialog.test.tsx` - the
+  browser print action waits for explicit physical success confirmation, a
+  failed attempt requires details, and success/failure outcomes are recorded
+  separately.
+- [x] `frontend/src/features/orders/configuration/OrderConfigurationPage.test.tsx`
+  - the five Order Configuration subjects use the shared viewport-edge
+  sidebar, identify Defaults initially, and update the active subject when the
+  user selects another panel.
 
 ## Deferred Tests
 
@@ -110,8 +125,8 @@ verification- or production-activation-complete.
   substitutions, backorders, immutable-document downloads, operational queue
   filters, notification recovery, and stale-version/error recovery with mocked
   APIs.
-- [ ] Lab Operations workspace - cover role-specific navigation and controls,
-  list/detail loading, receipt/accession and label history, protocol lifecycle,
+- [ ] Remaining Lab Operations workspace - cover role-specific navigation and
+  controls, list/detail loading, receipt/accession, protocol lifecycle,
   execution/material/equipment capture, library and batch actions, sendout and
   custody states, internal versus customer-action exceptions, scientific
   approval, ready-for-release messaging, concurrency recovery, and mock-mode
@@ -127,6 +142,26 @@ verification- or production-activation-complete.
 
 ## Requested Execution Log
 
+- 2026-07-17: the Order Operations navigation label changed from Reagents to
+  PSeq kits. `pnpm run lint`, `pnpm run typecheck`, and the four-test
+  documentation-registry suite passed.
+- 2026-07-17: Order Configuration sidebar verification ran `pnpm run lint`,
+  `pnpm run typecheck`, the focused Order Configuration component test, the
+  full `pnpm run test`, and `pnpm run build`. Lint and typecheck passed, the
+  focused test passed, all 42 tests in 17 files passed, and the client and SSR
+  production builds completed. The existing advisory client chunk-size warning
+  remains.
+- 2026-07-16: barcode completion verification ran `pnpm run lint`, `pnpm run
+  typecheck`, `pnpm run test`, and `pnpm run build`. Lint and typecheck passed,
+  all 41 tests in 16 files passed, and the client and SSR production builds
+  completed. The existing advisory bundle-size and plugin-timing warnings
+  remain. Focused coverage verifies Code 39 encoding, scan lookup, batch
+  context rejection, and explicit successful/failed physical-print outcomes.
+- 2026-07-16: footer cleanup verification ran `pnpm run lint` and `pnpm run
+  typecheck`; both passed. A live browser check confirmed the legal ownership
+  line and temporary support/policy placeholder, and confirmed the former
+  framework/vendor list is absent. Test execution was not requested and was not
+  run.
 - 2026-07-16: the Accounts list and detail surfaces were aligned with the
   documented HubSpot-originated intake intent. `pnpm run lint` and `pnpm run
   typecheck` passed, and a live Phaeno mock-session browser check confirmed the

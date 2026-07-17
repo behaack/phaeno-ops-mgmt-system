@@ -1209,7 +1209,7 @@ Phaeno navigation:
   Accounts selector. Its initial Order Operations panel is an explicitly
   labelled mock snapshot for layout validation; it does not claim connected
   queue counts or replace the full operational workspace.
-- `Order operations` is a platform-only workspace with separate Lab, Reagents,
+- `Order operations` is a platform-only workspace with separate Lab, PSeq kits,
   Assembly, and Integrations sections in the shared far-left sidebar. The
   sidebar is a remembered pinned rail on wide screens and the same non-modal
   hover, keyboard, and click rail when narrow or unpinned.
@@ -1218,7 +1218,10 @@ Phaeno navigation:
   workflow commands and separate tenant-safe reasons from internal notes.
 - `Order configuration` contains QuickBooks item synchronization/linking,
   analyses, Partner offerings/prices, assembly profiles, credit settings, quote
-  defaults, shipping restrictions, and instruction configuration.
+  defaults, shipping restrictions, and instruction configuration. Defaults,
+  Analyses, PSeq kits, Assembly, and Credit & QBO use the same shared far-left
+  sidebar behavior as the other multi-section POMS workspaces; the former
+  in-page tab row is removed.
 
 UI rules:
 

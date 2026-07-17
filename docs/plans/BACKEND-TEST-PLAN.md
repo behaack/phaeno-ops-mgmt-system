@@ -5,10 +5,12 @@ Keep this file updated as backend tests are created, changed, or intentionally d
 Do not execute this test plan unless explicitly requested.
 
 Lab Operations is feature-complete for the approved internal application
-scope, not verification-complete. The five opt-in provider/projection tests and
-four opt-in Commercial handoff tests below are authored and compile but have
-not been executed. The deferred Lab API scenarios remain production-activation
-coverage, not missing application features.
+scope. The five opt-in provider/projection tests and five opt-in Commercial
+handoff/operator tests below passed together against the migrated local
+`phaeno_ops` database on 2026-07-16. Negative API paths and physical bench
+acceptance remain production-activation coverage. Barcode allocation,
+normalization, reasoned print outcomes, exact scan lookup, and duplicate-safe
+batch entry now have focused unit and rollback-isolated PostgreSQL coverage.
 
 ## Created Tests
 
@@ -26,7 +28,10 @@ coverage, not missing application features.
   immutable authorization payload hashes, pre-receipt cancellation boundaries,
   work cancellation, provider-command receipt matching, controlled work
   milestones, protocol activation, QC-gated material consumption, and
-  customer-safe exception separation.
+  customer-safe exception separation, including execution completion without
+  an optional deviation note; plus Phaeno barcode kind/prefix allocation,
+  safe-character generation, Code 39 scan normalization, checksum validation,
+  and altered-value rejection.
 - [x] `backend/test/LabOperationsAuthorizationTests.cs` - exact additive
   Operator, Supervisor, Protocol Administrator, Scientific Reviewer, and Lab
   Operations Administrator capabilities; platform-administrator bootstrap;
@@ -107,9 +112,17 @@ coverage, not missing application features.
   Commercial authorization and Lab work, provider rejection rolls both back
   even after an intermediate save, accepted cancellation updates Commercial
   and Lab together, and started Lab work vetoes the decision without partially
-  approving it. The fixture uses unique Customer/Phaeno identities and removes
-  its Commercial, Laboratory, account, idempotency, notification, and audit
-  records.
+  approving it. A fifth rollback-isolated journey assigns additive Lab roles
+  and exercises active protocols, receipt/accession and barcode-print history,
+  including automatic submitted/derived barcode allocation, Code 39 scan
+  normalization, reasoned initial/reprint/failure outcomes without false print
+  increments, exact submitted/library lineage lookup, and duplicate-safe
+  scan-first batching; QC-approved materials, calibrated equipment, execution,
+  library lineage, NGS sendout/custody, exception resolution, scientific
+  approval, customer-safe projection delivery, and proof that Ready for release
+  creates neither a managed file nor a Lab result release. The fixture uses unique
+  Customer/Phaeno identities and removes its Commercial, Laboratory, account,
+  idempotency, notification, and audit records.
 - [x] `backend/tools/PSeq.Operations.ReferenceJourney` - controller-level
   authenticated PostgreSQL journey covering approved service-request source
   enforcement, rejection of an onboarding-only source, usable entitlement
@@ -136,10 +149,11 @@ coverage, not missing application features.
   specimen placement, Partner data-assembly placement, ineligible/custom-work
   routing, immutable pricing snapshots, Partner downstream-identity omission,
   post-placement scientific validation, and cross-tenant denial.
-- [ ] Complete Lab Operations API - cover receipt/accession and
-  lineage validation, protocol lifecycle and pinned execution, QC/expiry/
-  calibration gates, cross-order batching, sendout custody, exception
-  resolution, scientific approval, and optimistic concurrency.
+- [ ] Complete Lab Operations API negative paths - extend the passing
+  controller/PostgreSQL operator journey with hosted-HTTP unknown-barcode,
+  lineage rejection, stale-version conflict, expired material, overdue
+  calibration, wrong-work-order batch/custody, unresolved blocking exception,
+  and cross-tenant HTTP/authentication scenarios.
 - [ ] Prospect Trial Projects - cover idempotent HubSpot request intake, dual
   approval, frozen scope/amendments, Prospect acceptance, project-specific
   submit authorization, extracted-RNA-only validation, the five-sample cap,
@@ -218,6 +232,22 @@ coverage, not missing application features.
 
 ## Requested Execution Log
 
+- 2026-07-16: barcode completion verification ran the full Release backend
+  suite with the local PostgreSQL reference connection enabled; all 113 tests
+  passed with no failures or skips. A separate Release build completed with
+  zero warnings and zero errors. Coverage now includes POMS allocation and
+  checksum normalization, submitted/derived scan context, reasoned successful
+  and failed label attempts, non-incrementing failures, and duplicate-safe
+  batch membership.
+- 2026-07-16: database-backed Lab verification ran the five provider/projection
+  and five Commercial handoff/operator PostgreSQL tests together against the
+  migrated local `phaeno_ops` database; all 10 passed. The complete focused Lab
+  run passed 37 of 37 tests, and the full backend regression run passed 107 of
+  107 tests with no failures or skips. The new rollback-isolated operator
+  journey exposed and fixed new-aggregate state tracking during authorization
+  amendment, optional Lab text rejecting `null`, a zero-service test fixture,
+  and formatting-sensitive JSON comparison. PostgreSQL reference classes now
+  run serially to avoid invalid cross-fixture serialization races.
 - 2026-07-16: the Commercial-to-Lab handoff slice added four opt-in PostgreSQL
   controller scenarios and ran `dotnet build
   backend/PSeq.Operations.slnx --no-restore`; all projects compiled without

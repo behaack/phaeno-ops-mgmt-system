@@ -19,6 +19,9 @@ export type LabOperationsDashboard = { workOrders: LabWorkOrderSummary[]; protoc
 
 export type LabSpecimen = { id: string; submittedSpecimenId: string; accessionNumber: string | null; receivedAtUtc: string | null; intakeDisposition: string; receiptCondition: string | null; intakeReasonCode: string | null; currentLocation: string | null; version: number }
 export type LabContainer = { id: string; labSpecimenId: string | null; parentContainerId: string | null; kind: string; barcode: string; label: string; labelPrintCount: number; location: string; quantity: number | null; quantityUnit: string | null; status: string; retainUntilUtc: string | null; version: number }
+export type LabContainerScan = { labWorkOrderId: string; commercialOrderNumber: string | null; accessionNumber: string | null; parentBarcode: string | null; labLibraryId: string | null; libraryStatus: string | null; container: LabContainer }
+export type LabLabelPrintEvent = { id: string; labContainerId: string; outcome: string; reason: string; failureDetails: string | null; printNumber: number | null; actorUserId: string | null; occurredAtUtc: string }
+export type LabContainerLabel = { labWorkOrderId: string; commercialOrderNumber: string | null; accessionNumber: string | null; parentBarcode: string | null; container: LabContainer; printHistory: LabLabelPrintEvent[] }
 export type LabExecution = { id: string; labSpecimenId: string | null; labProtocolVersionId: string; assignedToUserId: string | null; status: string; capturedResultsJson: string; deviationNote: string | null; startedAtUtc: string | null; completedAtUtc: string | null; version: number }
 export type LabLibrary = { id: string; labSpecimenId: string; sourceContainerId: string; libraryContainerId: string; preparationExecutionId: string; libraryKey: string; status: string; qcResultsJson: string | null; version: number }
 export type LabException = { id: string; labSpecimenId: string | null; labProtocolExecutionId: string | null; audience: string; categoryCode: string; title: string; internalDescription: string; customerSafeSummary: string | null; isBlocking: boolean; status: string; responseDueAtUtc: string | null; resolvedAtUtc: string | null; version: number }
@@ -36,7 +39,9 @@ export const receiveLabSpecimen = (workId: string, specimenId: string, input: ob
 export const accessionLabSpecimen = (workId: string, specimenId: string, input: object) => post<LabWorkOrderDetail>(`/platform/lab-operations/work-orders/${workId}/specimens/${specimenId}/accession`, input)
 export const setLabSpecimenDisposition = (workId: string, specimenId: string, input: object) => post<LabWorkOrderDetail>(`/platform/lab-operations/work-orders/${workId}/specimens/${specimenId}/disposition`, input)
 export const createLabContainer = (workId: string, input: object) => post<LabContainer>(`/platform/lab-operations/work-orders/${workId}/containers`, input)
-export const printLabContainerLabel = (id: string) => post<LabContainer>(`/platform/lab-operations/containers/${id}/label-print`, {})
+export const scanLabContainer = (barcode: string) => get<LabContainerScan>(`/platform/lab-operations/containers/scan?barcode=${encodeURIComponent(barcode)}`)
+export const getLabContainerLabel = (id: string) => get<LabContainerLabel>(`/platform/lab-operations/containers/${id}/label`)
+export const recordLabContainerLabelPrint = (id: string, input: { reason: string; outcome: 'Succeeded' | 'Failed'; failureDetails?: string | null }) => post<LabContainerLabel>(`/platform/lab-operations/containers/${id}/label-print`, input)
 export const createLabExecution = (workId: string, input: object) => post<LabExecution>(`/platform/lab-operations/work-orders/${workId}/executions`, input)
 export const transitionLabExecution = (id: string, input: object) => post<LabExecution>(`/platform/lab-operations/executions/${id}/transition`, input)
 export const createLabMaterialLot = (input: object) => post<LabMaterialLot>('/platform/lab-operations/material-lots', input)

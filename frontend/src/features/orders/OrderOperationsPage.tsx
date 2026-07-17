@@ -23,7 +23,7 @@ type OrderSection = Workflow | 'integrations'
 
 const orderSections: ReadonlyArray<WorkspaceSidebarItem<OrderSection>> = [
   { value: 'lab', label: 'Lab', description: 'Pricing, samples, and laboratory execution', icon: FlaskConical },
-  { value: 'reagent', label: 'Reagents', description: 'Review, processing, and fulfillment', icon: Boxes },
+  { value: 'reagent', label: 'PSeq kits', description: 'Review, processing, and fulfillment', icon: Boxes },
   { value: 'assembly', label: 'Assembly', description: 'Intake, processing, and output release', icon: WorkflowIcon },
   { value: 'integrations', label: 'Integrations', description: 'Delivery failures and recovery queues', icon: PlugZap },
 ]
@@ -55,7 +55,7 @@ function OperationalQueues({ apiEnabled, mock, userId }: { apiEnabled: boolean; 
           <section className="mb-6 max-w-3xl">
             <h1 className="text-3xl font-semibold">Order operations</h1>
             <p className="mt-2 text-sm leading-6 text-muted-foreground">
-              Cross-organization queues for pricing, laboratory execution, reagent fulfillment,
+              Cross-organization queues for pricing, laboratory execution, PSeq kit fulfillment,
               data assembly, holds, cancellations, and integration recovery.
             </p>
           </section>
@@ -66,7 +66,7 @@ function OperationalQueues({ apiEnabled, mock, userId }: { apiEnabled: boolean; 
             </Alert>
           ) : null}
           {section === 'lab' ? <QueueCard title="Laboratory queue" workflow="lab" apiEnabled={apiEnabled} userId={userId} organizations={organizationOptions} /> : null}
-          {section === 'reagent' ? <QueueCard title="Reagent queue" workflow="reagent" apiEnabled={apiEnabled} userId={userId} organizations={organizationOptions} /> : null}
+          {section === 'reagent' ? <QueueCard title="PSeq kit queue" workflow="reagent" apiEnabled={apiEnabled} userId={userId} organizations={organizationOptions} /> : null}
           {section === 'assembly' ? <QueueCard title="Assembly queue" workflow="assembly" apiEnabled={apiEnabled} userId={userId} organizations={organizationOptions} /> : null}
           {section === 'integrations' ? <IntegrationQueue query={integrations} notifications={notifications} apiEnabled={apiEnabled} /> : null}
         </div>

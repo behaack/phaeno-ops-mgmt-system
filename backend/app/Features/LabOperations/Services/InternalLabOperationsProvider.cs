@@ -312,10 +312,12 @@ public sealed class InternalLabOperationsProvider(PSeqOperationsDbContext dbCont
         foreach (var specimen in replacement.Specimens
                      .Where(specimen => !existingSpecimenIds.Contains(specimen.SubmittedSpecimenId)))
         {
-            workOrder.Specimens.Add(new LabSpecimen(workOrder.Id, specimen.SubmittedSpecimenId));
+            var addedSpecimen = new LabSpecimen(workOrder.Id, specimen.SubmittedSpecimenId);
+            workOrder.Specimens.Add(addedSpecimen);
+            dbContext.LabSpecimens.Add(addedSpecimen);
         }
 
-        workOrder.AuthorizationVersions.Add(new LabWorkAuthorizationVersion(
+        var authorizationVersion = new LabWorkAuthorizationVersion(
             workOrder.Id,
             command.Metadata.CommandId,
             command.Metadata.CorrelationId,
@@ -323,7 +325,9 @@ public sealed class InternalLabOperationsProvider(PSeqOperationsDbContext dbCont
             command.Metadata.ContractVersion,
             payloadJson,
             payloadSha256,
-            command.Metadata.OccurredAtUtc));
+            command.Metadata.OccurredAtUtc);
+        workOrder.AuthorizationVersions.Add(authorizationVersion);
+        dbContext.LabWorkAuthorizationVersions.Add(authorizationVersion);
 
         return new LabCommandAcknowledgment(
             command.Metadata.CommandId,

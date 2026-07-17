@@ -12,7 +12,9 @@ Only a library with passed QC can enter a sequencing batch. If QC fails, preserv
 
 A batch may contain libraries from different organizations and Commercial orders. Add only the required library identifiers and operational facts. Do not copy Customer names, prices, order notes, or other confidential Commercial details into the batch manifest.
 
-Confirm membership before starting the batch. Once started, preserve the membership history and use supported add, remove, or exception actions rather than rewriting the original manifest.
+For scan-first entry, open **Batches**, select a draft batch under **Scan libraries into a batch**, and scan each physical library container. POMS accepts only a container linked to a **QC passed** library. An unknown barcode, non-library container, library in another state, or duplicate membership is rejected without changing the batch. A successful scan clears and refocuses the field for the next container.
+
+Confirm membership before starting the batch. Once started, preserve the membership history and use supported add, remove, or exception actions rather than rewriting the original manifest. Scanning proves the container identity used for entry; it does not replace the approved physical manifest and custody checks.
 
 ## Create an outsourced sendout
 

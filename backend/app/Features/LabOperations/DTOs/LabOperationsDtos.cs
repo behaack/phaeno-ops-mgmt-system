@@ -47,6 +47,21 @@ public sealed record LabContainerDto(
     string Label, int LabelPrintCount, string Location, decimal? Quantity,
     string? QuantityUnit, string Status, DateTime? RetainUntilUtc, long Version);
 
+public sealed record LabContainerScanDto(
+    Guid LabWorkOrderId, string? CommercialOrderNumber, string? AccessionNumber,
+    string? ParentBarcode, Guid? LabLibraryId, string? LibraryStatus,
+    LabContainerDto Container);
+
+public sealed record LabLabelPrintEventDto(
+    Guid Id, Guid LabContainerId, string Outcome, string Reason,
+    string? FailureDetails, int? PrintNumber, Guid? ActorUserId,
+    DateTime OccurredAtUtc);
+
+public sealed record LabContainerLabelDto(
+    Guid LabWorkOrderId, string? CommercialOrderNumber, string? AccessionNumber,
+    string? ParentBarcode, LabContainerDto Container,
+    IReadOnlyList<LabLabelPrintEventDto> PrintHistory);
+
 public sealed record LabExecutionDto(
     Guid Id, Guid? LabSpecimenId, Guid LabProtocolVersionId, Guid? AssignedToUserId,
     string Status, string CapturedResultsJson, string? DeviationNote,
@@ -83,11 +98,12 @@ public sealed record CreateProtocolVersionRequest(string DefinitionJson, long Pr
 public sealed record ProtocolTransitionRequest(string Action);
 public sealed record WorkMilestoneRequest(string Status, long Version);
 public sealed record SpecimenReceiptRequest(DateTime ReceivedAtUtc, string? ReceiptCondition, string? CurrentLocation, long Version);
-public sealed record SpecimenAccessionRequest(string AccessionNumber, string Barcode, string Label, string Location,
+public sealed record SpecimenAccessionRequest(string AccessionNumber, string Label, string Location,
     decimal? Quantity, string? QuantityUnit, DateTime? RetainUntilUtc, long Version);
 public sealed record SpecimenDispositionRequest(string Disposition, string? ReasonCode, long Version);
 public sealed record CreateContainerRequest(Guid? LabSpecimenId, Guid? ParentContainerId, string Kind,
-    string Barcode, string Label, string Location, decimal? Quantity, string? QuantityUnit, DateTime? RetainUntilUtc);
+    string Label, string Location, decimal? Quantity, string? QuantityUnit, DateTime? RetainUntilUtc);
+public sealed record RecordLabelPrintRequest(string Reason, string Outcome, string? FailureDetails);
 public sealed record CreateExecutionRequest(Guid? LabSpecimenId, Guid LabProtocolVersionId, Guid? AssignedToUserId);
 public sealed record ExecutionTransitionRequest(string Action, string? CapturedResultsJson, string? DeviationNote, long Version);
 public sealed record CreateMaterialLotRequest(string Kind, string MaterialKey, string Name, string LotNumber,

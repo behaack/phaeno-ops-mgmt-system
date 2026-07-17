@@ -1,6 +1,7 @@
 namespace PhaenoPortal.Test;
 
 using PSeq.Operations.Laboratory.Domain;
+using PhaenoPortal.App.Features.LabOperations.Services;
 
 public class LabOperationsDomainTests
 {
@@ -141,6 +142,53 @@ public class LabOperationsDomainTests
         version.Activate();
 
         Assert.Equal(LabProtocolStatus.Active, version.Status);
+    }
+
+    [Fact]
+    public void ExecutionCanCompleteWithoutADeviationNote()
+    {
+        var execution = new LabProtocolExecution(
+            Guid.NewGuid(),
+            Guid.NewGuid(),
+            Guid.NewGuid(),
+            Guid.NewGuid());
+
+        execution.Start(DateTime.UtcNow);
+        execution.Complete("""{"status":"passed"}""", null, DateTime.UtcNow);
+
+        Assert.Equal(LabExecutionStatus.Completed, execution.Status);
+        Assert.Null(execution.DeviationNote);
+    }
+
+    [Theory]
+    [InlineData(LabContainerKind.SubmittedSpecimen, "PH-S-")]
+    [InlineData(LabContainerKind.Aliquot, "PH-A-")]
+    [InlineData(LabContainerKind.PreparedReagent, "PH-R-")]
+    [InlineData(LabContainerKind.Library, "PH-L-")]
+    [InlineData(LabContainerKind.Other, "PH-O-")]
+    public void PhaenoBarcodeIsKindSpecificAndScannerNormalizable(
+        LabContainerKind kind,
+        string prefix)
+    {
+        var barcode = LabBarcodeService.Create(kind);
+
+        Assert.StartsWith(prefix, barcode);
+        Assert.True(LabBarcodeService.TryNormalize(
+            $"  *{barcode.ToLowerInvariant()}*  ",
+            out var normalized));
+        Assert.Equal(barcode, normalized);
+    }
+
+    [Fact]
+    public void PhaenoBarcodeRejectsIncompleteOrAlteredScans()
+    {
+        var barcode = LabBarcodeService.Create(LabContainerKind.Library);
+        var replacement = barcode[^1] == '2' ? '3' : '2';
+
+        Assert.False(LabBarcodeService.TryNormalize("customer-label", out _));
+        Assert.False(LabBarcodeService.TryNormalize(
+            $"{barcode[..^1]}{replacement}",
+            out _));
     }
 
     [Fact]
