@@ -16,7 +16,7 @@ test('confirms organization deactivation in an accessible dialog', async ({ page
     const method = route.request().method()
 
     if (method === 'GET' && url.pathname === '/api/organizations') {
-      return json(route, [organization])
+      return json(route, [phaenoOrganization(), organization])
     }
     if (method === 'GET' && url.pathname === '/api/platform/relationships/requests') {
       return envelope(route, [])
@@ -30,7 +30,18 @@ test('confirms organization deactivation in an accessible dialog', async ({ page
   })
 
   await page.goto('/customers')
-  await expect(page.getByRole('heading', { name: 'Organizations' })).toBeVisible()
+  await expect(page.getByRole('heading', { name: 'Accounts' })).toBeVisible()
+  await expect(
+    page.getByRole('heading', { name: 'HubSpot account intake' }),
+  ).toBeVisible()
+  await expect(page.getByText('Not connected', { exact: true })).toBeVisible()
+  await expect(
+    page.getByRole('button', { name: 'New organization' }),
+  ).toHaveCount(0)
+  await expect(page.getByRole('button', { name: 'New request' })).toHaveCount(0)
+  await expect(page.getByRole('button', { name: 'Request' })).toHaveCount(0)
+  await expect(page.getByRole('textbox', { name: 'Search accounts' })).toBeVisible()
+  await expect(page.getByRole('link', { name: 'Phaeno Inc.' })).toHaveCount(0)
   await expect(page.locator('html')).toHaveClass(/dark/)
 
   const deactivate = page.getByRole('button', { name: 'Deactivate' })
@@ -109,6 +120,13 @@ test('selects an eligible source request and uses lifecycle dialogs in the organ
 
   await page.goto(`/customers/${organizationId}`)
   await expect(page.getByRole('heading', { name: 'Atlas Research' })).toBeVisible()
+  await expect(page.getByRole('link', { name: 'Back to accounts' })).toBeVisible()
+  await expect(page.getByRole('button', { name: 'New request' })).toHaveCount(0)
+
+  await page.getByRole('tab', { name: 'Requests' }).click()
+  await expect(
+    page.getByRole('heading', { name: 'Account request history' }),
+  ).toBeVisible()
 
   await page.getByRole('tab', { name: 'Services' }).click()
   await page.getByRole('button', { name: 'Add entitlement' }).click()
@@ -175,6 +193,16 @@ function customerOrganization() {
     createdAt: '2026-07-15T10:00:00Z',
     updatedAt: '2026-07-15T10:00:00Z',
     version: 1,
+  }
+}
+
+function phaenoOrganization() {
+  return {
+    ...customerOrganization(),
+    id: '00000000-0000-0000-0000-000000000102',
+    name: 'Phaeno Inc.',
+    description: 'Internal Phaeno organization.',
+    kind: 'Phaeno',
   }
 }
 

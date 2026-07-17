@@ -1,9 +1,6 @@
 import { Link, useRouterState } from '@tanstack/react-router'
 import { SignOutButton } from '@clerk/react'
-import { useEffect, useId, useMemo, useState } from 'react'
 import {
-  Check,
-  ChevronDown,
   LogOut,
   Menu,
   Monitor,
@@ -15,11 +12,9 @@ import {
 import {
   canManageUserScope,
   getVisibleMainMenuItems,
-  isPhaenoEmployee,
 } from './navigation'
 import { type ThemeMode, useThemeMode } from './theme-mode'
 import { Avatar, AvatarFallback } from '#/components/ui/avatar'
-import { Input } from '#/components/ui/input'
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -35,12 +30,6 @@ import {
   getSelectedMembership,
   usePhaenoSession,
 } from '#/features/auth/session-context'
-import type { SessionResponse } from '#/api/session'
-import {
-  useMockAdminData,
-  type CustomerRecord,
-} from '#/features/admin/mock-admin-data'
-import { cn } from '#/lib/utils'
 
 const displayModes: readonly {
   label: string
@@ -57,28 +46,18 @@ export function UserMenu() {
   const currentPath = useRouterState({
     select: (state) => state.location.pathname,
   })
-  const [organizationQuery, setOrganizationQuery] = useState('')
-  const [customerDropdownOpen, setCustomerDropdownOpen] = useState(false)
-  const [activeCustomerIndex, setActiveCustomerIndex] = useState(0)
-  const customerOptionsId = useId()
   const {
     authProvider,
     signedIn,
     session,
     selectedOrganizationId,
-    setSelectedOrganizationId,
   } = usePhaenoSession()
-  const { customers } = useMockAdminData()
   const user = session?.user
   const selectedMembership = getSelectedMembership(
     session,
     selectedOrganizationId,
   )
-  const selectedCustomer = customers.find(
-    (customer) => customer.id === selectedOrganizationId,
-  )
-  const selectedOrganizationKind =
-    selectedMembership?.organizationKind ?? (selectedCustomer ? 'Customer' : null)
+  const selectedOrganizationKind = selectedMembership?.organizationKind ?? null
   const navigationContext = {
     selectedOrganizationKind,
     selectedMembership,
@@ -103,48 +82,8 @@ export function UserMenu() {
     selectedMembership,
     selectedOrganizationKind,
   )
-  const canImpersonateCustomers =
-    isPhaenoEmployee(session) &&
-    Boolean(session?.capabilities.canManageOrganizations)
-  const phaenoMembership = getPhaenoMembership(session)
-  const fallbackMembership =
-    selectedMembership ?? phaenoMembership ?? session?.memberships[0] ?? null
-  const currentCustomerImpersonation =
-    canImpersonateCustomers && selectedCustomer
-      ? selectedCustomer
-      : canImpersonateCustomers &&
-          selectedMembership?.organizationKind !== 'Phaeno'
-        ? selectedMembership
-      : null
-  const customerResults = useMemo(
-    () => filterCustomerOptions(customers, organizationQuery),
-    [customers, organizationQuery],
-  )
-  const activeCustomer = customerResults[activeCustomerIndex] ?? null
-  const showCustomerImpersonation = canImpersonateCustomers && customers.length > 0
-
-  useEffect(() => {
-    if (!customerDropdownOpen) {
-      return
-    }
-
-    setActiveCustomerIndex((currentIndex) => {
-      if (customerResults.length === 0) {
-        return 0
-      }
-
-      return Math.min(currentIndex, customerResults.length - 1)
-    })
-  }, [customerDropdownOpen, customerResults.length])
-
   if (!signedIn) {
     return null
-  }
-
-  function selectCustomerOrganization(customer: CustomerRecord) {
-    setSelectedOrganizationId(customer.id)
-    setOrganizationQuery('')
-    setCustomerDropdownOpen(false)
   }
 
   return (
@@ -158,14 +97,6 @@ export function UserMenu() {
       <DropdownMenuContent
         align="end"
         className="w-80"
-        onEscapeKeyDown={(event) => {
-          if (!customerDropdownOpen) {
-            return
-          }
-
-          event.preventDefault()
-          setCustomerDropdownOpen(false)
-        }}
       >
         <DropdownMenuLabel>
           <span className="flex min-w-0 items-center gap-2">
@@ -202,192 +133,6 @@ export function UserMenu() {
             </DropdownMenuRadioItem>
           ))}
         </DropdownMenuRadioGroup>
-
-        {showCustomerImpersonation ? (
-          <>
-            <DropdownMenuSeparator />
-            <DropdownMenuLabel>Organization context</DropdownMenuLabel>
-            <div className="space-y-1 px-1.5 py-1">
-              {currentCustomerImpersonation ? (
-                <div className="px-1 text-sm text-foreground">
-                  {selectedCustomer?.name ?? selectedMembership?.organizationName}
-                </div>
-              ) : null}
-              <div className="relative">
-                <DropdownMenuItem
-                  asChild
-                  className="h-8 cursor-text px-2.5 py-0 pr-8 focus:bg-transparent focus:text-foreground"
-                  onSelect={(event) => event.preventDefault()}
-                >
-                  <Input
-                    aria-activedescendant={
-                      customerDropdownOpen && activeCustomer
-                        ? getCustomerOptionId(
-                            customerOptionsId,
-                            activeCustomer.id,
-                          )
-                        : undefined
-                    }
-                    aria-autocomplete="list"
-                    aria-controls={customerOptionsId}
-                    aria-expanded={customerDropdownOpen}
-                    aria-label="Search organizations"
-                    role="combobox"
-                    value={organizationQuery}
-                    onBlur={() => setCustomerDropdownOpen(false)}
-                    onChange={(event) => {
-                      setOrganizationQuery(event.target.value)
-                      setCustomerDropdownOpen(true)
-                      setActiveCustomerIndex(0)
-                    }}
-                    onClick={() => {
-                      setCustomerDropdownOpen(true)
-                      setActiveCustomerIndex(0)
-                    }}
-                    onFocus={() => setActiveCustomerIndex(0)}
-                    onKeyDown={(event) => {
-                      if (event.key === 'Escape') {
-                        if (customerDropdownOpen) {
-                          event.preventDefault()
-                          event.stopPropagation()
-                          setCustomerDropdownOpen(false)
-                        }
-                        return
-                      }
-
-                      if (event.key === 'ArrowDown') {
-                        if (!customerDropdownOpen) {
-                          return
-                        }
-
-                        event.preventDefault()
-                        event.stopPropagation()
-                        setActiveCustomerIndex((currentIndex) =>
-                          customerResults.length === 0 ||
-                          currentIndex >= customerResults.length - 1
-                            ? 0
-                            : currentIndex + 1,
-                        )
-                        return
-                      }
-
-                      if (event.key === 'ArrowUp') {
-                        if (!customerDropdownOpen) {
-                          return
-                        }
-
-                        event.preventDefault()
-                        event.stopPropagation()
-                        setActiveCustomerIndex((currentIndex) =>
-                          customerResults.length === 0 || currentIndex <= 0
-                            ? Math.max(customerResults.length - 1, 0)
-                            : currentIndex - 1,
-                        )
-                        return
-                      }
-
-                      if (event.key === 'Enter') {
-                        event.preventDefault()
-                        event.stopPropagation()
-                        if (customerDropdownOpen && activeCustomer) {
-                          selectCustomerOrganization(activeCustomer)
-                        } else {
-                          setCustomerDropdownOpen(true)
-                          setActiveCustomerIndex(0)
-                        }
-                        return
-                      }
-
-                      if (
-                        event.key.length === 1 ||
-                        [
-                          'Backspace',
-                          'Delete',
-                          'Home',
-                          'End',
-                          'ArrowLeft',
-                          'ArrowRight',
-                        ].includes(event.key)
-                      ) {
-                        event.stopPropagation()
-                      }
-                    }}
-                    placeholder="Search customers..."
-                    className="h-8 pr-8"
-                  />
-                </DropdownMenuItem>
-                <ChevronDown
-                  aria-hidden="true"
-                  className="pointer-events-none absolute top-1/2 right-2 size-4 -translate-y-1/2 text-muted-foreground"
-                />
-                {customerDropdownOpen ? (
-                  <div
-                    id={customerOptionsId}
-                    role="listbox"
-                    className="absolute z-50 mt-1 max-h-56 w-full overflow-y-auto rounded-md border bg-popover p-1 text-popover-foreground shadow-md"
-                  >
-                    {customerResults.length > 0 ? (
-                      customerResults.map((membership, index) => (
-                        <button
-                          key={membership.id}
-                          id={getCustomerOptionId(
-                            customerOptionsId,
-                            membership.id,
-                          )}
-                          type="button"
-                          role="option"
-                          aria-selected={selectedCustomer?.id === membership.id}
-                          className={cn(
-                            'flex w-full items-center rounded-sm px-2 py-1.5 text-left text-sm outline-none hover:bg-accent hover:text-accent-foreground focus-visible:bg-accent focus-visible:text-accent-foreground',
-                            index === activeCustomerIndex &&
-                              'bg-accent text-accent-foreground',
-                          )}
-                          onMouseDown={(event) => event.preventDefault()}
-                          onMouseEnter={() => setActiveCustomerIndex(index)}
-                          onClick={() => selectCustomerOrganization(membership)}
-                        >
-                          <span className="min-w-0 flex-1 truncate">
-                            {membership.name}
-                          </span>
-                          {selectedCustomer?.id === membership.id ? (
-                            <Check className="ml-2 size-4 shrink-0" />
-                          ) : null}
-                        </button>
-                      ))
-                    ) : (
-                      <div className="px-2 py-1.5 text-sm text-muted-foreground">
-                        No organizations found.
-                      </div>
-                    )}
-                  </div>
-                ) : null}
-              </div>
-              {currentCustomerImpersonation ? (
-                <DropdownMenuItem
-                  className="pl-2 underline underline-offset-3 hover:no-underline focus-visible:no-underline"
-                  onSelect={(event) => {
-                    event.preventDefault()
-                    setSelectedOrganizationId(
-                      phaenoMembership?.organizationId ?? null,
-                    )
-                    setOrganizationQuery('')
-                    setCustomerDropdownOpen(false)
-                  }}
-                >
-                  Return to Phaeno
-                </DropdownMenuItem>
-              ) : null}
-            </div>
-          </>
-        ) : fallbackMembership ? (
-          <>
-            <DropdownMenuSeparator />
-            <DropdownMenuLabel>Organization</DropdownMenuLabel>
-            <div className="px-1.5 py-1 text-sm text-foreground">
-              {fallbackMembership.organizationName}
-            </div>
-          </>
-        ) : null}
 
         <div className="md:hidden">
           <DropdownMenuSeparator />
@@ -510,32 +255,4 @@ function isRouteActive(pathname: string, to: string, exact?: boolean) {
   }
 
   return pathname === to || pathname.startsWith(`${to}/`)
-}
-
-function getPhaenoMembership(session: SessionResponse | null) {
-  return (
-    session?.memberships.find(
-      (membership) => membership.organizationKind === 'Phaeno',
-    ) ?? null
-  )
-}
-
-function getCustomerOptionId(optionsId: string, membershipId: string) {
-  return `${optionsId}-${membershipId}`
-}
-
-function filterCustomerOptions(
-  customers: readonly CustomerRecord[],
-  query: string,
-) {
-  const normalizedQuery = query.trim().toLocaleLowerCase()
-  if (!normalizedQuery) {
-    return customers.slice(0, 12)
-  }
-
-  return customers
-    .filter((customer) =>
-      customer.name.toLocaleLowerCase().includes(normalizedQuery),
-    )
-    .slice(0, 12)
 }

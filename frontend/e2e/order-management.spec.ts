@@ -26,7 +26,8 @@ test('shows Phaeno operations and configuration workspaces in mock mode', async 
 
   await page.goto('/order-operations')
   await expect(page.getByRole('heading', { name: 'Order operations' })).toBeVisible()
-  await expect(page.getByRole('tab', { name: 'Integrations' })).toBeVisible()
+  await openSidebarIfCollapsed(page, 'Order operations')
+  await expect(page.getByRole('button', { name: /^Integrations/ })).toBeVisible()
 
   await page.goto('/order-configuration')
   await expect(page.getByRole('heading', { name: 'Order configuration' })).toBeVisible()
@@ -37,4 +38,14 @@ async function selectOrganization(page: import('@playwright/test').Page, organiz
   await page.addInitScript((selectedOrganizationId) => {
     window.localStorage.setItem('phaeno.selectedOrganizationId', selectedOrganizationId)
   }, organizationId)
+}
+
+async function openSidebarIfCollapsed(
+  page: import('@playwright/test').Page,
+  workspaceLabel: string,
+) {
+  const trigger = page.getByRole('button', {
+    name: new RegExp(`^Open ${workspaceLabel} navigation`),
+  })
+  if (await trigger.isVisible()) await trigger.click()
 }

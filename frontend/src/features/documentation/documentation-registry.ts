@@ -19,10 +19,26 @@ import PartnerGettingStarted from '#/content/docs/en-US/partner/getting-started.
 import PartnerReagentOrders from '#/content/docs/en-US/partner/reagent-orders.mdx'
 import PartnerStatusesAndTroubleshooting from '#/content/docs/en-US/partner/statuses-and-troubleshooting.mdx'
 import PhaenoConfigurationAndRecovery from '#/content/docs/phaeno/configuration-and-recovery.mdx'
+import PhaenoDataCuratedPublishing from '#/content/docs/phaeno/data-curated-publishing.mdx'
+import PhaenoDataGovernanceRecovery from '#/content/docs/phaeno/data-governance-recovery.mdx'
+import PhaenoDataOrganizationGrants from '#/content/docs/phaeno/data-organization-grants.mdx'
 import PhaenoDataProvisioningAndAccounts from '#/content/docs/phaeno/data-provisioning-and-accounts.mdx'
+import PhaenoDataSourceRegistry from '#/content/docs/phaeno/data-source-registry.mdx'
 import PhaenoGettingStarted from '#/content/docs/phaeno/getting-started.mdx'
+import PhaenoLabExceptionsRework from '#/content/docs/phaeno/lab-exceptions-rework.mdx'
+import PhaenoLabLibrariesBatchesSequencing from '#/content/docs/phaeno/lab-libraries-batches-sequencing.mdx'
+import PhaenoLabMaterialsEquipment from '#/content/docs/phaeno/lab-materials-equipment.mdx'
 import PhaenoLabOperations from '#/content/docs/phaeno/lab-operations.mdx'
+import PhaenoLabProtocolExecution from '#/content/docs/phaeno/lab-protocol-execution.mdx'
+import PhaenoLabReceiptAccession from '#/content/docs/phaeno/lab-receipt-accession.mdx'
+import PhaenoLabScientificApproval from '#/content/docs/phaeno/lab-scientific-approval.mdx'
+import PhaenoOrderBillingPaymentRelease from '#/content/docs/phaeno/order-billing-payment-release.mdx'
+import PhaenoOrderCustomerLabAuthorization from '#/content/docs/phaeno/order-customer-lab-authorization.mdx'
+import PhaenoOrderDataAssembly from '#/content/docs/phaeno/order-data-assembly.mdx'
+import PhaenoOrderHoldsCancellationsAdjustments from '#/content/docs/phaeno/order-holds-cancellations-adjustments.mdx'
+import PhaenoOrderIntegrationRecovery from '#/content/docs/phaeno/order-integration-recovery.mdx'
 import PhaenoOrderOperations from '#/content/docs/phaeno/order-operations.mdx'
+import PhaenoOrderReagentFulfillment from '#/content/docs/phaeno/order-reagent-fulfillment.mdx'
 import PhaenoOrganizationAndUserAdministration from '#/content/docs/phaeno/organization-and-user-administration.mdx'
 import PhaenoStatusesAndRecovery from '#/content/docs/phaeno/statuses-and-recovery.mdx'
 import {
@@ -47,30 +63,14 @@ export type DocumentationEntry = {
   audience: DocumentationAudience
   locale: ExternalDocumentationLocale | null
   slug: string
+  parentSlug?: string
+  overviewTitle?: string
   title: string
   summary: string
   section: string
   order: number
   reviewedAt: string
   Content: DocumentationContent
-}
-
-export const documentationAudiences: Record<
-  DocumentationAudience,
-  { landingSlug: string }
-> = {
-  prospect: {
-    landingSlug: 'getting-started',
-  },
-  customer: {
-    landingSlug: 'getting-started',
-  },
-  partner: {
-    landingSlug: 'getting-started',
-  },
-  phaeno: {
-    landingSlug: 'getting-started',
-  },
 }
 
 export const documentationEntries: readonly DocumentationEntry[] = [
@@ -304,9 +304,10 @@ export const documentationEntries: readonly DocumentationEntry[] = [
     audience: 'phaeno',
     locale: null,
     slug: 'data-provisioning-and-accounts',
-    title: 'Data provisioning and accounts',
-    summary: 'Manage organizations, source data, packages, grants, and governance events.',
-    section: 'Platform operations',
+    overviewTitle: 'Overview and access',
+    title: 'Data provisioning',
+    summary: 'Manage Phaeno-owned sources, immutable packages, exact-version grants, and governance events.',
+    section: 'Data provisioning',
     order: 30,
     reviewedAt: '2026-07-16',
     Content: PhaenoDataProvisioningAndAccounts,
@@ -314,13 +315,218 @@ export const documentationEntries: readonly DocumentationEntry[] = [
   {
     audience: 'phaeno',
     locale: null,
+    slug: 'data-source-registry',
+    parentSlug: 'data-provisioning-and-accounts',
+    title: 'Source registry',
+    summary: 'Register Phaeno-owned sources, managed files, evidence, and immutable ready revisions.',
+    section: 'Data provisioning',
+    order: 31,
+    reviewedAt: '2026-07-16',
+    Content: PhaenoDataSourceRegistry,
+  },
+  {
+    audience: 'phaeno',
+    locale: null,
+    slug: 'data-curated-publishing',
+    parentSlug: 'data-provisioning-and-accounts',
+    title: 'Curated catalog and publishing',
+    summary: 'Snapshot ready sources, validate complete packages, publish immutable versions, and retire safely.',
+    section: 'Data provisioning',
+    order: 32,
+    reviewedAt: '2026-07-16',
+    Content: PhaenoDataCuratedPublishing,
+  },
+  {
+    audience: 'phaeno',
+    locale: null,
+    slug: 'data-organization-grants',
+    parentSlug: 'data-provisioning-and-accounts',
+    title: 'Organization grants',
+    summary: 'Grant, upgrade, and revoke exact package versions without implicit access changes.',
+    section: 'Data provisioning',
+    order: 33,
+    reviewedAt: '2026-07-16',
+    Content: PhaenoDataOrganizationGrants,
+  },
+  {
+    audience: 'phaeno',
+    locale: null,
+    slug: 'data-governance-recovery',
+    parentSlug: 'data-provisioning-and-accounts',
+    title: 'Governance and recovery',
+    summary: 'Quarantine unsafe content, investigate with purpose, close out incidents, and retry safely.',
+    section: 'Data provisioning',
+    order: 34,
+    reviewedAt: '2026-07-16',
+    Content: PhaenoDataGovernanceRecovery,
+  },
+  {
+    audience: 'phaeno',
+    locale: null,
     slug: 'order-operations',
+    overviewTitle: 'Overview and queue triage',
     title: 'Order operations',
     summary: 'Operate Customer lab, Partner reagent, and Partner assembly workflows.',
-    section: 'Platform operations',
+    section: 'Order operations',
     order: 40,
     reviewedAt: '2026-07-16',
     Content: PhaenoOrderOperations,
+  },
+  {
+    audience: 'phaeno',
+    locale: null,
+    slug: 'order-customer-lab-authorization',
+    parentSlug: 'order-operations',
+    title: 'Customer lab authorization',
+    summary: 'Review Customer submissions, issue synchronized quotes, and create the Lab authorization safely.',
+    section: 'Order operations',
+    order: 41,
+    reviewedAt: '2026-07-16',
+    Content: PhaenoOrderCustomerLabAuthorization,
+  },
+  {
+    audience: 'phaeno',
+    locale: null,
+    slug: 'order-reagent-fulfillment',
+    parentSlug: 'order-operations',
+    title: 'Partner reagent fulfillment',
+    summary: 'Review negotiated order snapshots, manage substitutions and backorders, and ship immutably.',
+    section: 'Order operations',
+    order: 42,
+    reviewedAt: '2026-07-16',
+    Content: PhaenoOrderReagentFulfillment,
+  },
+  {
+    audience: 'phaeno',
+    locale: null,
+    slug: 'order-data-assembly',
+    parentSlug: 'order-operations',
+    title: 'Partner data assembly',
+    summary: 'Validate inputs, quote work, record processing, and approve immutable output releases.',
+    section: 'Order operations',
+    order: 43,
+    reviewedAt: '2026-07-16',
+    Content: PhaenoOrderDataAssembly,
+  },
+  {
+    audience: 'phaeno',
+    locale: null,
+    slug: 'order-holds-cancellations-adjustments',
+    parentSlug: 'order-operations',
+    title: 'Holds, cancellations, and adjustments',
+    summary: 'Pause work safely, decide cancellation requests, preserve completed work, and synchronize adjustments.',
+    section: 'Order operations',
+    order: 44,
+    reviewedAt: '2026-07-16',
+    Content: PhaenoOrderHoldsCancellationsAdjustments,
+  },
+  {
+    audience: 'phaeno',
+    locale: null,
+    slug: 'order-billing-payment-release',
+    parentSlug: 'order-operations',
+    title: 'Billing, payment, and release gates',
+    summary: 'Apply QuickBooks document, credit, payment, file, and readiness gates without conflating state.',
+    section: 'Order operations',
+    order: 45,
+    reviewedAt: '2026-07-16',
+    Content: PhaenoOrderBillingPaymentRelease,
+  },
+  {
+    audience: 'phaeno',
+    locale: null,
+    slug: 'order-integration-recovery',
+    parentSlug: 'order-operations',
+    title: 'Integration failures and recovery',
+    summary: 'Triage and safely retry durable QuickBooks and notification deliveries.',
+    section: 'Order operations',
+    order: 46,
+    reviewedAt: '2026-07-16',
+    Content: PhaenoOrderIntegrationRecovery,
+  },
+  {
+    audience: 'phaeno',
+    locale: null,
+    slug: 'lab-operations',
+    overviewTitle: 'Overview and access',
+    title: 'Laboratory operations',
+    summary: 'Accession specimens, execute controlled protocols, manage batches and sendouts, and record scientific release readiness.',
+    section: 'Laboratory operations',
+    order: 50,
+    reviewedAt: '2026-07-16',
+    Content: PhaenoLabOperations,
+  },
+  {
+    audience: 'phaeno',
+    locale: null,
+    slug: 'lab-receipt-accession',
+    parentSlug: 'lab-operations',
+    title: 'Receipt and accession',
+    summary: 'Record physical receipt, accession, labels, intake decisions, and container lineage.',
+    section: 'Laboratory operations',
+    order: 51,
+    reviewedAt: '2026-07-16',
+    Content: PhaenoLabReceiptAccession,
+  },
+  {
+    audience: 'phaeno',
+    locale: null,
+    slug: 'lab-protocol-execution',
+    parentSlug: 'lab-operations',
+    title: 'Protocol control and execution',
+    summary: 'Approve versioned protocols, pin assignments, capture controlled execution, and recover safely.',
+    section: 'Laboratory operations',
+    order: 52,
+    reviewedAt: '2026-07-16',
+    Content: PhaenoLabProtocolExecution,
+  },
+  {
+    audience: 'phaeno',
+    locale: null,
+    slug: 'lab-materials-equipment',
+    parentSlug: 'lab-operations',
+    title: 'Materials and equipment',
+    summary: 'Qualify lots and equipment, record consumption and use, and preserve traceability.',
+    section: 'Laboratory operations',
+    order: 53,
+    reviewedAt: '2026-07-16',
+    Content: PhaenoLabMaterialsEquipment,
+  },
+  {
+    audience: 'phaeno',
+    locale: null,
+    slug: 'lab-libraries-batches-sequencing',
+    parentSlug: 'lab-operations',
+    title: 'Libraries, batches, and sequencing',
+    summary: 'Prepare QC-approved libraries, build cross-order batches, and track sendout custody.',
+    section: 'Laboratory operations',
+    order: 54,
+    reviewedAt: '2026-07-16',
+    Content: PhaenoLabLibrariesBatchesSequencing,
+  },
+  {
+    audience: 'phaeno',
+    locale: null,
+    slug: 'lab-exceptions-rework',
+    parentSlug: 'lab-operations',
+    title: 'Exceptions, rework, and cancellation',
+    summary: 'Classify exceptions, preserve rework history, and respond safely to cancellation requests.',
+    section: 'Laboratory operations',
+    order: 55,
+    reviewedAt: '2026-07-16',
+    Content: PhaenoLabExceptionsRework,
+  },
+  {
+    audience: 'phaeno',
+    locale: null,
+    slug: 'lab-scientific-approval',
+    parentSlug: 'lab-operations',
+    title: 'Scientific approval and release readiness',
+    summary: 'Review complete lineage, record scientific approval, and publish the controlled readiness milestone.',
+    section: 'Laboratory operations',
+    order: 56,
+    reviewedAt: '2026-07-16',
+    Content: PhaenoLabScientificApproval,
   },
   {
     audience: 'phaeno',
@@ -329,20 +535,9 @@ export const documentationEntries: readonly DocumentationEntry[] = [
     title: 'Configuration and integration recovery',
     summary: 'Maintain scientific and commercial rules and recover durable integrations.',
     section: 'Platform operations',
-    order: 50,
+    order: 60,
     reviewedAt: '2026-07-16',
     Content: PhaenoConfigurationAndRecovery,
-  },
-  {
-    audience: 'phaeno',
-    locale: null,
-    slug: 'lab-operations',
-    title: 'Laboratory operations',
-    summary: 'Accession specimens, execute controlled protocols, manage batches and sendouts, and record scientific release readiness.',
-    section: 'Platform operations',
-    order: 45,
-    reviewedAt: '2026-07-16',
-    Content: PhaenoLabOperations,
   },
   {
     audience: 'phaeno',
@@ -351,7 +546,7 @@ export const documentationEntries: readonly DocumentationEntry[] = [
     title: 'Statuses and recovery',
     summary: 'Triage operational states and safely recover integrations, files, releases, and notifications.',
     section: 'Support',
-    order: 60,
+    order: 70,
     reviewedAt: '2026-07-16',
     Content: PhaenoStatusesAndRecovery,
   },

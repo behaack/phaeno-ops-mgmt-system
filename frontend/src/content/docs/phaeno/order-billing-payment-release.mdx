@@ -1,0 +1,25 @@
+# Billing, payment, and release gates
+
+QuickBooks Online is authoritative for estimates, invoices, credits, terms, balances, paid status, and hosted payment links. POMS consumes those facts and combines them with scientific, file, and approval state to decide whether a result or output can be released.
+
+## Understand document timing
+
+- Customer lab and Partner assembly quotes create or synchronize a QuickBooks estimate before acceptance.
+- Customer lab completion and Partner assembly completion create or synchronize the final invoice.
+- Partner reagent shipments use invoice-on-shipment; partial shipments may produce separate invoices.
+
+The portal links to authoritative QuickBooks documents. It does not recalculate tax, freight, discounts, balance, or payment state.
+
+## Apply Customer release gates
+
+A Customer result may be published only when the specific sample is scientifically ready, the release definition is approved, every file is present and checksummed, malware scanning passed, and required Commercial synchronization completed.
+
+For a Customer with approved credit, Phaeno may release a ready sample result under the configured Net 30 terms without waiting for payment. Without approved credit, no job result is downloadable until QuickBooks confirms that the completed job invoice is paid.
+
+## Apply Partner assembly release gates
+
+An approved output release must reference the accepted input revision and active assembly profile. The completion invoice must synchronize before release. A Partner with approved assembly credit may receive the output under its terms; otherwise QuickBooks must confirm payment first.
+
+## Diagnose a blocked release
+
+Review scientific readiness, output approval, file scan and checksum state, invoice synchronization, credit approval, paid status, and publication independently. Show the tenant that work is ready but held when appropriate, without exposing the files. Never bypass a failed gate by attaching a file manually or changing an unrelated workflow status.

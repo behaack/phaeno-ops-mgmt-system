@@ -1,17 +1,17 @@
 import { useMutation, useQuery, useQueryClient, type UseQueryResult } from '@tanstack/react-query'
 import { Link } from '@tanstack/react-router'
-import { RefreshCw } from 'lucide-react'
+import { Boxes, FlaskConical, PlugZap, RefreshCw, Workflow as WorkflowIcon } from 'lucide-react'
 import { useState } from 'react'
 
 import { getOrderConfiguration, getOrderErrorMessage, getPlatformOrder, listIntegrationMessages, listNotificationMessages, listPlatformOrders, retryIntegrationMessage, retryNotificationMessage, runPlatformAction, updateOperationalAssignment, type DataAssemblyRequest, type IntegrationMessage, type LabServiceOrder, type NotificationMessage, type PagedResult, type ReagentOrder } from '#/api/order-management'
 import { listOrganizations } from '#/api/data-provisioning'
 import { Alert, AlertDescription, AlertTitle } from '#/components/ui/alert'
+import { WorkspaceSidebar, type WorkspaceSidebarItem } from '#/components/WorkspaceSidebar'
 import { Button } from '#/components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '#/components/ui/card'
 import { Dialog, DialogClose, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '#/components/ui/dialog'
 import { Label } from '#/components/ui/label'
 import { Input } from '#/components/ui/input'
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '#/components/ui/tabs'
 import { usePhaenoSession } from '#/features/auth/session-context'
 import { humanizeStatus, OrderStatusBadge } from './OrderStatusBadge'
 import { AssemblyOperationsPanel } from './operations/AssemblyOperationsPanel'
@@ -19,6 +19,14 @@ import { LabOperationsPanel } from './operations/LabOperationsPanel'
 import { ReagentOperationsPanel } from './operations/ReagentOperationsPanel'
 
 type Workflow = 'lab' | 'reagent' | 'assembly'
+type OrderSection = Workflow | 'integrations'
+
+const orderSections: ReadonlyArray<WorkspaceSidebarItem<OrderSection>> = [
+  { value: 'lab', label: 'Lab', description: 'Pricing, samples, and laboratory execution', icon: FlaskConical },
+  { value: 'reagent', label: 'Reagents', description: 'Review, processing, and fulfillment', icon: Boxes },
+  { value: 'assembly', label: 'Assembly', description: 'Intake, processing, and output release', icon: WorkflowIcon },
+  { value: 'integrations', label: 'Integrations', description: 'Delivery failures and recovery queues', icon: PlugZap },
+]
 
 export function OrderOperationsPage({ workflow, orderId }: { workflow?: Workflow; orderId?: string }) {
   const { authProvider, session } = usePhaenoSession()
@@ -30,11 +38,41 @@ export function OrderOperationsPage({ workflow, orderId }: { workflow?: Workflow
 }
 
 function OperationalQueues({ apiEnabled, mock, userId }: { apiEnabled: boolean; mock: boolean; userId: string | null }) {
+  const [section, setSection] = useState<OrderSection>('lab')
   const organizations = useQuery({ queryKey: ['order-operations', 'organizations'], queryFn: listOrganizations, enabled: apiEnabled })
   const integrations = useQuery({ queryKey: ['order-integrations'], queryFn: () => listIntegrationMessages(), enabled: apiEnabled })
   const notifications = useQuery({ queryKey: ['order-notifications'], queryFn: () => listNotificationMessages(), enabled: apiEnabled })
   const organizationOptions = organizations.data?.map((item) => ({ id: item.id, name: item.name })) ?? []
-  return <main className="page-wrap px-4 py-8"><section className="mb-6 max-w-3xl"><h1 className="text-3xl font-semibold">Order operations</h1><p className="mt-2 text-sm leading-6 text-muted-foreground">Cross-organization queues for pricing, laboratory execution, reagent fulfillment, data assembly, holds, cancellations, and integration recovery.</p></section>{mock ? <Alert className="mb-5"><AlertTitle>Connected queues are paused in mock-session mode</AlertTitle><AlertDescription>Use a real Phaeno session to work operational orders.</AlertDescription></Alert> : null}<Tabs defaultValue="lab"><TabsList className="grid h-auto w-full grid-cols-2 sm:grid-cols-4"><TabsTrigger value="lab">Lab</TabsTrigger><TabsTrigger value="reagent">Reagents</TabsTrigger><TabsTrigger value="assembly">Assembly</TabsTrigger><TabsTrigger value="integrations">Integrations</TabsTrigger></TabsList><TabsContent value="lab"><QueueCard title="Laboratory queue" workflow="lab" apiEnabled={apiEnabled} userId={userId} organizations={organizationOptions} /></TabsContent><TabsContent value="reagent"><QueueCard title="Reagent queue" workflow="reagent" apiEnabled={apiEnabled} userId={userId} organizations={organizationOptions} /></TabsContent><TabsContent value="assembly"><QueueCard title="Assembly queue" workflow="assembly" apiEnabled={apiEnabled} userId={userId} organizations={organizationOptions} /></TabsContent><TabsContent value="integrations"><IntegrationQueue query={integrations} notifications={notifications} apiEnabled={apiEnabled} /></TabsContent></Tabs></main>
+  return (
+    <main className="py-8">
+      <WorkspaceSidebar
+        workspaceLabel="Order operations"
+        items={orderSections}
+        value={section}
+        onValueChange={setSection}
+      >
+        <div className="page-wrap px-4">
+          <section className="mb-6 max-w-3xl">
+            <h1 className="text-3xl font-semibold">Order operations</h1>
+            <p className="mt-2 text-sm leading-6 text-muted-foreground">
+              Cross-organization queues for pricing, laboratory execution, reagent fulfillment,
+              data assembly, holds, cancellations, and integration recovery.
+            </p>
+          </section>
+          {mock ? (
+            <Alert className="mb-5">
+              <AlertTitle>Connected queues are paused in mock-session mode</AlertTitle>
+              <AlertDescription>Use a real Phaeno session to work operational orders.</AlertDescription>
+            </Alert>
+          ) : null}
+          {section === 'lab' ? <QueueCard title="Laboratory queue" workflow="lab" apiEnabled={apiEnabled} userId={userId} organizations={organizationOptions} /> : null}
+          {section === 'reagent' ? <QueueCard title="Reagent queue" workflow="reagent" apiEnabled={apiEnabled} userId={userId} organizations={organizationOptions} /> : null}
+          {section === 'assembly' ? <QueueCard title="Assembly queue" workflow="assembly" apiEnabled={apiEnabled} userId={userId} organizations={organizationOptions} /> : null}
+          {section === 'integrations' ? <IntegrationQueue query={integrations} notifications={notifications} apiEnabled={apiEnabled} /> : null}
+        </div>
+      </WorkspaceSidebar>
+    </main>
+  )
 }
 
 function QueueCard({ title, workflow, apiEnabled, userId, organizations }: { title: string; workflow: Workflow; apiEnabled: boolean; userId: string | null; organizations: Array<{ id: string; name: string }> }) {

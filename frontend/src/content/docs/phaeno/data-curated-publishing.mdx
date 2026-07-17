@@ -1,0 +1,32 @@
+# Curated catalog and publishing
+
+A curated package is a Portal-facing, immutable version built from one exact ready source revision. Publication creates a stable package identity and manifest; it does not grant the package to an organization.
+
+## Create the curated draft
+
+Select the ready source revision and review the source identity, revision, ownership and de-identification evidence, files, checksums, and snapshot time. The draft captures that source state so later source changes cannot alter it.
+
+Add the Portal-facing title, summary, release notes, scientific context, and dataset-specific metadata required for users to understand the package. Do not copy internal investigation notes or storage keys into the visible description.
+
+## Validate the complete package
+
+Before publication, confirm:
+
+- every required record and file is included;
+- the manifest is complete and checksummed;
+- ownership and de-identification evidence is present;
+- every file passed managed-storage and malware checks;
+- source lineage points to the exact ready revision; and
+- policy and audience-eligibility requirements are satisfied.
+
+Publication is atomic. A failed validation leaves an editable draft and exposes no partial version.
+
+## Publish and manage eligibility
+
+Publishing creates an immutable version. Marking it eligible makes the version available to authorized Phaeno grant workflows; eligibility itself grants no tenant access.
+
+A later version has its own identity, review, manifest, and release notes. Existing organization grants remain pinned to their current version until explicitly upgraded.
+
+## Retire a version
+
+Retirement permanently prevents new grants while preserving existing grants, files, manifests, and download history. Confirm the affected active grants and provide a retained reason. Do not use retirement when the intent is immediate safety blocking; use quarantine instead.

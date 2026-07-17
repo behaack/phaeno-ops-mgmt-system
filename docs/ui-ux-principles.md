@@ -20,6 +20,13 @@ The owner supplies the user, problem, workflow, scientific and business rules, r
 
 Design for trained professionals who use the product repeatedly while keeping standard workflows understandable without formal training.
 
+- Use **POMS** as the application name when the selected organization is
+  Phaeno; it expands to **Phaeno Operations Management System**. Use
+  **Portal** in Prospect, Customer, and Partner contexts and before an external
+  organization is selected. Keep the browser title, application chrome,
+  accessible home name, dashboard, and audience-specific help aligned with the
+  current context. The footer uses the legal ownership line **Copyright ©
+  [current year] Phaeno Inc.** in every context.
 - Favor a balanced expert-first experience rather than consumer-style oversimplification or an intimidating power-user interface.
 - Use moderate-to-high functional density. Whitespace should clarify grouping and hierarchy, not serve as decoration.
 - Provide efficient repeat workflows, keyboard-friendly behavior, and progressive disclosure of advanced options.
@@ -40,8 +47,26 @@ Phaeno Portal is desktop-first and fully responsive.
 Use task-oriented entry points with record-centered workspaces.
 
 - The home experience should answer, "What needs my attention?"
+- The POMS home uses one **Order Operations / Lab Operations / Accounts** panel
+  selector so internal users can move among the two primary operational queues
+  and Customer, Partner, and Prospect account administration without stacking
+  all three dashboards. Show one panel at a time, emphasize attention counts
+  and representative priority work, and route users to the full owning
+  workspace for action. External organization dashboards do not expose this
+  internal selector.
 - Work queues surface pending tasks, exceptions, recent activity, and important status changes.
 - Primary navigation uses recognizable business and scientific areas rather than technical modules.
+- Do not expose an organization-context search or act-as switcher in the user
+  menu. Phaeno users manage external organizations through the Accounts
+  workspace, while external users remain in the organization context
+  established by their authenticated session.
+- Present Accounts as a HubSpot-originated intake and POMS review surface. Do
+  not place direct account creation or manual intake actions on the standard
+  Accounts list or detail page; show the disconnected integration state
+  honestly until automated intake is operational.
+- Multi-section workspaces use one shared sidebar anchored to the far-left viewport edge beneath the primary toolbar. On wide screens it may remain pinned; when unpinned or narrow, hovering at the pointer edge previews the same rail and the persistent edge tab provides keyboard and click access.
+- The unpinned rail is non-modal: it does not add a backdrop, trap focus, blur the page, or move content. A pinned rail preserves the normal centered page position when it fits in the available left margin and reflows the page only when the rail would otherwise overlap it.
+- Remember the sidebar pin preference as a low-risk presentation setting, and show pin controls only on wide layouts. Keep section selection, keyboard focus, Escape behavior, and accessible names intact across pinned and unpinned states, and do not render duplicate navigation for one viewport.
 - Searchable lists provide access to core records.
 - Selecting a major record opens a dedicated detail workspace with stable identity, status, actions, and related information.
 - Returning from a record preserves list filters, sorting, pagination, and scroll position.

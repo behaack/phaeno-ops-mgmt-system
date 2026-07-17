@@ -11,9 +11,7 @@ const documentationMessagesByLocale = {
     helpCenter: 'Help center',
     guides: 'Guides',
     documentation: 'Documentation',
-    documentationAudience: 'Documentation audience',
     previousAndNextGuides: 'Previous and next guides',
-    viewGuidesAs: 'View guides as',
     previous: 'Previous',
     next: 'Next',
     guideNotFound: 'Guide not found',
@@ -24,8 +22,6 @@ const documentationMessagesByLocale = {
       'Select an active Prospect, Customer, Partner, or Phaeno organization to open its guides.',
     documentationHeading: (audienceLabel: string) =>
       `${audienceLabel} documentation`,
-    guidesNavigationLabel: (audienceLabel: string) =>
-      `${audienceLabel} guides`,
     reviewed: (formattedDate: string) => `Reviewed ${formattedDate}`,
     audiences: {
       prospect: {

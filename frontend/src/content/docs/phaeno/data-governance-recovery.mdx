@@ -1,0 +1,25 @@
+# Governance and recovery
+
+Governance actions protect every organization using a curated package while preserving evidence, immutable versions, grants, and download history.
+
+## Quarantine immediately
+
+Use quarantine when ownership, de-identification, source safety, or published content becomes uncertain. Confirm the affected source, package versions, organizations, and active grants. Record the high-level concern category, internal investigation reason, and tenant-safe instructions.
+
+Quarantine overrides all grants derived from the affected source and immediately blocks tenant viewing and downloading. It suspends grants; it does not revoke them or delete content.
+
+## Investigate with purpose
+
+Quarantined content remains available only through the Phaeno investigation path. Every investigation view or download requires a recorded purpose. Keep internal evidence restricted and do not use the tenant download route.
+
+## Clear or withdraw
+
+Clear quarantine only after recording the investigation outcome and why the unchanged immutable version is safe. The confirmation should show which still-active grants will resume and which revoked or inactive grants will remain unavailable.
+
+If the content is confirmed unsafe, preserve the version as evidence and withdraw it from future use. Track one administrator attestation per affected organization, its due date, reminders, and completion evidence. Phaeno may record an externally received attestation, but the record must identify the organization contact, evidence source, and that it was **Recorded by Phaeno**.
+
+## Recover failed operations
+
+Publication, grants, upgrades, revocations, quarantine, and clearance use version-aware, idempotent commands. Refresh before retrying a failed operation. Retry the existing provisioning or governance run rather than creating a duplicate grant or package version.
+
+Never clear a quarantine, restore access, or change an immutable version merely to resolve an integration or UI error.

@@ -4,11 +4,11 @@ Phaeno administrators manage organizations, Portal readiness, service entitlemen
 
 ## Know which administration surface is durable
 
-The **Organizations** directory and each organization workspace are connected to the durable API. Changes to organization details, Portal requests, service entitlements, members, and invitations made in those workspaces persist and are audited.
+The **Accounts** directory and each account workspace are connected to the durable API. The directory contains Prospect, Customer, and Partner accounts; it does not contain the internal Phaeno organization. Changes to account details, Portal requests, service entitlements, members, and invitations made in those workspaces persist and are audited.
 
 The standalone **User management** screen remains a session-only preview. Additions, role changes, deactivations, and reactivations made there do not persist. Use the connected organization workspace for organization-scoped members and invitations. Treat a global user lifecycle change as an authorized Phaeno support task until the standalone screen is connected; never tell a user that a preview-only change completed their request.
 
-## Create and classify organizations
+## Review and maintain accounts
 
 Create the organization with the current business relationship:
 
@@ -19,13 +19,13 @@ Create the organization with the current business relationship:
 
 Do not use organization kind or Portal readiness as a shortcut for access. Curated package access requires an exact-version grant, member access requires an accepted invitation, and commercial work requires a current service entitlement.
 
-Open **Organizations** to search the durable organization directory. Use **New organization** or a row's **Edit** action to open the bounded modal. Select the organization name to open its dedicated workspace.
+Open **Accounts** to search the durable external-account directory. Select the account name to open its dedicated workspace, or use a row's **Edit** action for bounded maintenance of an existing Portal account. Normal onboarding begins in HubSpot, so the standard Accounts list and detail pages do not expose direct account creation or manual request submission.
 
 Record readiness as **Not reviewed**, **Pending**, **Ready**, or **Blocked**, with an internal note when useful. Readiness describes operational setup; it does not invite a user, activate a service, or place an order.
 
 ## Review Portal requests
 
-Use the Portal request queue to record onboarding, evaluation, service, relationship, Sales-assisted order, and offboarding handoffs. Requests entered directly in the Portal are marked **Manual**. HubSpot-originated request intake is not connected in the current portal.
+Use the Portal request queue to review onboarding, evaluation, service, relationship, Sales-assisted order, and offboarding handoffs. HubSpot-originated request intake is not connected in the current portal, and the standard Accounts workspace does not provide a manual intake action. Existing durable requests remain reviewable. A future migration or recovery exception must use a separately restricted and audited procedure rather than ordinary account administration.
 
 Approve or decline a pending request with a reason. Approval records the decision only. Complete each approved organization, invitation, entitlement, or order change through its owning workflow, verify the outcome, and then use **Mark applied** to record what was completed. When the request was submitted before an organization existed, select the completed organization while marking it applied; this links the request to that organization’s history. This separation prevents a review click from silently granting access or creating commercial work.
 

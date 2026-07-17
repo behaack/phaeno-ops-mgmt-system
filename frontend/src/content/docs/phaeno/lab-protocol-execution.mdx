@@ -1,0 +1,23 @@
+# Protocol control and execution
+
+Lab Ops uses versioned protocols so the laboratory can identify exactly which controlled instructions governed an execution. Later protocol changes never rewrite an execution already assigned to a version.
+
+## Control protocol versions
+
+A Protocol Administrator creates the protocol and an editable version definition. The definition should capture ordered and repeatable steps, optional or conditional rules, typed captures, inputs and outputs, required materials and equipment, role requirements, and QC gates.
+
+Review and approve the draft before activation. Activating a version retires the previously active version for new assignments. Retired versions remain available to explain historical work.
+
+## Assign work
+
+Assign only an active protocol version that matches the authorized service and material state. Confirm that required inputs exist and that the assigned operator has an effective Lab role. The assignment pins the work to that version even if a newer version becomes active later.
+
+## Record execution
+
+Start the execution before recording step results, material consumption, or equipment use. Capture required values using the configured types and units. Record optional steps, conditional branches, deviations, and abandoned executions explicitly rather than omitting them from history.
+
+Complete the execution only when required steps and QC gates are satisfied. Store the final captured-results JSON and any deviation note with the execution record.
+
+## Recover safely
+
+Do not edit an active definition to repair an execution. If the protocol itself is wrong, create and approve a new version for future assignments. If execution data is wrong, use the supported correction or repeat-work path while preserving the original record and reason.

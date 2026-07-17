@@ -1,0 +1,25 @@
+# Libraries, batches, and sequencing
+
+Library and batch records preserve the physical lineage from submitted specimen through prepared library and outsourced sequencing custody.
+
+## Prepare a library
+
+Create the physical library container before creating the library record. Link the source container, library container, submitted specimen, and completed preparation execution. Record the library QC result and supporting values required by the approved procedure.
+
+Only a library with passed QC can enter a sequencing batch. If QC fails, preserve the failed library and use the documented rework or replacement path.
+
+## Build a batch
+
+A batch may contain libraries from different organizations and Commercial orders. Add only the required library identifiers and operational facts. Do not copy Customer names, prices, order notes, or other confidential Commercial details into the batch manifest.
+
+Confirm membership before starting the batch. Once started, preserve the membership history and use supported add, remove, or exception actions rather than rewriting the original manifest.
+
+## Create an outsourced sendout
+
+For outsourced NGS, create a provider-neutral sendout with the provider name, optional provider reference, expected completion, and manifest. Advance it through **Shipped**, **Received by provider**, **Sequencing**, and **Complete** only when the corresponding operational fact is known.
+
+Add custody events whenever responsibility or location changes. Record carrier or shipment references when used by the approved procedure.
+
+## Respect the implementation boundary
+
+The sendout tracks material, manifest, timing, provider status, and custody. Raw-file ingestion, pipeline orchestration, intermediate provenance, long-term storage, and final-output publication remain outside the current Lab Ops implementation.

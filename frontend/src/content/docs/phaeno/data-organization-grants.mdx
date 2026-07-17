@@ -1,0 +1,31 @@
+# Organization grants
+
+An organization grant gives one Prospect, Customer, or Partner organization access to one exact immutable curated-package version. Organization kind, relationship stage, eligibility, or publication never creates access automatically.
+
+## Create the grant
+
+Confirm the active target organization and package identity. Select a published, eligible, non-quarantined, non-retired version and review the complete package contents before confirmation.
+
+The grant operation should show:
+
+- target organization and organization kind;
+- package and exact version;
+- current grant state and any superseded version;
+- files and manifest included in the package; and
+- the access consequence for active organization members.
+
+Granting is idempotent. If the operation fails after organization creation or another surrounding workflow, the organization remains valid and the grant can be retried independently.
+
+## Understand access
+
+Every active member of the granted organization can view and download the package under the current role rules. Access is package-wide, not file-by-file. Downloads remain authorized at request time against membership, grant, version, package, and governance state.
+
+## Upgrade explicitly
+
+Publishing a newer version never moves an existing grant. An upgrade atomically supersedes the prior active grant with the selected new version and preserves the earlier grant, version, downloads, and audit history.
+
+## Revoke access
+
+Revocation immediately blocks future viewing and downloads but cannot recall files already downloaded. Require confirmation and a retained reason. Organization deactivation suspends access without revoking the grant; reactivation restores access only when the grant remains active and eligible.
+
+Prospect conversion preserves every existing grant and pinned version. Handle any desired package change as a separate grant, upgrade, or revocation action.

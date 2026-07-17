@@ -180,9 +180,11 @@ organization, request, entitlement, membership, and invitation changes.
 User documentation is authored as portable MDX. Prospect, Customer, and Partner
 content is stored by locale, with `en-US` as the only current locale;
 Phaeno-only content may remain US English. The frontend registry owns audience,
-locale, slug, summary, section, order, and review metadata. The current
-organization filters the offered guide set, while Phaeno users may view all
-external guides for support. Because the current corpus is compiled into
+locale, slug, parent topic, overview label, summary, section, order, and review
+metadata. Phaeno Data Provisioning, Order Ops, and Lab Ops guides use one
+expandable navigation level backed by independently routed MDX pages. The current
+organization is the exclusive audience boundary for the offered guide set;
+cross-audience routes are not exposed. Because the current corpus is compiled into
 browser assets, it contains no confidential procedures. Future help search will
 use a backend index with authenticated audience and locale filtering.
 

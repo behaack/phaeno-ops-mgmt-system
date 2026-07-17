@@ -14,11 +14,23 @@ Do not execute this plan unless explicitly requested.
   persistence orchestration, Clerk/Postmark adapters, and bootstrap composition.
 - The frontend session shell and invitation acceptance/decline route are
   connected to the API.
-- The Phaeno organization list/detail, request, entitlement, invitation,
+- The user menu no longer exposes an organization-context search or act-as
+  switcher. Phaeno administrators manage external organizations through the
+  Accounts workspace; the authenticated session still supplies the
+  organization context required for tenant authorization.
+- The POMS dashboard groups the existing mock organization, user, invitation,
+  readiness, and activity summaries under a Phaeno-only **Accounts** panel
+  alongside Order Operations and Lab Operations. This is a layout mock-up, not
+  a connected account queue or authorization change.
+- The Phaeno Accounts list/detail, request, entitlement, invitation,
   membership, conversion, readiness, and lifecycle workspaces are connected to
   durable APIs. The standalone global User management screen remains a
   session-only preview; global-user lifecycle operations still require a
   connected frontend and coverage.
+- The standard Accounts workspace is an external-account review and operations
+  surface. It does not expose direct account creation or manual request intake;
+  ordinary onboarding will arrive from HubSpot, while any future manual
+  migration or recovery path must be separately restricted and audited.
 - Organization create and edit actions use modal forms, and selecting an
   organization opens a dedicated, view-first detail route.
 
@@ -63,6 +75,9 @@ Do not execute this plan unless explicitly requested.
 - Phaeno/platform admin access is based on an active admin membership in an active organization with kind `Phaeno`.
 - Phaeno admins manage external organizations through platform admin screens,
   not by freely switching into external organization context.
+- The Accounts directory lists only Prospect, Customer, and Partner
+  organizations. The internal Phaeno organization is authorization
+  infrastructure and is not an account-directory record.
 - Prospect, Customer, and Partner organization administrators can see only users
   and memberships in their own selected organization, with the same
   tenant-isolation baseline.
@@ -226,8 +241,11 @@ Do not execute this plan unless explicitly requested.
   - ready
 - Avoid login loops for valid Clerk users who lack local access.
 - Auto-select the only active membership.
-- Show an organization switcher only when multiple active memberships exist.
-- Persist the last selected organization locally.
+- Do not expose organization switching in the user menu. Phaeno users manage
+  external organizations through explicit platform administration screens,
+  and external users remain in their authenticated organization context.
+- Persist a valid session-selected organization locally when the session
+  supplies one.
 - If the persisted organization is no longer valid, fall back to another active membership or show the no-access state.
 - Frontend generally hides actions when capability booleans are false.
 - Backend still enforces all authorization checks.
@@ -370,7 +388,8 @@ Do not execute this plan unless explicitly requested.
 - [x] Remove direct user creation from normal API workflows so membership access is invite-only.
 - [x] Update frontend Clerk auth integration.
 - [x] Add `/accept-invite` frontend route and token scrubbing.
-- [x] Add frontend access states and organization switcher behavior.
+- [x] Add frontend access states and selected-organization validation without
+      exposing an act-as switcher in the user menu.
 - [x] Add capability-driven action visibility.
 - [x] Add backend tests for auth gates, invite lifecycle, membership lifecycle, and bootstrap.
 - [ ] Add frontend tests for auth states, invite flow, org selection, and hidden/visible actions.

@@ -42,6 +42,7 @@ import {
   type ProvisioningRun,
 } from '#/api/data-provisioning'
 import { Alert, AlertDescription, AlertTitle } from '#/components/ui/alert'
+import { WorkspaceSidebar, type WorkspaceSidebarItem } from '#/components/WorkspaceSidebar'
 import { Badge } from '#/components/ui/badge'
 import { Button } from '#/components/ui/button'
 import {
@@ -62,7 +63,6 @@ import {
 } from '#/components/ui/dialog'
 import { Input } from '#/components/ui/input'
 import { Label } from '#/components/ui/label'
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '#/components/ui/tabs'
 import { usePhaenoSession } from '#/features/auth/session-context'
 import { GovernancePanel } from './GovernancePanel'
 
@@ -118,6 +118,14 @@ type UpgradeValues = z.infer<typeof upgradeSchema>
 type OrganizationValues = z.infer<typeof organizationSchema>
 type RevokeValues = z.infer<typeof revokeSchema>
 type EligibilityRemovalValues = z.infer<typeof eligibilityRemovalSchema>
+type DataProvisioningSection = 'sources' | 'catalog' | 'grants' | 'governance'
+
+const dataProvisioningSections: ReadonlyArray<WorkspaceSidebarItem<DataProvisioningSection>> = [
+  { value: 'sources', label: 'Source registry', description: 'Phaeno-owned curation inputs', icon: Database },
+  { value: 'catalog', label: 'Curated catalog', description: 'Datasets and immutable versions', icon: FileStack },
+  { value: 'grants', label: 'Organization grants', description: 'Exact-version customer access', icon: UserRoundCheck },
+  { value: 'governance', label: 'Governance', description: 'Eligibility, activity, and controls', icon: ShieldCheck },
+]
 
 type CatalogLifecycleAction =
   | { kind: 'deactivate'; dataset: CuratedDataset }
@@ -125,6 +133,7 @@ type CatalogLifecycleAction =
 
 export function DataProvisioningPage() {
   const { authProvider, session } = usePhaenoSession()
+  const [section, setSection] = useState<DataProvisioningSection>('sources')
   const canManage = Boolean(session?.capabilities.canViewDatasetConfiguration)
   const apiEnabled = canManage && authProvider !== 'mock'
 
@@ -133,48 +142,41 @@ export function DataProvisioningPage() {
   }
 
   return (
-    <main className="page-wrap px-4 py-8">
-      <section className="mb-6 max-w-3xl">
-        <Badge variant="secondary" className="mb-3">
-          Phaeno-only configuration
-        </Badge>
-        <h1 className="text-3xl font-semibold leading-tight">Data provisioning</h1>
-        <p className="mt-3 max-w-2xl text-sm leading-6 text-muted-foreground sm:text-base">
-          Register Phaeno-owned source samples, publish immutable curated versions,
-          and grant one exact version to an organization.
-        </p>
-      </section>
+    <main className="py-8">
+      <WorkspaceSidebar
+        workspaceLabel="Data provisioning"
+        items={dataProvisioningSections}
+        value={section}
+        onValueChange={setSection}
+      >
+        <div className="page-wrap px-4">
+          <section className="mb-6 max-w-3xl">
+            <Badge variant="secondary" className="mb-3">
+              Phaeno-only configuration
+            </Badge>
+            <h1 className="text-3xl font-semibold leading-tight">Data provisioning</h1>
+            <p className="mt-3 max-w-2xl text-sm leading-6 text-muted-foreground sm:text-base">
+              Register Phaeno-owned source samples, publish immutable curated versions,
+              and grant one exact version to an organization.
+            </p>
+          </section>
 
-      {authProvider === 'mock' ? (
-        <Alert className="mb-5">
-          <AlertTitle>Connected data is paused in mock-session mode</AlertTitle>
-          <AlertDescription>
-            Set <code>VITE_USE_MOCK_SESSION=false</code> to exercise the secured API
-            with a real Phaeno sign-in. The workspace remains visible for UI review.
-          </AlertDescription>
-        </Alert>
-      ) : null}
+          {authProvider === 'mock' ? (
+            <Alert className="mb-5">
+              <AlertTitle>Connected data is paused in mock-session mode</AlertTitle>
+              <AlertDescription>
+                Set <code>VITE_USE_MOCK_SESSION=false</code> to exercise the secured API
+                with a real Phaeno sign-in. The workspace remains visible for UI review.
+              </AlertDescription>
+            </Alert>
+          ) : null}
 
-      <Tabs defaultValue="sources" className="gap-5">
-        <TabsList className="grid h-auto w-full grid-cols-1 sm:grid-cols-2 lg:grid-cols-4">
-          <TabsTrigger value="sources">Source registry</TabsTrigger>
-          <TabsTrigger value="catalog">Curated catalog</TabsTrigger>
-          <TabsTrigger value="grants">Organization grants</TabsTrigger>
-          <TabsTrigger value="governance">Governance</TabsTrigger>
-        </TabsList>
-        <TabsContent value="sources">
-          <SourceRegistryPanel apiEnabled={apiEnabled} />
-        </TabsContent>
-        <TabsContent value="catalog">
-          <CuratedCatalogPanel apiEnabled={apiEnabled} />
-        </TabsContent>
-        <TabsContent value="grants">
-          <OrganizationGrantsPanel apiEnabled={apiEnabled} />
-        </TabsContent>
-        <TabsContent value="governance">
-          <GovernancePanel apiEnabled={apiEnabled} />
-        </TabsContent>
-      </Tabs>
+          {section === 'sources' ? <SourceRegistryPanel apiEnabled={apiEnabled} /> : null}
+          {section === 'catalog' ? <CuratedCatalogPanel apiEnabled={apiEnabled} /> : null}
+          {section === 'grants' ? <OrganizationGrantsPanel apiEnabled={apiEnabled} /> : null}
+          {section === 'governance' ? <GovernancePanel apiEnabled={apiEnabled} /> : null}
+        </div>
+      </WorkspaceSidebar>
     </main>
   )
 }

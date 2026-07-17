@@ -1,0 +1,27 @@
+# Customer lab authorization
+
+Customer laboratory work enters Order Ops as a Commercial request. Order Ops validates the submitted service, samples, metadata, and files; prepares the quote; and records the Customer’s authorization. Laboratory execution begins only after that authorization succeeds.
+
+## Review the request
+
+Confirm that the Customer has an active laboratory-service entitlement and that the selected service is currently offered. Review every submitted sample, required service metadata, files, and Customer notes. Request a targeted correction when information is incomplete or unsafe rather than rewriting Customer data internally.
+
+Keep internal review notes separate from the tenant-safe reason shown to the Customer. The initial workflow is not a PHI intake path; do not ask for or store patient-identifying information.
+
+## Issue and accept the quote
+
+The quote is a versioned, immutable Commercial proposal for one job. Confirm the configured service, quantities, prices, currency, expected turnaround information, and expiration before issuance. The corresponding QuickBooks estimate must synchronize successfully before the quote becomes available for Customer acceptance.
+
+Customer acceptance performs one Commercial operation that:
+
+- records the accepted quote revision and purchase-order snapshot when required;
+- creates the immutable laboratory work authorization; and
+- creates the linked Lab work order through the provider-neutral boundary.
+
+Do not create a Lab work order manually if this operation fails. Refresh the order and retry the durable authorization command.
+
+## Respect the Lab boundary
+
+After acceptance, Order Ops continues to own Customer communication, Commercial holds, cancellation review, billing, files, and publication. Lab Ops owns receipt, accession, physical lineage, controlled execution, exceptions, and scientific approval.
+
+The Lab milestone **Ready for release** means the scientific gate passed. It does not upload, scan, attach, or publish a result. Order Ops must still apply the file, Commercial synchronization, and payment-or-credit release gates.

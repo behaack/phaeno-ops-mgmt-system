@@ -1,0 +1,29 @@
+# Partner data assembly
+
+Order Ops manages the Commercial intake, validation, processing milestones, quality review, and immutable output release for Partner data assembly. Inputs and outputs are operational records; they are not source samples for Data Provisioning.
+
+## Validate the submission
+
+Confirm the active Partner, project reference, purchase-order requirement, selected active assembly profile, required metadata, and uploaded input revision. Validate file type, size, completeness, malware-scan state, and every profile-specific requirement.
+
+Request a targeted correction when the submission can be repaired. Reject work that is unsafe, unsupported, or outside the offered profile. A correction creates a new input revision; it must not rewrite the revision that was reviewed previously.
+
+## Quote and accept the job
+
+Prepare the per-job quote from the current assembly offering and preserve its profile, price, currency, and expiration snapshot. The QuickBooks estimate must synchronize before the Partner can accept the quote. Acceptance records the immutable Commercial commitment and queues the work.
+
+## Process and review
+
+Record processing milestones against the accepted input revision and selected profile. Internal implementation details and intermediate files remain internal. When processing is complete, perform the configured quality review and document any hold or required correction.
+
+## Approve an output release
+
+An output release is immutable and identifies:
+
+- the exact source input revision;
+- the assembly profile and version;
+- the output manifest and included files;
+- checksums, scan state, and generation time; and
+- the quality-review and approval facts.
+
+Approve a new release rather than replacing a prior release. Start completion-invoice synchronization, then apply the Partner’s assembly-credit or paid-status release gate before downloads become available.

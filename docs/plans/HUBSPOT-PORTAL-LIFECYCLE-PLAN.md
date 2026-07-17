@@ -238,6 +238,62 @@ control in the Portal.
   Customer/Partner classification, contracted services, billing identity, or
   commercial terms. `Request account change` routes the request to HubSpot.
 
+## HubSpot Trigger And Accounts Workspace Intent
+
+Ordinary external-account intake begins in HubSpot, not from a create action in
+POMS. HubSpot remains the working surface for Companies, relationship Contacts,
+commercial qualification, Deals, and the status that authorizes a handoff.
+POMS remains the authority for the resulting Portal account, tenant access,
+service readiness, entitlements, invitations, and operational records.
+
+The intended automated handoff is:
+
+1. HubSpot reaches an explicitly configured eligible state with all required
+   Company, relationship, service, and designated-administrator fields present.
+2. A HubSpot workflow calls the authenticated POMS integration boundary with a
+   provider-neutral request. Ordinary Company edits and intermediate Deal
+   stages do not call POMS.
+3. POMS validates the source identifiers and request revision, applies a
+   deterministic idempotency key, and records or returns the same pending
+   request for duplicate delivery.
+4. An authorized Phaeno user reviews the request. Receipt and approval do not
+   by themselves create access, enable a service, send an invitation, or place
+   an order.
+5. POMS creates or links the external account, completes readiness and access
+   work through the owning workflows, and records the request as applied only
+   after those outcomes are verified.
+6. POMS publishes the safe request status, Portal account identifier, and
+   approved lifecycle summaries back to HubSpot through the durable outbound
+   integration boundary.
+
+Initial trigger intent is:
+
+- an explicitly approved evaluation request creates an evaluation intake;
+- `Closed Won`, with the required onboarding fields complete, creates a
+  Customer or Partner onboarding intake;
+- approved service, relationship, Sales-assisted-work, and offboarding states
+  create their corresponding request types; and
+- a later material source change creates a new request revision or supersedes
+  an unprocessed revision rather than silently rewriting an approved snapshot.
+
+The exact HubSpot properties, workflow actions, endpoint payload, signing and
+authentication mechanism, retry schedule, idempotency composition, and
+supersession rules remain Phase 1 implementation details that must be proven in
+the actual HubSpot subscription before production activation.
+
+The standard POMS **Accounts** workspace reflects this ownership boundary:
+
+- it lists only Prospect, Customer, and Partner accounts, never the internal
+  Phaeno authorization organization;
+- it provides account discovery, review, readiness, access, service, and
+  request-history surfaces;
+- it does not expose normal **New account**, **New organization**, or manual
+  **New request** actions;
+- it identifies HubSpot intake as not connected until the integration is
+  actually operational; and
+- migration, recovery, or other documented non-sales exceptions use a separate
+  restricted and audited manual path, not the standard Accounts page.
+
 ## End-to-End Relationship Lifecycle
 
 ### 1. HubSpot-Only Relationship

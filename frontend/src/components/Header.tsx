@@ -2,6 +2,7 @@ import { Link } from '@tanstack/react-router'
 
 import { MainMenu } from './MainMenu'
 import { UserMenu } from './UserMenu'
+import { useApplicationBranding } from './application-branding'
 import {
   getSelectedMembership,
   usePhaenoSession,
@@ -10,6 +11,7 @@ import { useMockAdminData } from '#/features/admin/mock-admin-data'
 import { isExternalOrganizationKind } from './navigation'
 
 export default function Header() {
+  const branding = useApplicationBranding()
   const { signedIn, session, selectedOrganizationId } = usePhaenoSession()
   const { customers } = useMockAdminData()
   const selectedMembership = getSelectedMembership(session, selectedOrganizationId)
@@ -30,7 +32,8 @@ export default function Header() {
           <Link
             to="/"
             className="inline-flex flex-col items-start gap-0.5 px-0 py-1 no-underline md:px-3"
-            aria-label="Phaeno Portal home"
+            aria-label={`${branding.name} home`}
+            title={branding.fullName}
           >
             <img
               src="/phaeno124x40.webp"
@@ -40,7 +43,7 @@ export default function Header() {
               className="h-9 w-[112px] object-contain md:h-10 md:w-[124px]"
             />
             <span className="text-[0.5625rem] font-semibold tracking-[0.32em] text-foreground uppercase md:text-[0.625rem]">
-              Portal
+              {branding.name}
             </span>
           </Link>
         </div>

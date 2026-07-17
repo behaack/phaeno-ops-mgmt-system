@@ -20,8 +20,14 @@ or production activation.
   physical lineage, controlled protocols and execution, materials and
   equipment, libraries and cross-order batches, provider-neutral NGS sendouts
   and custody, exceptions, scientific approval, and the Ready-for-release
-  handoff are implemented. Current Commercial file scanning, payment/credit,
-  and publication remain separate.
+  handoff are implemented. The six workspace sections now use the shared
+  far-left sidebar beneath the toolbar, with a remembered pinned desktop rail
+  and the same non-modal hover, keyboard, and click rail when narrow or
+  unpinned. The POMS dashboard now includes a Phaeno-only Order Operations /
+  Lab Operations / Accounts selector whose initial Lab panel is explicitly
+  mock data for layout validation, not a connected Laboratory queue or
+  production-readiness signal. Current Commercial file
+  scanning, payment/credit, and publication remain separate.
 - Architecture state: Phaeno operates a fit-for-purpose internal Lab Operations
   module behind a provider-neutral boundary. Commercial Operations remains
   customer-facing and can later replace the internal module with a third-party

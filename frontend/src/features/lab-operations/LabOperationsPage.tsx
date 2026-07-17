@@ -1,6 +1,6 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { Link } from '@tanstack/react-router'
-import { Plus, RefreshCw } from 'lucide-react'
+import { BookOpenCheck, ClipboardList, FlaskConical, Layers3, Microscope, Plus, RefreshCw, ShieldCheck } from 'lucide-react'
 import { useState, type FormEvent } from 'react'
 
 import {
@@ -23,21 +23,32 @@ import {
 } from '#/api/lab-operations'
 import { listOrganizationUsers } from '#/api/organization-management'
 import { Alert, AlertDescription, AlertTitle } from '#/components/ui/alert'
+import { WorkspaceSidebar, type WorkspaceSidebarItem } from '#/components/WorkspaceSidebar'
 import { Button } from '#/components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '#/components/ui/card'
 import { Dialog, DialogClose, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '#/components/ui/dialog'
 import { Input } from '#/components/ui/input'
 import { Label } from '#/components/ui/label'
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '#/components/ui/tabs'
 import { usePhaenoSession } from '#/features/auth/session-context'
 
 type CreateKind = 'protocol' | 'material' | 'equipment' | 'batch' | 'role' | null
+type LabSection = 'work' | 'protocols' | 'materials' | 'equipment' | 'batches' | 'access'
+
+const labSections: ReadonlyArray<WorkspaceSidebarItem<LabSection>> = [
+  { value: 'work', label: 'Work', description: 'Authorized work and specimen progress', icon: ClipboardList },
+  { value: 'protocols', label: 'Protocols', description: 'Controlled methods and approved versions', icon: BookOpenCheck },
+  { value: 'materials', label: 'Materials', description: 'Lots, prepared reagents, and QC', icon: FlaskConical },
+  { value: 'equipment', label: 'Equipment', description: 'Assets, availability, and calibration', icon: Microscope },
+  { value: 'batches', label: 'Batches', description: 'Operational and sequencing batches', icon: Layers3 },
+  { value: 'access', label: 'Access', description: 'Laboratory roles and permissions', icon: ShieldCheck },
+]
 
 export function LabOperationsPage() {
   const { authProvider, session, selectedOrganizationId } = usePhaenoSession()
   const canView = Boolean(session?.capabilities.canManageLabOperations)
   const apiEnabled = canView && authProvider !== 'mock'
   const queryClient = useQueryClient()
+  const [section, setSection] = useState<LabSection>('work')
   const [createKind, setCreateKind] = useState<CreateKind>(null)
   const [protocolForVersion, setProtocolForVersion] = useState<LabProtocol | null>(null)
   const dashboard = useQuery({ queryKey: ['lab-operations'], queryFn: getLabOperationsDashboard, enabled: apiEnabled })
@@ -51,39 +62,39 @@ export function LabOperationsPage() {
   if (!canView) return <AccessDenied />
 
   return (
-    <main className="page-wrap px-4 py-8">
-      <section className="mb-6 flex flex-wrap items-start justify-between gap-4">
-        <div className="max-w-3xl">
-          <h1 className="text-3xl font-semibold">Lab operations</h1>
-          <p className="mt-2 text-sm leading-6 text-muted-foreground">
-            Internal accession, protocol execution, materials, equipment, cross-order batching,
-            outsourced sequencing, exceptions, and scientific release readiness.
-          </p>
+    <main className="py-8">
+      <WorkspaceSidebar
+        workspaceLabel="Lab operations"
+        items={labSections}
+        value={section}
+        onValueChange={setSection}
+      >
+        <div className="page-wrap px-4">
+          <section className="mb-6 flex flex-wrap items-start justify-between gap-4">
+            <div className="max-w-3xl">
+              <h1 className="text-3xl font-semibold">Lab operations</h1>
+              <p className="mt-2 text-sm leading-6 text-muted-foreground">
+                Internal accession, protocol execution, materials, equipment, cross-order batching,
+                outsourced sequencing, exceptions, and scientific release readiness.
+              </p>
+            </div>
+            <Button type="button" variant="outline" disabled={!apiEnabled || dashboard.isFetching} onClick={() => refresh()}>
+              <RefreshCw data-icon="inline-start" /> Refresh
+            </Button>
+          </section>
+          {authProvider === 'mock' ? <Alert className="mb-5"><AlertTitle>Connected Lab operations are paused</AlertTitle><AlertDescription>Use a real Phaeno session to load or change laboratory records.</AlertDescription></Alert> : null}
+          {dashboard.error ? <Alert className="mb-5" variant="destructive"><AlertTitle>Lab operations could not be loaded</AlertTitle><AlertDescription>{getLabOperationsError(dashboard.error, 'Try refreshing the workspace.')}</AlertDescription></Alert> : null}
+          {dashboard.isLoading ? <p role="status">Loading laboratory workspace…</p> : null}
+          {dashboard.data && section === 'work' ? <WorkQueue items={dashboard.data.workOrders} /> : null}
+          {dashboard.data && section === 'protocols' ? <ProtocolList protocols={dashboard.data.protocols} canManage={Boolean(session?.capabilities.canManageLabProtocols)} onCreate={() => setCreateKind('protocol')} onVersion={setProtocolForVersion} refresh={refresh} /> : null}
+          {dashboard.data && section === 'materials' ? <MaterialList items={dashboard.data.materialLots} canManage={Boolean(session?.capabilities.canOperateLabWork)} canApprove={Boolean(session?.capabilities.canSuperviseLabWork)} onCreate={() => setCreateKind('material')} refresh={refresh} /> : null}
+          {dashboard.data && section === 'equipment' ? <EquipmentList items={dashboard.data.equipment} canManage={Boolean(session?.capabilities.canSuperviseLabWork)} onCreate={() => setCreateKind('equipment')} /> : null}
+          {dashboard.data && section === 'batches' ? <BatchList items={dashboard.data.batches} canManage={Boolean(session?.capabilities.canOperateLabWork)} onCreate={() => setCreateKind('batch')} refresh={refresh} /> : null}
+          {dashboard.data && section === 'access' ? <AccessList assignments={dashboard.data.roleAssignments} canManage={Boolean(session?.capabilities.canManageLabAccess)} onCreate={() => setCreateKind('role')} refresh={refresh} /> : null}
+          <CreateRecordDialog kind={createKind} users={users.data ?? []} onClose={() => setCreateKind(null)} onSaved={async () => { setCreateKind(null); await refresh() }} />
+          <ProtocolVersionDialog protocol={protocolForVersion} onClose={() => setProtocolForVersion(null)} onSaved={async () => { setProtocolForVersion(null); await refresh() }} />
         </div>
-        <Button type="button" variant="outline" disabled={!apiEnabled || dashboard.isFetching} onClick={() => refresh()}>
-          <RefreshCw data-icon="inline-start" /> Refresh
-        </Button>
-      </section>
-      {authProvider === 'mock' ? <Alert className="mb-5"><AlertTitle>Connected Lab operations are paused</AlertTitle><AlertDescription>Use a real Phaeno session to load or change laboratory records.</AlertDescription></Alert> : null}
-      {dashboard.error ? <Alert className="mb-5" variant="destructive"><AlertTitle>Lab operations could not be loaded</AlertTitle><AlertDescription>{getLabOperationsError(dashboard.error, 'Try refreshing the workspace.')}</AlertDescription></Alert> : null}
-      {dashboard.isLoading ? <p role="status">Loading laboratory workspace…</p> : null}
-      {dashboard.data ? (
-        <Tabs defaultValue="work">
-          <TabsList className="grid h-auto w-full grid-cols-3 lg:grid-cols-6">
-            <TabsTrigger value="work">Work</TabsTrigger><TabsTrigger value="protocols">Protocols</TabsTrigger>
-            <TabsTrigger value="materials">Materials</TabsTrigger><TabsTrigger value="equipment">Equipment</TabsTrigger>
-            <TabsTrigger value="batches">Batches</TabsTrigger><TabsTrigger value="access">Access</TabsTrigger>
-          </TabsList>
-          <TabsContent value="work"><WorkQueue items={dashboard.data.workOrders} /></TabsContent>
-          <TabsContent value="protocols"><ProtocolList protocols={dashboard.data.protocols} canManage={Boolean(session?.capabilities.canManageLabProtocols)} onCreate={() => setCreateKind('protocol')} onVersion={setProtocolForVersion} refresh={refresh} /></TabsContent>
-          <TabsContent value="materials"><MaterialList items={dashboard.data.materialLots} canManage={Boolean(session?.capabilities.canOperateLabWork)} canApprove={Boolean(session?.capabilities.canSuperviseLabWork)} onCreate={() => setCreateKind('material')} refresh={refresh} /></TabsContent>
-          <TabsContent value="equipment"><EquipmentList items={dashboard.data.equipment} canManage={Boolean(session?.capabilities.canSuperviseLabWork)} onCreate={() => setCreateKind('equipment')} /></TabsContent>
-          <TabsContent value="batches"><BatchList items={dashboard.data.batches} canManage={Boolean(session?.capabilities.canOperateLabWork)} onCreate={() => setCreateKind('batch')} refresh={refresh} /></TabsContent>
-          <TabsContent value="access"><AccessList assignments={dashboard.data.roleAssignments} canManage={Boolean(session?.capabilities.canManageLabAccess)} onCreate={() => setCreateKind('role')} refresh={refresh} /></TabsContent>
-        </Tabs>
-      ) : null}
-      <CreateRecordDialog kind={createKind} users={users.data ?? []} onClose={() => setCreateKind(null)} onSaved={async () => { setCreateKind(null); await refresh() }} />
-      <ProtocolVersionDialog protocol={protocolForVersion} onClose={() => setProtocolForVersion(null)} onSaved={async () => { setProtocolForVersion(null); await refresh() }} />
+      </WorkspaceSidebar>
     </main>
   )
 }

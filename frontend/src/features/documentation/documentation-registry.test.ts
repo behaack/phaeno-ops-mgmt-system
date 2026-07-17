@@ -15,7 +15,13 @@ describe('documentation registry', () => {
 
       expect(entries.map((entry) => entry.order)).toEqual([
         ...(audience === 'phaeno'
-          ? [10, 20, 30, 40, 45, 50, 60]
+          ? [
+              10, 20,
+              30, 31, 32, 33, 34,
+              40, 41, 42, 43, 44, 45, 46,
+              50, 51, 52, 53, 54, 55, 56,
+              60, 70,
+            ]
           : [10, 20, 30, 40, 50, 60]),
       ])
       expect(entries.every((entry) => entry.audience === audience)).toBe(true)
@@ -35,6 +41,12 @@ describe('documentation registry', () => {
       expect(entry.locale).toBe(
         entry.audience === 'phaeno' ? null : 'en-US',
       )
+      if (entry.parentSlug) {
+        const parent = getDocumentationEntry(entry.audience, entry.parentSlug)
+        expect(parent).toBeDefined()
+        expect(parent?.parentSlug).toBeUndefined()
+        expect(parent?.overviewTitle).not.toBe('')
+      }
     }
   })
 
@@ -64,6 +76,16 @@ describe('documentation registry', () => {
     expect(getDocumentationEntry('phaeno', 'lab-operations')?.title).toBe(
       'Laboratory operations',
     )
+    expect(
+      getDocumentationEntry('phaeno', 'lab-protocol-execution')?.parentSlug,
+    ).toBe('lab-operations')
+    expect(
+      getDocumentationEntry('phaeno', 'order-billing-payment-release')
+        ?.parentSlug,
+    ).toBe('order-operations')
+    expect(
+      getDocumentationEntry('phaeno', 'data-organization-grants')?.parentSlug,
+    ).toBe('data-provisioning-and-accounts')
     expect(getDocumentationEntry('partner', 'lab-services')).toBeUndefined()
     expect(getDocumentationEntry('prospect', 'lab-services')).toBeUndefined()
   })

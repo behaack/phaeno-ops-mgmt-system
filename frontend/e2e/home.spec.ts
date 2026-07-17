@@ -1,10 +1,75 @@
 import { expect, test } from '@playwright/test'
 
-test('loads the portal starter dashboard', async ({ page }) => {
+test('uses POMS branding in the internal Phaeno context', async ({ page }) => {
   await page.goto('/')
 
-  await expect(page.getByRole('heading', { name: 'Phaeno Portal' })).toBeVisible()
+  await expect(page).toHaveTitle('POMS')
+  await expect(
+    page.getByRole('heading', {
+      name: 'Phaeno Operations Management System',
+    }),
+  ).toBeVisible()
+  await expect(page.getByText('Phaeno operations', { exact: true })).toBeVisible()
+  await expect(page.getByRole('link', { name: 'POMS home' })).toBeVisible()
+  const dashboardSelector = page.getByRole('tablist', {
+    name: 'Dashboard panel selector',
+  })
+  const orderTab = dashboardSelector.getByRole('tab', {
+    name: /Order Operations/,
+  })
+  const labTab = dashboardSelector.getByRole('tab', {
+    name: /Lab Operations/,
+  })
+  const accountsTab = dashboardSelector.getByRole('tab', {
+    name: /Accounts/,
+  })
+  await expect(orderTab).toHaveAttribute('data-state', 'active')
+  await expect(
+    page.getByRole('heading', { name: 'Order Operations', level: 2 }),
+  ).toBeVisible()
+  await labTab.click()
+  await expect(labTab).toHaveAttribute('data-state', 'active')
+  await expect(
+    page.getByRole('heading', { name: 'Lab Operations', level: 2 }),
+  ).toBeVisible()
+  await expect(
+    page.getByRole('heading', { name: 'Order Operations', level: 2 }),
+  ).toHaveCount(0)
+  await accountsTab.click()
+  await expect(accountsTab).toHaveAttribute('data-state', 'active')
+  await expect(
+    page.getByRole('heading', {
+      name: 'Customer, Partner & Prospect Accounts',
+      level: 2,
+    }),
+  ).toBeVisible()
   await expect(page.getByRole('button', { name: 'Preview invite' })).toBeVisible()
+})
+
+test('uses Portal branding in an external organization context', async ({ page }) => {
+  await page.addInitScript(() => {
+    window.localStorage.setItem(
+      'phaeno.selectedOrganizationId',
+      'northline-labs',
+    )
+  })
+  await page.goto('/')
+
+  await expect(page).toHaveTitle('Portal')
+  await expect(page.getByRole('heading', { name: 'Portal' })).toBeVisible()
+  await expect(page.getByRole('link', { name: 'Portal home' })).toBeVisible()
+  await expect(
+    page.getByText(/Copyright © \d{4} Phaeno Inc\./),
+  ).toBeVisible()
+  await expect(
+    page.getByText('Support and policy links coming soon.'),
+  ).toBeVisible()
+  await expect(
+    page.getByText('TanStack Start, Query, Shadcn, Axios'),
+  ).toHaveCount(0)
+  await expect(
+    page.getByRole('tablist', { name: 'Dashboard panel selector' }),
+  ).toHaveCount(0)
 })
 
 test('keeps workspace navigation concise and groups the user menu', async ({
@@ -22,12 +87,13 @@ test('keeps workspace navigation concise and groups the user menu', async ({
     await expect(header.getByRole('link', { name: 'Dashboard' })).toBeVisible()
     await expect(
       header.getByRole('link', { name: 'Data provisioning' }),
-    ).toBeVisible()
+    ).toHaveCount(0)
     await expect(
-      header.getByRole('link', { name: 'Order operations' }),
+      header.getByRole('link', { name: 'Order ops' }),
     ).toBeVisible()
+    await expect(header.getByRole('link', { name: 'Docs' })).toBeVisible()
     await expect(
-      header.getByRole('link', { name: 'Organizations' }),
+      header.getByRole('link', { name: 'Accounts' }),
     ).toHaveCount(0)
     await expect(
       header.getByRole('link', { name: 'Order configuration' }),
@@ -40,37 +106,40 @@ test('keeps workspace navigation concise and groups the user menu', async ({
 
   if (isMobile) {
     await expect(page.getByText('Workspace', { exact: true })).toBeVisible()
-    await expect(
-      page.getByRole('menuitem', { name: 'Data provisioning' }),
-    ).toBeVisible()
+    await expect(page.getByRole('menuitem', { name: 'Docs' })).toBeVisible()
   }
 
   await expect(page.getByText('Administration', { exact: true })).toBeVisible()
   await expect(
-    page.getByRole('menuitem', { name: 'Organizations' }),
+    page.getByRole('menuitem', { name: 'Accounts' }),
   ).toBeVisible()
   await expect(
     page.getByRole('menuitem', { name: 'Order configuration' }),
   ).toBeVisible()
   await expect(page.getByText('Resources', { exact: true })).toBeVisible()
   await expect(
-    page.getByRole('menuitem', { name: 'Documentation' }),
+    page.getByRole('menuitem', { name: 'Data provisioning' }),
   ).toBeVisible()
+  if (!isMobile) {
+    await expect(page.getByRole('menuitem', { name: 'Docs' })).toHaveCount(0)
+  }
 
   const displayChoices = page.getByRole('menuitemradio')
   await expect(displayChoices).toHaveCount(3)
-  const organizationSearch = page.getByRole('combobox', {
-    name: 'Search organizations',
-  })
-  const organizationSearchLeftPadding = await organizationSearch.evaluate(
-    (input) => Number.parseFloat(getComputedStyle(input).paddingLeft),
-  )
-  expect(organizationSearchLeftPadding).toBeGreaterThanOrEqual(8)
+  await expect(
+    page.getByText('Organization context', { exact: true }),
+  ).toHaveCount(0)
+  await expect(
+    page.getByRole('combobox', { name: 'Search organizations' }),
+  ).toHaveCount(0)
+  await expect(
+    page.getByRole('button', { name: 'Return to Phaeno' }),
+  ).toHaveCount(0)
   const selectedDisplayChoice = page.locator(
     '[role="menuitemradio"][data-state="checked"]',
   )
   await expect(selectedDisplayChoice).toHaveCount(1)
-  await organizationSearch.focus()
+  await page.getByRole('menuitem', { name: 'Accounts' }).focus()
   const selectedDisplayBackground = await selectedDisplayChoice.evaluate(
     (choice) => getComputedStyle(choice).backgroundColor,
   )
@@ -117,27 +186,14 @@ test('keeps workspace navigation concise and groups the user menu', async ({
   })
   await darkThemeChoice.focus()
   await darkThemeChoice.press('ArrowDown')
-  await expect(organizationSearch).toBeFocused()
-  await organizationSearch.press('ArrowDown')
-  const nextMenuItemName = isMobile ? 'Dashboard' : 'Organizations'
+  const nextMenuItemName = isMobile ? 'Dashboard' : 'Accounts'
   await expect(
     page.getByRole('menuitem', { name: nextMenuItemName }),
   ).toBeFocused()
   await page
     .getByRole('menuitem', { name: nextMenuItemName })
     .press('ArrowUp')
-  await expect(organizationSearch).toBeFocused()
-
-  await organizationSearch.fill('north')
-  await expect(organizationSearch).toHaveAttribute('aria-expanded', 'true')
-  await expect(page.getByRole('listbox')).toBeVisible()
-  await organizationSearch.press('ArrowDown')
-  await expect(organizationSearch).toHaveAttribute(
-    'aria-activedescendant',
-    /.+/,
-  )
-  await organizationSearch.press('Escape')
-  await expect(organizationSearch).toHaveAttribute('aria-expanded', 'false')
+  await expect(darkThemeChoice).toBeFocused()
   await expect(page.getByRole('menu')).toBeVisible()
   await expect
     .poll(() =>
@@ -163,7 +219,8 @@ test('keeps workspace navigation concise and groups the user menu', async ({
     })
   }
 
-  await organizationSearch.press('Escape')
+  await darkThemeChoice.focus()
+  await darkThemeChoice.press('Escape')
   await expect(page.getByRole('menu')).toHaveCount(0)
   await expect
     .poll(() =>

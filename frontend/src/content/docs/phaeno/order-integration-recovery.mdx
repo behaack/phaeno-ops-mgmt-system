@@ -1,0 +1,25 @@
+# Integration failures and recovery
+
+Order Ops uses durable integration events for QuickBooks Online and notifications. A failed delivery remains attached to the original workflow with its idempotency key, attempt history, last error, and external identifier when one exists.
+
+## Triage the failure
+
+Open the **Integrations** section and identify the affected order, command type, current delivery state, last attempt, and tenant-visible consequence. Determine whether the local operation committed successfully before taking any recovery action.
+
+Common states include:
+
+- **Commercial sync pending** while a durable command awaits delivery;
+- **Commercial sync failed** when QuickBooks rejected or could not receive it; and
+- failed notification delivery after the underlying portal action already succeeded.
+
+## Retry safely
+
+Refresh the workflow and retry the existing durable integration event. Reconciliation uses the stored idempotency and external references to avoid duplicates. Do not recreate the order, quote, invoice, credit, shipment, release, or notification merely because delivery failed.
+
+If QuickBooks received the command but the portal lacks confirmation, use the reconciliation path rather than sending a new Commercial command. If a notification failed, retry the notification without repeating the underlying business transition.
+
+## Communicate the boundary
+
+Keep the workflow’s operational state distinct from delivery state. A failed estimate synchronization prevents quote visibility, but it does not delete the quote. A failed invoice synchronization can block release, but it does not undo scientific completion. A failed email does not reverse the order action recorded in the portal.
+
+Escalate only after the stored event, retry history, external reference, and current QuickBooks state have been reviewed. Include safe identifiers; never include credentials, payment data, or customer-confidential scientific detail in support notes.

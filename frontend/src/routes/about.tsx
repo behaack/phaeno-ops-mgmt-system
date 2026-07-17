@@ -7,19 +7,22 @@ import {
   CardHeader,
   CardTitle,
 } from '#/components/ui/card'
+import { useApplicationBranding } from '#/components/application-branding'
 
 export const Route = createFileRoute('/about')({
   component: About,
 })
 
 function About() {
+  const branding = useApplicationBranding()
+
   return (
     <main className="page-wrap px-4 py-8">
       <section className="mb-6 max-w-3xl">
         <h1 className="text-3xl font-semibold leading-tight">Project setup</h1>
         <p className="mt-3 text-sm leading-6 text-muted-foreground sm:text-base">
-          This frontend is a TanStack Start app prepared for the Phaeno Portal
-          security model and UI conventions.
+          This frontend is a TanStack Start app prepared for the {branding.name}
+          {' '}security model and UI conventions.
         </p>
       </section>
 

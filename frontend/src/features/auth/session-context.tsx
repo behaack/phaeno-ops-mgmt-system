@@ -63,8 +63,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       localization={{
         signIn: {
           start: {
-            title: 'Sign in to Phaeno Portal',
-            titleCombined: 'Sign in to Phaeno Portal',
+            title: 'Sign in to Portal',
+            titleCombined: 'Sign in to Portal',
           },
         },
       }}
@@ -325,7 +325,7 @@ function getAccessStateContent(state: SessionResponse['state'] | undefined) {
     case 'disabled':
       return {
         title: 'Access disabled',
-        description: 'Your Phaeno Portal account is disabled.',
+        description: 'Your Portal account is disabled.',
       }
     case 'no_active_memberships':
       return {

@@ -1,33 +1,30 @@
 # Order operations
 
-Order operations unifies Customer laboratory work, Partner reagent fulfillment, and Partner data assembly without relying on an external ERP or LIMS. Phaeno Portal is the operational source of truth; QuickBooks Online owns commercial documents and payment facts.
+Order operations is the Commercial workspace for Customer laboratory orders, Partner reagent fulfillment, and Partner data assembly. POMS owns operational state, assignments, tenant-safe communication, fulfillment, and release decisions. QuickBooks Online remains authoritative for estimates, invoices, credits, terms, balances, and payment facts.
 
-## Work from queues
+Use the far-left sidebar beneath the toolbar to move among **Lab**, **Reagents**, **Assembly**, and **Integrations**. The sidebar header identifies Order operations and, on wider screens, provides the pin or unpin icon. Pointer users can preview an unpinned sidebar by approaching the left edge; keyboard and touch users open it from the edge tab. Choosing a section closes an unpinned sidebar.
 
-Use workflow type, status, hold, overdue, organization, assignment, and due-date filters to find work. Assign an owner and due date where the workflow supports it. Keep operational status, quote status, commercial synchronization, payment, and file release separate.
+## Choose the correct queue
 
-Tenant users receive a curated timeline. Record a tenant-safe reason separately from internal notes whenever an action can be seen outside Phaeno.
+- **Lab** covers Customer submission review, quote authorization, cancellation decisions, Commercial milestones, and result release.
+- **Reagents** covers Partner order review, substitutions, backorders, shipments, and fulfillment.
+- **Assembly** covers Partner intake validation, quoting, processing, quality review, and output release.
+- **Integrations** covers failed or pending QuickBooks and notification deliveries.
 
-## Authorize Customer laboratory jobs
+Use status, hold, overdue, organization, assignment, and due-date filters to narrow the queue. Assign an owner and due date when the workflow supports them. A queue assignment coordinates work; it does not grant authorization or change the workflow state.
 
-Review submitted samples and metadata, request corrections when required, and issue a per-job quote. Customer acceptance records the Commercial authorization and linked Lab work order in one operation.
+## Keep state boundaries visible
 
-Use **Lab operations** for receipt, accession, protocol execution, materials, equipment, libraries, batches, outsourced sequencing, exceptions, and scientific approval. **Ready for release** returns a controlled milestone to Commercial but does not publish files. Release only scanned, checksummed, scientifically ready result artifacts. Credit-approved Customers can receive ready sample results under Net 30 after required synchronization. Without approved credit, no job result is downloadable until the completed invoice is paid in QuickBooks.
+Operational status, quote status, Commercial synchronization, payment, scientific readiness, file scanning, and publication are separate facts. Do not mark one complete merely because another succeeded. Tenant users receive a curated timeline, so record a tenant-safe reason separately from internal notes whenever an action can be seen outside Phaeno.
 
-## Fulfill Partner reagent orders
+Order Ops ends at the Commercial boundary. Use **Lab Ops** for specimen receipt, accession, protocol execution, materials, equipment, libraries, batches, sequencing sendouts, exceptions, and scientific approval. Lab readiness never publishes a file by itself.
 
-Review the placed commercial snapshot before acceptance. Record holds or rejection with a Partner-safe reason. A substitution requires Partner-administrator approval, and a total increase requires commercial approval before acceptance.
+## Triage safely
 
-Create partial or complete shipments with quantities, backorders, carrier, service, tracking, lot, expiration, and packing-slip facts. Shipped quantities remain immutable. Invoice-on-shipment documents are handled through QuickBooks Online.
+1. Confirm the active organization and workflow before opening a record.
+2. Review the current operational, Commercial, integration, payment, and release states independently.
+3. Check open holds, cancellation requests, overdue actions, and failed deliveries.
+4. Assign the work and due date when ownership is unclear.
+5. Perform the smallest valid next action and preserve the existing record.
 
-## Process Partner data assembly
-
-Review the immutable input revision against the selected profile. Request targeted corrections or reject unsafe or unsupported work. Issue a per-job quote, queue accepted work, and record processing and quality review.
-
-Approve an immutable output manifest and files linked to the source revision and profile. Start completion-invoice synchronization, then apply the Partner assembly-credit or paid-status release gate before downloads.
-
-## Handle cancellation and recovery
-
-Preserve work already performed, shipped quantities, prior revisions, releases, and commercial history. Decide cancellation requests as approved, partially approved, or declined and synchronize any adjustment through QuickBooks.
-
-Failed QuickBooks or notification deliveries remain visible and retryable. Retry the durable integration event; do not recreate the order or manually duplicate a commercial document.
+If a record appears stale, refresh it before retrying. Never repair a failed workflow by creating a duplicate order, quote, invoice, Lab work order, shipment, or release.

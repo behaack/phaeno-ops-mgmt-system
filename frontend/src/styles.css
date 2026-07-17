@@ -199,6 +199,12 @@ html {
   }
 }
 
+@media (min-width: 1024px) and (max-width: 1691px) {
+  .workspace-sidebar-pinned {
+    padding-left: 16rem;
+  }
+}
+
 .nav-link {
   display: inline-flex;
   align-items: center;

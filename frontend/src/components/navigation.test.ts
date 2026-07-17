@@ -56,7 +56,7 @@ describe('order navigation permissions', () => {
     expect(labels).toContain('Lab services')
     expect(labels).not.toContain('Reagent orders')
     expect(labels).not.toContain('Data assembly')
-    expect(labels).not.toContain('Order operations')
+    expect(labels).not.toContain('Order ops')
   })
 
   it('shows reagent and assembly work only in an authorized Partner context', () => {
@@ -88,8 +88,8 @@ describe('order navigation permissions', () => {
       selectedMembership: session.memberships[0],
     }).map((item) => item.label)
 
-    expect(labels).toContain('Order operations')
-    expect(labels).toContain('Lab operations')
+    expect(labels).toContain('Order ops')
+    expect(labels).toContain('Lab ops')
     expect(labels).toContain('Order configuration')
     expect(labels).not.toContain('Lab services')
     expect(labels).not.toContain('Reagent orders')
@@ -98,7 +98,7 @@ describe('order navigation permissions', () => {
 
 describe('documentation navigation permissions', () => {
   it.each<OrganizationKind>(['Prospect', 'Customer', 'Partner', 'Phaeno'])(
-    'shows Documentation for an active %s organization context',
+    'shows Docs for an active %s organization context',
     (kind) => {
       const session = createSession(kind, {})
 
@@ -108,7 +108,7 @@ describe('documentation navigation permissions', () => {
           kind === 'Phaeno' ? session.memberships[0] : session.memberships[1],
       }).map((item) => item.label)
 
-      expect(labels).toContain('Documentation')
+      expect(labels).toContain('Docs')
     },
   )
 })
@@ -131,17 +131,17 @@ describe('navigation placement', () => {
       getVisibleMainMenuItems(session, context, 'workspace').map(
         (item) => item.label,
       ),
-    ).toEqual(['Dashboard', 'Data provisioning', 'Order operations', 'Lab operations'])
+    ).toEqual(['Dashboard', 'Order ops', 'Lab ops', 'Docs'])
     expect(
       getVisibleMainMenuItems(session, context, 'administration').map(
         (item) => item.label,
       ),
-    ).toEqual(['Organizations', 'Order configuration'])
+    ).toEqual(['Accounts', 'Order configuration'])
     expect(
       getVisibleMainMenuItems(session, context, 'resources').map(
         (item) => item.label,
       ),
-    ).toEqual(['Documentation', 'Project', 'Query demo'])
+    ).toEqual(['Data provisioning', 'Project', 'Query demo'])
   })
 })
 

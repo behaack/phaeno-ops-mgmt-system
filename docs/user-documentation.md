@@ -9,7 +9,7 @@ The portal help system is authenticated product documentation. It explains curre
 | Prospect | Review and download explicitly granted curated data, understand governance actions, and manage Prospect access. | Users working in a Prospect organization. |
 | Customer | Request laboratory services, track samples, receive results, use assigned data, and manage the customer organization. | Users working in a Customer organization. |
 | Partner | Order reagents, request data assembly, use assigned data, and manage the partner organization. | Users working in a Partner organization. |
-| Phaeno | Operate customer and partner work, provision data, configure commercial workflows, and support users. | Users working in the Phaeno organization. Phaeno users may also view Prospect, Customer, and Partner guides for support. |
+| Phaeno | Operate customer and partner work, provision data, configure commercial workflows, and support users. | Users working in the Phaeno organization. |
 
 ## Current coverage baseline
 
@@ -39,7 +39,18 @@ external NGS provider runbook, or evidence of production activation.
 - Help landing page: `/docs`
 - Guide pages: `/docs/{audience}/{slug}`
 
-The current organization determines the default and permitted audience. Prospect, Customer, and Partner users cannot use a direct URL to view another audience's guide. Phaeno users can switch among all four audience guide sets to support portal users.
+The current organization determines the only permitted audience. Prospect, Customer, Partner, and Phaeno users cannot use a direct URL to view another audience's guide.
+
+Customer, Partner, and Prospect guides call the application **Portal**. Phaeno
+guides call the internal application **POMS**, meaning **Phaeno Operations
+Management System**. Do not use the retired shared UI name "Phaeno Portal" in
+audience-facing help.
+
+**Docs** is a primary menu-bar destination on wide screens and moves into the user menu with other primary navigation on narrow screens. The help shell places the current organization's guide navigation in the shared far-left sidebar beneath the primary toolbar. It does not provide an audience selector or a redundant audience heading. Each guide link has a topic-specific icon.
+
+Phaeno operational guides use one expandable level for **Data provisioning**, **Order operations**, and **Laboratory operations**. Each group contains an overview plus substantive workflow-specific guide pages. The active group opens automatically, and users may expand or collapse a group with its labeled disclosure button. Opening a group collapses the previously open group so only one documentation subject is expanded at a time. Do not add a second nesting level.
+
+The sidebar is pinned by default on wide screens and can be unpinned to an edge tab; pin controls are omitted on narrow screens. Pointer users may preview an unpinned rail by approaching the left edge; keyboard and touch users open the same non-modal rail from the tab. Choosing a guide closes an unpinned rail and moves through normal route navigation.
 
 The current MDX corpus is compiled into browser assets, so route and navigation filtering is a product-experience boundary, not a confidentiality control. Every bundled guide, including Phaeno guidance, must be safe to distribute and must never contain secrets or restricted internal evidence. If future Phaeno procedures require confidentiality, serve that content through an authenticated, backend-authorized endpoint rather than a public static asset.
 
@@ -64,7 +75,7 @@ Prospect, Customer, and Partner documentation is internationalization-enabled. `
 
 Translate the entire guide set and shared help-shell messages for an external audience before advertising a locale. Use locale-aware date formatting, design for text expansion, and include pseudolocalization and long-text checks. Scientific, clinical, financial, and regulatory translations require human review before publication.
 
-Phaeno documentation is a system-owner-only surface and may remain US English. Phaeno staff viewing Prospect, Customer, or Partner guides see the localized external corpus and must not treat an unreviewed machine translation as authoritative.
+Phaeno documentation is a system-owner-only surface and may remain US English. Prospect, Customer, and Partner contexts use the localized external corpus and must not treat an unreviewed machine translation as authoritative.
 
 ## Maintenance workflow
 
@@ -89,6 +100,40 @@ For every new workflow, confirm that the affected audience can answer all of the
 - Does the Prospect, Customer, or Partner content require translation before a new locale is considered complete?
 
 Phaeno operational documentation may describe roles, queues, configuration, recovery steps, and safe support workflows. While it is browser-bundled, it must not become a credential store or contain confidential internal information.
+
+## Future visual documentation
+
+Add screenshots to workflow guides after the corresponding screens and
+responsive behavior have stabilized. Screenshots should clarify spatial,
+state-dependent, or multi-step interactions; they should not be added merely
+to repeat labels already stated in the guide.
+
+The future implementation should:
+
+- capture the current Portal UI from deterministic seeded scenarios rather
+  than customer, production, or confidential operational data;
+- use a documented canonical viewport and theme, with additional narrow-screen
+  or alternate-theme images only when the workflow materially differs;
+- crop to the smallest useful region and use restrained callouts when the
+  relevant control or status is not otherwise clear;
+- provide meaningful Markdown alternative text and an adjacent caption, while
+  keeping every instruction understandable without the image;
+- keep localized external-audience screenshots aligned with the guide locale
+  when the visible UI contains translatable text;
+- store image assets beside the documentation corpus under a predictable
+  audience, locale, guide, and screen-state naming convention;
+- record the source route, scenario, viewport, theme, and capture date so an
+  image can be reproduced rather than manually approximated;
+- refresh or remove an image whenever the documented workflow, visible labels,
+  permissions, status presentation, or responsive layout changes; and
+- verify referenced assets, image loading, captions, alternative text, narrow
+  layouts, and light/dark readability as part of documentation coverage.
+
+Begin with the mature Data Provisioning, Order Operations, and Laboratory
+Operations guides. Prioritize overview, queue triage, detail workspace, and
+exception-recovery screens that benefit from visual orientation. Do not block
+documentation completeness on a screenshot while a screen is still changing;
+accurate prose remains the required source of truth.
 
 ## Future search
 

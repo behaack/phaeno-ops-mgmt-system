@@ -1,5 +1,5 @@
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
-import { render, screen } from '@testing-library/react'
+import { fireEvent, render, screen } from '@testing-library/react'
 import { describe, expect, it } from 'vitest'
 
 import { DataProvisioningPage } from './DataProvisioningPage'
@@ -27,13 +27,29 @@ describe('DataProvisioningPage', () => {
     expect(
       screen.getByRole('heading', { name: 'Data provisioning' }),
     ).toBeTruthy()
-    expect(screen.getByRole('tab', { name: 'Source registry' })).toBeTruthy()
-    expect(screen.getByRole('tab', { name: 'Curated catalog' })).toBeTruthy()
-    expect(screen.getByRole('tab', { name: 'Organization grants' })).toBeTruthy()
-    expect(screen.getByRole('tab', { name: 'Governance' })).toBeTruthy()
     expect(
       screen.getByRole('button', { name: 'Register source' }),
     ).toHaveProperty('disabled', true)
+
+    fireEvent.click(
+      screen.getByRole('button', {
+        name: 'Open Data provisioning navigation; current selection: Source registry',
+      }),
+    )
+
+    expect(
+      screen.getByRole('navigation', { name: 'Data provisioning sections' }),
+    ).toBeTruthy()
+    expect(
+      screen.getByRole('button', { name: /^Source registry/ }).getAttribute('aria-current'),
+    ).toBe('page')
+    expect(
+      screen.getByRole('button', { name: /^Curated catalog/ }),
+    ).toBeTruthy()
+    expect(
+      screen.getByRole('button', { name: /^Organization grants/ }),
+    ).toBeTruthy()
+    expect(screen.getByRole('button', { name: /^Governance/ })).toBeTruthy()
   })
 })
 

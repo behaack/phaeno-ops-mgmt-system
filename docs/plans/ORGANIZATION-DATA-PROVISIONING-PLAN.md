@@ -17,7 +17,10 @@ application behavior.
   idempotent exact-version grants, revocation, tenant-isolated metadata access,
   audited file/archive downloads, and the Phaeno and tenant user interfaces. The
   source workspace exposes audited, reason-required discard for an unreferenced
-  draft and returns the curator to the registry after managed-byte cleanup.
+  draft and returns the curator to the registry after managed-byte cleanup. The
+  four configuration sections use the shared far-left sidebar with a remembered
+  pinned desktop rail and the same non-modal hover, keyboard, and click rail
+  when narrow or unpinned.
 - The completion slice adds dataset metadata and active-state management,
   version retirement, catalog removal with optional bulk revocation, atomic
   exact-version upgrades, organization creation with optional package grants,

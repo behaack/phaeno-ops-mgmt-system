@@ -1205,8 +1205,14 @@ Partner navigation:
 
 Phaeno navigation:
 
+- The POMS dashboard includes a Phaeno-only Order Operations / Lab Operations /
+  Accounts selector. Its initial Order Operations panel is an explicitly
+  labelled mock snapshot for layout validation; it does not claim connected
+  queue counts or replace the full operational workspace.
 - `Order operations` is a platform-only workspace with separate Lab, Reagents,
-  and Assembly queues plus global holds/integration failures.
+  Assembly, and Integrations sections in the shared far-left sidebar. The
+  sidebar is a remembered pinned rail on wide screens and the same non-modal
+  hover, keyboard, and click rail when narrow or unpinned.
 - Each queue supports assigned/unassigned, organization, status, date, overdue,
   hold, and integration filters. Detail pages expose only capability-authorized
   workflow commands and separate tenant-safe reasons from internal notes.

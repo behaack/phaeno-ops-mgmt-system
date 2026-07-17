@@ -48,7 +48,7 @@ export const mainMenuItems: readonly MainMenuItem[] = [
     exact: true,
   },
   {
-    label: 'Organizations',
+    label: 'Accounts',
     to: '/customers',
     icon: Building2,
     group: 'administration',
@@ -61,7 +61,7 @@ export const mainMenuItems: readonly MainMenuItem[] = [
     label: 'Data provisioning',
     to: '/data-provisioning',
     icon: Database,
-    group: 'workspace',
+    group: 'resources',
     visibleWhen: (session, context) =>
       isPhaenoEmployee(session) &&
       context.selectedOrganizationKind === 'Phaeno' &&
@@ -104,7 +104,7 @@ export const mainMenuItems: readonly MainMenuItem[] = [
       Boolean(session?.capabilities.canViewDataAssemblyRequests),
   },
   {
-    label: 'Order operations',
+    label: 'Order ops',
     to: '/order-operations',
     icon: ClipboardList,
     group: 'workspace',
@@ -113,7 +113,7 @@ export const mainMenuItems: readonly MainMenuItem[] = [
       Boolean(session?.capabilities.canViewAllOperationalOrders),
   },
   {
-    label: 'Lab operations',
+    label: 'Lab ops',
     to: '/lab-operations',
     icon: Microscope,
     group: 'workspace',
@@ -131,10 +131,10 @@ export const mainMenuItems: readonly MainMenuItem[] = [
       Boolean(session?.capabilities.canManageOrderConfiguration),
   },
   {
-    label: 'Documentation',
+    label: 'Docs',
     to: '/docs',
     icon: BookOpenText,
-    group: 'resources',
+    group: 'workspace',
     visibleWhen: (_session, context) =>
       isExternalOrganizationKind(context.selectedOrganizationKind) ||
       context.selectedOrganizationKind === 'Phaeno',

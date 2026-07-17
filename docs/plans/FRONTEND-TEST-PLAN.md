@@ -20,18 +20,28 @@ verification- or production-activation-complete.
 - [x] `frontend/src/components/navigation.test.ts` - order navigation is scoped
   to Customer lab, Partner reagent/assembly, and Phaeno operations/configuration
   capabilities without leaking the other organization-kind surfaces.
-- [x] `frontend/src/components/navigation.test.ts` - Documentation navigation is
-  available in Prospect, Customer, Partner, and Phaeno organization contexts.
-- [x] `frontend/src/components/navigation.test.ts` - frequent workspace routes
-  remain in the desktop toolbar while administration and resource routes move
-  to the user dropdown without changing permission filtering.
+- [x] `frontend/src/components/navigation.test.ts` - Docs navigation is
+  available as a primary workspace destination in Prospect, Customer, Partner,
+  and Phaeno organization contexts.
+- [x] `frontend/src/components/navigation.test.ts` - frequent workspace routes,
+  including Docs, remain in the desktop toolbar while Data provisioning and
+  Accounts and other administration or resource routes move to the user
+  dropdown without changing permission filtering.
+- [x] `frontend/src/components/application-branding.test.ts` - the selected
+  Phaeno organization resolves to POMS, external organization kinds resolve to
+  Portal, and the pre-selection fallback is Portal.
 - [x] `frontend/src/features/documentation/documentation-registry.test.ts` - the
   maintained Prospect, Customer, Partner, and Phaeno registries expose unique,
-  ordered, backend-indexable metadata and resolve slugs only within their
-  audience.
+  ordered, backend-indexable metadata, resolve slugs only within their audience,
+  and keep Phaeno operational subtopics in one valid parent level.
 - [x] `frontend/src/features/data-provisioning/DataProvisioningPage.test.tsx` -
-  mock mode exposes the four Phaeno configuration surfaces without calling the
-  secured API.
+  mock mode exposes the source surface without calling the secured API and the
+  edge rail exposes all four Phaeno configuration sections with the active
+  section identified.
+- [x] `frontend/src/components/WorkspaceSidebar.test.tsx` - the shared
+  viewport-edge sidebar remembers pin choices, switches sections, opens a
+  non-modal rail from pointer hover or the accessible edge tab, restores the
+  pinned rail on wide layouts, and omits pin controls on narrow layouts.
 - [x] `frontend/src/features/data-provisioning/SourceSampleWorkspace.test.tsx` -
   draft discard requires a reason, sends the current optimistic version, and
   returns to the source registry after success.
@@ -117,6 +127,31 @@ verification- or production-activation-complete.
 
 ## Requested Execution Log
 
+- 2026-07-16: the Accounts list and detail surfaces were aligned with the
+  documented HubSpot-originated intake intent. `pnpm run lint` and `pnpm run
+  typecheck` passed, and a live Phaeno mock-session browser check confirmed the
+  intent panel, disconnected state, Accounts terminology, and absence of
+  standard direct-account/manual-request actions. Component and Playwright test
+  execution were not requested and were not run.
+- 2026-07-16: Accounts navigation and directory verification ran `pnpm run
+  lint` and `pnpm run typecheck`; both passed. Navigation and browser scenarios
+  were updated for the Accounts label and for excluding the internal Phaeno
+  organization from the external-account directory. Test execution was not
+  requested and was not run.
+- 2026-07-16: user-menu organization-context removal verification ran
+  `pnpm run lint` and `pnpm run typecheck`; both passed. A live Phaeno
+  mock-session browser check confirmed the organization search and act-as
+  controls are absent while the remaining menu groups, Escape dismissal, and
+  scroll restoration still work. Frontend test execution was not requested and
+  was not run.
+- 2026-07-16: context-sensitive POMS/Portal branding and dashboard copy
+  verification ran `pnpm run lint` and `pnpm run typecheck`; both passed. The
+  new focused branding test was not executed because test execution was not
+  requested.
+- 2026-07-16: Shared workspace-sidebar verification ran `pnpm run lint`,
+  `pnpm run typecheck`, and `pnpm run build`; all passed. The existing advisory
+  chunk-size warning remains. Component and E2E tests were updated but were not
+  executed because test execution was not requested.
 - 2026-07-16: Lab Operations completion verification ran `pnpm run lint`,
   `pnpm run typecheck`, and `pnpm run build`; lint and typecheck passed, and
   both client and SSR production builds completed. The existing advisory

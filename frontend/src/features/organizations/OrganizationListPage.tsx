@@ -1,14 +1,12 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { Link } from '@tanstack/react-router'
-import { ClipboardList, Pencil, Plus, Power, PowerOff, RefreshCw } from 'lucide-react'
+import { Pencil, Power, PowerOff, RefreshCw } from 'lucide-react'
 import { useMemo, useState } from 'react'
 
 import {
   apiErrorMessage,
   applyRelationshipRequest,
   cancelRelationshipRequest,
-  createOrganization,
-  createRelationshipRequest,
   decideRelationshipRequest,
   listOrganizations,
   listRelationshipRequests,
@@ -25,17 +23,13 @@ import { Checkbox } from '#/components/ui/checkbox'
 import { Input } from '#/components/ui/input'
 import { LifecycleActionDialog } from './LifecycleActionDialog'
 import { OrganizationFormDialog, readinessLabel, type OrganizationFormValues } from './OrganizationFormDialog'
-import { RelationshipRequestDialog, requestedServices, type RelationshipRequestFormValues } from './RelationshipRequestDialog'
 import { RequestActionDialog, type RequestAction } from './RequestActionDialog'
 
 export function OrganizationListPage() {
   const queryClient = useQueryClient()
   const [search, setSearch] = useState('')
   const [showInactive, setShowInactive] = useState(false)
-  const [formOpen, setFormOpen] = useState(false)
   const [editing, setEditing] = useState<Organization | null>(null)
-  const [requestOpen, setRequestOpen] = useState(false)
-  const [requestOrganization, setRequestOrganization] = useState<Organization | null>(null)
   const [deactivationTarget, setDeactivationTarget] = useState<Organization | null>(null)
   const [requestActionTarget, setRequestActionTarget] = useState<{
     action: RequestAction
@@ -50,18 +44,18 @@ export function OrganizationListPage() {
   ])
 
   const organizationMutation = useMutation({
-    mutationFn: (values: OrganizationFormValues) => editing
-      ? updateOrganization(editing.id, { name: values.name, description: values.description || null, portalReadiness: values.portalReadiness, portalReadinessNote: values.portalReadinessNote || null, version: editing.version })
-      : createOrganization({ name: values.name, description: values.description || null, kind: values.kind, portalReadiness: values.portalReadiness, portalReadinessNote: values.portalReadinessNote || null }),
-    onSuccess: async () => { await refresh(); setFormOpen(false); setEditing(null) },
+    mutationFn: (values: OrganizationFormValues) => {
+      if (!editing) {
+        throw new Error('Select an account before editing it.')
+      }
+
+      return updateOrganization(editing.id, { name: values.name, description: values.description || null, portalReadiness: values.portalReadiness, portalReadinessNote: values.portalReadinessNote || null, version: editing.version })
+    },
+    onSuccess: async () => { await refresh(); setEditing(null) },
   })
   const activeMutation = useMutation({
     mutationFn: ({ organization, active }: { organization: Organization; active: boolean }) => setOrganizationActive(organization.id, active),
     onSuccess: () => { setDeactivationTarget(null); void refresh() },
-  })
-  const requestMutation = useMutation({
-    mutationFn: (values: RelationshipRequestFormValues) => createRelationshipRequest({ organizationId: requestOrganization?.id ?? null, candidateOrganizationName: requestOrganization ? null : values.candidateOrganizationName, requestType: values.requestType, requestedOrganizationKind: values.requestedOrganizationKind, sourceReference: values.sourceReference || null, summary: values.summary, internalNotes: values.internalNotes || null, requestedServices: requestedServices(values) }),
-    onSuccess: async () => { await refresh(); setRequestOpen(false); setRequestOrganization(null) },
   })
   const requestAction = useMutation({
     mutationFn: async ({ action, organizationId, request, text }: { action: 'approve' | 'decline' | 'apply' | 'cancel'; organizationId?: string; request: RelationshipRequest; text: string }) => {
@@ -72,42 +66,57 @@ export function OrganizationListPage() {
     onSuccess: () => { setRequestActionTarget(null); void refresh() },
   })
 
-  const visible = useMemo(() => (organizationsQuery.data ?? []).filter((value) => {
+  const externalOrganizations = useMemo(
+    () =>
+      (organizationsQuery.data ?? []).filter(
+        (value) => value.kind !== 'Phaeno',
+      ),
+    [organizationsQuery.data],
+  )
+  const visible = useMemo(() => externalOrganizations.filter((value) => {
     const matchesSearch = `${value.name} ${value.description ?? ''} ${value.kind}`.toLowerCase().includes(search.trim().toLowerCase())
     return matchesSearch && (showInactive || value.isActive)
-  }), [organizationsQuery.data, search, showInactive])
+  }), [externalOrganizations, search, showInactive])
   const queue = (requestsQuery.data ?? []).filter((value) => value.status === 'PendingReview' || value.status === 'Approved')
-  const error = organizationsQuery.error ?? requestsQuery.error ?? organizationMutation.error ?? activeMutation.error ?? requestMutation.error ?? requestAction.error
+  const error = organizationsQuery.error ?? requestsQuery.error ?? organizationMutation.error ?? activeMutation.error ?? requestAction.error
 
   return (
     <main className="page-wrap space-y-6 px-4 py-8">
-      <section className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
-        <div className="max-w-3xl"><Badge variant="secondary" className="mb-3">Phaeno operations</Badge><h1 className="text-3xl font-semibold leading-tight">Organizations</h1><p className="mt-3 text-sm leading-6 text-muted-foreground sm:text-base">Manage prospects, customers, and partners from qualification through Portal readiness and service activation.</p></div>
-        <div className="flex flex-wrap gap-2"><Button variant="outline" onClick={() => { setRequestOrganization(null); setRequestOpen(true) }}><ClipboardList data-icon="inline-start" />New request</Button><Button onClick={() => { setEditing(null); setFormOpen(true) }}><Plus data-icon="inline-start" />New organization</Button></div>
+      <section>
+        <div className="max-w-3xl"><Badge variant="secondary" className="mb-3">Phaeno operations</Badge><h1 className="text-3xl font-semibold leading-tight">Accounts</h1><p className="mt-3 text-sm leading-6 text-muted-foreground sm:text-base">Review Prospect, Customer, and Partner accounts, readiness, access, and HubSpot-originated lifecycle requests.</p></div>
       </section>
 
-      {error ? <Alert variant="destructive"><AlertTitle>Could not complete the organization action</AlertTitle><AlertDescription>{apiErrorMessage(error)}</AlertDescription></Alert> : null}
+      {error ? <Alert variant="destructive"><AlertTitle>Could not complete the account action</AlertTitle><AlertDescription>{apiErrorMessage(error)}</AlertDescription></Alert> : null}
 
       <Card>
-        <CardHeader><CardTitle>Organization directory</CardTitle><CardDescription>The organization name opens its dedicated workspace. Relationship type, readiness, access, and service entitlement remain separate controls.</CardDescription></CardHeader>
+        <CardHeader>
+          <div className="flex flex-wrap items-center justify-between gap-2">
+            <CardTitle><h2>HubSpot account intake</h2></CardTitle>
+            <Badge variant="outline">Not connected</Badge>
+          </div>
+          <CardDescription>Sales qualifies companies in HubSpot. When an approved evaluation or Closed Won status is ready for handoff, HubSpot will send a pending request to POMS for review. POMS will not activate an account, access, or services automatically.</CardDescription>
+        </CardHeader>
+      </Card>
+
+      <Card>
+        <CardHeader><CardTitle><h2>Account directory</h2></CardTitle><CardDescription>The account name opens its dedicated workspace. Relationship type, readiness, access, and service entitlement remain separate controls.</CardDescription></CardHeader>
         <CardContent className="space-y-4">
-          <div className="flex flex-col gap-3 sm:flex-row sm:items-center"><Input aria-label="Search organizations" placeholder="Search organizations" value={search} onChange={(event) => setSearch(event.target.value)} /><label htmlFor="show-inactive-organizations" className="flex cursor-pointer items-center gap-2 whitespace-nowrap text-sm"><Checkbox id="show-inactive-organizations" checked={showInactive} onCheckedChange={(value) => setShowInactive(value === true)} />Show inactive</label><Button variant="outline" size="icon" aria-label="Refresh organizations" onClick={() => refresh()}><RefreshCw /></Button></div>
-          {organizationsQuery.isLoading ? <p className="text-sm text-muted-foreground">Loading organizations…</p> : visible.length ? (
+          <div className="flex flex-col gap-3 sm:flex-row sm:items-center"><Input aria-label="Search accounts" placeholder="Search accounts" value={search} onChange={(event) => setSearch(event.target.value)} /><label htmlFor="show-inactive-organizations" className="flex cursor-pointer items-center gap-2 whitespace-nowrap text-sm"><Checkbox id="show-inactive-organizations" checked={showInactive} onCheckedChange={(value) => setShowInactive(value === true)} />Show inactive</label><Button variant="outline" size="icon" aria-label="Refresh accounts" onClick={() => refresh()}><RefreshCw /></Button></div>
+          {organizationsQuery.isLoading ? <p className="text-sm text-muted-foreground">Loading accounts…</p> : visible.length ? (
             <div className="divide-y rounded-lg border">
-              {visible.map((organization) => <div key={organization.id} className="p-4"><div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between"><div className="min-w-0"><Link to="/customers/$customerId" params={{ customerId: organization.id }} className="cursor-pointer font-medium underline-offset-4 hover:underline focus-visible:rounded-sm focus-visible:ring-3 focus-visible:ring-ring/50 focus-visible:outline-none">{organization.name}</Link><p className="mt-1 text-sm text-muted-foreground">{organization.description || 'No description'}</p><div className="mt-2 flex flex-wrap gap-2"><Badge variant="outline">{organization.kind}</Badge><Badge variant={organization.portalReadiness === 'Ready' ? 'secondary' : 'outline'}>{readinessLabel(organization.portalReadiness)}</Badge>{!organization.isActive ? <Badge variant="destructive">Inactive</Badge> : null}</div></div><div className="flex flex-wrap gap-2"><Button size="sm" variant="outline" onClick={() => { setRequestOrganization(organization); setRequestOpen(true) }}><ClipboardList data-icon="inline-start" />Request</Button><Button size="sm" variant="outline" onClick={() => { setEditing(organization); setFormOpen(true) }}><Pencil data-icon="inline-start" />Edit</Button><Button size="sm" variant={organization.isActive ? 'destructive' : 'outline'} disabled={activeMutation.isPending} onClick={() => { if (organization.isActive) setDeactivationTarget(organization); else activeMutation.mutate({ organization, active: true }) }}>{organization.isActive ? <PowerOff data-icon="inline-start" /> : <Power data-icon="inline-start" />}{organization.isActive ? 'Deactivate' : 'Reactivate'}</Button></div></div></div>)}
+              {visible.map((organization) => <div key={organization.id} className="p-4"><div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between"><div className="min-w-0"><Link to="/customers/$customerId" params={{ customerId: organization.id }} className="cursor-pointer font-medium underline-offset-4 hover:underline focus-visible:rounded-sm focus-visible:ring-3 focus-visible:ring-ring/50 focus-visible:outline-none">{organization.name}</Link><p className="mt-1 text-sm text-muted-foreground">{organization.description || 'No description'}</p><div className="mt-2 flex flex-wrap gap-2"><Badge variant="outline">{organization.kind}</Badge><Badge variant={organization.portalReadiness === 'Ready' ? 'secondary' : 'outline'}>{readinessLabel(organization.portalReadiness)}</Badge>{!organization.isActive ? <Badge variant="destructive">Inactive</Badge> : null}</div></div><div className="flex flex-wrap gap-2"><Button size="sm" variant="outline" onClick={() => setEditing(organization)}><Pencil data-icon="inline-start" />Edit</Button><Button size="sm" variant={organization.isActive ? 'destructive' : 'outline'} disabled={activeMutation.isPending} onClick={() => { if (organization.isActive) setDeactivationTarget(organization); else activeMutation.mutate({ organization, active: true }) }}>{organization.isActive ? <PowerOff data-icon="inline-start" /> : <Power data-icon="inline-start" />}{organization.isActive ? 'Deactivate' : 'Reactivate'}</Button></div></div></div>)}
             </div>
-          ) : <p className="rounded-lg border p-6 text-center text-sm text-muted-foreground">No organizations match the current view.</p>}
+          ) : <p className="rounded-lg border p-6 text-center text-sm text-muted-foreground">No accounts match the current view.</p>}
         </CardContent>
       </Card>
 
       <Card>
-        <CardHeader><CardTitle>Portal request queue</CardTitle><CardDescription>Pending HubSpot and manually entered requests stay visible until reviewed and explicitly applied.</CardDescription></CardHeader>
-        <CardContent>{requestsQuery.isLoading ? <p className="text-sm text-muted-foreground">Loading requests…</p> : queue.length ? <div className="space-y-3">{queue.map((request) => <RequestRow key={request.id} request={request} disabled={requestAction.isPending} onAction={(action) => setRequestActionTarget({ action, request })} />)}</div> : <p className="rounded-lg border p-6 text-center text-sm text-muted-foreground">No requests are waiting for action.</p>}</CardContent>
+        <CardHeader><CardTitle><h2>Account review queue</h2></CardTitle><CardDescription>HubSpot onboarding, evaluation, account-change, and offboarding requests will appear here for Phaeno review. Existing durable requests remain reviewable while automated intake is not connected.</CardDescription></CardHeader>
+        <CardContent>{requestsQuery.isLoading ? <p className="text-sm text-muted-foreground">Loading requests…</p> : queue.length ? <div className="space-y-3">{queue.map((request) => <RequestRow key={request.id} request={request} disabled={requestAction.isPending} onAction={(action) => setRequestActionTarget({ action, request })} />)}</div> : <p className="rounded-lg border p-6 text-center text-sm text-muted-foreground">No account requests are waiting for review.</p>}</CardContent>
       </Card>
 
-      <OrganizationFormDialog open={formOpen} organization={editing} isPending={organizationMutation.isPending} error={organizationMutation.error ? apiErrorMessage(organizationMutation.error) : undefined} onOpenChange={(open) => { setFormOpen(open); if (!open) setEditing(null) }} onSubmit={(values) => organizationMutation.mutate(values)} />
-      <RelationshipRequestDialog open={requestOpen} organization={requestOrganization} isPending={requestMutation.isPending} error={requestMutation.error ? apiErrorMessage(requestMutation.error) : undefined} onOpenChange={(open) => { setRequestOpen(open); if (!open) setRequestOrganization(null) }} onSubmit={(values) => requestMutation.mutate(values)} />
-      <RequestActionDialog action={requestActionTarget?.action ?? null} request={requestActionTarget?.request ?? null} organizations={organizationsQuery.data ?? []} isPending={requestAction.isPending} error={requestAction.error ? apiErrorMessage(requestAction.error) : undefined} onOpenChange={(open) => { if (!open) setRequestActionTarget(null) }} onSubmit={({ explanation, organizationId }) => { if (requestActionTarget) requestAction.mutate({ ...requestActionTarget, organizationId, text: explanation }) }} />
+      <OrganizationFormDialog open={Boolean(editing)} organization={editing} isPending={organizationMutation.isPending} error={organizationMutation.error ? apiErrorMessage(organizationMutation.error) : undefined} onOpenChange={(open) => { if (!open) setEditing(null) }} onSubmit={(values) => organizationMutation.mutate(values)} />
+      <RequestActionDialog action={requestActionTarget?.action ?? null} request={requestActionTarget?.request ?? null} organizations={externalOrganizations} isPending={requestAction.isPending} error={requestAction.error ? apiErrorMessage(requestAction.error) : undefined} onOpenChange={(open) => { if (!open) setRequestActionTarget(null) }} onSubmit={({ explanation, organizationId }) => { if (requestActionTarget) requestAction.mutate({ ...requestActionTarget, organizationId, text: explanation }) }} />
       <LifecycleActionDialog
         action={deactivationTarget ? { kind: 'deactivate-organization', organizationName: deactivationTarget.name } : null}
         isPending={activeMutation.isPending}

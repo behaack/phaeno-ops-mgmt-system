@@ -1,0 +1,25 @@
+# Source registry
+
+The source registry is the Phaeno-only intake for material approved for curation. It establishes ownership, de-identification, evidence, managed files, and revision lineage before any curated package can be created.
+
+## Register the source
+
+Create the source shell with the stable Phaeno identifier and the minimum descriptive context needed to distinguish it. Confirm that Phaeno owns or is authorized to use the material for the intended curated package. Customer and Partner operational data must not be reused merely because Phaeno processed it.
+
+## Build the draft revision
+
+Add required metadata, ownership and de-identification evidence, and approved files. Upload files through managed portal storage so the system records size, content type, checksum, scan state, and storage identity.
+
+The draft remains editable while validation is incomplete. Review every required field and file, then resolve validation or malware-scan failures before readiness.
+
+## Mark the revision ready
+
+Ready is an irreversible revision boundary. A ready revision is immutable and can be selected for a curated snapshot. Later corrections create a new source revision; they never mutate the revision already used by a package.
+
+## Discard or archive safely
+
+An authorized Phaeno user may discard only an unreferenced draft. Discard requires confirmation and a retained reason. A ready, archived, or curated-snapshot revision cannot be deleted through the normal workflow.
+
+Archive a ready source when it must no longer be used for new curated snapshots. Archiving does not alter packages or grants already derived from that source.
+
+If ownership, de-identification, or safety becomes uncertain after publication, use the Governance workflow. Do not edit the source evidence or silently replace files.

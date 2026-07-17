@@ -5,8 +5,10 @@ import {
   createRootRouteWithContext,
   useRouterState,
 } from '@tanstack/react-router'
+import { useEffect } from 'react'
 import Footer from '../components/Footer'
 import Header from '../components/Header'
+import { useApplicationBranding } from '#/components/application-branding'
 import { MockAdminDataProvider } from '#/features/admin/mock-admin-data'
 import { AuthGate, AuthProvider } from '#/features/auth/session-context'
 
@@ -30,9 +32,6 @@ export const Route = createRootRouteWithContext<MyRouterContext>()({
         name: 'viewport',
         content: 'width=device-width, initial-scale=1',
       },
-      {
-        title: 'Phaeno Portal',
-      },
     ],
     links: [
       {
@@ -53,6 +52,7 @@ function RootLayout() {
   return (
     <AuthProvider>
       <MockAdminDataProvider>
+        <ContextualDocumentTitle />
         <div className="flex min-h-screen flex-col">
           <Header />
           <div className="flex flex-1 flex-col">
@@ -71,10 +71,21 @@ function RootLayout() {
   )
 }
 
+function ContextualDocumentTitle() {
+  const branding = useApplicationBranding()
+
+  useEffect(() => {
+    document.title = branding.name
+  }, [branding.name])
+
+  return null
+}
+
 function RootDocument({ children }: { children: React.ReactNode }) {
   return (
     <html lang="en" suppressHydrationWarning>
       <head>
+        <title>Portal</title>
         <script dangerouslySetInnerHTML={{ __html: THEME_INIT_SCRIPT }} />
         <HeadContent />
       </head>

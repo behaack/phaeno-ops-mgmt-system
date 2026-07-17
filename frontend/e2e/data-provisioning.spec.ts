@@ -6,13 +6,24 @@ test('shows the Phaeno data-provisioning workspace', async ({ page }) => {
   await expect(
     page.getByRole('heading', { name: 'Data provisioning' }),
   ).toBeVisible()
-  await expect(page.getByRole('tab', { name: 'Source registry' })).toBeVisible()
-  await expect(page.getByRole('tab', { name: 'Curated catalog' })).toBeVisible()
+  await openSidebarIfCollapsed(page, 'Data provisioning')
+  await expect(page.getByRole('button', { name: /^Source registry/ })).toBeVisible()
+  await expect(page.getByRole('button', { name: /^Curated catalog/ })).toBeVisible()
   await expect(
-    page.getByRole('tab', { name: 'Organization grants' }),
+    page.getByRole('button', { name: /^Organization grants/ }),
   ).toBeVisible()
-  await expect(page.getByRole('tab', { name: 'Governance' })).toBeVisible()
+  await expect(page.getByRole('button', { name: /^Governance/ })).toBeVisible()
 })
+
+async function openSidebarIfCollapsed(
+  page: import('@playwright/test').Page,
+  workspaceLabel: string,
+) {
+  const trigger = page.getByRole('button', {
+    name: new RegExp(`^Open ${workspaceLabel} navigation`),
+  })
+  if (await trigger.isVisible()) await trigger.click()
+}
 
 test('shows the Data Library in a Prospect organization context', async ({
   page,

@@ -1,0 +1,25 @@
+# Holds, cancellations, and adjustments
+
+Holds and cancellation decisions preserve work already performed. They do not erase shipments, Lab execution, input revisions, output releases, Commercial documents, or audit history.
+
+## Place and release holds
+
+Phaeno may place an active workflow on hold for an operational, Commercial, validation, shipping, or Customer-action reason. Record a concise tenant-safe explanation and separate internal notes. A hold pauses the affected next action; it does not silently change quote, payment, scientific, or release state.
+
+Release a hold only after the blocking condition is resolved. The release is an audited Phaeno action and should reference the corrected fact or approved exception.
+
+## Handle cancellation timing
+
+- A draft or other unaccepted commitment may be withdrawn under its workflow rules.
+- After quote acceptance or reagent-order acceptance, cancellation becomes a request for Phaeno review.
+- Decide the request as approved, partially approved, or declined based on work performed, material committed, quantities shipped, and outputs already released.
+
+For Customer laboratory work, Order Ops asks Lab Ops whether unreceived work can be cancelled before committing the Commercial decision. Started or specimen-level work requires a bounded manual decision; do not force Lab into a cancelled state.
+
+## Preserve unaffected work
+
+A partial cancellation can retain completed samples, shipped reagent quantities, or accepted assembly work while removing only the approved remainder. Preserve prior revisions, manifests, packing slips, releases, and Customer-visible history.
+
+## Record Commercial adjustments
+
+QuickBooks owns credits, revised invoices, taxes, freight, discounts, and balances. Record the portal cancellation decision and synchronize the required adjustment through the existing durable integration. Do not edit the original Commercial snapshot or manually create an unlinked QuickBooks document.

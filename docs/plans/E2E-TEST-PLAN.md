@@ -10,20 +10,27 @@ not satisfy this production-activation gate.
 
 ## Created Tests
 
-- [x] `frontend/e2e/home.spec.ts` - `loads the portal starter dashboard`.
+- [x] `frontend/e2e/home.spec.ts` - internal Phaeno context uses POMS in the
+  browser title, header, and dashboard while external organization context uses
+  Portal; both contexts retain the Phaeno Inc. legal footer and omit framework
+  vendor promotion; the POMS dashboard exposes a keyboard-operable Order
+  Operations / Lab Operations / Accounts selector with one visible panel at a
+  time while external contexts omit it.
 - [x] `frontend/e2e/home.spec.ts` - desktop keeps frequent workspace routes in
-  the toolbar, desktop and mobile expose grouped administration/resources in
-  the user menu, and the three display choices share one compact row directly
+  the toolbar, including Docs, while Data provisioning appears under Resources;
+  desktop and mobile expose Accounts and the remaining grouped
+  administration/resources in the user menu,
+  and the three display choices share one compact row directly
   after user identification with a brand-accent selected treatment distinct
   from active navigation and a separate focus-ring treatment;
-  organization search
-  participates in Arrow Up/Down menu navigation while preserving keyboard
-  control of its suggestions, and Escape closes suggestions before a second
-  Escape closes the menu; the open menu locks background scrolling.
+  the user menu omits organization-context search and act-as controls, Arrow
+  Up/Down traverses the remaining menu items, Escape closes the menu, and the
+  open menu locks background scrolling.
 - [x] `frontend/e2e/home.spec.ts` - shared modal dialogs lock background page
   scrolling and restore it when closed.
 - [x] `frontend/e2e/data-provisioning.spec.ts` - Phaeno mock context exposes the
-  source registry, curated catalog, organization-grant, and governance surfaces.
+  source registry, curated catalog, organization-grant, and governance surfaces
+  through the pinned wide-screen rail or accessible edge tab on narrow screens.
 - [x] `frontend/e2e/data-provisioning.spec.ts` - Prospect mock context exposes
   the Data Library without exposing connected data in mock mode.
 - [x] `frontend/e2e/order-management.spec.ts` - Customer mock context exposes
@@ -31,13 +38,20 @@ not satisfy this production-activation gate.
 - [x] `frontend/e2e/order-management.spec.ts` - Partner mock context exposes
   reagent ordering and data assembly.
 - [x] `frontend/e2e/order-management.spec.ts` - Phaeno mock context exposes
-  operational queues and order configuration.
+  operational queues through the pinned wide-screen rail or accessible edge
+  tab on narrow screens, plus order configuration.
 - [x] `frontend/e2e/documentation.spec.ts` - Prospect, Customer, and Partner
-  contexts are offered their own guide set and cross-audience routes are
-  denied, Phaeno can switch among all four audience guide sets, and MDX content
-  renders on guide routes.
+  contexts are offered their own guide set, Phaeno is offered only Phaeno
+  guides, the sidebar omits redundant audience controls and headings, every
+  topic has an icon, Data Provisioning, Order Ops, and Lab Ops expose one
+  keyboard-operable accordion subtopic level that auto-opens for the active
+  guide and keeps only one subject expanded, cross-audience routes are denied
+  for every context, and substantive MDX content renders on guide routes.
 - [x] `frontend/e2e/customers.spec.ts` - desktop and mobile organization
-  administration use accessible consequence dialogs for organization,
+  administration is titled Accounts, excludes the internal Phaeno organization,
+  identifies HubSpot intake as not connected, omits standard direct-account and
+  manual-request actions from list/detail surfaces, and uses accessible
+  consequence dialogs for organization,
   membership, and entitlement lifecycle actions; focus returns to the invoking
   control, ended entitlements retain their reason, and the entitlement source
   selector excludes an approved onboarding request that did not request the
@@ -108,6 +122,42 @@ not satisfy this production-activation gate.
 
 ## Requested Execution Log
 
+- 2026-07-16: the Accounts scenarios were updated for the HubSpot-originated
+  intake posture, explicit disconnected state, external-account-only directory,
+  and removal of direct account/manual request entry points from the standard
+  list and detail pages. The Playwright suite was not executed because E2E
+  execution was not requested.
+- 2026-07-16: the home and account-administration scenarios were updated for
+  the Accounts menu/page label and to prove that the internal Phaeno
+  organization is absent from the external-account directory. The Playwright
+  suite was not executed because E2E execution was not requested.
+- 2026-07-16: the home scenario was updated to prove that the user menu omits
+  organization-context search and act-as controls while preserving keyboard
+  traversal, Escape dismissal, and scroll locking. A live Phaeno mock-session
+  browser check confirmed the simplified menu and scroll restoration. The
+  Playwright suite was not executed because E2E execution was not requested.
+- 2026-07-16: the POMS home scenario was updated for the mock Order Operations /
+  Lab Operations / Accounts panel selector, single-panel visibility, and
+  external-context omission. The Playwright suite was not executed because E2E
+  execution was not requested.
+- 2026-07-16: the home scenario was updated for POMS in the Phaeno context and
+  Portal in external contexts. A live mock-session browser check verified the
+  title, header, dashboard, and footer while switching from Phaeno to a
+  Customer organization; the Playwright suite was not executed because E2E
+  execution was not requested.
+- 2026-07-16: Phaeno documentation topic groups were changed to an accordion
+  that collapses the open subject when another subject expands. The browser
+  scenario now covers the transition. The suite was not executed because E2E
+  execution was not requested.
+- 2026-07-16: Phaeno documentation scenarios were updated for expandable Data
+  Provisioning, Order Ops, and Lab Ops subtopics with independently routed guide
+  pages. The suite was not executed because E2E execution was not requested.
+- 2026-07-16: Documentation scenarios were updated for automatic
+  current-organization audience filtering and topic icons. The suite was not
+  executed because E2E execution was not requested.
+- 2026-07-16: Data provisioning, Order operations, and Documentation scenarios
+  were updated for the shared pinned/edge sidebar on desktop and narrow
+  layouts. The suite was not executed because E2E execution was not requested.
 - 2026-07-16: Lab Operations browser scenarios and their production-activation
   gates were added to this plan. E2E execution was not requested and was not
   run for the completion slice.
