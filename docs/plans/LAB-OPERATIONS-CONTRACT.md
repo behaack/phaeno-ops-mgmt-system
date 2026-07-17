@@ -26,12 +26,13 @@ external integrations, or deployments.
 - Initial provider: `InternalLabOperationsProvider` is registered in the API and
   implements durable command replay, authorization creation/amendment,
   cancellation feasibility, and current work projection lookup.
-- Provider conformance coverage: four opt-in PostgreSQL tests in
+- Provider conformance coverage: five opt-in PostgreSQL tests in
   `backend/test/LabOperationsProviderPostgresTests.cs` cover atomic persistence,
   command replay/conflict, authorization changes, cancellation, projection
-  lookup, and organization isolation. They require the explicitly configured
-  migrated reference database and were compiled, but not executed, in this
-  slice.
+  lookup, organization isolation, event replay, out-of-order delivery,
+  customer-safe fields, and no-file publication at `ReadyForRelease`. They
+  require the explicitly configured migrated reference database and were
+  compiled, but not executed, in this slice.
 - Completed application integration: accepted customer quotes create the
   Commercial authorization and Lab work atomically; approved cancellations are
   checked by Lab before Commercial commits; durable events update idempotent,
@@ -657,14 +658,15 @@ prove:
   batch participation
 - no pipeline/file ownership is inferred by the v1 types
 
-Additional automated coverage remains planned for the now-implemented durable
-event and projection path:
+The database-backed projection-delivery test additionally covers:
 
 - newer projections cannot be overwritten by older events
 - customer-action exceptions never expose internal notes automatically
 - `ReadyForRelease` does not make a result externally visible
-- a future fake or external provider satisfies the same contract scenarios as
-  the internal provider
+- duplicate delivery after a durable receipt remains harmless
+
+A future fake or external provider must satisfy the same contract scenarios as
+the internal provider before a provider cutover.
 
 ## Explicitly Deferred
 

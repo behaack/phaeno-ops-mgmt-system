@@ -85,9 +85,12 @@ Do not execute this test plan unless explicitly requested.
   provider conformance coverage for atomic authorization creation, exact command
   replay, conflicting command-ID reuse, safe/stale/unsafe amendments, full and
   partial pre-receipt cancellation, current projection lookup, Commercial
-  organization isolation, and prohibited commercial-field leakage. The tests
-  use `PSEQ_OPERATIONS_REFERENCE_CONNECTION`, require an already migrated
-  database, and explicitly clean their run-specific Lab and audit fixtures.
+  organization isolation, prohibited commercial-field leakage, durable event
+  replay, out-of-order projection rejection, customer-safe exception fields,
+  and proof that `ReadyForRelease` creates neither a file nor a result release.
+  The tests use `PSEQ_OPERATIONS_REFERENCE_CONNECTION`, require an already
+  migrated database, and explicitly clean their run-specific Lab, Commercial
+  projection, outbox, event-receipt, and audit fixtures.
 - [x] `backend/tools/PSeq.Operations.ReferenceJourney` - controller-level
   authenticated PostgreSQL journey covering approved service-request source
   enforcement, rejection of an onboarding-only source, usable entitlement
@@ -114,9 +117,6 @@ Do not execute this test plan unless explicitly requested.
   specimen placement, Partner data-assembly placement, ineligible/custom-work
   routing, immutable pricing snapshots, Partner downstream-identity omission,
   post-placement scientific validation, and cross-tenant denial.
-- [ ] Lab-to-Commercial projection delivery - cover durable
-  event replay, out-of-order projection rejection, exception audience filtering,
-  and the guarantee that `ReadyForRelease` does not publish customer files.
 - [ ] Complete Lab Operations API - cover additive role authorization, atomic
   quote-acceptance authorization, cancellation handoff, receipt/accession and
   lineage validation, protocol lifecycle and pinned execution, QC/expiry/
@@ -200,6 +200,11 @@ Do not execute this test plan unless explicitly requested.
 
 ## Requested Execution Log
 
+- 2026-07-16: the Lab projection-coverage slice added the fifth opt-in
+  PostgreSQL conformance test and ran `dotnet build
+  backend/PSeq.Operations.slnx --no-restore`; all projects compiled without
+  warnings or errors. Test execution was not requested, so the new database-
+  backed scenario was not run.
 - 2026-07-16: Lab Operations completion verification ran `dotnet build
   backend/PSeq.Operations.slnx --no-restore`; the solution, including the new
   domain and test sources, compiled without warnings or errors. The three

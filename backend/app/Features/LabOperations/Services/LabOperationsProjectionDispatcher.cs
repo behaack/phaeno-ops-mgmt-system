@@ -34,6 +34,14 @@ public sealed class LabOperationsProjectionDispatcher(
     {
         await using var scope = scopeFactory.CreateAsyncScope();
         var dbContext = scope.ServiceProvider.GetRequiredService<PSeqOperationsDbContext>();
+        await DispatchAsync(dbContext, logger, cancellationToken);
+    }
+
+    internal static async Task DispatchAsync(
+        PSeqOperationsDbContext dbContext,
+        ILogger logger,
+        CancellationToken cancellationToken)
+    {
         var events = await dbContext.LabOperationsOutboxEvents
             .Where(message => message.PublishedAtUtc == null)
             .OrderBy(message => message.OccurredAtUtc)

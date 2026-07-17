@@ -56,7 +56,7 @@ authorize a reset of any shared environment.
   and 28 desktop/mobile Playwright scenarios pass against this checkpoint.
   The complete Lab Operations slice has a clean backend build, frontend lint
   and typecheck, EF/model/schema checks,
-  and API health probe. Four opt-in PostgreSQL provider-conformance tests now
+  and API health probe. Five opt-in PostgreSQL provider/projection-conformance tests now
   compile against this checkpoint; they have not been executed because the test
   plan requires an explicit request.
 - The automated data-pipeline and scientific file-management boundary remains

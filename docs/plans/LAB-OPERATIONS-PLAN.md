@@ -46,10 +46,11 @@ deployment, or production activation.
   provider port are implemented. The registered internal provider handles
   durable authorization/amendment/cancellation and projection lookup. Event
   delivery, the operator workspace, Laboratory roles, and the Customer
-  workflow connection are now implemented. Four opt-in PostgreSQL conformance tests cover the provider's
-  persistence, idempotency, amendment, cancellation, projection, and isolation
-  behavior; they have a clean build and await an explicitly requested database
-  execution.
+  workflow connection are now implemented. Five opt-in PostgreSQL conformance
+  tests cover the provider's persistence, idempotency, amendment, cancellation,
+  projection, and isolation behavior plus replay-safe, monotonic, customer-safe
+  projection delivery; they have a clean build and await an explicitly
+  requested database execution.
 - Phase 0 Step 4 is complete as planning. The approved clean development
   database and migration reset, solution/project restructure, and schema
   baseline sequence are recorded in
@@ -618,9 +619,9 @@ remove competing internal write paths. The durable strategy is recorded in
   `AddLabProviderCommandReceipts` and implement authorization, safe
   amendment/cancellation, exact retry replay, and current milestone projection
   lookup.
-- Created: add opt-in database-backed provider conformance coverage with
-  run-specific cleanup. A passing execution against the migrated reference
-  database remains a verification gate.
+- Created: add opt-in database-backed provider and projection-delivery
+  conformance coverage with run-specific cleanup. A passing execution against
+  the migrated reference database remains a verification gate.
 - Complete: implement internal laboratory roles and authorization.
 - Complete: persist Commercial-owned milestone/exception projections and add durable
   Lab-to-Commercial event delivery.

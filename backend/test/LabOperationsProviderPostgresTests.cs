@@ -1,8 +1,11 @@
 namespace PhaenoPortal.Test;
 
+using System.Text.Json;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Logging.Abstractions;
 using Microsoft.Extensions.Options;
 using PSeq.Operations.Commercial.LabOperations.Application;
+using PSeq.Operations.Commercial.LabOperations.Domain;
 using PSeq.Operations.Laboratory.Domain;
 using PhaenoPortal.App.Features.LabOperations.Services;
 using PhaenoPortal.App.Infrastructure.Persistence;
@@ -304,6 +307,134 @@ public class LabOperationsProviderPostgresTests
                 || property.Contains("Download", StringComparison.OrdinalIgnoreCase));
     }
 
+    [PostgreSqlReferenceFact]
+    public async Task ProjectionDeliveryIsReplaySafeMonotonicAndCannotPublishFiles()
+    {
+        await using var scope = await ProviderTestScope.CreateAsync();
+        var authorizationId = scope.TrackAuthorization(Guid.NewGuid());
+        var authorization = await scope.Provider.AuthorizeWorkAsync(
+            CreateAuthorization(authorizationId, Guid.NewGuid(), [Guid.NewGuid()]),
+            CancellationToken.None);
+        Assert.Equal(LabCommandDisposition.Accepted, authorization.Disposition);
+        var workOrderId = Assert.IsType<Guid>(authorization.LabWorkOrderId);
+        var initialFileCount = await scope.DbContext.ManagedOperationalFiles.CountAsync();
+        var initialReleaseCount = await scope.DbContext.LabResultReleases.CountAsync();
+
+        await LabOperationsProjectionDispatcher.DispatchAsync(
+            scope.DbContext,
+            NullLogger.Instance,
+            CancellationToken.None);
+
+        scope.DbContext.ChangeTracker.Clear();
+        var initialEvent = await scope.DbContext.LabOperationsOutboxEvents
+            .AsNoTracking()
+            .SingleAsync(item => item.AuthorizationId == authorizationId);
+        var initialProjection = await scope.DbContext.CommercialLabWorkProjections
+            .AsNoTracking()
+            .SingleAsync(item => item.AuthorizationId == authorizationId);
+        Assert.Equal(1, initialProjection.ProjectionVersion);
+        Assert.Equal("AwaitingSpecimens", initialProjection.Milestone);
+        Assert.NotNull(initialEvent.PublishedAtUtc);
+        Assert.Equal(1, await scope.DbContext.LabOperationsEventReceipts
+            .CountAsync(item => item.AuthorizationId == authorizationId));
+
+        await scope.DbContext.LabOperationsOutboxEvents
+            .Where(item => item.Id == initialEvent.Id)
+            .ExecuteUpdateAsync(setters => setters
+                .SetProperty(item => item.PublishedAtUtc, (DateTime?)null));
+        scope.DbContext.ChangeTracker.Clear();
+        await LabOperationsProjectionDispatcher.DispatchAsync(
+            scope.DbContext,
+            NullLogger.Instance,
+            CancellationToken.None);
+
+        scope.DbContext.ChangeTracker.Clear();
+        Assert.Equal(1, await scope.DbContext.CommercialLabWorkProjections
+            .CountAsync(item => item.AuthorizationId == authorizationId));
+        Assert.Equal(1, await scope.DbContext.LabOperationsEventReceipts
+            .CountAsync(item => item.AuthorizationId == authorizationId));
+        Assert.Equal(2, await scope.DbContext.LabOperationsOutboxEvents
+            .Where(item => item.Id == initialEvent.Id)
+            .Select(item => item.AttemptCount)
+            .SingleAsync());
+
+        var readyAt = DateTime.UtcNow;
+        scope.DbContext.LabOperationsOutboxEvents.AddRange(
+            new LabOperationsOutboxEvent(
+                Guid.NewGuid(), authorizationId, workOrderId, 3,
+                "WorkReadyForRelease",
+                ProjectionPayload(
+                    "ReadyForRelease", "Complete", 1,
+                    "Please confirm the replacement specimen details.",
+                    "{\"rin\":9.2}",
+                    internalDescription: "Internal investigation details must not cross."),
+                readyAt),
+            new LabOperationsOutboxEvent(
+                Guid.NewGuid(), authorizationId, workOrderId, 2,
+                "WorkProcessing",
+                ProjectionPayload("Processing", "AtRisk", 0, null, null, null),
+                readyAt.AddSeconds(1)));
+        await scope.DbContext.SaveChangesAsync();
+
+        await LabOperationsProjectionDispatcher.DispatchAsync(
+            scope.DbContext,
+            NullLogger.Instance,
+            CancellationToken.None);
+
+        scope.DbContext.ChangeTracker.Clear();
+        var finalProjection = await scope.DbContext.CommercialLabWorkProjections
+            .AsNoTracking()
+            .SingleAsync(item => item.AuthorizationId == authorizationId);
+        Assert.Equal(3, finalProjection.ProjectionVersion);
+        Assert.Equal("ReadyForRelease", finalProjection.Milestone);
+        Assert.Equal("Complete", finalProjection.ScheduleHealth);
+        Assert.Equal(1, finalProjection.ActiveCustomerActionCount);
+        Assert.Equal(
+            "Please confirm the replacement specimen details.",
+            finalProjection.CustomerSafeSummary);
+        Assert.Equal("{\"rin\":9.2}", finalProjection.PermittedQcProjectionJson);
+        Assert.Equal(3, await scope.DbContext.LabOperationsEventReceipts
+            .CountAsync(item => item.AuthorizationId == authorizationId));
+        Assert.All(
+            await scope.DbContext.LabOperationsOutboxEvents
+                .AsNoTracking()
+                .Where(item => item.AuthorizationId == authorizationId)
+                .ToListAsync(),
+            item => Assert.NotNull(item.PublishedAtUtc));
+        Assert.Equal(initialFileCount, await scope.DbContext.ManagedOperationalFiles.CountAsync());
+        Assert.Equal(initialReleaseCount, await scope.DbContext.LabResultReleases.CountAsync());
+
+        var commercialProjectionProperties = typeof(CommercialLabWorkProjection)
+            .GetProperties()
+            .Select(property => property.Name)
+            .ToArray();
+        Assert.DoesNotContain(commercialProjectionProperties, property =>
+            property.Contains("Internal", StringComparison.OrdinalIgnoreCase)
+            || property.Contains("File", StringComparison.OrdinalIgnoreCase)
+            || property.Contains("Document", StringComparison.OrdinalIgnoreCase)
+            || property.Contains("Download", StringComparison.OrdinalIgnoreCase)
+            || property.Contains("Storage", StringComparison.OrdinalIgnoreCase));
+    }
+
+    private static string ProjectionPayload(
+        string milestone,
+        string scheduleHealth,
+        int activeCustomerActionCount,
+        string? customerSafeSummary,
+        string? permittedQcProjectionJson,
+        string? internalDescription) =>
+        JsonSerializer.Serialize(new
+        {
+            authorizationVersion = 1,
+            milestone,
+            scheduleHealth,
+            currentExpectedCompletionAtUtc = (DateTime?)null,
+            activeCustomerActionCount,
+            customerSafeSummary,
+            permittedQcProjectionJson,
+            internalDescription
+        });
+
     private static AuthorizeLabWorkCommand CreateAuthorization(
         Guid authorizationId,
         Guid organizationId,
@@ -460,7 +591,16 @@ public class LabOperationsProviderPostgresTests
                 await DbContext.AuditEvents
                     .Where(item => item.RequestId == requestId)
                     .ExecuteDeleteAsync();
+                await DbContext.LabOperationsEventReceipts
+                    .Where(item => trackedAuthorizationIds.Contains(item.AuthorizationId))
+                    .ExecuteDeleteAsync();
+                await DbContext.CommercialLabWorkProjections
+                    .Where(item => trackedAuthorizationIds.Contains(item.AuthorizationId))
+                    .ExecuteDeleteAsync();
                 await DbContext.LabProviderCommandReceipts
+                    .Where(item => trackedAuthorizationIds.Contains(item.AuthorizationId))
+                    .ExecuteDeleteAsync();
+                await DbContext.LabOperationsOutboxEvents
                     .Where(item => trackedAuthorizationIds.Contains(item.AuthorizationId))
                     .ExecuteDeleteAsync();
                 await DbContext.LabWorkEvents
