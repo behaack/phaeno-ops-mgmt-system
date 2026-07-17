@@ -24,6 +24,12 @@ frontend/certs/*.csr
 frontend/certs/*.pem
 frontend/certs/*.srl
 
+# Website data-cutover artifacts contain personal and inquiry data
+operations/website-cutover/snapshots/
+
+# Server-only Portal green deployment configuration and secrets
+deployment/hetzner/green/runtime/
+
 # IDE and OS files
 .vs/
 .vscode/

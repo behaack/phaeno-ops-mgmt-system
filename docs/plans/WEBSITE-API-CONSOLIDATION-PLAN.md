@@ -2,20 +2,49 @@
 
 ## Status
 
-The code consolidation is implemented in `phaeno-portal`. Production data
-copy, migration execution, runtime-secret and volume configuration, public
-traffic cutover, and retirement of the standalone `phaeno-website` API remain
-explicit deployment work.
+The code consolidation is implemented in `phaeno-portal`. The isolated Portal
+green API/database is now provisioned on the existing Hetzner host and the
+Portal migration chain has been applied there. Production data copy, public
+traffic cutover, and retirement of the standalone `phaeno-website` API/database
+remain explicit deployment work.
 
-No shared, staging, or production database migration has been applied by this
-plan.
+Repeatable cutover tooling is implemented under
+`operations/website-cutover`. It creates a protected source snapshot and
+custom-format backup, generates an idempotent primary-key import, preserves
+source identifiers and contact timestamps, and verifies every copied business
+column with deterministic hashes. It also archives the Website documents volume
+and records per-file SHA-256 digests. It retains destination-only rows so
+bridge submissions cannot be lost during the final legacy delta.
+
+On 2026-07-17, the production `snapshot` operation completed without changing
+the source database or live routing. It recorded 13 Website contacts, 2 Website
+orders, zero duplicate normalized-email groups, and 97 files totaling
+8,318,449 bytes in the documents volume. All inner artifact checksums passed.
+The snapshot was encrypted, its random archive key was wrapped to a dedicated
+off-server recovery key, both encrypted files were independently downloaded
+and verified through archive decryption, and a root-only encrypted copy was
+retained on Hetzner. The temporary plaintext snapshot, temporary database
+credential file, and one-use server tools were removed. Portal migrations,
+destination import, bridge deployment, and traffic changes remained
+unexecuted at snapshot time.
+
+Later on 2026-07-17, a new Docker-network-only PostgreSQL 17 database was
+created for the Portal green slot. All seven Portal migrations were applied,
+ending at `20260717215539_AddWebsiteApi`. The destination has the expected
+`commercial_ops`, `lab_ops`, and `website` schemas; its Website tables are
+empty pending the controlled import of the verified 13 contacts and 2 orders.
+The current Website database was not migrated or changed.
 
 The current `phaeno-website` deployment workflow is suitable for an ordinary
 API redeploy, but not for this cutover without modification: it extracts over
 the live application directory and recreates the single API container before
 running public smoke checks. It has no green slot, database reconciliation
-gate, or automated rollback. `phaeno-portal` does not yet have an approved
-production deployment path, Docker/Compose definition, or deployment workflow.
+gate, or automated rollback. `phaeno-portal` now has a green-only
+Docker/Compose definition under `deployment/hetzner/green`, an explicit
+one-shot migration mode, and trusted forwarded-header handling. The first
+green deployment is running at `127.0.0.1:8084`; its PostgreSQL service has no
+host-published port. Nginx and public routing still point to the standalone API
+at `127.0.0.1:8081`.
 
 ## Product boundary
 
@@ -145,6 +174,10 @@ database cutover.
    File Browser on `127.0.0.1:8082`. The exact ports are an operational input;
    examples are `8083` and `8084`.
 
+The prepared Hetzner green stack uses `127.0.0.1:8084` for Portal, keeps its
+PostgreSQL service Docker-network-only, mounts Website documents read-only, and
+uses separate volumes for the green Lucene index and Portal-owned files.
+
 ### Phase 1: prepare and backfill the Portal database
 
 1. Inspect legacy `"WebContacts"` for duplicate normalized emails. Resolve any
@@ -159,6 +192,12 @@ database cutover.
    same copy can be used for the final delta.
 6. Compare source and destination counts plus deterministic hashes over every
    business column. Record any intentional duplicate-contact resolution.
+
+The prepared `operations/website-cutover/website-data-cutover.sh` package
+implements the source snapshot, data-only backup, idempotent import, and
+snapshot-subset verification used by this phase. It requires private libpq
+service configuration, keeps credentials out of command-line arguments, and
+requires an explicit environment guard before destination writes.
 
 The source API stays live throughout this initial copy.
 
@@ -230,10 +269,11 @@ API, but every new contact and order is stored in the Portal database.
 
 ## Verification boundary
 
-On 2026-07-17, `dotnet build .\backend\PSeq.Operations.slnx` completed with
-zero warnings and zero errors after the migration was generated. The new tests
-were compiled by that build but were not executed; the repository policy
-requires an explicit request before running the backend test plan.
+On 2026-07-17,
+`dotnet build .\backend\PSeq.Operations.slnx --configuration Release --no-restore`
+completed with zero warnings and zero errors. The new tests were compiled by
+that build but were not executed; the repository policy requires an explicit
+request before running the backend test plan.
 
 The repository build proves compilation and EF model generation. It does not
 prove production reCAPTCHA credentials, Mailgun templates, public-file mounts,
@@ -244,3 +284,14 @@ On 2026-07-17, read-only public probes confirmed that the current root page,
 search endpoint, database-ping endpoint, and technical-brief URL responded
 successfully. That is the pre-cutover dial tone to preserve; it does not identify
 the runtime database host or authorize production access.
+
+The same date, the isolated green deployment was built from source archive
+SHA-256
+`a54c5c71fe967f783932dd2f6ec24dc2e403c7e1c5a7e1aae24e6ed8ebd510d8`
+as image `phaeno-portal-green-api:green-a54c5c71fe96`. The green database was
+healthy with zero restarts and no host-published port. The green API was
+healthy with zero restarts and returned: API health `200`, database ping `204`,
+representative search `200`, and the technical brief `200`. During the same
+check, the existing Website database ping returned `204` and the public Website
+returned `200`. Both API listeners remained loopback-only, and no Nginx or DNS
+change was made.

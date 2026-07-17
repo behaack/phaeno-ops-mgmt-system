@@ -1,8 +1,10 @@
 using System.Text.Json;
 using System.Text.Json.Serialization;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.AspNetCore.HttpOverrides;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.RateLimiting;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Options;
 using Microsoft.IdentityModel.Tokens;
 using System.Threading.RateLimiting;
@@ -242,11 +244,30 @@ builder.Services.Configure<MvcOptions>(options =>
 {
     options.Filters.Add<ApiResponseEnvelopeFilter>();
 });
+builder.Services.Configure<ForwardedHeadersOptions>(options =>
+{
+    options.ForwardedHeaders = ForwardedHeaders.XForwardedFor
+        | ForwardedHeaders.XForwardedHost
+        | ForwardedHeaders.XForwardedProto;
+    options.ForwardLimit = 1;
+    options.KnownIPNetworks.Clear();
+    options.KnownProxies.Clear();
+});
 
 var app = builder.Build();
 
+if (args.Contains("--migrate", StringComparer.Ordinal))
+{
+    await using var scope = app.Services.CreateAsyncScope();
+    var dbContext = scope.ServiceProvider
+        .GetRequiredService<PSeqOperationsDbContext>();
+    await dbContext.Database.MigrateAsync();
+    return;
+}
+
 await AccountsBootstrapSeeder.SeedAsync(app.Services);
 
+app.UseForwardedHeaders();
 app.UseHttpsRedirection();
 app.UseWebsitePublicDocuments();
 app.UseCors();

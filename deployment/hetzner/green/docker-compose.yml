@@ -1,0 +1,106 @@
+name: phaeno-portal-green
+
+services:
+  db:
+    image: postgres:17
+    container_name: phaeno-portal-green-db
+    restart: unless-stopped
+    env_file:
+      - /opt/phaeno.portal-green/runtime/database.env
+    volumes:
+      - portal_green_postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test:
+        - CMD-SHELL
+        - pg_isready -U "$${POSTGRES_USER}" -d "$${POSTGRES_DB}"
+      interval: 5s
+      timeout: 5s
+      retries: 20
+      start_period: 10s
+    logging:
+      options:
+        max-size: 10m
+        max-file: "3"
+    networks:
+      - portal_green
+
+  api:
+    image: phaeno-portal-green-api:${PORTAL_GREEN_IMAGE_TAG:?PORTAL_GREEN_IMAGE_TAG is required}
+    container_name: phaeno-portal-green-api
+    build:
+      context: ../../..
+      dockerfile: Dockerfile
+      args:
+        SOURCE_REVISION: ${PORTAL_GREEN_SOURCE_REVISION:?PORTAL_GREEN_SOURCE_REVISION is required}
+    restart: unless-stopped
+    init: true
+    env_file:
+      - /opt/phaeno.portal-green/runtime/portal.env
+    environment:
+      ASPNETCORE_ENVIRONMENT: Production
+      ASPNETCORE_HTTP_PORTS: "8080"
+      WebsiteApi__PublicDocumentsPath: /app/__DOCUMENTS/public
+      GoogleAuthSettings__RecaptchaServiceAccountKeyPath: /app/__DOCUMENTS/private/secrets/recaptcha-enterprise-service-account.json
+      WebSearchSettings__SearchIndexLocation: /app/__GREEN_INDEX
+      DataProvisioning__StorageRoot: /app/App_Data/provisioning-files
+      OrderManagement__StorageRoot: /app/App_Data/order-files
+    ports:
+      - 127.0.0.1:8084:8080
+    volumes:
+      - /opt/phaeno.website-api/documents:/app/__DOCUMENTS:ro
+      - portal_green_app_data:/app/App_Data
+      - portal_green_website_index:/app/__GREEN_INDEX
+    depends_on:
+      db:
+        condition: service_healthy
+    healthcheck:
+      test:
+        - CMD
+        - curl
+        - --fail
+        - --silent
+        - --show-error
+        - --header
+        - X-Forwarded-Proto:https
+        - http://127.0.0.1:8080/api/health
+      interval: 10s
+      timeout: 5s
+      retries: 12
+      start_period: 20s
+    stop_grace_period: 30s
+    security_opt:
+      - no-new-privileges:true
+    logging:
+      options:
+        max-size: 10m
+        max-file: "3"
+    networks:
+      - portal_green
+
+  migrate:
+    image: phaeno-portal-green-api:${PORTAL_GREEN_IMAGE_TAG:?PORTAL_GREEN_IMAGE_TAG is required}
+    container_name: phaeno-portal-green-migrate
+    profiles:
+      - tools
+    command:
+      - --migrate
+    env_file:
+      - /opt/phaeno.portal-green/runtime/portal.env
+    environment:
+      ASPNETCORE_ENVIRONMENT: Production
+    depends_on:
+      db:
+        condition: service_healthy
+    security_opt:
+      - no-new-privileges:true
+    networks:
+      - portal_green
+
+volumes:
+  portal_green_postgres_data:
+  portal_green_app_data:
+  portal_green_website_index:
+
+networks:
+  portal_green:
+    name: phaeno-portal-green
