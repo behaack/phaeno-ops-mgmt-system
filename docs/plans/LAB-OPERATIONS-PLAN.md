@@ -622,7 +622,9 @@ remove competing internal write paths. The durable strategy is recorded in
 - Created: add opt-in database-backed provider and projection-delivery
   conformance coverage with run-specific cleanup. A passing execution against
   the migrated reference database remains a verification gate.
-- Complete: implement internal laboratory roles and authorization.
+- Complete: implement internal laboratory roles and authorization, including
+  active-Phaeno-member eligibility, disabled/offboarded-user denial, exact
+  additive capabilities, session projection, and platform-admin bootstrap.
 - Complete: persist Commercial-owned milestone/exception projections and add durable
   Lab-to-Commercial event delivery.
 - Complete: extend the existing module-direction architecture tests to prevent direct

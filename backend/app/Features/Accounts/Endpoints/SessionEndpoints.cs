@@ -8,6 +8,7 @@ using PSeq.Operations.Commercial.Accounts.Domain;
 using PSeq.Operations.Laboratory.Domain;
 using PhaenoPortal.App.Features.Accounts.DTOs;
 using PhaenoPortal.App.Features.Accounts.Services;
+using PhaenoPortal.App.Features.LabOperations.Services;
 using PhaenoPortal.App.Infrastructure.Persistence;
 using PhaenoPortal.App.Infrastructure.Persistence.Auditing;
 
@@ -50,8 +51,8 @@ public static class SessionEndpoints
             }
         }
 
-        var labRoles = await dbContext.LabRoleAssignments.AsNoTracking()
-            .Where(assignment => assignment.UserId == user.Id && assignment.IsActive)
+        var labRoles = await LabOperationsAuthorization.ActiveAssignmentsFor(
+                dbContext.LabRoleAssignments.AsNoTracking(), user.Id)
             .Select(assignment => assignment.Role)
             .ToListAsync(cancellationToken);
 
@@ -124,7 +125,7 @@ public static class SessionEndpoints
         };
     }
 
-    private static SessionDto ToSession(
+    internal static SessionDto ToSession(
         User user,
         IReadOnlyCollection<LabRole> labRoles,
         string state,
@@ -143,13 +144,7 @@ public static class SessionEndpoints
         var canManageLabOrders = canViewLabOrders && isSelectedOrganizationAdmin;
         var canViewPartnerOrders = selectedKind == OrganizationKind.Partner;
         var canManagePartnerOrders = canViewPartnerOrders && isSelectedOrganizationAdmin;
-        var hasLabRole = (LabRole role) => isPlatformAdmin || labRoles.Contains(role);
-        var canOperateLabWork = hasLabRole(LabRole.Operator) || hasLabRole(LabRole.Supervisor)
-            || hasLabRole(LabRole.OperationsAdministrator);
-        var canSuperviseLabWork = hasLabRole(LabRole.Supervisor) || hasLabRole(LabRole.OperationsAdministrator);
-        var canManageLabProtocols = hasLabRole(LabRole.ProtocolAdministrator) || hasLabRole(LabRole.OperationsAdministrator);
-        var canReviewLabWork = hasLabRole(LabRole.ScientificReviewer) || hasLabRole(LabRole.OperationsAdministrator);
-        var canManageLabAccess = hasLabRole(LabRole.OperationsAdministrator);
+        var labCapabilities = LabOperationsAuthorization.Evaluate(user, labRoles);
 
         return new SessionDto
         {
@@ -214,12 +209,12 @@ public static class SessionEndpoints
                 CanViewAllOperationalOrders = isPlatformAdmin,
                 CanManageOrderConfiguration = isPlatformAdmin,
                 CanQuoteLabServiceWork = isPlatformAdmin,
-                CanManageLabOperations = isPlatformAdmin || labRoles.Count > 0,
-                CanOperateLabWork = canOperateLabWork,
-                CanSuperviseLabWork = canSuperviseLabWork,
-                CanManageLabProtocols = canManageLabProtocols,
-                CanReviewLabWork = canReviewLabWork,
-                CanManageLabAccess = canManageLabAccess,
+                CanManageLabOperations = labCapabilities.CanManageLabOperations,
+                CanOperateLabWork = labCapabilities.CanOperateLabWork,
+                CanSuperviseLabWork = labCapabilities.CanSuperviseLabWork,
+                CanManageLabProtocols = labCapabilities.CanManageLabProtocols,
+                CanReviewLabWork = labCapabilities.CanReviewLabWork,
+                CanManageLabAccess = labCapabilities.CanManageLabAccess,
                 CanManageReagentFulfillment = isPlatformAdmin,
                 CanManageDataAssembly = isPlatformAdmin,
                 CanManageOrderIntegrations = isPlatformAdmin,

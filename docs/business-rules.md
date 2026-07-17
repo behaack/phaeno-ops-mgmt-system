@@ -227,7 +227,9 @@ Confirmed Prospect rules:
   summary, reviewer-permitted QC, and released deliverables.
 - Phaeno Lab roles are additive: Operator, Supervisor, Protocol Administrator,
   Scientific Reviewer, and Lab Operations Administrator. Platform
-  administrators retain bootstrap access; external users have no Lab role.
+  administrators retain bootstrap access; only active Phaeno members can use
+  an assignment, and external, disabled, or offboarded users have no effective
+  Lab role.
 - Protocol execution pins one active version. Later protocol changes never
   rewrite active or historical execution.
 - Material consumption requires passed or exception-approved QC, a non-expired

@@ -21,6 +21,11 @@ Do not execute this test plan unless explicitly requested.
   work cancellation, provider-command receipt matching, controlled work
   milestones, protocol activation, QC-gated material consumption, and
   customer-safe exception separation.
+- [x] `backend/test/LabOperationsAuthorizationTests.cs` - exact additive
+  Operator, Supervisor, Protocol Administrator, Scientific Reviewer, and Lab
+  Operations Administrator capabilities; platform-administrator bootstrap;
+  inactive-assignment filtering; external-user denial; disabled-user denial;
+  explicit role matching; and `/api/session` capability projection.
 - [x] `backend/test/PersistenceTests.cs` - Commercial and Laboratory assembly
   schema ownership, all 22 Laboratory mappings, and no Laboratory foreign key
   into a Commercial entity.
@@ -117,8 +122,8 @@ Do not execute this test plan unless explicitly requested.
   specimen placement, Partner data-assembly placement, ineligible/custom-work
   routing, immutable pricing snapshots, Partner downstream-identity omission,
   post-placement scientific validation, and cross-tenant denial.
-- [ ] Complete Lab Operations API - cover additive role authorization, atomic
-  quote-acceptance authorization, cancellation handoff, receipt/accession and
+- [ ] Complete Lab Operations API - cover atomic quote-acceptance authorization,
+  cancellation handoff, receipt/accession and
   lineage validation, protocol lifecycle and pinned execution, QC/expiry/
   calibration gates, cross-order batching, sendout custody, exception
   resolution, scientific approval, and optimistic concurrency.
@@ -200,6 +205,10 @@ Do not execute this test plan unless explicitly requested.
 
 ## Requested Execution Log
 
+- 2026-07-16: the Lab role-authorization slice added shared request/session
+  capability policy and focused unit coverage, then ran `dotnet build
+  backend/PSeq.Operations.slnx --no-restore`; all projects compiled without
+  warnings or errors. Test execution was not requested and was not run.
 - 2026-07-16: the Lab projection-coverage slice added the fifth opt-in
   PostgreSQL conformance test and ran `dotnet build
   backend/PSeq.Operations.slnx --no-restore`; all projects compiled without

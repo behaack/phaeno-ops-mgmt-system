@@ -127,10 +127,21 @@ public sealed partial class LabOperationsController(
     {
         await requestContext.RequireAsync(HttpContext, cancellationToken, LabRole.OperationsAdministrator);
         if (!Enum.TryParse<LabRole>(role, true, out var parsedRole)) throw Invalid("lab_role_invalid", "The laboratory role is invalid.");
-        var user = await dbContext.Users.SingleOrDefaultAsync(item => item.Id == userId && item.IsActive, cancellationToken)
+        var user = await dbContext.Users
+            .Include(item => item.Memberships)
+            .ThenInclude(item => item.Organization)
+            .SingleOrDefaultAsync(item => item.Id == userId && item.IsActive, cancellationToken)
             ?? throw Missing();
         var assignment = await dbContext.LabRoleAssignments
             .SingleOrDefaultAsync(item => item.UserId == userId && item.Role == parsedRole, cancellationToken);
+        if (request.IsActive && !LabOperationsAuthorization.IsEligibleLabStaff(user))
+        {
+            throw Invalid("lab_role_user_ineligible", "Lab roles can be assigned only to active Phaeno members.");
+        }
+        if (!request.IsActive && assignment is null)
+        {
+            throw Missing();
+        }
         if (assignment is null)
         {
             assignment = new LabRoleAssignment(userId, parsedRole);
