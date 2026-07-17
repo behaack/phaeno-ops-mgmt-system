@@ -18,10 +18,12 @@ Do not execute this test plan unless explicitly requested.
 - [x] `backend/test/LabOperationsDomainTests.cs` - monotonic authorization
   versions, receipt-before-accession behavior, controlled hold/rejection reasons,
   immutable authorization payload hashes, pre-receipt cancellation boundaries,
-  work cancellation, and provider-command receipt matching.
+  work cancellation, provider-command receipt matching, controlled work
+  milestones, protocol activation, QC-gated material consumption, and
+  customer-safe exception separation.
 - [x] `backend/test/PersistenceTests.cs` - Commercial and Laboratory assembly
-  schema ownership, six Laboratory foundation/provider mappings, and no Laboratory
-  foreign key into a Commercial entity.
+  schema ownership, all 22 Laboratory mappings, and no Laboratory foreign key
+  into a Commercial entity.
 - [x] `backend/test/ApiResponseTests.cs` - `SuccessEnvelopeSerializesWithReferenceShape`.
 - [x] `backend/test/ApiResponseTests.cs` - `FailureEnvelopeSerializesWithReferenceShape`.
 - [x] `backend/test/ApiResponseTests.cs` - `DomainExceptionMapsLikeReferenceApi`.
@@ -112,9 +114,14 @@ Do not execute this test plan unless explicitly requested.
   specimen placement, Partner data-assembly placement, ineligible/custom-work
   routing, immutable pricing snapshots, Partner downstream-identity omission,
   post-placement scientific validation, and cross-tenant denial.
-- [ ] Lab-to-Commercial projection delivery - when implemented, cover durable
+- [ ] Lab-to-Commercial projection delivery - cover durable
   event replay, out-of-order projection rejection, exception audience filtering,
   and the guarantee that `ReadyForRelease` does not publish customer files.
+- [ ] Complete Lab Operations API - cover additive role authorization, atomic
+  quote-acceptance authorization, cancellation handoff, receipt/accession and
+  lineage validation, protocol lifecycle and pinned execution, QC/expiry/
+  calibration gates, cross-order batching, sendout custody, exception
+  resolution, scientific approval, and optimistic concurrency.
 - [ ] Prospect Trial Projects - cover idempotent HubSpot request intake, dual
   approval, frozen scope/amendments, Prospect acceptance, project-specific
   submit authorization, extracted-RNA-only validation, the five-sample cap,
@@ -193,6 +200,12 @@ Do not execute this test plan unless explicitly requested.
 
 ## Requested Execution Log
 
+- 2026-07-16: Lab Operations completion verification ran `dotnet build
+  backend/PSeq.Operations.slnx --no-restore`; the solution, including the new
+  domain and test sources, compiled without warnings or errors. The three
+  completion migrations were generated and applied successfully to the local
+  `phaeno_ops` development database. Automated tests and opt-in PostgreSQL
+  provider conformance tests were not requested and were not executed.
 - 2026-07-16: clean-baseline verification ran `dotnet build
   backend/PSeq.Operations.slnx --no-restore` and `dotnet test
   backend/PSeq.Operations.slnx --no-build`; the build completed without warnings

@@ -21,7 +21,7 @@ Do not execute this test plan unless explicitly requested.
   remain in the desktop toolbar while administration and resource routes move
   to the user dropdown without changing permission filtering.
 - [x] `frontend/src/features/documentation/documentation-registry.test.ts` - the
-  six-guide Prospect, Customer, Partner, and Phaeno registries expose unique,
+  maintained Prospect, Customer, Partner, and Phaeno registries expose unique,
   ordered, backend-indexable metadata and resolve slugs only within their
   audience.
 - [x] `frontend/src/features/data-provisioning/DataProvisioningPage.test.tsx` -
@@ -95,6 +95,12 @@ Do not execute this test plan unless explicitly requested.
   substitutions, backorders, immutable-document downloads, operational queue
   filters, notification recovery, and stale-version/error recovery with mocked
   APIs.
+- [ ] Lab Operations workspace - cover role-specific navigation and controls,
+  list/detail loading, receipt/accession and label history, protocol lifecycle,
+  execution/material/equipment capture, library and batch actions, sendout and
+  custody states, internal versus customer-action exceptions, scientific
+  approval, ready-for-release messaging, concurrency recovery, and mock-mode
+  boundaries with mocked APIs.
 - [ ] Backend-indexed help search - cover authenticated audience filtering,
   Prospect/Customer/Partner locale filtering, indexed metadata and headings,
   canonical guide links, empty/error states, and stale-index recovery when the
@@ -106,6 +112,11 @@ Do not execute this test plan unless explicitly requested.
 
 ## Requested Execution Log
 
+- 2026-07-16: Lab Operations completion verification ran `pnpm run lint`,
+  `pnpm run typecheck`, and `pnpm run build`; lint and typecheck passed, and
+  both client and SSR production builds completed. The existing advisory
+  chunk-size warning remains. Frontend tests were not requested and were not
+  executed.
 - 2026-07-16: clean-baseline verification ran `pnpm run lint`, `pnpm run
   typecheck`, `pnpm run test`, and `pnpm run build`; lint and typecheck passed,
   all 28 tests in 11 files passed, and both client and SSR production builds

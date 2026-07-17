@@ -6,6 +6,7 @@ import {
   Library,
   LayoutDashboard,
   ClipboardList,
+  Microscope,
   FlaskConical,
   Package,
   Settings,
@@ -110,6 +111,15 @@ export const mainMenuItems: readonly MainMenuItem[] = [
     visibleWhen: (session, context) =>
       context.selectedOrganizationKind === 'Phaeno' &&
       Boolean(session?.capabilities.canViewAllOperationalOrders),
+  },
+  {
+    label: 'Lab operations',
+    to: '/lab-operations',
+    icon: Microscope,
+    group: 'workspace',
+    visibleWhen: (session, context) =>
+      context.selectedOrganizationKind === 'Phaeno' &&
+      Boolean(session?.capabilities.canManageLabOperations),
   },
   {
     label: 'Order configuration',

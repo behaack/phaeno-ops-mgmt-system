@@ -1,10 +1,13 @@
 namespace PhaenoPortal.App.Features.OrderManagement.Controllers;
 
+using System.Data;
 using System.Text.Json;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Options;
+using PSeq.Operations.Commercial.LabOperations.Application;
+using PSeq.Operations.Commercial.LabOperations.Domain;
 using PSeq.Operations.Commercial.OrderManagement.Application;
 using PSeq.Operations.Commercial.OrderManagement.Domain;
 using PhaenoPortal.App.Features.OrderManagement.Domain;
@@ -21,7 +24,8 @@ public sealed class PlatformLabServiceOrdersController(
     OrderIdempotencyService idempotency,
     IOperationalFileStorage fileStorage,
     IOperationalFileScanner fileScanner,
-    IOptions<OrderManagementOptions> options) : ControllerBase
+    IOptions<OrderManagementOptions> options,
+    ILabOperationsProvider labOperationsProvider) : ControllerBase
 {
     private static readonly JsonSerializerOptions JsonOptions = new(JsonSerializerDefaults.Web);
 
@@ -309,11 +313,37 @@ public sealed class PlatformLabServiceOrdersController(
             && item.WorkflowType == OrderWorkflowTypes.LabService && item.WorkflowId == orderId, cancellationToken) ?? throw Missing();
         if (!Enum.TryParse<CancellationRequestStatus>(request.Status, true, out var decision) || decision == CancellationRequestStatus.Pending)
             throw Invalid("cancellation_decision_invalid", "A final cancellation decision is required.");
+        await using var transaction = await dbContext.Database.BeginTransactionAsync(
+            IsolationLevel.Serializable, cancellationToken);
         var before = order.Status.ToString();
+        if (decision == CancellationRequestStatus.Approved)
+        {
+            var authorization = await dbContext.CommercialLabAuthorizations
+                .SingleOrDefaultAsync(item => item.CommercialOrderId == order.Id, cancellationToken);
+            if (authorization is not null)
+            {
+                var outcome = await labOperationsProvider.RequestCancellationAsync(
+                    new RequestLabWorkCancellationCommand(
+                        new LabOperationsCommandMetadata(Guid.NewGuid(), authorization.AuthorizationId, DateTime.UtcNow),
+                        authorization.AuthorizationId,
+                        authorization.AuthorizationVersion,
+                        "commercial_cancellation_approved",
+                        SubmittedSpecimenIds: null),
+                    cancellationToken);
+                if (outcome.Disposition is not LabCancellationDisposition.Accepted)
+                {
+                    throw Conflict(
+                        "lab_cancellation_requires_review",
+                        "Laboratory work has started or requires a separate specimen-level cancellation decision.");
+                }
+                authorization.MarkCancelled();
+            }
+        }
         cancellation.Decide(decision, request.Reason, actor.Id, DateTime.UtcNow);
         Execute(() => order.ResolveCancellation(decision is CancellationRequestStatus.Approved, request.Reason, null));
         Event(order, before, order.Status.ToString(), actor.Id, request.Reason);
         await dbContext.SaveChangesAsync(cancellationToken);
+        await transaction.CommitAsync(cancellationToken);
         return await MapAsync(order, cancellationToken);
     }
 
@@ -376,14 +406,25 @@ public sealed class PlatformLabServiceOrdersController(
         var docs = await dbContext.CommercialDocumentLinks.AsNoTracking().Where(item => item.WorkflowType == OrderWorkflowTypes.LabService && item.WorkflowId == order.Id).OrderBy(item => item.CreatedAt).ToListAsync(cancellationToken);
         var cancellations = await dbContext.OrderCancellationRequests.AsNoTracking().Where(item => item.WorkflowType == OrderWorkflowTypes.LabService && item.WorkflowId == order.Id).OrderBy(item => item.CreatedAt).ToListAsync(cancellationToken);
         var timeline = await dbContext.OrderStatusEvents.AsNoTracking().Where(item => item.WorkflowType == OrderWorkflowTypes.LabService && item.WorkflowId == order.Id).OrderBy(item => item.OccurredAt).ToListAsync(cancellationToken);
+        var authorization = await dbContext.CommercialLabAuthorizations.AsNoTracking()
+            .SingleOrDefaultAsync(item => item.CommercialOrderId == order.Id, cancellationToken);
+        var projection = authorization is null ? null : await dbContext.CommercialLabWorkProjections.AsNoTracking()
+            .SingleOrDefaultAsync(item => item.AuthorizationId == authorization.AuthorizationId, cancellationToken);
         return new LabServiceOrderDto(order.Id, order.OrganizationId, order.OrderNumber, order.CustomerReference, order.SubmissionInstructionsSnapshot,
             order.Status.ToString(), order.RequestRevision, order.SubmittedAt, order.PlacedAt, order.CompletedAt, order.TenantSafeReason,
             order.InternalNote, order.CreatedAt, order.UpdatedAt, order.Version, false, false, false, false, false,
             order.Samples.OrderBy(item => item.CreatedAt).Select(item => item.ToDto(true)).ToList(), order.Quotes.OrderByDescending(item => item.Revision).Select(item => item.ToDto()).ToList(),
             releases.Select(item => item.ToDto()).ToList(), files.Select(item => item.ToDto()).ToList(), docs.Select(item => item.ToDto(true)).ToList(), cancellations.Select(item => item.ToDto()).ToList(), timeline.Select(item => item.ToDto(true)).ToList(),
             order.AssignedToUserId, order.DueAt,
-            order.Revisions.OrderByDescending(item => item.Revision).Select(item => new LabRequestRevisionDto(item.Id,
-                item.Revision, item.PreviousRevisionId, item.SnapshotJson, item.CorrectionReason, item.SubmittedByUserId, item.SubmittedAt)).ToList());
+            RequestRevisions: order.Revisions.OrderByDescending(item => item.Revision).Select(item => new LabRequestRevisionDto(item.Id,
+                item.Revision, item.PreviousRevisionId, item.SnapshotJson, item.CorrectionReason, item.SubmittedByUserId, item.SubmittedAt)).ToList(),
+            LabMilestone: projection?.Milestone,
+            LabScheduleHealth: projection?.ScheduleHealth,
+            LabExpectedCompletionAtUtc: projection?.ExpectedCompletionAtUtc,
+            LabCustomerActionCount: projection?.ActiveCustomerActionCount ?? 0,
+            LabCustomerActionSummary: projection?.CustomerSafeSummary,
+            LabPermittedQcProjectionJson: projection?.PermittedQcProjectionJson,
+            LabReadyForRelease: projection?.Milestone == "ReadyForRelease");
     }
 
     private void Event(LabServiceOrder order, string from, string to, Guid actorId, string? reason = null, string? internalNote = null, Guid? childId = null)

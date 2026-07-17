@@ -95,9 +95,18 @@ Do not execute this test plan unless explicitly requested.
   admin/member, Partner admin/member, Prospect denial, Phaeno operations,
   payment hold, QuickBooks failure, two-tenant isolation, keyboard, and narrow
   viewport scenarios through real authentication and API persistence.
+- [ ] Database-backed Lab Operations journey - accept a Customer quote, prove
+  atomic Lab authorization, assign additive Lab roles, receive and accession a
+  specimen, execute an active protocol with QC-approved material and calibrated
+  equipment, prepare and batch a library, track an outsourced NGS sendout and
+  custody, resolve an exception, record scientific approval, verify the
+  Customer-safe projection, and prove that Ready for release publishes no file.
 
 ## Requested Execution Log
 
+- 2026-07-16: Lab Operations browser scenarios and their production-activation
+  gates were added to this plan. E2E execution was not requested and was not
+  run for the completion slice.
 - 2026-07-16: the first clean-baseline run inherited the developer's real-Clerk
   local setting (`VITE_USE_MOCK_SESSION=false`) and correctly failed the suite's
   mock-session precondition. The test-only rerun used

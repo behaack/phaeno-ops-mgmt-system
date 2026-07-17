@@ -80,6 +80,7 @@ describe('order navigation permissions', () => {
     const session = createSession('Phaeno', {
       canViewAllOperationalOrders: true,
       canManageOrderConfiguration: true,
+      canManageLabOperations: true,
     })
 
     const labels = getVisibleMainMenuItems(session, {
@@ -88,6 +89,7 @@ describe('order navigation permissions', () => {
     }).map((item) => item.label)
 
     expect(labels).toContain('Order operations')
+    expect(labels).toContain('Lab operations')
     expect(labels).toContain('Order configuration')
     expect(labels).not.toContain('Lab services')
     expect(labels).not.toContain('Reagent orders')
@@ -117,6 +119,7 @@ describe('navigation placement', () => {
       canManageOrganizations: true,
       canViewDatasetConfiguration: true,
       canViewAllOperationalOrders: true,
+      canManageLabOperations: true,
       canManageOrderConfiguration: true,
     })
     const context = {
@@ -128,7 +131,7 @@ describe('navigation placement', () => {
       getVisibleMainMenuItems(session, context, 'workspace').map(
         (item) => item.label,
       ),
-    ).toEqual(['Dashboard', 'Data provisioning', 'Order operations'])
+    ).toEqual(['Dashboard', 'Data provisioning', 'Order operations', 'Lab operations'])
     expect(
       getVisibleMainMenuItems(session, context, 'administration').map(
         (item) => item.label,
@@ -219,6 +222,11 @@ function createSession(
       canManageOrderConfiguration: false,
       canQuoteLabServiceWork: false,
       canManageLabOperations: false,
+      canOperateLabWork: false,
+      canSuperviseLabWork: false,
+      canManageLabProtocols: false,
+      canReviewLabWork: false,
+      canManageLabAccess: false,
       canManageReagentFulfillment: false,
       canManageDataAssembly: false,
       canManageOrderIntegrations: false,

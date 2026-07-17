@@ -9,13 +9,14 @@ import {
 } from './documentation-registry'
 
 describe('documentation registry', () => {
-  it('provides six ordered guides for each supported audience', () => {
+  it('provides ordered maintained guides for each supported audience', () => {
     for (const audience of documentationAudienceKeys) {
       const entries = getDocumentationEntries(audience)
 
-      expect(entries).toHaveLength(6)
       expect(entries.map((entry) => entry.order)).toEqual([
-        10, 20, 30, 40, 50, 60,
+        ...(audience === 'phaeno'
+          ? [10, 20, 30, 40, 45, 50, 60]
+          : [10, 20, 30, 40, 50, 60]),
       ])
       expect(entries.every((entry) => entry.audience === audience)).toBe(true)
     }
@@ -59,6 +60,9 @@ describe('documentation registry', () => {
     )
     expect(getDocumentationEntry('customer', 'lab-services')?.title).toBe(
       'Request laboratory services',
+    )
+    expect(getDocumentationEntry('phaeno', 'lab-operations')?.title).toBe(
+      'Laboratory operations',
     )
     expect(getDocumentationEntry('partner', 'lab-services')).toBeUndefined()
     expect(getDocumentationEntry('prospect', 'lab-services')).toBeUndefined()

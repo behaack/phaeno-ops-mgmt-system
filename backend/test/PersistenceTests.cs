@@ -37,7 +37,7 @@ public class PersistenceTests
     }
 
     [Fact]
-    public void PSeqOperationsDbContextMapsLaboratoryFoundationWithoutCommercialForeignKeys()
+    public void PSeqOperationsDbContextMapsCompleteLaboratoryModelWithoutCommercialForeignKeys()
     {
         using var dbContext = CreateDbContext();
         var laboratoryAssembly = typeof(LaboratoryAssembly).Assembly;
@@ -45,7 +45,7 @@ public class PersistenceTests
             .Where(entityType => entityType.ClrType.Assembly == laboratoryAssembly)
             .ToList();
 
-        Assert.Equal(6, laboratoryEntities.Count);
+        Assert.Equal(22, laboratoryEntities.Count);
         Assert.Equal(
             "lab_work_orders",
             dbContext.Model.FindEntityType(typeof(LabWorkOrder))?.GetTableName());
@@ -64,6 +64,22 @@ public class PersistenceTests
         Assert.Equal(
             "lab_provider_command_receipts",
             dbContext.Model.FindEntityType(typeof(LabProviderCommandReceipt))?.GetTableName());
+        Assert.Equal("lab_role_assignments", dbContext.Model.FindEntityType(typeof(LabRoleAssignment))?.GetTableName());
+        Assert.Equal("lab_containers", dbContext.Model.FindEntityType(typeof(LabContainer))?.GetTableName());
+        Assert.Equal("lab_protocols", dbContext.Model.FindEntityType(typeof(LabProtocol))?.GetTableName());
+        Assert.Equal("lab_protocol_versions", dbContext.Model.FindEntityType(typeof(LabProtocolVersion))?.GetTableName());
+        Assert.Equal("lab_protocol_executions", dbContext.Model.FindEntityType(typeof(LabProtocolExecution))?.GetTableName());
+        Assert.Equal("lab_material_lots", dbContext.Model.FindEntityType(typeof(LabMaterialLot))?.GetTableName());
+        Assert.Equal("lab_material_consumptions", dbContext.Model.FindEntityType(typeof(LabMaterialConsumption))?.GetTableName());
+        Assert.Equal("lab_equipment", dbContext.Model.FindEntityType(typeof(LabEquipment))?.GetTableName());
+        Assert.Equal("lab_equipment_usages", dbContext.Model.FindEntityType(typeof(LabEquipmentUsage))?.GetTableName());
+        Assert.Equal("lab_libraries", dbContext.Model.FindEntityType(typeof(LabLibrary))?.GetTableName());
+        Assert.Equal("lab_operational_batches", dbContext.Model.FindEntityType(typeof(LabOperationalBatch))?.GetTableName());
+        Assert.Equal("lab_batch_members", dbContext.Model.FindEntityType(typeof(LabBatchMember))?.GetTableName());
+        Assert.Equal("lab_ngs_sendouts", dbContext.Model.FindEntityType(typeof(LabNgsSendout))?.GetTableName());
+        Assert.Equal("lab_custody_events", dbContext.Model.FindEntityType(typeof(LabCustodyEvent))?.GetTableName());
+        Assert.Equal("lab_exceptions", dbContext.Model.FindEntityType(typeof(LabException))?.GetTableName());
+        Assert.Equal("lab_operations_outbox_events", dbContext.Model.FindEntityType(typeof(LabOperationsOutboxEvent))?.GetTableName());
         Assert.All(laboratoryEntities, entityType => Assert.Equal("lab_ops", entityType.GetSchema()));
         Assert.DoesNotContain(
             laboratoryEntities.SelectMany(entityType => entityType.GetForeignKeys()),

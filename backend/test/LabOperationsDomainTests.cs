@@ -112,6 +112,66 @@ public class LabOperationsDomainTests
         Assert.False(receipt.Matches(LabProviderCommandType.AuthorizeWork, new string('b', 64)));
     }
 
+    [Fact]
+    public void WorkOrderUsesControlledMilestonesAndReadyForReleaseIsTerminal()
+    {
+        var workOrder = WorkOrder(authorizationVersion: 1);
+
+        workOrder.RecordMilestone(LabWorkOrderStatus.Received);
+        workOrder.RecordMilestone(LabWorkOrderStatus.Processing);
+        workOrder.RecordMilestone(LabWorkOrderStatus.ScientificReview);
+        workOrder.RecordMilestone(LabWorkOrderStatus.ReadyForRelease);
+
+        Assert.Equal(LabWorkOrderStatus.ReadyForRelease, workOrder.Status);
+        Assert.Equal(5, workOrder.ProjectionVersion);
+        Assert.Throws<InvalidOperationException>(() =>
+            workOrder.RecordMilestone(LabWorkOrderStatus.Processing));
+    }
+
+    [Fact]
+    public void ProtocolVersionMustBeApprovedBeforeActivation()
+    {
+        var protocol = new LabProtocol("rna-prep", "RNA preparation", null);
+        protocol.RecordVersion(1);
+        var version = new LabProtocolVersion(protocol.Id, 1, "{\"steps\":[]}",
+            Guid.NewGuid(), DateTime.UtcNow);
+
+        Assert.Throws<InvalidOperationException>(version.Activate);
+        version.Approve(Guid.NewGuid(), DateTime.UtcNow);
+        version.Activate();
+
+        Assert.Equal(LabProtocolStatus.Active, version.Status);
+    }
+
+    [Fact]
+    public void MaterialConsumptionCannotExceedQcApprovedAvailability()
+    {
+        var lot = new LabMaterialLot(LabMaterialLotKind.SupplierLot, "polymerase",
+            "Polymerase", "LOT-1", "Supplier", null, DateTime.UtcNow.AddDays(30),
+            "Freezer A", 10, "uL");
+
+        lot.RecordQc(LabQcDisposition.Passed, "{}", Guid.NewGuid(), DateTime.UtcNow);
+        lot.Consume(4);
+
+        Assert.Equal(6, lot.AvailableQuantity);
+        Assert.Throws<InvalidOperationException>(() => lot.Consume(7));
+    }
+
+    [Fact]
+    public void CustomerActionExceptionRequiresASeparateSafeSummary()
+    {
+        Assert.Throws<ArgumentException>(() => new LabException(
+            Guid.NewGuid(), null, null, LabExceptionAudience.CustomerActionRequired,
+            "replacement_needed", "Replacement needed", "Internal evidence",
+            null, true, DateTime.UtcNow.AddDays(2)));
+
+        var exception = new LabException(Guid.NewGuid(), null, null,
+            LabExceptionAudience.Internal, "internal_review", "Review",
+            "Internal evidence", null, false, null);
+
+        Assert.Null(exception.CustomerSafeSummary);
+    }
+
     private static LabWorkOrder WorkOrder(int authorizationVersion) => new(
         Guid.NewGuid(),
         authorizationVersion,

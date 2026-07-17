@@ -127,7 +127,7 @@ public sealed class InternalLabOperationsProvider(PSeqOperationsDbContext dbCont
             CurrentExpectedCompletionAtUtc: null,
             ActiveCustomerActionCount: 0,
             workOrder.UpdatedAt,
-            workOrder.Version);
+            workOrder.ProjectionVersion);
     }
 
     private async Task<LabCommandAcknowledgment> ApplyAuthorizationAsync(
@@ -189,6 +189,22 @@ public sealed class InternalLabOperationsProvider(PSeqOperationsDbContext dbCont
         }
 
         dbContext.LabWorkOrders.Add(workOrder);
+        dbContext.LabOperationsOutboxEvents.Add(new LabOperationsOutboxEvent(
+            command.Metadata.CorrelationId,
+            command.AuthorizationId,
+            workOrder.Id,
+            workOrder.ProjectionVersion,
+            "WorkAuthorized",
+            JsonSerializer.Serialize(new
+            {
+                authorizationVersion = command.AuthorizationVersion,
+                milestone = LabWorkMilestone.AwaitingSpecimens.ToString(),
+                scheduleHealth = LabScheduleHealth.OnTrack.ToString(),
+                currentExpectedCompletionAtUtc = (DateTime?)null,
+                activeCustomerActionCount = 0,
+                customerSafeSummary = (string?)null
+            }, SerializerOptions),
+            acknowledgedAtUtc));
 
         return new LabCommandAcknowledgment(
             command.Metadata.CommandId,
@@ -406,6 +422,26 @@ public sealed class InternalLabOperationsProvider(PSeqOperationsDbContext dbCont
                 : LabCancellationDisposition.ManualReviewRequired;
         var reasonCode = blockedCount == 0 ? null : LabCommandReasonCodes.WorkAlreadyStarted;
 
+        if (workOrder.Status == LabWorkOrderStatus.Cancelled)
+        {
+            dbContext.LabOperationsOutboxEvents.Add(new LabOperationsOutboxEvent(
+                command.Metadata.CorrelationId,
+                workOrder.AuthorizationId,
+                workOrder.Id,
+                workOrder.ProjectionVersion,
+                "WorkCancelled",
+                JsonSerializer.Serialize(new
+                {
+                    authorizationVersion = workOrder.CurrentAuthorizationVersion,
+                    milestone = LabWorkMilestone.Cancelled.ToString(),
+                    scheduleHealth = LabScheduleHealth.Complete.ToString(),
+                    currentExpectedCompletionAtUtc = (DateTime?)null,
+                    activeCustomerActionCount = 0,
+                    customerSafeSummary = (string?)null
+                }, SerializerOptions),
+                acknowledgedAtUtc));
+        }
+
         return new LabCancellationOutcome(
             command.Metadata.CommandId,
             command.Metadata.CorrelationId,
@@ -451,6 +487,25 @@ public sealed class InternalLabOperationsProvider(PSeqOperationsDbContext dbCont
                 commandType,
                 payloadSha256,
                 commandIdConflict);
+        }
+
+        if (dbContext.Database.CurrentTransaction is not null)
+        {
+            var outcome = await applyAsync(payloadJson, payloadSha256, acknowledgedAtUtc);
+            dbContext.LabProviderCommandReceipts.Add(new LabProviderCommandReceipt(
+                metadata.CommandId,
+                metadata.CorrelationId,
+                authorizationId,
+                commandType,
+                payloadSha256,
+                disposition(outcome),
+                workOrderId(outcome),
+                appliedAuthorizationVersion(outcome),
+                reasonCode(outcome),
+                JsonSerializer.Serialize(outcome, SerializerOptions),
+                acknowledgedAtUtc));
+            await dbContext.SaveChangesAsync(cancellationToken);
+            return outcome;
         }
 
         await using var transaction = await dbContext.Database.BeginTransactionAsync(
@@ -592,8 +647,11 @@ public sealed class InternalLabOperationsProvider(PSeqOperationsDbContext dbCont
         status switch
         {
             LabWorkOrderStatus.AwaitingSpecimens => LabWorkMilestone.AwaitingSpecimens,
+            LabWorkOrderStatus.Received => LabWorkMilestone.Received,
             LabWorkOrderStatus.OnHold => LabWorkMilestone.OnHold,
             LabWorkOrderStatus.Processing => LabWorkMilestone.Processing,
+            LabWorkOrderStatus.AwaitingExternalSequencing => LabWorkMilestone.AwaitingExternalSequencing,
+            LabWorkOrderStatus.DataProcessing => LabWorkMilestone.DataProcessing,
             LabWorkOrderStatus.ScientificReview => LabWorkMilestone.ScientificReview,
             LabWorkOrderStatus.ReadyForRelease => LabWorkMilestone.ReadyForRelease,
             LabWorkOrderStatus.Cancelled => LabWorkMilestone.Cancelled,

@@ -178,6 +178,13 @@ export type LabServiceOrder = {
   assignedToUserId?: string | null
   dueAt?: string | null
   requestRevisions?: LabRequestRevision[] | null
+  labMilestone?: string | null
+  labScheduleHealth?: string | null
+  labExpectedCompletionAtUtc?: string | null
+  labCustomerActionCount?: number
+  labCustomerActionSummary?: string | null
+  labPermittedQcProjectionJson?: string | null
+  labReadyForRelease?: boolean
 }
 
 export type ReagentOrderLine = {

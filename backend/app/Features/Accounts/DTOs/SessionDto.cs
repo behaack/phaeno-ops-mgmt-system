@@ -122,6 +122,16 @@ public sealed record SessionCapabilitiesDto
 
     public required bool CanManageLabOperations { get; init; }
 
+    public required bool CanOperateLabWork { get; init; }
+
+    public required bool CanSuperviseLabWork { get; init; }
+
+    public required bool CanManageLabProtocols { get; init; }
+
+    public required bool CanReviewLabWork { get; init; }
+
+    public required bool CanManageLabAccess { get; init; }
+
     public required bool CanManageReagentFulfillment { get; init; }
 
     public required bool CanManageDataAssembly { get; init; }

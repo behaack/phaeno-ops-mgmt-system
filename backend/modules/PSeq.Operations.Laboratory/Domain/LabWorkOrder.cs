@@ -11,8 +11,11 @@ public enum LabAuthorizationSource
 public enum LabWorkOrderStatus
 {
     AwaitingSpecimens,
+    Received,
     OnHold,
     Processing,
+    AwaitingExternalSequencing,
+    DataProcessing,
     ScientificReview,
     ReadyForRelease,
     Cancelled
@@ -31,6 +34,7 @@ public sealed class LabWorkOrder : IAudit, IConcurrency
     public string TurnaroundPolicyKey { get; private set; } = null!;
     public string? OpaqueSubmitterReference { get; private set; }
     public LabWorkOrderStatus Status { get; private set; } = LabWorkOrderStatus.AwaitingSpecimens;
+    public long ProjectionVersion { get; private set; } = 1;
     public DateTime CreatedAt { get; private set; } = DateTime.UtcNow;
     public Guid? CreatedByUserId { get; private set; }
     public DateTime UpdatedAt { get; private set; } = DateTime.UtcNow;
@@ -114,7 +118,52 @@ public sealed class LabWorkOrder : IAudit, IConcurrency
         }
 
         Status = LabWorkOrderStatus.Cancelled;
+        ProjectionVersion++;
     }
+
+    public void RecordMilestone(LabWorkOrderStatus status)
+    {
+        if (Status is LabWorkOrderStatus.Cancelled or LabWorkOrderStatus.ReadyForRelease)
+        {
+            throw new InvalidOperationException("A terminal Lab work order cannot transition.");
+        }
+
+        var allowed = (Status, status) switch
+        {
+            (LabWorkOrderStatus.AwaitingSpecimens, LabWorkOrderStatus.Received) => true,
+            (LabWorkOrderStatus.AwaitingSpecimens, LabWorkOrderStatus.OnHold) => true,
+            (LabWorkOrderStatus.AwaitingSpecimens, LabWorkOrderStatus.Processing) => true,
+            (LabWorkOrderStatus.OnHold, LabWorkOrderStatus.AwaitingSpecimens) => true,
+            (LabWorkOrderStatus.OnHold, LabWorkOrderStatus.Received) => true,
+            (LabWorkOrderStatus.OnHold, LabWorkOrderStatus.Processing) => true,
+            (LabWorkOrderStatus.OnHold, LabWorkOrderStatus.AwaitingExternalSequencing) => true,
+            (LabWorkOrderStatus.OnHold, LabWorkOrderStatus.DataProcessing) => true,
+            (LabWorkOrderStatus.OnHold, LabWorkOrderStatus.ScientificReview) => true,
+            (LabWorkOrderStatus.Received, LabWorkOrderStatus.OnHold) => true,
+            (LabWorkOrderStatus.Received, LabWorkOrderStatus.Processing) => true,
+            (LabWorkOrderStatus.Processing, LabWorkOrderStatus.OnHold) => true,
+            (LabWorkOrderStatus.Processing, LabWorkOrderStatus.AwaitingExternalSequencing) => true,
+            (LabWorkOrderStatus.Processing, LabWorkOrderStatus.DataProcessing) => true,
+            (LabWorkOrderStatus.Processing, LabWorkOrderStatus.ScientificReview) => true,
+            (LabWorkOrderStatus.AwaitingExternalSequencing, LabWorkOrderStatus.OnHold) => true,
+            (LabWorkOrderStatus.AwaitingExternalSequencing, LabWorkOrderStatus.DataProcessing) => true,
+            (LabWorkOrderStatus.DataProcessing, LabWorkOrderStatus.OnHold) => true,
+            (LabWorkOrderStatus.DataProcessing, LabWorkOrderStatus.ScientificReview) => true,
+            (LabWorkOrderStatus.ScientificReview, LabWorkOrderStatus.OnHold) => true,
+            (LabWorkOrderStatus.ScientificReview, LabWorkOrderStatus.Processing) => true,
+            (LabWorkOrderStatus.ScientificReview, LabWorkOrderStatus.ReadyForRelease) => true,
+            _ => false
+        };
+        if (!allowed)
+        {
+            throw new InvalidOperationException($"A Lab work order cannot transition from {Status} to {status}.");
+        }
+
+        Status = status;
+        ProjectionVersion++;
+    }
+
+    public void AdvanceProjectionVersion() => ProjectionVersion++;
 
     public void MarkCreated(DateTime utcNow, Guid? actorUserId)
     {

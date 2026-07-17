@@ -51,13 +51,18 @@ The backend targets .NET 10 as a modular monolith:
   reference API infrastructure, EF, Laboratory entities, vendors, or the
   unresolved pipeline/file domain.
 - `modules/PSeq.Operations.Laboratory/Domain`: Laboratory-owned work order,
-  immutable authorization version, specimen/accession, append-only execution
-  event, scientific approval, and durable command-receipt foundations. Their EF
+  immutable authorization version, roles, specimen/accession and physical
+  lineage, controlled protocols and execution, materials and equipment,
+  libraries and batches, NGS sendouts/custody, exceptions, append-only events,
+  scientific approval, and durable command-receipt/outbox records. Their EF
   mappings are explicit and have only intra-`lab_ops` foreign keys.
 - `app/Features/LabOperations`: the API composition adapter implementing the
   Commercial-owned provider port over Laboratory entities. Identical command
   retries replay their durable outcome; unsafe amendments and cancellations
-  require manual review rather than rewriting received or active work.
+  require manual review rather than rewriting received or active work. The
+  role-aware operator API and hosted outbox dispatcher compose Lab writes with
+  Commercial-owned authorization, milestone, exception, timing, and permitted-
+  QC projections without adding module references.
 - `Features/Health`: health endpoint.
 - `Infrastructure/Api`: response envelope, metadata, error mapping, and response filter.
 - `Infrastructure/Persistence`: the single `PSeqOperationsDbContext`, mappings, save interceptors, and PostgreSQL configuration.
@@ -70,10 +75,13 @@ Laboratory. Extracted account, relationship, data-provisioning, commercial
 configuration, Partner kit, request-revision, quote, workflow, integration, and
 notification rules, ports, and external download audit therefore remain usable
 independently of the current HTTP, EF, Clerk, QuickBooks, and Postmark adapters.
-The Lab Operations provider port follows the same dependency direction. The
-registered internal provider writes only Laboratory-owned records and exposes a
-provider-neutral projection query. No current customer workflow calls it, and
-Commercial projection persistence and event delivery remain future work.
+The Lab Operations provider port follows the same dependency direction. Quote
+acceptance creates the Commercial authorization and invokes the internal
+provider in one serializable database transaction. Approved cancellation also
+reaches Lab before Commercial commits the decision. Lab writes produce durable,
+versioned events; the hosted dispatcher applies idempotent Commercial
+projections and receipts. Ready for release and reviewer-permitted QC cross this
+boundary, but no Lab transition creates or publishes a file.
 
 ## Identity and authorization
 
@@ -83,6 +91,12 @@ The current organization kinds are `Phaeno`, `Prospect`, `Customer`, and
 `Partner`. A Prospect is a tenant phase that can convert in place to Customer or
 Partner while retaining its organization id, memberships, and curated-data
 grants. `Distributor` is not a separate product term.
+
+Phaeno laboratory permissions are additive role assignments stored in
+`lab_ops`: Operator, Supervisor, Protocol Administrator, Scientific Reviewer,
+and Lab Operations Administrator. Platform administrators retain bootstrap
+access. Customers and Partners never receive direct Lab workspace access;
+their APIs read only Commercial-owned projections.
 
 The first organization-data-provisioning slice includes a minimal Phaeno-only
 source-sample registry. The registry holds internal sample metadata,
@@ -148,7 +162,8 @@ and Zod own forms and validation. Implemented routes include the dashboard,
 organization administration, Phaeno users, invitation acceptance, Phaeno data
 provisioning and source workspaces, tenant Data Library, Customer lab services,
 Partner reagent ordering, Partner data assembly, Phaeno order operations and
-configuration, and the in-portal documentation system.
+configuration, dedicated Phaeno Lab operations list/detail workspaces, and the
+in-portal documentation system.
 
 Invitation acceptance and the scientific, provisioning, order, and organization
 administration workflows use connected API clients. The standalone user
@@ -171,14 +186,18 @@ use a backend index with authenticated audience and locale filtering.
 - Backend database: `ConnectionStrings:DefaultConnection` /
   `ConnectionStrings__DefaultConnection`; the verified local Development
   database is `phaeno_ops`.
-- PostgreSQL business schemas: Commercial/current-flow entities target
-  `commercial_ops`; Laboratory foundation entities target `lab_ops`; no default
+- PostgreSQL business schemas: Commercial/current-flow and Lab projection
+  entities target `commercial_ops`; Laboratory execution entities target
+  `lab_ops`; no default
   schema is used.
 - EF migration history: `public.__ef_migrations_history`.
 - Migration checkpoint: the disposable Development database was rebuilt on
   2026-07-16 from `20260716220428_InitialPSeqOperations`, renamed to
-  `phaeno_ops`, and extended by
-  `20260716223048_AddLabOperationsFoundation`. It contains no `portal` schema.
+  `phaeno_ops`, and extended by `20260716223048_AddLabOperationsFoundation`,
+  `20260716225818_AddLabProviderCommandReceipts`,
+  `20260716234233_CompleteLabOperations`, and
+  `20260716235343_AddLabQcProjection`, and
+  `20260717000026_EnforceLabLibraryLineage`. It contains no `portal` schema.
 - External identity: `Clerk` configuration.
 - Invitation delivery: Postmark when configured; logging sender otherwise.
 - Data provisioning: `DataProvisioning` storage root, size limit, environment

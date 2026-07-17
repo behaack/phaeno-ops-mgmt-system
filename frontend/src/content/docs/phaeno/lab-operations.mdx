@@ -1,0 +1,57 @@
+# Laboratory operations
+
+Use **Lab operations** after a Customer accepts a laboratory quote. Quote acceptance records the Commercial authorization and creates the linked Lab work order together; do not create Lab work manually to repair an order.
+
+## Roles and access
+
+Laboratory roles are additive Phaeno-only assignments:
+
+- **Lab Operator** records receipt, accession, containers, execution, consumption, equipment use, libraries, batching, sendouts, custody, and exceptions.
+- **Lab Supervisor** can perform operator work, approve material QC, and resolve exceptions.
+- **Protocol Administrator** authors, approves, activates, and retires controlled protocol versions.
+- **Scientific Reviewer** records scientific approval after execution and blocking-exception gates pass.
+- **Lab Operations Administrator** can perform all Lab actions and assign Lab roles.
+
+Platform administrators retain bootstrap access. Assign the narrowest roles needed for a person's work. Separation of operator and reviewer is supported but is not mandatory for every service.
+
+## Receive and accession specimens
+
+Open the authorized work order and record physical receipt against the submitted specimen identity. Accession only after receipt. The accession action creates the initial submitted-specimen container and its first label-print record.
+
+Choose a unique accession number and barcode. Record location, quantity and unit when tracked, and an optional retention date. Reprints increment the label history; they do not replace the container identity. Create child containers for aliquots, prepared reagents, libraries, or other derived material and select their parent to preserve lineage.
+
+Record **Accepted**, **On hold**, or **Rejected** after accession. Holds and rejections require a controlled reason code. When all expected specimens have an intake decision, the work order reaches **Received**.
+
+## Control and execute protocols
+
+Protocol Administrators create a protocol, add a JSON definition, approve the draft, and activate it. Activating a version retires the previously active version. Definitions should contain ordered and repeatable steps, optional or conditional rules, typed captures, inputs and outputs, material and equipment requirements, roles, and QC gates.
+
+Assign only an active version to work. The execution remains pinned to that version after later protocol changes. Start the execution before recording material consumption or equipment use. Complete it with captured results JSON and any deviation note.
+
+Use only material lots with **Passed** or **Approved exception** QC. The portal blocks expired lots, unit mismatches, and consumption above available quantity. Record equipment only when it is active and calibration is current at the time used.
+
+## Prepare libraries and batches
+
+Create the physical library container before creating the library record. Link the source container, library container, specimen, and completed preparation execution. Record library QC; only a passed library can enter a batch.
+
+A batch may contain libraries from different organizations and Commercial orders. Add only the required library identifiers; do not copy customer-confidential commercial details into batch notes or manifests. Start the batch after membership is complete.
+
+For outsourced NGS, create a provider-neutral sendout with the provider name, optional provider reference, expected completion, and a JSON manifest. Advance the sendout through **Shipped**, **Received by provider**, **Sequencing**, and **Complete**. Add custody events as responsibility or location changes. The sendout records operational facts only: raw files, pipeline orchestration, intermediates, provenance, storage, and final-output handoff are not implemented here.
+
+## Manage exceptions
+
+Choose **Internal** for issues that require no Customer action. Choose **Customer action required** only when Commercial should present a safe request to the Customer. Provide a customer-safe summary that states the needed action without disclosing internal scientific investigation details.
+
+Blocking open exceptions prevent scientific approval. A Supervisor resolves an exception with a durable resolution note. Commercial receives only the safe summary, active action count, milestone, schedule health, and expected timing projection.
+
+## Scientific approval and release boundary
+
+Move completed work into **Scientific review**. Before approval, confirm that assigned executions are completed or abandoned and all blocking exceptions are resolved. The reviewer records the release-definition key and version plus the permitted QC projection.
+
+Approval moves the Lab work order to **Ready for release**. This is a scientific handoff to Commercial, not publication. It does not create, attach, upload, or release a result file. Existing Commercial file scanning, payment or credit, and publication gates still control what a Customer can download.
+
+## Cancellation and recovery
+
+A Customer cancellation request stays in Commercial review until Phaeno decides it. When Phaeno approves cancellation, the portal asks Lab to cancel unreceived work before Commercial commits the decision. Started work requires a separate manual or specimen-level decision; do not force the Commercial order to cancelled when Lab reports that work already started.
+
+Lab projection events and Commercial receipts are durable and idempotent. If a Customer milestone is delayed, refresh the record and allow the dispatcher to retry. Do not recreate authorization, duplicate a work order, or manually copy Lab data into Commercial tables.

@@ -46,10 +46,13 @@ transition.
   `20260716220428_InitialPSeqOperations` baseline applied to the rebuilt
   Development database. The former feature migrations were intentionally
   replaced during the approved disposable-database reset.
-- The Commercial-owned provider-neutral Lab Operations v1 core contract and
-  registered internal provider now exist, and six Laboratory-owned tables live
-  in `lab_ops`. No current order flow calls the provider. Existing mixed
-  laboratory records remain authoritative in `commercial_ops` until routing and
+- The Commercial-owned provider-neutral Lab Operations v1 contract, registered
+  internal provider, atomic quote-acceptance/cancellation routing, durable
+  Commercial projections, and complete internal Lab operator workflow now
+  exist. Twenty-two Laboratory-owned tables live in `lab_ops`; Commercial
+  authorization/projection/receipt records remain in `commercial_ops`. Existing
+  customer order, quote, file, payment, and publication records remain
+  authoritative in `commercial_ops` until routing and
   a data transition are separately implemented.
 - Verification state: backend build/tests, frontend lint/typecheck/unit tests,
   client/SSR production build, desktop/mobile Playwright journeys, and a live
@@ -282,12 +285,17 @@ commercial direction is implemented and verified.
   The selected date is visible to the Customer and the override is audited.
 - Issuing a Customer quote creates or synchronizes the corresponding QuickBooks
   estimate through a durable integration boundary.
-- Customer quote acceptance authorizes laboratory work but does not immediately
-  create an invoice. Phaeno converts or synchronizes the accepted estimate to a
-  QuickBooks invoice when the portal job is marked completed.
+- Customer quote acceptance atomically records the Commercial placement and
+  authorizes the linked Lab work; either both commit or neither commits. It does
+  not immediately create an invoice. Phaeno converts or synchronizes the
+  accepted estimate to a QuickBooks invoice when the portal job is marked
+  completed.
 - Scientific completion and Customer release are separate states. Completing
   laboratory/data processing may make results internally ready without making
   them downloadable by the Customer.
+- Customer-safe Lab milestones, schedule health, expected timing, action counts
+  and summaries, and reviewer-permitted QC are read from Commercial-owned
+  projections. Ready for release never creates or publishes a result file.
 - A Customer with approved credit uses Net 30 terms. Phaeno may release completed
   results when they are scientifically ready without waiting for invoice payment.
 - A Customer without approved credit cannot receive or download results until

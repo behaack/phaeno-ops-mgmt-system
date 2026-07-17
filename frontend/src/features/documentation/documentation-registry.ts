@@ -21,6 +21,7 @@ import PartnerStatusesAndTroubleshooting from '#/content/docs/en-US/partner/stat
 import PhaenoConfigurationAndRecovery from '#/content/docs/phaeno/configuration-and-recovery.mdx'
 import PhaenoDataProvisioningAndAccounts from '#/content/docs/phaeno/data-provisioning-and-accounts.mdx'
 import PhaenoGettingStarted from '#/content/docs/phaeno/getting-started.mdx'
+import PhaenoLabOperations from '#/content/docs/phaeno/lab-operations.mdx'
 import PhaenoOrderOperations from '#/content/docs/phaeno/order-operations.mdx'
 import PhaenoOrganizationAndUserAdministration from '#/content/docs/phaeno/organization-and-user-administration.mdx'
 import PhaenoStatusesAndRecovery from '#/content/docs/phaeno/statuses-and-recovery.mdx'
@@ -331,6 +332,17 @@ export const documentationEntries: readonly DocumentationEntry[] = [
     order: 50,
     reviewedAt: '2026-07-16',
     Content: PhaenoConfigurationAndRecovery,
+  },
+  {
+    audience: 'phaeno',
+    locale: null,
+    slug: 'lab-operations',
+    title: 'Laboratory operations',
+    summary: 'Accession specimens, execute controlled protocols, manage batches and sendouts, and record scientific release readiness.',
+    section: 'Platform operations',
+    order: 45,
+    reviewedAt: '2026-07-16',
+    Content: PhaenoLabOperations,
   },
   {
     audience: 'phaeno',

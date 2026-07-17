@@ -218,6 +218,37 @@ Confirmed Prospect rules:
   laboratory analysis, data processing, and release of resulting data through
   the portal.
 - Customers can track the progress of their samples through the portal.
+- Customer quote acceptance atomically authorizes the corresponding Lab work;
+  a failed Lab authorization records no accepted quote.
+- Lab receipt, accession, physical lineage, protocol execution, materials,
+  equipment, library/batch membership, NGS sendout/custody, internal exceptions,
+  and scientific approval are Phaeno-only records. Customers see only the
+  Commercial-owned safe milestone, schedule health, expected timing, action
+  summary, reviewer-permitted QC, and released deliverables.
+- Phaeno Lab roles are additive: Operator, Supervisor, Protocol Administrator,
+  Scientific Reviewer, and Lab Operations Administrator. Platform
+  administrators retain bootstrap access; external users have no Lab role.
+- Protocol execution pins one active version. Later protocol changes never
+  rewrite active or historical execution.
+- Material consumption requires passed or exception-approved QC, a non-expired
+  lot, a matching tracked unit, and sufficient available quantity. Equipment
+  use requires an active asset with current calibration.
+- Libraries retain source-container, specimen, preparation-execution, and
+  output-container lineage. A cross-order batch may contain multiple
+  organizations, but its membership and other-organization identifiers never
+  enter a Customer projection.
+- Outsourced NGS records are provider-neutral operational metadata and custody
+  evidence. They do not own raw files, pipeline orchestration, intermediate
+  artifacts, scientific storage, provenance, retention, or output handoff.
+- A Customer-action-required Lab exception has a separate Customer-safe
+  summary. Internal descriptions never project to Commercial. Open blocking
+  exceptions prevent scientific approval.
+- Scientific approval moves Lab work to Ready for release and may project only
+  reviewer-permitted QC. It does not upload, attach, release, or publish a file;
+  existing Commercial scan, credit/payment, and publication gates still apply.
+- An approved Commercial cancellation reaches Lab before the Commercial order
+  commits cancellation. Received or started work requires manual review rather
+  than forced history rewriting.
 - A Partner can place reagent orders.
 - A Partner can submit data to Phaeno for data assembly and later download the
   assembled data/results for availability to the Partner's customers.

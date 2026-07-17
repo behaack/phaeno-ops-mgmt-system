@@ -66,6 +66,11 @@ export type SessionCapabilities = {
   canManageOrderConfiguration: boolean
   canQuoteLabServiceWork: boolean
   canManageLabOperations: boolean
+  canOperateLabWork: boolean
+  canSuperviseLabWork: boolean
+  canManageLabProtocols: boolean
+  canReviewLabWork: boolean
+  canManageLabAccess: boolean
   canManageReagentFulfillment: boolean
   canManageDataAssembly: boolean
   canManageOrderIntegrations: boolean

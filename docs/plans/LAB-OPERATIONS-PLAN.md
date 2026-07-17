@@ -11,13 +11,16 @@ deployment, or production activation.
 ## Status
 
 - Planning direction approved on 2026-07-16.
-- Development state: the separate Lab Operations persistence foundation and
-  internal provider are implemented, but no Commercial or operator workflow
-  invokes the provider yet. Existing
-  customer order, quote, submission, status, and release behavior remains in
-  Order Management under `commercial_ops`. Six Laboratory-owned work,
-  authorization, specimen/accession, event, scientific-approval, and durable
-  command-receipt tables live in `lab_ops`.
+- Development state: implementation is complete for the approved internal Lab
+  Operations scope. Customer quote acceptance atomically creates the
+  Commercial authorization and Laboratory work order; approved cancellation
+  reaches Lab before Commercial commits it. Additive Lab roles, the operator
+  workspace, durable Lab-to-Commercial projections, receipt/accession and
+  physical lineage, controlled protocols and execution, materials and
+  equipment, libraries and cross-order batches, provider-neutral NGS sendouts
+  and custody, exceptions, scientific approval, and the Ready-for-release
+  handoff are implemented. Current Commercial file scanning, payment/credit,
+  and publication remain separate.
 - Target state: Phaeno operates a fit-for-purpose internal Lab Operations
   module behind a provider-neutral boundary. Commercial Operations remains
   customer-facing and can later replace the internal module with a third-party
@@ -40,11 +43,10 @@ deployment, or production activation.
 - Phase 0 Step 3 is complete. The provider-neutral version 1
   Commercial-to-Lab Operations boundary is recorded in
   `LAB-OPERATIONS-CONTRACT.md`; its Commercial-owned core types and outbound
-  provider port are implemented. The Laboratory persistence foundation is also
-  implemented, and the registered internal provider handles durable
-  authorization/amendment/cancellation and projection lookup. Event delivery,
-  operator workspace, Laboratory roles, and customer-workflow connection do not
-  exist yet. Four opt-in PostgreSQL conformance tests now cover the provider's
+  provider port are implemented. The registered internal provider handles
+  durable authorization/amendment/cancellation and projection lookup. Event
+  delivery, the operator workspace, Laboratory roles, and the Customer
+  workflow connection are now implemented. Four opt-in PostgreSQL conformance tests cover the provider's
   persistence, idempotency, amendment, cancellation, projection, and isolation
   behavior; they have a clean build and await an explicitly requested database
   execution.
@@ -58,7 +60,10 @@ deployment, or production activation.
   slices plus the external download audit are extracted into Commercial. Mixed
   Commercial/Laboratory/pipeline records remain deferred. The disposable
   Development reset, clean `InitialPSeqOperations` migration, database rebuild,
-  bootstrap, Reference Journey, and verification suites completed on 2026-07-16.
+  bootstrap, Reference Journey, and baseline verification suites completed on
+  2026-07-16. The additive `CompleteLabOperations` and `AddLabQcProjection`
+  migrations plus `EnforceLabLibraryLineage` are applied to the local
+  `phaeno_ops` database.
 
 ## Goal
 
@@ -536,7 +541,9 @@ Included:
 - outsourced NGS batches, manifests, custody, and provider references
 - holds, exceptions, deviations, rework, and scientific approval
 - stable milestone projection to Commercial Operations
-- controlled publication of selected QC and opaque available deliverables
+- controlled projection of reviewer-permitted QC to Commercial Operations;
+  customer deliverable availability remains at the existing Commercial/file
+  boundary
 
 Explicitly excluded or deferred:
 
@@ -581,26 +588,28 @@ remove competing internal write paths. The durable strategy is recorded in
 
 - Completed inventory and ownership-classification evidence is maintained in
   `LAB-OPERATIONS-INVENTORY.md`.
-- The completed planned version 1 provider contract is maintained in
+- The completed version 1 provider contract is maintained in
   `LAB-OPERATIONS-CONTRACT.md`.
 - The completed clean reset and restructuring design is maintained in
   `PSEQ-OPERATIONS-MIGRATION-PLAN.md`.
-- Observe and document the real receipt, accession, reagent-preparation,
-  library-preparation, batching, send-out, exception, and review workflows.
-- Define the minimum data capture that protects scientific work without adding
-  unnecessary operator burden.
-- Inventory existing `LabServiceOrder`, `LabSample`, accession, QC, and release
-  records in Order Management.
-- Define barcode hardware, label, and degraded-mode needs.
-- Keep the pipeline and scientific file-management boundary explicitly open.
+- Complete for development: document the evidence-backed receipt, accession,
+  reagent-preparation, library-preparation, batching, send-out, exception, and
+  review workflows. Representative bench observation remains a production
+  activation gate.
+- Complete: define the minimum data capture that protects scientific work
+  without adding unnecessary operator burden.
+- Complete: inventory existing `LabServiceOrder`, `LabSample`, accession, QC,
+  and release records in Order Management.
+- Production gate: validate barcode hardware, labels, scanning, and degraded-
+  mode procedures with representative equipment.
+- Preserved boundary: keep pipeline and scientific file-management ownership
+  explicitly open.
 
 ### Phase 1 - Module and Contract Foundation
 
-- Current checkpoint: the Commercial-owned provider-neutral v1 core contract,
-  explicit schema guards, first Laboratory-owned persistence models, and the
-  registered idempotent internal provider are implemented without a
-  current-workflow connection. The verified local Development database is
-  `phaeno_ops`.
+- Complete: the Commercial-owned provider-neutral v1 core contract, explicit
+  schema guards, Laboratory persistence, registered idempotent internal
+  provider, current-workflow connection, and local `phaeno_ops` database.
 - Complete: establish Commercial and Laboratory module write boundaries.
 - Complete: add the first Laboratory-owned work, immutable authorization,
   specimen/accession, execution-event, and scientific-approval entities through
@@ -612,40 +621,54 @@ remove competing internal write paths. The durable strategy is recorded in
 - Created: add opt-in database-backed provider conformance coverage with
   run-specific cleanup. A passing execution against the migrated reference
   database remains a verification gate.
-- Implement internal laboratory roles and authorization.
-- Persist Commercial-owned milestone/exception projections and add durable
+- Complete: implement internal laboratory roles and authorization.
+- Complete: persist Commercial-owned milestone/exception projections and add durable
   Lab-to-Commercial event delivery.
-- Extend the existing module-direction architecture tests to prevent direct
+- Complete: extend the existing module-direction architecture tests to prevent direct
   cross-module persistence access as Laboratory entities are introduced.
-- Preserve current customer-facing behavior during the transition.
+- Complete: preserve current customer-facing behavior while adding the
+  customer-safe Lab milestone, schedule, action, and permitted-QC projection.
 
 ### Phase 2 - Intake, Protocols, and Materials
 
-- Implement receipt, accession, containers, barcodes, and intake disposition.
-- Implement protocol authoring, approval, versioning, and execution.
-- Implement material, prepared-reagent, lot, equipment, and QC records.
-- Validate workflows with representative PSeq work before production use.
+- Complete: receipt, accession, containers, barcodes, label history, optional
+  retention, and intake disposition.
+- Complete: protocol authoring, approval, activation/retirement, pinned
+  versioning, and execution.
+- Complete: material, prepared-reagent, lot, consumption, equipment,
+  calibration, and QC records.
+- Production gate: validate minimum fields, labels, scanners, and degraded-mode
+  procedures with representative PSeq bench work before activation.
 
 ### Phase 3 - Library Preparation and NGS Send-Out
 
-- Implement library lineage and preparation execution.
-- Implement internal batching across authorized work orders.
-- Implement NGS send-out manifests, custody, provider identifiers, timing, and
+- Complete: library lineage and preparation execution.
+- Complete: internal batching across authorized work orders.
+- Complete: provider-neutral NGS send-out manifests, custody, provider identifiers, timing, and
   exception handling.
-- Prove tenant-safe status projection for cross-customer batches.
+- Complete in the application boundary: projections contain only authorization,
+  stable milestone/schedule, action count, customer-safe summary, expected
+  timing, and reviewer-permitted QC; batch membership and other-organization
+  identifiers remain Lab-only. Database-backed two-tenant proof remains a test
+  execution gate.
 
 ### Phase 4 - Review and Customer Publication
 
-- Implement scientific review and ready-for-release handoff.
-- Implement versioned, whitelisted QC and deliverable publication.
-- Implement correction, notification, and immutable release history.
-- Connect only to the output-availability mechanism approved by the future
-  pipeline and file-management decision.
+- Complete: scientific review and Ready-for-release handoff.
+- Complete on the Lab side: versioned release definitions and reviewer-
+  whitelisted QC project to Commercial. No file or deliverable is created or
+  published by the Lab transition.
+- Complete for current scope: correction remains durable through exceptions,
+  resolution, work events, projection receipts, and existing Commercial
+  notification/release history.
+- Preserved boundary: output availability is not connected until the future
+  pipeline and file-management decision is approved.
 
-Each remaining phase requires separately approved implementation scope and
-acceptance criteria. The six-table `lab_ops` foundation/provider store now
-exists; do not add more Laboratory tables or migrate current Commercial records
-merely because this plan exists.
+The Product Owner authorized completion of the remaining phases on 2026-07-16.
+The application scope is complete. Production activation still requires the
+explicit bench-work, label/scanner, external-provider, database-backed test,
+deployment, and content gates recorded here; those gates do not expand Lab into
+the unresolved pipeline or scientific file domain.
 
 ## Acceptance Outcomes
 
@@ -686,11 +709,11 @@ targets are imposed.
 6. **Stricter quality or regulatory controls:** require a separate intended-use,
    compliance, cost, and validation decision.
 
-## Planning and Documentation Dependencies
+## Ongoing Planning and Documentation Maintenance
 
-When implementation is authorized:
+For future Lab Operations changes:
 
-- update `ORDER-MANAGEMENT-PLAN.md` to keep commercial orders separate from
+- keep `ORDER-MANAGEMENT-PLAN.md` aligned so commercial orders remain separate from
   laboratory work orders
 - update `FILE-MANAGEMENT-PLAN.md` only after the scientific file boundary is
   approved

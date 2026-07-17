@@ -84,6 +84,8 @@ builder.Services.AddSingleton<IOperationalFileScanner, EnvironmentOperationalFil
 builder.Services.AddScoped<OrderRequestContext>();
 builder.Services.AddScoped<OrderIdempotencyService>();
 builder.Services.AddScoped<ILabOperationsProvider, InternalLabOperationsProvider>();
+builder.Services.AddScoped<LabOperationsRequestContext>();
+builder.Services.AddHostedService<LabOperationsProjectionDispatcher>();
 builder.Services.AddHttpClient("QuickBooksOAuth");
 builder.Services.AddSingleton(services => new QuickBooksAccessTokenProvider(
     services.GetRequiredService<IHttpClientFactory>().CreateClient("QuickBooksOAuth"),

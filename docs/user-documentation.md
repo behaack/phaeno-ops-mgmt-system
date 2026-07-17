@@ -13,14 +13,14 @@ The portal help system is authenticated product documentation. It explains curre
 
 ## Current coverage baseline
 
-Each supported audience has six maintained guides. The corpus covers the implemented product as follows:
+Each supported audience has a maintained guide set. The corpus covers the implemented product as follows:
 
 | Audience | Onboarding and access | Primary workflows | Data and commercial rules | Status and recovery |
 | --- | --- | --- | --- | --- |
 | Prospect | Getting started; account and access | Data Library review and exact-version downloads | Version-specific grants, download history, governance, membership, and relationship transition | Grant, package, quarantine, retirement, checksum, organization, and access troubleshooting |
 | Customer | Getting started; account and access | Laboratory requests, samples, quotes, and cancellations | Results, billing, credit/payment release, Data Library, and membership | Job, sample, quote, scan, payment, and result troubleshooting |
 | Partner | Getting started; account and access | Reagent ordering and data assembly | Negotiated reagent pricing, job quotes, QuickBooks documents, Data Library, and membership | Reagent, shipment, assembly, scan, payment, and output troubleshooting |
-| Phaeno | Operations orientation; organization and user administration | Data provisioning, governance, Customer lab, Partner reagent, and Partner assembly operations | Scientific and commercial configuration, QuickBooks synchronization, credit, quotes, and release rules | Queue triage and safe integration, file, release, notification, and access recovery |
+| Phaeno | Operations orientation; organization and user administration | Data provisioning, governance, Customer order authorization, dedicated laboratory execution, Partner reagent, and Partner assembly operations | Laboratory roles, protocol control, lineage, materials, equipment, sequencing sendouts, scientific readiness, commercial configuration, QuickBooks synchronization, credit, quotes, and release rules | Queue triage and safe integration, projection, file, release, notification, and access recovery |
 
 This is the documentation baseline for currently implemented workflows. A feature is not documentation-complete when its behavior, permissions, status transitions, business rules, failure states, or support path have changed without a corresponding guide update. Production deployment procedures and confidential incident runbooks remain separate operational artifacts; browser-bundled help must not contain secrets or restricted evidence.
 

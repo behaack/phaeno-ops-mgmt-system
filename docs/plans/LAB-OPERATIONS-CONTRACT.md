@@ -1,6 +1,6 @@
 # Commercial to Lab Operations Contract
 
-This document defines the planned version 1 application contract between
+This document defines the version 1 application contract between
 Commercial Operations and Lab Operations.
 
 It is an architecture and implementation-planning artifact only. It does not
@@ -17,11 +17,12 @@ external integrations, or deployments.
   commands, acknowledgments and cancellation outcomes, work/exception
   projections, stable enums and reason codes, the generic event envelope, and
   the Commercial-owned `ILabOperationsProvider` port.
-- Laboratory persistence foundation: work orders, immutable authorization
-  versions, specimen/accession records, execution events, scientific approvals,
-  and durable provider-command receipts are implemented in `lab_ops` by
-  `20260716223048_AddLabOperationsFoundation` and
-  `20260716225818_AddLabProviderCommandReceipts`.
+- Laboratory persistence: work orders, immutable authorization versions,
+  specimen/accession and container records, protocols and execution, materials,
+  equipment, libraries, operational batches, sendouts and custody, exceptions,
+  scientific approvals, provider-command receipts, and the durable outbox are
+  implemented in `lab_ops`. Commercial authorizations, customer-safe
+  projections, and event receipts are implemented in `commercial_ops`.
 - Initial provider: `InternalLabOperationsProvider` is registered in the API and
   implements durable command replay, authorization creation/amendment,
   cancellation feasibility, and current work projection lookup.
@@ -31,15 +32,19 @@ external integrations, or deployments.
   lookup, and organization isolation. They require the explicitly configured
   migrated reference database and were compiled, but not executed, in this
   slice.
-- Not yet implemented: Commercial projection persistence, event payload
-  families/delivery, Laboratory role enforcement, operator execution workflows,
-  or a connection to current customer workflows.
+- Completed application integration: accepted customer quotes create the
+  Commercial authorization and Lab work atomically; approved cancellations are
+  checked by Lab before Commercial commits; durable events update idempotent,
+  monotonic Commercial projections; Lab roles protect the operator workflows;
+  and the customer order detail reads only customer-safe progress, action, and
+  reviewer-permitted QC fields.
 - Future provider: a third-party LIMS adapter implementing the same
   application-facing semantics.
 - Automated data-pipeline and scientific file-management ownership remains a
   major TBD. This contract does not resolve or silently absorb it.
-- Current `LabServiceOrder`, `LabSample`, and result-release code remains
-  authoritative until a separate restructuring and migration is approved.
+- Existing Commercial result scanning and release remain authoritative for file
+  publication. `ReadyForRelease` is scientific readiness only and never makes a
+  file customer-visible.
 
 ## Purpose
 
@@ -375,6 +380,11 @@ public sealed record LabWorkProjection(
 `ProjectionVersion` increases monotonically so duplicate or out-of-order events
 cannot move Commercial state backwards.
 
+The persisted Commercial projection also carries only the controlled
+customer-action summary and reviewer-permitted QC JSON needed by the current
+Portal view. It does not carry internal notes, raw QC, batch membership, or file
+references.
+
 ## Milestones and Schedule Health
 
 Milestones are deliberately coarse and stable:
@@ -523,7 +533,7 @@ public sealed record LabOperationsEventEnvelope<TPayload>(
     TPayload Payload);
 ```
 
-Planned event families:
+Version 1 event families:
 
 - `LabWorkMilestoneChanged`
 - `LabScheduleChanged`
@@ -557,19 +567,26 @@ contract.
 
 `InternalLabOperationsProvider` now:
 
-- validate the command independently of Commercial UI validation
-- create or match `LabWorkOrder` in `lab_ops`
-- preserve authorization versions
-- map submitted specimen IDs to future accessions without converting declared
+- validates commands independently of Commercial UI validation
+- creates or matches `LabWorkOrder` in `lab_ops`
+- preserves authorization versions
+- maps submitted specimen IDs to accessions without converting declared
   facts into observed facts
-- store the original command outcome and payload hash so identical retries
+- stores the original command outcome and payload hash so identical retries
   return the original response and conflicting command-ID reuse is rejected
-- automatically amend or cancel only while affected specimens remain unreceived
-- return a provider-neutral current work projection for reconciliation
+- automatically amends or cancels only while affected specimens remain
+  unreceived
+- returns a provider-neutral current work projection for reconciliation
+- participates in the caller's transaction so quote acceptance cannot leave
+  Commercial authorization and Lab work out of sync
+- writes durable outbox events that the registered dispatcher applies to
+  Commercial-owned projections with event-receipt and projection-version guards
 
-It does not yet publish projections into Commercial-owned read models, deliver
-events, enforce future Laboratory operator roles, or receive commands from the
-current customer order flow.
+The internal Lab Operations API separately enforces additive operator,
+supervisor, protocol-administrator, scientific-reviewer, and
+operations-administrator roles. Platform administrators retain bootstrap
+access. These roles are implementation detail and do not widen the provider
+contract.
 
 Commercial code references the contract assembly or neutral application types,
 not `PSeq.Operations.Laboratory` EF entities.
@@ -616,17 +633,17 @@ Lab Operations to Commercial must not send:
 - vendor credentials, raw vendor payloads, or vendor error messages
 - unresolved raw, intermediate, or output file-management detail
 
-## Contract Tests Required Before Implementation Is Complete
+## Contract Verification
 
 The current structural and domain tests prove that the core contract is
 Commercial-owned, transport-neutral, defaults to contract version 1,
 represents partial cancellation, carries no commercial-pricing,
 Customer/Partner-branch, vendor, pipeline, or file implementation fields, and
 that the internal adapter implements the provider port. Database-backed
-provider conformance coverage is implemented as opt-in PostgreSQL tests. A
-passing execution against the migrated reference database remains required
-before this transition is complete. Current structural, domain, and provider
-coverage proves:
+provider conformance coverage is implemented as opt-in PostgreSQL tests. Those
+database-backed tests have compiled but were not executed in this slice because
+test execution was not requested. The implemented coverage is intended to
+prove:
 
 - Customer and Partner authorizations produce indistinguishable Lab behavior
 - a Partner authorization works without downstream customer identity
@@ -640,8 +657,8 @@ coverage proves:
   batch participation
 - no pipeline/file ownership is inferred by the v1 types
 
-When durable Lab-to-Commercial event delivery and Commercial projection
-persistence are implemented, additional conformance coverage must prove:
+Additional automated coverage remains planned for the now-implemented durable
+event and projection path:
 
 - newer projections cannot be overwritten by older events
 - customer-action exceptions never expose internal notes automatically
@@ -653,20 +670,11 @@ persistence are implemented, additional conformance coverage must prove:
 
 This contract does not define:
 
-- Laboratory operator commands and screens
-- protocol, material, equipment, batch, QC, or accession entity schemas
-- exact persistence tables for future provider mappings, event delivery, or
-  Commercial projections; durable internal command receipts are implemented
-- the development reset from `portal` to the clean `commercial_ops` baseline,
-  which is governed by `PSEQ-OPERATIONS-MIGRATION-PLAN.md` and completed on
-  2026-07-16
-- the `lab_ops` persistence foundation, which is governed by
-  `PSEQ-OPERATIONS-MIGRATION-PLAN.md` and implemented by the additive
-  `AddLabOperationsFoundation` migration
 - pipeline/file-management ownership or integration
 - a third-party LIMS vendor or vendor payload mapping
 - authentication changes or new dependencies
 
-The remaining items are later planning and implementation steps. The registered
-provider does not make current customer routing, operator workflows, event
-delivery, or a future external LIMS adapter implemented.
+The first two items are activation and future-integration boundaries, not gaps
+in the completed internal Lab Operations application scope. The registered
+provider and current workflows do not make a future external LIMS adapter or
+pipeline/file integration implemented.

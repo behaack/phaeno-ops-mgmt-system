@@ -2,6 +2,7 @@
 using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 using PhaenoPortal.App.Infrastructure.Persistence;
@@ -11,9 +12,11 @@ using PhaenoPortal.App.Infrastructure.Persistence;
 namespace PSeq.Operations.Api.Migrations
 {
     [DbContext(typeof(PSeqOperationsDbContext))]
-    partial class PSeqOperationsDbContextModelSnapshot : ModelSnapshot
+    [Migration("20260716234233_CompleteLabOperations")]
+    partial class CompleteLabOperations
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -1594,10 +1597,6 @@ namespace PSeq.Operations.Api.Migrations
                         .HasMaxLength(50)
                         .HasColumnType("character varying(50)")
                         .HasColumnName("milestone");
-
-                    b.Property<string>("PermittedQcProjectionJson")
-                        .HasColumnType("jsonb")
-                        .HasColumnName("permitted_qc_projection_json");
 
                     b.Property<long>("ProjectionVersion")
                         .HasColumnType("bigint")
@@ -4160,14 +4159,10 @@ namespace PSeq.Operations.Api.Migrations
 
                     b.HasIndex("LabSpecimenId");
 
-                    b.HasIndex("LibraryContainerId");
-
                     b.HasIndex("LibraryKey")
                         .IsUnique();
 
                     b.HasIndex("PreparationExecutionId");
-
-                    b.HasIndex("SourceContainerId");
 
                     b.HasIndex("LabWorkOrderId", "LabSpecimenId");
 
@@ -6780,21 +6775,9 @@ namespace PSeq.Operations.Api.Migrations
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
 
-                    b.HasOne("PSeq.Operations.Laboratory.Domain.LabContainer", null)
-                        .WithMany()
-                        .HasForeignKey("LibraryContainerId")
-                        .OnDelete(DeleteBehavior.Restrict)
-                        .IsRequired();
-
                     b.HasOne("PSeq.Operations.Laboratory.Domain.LabProtocolExecution", null)
                         .WithMany()
                         .HasForeignKey("PreparationExecutionId")
-                        .OnDelete(DeleteBehavior.Restrict)
-                        .IsRequired();
-
-                    b.HasOne("PSeq.Operations.Laboratory.Domain.LabContainer", null)
-                        .WithMany()
-                        .HasForeignKey("SourceContainerId")
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
                 });

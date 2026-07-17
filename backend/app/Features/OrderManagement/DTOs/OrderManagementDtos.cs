@@ -158,7 +158,14 @@ public sealed record LabServiceOrderDto(
     IReadOnlyList<OrderTimelineDto> Timeline,
     Guid? AssignedToUserId = null,
     DateTime? DueAt = null,
-    IReadOnlyList<LabRequestRevisionDto>? RequestRevisions = null);
+    IReadOnlyList<LabRequestRevisionDto>? RequestRevisions = null,
+    string? LabMilestone = null,
+    string? LabScheduleHealth = null,
+    DateTime? LabExpectedCompletionAtUtc = null,
+    int LabCustomerActionCount = 0,
+    string? LabCustomerActionSummary = null,
+    string? LabPermittedQcProjectionJson = null,
+    bool LabReadyForRelease = false);
 
 public sealed record ReagentOrderLineDto(
     Guid Id,

@@ -1,9 +1,12 @@
 namespace PhaenoPortal.App.Features.OrderManagement.Controllers;
 
+using System.Data;
 using System.Text.Json;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using PSeq.Operations.Commercial.LabOperations.Application;
+using PSeq.Operations.Commercial.LabOperations.Domain;
 using PSeq.Operations.Commercial.Accounts.Domain;
 using PSeq.Operations.Commercial.OrderManagement.Domain;
 using PhaenoPortal.App.Features.OrderManagement.Domain;
@@ -19,7 +22,8 @@ public sealed class LabServiceOrdersController(
     PSeqOperationsDbContext dbContext,
     OrderRequestContext requestContext,
     OrderIdempotencyService idempotency,
-    IOperationalFileStorage fileStorage) : ControllerBase
+    IOperationalFileStorage fileStorage,
+    ILabOperationsProvider labOperationsProvider) : ControllerBase
 {
     private static readonly JsonSerializerOptions JsonSerializerOptions = new(JsonSerializerDefaults.Web);
 
@@ -215,16 +219,63 @@ public sealed class LabServiceOrdersController(
         if (replay != null) return replay;
         var order = await ReadOrderAsync(orderId, tenant.Organization.Id, cancellationToken);
         EnsureVersion(order.Version, request.Version);
+        await using var transaction = await dbContext.Database.BeginTransactionAsync(
+            IsolationLevel.Serializable, cancellationToken);
         var quote = order.Quotes.SingleOrDefault(item => item.Id == quoteId) ?? throw Missing();
         var before = order.Status.ToString();
         Execute(() => quote.Accept(tenant.Actor.Id, DateTime.UtcNow));
         Execute(() => order.AcceptQuote(quoteId, DateTime.UtcNow));
+        var authorizationId = Guid.NewGuid();
+        var commandId = Guid.NewGuid();
+        var metadata = new LabOperationsCommandMetadata(
+            commandId, authorizationId, DateTime.UtcNow);
+        var command = new AuthorizeLabWorkCommand(
+            metadata,
+            authorizationId,
+            1,
+            LabWorkAuthorizationSource.CommercialOrder,
+            order.Id,
+            order.OrganizationId,
+            "pseq-lab-service",
+            1,
+            "quoted-turnaround",
+            order.OrderNumber,
+            order.Samples.Select(sample => new AuthorizedSpecimen(
+                sample.Id,
+                sample.CustomerSampleId,
+                sample.MaterialType,
+                sample.BiologicalSource,
+                sample.Quantity,
+                sample.QuantityUnit,
+                sample.StorageRequirements,
+                sample.SafetyDeclaration,
+                sample.CollectionDate,
+                sample.Concentration,
+                sample.Notes,
+                JsonSerializer.Deserialize<List<Guid>>(sample.AnalysisDefinitionIdsJson, JsonSerializerOptions)
+                    ?.Select(id => id.ToString()).ToList() ?? [])).ToList());
+        var authorization = new CommercialLabAuthorization(
+            authorizationId, order.Id, order.OrganizationId, 1, commandId,
+            JsonSerializer.Serialize(command, JsonSerializerOptions));
+        dbContext.CommercialLabAuthorizations.Add(authorization);
+        var acknowledgment = await labOperationsProvider.AuthorizeWorkAsync(command, cancellationToken);
+        authorization.RecordOutcome(
+            acknowledgment.LabWorkOrderId,
+            acknowledgment.Disposition.ToString(),
+            acknowledgment.ReasonCode);
+        if (acknowledgment.Disposition is not (LabCommandDisposition.Accepted or LabCommandDisposition.AlreadyApplied))
+        {
+            throw Conflict(
+                "lab_authorization_failed",
+                "The order could not be authorized for laboratory work. No quote acceptance was recorded.");
+        }
         dbContext.OrderStatusEvents.Add(NewEvent(order, before, order.Status.ToString(), tenant.Actor.Id));
         QueueNotice(order, "lab-quote-accepted", "Laboratory quote accepted", $"{order.OrderNumber} is now placed and awaiting samples.");
         await dbContext.SaveChangesAsync(cancellationToken);
         var response = await MapAsync(order, true, false, cancellationToken);
         idempotency.Store(tenant.Actor.Id, scope, key, request, response);
         await dbContext.SaveChangesAsync(cancellationToken);
+        await transaction.CommitAsync(cancellationToken);
         return response;
     }
 
@@ -346,6 +397,10 @@ public sealed class LabServiceOrdersController(
             .OrderBy(item => item.CreatedAt).ToListAsync(cancellationToken);
         var timeline = await dbContext.OrderStatusEvents.AsNoTracking().Where(item => item.WorkflowType == OrderWorkflowTypes.LabService && item.WorkflowId == order.Id)
             .OrderBy(item => item.OccurredAt).ToListAsync(cancellationToken);
+        var authorization = await dbContext.CommercialLabAuthorizations.AsNoTracking()
+            .SingleOrDefaultAsync(item => item.CommercialOrderId == order.Id, cancellationToken);
+        var projection = authorization is null ? null : await dbContext.CommercialLabWorkProjections.AsNoTracking()
+            .SingleOrDefaultAsync(item => item.AuthorizationId == authorization.AuthorizationId, cancellationToken);
         var editable = order.Status is LabServiceOrderStatus.DraftRequest or LabServiceOrderStatus.ChangesRequested;
         return new LabServiceOrderDto(order.Id, order.OrganizationId, order.OrderNumber, order.CustomerReference,
             order.SubmissionInstructionsSnapshot, order.Status.ToString(), order.RequestRevision, order.SubmittedAt,
@@ -360,7 +415,14 @@ public sealed class LabServiceOrdersController(
             releases.Select(item => item.ToDto()).ToList(), files.Select(item => item.ToDto()).ToList(), documents.Select(item => item.ToDto(platform)).ToList(),
             cancellationRequests.Select(item => item.ToDto()).ToList(), timeline.Select(item => item.ToDto(platform)).ToList(),
             RequestRevisions: order.Revisions.OrderByDescending(item => item.Revision).Select(item => new LabRequestRevisionDto(item.Id,
-                item.Revision, item.PreviousRevisionId, item.SnapshotJson, item.CorrectionReason, item.SubmittedByUserId, item.SubmittedAt)).ToList());
+                item.Revision, item.PreviousRevisionId, item.SnapshotJson, item.CorrectionReason, item.SubmittedByUserId, item.SubmittedAt)).ToList(),
+            LabMilestone: projection?.Milestone,
+            LabScheduleHealth: projection?.ScheduleHealth,
+            LabExpectedCompletionAtUtc: projection?.ExpectedCompletionAtUtc,
+            LabCustomerActionCount: projection?.ActiveCustomerActionCount ?? 0,
+            LabCustomerActionSummary: projection?.CustomerSafeSummary,
+            LabPermittedQcProjectionJson: projection?.PermittedQcProjectionJson,
+            LabReadyForRelease: projection?.Milestone == "ReadyForRelease");
     }
 
     private async Task<string> BuildRequestSnapshotAsync(LabServiceOrder order, CancellationToken cancellationToken)

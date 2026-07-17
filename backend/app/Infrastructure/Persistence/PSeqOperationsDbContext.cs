@@ -3,6 +3,7 @@ using Microsoft.Extensions.Options;
 using PSeq.Operations.Commercial;
 using PSeq.Operations.Commercial.Accounts.Domain;
 using PSeq.Operations.Commercial.DataProvisioning.Domain;
+using PSeq.Operations.Commercial.LabOperations.Domain;
 using PSeq.Operations.Commercial.OrderManagement.Domain;
 using PSeq.Operations.Commercial.Relationships.Domain;
 using PSeq.Operations.Laboratory;
@@ -113,6 +114,25 @@ public sealed class PSeqOperationsDbContext(
     public DbSet<LabWorkEvent> LabWorkEvents { get; set; }
     public DbSet<LabScientificApproval> LabScientificApprovals { get; set; }
     public DbSet<LabProviderCommandReceipt> LabProviderCommandReceipts { get; set; }
+    public DbSet<LabRoleAssignment> LabRoleAssignments { get; set; }
+    public DbSet<LabContainer> LabContainers { get; set; }
+    public DbSet<LabProtocol> LabProtocols { get; set; }
+    public DbSet<LabProtocolVersion> LabProtocolVersions { get; set; }
+    public DbSet<LabProtocolExecution> LabProtocolExecutions { get; set; }
+    public DbSet<LabMaterialLot> LabMaterialLots { get; set; }
+    public DbSet<LabMaterialConsumption> LabMaterialConsumptions { get; set; }
+    public DbSet<LabEquipment> LabEquipment { get; set; }
+    public DbSet<LabEquipmentUsage> LabEquipmentUsages { get; set; }
+    public DbSet<LabLibrary> LabLibraries { get; set; }
+    public DbSet<LabOperationalBatch> LabOperationalBatches { get; set; }
+    public DbSet<LabBatchMember> LabBatchMembers { get; set; }
+    public DbSet<LabNgsSendout> LabNgsSendouts { get; set; }
+    public DbSet<LabCustodyEvent> LabCustodyEvents { get; set; }
+    public DbSet<LabException> LabExceptions { get; set; }
+    public DbSet<LabOperationsOutboxEvent> LabOperationsOutboxEvents { get; set; }
+    public DbSet<CommercialLabAuthorization> CommercialLabAuthorizations { get; set; }
+    public DbSet<CommercialLabWorkProjection> CommercialLabWorkProjections { get; set; }
+    public DbSet<LabOperationsEventReceipt> LabOperationsEventReceipts { get; set; }
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -261,6 +281,7 @@ public sealed class PSeqOperationsDbContext(
 
         DataProvisioningModelConfiguration.Configure(modelBuilder);
         OrderManagementModelConfiguration.Configure(modelBuilder, this.persistenceOptions.CommercialSchema);
+        CommercialLabOperationsModelConfiguration.Configure(modelBuilder, this.persistenceOptions.CommercialSchema);
         RelationshipManagementModelConfiguration.Configure(modelBuilder);
         LabOperationsModelConfiguration.Configure(modelBuilder, this.persistenceOptions.LaboratorySchema);
 

@@ -5,6 +5,7 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Options;
 using PSeq.Operations.Commercial.Accounts.Application;
 using PSeq.Operations.Commercial.Accounts.Domain;
+using PSeq.Operations.Laboratory.Domain;
 using PhaenoPortal.App.Features.Accounts.DTOs;
 using PhaenoPortal.App.Features.Accounts.Services;
 using PhaenoPortal.App.Infrastructure.Persistence;
@@ -49,15 +50,20 @@ public static class SessionEndpoints
             }
         }
 
+        var labRoles = await dbContext.LabRoleAssignments.AsNoTracking()
+            .Where(assignment => assignment.UserId == user.Id && assignment.IsActive)
+            .Select(assignment => assignment.Role)
+            .ToListAsync(cancellationToken);
+
         if (!user.IsActive || user.Status != UserAccountStatus.Active)
         {
-            return TypedResults.Ok(ToSession(user, state: "disabled", selectedMembership: null));
+            return TypedResults.Ok(ToSession(user, labRoles, state: "disabled", selectedMembership: null));
         }
 
         var activeMemberships = GetActiveMemberships(user).ToList();
         if (activeMemberships.Count == 0)
         {
-            return TypedResults.Ok(ToSession(user, state: "no_active_memberships", selectedMembership: null));
+            return TypedResults.Ok(ToSession(user, labRoles, state: "no_active_memberships", selectedMembership: null));
         }
 
         var selectedOrganizationId = ReadSelectedOrganizationId(httpContext);
@@ -70,11 +76,11 @@ public static class SessionEndpoints
 
             if (selectedMembership == null)
             {
-                return TypedResults.Ok(ToSession(user, state: "organization_unavailable", selectedMembership: null));
+                return TypedResults.Ok(ToSession(user, labRoles, state: "organization_unavailable", selectedMembership: null));
             }
         }
 
-        return TypedResults.Ok(ToSession(user, state: "ready", selectedMembership));
+        return TypedResults.Ok(ToSession(user, labRoles, state: "ready", selectedMembership));
     }
 
     public static void MapSessionEndpoints(this WebApplication app)
@@ -120,6 +126,7 @@ public static class SessionEndpoints
 
     private static SessionDto ToSession(
         User user,
+        IReadOnlyCollection<LabRole> labRoles,
         string state,
         OrganizationMembership? selectedMembership)
     {
@@ -136,6 +143,13 @@ public static class SessionEndpoints
         var canManageLabOrders = canViewLabOrders && isSelectedOrganizationAdmin;
         var canViewPartnerOrders = selectedKind == OrganizationKind.Partner;
         var canManagePartnerOrders = canViewPartnerOrders && isSelectedOrganizationAdmin;
+        var hasLabRole = (LabRole role) => isPlatformAdmin || labRoles.Contains(role);
+        var canOperateLabWork = hasLabRole(LabRole.Operator) || hasLabRole(LabRole.Supervisor)
+            || hasLabRole(LabRole.OperationsAdministrator);
+        var canSuperviseLabWork = hasLabRole(LabRole.Supervisor) || hasLabRole(LabRole.OperationsAdministrator);
+        var canManageLabProtocols = hasLabRole(LabRole.ProtocolAdministrator) || hasLabRole(LabRole.OperationsAdministrator);
+        var canReviewLabWork = hasLabRole(LabRole.ScientificReviewer) || hasLabRole(LabRole.OperationsAdministrator);
+        var canManageLabAccess = hasLabRole(LabRole.OperationsAdministrator);
 
         return new SessionDto
         {
@@ -200,7 +214,12 @@ public static class SessionEndpoints
                 CanViewAllOperationalOrders = isPlatformAdmin,
                 CanManageOrderConfiguration = isPlatformAdmin,
                 CanQuoteLabServiceWork = isPlatformAdmin,
-                CanManageLabOperations = isPlatformAdmin,
+                CanManageLabOperations = isPlatformAdmin || labRoles.Count > 0,
+                CanOperateLabWork = canOperateLabWork,
+                CanSuperviseLabWork = canSuperviseLabWork,
+                CanManageLabProtocols = canManageLabProtocols,
+                CanReviewLabWork = canReviewLabWork,
+                CanManageLabAccess = canManageLabAccess,
                 CanManageReagentFulfillment = isPlatformAdmin,
                 CanManageDataAssembly = isPlatformAdmin,
                 CanManageOrderIntegrations = isPlatformAdmin,
@@ -247,6 +266,11 @@ public static class SessionEndpoints
             CanManageOrderConfiguration = false,
             CanQuoteLabServiceWork = false,
             CanManageLabOperations = false,
+            CanOperateLabWork = false,
+            CanSuperviseLabWork = false,
+            CanManageLabProtocols = false,
+            CanReviewLabWork = false,
+            CanManageLabAccess = false,
             CanManageReagentFulfillment = false,
             CanManageDataAssembly = false,
             CanManageOrderIntegrations = false,
