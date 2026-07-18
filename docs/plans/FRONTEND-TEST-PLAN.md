@@ -74,10 +74,11 @@ remain incomplete production-activation gates.
   sidebar, identify Defaults initially, and update the active subject when the
   user selects another panel.
 - [x] `frontend/src/features/dashboard/WebOpsDashboardContent.test.tsx` -
-  separate mailing-list and demo-request panels render their counts, contact
-  context, technical-brief state, explicit mock-data identity, page-size-10
-  summaries, independent pagination actions, and isolated retryable API
-  failures.
+  the two-button selector shows one mailing-list or demo-request panel at a
+  time; panels render their counts, contact context, technical-brief state,
+  explicit mock-data identity, page-size-10 footer paginators, independent
+  pagination actions, single-page paginator suppression, and isolated retryable
+  API failures.
 
 ## Deferred Tests
 

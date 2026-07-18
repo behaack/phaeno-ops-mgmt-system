@@ -40,7 +40,7 @@ const demoRequestPage: WebOpsPage<WebOpsDemoRequest> = {
 }
 
 describe('WebOpsDashboardContent', () => {
-  it('shows mailing-list and demo-request intake in separate paginated panels', () => {
+  it('selects one independently paginated intake panel at a time', () => {
     render(
       <WebOpsDashboardContent
         mailingList={{
@@ -68,17 +68,28 @@ describe('WebOpsDashboardContent', () => {
       screen.getByRole('region', { name: 'Mailing List' }),
     ).toBeTruthy()
     expect(
-      screen.getByRole('region', { name: 'Demo Requests' }),
-    ).toBeTruthy()
+      screen.queryByRole('region', { name: 'Demo Requests' }),
+    ).toBeNull()
     expect(screen.getByText('Mock data')).toBeTruthy()
     expect(screen.getByText('Ada Lovelace')).toBeTruthy()
     expect(screen.getByText('Technical brief')).toBeTruthy()
+    expect(
+      screen.getByText('Showing 1–10 of 12 signups. Page 1 of 2.'),
+    ).toBeTruthy()
+
+    fireEvent.click(
+      screen.getByRole('tab', { name: /Demo Requests/ }),
+    )
+
+    expect(
+      screen.queryByRole('region', { name: 'Mailing List' }),
+    ).toBeNull()
+    expect(
+      screen.getByRole('region', { name: 'Demo Requests' }),
+    ).toBeTruthy()
     expect(screen.getByText('Compiler Labs')).toBeTruthy()
     expect(
       screen.getByText('Please arrange a PSeq demonstration.'),
-    ).toBeTruthy()
-    expect(
-      screen.getByText('Showing 1–10 of 12 signups. Page 1 of 2.'),
     ).toBeTruthy()
     expect(
       screen.getByText('Showing 1–10 of 12 requests. Page 1 of 2.'),
@@ -111,10 +122,6 @@ describe('WebOpsDashboardContent', () => {
     const mailingListPagination = screen.getByRole('navigation', {
       name: 'Mailing List pagination',
     })
-    const demoRequestPagination = screen.getByRole('navigation', {
-      name: 'Demo Requests pagination',
-    })
-
     expect(
       within(mailingListPagination).getByRole('button', { name: 'Previous' })
         .hasAttribute('disabled'),
@@ -126,9 +133,46 @@ describe('WebOpsDashboardContent', () => {
     expect(changeDemoRequestPage).not.toHaveBeenCalled()
 
     fireEvent.click(
+      screen.getByRole('tab', { name: /Demo Requests/ }),
+    )
+    const demoRequestPagination = screen.getByRole('navigation', {
+      name: 'Demo Requests pagination',
+    })
+    fireEvent.click(
       within(demoRequestPagination).getByRole('button', { name: 'Next' }),
     )
     expect(changeDemoRequestPage).toHaveBeenCalledWith(2)
+  })
+
+  it('hides pagination when a panel has only one page', () => {
+    render(
+      <WebOpsDashboardContent
+        mailingList={{
+          data: {
+            ...mailingListPage,
+            items: mailingListPage.items.slice(0, 4),
+            totalCount: 4,
+          },
+          error: null,
+          isLoading: false,
+          onPageChange: () => undefined,
+          onRetry: () => undefined,
+        }}
+        demoRequests={{
+          data: demoRequestPage,
+          error: null,
+          isLoading: false,
+          onPageChange: () => undefined,
+          onRetry: () => undefined,
+        }}
+      />,
+    )
+
+    expect(
+      screen.queryByRole('navigation', {
+        name: 'Mailing List pagination',
+      }),
+    ).toBeNull()
   })
 
   it('keeps one panel available when the other cannot be loaded', () => {
@@ -162,6 +206,10 @@ describe('WebOpsDashboardContent', () => {
       within(mailingListPanel).getByRole('button', { name: 'Try again' }),
     )
     expect(retryMailingList).toHaveBeenCalledOnce()
+
+    fireEvent.click(
+      screen.getByRole('tab', { name: /Demo Requests/ }),
+    )
     expect(screen.getByText('Compiler Labs')).toBeTruthy()
   })
 })

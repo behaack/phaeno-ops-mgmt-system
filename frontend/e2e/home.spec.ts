@@ -53,10 +53,14 @@ test('uses POMS branding in the internal Phaeno context', async ({ page }) => {
   await expect(
     page.getByRole('region', { name: 'Mailing List' }),
   ).toBeVisible()
+  await expect(page.getByText('Morgan Lee')).toBeVisible()
+  await expect(
+    page.getByRole('region', { name: 'Demo Requests' }),
+  ).not.toBeVisible()
+  await page.getByRole('tab', { name: /Demo Requests/ }).click()
   await expect(
     page.getByRole('region', { name: 'Demo Requests' }),
   ).toBeVisible()
-  await expect(page.getByText('Morgan Lee')).toBeVisible()
   await expect(page.getByText('Atlas Bioanalytics')).toBeVisible()
 })
 

@@ -132,10 +132,11 @@ into CRM or Portal onboarding must be an explicit workflow.
 ## Internal Web Operations dashboard
 
 The POMS home includes a read-only **Web Operations** view for Phaeno platform
-administrators. Mailing-list signups and demo requests appear in separate,
-responsive panels. Each panel has independent pagination with a fixed page size
-of 10. Mailing-list contacts are ordered newest first; demo requests are ordered
-deterministically by organization and contact. The UI labels the persisted
+administrators. Mailing-list signups and demo requests appear in separate
+panels, with a two-button tab selector showing one panel at a time. Each panel
+has independent pagination with a fixed page size of 10. Mailing-list contacts
+are ordered newest first; demo requests are ordered deterministically by
+organization and contact. The UI labels the persisted
 `WebOrder` public inquiries as **Demo Requests** without changing the public
 Website contract or persistence model.
 

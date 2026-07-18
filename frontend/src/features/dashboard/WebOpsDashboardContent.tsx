@@ -23,9 +23,16 @@ import {
   Card,
   CardContent,
   CardDescription,
+  CardFooter,
   CardHeader,
   CardTitle,
 } from '#/components/ui/card'
+import {
+  Tabs,
+  TabsContent,
+  TabsList,
+  TabsTrigger,
+} from '#/components/ui/tabs'
 
 type WebOpsPanelState<T> = {
   data?: WebOpsPage<T>
@@ -63,12 +70,30 @@ export function WebOpsDashboardContent({
         </Badge>
       </div>
 
-      <div className="grid gap-4 lg:grid-cols-2">
-        <Card
-          role="region"
-          aria-labelledby="mailing-list-heading"
-          aria-busy={mailingList.isLoading}
-        >
+      <Tabs defaultValue="mailing-list">
+        <TabsList aria-label="Web Operations lists">
+          <TabsTrigger value="mailing-list">
+            <Mail aria-hidden="true" />
+            Mailing List
+            <Badge variant="secondary" className="ml-1 tabular-nums">
+              {mailingList.data?.totalCount ?? 0}
+            </Badge>
+          </TabsTrigger>
+          <TabsTrigger value="demo-requests">
+            <Send aria-hidden="true" />
+            Demo Requests
+            <Badge variant="secondary" className="ml-1 tabular-nums">
+              {demoRequests.data?.totalCount ?? 0}
+            </Badge>
+          </TabsTrigger>
+        </TabsList>
+
+        <TabsContent value="mailing-list">
+          <Card
+            role="region"
+            aria-labelledby="mailing-list-heading"
+            aria-busy={mailingList.isLoading}
+          >
           <CardHeader className="border-b">
             <div className="flex items-start justify-between gap-3">
               <div>
@@ -101,8 +126,7 @@ export function WebOpsDashboardContent({
             ) : null}
             {mailingList.data ? (
               mailingList.data.items.length ? (
-                <>
-                  <ul className="divide-y">
+                <ul className="divide-y">
                     {mailingList.data.items.map((contact) => (
                       <li
                         key={contact.id}
@@ -139,29 +163,32 @@ export function WebOpsDashboardContent({
                       </li>
                     ))}
                   </ul>
-                  <PanelPagination
-                    itemCount={mailingList.data.items.length}
-                    label="signups"
-                    panelLabel="Mailing List"
-                    page={mailingList.data.page}
-                    pageSize={mailingList.data.pageSize}
-                    totalCount={mailingList.data.totalCount}
-                    disabled={mailingList.isLoading}
-                    onPageChange={mailingList.onPageChange}
-                  />
-                </>
               ) : (
                 <EmptyState message="No mailing-list signups have been recorded." />
               )
             ) : null}
           </CardContent>
-        </Card>
+          {mailingList.data?.items.length ? (
+            <PanelPagination
+              itemCount={mailingList.data.items.length}
+              label="signups"
+              panelLabel="Mailing List"
+              page={mailingList.data.page}
+              pageSize={mailingList.data.pageSize}
+              totalCount={mailingList.data.totalCount}
+              disabled={mailingList.isLoading}
+              onPageChange={mailingList.onPageChange}
+            />
+          ) : null}
+          </Card>
+        </TabsContent>
 
-        <Card
-          role="region"
-          aria-labelledby="demo-requests-heading"
-          aria-busy={demoRequests.isLoading}
-        >
+        <TabsContent value="demo-requests">
+          <Card
+            role="region"
+            aria-labelledby="demo-requests-heading"
+            aria-busy={demoRequests.isLoading}
+          >
           <CardHeader className="border-b">
             <div className="flex items-start justify-between gap-3">
               <div>
@@ -194,8 +221,7 @@ export function WebOpsDashboardContent({
             ) : null}
             {demoRequests.data ? (
               demoRequests.data.items.length ? (
-                <>
-                  <ul className="divide-y">
+                <ul className="divide-y">
                     {demoRequests.data.items.map((request) => (
                       <li
                         key={request.id}
@@ -223,24 +249,26 @@ export function WebOpsDashboardContent({
                       </li>
                     ))}
                   </ul>
-                  <PanelPagination
-                    itemCount={demoRequests.data.items.length}
-                    label="requests"
-                    panelLabel="Demo Requests"
-                    page={demoRequests.data.page}
-                    pageSize={demoRequests.data.pageSize}
-                    totalCount={demoRequests.data.totalCount}
-                    disabled={demoRequests.isLoading}
-                    onPageChange={demoRequests.onPageChange}
-                  />
-                </>
               ) : (
                 <EmptyState message="No demo requests have been recorded." />
               )
             ) : null}
           </CardContent>
-        </Card>
-      </div>
+          {demoRequests.data?.items.length ? (
+            <PanelPagination
+              itemCount={demoRequests.data.items.length}
+              label="requests"
+              panelLabel="Demo Requests"
+              page={demoRequests.data.page}
+              pageSize={demoRequests.data.pageSize}
+              totalCount={demoRequests.data.totalCount}
+              disabled={demoRequests.isLoading}
+              onPageChange={demoRequests.onPageChange}
+            />
+          ) : null}
+          </Card>
+        </TabsContent>
+      </Tabs>
     </section>
   )
 }
@@ -306,11 +334,13 @@ function PanelPagination({
   totalCount: number
 }) {
   const totalPages = Math.max(1, Math.ceil(totalCount / pageSize))
+  if (totalPages <= 1) return null
+
   const firstItem = (page - 1) * pageSize + 1
   const lastItem = firstItem + itemCount - 1
 
   return (
-    <div className="mt-3 flex flex-col gap-3 border-t pt-3 sm:flex-row sm:items-center sm:justify-between">
+    <CardFooter className="flex flex-col items-start justify-between gap-3 sm:flex-row sm:items-center">
       <p
         aria-live="polite"
         className="text-xs text-muted-foreground tabular-nums"
@@ -343,7 +373,7 @@ function PanelPagination({
           <ChevronRight aria-hidden="true" data-icon="inline-end" />
         </Button>
       </nav>
-    </div>
+    </CardFooter>
   )
 }
 
