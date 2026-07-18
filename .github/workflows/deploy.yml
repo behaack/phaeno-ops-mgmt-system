@@ -55,6 +55,10 @@ jobs:
           DEPLOY_KNOWN_HOSTS: ${{ secrets.DEPLOY_KNOWN_HOSTS }}
           DEPLOY_SSH_KEY: ${{ secrets.DEPLOY_SSH_KEY }}
           DEPLOY_USER: ${{ secrets.DEPLOY_USER }}
+          PORTAL_BOOTSTRAP_ADMIN_EMAIL: ${{ vars.PORTAL_BOOTSTRAP_ADMIN_EMAIL }}
+          PORTAL_BOOTSTRAP_ADMIN_FIRST_NAME: ${{ vars.PORTAL_BOOTSTRAP_ADMIN_FIRST_NAME }}
+          PORTAL_BOOTSTRAP_ADMIN_LAST_NAME: ${{ vars.PORTAL_BOOTSTRAP_ADMIN_LAST_NAME }}
+          PORTAL_BOOTSTRAP_ORGANIZATION_NAME: ${{ vars.PORTAL_BOOTSTRAP_ORGANIZATION_NAME }}
           PORTAL_CLERK_AUTHORITY: ${{ vars.PORTAL_CLERK_AUTHORITY }}
           PORTAL_CLERK_SECRET_KEY: ${{ secrets.PORTAL_CLERK_SECRET_KEY }}
           PORTAL_MIGRATION_BACKUP_PUBLIC_KEY: ${{ secrets.PORTAL_MIGRATION_BACKUP_PUBLIC_KEY }}
@@ -66,6 +70,10 @@ jobs:
             DEPLOY_KNOWN_HOSTS \
             DEPLOY_SSH_KEY \
             DEPLOY_USER \
+            PORTAL_BOOTSTRAP_ADMIN_EMAIL \
+            PORTAL_BOOTSTRAP_ADMIN_FIRST_NAME \
+            PORTAL_BOOTSTRAP_ADMIN_LAST_NAME \
+            PORTAL_BOOTSTRAP_ORGANIZATION_NAME \
             PORTAL_CLERK_AUTHORITY \
             PORTAL_CLERK_SECRET_KEY; do
             if [ -z "${!name}" ]; then
@@ -73,6 +81,16 @@ jobs:
               missing=1
             fi
           done
+
+          if [ -n "$PORTAL_BOOTSTRAP_ADMIN_EMAIL" ]; then
+            case "$PORTAL_BOOTSTRAP_ADMIN_EMAIL" in
+              *@*.*) ;;
+              *)
+                echo "::error::PORTAL_BOOTSTRAP_ADMIN_EMAIL is not a valid email address."
+                missing=1
+                ;;
+            esac
+          fi
 
           if [ -n "$PORTAL_CLERK_SECRET_KEY" ]; then
             case "$PORTAL_CLERK_SECRET_KEY" in
@@ -204,6 +222,7 @@ jobs:
           chmod -R u=rwX,go=rX "$release_path"
           chmod 755 \
             "$release_path/deployment/hetzner/green/deploy-release.sh" \
+            "$release_path/deployment/hetzner/green/install-bootstrap-runtime-config.sh" \
             "$release_path/deployment/hetzner/green/install-clerk-runtime-secret.sh"
           REMOTE
 
@@ -220,6 +239,24 @@ jobs:
             "$PORTAL_CLERK_SECRET_KEY" \
             | ssh -i ~/.ssh/deploy_key "$DEPLOY_USER@$DEPLOY_HOST" \
                 "$RELEASE_PATH/deployment/hetzner/green/install-clerk-runtime-secret.sh '$DEPLOY_ROOT'"
+
+      - name: Install Portal bootstrap runtime configuration
+        env:
+          DEPLOY_HOST: ${{ secrets.DEPLOY_HOST }}
+          DEPLOY_USER: ${{ secrets.DEPLOY_USER }}
+          PORTAL_BOOTSTRAP_ADMIN_EMAIL: ${{ vars.PORTAL_BOOTSTRAP_ADMIN_EMAIL }}
+          PORTAL_BOOTSTRAP_ADMIN_FIRST_NAME: ${{ vars.PORTAL_BOOTSTRAP_ADMIN_FIRST_NAME }}
+          PORTAL_BOOTSTRAP_ADMIN_LAST_NAME: ${{ vars.PORTAL_BOOTSTRAP_ADMIN_LAST_NAME }}
+          PORTAL_BOOTSTRAP_ORGANIZATION_NAME: ${{ vars.PORTAL_BOOTSTRAP_ORGANIZATION_NAME }}
+          RELEASE_PATH: ${{ steps.release.outputs.release_path }}
+        run: |
+          printf 'Bootstrap__PhaenoOrganizationName=%s\nBootstrap__AdminEmail=%s\nBootstrap__AdminFirstName=%s\nBootstrap__AdminLastName=%s\n' \
+            "$PORTAL_BOOTSTRAP_ORGANIZATION_NAME" \
+            "$PORTAL_BOOTSTRAP_ADMIN_EMAIL" \
+            "$PORTAL_BOOTSTRAP_ADMIN_FIRST_NAME" \
+            "$PORTAL_BOOTSTRAP_ADMIN_LAST_NAME" \
+            | ssh -i ~/.ssh/deploy_key "$DEPLOY_USER@$DEPLOY_HOST" \
+                "$RELEASE_PATH/deployment/hetzner/green/install-bootstrap-runtime-config.sh '$DEPLOY_ROOT'"
 
       - name: Upload migration-backup public key
         if: ${{ inputs.apply_migrations }}

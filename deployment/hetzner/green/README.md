@@ -87,6 +87,13 @@ non-migration deployment automatically restores the prior Portal API image.
 
 Configure a protected GitHub environment named `production` with:
 
+- `PORTAL_BOOTSTRAP_ORGANIZATION_NAME`: non-secret name of the initial Phaeno
+  organization;
+- `PORTAL_BOOTSTRAP_ADMIN_EMAIL`: non-secret email of the existing Clerk user
+  authorized as the initial Portal administrator;
+- `PORTAL_BOOTSTRAP_ADMIN_FIRST_NAME` and
+  `PORTAL_BOOTSTRAP_ADMIN_LAST_NAME`: non-secret profile values for that
+  administrator;
 - `PORTAL_CLERK_AUTHORITY`: non-secret Clerk JWT issuer matching the Portal
   frontend publishable key, such as `https://example.clerk.accounts.dev`;
 - `DEPLOY_HOST`: Hetzner SSH host;
@@ -98,12 +105,19 @@ Configure a protected GitHub environment named `production` with:
 - `PORTAL_MIGRATION_BACKUP_PUBLIC_KEY`: PEM public key used only when an
   authorized migration is requested.
 
-On every deployment, the workflow validates `PORTAL_CLERK_AUTHORITY` and
-`PORTAL_CLERK_SECRET_KEY`, streams them over the pinned SSH connection without
-placing them in the release archive, and atomically replaces only
-`Clerk__Authority` and `Clerk__SecretKey` in the root-protected
-`runtime/portal.env`. The API recreation then loads the updated values. The
-workflow never prints the secret value.
+On every deployment, the workflow validates the bootstrap configuration,
+`PORTAL_CLERK_AUTHORITY`, and `PORTAL_CLERK_SECRET_KEY`; streams them over the
+pinned SSH connection without placing them in the release archive; and
+atomically updates only the corresponding `Bootstrap__*`, `Clerk__Authority`,
+and `Clerk__SecretKey` entries in the root-protected `runtime/portal.env`. The
+API recreation then loads the updated values. The workflow never prints the
+secret value.
+
+The bootstrap seeder uses the exact administrator email to find an existing
+Clerk user. It idempotently creates or activates the local Phaeno organization,
+Portal user, and administrator membership, then links that Clerk subject. It
+does not create a new Clerk user unless an administrator password is separately
+configured on the server.
 
 The workflow input `apply_migrations` defaults to `false`. Selecting `true` is
 the explicit shared-database approval gate. Before running the migration
