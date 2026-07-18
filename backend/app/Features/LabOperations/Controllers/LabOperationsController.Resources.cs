@@ -4,6 +4,7 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using PSeq.Operations.Laboratory.Domain;
 using PhaenoPortal.App.Features.LabOperations.DTOs;
+using PhaenoPortal.App.Features.LabOperations.Services;
 
 public sealed partial class LabOperationsController
 {
@@ -115,11 +116,16 @@ public sealed partial class LabOperationsController
                 && item.LabWorkOrderId == workOrderId && item.Status == LabExecutionStatus.Completed, cancellationToken)
             ?? throw Conflict("library_execution_required", "A completed preparation execution is required.");
         var containerIds = new[] { request.SourceContainerId, request.LibraryContainerId };
-        if (await dbContext.LabContainers.CountAsync(item => containerIds.Contains(item.Id)
-            && item.LabWorkOrderId == workOrderId, cancellationToken) != 2)
+        var containers = await dbContext.LabContainers.AsNoTracking()
+            .Where(item => containerIds.Contains(item.Id) && item.LabWorkOrderId == workOrderId)
+            .ToListAsync(cancellationToken);
+        if (containers.Count != 2)
             throw Invalid("library_lineage_invalid", "Both source and library containers must belong to this work order.");
+        var libraryContainer = containers.Single(item => item.Id == request.LibraryContainerId);
+        if (libraryContainer.Kind != LabContainerKind.Library)
+            throw Invalid("library_container_invalid", "The library container must be a Phaeno library container.");
         var library = new LabLibrary(workOrderId, request.LabSpecimenId, request.SourceContainerId,
-            request.LibraryContainerId, execution.Id, request.LibraryKey);
+            request.LibraryContainerId, execution.Id, libraryContainer.Barcode);
         dbContext.LabLibraries.Add(library);
         await dbContext.SaveChangesAsync(cancellationToken);
         return MapLibrary(library);
@@ -145,7 +151,9 @@ public sealed partial class LabOperationsController
     {
         await requestContext.RequireAsync(HttpContext, cancellationToken,
             LabRole.Operator, LabRole.Supervisor, LabRole.OperationsAdministrator);
-        var batch = new LabOperationalBatch(request.BatchNumber, request.BatchType, request.Notes);
+        var batchNumber = await LabIdentifierService.AllocateBatchNumberAsync(
+            dbContext, DateTime.UtcNow, cancellationToken);
+        var batch = new LabOperationalBatch(batchNumber, request.BatchType, request.Notes);
         dbContext.LabOperationalBatches.Add(batch);
         await dbContext.SaveChangesAsync(cancellationToken);
         return MapBatch(batch, 0, null);

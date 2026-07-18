@@ -4,13 +4,13 @@ Library and batch records preserve the physical lineage from submitted specimen 
 
 ## Prepare a library
 
-Create the physical library container before creating the library record. Link the source container, library container, submitted specimen, and completed preparation execution. Record the library QC result and supporting values required by the approved procedure.
+Create the physical library container before creating the library record. Link the source container, library container, submitted specimen, and completed preparation execution. POMS uses the selected library container's Phaeno barcode as the immutable library key; do not enter a second identifier. Record the library QC result and supporting values required by the approved procedure.
 
 Only a library with passed QC can enter a sequencing batch. If QC fails, preserve the failed library and use the documented rework or replacement path.
 
 ## Build a batch
 
-A batch may contain libraries from different organizations and Commercial orders. Add only the required library identifiers and operational facts. Do not copy Customer names, prices, order notes, or other confidential Commercial details into the batch manifest.
+A batch may contain libraries from different organizations and Commercial orders. Enter its operational type and optional notes; POMS assigns a date-stamped, scanner-safe batch number when the batch is created. Add only the required library identifiers and operational facts. Do not copy Customer names, prices, order notes, or other confidential Commercial details into the batch manifest.
 
 For scan-first entry, open **Batches**, select a draft batch under **Scan libraries into a batch**, and scan each physical library container. POMS accepts only a container linked to a **QC passed** library. An unknown barcode, non-library container, library in another state, or duplicate membership is rejected without changing the batch. A successful scan clears and refocuses the field for the next container.
 

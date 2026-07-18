@@ -136,6 +136,7 @@ remain incomplete production-activation gates.
   APIs.
 - [ ] Remaining Lab Operations workspace - cover role-specific navigation and
   controls, list/detail loading, receipt/accession, protocol lifecycle,
+  system-assigned protocol/library/batch identifiers,
   execution/material/equipment capture, library and batch actions, sendout and
   custody states, internal versus customer-action exceptions, scientific
   approval, ready-for-release messaging, concurrency recovery, and mock-mode
@@ -151,6 +152,12 @@ remain incomplete production-activation gates.
 
 ## Requested Execution Log
 
+- 2026-07-18: system-owned Lab identifier verification ran `pnpm run
+  typecheck`, `pnpm exec eslint src`, and `pnpm run build`; type checking and
+  source lint passed, and both client and SSR production builds completed. The
+  broad `pnpm run lint` command traversed existing generated `.output` and
+  `.vercel` bundles and failed on generated code; no source-tree lint failure
+  remained. Frontend tests were not requested and were not run.
 - 2026-07-18: Web Operations unsubscribe and demo-completion changes passed
   focused ESLint, `pnpm run typecheck`, and the client/SSR production build.
   The repository-wide lint command also traversed generated `.output` and

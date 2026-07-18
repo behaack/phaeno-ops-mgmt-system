@@ -136,15 +136,21 @@ not satisfy this production-activation gate.
   the already-passing controller/PostgreSQL workflow through real Clerk
   authentication, the hosted HTTP API, and a browser. The controller/database
   portion already proves atomic Lab authorization, additive Lab roles,
-  receipt/accession, barcode allocation/scan/print-outcome history, active
-  protocol execution with QC-approved material and calibrated equipment,
-  scan-first library batching, sendout/custody, exception resolution,
-  scientific approval, the Customer-safe projection, and no file publication
-  at Ready for release. Physical printer/scanner qualification remains a
-  manual bench gate.
+  receipt/accession, barcode allocation/scan/print-outcome history,
+  system-assigned protocol/library/batch identifiers, active protocol execution
+  with QC-approved material and calibrated equipment, scan-first library
+  batching, sendout/custody, exception resolution, scientific approval, the
+  Customer-safe projection, and no file publication at Ready for release.
+  Physical printer/scanner qualification remains a manual bench gate.
 
 ## Requested Execution Log
 
+- 2026-07-18: a local production preview reached the expected
+  authentication-not-configured boundary because the preview had no Clerk
+  publishable key; the active port-3000 development listener returned an empty
+  response. The connected protocol, library, and batch dialogs therefore
+  remain covered by the deferred authenticated Lab Operations browser journey.
+  Playwright tests were not requested and were not run.
 - 2026-07-17: the POMS home scenario was updated for the shared dashboard
   sidebar and Web Operations mock intake. A live in-app browser review verified
   the desktop and 390-pixel layouts, sidebar selection, visible counts, bounded

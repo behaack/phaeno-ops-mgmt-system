@@ -216,12 +216,15 @@ public class LabOperationsCommercialHandoffPostgresTests
             }
 
             var lab = scope.CreateLabController(staff.Identity);
+            var protocolName = $"Reference library preparation {Guid.NewGuid():N}";
             var protocol = await lab.CreateProtocol(
                 new CreateProtocolRequest(
-                    $"reference-prep-{Guid.NewGuid():N}",
-                    "Reference library preparation",
+                    protocolName,
                     "Database-backed verification protocol."),
                 CancellationToken.None);
+            Assert.Equal(
+                LabIdentifierService.CreateProtocolKey(protocolName, Array.Empty<string>()),
+                protocol.Key);
             protocol = await lab.CreateProtocolVersion(
                 protocol.Id,
                 new CreateProtocolVersionRequest(
@@ -411,9 +414,9 @@ public class LabOperationsCommercialHandoffPostgresTests
                     specimen.Id,
                     submittedContainer.Id,
                     libraryContainer.Id,
-                    execution.Id,
-                    $"library-{Guid.NewGuid():N}"),
+                    execution.Id),
                 CancellationToken.None);
+            Assert.Equal(libraryContainer.Barcode, library.LibraryKey);
             library = await lab.RecordLibraryQc(
                 library.Id,
                 new LibraryQcRequest(
@@ -429,10 +432,12 @@ public class LabOperationsCommercialHandoffPostgresTests
 
             var batch = await lab.CreateBatch(
                 new CreateBatchRequest(
-                    $"BATCH-{Guid.NewGuid():N}",
                     "ExternalSequencing",
                     "Reference database-backed journey."),
                 CancellationToken.None);
+            Assert.Matches(
+                "^PH-BAT-[0-9]{8}-[23456789ABCDEFGHJKLMNPQRSTUVWXYZ]{8}$",
+                batch.BatchNumber);
             batch = await lab.AddBatchMember(
                 batch.Id,
                 new AddBatchMemberRequest(workOrderId.Value, library.Id),

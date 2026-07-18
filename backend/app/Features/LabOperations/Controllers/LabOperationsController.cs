@@ -165,7 +165,9 @@ public sealed partial class LabOperationsController(
     {
         await requestContext.RequireAsync(HttpContext, cancellationToken,
             LabRole.ProtocolAdministrator, LabRole.OperationsAdministrator);
-        var protocol = new LabProtocol(request.Key, request.Name, request.Description);
+        var key = await LabIdentifierService.AllocateProtocolKeyAsync(
+            dbContext, request.Name, cancellationToken);
+        var protocol = new LabProtocol(key, request.Name, request.Description);
         dbContext.LabProtocols.Add(protocol);
         await dbContext.SaveChangesAsync(cancellationToken);
         return MapProtocol(protocol, []);

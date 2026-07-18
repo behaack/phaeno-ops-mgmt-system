@@ -398,6 +398,8 @@ The initial Lab Operations scope includes a bounded protocol builder supporting:
 - QC gates with pass, fail, and hold outcomes
 - role-based execution and approval
 - draft, approved, active, and retired protocol versions
+- a POMS-generated immutable protocol key derived from the entered protocol
+  name, with a stable suffix when the readable key is already in use
 
 Each execution is pinned to the approved protocol version under which it began.
 A procedure change creates a new version and does not rewrite active or
@@ -671,7 +673,7 @@ remove competing internal write paths. The durable strategy is recorded in
   barcodes, browser-rendered Code 39 labels, reasoned print outcomes,
   scan-first lookup, label history, optional retention, and intake disposition.
 - Complete: protocol authoring, approval, activation/retirement, pinned
-  versioning, and execution.
+  versioning, execution, and system-owned readable protocol-key allocation.
 - Complete: material, prepared-reagent, lot, consumption, equipment,
   calibration, and QC records.
 - Production gate: validate minimum fields, labels, scanners, and degraded-mode
@@ -684,6 +686,8 @@ remove competing internal write paths. The durable strategy is recorded in
 - Complete: library lineage and preparation execution.
 - Complete: internal batching across authorized work orders, including
   scan-first QC-passed-library entry and duplicate/wrong-context rejection.
+  POMS uses the library container barcode as the library key and allocates
+  date-stamped, scanner-safe batch numbers.
 - Complete: provider-neutral NGS send-out manifests, custody, provider identifiers, timing, and
   exception handling.
 - Complete in the application boundary: projections contain only authorization,
@@ -721,7 +725,8 @@ The initial Lab Operations capability is successful when:
 - protocol changes create controlled versions without rewriting active or
   historical executions
 - operators can complete routine work without redundant entry of commercial,
-  organization, or repeated batch data
+  organization, repeated batch data, or system-owned protocol, library, and
+  batch identifiers
 - Phaeno can identify which specimens, materials, protocol versions, equipment,
   operators, batches, and exceptions contributed to an internal result when
   those facts are required by the approved protocol

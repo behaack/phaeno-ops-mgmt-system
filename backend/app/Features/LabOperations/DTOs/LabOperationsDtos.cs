@@ -93,7 +93,7 @@ public sealed record LabScientificApprovalDto(
     long ProjectionVersion);
 
 public sealed record SetLabRoleRequest(bool IsActive, long? Version);
-public sealed record CreateProtocolRequest(string Key, string Name, string? Description);
+public sealed record CreateProtocolRequest(string Name, string? Description);
 public sealed record CreateProtocolVersionRequest(string DefinitionJson, long ProtocolVersion);
 public sealed record ProtocolTransitionRequest(string Action);
 public sealed record WorkMilestoneRequest(string Status, long Version);
@@ -116,9 +116,9 @@ public sealed record CreateEquipmentRequest(string AssetCode, string Name, strin
     string Location, DateTime? LastCalibrationAtUtc, DateTime? CalibrationDueAtUtc);
 public sealed record RecordEquipmentUsageRequest(Guid LabEquipmentId, DateTime UsedAtUtc, string? RunReference);
 public sealed record CreateLibraryRequest(Guid LabSpecimenId, Guid SourceContainerId,
-    Guid LibraryContainerId, Guid PreparationExecutionId, string LibraryKey);
+    Guid LibraryContainerId, Guid PreparationExecutionId);
 public sealed record LibraryQcRequest(bool Passed, string ResultsJson, long Version);
-public sealed record CreateBatchRequest(string BatchNumber, string BatchType, string? Notes);
+public sealed record CreateBatchRequest(string BatchType, string? Notes);
 public sealed record BatchTransitionRequest(string Action, long Version);
 public sealed record AddBatchMemberRequest(Guid LabWorkOrderId, Guid LabLibraryId);
 public sealed record CreateSendoutRequest(string ProviderName, string? ProviderReference,

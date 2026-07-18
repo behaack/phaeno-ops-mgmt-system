@@ -145,6 +145,27 @@ public class LabOperationsDomainTests
     }
 
     [Fact]
+    public void ProtocolKeysAreDerivedFromNamesAndResolveCollisions()
+    {
+        var key = LabIdentifierService.CreateProtocolKey(
+            "  Référence / RNA Library Preparation  ",
+            new[] { "reference-rna-library-preparation", "reference-rna-library-preparation-2" });
+
+        Assert.Equal("reference-rna-library-preparation-3", key);
+    }
+
+    [Fact]
+    public void BatchNumbersAreDateStampedAndUseScannerSafeCharacters()
+    {
+        var batchNumber = LabIdentifierService.CreateBatchNumber(
+            new DateTime(2026, 7, 18, 12, 0, 0, DateTimeKind.Utc));
+
+        Assert.Matches(
+            "^PH-BAT-20260718-[23456789ABCDEFGHJKLMNPQRSTUVWXYZ]{8}$",
+            batchNumber);
+    }
+
+    [Fact]
     public void ExecutionCanCompleteWithoutADeviationNote()
     {
         var execution = new LabProtocolExecution(

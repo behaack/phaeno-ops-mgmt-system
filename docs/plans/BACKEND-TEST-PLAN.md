@@ -8,9 +8,10 @@ Lab Operations is feature-complete for the approved internal application
 scope. The five opt-in provider/projection tests and five opt-in Commercial
 handoff/operator tests below passed together against the migrated local
 `phaeno_ops` database on 2026-07-16. Negative API paths and physical bench
-acceptance remain production-activation coverage. Barcode allocation,
-normalization, reasoned print outcomes, exact scan lookup, and duplicate-safe
-batch entry now have focused unit and rollback-isolated PostgreSQL coverage.
+acceptance remain production-activation coverage. Protocol-key and batch-number
+allocation, barcode normalization, reasoned print outcomes, exact scan lookup,
+library-key derivation, and duplicate-safe batch entry now have focused unit
+and rollback-isolated PostgreSQL coverage.
 
 ## Created Tests
 
@@ -38,7 +39,8 @@ batch entry now have focused unit and rollback-isolated PostgreSQL coverage.
   customer-safe exception separation, including execution completion without
   an optional deviation note; plus Phaeno barcode kind/prefix allocation,
   safe-character generation, Code 39 scan normalization, checksum validation,
-  and altered-value rejection.
+  and altered-value rejection; plus readable protocol-key collision handling
+  and date-stamped scanner-safe batch-number generation.
 - [x] `backend/test/LabOperationsAuthorizationTests.cs` - exact additive
   Operator, Supervisor, Protocol Administrator, Scientific Reviewer, and Lab
   Operations Administrator capabilities; platform-administrator bootstrap;
@@ -121,13 +123,15 @@ batch entry now have focused unit and rollback-isolated PostgreSQL coverage.
   and Lab together, and started Lab work vetoes the decision without partially
   approving it. A fifth rollback-isolated journey assigns additive Lab roles
   and exercises active protocols, receipt/accession and barcode-print history,
-  including automatic submitted/derived barcode allocation, Code 39 scan
-  normalization, reasoned initial/reprint/failure outcomes without false print
-  increments, exact submitted/library lineage lookup, and duplicate-safe
-  scan-first batching; QC-approved materials, calibrated equipment, execution,
-  library lineage, NGS sendout/custody, exception resolution, scientific
-  approval, customer-safe projection delivery, and proof that Ready for release
-  creates neither a managed file nor a Lab result release. The fixture uses unique
+  including automatic submitted/derived barcode allocation, readable protocol
+  keys, library keys derived from their container barcodes, scanner-safe batch
+  numbers, Code 39 scan normalization, reasoned initial/reprint/failure outcomes
+  without false print increments, exact submitted/library lineage lookup, and
+  duplicate-safe scan-first batching; QC-approved materials, calibrated
+  equipment, execution, library lineage, NGS sendout/custody, exception
+  resolution, scientific approval, customer-safe projection delivery, and proof
+  that Ready for release creates neither a managed file nor a Lab result release.
+  The fixture uses unique
   Customer/Phaeno identities and removes its Commercial, Laboratory, account,
   idempotency, notification, and audit records.
 - [x] `backend/tools/PSeq.Operations.ReferenceJourney` - controller-level
@@ -249,6 +253,12 @@ batch entry now have focused unit and rollback-isolated PostgreSQL coverage.
 
 ## Requested Execution Log
 
+- 2026-07-18: system-owned Lab identifier verification ran `dotnet build
+  backend/PSeq.Operations.slnx -c Release --no-restore`; all projects,
+  including the updated test sources, compiled with zero warnings and zero
+  errors. The Debug build could not replace assemblies held by the active
+  Visual Studio/IIS Express session. Backend tests were not requested and were
+  not run.
 - 2026-07-18: Web Operations unsubscribe and demo-completion lifecycle changes
   passed the full solution build with zero warnings and zero errors. The
   additive migration was generated and applied to the local `phaeno_ops`

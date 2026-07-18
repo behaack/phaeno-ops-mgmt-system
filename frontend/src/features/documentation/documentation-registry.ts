@@ -477,7 +477,7 @@ export const documentationEntries: readonly DocumentationEntry[] = [
     summary: 'Approve versioned protocols, pin assignments, capture controlled execution, and recover safely.',
     section: 'Laboratory operations',
     order: 52,
-    reviewedAt: '2026-07-16',
+    reviewedAt: '2026-07-18',
     Content: PhaenoLabProtocolExecution,
   },
   {
@@ -501,7 +501,7 @@ export const documentationEntries: readonly DocumentationEntry[] = [
     summary: 'Prepare QC-approved libraries, build cross-order batches, and track sendout custody.',
     section: 'Laboratory operations',
     order: 54,
-    reviewedAt: '2026-07-16',
+    reviewedAt: '2026-07-18',
     Content: PhaenoLabLibrariesBatchesSequencing,
   },
   {
