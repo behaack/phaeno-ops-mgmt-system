@@ -6,6 +6,12 @@ public sealed record WebOpsDashboardDto(
     IReadOnlyList<WebOpsMailingListContactDto> MailingListContacts,
     IReadOnlyList<WebOpsDemoRequestDto> DemoRequests);
 
+public sealed record WebOpsPageDto<T>(
+    IReadOnlyList<T> Items,
+    int Page,
+    int PageSize,
+    int TotalCount);
+
 public sealed record WebOpsMailingListContactDto(
     Guid Id,
     string FirstName,

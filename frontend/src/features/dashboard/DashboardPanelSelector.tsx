@@ -16,8 +16,11 @@ import { AccountsDashboardContent } from './AccountsDashboardContent'
 import { DashboardHero } from './DashboardHero'
 import { WebOpsDashboardContent } from './WebOpsDashboardContent'
 import {
-  getWebOpsDashboard,
-  type WebOpsDashboard,
+  getWebOpsDemoRequests,
+  getWebOpsMailingList,
+  type WebOpsDemoRequest,
+  type WebOpsMailingListContact,
+  type WebOpsPage,
 } from '#/api/web-ops'
 import {
   WorkspaceSidebar,
@@ -121,10 +124,11 @@ const operationsPanels = {
 
 type DashboardSection = 'orders' | 'lab' | 'accounts' | 'webOps'
 
-const mockWebOperationsDashboard: WebOpsDashboard = {
-  mailingListCount: 13,
-  demoRequestCount: 2,
-  mailingListContacts: [
+const mockMailingListPage: WebOpsPage<WebOpsMailingListContact> = {
+  page: 1,
+  pageSize: 10,
+  totalCount: 2,
+  items: [
     {
       id: 'mock-contact-1',
       firstName: 'Morgan',
@@ -144,7 +148,13 @@ const mockWebOperationsDashboard: WebOpsDashboard = {
       createdAtUtc: '2026-07-16T19:30:00Z',
     },
   ],
-  demoRequests: [
+}
+
+const mockDemoRequestPage: WebOpsPage<WebOpsDemoRequest> = {
+  page: 1,
+  pageSize: 10,
+  totalCount: 2,
+  items: [
     {
       id: 'mock-request-1',
       firstName: 'Alex',
@@ -166,17 +176,28 @@ const mockWebOperationsDashboard: WebOpsDashboard = {
 
 export function DashboardPanelSelector() {
   const [section, setSection] = useState<DashboardSection>('orders')
+  const [mailingListPage, setMailingListPage] = useState(1)
+  const [demoRequestPage, setDemoRequestPage] = useState(1)
   const { authProvider, session } = usePhaenoSession()
   const apiEnabled = authProvider !== 'mock'
   const canViewWebOperations = session?.isPlatformAdmin === true
-  const webOpsDashboard = useQuery({
-    queryKey: ['web-ops', 'dashboard'],
-    queryFn: getWebOpsDashboard,
+  const mailingList = useQuery({
+    queryKey: ['web-ops', 'mailing-list', mailingListPage],
+    queryFn: () => getWebOpsMailingList(mailingListPage),
     enabled: apiEnabled && canViewWebOperations,
   })
-  const webOperationsData = apiEnabled
-    ? webOpsDashboard.data
-    : mockWebOperationsDashboard
+  const demoRequests = useQuery({
+    queryKey: ['web-ops', 'demo-requests', demoRequestPage],
+    queryFn: () => getWebOpsDemoRequests(demoRequestPage),
+    enabled: apiEnabled && canViewWebOperations,
+  })
+  const mailingListData = apiEnabled ? mailingList.data : mockMailingListPage
+  const demoRequestData = apiEnabled
+    ? demoRequests.data
+    : mockDemoRequestPage
+  const webOperationsCount = mailingListData && demoRequestData
+    ? mailingListData.totalCount + demoRequestData.totalCount
+    : undefined
   const sections = useMemo<
     ReadonlyArray<WorkspaceSidebarItem<DashboardSection>>
   >(
@@ -210,18 +231,15 @@ export function DashboardPanelSelector() {
             value: 'webOps' as const,
             label: 'Web Operations',
             description: 'Mailing List and Demo Requests.',
-            count: webOperationsData
-              ? webOperationsData.mailingListCount
-                + webOperationsData.demoRequestCount
-              : undefined,
-            countDescription: webOperationsData
-              ? `${webOperationsData.mailingListCount + webOperationsData.demoRequestCount} Website submissions`
+            count: webOperationsCount,
+            countDescription: webOperationsCount !== undefined
+              ? `${webOperationsCount} Website submissions`
               : undefined,
             icon: Globe2,
           }]
         : []),
     ],
-    [canViewWebOperations, webOperationsData],
+    [canViewWebOperations, webOperationsCount],
   )
 
   return (
@@ -247,11 +265,21 @@ export function DashboardPanelSelector() {
           ) : null}
           {section === 'webOps' ? (
             <WebOpsDashboardContent
-              data={webOperationsData}
-              error={apiEnabled ? webOpsDashboard.error : null}
-              isLoading={apiEnabled && webOpsDashboard.isLoading}
+              mailingList={{
+                data: mailingListData,
+                error: apiEnabled ? mailingList.error : null,
+                isLoading: apiEnabled && mailingList.isFetching,
+                onPageChange: setMailingListPage,
+                onRetry: () => void mailingList.refetch(),
+              }}
+              demoRequests={{
+                data: demoRequestData,
+                error: apiEnabled ? demoRequests.error : null,
+                isLoading: apiEnabled && demoRequests.isFetching,
+                onPageChange: setDemoRequestPage,
+                onRetry: () => void demoRequests.refetch(),
+              }}
               isMockData={!apiEnabled}
-              onRetry={() => void webOpsDashboard.refetch()}
             />
           ) : null}
         </div>

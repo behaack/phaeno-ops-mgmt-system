@@ -131,16 +131,19 @@ into CRM or Portal onboarding must be an explicit workflow.
 
 ## Internal Web Operations dashboard
 
-The POMS home includes a read-only **Web Operations** panel for Phaeno platform
-administrators. It shows the total mailing-list and demo-request intake counts,
-the five newest mailing-list contacts, and up to five demo requests ordered by
-organization. The UI labels the persisted `WebOrder` public inquiries as
-**Demo Requests** without changing the public Website contract or persistence
-model.
+The POMS home includes a read-only **Web Operations** view for Phaeno platform
+administrators. Mailing-list signups and demo requests appear in separate,
+responsive panels. Each panel has independent pagination with a fixed page size
+of 10. Mailing-list contacts are ordered newest first; demo requests are ordered
+deterministically by organization and contact. The UI labels the persisted
+`WebOrder` public inquiries as **Demo Requests** without changing the public
+Website contract or persistence model.
 
-The additive internal endpoint is `GET /api/web-ops/dashboard`. It requires an
-authenticated active Phaeno platform administrator and returns only the bounded
-summary needed by the dashboard. The existing anonymous
+The existing additive summary endpoint, `GET /api/web-ops/dashboard`, remains
+available with its five-item bounds for compatibility. The independently
+paginated panels use `GET /api/web-ops/mailing-list?page=...` and
+`GET /api/web-ops/demo-requests?page=...`. All three routes require an
+authenticated active Phaeno platform administrator. The existing anonymous
 `/api/v1/web-ops/...` routes remain unchanged. This surface does not promote
 Website intake into an Account, Portal request, HubSpot contact, or operational
 order.

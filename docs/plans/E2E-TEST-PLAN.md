@@ -15,8 +15,9 @@ not satisfy this production-activation gate.
   Portal; both contexts retain the Phaeno Inc. legal footer and omit framework
   vendor promotion; the POMS dashboard exposes a keyboard-operable
   viewport-edge sidebar for Order Operations, Lab Operations, Accounts, and
-  read-only Web Operations mailing-list/demo-request intake with one visible panel at a
-  time while external contexts omit it.
+  read-only Web Operations intake with separate mailing-list and demo-request
+  panels, independent page-size-10 pagination, and one dashboard section
+  visible at a time while external contexts omit it.
 - [x] `frontend/e2e/home.spec.ts` - desktop keeps frequent workspace routes in
   the toolbar, including Docs, while Data provisioning appears under Resources;
   desktop and mobile expose Accounts and the remaining grouped

@@ -144,7 +144,10 @@ batch entry now have focused unit and rollback-isolated PostgreSQL coverage.
 - [ ] Internal Web Operations dashboard endpoint - cover authenticated Phaeno
   platform-administrator access, external and non-admin denial, total counts,
   five-item bounds, newest-first mailing-list ordering, deterministic
-  demo-request ordering, and response-envelope serialization.
+  demo-request ordering, and response-envelope serialization. Cover the
+  additive mailing-list and demo-request endpoints for their fixed 10-item
+  pages, boundary-page normalization, stable ordering, totals, and the same
+  authorization rules.
 - [ ] HubSpot/Portal lifecycle - cover signed webhook intake, exact Company and
   Deal correlation, duplicate/out-of-order delivery, pending onboarding with no
   access, direct Customer/Partner creation, narrow Portal Prospect creation,

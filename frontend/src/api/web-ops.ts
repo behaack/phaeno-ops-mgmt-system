@@ -32,6 +32,13 @@ export type WebOpsDashboard = {
   demoRequests: WebOpsDemoRequest[]
 }
 
+export type WebOpsPage<T> = {
+  items: T[]
+  page: number
+  pageSize: number
+  totalCount: number
+}
+
 export async function getWebOpsDashboard() {
   const response = await api.get<ApiEnvelope<WebOpsDashboard>>(
     '/web-ops/dashboard',
@@ -41,6 +48,29 @@ export async function getWebOpsDashboard() {
     throw new Error(
       envelope.error?.message
         ?? 'The Web Operations dashboard could not be loaded.',
+    )
+  }
+
+  return envelope.data
+}
+
+export function getWebOpsMailingList(page: number) {
+  return getWebOpsPage<WebOpsMailingListContact>('/web-ops/mailing-list', page)
+}
+
+export function getWebOpsDemoRequests(page: number) {
+  return getWebOpsPage<WebOpsDemoRequest>('/web-ops/demo-requests', page)
+}
+
+async function getWebOpsPage<T>(url: string, page: number) {
+  const response = await api.get<ApiEnvelope<WebOpsPage<T>>>(url, {
+    params: { page },
+  })
+  const envelope = response.data
+  if (!envelope.success || !envelope.data) {
+    throw new Error(
+      envelope.error?.message
+        ?? 'The Web Operations list could not be loaded.',
     )
   }
 
