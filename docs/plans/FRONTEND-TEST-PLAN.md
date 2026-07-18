@@ -147,7 +147,8 @@ remain incomplete production-activation gates.
   protocol-version builder's step ordering/duplication/removal, required,
   optional, and conditional rules, typed-capture validation, materials,
   including controlled definition/supplier/storage selection, prepared-reagent
-  component rows, date-only expiration, outputs, equipment, QC gates,
+  component rows, date-only expiration, material QC modal date and
+  failed-reason validation, outputs, equipment, QC gates,
   generated JSON preview, clone-from-controlled
   initialization, draft resume/save/discard, approval withdrawal,
   one-open-candidate action gating, unsaved-change warning, concurrency

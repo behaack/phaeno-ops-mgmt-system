@@ -151,6 +151,15 @@ not satisfy this production-activation gate.
 
 ## Requested Execution Log
 
+- 2026-07-18: a live authenticated browser review verified the material-lot QC
+  workflow without recording a decision. Pending rows show `QC: Pending` and
+  one `Record QC` action. The modal identifies the lot, defaults the required QC
+  date to today, prevents future picker dates, explains Pass and Fail outcomes,
+  and reveals a required failure reason only for Fail QC. Empty failure
+  validation cleared as the reason was entered, Cancel restored focus to the
+  invoking row action, the refreshed migration-aware API loaded successfully,
+  and no browser errors were produced. The Playwright suite was not requested
+  or run.
 - 2026-07-18: a live authenticated browser review verified clearer list
   hierarchy in the Lab Operations Protocols and Materials sections. Each
   section title, description, and create action now occupy a muted header band

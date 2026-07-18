@@ -364,13 +364,14 @@ function MaterialList({ items, canManage, canApprove, onCreate, refresh }: { ite
         failureReason: outcome === 'Failed' ? qcFailureReason.trim() : null,
         resultsJson: '{}',
       }),
-    onSuccess: async () => {
+    onSuccess: async (_result, variables) => {
       setQcLot(null)
       setQcOutcome('')
       setQcPerformedOn(todayDateOnly())
       setQcFailureReason('')
       setQcAttempted(false)
       await refresh()
+      requestAnimationFrame(() => document.getElementById(`material-lot-${variables.lot.id}`)?.focus())
     },
   })
   const openQcDialog = (lot: LabMaterialLot) => {
@@ -383,12 +384,16 @@ function MaterialList({ items, canManage, canApprove, onCreate, refresh }: { ite
   }
   const closeQcDialog = () => {
     if (qc.isPending) return
+    const lotId = qcLot?.id
     qc.reset()
     setQcLot(null)
     setQcOutcome('')
     setQcPerformedOn(todayDateOnly())
     setQcFailureReason('')
     setQcAttempted(false)
+    if (lotId) {
+      requestAnimationFrame(() => document.getElementById(`material-qc-action-${lotId}`)?.focus())
+    }
   }
   const submitQc = (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault()
@@ -423,7 +428,9 @@ function MaterialList({ items, canManage, canApprove, onCreate, refresh }: { ite
             {items.map((item) => (
               <li
                 key={item.id}
-                className="flex flex-wrap items-center justify-between gap-3 rounded-lg border bg-background p-4 shadow-xs"
+                id={`material-lot-${item.id}`}
+                tabIndex={-1}
+                className="flex flex-wrap items-center justify-between gap-3 rounded-lg border bg-background p-4 shadow-xs focus-visible:ring-3 focus-visible:ring-ring/50 focus-visible:outline-none"
               >
                 <div>
                   <p className="font-medium">{item.name} · {item.lotNumber}</p>
@@ -448,6 +455,7 @@ function MaterialList({ items, canManage, canApprove, onCreate, refresh }: { ite
                   <Status value={item.qcDisposition} prefix="QC" />
                   {canApprove && item.qcDisposition === 'Pending' ? (
                     <Button
+                      id={`material-qc-action-${item.id}`}
                       type="button"
                       size="sm"
                       variant="outline"
@@ -503,7 +511,7 @@ function MaterialList({ items, canManage, canApprove, onCreate, refresh }: { ite
                 <legend className="mb-1 text-sm font-medium">
                   QC outcome <span className="text-destructive" aria-hidden="true">*</span>
                 </legend>
-                <label htmlFor="material-qc-passed" className={`flex cursor-pointer items-start gap-3 rounded-lg border p-4 transition-colors ${
+                <Label htmlFor="material-qc-passed" className={`flex cursor-pointer items-start gap-3 rounded-lg border p-4 font-normal transition-colors ${
                   qcOutcome === 'Passed' ? 'border-primary bg-primary/5 ring-1 ring-primary' : 'hover:bg-muted/40'
                 }`}>
                   <input
@@ -524,8 +532,8 @@ function MaterialList({ items, canManage, canApprove, onCreate, refresh }: { ite
                       The lot may be used in controlled work when its other eligibility rules are met.
                     </span>
                   </span>
-                </label>
-                <label htmlFor="material-qc-failed" className={`flex cursor-pointer items-start gap-3 rounded-lg border p-4 transition-colors ${
+                </Label>
+                <Label htmlFor="material-qc-failed" className={`flex cursor-pointer items-start gap-3 rounded-lg border p-4 font-normal transition-colors ${
                   qcOutcome === 'Failed' ? 'border-destructive bg-destructive/5 ring-1 ring-destructive' : 'hover:bg-muted/40'
                 }`}>
                   <input
@@ -543,7 +551,7 @@ function MaterialList({ items, canManage, canApprove, onCreate, refresh }: { ite
                       The lot remains blocked from controlled work.
                     </span>
                   </span>
-                </label>
+                </Label>
                 {qcAttempted && !qcOutcome ? (
                   <p className="text-sm text-destructive" role="alert">Choose Pass QC or Fail QC.</p>
                 ) : null}

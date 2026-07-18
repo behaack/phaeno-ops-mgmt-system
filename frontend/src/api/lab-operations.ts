@@ -64,7 +64,13 @@ export const recordLabContainerLabelPrint = (id: string, input: { reason: string
 export const createLabExecution = (workId: string, input: object) => post<LabExecution>(`/platform/lab-operations/work-orders/${workId}/executions`, input)
 export const transitionLabExecution = (id: string, input: object) => post<LabExecution>(`/platform/lab-operations/executions/${id}/transition`, input)
 export const createLabMaterialLot = (input: CreateLabMaterialLotInput) => post<LabMaterialLot>('/platform/lab-operations/material-lots', input)
-export const recordLabMaterialQc = (id: string, input: object) => post<LabMaterialLot>(`/platform/lab-operations/material-lots/${id}/qc`, input)
+export const recordLabMaterialQc = (id: string, input: {
+  version: number
+  disposition: 'Passed' | 'Failed'
+  performedOn: string
+  failureReason: string | null
+  resultsJson: string
+}) => post<LabMaterialLot>(`/platform/lab-operations/material-lots/${id}/qc`, input)
 export const consumeLabMaterial = (executionId: string, input: object) => post<LabExecution>(`/platform/lab-operations/executions/${executionId}/material-consumptions`, input)
 export const createLabEquipment = (input: object) => post<LabEquipment>('/platform/lab-operations/equipment', input)
 export const recordLabEquipmentUsage = (executionId: string, input: object) => post<LabExecution>(`/platform/lab-operations/executions/${executionId}/equipment-usages`, input)
