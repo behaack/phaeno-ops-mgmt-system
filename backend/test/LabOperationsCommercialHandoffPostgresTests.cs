@@ -299,20 +299,24 @@ public class LabOperationsCommercialHandoffPostgresTests
             var material = await lab.CreateMaterialLot(
                 new CreateMaterialLotRequest(
                     LabMaterialLotKind.SupplierLot.ToString(),
-                    $"reference-kit-{Guid.NewGuid():N}",
-                    "Reference preparation kit",
+                    null,
+                    $"Reference preparation kit {Guid.NewGuid():N}",
                     $"lot-{Guid.NewGuid():N}",
-                    "Reference supplier",
-                    """{"component":"library-prep"}""",
-                    DateTime.UtcNow.AddMonths(6),
-                    "Freezer A",
+                    null,
+                    $"Reference supplier {Guid.NewGuid():N}",
+                    null,
+                    $"Freezer A {Guid.NewGuid():N}",
+                    DateOnly.FromDateTime(DateTime.UtcNow.AddMonths(6)),
                     100,
-                    "uL"),
+                    "uL",
+                    null),
                 CancellationToken.None);
             material = await lab.RecordMaterialQc(
                 material.Id,
                 new MaterialQcRequest(
                     LabQcDisposition.Passed.ToString(),
+                    DateOnly.FromDateTime(DateTime.UtcNow),
+                    null,
                     """{"inspection":"passed"}""",
                     material.Version),
                 CancellationToken.None);

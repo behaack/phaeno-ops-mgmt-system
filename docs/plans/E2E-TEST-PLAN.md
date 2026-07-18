@@ -141,13 +141,35 @@ not satisfy this production-activation gate.
   authoring from protocol identity through ordered steps, typed captures,
   resources, QC gates, draft creation and resume, parallel-candidate rejection,
   discard history, approval withdrawal, controlled-definition cloning, approval
-  and activation, active protocol execution with QC-approved material and calibrated equipment, scan-first library
+  and activation, active protocol execution with controlled material identity,
+  supplier/storage references, date-only expiration/retest, structured
+  prepared-reagent component lineage, QC-approved material and calibrated
+  equipment, scan-first library
   batching, sendout/custody, exception resolution, scientific approval, the
   Customer-safe projection, and no file publication at Ready for release.
   Physical printer/scanner qualification remains a manual bench gate.
 
 ## Requested Execution Log
 
+- 2026-07-18: a live authenticated browser review verified clearer list
+  hierarchy in the Lab Operations Protocols and Materials sections. Each
+  section title, description, and create action now occupy a muted header band
+  with a divider; protocol and material records render as separately bordered
+  rows on the content surface. The distinction remained visible in light and
+  dark themes, actions stayed associated with the correct record, and no
+  browser errors were produced. The Playwright suite was not requested or run.
+- 2026-07-18: a live authenticated browser review verified the redesigned
+  material-lot form without submitting data. Supplier lots expose controlled
+  material, supplier, and storage selections with related-record modal creation,
+  omit manual material-key entry, and use a date-only expiration/retest field.
+  Supplier and storage selectors span the form width. Prepared reagents hide
+  supplier, expose structured component-lot rows, and explain when no
+  QC-approved source lot is available. New material, supplier, and storage
+  names are collected in a focused modal and returned as the selected option in
+  the parent form without submitting data. The parent dialog stayed within a
+  390-pixel viewport with no horizontal overflow, and the desktop related-record
+  modal review produced no browser errors. The Playwright suite was not
+  requested or run.
 - 2026-07-18: a live authenticated browser review verified the open-candidate
   protocol lifecycle without changing data: Draft v1 exposed Continue editing,
   omitted Add version, restored the saved structured definition, and blocked a

@@ -313,48 +313,123 @@ public enum LabQcDisposition
     ApprovedException
 }
 
+public sealed class LabMaterialDefinition : LabAuditedEntity
+{
+    public Guid Id { get; private set; } = Guid.NewGuid();
+    public string Key { get; private set; } = null!;
+    public string Name { get; private set; } = null!;
+    public LabMaterialLotKind Kind { get; private set; }
+    public bool IsActive { get; private set; } = true;
+
+    private LabMaterialDefinition() { }
+
+    public LabMaterialDefinition(string key, string name, LabMaterialLotKind kind)
+    {
+        Key = Required(key, nameof(key), 100);
+        Name = Required(name, nameof(name), 255);
+        Kind = kind;
+    }
+
+    public void SetActive(bool isActive) => IsActive = isActive;
+}
+
+public sealed class LabSupplier : LabAuditedEntity
+{
+    public Guid Id { get; private set; } = Guid.NewGuid();
+    public string Name { get; private set; } = null!;
+    public string NormalizedName { get; private set; } = null!;
+    public bool IsActive { get; private set; } = true;
+
+    private LabSupplier() { }
+
+    public LabSupplier(string name)
+    {
+        Name = Required(name, nameof(name), 255);
+        NormalizedName = Name.ToUpperInvariant();
+    }
+
+    public void SetActive(bool isActive) => IsActive = isActive;
+}
+
+public sealed class LabStorageLocation : LabAuditedEntity
+{
+    public Guid Id { get; private set; } = Guid.NewGuid();
+    public string Name { get; private set; } = null!;
+    public string NormalizedName { get; private set; } = null!;
+    public bool IsActive { get; private set; } = true;
+
+    private LabStorageLocation() { }
+
+    public LabStorageLocation(string name)
+    {
+        Name = Required(name, nameof(name), 255);
+        NormalizedName = Name.ToUpperInvariant();
+    }
+
+    public void SetActive(bool isActive) => IsActive = isActive;
+}
+
 public sealed class LabMaterialLot : LabAuditedEntity
 {
     public Guid Id { get; private set; } = Guid.NewGuid();
     public LabMaterialLotKind Kind { get; private set; }
-    public string MaterialKey { get; private set; } = null!;
-    public string Name { get; private set; } = null!;
+    public Guid MaterialDefinitionId { get; private set; }
     public string LotNumber { get; private set; } = null!;
-    public string? Supplier { get; private set; }
-    public string? ComponentsJson { get; private set; }
-    public DateTime? ExpiresAtUtc { get; private set; }
-    public string StorageLocation { get; private set; } = null!;
+    public Guid? SupplierId { get; private set; }
+    public string? LegacyComponentsJson { get; private set; }
+    public DateOnly? ExpirationOrRetestDate { get; private set; }
+    public Guid StorageLocationId { get; private set; }
     public decimal AvailableQuantity { get; private set; }
     public string QuantityUnit { get; private set; } = null!;
     public LabQcDisposition QcDisposition { get; private set; } = LabQcDisposition.Pending;
     public string? QcResultsJson { get; private set; }
+    public DateOnly? QcPerformedOn { get; private set; }
+    public string? QcFailureReason { get; private set; }
     public Guid? QcApprovedByUserId { get; private set; }
     public DateTime? QcApprovedAtUtc { get; private set; }
 
     private LabMaterialLot() { }
 
-    public LabMaterialLot(LabMaterialLotKind kind, string materialKey, string name,
-        string lotNumber, string? supplier, string? componentsJson, DateTime? expiresAtUtc,
-        string storageLocation, decimal availableQuantity, string quantityUnit)
+    public LabMaterialLot(LabMaterialLotKind kind, Guid materialDefinitionId,
+        string lotNumber, Guid? supplierId, DateOnly? expirationOrRetestDate,
+        Guid storageLocationId, decimal availableQuantity, string quantityUnit)
     {
         if (availableQuantity < 0) throw new ArgumentOutOfRangeException(nameof(availableQuantity));
+        if (materialDefinitionId == Guid.Empty)
+            throw new ArgumentException("A material definition is required.", nameof(materialDefinitionId));
+        if (storageLocationId == Guid.Empty)
+            throw new ArgumentException("A storage location is required.", nameof(storageLocationId));
+        if (kind == LabMaterialLotKind.SupplierLot && !supplierId.HasValue)
+            throw new ArgumentException("A supplier is required for a supplier lot.", nameof(supplierId));
+        if (kind == LabMaterialLotKind.PreparedReagent && supplierId.HasValue)
+            throw new ArgumentException("A prepared reagent cannot have a supplier.", nameof(supplierId));
+
         Kind = kind;
-        MaterialKey = Required(materialKey, nameof(materialKey), 100);
-        Name = Required(name, nameof(name), 255);
+        MaterialDefinitionId = materialDefinitionId;
         LotNumber = Required(lotNumber, nameof(lotNumber), 100);
-        Supplier = Optional(supplier, 255);
-        ComponentsJson = string.IsNullOrWhiteSpace(componentsJson) ? null : componentsJson;
-        ExpiresAtUtc = expiresAtUtc;
-        StorageLocation = Required(storageLocation, nameof(storageLocation), 255);
+        SupplierId = supplierId;
+        ExpirationOrRetestDate = expirationOrRetestDate;
+        StorageLocationId = storageLocationId;
         AvailableQuantity = availableQuantity;
         QuantityUnit = Required(quantityUnit, nameof(quantityUnit), 50);
     }
 
-    public void RecordQc(LabQcDisposition disposition, string resultsJson, Guid actorUserId, DateTime utcNow)
+    public void RecordQc(LabQcDisposition disposition, DateOnly performedOn,
+        string? failureReason, string resultsJson, Guid actorUserId, DateTime utcNow)
     {
         if (disposition == LabQcDisposition.Pending) throw new ArgumentOutOfRangeException(nameof(disposition));
+        if (performedOn == default) throw new ArgumentOutOfRangeException(nameof(performedOn));
+        if (performedOn > DateOnly.FromDateTime(utcNow))
+            throw new ArgumentOutOfRangeException(nameof(performedOn), "The QC date cannot be in the future.");
+        if (disposition == LabQcDisposition.Failed && string.IsNullOrWhiteSpace(failureReason))
+            throw new ArgumentException("A failure reason is required when material QC fails.", nameof(failureReason));
+
         QcDisposition = disposition;
         QcResultsJson = string.IsNullOrWhiteSpace(resultsJson) ? "{}" : resultsJson;
+        QcPerformedOn = performedOn;
+        QcFailureReason = disposition == LabQcDisposition.Failed
+            ? Required(failureReason!, nameof(failureReason), 1000)
+            : null;
         QcApprovedByUserId = actorUserId;
         QcApprovedAtUtc = utcNow;
     }
@@ -363,6 +438,37 @@ public sealed class LabMaterialLot : LabAuditedEntity
     {
         if (quantity <= 0 || quantity > AvailableQuantity) throw new InvalidOperationException("The requested quantity is not available.");
         AvailableQuantity -= quantity;
+    }
+}
+
+public sealed class LabPreparedReagentComponent
+{
+    public Guid Id { get; private set; } = Guid.NewGuid();
+    public Guid PreparedMaterialLotId { get; private set; }
+    public Guid ComponentMaterialLotId { get; private set; }
+    public decimal Quantity { get; private set; }
+    public string QuantityUnit { get; private set; } = null!;
+
+    private LabPreparedReagentComponent() { }
+
+    public LabPreparedReagentComponent(Guid preparedMaterialLotId,
+        Guid componentMaterialLotId, decimal quantity, string quantityUnit)
+    {
+        if (preparedMaterialLotId == Guid.Empty || componentMaterialLotId == Guid.Empty)
+            throw new ArgumentException("Prepared and component material lots are required.");
+        if (preparedMaterialLotId == componentMaterialLotId)
+            throw new ArgumentException("A prepared reagent cannot consume itself.");
+        if (quantity <= 0)
+            throw new ArgumentOutOfRangeException(nameof(quantity), "A positive component quantity is required.");
+
+        PreparedMaterialLotId = preparedMaterialLotId;
+        ComponentMaterialLotId = componentMaterialLotId;
+        Quantity = quantity;
+        QuantityUnit = string.IsNullOrWhiteSpace(quantityUnit)
+            ? throw new ArgumentException("A quantity unit is required.", nameof(quantityUnit))
+            : quantityUnit.Trim();
+        if (QuantityUnit.Length > 50)
+            throw new ArgumentException("The quantity unit cannot exceed 50 characters.", nameof(quantityUnit));
     }
 }
 

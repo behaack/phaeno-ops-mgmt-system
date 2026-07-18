@@ -8,29 +8,18 @@ using PhaenoPortal.App.Infrastructure.Persistence;
 
 internal static class LabIdentifierService
 {
-    private const int ProtocolKeyMaxLength = 100;
+    private const int RecordKeyMaxLength = 100;
     private const string SafeAlphabet = "23456789ABCDEFGHJKLMNPQRSTUVWXYZ";
     private const int BatchTokenLength = 8;
 
     public static string CreateProtocolKey(string name, IEnumerable<string> existingKeys)
     {
-        var baseKey = Slugify(name);
-        var usedKeys = new HashSet<string>(existingKeys, StringComparer.OrdinalIgnoreCase);
-        if (!usedKeys.Contains(baseKey))
-        {
-            return baseKey;
-        }
+        return CreateUniqueKey(name, existingKeys, "protocol", "protocol");
+    }
 
-        for (var suffix = 2; suffix < 100_000; suffix++)
-        {
-            var candidate = WithSuffix(baseKey, suffix);
-            if (!usedKeys.Contains(candidate))
-            {
-                return candidate;
-            }
-        }
-
-        throw new InvalidOperationException("A unique protocol key could not be allocated.");
+    public static string CreateMaterialKey(string name, IEnumerable<string> existingKeys)
+    {
+        return CreateUniqueKey(name, existingKeys, "material", "material");
     }
 
     public static async Task<string> AllocateProtocolKeyAsync(
@@ -43,6 +32,18 @@ internal static class LabIdentifierService
             .Select(item => item.Key)
             .ToListAsync(cancellationToken);
         return CreateProtocolKey(name, existingKeys);
+    }
+
+    public static async Task<string> AllocateMaterialKeyAsync(
+        PSeqOperationsDbContext dbContext,
+        string name,
+        CancellationToken cancellationToken)
+    {
+        var existingKeys = await dbContext.LabMaterialDefinitions
+            .AsNoTracking()
+            .Select(item => item.Key)
+            .ToListAsync(cancellationToken);
+        return CreateMaterialKey(name, existingKeys);
     }
 
     public static string CreateBatchNumber(DateTime utcNow)
@@ -76,7 +77,29 @@ internal static class LabIdentifierService
         throw new InvalidOperationException("A unique batch number could not be allocated.");
     }
 
-    private static string Slugify(string name)
+    private static string CreateUniqueKey(string name, IEnumerable<string> existingKeys,
+        string fallback, string recordType)
+    {
+        var baseKey = Slugify(name, fallback);
+        var usedKeys = new HashSet<string>(existingKeys, StringComparer.OrdinalIgnoreCase);
+        if (!usedKeys.Contains(baseKey))
+        {
+            return baseKey;
+        }
+
+        for (var suffix = 2; suffix < 100_000; suffix++)
+        {
+            var candidate = WithSuffix(baseKey, suffix);
+            if (!usedKeys.Contains(candidate))
+            {
+                return candidate;
+            }
+        }
+
+        throw new InvalidOperationException($"A unique {recordType} key could not be allocated.");
+    }
+
+    private static string Slugify(string name, string fallback)
     {
         if (string.IsNullOrWhiteSpace(name))
         {
@@ -84,7 +107,7 @@ internal static class LabIdentifierService
         }
 
         var normalized = name.Trim().Normalize(NormalizationForm.FormD);
-        var key = new StringBuilder(ProtocolKeyMaxLength);
+        var key = new StringBuilder(RecordKeyMaxLength);
         var separatorPending = false;
 
         foreach (var character in normalized)
@@ -97,12 +120,12 @@ internal static class LabIdentifierService
             var lower = char.ToLowerInvariant(character);
             if (lower is >= 'a' and <= 'z' or >= '0' and <= '9')
             {
-                if (separatorPending && key.Length > 0 && key.Length < ProtocolKeyMaxLength)
+                if (separatorPending && key.Length > 0 && key.Length < RecordKeyMaxLength)
                 {
                     key.Append('-');
                 }
 
-                if (key.Length < ProtocolKeyMaxLength)
+                if (key.Length < RecordKeyMaxLength)
                 {
                     key.Append(lower);
                 }
@@ -116,13 +139,13 @@ internal static class LabIdentifierService
         }
 
         var result = key.ToString().TrimEnd('-');
-        return result.Length == 0 ? "protocol" : result;
+        return result.Length == 0 ? fallback : result;
     }
 
     private static string WithSuffix(string baseKey, int suffix)
     {
         var suffixText = $"-{suffix.ToString(CultureInfo.InvariantCulture)}";
-        var stemLength = Math.Min(baseKey.Length, ProtocolKeyMaxLength - suffixText.Length);
+        var stemLength = Math.Min(baseKey.Length, RecordKeyMaxLength - suffixText.Length);
         return $"{baseKey[..stemLength].TrimEnd('-')}{suffixText}";
     }
 }

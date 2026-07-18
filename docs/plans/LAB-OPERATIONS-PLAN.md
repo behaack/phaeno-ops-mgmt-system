@@ -460,10 +460,29 @@ prepared reagents:
 - required QC and approval
 - expiration or retest date
 - storage location, current status, and available quantity
+- QC disposition, laboratory QC date, and a required reason for failed QC
 - protocol execution or batch consumption
 
 A prepared reagent cannot be available for use until its required QC and
 approval are complete.
+
+POMS owns a reusable material definition with a system-assigned immutable key;
+operators select that identity when receiving or preparing a lot rather than
+typing a key per lot. Supplier and storage location are controlled, auditable
+reference records. Supplier is required only for a supplier lot. Retired
+references remain available to historical records but cannot be selected for
+new work. A missing material, supplier, or storage reference can be named in a
+focused related-record modal without abandoning the lot form; the draft name
+returns as the selected option and the reference is created with the lot.
+
+Expiration or retest is stored as a date and remains valid through the end of
+that laboratory day. A future exact time-sensitive prepared-reagent use-by
+control, if required by bench validation, will be a separate timestamp rather
+than changing every lot to time-of-day expiration.
+
+Prepared-reagent composition is structured lot lineage rather than free-form
+JSON. Creation requires one or more QC-approved, unexpired source lots, records
+the exact quantities and units, and atomically reduces source availability.
 
 Lab Operations is not a purchasing, accounts-payable, or warehouse-management
 system. QuickBooks remains authoritative for vendors, purchase orders, bills,
@@ -697,7 +716,9 @@ remove competing internal write paths. The durable strategy is recorded in
   resumable draft editing and discard history, approval withdrawal,
   one-open-candidate enforcement, approval, activation/retirement, pinned
   versioning, execution, and system-owned readable protocol-key allocation.
-- Complete: material, prepared-reagent, lot, consumption, equipment,
+- Complete: controlled material definitions with POMS-assigned keys,
+  supplier/storage references, supplier and prepared-reagent lots, structured
+  component lineage, date-only expiration/retest, consumption, equipment,
   calibration, and QC records.
 - Production gate: validate minimum fields, labels, scanners, and degraded-mode
   procedures with representative PSeq bench work before activation. The

@@ -91,7 +91,7 @@ public class PersistenceTests
             .Where(entityType => entityType.ClrType.Assembly == laboratoryAssembly)
             .ToList();
 
-        Assert.Equal(22, laboratoryEntities.Count);
+        Assert.Equal(26, laboratoryEntities.Count);
         Assert.Equal(
             "lab_work_orders",
             dbContext.Model.FindEntityType(typeof(LabWorkOrder))?.GetTableName());
@@ -115,7 +115,11 @@ public class PersistenceTests
         Assert.Equal("lab_protocols", dbContext.Model.FindEntityType(typeof(LabProtocol))?.GetTableName());
         Assert.Equal("lab_protocol_versions", dbContext.Model.FindEntityType(typeof(LabProtocolVersion))?.GetTableName());
         Assert.Equal("lab_protocol_executions", dbContext.Model.FindEntityType(typeof(LabProtocolExecution))?.GetTableName());
+        Assert.Equal("lab_material_definitions", dbContext.Model.FindEntityType(typeof(LabMaterialDefinition))?.GetTableName());
+        Assert.Equal("lab_suppliers", dbContext.Model.FindEntityType(typeof(LabSupplier))?.GetTableName());
+        Assert.Equal("lab_storage_locations", dbContext.Model.FindEntityType(typeof(LabStorageLocation))?.GetTableName());
         Assert.Equal("lab_material_lots", dbContext.Model.FindEntityType(typeof(LabMaterialLot))?.GetTableName());
+        Assert.Equal("lab_prepared_reagent_components", dbContext.Model.FindEntityType(typeof(LabPreparedReagentComponent))?.GetTableName());
         Assert.Equal("lab_material_consumptions", dbContext.Model.FindEntityType(typeof(LabMaterialConsumption))?.GetTableName());
         Assert.Equal("lab_equipment", dbContext.Model.FindEntityType(typeof(LabEquipment))?.GetTableName());
         Assert.Equal("lab_equipment_usages", dbContext.Model.FindEntityType(typeof(LabEquipmentUsage))?.GetTableName());

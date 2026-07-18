@@ -72,6 +72,10 @@ remain incomplete production-activation gates.
 - [x] `frontend/src/features/lab-operations/protocol-definition.test.ts` -
   structured definitions round-trip for resume/clone workflows, older empty
   definitions open as one editable step, and invalid JSON is rejected.
+- [x] `frontend/src/features/lab-operations/MaterialLotCreateDialog.test.ts` -
+  supplier-lot validation accepts date-only expiration, prepared reagents
+  require structured component lots, and modal related-reference creation
+  requires names.
 - [x] `frontend/src/features/orders/configuration/OrderConfigurationPage.test.tsx`
   - the five Order Configuration subjects use the shared viewport-edge
   sidebar, identify Defaults initially, and update the active subject when the
@@ -142,7 +146,9 @@ remain incomplete production-activation gates.
   system-assigned protocol/library/batch identifiers, the dedicated structured
   protocol-version builder's step ordering/duplication/removal, required,
   optional, and conditional rules, typed-capture validation, materials,
-  outputs, equipment, QC gates, generated JSON preview, clone-from-controlled
+  including controlled definition/supplier/storage selection, prepared-reagent
+  component rows, date-only expiration, outputs, equipment, QC gates,
+  generated JSON preview, clone-from-controlled
   initialization, draft resume/save/discard, approval withdrawal,
   one-open-candidate action gating, unsaved-change warning, concurrency
   recovery, and return to the Protocols section,

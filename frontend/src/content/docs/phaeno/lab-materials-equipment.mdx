@@ -4,9 +4,22 @@ Materials and equipment records show what was used, in what quantity, and whethe
 
 ## Receive and qualify material lots
 
-Record the material identity, supplier and lot references, received quantity and unit, expiration when applicable, storage location, and current QC state. Only lots with **Passed** or **Approved exception** QC may be consumed in controlled work.
+Choose the lot kind first:
+
+- **Supplier lot** uses a controlled material identity, supplier, supplier lot number, and storage location.
+- **Prepared reagent** uses a controlled material identity, Phaeno lot number, storage location, and one or more source component lots. It does not use a supplier.
+
+Select existing controlled records when available. If a material, supplier, or storage location is new, choose the corresponding **Create a new…** option and enter its name in the focused modal. The entered name returns as the selected option in the lot form. The new reference is created with the lot, and POMS assigns an immutable key to a new material. Retired reference records are retained for history but are not available for new lots.
+
+Record the available quantity and unit. Use **Expiration or retest date** when applicable; this is a date-only field and the lot remains valid through the end of that date. Exact time-sensitive use-by control is not represented by this field.
+
+New lots show **QC: Pending**. A laboratory supervisor uses **Record QC**, confirms the QC date, and selects **Pass QC** or **Fail QC** in the modal. A failed outcome requires a reason. Passing QC makes the lot eligible for controlled work when its expiration or retest date, availability, and other rules are also satisfied. Failing QC keeps the lot blocked. POMS also retains the operator and server-recorded audit time.
+
+Only lots with **Passed** or **Approved exception** QC may be consumed in controlled work.
 
 An approved exception must retain the decision, reason, approver, and applicable scope. Expired, failed, quarantined, or otherwise unavailable lots remain blocked.
+
+When a prepared reagent is created, select each exact source lot and quantity. Every source lot must be QC-approved, unexpired, and available in the entered unit. POMS records the lineage and subtracts the component quantities atomically.
 
 ## Record consumption
 

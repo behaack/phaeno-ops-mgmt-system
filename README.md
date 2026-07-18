@@ -127,7 +127,7 @@ It was rebuilt on 2026-07-16 from `InitialPSeqOperations`, then extended by
 `CompleteLabOperations`, `AddLabQcProjection`,
 and `EnforceLabLibraryLineage`. The generated `AddWebsiteApi` migration has not
 been applied by this work. The current model contains 54 tables in
-`commercial_ops`, 22 Laboratory tables in `lab_ops`, two Website tables in
+`commercial_ops`, 26 Laboratory tables in `lab_ops`, two Website tables in
 `website`, and migration history in `public`; it has no `portal` schema.
 
 Use environment configuration for non-development database credentials. In ASP.NET Core configuration, the connection string can be supplied with `ConnectionStrings__DefaultConnection`.

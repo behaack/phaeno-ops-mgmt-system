@@ -295,8 +295,9 @@ No role or authentication changes are authorized by this inventory.
 | `20260716220428_InitialPSeqOperations` | The single reviewed Development baseline; it replaced the seven former migrations during the approved reset. |
 | `20260716223048_AddLabOperationsFoundation` | Additive migration applied to `phaeno_ops`; creates only the five Laboratory-owned `lab_ops` tables and internal foreign keys. |
 | `20260716225818_AddLabProviderCommandReceipts` | Additive migration applied to `phaeno_ops`; creates only the Laboratory-owned durable receipt table, indexes, and optional internal work-order foreign key. |
+| `20260718212212_AddLabMaterialReferences` | Additive migration applied to local `phaeno_ops`; backfills reusable material definitions, controlled suppliers and storage locations, date-only expiration/retest, and structured prepared-reagent component lineage without discarding historical lot records. |
 | `PSeqOperationsDbContextModelSnapshot.cs` | Current snapshot generated from the restructured model; EF reports no pending model changes. |
-| `public.__ef_migrations_history` | Current migration-history table containing the clean baseline and both additive Lab rows. The rebuilt database has no `portal` schema. |
+| `public.__ef_migrations_history` | Current local migration-history table containing the clean baseline and subsequent additive Portal migrations. The rebuilt database has no `portal` schema. |
 
 ## Records That Must Not Be Confused
 

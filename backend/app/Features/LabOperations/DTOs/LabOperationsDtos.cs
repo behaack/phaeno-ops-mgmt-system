@@ -16,10 +16,24 @@ public sealed record LabProtocolVersionDto(
     Guid Id, int ProtocolVersion, string Status, string DefinitionJson,
     Guid AuthoredByUserId, DateTime AuthoredAtUtc, Guid? ApprovedByUserId, DateTime? ApprovedAtUtc);
 
+public sealed record LabMaterialDefinitionDto(
+    Guid Id, string Key, string Name, string Kind, bool IsActive);
+
+public sealed record LabSupplierDto(Guid Id, string Name, bool IsActive);
+
+public sealed record LabStorageLocationDto(Guid Id, string Name, bool IsActive);
+
+public sealed record LabPreparedReagentComponentDto(
+    Guid Id, Guid ComponentMaterialLotId, string MaterialKey, string MaterialName,
+    string LotNumber, decimal Quantity, string QuantityUnit);
+
 public sealed record LabMaterialLotDto(
-    Guid Id, string Kind, string MaterialKey, string Name, string LotNumber,
-    string? Supplier, DateTime? ExpiresAtUtc, string StorageLocation,
-    decimal AvailableQuantity, string QuantityUnit, string QcDisposition, long Version);
+    Guid Id, string Kind, Guid MaterialDefinitionId, string MaterialKey, string Name,
+    string LotNumber, Guid? SupplierId, string? Supplier,
+    DateOnly? ExpirationOrRetestDate, Guid StorageLocationId, string StorageLocation,
+    decimal AvailableQuantity, string QuantityUnit, string QcDisposition,
+    DateOnly? QcPerformedOn, string? QcFailureReason,
+    IReadOnlyList<LabPreparedReagentComponentDto> Components, long Version);
 
 public sealed record LabEquipmentDto(
     Guid Id, string AssetCode, string Name, string EquipmentType, string Location,
@@ -33,6 +47,9 @@ public sealed record LabOperationsDashboardDto(
     IReadOnlyList<LabWorkOrderSummaryDto> WorkOrders,
     IReadOnlyList<LabProtocolDto> Protocols,
     IReadOnlyList<LabMaterialLotDto> MaterialLots,
+    IReadOnlyList<LabMaterialDefinitionDto> MaterialDefinitions,
+    IReadOnlyList<LabSupplierDto> Suppliers,
+    IReadOnlyList<LabStorageLocationDto> StorageLocations,
     IReadOnlyList<LabEquipmentDto> Equipment,
     IReadOnlyList<LabBatchDto> Batches,
     IReadOnlyList<LabRoleAssignmentDto> RoleAssignments);
@@ -107,10 +124,17 @@ public sealed record CreateContainerRequest(Guid? LabSpecimenId, Guid? ParentCon
 public sealed record RecordLabelPrintRequest(string Reason, string Outcome, string? FailureDetails);
 public sealed record CreateExecutionRequest(Guid? LabSpecimenId, Guid LabProtocolVersionId, Guid? AssignedToUserId);
 public sealed record ExecutionTransitionRequest(string Action, string? CapturedResultsJson, string? DeviationNote, long Version);
-public sealed record CreateMaterialLotRequest(string Kind, string MaterialKey, string Name, string LotNumber,
-    string? Supplier, string? ComponentsJson, DateTime? ExpiresAtUtc, string StorageLocation,
-    decimal AvailableQuantity, string QuantityUnit);
-public sealed record MaterialQcRequest(string Disposition, string ResultsJson, long Version);
+public sealed record CreatePreparedReagentComponentRequest(
+    Guid ComponentMaterialLotId, decimal Quantity, string QuantityUnit);
+public sealed record CreateMaterialLotRequest(
+    string Kind, Guid? MaterialDefinitionId, string? NewMaterialName, string LotNumber,
+    Guid? SupplierId, string? NewSupplierName,
+    Guid? StorageLocationId, string? NewStorageLocationName,
+    DateOnly? ExpirationOrRetestDate, decimal AvailableQuantity, string QuantityUnit,
+    IReadOnlyList<CreatePreparedReagentComponentRequest>? Components);
+public sealed record MaterialQcRequest(
+    string Disposition, DateOnly PerformedOn, string? FailureReason,
+    string ResultsJson, long Version);
 public sealed record ConsumeMaterialRequest(Guid LabMaterialLotId, Guid? OutputContainerId,
     decimal Quantity, string QuantityUnit, long LotVersion);
 public sealed record CreateEquipmentRequest(string AssetCode, string Name, string EquipmentType,

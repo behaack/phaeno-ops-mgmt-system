@@ -6,7 +6,6 @@ import { useState, type FormEvent } from 'react'
 import {
   createLabBatch,
   createLabEquipment,
-  createLabMaterialLot,
   createLabProtocol,
   createLabSendout,
   getLabOperationsDashboard,
@@ -18,6 +17,7 @@ import {
   transitionLabProtocolVersion,
   transitionLabSendout,
   type LabBatch,
+  type LabMaterialLot,
   type LabProtocol,
 } from '#/api/lab-operations'
 import { listOrganizationUsers } from '#/api/organization-management'
@@ -31,6 +31,7 @@ import { Label } from '#/components/ui/label'
 import { usePhaenoSession } from '#/features/auth/session-context'
 
 import { LabBarcodeLookup, LabBatchBarcodeScanner } from './LabBarcodeScanner'
+import { MaterialLotCreateDialog } from './MaterialLotCreateDialog'
 
 type CreateKind = 'protocol' | 'material' | 'equipment' | 'batch' | 'role' | null
 export type LabSection = 'work' | 'protocols' | 'materials' | 'equipment' | 'batches' | 'access'
@@ -90,7 +91,23 @@ export function LabOperationsPage({ section, onSectionChange }: { section: LabSe
           {dashboard.data && section === 'equipment' ? <EquipmentList items={dashboard.data.equipment} canManage={Boolean(session?.capabilities.canSuperviseLabWork)} onCreate={() => setCreateKind('equipment')} /> : null}
           {dashboard.data && section === 'batches' ? <BatchList items={dashboard.data.batches} canManage={Boolean(session?.capabilities.canOperateLabWork)} onCreate={() => setCreateKind('batch')} refresh={refresh} /> : null}
           {dashboard.data && section === 'access' ? <AccessList assignments={dashboard.data.roleAssignments} canManage={Boolean(session?.capabilities.canManageLabAccess)} onCreate={() => setCreateKind('role')} refresh={refresh} /> : null}
-          <CreateRecordDialog kind={createKind} users={users.data ?? []} onClose={() => setCreateKind(null)} onSaved={async () => { setCreateKind(null); await refresh() }} />
+          {dashboard.data ? (
+            <MaterialLotCreateDialog
+              open={createKind === 'material'}
+              definitions={dashboard.data.materialDefinitions}
+              suppliers={dashboard.data.suppliers}
+              storageLocations={dashboard.data.storageLocations}
+              materialLots={dashboard.data.materialLots}
+              onOpenChange={(open) => {
+                if (!open) setCreateKind(null)
+              }}
+              onSaved={async () => {
+                setCreateKind(null)
+                await refresh()
+              }}
+            />
+          ) : null}
+          <CreateRecordDialog kind={createKind === 'material' ? null : createKind} users={users.data ?? []} onClose={() => setCreateKind(null)} onSaved={async () => { setCreateKind(null); await refresh() }} />
         </div>
       </WorkspaceSidebar>
     </main>
@@ -144,8 +161,8 @@ function ProtocolList({ protocols, canManage, onCreate, refresh }: { protocols: 
 
   return (
     <>
-      <Card>
-        <CardHeader>
+      <Card className="gap-0 py-0">
+        <CardHeader className="border-b bg-muted/50 p-4">
           <div className="flex items-start justify-between gap-3">
             <div>
               <CardTitle>Controlled protocols</CardTitle>
@@ -160,7 +177,7 @@ function ProtocolList({ protocols, canManage, onCreate, refresh }: { protocols: 
             ) : null}
           </div>
         </CardHeader>
-        <CardContent>
+        <CardContent className="p-4">
           {transition.error ? (
             <Alert variant="destructive" className="mb-4">
               <AlertTitle>Protocol status was not changed</AlertTitle>
@@ -175,7 +192,7 @@ function ProtocolList({ protocols, canManage, onCreate, refresh }: { protocols: 
                 (version) => version.status === 'Draft' || version.status === 'Approved',
               )
               return (
-                <section key={protocol.id} className="rounded-lg border p-4">
+                <section key={protocol.id} className="rounded-lg border bg-background p-4 shadow-xs">
                   <div className="flex flex-wrap items-start justify-between gap-3">
                     <div>
                       <h3 className="font-medium">{protocol.name}</h3>
@@ -333,8 +350,246 @@ function ProtocolList({ protocols, canManage, onCreate, refresh }: { protocols: 
 }
 
 function MaterialList({ items, canManage, canApprove, onCreate, refresh }: { items: Awaited<ReturnType<typeof getLabOperationsDashboard>>['materialLots']; canManage: boolean; canApprove: boolean; onCreate: () => void; refresh: () => Promise<unknown> }) {
-  const qc = useMutation({ mutationFn: ({ id, version, disposition }: { id: string; version: number; disposition: string }) => recordLabMaterialQc(id, { version, disposition, resultsJson: '{}' }), onSuccess: refresh })
-  return <Card><CardHeader><div className="flex items-start justify-between gap-3"><div><CardTitle>Material and prepared-reagent lots</CardTitle><CardDescription>QC disposition, expiry, storage, and available quantity gate execution consumption.</CardDescription></div>{canManage ? <Button type="button" onClick={onCreate}><Plus data-icon="inline-start" /> New lot</Button> : null}</div></CardHeader><CardContent><div className="divide-y">{items.map((item) => <div key={item.id} className="flex flex-wrap items-center justify-between gap-3 py-3"><div><p className="font-medium">{item.name} · {item.lotNumber}</p><p className="text-xs text-muted-foreground">{item.availableQuantity} {item.quantityUnit} · {item.storageLocation}{item.expiresAtUtc ? ` · expires ${formatDate(item.expiresAtUtc)}` : ''}</p></div><div className="flex items-center gap-2"><Status value={item.qcDisposition} />{canApprove && item.qcDisposition === 'Pending' ? <><Button type="button" size="sm" variant="outline" disabled={qc.isPending} onClick={() => qc.mutate({ id: item.id, version: item.version, disposition: 'Failed' })}>Fail</Button><Button type="button" size="sm" disabled={qc.isPending} onClick={() => qc.mutate({ id: item.id, version: item.version, disposition: 'Passed' })}>Pass</Button></> : null}</div></div>)}</div></CardContent></Card>
+  const [qcLot, setQcLot] = useState<LabMaterialLot | null>(null)
+  const [qcOutcome, setQcOutcome] = useState<'Passed' | 'Failed' | ''>('')
+  const [qcPerformedOn, setQcPerformedOn] = useState(todayDateOnly())
+  const [qcFailureReason, setQcFailureReason] = useState('')
+  const [qcAttempted, setQcAttempted] = useState(false)
+  const qc = useMutation({
+    mutationFn: ({ lot, outcome }: { lot: LabMaterialLot; outcome: 'Passed' | 'Failed' }) =>
+      recordLabMaterialQc(lot.id, {
+        version: lot.version,
+        disposition: outcome,
+        performedOn: qcPerformedOn,
+        failureReason: outcome === 'Failed' ? qcFailureReason.trim() : null,
+        resultsJson: '{}',
+      }),
+    onSuccess: async () => {
+      setQcLot(null)
+      setQcOutcome('')
+      setQcPerformedOn(todayDateOnly())
+      setQcFailureReason('')
+      setQcAttempted(false)
+      await refresh()
+    },
+  })
+  const openQcDialog = (lot: LabMaterialLot) => {
+    qc.reset()
+    setQcOutcome('')
+    setQcPerformedOn(todayDateOnly())
+    setQcFailureReason('')
+    setQcAttempted(false)
+    setQcLot(lot)
+  }
+  const closeQcDialog = () => {
+    if (qc.isPending) return
+    qc.reset()
+    setQcLot(null)
+    setQcOutcome('')
+    setQcPerformedOn(todayDateOnly())
+    setQcFailureReason('')
+    setQcAttempted(false)
+  }
+  const submitQc = (event: FormEvent<HTMLFormElement>) => {
+    event.preventDefault()
+    if (!qcLot) return
+    if (!qcOutcome || !qcPerformedOn || (qcOutcome === 'Failed' && !qcFailureReason.trim())) {
+      setQcAttempted(true)
+      return
+    }
+    qc.mutate({ lot: qcLot, outcome: qcOutcome })
+  }
+
+  return (
+    <>
+      <Card className="gap-0 py-0">
+        <CardHeader className="border-b bg-muted/50 p-4">
+          <div className="flex items-start justify-between gap-3">
+            <div>
+              <CardTitle>Material and prepared-reagent lots</CardTitle>
+              <CardDescription>
+                Controlled identity, QC, expiration or retest date, storage, and available quantity gate execution use.
+              </CardDescription>
+            </div>
+            {canManage ? (
+              <Button type="button" onClick={onCreate}>
+                <Plus data-icon="inline-start" /> New lot
+              </Button>
+            ) : null}
+          </div>
+        </CardHeader>
+        <CardContent className="p-4">
+          <ul className="space-y-3">
+            {items.map((item) => (
+              <li
+                key={item.id}
+                className="flex flex-wrap items-center justify-between gap-3 rounded-lg border bg-background p-4 shadow-xs"
+              >
+                <div>
+                  <p className="font-medium">{item.name} · {item.lotNumber}</p>
+                  <p className="text-xs text-muted-foreground">
+                    {item.materialKey} · {item.availableQuantity} {item.quantityUnit} · {item.storageLocation}
+                    {item.supplier ? ` · ${item.supplier}` : ''}
+                    {item.expirationOrRetestDate ? ` · expiration/retest ${formatDateOnly(item.expirationOrRetestDate)}` : ''}
+                    {item.qcPerformedOn ? ` · QC ${formatDateOnly(item.qcPerformedOn)}` : ''}
+                  </p>
+                  {item.qcDisposition === 'Failed' && item.qcFailureReason ? (
+                    <p className="mt-1 text-xs text-muted-foreground">
+                      QC failure reason: {item.qcFailureReason}
+                    </p>
+                  ) : null}
+                  {item.components.length > 0 ? (
+                    <p className="mt-1 text-xs text-muted-foreground">
+                      Prepared from {item.components.map((component) => `${component.materialName} ${component.lotNumber}`).join(', ')}
+                    </p>
+                  ) : null}
+                </div>
+                <div className="flex items-center gap-2">
+                  <Status value={item.qcDisposition} prefix="QC" />
+                  {canApprove && item.qcDisposition === 'Pending' ? (
+                    <Button
+                      type="button"
+                      size="sm"
+                      variant="outline"
+                      onClick={() => openQcDialog(item)}
+                    >
+                      Record QC
+                    </Button>
+                  ) : null}
+                </div>
+              </li>
+            ))}
+          </ul>
+          {items.length === 0 ? <Empty>No material lots have been created.</Empty> : null}
+        </CardContent>
+      </Card>
+
+      <Dialog
+        open={qcLot !== null}
+        onOpenChange={(open) => {
+          if (!open) closeQcDialog()
+        }}
+      >
+        <DialogContent className="max-w-lg">
+          <form noValidate onSubmit={submitQc}>
+            <DialogHeader>
+              <DialogTitle>Record material QC</DialogTitle>
+              <DialogDescription>
+                {qcLot
+                  ? `Record the QC outcome for ${qcLot.name}, lot ${qcLot.lotNumber}.`
+                  : 'Record the QC outcome for this material lot.'}
+              </DialogDescription>
+            </DialogHeader>
+
+            <div className="my-5 grid gap-4">
+              <div className="grid gap-1.5">
+                <Label htmlFor="material-qc-date">
+                  QC date <span className="text-destructive" aria-hidden="true">*</span>
+                </Label>
+                <Input
+                  id="material-qc-date"
+                  type="date"
+                  max={todayDateOnly()}
+                  value={qcPerformedOn}
+                  aria-invalid={qcAttempted && !qcPerformedOn}
+                  onChange={(event) => setQcPerformedOn(event.target.value)}
+                />
+                {qcAttempted && !qcPerformedOn ? (
+                  <p className="text-sm text-destructive" role="alert">Enter the QC date.</p>
+                ) : null}
+              </div>
+
+              <fieldset className="grid gap-3" aria-invalid={qcAttempted && !qcOutcome}>
+                <legend className="mb-1 text-sm font-medium">
+                  QC outcome <span className="text-destructive" aria-hidden="true">*</span>
+                </legend>
+                <label htmlFor="material-qc-passed" className={`flex cursor-pointer items-start gap-3 rounded-lg border p-4 transition-colors ${
+                  qcOutcome === 'Passed' ? 'border-primary bg-primary/5 ring-1 ring-primary' : 'hover:bg-muted/40'
+                }`}>
+                  <input
+                    id="material-qc-passed"
+                    type="radio"
+                    name="material-qc-outcome"
+                    value="Passed"
+                    checked={qcOutcome === 'Passed'}
+                    className="mt-0.5 size-4 accent-primary"
+                    onChange={() => {
+                      setQcOutcome('Passed')
+                      setQcFailureReason('')
+                    }}
+                  />
+                  <span>
+                    <span className="block font-medium">Pass QC</span>
+                    <span className="mt-1 block text-sm text-muted-foreground">
+                      The lot may be used in controlled work when its other eligibility rules are met.
+                    </span>
+                  </span>
+                </label>
+                <label htmlFor="material-qc-failed" className={`flex cursor-pointer items-start gap-3 rounded-lg border p-4 transition-colors ${
+                  qcOutcome === 'Failed' ? 'border-destructive bg-destructive/5 ring-1 ring-destructive' : 'hover:bg-muted/40'
+                }`}>
+                  <input
+                    id="material-qc-failed"
+                    type="radio"
+                    name="material-qc-outcome"
+                    value="Failed"
+                    checked={qcOutcome === 'Failed'}
+                    className="mt-0.5 size-4 accent-destructive"
+                    onChange={() => setQcOutcome('Failed')}
+                  />
+                  <span>
+                    <span className="block font-medium">Fail QC</span>
+                    <span className="mt-1 block text-sm text-muted-foreground">
+                      The lot remains blocked from controlled work.
+                    </span>
+                  </span>
+                </label>
+                {qcAttempted && !qcOutcome ? (
+                  <p className="text-sm text-destructive" role="alert">Choose Pass QC or Fail QC.</p>
+                ) : null}
+              </fieldset>
+
+              {qcOutcome === 'Failed' ? (
+                <div className="grid gap-1.5">
+                  <Label htmlFor="material-qc-failure-reason">
+                    Failure reason <span className="text-destructive" aria-hidden="true">*</span>
+                  </Label>
+                  <textarea
+                    id="material-qc-failure-reason"
+                    value={qcFailureReason}
+                    maxLength={1000}
+                    rows={3}
+                    aria-invalid={qcAttempted && !qcFailureReason.trim()}
+                    className="w-full resize-y rounded-lg border border-input bg-background px-3 py-2 text-sm focus-visible:ring-3 focus-visible:ring-ring/50 focus-visible:outline-none"
+                    onChange={(event) => setQcFailureReason(event.target.value)}
+                  />
+                  {qcAttempted && !qcFailureReason.trim() ? (
+                    <p className="text-sm text-destructive" role="alert">Enter why the lot failed QC.</p>
+                  ) : null}
+                </div>
+              ) : null}
+            </div>
+
+            {qc.error ? (
+              <Alert variant="destructive" className="mb-4">
+                <AlertTitle>QC outcome was not recorded</AlertTitle>
+                <AlertDescription>
+                  {getLabOperationsError(qc.error, 'Refresh the material lot and try again.')}
+                </AlertDescription>
+              </Alert>
+            ) : null}
+
+            <DialogFooter>
+              <Button type="button" variant="outline" disabled={qc.isPending} onClick={closeQcDialog}>Cancel</Button>
+              <Button type="submit" disabled={qc.isPending}>
+                {qc.isPending ? 'Recording…' : 'Record QC outcome'}
+              </Button>
+            </DialogFooter>
+          </form>
+        </DialogContent>
+      </Dialog>
+    </>
+  )
 }
 
 function EquipmentList({ items, canManage, onCreate }: { items: Awaited<ReturnType<typeof getLabOperationsDashboard>>['equipment']; canManage: boolean; onCreate: () => void }) {
@@ -365,7 +620,6 @@ function CreateRecordDialog({ kind, users, onClose, onSaved }: { kind: CreateKin
   const [form, setForm] = useState<Record<string, string>>({})
   const mutation = useMutation({ mutationFn: async () => {
     if (kind === 'protocol') return createLabProtocol({ name: form.name, description: form.description })
-    if (kind === 'material') return createLabMaterialLot({ kind: form.kind || 'SupplierLot', materialKey: form.materialKey, name: form.name, lotNumber: form.lotNumber, supplier: form.supplier || null, componentsJson: form.componentsJson || null, expiresAtUtc: form.expiresAtUtc ? new Date(form.expiresAtUtc).toISOString() : null, storageLocation: form.location, availableQuantity: Number(form.quantity), quantityUnit: form.unit })
     if (kind === 'equipment') return createLabEquipment({ assetCode: form.assetCode, name: form.name, equipmentType: form.equipmentType, location: form.location, lastCalibrationAtUtc: form.lastCalibrationAtUtc ? new Date(form.lastCalibrationAtUtc).toISOString() : null, calibrationDueAtUtc: form.calibrationDueAtUtc ? new Date(form.calibrationDueAtUtc).toISOString() : null })
     if (kind === 'batch') return createLabBatch({ batchType: form.batchType, notes: form.notes || null })
     if (kind === 'role') return setLabRole(form.userId, form.role || 'Operator', { isActive: true })
@@ -373,15 +627,21 @@ function CreateRecordDialog({ kind, users, onClose, onSaved }: { kind: CreateKin
   }, onSuccess: async () => { setForm({}); await onSaved() } })
   const set = (key: string) => (event: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => setForm((current) => ({ ...current, [key]: event.target.value }))
   function submit(event: FormEvent) { event.preventDefault(); mutation.mutate() }
-  return <Dialog open={kind !== null} onOpenChange={(open) => !open && onClose()}><DialogContent><form onSubmit={submit}><DialogHeader><DialogTitle>{kind ? `Create ${humanize(kind)}` : 'Create record'}</DialogTitle><DialogDescription>{kind === 'protocol' ? 'Enter the controlled protocol details. POMS assigns its immutable key.' : kind === 'batch' ? 'Enter the batch details. POMS assigns its batch number.' : 'Required fields are marked. Laboratory records remain internal to Phaeno.'}</DialogDescription></DialogHeader><div className="my-5 grid gap-4 sm:grid-cols-2">{kind === 'protocol' ? <><div className="sm:col-span-2"><Field label="Name" value={form.name} onChange={set('name')} required /></div><TextField label="Description" value={form.description} onChange={set('description')} /></> : null}{kind === 'material' ? <><SelectField label="Lot kind" value={form.kind || 'SupplierLot'} onChange={set('kind')} options={['SupplierLot', 'PreparedReagent']} /><Field label="Material key" value={form.materialKey} onChange={set('materialKey')} required /><Field label="Name" value={form.name} onChange={set('name')} required /><Field label="Lot number" value={form.lotNumber} onChange={set('lotNumber')} required /><Field label="Supplier" value={form.supplier} onChange={set('supplier')} /><Field label="Storage location" value={form.location} onChange={set('location')} required /><Field label="Available quantity" value={form.quantity} onChange={set('quantity')} type="number" required /><Field label="Unit" value={form.unit} onChange={set('unit')} required /><Field label="Expires at" value={form.expiresAtUtc} onChange={set('expiresAtUtc')} type="datetime-local" /><TextField label="Components JSON" value={form.componentsJson} onChange={set('componentsJson')} /></> : null}{kind === 'equipment' ? <><Field label="Asset code" value={form.assetCode} onChange={set('assetCode')} required /><Field label="Name" value={form.name} onChange={set('name')} required /><Field label="Equipment type" value={form.equipmentType} onChange={set('equipmentType')} required /><Field label="Location" value={form.location} onChange={set('location')} required /><Field label="Last calibration" value={form.lastCalibrationAtUtc} onChange={set('lastCalibrationAtUtc')} type="datetime-local" /><Field label="Calibration due" value={form.calibrationDueAtUtc} onChange={set('calibrationDueAtUtc')} type="datetime-local" /></> : null}{kind === 'batch' ? <><Field label="Batch type" value={form.batchType} onChange={set('batchType')} required /><TextField label="Notes" value={form.notes} onChange={set('notes')} /></> : null}{kind === 'role' ? <><SelectField label="Phaeno user" value={form.userId || ''} onChange={set('userId')} options={users.map((user) => ({ value: user.id, label: `${user.firstName} ${user.lastName} · ${user.email}` }))} /><SelectField label="Role" value={form.role || 'Operator'} onChange={set('role')} options={['Operator', 'Supervisor', 'ProtocolAdministrator', 'ScientificReviewer', 'OperationsAdministrator']} /></> : null}</div>{mutation.error ? <Alert variant="destructive" className="mb-4"><AlertTitle>Record was not created</AlertTitle><AlertDescription>{getLabOperationsError(mutation.error, 'Check the entered values.')}</AlertDescription></Alert> : null}<DialogFooter><DialogClose asChild><Button type="button" variant="outline">Cancel</Button></DialogClose><Button type="submit" disabled={mutation.isPending}>{kind ? createActionLabel(kind) : 'Create'}</Button></DialogFooter></form></DialogContent></Dialog>
+  return <Dialog open={kind !== null} onOpenChange={(open) => !open && onClose()}><DialogContent><form onSubmit={submit}><DialogHeader><DialogTitle>{kind ? `Create ${humanize(kind)}` : 'Create record'}</DialogTitle><DialogDescription>{kind === 'protocol' ? 'Enter the controlled protocol details. POMS assigns its immutable key.' : kind === 'batch' ? 'Enter the batch details. POMS assigns its batch number.' : 'Required fields are marked. Laboratory records remain internal to Phaeno.'}</DialogDescription></DialogHeader><div className="my-5 grid gap-4 sm:grid-cols-2">{kind === 'protocol' ? <><div className="sm:col-span-2"><Field label="Name" value={form.name} onChange={set('name')} required /></div><TextField label="Description" value={form.description} onChange={set('description')} /></> : null}{kind === 'equipment' ? <><Field label="Asset code" value={form.assetCode} onChange={set('assetCode')} required /><Field label="Name" value={form.name} onChange={set('name')} required /><Field label="Equipment type" value={form.equipmentType} onChange={set('equipmentType')} required /><Field label="Location" value={form.location} onChange={set('location')} required /><Field label="Last calibration" value={form.lastCalibrationAtUtc} onChange={set('lastCalibrationAtUtc')} type="datetime-local" /><Field label="Calibration due" value={form.calibrationDueAtUtc} onChange={set('calibrationDueAtUtc')} type="datetime-local" /></> : null}{kind === 'batch' ? <><Field label="Batch type" value={form.batchType} onChange={set('batchType')} required /><TextField label="Notes" value={form.notes} onChange={set('notes')} /></> : null}{kind === 'role' ? <><SelectField label="Phaeno user" value={form.userId || ''} onChange={set('userId')} options={users.map((user) => ({ value: user.id, label: `${user.firstName} ${user.lastName} · ${user.email}` }))} /><SelectField label="Role" value={form.role || 'Operator'} onChange={set('role')} options={['Operator', 'Supervisor', 'ProtocolAdministrator', 'ScientificReviewer', 'OperationsAdministrator']} /></> : null}</div>{mutation.error ? <Alert variant="destructive" className="mb-4"><AlertTitle>Record was not created</AlertTitle><AlertDescription>{getLabOperationsError(mutation.error, 'Check the entered values.')}</AlertDescription></Alert> : null}<DialogFooter><DialogClose asChild><Button type="button" variant="outline">Cancel</Button></DialogClose><Button type="submit" disabled={mutation.isPending}>{kind ? createActionLabel(kind) : 'Create'}</Button></DialogFooter></form></DialogContent></Dialog>
 }
 
 function Field({ label, value = '', onChange, required, type = 'text' }: { label: string; value?: string; onChange: React.ChangeEventHandler<HTMLInputElement>; required?: boolean; type?: string }) { const id = `lab-${label.toLowerCase().replaceAll(' ', '-')}`; return <div><Label htmlFor={id}>{label}{required ? <span aria-hidden="true"> *</span> : null}</Label><Input id={id} className="mt-2" type={type} value={value ?? ''} onChange={onChange} required={required} /></div> }
 function TextField({ label, value = '', onChange }: { label: string; value?: string; onChange: React.ChangeEventHandler<HTMLTextAreaElement> }) { const id = `lab-${label.toLowerCase().replaceAll(' ', '-')}`; return <div className="sm:col-span-2"><Label htmlFor={id}>{label}</Label><textarea id={id} className="mt-2 min-h-20 w-full rounded-lg border bg-background px-3 py-2 text-sm" value={value ?? ''} onChange={onChange} /></div> }
 function SelectField({ label, value, onChange, options }: { label: string; value: string; onChange: React.ChangeEventHandler<HTMLSelectElement>; options: Array<string | { value: string; label: string }> }) { const id = `lab-${label.toLowerCase().replaceAll(' ', '-')}`; return <div><Label htmlFor={id}>{label} <span aria-hidden="true">*</span></Label><select id={id} className="mt-2 h-9 w-full rounded-lg border bg-background px-3 text-sm" value={value} onChange={onChange} required><option value="" disabled>Select…</option>{options.map((option) => { const value = typeof option === 'string' ? option : option.value; const text = typeof option === 'string' ? humanize(option) : option.label; return <option key={value} value={value}>{text}</option> })}</select></div> }
-function Status({ value }: { value: string }) { return <span className="rounded-full border bg-muted px-2.5 py-1 text-xs font-medium">{humanize(value)}</span> }
+function Status({ value, prefix }: { value: string; prefix?: string }) { return <span className="rounded-full border bg-muted px-2.5 py-1 text-xs font-medium">{prefix ? `${prefix}: ` : ''}{humanize(value)}</span> }
 function Empty({ children }: { children: React.ReactNode }) { return <p className="py-8 text-center text-sm text-muted-foreground">{children}</p> }
 function AccessDenied() { return <main className="page-wrap px-4 py-8"><Alert variant="destructive"><AlertTitle>Lab operations unavailable</AlertTitle><AlertDescription>An assigned Phaeno laboratory role is required.</AlertDescription></Alert></main> }
 function humanize(value: string) { return value.replace(/([a-z])([A-Z])/g, '$1 $2').replaceAll('_', ' ').replace(/^./, (character) => character.toUpperCase()) }
 function createActionLabel(kind: Exclude<CreateKind, null>) { return kind === 'role' ? 'Assign role' : `Create ${humanize(kind).toLowerCase()}` }
 function formatDate(value: string) { return new Intl.DateTimeFormat('en-US', { dateStyle: 'medium', timeStyle: 'short' }).format(new Date(value)) }
+function formatDateOnly(value: string) { return new Intl.DateTimeFormat('en-US', { dateStyle: 'medium', timeZone: 'UTC' }).format(new Date(`${value}T00:00:00Z`)) }
+function todayDateOnly() {
+  const now = new Date()
+  const local = new Date(now.getTime() - now.getTimezoneOffset() * 60_000)
+  return local.toISOString().slice(0, 10)
+}

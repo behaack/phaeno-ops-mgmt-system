@@ -12,10 +12,28 @@ export type LabRoleAssignment = { id: string; userId: string; userName: string; 
 export type LabWorkOrderSummary = { id: string; authorizationId: string; commercialOrderId: string | null; commercialOrderNumber: string | null; submittingOrganizationId: string; serviceKey: string; status: string; specimenCount: number; openExceptionCount: number; updatedAt: string; version: number }
 export type LabProtocolVersion = { id: string; protocolVersion: number; status: string; definitionJson: string; authoredByUserId: string; authoredAtUtc: string; approvedByUserId: string | null; approvedAtUtc: string | null }
 export type LabProtocol = { id: string; key: string; name: string; description: string | null; latestVersion: number; versions: LabProtocolVersion[]; version: number }
-export type LabMaterialLot = { id: string; kind: string; materialKey: string; name: string; lotNumber: string; supplier: string | null; expiresAtUtc: string | null; storageLocation: string; availableQuantity: number; quantityUnit: string; qcDisposition: string; version: number }
+export type LabMaterialDefinition = { id: string; key: string; name: string; kind: string; isActive: boolean }
+export type LabSupplier = { id: string; name: string; isActive: boolean }
+export type LabStorageLocation = { id: string; name: string; isActive: boolean }
+export type LabPreparedReagentComponent = { id: string; componentMaterialLotId: string; materialKey: string; materialName: string; lotNumber: string; quantity: number; quantityUnit: string }
+export type LabMaterialLot = { id: string; kind: string; materialDefinitionId: string; materialKey: string; name: string; lotNumber: string; supplierId: string | null; supplier: string | null; expirationOrRetestDate: string | null; storageLocationId: string; storageLocation: string; availableQuantity: number; quantityUnit: string; qcDisposition: string; qcPerformedOn: string | null; qcFailureReason: string | null; components: LabPreparedReagentComponent[]; version: number }
 export type LabEquipment = { id: string; assetCode: string; name: string; equipmentType: string; location: string; status: string; lastCalibrationAtUtc: string | null; calibrationDueAtUtc: string | null; version: number }
 export type LabBatch = { id: string; batchNumber: string; batchType: string; status: string; notes: string | null; memberCount: number; sendoutId: string | null; sendoutStatus: string | null; sendoutVersion: number | null; version: number }
-export type LabOperationsDashboard = { workOrders: LabWorkOrderSummary[]; protocols: LabProtocol[]; materialLots: LabMaterialLot[]; equipment: LabEquipment[]; batches: LabBatch[]; roleAssignments: LabRoleAssignment[] }
+export type LabOperationsDashboard = { workOrders: LabWorkOrderSummary[]; protocols: LabProtocol[]; materialLots: LabMaterialLot[]; materialDefinitions: LabMaterialDefinition[]; suppliers: LabSupplier[]; storageLocations: LabStorageLocation[]; equipment: LabEquipment[]; batches: LabBatch[]; roleAssignments: LabRoleAssignment[] }
+export type CreateLabMaterialLotInput = {
+  kind: 'SupplierLot' | 'PreparedReagent'
+  materialDefinitionId: string | null
+  newMaterialName: string | null
+  lotNumber: string
+  supplierId: string | null
+  newSupplierName: string | null
+  storageLocationId: string | null
+  newStorageLocationName: string | null
+  expirationOrRetestDate: string | null
+  availableQuantity: number
+  quantityUnit: string
+  components: Array<{ componentMaterialLotId: string; quantity: number; quantityUnit: string }>
+}
 
 export type LabSpecimen = { id: string; submittedSpecimenId: string; accessionNumber: string | null; receivedAtUtc: string | null; intakeDisposition: string; receiptCondition: string | null; intakeReasonCode: string | null; currentLocation: string | null; version: number }
 export type LabContainer = { id: string; labSpecimenId: string | null; parentContainerId: string | null; kind: string; barcode: string; label: string; labelPrintCount: number; location: string; quantity: number | null; quantityUnit: string | null; status: string; retainUntilUtc: string | null; version: number }
@@ -45,7 +63,7 @@ export const getLabContainerLabel = (id: string) => get<LabContainerLabel>(`/pla
 export const recordLabContainerLabelPrint = (id: string, input: { reason: string; outcome: 'Succeeded' | 'Failed'; failureDetails?: string | null }) => post<LabContainerLabel>(`/platform/lab-operations/containers/${id}/label-print`, input)
 export const createLabExecution = (workId: string, input: object) => post<LabExecution>(`/platform/lab-operations/work-orders/${workId}/executions`, input)
 export const transitionLabExecution = (id: string, input: object) => post<LabExecution>(`/platform/lab-operations/executions/${id}/transition`, input)
-export const createLabMaterialLot = (input: object) => post<LabMaterialLot>('/platform/lab-operations/material-lots', input)
+export const createLabMaterialLot = (input: CreateLabMaterialLotInput) => post<LabMaterialLot>('/platform/lab-operations/material-lots', input)
 export const recordLabMaterialQc = (id: string, input: object) => post<LabMaterialLot>(`/platform/lab-operations/material-lots/${id}/qc`, input)
 export const consumeLabMaterial = (executionId: string, input: object) => post<LabExecution>(`/platform/lab-operations/executions/${executionId}/material-consumptions`, input)
 export const createLabEquipment = (input: object) => post<LabEquipment>('/platform/lab-operations/equipment', input)

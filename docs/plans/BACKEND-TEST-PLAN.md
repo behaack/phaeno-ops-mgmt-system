@@ -35,12 +35,14 @@ and rollback-isolated PostgreSQL coverage.
   versions, receipt-before-accession behavior, controlled hold/rejection reasons,
   immutable authorization payload hashes, pre-receipt cancellation boundaries,
   work cancellation, provider-command receipt matching, controlled work
-  milestones, protocol activation, QC-gated material consumption, and
+  milestones, protocol activation, QC-gated material consumption, required
+  failed-QC reasons with the laboratory QC date, and
   customer-safe exception separation, including execution completion without
   an optional deviation note; plus Phaeno barcode kind/prefix allocation,
   safe-character generation, Code 39 scan normalization, checksum validation,
-  and altered-value rejection; plus readable protocol-key collision handling
-  and date-stamped scanner-safe batch-number generation; plus draft definition
+  and altered-value rejection; plus readable protocol/material-key collision
+  handling, material-lot quantity and structured-component invariants, and
+  date-stamped scanner-safe batch-number generation; plus draft definition
   updates, approval withdrawal, discarded-version history, and illegal
   post-discard transitions.
 - [x] `backend/test/LabOperationsAuthorizationTests.cs` - exact additive
@@ -49,7 +51,7 @@ and rollback-isolated PostgreSQL coverage.
   inactive-assignment filtering; external-user denial; disabled-user denial;
   explicit role matching; and `/api/session` capability projection.
 - [x] `backend/test/PersistenceTests.cs` - Commercial and Laboratory assembly
-  schema ownership, all 22 Laboratory mappings, and no Laboratory foreign key
+  schema ownership, all 26 Laboratory mappings, and no Laboratory foreign key
   into a Commercial entity.
 - [x] `backend/test/ApiResponseTests.cs` - `SuccessEnvelopeSerializesWithReferenceShape`.
 - [x] `backend/test/ApiResponseTests.cs` - `FailureEnvelopeSerializesWithReferenceShape`.

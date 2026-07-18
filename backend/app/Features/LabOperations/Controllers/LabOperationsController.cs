@@ -48,11 +48,19 @@ public sealed partial class LabOperationsController(
             .ToDictionaryAsync(item => item.WorkOrderId, item => item.Count, cancellationToken);
 
         var protocols = await ReadProtocolsAsync(cancellationToken);
-        var lots = await dbContext.LabMaterialLots.AsNoTracking()
-            .OrderBy(item => item.Name).ThenBy(item => item.LotNumber)
-            .Select(item => new LabMaterialLotDto(item.Id, item.Kind.ToString(), item.MaterialKey,
-                item.Name, item.LotNumber, item.Supplier, item.ExpiresAtUtc, item.StorageLocation,
-                item.AvailableQuantity, item.QuantityUnit, item.QcDisposition.ToString(), item.Version))
+        var lots = await ReadMaterialLotsAsync(cancellationToken);
+        var materialDefinitions = await dbContext.LabMaterialDefinitions.AsNoTracking()
+            .Where(item => item.IsActive).OrderBy(item => item.Name)
+            .Select(item => new LabMaterialDefinitionDto(
+                item.Id, item.Key, item.Name, item.Kind.ToString(), item.IsActive))
+            .ToListAsync(cancellationToken);
+        var suppliers = await dbContext.LabSuppliers.AsNoTracking()
+            .Where(item => item.IsActive).OrderBy(item => item.Name)
+            .Select(item => new LabSupplierDto(item.Id, item.Name, item.IsActive))
+            .ToListAsync(cancellationToken);
+        var storageLocations = await dbContext.LabStorageLocations.AsNoTracking()
+            .Where(item => item.IsActive).OrderBy(item => item.Name)
+            .Select(item => new LabStorageLocationDto(item.Id, item.Name, item.IsActive))
             .ToListAsync(cancellationToken);
         var equipment = await dbContext.LabEquipment.AsNoTracking().OrderBy(item => item.AssetCode)
             .Select(item => new LabEquipmentDto(item.Id, item.AssetCode, item.Name, item.EquipmentType,
@@ -64,7 +72,8 @@ public sealed partial class LabOperationsController(
         return new LabOperationsDashboardDto(
             workOrders.Select(work => MapWorkOrder(work, authorizations, commercialOrders,
                 specimenCounts.GetValueOrDefault(work.Id), exceptionCounts.GetValueOrDefault(work.Id))).ToList(),
-            protocols, lots, equipment, batches, roles);
+            protocols, lots, materialDefinitions, suppliers, storageLocations,
+            equipment, batches, roles);
     }
 
     [HttpGet("work-orders/{workOrderId:guid}")]

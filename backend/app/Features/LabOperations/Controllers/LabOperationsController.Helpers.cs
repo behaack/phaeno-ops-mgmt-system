@@ -6,6 +6,7 @@ using PSeq.Operations.Commercial.LabOperations.Application;
 using PSeq.Operations.Commercial.LabOperations.Domain;
 using PSeq.Operations.Laboratory.Domain;
 using PhaenoPortal.App.Features.LabOperations.DTOs;
+using PhaenoPortal.App.Features.LabOperations.Services;
 using PhaenoPortal.App.Features.OrderManagement.Domain;
 using PhaenoPortal.App.Features.OrderManagement.Services;
 
@@ -17,6 +18,90 @@ public sealed partial class LabOperationsController
     private async Task<LabSpecimen> RequireSpecimenAsync(Guid workOrderId, Guid specimenId, CancellationToken cancellationToken) =>
         await dbContext.LabSpecimens.SingleOrDefaultAsync(item => item.Id == specimenId
             && item.LabWorkOrderId == workOrderId, cancellationToken) ?? throw Missing();
+
+    private async Task<LabMaterialDefinition> ResolveMaterialDefinitionAsync(
+        LabMaterialLotKind kind, Guid? existingId, string? newName,
+        CancellationToken cancellationToken)
+    {
+        if (existingId.HasValue == !string.IsNullOrWhiteSpace(newName))
+            throw Invalid("material_definition_selection_invalid",
+                "Select an existing material or enter a new material name.");
+
+        if (existingId.HasValue)
+        {
+            return await dbContext.LabMaterialDefinitions.SingleOrDefaultAsync(
+                item => item.Id == existingId.Value && item.IsActive && item.Kind == kind,
+                cancellationToken)
+                ?? throw Invalid("material_definition_invalid",
+                    "The selected active material does not match the lot kind.");
+        }
+
+        var normalizedName = newName!.Trim();
+        if (await dbContext.LabMaterialDefinitions.AsNoTracking().AnyAsync(
+            item => item.Kind == kind && item.Name.ToUpper() == normalizedName.ToUpper(),
+            cancellationToken))
+            throw Conflict("material_definition_exists",
+                "A material with this name already exists. Select it from the list.");
+        var key = await LabIdentifierService.AllocateMaterialKeyAsync(
+            dbContext, normalizedName, cancellationToken);
+        var definition = new LabMaterialDefinition(key, normalizedName, kind);
+        dbContext.LabMaterialDefinitions.Add(definition);
+        return definition;
+    }
+
+    private async Task<LabSupplier> ResolveSupplierAsync(
+        Guid? existingId, string? newName, CancellationToken cancellationToken)
+    {
+        if (existingId.HasValue == !string.IsNullOrWhiteSpace(newName))
+            throw Invalid("material_supplier_selection_invalid",
+                "Select an existing supplier or enter a new supplier name.");
+        if (existingId.HasValue)
+        {
+            return await dbContext.LabSuppliers.SingleOrDefaultAsync(
+                item => item.Id == existingId.Value && item.IsActive, cancellationToken)
+                ?? throw Invalid("material_supplier_invalid", "The selected supplier is not active.");
+        }
+
+        var candidate = new LabSupplier(newName!);
+        var existing = await dbContext.LabSuppliers.SingleOrDefaultAsync(
+            item => item.NormalizedName == candidate.NormalizedName, cancellationToken);
+        if (existing is not null)
+        {
+            if (!existing.IsActive)
+                throw Conflict("material_supplier_inactive",
+                    "This supplier is retired and must be reactivated before use.");
+            return existing;
+        }
+        dbContext.LabSuppliers.Add(candidate);
+        return candidate;
+    }
+
+    private async Task<LabStorageLocation> ResolveStorageLocationAsync(
+        Guid? existingId, string? newName, CancellationToken cancellationToken)
+    {
+        if (existingId.HasValue == !string.IsNullOrWhiteSpace(newName))
+            throw Invalid("material_storage_selection_invalid",
+                "Select an existing storage location or enter a new location name.");
+        if (existingId.HasValue)
+        {
+            return await dbContext.LabStorageLocations.SingleOrDefaultAsync(
+                item => item.Id == existingId.Value && item.IsActive, cancellationToken)
+                ?? throw Invalid("material_storage_invalid", "The selected storage location is not active.");
+        }
+
+        var candidate = new LabStorageLocation(newName!);
+        var existing = await dbContext.LabStorageLocations.SingleOrDefaultAsync(
+            item => item.NormalizedName == candidate.NormalizedName, cancellationToken);
+        if (existing is not null)
+        {
+            if (!existing.IsActive)
+                throw Conflict("material_storage_inactive",
+                    "This storage location is retired and must be reactivated before use.");
+            return existing;
+        }
+        dbContext.LabStorageLocations.Add(candidate);
+        return candidate;
+    }
 
     private async Task EmitProjectionAsync(LabWorkOrder work, Guid actorUserId,
         string eventType, CancellationToken cancellationToken, DateTime? expectedCompletionAtUtc = null,
@@ -86,6 +171,53 @@ public sealed partial class LabOperationsController
         }).ToList();
     }
 
+    private async Task<List<LabMaterialLotDto>> ReadMaterialLotsAsync(
+        CancellationToken cancellationToken)
+    {
+        var lots = await dbContext.LabMaterialLots.AsNoTracking().ToListAsync(cancellationToken);
+        var definitions = await dbContext.LabMaterialDefinitions.AsNoTracking()
+            .ToDictionaryAsync(item => item.Id, cancellationToken);
+        var suppliers = await dbContext.LabSuppliers.AsNoTracking()
+            .ToDictionaryAsync(item => item.Id, cancellationToken);
+        var storageLocations = await dbContext.LabStorageLocations.AsNoTracking()
+            .ToDictionaryAsync(item => item.Id, cancellationToken);
+        var components = await dbContext.LabPreparedReagentComponents.AsNoTracking()
+            .OrderBy(item => item.Id)
+            .ToListAsync(cancellationToken);
+        var componentsByPreparedLot = components
+            .GroupBy(item => item.PreparedMaterialLotId)
+            .ToDictionary(group => group.Key, group => group.ToList());
+        var lotsById = lots.ToDictionary(item => item.Id);
+
+        return lots.Select(lot =>
+        {
+            var definition = definitions[lot.MaterialDefinitionId];
+            suppliers.TryGetValue(lot.SupplierId ?? Guid.Empty, out var supplier);
+            var storageLocation = storageLocations[lot.StorageLocationId];
+            var componentDtos = componentsByPreparedLot.GetValueOrDefault(lot.Id)?
+                .Select(component =>
+                {
+                    var componentLot = lotsById[component.ComponentMaterialLotId];
+                    var componentDefinition = definitions[componentLot.MaterialDefinitionId];
+                    return new LabPreparedReagentComponentDto(
+                        component.Id, component.ComponentMaterialLotId,
+                        componentDefinition.Key, componentDefinition.Name,
+                        componentLot.LotNumber, component.Quantity, component.QuantityUnit);
+                })
+                .ToList() ?? [];
+
+            return new LabMaterialLotDto(
+                lot.Id, lot.Kind.ToString(), definition.Id, definition.Key, definition.Name,
+                lot.LotNumber, supplier?.Id, supplier?.Name, lot.ExpirationOrRetestDate,
+                storageLocation.Id, storageLocation.Name, lot.AvailableQuantity,
+                lot.QuantityUnit, lot.QcDisposition.ToString(), lot.QcPerformedOn,
+                lot.QcFailureReason, componentDtos, lot.Version);
+        })
+        .OrderBy(item => item.Name)
+        .ThenBy(item => item.LotNumber)
+        .ToList();
+    }
+
     private async Task<List<LabRoleAssignmentDto>> ReadRoleAssignmentsAsync(CancellationToken cancellationToken)
     {
         var assignments = await dbContext.LabRoleAssignments.AsNoTracking()
@@ -125,11 +257,6 @@ public sealed partial class LabOperationsController
     private static LabProtocolVersionDto MapProtocolVersion(LabProtocolVersion version) =>
         new(version.Id, version.ProtocolVersion, version.Status.ToString(), version.DefinitionJson,
             version.AuthoredByUserId, version.AuthoredAtUtc, version.ApprovedByUserId, version.ApprovedAtUtc);
-
-    private static LabMaterialLotDto MapMaterialLot(LabMaterialLot item) =>
-        new(item.Id, item.Kind.ToString(), item.MaterialKey, item.Name, item.LotNumber,
-            item.Supplier, item.ExpiresAtUtc, item.StorageLocation, item.AvailableQuantity,
-            item.QuantityUnit, item.QcDisposition.ToString(), item.Version);
 
     private static LabEquipmentDto MapEquipment(LabEquipment item) =>
         new(item.Id, item.AssetCode, item.Name, item.EquipmentType, item.Location,

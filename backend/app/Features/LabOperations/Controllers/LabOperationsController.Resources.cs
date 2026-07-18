@@ -16,12 +16,72 @@ public sealed partial class LabOperationsController
             LabRole.Operator, LabRole.Supervisor, LabRole.OperationsAdministrator);
         if (!Enum.TryParse<LabMaterialLotKind>(request.Kind, true, out var kind))
             throw Invalid("material_lot_kind_invalid", "The material lot kind is invalid.");
-        var lot = new LabMaterialLot(kind, request.MaterialKey, request.Name, request.LotNumber,
-            request.Supplier, NormalizeOptionalJson(request.ComponentsJson, "material_components_invalid"),
-            request.ExpiresAtUtc, request.StorageLocation, request.AvailableQuantity, request.QuantityUnit);
+        if (request.AvailableQuantity < 0)
+            throw Invalid("material_quantity_invalid", "Available quantity cannot be negative.");
+        if (request.ExpirationOrRetestDate < DateOnly.FromDateTime(DateTime.UtcNow))
+            throw Invalid("material_expiration_invalid", "Expiration or retest date cannot be in the past.");
+
+        var componentRequests = request.Components ?? [];
+        if (kind == LabMaterialLotKind.SupplierLot && componentRequests.Count > 0)
+            throw Invalid("material_components_not_allowed", "Supplier lots cannot have prepared-reagent components.");
+        if (kind == LabMaterialLotKind.PreparedReagent && componentRequests.Count == 0)
+            throw Invalid("material_components_required", "A prepared reagent requires at least one component lot.");
+        if (componentRequests.Select(item => item.ComponentMaterialLotId).Distinct().Count() != componentRequests.Count)
+            throw Invalid("material_component_duplicate", "Each component lot may be selected only once.");
+
+        await using var transaction = await dbContext.Database.BeginTransactionAsync(cancellationToken);
+        var definition = await ResolveMaterialDefinitionAsync(
+            kind, request.MaterialDefinitionId, request.NewMaterialName, cancellationToken);
+        var supplier = kind == LabMaterialLotKind.SupplierLot
+            ? await ResolveSupplierAsync(request.SupplierId, request.NewSupplierName, cancellationToken)
+            : null;
+        if (kind == LabMaterialLotKind.PreparedReagent
+            && (request.SupplierId.HasValue || !string.IsNullOrWhiteSpace(request.NewSupplierName)))
+            throw Invalid("material_supplier_not_allowed", "A prepared reagent cannot have a supplier.");
+        var storageLocation = await ResolveStorageLocationAsync(
+            request.StorageLocationId, request.NewStorageLocationName, cancellationToken);
+
+        var sourceLots = componentRequests.Count == 0
+            ? []
+            : await dbContext.LabMaterialLots
+                .Where(item => componentRequests.Select(component => component.ComponentMaterialLotId).Contains(item.Id))
+                .ToListAsync(cancellationToken);
+        if (sourceLots.Count != componentRequests.Count)
+            throw Invalid("material_component_invalid", "One or more component lots could not be found.");
+
+        var today = DateOnly.FromDateTime(DateTime.UtcNow);
+        foreach (var componentRequest in componentRequests)
+        {
+            var sourceLot = sourceLots.Single(item => item.Id == componentRequest.ComponentMaterialLotId);
+            if (sourceLot.QcDisposition is not (LabQcDisposition.Passed or LabQcDisposition.ApprovedException))
+                throw Conflict("material_component_qc_required", "Every component lot must pass QC before preparation.");
+            if (sourceLot.ExpirationOrRetestDate < today)
+                throw Conflict("material_component_expired", "An expired component lot cannot be used.");
+            if (!string.Equals(sourceLot.QuantityUnit, componentRequest.QuantityUnit, StringComparison.OrdinalIgnoreCase))
+                throw Invalid("material_component_unit_mismatch", "Each component must use its source lot's tracked unit.");
+            try
+            {
+                sourceLot.Consume(componentRequest.Quantity);
+            }
+            catch (InvalidOperationException exception)
+            {
+                throw Conflict("material_component_quantity_unavailable", exception.Message);
+            }
+        }
+
+        var lot = new LabMaterialLot(kind, definition.Id, request.LotNumber, supplier?.Id,
+            request.ExpirationOrRetestDate, storageLocation.Id,
+            request.AvailableQuantity, request.QuantityUnit);
         dbContext.LabMaterialLots.Add(lot);
+        foreach (var componentRequest in componentRequests)
+        {
+            dbContext.LabPreparedReagentComponents.Add(new LabPreparedReagentComponent(
+                lot.Id, componentRequest.ComponentMaterialLotId,
+                componentRequest.Quantity, componentRequest.QuantityUnit));
+        }
         await dbContext.SaveChangesAsync(cancellationToken);
-        return MapMaterialLot(lot);
+        await transaction.CommitAsync(cancellationToken);
+        return (await ReadMaterialLotsAsync(cancellationToken)).Single(item => item.Id == lot.Id);
     }
 
     [HttpPost("material-lots/{lotId:guid}/qc")]
@@ -35,10 +95,18 @@ public sealed partial class LabOperationsController
         var lot = await dbContext.LabMaterialLots.SingleOrDefaultAsync(item => item.Id == lotId, cancellationToken)
             ?? throw Missing();
         EnsureVersion(lot.Version, request.Version);
-        lot.RecordQc(disposition, NormalizeJson(request.ResultsJson, "material_qc_results_invalid"),
-            actor.User.Id, DateTime.UtcNow);
+        try
+        {
+            lot.RecordQc(disposition, request.PerformedOn, request.FailureReason,
+                NormalizeJson(request.ResultsJson, "material_qc_results_invalid"),
+                actor.User.Id, DateTime.UtcNow);
+        }
+        catch (ArgumentException exception)
+        {
+            throw Invalid("material_qc_details_invalid", exception.Message);
+        }
         await dbContext.SaveChangesAsync(cancellationToken);
-        return MapMaterialLot(lot);
+        return (await ReadMaterialLotsAsync(cancellationToken)).Single(item => item.Id == lot.Id);
     }
 
     [HttpPost("executions/{executionId:guid}/material-consumptions")]
@@ -56,7 +124,7 @@ public sealed partial class LabOperationsController
         EnsureVersion(lot.Version, request.LotVersion);
         if (lot.QcDisposition is not (LabQcDisposition.Passed or LabQcDisposition.ApprovedException))
             throw Conflict("material_qc_required", "The material lot must pass QC before use.");
-        if (lot.ExpiresAtUtc < DateTime.UtcNow)
+        if (lot.ExpirationOrRetestDate < DateOnly.FromDateTime(DateTime.UtcNow))
             throw Conflict("material_expired", "The material lot is expired.");
         if (!string.Equals(lot.QuantityUnit, request.QuantityUnit, StringComparison.OrdinalIgnoreCase))
             throw Invalid("material_unit_mismatch", "Consumption must use the lot's tracked quantity unit.");

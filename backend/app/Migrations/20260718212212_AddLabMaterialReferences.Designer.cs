@@ -2,6 +2,7 @@
 using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 using PhaenoPortal.App.Infrastructure.Persistence;
@@ -11,9 +12,11 @@ using PhaenoPortal.App.Infrastructure.Persistence;
 namespace PSeq.Operations.Api.Migrations
 {
     [DbContext(typeof(PSeqOperationsDbContext))]
-    partial class PSeqOperationsDbContextModelSnapshot : ModelSnapshot
+    [Migration("20260718212212_AddLabMaterialReferences")]
+    partial class AddLabMaterialReferences
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -4384,26 +4387,6 @@ namespace PSeq.Operations.Api.Migrations
                     b.ToTable("lab_material_lots", "lab_ops");
                 });
 
-            modelBuilder.Entity("PSeq.Operations.Laboratory.Domain.LabMaterialLot", b =>
-                {
-                    b.HasOne("PSeq.Operations.Laboratory.Domain.LabMaterialDefinition", null)
-                        .WithMany()
-                        .HasForeignKey("MaterialDefinitionId")
-                        .OnDelete(DeleteBehavior.Restrict)
-                        .IsRequired();
-
-                    b.HasOne("PSeq.Operations.Laboratory.Domain.LabStorageLocation", null)
-                        .WithMany()
-                        .HasForeignKey("StorageLocationId")
-                        .OnDelete(DeleteBehavior.Restrict)
-                        .IsRequired();
-
-                    b.HasOne("PSeq.Operations.Laboratory.Domain.LabSupplier", null)
-                        .WithMany()
-                        .HasForeignKey("SupplierId")
-                        .OnDelete(DeleteBehavior.Restrict);
-                });
-
             modelBuilder.Entity("PSeq.Operations.Laboratory.Domain.LabNgsSendout", b =>
                 {
                     b.Property<Guid>("Id")
@@ -4692,21 +4675,6 @@ namespace PSeq.Operations.Api.Migrations
                         .IsUnique();
 
                     b.ToTable("lab_protocols", "lab_ops");
-                });
-
-            modelBuilder.Entity("PSeq.Operations.Laboratory.Domain.LabPreparedReagentComponent", b =>
-                {
-                    b.HasOne("PSeq.Operations.Laboratory.Domain.LabMaterialLot", null)
-                        .WithMany()
-                        .HasForeignKey("ComponentMaterialLotId")
-                        .OnDelete(DeleteBehavior.Restrict)
-                        .IsRequired();
-
-                    b.HasOne("PSeq.Operations.Laboratory.Domain.LabMaterialLot", null)
-                        .WithMany()
-                        .HasForeignKey("PreparedMaterialLotId")
-                        .OnDelete(DeleteBehavior.Restrict)
-                        .IsRequired();
                 });
 
             modelBuilder.Entity("PSeq.Operations.Laboratory.Domain.LabProtocolExecution", b =>
@@ -7162,6 +7130,26 @@ namespace PSeq.Operations.Api.Migrations
                         .OnDelete(DeleteBehavior.Restrict);
                 });
 
+            modelBuilder.Entity("PSeq.Operations.Laboratory.Domain.LabMaterialLot", b =>
+                {
+                    b.HasOne("PSeq.Operations.Laboratory.Domain.LabMaterialDefinition", null)
+                        .WithMany()
+                        .HasForeignKey("MaterialDefinitionId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("PSeq.Operations.Laboratory.Domain.LabStorageLocation", null)
+                        .WithMany()
+                        .HasForeignKey("StorageLocationId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("PSeq.Operations.Laboratory.Domain.LabSupplier", null)
+                        .WithMany()
+                        .HasForeignKey("SupplierId")
+                        .OnDelete(DeleteBehavior.Restrict);
+                });
+
             modelBuilder.Entity("PSeq.Operations.Laboratory.Domain.LabNgsSendout", b =>
                 {
                     b.HasOne("PSeq.Operations.Laboratory.Domain.LabOperationalBatch", null)
@@ -7176,6 +7164,21 @@ namespace PSeq.Operations.Api.Migrations
                     b.HasOne("PSeq.Operations.Laboratory.Domain.LabWorkOrder", null)
                         .WithMany()
                         .HasForeignKey("LabWorkOrderId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+                });
+
+            modelBuilder.Entity("PSeq.Operations.Laboratory.Domain.LabPreparedReagentComponent", b =>
+                {
+                    b.HasOne("PSeq.Operations.Laboratory.Domain.LabMaterialLot", null)
+                        .WithMany()
+                        .HasForeignKey("ComponentMaterialLotId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("PSeq.Operations.Laboratory.Domain.LabMaterialLot", null)
+                        .WithMany()
+                        .HasForeignKey("PreparedMaterialLotId")
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
                 });

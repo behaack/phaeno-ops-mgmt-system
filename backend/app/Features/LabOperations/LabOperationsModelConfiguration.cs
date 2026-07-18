@@ -170,23 +170,70 @@ public static class LabOperationsModelConfiguration
             entity.HasOne<LabProtocolVersion>().WithMany().HasForeignKey(e => e.LabProtocolVersionId).OnDelete(DeleteBehavior.Restrict);
         });
 
+        modelBuilder.Entity<LabMaterialDefinition>(entity =>
+        {
+            entity.ToTable("lab_material_definitions", laboratorySchema);
+            entity.HasKey(e => e.Id);
+            ConfigureAudited(entity);
+            entity.Property(e => e.Key).HasMaxLength(100).IsRequired();
+            entity.Property(e => e.Name).HasMaxLength(255).IsRequired();
+            entity.Property(e => e.Kind).HasConversion<string>().HasMaxLength(50).IsRequired();
+            entity.HasIndex(e => e.Key).IsUnique();
+            entity.HasIndex(e => new { e.Kind, e.IsActive, e.Name });
+        });
+
+        modelBuilder.Entity<LabSupplier>(entity =>
+        {
+            entity.ToTable("lab_suppliers", laboratorySchema);
+            entity.HasKey(e => e.Id);
+            ConfigureAudited(entity);
+            entity.Property(e => e.Name).HasMaxLength(255).IsRequired();
+            entity.Property(e => e.NormalizedName).HasMaxLength(255).IsRequired();
+            entity.HasIndex(e => e.NormalizedName).IsUnique();
+            entity.HasIndex(e => new { e.IsActive, e.Name });
+        });
+
+        modelBuilder.Entity<LabStorageLocation>(entity =>
+        {
+            entity.ToTable("lab_storage_locations", laboratorySchema);
+            entity.HasKey(e => e.Id);
+            ConfigureAudited(entity);
+            entity.Property(e => e.Name).HasMaxLength(255).IsRequired();
+            entity.Property(e => e.NormalizedName).HasMaxLength(255).IsRequired();
+            entity.HasIndex(e => e.NormalizedName).IsUnique();
+            entity.HasIndex(e => new { e.IsActive, e.Name });
+        });
+
         modelBuilder.Entity<LabMaterialLot>(entity =>
         {
             entity.ToTable("lab_material_lots", laboratorySchema);
             entity.HasKey(e => e.Id);
             ConfigureAudited(entity);
             entity.Property(e => e.Kind).HasConversion<string>().HasMaxLength(50).IsRequired();
-            entity.Property(e => e.MaterialKey).HasMaxLength(100).IsRequired();
-            entity.Property(e => e.Name).HasMaxLength(255).IsRequired();
             entity.Property(e => e.LotNumber).HasMaxLength(100).IsRequired();
-            entity.Property(e => e.Supplier).HasMaxLength(255);
-            entity.Property(e => e.ComponentsJson).HasColumnType("jsonb");
-            entity.Property(e => e.StorageLocation).HasMaxLength(255).IsRequired();
+            entity.Property(e => e.LegacyComponentsJson).HasColumnName("components_json").HasColumnType("jsonb");
+            entity.Property(e => e.ExpirationOrRetestDate).HasColumnType("date");
             entity.Property(e => e.QuantityUnit).HasMaxLength(50).IsRequired();
             entity.Property(e => e.QcDisposition).HasConversion<string>().HasMaxLength(50).IsRequired();
             entity.Property(e => e.QcResultsJson).HasColumnType("jsonb");
-            entity.HasIndex(e => new { e.MaterialKey, e.LotNumber }).IsUnique();
-            entity.HasIndex(e => new { e.QcDisposition, e.ExpiresAtUtc });
+            entity.Property(e => e.QcPerformedOn).HasColumnType("date");
+            entity.Property(e => e.QcFailureReason).HasMaxLength(1000);
+            entity.HasIndex(e => new { e.MaterialDefinitionId, e.LotNumber }).IsUnique();
+            entity.HasIndex(e => new { e.QcDisposition, e.ExpirationOrRetestDate });
+            entity.HasOne<LabMaterialDefinition>().WithMany().HasForeignKey(e => e.MaterialDefinitionId).OnDelete(DeleteBehavior.Restrict);
+            entity.HasOne<LabSupplier>().WithMany().HasForeignKey(e => e.SupplierId).OnDelete(DeleteBehavior.Restrict);
+            entity.HasOne<LabStorageLocation>().WithMany().HasForeignKey(e => e.StorageLocationId).OnDelete(DeleteBehavior.Restrict);
+        });
+
+        modelBuilder.Entity<LabPreparedReagentComponent>(entity =>
+        {
+            entity.ToTable("lab_prepared_reagent_components", laboratorySchema);
+            entity.HasKey(e => e.Id);
+            entity.Property(e => e.QuantityUnit).HasMaxLength(50).IsRequired();
+            entity.HasIndex(e => new { e.PreparedMaterialLotId, e.ComponentMaterialLotId }).IsUnique();
+            entity.HasIndex(e => e.ComponentMaterialLotId);
+            entity.HasOne<LabMaterialLot>().WithMany().HasForeignKey(e => e.PreparedMaterialLotId).OnDelete(DeleteBehavior.Restrict);
+            entity.HasOne<LabMaterialLot>().WithMany().HasForeignKey(e => e.ComponentMaterialLotId).OnDelete(DeleteBehavior.Restrict);
         });
 
         modelBuilder.Entity<LabMaterialConsumption>(entity =>

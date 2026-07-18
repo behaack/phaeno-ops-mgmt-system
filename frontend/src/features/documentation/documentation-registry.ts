@@ -489,7 +489,7 @@ export const documentationEntries: readonly DocumentationEntry[] = [
     summary: 'Qualify lots and equipment, record consumption and use, and preserve traceability.',
     section: 'Laboratory operations',
     order: 53,
-    reviewedAt: '2026-07-16',
+    reviewedAt: '2026-07-18',
     Content: PhaenoLabMaterialsEquipment,
   },
   {

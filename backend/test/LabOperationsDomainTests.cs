@@ -182,6 +182,16 @@ public class LabOperationsDomainTests
     }
 
     [Fact]
+    public void MaterialKeysAreSystemDerivedAndResolveCollisions()
+    {
+        var key = LabIdentifierService.CreateMaterialKey(
+            "  Référence / RNA Kit  ",
+            new[] { "reference-rna-kit" });
+
+        Assert.Equal("reference-rna-kit-2", key);
+    }
+
+    [Fact]
     public void BatchNumbersAreDateStampedAndUseScannerSafeCharacters()
     {
         var batchNumber = LabIdentifierService.CreateBatchNumber(
@@ -242,15 +252,47 @@ public class LabOperationsDomainTests
     [Fact]
     public void MaterialConsumptionCannotExceedQcApprovedAvailability()
     {
-        var lot = new LabMaterialLot(LabMaterialLotKind.SupplierLot, "polymerase",
-            "Polymerase", "LOT-1", "Supplier", null, DateTime.UtcNow.AddDays(30),
-            "Freezer A", 10, "uL");
+        var lot = new LabMaterialLot(LabMaterialLotKind.SupplierLot, Guid.NewGuid(),
+            "LOT-1", Guid.NewGuid(), DateOnly.FromDateTime(DateTime.UtcNow.AddDays(30)),
+            Guid.NewGuid(), 10, "uL");
 
-        lot.RecordQc(LabQcDisposition.Passed, "{}", Guid.NewGuid(), DateTime.UtcNow);
+        lot.RecordQc(LabQcDisposition.Passed, DateOnly.FromDateTime(DateTime.UtcNow),
+            null, "{}", Guid.NewGuid(), DateTime.UtcNow);
         lot.Consume(4);
 
         Assert.Equal(6, lot.AvailableQuantity);
         Assert.Throws<InvalidOperationException>(() => lot.Consume(7));
+    }
+
+    [Fact]
+    public void FailedMaterialQcRequiresAndRecordsReasonAndPerformedDate()
+    {
+        var lot = new LabMaterialLot(LabMaterialLotKind.SupplierLot, Guid.NewGuid(),
+            "LOT-FAIL", Guid.NewGuid(), DateOnly.FromDateTime(DateTime.UtcNow.AddDays(30)),
+            Guid.NewGuid(), 10, "uL");
+        var performedOn = new DateOnly(2026, 7, 18);
+
+        Assert.Throws<ArgumentException>(() => lot.RecordQc(
+            LabQcDisposition.Failed, performedOn, null, "{}", Guid.NewGuid(), DateTime.UtcNow));
+        Assert.Throws<ArgumentOutOfRangeException>(() => lot.RecordQc(
+            LabQcDisposition.Failed, performedOn.AddDays(1), "Visible particulate",
+            "{}", Guid.NewGuid(), performedOn.ToDateTime(TimeOnly.MinValue)));
+
+        lot.RecordQc(LabQcDisposition.Failed, performedOn, "Visible particulate",
+            "{}", Guid.NewGuid(), DateTime.UtcNow);
+
+        Assert.Equal(performedOn, lot.QcPerformedOn);
+        Assert.Equal("Visible particulate", lot.QcFailureReason);
+    }
+
+    [Fact]
+    public void PreparedReagentRejectsSupplierAndRequiresStructuredComponentQuantity()
+    {
+        Assert.Throws<ArgumentException>(() => new LabMaterialLot(
+            LabMaterialLotKind.PreparedReagent, Guid.NewGuid(), "PREP-1",
+            Guid.NewGuid(), null, Guid.NewGuid(), 10, "uL"));
+        Assert.Throws<ArgumentOutOfRangeException>(() => new LabPreparedReagentComponent(
+            Guid.NewGuid(), Guid.NewGuid(), 0, "uL"));
     }
 
     [Fact]
