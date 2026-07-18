@@ -8,7 +8,6 @@ import {
   createLabEquipment,
   createLabMaterialLot,
   createLabProtocol,
-  createLabProtocolVersion,
   createLabSendout,
   getLabOperationsDashboard,
   getLabOperationsError,
@@ -34,7 +33,7 @@ import { usePhaenoSession } from '#/features/auth/session-context'
 import { LabBarcodeLookup, LabBatchBarcodeScanner } from './LabBarcodeScanner'
 
 type CreateKind = 'protocol' | 'material' | 'equipment' | 'batch' | 'role' | null
-type LabSection = 'work' | 'protocols' | 'materials' | 'equipment' | 'batches' | 'access'
+export type LabSection = 'work' | 'protocols' | 'materials' | 'equipment' | 'batches' | 'access'
 
 const labSections: ReadonlyArray<WorkspaceSidebarItem<LabSection>> = [
   { value: 'work', label: 'Work', description: 'Authorized work and specimen progress', icon: ClipboardList },
@@ -45,14 +44,12 @@ const labSections: ReadonlyArray<WorkspaceSidebarItem<LabSection>> = [
   { value: 'access', label: 'Access', description: 'Laboratory roles and permissions', icon: ShieldCheck },
 ]
 
-export function LabOperationsPage() {
+export function LabOperationsPage({ section, onSectionChange }: { section: LabSection; onSectionChange: (section: LabSection) => void }) {
   const { authProvider, session, selectedOrganizationId } = usePhaenoSession()
   const canView = Boolean(session?.capabilities.canManageLabOperations)
   const apiEnabled = canView && authProvider !== 'mock'
   const queryClient = useQueryClient()
-  const [section, setSection] = useState<LabSection>('work')
   const [createKind, setCreateKind] = useState<CreateKind>(null)
-  const [protocolForVersion, setProtocolForVersion] = useState<LabProtocol | null>(null)
   const dashboard = useQuery({ queryKey: ['lab-operations'], queryFn: getLabOperationsDashboard, enabled: apiEnabled })
   const users = useQuery({
     queryKey: ['lab-operations', 'users', selectedOrganizationId],
@@ -69,7 +66,7 @@ export function LabOperationsPage() {
         workspaceLabel="Lab operations"
         items={labSections}
         value={section}
-        onValueChange={setSection}
+        onValueChange={onSectionChange}
       >
         <div className="page-wrap px-4">
           <section className="mb-6 flex flex-wrap items-start justify-between gap-4">
@@ -88,13 +85,12 @@ export function LabOperationsPage() {
           {dashboard.error ? <Alert className="mb-5" variant="destructive"><AlertTitle>Lab operations could not be loaded</AlertTitle><AlertDescription>{getLabOperationsError(dashboard.error, 'Try refreshing the workspace.')}</AlertDescription></Alert> : null}
           {dashboard.isLoading ? <p role="status">Loading laboratory workspace…</p> : null}
           {dashboard.data && section === 'work' ? <div className="space-y-5"><LabBarcodeLookup /><WorkQueue items={dashboard.data.workOrders} /></div> : null}
-          {dashboard.data && section === 'protocols' ? <ProtocolList protocols={dashboard.data.protocols} canManage={Boolean(session?.capabilities.canManageLabProtocols)} onCreate={() => setCreateKind('protocol')} onVersion={setProtocolForVersion} refresh={refresh} /> : null}
+          {dashboard.data && section === 'protocols' ? <ProtocolList protocols={dashboard.data.protocols} canManage={Boolean(session?.capabilities.canManageLabProtocols)} onCreate={() => setCreateKind('protocol')} refresh={refresh} /> : null}
           {dashboard.data && section === 'materials' ? <MaterialList items={dashboard.data.materialLots} canManage={Boolean(session?.capabilities.canOperateLabWork)} canApprove={Boolean(session?.capabilities.canSuperviseLabWork)} onCreate={() => setCreateKind('material')} refresh={refresh} /> : null}
           {dashboard.data && section === 'equipment' ? <EquipmentList items={dashboard.data.equipment} canManage={Boolean(session?.capabilities.canSuperviseLabWork)} onCreate={() => setCreateKind('equipment')} /> : null}
           {dashboard.data && section === 'batches' ? <BatchList items={dashboard.data.batches} canManage={Boolean(session?.capabilities.canOperateLabWork)} onCreate={() => setCreateKind('batch')} refresh={refresh} /> : null}
           {dashboard.data && section === 'access' ? <AccessList assignments={dashboard.data.roleAssignments} canManage={Boolean(session?.capabilities.canManageLabAccess)} onCreate={() => setCreateKind('role')} refresh={refresh} /> : null}
           <CreateRecordDialog kind={createKind} users={users.data ?? []} onClose={() => setCreateKind(null)} onSaved={async () => { setCreateKind(null); await refresh() }} />
-          <ProtocolVersionDialog protocol={protocolForVersion} onClose={() => setProtocolForVersion(null)} onSaved={async () => { setProtocolForVersion(null); await refresh() }} />
         </div>
       </WorkspaceSidebar>
     </main>
@@ -102,12 +98,238 @@ export function LabOperationsPage() {
 }
 
 function WorkQueue({ items }: { items: Awaited<ReturnType<typeof getLabOperationsDashboard>>['workOrders'] }) {
-  return <Card><CardHeader><CardTitle>Authorized laboratory work</CardTitle><CardDescription>Open a work order for accession, lineage, execution, exceptions, and scientific review.</CardDescription></CardHeader><CardContent><div className="divide-y">{items.map((item) => <div key={item.id} className="flex flex-wrap items-center justify-between gap-3 py-3"><div><Link to="/lab-operations/$workOrderId" params={{ workOrderId: item.id }} className="font-medium text-primary hover:underline">{item.commercialOrderNumber ?? item.id}</Link><p className="mt-1 text-xs text-muted-foreground">{item.specimenCount} specimen(s) · {item.openExceptionCount} open exception(s) · updated {formatDate(item.updatedAt)}</p></div><Status value={item.status} /></div>)}</div>{items.length === 0 ? <Empty>No accepted Commercial order has authorized Lab work yet.</Empty> : null}</CardContent></Card>
+  return <Card><CardHeader><CardTitle>Authorized laboratory work</CardTitle><CardDescription>Open a work order for accession, lineage, execution, exceptions, and scientific review.</CardDescription></CardHeader><CardContent><div className="divide-y">{items.map((item) => <div key={item.id} className="flex flex-wrap items-center justify-between gap-3 py-3"><div><Link to="/lab-operations/$workOrderId" params={{ workOrderId: item.id }} search={{ section: undefined }} className="font-medium text-primary hover:underline">{item.commercialOrderNumber ?? item.id}</Link><p className="mt-1 text-xs text-muted-foreground">{item.specimenCount} specimen(s) · {item.openExceptionCount} open exception(s) · updated {formatDate(item.updatedAt)}</p></div><Status value={item.status} /></div>)}</div>{items.length === 0 ? <Empty>No accepted Commercial order has authorized Lab work yet.</Empty> : null}</CardContent></Card>
 }
 
-function ProtocolList({ protocols, canManage, onCreate, onVersion, refresh }: { protocols: LabProtocol[]; canManage: boolean; onCreate: () => void; onVersion: (protocol: LabProtocol) => void; refresh: () => Promise<unknown> }) {
-  const transition = useMutation({ mutationFn: ({ id, action }: { id: string; action: string }) => transitionLabProtocolVersion(id, action), onSuccess: refresh })
-  return <Card><CardHeader><div className="flex items-start justify-between gap-3"><div><CardTitle>Controlled protocols</CardTitle><CardDescription>Execution pins an approved, active version; historical versions remain immutable.</CardDescription></div>{canManage ? <Button type="button" onClick={onCreate}><Plus data-icon="inline-start" /> New protocol</Button> : null}</div></CardHeader><CardContent><div className="space-y-4">{protocols.map((protocol) => <section key={protocol.id} className="rounded-lg border p-4"><div className="flex flex-wrap items-start justify-between gap-3"><div><h3 className="font-medium">{protocol.name}</h3><p className="text-xs text-muted-foreground">{protocol.key} · latest v{protocol.latestVersion || 'none'}</p></div>{canManage ? <Button type="button" size="sm" variant="outline" onClick={() => onVersion(protocol)}>Add version</Button> : null}</div><div className="mt-3 flex flex-wrap gap-2">{protocol.versions.map((version) => <div key={version.id} className="flex items-center gap-2 rounded-md bg-muted px-3 py-2 text-sm"><span>v{version.protocolVersion}</span><Status value={version.status} />{canManage && version.status === 'Draft' ? <Button type="button" size="sm" variant="ghost" disabled={transition.isPending} onClick={() => transition.mutate({ id: version.id, action: 'approve' })}>Approve</Button> : null}{canManage && version.status === 'Approved' ? <Button type="button" size="sm" variant="ghost" disabled={transition.isPending} onClick={() => transition.mutate({ id: version.id, action: 'activate' })}>Activate</Button> : null}{canManage && version.status === 'Active' ? <Button type="button" size="sm" variant="ghost" disabled={transition.isPending} onClick={() => transition.mutate({ id: version.id, action: 'retire' })}>Retire</Button> : null}</div>)}</div></section>)}</div>{protocols.length === 0 ? <Empty>No protocols have been authored.</Empty> : null}</CardContent></Card>
+function ProtocolList({ protocols, canManage, onCreate, refresh }: { protocols: LabProtocol[]; canManage: boolean; onCreate: () => void; refresh: () => Promise<unknown> }) {
+  const [confirmation, setConfirmation] = useState<{
+    protocol: LabProtocol
+    version: LabProtocol['versions'][number]
+    action: 'discard' | 'withdraw'
+  } | null>(null)
+  const transition = useMutation({
+    mutationFn: ({
+      protocol,
+      versionId,
+      action,
+    }: {
+      protocol: LabProtocol
+      versionId: string
+      action: string
+    }) => transitionLabProtocolVersion(versionId, {
+      action,
+      protocolVersion: protocol.version,
+    }),
+    onSuccess: async () => {
+      setConfirmation(null)
+      await refresh()
+    },
+  })
+  const applyTransition = (
+    protocol: LabProtocol,
+    versionId: string,
+    action: string,
+  ) => {
+    transition.reset()
+    transition.mutate({ protocol, versionId, action })
+  }
+  const requestConfirmation = (
+    protocol: LabProtocol,
+    version: LabProtocol['versions'][number],
+    action: 'discard' | 'withdraw',
+  ) => {
+    transition.reset()
+    setConfirmation({ protocol, version, action })
+  }
+
+  return (
+    <>
+      <Card>
+        <CardHeader>
+          <div className="flex items-start justify-between gap-3">
+            <div>
+              <CardTitle>Controlled protocols</CardTitle>
+              <CardDescription>
+                Execution pins an approved, active version. Each protocol may have only one open draft or approved candidate.
+              </CardDescription>
+            </div>
+            {canManage ? (
+              <Button type="button" onClick={onCreate}>
+                <Plus data-icon="inline-start" /> New protocol
+              </Button>
+            ) : null}
+          </div>
+        </CardHeader>
+        <CardContent>
+          {transition.error ? (
+            <Alert variant="destructive" className="mb-4">
+              <AlertTitle>Protocol status was not changed</AlertTitle>
+              <AlertDescription>
+                {getLabOperationsError(transition.error, 'Refresh the protocol and try again.')}
+              </AlertDescription>
+            </Alert>
+          ) : null}
+          <div className="space-y-4">
+            {protocols.map((protocol) => {
+              const openCandidate = protocol.versions.find(
+                (version) => version.status === 'Draft' || version.status === 'Approved',
+              )
+              return (
+                <section key={protocol.id} className="rounded-lg border p-4">
+                  <div className="flex flex-wrap items-start justify-between gap-3">
+                    <div>
+                      <h3 className="font-medium">{protocol.name}</h3>
+                      <p className="text-xs text-muted-foreground">
+                        {protocol.key} · latest v{protocol.latestVersion || 'none'}
+                      </p>
+                    </div>
+                    {canManage && !openCandidate ? (
+                      <Button asChild size="sm" variant="outline">
+                        <Link
+                          to="/lab-operations/protocols/$protocolId/versions/new"
+                          params={{ protocolId: protocol.id }}
+                          search={{ section: undefined }}
+                        >
+                          Add version
+                        </Link>
+                      </Button>
+                    ) : null}
+                  </div>
+                  <div className="mt-3 flex flex-wrap gap-2">
+                    {protocol.versions.map((version) => (
+                      <div
+                        key={version.id}
+                        className="flex flex-wrap items-center gap-2 rounded-md bg-muted px-3 py-2 text-sm"
+                      >
+                        <span>v{version.protocolVersion}</span>
+                        <Status value={version.status} />
+                        {canManage && version.status === 'Draft' ? (
+                          <>
+                            <Button asChild size="sm">
+                              <Link
+                                to="/lab-operations/protocols/$protocolId/versions/$versionId/edit"
+                                params={{ protocolId: protocol.id, versionId: version.id }}
+                                search={{ section: undefined }}
+                              >
+                                Continue editing
+                              </Link>
+                            </Button>
+                            <Button
+                              type="button"
+                              size="sm"
+                              variant="outline"
+                              disabled={transition.isPending}
+                              onClick={() => applyTransition(protocol, version.id, 'approve')}
+                            >
+                              Approve
+                            </Button>
+                            <Button
+                              type="button"
+                              size="sm"
+                              variant="ghost"
+                              disabled={transition.isPending}
+                              onClick={() => requestConfirmation(protocol, version, 'discard')}
+                            >
+                              Discard
+                            </Button>
+                          </>
+                        ) : null}
+                        {canManage && version.status === 'Approved' ? (
+                          <>
+                            <Button
+                              type="button"
+                              size="sm"
+                              disabled={transition.isPending}
+                              onClick={() => applyTransition(protocol, version.id, 'activate')}
+                            >
+                              Activate
+                            </Button>
+                            <Button
+                              type="button"
+                              size="sm"
+                              variant="outline"
+                              disabled={transition.isPending}
+                              onClick={() => requestConfirmation(protocol, version, 'withdraw')}
+                            >
+                              Withdraw approval
+                            </Button>
+                          </>
+                        ) : null}
+                        {canManage && version.status === 'Active' ? (
+                          <Button
+                            type="button"
+                            size="sm"
+                            variant="ghost"
+                            disabled={transition.isPending}
+                            onClick={() => applyTransition(protocol, version.id, 'retire')}
+                          >
+                            Retire
+                          </Button>
+                        ) : null}
+                      </div>
+                    ))}
+                  </div>
+                </section>
+              )
+            })}
+          </div>
+          {protocols.length === 0 ? <Empty>No protocols have been authored.</Empty> : null}
+        </CardContent>
+      </Card>
+
+      <Dialog
+        open={confirmation !== null}
+        onOpenChange={(open) => {
+          if (open) return
+          setConfirmation(null)
+          transition.reset()
+        }}
+      >
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>
+              {confirmation?.action === 'discard' ? 'Discard protocol draft?' : 'Withdraw protocol approval?'}
+            </DialogTitle>
+            <DialogDescription>
+              {confirmation?.action === 'discard'
+                ? `Version ${confirmation.version.protocolVersion} will remain in history as discarded and cannot be approved or activated.`
+                : `Version ${confirmation?.version.protocolVersion} will return to Draft. Its recorded approval will be cleared, and it must be approved again before activation.`}
+            </DialogDescription>
+          </DialogHeader>
+          {transition.error ? (
+            <Alert variant="destructive">
+              <AlertTitle>Protocol status was not changed</AlertTitle>
+              <AlertDescription>
+                {getLabOperationsError(transition.error, 'Refresh the protocol and try again.')}
+              </AlertDescription>
+            </Alert>
+          ) : null}
+          <DialogFooter>
+            <DialogClose asChild>
+              <Button type="button" variant="outline">Cancel</Button>
+            </DialogClose>
+            <Button
+              type="button"
+              variant={confirmation?.action === 'discard' ? 'destructive' : 'default'}
+              disabled={!confirmation || transition.isPending}
+              onClick={() => {
+                if (!confirmation) return
+                applyTransition(
+                  confirmation.protocol,
+                  confirmation.version.id,
+                  confirmation.action,
+                )
+              }}
+            >
+              {transition.isPending
+                ? 'Saving…'
+                : confirmation?.action === 'discard' ? 'Discard draft' : 'Withdraw approval'}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+    </>
+  )
 }
 
 function MaterialList({ items, canManage, canApprove, onCreate, refresh }: { items: Awaited<ReturnType<typeof getLabOperationsDashboard>>['materialLots']; canManage: boolean; canApprove: boolean; onCreate: () => void; refresh: () => Promise<unknown> }) {
@@ -151,13 +373,7 @@ function CreateRecordDialog({ kind, users, onClose, onSaved }: { kind: CreateKin
   }, onSuccess: async () => { setForm({}); await onSaved() } })
   const set = (key: string) => (event: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => setForm((current) => ({ ...current, [key]: event.target.value }))
   function submit(event: FormEvent) { event.preventDefault(); mutation.mutate() }
-  return <Dialog open={kind !== null} onOpenChange={(open) => !open && onClose()}><DialogContent><form onSubmit={submit}><DialogHeader><DialogTitle>{kind ? `Create ${humanize(kind)}` : 'Create record'}</DialogTitle><DialogDescription>{kind === 'protocol' ? 'Enter the controlled protocol details. POMS assigns its immutable key.' : kind === 'batch' ? 'Enter the batch details. POMS assigns its batch number.' : 'Required fields are marked. Laboratory records remain internal to Phaeno.'}</DialogDescription></DialogHeader><div className="my-5 grid gap-4 sm:grid-cols-2">{kind === 'protocol' ? <><Field label="Name" value={form.name} onChange={set('name')} required /><TextField label="Description" value={form.description} onChange={set('description')} /></> : null}{kind === 'material' ? <><SelectField label="Lot kind" value={form.kind || 'SupplierLot'} onChange={set('kind')} options={['SupplierLot', 'PreparedReagent']} /><Field label="Material key" value={form.materialKey} onChange={set('materialKey')} required /><Field label="Name" value={form.name} onChange={set('name')} required /><Field label="Lot number" value={form.lotNumber} onChange={set('lotNumber')} required /><Field label="Supplier" value={form.supplier} onChange={set('supplier')} /><Field label="Storage location" value={form.location} onChange={set('location')} required /><Field label="Available quantity" value={form.quantity} onChange={set('quantity')} type="number" required /><Field label="Unit" value={form.unit} onChange={set('unit')} required /><Field label="Expires at" value={form.expiresAtUtc} onChange={set('expiresAtUtc')} type="datetime-local" /><TextField label="Components JSON" value={form.componentsJson} onChange={set('componentsJson')} /></> : null}{kind === 'equipment' ? <><Field label="Asset code" value={form.assetCode} onChange={set('assetCode')} required /><Field label="Name" value={form.name} onChange={set('name')} required /><Field label="Equipment type" value={form.equipmentType} onChange={set('equipmentType')} required /><Field label="Location" value={form.location} onChange={set('location')} required /><Field label="Last calibration" value={form.lastCalibrationAtUtc} onChange={set('lastCalibrationAtUtc')} type="datetime-local" /><Field label="Calibration due" value={form.calibrationDueAtUtc} onChange={set('calibrationDueAtUtc')} type="datetime-local" /></> : null}{kind === 'batch' ? <><Field label="Batch type" value={form.batchType} onChange={set('batchType')} required /><TextField label="Notes" value={form.notes} onChange={set('notes')} /></> : null}{kind === 'role' ? <><SelectField label="Phaeno user" value={form.userId || ''} onChange={set('userId')} options={users.map((user) => ({ value: user.id, label: `${user.firstName} ${user.lastName} · ${user.email}` }))} /><SelectField label="Role" value={form.role || 'Operator'} onChange={set('role')} options={['Operator', 'Supervisor', 'ProtocolAdministrator', 'ScientificReviewer', 'OperationsAdministrator']} /></> : null}</div>{mutation.error ? <Alert variant="destructive" className="mb-4"><AlertTitle>Record was not created</AlertTitle><AlertDescription>{getLabOperationsError(mutation.error, 'Check the entered values.')}</AlertDescription></Alert> : null}<DialogFooter><DialogClose asChild><Button type="button" variant="outline">Cancel</Button></DialogClose><Button type="submit" disabled={mutation.isPending}>{kind ? createActionLabel(kind) : 'Create'}</Button></DialogFooter></form></DialogContent></Dialog>
-}
-
-function ProtocolVersionDialog({ protocol, onClose, onSaved }: { protocol: LabProtocol | null; onClose: () => void; onSaved: () => Promise<unknown> }) {
-  const [definition, setDefinition] = useState('{\n  "steps": []\n}')
-  const mutation = useMutation({ mutationFn: () => createLabProtocolVersion(protocol!.id, { definitionJson: definition, protocolVersion: protocol!.version }), onSuccess: onSaved })
-  return <Dialog open={protocol !== null} onOpenChange={(open) => !open && onClose()}><DialogContent><DialogHeader><DialogTitle>New {protocol?.name} version</DialogTitle><DialogDescription>Define ordered steps, typed captures, materials, equipment, outputs, and QC gates as portable JSON.</DialogDescription></DialogHeader><div className="my-5"><Label htmlFor="protocolDefinition">Protocol definition JSON <span aria-hidden="true">*</span></Label><textarea id="protocolDefinition" className="mt-2 min-h-64 w-full rounded-lg border bg-background px-3 py-2 font-mono text-sm" value={definition} onChange={(event) => setDefinition(event.target.value)} /></div>{mutation.error ? <Alert variant="destructive" className="mb-4"><AlertTitle>Version was not created</AlertTitle><AlertDescription>{getLabOperationsError(mutation.error, 'Validate the JSON and retry.')}</AlertDescription></Alert> : null}<DialogFooter><DialogClose asChild><Button type="button" variant="outline">Cancel</Button></DialogClose><Button type="button" disabled={mutation.isPending} onClick={() => mutation.mutate()}>Create draft</Button></DialogFooter></DialogContent></Dialog>
+  return <Dialog open={kind !== null} onOpenChange={(open) => !open && onClose()}><DialogContent><form onSubmit={submit}><DialogHeader><DialogTitle>{kind ? `Create ${humanize(kind)}` : 'Create record'}</DialogTitle><DialogDescription>{kind === 'protocol' ? 'Enter the controlled protocol details. POMS assigns its immutable key.' : kind === 'batch' ? 'Enter the batch details. POMS assigns its batch number.' : 'Required fields are marked. Laboratory records remain internal to Phaeno.'}</DialogDescription></DialogHeader><div className="my-5 grid gap-4 sm:grid-cols-2">{kind === 'protocol' ? <><div className="sm:col-span-2"><Field label="Name" value={form.name} onChange={set('name')} required /></div><TextField label="Description" value={form.description} onChange={set('description')} /></> : null}{kind === 'material' ? <><SelectField label="Lot kind" value={form.kind || 'SupplierLot'} onChange={set('kind')} options={['SupplierLot', 'PreparedReagent']} /><Field label="Material key" value={form.materialKey} onChange={set('materialKey')} required /><Field label="Name" value={form.name} onChange={set('name')} required /><Field label="Lot number" value={form.lotNumber} onChange={set('lotNumber')} required /><Field label="Supplier" value={form.supplier} onChange={set('supplier')} /><Field label="Storage location" value={form.location} onChange={set('location')} required /><Field label="Available quantity" value={form.quantity} onChange={set('quantity')} type="number" required /><Field label="Unit" value={form.unit} onChange={set('unit')} required /><Field label="Expires at" value={form.expiresAtUtc} onChange={set('expiresAtUtc')} type="datetime-local" /><TextField label="Components JSON" value={form.componentsJson} onChange={set('componentsJson')} /></> : null}{kind === 'equipment' ? <><Field label="Asset code" value={form.assetCode} onChange={set('assetCode')} required /><Field label="Name" value={form.name} onChange={set('name')} required /><Field label="Equipment type" value={form.equipmentType} onChange={set('equipmentType')} required /><Field label="Location" value={form.location} onChange={set('location')} required /><Field label="Last calibration" value={form.lastCalibrationAtUtc} onChange={set('lastCalibrationAtUtc')} type="datetime-local" /><Field label="Calibration due" value={form.calibrationDueAtUtc} onChange={set('calibrationDueAtUtc')} type="datetime-local" /></> : null}{kind === 'batch' ? <><Field label="Batch type" value={form.batchType} onChange={set('batchType')} required /><TextField label="Notes" value={form.notes} onChange={set('notes')} /></> : null}{kind === 'role' ? <><SelectField label="Phaeno user" value={form.userId || ''} onChange={set('userId')} options={users.map((user) => ({ value: user.id, label: `${user.firstName} ${user.lastName} · ${user.email}` }))} /><SelectField label="Role" value={form.role || 'Operator'} onChange={set('role')} options={['Operator', 'Supervisor', 'ProtocolAdministrator', 'ScientificReviewer', 'OperationsAdministrator']} /></> : null}</div>{mutation.error ? <Alert variant="destructive" className="mb-4"><AlertTitle>Record was not created</AlertTitle><AlertDescription>{getLabOperationsError(mutation.error, 'Check the entered values.')}</AlertDescription></Alert> : null}<DialogFooter><DialogClose asChild><Button type="button" variant="outline">Cancel</Button></DialogClose><Button type="submit" disabled={mutation.isPending}>{kind ? createActionLabel(kind) : 'Create'}</Button></DialogFooter></form></DialogContent></Dialog>
 }
 
 function Field({ label, value = '', onChange, required, type = 'text' }: { label: string; value?: string; onChange: React.ChangeEventHandler<HTMLInputElement>; required?: boolean; type?: string }) { const id = `lab-${label.toLowerCase().replaceAll(' ', '-')}`; return <div><Label htmlFor={id}>{label}{required ? <span aria-hidden="true"> *</span> : null}</Label><Input id={id} className="mt-2" type={type} value={value ?? ''} onChange={onChange} required={required} /></div> }

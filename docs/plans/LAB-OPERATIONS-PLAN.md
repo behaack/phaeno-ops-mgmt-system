@@ -19,8 +19,9 @@ or production activation.
   Commercial authorization and Laboratory work order; approved cancellation
   reaches Lab before Commercial commits it. Additive Lab roles, the operator
   workspace, durable Lab-to-Commercial projections, receipt/accession and
-  physical lineage, controlled protocols and execution, materials and
-  equipment, libraries and cross-order batches, provider-neutral NGS sendouts
+  physical lineage, controlled protocols and execution, including the
+  dedicated structured version builder, materials and equipment, libraries and
+  cross-order batches, provider-neutral NGS sendouts
   and custody, exceptions, scientific approval, and the Ready-for-release
   handoff are implemented. Barcode completion includes POMS-allocated
   checksummed container identifiers, browser-rendered Code 39 labels,
@@ -397,7 +398,7 @@ The initial Lab Operations scope includes a bounded protocol builder supporting:
 - equipment type requirements and actual equipment used
 - QC gates with pass, fail, and hold outcomes
 - role-based execution and approval
-- draft, approved, active, and retired protocol versions
+- draft, approved, active, retired, and discarded protocol versions
 - a POMS-generated immutable protocol key derived from the entered protocol
   name, with a stable suffix when the readable key is already in use
 
@@ -406,12 +407,31 @@ A procedure change creates a new version and does not rewrite active or
 historical work. A deviation is recorded against an execution; it does not
 mutate the protocol definition.
 
+Each protocol may have only one open candidate version: Draft or Approved. A
+Draft remains resumable and editable until approval, or it may be discarded
+while remaining visible in version history. Approval locks the definition.
+Withdrawing approval clears the recorded approval and returns the same reserved
+version number to Draft for correction and reapproval. An Approved candidate
+must be activated or returned to Draft, and a Draft must be approved or
+discarded, before POMS permits another version. Creating a later version starts
+from the active definition, or the most recent retired definition when no
+version is active. Activation retires the previously active version for new
+assignments.
+
 The initial product will use a structured step editor rather than a generic
 drag-and-drop workflow programming environment. Arbitrary graphs, parallel
 branches, unrestricted formulas, general API calls, nested workflows, and
 other programming-language capabilities are out of scope. The underlying
 model may gain additional controlled step types when proven laboratory needs
 justify them.
+
+Protocol identity remains a bounded modal create action. Authoring a protocol
+version is a documented exception to the default modal-edit pattern and uses a
+dedicated page because it contains ordered child steps, typed captures,
+resource requirements, QC gates, validation, review, and unsaved-work
+protection. The editor generates the existing portable JSON definition and
+keeps raw JSON as a collapsed read-only preview rather than an authoring
+control.
 
 ## Controlled Operational Flexibility
 
@@ -672,7 +692,10 @@ remove competing internal write paths. The durable strategy is recorded in
 - Complete: receipt, accession, containers, POMS-allocated checksummed
   barcodes, browser-rendered Code 39 labels, reasoned print outcomes,
   scan-first lookup, label history, optional retention, and intake disposition.
-- Complete: protocol authoring, approval, activation/retirement, pinned
+- Complete: structured protocol authoring with ordered steps, typed captures,
+  resource requirements, QC gates, JSON preview, cloned version creation,
+  resumable draft editing and discard history, approval withdrawal,
+  one-open-candidate enforcement, approval, activation/retirement, pinned
   versioning, execution, and system-owned readable protocol-key allocation.
 - Complete: material, prepared-reagent, lot, consumption, equipment,
   calibration, and QC records.

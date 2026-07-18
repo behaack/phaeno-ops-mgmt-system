@@ -39,6 +39,8 @@ import { Route as LabServicesOrderIdEditRouteImport } from './routes/lab-service
 import { Route as DocsAudienceSlugRouteImport } from './routes/docs.$audience.$slug'
 import { Route as DataProvisioningSourcesSourceSampleIdRouteImport } from './routes/data-provisioning.sources.$sourceSampleId'
 import { Route as DataAssemblyRequestIdEditRouteImport } from './routes/data-assembly.$requestId.edit'
+import { Route as LabOperationsProtocolsProtocolIdVersionsNewRouteImport } from './routes/lab-operations.protocols.$protocolId.versions.new'
+import { Route as LabOperationsProtocolsProtocolIdVersionsVersionIdEditRouteImport } from './routes/lab-operations.protocols.$protocolId.versions.$versionId.edit'
 
 const ReagentOrdersRoute = ReagentOrdersRouteImport.update({
   id: '/reagent-orders',
@@ -195,6 +197,18 @@ const DataAssemblyRequestIdEditRoute =
     path: '/edit',
     getParentRoute: () => DataAssemblyRequestIdRoute,
   } as any)
+const LabOperationsProtocolsProtocolIdVersionsNewRoute =
+  LabOperationsProtocolsProtocolIdVersionsNewRouteImport.update({
+    id: '/protocols/$protocolId/versions/new',
+    path: '/protocols/$protocolId/versions/new',
+    getParentRoute: () => LabOperationsRoute,
+  } as any)
+const LabOperationsProtocolsProtocolIdVersionsVersionIdEditRoute =
+  LabOperationsProtocolsProtocolIdVersionsVersionIdEditRouteImport.update({
+    id: '/protocols/$protocolId/versions/$versionId/edit',
+    path: '/protocols/$protocolId/versions/$versionId/edit',
+    getParentRoute: () => LabOperationsRoute,
+  } as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
@@ -227,6 +241,8 @@ export interface FileRoutesByFullPath {
   '/lab-services/$orderId/edit': typeof LabServicesOrderIdEditRoute
   '/order-operations/$workflow/$orderId': typeof OrderOperationsWorkflowOrderIdRoute
   '/reagent-orders/$orderId/edit': typeof ReagentOrdersOrderIdEditRoute
+  '/lab-operations/protocols/$protocolId/versions/new': typeof LabOperationsProtocolsProtocolIdVersionsNewRoute
+  '/lab-operations/protocols/$protocolId/versions/$versionId/edit': typeof LabOperationsProtocolsProtocolIdVersionsVersionIdEditRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -259,6 +275,8 @@ export interface FileRoutesByTo {
   '/lab-services/$orderId/edit': typeof LabServicesOrderIdEditRoute
   '/order-operations/$workflow/$orderId': typeof OrderOperationsWorkflowOrderIdRoute
   '/reagent-orders/$orderId/edit': typeof ReagentOrdersOrderIdEditRoute
+  '/lab-operations/protocols/$protocolId/versions/new': typeof LabOperationsProtocolsProtocolIdVersionsNewRoute
+  '/lab-operations/protocols/$protocolId/versions/$versionId/edit': typeof LabOperationsProtocolsProtocolIdVersionsVersionIdEditRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -292,6 +310,8 @@ export interface FileRoutesById {
   '/lab-services/$orderId/edit': typeof LabServicesOrderIdEditRoute
   '/order-operations/$workflow/$orderId': typeof OrderOperationsWorkflowOrderIdRoute
   '/reagent-orders/$orderId/edit': typeof ReagentOrdersOrderIdEditRoute
+  '/lab-operations/protocols/$protocolId/versions/new': typeof LabOperationsProtocolsProtocolIdVersionsNewRoute
+  '/lab-operations/protocols/$protocolId/versions/$versionId/edit': typeof LabOperationsProtocolsProtocolIdVersionsVersionIdEditRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -326,6 +346,8 @@ export interface FileRouteTypes {
     | '/lab-services/$orderId/edit'
     | '/order-operations/$workflow/$orderId'
     | '/reagent-orders/$orderId/edit'
+    | '/lab-operations/protocols/$protocolId/versions/new'
+    | '/lab-operations/protocols/$protocolId/versions/$versionId/edit'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -358,6 +380,8 @@ export interface FileRouteTypes {
     | '/lab-services/$orderId/edit'
     | '/order-operations/$workflow/$orderId'
     | '/reagent-orders/$orderId/edit'
+    | '/lab-operations/protocols/$protocolId/versions/new'
+    | '/lab-operations/protocols/$protocolId/versions/$versionId/edit'
   id:
     | '__root__'
     | '/'
@@ -390,6 +414,8 @@ export interface FileRouteTypes {
     | '/lab-services/$orderId/edit'
     | '/order-operations/$workflow/$orderId'
     | '/reagent-orders/$orderId/edit'
+    | '/lab-operations/protocols/$protocolId/versions/new'
+    | '/lab-operations/protocols/$protocolId/versions/$versionId/edit'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -622,6 +648,20 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof DataAssemblyRequestIdEditRouteImport
       parentRoute: typeof DataAssemblyRequestIdRoute
     }
+    '/lab-operations/protocols/$protocolId/versions/new': {
+      id: '/lab-operations/protocols/$protocolId/versions/new'
+      path: '/protocols/$protocolId/versions/new'
+      fullPath: '/lab-operations/protocols/$protocolId/versions/new'
+      preLoaderRoute: typeof LabOperationsProtocolsProtocolIdVersionsNewRouteImport
+      parentRoute: typeof LabOperationsRoute
+    }
+    '/lab-operations/protocols/$protocolId/versions/$versionId/edit': {
+      id: '/lab-operations/protocols/$protocolId/versions/$versionId/edit'
+      path: '/protocols/$protocolId/versions/$versionId/edit'
+      fullPath: '/lab-operations/protocols/$protocolId/versions/$versionId/edit'
+      preLoaderRoute: typeof LabOperationsProtocolsProtocolIdVersionsVersionIdEditRouteImport
+      parentRoute: typeof LabOperationsRoute
+    }
   }
 }
 
@@ -700,10 +740,16 @@ const DocsRouteWithChildren = DocsRoute._addFileChildren(DocsRouteChildren)
 
 interface LabOperationsRouteChildren {
   LabOperationsWorkOrderIdRoute: typeof LabOperationsWorkOrderIdRoute
+  LabOperationsProtocolsProtocolIdVersionsNewRoute: typeof LabOperationsProtocolsProtocolIdVersionsNewRoute
+  LabOperationsProtocolsProtocolIdVersionsVersionIdEditRoute: typeof LabOperationsProtocolsProtocolIdVersionsVersionIdEditRoute
 }
 
 const LabOperationsRouteChildren: LabOperationsRouteChildren = {
   LabOperationsWorkOrderIdRoute: LabOperationsWorkOrderIdRoute,
+  LabOperationsProtocolsProtocolIdVersionsNewRoute:
+    LabOperationsProtocolsProtocolIdVersionsNewRoute,
+  LabOperationsProtocolsProtocolIdVersionsVersionIdEditRoute:
+    LabOperationsProtocolsProtocolIdVersionsVersionIdEditRoute,
 }
 
 const LabOperationsRouteWithChildren = LabOperationsRoute._addFileChildren(

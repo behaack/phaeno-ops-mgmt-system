@@ -82,6 +82,7 @@ export function LabBarcodeLookup() {
                   <Link
                     className="font-medium text-primary hover:underline"
                     params={{ workOrderId: result.labWorkOrderId }}
+                    search={{ section: undefined }}
                     to="/lab-operations/$workOrderId"
                   >
                     {result.commercialOrderNumber ?? result.labWorkOrderId}

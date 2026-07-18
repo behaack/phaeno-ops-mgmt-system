@@ -151,7 +151,8 @@ public enum LabProtocolStatus
     Draft,
     Approved,
     Active,
-    Retired
+    Retired,
+    Discarded
 }
 
 public sealed class LabProtocol : LabAuditedEntity
@@ -208,6 +209,26 @@ public sealed class LabProtocolVersion
         Status = LabProtocolStatus.Approved;
         ApprovedByUserId = actorUserId;
         ApprovedAtUtc = utcNow;
+    }
+
+    public void UpdateDraft(string definitionJson)
+    {
+        if (Status != LabProtocolStatus.Draft) throw new InvalidOperationException("Only a draft protocol can be edited.");
+        DefinitionJson = RequiredDefinition(definitionJson);
+    }
+
+    public void WithdrawApproval()
+    {
+        if (Status != LabProtocolStatus.Approved) throw new InvalidOperationException("Only an approved protocol can return to draft.");
+        Status = LabProtocolStatus.Draft;
+        ApprovedByUserId = null;
+        ApprovedAtUtc = null;
+    }
+
+    public void Discard()
+    {
+        if (Status != LabProtocolStatus.Draft) throw new InvalidOperationException("Only a draft protocol can be discarded.");
+        Status = LabProtocolStatus.Discarded;
     }
 
     public void Activate()

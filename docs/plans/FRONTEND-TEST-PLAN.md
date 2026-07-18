@@ -69,6 +69,9 @@ remain incomplete production-activation gates.
   browser print action waits for explicit physical success confirmation, a
   failed attempt requires details, and success/failure outcomes are recorded
   separately.
+- [x] `frontend/src/features/lab-operations/protocol-definition.test.ts` -
+  structured definitions round-trip for resume/clone workflows, older empty
+  definitions open as one editable step, and invalid JSON is rejected.
 - [x] `frontend/src/features/orders/configuration/OrderConfigurationPage.test.tsx`
   - the five Order Configuration subjects use the shared viewport-edge
   sidebar, identify Defaults initially, and update the active subject when the
@@ -136,7 +139,13 @@ remain incomplete production-activation gates.
   APIs.
 - [ ] Remaining Lab Operations workspace - cover role-specific navigation and
   controls, list/detail loading, receipt/accession, protocol lifecycle,
-  system-assigned protocol/library/batch identifiers,
+  system-assigned protocol/library/batch identifiers, the dedicated structured
+  protocol-version builder's step ordering/duplication/removal, required,
+  optional, and conditional rules, typed-capture validation, materials,
+  outputs, equipment, QC gates, generated JSON preview, clone-from-controlled
+  initialization, draft resume/save/discard, approval withdrawal,
+  one-open-candidate action gating, unsaved-change warning, concurrency
+  recovery, and return to the Protocols section,
   execution/material/equipment capture, library and batch actions, sendout and
   custody states, internal versus customer-action exceptions, scientific
   approval, ready-for-release messaging, concurrency recovery, and mock-mode
@@ -152,6 +161,21 @@ remain incomplete production-activation gates.
 
 ## Requested Execution Log
 
+- 2026-07-18: one-open-protocol-candidate workflow verification passed focused
+  ESLint, `pnpm run typecheck`, and the client/SSR production build. A live
+  authenticated browser review confirmed that Draft v1 replaces Add version
+  with Continue editing, restores its saved definition, blocks the direct new-
+  version route, presents a history-preserving discard confirmation, and
+  reflows at 390 pixels without horizontal overflow or browser errors. The
+  confirmation was cancelled and no protocol data changed. Frontend tests were
+  not requested and were not run.
+- 2026-07-18: structured protocol-version authoring passed `pnpm run
+  typecheck`, focused ESLint for the changed TypeScript sources, and the client
+  and SSR production build. A live authenticated browser review verified
+  required-field errors, the three-step library-preparation example, generated
+  JSON, unsaved-change protection, return to the Protocols section, and a
+  390-pixel layout without horizontal overflow. No draft was persisted during
+  verification. Frontend tests were not requested and were not run.
 - 2026-07-18: system-owned Lab identifier verification ran `pnpm run
   typecheck`, `pnpm exec eslint src`, and `pnpm run build`; type checking and
   source lint passed, and both client and SSR production builds completed. The

@@ -137,14 +137,31 @@ not satisfy this production-activation gate.
   authentication, the hosted HTTP API, and a browser. The controller/database
   portion already proves atomic Lab authorization, additive Lab roles,
   receipt/accession, barcode allocation/scan/print-outcome history,
-  system-assigned protocol/library/batch identifiers, active protocol execution
-  with QC-approved material and calibrated equipment, scan-first library
+  system-assigned protocol/library/batch identifiers, structured protocol
+  authoring from protocol identity through ordered steps, typed captures,
+  resources, QC gates, draft creation and resume, parallel-candidate rejection,
+  discard history, approval withdrawal, controlled-definition cloning, approval
+  and activation, active protocol execution with QC-approved material and calibrated equipment, scan-first library
   batching, sendout/custody, exception resolution, scientific approval, the
   Customer-safe projection, and no file publication at Ready for release.
   Physical printer/scanner qualification remains a manual bench gate.
 
 ## Requested Execution Log
 
+- 2026-07-18: a live authenticated browser review verified the open-candidate
+  protocol lifecycle without changing data: Draft v1 exposed Continue editing,
+  omitted Add version, restored the saved structured definition, and blocked a
+  direct new-version URL. The history-preserving discard confirmation opened
+  and was cancelled. The Protocols surface had no horizontal overflow at 390
+  pixels and produced no browser errors. The Playwright suite was not requested
+  or run.
+- 2026-07-18: a live authenticated browser review covered the structured
+  protocol-version builder on desktop and at 390 pixels, including blank-form
+  validation, loading the three-step example, inspecting generated JSON,
+  confirming the discard-changes dialog, and returning to the addressable
+  Protocols section. No draft was persisted. The database-backed approval and
+  activation journey remains deferred, and Playwright tests were not requested
+  or run.
 - 2026-07-18: a local production preview reached the expected
   authentication-not-configured boundary because the preview had no Clerk
   publishable key; the active port-3000 development listener returned an empty

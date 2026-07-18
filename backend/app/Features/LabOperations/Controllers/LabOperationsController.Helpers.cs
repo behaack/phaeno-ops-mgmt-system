@@ -196,6 +196,9 @@ public sealed partial class LabOperationsController
         if (actual != expected.Value) throw Conflict("concurrency_conflict", "This record changed. Refresh and try again.");
     }
 
+    private void MarkProtocolCandidateChanged(LabProtocol protocol) =>
+        dbContext.Entry(protocol).Property(item => item.UpdatedAt).IsModified = true;
+
     private static void Execute(Action action)
     {
         try { action(); }

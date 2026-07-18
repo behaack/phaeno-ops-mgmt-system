@@ -145,6 +145,33 @@ public class LabOperationsDomainTests
     }
 
     [Fact]
+    public void ProtocolDraftCanBeEditedWithdrawnAndDiscardedWithoutReusingItsVersion()
+    {
+        var protocol = new LabProtocol("rna-prep", "RNA preparation", null);
+        protocol.RecordVersion(1);
+        var version = new LabProtocolVersion(protocol.Id, 1, "{\"steps\":[]}",
+            Guid.NewGuid(), DateTime.UtcNow);
+
+        version.UpdateDraft("""{"steps":[{"key":"verify"}]}""");
+        version.Approve(Guid.NewGuid(), DateTime.UtcNow);
+        Assert.Throws<InvalidOperationException>(() =>
+            version.UpdateDraft("""{"steps":[{"key":"changed-after-approval"}]}"""));
+
+        version.WithdrawApproval();
+        Assert.Equal(LabProtocolStatus.Draft, version.Status);
+        Assert.Null(version.ApprovedByUserId);
+        Assert.Null(version.ApprovedAtUtc);
+
+        version.Discard();
+        Assert.Equal(LabProtocolStatus.Discarded, version.Status);
+        Assert.Equal(1, protocol.LatestVersion);
+        Assert.Throws<InvalidOperationException>(() => version.Approve(Guid.NewGuid(), DateTime.UtcNow));
+
+        protocol.RecordVersion(2);
+        Assert.Equal(2, protocol.LatestVersion);
+    }
+
+    [Fact]
     public void ProtocolKeysAreDerivedFromNamesAndResolveCollisions()
     {
         var key = LabIdentifierService.CreateProtocolKey(

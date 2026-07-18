@@ -232,15 +232,69 @@ public class LabOperationsCommercialHandoffPostgresTests
                     protocol.Version),
                 CancellationToken.None);
             var protocolVersion = Assert.Single(protocol.Versions);
-            protocolVersion = await lab.TransitionProtocol(
+            var duplicateCandidate = await Assert.ThrowsAsync<OrderManagementException>(() =>
+                lab.CreateProtocolVersion(
+                    protocol.Id,
+                    new CreateProtocolVersionRequest(
+                        """{"steps":[{"key":"parallel-draft","required":true}]}""",
+                        protocol.Version),
+                    CancellationToken.None));
+            Assert.Equal("protocol_candidate_exists", duplicateCandidate.ErrorCode);
+            protocol = await lab.UpdateProtocolVersion(
                 protocolVersion.Id,
-                new ProtocolTransitionRequest("approve"),
+                new UpdateProtocolVersionRequest(
+                    """{"steps":[{"key":"prepare-library-updated","required":true}]}""",
+                    protocol.Version),
                 CancellationToken.None);
-            protocolVersion = await lab.TransitionProtocol(
+            protocolVersion = Assert.Single(protocol.Versions);
+            protocol = await lab.TransitionProtocol(
                 protocolVersion.Id,
-                new ProtocolTransitionRequest("activate"),
+                new ProtocolTransitionRequest("approve", protocol.Version),
                 CancellationToken.None);
+            protocolVersion = Assert.Single(protocol.Versions);
+            protocol = await lab.TransitionProtocol(
+                protocolVersion.Id,
+                new ProtocolTransitionRequest("withdraw", protocol.Version),
+                CancellationToken.None);
+            protocolVersion = Assert.Single(protocol.Versions);
+            Assert.Equal(LabProtocolStatus.Draft.ToString(), protocolVersion.Status);
+            protocol = await lab.UpdateProtocolVersion(
+                protocolVersion.Id,
+                new UpdateProtocolVersionRequest(
+                    """{"steps":[{"key":"prepare-library-final","required":true}]}""",
+                    protocol.Version),
+                CancellationToken.None);
+            protocolVersion = Assert.Single(protocol.Versions);
+            protocol = await lab.TransitionProtocol(
+                protocolVersion.Id,
+                new ProtocolTransitionRequest("approve", protocol.Version),
+                CancellationToken.None);
+            protocolVersion = Assert.Single(protocol.Versions);
+            protocol = await lab.TransitionProtocol(
+                protocolVersion.Id,
+                new ProtocolTransitionRequest("activate", protocol.Version),
+                CancellationToken.None);
+            protocolVersion = Assert.Single(protocol.Versions);
             Assert.Equal(LabProtocolStatus.Active.ToString(), protocolVersion.Status);
+            protocol = await lab.CreateProtocolVersion(
+                protocol.Id,
+                new CreateProtocolVersionRequest(
+                    """{"steps":[{"key":"discarded-change","required":true}]}""",
+                    protocol.Version),
+                CancellationToken.None);
+            var discardedCandidate = Assert.Single(
+                protocol.Versions,
+                item => item.Status == LabProtocolStatus.Draft.ToString());
+            protocol = await lab.TransitionProtocol(
+                discardedCandidate.Id,
+                new ProtocolTransitionRequest("discard", protocol.Version),
+                CancellationToken.None);
+            Assert.Contains(
+                protocol.Versions,
+                item => item.Status == LabProtocolStatus.Discarded.ToString());
+            protocolVersion = Assert.Single(
+                protocol.Versions,
+                item => item.Status == LabProtocolStatus.Active.ToString());
 
             var material = await lab.CreateMaterialLot(
                 new CreateMaterialLotRequest(

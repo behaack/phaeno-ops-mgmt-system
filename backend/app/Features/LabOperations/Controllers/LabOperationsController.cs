@@ -182,6 +182,15 @@ public sealed partial class LabOperationsController(
         var protocol = await dbContext.LabProtocols.SingleOrDefaultAsync(item => item.Id == protocolId, cancellationToken)
             ?? throw Missing();
         EnsureVersion(protocol.Version, request.ProtocolVersion);
+        var hasOpenCandidate = await dbContext.LabProtocolVersions.AnyAsync(item =>
+            item.LabProtocolId == protocolId
+            && (item.Status == LabProtocolStatus.Draft || item.Status == LabProtocolStatus.Approved),
+            cancellationToken);
+        if (hasOpenCandidate)
+        {
+            throw Conflict("protocol_candidate_exists",
+                "Continue, activate, withdraw, or discard the open protocol version before creating another.");
+        }
         var definition = NormalizeJson(request.DefinitionJson, "protocol_definition_invalid");
         var nextVersion = protocol.LatestVersion + 1;
         protocol.RecordVersion(nextVersion);
@@ -191,28 +200,55 @@ public sealed partial class LabOperationsController(
         return (await ReadProtocolsAsync(cancellationToken)).Single(item => item.Id == protocol.Id);
     }
 
+    [HttpPut("protocol-versions/{versionId:guid}")]
+    public async Task<LabProtocolDto> UpdateProtocolVersion(Guid versionId,
+        [FromBody] UpdateProtocolVersionRequest request, CancellationToken cancellationToken)
+    {
+        await requestContext.RequireAsync(HttpContext, cancellationToken,
+            LabRole.ProtocolAdministrator, LabRole.OperationsAdministrator);
+        var version = await dbContext.LabProtocolVersions
+            .SingleOrDefaultAsync(item => item.Id == versionId, cancellationToken)
+            ?? throw Missing();
+        var protocol = await dbContext.LabProtocols
+            .SingleOrDefaultAsync(item => item.Id == version.LabProtocolId, cancellationToken)
+            ?? throw Missing();
+        EnsureVersion(protocol.Version, request.ProtocolVersion);
+        var definition = NormalizeJson(request.DefinitionJson, "protocol_definition_invalid");
+        Execute(() => version.UpdateDraft(definition));
+        MarkProtocolCandidateChanged(protocol);
+        await dbContext.SaveChangesAsync(cancellationToken);
+        return (await ReadProtocolsAsync(cancellationToken)).Single(item => item.Id == protocol.Id);
+    }
+
     [HttpPost("protocol-versions/{versionId:guid}/transition")]
-    public async Task<LabProtocolVersionDto> TransitionProtocol(Guid versionId,
+    public async Task<LabProtocolDto> TransitionProtocol(Guid versionId,
         [FromBody] ProtocolTransitionRequest request, CancellationToken cancellationToken)
     {
         var actor = await requestContext.RequireAsync(HttpContext, cancellationToken,
             LabRole.ProtocolAdministrator, LabRole.OperationsAdministrator);
         var version = await dbContext.LabProtocolVersions.SingleOrDefaultAsync(item => item.Id == versionId, cancellationToken)
             ?? throw Missing();
+        var protocol = await dbContext.LabProtocols
+            .SingleOrDefaultAsync(item => item.Id == version.LabProtocolId, cancellationToken)
+            ?? throw Missing();
+        EnsureVersion(protocol.Version, request.ProtocolVersion);
         switch (request.Action.Trim().ToLowerInvariant())
         {
-            case "approve": version.Approve(actor.User.Id, DateTime.UtcNow); break;
+            case "approve": Execute(() => version.Approve(actor.User.Id, DateTime.UtcNow)); break;
+            case "withdraw": Execute(version.WithdrawApproval); break;
+            case "discard": Execute(version.Discard); break;
             case "activate":
                 var active = await dbContext.LabProtocolVersions
                     .Where(item => item.LabProtocolId == version.LabProtocolId && item.Status == LabProtocolStatus.Active)
                     .ToListAsync(cancellationToken);
-                foreach (var previous in active) previous.Retire();
-                version.Activate();
+                foreach (var previous in active) Execute(previous.Retire);
+                Execute(version.Activate);
                 break;
-            case "retire": version.Retire(); break;
+            case "retire": Execute(version.Retire); break;
             default: throw Invalid("protocol_transition_invalid", "The protocol transition is invalid.");
         }
+        MarkProtocolCandidateChanged(protocol);
         await dbContext.SaveChangesAsync(cancellationToken);
-        return MapProtocolVersion(version);
+        return (await ReadProtocolsAsync(cancellationToken)).Single(item => item.Id == protocol.Id);
     }
 }

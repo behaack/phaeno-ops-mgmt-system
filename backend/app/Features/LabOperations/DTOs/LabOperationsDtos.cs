@@ -95,7 +95,8 @@ public sealed record LabScientificApprovalDto(
 public sealed record SetLabRoleRequest(bool IsActive, long? Version);
 public sealed record CreateProtocolRequest(string Name, string? Description);
 public sealed record CreateProtocolVersionRequest(string DefinitionJson, long ProtocolVersion);
-public sealed record ProtocolTransitionRequest(string Action);
+public sealed record UpdateProtocolVersionRequest(string DefinitionJson, long ProtocolVersion);
+public sealed record ProtocolTransitionRequest(string Action, long ProtocolVersion);
 public sealed record WorkMilestoneRequest(string Status, long Version);
 public sealed record SpecimenReceiptRequest(DateTime ReceivedAtUtc, string? ReceiptCondition, string? CurrentLocation, long Version);
 public sealed record SpecimenAccessionRequest(string AccessionNumber, string Label, string Location,

@@ -40,7 +40,9 @@ and rollback-isolated PostgreSQL coverage.
   an optional deviation note; plus Phaeno barcode kind/prefix allocation,
   safe-character generation, Code 39 scan normalization, checksum validation,
   and altered-value rejection; plus readable protocol-key collision handling
-  and date-stamped scanner-safe batch-number generation.
+  and date-stamped scanner-safe batch-number generation; plus draft definition
+  updates, approval withdrawal, discarded-version history, and illegal
+  post-discard transitions.
 - [x] `backend/test/LabOperationsAuthorizationTests.cs` - exact additive
   Operator, Supervisor, Protocol Administrator, Scientific Reviewer, and Lab
   Operations Administrator capabilities; platform-administrator bootstrap;
@@ -122,7 +124,8 @@ and rollback-isolated PostgreSQL coverage.
   even after an intermediate save, accepted cancellation updates Commercial
   and Lab together, and started Lab work vetoes the decision without partially
   approving it. A fifth rollback-isolated journey assigns additive Lab roles
-  and exercises active protocols, receipt/accession and barcode-print history,
+  and exercises one-open-candidate protocol enforcement, active protocols,
+  receipt/accession and barcode-print history,
   including automatic submitted/derived barcode allocation, readable protocol
   keys, library keys derived from their container barcodes, scanner-safe batch
   numbers, Code 39 scan normalization, reasoned initial/reprint/failure outcomes
@@ -172,7 +175,8 @@ and rollback-isolated PostgreSQL coverage.
   post-placement scientific validation, and cross-tenant denial.
 - [ ] Complete Lab Operations API negative paths - extend the passing
   controller/PostgreSQL operator journey with hosted-HTTP unknown-barcode,
-  lineage rejection, stale-version conflict, expired material, overdue
+  lineage rejection, stale-version conflict, parallel protocol-candidate
+  rejection, invalid draft/approval transitions, expired material, overdue
   calibration, wrong-work-order batch/custody, unresolved blocking exception,
   and cross-tenant HTTP/authentication scenarios.
 - [ ] Prospect Trial Projects - cover idempotent HubSpot request intake, dual
@@ -253,6 +257,12 @@ and rollback-isolated PostgreSQL coverage.
 
 ## Requested Execution Log
 
+- 2026-07-18: one-open-protocol-candidate lifecycle verification compiled the
+  complete solution, including updated domain and PostgreSQL journey coverage,
+  with zero warnings and zero errors using an isolated output path while the
+  local API was active. `dotnet ef migrations has-pending-model-changes`
+  confirmed that the string-backed status and lifecycle operations require no
+  schema migration. Backend tests were not requested and were not run.
 - 2026-07-18: system-owned Lab identifier verification ran `dotnet build
   backend/PSeq.Operations.slnx -c Release --no-restore`; all projects,
   including the updated test sources, compiled with zero warnings and zero

@@ -6,9 +6,19 @@ Lab Ops uses versioned protocols so the laboratory can identify exactly which co
 
 A Protocol Administrator creates the protocol by entering its name and optional description. POMS derives a readable, immutable protocol key from the name and adds a suffix if that key is already in use. Record the generated key when it is useful for support or integration matching; do not invent or maintain a separate key.
 
-Create an editable version definition for the protocol. The definition should capture ordered and repeatable steps, optional or conditional rules, typed captures, inputs and outputs, required materials and equipment, role requirements, and QC gates.
+Choose **Add version** when the protocol has no open Draft or Approved candidate. The first version starts blank and offers an optional library-preparation example. A later version starts with the active definition, or the most recently retired definition when none is active. Build the procedure in execution order and use **Add step**, the move controls, duplicate, and remove actions to maintain that order. Replace example or copied content with the intended laboratory procedure before saving.
 
-Review and approve the draft before activation. Activating a version retires the previously active version for new assignments. Retired versions remain available to explain historical work.
+For each step, enter a name and operator instructions, then choose whether the step is required, optional, or conditional. Conditional steps require a plain-language condition. Record whether the step may repeat, whether explicit operator confirmation is required, and whether a particular laboratory role is required.
+
+Add captured values only when the approved procedure requires them. Captures may be numbers, text, dates, choices, file references, or barcodes. Number captures may identify a unit, and choice captures require their permitted choices. Input materials, prepared outputs, and equipment types may be entered as comma- or line-separated requirements. A QC gate records explicit Pass, Fail, or Hold outcomes and requires acceptance criteria.
+
+Use the collapsed JSON preview only to review or copy the portable representation; do not author protocol JSON directly. **Create protocol draft** validates the complete definition and reserves the next version number. Cancelling after edits warns before discarding the unsaved definition.
+
+Each protocol can have only one open candidate version. While a Draft exists, **Continue editing** replaces **Add version**. Save corrections to that same version, then approve it when it is ready for controlled use. Approval locks the definition.
+
+An Approved version can be activated or have its approval withdrawn. **Withdraw approval** clears the recorded approval and returns the same version to Draft so it can be corrected and approved again. A Draft may instead be discarded; it remains visible in history as Discarded and cannot be approved or activated. POMS does not permit another version until the open candidate is activated or discarded.
+
+Activating a version retires the previously active version for new assignments. Active, retired, and discarded versions remain immutable and available to explain protocol history.
 
 ## Assign work
 
