@@ -141,6 +141,10 @@ batch entry now have focused unit and rollback-isolated PostgreSQL coverage.
 
 ## Deferred Tests
 
+- [ ] Internal Web Operations dashboard endpoint - cover authenticated Phaeno
+  platform-administrator access, external and non-admin denial, total counts,
+  five-item bounds, newest-first mailing-list ordering, deterministic
+  demo-request ordering, and response-envelope serialization.
 - [ ] HubSpot/Portal lifecycle - cover signed webhook intake, exact Company and
   Deal correlation, duplicate/out-of-order delivery, pending onboarding with no
   access, direct Customer/Partner creation, narrow Portal Prospect creation,
@@ -239,6 +243,11 @@ batch entry now have focused unit and rollback-isolated PostgreSQL coverage.
 
 ## Requested Execution Log
 
+- 2026-07-17: the additive Phaeno-admin Web Operations dashboard read endpoint
+  passed a full solution build with zero warnings and zero errors by using an
+  isolated output path because the normal Debug assemblies were locked by the
+  active Visual Studio/IIS Express session. Backend tests were not requested
+  and were not run.
 - 2026-07-16: barcode completion verification ran the full Release backend
   suite with the local PostgreSQL reference connection enabled; all 113 tests
   passed with no failures or skips. A separate Release build completed with

@@ -1,4 +1,4 @@
-import { expect, test } from '@playwright/test'
+import { expect, test, type Page } from '@playwright/test'
 
 test('uses POMS branding in the internal Phaeno context', async ({ page }) => {
   await page.goto('/')
@@ -11,32 +11,30 @@ test('uses POMS branding in the internal Phaeno context', async ({ page }) => {
   ).toBeVisible()
   await expect(page.getByText('Phaeno operations', { exact: true })).toBeVisible()
   await expect(page.getByRole('link', { name: 'POMS home' })).toBeVisible()
-  const dashboardSelector = page.getByRole('tablist', {
-    name: 'Dashboard panel selector',
-  })
-  const orderTab = dashboardSelector.getByRole('tab', {
+  let dashboardSelector = await openDashboardNavigation(page)
+  const orderButton = dashboardSelector.getByRole('button', {
     name: /Order Operations/,
   })
-  const labTab = dashboardSelector.getByRole('tab', {
+  const labButton = dashboardSelector.getByRole('button', {
     name: /Lab Operations/,
   })
-  const accountsTab = dashboardSelector.getByRole('tab', {
-    name: /Accounts/,
-  })
-  await expect(orderTab).toHaveAttribute('data-state', 'active')
+  await expect(orderButton).toHaveAttribute('aria-current', 'page')
   await expect(
     page.getByRole('heading', { name: 'Order Operations', level: 2 }),
   ).toBeVisible()
-  await labTab.click()
-  await expect(labTab).toHaveAttribute('data-state', 'active')
+  await labButton.click()
   await expect(
     page.getByRole('heading', { name: 'Lab Operations', level: 2 }),
   ).toBeVisible()
   await expect(
     page.getByRole('heading', { name: 'Order Operations', level: 2 }),
   ).toHaveCount(0)
-  await accountsTab.click()
-  await expect(accountsTab).toHaveAttribute('data-state', 'active')
+
+  dashboardSelector = await openDashboardNavigation(page)
+  const accountsButton = dashboardSelector.getByRole('button', {
+    name: /Accounts/,
+  })
+  await accountsButton.click()
   await expect(
     page.getByRole('heading', {
       name: 'Customer, Partner & Prospect Accounts',
@@ -44,6 +42,18 @@ test('uses POMS branding in the internal Phaeno context', async ({ page }) => {
     }),
   ).toBeVisible()
   await expect(page.getByRole('button', { name: 'Preview invite' })).toBeVisible()
+
+  dashboardSelector = await openDashboardNavigation(page)
+  await dashboardSelector.getByRole('button', {
+    name: /Web Operations/,
+  }).click()
+  await expect(
+    page.getByRole('heading', { name: 'Web Operations', level: 2 }),
+  ).toBeVisible()
+  await expect(page.getByText('Mailing List')).toBeVisible()
+  await expect(page.getByText('Demo Requests')).toBeVisible()
+  await expect(page.getByText('Morgan Lee')).toBeVisible()
+  await expect(page.getByText('Atlas Bioanalytics')).toBeVisible()
 })
 
 test('uses Portal branding in an external organization context', async ({ page }) => {
@@ -67,9 +77,12 @@ test('uses Portal branding in an external organization context', async ({ page }
   await expect(
     page.getByText('TanStack Start, Query, Shadcn, Axios'),
   ).toHaveCount(0)
-  await expect(
-    page.getByRole('tablist', { name: 'Dashboard panel selector' }),
-  ).toHaveCount(0)
+  await expect(page.getByRole('navigation', {
+    name: 'POMS dashboard sections',
+  })).toHaveCount(0)
+  await expect(page.getByRole('button', {
+    name: /Open POMS dashboard navigation/,
+  })).toHaveCount(0)
 })
 
 test('keeps workspace navigation concise and groups the user menu', async ({
@@ -251,3 +264,16 @@ test('locks background scrolling while a modal is open', async ({ page }) => {
     )
     .not.toBe('hidden')
 })
+
+async function openDashboardNavigation(page: Page) {
+  const navigation = page.getByRole('navigation', {
+    name: 'POMS dashboard sections',
+  })
+  if (!(await navigation.isVisible())) {
+    await page.getByRole('button', {
+      name: /Open POMS dashboard navigation/,
+    }).click()
+  }
+  await expect(navigation).toBeVisible()
+  return navigation
+}

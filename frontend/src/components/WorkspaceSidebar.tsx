@@ -23,6 +23,8 @@ export type WorkspaceSidebarItem<Value extends string> = {
   label: string
   description: string
   icon: LucideIcon
+  count?: number
+  countDescription?: string
 }
 
 type WorkspaceSidebarProps<Value extends string> = {
@@ -232,11 +234,26 @@ function WorkspaceNavigation<Value extends string>({
                 onClick={() => onValueChange(item.value)}
               >
                 <Icon aria-hidden="true" className="mt-0.5 size-4 shrink-0" />
-                <span className="min-w-0">
-                  <span className="block text-sm font-medium">{item.label}</span>
+                <span className="min-w-0 flex-1">
+                  <span className="flex items-start justify-between gap-2">
+                    <span className="block text-sm font-medium">{item.label}</span>
+                    {item.count !== undefined ? (
+                      <span
+                        aria-hidden="true"
+                        className="inline-flex min-w-6 shrink-0 justify-center rounded-full bg-background/80 px-1.5 py-0.5 text-[0.6875rem] leading-4 tabular-nums ring-1 ring-foreground/10"
+                      >
+                        {item.count}
+                      </span>
+                    ) : null}
+                  </span>
                   <span className="mt-0.5 block text-xs leading-4 text-muted-foreground">
                     {item.description}
                   </span>
+                  {item.count !== undefined ? (
+                    <span className="sr-only">
+                      {item.countDescription ?? `${item.count} items`}
+                    </span>
+                  ) : null}
                 </span>
               </button>
             </li>

@@ -286,7 +286,7 @@ export const documentationEntries: readonly DocumentationEntry[] = [
     summary: 'Select the Phaeno workspace, find operational tools, and support users safely.',
     section: 'Basics',
     order: 10,
-    reviewedAt: '2026-07-16',
+    reviewedAt: '2026-07-17',
     Content: PhaenoGettingStarted,
   },
   {

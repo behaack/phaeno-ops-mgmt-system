@@ -1,0 +1,283 @@
+name: Deploy Portal Green
+
+on:
+  workflow_dispatch:
+    inputs:
+      apply_migrations:
+        description: Apply pending Portal migrations after creating an encrypted database backup
+        required: true
+        default: false
+        type: boolean
+
+permissions:
+  contents: read
+
+concurrency:
+  group: phaeno-portal-green-production
+  cancel-in-progress: false
+
+env:
+  DEPLOY_ROOT: /opt/phaeno.portal-green
+  PUBLIC_WEBSITE_URL: https://www.phaenobiotech.com
+  PUBLIC_WEBSITE_API_URL: https://api.phaenobiotech.com
+
+jobs:
+  deploy:
+    name: Build and deploy Portal green
+    runs-on: ubuntu-latest
+    timeout-minutes: 35
+    environment:
+      name: production
+
+    defaults:
+      run:
+        shell: bash
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v6
+
+      - name: Set up .NET
+        uses: actions/setup-dotnet@v5
+        with:
+          dotnet-version: 10.0.x
+
+      - name: Restore Portal API
+        run: dotnet restore ./backend/PSeq.Operations.slnx
+
+      - name: Build Portal API
+        run: dotnet build ./backend/PSeq.Operations.slnx --configuration Release --no-restore
+
+      - name: Validate deployment secrets
+        env:
+          APPLY_MIGRATIONS: ${{ inputs.apply_migrations }}
+          DEPLOY_HOST: ${{ secrets.DEPLOY_HOST }}
+          DEPLOY_KNOWN_HOSTS: ${{ secrets.DEPLOY_KNOWN_HOSTS }}
+          DEPLOY_SSH_KEY: ${{ secrets.DEPLOY_SSH_KEY }}
+          DEPLOY_USER: ${{ secrets.DEPLOY_USER }}
+          PORTAL_MIGRATION_BACKUP_PUBLIC_KEY: ${{ secrets.PORTAL_MIGRATION_BACKUP_PUBLIC_KEY }}
+        run: |
+          missing=0
+
+          for name in DEPLOY_HOST DEPLOY_KNOWN_HOSTS DEPLOY_SSH_KEY DEPLOY_USER; do
+            if [ -z "${!name}" ]; then
+              echo "::error::Missing production secret ${name}."
+              missing=1
+            fi
+          done
+
+          if [ "$APPLY_MIGRATIONS" = "true" ] \
+            && [ -z "$PORTAL_MIGRATION_BACKUP_PUBLIC_KEY" ]; then
+            echo "::error::PORTAL_MIGRATION_BACKUP_PUBLIC_KEY is required when migrations are authorized."
+            missing=1
+          fi
+
+          exit "$missing"
+
+      - name: Prepare release metadata
+        id: release
+        run: |
+          short_revision="${GITHUB_SHA:0:12}"
+          release_id="${GITHUB_SHA}-${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}"
+          image_tag="sha-${short_revision}-run-${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}"
+          archive_name="phaeno-portal-${release_id}.tar.gz"
+          release_path="${DEPLOY_ROOT}/releases/${release_id}"
+          backup_key_path="/tmp/phaeno-portal-backup-${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}.pub"
+
+          {
+            echo "release_id=$release_id"
+            echo "image_tag=$image_tag"
+            echo "archive_name=$archive_name"
+            echo "release_path=$release_path"
+            echo "backup_key_path=$backup_key_path"
+          } >> "$GITHUB_OUTPUT"
+
+      - name: Configure SSH
+        env:
+          DEPLOY_KNOWN_HOSTS: ${{ secrets.DEPLOY_KNOWN_HOSTS }}
+          DEPLOY_SSH_KEY: ${{ secrets.DEPLOY_SSH_KEY }}
+        run: |
+          install -d -m 700 ~/.ssh
+          printf '%s\n' "$DEPLOY_SSH_KEY" > ~/.ssh/deploy_key
+          printf '%s\n' "$DEPLOY_KNOWN_HOSTS" > ~/.ssh/known_hosts
+          chmod 600 ~/.ssh/deploy_key ~/.ssh/known_hosts
+
+      - name: Create deployment archive
+        env:
+          DEPLOY_ARCHIVE: ${{ steps.release.outputs.archive_name }}
+        run: |
+          tar \
+            --create \
+            --gzip \
+            --file "$RUNNER_TEMP/$DEPLOY_ARCHIVE" \
+            --exclude='backend/**/bin' \
+            --exclude='backend/**/obj' \
+            --exclude='backend/.tmp' \
+            --exclude='backend/.vs' \
+            Dockerfile \
+            .dockerignore \
+            backend \
+            deployment/hetzner/green
+
+          (
+            cd "$RUNNER_TEMP"
+            sha256sum "$DEPLOY_ARCHIVE" > "$DEPLOY_ARCHIVE.sha256"
+          )
+
+      - name: Upload release
+        env:
+          DEPLOY_ARCHIVE: ${{ steps.release.outputs.archive_name }}
+          DEPLOY_HOST: ${{ secrets.DEPLOY_HOST }}
+          DEPLOY_USER: ${{ secrets.DEPLOY_USER }}
+        run: |
+          scp \
+            -i ~/.ssh/deploy_key \
+            "$RUNNER_TEMP/$DEPLOY_ARCHIVE" \
+            "$RUNNER_TEMP/$DEPLOY_ARCHIVE.sha256" \
+            "$DEPLOY_USER@$DEPLOY_HOST:/tmp/"
+
+      - name: Extract versioned release
+        env:
+          DEPLOY_ARCHIVE: ${{ steps.release.outputs.archive_name }}
+          DEPLOY_HOST: ${{ secrets.DEPLOY_HOST }}
+          DEPLOY_USER: ${{ secrets.DEPLOY_USER }}
+          RELEASE_PATH: ${{ steps.release.outputs.release_path }}
+        run: |
+          ssh -i ~/.ssh/deploy_key "$DEPLOY_USER@$DEPLOY_HOST" \
+            bash -s -- "$DEPLOY_ROOT" "$RELEASE_PATH" "$DEPLOY_ARCHIVE" <<'REMOTE'
+          set -Eeuo pipefail
+          umask 022
+
+          deploy_root="$1"
+          release_path="$2"
+          archive_name="$3"
+
+          case "$release_path" in
+            "$deploy_root"/releases/*) ;;
+            *)
+              echo "Invalid release path." >&2
+              exit 1
+              ;;
+          esac
+
+          test ! -e "$release_path"
+          install -d -m 755 "$deploy_root/releases" "$release_path"
+
+          (
+            cd /tmp
+            sha256sum --check --strict "$archive_name.sha256"
+          )
+
+          tar \
+            --extract \
+            --gzip \
+            --file "/tmp/$archive_name" \
+            --directory "$release_path"
+          chmod -R u=rwX,go=rX "$release_path"
+          chmod 755 "$release_path/deployment/hetzner/green/deploy-release.sh"
+          REMOTE
+
+      - name: Upload migration-backup public key
+        if: ${{ inputs.apply_migrations }}
+        env:
+          BACKUP_KEY_PATH: ${{ steps.release.outputs.backup_key_path }}
+          DEPLOY_HOST: ${{ secrets.DEPLOY_HOST }}
+          DEPLOY_USER: ${{ secrets.DEPLOY_USER }}
+          PORTAL_MIGRATION_BACKUP_PUBLIC_KEY: ${{ secrets.PORTAL_MIGRATION_BACKUP_PUBLIC_KEY }}
+        run: |
+          printf '%s\n' "$PORTAL_MIGRATION_BACKUP_PUBLIC_KEY" \
+            | ssh -i ~/.ssh/deploy_key "$DEPLOY_USER@$DEPLOY_HOST" \
+                "install -m 600 /dev/stdin '$BACKUP_KEY_PATH'"
+
+      - name: Deploy and smoke Portal green
+        env:
+          APPLY_MIGRATIONS: ${{ inputs.apply_migrations }}
+          BACKUP_KEY_PATH: ${{ steps.release.outputs.backup_key_path }}
+          DEPLOY_HOST: ${{ secrets.DEPLOY_HOST }}
+          DEPLOY_USER: ${{ secrets.DEPLOY_USER }}
+          IMAGE_TAG: ${{ steps.release.outputs.image_tag }}
+          RELEASE_PATH: ${{ steps.release.outputs.release_path }}
+        run: |
+          if [ "$APPLY_MIGRATIONS" = "true" ]; then
+            migration_guard=YES
+          else
+            migration_guard=NO
+          fi
+
+          ssh -i ~/.ssh/deploy_key "$DEPLOY_USER@$DEPLOY_HOST" \
+            bash -s -- \
+              "$RELEASE_PATH" \
+              "$GITHUB_SHA" \
+              "$IMAGE_TAG" \
+              "$APPLY_MIGRATIONS" \
+              "$migration_guard" \
+              "$BACKUP_KEY_PATH" <<'REMOTE'
+          set -Eeuo pipefail
+
+          release_path="$1"
+          source_revision="$2"
+          image_tag="$3"
+          apply_migrations="$4"
+          migration_guard="$5"
+          backup_key_path="$6"
+
+          export ALLOW_PORTAL_MIGRATIONS="$migration_guard"
+          export PORTAL_MIGRATION_BACKUP_PUBLIC_KEY_PATH="$backup_key_path"
+
+          "$release_path/deployment/hetzner/green/deploy-release.sh" \
+            "$source_revision" \
+            "$image_tag" \
+            "$apply_migrations"
+          REMOTE
+
+      - name: Verify public dial tone remains available
+        run: |
+          curl \
+            --fail \
+            --silent \
+            --show-error \
+            --max-time 20 \
+            --output /dev/null \
+            "$PUBLIC_WEBSITE_URL/"
+          curl \
+            --fail \
+            --silent \
+            --show-error \
+            --max-time 20 \
+            --output /dev/null \
+            "$PUBLIC_WEBSITE_API_URL/api/v1/web-ops/database-ping"
+
+      - name: Record deployment summary
+        env:
+          APPLY_MIGRATIONS: ${{ inputs.apply_migrations }}
+          IMAGE_TAG: ${{ steps.release.outputs.image_tag }}
+          RELEASE_PATH: ${{ steps.release.outputs.release_path }}
+        run: |
+          {
+            echo "## Portal green deployment"
+            echo
+            echo "- Commit: \`$GITHUB_SHA\`"
+            echo "- Image: \`phaeno-portal-green-api:$IMAGE_TAG\`"
+            echo "- Release: \`$RELEASE_PATH\`"
+            echo "- Migrations requested: \`$APPLY_MIGRATIONS\`"
+            echo "- Nginx/public routing changed: \`false\`"
+          } >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Remove uploaded temporary files
+        if: ${{ always() }}
+        env:
+          BACKUP_KEY_PATH: ${{ steps.release.outputs.backup_key_path }}
+          DEPLOY_ARCHIVE: ${{ steps.release.outputs.archive_name }}
+          DEPLOY_HOST: ${{ secrets.DEPLOY_HOST }}
+          DEPLOY_USER: ${{ secrets.DEPLOY_USER }}
+        run: |
+          if [ -z "$DEPLOY_ARCHIVE" ] \
+            || [ -z "$DEPLOY_HOST" ] \
+            || [ -z "$DEPLOY_USER" ] \
+            || [ ! -f ~/.ssh/deploy_key ]; then
+            exit 0
+          fi
+
+          ssh -i ~/.ssh/deploy_key "$DEPLOY_USER@$DEPLOY_HOST" \
+            "rm -f '/tmp/$DEPLOY_ARCHIVE' '/tmp/$DEPLOY_ARCHIVE.sha256' '$BACKUP_KEY_PATH'" \
+            || true

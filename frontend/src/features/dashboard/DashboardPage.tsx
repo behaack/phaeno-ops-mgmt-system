@@ -13,18 +13,18 @@ export function DashboardPage() {
     selectedOrganizationId,
   )
 
+  if (selectedMembership?.organizationKind === 'Phaeno') {
+    return <DashboardPanelSelector />
+  }
+
   return (
     <main className="page-wrap px-4 py-8">
       <div className="soft-enter">
         <DashboardHero />
       </div>
-      {selectedMembership?.organizationKind === 'Phaeno' ? (
-        <DashboardPanelSelector />
-      ) : (
-        <div className="soft-enter soft-enter-delay-1">
-          <AccountsDashboardContent />
-        </div>
-      )}
+      <div className="soft-enter soft-enter-delay-1">
+        <AccountsDashboardContent />
+      </div>
     </main>
   )
 }

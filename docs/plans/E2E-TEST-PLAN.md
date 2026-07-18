@@ -13,8 +13,9 @@ not satisfy this production-activation gate.
 - [x] `frontend/e2e/home.spec.ts` - internal Phaeno context uses POMS in the
   browser title, header, and dashboard while external organization context uses
   Portal; both contexts retain the Phaeno Inc. legal footer and omit framework
-  vendor promotion; the POMS dashboard exposes a keyboard-operable Order
-  Operations / Lab Operations / Accounts selector with one visible panel at a
+  vendor promotion; the POMS dashboard exposes a keyboard-operable
+  viewport-edge sidebar for Order Operations, Lab Operations, Accounts, and
+  read-only Web Operations mailing-list/demo-request intake with one visible panel at a
   time while external contexts omit it.
 - [x] `frontend/e2e/home.spec.ts` - desktop keeps frequent workspace routes in
   the toolbar, including Docs, while Data provisioning appears under Resources;
@@ -137,6 +138,12 @@ not satisfy this production-activation gate.
 
 ## Requested Execution Log
 
+- 2026-07-17: the POMS home scenario was updated for the shared dashboard
+  sidebar and Web Operations mock intake. A live in-app browser review verified
+  the desktop and 390-pixel layouts, sidebar selection, visible counts, bounded
+  Mailing List and Demo Requests panels, and zero browser console errors. The
+  Playwright suite was not executed because E2E execution was not separately
+  requested.
 - 2026-07-17: the Phaeno Order Operations mock scenario now requires the PSeq
   kits sidebar label. The Playwright suite was not executed because E2E
   execution was not separately requested.

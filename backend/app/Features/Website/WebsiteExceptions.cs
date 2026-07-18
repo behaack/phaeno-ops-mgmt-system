@@ -17,3 +17,19 @@ public sealed class WebsiteRecaptchaRejectedException()
 
     public override string ErrorCode => "recaptcha_rejected";
 }
+
+public sealed class WebsiteOperationsAccessException(
+    string message,
+    int statusCode,
+    string errorCode)
+    : DomainException(message)
+{
+    public override int StatusCode => statusCode;
+
+    public override string ErrorType =>
+        statusCode == StatusCodes.Status401Unauthorized
+            ? "unauthorized"
+            : "forbidden";
+
+    public override string ErrorCode => errorCode;
+}

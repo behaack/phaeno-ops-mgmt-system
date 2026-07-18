@@ -1,0 +1,2 @@
+/.github/workflows/*.yml text eol=lf
+/deployment/hetzner/green/*.sh text eol=lf

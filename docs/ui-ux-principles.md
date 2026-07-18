@@ -47,13 +47,16 @@ Phaeno Portal is desktop-first and fully responsive.
 Use task-oriented entry points with record-centered workspaces.
 
 - The home experience should answer, "What needs my attention?"
-- The POMS home uses one **Order Operations / Lab Operations / Accounts** panel
-  selector so internal users can move among the two primary operational queues
-  and Customer, Partner, and Prospect account administration without stacking
-  all three dashboards. Show one panel at a time, emphasize attention counts
+- The POMS home uses the shared far-left sidebar as one **Order Operations / Lab
+  Operations / Accounts / Web Operations** panel selector so internal users can
+  move among the two primary operational queues, Customer, Partner, and Prospect
+  account administration, and public Website intake without stacking the
+  dashboards. Show one panel at a time, emphasize attention or intake counts
   and representative priority work, and route users to the full owning
-  workspace for action. External organization dashboards do not expose this
-  internal selector.
+  workspace when one exists. Web Operations keeps mailing-list signups and demo
+  requests read-only on the dashboard and is visible only to Phaeno platform
+  administrators. External organization dashboards do not expose this internal
+  selector.
 - Work queues surface pending tasks, exceptions, recent activity, and important status changes.
 - Primary navigation uses recognizable business and scientific areas rather than technical modules.
 - Do not expose an organization-context search or act-as switcher in the user

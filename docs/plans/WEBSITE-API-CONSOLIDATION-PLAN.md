@@ -3,10 +3,13 @@
 ## Status
 
 The code consolidation is implemented in `phaeno-portal`. The isolated Portal
-green API/database is now provisioned on the existing Hetzner host and the
-Portal migration chain has been applied there. Production data copy, public
-traffic cutover, and retirement of the standalone `phaeno-website` API/database
-remain explicit deployment work.
+green API/database is provisioned on the existing Hetzner host and the Portal
+migration chain has been applied there. Phase 3 is complete: the Portal API is
+the public Website API upstream, new Website writes persist through the shared
+Portal context and database, browser acceptance passed, and notification
+delivery was confirmed. The temporary bridge remains available during the
+observation window. Retiring the bridge and standalone `phaeno-website`
+API/database remains explicit Phase 4 deployment work.
 
 Repeatable cutover tooling is implemented under
 `operations/website-cutover`. It creates a protected source snapshot and
@@ -31,9 +34,16 @@ unexecuted at snapshot time.
 Later on 2026-07-17, a new Docker-network-only PostgreSQL 17 database was
 created for the Portal green slot. All seven Portal migrations were applied,
 ending at `20260717215539_AddWebsiteApi`. The destination has the expected
-`commercial_ops`, `lab_ops`, and `website` schemas; its Website tables are
-empty pending the controlled import of the verified 13 contacts and 2 orders.
-The current Website database was not migrated or changed.
+`commercial_ops`, `lab_ops`, and `website` schemas.
+
+The verified snapshot was then imported into the green `website` schema in one
+transaction. The destination contains 13 contacts and 2 orders, has zero
+duplicate normalized-email groups, and matches both recorded source hashes
+exactly. An independent verification repeated the comparisons inside a
+rolled-back transaction. The source database was not changed by the initial
+import. A final source snapshot was subsequently captured after public traffic
+moved to the bridge; it contained the same rows and fingerprints and was
+imported idempotently.
 
 The current `phaeno-website` deployment workflow is suitable for an ordinary
 API redeploy, but not for this cutover without modification: it extracts over
@@ -43,8 +53,31 @@ gate, or automated rollback. `phaeno-portal` now has a green-only
 Docker/Compose definition under `deployment/hetzner/green`, an explicit
 one-shot migration mode, and trusted forwarded-header handling. The first
 green deployment is running at `127.0.0.1:8084`; its PostgreSQL service has no
-host-published port. Nginx and public routing still point to the standalone API
-at `127.0.0.1:8081`.
+host-published port. Public routing now points to Portal at
+`127.0.0.1:8084`; the bridge remains available as the immediate rollback
+upstream at `127.0.0.1:8085`, and the standalone API remains available at
+`127.0.0.1:8081` for the observation window.
+
+The temporary Website bridge is running at `127.0.0.1:8085`, connected to the
+Portal Docker network and database, with the shared Website documents mounted
+read-only and a separate search-index volume. Its explicit bridge model maps
+the legacy entities to the Portal `website` schema without running the
+standalone migration history. Nginx currently routes both
+`api.phaenobiotech.com` and the compatibility hostname
+`webops.phaenobiotech.com` to Portal. The canonical hostname has an explicit
+Vercel DNS A record, a valid TLS certificate, and a dedicated Nginx server
+block. The prior hostname remains a temporary compatibility alias during the
+observation window.
+The bridge has zero established connections and remains loopback-only for
+rollback.
+
+The manual `.github/workflows/deploy.yml` workflow now provides the controlled
+Portal green deployment path. It builds and uploads a versioned release,
+preserves server-only runtime files, leaves Nginx and public routing unchanged,
+smokes the isolated API, and automatically restores the prior image after a
+failed non-migration deployment. Shared-database migrations remain off by
+default and require an explicit workflow input plus an encrypted pre-migration
+backup.
 
 ## Product boundary
 
@@ -96,6 +129,22 @@ The Website records are public-intake records, not Portal users,
 organizations, memberships, orders, or HubSpot contacts. Any later promotion
 into CRM or Portal onboarding must be an explicit workflow.
 
+## Internal Web Operations dashboard
+
+The POMS home includes a read-only **Web Operations** panel for Phaeno platform
+administrators. It shows the total mailing-list and demo-request intake counts,
+the five newest mailing-list contacts, and up to five demo requests ordered by
+organization. The UI labels the persisted `WebOrder` public inquiries as
+**Demo Requests** without changing the public Website contract or persistence
+model.
+
+The additive internal endpoint is `GET /api/web-ops/dashboard`. It requires an
+authenticated active Phaeno platform administrator and returns only the bounded
+summary needed by the dashboard. The existing anonymous
+`/api/v1/web-ops/...` routes remain unchanged. This surface does not promote
+Website intake into an Account, Portal request, HubSpot contact, or operational
+order.
+
 ## Runtime configuration
 
 The portal now owns these existing Website API configuration sections:
@@ -117,7 +166,8 @@ source-controlled settings.
 The checked-in Website deployment material currently describes:
 
 - the public Website UI deployed separately on Vercel;
-- `webops.phaenobiotech.com` terminating TLS at host Nginx;
+- `api.phaenobiotech.com` as the canonical Website API hostname;
+- `webops.phaenobiotech.com` retained temporarily as a compatibility alias;
 - the standalone API bound to `127.0.0.1:8081`;
 - File Browser bound to `127.0.0.1:8082`;
 - `/opt/phaeno.website-api/documents` mounted at `/app/__DOCUMENTS`;
@@ -132,10 +182,15 @@ not represent the actual production database identified by the owner. Treat
 their provider and host statements as stale until the deployed runtime
 configuration is inspected through an approved, credential-safe process.
 
-Keep the public hostname during consolidation. If
-`webops.phaenobiotech.com` remains the Website API origin, the Astro
-`PUBLIC_API_BASE_URL`, the technical-brief URL, and the scheduled database
-probe do not need a coordinated DNS or Website redeploy.
+The public hostname remained stable during the implementation and database
+consolidation. After Phase 3 acceptance, DNS and TLS for
+`api.phaenobiotech.com` were brought up before the canonical origin changed,
+and the prior hostname was preserved as an alias. Repository configuration,
+the technical-brief URL, deployment smoke checks, and the scheduled database
+probe now use the canonical hostname. The Vercel `PUBLIC_API_BASE_URL` setting
+also uses the canonical hostname for all environments. The live Website build
+continues to use the compatibility alias until its next successful production
+deployment.
 
 ## No-disruption data and traffic cutover
 
@@ -211,15 +266,21 @@ The source API stays live throughout this initial copy.
    run the standalone Website migration history against the Portal database.
 3. Start the bridge on its green loopback port and smoke it directly through
    Nginx with a temporary internal route or host header.
-4. Change only the Nginx upstream for `webops.phaenobiotech.com` from legacy to
-   bridge, run `nginx -t`, and reload Nginx. Do not change public DNS or the
-   Website API base URL.
+4. Change only the Nginx upstream for the then-current public Website API
+   hostname from legacy to bridge, run `nginx -t`, and reload Nginx. Do not
+   change public DNS or the Website API base URL.
 5. Allow existing legacy upstream requests and keep-alive connections to drain.
 6. Run the idempotent source-to-destination copy again. Reconcile counts and
    hashes, then prevent any further application writes to the legacy database.
 
 After this phase, public behavior is still supplied by the standalone Website
 API, but every new contact and order is stored in the Portal database.
+
+Phase 2 completed on 2026-07-18 UTC. Nginx routes the stable public hostname to
+the bridge on `127.0.0.1:8085`. The legacy upstream drained to zero established
+connections and remains running on `127.0.0.1:8081` solely for immediate
+rollback. The final source import and independent rolled-back verification
+matched every source business-field fingerprint.
 
 ### Phase 3: switch the API implementation
 
@@ -238,6 +299,19 @@ API, but every new contact and order is stored in the Portal database.
 5. If Portal is unhealthy, switch Nginx back to the bridge. Both implementations
    use the same Portal database, so this rollback does not require a data
    rollback or reverse copy.
+
+Phase 3 completed on 2026-07-18 UTC. Two submissions made while the bridge was
+public increased the shared destination from 13 contacts and 2 orders to 14
+contacts and 3 orders; the corresponding order and mailing-list notifications
+were both accepted and delivered. Nginx then changed only the Website upstream
+from the bridge on `127.0.0.1:8085` to Portal on `127.0.0.1:8084`.
+
+After that implementation switch, a controlled browser acceptance pair with
+identifier `PortalCutover-20260718T014950Z` produced the expected success
+states. The exact synthetic contact and order each appeared once in the Portal
+`website` schema, increasing the totals to 15 contacts and 4 orders. The
+contact did not request a technical brief. Mailgun reported accepted and
+delivered events for both the Portal order and mailing-list templates.
 
 ### Phase 4: observe and retire
 
@@ -295,3 +369,115 @@ representative search `200`, and the technical brief `200`. During the same
 check, the existing Website database ping returned `204` and the public Website
 returned `200`. Both API listeners remained loopback-only, and no Nginx or DNS
 change was made.
+
+The initial data import matched:
+
+- contacts: 13 rows and hash `cfc2e50a1eefe8ac4b059be76abac3bb`;
+- orders: 2 rows and hash `487e2763f18deb80a15597907199858f`; and
+- duplicate normalized-email groups: 0.
+
+Catalog-valid pre-import and post-import Portal database dumps were encrypted
+with the snapshot recovery material, independently decrypted and compared to
+their plaintext inputs, and retained root-only with SHA-256 checksums. The
+plaintext dumps, decrypted snapshot, archive passphrase, temporary database
+service file, and one-use import workspace were securely removed. Post-import
+probes again returned green health `200`, green database ping `204`, green
+search `200`, green technical brief `200`, current Website database ping `204`,
+and public Website `200`; both green containers remained healthy with zero
+restarts.
+
+The bridge source archive SHA-256 was
+`042c2c8d00929db8fb866a7f84a5c7547c6538321750aef2b4d95130c7f81617`,
+and the deployed image was
+`phaeno-website-bridge-api:bridge-042c2c8d0092`. Direct bridge probes returned
+database ping `204`, representative search `200`, technical brief `200`, CORS
+preflight `204`, and invalid reCAPTCHA rejection `400`; the rejection did not
+change the destination counts of 13 contacts and 2 orders. Both bridge and
+legacy EF model mappings were inspected and matched their expected schemas,
+tables, and columns.
+
+Deployment inspection first found an invalid notification credential in the
+ignored local Website configuration. The exact Mailgun messages endpoint
+rejected an intentionally incomplete request with `401 Unauthorized`; the
+request could not send email, and all runtime files were restored.
+
+The owner then supplied the replacement through the
+`PSeq.Operation.Api` application settings. It was streamed into the
+root-only bridge and Portal runtime secret files without being printed or
+passed on a command line. An intentionally incomplete request to the exact
+Mailgun messages endpoint returned `400 Bad Request`, proving authentication
+without sending email. The tracked application-settings value was immediately
+cleared back to empty. The bridge and Portal containers were recreated with
+the runtime secret and retained zero restarts.
+
+The guarded Nginx cutover then changed only the Website upstream from
+`127.0.0.1:8081` to `127.0.0.1:8085`. The original configuration is retained
+root-only with SHA-256
+`7ee6414527adfc2751c7aeee29e46f12f3f7fec0aa352ca8e1f781b117995373`.
+Public bridge probes returned database ping `204`, representative search
+`200`, technical brief `200`, CORS preflight `204`, and invalid reCAPTCHA
+rejection `400`. The destination remained at 13 contacts and 2 orders, and the
+legacy API remained available with database ping `204`.
+
+After the legacy upstream drained to zero established connections, the final
+source snapshot recorded:
+
+- contacts: 13 rows and hash `cfc2e50a1eefe8ac4b059be76abac3bb`;
+- orders: 2 rows and hash `487e2763f18deb80a15597907199858f`;
+- duplicate normalized-email groups: 0; and
+- documents: 97 files totaling 8,318,449 bytes.
+
+The idempotent final import reported zero destination-only rows and exact
+source/snapshot/destination hashes for both tables. Independent verification
+repeated the comparison in a rolled-back transaction, and every document
+checksum passed. The authoritative final source snapshot and a post-import
+Portal database dump were encrypted with the existing off-server recovery key,
+their encrypted checksums passed, and all temporary plaintext snapshot and
+database-dump files were securely removed.
+
+The Phase 3 Portal cutover completed at `20260718T015903Z`. The guarded switch
+first retained a root-only Nginx backup at
+`/var/backups/phaeno-website-cutover/nginx-pre-portal-20260718T015903Z.conf`
+with SHA-256
+`745ceb340b346e22b3efc19c7d2f417b7c1011f12688d61d1254e3cfc3a037dc`.
+The public Portal API then returned health `200`, database ping `204`,
+representative search `200`, and the technical brief `200`; the public Website
+returned `200`. CORS preflight returned `204` with the expected marketing
+origin, and an invalid reCAPTCHA submission was rejected with `403` without
+changing row counts.
+
+The post-browser production audit confirmed 15 contacts, 4 orders, exactly one
+synthetic contact, and exactly one synthetic order. Portal remained healthy
+with zero restarts and no cutover-period application errors. Both Portal
+notifications were accepted and delivered, the bridge still returned database
+ping `204`, and it had zero established connections. The standalone API also
+returned database ping `204`. Nginx configuration validation passed; the host
+continues to emit an unrelated duplicate-server-name warning for another
+domain. Public traffic remains on Portal while the bridge and prior API stay
+available for the Phase 4 observation window.
+
+The canonical hostname activation completed at `20260718T025657Z`. Vercel DNS
+has an explicit `api` A record for `178.156.175.151` with TTL 60. The
+`api.phaenobiotech.com` TLS certificate is valid through 2026-10-16. The
+guarded Nginx change retained a root-only backup at
+`/var/backups/phaeno-website-cutover/nginx-pre-api-hostname-20260718T025657Z.conf`
+with SHA-256
+`96770d59788d6c63b1ff0abe505f24f042de8110385081bfce8c71a1bf35495a`.
+Public checks returned Portal health `200`, database ping `204`,
+representative search `200`, and the technical brief `200`. The compatibility
+hostname continued to return database ping `204`.
+
+Vercel `PUBLIC_API_BASE_URL` was updated for all Website environments to
+`https://api.phaenobiotech.com/api/v1/`. A production rebuild of current
+`main` failed before promotion because `ui/src/styles/global.css` imports the
+missing `ui/src/styles/design-system.css`. A guarded attempt to rebuild the
+still-current known-good production revision was rejected because that
+revision no longer belongs to `main`. Vercel therefore left the existing
+production deployment and assigned domains unchanged. The live Website
+continues operating through the retained compatibility hostname, and the next
+successful Website deployment will bake in the canonical API origin.
+
+The deployment workflow and server helper were validated statically and by
+repository build checks; creating the workflow does not itself deploy a new
+release. Its first production dispatch remains an explicit operator action
+through the protected `production` GitHub environment.

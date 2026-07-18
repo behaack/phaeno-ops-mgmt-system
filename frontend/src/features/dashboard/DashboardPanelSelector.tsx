@@ -1,15 +1,28 @@
 import { Link } from '@tanstack/react-router'
+import { useQuery } from '@tanstack/react-query'
 import {
   AlertTriangle,
   ArrowRight,
   Building2,
   Clock3,
   FlaskConical,
+  Globe2,
   PackageCheck,
   ShoppingCart,
 } from 'lucide-react'
+import { useMemo, useState } from 'react'
 
 import { AccountsDashboardContent } from './AccountsDashboardContent'
+import { DashboardHero } from './DashboardHero'
+import { WebOpsDashboardContent } from './WebOpsDashboardContent'
+import {
+  getWebOpsDashboard,
+  type WebOpsDashboard,
+} from '#/api/web-ops'
+import {
+  WorkspaceSidebar,
+  type WorkspaceSidebarItem,
+} from '#/components/WorkspaceSidebar'
 import { Badge } from '#/components/ui/badge'
 import { Button } from '#/components/ui/button'
 import {
@@ -19,12 +32,7 @@ import {
   CardHeader,
   CardTitle,
 } from '#/components/ui/card'
-import {
-  Tabs,
-  TabsContent,
-  TabsList,
-  TabsTrigger,
-} from '#/components/ui/tabs'
+import { usePhaenoSession } from '#/features/auth/session-context'
 
 const operationsPanels = {
   orders: {
@@ -111,87 +119,144 @@ const operationsPanels = {
   },
 } as const
 
-const dashboardTabs = [
-  {
-    value: 'orders',
-    label: operationsPanels.orders.tabLabel,
-    shortLabel: 'Order Ops',
-    count: operationsPanels.orders.tabCount,
-    icon: operationsPanels.orders.icon,
-  },
-  {
-    value: 'lab',
-    label: operationsPanels.lab.tabLabel,
-    shortLabel: 'Lab Ops',
-    count: operationsPanels.lab.tabCount,
-    icon: operationsPanels.lab.icon,
-  },
-  {
-    value: 'accounts',
-    label: 'Accounts',
-    shortLabel: 'Accounts',
-    count: 21,
-    icon: Building2,
-  },
-] as const
+type DashboardSection = 'orders' | 'lab' | 'accounts' | 'webOps'
+
+const mockWebOperationsDashboard: WebOpsDashboard = {
+  mailingListCount: 13,
+  demoRequestCount: 2,
+  mailingListContacts: [
+    {
+      id: 'mock-contact-1',
+      firstName: 'Morgan',
+      lastName: 'Lee',
+      organizationName: 'Northstar Research',
+      email: 'morgan.lee@example.com',
+      technicalBriefRequested: true,
+      createdAtUtc: '2026-07-17T17:00:00Z',
+    },
+    {
+      id: 'mock-contact-2',
+      firstName: 'Priya',
+      lastName: 'Shah',
+      organizationName: 'Helix Discovery',
+      email: 'priya.shah@example.com',
+      technicalBriefRequested: false,
+      createdAtUtc: '2026-07-16T19:30:00Z',
+    },
+  ],
+  demoRequests: [
+    {
+      id: 'mock-request-1',
+      firstName: 'Alex',
+      lastName: 'Chen',
+      organizationName: 'Atlas Bioanalytics',
+      email: 'alex.chen@example.com',
+      description: 'We would like a demonstration for our transcriptomics team.',
+    },
+    {
+      id: 'mock-request-2',
+      firstName: 'Sam',
+      lastName: 'Rivera',
+      organizationName: 'Summit Genomics',
+      email: 'sam.rivera@example.com',
+      description: 'Please schedule a technical overview for our research group.',
+    },
+  ],
+}
 
 export function DashboardPanelSelector() {
-  return (
-    <section
-      aria-labelledby="dashboard-panels-heading"
-      className="soft-enter soft-enter-delay-1"
-    >
-      <Tabs defaultValue="orders">
-        <div className="mb-4 flex flex-col gap-3 lg:flex-row lg:items-end lg:justify-between">
-          <div>
-            <h2 id="dashboard-panels-heading" className="text-lg font-semibold">
-              POMS dashboard
-            </h2>
-            <p className="mt-1 text-sm text-muted-foreground">
-              Select the operational or account-management view that needs your
-              attention.
-            </p>
-          </div>
-          <TabsList
-            aria-label="Dashboard panel selector"
-            className="grid w-full grid-cols-3 lg:w-[42rem]"
-          >
-            {dashboardTabs.map((tab) => {
-              const Icon = tab.icon
-              return (
-                <TabsTrigger
-                  key={tab.value}
-                  value={tab.value}
-                  className="gap-2 px-3"
-                >
-                  <Icon aria-hidden="true" />
-                  <span className="hidden sm:inline">{tab.label}</span>
-                  <span className="sm:hidden">{tab.shortLabel}</span>
-                  <span
-                    aria-hidden="true"
-                    className="ml-1 hidden rounded-full bg-background/80 px-1.5 py-0.5 text-[0.6875rem] tabular-nums sm:inline-flex"
-                  >
-                    {tab.count}
-                  </span>
-                  <span className="sr-only">
-                    {tab.count} items needing attention
-                  </span>
-                </TabsTrigger>
-              )
-            })}
-          </TabsList>
-        </div>
+  const [section, setSection] = useState<DashboardSection>('orders')
+  const { authProvider, session } = usePhaenoSession()
+  const apiEnabled = authProvider !== 'mock'
+  const canViewWebOperations = session?.isPlatformAdmin === true
+  const webOpsDashboard = useQuery({
+    queryKey: ['web-ops', 'dashboard'],
+    queryFn: getWebOpsDashboard,
+    enabled: apiEnabled && canViewWebOperations,
+  })
+  const webOperationsData = apiEnabled
+    ? webOpsDashboard.data
+    : mockWebOperationsDashboard
+  const sections = useMemo<
+    ReadonlyArray<WorkspaceSidebarItem<DashboardSection>>
+  >(
+    () => [
+      {
+        value: 'orders',
+        label: operationsPanels.orders.tabLabel,
+        description: 'Pricing, fulfillment, release, and integration work.',
+        count: operationsPanels.orders.tabCount,
+        countDescription: `${operationsPanels.orders.tabCount} items needing attention`,
+        icon: operationsPanels.orders.icon,
+      },
+      {
+        value: 'lab',
+        label: operationsPanels.lab.tabLabel,
+        description: 'Receipt, exceptions, and scientific review.',
+        count: operationsPanels.lab.tabCount,
+        countDescription: `${operationsPanels.lab.tabCount} items needing attention`,
+        icon: operationsPanels.lab.icon,
+      },
+      {
+        value: 'accounts',
+        label: 'Accounts',
+        description: 'Customer, Partner, and Prospect administration.',
+        count: 21,
+        countDescription: '21 items needing attention',
+        icon: Building2,
+      },
+      ...(canViewWebOperations
+        ? [{
+            value: 'webOps' as const,
+            label: 'Web Operations',
+            description: 'Mailing List and Demo Requests.',
+            count: webOperationsData
+              ? webOperationsData.mailingListCount
+                + webOperationsData.demoRequestCount
+              : undefined,
+            countDescription: webOperationsData
+              ? `${webOperationsData.mailingListCount + webOperationsData.demoRequestCount} Website submissions`
+              : undefined,
+            icon: Globe2,
+          }]
+        : []),
+    ],
+    [canViewWebOperations, webOperationsData],
+  )
 
-        {Object.entries(operationsPanels).map(([value, panel]) => (
-          <TabsContent key={value} value={value}>
-            <OperationsPanel panel={panel} />
-          </TabsContent>
-        ))}
-        <TabsContent value="accounts">
-          <AccountsDashboardContent showHeading />
-        </TabsContent>
-      </Tabs>
-    </section>
+  return (
+    <WorkspaceSidebar
+      workspaceLabel="POMS dashboard"
+      items={sections}
+      value={section}
+      onValueChange={setSection}
+    >
+      <main className="page-wrap px-4 py-8">
+        <div className="soft-enter">
+          <DashboardHero />
+        </div>
+        <div className="soft-enter soft-enter-delay-1">
+          {section === 'orders' ? (
+            <OperationsPanel panel={operationsPanels.orders} />
+          ) : null}
+          {section === 'lab' ? (
+            <OperationsPanel panel={operationsPanels.lab} />
+          ) : null}
+          {section === 'accounts' ? (
+            <AccountsDashboardContent showHeading />
+          ) : null}
+          {section === 'webOps' ? (
+            <WebOpsDashboardContent
+              data={webOperationsData}
+              error={apiEnabled ? webOpsDashboard.error : null}
+              isLoading={apiEnabled && webOpsDashboard.isLoading}
+              isMockData={!apiEnabled}
+              onRetry={() => void webOpsDashboard.refetch()}
+            />
+          ) : null}
+        </div>
+      </main>
+    </WorkspaceSidebar>
   )
 }
 

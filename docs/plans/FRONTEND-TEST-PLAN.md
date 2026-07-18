@@ -73,6 +73,10 @@ remain incomplete production-activation gates.
   - the five Order Configuration subjects use the shared viewport-edge
   sidebar, identify Defaults initially, and update the active subject when the
   user selects another panel.
+- [x] `frontend/src/features/dashboard/WebOpsDashboardContent.test.tsx` -
+  bounded mailing-list and demo-request summaries render their counts,
+  contact context, technical-brief state, explicit mock-data identity, and
+  retryable secured-API failure.
 
 ## Deferred Tests
 
@@ -142,6 +146,12 @@ remain incomplete production-activation gates.
 
 ## Requested Execution Log
 
+- 2026-07-17: POMS dashboard sidebar and Web Operations verification ran
+  `pnpm run lint` and `pnpm run typecheck`; both passed. A live mock-session
+  browser review verified desktop and 390-pixel responsive layouts, sidebar
+  counts and selection, Mailing List and Demo Requests content, and zero
+  console errors. Frontend and Playwright test suites were not requested and
+  were not run.
 - 2026-07-17: the Order Operations navigation label changed from Reagents to
   PSeq kits. `pnpm run lint`, `pnpm run typecheck`, and the four-test
   documentation-registry suite passed.
