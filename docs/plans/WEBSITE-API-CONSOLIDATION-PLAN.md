@@ -149,12 +149,26 @@ the active Mailing List, and
 `POST /api/web-ops/demo-requests/{id}/complete` removes a handled inquiry from
 the open Demo Requests queue. Both actions are idempotent soft lifecycle
 transitions: the original Website record remains available for audit, with the
-acting internal user and transition time recorded. Counts, pages, and summary
-data include only active records. All Web Operations routes require an
-authenticated active Phaeno platform administrator. The existing anonymous
-`/api/v1/web-ops/...` routes remain unchanged. This surface does not promote
-Website intake into an Account, Portal request, HubSpot contact, or operational
-order.
+acting internal user and transition time recorded until a separately authorized
+production cleanup permanently removes retired Website intake records. Counts,
+pages, and summary data include only active records. All Web Operations routes
+require an authenticated active Phaeno platform administrator. The existing
+anonymous `/api/v1/web-ops/...` routes remain unchanged. This surface does not
+promote Website intake into an Account, Portal request, HubSpot contact, or
+operational order.
+
+The manual `Purge Retired Web Operations Records` GitHub Actions workflow owns
+that cleanup boundary. It targets only `website.web_contacts` already marked
+unsubscribed and `website.web_orders` already marked completed as of the
+workflow cutoff; it never targets Portal users, organizations, memberships, or
+operational orders. Preview is the default. Permanent deletion requires the
+protected production environment, `delete` mode, an exact confirmation phrase,
+and a catalog-validated encrypted full-database backup whose wrapped key uses
+the same off-server recovery key as migration backups. Candidate counts are
+rechecked under a database lock, deletion occurs in one transaction, and the
+workflow verifies both the deleted counts and public database dial tone. The
+workflow is manual rather than scheduled so retention cleanup remains an
+explicit owner-authorized operation.
 
 ## Runtime configuration
 

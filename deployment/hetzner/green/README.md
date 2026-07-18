@@ -126,6 +126,33 @@ validates its catalog, encrypts it with a random passphrase, wraps that
 passphrase to `PORTAL_MIGRATION_BACKUP_PUBLIC_KEY`, verifies encrypted
 checksums, and removes the plaintext dump and passphrase.
 
+## Retired Web Operations record cleanup
+
+`.github/workflows/purge-retired-web-operations.yml` provides the manual
+**Purge Retired Web Operations Records** maintenance operation. It is limited
+to:
+
+- `website.web_contacts` with `unsubscribed_at_utc` set; and
+- `website.web_orders` with `completed_at_utc` set.
+
+These are public Website intake records, not Portal user accounts or
+operational orders. The workflow defaults to `preview`, which reports aggregate
+candidate counts without changing data. `delete` mode additionally requires
+the exact confirmation phrase `DELETE RETIRED WEB OPERATIONS DATA` in the
+protected `production` environment.
+
+Before deletion, the workflow creates and catalog-validates a full custom-format
+database dump, encrypts it, wraps its random passphrase to
+`PORTAL_MIGRATION_BACKUP_PUBLIC_KEY`, verifies the encrypted checksums, and
+removes the plaintext material. The server retains the encrypted recovery
+artifacts and a count-only purge manifest under
+`/var/backups/phaeno-portal-maintenance`. The action deletes only records
+eligible at its recorded UTC cutoff, rechecks candidate counts under the shared
+deployment lock, performs both deletes in one transaction, verifies that no
+cutoff-eligible records remain, and checks the public database-ping endpoint.
+New lifecycle transitions after the cutoff remain for a later explicitly
+authorized cleanup.
+
 Runtime secrets remain outside release archives and source control. The Clerk
 secret is held in the protected GitHub `production` environment and in
 `/opt/phaeno.portal-green/runtime/portal.env`; other runtime secrets remain

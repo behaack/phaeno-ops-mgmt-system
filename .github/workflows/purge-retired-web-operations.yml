@@ -1,0 +1,199 @@
+name: Purge Retired Web Operations Records
+
+on:
+  workflow_dispatch:
+    inputs:
+      mode:
+        description: Preview eligible records or permanently delete them after an encrypted database backup
+        required: true
+        default: preview
+        type: choice
+        options:
+          - preview
+          - delete
+      confirmation:
+        description: For delete mode, type DELETE RETIRED WEB OPERATIONS DATA
+        required: false
+        default: ""
+        type: string
+
+permissions:
+  contents: read
+
+concurrency:
+  group: phaeno-portal-green-production
+  cancel-in-progress: false
+
+env:
+  DEPLOY_ROOT: /opt/phaeno.portal-green
+  PUBLIC_WEBSITE_API_URL: https://api.phaenobiotech.com
+
+jobs:
+  purge:
+    name: Purge retired Web Operations records
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    environment:
+      name: production
+
+    defaults:
+      run:
+        shell: bash
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v6
+
+      - name: Validate operation and production secrets
+        env:
+          CONFIRMATION: ${{ inputs.confirmation }}
+          DEPLOY_HOST: ${{ secrets.DEPLOY_HOST }}
+          DEPLOY_KNOWN_HOSTS: ${{ secrets.DEPLOY_KNOWN_HOSTS }}
+          DEPLOY_SSH_KEY: ${{ secrets.DEPLOY_SSH_KEY }}
+          DEPLOY_USER: ${{ secrets.DEPLOY_USER }}
+          MODE: ${{ inputs.mode }}
+          PORTAL_MIGRATION_BACKUP_PUBLIC_KEY: ${{ secrets.PORTAL_MIGRATION_BACKUP_PUBLIC_KEY }}
+        run: |
+          missing=0
+
+          for name in \
+            DEPLOY_HOST \
+            DEPLOY_KNOWN_HOSTS \
+            DEPLOY_SSH_KEY \
+            DEPLOY_USER; do
+            if [ -z "${!name}" ]; then
+              echo "::error::Missing production configuration ${name}."
+              missing=1
+            fi
+          done
+
+          if [ "$MODE" = "delete" ]; then
+            if [ "$CONFIRMATION" != "DELETE RETIRED WEB OPERATIONS DATA" ]; then
+              echo "::error::Delete mode requires the exact confirmation phrase."
+              missing=1
+            fi
+
+            if [ -z "$PORTAL_MIGRATION_BACKUP_PUBLIC_KEY" ]; then
+              echo "::error::PORTAL_MIGRATION_BACKUP_PUBLIC_KEY is required for an encrypted pre-delete backup."
+              missing=1
+            fi
+          fi
+
+          exit "$missing"
+
+      - name: Prepare maintenance metadata
+        id: maintenance
+        run: |
+          backup_key_path="/tmp/phaeno-portal-web-ops-purge-${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}.pub"
+          echo "backup_key_path=$backup_key_path" >> "$GITHUB_OUTPUT"
+
+      - name: Configure SSH
+        env:
+          DEPLOY_KNOWN_HOSTS: ${{ secrets.DEPLOY_KNOWN_HOSTS }}
+          DEPLOY_SSH_KEY: ${{ secrets.DEPLOY_SSH_KEY }}
+        run: |
+          install -d -m 700 ~/.ssh
+          printf '%s\n' "$DEPLOY_SSH_KEY" > ~/.ssh/deploy_key
+          printf '%s\n' "$DEPLOY_KNOWN_HOSTS" > ~/.ssh/known_hosts
+          chmod 600 ~/.ssh/deploy_key ~/.ssh/known_hosts
+
+      - name: Upload cleanup-backup public key
+        if: ${{ inputs.mode == 'delete' }}
+        env:
+          BACKUP_KEY_PATH: ${{ steps.maintenance.outputs.backup_key_path }}
+          DEPLOY_HOST: ${{ secrets.DEPLOY_HOST }}
+          DEPLOY_USER: ${{ secrets.DEPLOY_USER }}
+          PORTAL_MIGRATION_BACKUP_PUBLIC_KEY: ${{ secrets.PORTAL_MIGRATION_BACKUP_PUBLIC_KEY }}
+        run: |
+          printf '%s\n' "$PORTAL_MIGRATION_BACKUP_PUBLIC_KEY" \
+            | ssh -i ~/.ssh/deploy_key "$DEPLOY_USER@$DEPLOY_HOST" \
+                "install -m 600 /dev/stdin '$BACKUP_KEY_PATH'"
+
+      - name: Run guarded Web Operations cleanup
+        id: purge
+        env:
+          BACKUP_KEY_PATH: ${{ steps.maintenance.outputs.backup_key_path }}
+          DEPLOY_HOST: ${{ secrets.DEPLOY_HOST }}
+          DEPLOY_USER: ${{ secrets.DEPLOY_USER }}
+          MODE: ${{ inputs.mode }}
+        run: |
+          if [ "$MODE" = "delete" ]; then
+            purge_guard=YES
+          else
+            purge_guard=NO
+          fi
+
+          output="$(
+            ssh -i ~/.ssh/deploy_key "$DEPLOY_USER@$DEPLOY_HOST" \
+              bash -s -- \
+                "$DEPLOY_ROOT" \
+                "$MODE" \
+                "$BACKUP_KEY_PATH" \
+                "$GITHUB_SHA" \
+                "$purge_guard" \
+                < deployment/hetzner/green/purge-retired-web-operations-records.sh
+          )"
+          printf '%s\n' "$output"
+
+          while IFS='=' read -r name value; do
+            case "$name" in
+              mode|cutoff_utc|contacts_before|orders_before|contact_candidates|order_candidates|deleted_contacts|deleted_orders|contacts_after|orders_after|backup_created|backup_base)
+                echo "$name=$value" >> "$GITHUB_OUTPUT"
+                ;;
+            esac
+          done <<< "$output"
+
+      - name: Verify public database dial tone
+        run: |
+          curl \
+            --fail \
+            --silent \
+            --show-error \
+            --max-time 20 \
+            --output /dev/null \
+            "$PUBLIC_WEBSITE_API_URL/api/v1/web-ops/database-ping"
+
+      - name: Record maintenance summary
+        env:
+          BACKUP_BASE: ${{ steps.purge.outputs.backup_base }}
+          BACKUP_CREATED: ${{ steps.purge.outputs.backup_created }}
+          CONTACT_CANDIDATES: ${{ steps.purge.outputs.contact_candidates }}
+          CONTACTS_AFTER: ${{ steps.purge.outputs.contacts_after }}
+          CONTACTS_BEFORE: ${{ steps.purge.outputs.contacts_before }}
+          CUTOFF_UTC: ${{ steps.purge.outputs.cutoff_utc }}
+          DELETED_CONTACTS: ${{ steps.purge.outputs.deleted_contacts }}
+          DELETED_ORDERS: ${{ steps.purge.outputs.deleted_orders }}
+          MODE: ${{ steps.purge.outputs.mode }}
+          ORDER_CANDIDATES: ${{ steps.purge.outputs.order_candidates }}
+          ORDERS_AFTER: ${{ steps.purge.outputs.orders_after }}
+          ORDERS_BEFORE: ${{ steps.purge.outputs.orders_before }}
+        run: |
+          {
+            echo "## Retired Web Operations record cleanup"
+            echo
+            echo "- Mode: \`$MODE\`"
+            echo "- Eligibility cutoff: \`$CUTOFF_UTC\`"
+            echo "- Mailing-list contacts: \`$CONTACTS_BEFORE\` before; \`$CONTACT_CANDIDATES\` eligible; \`$DELETED_CONTACTS\` deleted; \`$CONTACTS_AFTER\` after"
+            echo "- Demo requests: \`$ORDERS_BEFORE\` before; \`$ORDER_CANDIDATES\` eligible; \`$DELETED_ORDERS\` deleted; \`$ORDERS_AFTER\` after"
+            echo "- Encrypted backup created: \`$BACKUP_CREATED\`"
+            echo "- Server backup base: \`$BACKUP_BASE\`"
+            echo "- Portal user accounts touched: \`false\`"
+          } >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Remove uploaded public key
+        if: ${{ always() }}
+        env:
+          BACKUP_KEY_PATH: ${{ steps.maintenance.outputs.backup_key_path }}
+          DEPLOY_HOST: ${{ secrets.DEPLOY_HOST }}
+          DEPLOY_USER: ${{ secrets.DEPLOY_USER }}
+        run: |
+          if [ -z "$BACKUP_KEY_PATH" ] \
+            || [ -z "$DEPLOY_HOST" ] \
+            || [ -z "$DEPLOY_USER" ] \
+            || [ ! -f ~/.ssh/deploy_key ]; then
+            exit 0
+          fi
+
+          ssh -i ~/.ssh/deploy_key "$DEPLOY_USER@$DEPLOY_HOST" \
+            "rm -f '$BACKUP_KEY_PATH'" \
+            || true
