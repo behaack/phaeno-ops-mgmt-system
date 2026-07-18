@@ -4,6 +4,7 @@ import { fileURLToPath } from 'node:url'
 
 import { tanstackStart } from '@tanstack/react-start/plugin/vite'
 import mdx from '@mdx-js/rollup'
+import { nitro } from 'nitro/vite'
 
 import viteReact from '@vitejs/plugin-react'
 import tailwindcss from '@tailwindcss/vite'
@@ -48,6 +49,7 @@ const config = defineConfig(({ command }) => ({
     { enforce: 'pre', ...mdx() },
     tailwindcss(),
     tanstackStart(),
+    nitro(),
     viteReact({ include: /\.(js|jsx|md|mdx|ts|tsx)$/ }),
   ],
   test: {

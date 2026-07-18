@@ -4,6 +4,7 @@
 **/dist/
 **/build/
 **/.output/
+**/.vercel/
 **/.tanstack/
 
 # Dependencies

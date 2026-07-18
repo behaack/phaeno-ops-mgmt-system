@@ -251,6 +251,10 @@ Generated `dist`, `.astro`, and `node_modules` content is not canonical source.
   Mailgun secrets.
 - Frontend authentication and API routing: `VITE_CLERK_PUBLISHABLE_KEY`,
   `VITE_API_BASE_URL`, and the development-only `VITE_USE_MOCK_SESSION` switch.
+- Portal frontend hosting output: the Vite build uses Nitro. Local production
+  builds emit `.output`, while Vercel builds emit Build Output API assets,
+  routing, and the SSR function under `.vercel/output`; `frontend/vercel.json`
+  records the TanStack Start framework preset.
 - Public Website API routing and reCAPTCHA: `PUBLIC_API_BASE_URL` and
   `PUBLIC_RECAPTCHA_SITE_ID`. These values are compiled into the public static
   site and must never contain secrets.
