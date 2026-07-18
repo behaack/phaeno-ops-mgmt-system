@@ -1,0 +1,85 @@
+---
+import { getCollection, render, type CollectionEntry } from 'astro:content';
+import Layout from '@/layouts/Layout.astro';
+import ShareWithSocialMedia from '@/components/ShareWithSocialMedia.astro'
+import ReadFullArticle from '@/components/ReadFullArticle.astro';
+import ArticleSEOMeta from '@/components/meta-data-helpers/ArticleSEOMeta.astro';
+import { formatContentDate } from '@/lib/dates';
+
+export async function getStaticPaths() {
+  const papers = await getCollection('scientific_papers');
+  return papers.map((paper) => ({
+    params: { slug: paper.id },
+    props: { paper },
+  }));
+}
+
+const { paper } = Astro.props as { paper: CollectionEntry<'scientific_papers'> };
+const { title, authors, journal, date, summary, image } = paper.data;
+const { Content } = await render(paper);
+---
+
+<title>Scientific Pubs | Phaeno</title>
+<meta name="description" content="Phaeno is revolutionizing RNA sequencing with full-length, high-fidelity reads. Discover our platform and team." />
+
+<Layout>
+  <ArticleSEOMeta 
+    slot="head"
+    title={title}
+    description={summary}
+    datePosted={date}
+    authors={authors}
+    image={image}
+    documentType="Web Page"
+    searchTitle={`Scientific Publication - ${title}`}
+  />      
+  <main id="main">
+    <section>
+      <p>Media | <a href="/media/scientific-publications">Scientific Publications</a> | {paper.id}</p>
+      <h1 id={`${title.replace(/\s+/g, '-').toLowerCase()}`} class="text-3xl sm:text-4xl font-semibold tracking-tight text-neutral-900">{title}</h1>
+      <p class="text-sm text-gray-600">{authors.join(', ')}</p>
+      <p class="text-sm text-gray-600">{journal}</p>
+      <p class="text-sm text-gray-500">Published {formatContentDate(date)}</p>
+
+      <div><b>Abstract:</b></div>
+      <!-- Render the body if you store descriptions in MD/MDX -->
+       <article>
+         <Content />
+       </article>
+
+       <hr class="text-zinc-200 mt-12" />
+       
+      <div class="bottom-container">
+        <ReadFullArticle link={paper.data.link} />
+        <div class="share-container">
+          <ShareWithSocialMedia 
+            title={paper.data.title} 
+            link={Astro.url.pathname}
+            summary={summary} 
+          />
+        </div>
+      </div>
+    </section>
+  </main>
+</Layout>
+
+<style>
+.bottom-container {
+  display: flex;
+  justify-content: space-between;
+  margin: 1.25rem 0;
+  align-items: center;
+}
+
+@media (max-width: 800px) {
+	.bottom-container {
+		display: block;
+	}
+
+  .share-container {
+    margin-top: 2rem;
+    display: flex;
+    justify-content: center;
+  }
+}  
+</style>

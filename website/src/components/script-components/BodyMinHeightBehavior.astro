@@ -1,0 +1,21 @@
+---
+/* main minimum height logic */
+---
+
+<script>
+document.addEventListener('DOMContentLoaded', () => {
+  function setStickyFooter() {
+    const footer = document.getElementById('site-footer');
+    const main = document.getElementsByTagName('main')[0];
+    const body = document.body;
+
+    if (footer && main && body) {
+      const footerHeight = footer.offsetHeight;
+      main.style.minHeight = `calc(100vh - ${footerHeight}px)`;
+    }
+  }
+
+  setStickyFooter();
+  window.addEventListener('resize', setStickyFooter);
+});
+</script>

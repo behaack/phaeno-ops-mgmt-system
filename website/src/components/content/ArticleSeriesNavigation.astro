@@ -1,0 +1,144 @@
+---
+import type { ArticleSeries } from '@/lib/articleSeries';
+
+interface Props {
+  series: ArticleSeries;
+  currentPart: number;
+  position?: 'start' | 'end';
+}
+
+const {
+  series,
+  currentPart,
+  position = 'start',
+} = Astro.props;
+
+const currentIndex = series.parts.findIndex((part) => part.number === currentPart);
+const currentPosition = currentIndex >= 0 ? currentIndex + 1 : currentPart;
+const positionLabel = position === 'start' ? 'Series navigation' : 'Continue through the series';
+---
+
+<nav
+  class={`article-series-navigation article-series-navigation--${position}`}
+  aria-label={`${series.title}: ${positionLabel}`}
+  data-phaeno-search-ignore
+>
+  <div class="article-series-navigation__heading">
+    <div>
+      <span class="article-series-navigation__eyebrow">Article series</span>
+      <strong>{series.title}</strong>
+    </div>
+    <span class="article-series-navigation__position">
+      Part {currentPosition} of {series.parts.length}
+    </span>
+  </div>
+
+  <ol class="article-series-navigation__parts">
+    {series.parts.map((part) => (
+      <li data-current={part.number === currentPart ? 'true' : undefined}>
+        {part.number === currentPart ? (
+          <span class="article-series-navigation__part" aria-current="page">
+            <span class="article-series-navigation__part-number">Part {part.number}</span>
+            <span>{part.title}</span>
+          </span>
+        ) : (
+          <a class="article-series-navigation__part" href={part.href}>
+            <span class="article-series-navigation__part-number">Part {part.number}</span>
+            <span>{part.title}</span>
+          </a>
+        )}
+      </li>
+    ))}
+  </ol>
+</nav>
+
+<style>
+.article-series-navigation {
+  padding: var(--space-4) 0;
+  border-top: 1px solid var(--phaeno-green-200);
+  border-bottom: 1px solid var(--phaeno-green-200);
+}
+
+.article-series-navigation--start {
+  margin: 0 0 var(--space-4);
+}
+
+.article-series-navigation--end {
+  margin: var(--space-8) 0 0;
+}
+
+.article-series-navigation__heading {
+  display: flex;
+  justify-content: space-between;
+  gap: var(--space-5);
+  align-items: end;
+}
+
+.article-series-navigation__heading > div {
+  display: grid;
+  gap: var(--space-1);
+}
+
+.article-series-navigation__eyebrow,
+.article-series-navigation__position,
+.article-series-navigation__part-number {
+  color: var(--phaeno-green-700);
+  font-size: var(--font-size-xs);
+  font-weight: var(--font-weight-semibold);
+  letter-spacing: 0.08em;
+  line-height: var(--line-height-copy);
+  text-transform: uppercase;
+}
+
+.article-series-navigation__heading strong {
+  color: var(--phaeno-rna-900);
+  font-size: var(--font-size-lg);
+  line-height: var(--line-height-copy);
+}
+
+.article-series-navigation__parts {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: var(--space-2);
+  margin: var(--space-4) 0 0;
+  padding: 0;
+  list-style: none;
+}
+
+.article-series-navigation__parts li {
+  min-width: 0;
+  margin: 0;
+}
+
+.article-series-navigation__part {
+  display: grid;
+  gap: var(--space-1);
+  height: 100%;
+  padding: var(--space-3);
+  border-left: 2px solid var(--phaeno-green-200);
+  color: var(--phaeno-rna-900);
+  line-height: var(--line-height-copy);
+  text-decoration: none;
+}
+
+a.article-series-navigation__part:hover {
+  border-left-color: var(--phaeno-green-600);
+  background: var(--phaeno-green-50);
+}
+
+.article-series-navigation__parts li[data-current="true"] .article-series-navigation__part {
+  border-left-color: var(--phaeno-rna-600);
+  background: var(--phaeno-rna-50);
+  font-weight: var(--font-weight-semibold);
+}
+
+@media (max-width: 725px) {
+  .article-series-navigation__heading {
+    align-items: start;
+  }
+
+  .article-series-navigation__parts {
+    grid-template-columns: 1fr;
+  }
+}
+</style>

@@ -1,0 +1,42 @@
+<script>
+function initMotionReveals(): void {
+  const elements = Array.from(
+    document.querySelectorAll<HTMLElement>('[data-motion-reveal]'),
+  ).filter((element) => !element.classList.contains('motion-reveal-pending'));
+
+  if (elements.length === 0) return;
+
+  const prefersReducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  if (prefersReducedMotion || !('IntersectionObserver' in window)) {
+    elements.forEach((element) => element.classList.add('is-revealed'));
+    return;
+  }
+
+  elements.forEach((element) => {
+    const delay = Number.parseInt(element.dataset.motionDelay ?? '0', 10);
+    element.style.setProperty('--motion-reveal-delay', `${Number.isFinite(delay) ? delay : 0}ms`);
+    element.classList.add('motion-reveal-pending');
+  });
+
+  const observer = new IntersectionObserver((entries) => {
+    entries.forEach((entry) => {
+      if (!entry.isIntersecting) return;
+
+      const element = entry.target as HTMLElement;
+      element.classList.add('is-revealed');
+      observer.unobserve(element);
+    });
+  }, {
+    rootMargin: '0px 0px -10% 0px',
+    threshold: 0.12,
+  });
+
+  elements.forEach((element) => observer.observe(element));
+}
+
+if (document.readyState === 'loading') {
+  document.addEventListener('DOMContentLoaded', initMotionReveals, { once: true });
+} else {
+  initMotionReveals();
+}
+</script>

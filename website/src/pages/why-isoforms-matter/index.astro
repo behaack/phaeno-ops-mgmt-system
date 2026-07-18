@@ -1,0 +1,372 @@
+---
+import { biomarkers } from '@/assets/biomarkers'
+import SEOMeta from '@/components/meta-data-helpers/SEOMeta.astro'
+import TopPageBanner from '@/components/TopPageBanner.astro'
+import Layout from '@/layouts/Layout.astro'
+---
+
+<Layout>
+  <SEOMeta
+    slot="head"
+    title="Why RNA Isoforms | Phaeno"
+    description="RNA isoforms define gene function. Full-length, isoform-resolved RNA sequencing reveals how transcripts actually behave in biology."
+    documentType="Web Page"
+    searchTitle="Why RNA Isoforms Matter"
+    searchKeywords="RNA isoforms isoform resolved RNA full-length transcript protein isoforms UTR RNA localization HER2 p95HER2 oncology biomarkers ASO therapies alternative splicing phenotype"
+  />
+
+  <main id="main" class="isoform-page">
+    <TopPageBanner title="Why Isoform-Resolved RNA?" image="image-3" />
+
+    <div class="page-shell">
+      <section class="intro-section" aria-labelledby="full-length-isoform-resolved">
+        <div class="intro-section__statement">
+          <p class="eyebrow">The missing biological layer</p>
+          <h2
+            id="full-length-isoform-resolved"
+            data-phaeno-search="Full-length isoform-resolved RNA exposes phenotype drivers"
+            data-phaeno-search-summary="Full-length, isoform-resolved RNA analysis reveals the processed transcripts and protein isoforms that connect genotype to phenotype."
+            data-phaeno-search-keywords="full-length RNA isoform-resolved phenotype drivers alternative splicing protein isoforms"
+          >Genes set the possibility.<br /><span>Isoforms shape the phenotype.</span></h2>
+        </div>
+
+        <div class="intro-section__copy">
+          <p class="lead">A single disease-linked DNA mutation can produce 30+ protein isoforms. Only full-length, isoform-resolved RNA analysis shows which molecules biology actually produced.</p>
+          <p>Alternative splicing, promoter usage, UTR selection, and other processing steps transform each gene into multiple RNA products—often with different molecular functions and clinical consequences.</p>
+        </div>
+      </section>
+
+      <section class="resolution-section" aria-labelledby="resolution-pathway">
+        <div class="section-heading">
+          <p class="eyebrow">From sequence to function</p>
+          <h2 id="resolution-pathway" data-phaeno-search="How RNA processing connects genes to phenotype">The phenotype emerges after the gene is read.</h2>
+          <p>Gene-level counts compress this biology. Isoform resolution preserves the molecular decisions that occur between DNA and function.</p>
+        </div>
+
+        <div class="resolution-path">
+          <article class="resolution-card">
+            <p class="resolution-card__label">Encode</p>
+            <h3>DNA defines potential</h3>
+            <p>The genome provides the sequence, but not the final molecular product.</p>
+          </article>
+          <span class="resolution-path__arrow" aria-hidden="true">→</span>
+          <article class="resolution-card">
+            <p class="resolution-card__label">Process</p>
+            <h3>RNA creates diversity</h3>
+            <p>Splicing and transcript processing determine which full-length molecules exist.</p>
+          </article>
+          <span class="resolution-path__arrow" aria-hidden="true">→</span>
+          <article class="resolution-card resolution-card--emphasis">
+            <p class="resolution-card__label">Resolve</p>
+            <h3>Isoforms expose function</h3>
+            <p>Complete transcripts reveal the disease-driving and therapeutically relevant forms.</p>
+          </article>
+        </div>
+
+        <div class="outcome-grid">
+          <article>
+            <span aria-hidden="true">↗</span>
+            <div><h3>Functional diversity becomes visible</h3><p>Mutations take effect only after RNA processing defines which protein isoforms are produced.</p></div>
+          </article>
+          <article>
+            <span aria-hidden="true">◎</span>
+            <div><h3>Disease-causing isoforms are resolved</h3><p>Pathogenic RNA products can remain invisible to genome sequencing and gene-level summaries.</p></div>
+          </article>
+          <article>
+            <span aria-hidden="true">⌖</span>
+            <div><h3>Localization-associated signals remain visible</h3><p>Isoform-specific UTR features can support hypotheses about RNA localization and trafficking.</p></div>
+          </article>
+        </div>
+      </section>
+
+      <section class="her2-section" aria-labelledby="protein-isoforms-example-oncology-her2">
+        <div class="her2-section__intro">
+          <div class="her2-section__heading">
+            <p class="eyebrow">Clinical evidence / HER2</p>
+            <h2
+              id="protein-isoforms-example-oncology-her2"
+              data-phaeno-search="HER2 oncology example for RNA isoforms"
+              data-phaeno-search-summary="HER2 examples show how protein expression, gene status, and truncated receptor isoforms can diverge in clinically meaningful ways."
+              data-phaeno-search-keywords="HER2 p95HER2 oncology isoforms protein expression gene status discordance"
+            >One gene. Different molecular realities.</h2>
+          </div>
+          <div class="her2-section__summary">
+            <p>Oncologists have long observed a 10% to 25% discordance rate between protein-based and gene-based tests for HER2. The gap is not noise—it can reflect different isoforms, including p95HER2, a truncated receptor that retains an active kinase domain.</p>
+            <div class="evidence-stat"><strong>10–25%</strong><span>reported discordance between HER2 gene- and protein-based tests</span></div>
+          </div>
+        </div>
+
+        <div class="quote-grid">
+          <figure class="evidence-quote">
+            <blockquote>“Discordance between protein expression and gene status is not uncommon and has significant therapeutic implications.”</blockquote>
+            <figcaption>
+              <img src="/images/reis-filho.webp" alt="Dr. Jorge S. Reis-Filho" loading="lazy" />
+              <span><strong>Jorge S. Reis-Filho</strong><small>Memorial Sloan Kettering Cancer Center<br /><i>Breast Cancer Res</i>, 2005</small></span>
+            </figcaption>
+          </figure>
+          <figure class="evidence-quote evidence-quote--dark">
+            <blockquote>“A subgroup of HER2-overexpressing tumors also express p95HER2, an amino-terminally truncated receptor.”</blockquote>
+            <figcaption>
+              <img src="/images/scaltriti.webp" alt="Dr. Maurizio Scaltriti" loading="lazy" />
+              <span><strong>Maurizio Scaltriti</strong><small>Vall d'Hebron University Hospital<br /><i>J. Natl Cancer Inst</i>, 2007</small></span>
+            </figcaption>
+          </figure>
+        </div>
+      </section>
+
+      <section class="biomarker-section" aria-labelledby="protein-isoforms-example-oncology-other-biomarkers">
+        <div class="section-heading section-heading--split">
+          <div>
+            <p class="eyebrow">Beyond HER2</p>
+            <h2
+              id="protein-isoforms-example-oncology-other-biomarkers"
+              data-phaeno-search="Oncology biomarker isoform and modification discordance"
+              data-phaeno-search-summary="Examples of oncology biomarkers where gene tests and protein tests can diverge because of isoforms, modifications, or expression context."
+              data-phaeno-search-keywords="oncology biomarkers EGFR PD-L1 ER PR ALK ROS1 NTRK TP53 CD20 isoform modification discordance"
+            >The same gap appears across oncology.</h2>
+          </div>
+          <p>Across major biomarkers, DNA, RNA, and protein tests answer different questions. Isoform resolution explains part of the distance between them.</p>
+        </div>
+
+        <div class="biomarker-table" role="table" aria-label="Oncology biomarker test comparison">
+          <div class="biomarker-table__header" role="row">
+            <div role="columnheader">Biomarker</div>
+            <div role="columnheader">Gene test</div>
+            <div role="columnheader">Protein test</div>
+            <div role="columnheader">What can diverge</div>
+          </div>
+          {biomarkers.map((item) => (
+            <article class="biomarker-row" role="row">
+              <div class="biomarker-name" role="cell">{item.Biomarker}</div>
+              <div role="cell"><span class="mobile-label">Gene test</span>{item.GeneTest}</div>
+              <div role="cell"><span class="mobile-label">Protein test</span>{item.ProteinTest}</div>
+              <div role="cell"><span class="mobile-label">What can diverge</span>{item.Discordance}</div>
+            </article>
+          ))}
+        </div>
+      </section>
+
+      <section class="aso-section" aria-labelledby="protein-isoforms-example-antisense-oligonucleotide-therapies">
+        <div class="aso-section__inner">
+          <p class="eyebrow">Therapeutic relevance</p>
+          <div class="aso-section__body">
+            <div class="aso-section__content">
+              <h2
+                id="protein-isoforms-example-antisense-oligonucleotide-therapies"
+                data-phaeno-search="ASO therapy examples for RNA isoforms"
+                data-phaeno-search-summary="Antisense oligonucleotide therapies show how modulating RNA splicing can address disease-linked isoforms that genomic methods miss."
+                data-phaeno-search-keywords="ASO therapies antisense oligonucleotide RNA splicing isoforms nusinersen eteplirsen"
+              >Isoforms are not just biomarkers. They are therapeutic targets.</h2>
+              <p>Antisense oligonucleotide therapies modulate RNA splicing to restore or suppress specific molecular forms—intervening at a layer gene-level methods cannot resolve.</p>
+              <p>Tools such as JunctionSeq and BIISQ have helped discover and quantify novel isoforms. By early 2025, 11 ASO drugs had been approved, while individualized cases such as Mila’s custom ASO demonstrated the potential of personalized RNA intervention.</p>
+            </div>
+            <div class="aso-examples">
+              <article><div><p>Spinal muscular atrophy</p><h3>Nusinersen</h3><p>Promotes SMN2 exon 7 inclusion to increase functional protein.</p></div></article>
+              <article><div><p>Duchenne muscular dystrophy</p><h3>Eteplirsen</h3><p>Induces exon 51 skipping to restore a functional reading frame.</p></div></article>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section class="references-section" aria-labelledby="references-heading">
+        <div class="references-section__heading">
+          <p class="eyebrow">Source material</p>
+          <h2 id="references-heading" data-phaeno-search="References for RNA isoforms and oncology biomarkers">References</h2>
+          <p>The studies supporting the biological, clinical, and biomarker examples above.</p>
+        </div>
+
+        <div class="reference-groups">
+          <details id="references-for-her2" open>
+            <summary>HER2 and breast cancer <span aria-hidden="true">+</span></summary>
+            <div class="reference-list">
+              <p><strong>HER2 isoform issue</strong></p>
+              <p>Scaltriti M, Rojo F, Ocana A, et al. <i>Expression of p95HER2, a truncated form of the HER2 receptor, and response to anti-HER2 therapies in breast cancer.</i> J Natl Cancer Inst. 2007;99(8):628-638. doi:10.1093/jnci/djk134</p>
+              <p>Arribas J, Baselga J, Pedersen K, Parra-Palau JL. <i>p95HER2 and breast cancer.</i> Cancer Res. 2011;71(5):1515–1519. doi:10.1158/0008-5472.CAN-10-3795</p>
+              <p><strong>Breast cancer</strong></p>
+              <p>Yin L, Zhang H, Liang X, et al. <i>Clinicopathological characteristics and biological markers of primary and recurrent or metastatic breast cancer: a meta-analysis.</i> Oncology Advances. 2024;4(1):e00027.</p>
+              <p>Press MF, Sauter G, Bernstein L, et al. <i>Diagnostic evaluation of HER2 as a molecular target.</i> Breast Cancer Res Treat. 2005;86(1):1-13.</p>
+            </div>
+          </details>
+
+          <details>
+            <summary>Gastric and pan-cancer HER2 <span aria-hidden="true">+</span></summary>
+            <div class="reference-list">
+              <p>Park SR, Park YS, Ryu MH, et al. <i>Extra-gastric metastases of HER2-positive gastric carcinoma.</i> Sci Rep. 2017;7:13023.</p>
+              <p>Kim MA, Jung EJ, Lee HS, et al. <i>Prognostic significance of HER2 gene amplification and protein overexpression in gastric carcinoma.</i> Int J Cancer. 2008;122(4):967-975.</p>
+              <p>Lee HE, Park KU, Yoo SB, et al. <i>Clinical significance of intratumoral HER2 heterogeneity in gastric cancer.</i> Eur J Cancer. 2013;49(6):1448-1457.</p>
+              <p>Sahin IH, Lee C, Svrcek M, et al. <i>Discordance of HER2 expression and/or amplification between primary tumors and metastases in gastrointestinal malignancies.</i> Mol Cancer Ther. 2023;22(8):976–985.</p>
+            </div>
+          </details>
+
+          <details id="references-for-other-bio-markers">
+            <summary>Other oncology biomarkers <span aria-hidden="true">+</span></summary>
+            <div class="reference-list reference-list--columns">
+              <div><p><strong>EGFR</strong></p><p>Sharma SV, Bell DW, Settleman J, Haber DA. <i>Epidermal growth factor receptor mutations in lung cancer.</i> Nat Rev Cancer. 2007;7(3):169–181.</p><p>Wei J, et al. <i>Discordance between EGFR mutation status and EGFR protein expression in non-small cell lung cancer.</i> Oncology Letters. 2019;17(6):5047–5052.</p></div>
+              <div><p><strong>PD-L1</strong></p><p>Ilie M, Long-Mira E, Bence C, et al. <i>Comparative study of the PD-L1 status between surgically resected specimens and matched biopsies of NSCLC patients.</i> Ann Oncol. 2016;27(1):147–153.</p><p>Wang Y, et al. <i>PD-L1 expression variability in lung cancer: causes and consequences.</i> Cancer Commun. 2020;40(2):87–98.</p></div>
+              <div><p><strong>ER / PR</strong></p><p>van de Vijver MJ, et al. <i>A gene-expression signature as a predictor of survival in breast cancer.</i> N Engl J Med. 2002;347(25):1999–2009.</p><p>Shibata A, et al. <i>Discordance in ER, PR, and HER2 between primary breast cancer and brain metastases.</i> J Clin Oncol. 2018;36(suppl):1016.</p></div>
+              <div><p><strong>ALK / ROS1 / NTRK</strong></p><p>Camidge DR, Doebele RC. <i>Treating ALK-positive lung cancer—early successes and future challenges.</i> Nat Rev Clin Oncol. 2012;9(5):268–277.</p><p>Solomon JP, Linkov I, Rosado A, et al. <i>NTRK fusion detection across multiple assays and 33,997 cases.</i> Mod Pathol. 2020;33:38–46.</p></div>
+              <div><p><strong>TP53</strong></p><p>Soussi T, Wiman KG. <i>TP53: an oncogene in disguise.</i> Cell Death Differ. 2015;22(8):1239–1249.</p><p>Bártová E, et al. <i>p53-dependent mechanisms of gene regulation and chromatin remodeling.</i> Cell Mol Life Sci. 2019;76:2249–2261.</p></div>
+              <div><p><strong>CD20</strong></p><p>Tedder TF, Engel P. <i>CD20: a regulator of cell-cycle progression of B lymphocytes.</i> Immunol Today. 1994;15(9):450–454.</p><p>Johnson NA, Boyle M, Bashashati A, et al. <i>Diffuse large B-cell lymphoma: reduced CD20 expression is associated with an inferior survival.</i> Blood. 2009;113(16):3773–3780.</p></div>
+            </div>
+          </details>
+
+          <details id="references-for-rna-localization">
+            <summary>UTRs and RNA localization <span aria-hidden="true">+</span></summary>
+            <div class="reference-list">
+              <p>Salehi S, Zare A, Prezza G, et al. <i>Cytosolic Ptbp2 modulates axon growth in motoneurons through axonal localization and translation of Hnrnpr.</i> Nat Commun. 2023;14:4158. doi:10.1038/s41467-023-39787-6.</p>
+            </div>
+          </details>
+        </div>
+      </section>
+
+      <section class="closing-panel" data-phaeno-search-ignore>
+        <div class="closing-panel__inner">
+          <p class="eyebrow">See biology in full resolution</p>
+          <div class="closing-panel__content">
+            <h2>Measure the molecules that drive phenotype.</h2>
+            <div class="closing-panel__actions"><a class="button-secondary" href="/technology">Explore PSeq technology</a><a class="button-primary" href="/contact#request-demo">Request a demo</a></div>
+          </div>
+        </div>
+      </section>
+    </div>
+  </main>
+</Layout>
+
+<style>
+.isoform-page { container-type: inline-size; background: var(--color-canvas); }
+.page-shell { width: 100%; max-width: 80rem; margin: 0 auto; padding-inline: var(--page-gutter); }
+.eyebrow { margin: 0 0 var(--space-3); padding: 0; color: var(--color-brand-strong); font-size: var(--font-size-xs); font-weight: var(--font-weight-semibold); letter-spacing: .16em; text-transform: uppercase; }
+.intro-section { display: grid; grid-template-columns: minmax(0, 1.2fr) minmax(18rem, .8fr); gap: clamp(2rem, 7vw, 7rem); align-items: start; padding: clamp(2rem, 4vw, 3.5rem) 0; }
+.intro-section h2 { max-width: 14ch; margin: 0; padding: 0; color: var(--phaeno-rna-900); font-size: clamp(2.7rem, 5.5vw, 5.3rem); font-weight: var(--font-weight-medium); letter-spacing: -.055em; line-height: .96; }
+.intro-section h2 span { color: var(--color-brand); }
+.intro-section__copy { padding-top: var(--space-5); padding-bottom: .35rem; }
+.intro-section__copy p { margin: 0; padding: 0; color: var(--phaeno-neutral-700); font-size: var(--font-size-lg); line-height: 1.65; }
+.intro-section__copy .lead { margin-bottom: var(--space-5); color: var(--phaeno-rna-900); font-size: clamp(1.25rem, 2vw, 1.6rem); font-weight: var(--font-weight-medium); line-height: 1.45; }
+.resolution-section { padding: clamp(2.5rem, 4.5vw, 4.25rem); border-radius: var(--radius-2xl); background: var(--phaeno-neutral-100); }
+.section-heading { max-width: 49rem; margin-bottom: clamp(1.75rem, 3.5vw, 2.75rem); }
+.section-heading h2, .her2-section h2, .biomarker-section h2, .aso-section h2, .references-section h2, .closing-panel h2 { margin: 0; color: var(--phaeno-rna-900); font-size: clamp(2rem, 4vw, 3.6rem); font-weight: var(--font-weight-medium); letter-spacing: -.04em; line-height: 1.02; }
+.section-heading > p:last-child { max-width: 44rem; margin: var(--space-4) 0 0; color: var(--phaeno-neutral-700); font-size: var(--font-size-lg); line-height: 1.6; }
+.resolution-path { display: grid; grid-template-columns: 1fr auto 1fr auto 1fr; gap: var(--space-4); align-items: center; }
+.resolution-card { min-height: 17rem; padding: clamp(1.4rem, 2.5vw, 2rem); border: 1px solid var(--phaeno-green-200); border-radius: var(--radius-xl); background: var(--color-surface); }
+.resolution-card__label { margin: 0 0 .5rem; color: var(--color-brand-strong); font-size: var(--font-size-xs); font-weight: var(--font-weight-semibold); letter-spacing: .14em; text-transform: uppercase; }
+.resolution-card h3 { max-width: 12ch; margin: 0 0 var(--space-4); color: var(--phaeno-rna-900); font-size: clamp(1.45rem, 2.3vw, 2rem); line-height: 1.05; }
+.resolution-card p:last-child { margin: 0; color: var(--phaeno-neutral-700); line-height: 1.55; }
+.resolution-card--emphasis { border-color: var(--phaeno-rna-800); background: linear-gradient(145deg, var(--phaeno-rna-900), var(--phaeno-rna-800)); }
+.resolution-card--emphasis .resolution-card__label { color: var(--phaeno-green-300); }
+.resolution-card--emphasis :is(h3, p:last-child) { color: var(--color-text-on-dark); }
+.resolution-path__arrow { color: var(--color-brand); font-size: 1.8rem; }
+.outcome-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: var(--space-4); margin-top: var(--space-4); }
+.outcome-grid article { display: flex; gap: var(--space-4); padding: var(--space-5); border-radius: var(--radius-xl); background: var(--phaeno-green-100); }
+.outcome-grid article > span { display: grid; flex: 0 0 2.5rem; height: 2.5rem; place-items: center; border-radius: 50%; color: var(--phaeno-rna-800); background: var(--color-surface); }
+.outcome-grid h3 { margin: 0 0 .35rem; color: var(--phaeno-rna-900); font-size: var(--font-size-lg); }
+.outcome-grid p { margin: 0; color: var(--phaeno-neutral-700); line-height: 1.5; }
+.her2-section { padding: clamp(3rem, 5vw, 4.5rem) 0; }
+.her2-section__intro { display: grid; grid-template-columns: minmax(18rem, .85fr) minmax(0, 1.15fr); gap: clamp(2rem, 8vw, 7rem); align-items: start; }
+.her2-section__summary { padding-top: var(--space-8); }
+.her2-section__summary > p { margin: 0; color: var(--phaeno-neutral-700); font-size: var(--font-size-lg); line-height: 1.65; }
+.evidence-stat { display: flex; gap: var(--space-4); align-items: center; margin-top: var(--space-7); padding-top: var(--space-5); border-top: 1px solid var(--phaeno-green-200); }
+.evidence-stat strong { color: var(--color-brand-strong); font-size: clamp(2.3rem, 4vw, 3.5rem); letter-spacing: -.05em; }
+.evidence-stat span { max-width: 15rem; color: var(--phaeno-neutral-600); font-size: var(--font-size-sm); line-height: 1.4; }
+.quote-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: var(--space-4); margin-top: clamp(2rem, 5vw, 3.5rem); }
+.evidence-quote { display: grid; grid-template-rows: auto 1fr; min-height: 0; margin: 0; padding: clamp(1.6rem, 3vw, 2.5rem); border: 1px solid var(--phaeno-green-200); border-radius: var(--radius-2xl); background: linear-gradient(150deg, var(--color-surface), var(--phaeno-green-50)); }
+.evidence-quote blockquote { max-width: 30ch; margin: 0; padding: 0; border: 0; border-radius: 0; color: var(--phaeno-rna-900); background: transparent; box-shadow: none; font-size: clamp(1.3rem, 2vw, 1.75rem); line-height: 1.45; }
+.evidence-quote figcaption { display: flex; gap: var(--space-4); align-self: end; align-items: flex-start; margin-top: var(--space-5); padding-top: var(--space-5); border-top: 1px solid var(--phaeno-green-200); }
+.evidence-quote img { width: 3.5rem; height: 3.5rem; border-radius: 50%; object-fit: cover; filter: grayscale(1); }
+.evidence-quote figcaption span { display: flex; min-width: 0; flex-direction: column; color: var(--phaeno-rna-900); }
+.evidence-quote figcaption strong { color: var(--phaeno-rna-900); }
+.evidence-quote small { margin-top: .3rem; color: var(--phaeno-neutral-600); line-height: 1.4; }
+.evidence-quote--dark { border-color: var(--phaeno-rna-800); background: linear-gradient(145deg, var(--phaeno-rna-900), var(--phaeno-rna-800)); }
+.evidence-quote--dark :is(blockquote, figcaption span) { color: var(--color-text-on-dark); }
+.evidence-quote--dark figcaption { border-top-color: rgb(255 255 255 / 28%); }
+.evidence-quote--dark figcaption strong { color: var(--color-text-on-dark); }
+.evidence-quote--dark small { color: var(--phaeno-green-200); }
+.biomarker-section { padding: clamp(2.5rem, 4.5vw, 4.25rem); border-radius: var(--radius-2xl); background: var(--phaeno-green-50); }
+.section-heading--split { display: grid; grid-template-columns: 1fr minmax(18rem, .65fr); gap: clamp(2rem, 6vw, 5rem); max-width: none; align-items: start; }
+.section-heading--split h2 { padding: 0; }
+.section-heading.section-heading--split > p { margin: 0 0 .25rem; padding: var(--space-5) 0 0; color: var(--phaeno-neutral-700); font-size: var(--font-size-lg); line-height: 1.6; }
+.biomarker-table { overflow: hidden; border: 1px solid var(--phaeno-green-200); border-radius: var(--radius-xl); background: var(--color-surface); }
+.biomarker-table__header, .biomarker-row { display: grid; grid-template-columns: .65fr 1.15fr 1fr 1.7fr; }
+.biomarker-table__header { color: var(--phaeno-green-200); background: var(--phaeno-rna-900); font-size: var(--font-size-xs); font-weight: var(--font-weight-semibold); letter-spacing: .12em; text-transform: uppercase; }
+.biomarker-table__header div, .biomarker-row > div { padding: 1rem 1.15rem; }
+.biomarker-row { color: var(--phaeno-neutral-700); font-size: var(--font-size-sm); line-height: 1.45; }
+.biomarker-row + .biomarker-row { border-top: 1px solid var(--phaeno-neutral-200); }
+.biomarker-row:nth-child(odd) { background: var(--phaeno-neutral-50); }
+.biomarker-name { color: var(--phaeno-rna-900); font-size: var(--font-size-base); font-weight: var(--font-weight-semibold); }
+.mobile-label { display: none; }
+.aso-section { width: 100cqw; max-width: none; margin: clamp(3rem, 5vw, 4.5rem) calc(50% - 50cqw); padding: 0; background: var(--phaeno-rna-900); }
+.aso-section__inner { width: 100%; max-width: var(--content-max-width); margin: 0 auto; padding: clamp(3rem, 6vw, 5rem) var(--page-gutter); }
+.aso-section .eyebrow { color: var(--phaeno-green-300); }
+.aso-section__body { display: grid; grid-template-columns: 1fr .8fr; gap: clamp(2rem, 7vw, 6rem); align-items: center; }
+.aso-section h2 { color: var(--color-text-on-dark); }
+.aso-section__content > p:not(.eyebrow) { color: var(--phaeno-neutral-200); font-size: var(--font-size-lg); line-height: 1.65; }
+.aso-examples { display: grid; gap: var(--space-4); align-content: center; }
+.aso-examples article { display: flex; gap: var(--space-4); padding: var(--space-5); border: 1px solid rgb(255 255 255 / 14%); border-radius: var(--radius-xl); background: rgb(255 255 255 / 7%); }
+.aso-examples article p { margin: 0; color: var(--phaeno-neutral-300); font-size: var(--font-size-sm); line-height: 1.45; }
+.aso-examples article p:first-child { color: var(--phaeno-green-300); font-size: var(--font-size-xs); font-weight: var(--font-weight-semibold); letter-spacing: .1em; text-transform: uppercase; }
+.aso-examples h3 { margin: .4rem 0 .55rem; color: var(--color-text-on-dark); font-size: 1.5rem; }
+.references-section { display: grid; grid-template-columns: minmax(15rem, .45fr) minmax(0, 1fr); gap: clamp(2rem, 7vw, 6rem); padding-bottom: clamp(3rem, 5vw, 4.5rem); }
+.references-section__heading { position: sticky; top: 6rem; align-self: start; }
+.references-section__heading > p:last-child { color: var(--phaeno-neutral-600); line-height: 1.55; }
+.reference-groups { border-top: 1px solid var(--phaeno-green-200); }
+.reference-groups details { border-bottom: 1px solid var(--phaeno-green-200); }
+.reference-groups summary { display: flex; justify-content: space-between; padding: 1.4rem 0; color: var(--phaeno-rna-900); font-size: var(--font-size-lg); font-weight: var(--font-weight-semibold); cursor: pointer; list-style: none; }
+.reference-groups summary::-webkit-details-marker { display: none; }
+.reference-groups summary span { transition: transform var(--duration-fast) var(--ease-standard); }
+.reference-groups details[open] summary span { transform: rotate(45deg); }
+.reference-list { padding: 0 0 var(--space-6); }
+.reference-groups details[open] > .reference-list { animation: reference-list-reveal var(--duration-base) var(--ease-standard) both; }
+@keyframes reference-list-reveal {
+  from { opacity: 0; transform: translateY(-0.25rem); }
+  to { opacity: 1; transform: translateY(0); }
+}
+.reference-list p { color: var(--phaeno-neutral-600); font-size: var(--font-size-sm); line-height: 1.55; }
+.reference-list--columns { display: grid; grid-template-columns: repeat(2, 1fr); gap: var(--space-5); }
+.reference-list--columns div { padding: var(--space-5); border-radius: var(--radius-lg); background: var(--phaeno-neutral-50); }
+.reference-list--columns p:first-child { margin-top: 0; color: var(--phaeno-rna-900); }
+.closing-panel { width: 100cqw; max-width: none; margin: 0 calc(50% - 50cqw); padding: 0; background: var(--phaeno-green-100); }
+.closing-panel__inner { width: 100%; max-width: var(--content-max-width); margin: 0 auto; padding: clamp(3rem, 6vw, 5rem) var(--page-gutter); }
+.closing-panel__content { display: flex; justify-content: space-between; gap: var(--space-7); align-items: center; }
+.closing-panel h2 { max-width: 17ch; font-size: clamp(2rem, 3.5vw, 3.2rem); }
+.closing-panel__actions { display: flex; gap: var(--space-3); flex-shrink: 0; }
+.closing-panel a { padding: .9rem 1.35rem; border: 1px solid transparent; border-radius: var(--radius-pill); font-weight: var(--font-weight-semibold); transition: color var(--duration-fast) var(--ease-standard), background-color var(--duration-base) var(--ease-standard), box-shadow var(--duration-base) var(--ease-standard), transform var(--duration-fast) var(--ease-standard); }
+.button-primary { color: var(--color-text-on-dark); background: var(--phaeno-orange-500); }
+.button-primary:hover { color: var(--color-text-on-dark); background: var(--phaeno-orange-600); box-shadow: var(--shadow-md); transform: translateY(-1px); }
+.button-secondary { border-color: var(--phaeno-rna-800) !important; color: var(--phaeno-rna-900); }
+.button-secondary:hover { color: var(--color-text-on-dark); background: var(--phaeno-rna-900); transform: translateY(-1px); }
+
+@media (max-width: 950px) {
+  .intro-section, .aso-section__body, .references-section { grid-template-columns: 1fr; }
+  .intro-section { align-items: start; }
+  .intro-section__copy { max-width: 48rem; padding-top: 0; }
+  .quote-grid { grid-template-columns: 1fr; }
+  .outcome-grid { grid-template-columns: repeat(2, 1fr); }
+  .outcome-grid article:last-child { grid-column: 1 / -1; }
+  .resolution-path { grid-template-columns: 1fr; }
+  .resolution-path__arrow { transform: rotate(90deg); justify-self: center; }
+  .resolution-card { min-height: auto; }
+  .her2-section__intro { grid-template-columns: 1fr; max-width: 48rem; align-items: start; }
+  .her2-section__summary { padding-top: 0; }
+  .references-section__heading { position: static; }
+  .closing-panel__content { align-items: flex-start; flex-direction: column; }
+}
+
+@media (max-width: 725px) {
+  .intro-section { gap: var(--space-7); padding: 2rem 0; }
+  .intro-section h2 { font-size: clamp(2.5rem, 13vw, 4rem); }
+  .resolution-section, .biomarker-section { margin-right: -.25rem; margin-left: -.25rem; padding: 1.5rem; border-radius: var(--radius-xl); }
+  .outcome-grid, .quote-grid, .section-heading--split, .reference-list--columns { grid-template-columns: 1fr; }
+  .section-heading.section-heading--split > p { padding-top: 0; }
+  .outcome-grid article:last-child { grid-column: auto; }
+  .evidence-quote { min-height: 0; }
+  .biomarker-table { overflow: visible; border: 0; background: transparent; }
+  .biomarker-table__header { display: none; }
+  .biomarker-row { display: grid; grid-template-columns: 1fr; gap: var(--space-3); margin-bottom: var(--space-4); padding: var(--space-5); border: 1px solid var(--phaeno-green-200) !important; border-radius: var(--radius-xl); background: var(--color-surface) !important; }
+  .biomarker-row > div { padding: 0; }
+  .biomarker-name { padding-bottom: var(--space-3) !important; border-bottom: 1px solid var(--phaeno-neutral-200); font-size: 1.3rem; }
+  .mobile-label { display: block; margin-bottom: .2rem; color: var(--color-brand-strong); font-size: .7rem; font-weight: var(--font-weight-semibold); letter-spacing: .1em; text-transform: uppercase; }
+  .aso-section { margin-top: 3.5rem; margin-bottom: 3.5rem; }
+  .aso-section__inner { padding: 2.5rem var(--page-gutter); }
+  .closing-panel__actions { width: 100%; flex-direction: column; }
+  .closing-panel a { width: 100%; text-align: center; }
+}
+</style>

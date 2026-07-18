@@ -1,0 +1,198 @@
+---
+interface ComparisonColumn {
+  key: string;
+  label: string;
+  shortLabel?: string;
+  highlighted?: boolean;
+}
+
+interface ComparisonRow {
+  label: string;
+  values: Record<string, string>;
+  highlighted?: boolean;
+}
+
+interface Props {
+  ariaLabel: string;
+  columns: ComparisonColumn[];
+  rows: ComparisonRow[];
+  rowHeaderLabel?: string;
+  highlightedColumns?: string[];
+  highlightedRows?: string[];
+}
+
+const {
+  ariaLabel,
+  columns,
+  rows,
+  rowHeaderLabel = 'Characteristic',
+  highlightedColumns = [],
+  highlightedRows = [],
+} = Astro.props;
+
+const highlightedColumnSet = new Set(highlightedColumns);
+const highlightedRowSet = new Set(highlightedRows);
+const isColumnHighlighted = (column: ComparisonColumn) =>
+  column.highlighted === true || highlightedColumnSet.has(column.key);
+const isRowHighlighted = (row: ComparisonRow) =>
+  row.highlighted === true || highlightedRowSet.has(row.label);
+---
+
+<div class="article-comparison-table" role="region" aria-label={ariaLabel} tabindex="0">
+  <table>
+    <thead>
+      <tr>
+        <th scope="col">{rowHeaderLabel}</th>
+        {columns.map((column) => (
+          <th
+            scope="col"
+            data-highlight-column={isColumnHighlighted(column) ? 'true' : undefined}
+          >{column.label}</th>
+        ))}
+      </tr>
+    </thead>
+    <tbody>
+      {rows.map((row) => (
+        <tr data-highlight-row={isRowHighlighted(row) ? 'true' : undefined}>
+          <th scope="row" data-label={rowHeaderLabel}>{row.label}</th>
+          {columns.map((column) => (
+            <td
+              data-label={column.shortLabel ?? column.label}
+              data-highlight-column={isColumnHighlighted(column) ? 'true' : undefined}
+            >{row.values[column.key]}</td>
+          ))}
+        </tr>
+      ))}
+    </tbody>
+  </table>
+</div>
+
+<style>
+.article-comparison-table {
+  margin: var(--space-1) 0 var(--space-6);
+  overflow-x: auto;
+  outline-offset: var(--space-1);
+}
+
+.article-comparison-table table {
+  width: 100%;
+  min-width: 44rem;
+  border-collapse: collapse;
+  border: 1px solid var(--color-border);
+  color: var(--color-text);
+  font-size: 0.95rem;
+  line-height: var(--line-height-copy);
+}
+
+.article-comparison-table th,
+.article-comparison-table td {
+  padding: var(--space-3) 0.85rem;
+  border: 1px solid var(--color-border);
+  text-align: left;
+  vertical-align: middle;
+}
+
+.article-comparison-table thead th {
+  background: var(--phaeno-rna-600);
+  color: var(--color-text-on-dark);
+  font-weight: var(--font-weight-bold);
+}
+
+.article-comparison-table thead th[data-highlight-column="true"] {
+  background: var(--phaeno-rna-800);
+}
+
+.article-comparison-table tbody th {
+  width: 20%;
+  color: var(--phaeno-rna-900);
+  font-weight: var(--font-weight-semibold);
+}
+
+.article-comparison-table tbody tr:nth-child(odd) {
+  background: var(--color-surface-subtle);
+}
+
+.article-comparison-table tbody tr:nth-child(even) {
+  background: var(--color-surface);
+}
+
+.article-comparison-table tbody tr:nth-child(odd) > [data-highlight-column="true"] {
+  background: var(--phaeno-green-100);
+}
+
+.article-comparison-table tbody tr:nth-child(even) > [data-highlight-column="true"] {
+  background: var(--phaeno-green-50);
+}
+
+.article-comparison-table tbody tr[data-highlight-row="true"] > th,
+.article-comparison-table tbody tr[data-highlight-row="true"] > td {
+  background: var(--phaeno-amber-100);
+}
+
+.article-comparison-table tbody tr[data-highlight-row="true"] > [data-highlight-column="true"] {
+  background: var(--phaeno-green-200);
+}
+
+@media (max-width: 725px) {
+  .article-comparison-table {
+    overflow: visible;
+  }
+
+  .article-comparison-table table,
+  .article-comparison-table thead,
+  .article-comparison-table tbody,
+  .article-comparison-table tr,
+  .article-comparison-table th,
+  .article-comparison-table td {
+    display: block;
+    min-width: 0;
+    width: 100%;
+  }
+
+  .article-comparison-table table {
+    border: 0;
+    font-size: 0.92rem;
+  }
+
+  .article-comparison-table thead {
+    display: none;
+  }
+
+  .article-comparison-table tr {
+    margin: 0 0 var(--space-4);
+    border: 1px solid var(--color-border);
+    background: var(--color-surface);
+  }
+
+  .article-comparison-table th,
+  .article-comparison-table td {
+    display: grid;
+    grid-template-columns: minmax(8rem, 38%) minmax(0, 1fr);
+    gap: var(--space-3);
+    border: 0;
+    border-bottom: 1px solid var(--color-border);
+  }
+
+  .article-comparison-table tr > :last-child {
+    border-bottom: 0;
+  }
+
+  .article-comparison-table th::before,
+  .article-comparison-table td::before {
+    content: attr(data-label);
+    overflow-wrap: anywhere;
+    color: var(--color-text-muted);
+    font-weight: var(--font-weight-bold);
+  }
+
+  .article-comparison-table tbody th {
+    width: 100%;
+    background: var(--phaeno-rna-600);
+    color: var(--color-text-on-dark);
+  }
+
+  .article-comparison-table tbody th::before {
+    color: var(--phaeno-rna-100);
+  }
+}
+</style>

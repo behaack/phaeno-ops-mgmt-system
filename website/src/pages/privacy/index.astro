@@ -1,0 +1,21 @@
+---
+import { Content } from '@/content/privacy.md';
+import Layout from '@/layouts/Layout.astro';
+import TopPageBanner from '@/components/TopPageBanner.astro';
+import SEOMeta from '@/components/meta-data-helpers/SEOMeta.astro';
+---
+<Layout>   
+  <SEOMeta 
+    slot="head"
+    title="Privacy Policies | Phaeno"
+    description="Read Phaeno’s Privacy Policy and learn how we collect, use, and protect your information."
+    documentType="Web Page"
+    searchTitle="Privacy Policy"
+  />    
+  <main id="main">
+    <TopPageBanner title="Phaeno Privacy Policy" image="image-1"/>
+    <section>
+      <Content />
+    </section>
+  </main>
+</Layout>

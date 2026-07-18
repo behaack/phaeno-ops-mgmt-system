@@ -1,0 +1,47 @@
+---
+import { getCollection } from 'astro:content'
+import Layout from '@/layouts/Layout.astro'
+import MediaCollection from '@/components/MediaCollection.astro'
+import MediaCard from '@/components/MediaCard.astro'
+import TopPageBanner from '@/components/TopPageBanner.astro'
+import SEOMeta from '@/components/meta-data-helpers/SEOMeta.astro';
+import MediaSearch from '@/components/MediaSearch.astro'
+import MediaNoItems from '@/components/MediaNoItems.astro'
+import { formatContentDate } from '@/lib/dates'
+
+const papers = await getCollection('white_papers')
+---
+
+<title>White Papers | Phaeno</title>
+<meta name="description" content="Read technical White Papers published by Phaeno." />
+
+<Layout>
+  <SEOMeta 
+    slot="head"
+    title="White Papers | Phaeno"
+    description="Learn about Phaeno's mission to transform molecular diagnostics through innovative RNA sequencing technology and expert leadership."
+    documentType="List"
+    searchTitle="White Papers"
+  />    
+  <main id="main">
+    <TopPageBanner title="White Papers" image="image-3"/>
+    <section>
+      <MediaSearch listLength={papers.length} placeholder="Search title or author" />
+      <MediaCollection>
+        {papers.map(paper => (
+          <MediaCard 
+            searchString={`${paper.data.title} ${paper.data.authors.join(' ')}`.toLowerCase()}
+            title={paper.data.title} 
+            image={paper.data.image} 
+            link={`/media/white-papers/${paper.id}`}
+          >
+            <div>By {paper.data.authors.join(', ')}</div>
+            <div>{formatContentDate(paper.data.date)}</div>
+          </MediaCard>
+        ))}      
+      </MediaCollection>
+      <MediaNoItems listLength={papers.length} message="No white papers, check back later." />
+      <br />
+    </section>
+  </main>
+</Layout>

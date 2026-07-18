@@ -33,6 +33,8 @@ Keep the owner focused on scientific meaning, sequencing and laboratory workflow
 ## Start here
 
 - Read `ai/README.md` for the task-to-context map.
+- For work under `website/`, also read `website/AGENTS.md`,
+  `website/README.md`, and `website/src/styles/design-system.css`.
 - Read `docs/ui-ux-principles.md` before adding or changing a user-facing workflow, list, record workspace, form, modal, control, feedback pattern, responsive behavior, or accessibility behavior.
 - Read `docs/user-documentation.md` before changing user-visible behavior or the in-portal help system.
 - Read the relevant file in `docs/plans/` before changing an area that already has a plan.
@@ -43,12 +45,19 @@ Keep the owner focused on scientific meaning, sequencing and laboratory workflow
 - `backend/app`: .NET 10 ASP.NET Core API, feature folders, EF Core, and PostgreSQL.
 - `backend/test`: xUnit tests for the API and domain behavior.
 - `frontend`: React 19, TypeScript, TanStack Start/Router/Query, Axios, React Hook Form, Zod, Tailwind 4, and shadcn/Radix primitives.
+- `website`: the public Phaeno company website copied from the former
+  `phaeno-website` project. It is an Astro 7 static site with React islands and
+  Tailwind 4, built separately from the Portal frontend and deployed
+  independently to Vercel.
 - Authentication currently uses Clerk-issued JWTs. The API maps the external subject to its own `User`, organization memberships, and authorization rules.
 - `docs/plans/` is the authoritative home for active feature and test plans.
 
 ## Working rules
 
 - Keep diffs narrow and follow the existing feature-owned backend and frontend folder patterns.
+- Treat `frontend/` and `website/` as separate applications with separate
+  package roots, UI patterns, and deployment paths. Do not move code or
+  dependencies between them merely because both use React or Tailwind.
 - Keep route files thin. Put server state in TanStack Query hooks and form validation in React Hook Form plus Zod.
 - Treat authorization as a backend concern. Scope every tenant read or write by the authenticated internal user and active membership.
 - Preserve the API envelope (`success`, `data`, `error`, `meta`) and map domain failures through the existing error infrastructure.
@@ -65,6 +74,9 @@ Keep the owner focused on scientific meaning, sequencing and laboratory workflow
 - Meet WCAG 2.2 AA, including keyboard behavior, focus visibility, names, errors, contrast, and reduced motion.
 - Use semantic design tokens and keep light/dark themes working.
 - Apply the application-wide record-management flow from `docs/ui-ux-principles.md`: lists are form-free discovery and management surfaces; a record's primary identifier opens its dedicated, view-first detail page; and bounded create/edit actions use modals from either surface. Use a dedicated create/edit page only when the documented complexity criteria apply, and record any exception in the owning plan.
+- For the public Website, use the scoped rules in `website/AGENTS.md` and the
+  existing tokens and patterns under `website/src/styles/`. Portal
+  record-management conventions do not automatically apply to marketing pages.
 - Use pointer cursors for mouse-clickable actions and accessible labels for icon-only controls.
 - Keep required-field presentation consistent: label, required marker, control, and error.
 - Keep primary navigation in the desktop toolbar and move it into the user menu on narrow layouts; do not render duplicate navigation for one viewport.
@@ -92,4 +104,6 @@ Run only the checks appropriate to the change and requested scope. Standard comm
 
 - Backend: `dotnet build backend/PSeq.Operations.slnx` and `dotnet test backend/PSeq.Operations.slnx`.
 - Frontend: from `frontend/`, `pnpm run lint`, `pnpm run typecheck`, `pnpm run test`, and `pnpm run test:e2e`.
+- Public Website: from `website/`, run `pnpm build` for route, content,
+  metadata, style, or component changes.
 - Documentation-only changes: check links, paths, and `git diff --check`; no application build is normally needed.

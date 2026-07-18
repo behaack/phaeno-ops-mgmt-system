@@ -1,0 +1,164 @@
+---
+import { Image } from 'astro:assets';
+interface Props {
+  bgColor?: string
+  borderColor?: string
+  verb: string
+  image: string
+  alt: string
+}
+
+const { bgColor, borderColor, verb, image, alt } = Astro.props as Props
+const border = borderColor ? `1px dashed ${borderColor}; border-radius: 12px` : '1px dashed #99A4A9; border-radius: 12px'
+---
+
+<div 
+  class="workflow-item" 
+  style={`background-color:${bgColor || 'transparent'};border: ${border}`}
+  >
+  <div class="text-center">
+    <div class="verb"><i>{ verb }</i></div>
+    <div class="step"><slot /></div>
+  </div>
+  <div>
+    <Image src={image} alt={alt} width={60} height={1}/>
+  </div>
+</div>
+
+<style lang="scss">
+  img {
+    height: 4rem;
+  }
+
+  .workflow-item {
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    align-items: center;
+    padding: 1rem .75rem;
+    height: 12rem;
+  }
+  
+  .verb {
+    color: #DD9901;
+    letter-spacing: 3px;
+    font-size: .9rem;
+    margin-bottom: .2rem;
+    font-weight: 700;
+  }
+
+  .step {
+    font-family: Arial, Helvetica, sans-serif;
+    line-height: 1rem;
+    color: black;
+    font-weight: 900;
+    text-transform: uppercase;
+    letter-spacing: 2px;
+    font-size: .85rem;
+    text-align: center;
+    margin-bottom: 1rem
+  }
+
+  @media (max-width:  1200px) {
+    img {
+      height: 4rem;
+    }
+
+    .workflow-item {
+      padding: 1rem .75rem;
+    }
+    
+    .verb {
+      font-size: .9rem;
+    }
+
+    .step {
+      font-size: .85rem;
+    }
+  }
+
+  @media (max-width:  1000px) {
+    img {
+      height: 3rem;
+    }
+    
+    .workflow-item {
+      padding: .7rem .3rem;
+      height: 10rem;
+    }
+    
+    .verb {
+      font-size: .7rem;
+      letter-spacing: 2px;
+    }
+    
+    .step {
+      font-size: .7rem;
+      line-height: .85rem;
+    } 
+  }  
+
+  @media (max-width:  750px) {
+    img {
+      height: 2.5rem;
+    }
+    
+    .workflow-item {
+      padding: .5rem .2rem;
+      height: 8rem;
+    }
+    
+    .verb {
+      font-size: .6rem;
+      letter-spacing: 2px;
+    }
+    
+    .step {
+      font-size: .45rem;
+      line-height: .6rem;
+    } 
+  }
+
+  @media (max-width:  500px) {
+    img {
+      height: 1.75rem;
+    }
+    
+    .workflow-item {
+      padding: .25rem .15rem;
+      height: 6rem;
+    }
+    
+    .verb {
+      font-size: .5rem;
+      letter-spacing: 2px;
+    }
+    
+    .step {
+      font-size: .4rem;
+      line-height: .475rem;
+    } 
+  } 
+  
+  @media (max-width:  425px) {
+    img {
+      height: 3rem;
+    }
+    
+    .workflow-item {
+      padding: .75rem .5rem;
+      width: 10rem;
+      height: 11rem;
+    }
+    
+    .verb {
+      font-size: 1rem;
+      letter-spacing: 1px;
+    }
+    
+    .step {
+      font-size: 1.1rem;
+      line-height: 1.4rem;
+    } 
+  }   
+</style>

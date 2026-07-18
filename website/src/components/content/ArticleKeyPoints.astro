@@ -1,0 +1,67 @@
+---
+interface Props {
+  items: string[];
+  ariaLabel?: string;
+}
+
+const {
+  items,
+  ariaLabel = 'Key points',
+} = Astro.props;
+---
+
+<ol class="article-key-points" aria-label={ariaLabel}>
+  {items.map((item, index) => (
+    <li>
+      <span class="article-key-points__number" aria-hidden="true">
+        {String(index + 1).padStart(2, '0')}
+      </span>
+      <span class="article-key-points__copy">{item}</span>
+    </li>
+  ))}
+</ol>
+
+<style>
+.article-key-points {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 14rem), 1fr));
+  gap: var(--space-5);
+  margin: var(--space-5) 0 var(--space-6);
+  padding: var(--space-5) 0;
+  border-top: 1px solid var(--phaeno-green-200);
+  border-bottom: 1px solid var(--phaeno-green-200);
+  list-style: none;
+}
+
+.article-key-points li {
+  display: grid;
+  align-content: start;
+  gap: var(--space-2);
+  margin: 0;
+  padding: 0 0 0 var(--space-4);
+  border-left: 2px solid var(--phaeno-green-300);
+}
+
+.article-key-points__number {
+  color: var(--phaeno-green-600);
+  font-size: var(--font-size-xs);
+  font-weight: var(--font-weight-semibold);
+  letter-spacing: 0.1em;
+  line-height: var(--line-height-copy);
+}
+
+.article-key-points__copy {
+  color: var(--phaeno-rna-900);
+  font-size: var(--font-size-md);
+  font-weight: var(--font-weight-medium);
+  line-height: var(--line-height-relaxed);
+}
+
+@media (max-width: 725px) {
+  .article-key-points {
+    grid-template-columns: 1fr;
+    gap: var(--space-4);
+    padding: var(--space-4) 0;
+  }
+}
+</style>

@@ -1,0 +1,297 @@
+<script>
+function init(): void {
+  /* ――― 1. helper to detect the mobile breakpoint ――― */
+  const MOBILE_BP = '(max-width: 900px)';
+  const mqMobile  = window.matchMedia(MOBILE_BP);
+  const isMobile  = () => mqMobile.matches;
+
+  const menuBtn = document.getElementById('burger-button');
+  const nav = document.getElementById('nav') as HTMLElement | null;
+  const mainMenu = document.getElementById('main-menu') as HTMLElement | null;
+  if (!nav || !menuBtn || !mainMenu) return; // Should never happen, but keeps TS happy
+  const parentLinks = document.querySelectorAll<HTMLAnchorElement>('.main-menu-parent > a');
+
+  setOrientation();
+  resetMenuState();
+
+  parentLinks.forEach(link => {
+    const li = link.parentElement as HTMLElement; // <li> wrapper
+    
+    /* ----------  click  ---------- */
+    link.addEventListener('click', (e: MouseEvent) => {
+      e.preventDefault();
+      toggleSubmenu(li, link);
+    });
+
+    /* ----------  keyboard toggle  ---------- */
+    link.addEventListener('keydown', (e: KeyboardEvent) => {
+      if (e.key === 'Enter' || e.key === ' ') {
+        e.preventDefault();
+        toggleSubmenu(li, link);
+      }
+    });
+
+    li.addEventListener('keydown', (e: KeyboardEvent) => {
+      if (e.key === 'Escape') {
+        e.preventDefault();            // stop the browser’s default “leave full-screen” etc.
+        close(li, link);               // hide the submenu (already sets aria-expanded="false")
+      }
+    });    
+
+    /* ----  focus-in keeps menu open; focus-out closes  ---- */
+    li.addEventListener('focusout', (e) => {
+      if (isMobile()) return;                          // mobile: keep it open
+      if (!li.contains(e.relatedTarget as Node | null)) {
+        close(li, link);                               // desktop: auto-close
+      }
+    });  
+  });
+
+  menuBtn.addEventListener('click', toggleMenu);
+  mqMobile.addEventListener('change', setOrientation);
+
+
+
+  // close mobile menu on click outside
+  document.addEventListener('click', (e: MouseEvent) => {
+    const target = e.target as Node;  // narrow type
+    if (nav?.classList.contains('open') &&
+        !nav.contains(target) &&
+        !menuBtn.contains(target)) {
+      toggleMenu();
+    }
+  });
+
+  // when coming back via bfcache
+  window.addEventListener('pageshow', (e) => {
+    // `e.persisted` is true if this was restored from the bfcache
+    if (e.persisted) resetMenuState();
+  });
+
+  // cover “normal” history navigations too
+  window.addEventListener('popstate', () => {
+    resetMenuState();
+  });  
+
+
+  // close mobile menu on escape
+  document.addEventListener('keydown', (e: KeyboardEvent) => {
+    /* press Esc anywhere while the menu is open */
+    if (e.key === 'Escape' && nav.classList.contains('open')) {
+      e.preventDefault();           // stops a stray Esc doing something else
+      toggleMenu();                 // close the menu
+      menuBtn.focus();              // return focus to the button (a11y)
+    }
+  });  
+
+  /* ========== top-level ARROW & TAB logic ========== */
+  nav.addEventListener('keydown', (e: KeyboardEvent) => {
+    const li       = (e.target as HTMLElement).closest('.menu-item') as HTMLElement | null;
+    const link     = li?.querySelector('a') as HTMLAnchorElement | null;
+    const isParent = li?.classList.contains('main-menu-parent');
+    const inSub    = (e.target as HTMLElement).closest('.sub-menu');
+    
+    if (inSub) return; // NEW: ignore everything if focus is in a submenu
+    
+    switch (e.key) {
+      /* -------------- menubar left / right -------------- */
+      case 'ArrowRight':
+        e.preventDefault();
+        moveFocus(topLevelLinks(), +1);
+        break;
+      case 'ArrowLeft':
+        e.preventDefault();
+        moveFocus(topLevelLinks(), -1);
+        break;
+
+      /* -------------- open submenu -------------- */
+      case 'ArrowDown':
+        if (isParent && !inSub) {           // ★ ignore if the event came from inside a submenu
+          e.preventDefault();
+          open(li!, link!);                 /* show submenu   */
+          moveFocus(submenuItems(li!), 'first');
+        }
+        break;    
+
+      /* -------------- close submenu -------------- */
+      case 'Escape':
+        if (li?.classList.contains('open')) {          /* if we’re inside a submenu */
+          e.preventDefault();
+          close(li!, link!);
+          link!.focus();                               /* restore focus to parent */
+        }
+        break;
+
+      /* -------------- Home / End (optional) -------------- */
+      case 'Home':
+        e.preventDefault();
+        moveFocus(topLevelLinks(), 'first');
+        break;
+      
+      case 'End':
+        e.preventDefault();
+        moveFocus(topLevelLinks(), 'last');
+        break;    
+
+    }
+  });
+
+  /* ========== submenu Up / Down logic ========== */
+  nav.addEventListener('keydown', (e: KeyboardEvent) => {
+    const inSub   = (e.target as HTMLElement).closest('.sub-menu') as HTMLElement | null;
+    if (!inSub) return;                                /* ignore if in menubar */
+
+    const items = submenuItems(inSub.closest('.menu-item')!);
+    e.stopPropagation(); // NEW: keep the event from bubbling any higher
+
+    switch (e.key) {
+      case 'Escape':
+        e.preventDefault();
+
+        const parentLi   = inSub.closest('.menu-item')! as HTMLElement;;
+        const parentLink = parentLi.querySelector('a') as HTMLAnchorElement;
+
+        if (isMobile()) {
+          /* Close entire drawer and restore focus to burger */
+          toggleMenu();
+        } else {
+          /* Desktop: close only this submenu */
+          close(parentLi, parentLink);
+          parentLink.focus();
+        }
+        break;
+      case 'ArrowDown':
+        e.preventDefault();
+        moveFocus(items, +1);
+        break;
+      case 'ArrowUp':
+        e.preventDefault();
+        moveFocus(items, -1);
+        break;
+      case 'Home':
+        e.preventDefault();
+        moveFocus(items, 'first');
+        break;
+      case 'End':
+        e.preventDefault();
+        moveFocus(items, 'last');
+        break;
+      case 'Tab':     
+        /* MOBILE → keep the submenu open */
+        if (!isMobile()) {
+          /* DESKTOP → close so focus lands on next parent */
+          close(inSub.closest('.menu-item')!, inSub.closest('.menu-item')!.querySelector('a')!);
+        }
+        break;
+    }
+  });
+  
+  // /* ================ helpers ================== */
+  function resetMenuState() {
+    // close the drawer
+    nav?.classList.remove('open');
+    menuBtn?.classList.remove('open');
+    menuBtn?.setAttribute('aria-expanded', 'false');
+    mainMenu?.removeAttribute('hidden');
+    // collapse any submenus
+    closeAllSubmenus();
+  }
+    
+  function toggleMenu() {
+    const open = nav?.classList.toggle('open');          
+    menuBtn?.classList.toggle('open', open);              
+    menuBtn?.setAttribute('aria-expanded', String(open)); 
+    //(menu?.querySelector('ul li a') as HTMLAnchorElement | null)?.focus();
+
+    if (open) {
+      /* move focus to first link & start trapping */
+      (focusables()[0] as HTMLElement | undefined)?.focus();
+      nav?.addEventListener('keydown', trapFocus);
+    } else {
+      /* stop trapping & restore focus to the burger */
+      nav?.removeEventListener('keydown', trapFocus);
+      menuBtn?.focus();
+      closeAllSubmenus();
+    }    
+  }
+
+  function toggleSubmenu(li: HTMLElement, link: HTMLAnchorElement) {
+    li.classList.contains('open') ? close(li, link) : open(li, link);
+  }
+
+  function closeAllSubmenus() {
+    nav!.querySelectorAll<HTMLElement>('.menu-item.open')
+      .forEach(li => {
+        const a = li.querySelector('a') as HTMLAnchorElement;
+        close(li, a);
+      });
+  }  
+
+  function open(li: HTMLElement, link: HTMLAnchorElement) {
+    closeAllSubmenus(); 
+    li.classList.add('open');
+    link.setAttribute('aria-expanded', 'true');   
+  }
+
+  function close(li: HTMLElement, link: HTMLAnchorElement) {
+    li.classList.remove('open');
+    link.setAttribute('aria-expanded', 'false');
+  }
+
+  function focusables(): HTMLElement[] { 
+    return Array.from( 
+      nav!.querySelectorAll<HTMLElement>('a, button') )
+        .filter(el => !el.hasAttribute('disabled')); 
+  }  
+
+  function trapFocus(e: KeyboardEvent) {
+    if (e.key !== 'Tab' || !isMobile()) return;
+
+    const items = focusables();
+    const first = items[0];
+    const last  = items[items.length - 1];
+
+    if (e.shiftKey && document.activeElement === first) {
+      e.preventDefault();
+      last.focus();
+    } else if (!e.shiftKey && document.activeElement === last) {
+      e.preventDefault();
+      first.focus();
+    }
+  }
+
+  function topLevelLinks(): HTMLAnchorElement[] {
+    return Array.from(nav!.querySelectorAll<HTMLAnchorElement>(
+      '.main-menu > .menu-item > a'
+    ));
+  }
+
+  function submenuItems(li: HTMLElement): HTMLAnchorElement[] {
+    return Array.from(
+      li.querySelectorAll<HTMLAnchorElement>('.sub-menu a')
+    );
+  }
+
+  function moveFocus(list: HTMLAnchorElement[], delta: number | 'first' | 'last') {
+    const current = document.activeElement as HTMLAnchorElement | null;
+    let idx = list.indexOf(current!);
+
+    if (delta === 'first')           idx = 0;
+    else if (delta === 'last')       idx = list.length - 1;
+    else                             idx = (idx + delta + list.length) % list.length;
+
+    list[idx].focus();
+  }
+
+  function setOrientation() {
+    mainMenu?.setAttribute('aria-orientation', isMobile() ? 'vertical' : 'horizontal');
+  }  
+}
+
+/* Run `init` as soon as the DOM is ready (covers both early & late script injection) */
+if (document.readyState === 'loading') {
+  document.addEventListener('DOMContentLoaded', init);
+} else {
+  init();
+}
+</script>

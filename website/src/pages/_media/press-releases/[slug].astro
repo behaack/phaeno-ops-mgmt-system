@@ -1,0 +1,53 @@
+---
+import { getCollection, render, type CollectionEntry } from 'astro:content';
+import Layout from '@/layouts/Layout.astro';
+import ShareWithSocialMedia from '@/components/ShareWithSocialMedia.astro';
+import ArticleSEOMeta from '@/components/meta-data-helpers/ArticleSEOMeta.astro';
+import { formatContentDate } from '@/lib/dates';
+
+
+export async function getStaticPaths() {
+  const jobs = await getCollection('press');
+  return jobs.map((job) => ({
+    params: { slug: job.id },
+    props: { job },
+  }));
+}
+
+const path = decodeURIComponent(Astro.url.pathname).toLowerCase();
+const { job } = Astro.props as { job: CollectionEntry<'press'> };
+const { title, date, summary } = job.data;
+const { Content } = await render(job);
+---
+
+<title>Press Releases | Phaeno</title>
+<meta name="description" content="Phaeno is revolutionizing RNA sequencing with full-length, high-fidelity reads. Discover our platform and team." />
+
+<Layout>
+  <ArticleSEOMeta 
+    slot="head"
+    title={title}
+    description={summary}
+    datePosted={date}
+    documentType="Web Page"
+    searchTitle={`Press Release - ${title}`}
+  />      
+  <main id="main">
+    <section>
+      <p>Media | <a href="/media/press-releases">Press Releases</a> | {job.id}</p>
+      <h1 id={`${title.replace(/\s+/g, '-').toLowerCase()}`} class="text-3xl sm:text-4xl font-semibold tracking-tight text-neutral-900">{title}</h1>
+      <p class="text-sm text-gray-500">Published {formatContentDate(date)}</p>
+      <Content />      
+      
+      <hr class="text-zinc-200 mt-12" />
+
+      <div class="flex justify-end my-10">
+        <ShareWithSocialMedia 
+          title={title} 
+          link={path} 
+          summary={summary} 
+        />
+      </div>
+    </section>
+  </main>
+</Layout>

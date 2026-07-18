@@ -1,0 +1,166 @@
+---
+import { FaLinkedin, FaSquareXTwitter, FaFacebook, FaReddit, FaWhatsapp, FaTelegram, FaEnvelope } from 'react-icons/fa6';
+
+interface IProps {
+  title: string
+  link: string
+  summary: string
+}
+
+const {title, link, summary} = Astro.props;
+const fullPath = new URL(link, Astro.site ?? Astro.url.origin).href;
+const shareText = summary ? `${title}: ${summary}` : title;
+const iconSize: number = 25;
+
+function getShareUrl(baseUrl: string, params: Record<string, string>) {
+  const url = new URL(baseUrl);
+  for (const [key, value] of Object.entries(params)) {
+    url.searchParams.set(key, value);
+  }
+  return url.href;
+}
+
+const linkedInShareUrl = getShareUrl('https://www.linkedin.com/shareArticle', {
+  mini: 'true',
+  url: fullPath,
+  title,
+  summary,
+});
+const xShareUrl = getShareUrl('https://x.com/intent/post', {
+  text: title,
+  url: fullPath,
+});
+const redditShareUrl = getShareUrl('https://reddit.com/submit', {
+  url: fullPath,
+  title,
+});
+const facebookShareUrl = getShareUrl('https://www.facebook.com/sharer.php', {
+  u: fullPath,
+});
+const whatsappShareUrl = getShareUrl('https://api.whatsapp.com/send', {
+  text: fullPath,
+});
+const telegramShareUrl = getShareUrl('https://t.me/share/url', {
+  url: fullPath,
+  text: shareText,
+});
+const emailShareUrl = `mailto:?${new URLSearchParams({
+  subject: title,
+  body: fullPath,
+}).toString()}`;
+---
+
+<div class="flex flex-col">
+  <div class="mb-1.5 text-right"><b>Share on social media</b></div>
+  <div class="icon-container">
+    <a 
+      class="linked-in"
+      target="_blank"       
+      rel="noopener noreferrer"
+      title="LinkedIn"
+      aria-label="Share this article on LinkedIn – opens in a new tab"
+      href={linkedInShareUrl}
+    >
+      <FaLinkedin 
+        size={iconSize} 
+      />
+    </a>
+
+    <a
+      class="twitter" 
+      target="_blank" 
+      rel="noopener noreferrer"
+      title="X"
+      aria-label="Share this article on X – opens in a new tab"
+      href={xShareUrl}
+    >
+      <FaSquareXTwitter 
+        size={iconSize} 
+      />
+    </a>
+    <a
+      class="reddit" 
+      target="_blank" 
+      rel="noopener noreferrer"
+      title="Reddit"
+      aria-label="Share this article on Reddit – opens in a new tab"
+      href={redditShareUrl}
+    >
+      <FaReddit 
+        size={iconSize} 
+      />
+    </a>
+
+    <a 
+      class="facebook"
+      target="_blank" 
+      rel="noopener noreferrer"
+      title="Facebook"
+      aria-label="Share this article on Facebook – opens in a new tab"
+      href={facebookShareUrl}
+    >
+      <FaFacebook 
+        size={iconSize} 
+      />
+    </a>  
+
+    <a 
+      class="whatsapp"
+      target="_blank" 
+      rel="noopener noreferrer"
+      title="WhatsApp"
+      aria-label="Share this article on WhatsApp – opens in a new tab"
+      href={whatsappShareUrl}
+    >
+      <FaWhatsapp size={iconSize} />
+    </a>
+
+    <a
+      class="telegram" 
+      target="_blank" 
+      rel="noopener noreferrer"
+      title="Telegram"
+      aria-label="Share this article on Telegram – opens in a new tab"
+      href={telegramShareUrl}
+    >
+      <FaTelegram size={iconSize} />
+    </a>
+
+    <a 
+      title="Email"
+      aria-label="Share this article by email – opens your default email application"
+      href={emailShareUrl}
+      rel="nofollow"
+    >
+      <FaEnvelope 
+        size={iconSize} 
+      />
+    </a>      
+  </div>
+</div>
+
+<style>
+.icon-container {
+  display: flex;
+  justify-items: center;
+  gap: 1.1rem;
+  width: fit-content;
+}
+
+a { transition: color 0.3s ease, transform 0.3s ease; }
+a:hover { transform: scale(1.1); }
+a:active { transform: scale(1); }
+
+.linked-in:hover  { color: #0077B5; }   /* LinkedIn Blue */
+.twitter:hover    { color: black; }     /* Twitter Black */
+.reddit:hover     { color: #FF4500; }   /* Reddit Orange */
+.facebook:hover   { color: #1877F2; }   /* Facebook Blue */
+.whatsapp:hover   { color: #25D366; }   /* WhatsApp Green */
+.telegram:hover   { color: #0088CC; }   /* Telegram Blue */
+
+@media (max-width: 450px) {
+  .icon-container {
+    gap: 1rem;
+  }
+} 
+</style>

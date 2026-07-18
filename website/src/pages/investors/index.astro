@@ -1,0 +1,98 @@
+---
+import SEOMeta from '@/components/meta-data-helpers/SEOMeta.astro';
+import TopPageBanner from '@/components/TopPageBanner.astro';
+import Layout from '@/layouts/Layout.astro';
+---
+<Layout>
+  <SEOMeta 
+    slot="head"
+    title="Investors | Phaeno"
+    description="Explore Phaeno's investment opportunity around PSeq, full-length RNA sequencing, and mapping the functional human genome."
+    documentType="Web Page"
+    searchTitle="Investors"
+    searchKeywords="Phaeno investors PSeq funding full-length RNA sequencing functional human genome short-read NGS transcriptomics"
+  />    
+  <main id="main" tabindex="-1">
+    <TopPageBanner title="Investors" image="image-3" />
+    <section>
+      <h2
+        id="investor-page"
+        data-phaeno-search="Phaeno investor opportunity"
+        data-phaeno-search-summary="Phaeno is building PSeq to map the functional human genome with full-length, isoform-resolved RNA sequencing on short-read instruments."
+        data-phaeno-search-keywords="Phaeno investor opportunity PSeq functional human genome isoform-resolved RNA sequencing"
+      >Investing in the Functional Human Genome</h2>
+      <p class="max-w-4xl text-lg leading-7 text-neutral-700">
+        Phaeno is developing PSeq to make full-length, isoform-resolved RNA measurement practical on short-read NGS
+        instruments already used at scale. The opportunity is to move transcriptomics beyond collapsed gene counts and
+        expose RNA-level biology for studies of phenotype and therapeutic response, with outputs structured for
+        machine-learning-driven discovery.
+      </p>
+
+      <div class="mt-5 grid gap-4 md:grid-cols-3">
+        <div class="investor-card">
+          <h3>Why now</h3>
+          <p>
+            Short-read sequencing infrastructure is mature, but biology increasingly demands molecule-level transcript
+            resolution. PSeq is designed to close that gap without requiring specialized long-read instruments.
+          </p>
+        </div>
+        <div class="investor-card">
+          <h3>What is different</h3>
+          <p>
+            PSeq combines chemistry and software to recover full-length RNA information, quantify individual molecules,
+            and produce isoform-level feature matrices designed for downstream ML models and established analysis tools.
+          </p>
+        </div>
+        <div class="investor-card">
+          <h3>Current stage</h3>
+          <p>
+            Phaeno has raised $1.4M to date and is engaging qualified investors who can help accelerate validation,
+            commercialization, and platform adoption.
+          </p>
+        </div>
+      </div>
+
+      <div class="mt-6 rounded-2xl border border-slate-200 bg-slate-50 p-5">
+        <h3
+          id="investor-contact"
+          data-phaeno-search="Contact Phaeno for investor inquiries"
+          data-phaeno-search-summary="Qualified investors can contact Phaeno to discuss the PSeq investment opportunity."
+          data-phaeno-search-keywords="Phaeno investor inquiry qualified investors PSeq funding"
+        >Investor inquiries</h3>
+        <p class="mb-0">
+          Qualified investors interested in Phaeno's mission can{' '}
+          <a
+            aria-label="Email Phaeno to make an investment inquiry."
+            href="mailto:info@phaenobiotech.com?subject=Investor Inquiry"
+            rel="nofollow"
+          >email us</a>{' '}
+          to start a conversation.
+        </p>
+      </div>
+    </section>
+  </main>
+</Layout>
+
+<style>
+  .investor-card {
+    border: 1px solid rgb(226 232 240);
+    border-radius: 1rem;
+    background: white;
+    padding: 1.25rem;
+    box-shadow: 0 1px 2px rgba(15, 23, 42, 0.08);
+  }
+
+  .investor-card h3 {
+    margin: 0;
+    padding: 0;
+    font-size: 1.1rem;
+    font-weight: 600;
+  }
+
+  .investor-card p {
+    margin: 0.5rem 0 0;
+    font-size: 0.925rem;
+    line-height: 1.55;
+    color: rgb(51 65 85);
+  }
+</style>

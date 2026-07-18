@@ -1,0 +1,127 @@
+---
+import { Image } from 'astro:assets';
+import Menu from './Menu.astro';
+import SignupButton from '@/components/SignupButton.astro';
+import menu from './menu-versions/short-menu';
+import MobileMenuButton from './MobileMenuButton.astro';
+import Search from '@/components/web-search/Search';
+
+const currentPath = decodeURIComponent(Astro.url.pathname).toLowerCase();
+---
+
+<header id="site-header" class="visible">
+  <div class="header-container">
+    <a class="logo-link" href="/" aria-label="Phaeno – Home">
+      <Image 
+        src="/images/phaeno124x40.webp" 
+        alt="Phaeno Logo"
+        height={40}
+        width={124}
+      />
+    </a>
+    <div class="header-actions flex items-center">
+      <div class="mobile-signup-holder">
+        <Search client:load />
+        <SignupButton size="wide" />
+      </div>
+      <MobileMenuButton />
+      <Menu menuItems={menu} currentPath={currentPath} />
+      <div class="desktop-signup-holder">
+        <Search client:load />
+        <SignupButton size="wide" />
+      </div>
+    </div>
+  </div>
+</header>
+
+<style> 
+header {
+  min-height: var(--header-height);
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  z-index: 50;
+  background: rgb(255 255 255 / 0.94);
+  backdrop-filter: blur(18px);
+  display: flex;
+  flex-direction: row;
+  justify-content: center;
+  padding: 0 var(--page-gutter);
+  border-bottom: 1px solid rgb(14 40 65 / 0.1);
+  transition: transform var(--duration-slow) var(--ease-standard), box-shadow var(--duration-base) var(--ease-standard);
+  box-shadow: 0 8px 28px rgb(14 40 65 / 0.06);
+}
+
+header.hidden {
+  transform: translateY(-100%);
+}
+
+header.visible {
+  transform: translateY(0);
+}
+
+.header-container {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+  max-width: var(--content-max-width);
+}
+
+.mobile-signup-holder {
+  display: none;
+}
+
+.desktop-signup-holder {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  margin-left: var(--space-4);
+}
+
+.logo-link {
+  display: inline-flex;
+  align-items: center;
+  padding: var(--space-2) 0;
+  line-height: 0;
+}
+
+.logo-link img {
+  display: block;          /* removes baseline gap under the image */
+  height: 2.55rem;
+  width: auto;
+}
+
+@media (max-width: 1400px) {
+  header {
+    padding-right: .25rem;
+  }
+}
+
+/* Mobile styles */
+@media (max-width: 900px) {
+  header {
+    min-height: 3.75rem;
+    padding: 0 var(--space-3);
+  }
+  .mobile-signup-holder {
+    display: flex;
+    align-items: center;
+    gap: var(--space-1);
+  }
+
+  .header-actions {
+    gap: var(--space-1);
+  }
+  
+  .desktop-signup-holder {
+    display: none;
+  }
+  
+  .logo-link img {
+    height: 2rem;
+  }
+
+}
+</style>

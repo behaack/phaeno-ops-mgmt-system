@@ -1,0 +1,278 @@
+---
+import { getCollection } from 'astro:content';
+import { FaCaretRight } from 'react-icons/fa6';
+import TopPageBanner from '@/components/TopPageBanner.astro';
+import Layout from '@/layouts/Layout.astro';
+import SEOMeta from '@/components/meta-data-helpers/SEOMeta.astro';
+import { formatContentDate } from '@/lib/dates';
+const jobs = await getCollection('jobs');
+const isJobs = (jobs.length > 0)
+---
+<Layout>
+  <SEOMeta 
+    slot="head"
+    title="Job Openings | Phaeno"
+    description="Join Phaeno and help shape the future of RNA sequencing. Explore open roles and our company culture."
+    documentType="List"
+    searchTitle="Jobs"
+  />
+  <main id="main" tabindex="-1">
+    <TopPageBanner title="Job Openings" image="image-3"/>
+    <section>
+      <div class="careers-intro">
+        <div class="careers-intro__copy">
+          <p>
+            We believe great science starts with great people. At Phaeno, we foster a collaborative and inclusive environment where innovation thrives.
+          </p>
+          <p>
+            Our team includes leading experts in chemistry, bioinformatics, and diagnostics — all working together to push the boundaries of RNA technology.
+          </p>
+          <p>
+            Join us and be part of a mission-driven company that’s helping shape the future of precision medicine.
+          </p>
+        </div>
+        <figure class="careers-intro__image" data-phaeno-search-ignore>
+          <img
+            src="/images/career-science-team.png"
+            alt="Scientists collaborating in a molecular biology laboratory"
+            loading="eager"
+            decoding="async"
+          />
+        </figure>
+      </div>
+
+      {(isJobs)
+      ? (
+          <div class="mt-12 mb-2 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+            <input
+              id="jobSearch"
+              type="text"
+              placeholder="Search jobs..."
+              class="w-full sm:w-2/3 px-4 py-2 rounded-md text-black"
+              oninput="filterJobs()"
+            />
+
+            <label for="jobType" class="sr-only">Job type</label>
+            <select 
+              id="jobType" 
+              class="w-full sm:w-1/3 px-4 py-2 rounded-md text-black" 
+              name="jobType"
+              aria-label="Job type"          
+              onchange="filterJobs()"
+            >
+              <option value="">All Types</option>
+              <option value="Full-time">Full-time</option>
+              <option value="Part-time">Part-time</option>
+              <option value="Contract">Contract</option>
+              <option value="Temporary">Temporary</option>
+              <option value="Intern">Intern</option>
+              <option value="Other">Other</option>
+            </select>    
+          </div>
+          <div class="mt-2 mb-6 gap-2 flex items-center">
+            <div class="pl-1 text-gray-600">Location: </div>
+            <div class="flex gap-9 items-center">
+              <label class="inline-flex items-center gap-1">
+                <input 
+                  type="checkbox"
+                  id="filterRemote"
+                  value="Remote"
+                  checked
+                  onchange="filterJobs()" 
+                />
+                  <span>Remote</span>
+              </label>
+      
+              <label class="inline-flex items-center gap-1">
+                <input 
+                  type="checkbox"
+                  id="filterOnsite"
+                  value="On-Site"
+                  checked
+                  onchange="filterJobs()" 
+                />
+                  <span>On-Site</span>
+              </label>
+            </div>       
+          </div>                  
+        ) 
+        : (
+          <div class="text-center pt-10">
+            <p id="msgEmpty" class="text-gray-600 italic">Sorry, we don't have any job openings right now.<br/>Check back soon.</p>
+          </div>
+        )
+      }
+
+      <ul 
+        id="jobList"
+        class="ml-0" 
+      >
+        {jobs.map(job => (
+          <li 
+            class="job-card"
+            data-search={`${job.data.title}`.toLowerCase()}
+            data-title={job.data.title.toLowerCase()} 
+            data-type={job.data.employmentType}
+            data-location={job.data.locationType}
+          > 
+            <div class="flex items-center gap-4 -ml-4">
+              <div style="color: #7F943A;"><FaCaretRight size={50}/></div>
+              <div>                
+                <a class="list-alternative" href={`/about/job-openings/${job.id}`}>
+                  <h2 id={`${job.data.id}-${job.data.title.replace(/\s+/g, '-').toLowerCase()}`}>
+                    {job.data.id} - {job.data.title}
+                  </h2>                
+                </a>
+                <p class="text-sm text-gray-600 p-0 m-0 mb-0.5">{job.data.employmentType} • {job.data.locationType} • {job.data.locationDescription}</p>
+                <p class="text-sm text-gray-600 p-0 m-0 mb-0.5">{job.data.summary}</p>
+                <p class="text-sm text-gray-600 p-0 m-0">Posted on {formatContentDate(job.data.date)}</p>
+              </div>
+            </div>       
+          </li>
+        ))}
+      </ul>
+      <div class="text-center">
+        <p id="msgEmpty"   class="text-gray-600 italic" hidden>Sorry, we don't have any job openings right now.<br/>Check back soon.</p>
+        {(isJobs) && <p id="msgNoMatch" class="text-gray-600 italic" hidden>No jobs match your criteria.</p>}
+      </div>
+      <br />     
+    </section>
+  </main>
+</Layout>
+
+<style>
+.careers-intro {
+  display: grid;
+  grid-template-columns: minmax(0, 1.05fr) minmax(22rem, .95fr);
+  gap: clamp(2rem, 5vw, 5rem);
+  align-items: stretch;
+}
+
+.careers-intro__copy {
+  align-self: center;
+}
+
+.careers-intro__copy p:first-child {
+  margin-top: 0;
+}
+
+.careers-intro__copy p:last-child {
+  margin-bottom: 0;
+}
+
+.careers-intro__image {
+  position: relative;
+  min-height: 0;
+  margin: 0;
+  overflow: hidden;
+  border: 1px solid var(--phaeno-green-200);
+  border-radius: var(--radius-xl);
+  box-shadow: var(--shadow-sm);
+}
+
+.careers-intro__image img {
+  position: absolute;
+  inset: 0;
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  object-position: center;
+}
+
+ul {
+  list-style: none;
+}
+
+li {
+  padding: 10px 0;
+  border-bottom: 1px rgba(128, 128, 128, 0.123) solid; 
+}
+
+ul li:last-child {
+  border-bottom: none;
+}
+
+a {
+  font-size: 1.5rem;
+}
+
+a > h2 {
+  color: inherit;              /* Inherit link color (e.g., blue for unvisited links) */
+  text-decoration: inherit;    /* Inherit underline if the <a> has it */
+  font-weight: inherit;        /* Match boldness */
+  font-size: inherit;          /* Match font size */
+  margin: 0;                   /* Reset default h2 margins to avoid extra spacing */
+  padding: 0;                  /* Reset padding if needed */
+  display: inline;             /* Make it behave like inline text, not a block */  
+}
+
+.sr-only {
+  position:absolute; width:1px; height:1px; padding:0; margin:-1px;
+  overflow:hidden; clip:rect(0,0,0,0); white-space:nowrap; border:0;
+}
+
+.job-card[hidden] { display:none; }  
+
+@media (max-width: 760px) {
+  .careers-intro {
+    grid-template-columns: 1fr;
+    gap: var(--space-6);
+  }
+
+  .careers-intro__image {
+    height: 14rem;
+  }
+}
+</style>
+
+<script is:inline>
+  function filterJobs () {
+    const jobCards = document.querySelectorAll('.job-card');
+
+    // If there are no jobs rendered, nothing to filter (and controls may not exist).
+    if (jobCards.length === 0) return;
+
+    const jobSearchEl   = document.getElementById('jobSearch');
+    const jobTypeEl     = document.getElementById('jobType');
+    const filterRemoteEl= document.getElementById('filterRemote');
+    const filterOnsiteEl= document.getElementById('filterOnsite');
+    const msgNoMatchEl  = document.getElementById('msgNoMatch');
+
+    // Controls are only rendered when isJobs=true. If missing, just bail safely.
+    if (!jobSearchEl || !jobTypeEl || !filterRemoteEl || !filterOnsiteEl) return;
+
+    const search     = jobSearchEl.value.trim().toLowerCase();
+    const typeFilter = jobTypeEl.value;
+    const remoteOn   = filterRemoteEl.checked;
+    const onsiteOn   = filterOnsiteEl.checked;
+
+    let visibleCount = 0;
+
+    jobCards.forEach(job => {
+      const title    = (job.dataset.title ?? '');
+      const jobType  = (job.dataset.type ?? '');
+      const location = (job.dataset.location ?? '');
+
+      const matchesSearch = !search || title.includes(search);
+      const matchesType   = !typeFilter || jobType === typeFilter;
+
+      let matchesLocation = false;
+      if (remoteOn || onsiteOn) {
+        matchesLocation =
+          (remoteOn && location === 'Remote') ||
+          (onsiteOn && location === 'On-Site');
+      }
+
+      const show = matchesSearch && matchesType && matchesLocation;
+      job.hidden = !show;
+      if (show) visibleCount++;
+    });
+
+    if (msgNoMatchEl) msgNoMatchEl.hidden = visibleCount !== 0;
+  }
+
+  window.addEventListener('DOMContentLoaded', () => {
+    filterJobs();
+  });
+</script>

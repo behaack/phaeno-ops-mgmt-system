@@ -1,0 +1,639 @@
+---
+import Layout from '@/layouts/Layout.astro'
+import TopPageBanner from '@/components/TopPageBanner.astro'
+import SEOMeta from '@/components/meta-data-helpers/SEOMeta.astro'
+
+const fragilities = [
+  {
+    label: 'Signal',
+    title: 'Errors compound',
+    copy: 'Each layer introduces bias and uncertainty. Integration multiplies those errors—especially when upstream signals are weak.',
+  },
+  {
+    label: 'Models',
+    title: 'Assumptions accumulate',
+    copy: 'Many methods assume correspondence across modalities that biology does not consistently obey.',
+  },
+  {
+    label: 'Operations',
+    title: 'Workflow burden grows',
+    copy: 'More assays mean more samples, more QC, more batch effects, and more operational complexity.',
+  },
+  {
+    label: 'Economics',
+    title: 'Cost scales poorly',
+    copy: 'Marginal biological insight often drops as cost and coordination rise.',
+  },
+  {
+    label: 'Evidence',
+    title: 'Reproducibility suffers',
+    copy: 'Standardization is uneven across modalities, making results difficult to replicate across labs.',
+  },
+  {
+    label: 'Outcomes',
+    title: 'Returns diminish',
+    copy: 'Adding layers can look holistic while producing models that overfit noise.',
+  },
+]
+
+const benefits = [
+  {
+    label: 'Resolution',
+    title: 'Isoform-resolved inputs',
+    copy: 'Reduce transcript-to-protein mismatch by capturing the complete RNA molecules that are actually expressed.',
+    emphasis: true,
+  },
+  {
+    label: 'Proteomics',
+    title: 'Higher-fidelity discovery',
+    copy: 'Improve protein discovery and interpretation with transcript features that preserve molecular identity.',
+  },
+  {
+    label: 'Context',
+    title: 'Regulation stays visible',
+    copy: 'Capture promoter, UTR, and processing signals that shape translation without adding another assay layer.',
+  },
+  {
+    label: 'Workflow',
+    title: 'Fewer moving parts',
+    copy: 'Collapse multiple transcript questions into one sample preparation and sequencing workflow.',
+  },
+  {
+    label: 'Stability',
+    title: 'Less downstream fragility',
+    copy: 'Reduce error compounding and give integration models a more stable biological foundation.',
+  },
+  {
+    label: 'Intelligence',
+    title: 'ML-ready features',
+    copy: 'Produce structured, molecule-level features designed as inputs to downstream machine-learning models.',
+  },
+]
+---
+
+<Layout>
+  <SEOMeta
+    slot="head"
+    title="PSeq & Multi-omics | Phaeno"
+    description="Why multi-omics often breaks down in practice—and how PSeq strengthens the transcript layer for downstream biology and AI."
+    documentType="Web Page"
+    searchTitle="PSeq & Multi-omics"
+    searchKeywords="multi-omics PSeq transcript layer proteomics AI machine learning isoform resolution regulatory context batch effects reproducibility omics integration"
+  />
+
+  <main id="main" class="multiomics-page" tabindex="-1">
+    <TopPageBanner title="PSeq & Multi-omics" image="image-2" />
+
+    <div class="page-shell">
+      <section class="intro-section" aria-labelledby="first-line-discovery-layer">
+        <div>
+          <p class="eyebrow">The discovery foundation</p>
+          <h2
+            id="first-line-discovery-layer"
+            data-phaeno-search="PSeq as the first-line discovery layer for multi-omics"
+            data-phaeno-search-summary="PSeq strengthens the transcript layer so downstream biology, proteomics, and AI do not rest on noisy or low-resolution inputs."
+            data-phaeno-search-keywords="PSeq multi-omics transcript layer proteomics AI first-line discovery"
+          ><span class="intro-title__first-line">Better multi-omics</span><br />starts with a resolved transcript layer.</h2>
+        </div>
+
+        <div class="intro-section__copy">
+          <p>Multi-omics can be powerful—but it becomes fragile and expensive when upstream measurements are noisy or low-resolution.</p>
+          <aside class="intro-thesis" data-phaeno-search-ignore>
+            <span>Core principle</span>
+            <strong>Better inputs beat more layers.</strong>
+            <p>PSeq resolves complete RNA molecules so downstream biology, proteomics, and AI begin with measured structure instead of statistical guesswork.</p>
+          </aside>
+        </div>
+      </section>
+
+      <section class="fragility-section" aria-labelledby="why-multi-omics-breaks-down">
+        <div class="section-heading section-heading--split">
+          <div>
+            <p class="eyebrow">Where integration fails</p>
+            <h2
+              id="why-multi-omics-breaks-down"
+              data-phaeno-search="Why multi-omics breaks down in practice"
+              data-phaeno-search-summary="Multi-omics workflows can compound errors, add assumptions, increase cost, and reduce reproducibility when upstream measurements are weak."
+              data-phaeno-search-keywords="multi-omics errors assumptions workflow burden cost reproducibility diminishing returns"
+            >More data does not automatically create more truth.</h2>
+          </div>
+          <p>When the first biological measurement is incomplete, every downstream layer inherits the uncertainty—and adds its own.</p>
+        </div>
+
+        <div class="fragility-grid">
+          {fragilities.map((item) => (
+            <article class="fragility-card">
+              <p class="card-label">{item.label}</p>
+              <h3>{item.title}</h3>
+              <p>{item.copy}</p>
+            </article>
+          ))}
+        </div>
+      </section>
+
+      <section class="foundation-section" aria-labelledby="resolution-first-workflow">
+        <div class="foundation-section__inner">
+          <div class="foundation-section__statement">
+            <p class="eyebrow">Resolve before you integrate</p>
+            <h2
+              id="resolution-first-workflow"
+              data-phaeno-search="A resolution-first workflow for multi-omics"
+              data-phaeno-search-summary="PSeq creates a resolved transcript foundation that preserves molecular context for downstream proteomics, biology, and machine learning."
+            >PSeq is not another layer. It strengthens the layer everything else depends on.</h2>
+            <p>A complete transcript measurement makes every downstream layer more interpretable.</p>
+          </div>
+
+          <div class="foundation-flow" data-phaeno-search-ignore>
+            <article>
+              <div><p>Measure</p><h3>Resolve complete RNA molecules</h3></div>
+            </article>
+            <article>
+              <div><p>Preserve</p><h3>Keep isoform and regulatory context</h3></div>
+            </article>
+            <article>
+              <div><p>Integrate</p><h3>Connect cleaner features downstream</h3></div>
+            </article>
+          </div>
+        </div>
+      </section>
+
+      <section class="benefit-section" aria-labelledby="how-pseq-improves-multi-omics">
+        <div class="section-heading section-heading--split">
+          <div>
+            <p class="eyebrow">The highest-leverage layer</p>
+            <h2
+              id="how-pseq-improves-multi-omics"
+              data-phaeno-search="How PSeq improves multi-omics"
+              data-phaeno-search-summary="PSeq improves the transcript layer with isoform resolution, regulatory context, simpler workflows, and ML-ready molecule-level features."
+              data-phaeno-search-keywords="PSeq multi-omics isoform resolution proteomics regulatory context ML-ready inputs"
+            >One better transcript layer improves the entire stack.</h2>
+          </div>
+          <p>Proteomics and multi-omics workflows become more useful when RNA measurements preserve the molecules and regulatory context biology actually produced.</p>
+        </div>
+
+        <div class="benefit-grid">
+          {benefits.map((item) => (
+            <article class:list={['benefit-card', { 'benefit-card--emphasis': item.emphasis }]}>
+              <p class="card-label">{item.label}</p>
+              <h3>{item.title}</h3>
+              <p>{item.copy}</p>
+            </article>
+          ))}
+        </div>
+      </section>
+
+      <section class="closing-panel" data-phaeno-search-ignore>
+        <div class="closing-panel__inner">
+          <div>
+            <p class="eyebrow">Build on resolved biology</p>
+            <h2>Give every downstream layer a stronger starting point.</h2>
+          </div>
+          <div class="closing-panel__actions">
+            <a class="button-primary" href="/contact#request-demo">Request a demo</a>
+            <a class="button-secondary" href="/technology">Explore PSeq technology</a>
+          </div>
+        </div>
+      </section>
+    </div>
+  </main>
+</Layout>
+
+<style>
+.multiomics-page {
+  container-type: inline-size;
+  background: var(--color-canvas);
+}
+
+.page-shell {
+  width: 100%;
+  max-width: 80rem;
+  margin: 0 auto;
+  padding-inline: var(--page-gutter);
+}
+
+.eyebrow,
+.card-label {
+  margin: 0;
+  color: var(--color-brand-strong);
+  font-size: var(--font-size-xs);
+  font-weight: var(--font-weight-semibold);
+  letter-spacing: .15em;
+  text-transform: uppercase;
+}
+
+.intro-section {
+  display: grid;
+  grid-template-columns: minmax(0, 1.05fr) minmax(31rem, .95fr);
+  gap: clamp(2.5rem, 5vw, 5rem);
+  align-items: start;
+  padding: clamp(3.5rem, 7vw, 6rem) 0;
+}
+
+.intro-section h2,
+.section-heading h2,
+.foundation-section h2,
+.closing-panel h2 {
+  margin: 0;
+  color: var(--phaeno-rna-900);
+  font-weight: var(--font-weight-medium);
+  letter-spacing: -.045em;
+  line-height: 1;
+}
+
+.intro-section h2 {
+  max-width: 15ch;
+  margin-top: var(--space-4);
+  font-size: clamp(2.8rem, 5.2vw, 5rem);
+  line-height: .97;
+}
+
+.intro-title__first-line {
+  white-space: nowrap;
+}
+
+.intro-section__copy {
+  padding-top: calc(var(--space-12) + var(--space-2));
+}
+
+.intro-section__copy > p {
+  margin: 0;
+  color: var(--phaeno-neutral-700);
+  font-size: var(--font-size-lg);
+  line-height: 1.65;
+}
+
+.intro-section__copy > p + p {
+  margin-top: var(--space-5);
+}
+
+.intro-thesis {
+  position: relative;
+  box-sizing: border-box;
+  width: 100%;
+  margin-top: var(--space-5);
+  padding: var(--space-6);
+  overflow: hidden;
+  border-radius: var(--radius-xl);
+  color: var(--color-text-on-dark);
+  background: var(--phaeno-rna-900);
+}
+
+.intro-thesis::after {
+  position: absolute;
+  right: -4rem;
+  bottom: -5rem;
+  width: 10rem;
+  height: 10rem;
+  border: 1px solid rgb(183 200 164 / .25);
+  border-radius: 50%;
+  content: '';
+}
+
+.intro-thesis span {
+  display: block;
+  color: var(--phaeno-green-300);
+  font-size: var(--font-size-xs);
+  font-weight: var(--font-weight-semibold);
+  letter-spacing: .14em;
+  text-transform: uppercase;
+}
+
+.intro-thesis strong {
+  display: block;
+  margin-top: var(--space-3);
+  font-size: clamp(1.35rem, 2vw, 1.75rem);
+  white-space: nowrap;
+}
+
+.intro-thesis p {
+  max-width: 29rem;
+  margin: var(--space-2) 0 0;
+  color: rgb(255 255 255 / .7);
+  line-height: 1.5;
+}
+
+.fragility-section,
+.benefit-section {
+  padding: clamp(2.5rem, 4.5vw, 4.25rem);
+  border-radius: var(--radius-2xl);
+}
+
+.fragility-section {
+  background: var(--phaeno-neutral-100);
+}
+
+.benefit-section {
+  background: var(--phaeno-green-50);
+}
+
+.section-heading {
+  margin-bottom: clamp(2rem, 4vw, 3.25rem);
+}
+
+.section-heading--split {
+  display: grid;
+  grid-template-columns: minmax(0, 38rem) minmax(18rem, 22rem);
+  gap: clamp(2rem, 4vw, 3rem);
+  align-items: end;
+  justify-content: start;
+}
+
+.section-heading h2,
+.foundation-section h2,
+.closing-panel h2 {
+  margin-top: var(--space-4);
+  font-size: clamp(2.2rem, 4vw, 3.75rem);
+}
+
+.section-heading--split > p {
+  margin: 0 0 .25rem;
+  color: var(--phaeno-neutral-700);
+  font-size: var(--font-size-lg);
+  line-height: 1.6;
+}
+
+.fragility-grid,
+.benefit-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: var(--space-4);
+}
+
+.fragility-card,
+.benefit-card {
+  min-height: 13.5rem;
+  padding: var(--space-6);
+  border: 1px solid var(--phaeno-green-200);
+  border-radius: var(--radius-xl);
+  background: var(--color-surface);
+  box-shadow: var(--shadow-sm);
+}
+
+.fragility-card h3,
+.benefit-card h3 {
+  margin: var(--space-5) 0 0;
+  color: var(--phaeno-rna-900);
+  font-size: clamp(1.3rem, 2vw, 1.65rem);
+  line-height: 1.12;
+}
+
+.fragility-card > p:last-child,
+.benefit-card > p:last-child {
+  margin: var(--space-4) 0 0;
+  color: var(--phaeno-neutral-700);
+  line-height: 1.55;
+}
+
+.foundation-section {
+  width: 100cqw;
+  max-width: none;
+  margin: clamp(3rem, 5vw, 4.5rem) calc(50% - 50cqw);
+  padding: 0;
+  color: var(--color-text-on-dark);
+  background:
+    radial-gradient(circle at 92% 12%, rgb(28 127 152 / .3), transparent 34%),
+    var(--phaeno-rna-900);
+}
+
+.foundation-section__inner {
+  display: grid;
+  grid-template-columns: minmax(0, 1.2fr) minmax(22rem, .8fr);
+  gap: clamp(2.5rem, 5vw, 4rem);
+  align-items: center;
+  width: 100%;
+  max-width: var(--content-max-width);
+  margin: 0 auto;
+  padding: clamp(3rem, 6vw, 5rem) var(--page-gutter);
+}
+
+.foundation-section .eyebrow {
+  color: var(--phaeno-green-300);
+}
+
+.foundation-section h2 {
+  color: var(--color-text-on-dark);
+}
+
+.foundation-section__statement > p:last-child {
+  margin: var(--space-5) 0 0;
+  color: rgb(255 255 255 / .7);
+  font-size: var(--font-size-lg);
+  line-height: 1.6;
+}
+
+.foundation-flow {
+  display: grid;
+  gap: var(--space-3);
+}
+
+.foundation-flow article {
+  padding: var(--space-5);
+  border: 1px solid rgb(255 255 255 / .15);
+  border-radius: var(--radius-xl);
+  background: rgb(255 255 255 / .07);
+}
+
+.foundation-flow p {
+  margin: 0;
+  color: var(--phaeno-green-300);
+  font-size: var(--font-size-xs);
+  font-weight: var(--font-weight-semibold);
+  letter-spacing: .13em;
+  text-transform: uppercase;
+}
+
+.foundation-flow h3 {
+  margin: var(--space-1) 0 0;
+  color: var(--color-text-on-dark);
+  font-size: var(--font-size-lg);
+  line-height: 1.3;
+}
+
+.benefit-card--emphasis {
+  color: var(--color-text-on-dark);
+  border-color: rgb(183 200 164 / .25);
+  background: var(--phaeno-rna-900);
+}
+
+.benefit-card--emphasis .card-label {
+  color: var(--phaeno-green-300);
+}
+
+.benefit-card--emphasis h3 {
+  color: var(--color-text-on-dark);
+}
+
+.benefit-card--emphasis > p:last-child {
+  color: rgb(255 255 255 / .72);
+}
+
+.closing-panel {
+  width: 100cqw;
+  max-width: none;
+  margin: clamp(3rem, 5vw, 4.5rem) calc(50% - 50cqw) 0;
+  padding: 0;
+  background: var(--phaeno-green-100);
+}
+
+.closing-panel__inner {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: var(--space-8);
+  width: 100%;
+  max-width: var(--content-max-width);
+  margin: 0 auto;
+  padding: clamp(3rem, 6vw, 5rem) var(--page-gutter);
+}
+
+.closing-panel h2 {
+  max-width: 18ch;
+  font-size: clamp(2rem, 3.5vw, 3.25rem);
+}
+
+.closing-panel__actions {
+  display: flex;
+  flex-shrink: 0;
+  gap: var(--space-3);
+  transform: translateY(1.375rem);
+}
+
+.closing-panel a {
+  padding: .9rem 1.35rem;
+  border: 1px solid transparent;
+  border-radius: var(--radius-pill);
+  font-weight: var(--font-weight-semibold);
+  text-align: center;
+  transition:
+    color var(--duration-fast) var(--ease-standard),
+    background-color var(--duration-base) var(--ease-standard),
+    box-shadow var(--duration-base) var(--ease-standard),
+    transform var(--duration-fast) var(--ease-standard);
+}
+
+.button-primary {
+  color: var(--color-text-on-dark);
+  background: var(--phaeno-orange-500);
+}
+
+.button-primary:hover {
+  color: var(--color-text-on-dark);
+  background: var(--phaeno-orange-600);
+  box-shadow: var(--shadow-md);
+  transform: translateY(-1px);
+}
+
+.button-secondary {
+  color: var(--phaeno-rna-900);
+  border-color: var(--phaeno-rna-700) !important;
+}
+
+.button-secondary:hover {
+  color: var(--color-text-on-dark);
+  background: var(--phaeno-rna-900);
+  transform: translateY(-1px);
+}
+
+@media (max-width: 980px) {
+  .intro-section,
+  .foundation-section__inner,
+  .section-heading--split {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .intro-section__copy {
+    max-width: 48rem;
+    padding-top: 0;
+  }
+
+  .intro-thesis strong {
+    white-space: normal;
+  }
+
+  .section-heading--split {
+    gap: var(--space-5);
+    align-items: start;
+  }
+
+  .section-heading--split > p {
+    max-width: 48rem;
+  }
+
+  .fragility-grid,
+  .benefit-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .foundation-section {
+    gap: var(--space-8);
+  }
+
+  .closing-panel__inner {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+
+  .closing-panel__actions {
+    transform: none;
+  }
+}
+
+@media (max-width: 640px) {
+  .intro-section {
+    gap: var(--space-7, 1.75rem);
+    padding: 2.5rem 0;
+  }
+
+  .intro-section h2 {
+    font-size: clamp(2.5rem, 13vw, 4rem);
+  }
+
+  .intro-title__first-line {
+    white-space: normal;
+  }
+
+  .fragility-section,
+  .benefit-section {
+    margin-right: -.25rem;
+    margin-left: -.25rem;
+    padding: 1.5rem;
+    border-radius: var(--radius-xl);
+  }
+
+  .fragility-grid,
+  .benefit-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .fragility-card,
+  .benefit-card {
+    min-height: auto;
+  }
+
+  .foundation-section {
+    margin-top: 2.5rem;
+    margin-bottom: 2.5rem;
+  }
+
+  .foundation-section__inner {
+    padding: 2.5rem var(--page-gutter);
+  }
+
+  .closing-panel {
+    margin-top: 2.5rem;
+  }
+
+  .closing-panel__inner {
+    padding: 2.5rem var(--page-gutter);
+  }
+
+  .closing-panel__actions {
+    width: 100%;
+    flex-direction: column;
+  }
+
+  .closing-panel a {
+    width: 100%;
+  }
+}
+</style>

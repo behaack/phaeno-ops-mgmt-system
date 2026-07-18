@@ -2,21 +2,27 @@
 
 ## System shape
 
-Phaeno Portal is a two-application repository with a shared account and tenant model.
+This repository contains three independently built applications: the Portal
+frontend, the Portal/API backend, and the public Phaeno company Website. The
+Portal frontend and API share the account and tenant model; the public Website
+is anonymous and uses only the explicitly public Website API contract.
 
 ```text
 Browser
   -> React/TanStack frontend (`frontend`)
   -> Clerk authentication and bearer token
   -> ASP.NET Core API (`backend/app`)
-Public Phaeno Website
+Public Phaeno Website (`website`)
+  -> Astro static site deployed independently to Vercel
   -> anonymous `/api/v1/web-ops` endpoints in the same ASP.NET Core API
   -> PostgreSQL through EF Core
   -> local managed-file storage in the current development implementation
   -> QuickBooks Online, Postmark, Mailgun, and Google reCAPTCHA through configured adapters
 ```
 
-The frontend and API are separate build units. The root `package.json` delegates common frontend commands; the backend solution lives at `backend/PSeq.Operations.slnx`.
+The Portal frontend, API, and public Website are separate build units. The root
+`package.json` delegates common Portal frontend commands; the backend solution
+lives at `backend/PSeq.Operations.slnx`; Website commands run from `website/`.
 
 ## Backend
 
@@ -193,6 +199,20 @@ cross-audience routes are not exposed. Because the current corpus is compiled in
 browser assets, it contains no confidential procedures. Future help search will
 use a backend index with authenticated audience and locale filtering.
 
+## Public Website
+
+The public company Website is an Astro 7 static application under `website/`.
+It uses React 19 islands, Tailwind 4, MDX/content collections, generated sitemap
+and RSS routes, and the Phaeno design tokens and component rules in
+`website/src/styles/design-system.css`. It is deployed to Vercel independently
+from both the Portal frontend and the ASP.NET Core API.
+
+The Website has no private tenant or database access. Browser-side search,
+contact, non-binding order, reCAPTCHA, public-document, and database-ping flows
+use the anonymous contract owned by `backend/app/Features/Website`. Any change
+to that shared contract must be planned and verified across both directories.
+Generated `dist`, `.astro`, and `node_modules` content is not canonical source.
+
 ## Configuration and deployment
 
 - Backend database: `ConnectionStrings:DefaultConnection` /
@@ -231,6 +251,12 @@ use a backend index with authenticated audience and locale filtering.
   Mailgun secrets.
 - Frontend authentication and API routing: `VITE_CLERK_PUBLISHABLE_KEY`,
   `VITE_API_BASE_URL`, and the development-only `VITE_USE_MOCK_SESSION` switch.
+- Public Website API routing and reCAPTCHA: `PUBLIC_API_BASE_URL` and
+  `PUBLIC_RECAPTCHA_SITE_ID`. These values are compiled into the public static
+  site and must never contain secrets.
+- Public Website deployment: the static output under `website/` is a separate
+  Vercel deployment unit; adding it to this repository does not merge it into
+  the Portal frontend deployment.
 - Deployment is not yet an established production path. Current operational and
   activation boundaries are recorded in `docs/operations-readiness.md`; do not
   infer a target from the Phaeno Website or another repository.
@@ -239,6 +265,8 @@ use a backend index with authenticated audience and locale filtering.
 
 - `AGENTS.md`: canonical repository working rules.
 - `README.md`: setup, API envelope, and persistence overview.
+- `website/AGENTS.md` and `website/README.md`: scoped public Website rules,
+  setup, and API boundary.
 - `docs/plans/AUTH-USER-SYSTEM-PLAN.md`: account-system decisions and remaining work.
 - `docs/user-documentation.md`: help authoring, audience, locale, and search rules.
 - `docs/operations-readiness.md`: current runtime and production-activation boundary.

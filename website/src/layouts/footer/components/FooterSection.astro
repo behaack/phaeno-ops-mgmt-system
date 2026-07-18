@@ -1,0 +1,48 @@
+---
+import SocialMedia from "@/components/SocialMedia.astro";
+import FooterEmail from "./FooterEmail.astro";
+import FooterExternalLink from "./FooterExternalLink.astro";
+import FooterLabel from "./FooterLabel.astro";
+import FooterLink from "./FooterLink.astro";
+
+export interface IContent {
+  type: 'label' | 'email' | 'link' | 'external-link' | 'social-media';
+  label: string;
+  value: string;
+}
+
+export interface ISection {
+  header: string;
+  content: IContent[]
+}
+
+interface IProps {
+  section: ISection;
+}
+
+const { section } = Astro.props as IProps
+---
+
+<div class="flex flex-col gap-1.5">
+  <div class="column-header">{section.header}</div>
+  {section.content.map(item => (              
+    <>
+      {item.type==='label' ? <FooterLabel text={item.label} /> : null}
+      {item.type==='email' ? <FooterEmail contentItem={item} /> : null}
+      {item.type==='link' ? <FooterLink contentItem={item} /> : null}
+      {item.type==='external-link' ? <FooterExternalLink contentItem={item} /> : null}
+      {item.type==='social-media' ? <div class="flex justify-center mt-1"><SocialMedia size="sm" /></div> : null}
+    </>
+  ))}
+</div>
+
+<style>
+.column-header {
+  color: var(--phaeno-green-300);
+  font-size: var(--font-size-xs);
+  font-weight: var(--font-weight-semibold);
+  letter-spacing: .12em;
+  text-transform: uppercase;
+  margin-bottom: var(--space-2);
+}
+</style>

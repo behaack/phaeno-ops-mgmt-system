@@ -1,0 +1,356 @@
+---
+import type { IMenuItem } from "./menu-versions/IMenuItem";
+
+interface IProps {
+  menuItems: IMenuItem[]
+  currentPath: string
+}
+
+const { menuItems, currentPath } = Astro.props as IProps;
+const path = currentPath.endsWith("/") ? currentPath.slice(0, -1) : currentPath;
+const rootParts = path.split('/').filter(item => item !== '');
+const rootPath = path.substring(0, path.lastIndexOf("/"));
+const subRootPath = rootPath.substring(0, rootPath.lastIndexOf("/"));
+
+let parentPath = ''
+let subPath = ''
+switch (rootParts.length) {
+  case 0:
+    parentPath = '/';
+    break;
+  case 1:
+    parentPath = path;
+    break;
+  case 2:
+    parentPath = rootPath;
+    subPath = path;
+    break;
+  case 3:
+    parentPath = subRootPath;
+    subPath = rootPath;
+    break;
+  default:
+    break;
+}
+---
+
+<nav 
+  id="nav" 
+  aria-label="Main navigation"
+>
+  <ul
+    id="main-menu" 
+    role="menubar"
+    class="main-menu" 
+    hidden
+    aria-orientation="horizontal"
+    aria-label="Main menu"
+  >
+    {menuItems.map(item => (
+      <li
+        class={`
+          menu-item
+          ${item.submenu ? 'main-menu-parent' : ''}
+        `}
+        role="none"        
+      >
+        {item.submenu ? (
+          <a
+            href="#"
+            id={`parent-${item.path.replace(/\W+/g, '-')}`}
+            role="menuitem"
+            data-toggle="sub-menu"
+            class={parentPath === item.path ? 'active-parent' : ''}
+            aria-haspopup="true"
+            aria-expanded="false"
+          >
+            <span class="main-menu-label">{item.label}</span>
+          </a>
+        ) : (
+          <a
+            href={item.path}
+            role="menuitem"
+            class={parentPath === item.path ? 'active' : ''}
+            aria-current={parentPath === item.path ? 'page' : undefined}
+          >
+            <span class="main-menu-label">{item.label}</span>
+          </a>
+        )}
+
+        {item.submenu && (
+          <ul 
+            class="sub-menu" 
+            role="menu"
+            aria-labelledby={`parent-${item.path.replace(/\W+/g, '-')}`}
+          >
+            {item.submenu.map(sub => (
+              <li role="none">
+                <a
+                  href={sub.path ?? '#'}
+                  role="menuitem"
+                  class={subPath === sub.path ? ((rootParts.length === 2) ? 'active' : 'active-parent') : ''}
+                  aria-current={subPath === sub.path && rootParts.length === 2 ? 'page' : undefined}
+                  tabindex={-1}
+                >
+                  <span class="sub-menu-label">{sub.label}</span>
+                </a>
+              </li>
+            ))}
+          </ul>
+        )}
+      </li>
+    ))}
+  </ul>
+</nav>
+
+<style>
+.main-menu {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  display: flex;
+  flex-direction: row;
+  gap: var(--space-1);
+}
+
+.menu-item {
+  padding: 0;
+  position: relative;                             /* Needed for submenu positioning */
+}
+
+.menu-item > a {  
+  display: block;
+  padding: 1.45rem .15rem;
+  text-decoration: none;                          /* no underlines */
+  background-color: var(--menu-bgcolor);
+  color: var(--menu-color);
+  outline: none;                                  /* suppress default ring  */
+  border-radius: 0;
+}
+
+.main-menu-label {
+  display: flex;
+  min-height: 2.125rem;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0 .7rem;
+  border-radius: var(--radius-pill);
+  font-size: var(--font-size-sm);
+  font-weight: var(--font-weight-medium);
+  line-height: 1;
+  width: 100%;
+  transition:
+    background-color var(--duration-fast) var(--ease-standard),
+    box-shadow var(--duration-fast) var(--ease-standard);
+}
+
+.menu-item > a.active {
+  background: transparent;
+  color: var(--color-brand-strong);
+}
+
+.menu-item > a.active .main-menu-label {
+  background: var(--phaeno-green-100);
+  box-shadow: inset 0 0 0 1px var(--phaeno-green-200);
+}
+
+.menu-item > a.active-parent {
+  background: transparent;
+  color: var(--color-brand-strong);
+}
+
+.menu-item > a.active-parent .main-menu-label {
+  background: var(--phaeno-green-100);
+  box-shadow: inset 0 0 0 1px var(--phaeno-green-200);
+}
+
+.menu-item > a:focus-visible .main-menu-label {
+  outline: 1px solid var(--focus-ring-color);
+  outline-offset: 2px;
+}
+
+.menu-item:focus-within { color: var(--color-brand-strong); }
+.menu-item > a:hover { color: var(--color-brand-strong); background-color: transparent; }
+.menu-item > a:hover .main-menu-label { background: var(--phaeno-green-100); }
+.menu-item > a:active { color: var(--color-brand-strong); background-color: transparent; }
+.menu-item > a.active:hover,
+.menu-item > a.active:active,
+.menu-item > a.active-parent:hover,
+.menu-item > a.active-parent:active {
+  color: var(--color-brand-strong);
+  background-color: transparent;
+}
+.menu-item > a.active:hover .main-menu-label,
+.menu-item > a.active:active .main-menu-label,
+.menu-item > a.active-parent:hover .main-menu-label,
+.menu-item > a.active-parent:active .main-menu-label {
+  background: var(--phaeno-green-200);
+}
+
+/* --- Menu Menu Parent Item Settings --- */
+.main-menu-parent > a > .main-menu-label::after {
+  content: '▸';
+  font-size: 1rem;
+  line-height: 1;
+  margin-left: 0.5rem; /* optional, adjust spacing from label */
+  margin-right: 0;     /* optional, can be omitted */
+  flex-shrink: 0;      /* prevents squishing on narrow viewports */
+  transition: transform var(--duration-fast) var(--ease-standard);
+}
+
+/* Arrow rotation on open or hover */
+.menu-item.main-menu-parent.open > a > .main-menu-label::after 
+{ 
+  transform: rotate(90deg); 
+}
+
+/* --- Sub-Menu Settings --- */
+.sub-menu {
+  position: absolute;
+  top: calc(100%);
+  left: 0;
+  background: rgb(255 255 255 / 0.98);
+  color: var(--submenu-color);
+  border: 1px solid var(--phaeno-green-200);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-md);
+  /* border-top: none; */
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  z-index: 999;
+  min-width: 12.5rem;
+  max-height: 0;
+  opacity: 0;
+  overflow: hidden;
+  pointer-events: none;
+  gap: 0;
+  font-size: smaller;
+  transition:
+    opacity var(--duration-base) var(--ease-standard),
+    max-height var(--duration-slow) var(--ease-standard);
+}
+
+.sub-menu li a {
+  display: block;
+  padding: 0.75rem 1rem;
+  color: var(--color-text);
+  text-decoration: none;
+  border-top: 1px solid var(--phaeno-green-100);
+  outline: none; /* suppress default ring  */  
+  border-radius: 0;
+}
+
+/* First submenu item only */
+.sub-menu li:first-child > a {
+  /* example: remove the top divider */
+  border-top: none;
+}
+
+.sub-menu-label {
+  display: inline-block;    /* lets outline fit tight */
+  padding: 0 .25rem;        /* micro-padding inside   */
+  border-radius: 4px;       /* rounded outline (opt.) */
+  width: 100%;
+}
+
+.sub-menu > li a.active {
+  background: var(--phaeno-green-100);
+  color: var(--color-brand-strong);
+}
+
+.sub-menu > li a.active-parent {
+  background: var(--phaeno-green-100);
+  color: var(--color-brand-strong);
+}
+
+.sub-menu > li a:focus-visible .sub-menu-label {
+  outline: 1px solid var(--focus-ring-color);
+  outline-offset: 2px;
+}
+
+.sub-menu > li:focus-within { color: var(--color-brand-strong); background-color: var(--phaeno-green-50); }
+.sub-menu > li a:hover { color: var(--color-brand-strong); background-color: var(--phaeno-green-100); }
+.sub-menu > li a:active { color: var(--color-brand-strong); background-color: var(--phaeno-green-200); }
+.sub-menu > li a.active:hover,
+.sub-menu > li a.active:active,
+.sub-menu > li a.active-parent:hover,
+.sub-menu > li a.active-parent:active {
+  color: var(--color-brand-strong);
+  background-color: var(--phaeno-green-200);
+}
+
+@media (min-width: 901px) {
+  .menu-item.main-menu-parent:hover > a > .main-menu-label::after,
+  .menu-item.main-menu-parent.open > a > .main-menu-label::after {
+    transform: rotate(90deg);
+  }
+  
+  .menu-item.open > .sub-menu,
+  .menu-item:hover > .sub-menu {
+    max-height: 500px; /* large enough to fit your longest submenu */
+    opacity: 1;
+    pointer-events: auto;
+  }
+}
+
+@media (max-width: 900px) {
+  #nav {
+    position: relative;
+  }
+
+  #nav.open > .main-menu {
+    visibility: visible;
+    opacity: 1;
+    pointer-events: auto;
+    transform: translateY(0);
+    transition-delay: 0ms;
+  }
+
+  .main-menu {
+    display: block;
+    position: absolute;
+    top: calc(100% + 1.68rem);
+    right: 0;
+    background: rgb(255 255 255 / 0.99);
+    border: 1px solid var(--phaeno-green-200);
+    border-radius: var(--radius-xl);
+    box-shadow: var(--shadow-overlay);
+    min-width: min(20rem, calc(100vw - 2rem));
+    margin: 0;
+    padding: 0;
+    z-index: 999;
+    visibility: hidden;
+    opacity: 0;
+    pointer-events: none;
+    transform: translateY(-0.5rem);
+    transition:
+      opacity var(--duration-base) var(--ease-standard),
+      transform var(--duration-base) var(--ease-standard),
+      visibility 0s linear var(--duration-base);
+  }
+
+  .sub-menu {
+    position: static;
+    border: none;
+  }
+
+  .menu-item > a {  
+    padding: .45rem .65rem;
+    border-bottom: 1px solid var(--phaeno-green-100);
+  }
+  
+  .sub-menu li:last-child > a {  
+    border-bottom: var(--mobile-menu-divider);
+  }  
+  
+  .menu-item.open > .sub-menu {
+    max-height: 500px;
+    opacity: 1;
+    pointer-events: auto;
+  }
+  
+  .menu-item.main-menu-parent.open  > a::after { transform: rotate(90deg); }
+}
+
+</style>

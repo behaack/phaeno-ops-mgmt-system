@@ -1,0 +1,14 @@
+---
+interface IProps {
+  message: string;
+  listLength: number;
+}
+
+const { message, listLength } = Astro.props as IProps
+---
+
+{!listLength ?
+  <div class="w-full mt-10 flex justify-center items-center">
+    <div>{ message }</div>
+  </div> : null
+}

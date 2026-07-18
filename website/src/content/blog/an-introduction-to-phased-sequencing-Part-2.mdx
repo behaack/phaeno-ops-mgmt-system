@@ -1,0 +1,238 @@
+---
+title: "An Introduction to Phased Sequencing: Part 2"
+summary: "How PSeq is designed to preserve source-molecule identity in a short-read workflow."
+image: "/images/media/blog/an-introduction-to-phased-sequencing-part-2.png"
+authors: ["William Agnew"]
+date: '2026-07-15'
+---
+import ArticleCallout from '@/components/content/ArticleCallout.astro';
+import ArticleComparisonTable from '@/components/content/ArticleComparisonTable.astro';
+import ArticleConceptList from '@/components/content/ArticleConceptList.astro';
+import ArticleKeyPoints from '@/components/content/ArticleKeyPoints.astro';
+import ArticleSeriesNavigation from '@/components/content/ArticleSeriesNavigation.astro';
+import { phasedSequencingSeries } from '@/lib/articleSeries';
+
+<ArticleSeriesNavigation
+  series={phasedSequencingSeries}
+  currentPart={2}
+  position="start"
+/>
+
+## Summary
+
+In this series, Phaeno uses **phased sequencing** to describe sequencing architectures that preserve linkage among observations originating from the same source molecule. The idea is simple: fragments are much more informative when their molecular origin remains known.
+
+Conventional short-read RNA sequencing usually fragments and pools many transcripts before sequencing. The resulting reads can be accurate, abundant, and highly useful, but the experiment generally does not retain a direct record of which distant fragments came from the same captured molecular template. End-to-end transcript structures must therefore be inferred from overlapping evidence collected across a mixed population.
+
+PSeq is designed to change that measurement architecture. Molecular information is associated with each successfully captured RNA-derived cDNA molecule before short-fragment library generation. That information is intended to remain recoverable on the resulting reads, allowing reads from the same captured template to be grouped into molecule-specific sets before assembly.
+
+The result is not a long read. It is a collection of short reads assigned to a shared captured template. Assembly can therefore be performed within a source-molecule boundary rather than across an undifferentiated pool of transcript fragments, but reconstruction still depends on coverage continuity, overlap, reference guidance, and transcript-boundary evidence.
+
+## What source-molecule identity means
+
+Source-molecule identity is the experimental information that connects a sequencing observation to an individual captured RNA-derived molecular template.
+
+In a cDNA workflow, that observable template is a reverse-transcribed representation of a starting RNA molecule, not the original RNA observed directly. Reverse transcription may be incomplete, may introduce substitutions or template switching, may produce more than one product, or may fail to produce a recoverable product. An observed cDNA end therefore provides evidence about an RNA boundary but is not automatically proof of the native biological end.
+
+It is related to, but distinct from, ordinary sample indexing. A sample index identifies the specimen or library that produced a read. Source-molecule information operates at a finer level: it distinguishes individual captured molecular templates within that specimen or library.
+
+It is also distinct from transcript annotation. An annotation may state that a read is compatible with a known gene or isoform. Source-molecule identity states that a particular set of reads originated from the same captured molecular template, whether or not that template matches an existing annotation.
+
+<ArticleCallout>
+  <em>Sample identity answers which specimen a read came from. Source-molecule identity answers which captured RNA-derived molecular template within that specimen a read was assigned to.</em>
+</ArticleCallout>
+
+This distinction matters because two RNA-derived molecular templates from the same gene may have different splice junctions, observed transcript boundaries, sequence variants, candidate editing events, or untranslated regions. Once fragments from those templates are mixed without a recoverable source relationship, their end-to-end arrangements become a computational inference problem.
+
+## Why identity must be established before fragmentation
+
+Fragmentation separates sequence features that were originally connected on the same molecule. A splice junction near the observed 5′ boundary, a sequence variant in a predicted coding region, and a 3′ untranslated region may all be observed accurately, yet nothing in the fragment sequences alone necessarily proves that those features occurred together.
+
+If molecular origin is established before fragmentation and carried into the sequencing library, the fragments can remain related even after the physical molecule has been divided. The connection is informational rather than spatial.
+
+Four requirements follow from that design:
+
+<ArticleKeyPoints
+  ariaLabel="Requirements for preserving source-molecule identity"
+  items={[
+    'Identity must be associated with the molecule before its sequence is fragmented',
+    'The identity information must survive library generation and sequencing',
+    'Reads must retain enough information for reliable molecule assignment',
+    'The identifier system must distinguish molecules while tolerating experimental error',
+  ]}
+/>
+
+Failure at any stage can weaken the intended constraint. Collisions may make different molecules appear identical. Tag damage or sequencing error may split reads from one molecule into multiple groups. Contamination between groups may introduce fragments from unrelated molecules. These are measurable analytical risks, not merely software details.
+
+## The PSeq workflow at a conceptual level
+
+The exact chemistry and implementation determine performance, but the source-identity logic can be described as a sequence of six stages.
+
+<ArticleConceptList
+  ariaLabel="Conceptual stages of the PSeq workflow"
+  items={[
+    {
+      id: 'represent-the-source-molecule',
+      title: 'Represent the source molecule',
+      paragraphs: [
+        'An RNA molecule is reverse transcribed so that its sequence can enter a DNA-library workflow compatible with established short-read sequencing systems.',
+        'The reverse transcript is intended to preserve the sequence relationships present in the starting RNA, subject to the completeness and fidelity of reverse transcription.',
+        'The resulting cDNA is a captured representation of the starting RNA. Its observed ends do not by themselves establish the native 5′ or 3′ RNA boundaries.',
+      ],
+    },
+    {
+      id: 'associate-molecular-information',
+      title: 'Associate molecular information',
+      paragraphs: [
+        'PSeq chemistry is designed to associate each successfully captured RNA-derived cDNA molecule with molecular information before short-fragment library generation.',
+        'That information provides the basis for distinguishing reads derived from different captured templates in the same sample.',
+      ],
+    },
+    {
+      id: 'generate-a-short-fragment-library',
+      title: 'Generate a short-fragment library',
+      paragraphs: [
+        'The tagged material is converted into a sequencing library composed of short DNA fragments. PSeq is designed so that source-molecule information remains associated with those fragments through library preparation.',
+        'The captured cDNA template is no longer physically intact, but its fragments are intended to remain identifiable as a group.',
+      ],
+    },
+    {
+      id: 'sequence-on-established-ngs-systems',
+      title: 'Sequence on established NGS systems',
+      paragraphs: [
+        'The library is read using short-read next-generation sequencing instrumentation. Each captured molecular template may be represented by multiple independently observed fragments.',
+        'Coverage across a molecule can be selected according to the experiment, while actual recovery will depend on library complexity, abundance, transcript length, and sequencing depth.',
+      ],
+    },
+    {
+      id: 'assign-reads-to-molecule-specific-sets',
+      title: 'Assign reads to molecule-specific sets',
+      paragraphs: [
+        'After sequencing, molecular information is used to sort reads into sets that are intended to represent individual captured molecular templates.',
+        'Assignment quality is central: molecule-specific assembly is useful only when the membership of each set is sufficiently accurate and complete.',
+      ],
+    },
+    {
+      id: 'assemble-and-build-consensus',
+      title: 'Assemble and build consensus',
+      paragraphs: [
+        'Transcript reconstruction is performed within each molecule-specific set. Reads assigned to one captured template are compared with one another rather than with every compatible fragment in the sample.',
+        'Overlap, coverage continuity, reference information, and observed boundary evidence determine which reconstruction is supportable. Overlapping, independently sequenced observations can also support consensus generation, although achievable accuracy and completeness require direct validation.',
+      ],
+    },
+  ]}
+/>
+
+## Identity constrains assembly; it does not solve it automatically
+
+Source-molecule identity changes the search space available to an assembler. In conventional transcript assembly, many fragments from many transcripts may be compatible with the same gene. The algorithm must identify one or more transcript models that explain the pooled evidence.
+
+In a molecule-constrained workflow, the assembler receives a smaller set of reads believed to originate from one captured molecular template. The question changes from “Which population of transcripts explains these fragments?” to “How do these fragments fit together within this captured template, given the coverage, overlap, reference information, and boundary evidence available?”
+
+That constraint can reduce ambiguity, but it does not eliminate every failure mode. A molecule-specific set containing disconnected islands of coverage may still support multiple reconstructions—or no complete reconstruction.
+
+Here, **transcript completeness** refers to a predefined analytical criterion and should not be assumed solely from assignment of reads to one molecule. The criterion should state whether it requires observed 5′ and 3′ boundaries, a complete splice chain, minimum coverage, an end-to-end contiguous consensus, or reference-supported interpolation.
+
+<ArticleComparisonTable
+  ariaLabel="What source-molecule information enables and what it does not guarantee"
+  rowHeaderLabel="Retained information"
+  columns={[
+    { key: 'enables', label: 'What it enables', highlighted: true },
+    { key: 'doesNotGuarantee', label: 'What it does not guarantee' },
+  ]}
+  rows={[
+    {
+      label: 'Molecular identifier',
+      values: {
+        enables: 'Assignment of reads to a candidate captured molecular template',
+        doesNotGuarantee: 'That every identifier is unique, error-free, or recovered',
+      },
+    },
+    {
+      label: 'Fragment membership',
+      values: {
+        enables: 'Assembly within a molecule-specific read set',
+        doesNotGuarantee: 'That every read is assigned correctly or that contamination is absent',
+      },
+    },
+    {
+      label: 'Independent sequence coverage',
+      values: {
+        enables: 'Consensus across overlapping observations',
+        doesNotGuarantee: 'Uniform depth, unbiased coverage, or recovery of native transcript ends',
+      },
+    },
+    {
+      label: 'Reconstructed transcript',
+      values: {
+        enables: 'A molecule-level hypothesis for linked sequence and structure',
+        doesNotGuarantee: 'That the reconstruction is complete, biologically functional, or quantitatively unbiased',
+      },
+    },
+  ]}
+/>
+
+## Read assignment is an analytical measurement
+
+It is tempting to treat molecular sorting as a preprocessing step. In practice, assignment quality is one of the measurements on which the downstream result depends.
+
+Several error classes must be characterized:
+
+- **Collisions:** two captured molecular templates receive molecular information that is insufficiently distinct and are merged into one set.
+- **Splitting:** reads from one captured molecular template appear to carry different identities and are divided across multiple sets.
+- **Cross-assignment:** a fragment is placed in the wrong molecule-specific set.
+- **Loss:** identity information cannot be read confidently, so otherwise useful sequence observations cannot be assigned.
+- **Uneven representation:** some portions of a molecule are covered deeply while others are not recovered.
+
+The acceptable rates depend on the application. Isoform discovery, abundance estimation, linked-variant analysis, and rare-molecule detection impose different requirements. A workflow intended for broad discovery may tolerate a different error profile than one intended to support a clinical decision.
+
+## Consensus depends on independent evidence
+
+Short-read sequencing can observe the same base position multiple times across fragments assigned to a captured molecular template. When those observations are sufficiently independent and correctly assigned, agreement among them can support a consensus sequence.
+
+Consensus is valuable because individual observations may contain sequencing or amplification errors. Repeated observations can help distinguish reproducible molecular sequence from sporadic error. But additional reads do not automatically produce an unbiased consensus. Shared errors introduced during reverse transcription, early copying, sequence-context effects, or systematic assignment mistakes may persist across the read set.
+
+Consensus therefore estimates the sequence of the captured cDNA template. Fidelity to the original RNA has an additional ceiling set by errors introduced before fragment-level observations become independent; a reverse-transcription error, for example, may be indistinguishable from the sequence of the captured template.
+
+The relevant validation question is therefore not simply how many reads cover a molecule. It is whether the full workflow produces accurate, reproducible molecule-level sequences across realistic transcript lengths, abundances, compositions, and structures.
+
+## What must be validated
+
+A source-molecule workflow should be evaluated with reference materials whose expected sequences, structures, and abundances are known. Synthetic RNA controls, mixtures of defined isoforms, dilution series, replicate libraries, and orthogonal measurements can address different parts of the performance envelope.
+
+Important measurements include:
+
+- the number and fraction of captured molecular templates represented by recoverable groups;
+- the rate of molecular-identifier collision, splitting, loss, and cross-assignment;
+- coverage uniformity across transcript bodies and ends;
+- consensus accuracy by sequence context and depth;
+- sensitivity and precision for known transcript structures;
+- abundance linearity and reproducibility across replicates;
+- performance across transcript length, abundance, GC content, and structural complexity;
+- robustness to sample quality, input amount, batch, operator, and instrument variation.
+
+These measurements should be reported separately. A high consensus accuracy among successfully reconstructed captured templates does not establish high molecule recovery. Accurate transcript structures do not by themselves establish unbiased quantification. Strong performance on synthetic controls does not guarantee equivalent performance in complex biological samples.
+
+Recovered molecule groups are analytical observations of captured templates, not automatically unbiased census counts of all RNA molecules in the input. Their relationship to input abundance depends on capture probability, reverse-transcription efficiency, molecular splitting and collision, identifier dropout, duplicate representation, differential recovery by length or sequence, and filtering and assembly thresholds.
+
+## Scientific context for molecular identifiers
+
+The general principle of molecule-aware sequencing predates PSeq. Kivioja and colleagues demonstrated that [unique molecular identifiers can distinguish individual nucleic-acid molecules](https://doi.org/10.1038/nmeth.1778) and support molecule-aware counting in next-generation sequencing.
+
+PSeq applies source-molecule information toward a different objective: constraining the reconstruction of transcript structures from short-fragment reads assigned to captured molecular templates. The scientific precedent supports the value of molecular identification as a measurement principle; it does not substitute for validation of PSeq chemistry, assignment, assembly, or consensus performance.
+
+## Conclusion
+
+PSeq is designed to preserve the relationship between a successfully captured RNA-derived cDNA molecule and the short reads derived from it. Molecular information is associated before fragmentation, carried through library generation, recovered during sequencing, and used to create molecule-specific read sets.
+
+That relationship changes transcript assembly from a population-level inference problem into a molecule-constrained reconstruction problem. It may also provide repeated sequence observations that support consensus generation relative to the captured cDNA template.
+
+The value of the architecture depends on the integrity of the entire chain. Molecular information must be sufficiently diverse, stable, readable, and error-tolerant. Read assignment must be accurate. Coverage must support the intended reconstruction. Consensus and quantification must be validated independently.
+
+[Part 3 examines how molecule-resolved transcript data could be used in biological discovery, translational research, and machine learning.](/blog/an-introduction-to-phased-sequencing-part-3)
+
+<ArticleSeriesNavigation
+  series={phasedSequencingSeries}
+  currentPart={2}
+  position="end"
+/>

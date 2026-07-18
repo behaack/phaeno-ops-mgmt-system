@@ -1,0 +1,95 @@
+---
+interface ArticleExample {
+  title: string;
+  points: string[];
+}
+
+interface Props {
+  items: ArticleExample[];
+  ariaLabel?: string;
+  idPrefix?: string;
+}
+
+const {
+  items,
+  ariaLabel = 'Examples',
+  idPrefix = 'article-example',
+} = Astro.props;
+---
+
+<ol class="article-example-list" aria-label={ariaLabel}>
+  {items.map((item, index) => {
+    const headingId = `${idPrefix}-${index + 1}`;
+
+    return (
+      <li class="article-example">
+        <span class="article-example__number" aria-hidden="true">
+          {String(index + 1).padStart(2, '0')}
+        </span>
+        <section class="article-example__copy" aria-labelledby={headingId}>
+          <h4
+            id={headingId}
+            data-phaeno-search={item.title}
+            data-phaeno-search-summary={item.points.join(' ')}
+          >{item.title}</h4>
+          <ul class="article-example__points">
+            {item.points.map((point) => (
+              <li>{point}</li>
+            ))}
+          </ul>
+        </section>
+      </li>
+    );
+  })}
+</ol>
+
+<style>
+.article-example-list {
+  display: grid;
+  gap: 0;
+  margin: var(--space-5) 0 var(--space-6);
+  padding: 0;
+  border-top: 1px solid var(--phaeno-green-200);
+  list-style: none;
+}
+
+.article-example {
+  display: grid;
+  grid-template-columns: 2.5rem minmax(0, 1fr);
+  gap: var(--space-3);
+  margin: 0;
+  padding: var(--space-5) 0;
+  border-bottom: 1px solid var(--phaeno-green-200);
+}
+
+.article-example__number {
+  padding-top: var(--space-1);
+  color: var(--phaeno-green-600);
+  font-size: var(--font-size-xs);
+  font-weight: var(--font-weight-semibold);
+  letter-spacing: 0.1em;
+  line-height: var(--line-height-copy);
+}
+
+.article-example .article-example__copy h4 {
+  margin: 0 0 var(--space-2);
+  padding: 0;
+  color: var(--phaeno-rna-900);
+  font-size: var(--font-size-md);
+  font-weight: var(--font-weight-semibold);
+  letter-spacing: 0;
+  line-height: var(--line-height-copy);
+}
+
+.article-example .article-example__copy .article-example__points {
+  display: grid;
+  gap: var(--space-1);
+  margin: 0 0 0 var(--space-4);
+  padding: 0;
+}
+
+.article-example .article-example__copy li {
+  margin: 0;
+  line-height: var(--line-height-relaxed);
+}
+</style>

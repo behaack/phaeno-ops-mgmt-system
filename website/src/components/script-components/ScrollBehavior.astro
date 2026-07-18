@@ -1,0 +1,138 @@
+---
+/* Consolidated header + scroll + footer-height logic */
+---
+
+<script>
+document.addEventListener('DOMContentLoaded', () => {
+  const TIMEOUT = 1500;
+  const header = document.getElementById('site-header') as HTMLElement | null;
+  const skipLink = document.getElementById('skip-link') as HTMLElement | null;
+
+  const offset = header?.offsetHeight ?? 80;
+  const anchorGap = 24;
+  let lastScrollY = window.scrollY;
+  let mouseNearTop = false;
+  let hideTimeout: ReturnType<typeof setTimeout> | null = null;
+  let programmaticScroll = false;
+
+  // === Header helpers ===
+  function isSkipLinkFocus() : boolean {
+    return skipLink?.matches(':focus, :hover') ?? false;
+  }
+
+  function isHeaderFocused(): boolean {
+    return header?.matches(':focus-within, :hover') ?? false;
+  }
+
+  function showHeader(): void {
+    header?.classList.remove('hidden');
+    header?.classList.add('visible');
+  }
+
+  function hideHeader(): void {
+if (isHeaderFocused() || isSkipLinkFocus()) return;
+    header?.classList.remove('visible');
+    header?.classList.add('hidden');
+  }
+
+  function startHideTimer(): void {
+    if (hideTimeout) clearTimeout(hideTimeout);
+    hideTimeout = setTimeout(() => {
+      if (!mouseNearTop && window.scrollY > 50 && !isHeaderFocused() && !isSkipLinkFocus()) {
+        hideHeader();
+      }
+    }, TIMEOUT);
+  }
+
+  function getAnchorScrollTop(target: HTMLElement): number {
+    const scrollMarginTop = Number.parseFloat(
+      window.getComputedStyle(target).scrollMarginTop,
+    );
+    const targetGap = Number.isFinite(scrollMarginTop) && scrollMarginTop > 0
+      ? scrollMarginTop
+      : anchorGap;
+
+    return target.getBoundingClientRect().top + window.scrollY - offset - targetGap;
+  }
+
+  // === Header event handlers ===
+  header?.addEventListener('focusin', () => {
+    showHeader();
+    if (hideTimeout) clearTimeout(hideTimeout);
+  });
+
+  header?.addEventListener('focusout', () => {
+    if (!mouseNearTop && window.scrollY > 50) {
+      startHideTimer();
+    }
+  });
+
+  window.addEventListener('scroll', () => {
+    const currentScrollY = window.scrollY;
+
+    if (programmaticScroll) {
+      setTimeout(() => { programmaticScroll = false; }, 300);
+      return;
+    }
+
+    if (!mouseNearTop) {
+      if (currentScrollY > lastScrollY && currentScrollY > 50) {
+        hideHeader();
+      } else if (currentScrollY < lastScrollY && currentScrollY > 0) {
+        showHeader();
+        startHideTimer();
+      } else if (currentScrollY === 0) {
+        showHeader();
+        if (hideTimeout) clearTimeout(hideTimeout);
+      }
+    }
+
+    lastScrollY = currentScrollY;
+  });
+
+  window.addEventListener('mousemove', (e: MouseEvent) => {
+    if (e.clientY <= 50) {
+      mouseNearTop = true;
+      showHeader();
+      startHideTimer();
+    } else if (mouseNearTop) {
+      mouseNearTop = false;
+      if (window.scrollY > 50 && !isHeaderFocused()) {
+        hideHeader();
+      }
+    }
+  });
+
+  // === Smooth scroll with offset ===
+  document.querySelectorAll<HTMLAnchorElement>('a[href^="#"]').forEach(anchor => {
+    anchor.addEventListener('click', (e: MouseEvent) => {
+      const href = anchor.getAttribute('href');
+      if (!href) return;
+
+      const target = document.querySelector(href) as HTMLElement | null;
+      if (target) {
+        e.preventDefault();
+        history.pushState(null, '', href);
+        const y = getAnchorScrollTop(target);
+
+        programmaticScroll = true;
+        showHeader();
+        window.scrollTo({ top: y, behavior: 'smooth' });
+      }
+    });
+  });
+
+  // === Scroll to anchor on load with offset ===
+  if (window.location.hash) {
+    const target = document.querySelector(window.location.hash) as HTMLElement | null;
+    if (target) {
+      const y = getAnchorScrollTop(target);
+      programmaticScroll = true;
+      showHeader();
+      setTimeout(() => {
+        window.scrollTo({ top: y, behavior: 'instant' });
+      }, 0);
+    }
+  }
+});
+</script>

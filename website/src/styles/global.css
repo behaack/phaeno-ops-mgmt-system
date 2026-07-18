@@ -1,0 +1,624 @@
+@import "./design-system.css";
+@import "tailwindcss/preflight";
+@import "tailwindcss/utilities";
+@import "tailwindcss";
+@import "tw-animate-css";
+
+:root {
+  /* --------------------- */
+  /*      GLOBALLY USED    */
+  /* --------------------- */
+  --primary-text-color: var(--color-text);
+  --font-main: var(--font-family-sans);
+  --button-color: var(--phaeno-neutral-600);
+  --button-hover-color: var(--color-action-primary);
+  --botton-hover-color: var(--button-hover-color); /* legacy typo */
+  --focus-ring-color: var(--color-focus);
+  --font-size: 16px;  /* 1rem = 16px */
+  --line-height: 1.4;
+  --heading-height: var(--header-height);
+  --section-padding-y: 1rem;
+  --section-padding-x: 0.5rem;
+  --p-padding-y: 0.35rem;
+  --h-font-weight: 500;
+  --h-letter-spacing: 0;
+  --h-line-height: 1.15;
+  --h-font-color: var(--primary-text-color);
+
+  --h1-font-size-desktop: 3rem;
+  --h1-font-size-mobile: 2.25rem;
+  --h1-padding-desktop: .5rem 0 1rem 0;
+  --h1-padding-mobile: .5rem 0 .75rem 0;
+  
+  --h2-font-size-desktop: 1.875rem;
+  --h2-font-size-mobile: 1.65rem;
+  --h2-padding-desktop: 1rem 0 .75rem 0;
+  --h2-padding-mobile: .5rem 0 .75rem 0;  
+  
+  --h3-font-size-desktop: 1.5rem;
+  --h3-font-size-mobile: 1.25rem;
+  --h3-padding-desktop: .75rem 0 .5rem 0;
+  --h3-padding-mobile: .5rem 0 .75rem 0;    
+
+  --h4-font-size-desktop: 1.25rem;
+  --h4-font-size-mobile: 1.2rem;
+  --h4-padding-desktop: .75rem 0 .5rem 0;
+  --h4-padding-mobile: .5rem 0 .75rem 0;     
+
+  --h5-font-size-desktop: 1.15rem;
+  --h5-font-size-mobile: 1.1rem;
+  --h5-padding-desktop: .75rem 0 .5rem 0;
+  --h5-padding-mobile: .5rem 0 .75rem 0;   
+  
+  --h6-font-size-desktop: 1.05rem;
+  --h6-font-size-mobile: 1.05rem;
+  --h6-padding-desktop: .75rem 0 .5rem 0;
+  --h6-padding-mobile: .5rem 0 .75rem 0;     
+
+  /* --------------------- */
+  /*      Menu Settings    */
+  /* --------------------- */
+  /*   Main Menu           */
+  --menu-bgcolor: inherit;
+  --menu-color: var(--color-text);
+  
+  --menu-selected-bgcolor: var(--phaeno-green-100);
+  --menu-selected-color: var(--color-brand-strong);
+
+  --menu-child-selected-bgcolor: var(--phaeno-green-100);
+  --menu-child-selected-color: var(--color-brand-strong);
+  
+  --menu-focus-bgcolor: var(--phaeno-green-50);
+  --menu-focus-color: var(--color-brand-strong);
+  
+  --menu-hover-bgcolor: var(--phaeno-green-100);
+  --menu-hover-color: var(--color-brand-strong);
+  
+  --menu-active-bgcolor: var(--phaeno-green-200);
+  --menu-active-color: var(--color-brand-strong);
+
+    /*    Sub-Menu   */  
+  --submenu-bgcolor: var(--phaeno-green-100);
+  --submenu-color: black;
+  --submenu-border: 1px solid #ccc;
+  --submenu-divider: 1px solid #ccc;
+
+  --submenu-selected-bgcolor: var(--phaeno-green-100);
+  --submenu-selected-color: var(--color-brand-strong);
+    
+  --submenu-focus-bgcolor: var(--phaeno-green-50);
+  --submenu-focus-color: var(--color-brand-strong);
+  
+  --submenu-hover-bgcolor: var(--phaeno-green-100);
+  --submenu-hover-color: var(--color-brand-strong);
+  
+  --submenu-active-bgcolor: var(--phaeno-green-200);
+  --submenu-active-color: var(--color-brand-strong);
+
+  /* --------------------- */
+  /* MOBILE Menu Settings */
+  /* --------------------- */
+  --mobile-menu-bgcolor: var(--phaeno-green-100);
+  --mobile-menu-border: 1px solid #ccc;
+  --mobile-menu-divider: 1px solid #ccc;
+}
+
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+html, body {
+  font-family: var(--font-main);
+  line-height: var(--line-height);
+	font-size: var(--font-size);
+	margin: 0;
+	width: 100%;
+	height: 100%;
+	background-color: var(--color-canvas);
+	display: flex;
+	flex-direction: column;
+	overflow: auto;
+	height: fit-content;
+  scroll-behavior: smooth;
+}
+
+main {
+	padding: var(--heading-height) 0 0 0;
+	width: 100%;
+	display: flex;
+	flex-direction: column;
+	align-items: center;
+	align-content: start;
+}
+
+section {
+	max-width: 80rem;
+	width: 100%;
+	padding: var(--section-padding-y) var(--section-padding-x);	
+	height: fit-content;
+}
+
+h1, h2, h3, h4, h5, h6 {
+  font-family: var(--font-main);
+  font-weight: var(--h-font-weight);
+  letter-spacing: var(--h-letter-spacing);
+  line-height: var(--h-line-height);
+  color: var(--h-font-color);
+}
+
+h1 {
+  text-transform: uppercase;
+  font-size: var(--h1-font-size-desktop);
+  padding: var(--h1-padding-desktop);
+}
+
+h2 {
+  font-size: var(--h2-font-size-desktop);
+  padding: var(--h2-padding-desktop);
+}
+
+h3 {
+  font-size: var(--h3-font-size-desktop);
+  padding: var(--h3-padding-desktop);
+}
+
+h4 {
+  font-size: var(--h4-font-size-desktop);
+  padding: var(--h4-padding-desktop);
+}
+
+h5 {
+  font-size: var(--h5-font-size-desktop);
+  padding: var(--h5-padding-desktop);
+}
+
+h6 {
+  font-size: var(--h6-font-size-desktop);
+  padding: var(--h6-padding-desktop);
+}
+
+p {
+  font-size: var(--font-size);
+  line-height: var(--line-height);
+  padding: var(--p-padding-y) 0;
+	color: var(--primary-text-color);
+}
+
+a {
+  text-decoration: none;
+	color: var(--color-link);
+  transition:
+    color var(--duration-fast) var(--ease-standard),
+    background-color var(--duration-base) var(--ease-standard),
+    border-color var(--duration-base) var(--ease-standard),
+    box-shadow var(--duration-base) var(--ease-standard);
+}
+
+a.list-alternative {
+  font-size: 1.5rem;
+  padding: 0;
+  margin: 0;
+}
+
+a:hover {
+  color: black; 
+}
+
+a.dark:hover {
+  color: white; 
+}
+
+a:focus:not(:focus-visible),
+button:focus:not(:focus-visible) {
+  outline: none;
+}
+
+a:focus,
+button:focus {
+  outline: 1px solid var(--focus-ring-color);
+  outline-offset: 3px;
+  border-radius: 1rem;
+}
+
+ul {
+	margin-left: 1.25rem;
+	display: flex;
+	flex-direction: column;
+	gap: 1rem;
+	list-style-type: circle;
+	color: black;	
+}
+
+blockquote {
+  padding: 10px 20px;
+  border-left: 5px solid green;
+  background: white;
+  border-radius: 5px;
+  font-style: italic;
+  position: relative;
+	color: black;
+	font-size: 1.5rem;
+}
+
+label {
+  user-select: none;
+  font-weight: 600;
+}
+
+input,
+textarea,
+select {
+  width: 100%;
+  padding: 6px 12px;
+  margin: 0;
+  border: 1px solid #ccc;
+  border-radius: 5px;
+  box-sizing: border-box;
+  font-size: 14px;
+  transition:
+    border-color 0.3s,
+    box-shadow 0.3s;
+}
+
+select:focus,
+input:focus {
+  border-color: #959A76;
+  box-shadow: 0 0 5px #959A76;
+  outline: none;
+}
+
+input[type="checkbox"]:hover {
+  cursor:pointer;
+}
+
+input[type="search"]::-webkit-search-cancel-button {
+  display: none;
+}
+
+/* ─── shared label layout ─────────────────────────────── */
+label > input[type="checkbox"] + span {
+  /* put input + text on one line */
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  cursor: pointer;
+  user-select: none;
+  /* inherit your font size */
+}
+
+/* ─── hide the native box (but keep it focusable) ─────── */
+label > input[type="checkbox"] {
+  position: absolute;   /* remove from flow */
+  opacity: 0;           /* invisible, still tabbable */
+  width: 1rem;          /* keeps a focusable area */
+  height: 1rem;
+}
+
+/* ─── draw our own box on the <span>::before ──────────── */
+label > span::before {
+  content: "";
+  display: inline-block;
+  width: 1.1rem;
+  height: 1.1rem;
+  border: 2px solid #ccc;
+  border-radius: 4px;
+  box-sizing: border-box;
+  transition:
+    border-color 0.3s,
+    background-color 0.3s,
+    box-shadow 0.3s;
+}
+
+/* ─── 1.  Layout & cursor only for checkbox labels ────────────── */
+label:has(> input[type="checkbox"]) {
+  display: inline-flex;          /* box + text in one line */
+  align-items: center;
+  gap: 0.35rem;
+  cursor: pointer;
+  user-select: none;
+  padding: 2px 4px;              /* breathing space for outline */
+  border-radius: 6px;
+}
+
+/* ─── 2.  Hide native box, keep it focusable ────────────────── */
+label:has(> input[type="checkbox"]) > input[type="checkbox"] {
+  position: absolute;
+  opacity: 0;
+  width: 1rem;
+  height: 1rem;
+}
+
+/* ─── 3.  Custom square drawn on the span ───────────────────── */
+label:has(> input[type="checkbox"]) > span::before {
+  content: "";
+  display: inline-block;
+  width: 1.1rem;
+  height: 1.1rem;
+  border: 2px solid #ccc;
+  border-radius: 4px;
+  box-sizing: border-box;
+  transition: border-color 0.3s,
+              background-color 0.3s;
+}
+
+/* checked state */
+label:has(> input[type="checkbox"]) > input[type="checkbox"]:checked + span::before {
+  background: #7F943A
+              url("data:image/svg+xml,%3Csvg viewBox='0 0 12 10' xmlns='http://www.w3.org/2000/svg'%3E%3Cpolyline points='1 5 4 8 11 1' fill='none' stroke='%23fff' stroke-width='2'/%3E%3C/svg%3E")
+              center / 75% no-repeat;
+  border-color: #7F943A;
+}
+
+/* ─── 4.  Focus ring on *entire* checkbox label only ─────────── */
+label:has(> input[type="checkbox"]):focus-within {
+  outline: 1px solid var(--focus-ring-color);    /* match other inputs */
+  outline-offset: 2px;
+}
+
+/* ─── checked state: fill box & add check-mark ─────────── */
+label > input[type="checkbox"]:checked + span::before {
+  background-color: #7F943A;  /* your brand green */
+  border-color:     #7F943A;
+
+  /* tiny white check mark (1 kB inline SVG) */
+  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 12 10' xmlns='http://www.w3.org/2000/svg'%3E%3Cpolyline points='1 5 4 8 11 1' fill='none' stroke='%23fff' stroke-width='2'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: center;
+}
+
+/* ─── keyboard focus ring, same colour as your inputs ─── */
+label > input[type="checkbox"]:focus-visible + span::before {
+  border-color: #959A76;
+  box-shadow:   0 0 0 3px rgba(149,154,118,0.4);
+}
+
+button {
+  transition:
+    color var(--duration-fast) var(--ease-standard),
+    background-color var(--duration-base) var(--ease-standard),
+    border-color var(--duration-base) var(--ease-standard),
+    box-shadow var(--duration-base) var(--ease-standard),
+    transform var(--duration-fast) var(--ease-standard);
+}
+
+button:hover:not(:disabled) {
+  background-color: var(--button-hover-color);
+  transform: translateY(-1px);
+  cursor: pointer;
+}
+
+button:active:not(:disabled) {
+  transform: translateY(0);
+}
+
+button:focus {
+  outline: 1px solid #f97316; 
+  outline-offset: 2px;
+  border-radius: .5rem;
+  background-color: var(--button-hover-color);
+}
+
+.grecaptcha-badge { visibility: hidden; }
+
+[data-motion-reveal].motion-reveal-pending {
+  opacity: 0;
+  transform: translateY(0.75rem);
+}
+
+[data-motion-reveal].motion-reveal-pending.is-revealed {
+  opacity: 1;
+  transform: translateY(0);
+  transition:
+    opacity var(--duration-slow) var(--ease-standard),
+    transform var(--duration-slow) var(--ease-standard);
+  transition-delay: var(--motion-reveal-delay, 0ms);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  [data-motion-reveal] {
+    opacity: 1 !important;
+    transform: none !important;
+    transition: none !important;
+  }
+}
+
+.science-page > section,
+.company-page > section,
+.contact-page > section {
+  display: flow-root;
+}
+
+.science-page > section > h2,
+.company-page > section > h2,
+.contact-page > section > h2 {
+  margin-top: clamp(2.5rem, 7vw, 5rem);
+}
+
+.science-page > section > h2:first-child,
+.company-page > section > h2:first-child,
+.contact-page > section > h2:first-child {
+  margin-top: 0;
+}
+
+.science-page div.rounded-2xl,
+.science-page aside.rounded-2xl {
+  border-color: var(--phaeno-green-200);
+  background: linear-gradient(155deg, var(--color-surface), var(--phaeno-green-50));
+  box-shadow: var(--shadow-sm);
+}
+
+.science-page .mechanism-card {
+  position: relative;
+  overflow: hidden;
+  min-height: 16rem;
+  padding: var(--space-6);
+}
+
+.science-page .mechanism-card::before {
+  content: '';
+  position: absolute;
+  inset: 0 auto 0 0;
+  width: 4px;
+  background: var(--color-brand);
+}
+
+.company-page > section > p {
+  font-size: var(--font-size-lg);
+  line-height: var(--line-height-relaxed);
+}
+
+@media (max-width: 80rem) {
+	section {
+		padding-right: .5rem;
+		padding-left: .5rem;
+	}
+}
+
+@media (max-width: 900px) {
+  :root {
+    --header-height: 3.75rem;
+  }
+
+	main {
+		padding: var(--header-height) 0 0 0;
+	}
+
+  h1 {
+    font-size: var(--h1-font-size-mobile);
+    padding: var(--h1-padding-mobile);
+  }
+
+  h2 {
+    font-size: var(--h2-font-size-mobile);
+    padding: var(--h2-padding-mobile);
+  }
+
+  h3 {
+    font-size: var(--h3-font-size-mobile);
+    padding: var(--h3-padding-mobile);
+  }  
+
+  h4 {
+    font-size: var(--h4-font-size-mobile);
+    padding: var(--h4-padding-mobile);
+  }  
+  
+  h5 {
+    font-size: var(--h5-font-size-mobile);
+    padding: var(--h5-padding-mobile);
+  }  
+  
+  h6 {
+    font-size: var(--h6-font-size-mobile);
+    padding: var(--h6-padding-mobile);
+  }    
+}
+
+/* --------------------------------------------------------- */
+/* Phaeno editorial system                                   */
+/* --------------------------------------------------------- */
+
+::selection {
+  color: var(--color-text);
+  background: var(--phaeno-amber-400);
+}
+
+body {
+  color: var(--color-text);
+  background:
+    linear-gradient(180deg, var(--color-canvas) 0%, var(--phaeno-green-50) 100%);
+  text-rendering: optimizeLegibility;
+}
+
+main {
+  background: var(--color-canvas);
+}
+
+main > section {
+  padding: var(--page-content-start-space) var(--page-gutter) var(--section-space);
+}
+
+main > .top-banner + section:first-of-type,
+main > .top-banner + .page-shell > section:first-child {
+  padding-top: var(--page-content-start-space);
+}
+
+main > section > :where(p, ul, ol):not(.data-table) {
+  max-width: var(--copy-max-width);
+}
+
+h1,
+h2,
+h3,
+h4,
+h5,
+h6 {
+  text-wrap: balance;
+}
+
+h1 {
+  font-weight: var(--font-weight-medium);
+  letter-spacing: -.035em;
+}
+
+h2 {
+  color: var(--phaeno-rna-900);
+  font-weight: var(--font-weight-semibold);
+  letter-spacing: -.025em;
+}
+
+h3 {
+  color: var(--phaeno-rna-800);
+  font-weight: var(--font-weight-semibold);
+  letter-spacing: -.015em;
+}
+
+p {
+  color: var(--color-text-muted);
+}
+
+a {
+  text-underline-offset: .18em;
+  text-decoration-thickness: .08em;
+}
+
+a:hover {
+  color: var(--color-brand-strong);
+}
+
+:where(a, button, input, textarea, select):focus-visible {
+  outline: 2px solid var(--color-focus);
+  outline-offset: 3px;
+}
+
+blockquote {
+  padding: var(--space-6) var(--space-8);
+  border-left: 4px solid var(--color-brand);
+  background: var(--phaeno-green-50);
+  border-radius: 0 var(--radius-xl) var(--radius-xl) 0;
+  color: var(--phaeno-rna-900);
+  box-shadow: var(--shadow-sm);
+}
+
+input,
+textarea,
+select {
+  min-height: 2.75rem;
+  border-color: var(--color-border-strong);
+  border-radius: var(--radius-md);
+  background: var(--color-surface);
+}
+
+input:focus,
+textarea:focus,
+select:focus {
+  border-color: var(--color-action-primary);
+  box-shadow: 0 0 0 3px rgb(98 116 48 / .18);
+}
+
+@media (max-width: 725px) {
+  main > section {
+    padding: var(--page-content-start-space) var(--space-4) var(--space-12);
+  }
+}

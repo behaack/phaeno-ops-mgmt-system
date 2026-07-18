@@ -1,0 +1,379 @@
+---
+title: "An Introduction to Phased Sequencing: Part 1"
+summary: "Why RNA needs better measurement"
+image: "/images/media/blog/an-introduction-to-phased-sequencing.png"
+authors: ["William Agnew"]
+date: '2026-07-15'
+---
+import ArticleCallout from '@/components/content/ArticleCallout.astro';
+import ArticleComparisonTable from '@/components/content/ArticleComparisonTable.astro';
+import ArticleConceptList from '@/components/content/ArticleConceptList.astro';
+import ArticleKeyPoints from '@/components/content/ArticleKeyPoints.astro';
+import ArticleSeriesNavigation from '@/components/content/ArticleSeriesNavigation.astro';
+import { phasedSequencingSeries } from '@/lib/articleSeries';
+
+<ArticleSeriesNavigation
+  series={phasedSequencingSeries}
+  currentPart={1}
+  position="start"
+/>
+
+## Summary
+
+DNA sequence establishes the inherited framework of biological systems, but it does not by itself specify the molecular state of a cell. That state emerges through transcription and RNA processing: transcription initiation, RNA 3′-end formation, alternative splicing, RNA editing, polyadenylation, and the selection of coding and untranslated regions.
+
+These processes generate distinct RNA isoforms from the same genomic locus. Each isoform is a linked molecular entity in which an observed 5′ boundary, inferred promoter usage, exon composition, predicted coding sequence, candidate editing events, and regulatory regions occur together on the same transcript. Preserving those relationships can be important because different isoforms may support different protein products, differ in stability or localization, or respond differently to cellular regulation.
+
+Conventional short-read RNA sequencing has transformed biology, but it typically fragments transcripts before sequencing. The resulting reads provide highly accurate local sequence information, while end-to-end structures must often be inferred computationally. Long-read sequencing can preserve more of the original transcript structure, but currently involves different trade-offs in instrumentation, throughput, depth, accuracy, cost, and workflow.
+
+Phaeno’s PSeq technology is designed to preserve source-molecule identity through a short-read sequencing workflow. Reads assigned to the same captured molecular template can therefore be grouped before transcript assembly, converting an otherwise unconstrained reconstruction problem into a molecule-constrained one. Molecular identity narrows the search space; complete reconstruction still depends on the coverage, overlap, reference information, and boundary evidence available for that molecule.
+
+In this series, Phaeno uses **phased sequencing** to describe sequencing architectures that preserve linkage among observations originating from the same source molecule. This usage is distinct from the common genomic meaning of phasing variants into haplotypes and overlaps conceptually with terms such as molecule-aware sequencing, linked reads, read clouds, and barcoded fragment reconstruction.
+
+This article explains why that distinction matters. Part 2 will describe how PSeq preserves source-molecule identity, and Part 3 will examine the potential value of molecule-resolved transcript data in biological discovery, translational research, and machine learning.
+
+## DNA sequence alone does not specify cellular state
+
+The Human Genome Project established a reference sequence for the human genome and provided an essential foundation for modern biology. It also helped clarify the limits of sequence information considered in isolation.
+
+Cells with nearly identical genomes can adopt markedly different structures and functions. A hepatocyte, neuron, lymphocyte, and epithelial cell generally contain the same inherited DNA sequence, yet differ extensively in morphology, metabolism, signaling, and behavior. These differences arise from regulatory processes that determine which portions of the genome are used, how they are transcribed, and how the resulting RNAs are processed.
+
+RNA occupies a central position in this process. It is both an intermediate between DNA and protein and, in many cases, a functional molecular species in its own right. Messenger RNAs encode proteins, while ribosomal, transfer, micro-, long noncoding, and other classes of RNA contribute directly to translation, regulation, genome organization, and cellular signaling.
+
+Even within protein-coding genes, the relationship between a genomic locus and its biological products is not one-to-one. A single locus may produce multiple transcripts through combinations of:
+
+- alternative transcription initiation;
+- alternative splicing;
+- alternative cleavage and polyadenylation;
+- RNA editing;
+- variation in untranslated regions;
+- differential transcript stability and degradation.
+
+The resulting transcripts may encode distinct protein sequences, alter the abundance of a protein, change where an RNA is localized, or affect its translation and degradation. The biological output of a gene therefore depends not only on whether the gene is expressed, but also on which transcripts are produced and in what proportions.
+
+For this reason, RNA isoforms should not be treated merely as interchangeable measurements of gene activity. Each transcript is a linked arrangement of sequence and regulatory features that exists as a physical molecule.
+
+## The transcript as a linked unit of information
+
+A transcript may contain several biologically meaningful features simultaneously:
+
+- its observed 5′ transcript boundary;
+- its exon and splice-junction structure;
+- its predicted open reading frame or coding potential;
+- sequence variants or candidate RNA-editing events;
+- its 5′ and 3′ untranslated regions;
+- its observed 3′ transcript boundary or cleavage and polyadenylation site.
+
+The significance of any one feature may depend on the others with which it occurs.
+
+A sequence variant, for example, may be present only in transcripts with a particular observed 5′ boundary or inferred promoter usage. An exon-skipping event may alter the predicted reading frame in one transcript context but not another. A 3′ untranslated region may contain regulatory motifs that affect the stability, localization, or translation of a specific isoform. Two transcripts from the same gene may therefore differ functionally even when they share most of their sequence.
+
+This creates a phasing problem.
+
+In sequencing, **phasing** means determining which sequence features occur together on the same physical molecule. The concept is familiar in genomics, where variants may be assigned to maternal or paternal chromosomes. In transcriptomics, the same principle applies to combinations of splice junctions, observed transcript boundaries, sequence variants, candidate editing events, and regulatory regions.
+
+Knowing that two features are present in a sample is not equivalent to knowing that they occur on the same transcript.
+
+That distinction becomes especially important for genes that produce many overlapping isoforms. If several transcripts share exons and splice junctions, short sequence fragments may be compatible with multiple end-to-end structures. The local observations can be correct while the global arrangement remains ambiguous.
+
+## Three related concepts
+
+The terminology surrounding molecule-resolved sequencing can be confusing. Three distinctions are particularly useful.
+
+<ArticleConceptList
+  ariaLabel="Three related molecule-resolution concepts"
+  items={[
+    {
+      id: 'source-molecule-identity',
+      title: 'Source-molecule identity',
+      paragraphs: [
+        'Source-molecule identity means retaining information about which captured molecular template gave rise to a collection of sequencing reads.',
+        'In a cDNA-based workflow, that template is a successfully captured RNA-derived cDNA molecule: a reverse-transcribed representation of a starting RNA molecule, not the original RNA observed directly.',
+      ],
+    },
+    {
+      id: 'phased-sequencing',
+      title: 'Phased sequencing',
+      paragraphs: [
+        'In Phaeno’s usage, phased sequencing determines which observed features occur together on the same source molecule.',
+        'For RNA, these features may include splice junctions, sequence variants, candidate editing events, observed transcript boundaries, and untranslated regions.',
+      ],
+    },
+    {
+      id: 'whole-molecule-resolution',
+      title: 'Whole-molecule resolution',
+      paragraphs: [
+        'Whole-molecule resolution refers to reconstructing the structure of an individual captured molecular template under a predefined completeness criterion.',
+        'In a short-read workflow, this reconstruction remains computational. Molecular assignment constrains it, but disconnected coverage can still support multiple reconstructions or no complete reconstruction.',
+      ],
+    },
+  ]}
+/>
+
+These concepts are related but not identical. Molecular identification enables phasing, and phasing makes whole-molecule reconstruction more tractable.
+
+Throughout this series, **complete** and **full-length** are operational terms rather than consequences of molecular assignment alone. A completeness claim should state whether it requires observed 5′ and 3′ boundaries, a complete splice chain, a minimum coverage threshold, an end-to-end contiguous consensus, or reference-supported interpolation between covered regions.
+
+## The measurement problem created by fragmentation
+
+Conventional RNA sequencing typically converts RNA into complementary DNA and fragments the material before or during library preparation. Millions of short reads are then aligned to a reference genome or transcriptome and summarized into gene-, exon-, junction-, or transcript-level measurements.
+
+This approach has been extraordinarily productive. Short-read RNA sequencing supports:
+
+- differential gene-expression analysis;
+- splice-junction detection;
+- transcript annotation;
+- allele-specific expression;
+- fusion detection;
+- single-cell and spatial transcriptomics;
+- numerous diagnostic and translational applications.
+
+Its limitations should therefore be described precisely. The problem is not that short-read RNA sequencing fails to detect RNA or cannot identify transcript structure. Rather, fragmentation separates observations that originally occurred together on the same molecule.
+
+Once source-molecule linkage has been lost, transcript reconstruction becomes an inference problem.
+
+Computational methods can often resolve that problem, particularly when isoforms are well annotated, sequence coverage is high, and transcript structures are sufficiently distinct. Ambiguity increases, however, when a locus contains many overlapping isoforms that share exons, junctions, or sequence regions.
+
+Consider a simplified gene containing two alternative promoters, several alternatively spliced exons, and two polyadenylation sites. Short reads may independently support two observed 5′ boundaries consistent with alternative promoter usage, each splice junction, and two observed 3′ boundaries. Yet those observations may remain compatible with several different end-to-end combinations.
+
+The issue is therefore one of **identifiability**: whether the observed fragments uniquely determine the molecules that produced them.
+
+For gene-level expression analysis, this ambiguity may be acceptable or irrelevant. For questions involving exact isoform structure, linked variants, candidate RNA editing, or regulatory context, it may be consequential.
+
+## Long-read sequencing addresses a different part of the problem
+
+Long-read technologies from Oxford Nanopore Technologies and Pacific Biosciences approach transcript structure by generating reads that can span much or all of an RNA or complementary DNA molecule.
+
+This is a major advantage for isoform discovery and transcript annotation. Long reads can directly connect distant splice junctions and transcript boundaries that short reads observe separately. They have expanded the number of detectable transcript structures and improved characterization of complex loci.
+
+Long-read methods also have limitations and trade-offs. Depending on the platform, protocol, and experimental objective, these may include:
+
+- the need for dedicated instrumentation;
+- lower numbers of reads relative to high-throughput short-read systems;
+- reduced sampling depth for low-abundance transcripts;
+- differences in per-read accuracy and error profile;
+- cost and workflow considerations;
+- amplification or library-preparation biases;
+- incomplete capture of transcript ends.
+
+These technologies are improving rapidly, and no single description applies to every platform or application. Long-read and short-read methods should not be viewed as mutually exclusive. They answer overlapping but distinct questions and are increasingly used together.
+
+The relevant question is not which platform is universally superior. It is which measurement architecture preserves the information required for a particular biological problem.
+
+## PSeq: molecule-constrained assembly using short reads
+
+PSeq is designed to retain source-molecule identity while using existing short-read next-generation sequencing instruments.
+
+In the PSeq workflow, each successfully captured RNA-derived cDNA molecule is associated with molecular information that is retained as sequencing libraries are generated. After sequencing, reads carrying the same source-molecule identity can be grouped into molecule-specific sets.
+
+Transcript assembly is then performed within those sets.
+
+This changes the nature of the reconstruction problem. Conventional transcript assembly evaluates fragments drawn from a mixed population and identifies transcript models that can explain the aggregate data. PSeq instead seeks to reconstruct each captured molecular template using reads assigned to that template.
+
+The assembly remains computational, but it is constrained by experimental information about molecular origin.
+
+This distinction can be summarized as follows:
+
+<ArticleCallout>
+  <em>Conventional RNA sequencing asks which collection of transcripts most plausibly explains a mixed pool of reads. PSeq asks how reads assigned to the same captured molecular template fit together, subject to the coverage, overlap, reference information, and boundary evidence available for that molecule.</em>
+</ArticleCallout>
+
+Because a captured molecular template may be represented by multiple independently sequenced fragments, consensus can be used to improve sequence accuracy. Consensus estimates the sequence of the captured cDNA template; fidelity to the original RNA also depends on errors introduced before fragment-level observations become independent, including during reverse transcription. Actual performance will depend on factors including library complexity, molecule recovery, read depth, transcript length, sequence composition, and assembly algorithms. These characteristics must be established through analytical validation and comparative studies.
+
+PSeq should therefore be understood as a new measurement architecture, not as a claim that every RNA molecule in a sample will be captured, represented completely, or recovered without error.
+
+## Comparison of RNA measurement approaches
+
+<ArticleComparisonTable
+  ariaLabel="Comparison of conventional short-read RNA sequencing, long-read transcript sequencing, and PSeq"
+  rowHeaderLabel="Characteristic"
+  columns={[
+    { key: 'pseq', label: 'PSeq', highlighted: true },
+    { key: 'rnaSeq', label: 'Conventional short-read RNA sequencing', shortLabel: 'Short-read RNA sequencing' },
+    { key: 'longReadSeq', label: 'Long-read transcript sequencing', shortLabel: 'Long-read sequencing' },
+  ]}
+  rows={[
+    {
+      label: 'Primary sequencing output',
+      values: {
+        rnaSeq: 'Short fragments from a mixed transcript population',
+        longReadSeq: 'Long reads representing individual library molecules',
+        pseq: 'Short fragments retaining source-molecule identity',
+      },
+    },
+    {
+      label: 'Source-molecule linkage',
+      values: {
+        rnaSeq: 'Generally not retained across distant fragments',
+        longReadSeq: 'Directly retained across the portion of a library molecule represented by one read',
+        pseq: 'Retained through molecular identification',
+      },
+    },
+    {
+      label: 'Transcript structure',
+      values: {
+        rnaSeq: 'Inferred from aggregate fragment evidence',
+        longReadSeq: 'Direct across the represented portion; end-to-end only when the read spans the relevant molecule and boundaries',
+        pseq: 'Reconstructed from assigned reads when coverage and structural evidence are sufficient',
+      },
+    },
+    {
+      label: 'Instrumentation',
+      values: {
+        rnaSeq: 'Established short-read NGS systems',
+        longReadSeq: 'Dedicated long-read systems',
+        pseq: 'Established short-read NGS systems',
+      },
+    },
+    {
+      label: 'Principal strengths',
+      values: {
+        rnaSeq: 'Accuracy, scale, depth, mature workflows',
+        longReadSeq: 'Long-range connectivity and isoform discovery',
+        pseq: 'Molecule-constrained assembly with short-read depth and accuracy',
+      },
+    },
+    {
+      label: 'Important limitations',
+      values: {
+        rnaSeq: 'Ambiguous reconstruction at complex loci',
+        longReadSeq: 'Platform-dependent depth, cost, accuracy, and workflow trade-offs',
+        pseq: 'New platform requiring extensive validation, benchmarking, and adoption',
+      },
+    },
+  ]}
+/>
+
+This comparison is necessarily general. Performance depends on the specific protocol, instrument, sample type, and analysis pipeline.
+
+Long-read cDNA observations can also be truncated, concatenated, chimeric, or derived from amplified copies. “Individual molecule” therefore refers to the library molecule represented by a read and should not automatically be interpreted as an intact native RNA molecule.
+
+## What additional information can molecule resolution provide?
+
+The value of molecule-resolved measurement is not simply that it produces a longer sequence. Its value lies in preserving relationships among features.
+
+<ArticleConceptList
+  ariaLabel="Information provided by molecule-resolved measurement"
+  items={[
+    {
+      id: 'transcript-isoforms',
+      title: 'Transcript isoforms',
+      paragraphs: [
+        'A molecule-resolved measurement can determine which splice junctions, observed transcript boundaries, predicted coding sequences, and untranslated regions occur together.',
+        'This is particularly relevant when different isoforms share most of their sequence but differ in a functionally important exon or regulatory region.',
+      ],
+    },
+    {
+      id: 'linked-sequence-variation',
+      title: 'Linked sequence variation',
+      paragraphs: [
+        'A sample may contain several substitutions, candidate editing events, or mutations within the same gene or RNA genome. Aggregate sequencing can estimate the frequency of each event, but it may not establish whether the events occur on the same molecule.',
+        'Phasing preserves those combinations.',
+        'This could be useful in settings such as viral population analysis, somatic variation, allele-specific transcription, and candidate RNA-editing analysis, provided that molecule recovery and error characteristics are sufficiently well controlled.',
+      ],
+    },
+    {
+      id: 'isoform-abundance',
+      title: 'Isoform abundance',
+      paragraphs: [
+        'Gene-level abundance combines all transcripts assigned to a locus. Transcript-level quantification attempts to separate that total among isoforms, but estimates may be unstable when isoforms share substantial sequence.',
+        'Molecule-resolved observations could provide a more direct basis for estimating the abundance of specific transcript structures. Recovered molecule groups are analytical observations of captured templates, not automatically unbiased census counts of all RNA molecules in the input. Quantitative accuracy will still depend on capture probability, reverse-transcription efficiency, molecular splitting and collision, identifier dropout, duplicate representation, differential recovery, filtering, amplification, and sampling.',
+      ],
+    },
+    {
+      id: 'regulatory-context',
+      title: 'Regulatory context',
+      paragraphs: [
+        'Predicted protein-coding sequence is only one component of an RNA molecule. Observed 5′ boundaries, inferred promoter usage, untranslated regions, and transcript ends can influence hypotheses about expression, localization, translation, and degradation.',
+        'Preserving these elements in the same molecular observation may help connect predicted coding potential with regulatory context; RNA sequence alone does not establish which open reading frame is translated or whether a protein product is stable.',
+      ],
+    },
+  ]}
+/>
+
+## RNA as a component of molecular phenotype
+
+Phenotype is expressed across multiple biological scales. It includes observable traits, cellular states, tissue architecture, physiology, disease course, and response to treatment.
+
+No single molecular layer is equivalent to phenotype. DNA, chromatin, RNA, protein, metabolites, cellular interactions, and environmental exposures all contribute.
+
+The transcriptome nevertheless occupies a particularly informative position. It reflects both genomic potential and the current regulatory state of a biological system. It changes during differentiation, stress, immune activation, aging, treatment, and disease progression.
+
+For that reason, the transcriptome can be considered one component of molecular phenotype: a dynamic record of which genomic programs are being executed and in what form.
+
+Gene-expression measurements capture an important part of that record. Isoform-resolved measurements may capture another.
+
+A useful shorthand is:
+
+<ArticleCallout>
+  <em>Gene-level RNA abundance indicates which loci contribute detectable RNA and at what aggregate level. Isoform structure describes which molecular forms contribute to that signal.</em>
+</ArticleCallout>
+
+This distinction should not be overstated. Many biological questions are adequately addressed using gene-level counts, and increasing feature resolution can introduce additional noise, sparsity, and analytical complexity. The value of isoform-level data must therefore be demonstrated empirically for each application.
+
+## Why molecule-resolved RNA may matter for machine learning
+
+Machine-learning models do not automatically benefit from more detailed measurements. Additional features improve a model only when they contain reproducible information relevant to the prediction task and can be measured with sufficient consistency.
+
+Isoform-resolved data could be useful because gene-level summaries may combine transcripts with different biological effects. If one isoform increases while another decreases, the total expression of the gene may remain unchanged even though the functional state of the system has shifted.
+
+In such a case, a gene-level feature can obscure rather than reveal the relevant signal.
+
+Molecule-resolved measurements could provide models with features such as:
+
+- the estimated abundance of isoforms meeting predefined completeness criteria;
+- linked combinations of splice and candidate editing events;
+- observed 5′-boundary-to-isoform relationships that may support inference of promoter usage;
+- predicted coding sequences paired with untranslated regions;
+- transcript structures not represented in existing annotations.
+
+These features may be more closely related to molecular function than aggregate gene counts. They may also improve interpretability by allowing a model’s predictions to be associated with specific transcript structures.
+
+There are, however, important challenges.
+
+Isoform-level datasets are high-dimensional. Many isoforms are rare, tissue-specific, or incompletely annotated. Measurement error, batch effects, and changes in analysis pipelines can create unstable features. Larger numbers of candidate variables also increase the risk of overfitting.
+
+The potential value of molecule-resolved RNA data for machine learning therefore depends on rigorous feature definition, analytical validation, independent cohorts, and prospective testing. It should be evaluated through direct comparisons against gene-level RNA sequencing and other established measurements.
+
+The scientific hypothesis is not that isoform-level data will improve every model. It is that some biological signals are encoded in transcript structure and molecular linkage and are therefore inaccessible, diluted, or ambiguously represented in gene-level summaries.
+
+## A different type of RNA measurement
+
+The central distinction between conventional RNA sequencing and PSeq is not short reads versus long reads. PSeq also uses short reads.
+
+The distinction is whether those reads retain information about their source molecule.
+
+Conventional RNA sequencing fragments and pools transcripts, then infers end-to-end structures from aggregate evidence. PSeq is designed to fragment successfully captured RNA-derived cDNA molecules while retaining source-molecule identity, allowing reconstruction to be attempted within each associated read set.
+
+That design seeks to combine three properties:
+
+<ArticleKeyPoints
+  ariaLabel="Properties combined by the PSeq design"
+  items={[
+    'The base-level accuracy of short-read sequencing',
+    'The throughput and installed infrastructure of established NGS systems',
+    'The molecular linkage needed for isoform-resolved reconstruction',
+  ]}
+/>
+
+Whether PSeq achieves these objectives across transcript classes, sample types, and abundance ranges is a question for analytical and experimental validation. Relevant benchmarks will include sensitivity, specificity, consensus accuracy relative to both captured cDNA and original RNA controls, transcript completeness under predefined criteria, isoform quantification, reproducibility, throughput, cost, and comparison with both short- and long-read methods.
+
+Those studies are essential because molecule-resolved sequencing is useful only if molecular identity is preserved accurately and the resulting reconstructions reflect the molecules present in the original sample.
+
+## Conclusion
+
+RNA is not simply a transient copy of DNA. It is a diverse population of molecular species in which predicted coding sequence, splice structure, observed transcript boundaries, regulatory regions, and sequence variation occur in linked combinations.
+
+Conventional RNA sequencing measures this population with exceptional scale and accuracy, but fragmentation often separates features that originally belonged to the same molecule. Computational methods can reconstruct many transcript structures, yet ambiguity remains when multiple isoforms share the same local sequence evidence.
+
+Long-read sequencing restores much of this connectivity by reading extended molecules directly. PSeq takes a different approach: preserving source-molecule identity through a short-read workflow and using that identity to constrain transcript assembly.
+
+The potential significance of this approach is straightforward. If biological function depends on linked features within individual RNA molecules, then preserving captured molecular templates as units of measurement may reveal information that is obscured by fragment-level or gene-level summaries. Whether a reconstruction is complete, biologically faithful, or functionally important remains a separate question.
+
+[Part 2 describes the PSeq workflow in greater detail, including molecular tagging, library construction, read assignment, molecule-specific assembly, and consensus generation.](/blog/an-introduction-to-phased-sequencing-part-2)
+
+<ArticleSeriesNavigation
+  series={phasedSequencingSeries}
+  currentPart={1}
+  position="end"
+/>

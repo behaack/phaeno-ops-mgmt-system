@@ -1,0 +1,219 @@
+---
+import Team from '@/components/Team.astro'
+import team, { ETeamMemberType } from '@/assets/team'
+import Layout from '@/layouts/Layout.astro'
+import SEOMeta from '@/components/meta-data-helpers/SEOMeta.astro';
+import TopPageBanner from '@/components/TopPageBanner.astro'
+
+const management = team.filter(item => item.type === ETeamMemberType.management)
+const busdev = team.filter(item => item.type === ETeamMemberType.busdev)
+const technical = team.filter(item => item.type === ETeamMemberType.technical)
+const advisors = team.filter(item => item.type === ETeamMemberType.advisor)
+---
+<Layout>
+  <SEOMeta 
+    slot="head"
+    title="About Us | Phaeno"
+    description="Meet Phaeno's team and mission to map the functional human genome with PSeq, full-length RNA sequencing technology for transcriptomics."
+    documentType="Web Page"
+    searchTitle="About Us"
+  />  
+  <main id="main" class="company-page" tabindex="-1">
+    <TopPageBanner title="About us" image="image-1" />
+    <section>
+      <div class="about-feature about-feature--mission">
+        <div class="about-mission">
+          <h2
+            id="phaeno-mission"
+            data-phaeno-search="Phaeno mission"
+            data-phaeno-search-summary="Phaeno develops technology that helps scientists map the functional human genome and understand phenotype drivers."
+            data-phaeno-search-keywords="Phaeno mission functional human genome phenotype drivers PSeq"
+          >Our Mission</h2>
+          <p>
+            Phaeno's mission is to develop technology that empowers scientists to map the functional human genome and gain a
+            comprehensive understanding of the underlying drivers of phenotypes.
+          </p>
+        </div>
+      </div>
+
+      <div class="about-feature about-feature--origin" style="align-items: stretch;">
+        <figure
+          class="about-visual about-visual--origin"
+          data-phaeno-search-ignore
+          style="height: calc(100% - 2rem); min-height: 18rem; align-self: start;"
+        >
+          <img
+            src="/images/about-origin-lab.webp"
+            alt="An archival molecular biology workbench with a microscope, laboratory notebook, and RNA research materials"
+            loading="lazy"
+            decoding="async"
+            style="position: absolute; inset: 0; filter: blur(1.75px); transform: scale(1.015);"
+          />
+        </figure>
+        <div class="about-origin" style="transform: translateY(-1rem);">
+          <h2
+            id="origin-story"
+            data-phaeno-search="Phaeno origin story"
+            data-phaeno-search-summary="Phaeno was founded to address the gap between genotype and phenotype by profiling RNA comprehensively and accurately."
+            data-phaeno-search-keywords="Phaeno origin story genotype phenotype RNA profiling Central Dogma"
+          >Our Origin Story</h2>
+          <p>
+            Phaeno cofounders noted fundamental conflicts with the Central Dogma of Molecular Biology evident in molecular
+            neurobiological studies as early as 1988. These conflicts became more explicit in a series of
+            seminal studies 25 years ago and were largely ignored.
+          </p>
+          <p>
+            We recognized that demonstrating that disparities with the Central Dogma were universal would require new
+            technology. This would require profiling, simultaneously, every RNA arising from every gene in a cell or tissue,
+            comprehensively, accurately, economically and easily. Only in this way could such a fundamental tenet be
+            objectively tested.
+          </p>
+          <p>
+            The failure of genome sequencing to provide a direct map between genotype and phenotype is now not in dispute
+            (references).
+          </p>
+          <p>
+            Phaeno's PSeq technology is now capable of detecting the thousands of quanta of genetic information created in
+            messenger and functional RNAs, by complex steps in RNA processing. Phaeno NGS phased RNA sequencing (PSeq) can
+            now be used to mine the full transcriptome, with applications in both fundamental biology and genomic medicine.
+          </p>
+        </div>
+      </div>
+
+      <div class="about-team">
+        <h2
+          id="phaeno-team"
+          data-phaeno-search="Phaeno team"
+          data-phaeno-search-summary="Meet the Phaeno team building PSeq technology across executive, technical, business development, and advisory roles."
+          data-phaeno-search-keywords="Phaeno team executive technical business development advisors"
+        >Our Team</h2>
+        <h3 id="phaeno-executive-team" data-phaeno-search="Phaeno executive team">Executive Team</h3>
+        <Team members={management} />
+        <h3 id="phaeno-technical-team" data-phaeno-search="Phaeno technical team">Technical Team</h3>
+        <Team members={technical} />
+        <h3 id="phaeno-bus-dev-team" data-phaeno-search="Phaeno business development team">Business Development Team</h3>
+        <Team members={busdev} />
+        <h3 id="phaeno-advisors" data-phaeno-search="Phaeno advisory team">Advisory Team</h3>
+        <Team members={advisors} />
+      </div>
+    </section>
+  </main>
+</Layout>
+
+<style>
+  .about-feature {
+    display: grid;
+    align-items: start;
+    gap: clamp(2rem, 6vw, 5.5rem);
+  }
+
+  .about-feature--mission {
+    display: block;
+    max-width: 50rem;
+  }
+
+  .about-feature--origin {
+    grid-template-columns: minmax(20rem, 0.84fr) minmax(0, 1.16fr);
+    align-items: stretch;
+    margin-top: clamp(2.25rem, 4vw, 4rem);
+  }
+
+  .about-mission,
+  .about-origin {
+    max-width: 44rem;
+    transform: translateY(-1rem);
+  }
+
+  .about-mission {
+    max-width: 50rem;
+  }
+
+  .about-visual {
+    position: relative;
+    overflow: hidden;
+    margin: 0;
+    border: 1px solid var(--phaeno-green-200);
+    border-radius: var(--radius-xl);
+    background: var(--phaeno-navy-900);
+    box-shadow: var(--shadow-md);
+  }
+
+  .about-visual::after {
+    position: absolute;
+    inset: 0;
+    content: '';
+    pointer-events: none;
+    background: linear-gradient(145deg, transparent 45%, rgb(5 35 52 / 0.24));
+  }
+
+  .about-visual img {
+    display: block;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+  }
+
+  .about-visual--origin {
+    height: calc(100% - 2rem);
+    min-height: 18rem;
+    align-self: start;
+  }
+
+  .about-visual--origin img {
+    position: absolute;
+    inset: 0;
+    object-position: center;
+    filter: blur(1.75px);
+    transform: scale(1.015);
+  }
+
+  .about-team {
+    margin-top: clamp(2rem, 3.5vw, 3.5rem);
+  }
+
+  .about-mission h2,
+  .about-origin h2,
+  .about-team h2 {
+    margin-top: 0;
+  }
+
+  .about-mission p,
+  .about-origin p {
+    font-size: var(--font-size-lg);
+    line-height: var(--line-height-relaxed);
+  }
+
+  .about-team h3:not(:first-of-type) {
+    margin-top: var(--space-10);
+  }
+
+  .about-team :global(.team-grid) {
+    width: 100%;
+    max-width: none;
+  }
+
+  @media (max-width: 800px) {
+    .about-feature--mission,
+    .about-feature--origin {
+      grid-template-columns: 1fr;
+    }
+
+    .about-feature--origin .about-origin {
+      order: 1;
+    }
+
+    .about-feature--origin .about-visual {
+      order: 2;
+    }
+
+    .about-mission,
+    .about-origin {
+      max-width: var(--copy-max-width);
+      transform: none !important;
+    }
+
+    .about-visual--origin {
+      height: clamp(18rem, 72vw, 30rem) !important;
+    }
+  }
+</style>

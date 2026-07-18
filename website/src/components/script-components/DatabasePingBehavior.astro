@@ -1,0 +1,29 @@
+---
+const apiBaseUrl = import.meta.env.PUBLIC_API_BASE_URL;
+const databasePingUrl = apiBaseUrl
+  ? `${apiBaseUrl}web-ops/database-ping`
+  : "";
+---
+
+{
+  databasePingUrl && (
+    <script define:vars={{ databasePingUrl }}>
+      const pingDatabase = () => {
+        fetch(databasePingUrl, {
+          method: 'GET',
+          cache: 'no-store',
+          credentials: 'omit',
+          keepalive: true,
+        }).catch(() => {
+          // Keepalive failures should not affect the public website experience.
+        });
+      };
+
+      if ('requestIdleCallback' in window) {
+        window.requestIdleCallback(pingDatabase, { timeout: 3000 });
+      } else {
+        window.setTimeout(pingDatabase, 0);
+      }
+    </script>
+  )
+}

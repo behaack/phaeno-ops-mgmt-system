@@ -1,0 +1,87 @@
+---
+import { FaLinkedin, FaSquareXTwitter, FaYoutube } from 'react-icons/fa6';
+
+interface IProps {
+  size?: 'sm' | 'md' | 'lg'
+  width?: 'wide' | 'narrow'
+}
+
+const sizeMap = {
+  sm: 25,
+  md: 30,
+  lg: 35,
+} as const;
+
+
+const { size="sm", width='narrow' } = Astro.props as IProps
+const iconSize = sizeMap[size];
+---
+
+<div class={`flex ${width}`}>
+  <a 
+    class="linked-in"
+    target="_blank" 
+    rel="noopener noreferrer"
+    title="Visit us on LinkedIn"
+    aria-label="Visit us on LinkedIn – opens in a new tab"
+    href="https://www.linkedin.com/company/phaeno-biotech/"
+  >
+    <FaLinkedin
+      aria-hidden="true" 
+      focusable="false"      
+      size={iconSize}  
+    />
+  </a>
+
+  <!-- <a 
+    class="twitter"
+    target="_blank" 
+    rel="noopener noreferrer"
+    title="Visit us on X"
+    aria-label="Visit us on X  - opens in a new tab"
+    href="https://www.x.com"
+  >
+    <FaSquareXTwitter
+      aria-hidden="true" 
+      focusable="false"      
+      size={iconSize} 
+    />
+  </a> -->
+
+  <a 
+    class="youtube"
+    target="_blank" 
+    rel="noopener noreferrer"
+    title="Visit us on YouTube"
+    aria-label="Visit our YouTube channel - opens in a new tab"
+    href="https://www.youtube.com/@phaenobiotech" 
+  >
+    <FaYoutube
+      aria-hidden="true" 
+      focusable="false" 
+      size={iconSize} 
+    />
+  </a>
+</div>
+
+<style>
+.wide { gap: 36px; }
+.narrow { gap: 12px }
+
+a { 
+  transition: color 0.3s ease, 
+  transform 0.3s ease; 
+  /* This defines the focus shape */
+  padding: 0px;
+  border-radius: 4px; /* square-ish; use 0 for hard square */
+
+  transition: opacity 150ms ease, box-shadow 150ms ease;  
+}
+
+
+a:active { transform: scale(1); }
+
+.linked-in:hover  { color: #0077B5; }   /* LinkedIn Blue */
+.youtube:hover    { color: #FF0000; }   /* YouTube Red */  
+.twitter:hover    { color: black; }     /* Twitter Black */  
+</style>

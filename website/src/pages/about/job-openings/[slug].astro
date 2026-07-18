@@ -1,0 +1,90 @@
+---
+import JobSEOMeta from '@/components/meta-data-helpers/JobSEOMeta.astro';
+import ShareWithSocialMedia from '@/components/ShareWithSocialMedia.astro';
+import Layout from '@/layouts/Layout.astro';
+import TopPageBanner from '@/components/TopPageBanner.astro';
+import { getJobPostingSchema } from '@/lib/getJobPostSchema';
+import { getCollection, render, type CollectionEntry } from 'astro:content';
+import { formatContentDate } from '@/lib/dates';
+
+const path  = decodeURIComponent(Astro.url.pathname).toLowerCase();
+const host  = Astro.site?.href;
+const url   = new URL(path, host);
+
+const { job } = Astro.props as { job: CollectionEntry<'jobs'> };
+const {
+  id,
+  title,
+  locationType,
+  locationDescription,
+  employmentType,
+  date,
+  summary,
+} = job.data;
+
+const { Content } = await render(job);
+
+const metaTitle       = `Phaeno Job Opening: ${id} – ${title}`;
+const metaDescription = `${title} | ${employmentType} · ${locationType}: ${locationDescription} – ${summary}`;
+const metaImage       = new URL('/images/phaeno-socialmedia-splash.webp', Astro.site).href;
+
+const schema = getJobPostingSchema(job);
+
+export async function getStaticPaths() {
+  const jobs = await getCollection('jobs');
+  return jobs.map((job) => ({
+    params: { slug: job.id },
+    props: { job },
+  }));
+}
+---
+
+<Layout>
+  <JobSEOMeta 
+    slot="head"
+    title={metaTitle}
+    description={metaDescription}
+    datePosted={date}
+    image={metaImage}
+    schema={schema}    
+    searchTitle={`Job - ${title}`}
+  />
+
+  <main id="main" tabindex="-1">
+    <TopPageBanner title="Job Opening" image="image-3"/>
+    <section>
+      <p class="m-0 p-0">
+        About&nbsp;|&nbsp;
+        <a
+          href="/about/job-openings"
+          title="Return to job openings list"
+          aria-label="Return to job openings list"
+        >Job Openings</a>
+        &nbsp;|&nbsp;{job.id}
+      </p>
+
+      <h1 id={`${job.data.id}-${job.data.title.replace(/\s+/g, '-').toLowerCase()}`} class="alternative">{id} – {title}</h1>
+      <p class="text-sm text-gray-600">
+        {employmentType} • {locationType} • {locationDescription}
+      </p>
+      <p class="text-sm text-gray-500">
+        Posted&nbsp;{formatContentDate(date)}
+      </p>
+      <p class="text-sm text-gray-600">{summary}</p>
+
+      <article class="mt-8">
+        <Content />
+      </article>
+
+      <hr class="text-zinc-200 mt-12" />
+
+      <div class="flex justify-end my-10">
+        <ShareWithSocialMedia
+          title={title}
+          link={url}
+          summary={summary}
+        />
+      </div>
+    </section>
+  </main>
+</Layout>

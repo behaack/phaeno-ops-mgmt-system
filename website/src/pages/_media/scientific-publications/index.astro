@@ -1,0 +1,47 @@
+---
+import { getCollection } from 'astro:content'
+import Layout from '@/layouts/Layout.astro'
+import MediaCard from '@/components/MediaCard.astro'
+import MediaCollection from '@/components/MediaCollection.astro'
+import TopPageBanner from '@/components/TopPageBanner.astro'
+import SEOMeta from '@/components/meta-data-helpers/SEOMeta.astro';
+import MediaSearch from '@/components/MediaSearch.astro'
+import MediaNoItems from '@/components/MediaNoItems.astro'
+import { formatContentDate } from '@/lib/dates'
+
+const papers = await getCollection('scientific_papers')
+---
+
+<title>Scientific Pubs | Phaeno</title>
+<meta name="description" content="Browse throught and read Phaeno's scientific publications." />
+
+<Layout>
+  <SEOMeta 
+    slot="head"
+    title="Scientific Publications"
+    description="Learn about Phaeno's mission to transform molecular diagnostics through innovative RNA sequencing technology and expert leadership."
+    documentType="List"
+    searchTitle="Scientific Publications"
+  />    
+  <main id="main">
+    <TopPageBanner title="Scientific Publications" image="image-1" />
+    <section>
+      <MediaSearch listLength={papers.length} placeholder="Search title, author or journal" />
+      <MediaCollection>
+        {papers.map(paper => (
+          <MediaCard
+            searchString={`${paper.data.title} ${paper.data.journal} ${paper.data.authors.join(' ')}`.toLowerCase()}
+            title={paper.data.title} 
+            image={paper.data.image} 
+            link={`/media/scientific-publications/${paper.id}`}
+          >
+            <div>{paper.data.authors.join(', ')}</div>
+            <div><i>{paper.data.journal}</i></div>
+            <div><i>{formatContentDate(paper.data.date)}</i></div>
+          </MediaCard>
+        ))}      
+      </MediaCollection> 
+      <MediaNoItems listLength={papers.length} message="No scientific publications, check back later." />
+    </section>
+  </main>
+</Layout>

@@ -1,0 +1,29 @@
+---
+import { FaRss } from "react-icons/fa6";
+
+interface IProps {
+  feedName: string
+}
+
+const { feedName } = Astro.props as IProps
+---
+<a href={new URL(feedName, Astro.site)} aria-label="Subscribe via RSS">
+  <span>RSS Feed</span>
+  <FaRss size={20} />
+</a>
+
+<style>
+  a {
+    display: flex;
+    align-items: center;
+    font-size: 12px;
+    color: #F26522;
+    width: fit-content;
+    padding: 3px;
+    gap: 4px;
+  }
+
+  a:hover {
+    color: black
+  }
+</style>

@@ -1,104 +1,110 @@
-# Phaeno website v3 (Astro JS)
+# Phaeno company Website
 
-## 🚀 Project Structure
+This directory contains the public Phaeno company Website, copied from the
+standalone `phaeno-website` project into the Phaeno Portal repository. It
+remains a separate application and deployment unit: Astro builds the static
+site, Vercel serves it, and the Portal backend owns the anonymous Website API.
 
-Inside of your Astro project, you'll see the following folders and files:
+## Architecture and ownership
+
+- **Framework**: Astro 7 with static output
+- **Interactive islands**: React 19
+- **Styling**: Tailwind 4 and the Phaeno tokens in
+  `src/styles/design-system.css`
+- **Content**: Astro content collections and MDX
+- **Public origin**: `https://www.phaenobiotech.com`
+- **Deployment**: Vercel, independently from the Portal frontend and backend
+- **Anonymous API**: `../backend/app/Features/Website`
+- **Portal application**: `../frontend/`
+
+The Website does not connect directly to PostgreSQL or use authenticated Portal
+data. Search, contact, non-binding order, database-ping, public-document, and
+reCAPTCHA flows consume the versioned anonymous Website API. Changes to that
+contract must be planned and verified across both the Website and backend.
+
+## Project structure
 
 ```text
-/
+website/
 ├── public/
-│   └── public resources
+│   ├── images/
+│   └── robots.txt
 ├── src/
 │   ├── assets/
-│   │   └── .ts files
-│   ├── layouts/          [defines layout - header, menu, and footer for website]
-│   │   └── Layout.astro
-│   ├── components/       [reusable components and partial pages]
-│   │   └── home-page-sections  [sections to the home page]
-│   │   └── meta-data-helpers   [SEO meta data helper]
-│   │   └── script-components   [javascript for layout management]
-│   │   └── .astro files        [astro components]
-│   │   └── .tsx files          [react js islands]
-│   └── content/           [markdown content]
-│   │   └── blog
-│   │   └── events
-│   │   └── jobs
-│   │   └── news
-│   │   └── press
-│   │   └── scientific_papers
-│   │   └── white_papers
-│   │   └── config.ts           [markdown content configuration file]
-│   └── pages/
-│       └── index.astro     [home page]
-│       └── 404.astro
-│       └── website urls
+│   ├── components/
+│   ├── content/
+│   │   ├── blog/
+│   │   ├── events/
+│   │   ├── jobs/
+│   │   ├── news/
+│   │   ├── press/
+│   │   ├── scientific_papers/
+│   │   └── white_papers/
+│   ├── layouts/
+│   ├── lib/
+│   ├── pages/
+│   ├── react-hooks/
 │   └── styles/
-│       └── global.css        [global styles]
-└── astro.config.msj        [astro configuration]
-└── package.json            
-└── tailwind.config.js      [astro configuration]
-└── tsconfig.json           [typescript configuration]
-└── vercel.json             [vercel configuration]
+├── AGENTS.md
+├── astro.config.mjs
+├── package.json
+├── pnpm-lock.yaml
+├── tailwind.config.js
+├── tsconfig.json
+└── vercel.json
 ```
 
-## Anatomy of an astro webpage
+Pages use shared layouts and SEO helpers, with page-specific content inside
+semantic `main` and section landmarks. Reuse existing components and content
+collection patterns rather than introducing parallel structures.
 
-```Astro
----
-// This is for front matter. For example, importing components
-import TopPageBanner from "@/components/TopPageBanner.astro";
-import Layout from "@/layouts/Layout.astro";
-import SEOMeta from '@/components/meta-data-helpers/SEOMeta.astro';  
----
-<Layout>
-  <SEOMeta 
-    slot="head"
-    title="Stalled genomic revolution | Phaeno"
-    description="Find our more about the shortcomings of the genomic revolution."
-  />    
-  <main>
-    <TopPageBanner1 title="Stalled genomic revolution" image="image-1"/>
-    <section>
-      Page content here. A page may have multiple sections
-    </section>  
-  </main>
-</Layout>
-```text
-Every page must follow this basic pattern, in this specific order:
-- Layout
-  - SEOMeta
-  - main
-    - TopPageBanner
-    - section(s)
+## Design, content, and search
 
+Read `src/styles/design-system.css` and the current layout and component
+patterns before changing the visual system. The Website should make Phaeno's
+scientific evidence clear and credible, use established semantic tokens, and
+meet WCAG 2.2 AA.
 
-## 🧞 Commands
+Searchable pages need meaningful titles, descriptions, `phaeno:document-type`
+metadata, and stable heading IDs. Route, metadata, heading, content, sitemap,
+and RSS changes should be checked together because the Portal-owned crawler
+indexes the deployed public site.
 
-All commands are run from the root of the project, from a terminal:
+The content collections under `src/content/` hold blog posts, events, jobs,
+news, press releases, scientific papers, and white papers. Keep content schema
+and route behavior aligned when adding or changing entries.
 
-| Command                | Action                                           |
-| :--------------------- | :----------------------------------------------- |
-| `pnpm install`         | Installs dependencies                            |
-| `pnpm dev`             | Starts local dev server at `localhost:4321`      |
-| `pnpm build`           | Build your production site to `./dist/`          |
-| `pnpm preview`         | Preview your build locally, before deploying     |
-| `pnpm astro ...`       | Run CLI commands like `astro add`, `astro check` |
-| `pnpm astro -- --help` | Get help using the Astro CLI                     |
+## Environment configuration
 
-## 👀 Want to learn more?
+The browser-visible build currently expects:
 
-Feel free to check [our documentation](https://docs.astro.build) or jump into our [Discord server](https://astro.build/chat).
+- `PUBLIC_API_BASE_URL`: base URL for the versioned anonymous Website API
+- `PUBLIC_RECAPTCHA_SITE_ID`: public reCAPTCHA site identifier
 
-## 🧰 Required Tools
+Keep local values in ignored environment files or the deployment platform.
+Never place secrets in a `PUBLIC_` variable because Astro includes those values
+in browser assets.
 
-Install these tools to edit and run this project locally:
+## Commands
 
-- **VS Code**: Recommended editor. Install the Astro and ESLint extensions for best editing experience.
-  - Mac download: https://code.visualstudio.com/download
-- **Git**: Source control and repository cloning. Ensure `git` is available in your terminal.
-  - Mac install options: https://git-scm.com/install/mac
-- **Node.js (LTS)**: Runtime required for Astro and tooling. Use the latest LTS version.
-  - Mac installer: https://nodejs.org/en/download/prebuilt-installer
-- **pnpm**: Package manager used by this project. Install globally via `npm install -g pnpm` after Node.js.
-  - Mac install guide: https://pnpm.io/installation
-  
+Use pnpm and run commands from `website/`:
+
+| Command | Action |
+| --- | --- |
+| `pnpm install` | Install dependencies |
+| `pnpm dev` | Start the Astro development server at `localhost:4321` |
+| `pnpm build` | Build the static production site to `dist/` |
+| `pnpm preview` | Preview the production build locally |
+| `pnpm astro -- --help` | Show Astro CLI help |
+
+For route, content, metadata, style, or component changes, run `pnpm build` and
+inspect the affected generated HTML, sitemap, and RSS output when applicable.
+For documentation-only changes, validate links and paths and run
+`git diff --check`; an application build is normally unnecessary.
+
+## Working rules
+
+Read `AGENTS.md` in this directory in addition to the repository-level
+`../AGENTS.md`. Do not add dependencies, change the public API contract,
+deploy, stage, or commit without the scope and approval required by those
+guides.

@@ -1,0 +1,62 @@
+---
+import { Image } from 'astro:assets';
+
+interface IProps {
+  text: string
+  imageUrl: string
+  imageAlt: string
+}
+
+const {text, imageUrl, imageAlt} = Astro.props as IProps;
+---
+
+<div class="p-3">
+  <blockquote class="block-quote">
+    <div class="quote">{text}</div>
+    <div class="text-gray-600 text-sm items-center flex mt-4 gap-4">
+      <div class="avatar">
+        <Image width={60} height={60} alt={imageAlt} src={imageUrl} />
+      </div>
+      <div class="text-black text-xs not-italic">
+        <slot />
+      </div>
+    </div>  
+  </blockquote>   
+</div>
+
+<style>
+.block-quote {
+  background-color: #f9fafb;    
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1); /* Drop shadow */
+  border-radius: 0.5rem; /* Optional: rounded corners */
+}
+
+.quote {
+  font-size: 1.25rem;
+}
+
+.avatar {
+  width: 50px;
+  height: 50px;
+  aspect-ratio: 1 / 1; /* ensures it's always square */
+  border-radius: 50%;
+  overflow: hidden;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0; /* prevent shrinking on small screens */
+}
+
+.avatar img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}    
+
+@media (max-width: 650px) {
+  .quote {
+    font-size: 1.1rem;
+  }
+}
+</style>

@@ -1,0 +1,42 @@
+---
+import { FaArrowRight } from 'react-icons/fa6';
+
+interface IProp {
+  link: string
+}
+
+const { link } = Astro.props
+---
+
+<div>
+  <a target="_blank" class="read-full-article" href={link}>
+    <div>Read the full article</div>
+    <div class="pl-3"><FaArrowRight size={20}/></div>
+  </a>
+</div>
+
+<style>
+a.read-full-article {
+  border: 3px solid #B35D0C;
+  color: #B35D0C;
+  border-radius: 7px;
+  max-width: 15rem;
+  text-align: center;
+  padding: .75rem;
+  display: flex;
+  align-items: center;
+  transition: color .3s ease, transform .3s ease;
+}
+
+.read-full-article:focus,
+.read-full-article:hover {
+  color: black;
+  border: 3px solid black;
+  cursor: pointer;
+  text-decoration: none;
+}  
+
+.read-full-article:hover {
+  transform: scale(1.025);
+} 
+</style>

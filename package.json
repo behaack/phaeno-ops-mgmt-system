@@ -3,8 +3,10 @@
   "private": true,
   "packageManager": "pnpm@10.24.0",
   "scripts": {
-    "dev": "pnpm --dir frontend run dev",
-    "dev:web": "pnpm --dir frontend run dev",
+    "dev": "pnpm run dev:portal",
+    "dev:portal": "pnpm --dir frontend run dev",
+    "dev:website": "pnpm --dir website run dev",
+    "dev:web": "pnpm run dev:portal",
     "dev:https": "pnpm --dir frontend run dev:https",
     "lint": "pnpm --dir frontend run lint",
     "lint:ci": "pnpm --dir frontend run lint:ci",

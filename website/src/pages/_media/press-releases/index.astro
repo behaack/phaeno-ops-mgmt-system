@@ -1,0 +1,70 @@
+---
+import { getCollection } from 'astro:content'
+import { FaCaretRight } from 'react-icons/fa6'
+import Layout from '@/layouts/Layout.astro'
+import RSSFeed from '@/components/RSSFeed.astro'
+import TopPageBanner from '@/components/TopPageBanner.astro'
+import SEOMeta from '@/components/meta-data-helpers/SEOMeta.astro';
+import MediaCollection from '@/components/MediaCollection.astro'
+import MediaSearch from '@/components/MediaSearch.astro'
+import MediaNoItems from '@/components/MediaNoItems.astro'
+import { formatContentDate } from '@/lib/dates'
+
+const press = await getCollection('press')
+---
+
+<title>Press Releases | Phaeno</title>
+<meta name="description" content="Phaeno is revolutionizing RNA sequencing with full-length, high-fidelity reads. Discover our platform and team." />
+
+<Layout>
+  <SEOMeta 
+    slot="head"
+    title="Press Releases | Phaeno"
+    description="Learn about Phaeno's mission to transform molecular diagnostics through innovative RNA sequencing technology and expert leadership."
+    documentType="List"
+    searchTitle="Press Releases"
+  />  
+  <main id="main">
+    <TopPageBanner title="Press Releases" image="image-2"/>
+    <section>
+      {press.length ? (
+        <div class="mb-2 flex justify-end">
+          <RSSFeed feedName="press.xml"/>
+        </div>
+      ) : null}
+      <MediaSearch listLength={press.length} placeholder="Search title" />
+      <MediaCollection stacked>
+        {press.map(item => (
+          <li 
+            class="media-card-item"
+            data-search={`${item.data.title}`.toLowerCase()}           
+          > 
+            <div class="flex items-center gap-4 -ml-4">
+              <div style="color: #7F943A;"><FaCaretRight size={50}/></div>
+              <div>
+                <a href={`/media/press-releases/${item.id}`}><h2 class="text-xl m-0 p-0">{item.data.title}</h2></a>
+                <div>{formatContentDate(item.data.date)}</div>
+              </div>
+            </div>       
+          </li>
+        ))}
+      </MediaCollection>    
+      <MediaNoItems listLength={press.length} message="No press releases, check back later." />
+    </section>
+  </main>
+</Layout>
+
+<style>
+.media-card-item {
+  padding: .25rem 0 1rem 0;
+  border-bottom: 1px rgba(128, 128, 128, 0.123) solid; 
+}
+
+.media-card-item:last-child {
+  border-bottom: none;
+}
+
+a {
+  font-size: 1.5rem;
+}
+</style>

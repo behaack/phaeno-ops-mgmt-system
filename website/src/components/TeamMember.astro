@@ -1,0 +1,104 @@
+---
+import { Image } from 'astro:assets';
+import { ETeamMemberType, type ITeamMember } from '@/assets/team';
+import { FaLinkedin } from 'react-icons/fa6';
+
+const iconSize: number = 30;
+
+interface IProp {
+  member: ITeamMember
+}
+
+const { member } = Astro.props as IProp;
+---
+
+<li class="member-card">
+  <Image
+    src={`/images/team/${member.image}`}
+    alt={`Photo of ${member.fname} ${member.lname}`}
+    class="member-photo"
+    height={50}
+    width={50}
+  />
+
+  <div class="member-info">
+    <p class="member-name">{member.fname}<br />{member.lname}</p>
+
+    {(member.type != ETeamMemberType.advisor) && (
+      <p class="member-title">{member.title}</p>
+    )}
+
+    <a
+      class="member-link"
+      target="_blank"
+      rel="noopener noreferrer"
+      title={`See ${member.fname}'s profile on LinkedIn`}
+      aria-label={`Visit ${member.fname} ${member.lname} on LinkedIn - opens in a new tab`}
+      href={member.linkedIn}
+    >
+      <FaLinkedin
+        aria-hidden="true" 
+        focusable="false"             
+        size={iconSize} 
+      />
+    </a>
+  </div>
+</li>
+
+<style>
+.member-card {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+
+  padding: var(--space-5);
+  border: 1px solid var(--phaeno-green-200);
+  border-radius: var(--radius-xl);
+  background: linear-gradient(155deg, var(--color-surface), var(--phaeno-green-50));
+  box-shadow: var(--shadow-sm);
+
+  /* Allow the grid to shrink but not below the image size */
+  min-width: 180px;
+}
+
+.member-photo {
+  width: 100%;
+  aspect-ratio: 1/1;
+  object-fit: cover;
+  border-radius: var(--radius-pill);
+  max-width: 130px;
+}
+
+.member-info { margin-top: 0.75rem; }
+.member-name  { font-size: 1rem; color: var(--phaeno-rna-900); font-weight: var(--font-weight-bold); margin: 0; }
+.member-title { font-size: var(--font-size-xs); color: var(--color-text-muted); margin: 0.25rem 0; }
+
+.member-link {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+
+  margin-top: 0.5rem;
+
+  /* This defines the focus shape */
+  padding: 2px;
+  border-radius: 4px; /* square-ish; use 0 for hard square */
+
+  transition: opacity 150ms ease, box-shadow 150ms ease;
+}
+.member-link:hover { 
+  opacity: 0.75;
+  color: #0a66c2;
+}
+
+/* Remove default browser ring */
+.member-link:focus {
+  outline: none;
+}
+
+/* Accessible keyboard-only focus ring */
+.member-link:focus-visible {
+  box-shadow: 0 0 0 2px var(--color-focus);
+}
+</style>

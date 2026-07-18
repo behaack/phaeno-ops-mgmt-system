@@ -1,0 +1,14 @@
+---
+import type { IContent } from "./FooterSection.astro";
+
+interface IProps {
+  contentItem: IContent;
+}
+
+const { contentItem } = Astro.props as IProps
+---
+
+<div class="text-sm">
+  <a href={`email:${contentItem.value}`}>{contentItem.label}</a>
+</div>
+

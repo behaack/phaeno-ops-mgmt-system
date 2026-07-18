@@ -1,0 +1,352 @@
+---
+---
+
+<div class="comparison">
+  <div class="comparison__header">
+    <h2
+      id="performance-metrics"
+      data-phaeno-search="PSeq performance metrics and RNA sequencing comparison"
+      data-phaeno-search-summary="Comparison of PSeq, short-read RNA-Seq, and long-read sequencing across molecule resolution, quantification, workflow, ML readiness, and preliminary performance."
+      data-phaeno-search-keywords="PSeq performance RNA-Seq long-read sequencing short-read sequencing rare isoforms full-length recovery pri-miRNA pre-miRNA mature miRNA NGS compatible ML-ready"
+    >How PSeq compares</h2>
+    <p>Preliminary performance data against standard short-read and long-read workflows.</p>
+  </div>
+
+  <div class="comparison__table-wrap">
+    <table>
+      <caption class="sr-only">PSeq, short-read NGS, and long-read sequencing comparison</caption>
+      <thead>
+        <tr>
+          <th scope="col"><span class="sr-only">Metric</span></th>
+          <th scope="col" class="pseq-heading"><span class="pseq-heading__label">PSeq</span></th>
+          <th scope="col">Short-Read NGS<sup>1</sup></th>
+          <th scope="col">Long-Read<sup>2</sup></th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <th scope="row">Isoform resolution</th>
+          <td data-label="PSeq"><span class="status status--yes" aria-hidden="true">✓</span><span class="sr-only">Yes</span></td>
+          <td data-label="Short-Read NGS"><span class="status status--no" aria-hidden="true">✕</span><span class="sr-only">No</span></td>
+          <td data-label="Long-Read"><span class="status status--yes" aria-hidden="true">✓</span><span class="sr-only">Yes</span></td>
+        </tr>
+        <tr>
+          <th scope="row">Full UTR resolution</th>
+          <td data-label="PSeq"><span class="status status--yes" aria-hidden="true">✓</span><span class="sr-only">Yes</span></td>
+          <td data-label="Short-Read NGS"><span class="status status--no" aria-hidden="true">✕</span><span class="sr-only">No</span></td>
+          <td data-label="Long-Read"><span class="status-with-detail"><span class="status status--partial" aria-hidden="true">◐</span><span>partial only</span></span></td>
+        </tr>
+        <tr>
+          <th scope="row">Full-length isoform structure</th>
+          <td data-label="PSeq"><span class="status-with-detail"><span class="status status--yes" aria-hidden="true">✓</span><span>molecule-constrained</span></span></td>
+          <td data-label="Short-Read NGS"><span class="status-with-detail"><span class="status status--no" aria-hidden="true">✕</span><span>inferred from pooled fragments</span></span></td>
+          <td data-label="Long-Read"><span class="status status--yes" aria-hidden="true">✓</span><span class="sr-only">Yes</span></td>
+        </tr>
+        <tr>
+          <th scope="row">Pri-/pre-miRNA<sup>3</sup></th>
+          <td data-label="PSeq"><span class="status status--yes" aria-hidden="true">✓</span><span class="sr-only">Yes</span></td>
+          <td data-label="Short-Read NGS"><span class="status-with-detail"><span class="status status--partial" aria-hidden="true">◐</span><span>fragmented/inferred</span></span></td>
+          <td data-label="Long-Read"><span class="status-with-detail"><span class="status status--partial" aria-hidden="true">◐</span><span>longer pri-/pre-miRNA only</span></span></td>
+        </tr>
+        <tr>
+          <th scope="row">Mature miRNA</th>
+          <td data-label="PSeq"><span class="status-with-detail"><span class="status status--yes" aria-hidden="true">✓</span><span>validation pending</span></span></td>
+          <td data-label="Short-Read NGS"><span class="status-with-detail"><span class="status status--partial" aria-hidden="true">◐</span><span>requires small-RNA library</span></span></td>
+          <td data-label="Long-Read"><span class="status status--no" aria-hidden="true">✕</span><span class="sr-only">No</span></td>
+        </tr>
+        <tr>
+          <th scope="row">Quantitative</th>
+          <td data-label="PSeq"><span class="status-with-detail"><span class="status status--yes" aria-hidden="true">✓</span><span>molecule-counting</span></span></td>
+          <td data-label="Short-Read NGS"><span class="status-with-detail"><span class="status status--no" aria-hidden="true">✕</span><span>semi-quantitative</span></span></td>
+          <td data-label="Long-Read"><span class="status-with-detail"><span class="status status--no" aria-hidden="true">✕</span><span>semi-quantitative</span></span></td>
+        </tr>
+        <tr>
+          <th scope="row">Direct cloning</th>
+          <td data-label="PSeq"><span class="status status--yes" aria-hidden="true">✓</span><span class="sr-only">Yes</span></td>
+          <td data-label="Short-Read NGS"><span class="status status--no" aria-hidden="true">✕</span><span class="sr-only">No</span></td>
+          <td data-label="Long-Read"><span class="status status--no" aria-hidden="true">✕</span><span class="sr-only">No</span></td>
+        </tr>
+        <tr>
+          <th scope="row">Simple workflow</th>
+          <td data-label="PSeq"><span class="status status--yes" aria-hidden="true">✓</span><span class="sr-only">Yes</span></td>
+          <td data-label="Short-Read NGS"><span class="status-with-detail"><span class="status status--partial" aria-hidden="true">◐</span><span>multi-step &amp; model-dependent</span></span></td>
+          <td data-label="Long-Read"><span class="status status--no" aria-hidden="true">✕</span><span class="sr-only">No</span></td>
+        </tr>
+        <tr>
+          <th scope="row">NGS-compatible</th>
+          <td data-label="PSeq"><span class="status status--yes" aria-hidden="true">✓</span><span class="sr-only">Yes</span></td>
+          <td data-label="Short-Read NGS"><span class="status status--yes" aria-hidden="true">✓</span><span class="sr-only">Yes</span></td>
+          <td data-label="Long-Read"><span class="status status--no" aria-hidden="true">✕</span><span class="sr-only">No</span></td>
+        </tr>
+        <tr>
+          <th scope="row">Designed for downstream ML</th>
+          <td data-label="PSeq"><span class="status status--yes" aria-hidden="true">✓</span><span class="sr-only">Yes</span></td>
+          <td data-label="Short-Read NGS"><span class="status status--no" aria-hidden="true">✕</span><span class="sr-only">No</span></td>
+          <td data-label="Long-Read"><span class="status status--no" aria-hidden="true">✕</span><span class="sr-only">No</span></td>
+        </tr>
+        <tr class="metrics-start">
+          <th scope="row">Rare isoform sensitivity<sup>4</sup></th>
+          <td data-label="PSeq" class="pseq-value">&gt;87%</td>
+          <td data-label="Short-Read NGS">&lt;5%</td>
+          <td data-label="Long-Read">~45%</td>
+        </tr>
+        <tr>
+          <th scope="row">Full-length recovery rate</th>
+          <td data-label="PSeq" class="pseq-value">&gt;94%</td>
+          <td data-label="Short-Read NGS">~72%</td>
+          <td data-label="Long-Read">~88%</td>
+        </tr>
+        <tr>
+          <th scope="row">Hands-on time per sample</th>
+          <td data-label="PSeq" class="pseq-value">&lt;2 hrs</td>
+          <td data-label="Short-Read NGS">~3 hrs</td>
+          <td data-label="Long-Read">~6 hrs</td>
+        </tr>
+        <tr>
+          <th scope="row">Turnaround (library→FASTA)</th>
+          <td data-label="PSeq" class="pseq-value">&lt;24 hrs</td>
+          <td data-label="Short-Read NGS">~26 hrs</td>
+          <td data-label="Long-Read">~72 hrs</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <div class="comparison__notes">
+    <p><sup>1</sup> Illumina TruSeq Stranded mRNA, STAR + RSEM quantification (v2.7). <sup>2</sup> PacBio Iso-Seq3, SMRT-Link v11, consensus polishing. <sup>3</sup> miRNA precursors are long enough for standard transcript-oriented workflows, although short-read data may require reconstruction. Mature miRNAs are approximately 22 nt and require efficient small-RNA capture. <sup>4</sup> Rare isoforms are &lt;0.01% abundance.</p>
+    <p>All data are for research use only (RUO); not validated for clinical diagnostics.</p>
+  </div>
+</div>
+
+<style>
+.comparison {
+  width: 100%;
+}
+
+.comparison__header {
+  margin-bottom: var(--space-8);
+}
+
+.comparison__header h2 {
+  margin: 0;
+  padding: 0;
+  color: var(--phaeno-rna-900);
+  font-size: clamp(2rem, 3.2vw, 3rem);
+  line-height: 1.05;
+}
+
+.comparison__header p {
+  max-width: none;
+  margin: var(--space-3) 0 0;
+  padding: 0;
+  color: var(--color-text-muted);
+  font-size: var(--font-size-lg);
+}
+
+.comparison__table-wrap {
+  width: 100%;
+}
+
+table {
+  width: 100%;
+  border-collapse: collapse;
+  table-layout: fixed;
+}
+
+thead {
+  border-bottom: 2px solid var(--phaeno-neutral-900);
+}
+
+thead th {
+  padding: .9rem 1rem;
+  color: var(--phaeno-rna-900);
+  font-family: var(--font-family-data);
+  font-size: var(--font-size-sm);
+  font-weight: var(--font-weight-medium);
+  text-align: left;
+}
+
+thead th:first-child {
+  width: 25%;
+}
+
+thead th:nth-child(2) {
+  width: 22%;
+}
+
+thead th:nth-child(3),
+thead th:nth-child(4) {
+  width: 26.5%;
+}
+
+.pseq-heading,
+.pseq-value {
+  color: var(--phaeno-rna-600);
+}
+
+.pseq-heading {
+  font-weight: var(--font-weight-bold);
+}
+
+.pseq-heading__label {
+  display: inline-flex;
+  align-items: center;
+  padding: .35rem .75rem;
+  border-radius: 999px;
+  color: var(--color-text-on-dark);
+  background: var(--phaeno-rna-900);
+  font-family: var(--font-family-sans);
+  font-size: var(--font-size-md);
+  font-weight: var(--font-weight-bold);
+  letter-spacing: .01em;
+}
+
+tbody tr {
+  border-bottom: 1px solid var(--phaeno-neutral-200);
+}
+
+tbody th,
+tbody td {
+  padding: .9rem 1rem;
+  vertical-align: top;
+  text-align: left;
+}
+
+tbody th {
+  color: var(--color-text);
+  font-size: var(--font-size-sm);
+  font-weight: var(--font-weight-semibold);
+  line-height: 1.35;
+}
+
+tbody td {
+  color: var(--color-text-muted);
+  font-family: ui-monospace, SFMono-Regular, Consolas, 'Liberation Mono', monospace;
+  font-size: .78rem;
+  line-height: 1.5;
+}
+
+tbody td:nth-child(2) {
+  color: var(--phaeno-rna-600);
+}
+
+.metrics-start {
+  border-top: 2px solid var(--phaeno-neutral-900);
+}
+
+.status {
+  display: inline-block;
+  min-width: 1.1em;
+  margin-right: .35rem;
+  font-family: var(--font-family-data);
+  font-weight: var(--font-weight-semibold);
+}
+
+.status-with-detail {
+  display: grid;
+  width: 100%;
+  grid-template-columns: 1.1em minmax(0, 1fr);
+  column-gap: .35rem;
+  align-items: start;
+}
+
+.status-with-detail .status {
+  margin-right: 0;
+}
+
+.status--yes {
+  color: #007b70;
+}
+
+.status--no {
+  color: #c54b3f;
+}
+
+.status--partial {
+  color: #be760b;
+}
+
+.comparison__notes {
+  max-width: 64rem;
+  margin-top: var(--space-5);
+}
+
+.comparison__notes p {
+  max-width: none;
+  margin: 0;
+  padding: 0;
+  color: var(--phaeno-neutral-500);
+  font-family: ui-monospace, SFMono-Regular, Consolas, 'Liberation Mono', monospace;
+  font-size: .68rem;
+  line-height: 1.6;
+}
+
+.comparison__notes p + p {
+  margin-top: var(--space-1);
+}
+
+@media (max-width: 760px) {
+  .comparison__header {
+    margin-bottom: var(--space-6);
+  }
+
+  .comparison__header p {
+    font-size: var(--font-size-md);
+  }
+
+  table,
+  tbody,
+  tr,
+  th,
+  td {
+    display: block;
+    width: 100%;
+  }
+
+  thead {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip: rect(0 0 0 0);
+    clip-path: inset(50%);
+    white-space: nowrap;
+  }
+
+  tbody tr {
+    padding: var(--space-4) 0;
+  }
+
+  tbody tr:first-child {
+    border-top: 2px solid var(--phaeno-neutral-900);
+  }
+
+  tbody th {
+    padding: 0 0 var(--space-3);
+    font-size: var(--font-size-md);
+  }
+
+  tbody td {
+    display: grid;
+    grid-template-columns: minmax(7.5rem, 42%) 1fr;
+    gap: var(--space-3);
+    padding: .35rem 0;
+  }
+
+  tbody td::before {
+    content: attr(data-label);
+    color: var(--phaeno-neutral-600);
+    font-family: var(--font-family-sans);
+    font-size: var(--font-size-xs);
+    font-weight: var(--font-weight-semibold);
+  }
+
+  tbody td:nth-child(2)::before {
+    color: var(--phaeno-rna-600);
+  }
+
+  .metrics-start {
+    margin-top: var(--space-4);
+  }
+}
+</style>

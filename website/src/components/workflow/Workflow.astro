@@ -1,0 +1,138 @@
+---
+import { Image } from 'astro:assets';
+import WorkflowItem from "./WorkflowItem.astro";
+---
+<div class="workflow-container">
+  <WorkflowItem 
+    verb="collect"
+    image="/images/workflow/sample.webp"
+    alt="rna sample"
+  >
+    <div>RNA<br />Sample</div>
+  </WorkflowItem>
+
+  <div class="arrow">
+    <Image class="arrowImg" alt="next step" src="/images/workflow/next.webp" height={10} width={10} />
+  </div>
+  
+  <WorkflowItem 
+    verb="apply"
+    image="/images/workflow/chemistry.webp"
+    bgColor="#D6E3C3"
+    borderColor="#789946"
+    alt="beakers and test tubes"
+  >
+    <div>PSeq<br />Chemistry</div>
+  </WorkflowItem>
+
+  <div class="arrow">
+    <Image class="arrowImg" alt="next step" src="/images/workflow/next.webp" height={10} width={10} />
+  </div>
+
+  <WorkflowItem 
+    verb="sequence"
+    image="/images/workflow/ngs.webp"
+    alt="NGS sequencing instrument"
+  >
+    <div>NGS<br />System</div>
+  </WorkflowItem>
+
+  <div class="arrow">
+    <Image class="arrowImg" alt="next step" src="/images/workflow/next.webp" height={10} width={10} />
+  </div>
+
+  <WorkflowItem 
+    verb="execute"
+    image="/images/workflow/computer.webp"
+    bgColor="#C1D4DD"
+    borderColor="#156082"
+    alt="Computer"
+  >
+    <div>PSeq<br />Software<br/>Stack</div>
+  </WorkflowItem>
+
+  <div class="arrow">
+    <Image class="arrowImg" alt="next step" src="/images/workflow/next.webp" height={22} width={50} />
+  </div>
+
+  <WorkflowItem 
+    verb="deliver"
+    bgColor="#F2F2F2"
+    image="/images/workflow/results.webp"
+    alt="Data table"
+  >
+    <div>Isoform<br />Resolved<br />Insights</div>
+  </WorkflowItem>
+</div>
+
+<style lang="scss">
+.workflow-container {
+  display: grid;
+  /* 5 items (1fr each) + 4 arrows (2rem each) = 9 columns */
+  grid-template-columns: 1fr 6rem 1fr 6rem 1fr 6rem 1fr 6rem 1fr;
+  align-items: start;
+}
+
+.arrow {
+  display: flex;
+  justify-content: center; /* centers the arrow horizontally */
+  align-items: flex-start;   /* align top vertically */
+}
+
+.arrowImg {
+  height: 50px;
+  width: auto;
+  margin-top: 2rem;
+}
+
+@media (max-width:  1200px) {
+  .workflow-container {
+    grid-template-columns: 1fr 6rem 1fr 6rem 1fr 6rem 1fr 6rem 1fr;
+  }
+}
+
+@media (max-width:  1000px) {
+  .workflow-container {
+    grid-template-columns: 1fr 3rem 1fr 3rem 1fr 3rem 1fr 3rem 1fr;
+  }
+  .arrowImg {
+    height: 40px;
+    margin-top: 1.7rem;
+  }
+}  
+
+@media (max-width:  750px) {
+  .workflow-container {
+    grid-template-columns: 1fr 2rem 1fr 2rem 1fr 2rem 1fr 2rem 1fr;
+  }
+  
+  .arrowImg {
+    height: 25px;
+    margin-top: 1.6rem;
+  }  
+}  
+
+@media (max-width:  500px) {
+  .workflow-container {
+    grid-template-columns: 1fr 1rem 1fr 1rem 1fr 1rem 1fr 1rem 1fr;
+  }
+
+  .arrowImg {
+    height: 20px;
+    margin-top: 1.6rem;
+  }  
+}  
+
+@media (max-width:  425px) {
+  .workflow-container {
+    grid-template-columns: 1fr;
+    place-items: center; /* centers horizontally AND vertically */
+  }
+  .arrowImg {
+    height: 40px;
+    margin-top: .25rem;
+    margin-bottom: .25rem;
+    transform: rotate(90deg);
+  }  
+}  
+</style>

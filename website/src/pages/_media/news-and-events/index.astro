@@ -1,0 +1,85 @@
+---
+import { FaCaretRight } from 'react-icons/fa6';
+import { getCollection } from 'astro:content'
+import Layout from '@/layouts/Layout.astro'
+import MediaCard from '@/components/MediaCard.astro'
+import MediaCollection from '@/components/MediaCollection.astro'
+import TopPageBanner from '@/components/TopPageBanner.astro'
+import SEOMeta from '@/components/meta-data-helpers/SEOMeta.astro';
+import MediaSearch from '@/components/MediaSearch.astro';
+import MediaNoItems from '@/components/MediaNoItems.astro';
+import { formatContentDate } from '@/lib/dates';
+
+const events = await getCollection('events')
+const news = await getCollection('news')
+---
+
+<title>News & Events | Phaeno</title>
+<meta name="description" content="Stay up to date with Events we are attending and catch the latest news about Phaeno." />
+
+<Layout>
+  <SEOMeta 
+    slot="head"
+    title="News & Events | Phaeno"
+    description="Learn about Phaeno's mission to transform molecular diagnostics through innovative RNA sequencing technology and expert leadership."
+    documentType="List"
+    searchTitle="News"
+  />    
+  <main id="main">
+    <TopPageBanner title="News & Events" image="image-3"/>
+    <section>
+      <h2>Upcoming events</h2>
+      {events.length ? (
+        <ul class="event-list">
+          {events.map(item => (
+            <li data-lastdate={item.data.lastdate} > 
+              <dir class="flex items-center gap-4">
+                <div style="color: #7F943A;"><FaCaretRight size={30}/></div>
+                <div>
+                  <a target="_blank" href={item.data.path}>
+                    <div class="font-bold">{item.data.name}</div>
+                    <div class="text-xs">{item.data.dates} | {item.data.location}</div>
+                  </a> 
+                </div>
+                </dir>       
+            </li>
+          ))}
+        </ul>          
+      ) : <div>No events</div>}
+      <br />
+      <h2>Phaeno in the news</h2>
+      
+      <MediaSearch listLength={news.length} placeholder="Search title" />
+      
+      <MediaCollection>
+        {news.map(item => (
+          <MediaCard 
+            searchString={`${item.data.title}`.toLowerCase()}
+            title={item.data.title} 
+            image={item.data.image} 
+            link={`/media/news-and-events/${item.id}`}
+          >
+            <div>{formatContentDate(item.data.date)}</div>
+          </MediaCard>
+        ))}      
+      </MediaCollection>
+      <MediaNoItems listLength={news.length} message="No news items, check back later." />
+      <br/>
+    </section>
+  </main>
+</Layout>
+
+<style>
+.event-list {
+  display: flex;
+  flex-direction: column;
+  gap: 1.25rem;
+  list-style: none;
+  margin-left: 0;
+}
+
+.event-list li:not(:last-child) {
+  border-bottom: 1px solid rgba(0, 0, 0, 0.1);
+  padding-bottom: 1.25rem;
+}
+</style>

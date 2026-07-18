@@ -1,0 +1,20 @@
+---
+import TopPageBanner from '@/components/TopPageBanner.astro';
+import Layout from '@/layouts/Layout.astro';
+import SEOMeta from '@/components/meta-data-helpers/SEOMeta.astro';
+---
+<Layout>   
+  <SEOMeta 
+    slot="head"
+    title="Data Security, Retention, and Backup Policy | Phaeno"
+    description="RRead Phaeno’s Data Policies and learn how we manage, store, and protect data."
+    documentType="Web Page"
+    searchTitle="Data Policies"
+  />    
+  <main id="main">
+    <TopPageBanner title="Phaeno Data Policies" image="image-2"/>    
+    <section>
+      <p>If you would like to learn about our <b><i>data security, retention, and backup policies</i></b>, please contact your account representative or contact us at <a href="mailto:info@phaenobiotech.com">info@phaenobiotech.com</a>.</p>
+    </section>
+  </main>
+</Layout>

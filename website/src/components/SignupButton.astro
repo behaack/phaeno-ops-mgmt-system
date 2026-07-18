@@ -1,0 +1,54 @@
+---
+interface IProps {
+  size: 'narrow' | 'wide'
+}
+
+const { size } = Astro.props as IProps
+---
+
+<a
+  href="/contact#request-demo"
+  role="button"
+  aria-label="Request a demo"
+>
+  <span>
+    Request a {(size==='narrow') && <br />}demo
+  </span>
+</a>
+
+<style>
+  a {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 2.75rem;
+    background: var(--phaeno-orange-500);
+    color: var(--color-text-on-dark);
+    padding: .65rem 1rem;
+    border: 1px solid var(--phaeno-orange-500);
+    border-radius: var(--radius-pill);
+    text-decoration: none;
+    margin: 0;
+    font-size: var(--font-size-xs);
+    font-weight: var(--font-weight-semibold);
+    transition: transform var(--duration-fast) var(--ease-standard), background var(--duration-base) var(--ease-standard), box-shadow var(--duration-base) var(--ease-standard);
+  }
+
+  a:hover {
+    color: var(--color-text-on-dark);
+    background: var(--phaeno-orange-600);
+    border-color: var(--phaeno-orange-600);
+    box-shadow: var(--shadow-md);
+    transform: translateY(-1px);
+  }
+
+  a:active {
+    box-shadow: none;
+    transform: scale(1);
+  }
+
+  a > span {
+    text-align: center;
+    letter-spacing: .01em;
+  }
+</style>

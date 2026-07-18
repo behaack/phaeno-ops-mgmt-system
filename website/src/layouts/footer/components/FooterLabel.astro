@@ -1,0 +1,14 @@
+---
+interface IProps {
+  text: string;
+}
+
+const { text } = Astro.props as IProps
+---
+
+<div class="text-sm">
+  {text.split(/\r?\n/).map(line => (
+    <Fragment>{line}<br /></Fragment>
+  ))}
+</div>
+

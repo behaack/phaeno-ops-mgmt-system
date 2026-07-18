@@ -1,0 +1,96 @@
+---
+interface ArticleConcept {
+  id: string;
+  title: string;
+  paragraphs: string[];
+}
+
+interface Props {
+  items: ArticleConcept[];
+  ariaLabel?: string;
+}
+
+const {
+  items,
+  ariaLabel = 'Related concepts',
+} = Astro.props;
+---
+
+<ol class="article-concept-list" aria-label={ariaLabel}>
+  {items.map((item, index) => (
+    <li class="article-concept">
+      <span class="article-concept__number" aria-hidden="true">
+        {String(index + 1).padStart(2, '0')}
+      </span>
+      <div class="article-concept__copy">
+        <h3
+          class="article-concept__title"
+          id={item.id}
+          data-phaeno-search={item.title}
+          data-phaeno-search-summary={item.paragraphs[0]}
+        >{item.title}</h3>
+        {item.paragraphs.map((paragraph) => <p>{paragraph}</p>)}
+      </div>
+    </li>
+  ))}
+</ol>
+
+<style>
+.article-concept-list {
+  display: grid;
+  gap: 0;
+  margin: var(--space-6) 0 var(--space-6);
+  padding: 0;
+  border-top: 1px solid var(--phaeno-green-200);
+  list-style: none;
+}
+
+.article-concept {
+  display: grid;
+  grid-template-columns: 3.25rem minmax(0, 1fr);
+  gap: var(--space-4);
+  margin: 0;
+  padding: var(--space-6) 0;
+  border-bottom: 1px solid var(--phaeno-green-200);
+}
+
+.article-concept + .article-concept {
+  margin-top: 0;
+}
+
+.article-concept__number {
+  padding-top: 0.2rem;
+  color: var(--phaeno-green-600);
+  font-size: var(--font-size-sm);
+  font-weight: var(--font-weight-semibold);
+  letter-spacing: 0.08em;
+  line-height: 1.5;
+}
+
+.article-concept .article-concept__title {
+  margin: 0 0 var(--space-3);
+  padding: 0;
+  color: var(--phaeno-rna-900);
+  font-size: clamp(1.35rem, 2.2vw, 1.75rem);
+  font-weight: var(--font-weight-semibold);
+  line-height: 1.2;
+}
+
+.article-concept .article-concept__copy p {
+  margin: 0 0 var(--space-4);
+  padding: 0;
+  line-height: 1.7;
+}
+
+.article-concept .article-concept__copy p:last-child {
+  margin-bottom: 0;
+}
+
+@media (max-width: 725px) {
+  .article-concept {
+    grid-template-columns: 2.5rem minmax(0, 1fr);
+    gap: var(--space-3);
+    padding: var(--space-5) 0;
+  }
+}
+</style>

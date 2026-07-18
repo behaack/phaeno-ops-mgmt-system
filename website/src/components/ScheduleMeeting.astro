@@ -1,0 +1,45 @@
+---
+import { FaCalendar } from "react-icons/fa6";
+
+
+---
+<div>
+  <a 
+    target="_blank"
+    role="button"
+    class="meeting-button"
+    href="https://calendly.com/xxxxxxxxxxxxxxxxxxxxxxxxx/"
+  >
+    <span>Schedule a meeting</span>
+    <FaCalendar size={20} />
+  </a>
+</div>
+
+<style>
+a {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  background-color: #545458;
+  color: white;
+  font-weight: 600;
+  text-decoration: none;
+  gap: 8px;
+  padding: 5px 7px;
+  font-size: 15px;
+  border-radius: 7px;
+  width: 12rem;  
+  transition:  background-color 0.3s ease, transform 0.3s ease;  
+}
+
+a:hover {
+  transform: scale(1.02);
+  background-color: black;
+  box-shadow: 0 4px 9px rgba(0, 0, 0, 0.2); /* Drop shadow */
+}
+
+a:active {
+  transform: scale(1);
+  box-shadow: none;
+}
+</style>

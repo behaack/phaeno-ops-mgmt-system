@@ -1,0 +1,52 @@
+---
+import { getCollection } from 'astro:content'
+import Layout from '@/layouts/Layout.astro'
+import MediaCard from '@/components/MediaCard.astro'
+import MediaCollection from '@/components/MediaCollection.astro'
+import RSSFeed from '@/components/RSSFeed.astro'
+import TopPageBanner from '@/components/TopPageBanner.astro'
+import SEOMeta from '@/components/meta-data-helpers/SEOMeta.astro'
+import MediaSearch from '@/components/MediaSearch.astro'
+import MediaNoItems from '@/components/MediaNoItems.astro'
+import { formatContentDate } from '@/lib/dates'
+
+const blog = await getCollection('blog')
+---
+
+<title>Blog | Phaeno</title>
+<meta name="description" content="Stay up to date with the latest news, breakthroughs, and company updates from the team at Phaeno." />
+
+<Layout>
+  <SEOMeta 
+    slot="head"
+    title="Our Blog | Phaeno"
+    description="Learn about Phaeno's mission to transform molecular diagnostics through innovative RNA sequencing technology and expert leadership."
+    documentType="List"
+    searchTitle="Blog"
+  />  
+  <main id="main">
+    <TopPageBanner title="Phaeno Blog" />
+    <section>
+    {blog.length ? (
+      <div class="mb-2 flex justify-end">
+        <RSSFeed feedName="blog.xml"/>
+      </div>) : null
+    }
+    <MediaSearch listLength={blog.length} placeholder="Search title or author" />
+    <MediaCollection>
+      {blog.map(paper => (
+        <MediaCard
+          searchString={`${paper.data.title} ${paper.data.authors.join(' ')}`.toLowerCase()}        
+          title={paper.data.title} 
+          image={paper.data.image} 
+          link={`/media/blog/${paper.id}`}
+        >
+          <div>{paper.data.authors.join(', ')}</div>
+          <div>{formatContentDate(paper.data.date)}</div>
+        </MediaCard>
+      ))}      
+    </MediaCollection>  
+    <MediaNoItems listLength={blog.length} message="No blog items, check back later." />
+    </section>
+  </main>
+</Layout>

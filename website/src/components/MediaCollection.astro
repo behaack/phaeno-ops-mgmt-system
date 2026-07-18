@@ -1,0 +1,67 @@
+---
+interface IProps {
+  stacked?: boolean
+}
+
+const { stacked=false } = Astro.props as IProps
+---
+
+<ul id="mediaList" class={`${(stacked)?'media-stack':'media-list'}`}>
+  <slot />
+</ul>
+<p id="noResults" class="text-gray-600 italic text-center" hidden>No items match your search criteria</p>
+
+<style>
+.media-list {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 18.5rem), 1fr));
+  justify-content: start;
+  align-items: stretch;
+  list-style: none;
+  max-width: none;
+  margin: 0;
+  padding: 0;
+  gap: var(--space-6);
+}
+
+.media-stack {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  gap: 1.25rem;
+}
+
+@media (max-width: 725px) {
+  .media-list {
+    grid-template-columns: 1fr;
+  }
+}
+
+</style>
+
+<script is:inline type="module">
+  const searchInput = document.getElementById('mediaSearch');
+  const list = document.getElementById('mediaList');
+
+  if (searchInput && list) {
+    const filter = (value = '') => {
+      const q = value.trim().toLowerCase();
+
+      for (const item of list.children) {
+        const haystack = (item.dataset.search ?? '').toLowerCase();
+        item.hidden = q && !haystack.includes(q);
+      }
+
+      const visible = Array.from(list.children).some(item => !item.hidden);
+      const noResults = document.getElementById('noResults');
+      if (noResults) {
+        noResults.hidden = !(q && !visible);
+      }
+    };
+
+    // initial state (in case the field is autofilled)
+    filter(searchInput.value);
+
+    searchInput.addEventListener('input', e => filter(e.target.value));
+  }
+</script>

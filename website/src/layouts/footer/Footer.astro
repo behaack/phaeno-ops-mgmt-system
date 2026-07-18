@@ -1,0 +1,160 @@
+---
+import footerItems from './versions/short'
+import FooterSection from './components/FooterSection.astro';
+import FooterLink from './components/FooterLink.astro';
+import FooterExternalLink from './components/FooterExternalLink.astro';
+
+const copyYear = new Date().getFullYear()
+---
+
+<footer id="site-footer">
+  <div class="footer-container">
+    <div class="top-container">
+      <div class="top-container-item">
+        {footerItems.left.sections.map(item => (
+          <FooterSection section={item} />
+        ))}
+      </div>
+      <div class="top-container-item">
+        {footerItems.center.sections.map(item => (
+          <FooterSection section={item} />
+        ))}        
+      </div>
+      <div class="top-container-item">
+        {footerItems.right.sections.map(item => (
+          <FooterSection section={item} />
+        ))}        
+      </div>
+      <div class="top-container-item footer-follow">
+        <div class="column-header">Follow</div>
+        <a href="https://www.linkedin.com/company/phaeno-biotech/" target="_blank" rel="noopener noreferrer">LinkedIn</a>
+        <a href="https://www.youtube.com/@phaenobiotech" target="_blank" rel="noopener noreferrer">YouTube</a>
+      </div>
+    </div>
+    <hr />
+    <div class="bottom-container">
+      <div class="footer-legal">Copyright &copy;{ copyYear } Phaeno Inc. All data are for research use only (RUO). Not validated for clinical diagnostics.</div>
+      <div class="footer-policies">
+        {footerItems.bottom.map(item => (
+          <>
+            {(item.type === 'link')
+              ? <FooterLink contentItem={item} />
+              : <FooterExternalLink contentItem={item} />
+            }
+          </>
+        ))}
+      </div>
+    </div>
+  </div>
+</footer>
+
+<style>
+footer {
+  position: relative;
+  background: #101e1a;
+  display: flex;
+  flex-direction: row;
+  justify-content: center;
+  width: 100%;
+  color: rgb(255 255 255 / .78);
+  border-top: 0;
+}
+
+.footer-container {
+  padding: var(--space-12) var(--page-gutter) var(--space-6);
+  max-width: var(--content-max-width);
+  width: 100%;
+}
+
+.top-container {
+  display: grid;
+  grid-template-columns: 1.35fr .9fr .9fr .55fr;
+  gap: var(--space-8);
+  font-size: var(--font-size-sm);
+}
+
+.top-container-item {
+  display: flex;
+  flex-direction: column;
+  padding: 0;
+  text-align: left;
+}
+
+.bottom-container {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-6);
+  padding-top: var(--space-5);
+  color: rgb(255 255 255 / .5);
+  font-size: var(--font-size-xs);
+}
+
+.footer-follow {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+
+.footer-follow a {
+  align-self: flex-start;
+  width: fit-content;
+}
+
+.column-header {
+  margin-bottom: var(--space-2);
+  color: var(--phaeno-green-300);
+  font-size: var(--font-size-xs);
+  font-weight: var(--font-weight-semibold);
+  letter-spacing: .12em;
+  text-transform: uppercase;
+}
+
+.footer-policies {
+  display: flex;
+  gap: var(--space-6);
+  white-space: nowrap;
+}
+
+footer :global(a) {
+  color: rgb(255 255 255 / .78);
+  transition: color var(--duration-fast) var(--ease-standard);
+}
+
+footer :global(a:hover) {
+  color: var(--phaeno-green-300);
+}
+
+footer hr {
+  margin: var(--space-8) 0 0;
+  border-color: rgb(255 255 255 / .16);
+}
+
+@media (max-width: 900px) {
+  .top-container {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 725px) {
+  .top-container {
+    grid-template-columns: 1fr 1fr;
+  }
+
+  .bottom-container {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+
+  .footer-policies {
+    flex-wrap: wrap;
+    order: -1;
+  }
+}
+
+@media (max-width: 480px) {
+  .top-container {
+    grid-template-columns: 1fr;
+  }
+}
+</style>

@@ -1,0 +1,33 @@
+---
+import type { ITeamMember } from '@/assets/team';
+import TeamMember from './TeamMember.astro';
+
+interface IProp { members: ITeamMember[] }
+const { members } = Astro.props as IProp;
+---
+
+<ul class="team-grid">
+  {members.map((m) => (
+    <TeamMember member={m} />
+  ))}
+</ul>
+
+<style>
+.team-grid {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+
+  display: grid;
+  gap: 1.25rem;                     /* space between cards   */
+  grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+  /*  ↳ Each track must be ≥180 px;
+       browser adds / removes tracks automatically */
+}
+
+/* Optional: lock to an exact track count at wider widths */
+@media (min-width: 100px)   { .team-grid { grid-template-columns: repeat(2, 1fr); } }
+@media (min-width: 760px)   { .team-grid { grid-template-columns: repeat(3, 1fr); } }
+@media (min-width: 1055px)   { .team-grid { grid-template-columns: repeat(4, 1fr); } }
+@media (min-width: 1280px)  { .team-grid { grid-template-columns: repeat(5, 1fr); } }
+</style>

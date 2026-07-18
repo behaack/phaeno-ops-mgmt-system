@@ -1,0 +1,273 @@
+---
+const bannerUrl = '/images/home-page-banner.webp'
+---
+<Fragment set:head>
+  <link
+    rel="preload"
+    as="image"
+    href={bannerUrl}
+    type="image/webp"
+    fetchpriority="high"
+  />
+</Fragment>
+
+<section class="hero" aria-labelledby="home-hero">
+  <div
+    class="hero__image"
+    style={`background-image: url('${bannerUrl}');`}
+    aria-hidden="true"
+  ></div>
+  <div class="hero__wash" aria-hidden="true"></div>
+  <div class="hero__signal hero__signal--one" aria-hidden="true"></div>
+  <div class="hero__signal hero__signal--two" aria-hidden="true"></div>
+
+  <div class="hero__content">
+    <p class="hero__kicker" data-phaeno-search-ignore>Phased sequencing / PSeq™</p>
+    <h1
+      id="home-hero"
+      data-phaeno-search="Full-length isoform-resolved RNA insight at scale"
+      data-phaeno-search-summary="Phaeno turns RNA into full-length, isoform-resolved insight for molecule-level transcriptomics and machine learning workflows."
+      data-phaeno-search-keywords="Phaeno PSeq full-length RNA sequencing isoform-resolved transcriptomics ML-ready RNA insight"
+    >Turning RNA into full-length, isoform-resolved insight—at scale</h1>
+    <h2
+      id="home-output"
+      data-phaeno-search="ML-ready isoform-level RNA outputs from short-read sequencing"
+      data-phaeno-search-summary="Phaeno produces quantitative, structured isoform-level outputs designed as inputs to downstream machine-learning models."
+      data-phaeno-search-keywords="short-read sequencing isoform-level RNA ML-ready outputs machine learning PSeq"
+    >Quantitative, isoform-level outputs designed for downstream ML models—from the short-read instruments you already use.</h2>
+
+    <div class="hero__actions" data-phaeno-search-ignore>
+      <a class="hero__primary" href="/contact#request-demo">Request a demo <span aria-hidden="true">→</span></a>
+      <a class="hero__secondary" href="/technology">Explore the technology <span aria-hidden="true">→</span></a>
+    </div>
+
+    <div class="hero__proof" data-phaeno-search-ignore>
+      <div><strong>5′–3′</strong><span>full-length RNA</span></div>
+      <div><strong>NGS</strong><span>instrument compatible</span></div>
+      <div><strong>ML</strong><span>model-ready features</span></div>
+    </div>
+  </div>
+</section>
+
+<style>
+.hero {
+  position: relative;
+  isolation: isolate;
+  overflow: hidden;
+  width: 100%;
+  max-width: none;
+  min-height: 100svh;
+  padding: 0;
+  display: grid;
+  align-items: center;
+  color: var(--color-text-on-dark);
+  background: var(--phaeno-rna-900);
+}
+
+.hero__image,
+.hero__wash {
+  position: absolute;
+  inset: 0;
+}
+
+.hero__image {
+  z-index: -3;
+  background-position: center;
+  background-repeat: no-repeat;
+  background-size: cover;
+  filter: saturate(.76) contrast(1.08);
+  transform: scale(1.02);
+}
+
+.hero__wash {
+  z-index: -2;
+  background:
+    linear-gradient(90deg, rgb(7 24 37 / .96) 0%, rgb(14 40 65 / .87) 48%, rgb(14 40 65 / .32) 100%),
+    linear-gradient(0deg, rgb(7 24 37 / .48), transparent 45%);
+}
+
+.hero__signal {
+  position: absolute;
+  z-index: -1;
+  border: 1px solid rgb(183 200 164 / .28);
+  border-radius: 50%;
+  pointer-events: none;
+}
+
+.hero__signal--one {
+  width: 30rem;
+  height: 30rem;
+  right: -9rem;
+  top: -10rem;
+}
+
+.hero__signal--two {
+  width: 18rem;
+  height: 18rem;
+  right: 11rem;
+  bottom: -11rem;
+}
+
+.hero__content {
+  width: min(100%, var(--content-max-width));
+  margin: 0 auto;
+  padding: clamp(6rem, 10vw, 9rem) var(--page-gutter) var(--space-8);
+}
+
+.hero__kicker {
+  margin: 0 0 var(--space-5);
+  padding: 0;
+  color: var(--phaeno-green-300);
+  font-size: var(--font-size-xs);
+  font-weight: var(--font-weight-semibold);
+  letter-spacing: .18em;
+  text-transform: uppercase;
+}
+
+.hero h1 {
+  max-width: 13ch;
+  margin: 0;
+  padding: 0;
+  color: var(--color-text-on-dark);
+  font-size: clamp(3rem, 7.2vw, 6.5rem);
+  font-weight: var(--font-weight-medium);
+  letter-spacing: -.055em;
+  line-height: .98;
+  text-transform: none;
+}
+
+.hero h2 {
+  max-width: 38rem;
+  margin: var(--space-6) 0 0;
+  padding: 0;
+  color: rgb(255 255 255 / .78);
+  font-size: clamp(1.15rem, 2.2vw, 1.55rem);
+  font-weight: var(--font-weight-regular);
+  letter-spacing: -.015em;
+  line-height: 1.45;
+}
+
+.hero__actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-3);
+  margin-top: var(--space-8);
+}
+
+.hero__actions a {
+  min-height: 3rem;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-3);
+  padding: .8rem 1.15rem;
+  border-radius: var(--radius-pill);
+  font-size: var(--font-size-sm);
+  font-weight: var(--font-weight-semibold);
+  transition: transform var(--duration-fast) var(--ease-standard), background var(--duration-base) var(--ease-standard);
+}
+
+.hero__primary {
+  color: var(--color-text-on-dark);
+  background: var(--color-action-primary);
+  border: 1px solid var(--phaeno-green-500);
+}
+
+.hero__primary:hover {
+  color: var(--color-text-on-dark);
+  background: var(--color-action-primary-hover);
+  transform: translateY(-1px);
+}
+
+.hero__secondary {
+  color: var(--color-text-on-dark);
+  background: rgb(255 255 255 / .08);
+  border: 1px solid rgb(255 255 255 / .3);
+}
+
+.hero__secondary:hover {
+  color: var(--color-text-on-dark);
+  background: rgb(255 255 255 / .14);
+  transform: translateY(-1px);
+}
+
+.hero__proof {
+  max-width: 42rem;
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: var(--space-4);
+  margin-top: clamp(2rem, 5vw, 4rem);
+  padding-top: var(--space-5);
+  border-top: 1px solid rgb(255 255 255 / .2);
+}
+
+.hero__proof div {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+}
+
+.hero__proof strong {
+  color: var(--phaeno-green-300);
+  font-size: var(--font-size-lg);
+}
+
+.hero__proof span {
+  color: rgb(255 255 255 / .62);
+  font-size: var(--font-size-xs);
+}
+
+@media (min-width: 726px) and (max-height: 975px) {
+  .hero__content {
+    padding-top: calc(var(--header-height) + clamp(1rem, 3vh, 1.5rem));
+    padding-bottom: var(--space-2);
+  }
+
+  .hero__kicker {
+    margin-bottom: var(--space-3);
+  }
+
+  .hero h1 {
+    font-size: clamp(3rem, min(7.2vw, 8.5vh), 6.5rem);
+  }
+
+  .hero h2 {
+    margin-top: var(--space-4);
+  }
+
+  .hero__actions {
+    margin-top: var(--space-5);
+  }
+
+  .hero__proof {
+    margin-top: var(--space-6);
+    padding-top: var(--space-4);
+  }
+}
+
+@media (max-width: 725px) {
+  .hero {
+    min-height: max(43rem, 100svh);
+  }
+
+  .hero__wash {
+    background: linear-gradient(90deg, rgb(7 24 37 / .95), rgb(14 40 65 / .78));
+  }
+
+  .hero__content {
+    padding: 6.5rem var(--space-4) var(--space-10);
+  }
+
+  .hero__actions a {
+    width: 100%;
+  }
+
+  .hero__proof {
+    gap: var(--space-2);
+  }
+
+  .hero__proof span {
+    font-size: .68rem;
+  }
+}
+</style>

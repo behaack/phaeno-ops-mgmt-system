@@ -7,8 +7,9 @@ Phaeno-owned curated-data provisioning, Customer laboratory services, Partner
 reagent orders, Partner data assembly, Phaeno operational/configuration work,
 an internal Lab Operations application, and QuickBooks Online commercial
 synchronization. The API also serves the anonymous Phaeno Website search,
-contact, and inquiry contract. The repository contains a .NET API and a
-responsive React/TanStack frontend.
+contact, and inquiry contract. The repository contains a .NET API, a responsive
+React/TanStack Portal frontend, and the independently built Astro company
+website under `website/`.
 
 ## Documentation map
 
@@ -19,6 +20,8 @@ responsive React/TanStack frontend.
 - `docs/user-documentation.md`: role-specific MDX help authoring policy.
 - `docs/operations-readiness.md`: current runtime and production-activation boundary.
 - `docs/plans/`: implementation state and living backend, frontend, and E2E test plans.
+- `website/README.md`: public company Website architecture, setup, and API boundary.
+- `website/AGENTS.md`: scoped working rules for public Website changes.
 
 ## Architecture
 
@@ -202,6 +205,25 @@ frontend/src/
 - In mobile layouts, primary navigation items move into the user dropdown menu.
 - Navigation and menu controls must be keyboard accessible and expose appropriate roles, names, and focus states.
 
+### Public Website
+
+The public company Website lives under `website/`. It was copied from the
+standalone `phaeno-website` project so the marketing site and the Portal-owned
+Website API can be maintained in one repository without combining their
+deployment units.
+
+- **Framework**: Astro 7 static output with React 19 islands
+- **Styling**: Tailwind 4 plus the Phaeno tokens and component rules in
+  `website/src/styles/design-system.css`
+- **Content**: Astro content collections for blog, events, jobs, news, press,
+  scientific papers, and white papers
+- **Deployment**: Vercel, independently from the Portal frontend and API
+- **API boundary**: browser-side search, contact, order, reCAPTCHA, and
+  database-ping consumers call the anonymous Website contract implemented in
+  `backend/app/Features/Website`
+- **Package root**: run Website package commands from `website/`, not from the
+  repository root or `frontend/`
+
 ## Security Model
 
 The application implements tenant-scoped authorization with invite-only
@@ -237,6 +259,7 @@ boundary.
 - **Backend**: .NET 10
 - **Database**: PostgreSQL with Entity Framework Core and EF migrations
 - **Frontend**: React, TypeScript, Tan Stack Start, Tan Stack Query, Axios, React Hook Form, Shadcn
+- **Public Website**: Astro, React islands, TypeScript, Tailwind, MDX, generated sitemap and RSS
 - **Testing**: Vitest (frontend unit tests), xUnit/.NET testing framework (backend), Playwright (e2e tests designed for parallel execution)
 - **Accessibility Testing**: Axe checks through Playwright for primary frontend pages
 - **Styling**: CSS with design tokens, light/dark mode support
@@ -259,19 +282,25 @@ phaeno-portal/
 │   │   │   └── Persistence/
 │   │   └── Middleware/
 │   └── test/
-└── frontend/
+├── frontend/
+│   ├── src/
+│   │   ├── api/
+│   │   ├── components/
+│   │   ├── features/
+│   │   ├── integrations/
+│   │   ├── lib/
+│   │   ├── routes/
+│   │   └── styles.css
+│   ├── e2e/
+│   ├── tests/
+│   ├── package.json
+│   └── pnpm-lock.yaml
+└── website/
+    ├── AGENTS.md
+    ├── public/
     ├── src/
-    │   ├── api/
-    │   ├── components/
-    │   ├── features/
-    │   ├── integrations/
-    │   ├── lib/
-    │   ├── routes/
-    │   └── styles.css
-    ├── e2e/
-    ├── tests/
     ├── package.json
-    └── pnpm-lock.yaml
+    └── README.md
 ```
 
 ## Getting Started
@@ -281,6 +310,16 @@ phaeno-portal/
 - .NET 10 SDK
 - Node.js (latest LTS)
 - pnpm
+
+From the repository root, start either web application with:
+
+```powershell
+pnpm run dev:portal
+pnpm run dev:website
+```
+
+`pnpm run dev` and the existing `pnpm run dev:web` alias continue to start the
+Portal frontend.
 
 ### Backend Setup
 
@@ -298,6 +337,15 @@ phaeno-portal/
 2. Install dependencies: `pnpm install`
 3. Start the development server: `pnpm run dev`
 
+### Public Website Setup
+
+1. Navigate to the `website` directory.
+2. Install dependencies with `pnpm install`.
+3. Configure the public `PUBLIC_API_BASE_URL` and
+   `PUBLIC_RECAPTCHA_SITE_ID` values through local environment configuration.
+4. Start the Astro development server with `pnpm dev`.
+5. Build the static site with `pnpm build`.
+
 ## Development Guidelines
 
 - Follow .NET coding standards for backend development
@@ -307,11 +355,15 @@ phaeno-portal/
 - Document API endpoints and components
 - Run lint periodically during frontend work to catch code quality issues early
 - Run frontend verification with `pnpm run lint`, `pnpm run typecheck`, `pnpm run test`, and `pnpm run test:e2e`
+- Run public Website verification from `website/`; use `pnpm build` and inspect
+  generated routes, metadata, sitemap, and RSS output for affected changes
 - Treat automated accessibility checks as a required gate, not a substitute for manual WCAG review
 
 ## Contributing
 
-Please read `AGENTS.md` for repository working rules and `ai/README.md` for task-specific context.
+Please read `AGENTS.md` for repository working rules and `ai/README.md` for
+task-specific context. Changes under `website/` must also follow
+`website/AGENTS.md`.
 
 ## License
 

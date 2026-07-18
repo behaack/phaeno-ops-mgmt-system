@@ -1,0 +1,347 @@
+---
+import Layout from '@/layouts/Layout.astro';
+import SEOMeta from '@/components/meta-data-helpers/SEOMeta.astro';
+import ContactUsForms from '@/components/contact-forms/ContactUsForms';
+import TopPageBanner from '@/components/TopPageBanner.astro';
+import SocialMedia from '@/components/SocialMedia.astro';
+import ReCaptchaNotification from '@/components/ReCaptchaNotification.astro';
+//import ScheduleMeeting from '@/components/ScheduleMeeting.astro';
+---
+<Layout>
+  <SEOMeta 
+    slot="head"
+    title="Contact Us | Phaeno"
+    description="Contact Phaeno to discuss PSeq RNA sequencing technology, partnerships, investor inquiries, or company updates."
+    documentType="Web Page"
+    searchTitle="Contact"
+    searchKeywords="contact Phaeno PSeq demo request technical brief partnerships investor inquiries company updates Irvine RNA sequencing"
+  />  
+  <main id="main" class="contact-page" tabindex="-1">
+    <TopPageBanner title="Contact Us" image="image-2"/>
+    <section class="contact-content">
+      <div class="contact-intro">
+        <div>
+          <p class="contact-eyebrow" data-phaeno-search-ignore>Start a conversation</p>
+          <h2
+            id="contact-details"
+            data-phaeno-search="Phaeno contact details"
+            data-phaeno-search-summary="Contact Phaeno in Irvine, California for PSeq demos, technical briefs, partnerships, investor inquiries, and company updates."
+            data-phaeno-search-keywords="Phaeno contact Irvine PSeq demo technical brief partnerships investors"
+          >Contact Details</h2>
+        </div>
+        <p class="contact-intro__copy">
+          Tell us what you are trying to resolve. We welcome conversations with research teams, partners, and investors
+          working at the edge of RNA biology.
+        </p>
+      </div>
+      <div class="contact-details-container">
+        <div class="contact-detail">
+          <h3>Street Address</h3>
+          <address>5270 California Avenue<br />Suite 300<br />Irvine, CA 92617</address>
+        </div>
+        <div class="contact-detail">
+          <h3>Get in Touch</h3>
+          <a class="contact-detail__link" href="mailto:info@phaenobiotech.com">
+            info@phaenobiotech.com <span aria-hidden="true">↗</span>
+          </a>
+        </div>
+        <div class="contact-detail social-media">
+          <h3>Follow Phaeno</h3>
+          <SocialMedia size="sm" />
+        </div>
+      </div>
+      <ContactUsForms client:load />
+      <ReCaptchaNotification />
+    </section>
+  </main>
+</Layout>
+
+<style>
+.contact-page {
+  container-type: inline-size;
+}
+
+.contact-details-container {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: var(--contact-column-gap);
+  margin-top: clamp(3rem, 4vw, 4rem);
+  border: 0;
+}
+
+.contact-content {
+  --contact-column-gap: clamp(2rem, 5vw, 5rem);
+
+  padding-top: clamp(2rem, 3vw, 3rem);
+  padding-bottom: var(--space-8);
+}
+
+.contact-intro {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: var(--contact-column-gap);
+  align-items: end;
+}
+
+.contact-eyebrow,
+:global(.demo-band__eyebrow),
+:global(.updates-band__eyebrow) {
+  margin: 0 0 var(--space-3);
+  color: var(--color-brand-strong);
+  font-size: var(--font-size-xs);
+  font-weight: var(--font-weight-semibold);
+  letter-spacing: .16em;
+  text-transform: uppercase;
+}
+
+.contact-intro h2 {
+  margin: 0;
+}
+
+.contact-intro__copy {
+  grid-column: 2 / 4;
+  max-width: 44rem;
+  margin: 0;
+  color: var(--color-text-muted);
+  font-size: var(--font-size-lg);
+  line-height: 1.65;
+}
+
+.contact-detail {
+  position: relative;
+  min-height: 6rem;
+  padding: 0;
+  border: 0;
+}
+
+.contact-detail:not(:last-child) {
+  border: 0;
+}
+
+.contact-detail h3 {
+  margin: 0 0 var(--space-2);
+  padding: 0;
+  font-size: var(--font-size-lg);
+}
+
+.contact-detail address,
+.contact-detail__link {
+  color: var(--color-text-muted);
+  font-size: var(--font-size-sm);
+  font-style: normal;
+  line-height: 1.65;
+}
+
+.contact-detail__link {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+  color: var(--color-link);
+  font-weight: var(--font-weight-medium);
+}
+
+:global(.demo-band) {
+  position: relative;
+  overflow: hidden;
+  width: 100cqw;
+  max-width: none;
+  margin: clamp(3rem, 5vw, 4.5rem) calc(50% - 50cqw);
+  padding: 0;
+  color: var(--color-text-on-dark);
+  background:
+    radial-gradient(circle at 94% 10%, rgb(28 127 152 / .34), transparent 34%),
+    radial-gradient(circle at 6% 94%, rgb(120 153 70 / .18), transparent 28%),
+    var(--color-surface-rna);
+}
+
+:global(.demo-band::after) {
+  position: absolute;
+  right: -6rem;
+  bottom: -8rem;
+  width: 20rem;
+  height: 20rem;
+  border: 1px solid rgb(214 227 195 / .18);
+  border-radius: 50%;
+  content: '';
+  pointer-events: none;
+}
+
+:global(.demo-band__inner) {
+  position: relative;
+  z-index: 1;
+  display: grid;
+  grid-template-columns: minmax(16rem, .72fr) minmax(28rem, 1.28fr);
+  gap: clamp(2.5rem, 7vw, 7rem);
+  align-items: start;
+  width: 100%;
+  max-width: var(--content-max-width);
+  margin: 0 auto;
+  padding: clamp(4rem, 8vw, 7rem) var(--page-gutter);
+}
+
+:global(.demo-band__intro h2) {
+  margin-top: 0;
+  color: var(--color-text-on-dark);
+  font-size: clamp(2rem, 4vw, 3.5rem);
+  line-height: 1.05;
+}
+
+:global(#request-demo),
+:global(#sign-up) {
+  scroll-margin-top: 7rem;
+}
+
+:global(.demo-band__eyebrow) {
+  color: var(--phaeno-green-300);
+}
+
+:global(.demo-band__intro > p:not(.demo-band__eyebrow)) {
+  margin: var(--space-5) 0 0;
+  color: var(--phaeno-neutral-200);
+  font-size: var(--font-size-lg);
+  line-height: 1.65;
+}
+
+:global(.demo-band__expectations) {
+  display: grid;
+  gap: var(--space-3);
+  margin: var(--space-7) 0 0;
+  padding: 0;
+  color: var(--phaeno-neutral-200);
+  font-size: var(--font-size-sm);
+  list-style: none;
+}
+
+:global(.demo-band__expectations li) {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+}
+
+:global(.demo-band__expectations li::before) {
+  width: .45rem;
+  height: .45rem;
+  flex: 0 0 auto;
+  border-radius: 50%;
+  background: var(--phaeno-green-300);
+  content: '';
+}
+
+:global(.contact-form-panel) {
+  overflow: hidden;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-xl);
+  background: var(--color-surface);
+  box-shadow: var(--shadow-sm);
+}
+
+:global(.contact-form-panel--demo) {
+  background: var(--phaeno-neutral-50);
+  box-shadow: none;
+}
+
+:global(.updates-band) {
+  margin: clamp(3rem, 5vw, 4rem) 0 var(--space-8);
+  background: var(--phaeno-neutral-50);
+}
+
+:global(.updates-band__inner) {
+  display: grid;
+  grid-template-columns: minmax(16rem, .65fr) minmax(28rem, 1.35fr);
+  gap: clamp(2.5rem, 4vw, 4rem);
+  align-items: start;
+  padding: clamp(2.5rem, 4vw, 3rem);
+}
+
+:global(.updates-band__copy h2) {
+  margin: 0;
+}
+
+:global(.updates-band__copy > p:not(.updates-band__eyebrow)) {
+  margin: var(--space-4) 0 0;
+  color: var(--color-text-muted);
+  line-height: 1.65;
+}
+
+:global(.contact-form-panel--updates) {
+  box-shadow: var(--shadow-sm);
+}
+
+:global(.contact-input:focus) {
+  border-color: var(--color-action-primary);
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--color-focus) 24%, transparent);
+}
+
+:global(.contact-submit) {
+  color: var(--color-text-on-dark);
+  background: var(--color-action-primary);
+  transition:
+    background-color var(--duration-base) var(--ease-standard),
+    box-shadow var(--duration-base) var(--ease-standard),
+    opacity var(--duration-fast) var(--ease-standard),
+    transform var(--duration-fast) var(--ease-standard);
+}
+
+:global(.contact-submit:hover:not(:disabled)) {
+  background: var(--color-action-primary-hover);
+  box-shadow: var(--shadow-md);
+}
+
+:global(.contact-submit:focus-visible) {
+  outline: 2px solid var(--color-focus);
+  outline-offset: 3px;
+}
+
+.social-media {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+}
+
+@media (max-width: 725px) {
+  .contact-intro,
+  :global(.demo-band__inner),
+  :global(.updates-band__inner) {
+    grid-template-columns: 1fr;
+  }
+
+  .contact-intro {
+    gap: var(--space-5);
+  }
+
+  .contact-intro__copy {
+    grid-column: auto;
+  }
+
+  .contact-details-container {
+    grid-template-columns: 1fr;
+    gap: var(--space-8);
+  }
+
+  .contact-detail {
+    min-height: auto;
+  }
+
+  :global(.demo-band__inner) {
+    padding-block: clamp(3.5rem, 12vw, 5rem);
+  }
+
+  :global(.updates-band__inner) {
+    gap: var(--space-8);
+    padding: var(--space-8) var(--space-5);
+  }
+
+  :global(.contact-form-actions) {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  :global(.contact-submit) {
+    width: 100%;
+  }
+
+  .social-media {
+    display: block;
+  }
+}
+</style>

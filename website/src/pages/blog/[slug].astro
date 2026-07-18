@@ -1,0 +1,350 @@
+---
+import ArticleSEOMeta from '@/components/meta-data-helpers/ArticleSEOMeta.astro'
+import ShareWithSocialMedia from '@/components/ShareWithSocialMedia.astro'
+import Layout from '@/layouts/Layout.astro'
+import { getCollection, render, type CollectionEntry } from 'astro:content'
+import { formatContentDate } from '@/lib/dates'
+
+export async function getStaticPaths() {
+  const blogs = await getCollection('blog')
+  return blogs.map((job) => ({
+    params: { slug: job.id },
+    props: { job },
+  }))
+}
+
+const path = decodeURIComponent(Astro.url.pathname).toLowerCase()
+const { job: blog } = Astro.props as { job: CollectionEntry<'blog'> }
+const { title, image, authors, date, summary } = blog.data
+const articleSearchKeywords = [
+  title,
+  summary,
+  authors.join(' '),
+  'PSeq phased sequencing full-length RNA whole-molecule RNA isoform-resolved RNA transcriptomics short-read NGS RNA-Seq long-read sequencing machine learning',
+].join(' ')
+const { Content } = await render(blog)
+const articleHeadingId = title.replace(/\s+/g, '-').toLowerCase()
+const formattedDate = formatContentDate(date, {
+  month: 'long',
+  day: 'numeric',
+  year: 'numeric',
+})
+---
+
+<Layout>
+  <ArticleSEOMeta 
+    slot="head"
+    title={title}
+    description={summary}
+    authors={authors}
+    datePosted={date}
+    image={image}
+    documentType="Web Page"
+    searchTitle={`Blog - ${title}`}
+    searchKeywords={articleSearchKeywords}
+  />
+
+  <main id="main" class="blog-post-page" tabindex="-1">
+    <header class="article-hero" aria-labelledby={articleHeadingId}>
+      <div class="article-hero__inner">
+        <div class="article-hero__copy">
+          <a class="back-link" href="/blog" data-phaeno-search-ignore>
+            <span aria-hidden="true">←</span>
+            Back to all articles
+          </a>
+          <p class="article-eyebrow">Phaeno insights</p>
+          <h1
+            id={articleHeadingId}
+            data-phaeno-search={title}
+            data-phaeno-search-summary={summary}
+          >{title}</h1>
+          <p class="article-deck">{summary}</p>
+          <div class="blog-post-meta" data-phaeno-search-ignore>
+            <span>{authors.join(', ')}</span>
+            <span aria-hidden="true">•</span>
+            <time datetime={new Date(date).toISOString()}>{formattedDate}</time>
+          </div>
+        </div>
+
+        <figure class="article-hero__media" data-phaeno-search-ignore>
+          <img src={image} alt="" loading="eager" fetchpriority="high" />
+        </figure>
+      </div>
+    </header>
+
+    <div class="article-body-shell">
+      <article class="blog-post-content">
+        <Content />
+      </article>
+
+      <footer class="article-footer" data-phaeno-search-ignore>
+        <a class="back-link back-link--light" href="/blog">
+          <span aria-hidden="true">←</span>
+          Back to all articles
+        </a>
+        <div class="article-share">
+          <ShareWithSocialMedia 
+            title={title} 
+            link={path} 
+            summary={summary} 
+          />
+        </div>
+      </footer>
+    </div>
+  </main>
+</Layout>
+
+<style>
+.blog-post-page {
+  background: var(--color-canvas);
+}
+
+.article-hero {
+  padding: clamp(2.5rem, 5vw, 4.75rem) var(--page-gutter);
+  overflow: hidden;
+  color: var(--color-text-on-dark);
+  background:
+    radial-gradient(circle at 78% 18%, rgb(28 127 152 / .28), transparent 34%),
+    var(--phaeno-rna-900);
+}
+
+.article-hero__inner {
+  display: grid;
+  grid-template-columns: minmax(0, 1.2fr) minmax(20rem, .8fr);
+  gap: clamp(2.5rem, 6vw, 5rem);
+  align-items: center;
+  width: min(100%, 80rem);
+  margin: 0 auto;
+}
+
+.article-hero__copy {
+  max-width: 46rem;
+}
+
+.back-link {
+  display: inline-flex;
+  gap: .6rem;
+  align-items: center;
+  width: fit-content;
+  padding: .7rem 1rem;
+  border: 1px solid rgb(255 255 255 / .28);
+  border-radius: var(--radius-pill);
+  color: var(--color-text-on-dark);
+  font-size: var(--font-size-sm);
+  font-weight: var(--font-weight-semibold);
+  line-height: 1;
+  text-decoration: none;
+  transition: border-color var(--duration-fast) var(--ease-standard), background var(--duration-fast) var(--ease-standard), transform var(--duration-fast) var(--ease-standard);
+}
+
+.back-link:hover {
+  color: var(--color-text-on-dark);
+  border-color: rgb(255 255 255 / .5);
+  background: rgb(255 255 255 / .08);
+  transform: translateX(-2px);
+}
+
+.article-eyebrow {
+  margin: clamp(2rem, 4vw, 3rem) 0 0;
+  color: var(--phaeno-green-300);
+  font-size: var(--font-size-xs);
+  font-weight: var(--font-weight-semibold);
+  letter-spacing: .16em;
+  text-transform: uppercase;
+}
+
+.article-hero h1 {
+  margin: var(--space-4) 0 0;
+  color: var(--color-text-on-dark);
+  font-size: clamp(2.75rem, 4.8vw, 4.75rem);
+  font-weight: var(--font-weight-medium);
+  letter-spacing: -.045em;
+  line-height: 1.05;
+  text-transform: none;
+  text-wrap: balance;
+}
+
+.article-deck {
+  max-width: 38rem;
+  margin: var(--space-5) 0 0;
+  color: rgb(255 255 255 / .75);
+  font-size: clamp(1.1rem, 1.8vw, 1.35rem);
+  line-height: 1.5;
+}
+
+.blog-post-meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: .65rem;
+  align-items: center;
+  margin-top: var(--space-6);
+  color: var(--phaeno-green-200);
+  font-size: var(--font-size-sm);
+  line-height: 1.5;
+}
+
+.article-hero__media {
+  position: relative;
+  margin: 0;
+  overflow: hidden;
+  aspect-ratio: 4 / 3;
+  border: 1px solid rgb(255 255 255 / .15);
+  border-radius: var(--radius-2xl);
+  background: rgb(255 255 255 / .06);
+  box-shadow: var(--shadow-xl);
+}
+
+.article-hero__media::after {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(135deg, rgb(14 46 71 / .1), rgb(14 46 71 / .32));
+  content: '';
+  pointer-events: none;
+}
+
+.article-hero__media img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.article-body-shell {
+  width: min(100% - (2 * var(--page-gutter)), 56rem);
+  margin: 0 auto;
+  padding: var(--page-content-start-space) 0 clamp(3.5rem, 7vw, 6rem);
+}
+
+.blog-post-content {
+  color: var(--phaeno-neutral-700);
+  font-size: clamp(1.05rem, 1.4vw, 1.15rem);
+  line-height: 1.75;
+}
+
+.blog-post-content :global(p) {
+  margin: 0 0 1em;
+  padding: 0;
+}
+
+.blog-post-content :global(h2),
+.blog-post-content :global(h3),
+.blog-post-content :global(h4) {
+  color: var(--phaeno-rna-900);
+  font-weight: var(--font-weight-semibold);
+  letter-spacing: -.025em;
+  line-height: 1.15;
+  text-wrap: balance;
+}
+
+.blog-post-content :global(h2),
+.blog-post-content :global(h3) {
+  font-size: clamp(1.75rem, 3vw, 2.5rem);
+}
+
+.blog-post-content :global(h2) {
+  margin: clamp(2.25rem, 4vw, 3rem) 0 var(--space-4);
+}
+
+.blog-post-content :global(.article-series-navigation--start + h2) {
+  margin-top: var(--space-8);
+}
+
+.blog-post-content :global(h3) {
+  margin: clamp(1.75rem, 3vw, 2.25rem) 0 var(--space-4);
+}
+
+.blog-post-content :global(h4) {
+  margin: 2.5rem 0 var(--space-3);
+  font-size: clamp(1.3rem, 2vw, 1.65rem);
+}
+
+.blog-post-content :global(ul:not([class])),
+.blog-post-content :global(ol:not([class])) {
+  gap: 0;
+  margin: 0 0 1.5rem;
+  padding-left: 1.4rem;
+}
+
+.blog-post-content :global(ul:not([class]) > li + li),
+.blog-post-content :global(ol:not([class]) > li + li) {
+  margin-top: .5rem;
+}
+
+.blog-post-content :global(a) {
+  text-decoration-thickness: 1px;
+  text-underline-offset: .2em;
+}
+
+.article-footer {
+  display: flex;
+  justify-content: space-between;
+  gap: var(--space-8);
+  align-items: center;
+  margin-top: clamp(3.5rem, 6vw, 5rem);
+  padding-top: var(--space-6);
+  border-top: 1px solid var(--phaeno-green-200);
+}
+
+.back-link--light {
+  flex-shrink: 0;
+  color: var(--phaeno-rna-900);
+  border-color: var(--phaeno-green-300);
+}
+
+.back-link--light:hover {
+  color: var(--phaeno-rna-900);
+  border-color: var(--phaeno-green-500);
+  background: var(--phaeno-green-50);
+}
+
+@media (max-width: 900px) {
+  .article-hero__inner {
+    grid-template-columns: minmax(0, 1fr);
+    gap: var(--space-8);
+  }
+
+  .article-hero__copy {
+    max-width: 52rem;
+  }
+
+  .article-hero__media {
+    max-width: 40rem;
+    aspect-ratio: 16 / 9;
+  }
+}
+
+@media (max-width: 640px) {
+  .article-hero {
+    padding: 2rem 1rem 2.5rem;
+  }
+
+  .article-hero h1 {
+    font-size: clamp(2.5rem, 12vw, 3.6rem);
+  }
+
+  .article-body-shell {
+    width: min(100% - 2rem, 56rem);
+  }
+
+  .article-footer {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+
+  .article-share {
+    width: 100%;
+  }
+
+  .article-share :global(.flex.flex-col) {
+    align-items: flex-start;
+  }
+
+  .article-share :global(.text-right) {
+    text-align: left;
+  }
+
+  .article-share :global(.icon-container) {
+    flex-wrap: wrap;
+    gap: .85rem;
+  }
+}
+</style>

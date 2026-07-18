@@ -1,0 +1,60 @@
+---
+/**
+ *  Standard page <head> tags (non-article).
+ *  Usage:
+ *    <Article slot="head" title="About Phaeno" description="…" />
+ */
+import type { webtypes } from '@/assets/docTypes'
+interface Props {
+  title: string;
+  description: string;
+  documentType: webtypes;
+  authors?: string[];
+  datePosted: Date
+  /** Absolute page URL (defaults to Astro.url) */
+  url?: string;
+  /** Social-card image (defaults to site-wide card) */
+  image?: string;
+  /** Twitter card type */
+  twitterCard?: 'summary' | 'summary_large_image';
+  /** Internal site-search terms, not external SEO keywords */
+  searchKeywords?: string;
+  /** Internal site-search page label, separate from the SEO title */
+  searchTitle?: string;
+}
+
+const {
+  title,
+  description,
+  documentType,
+  authors=[],
+  datePosted,
+  url = new URL(Astro.url.pathname, Astro.site).href,
+  image="",
+  twitterCard = 'summary_large_image',
+  searchKeywords = '',
+  searchTitle = '',
+} = Astro.props as Props;
+---
+
+<title>{title}</title>
+<meta name="description" content={description} />
+<meta name="phaeno:document-type" content={documentType} />
+{searchTitle ? <meta name="phaeno:search-title" content={searchTitle} /> : null}
+{searchKeywords ? <meta name="phaeno:search-keywords" content={searchKeywords} /> : null}
+<link rel="canonical" href={url} />
+
+<!-- Open Graph -->
+<meta property="og:type"        content="website" />
+<meta property="og:site_name"   content="Phaeno" />
+<meta property="og:url"         content={url} />
+<meta property="og:title"       content={title} />
+<meta property="og:description" content={description} />
+<meta property="og:image"       content={image} />
+
+<!-- Twitter -->
+<meta name="twitter:card"        content={twitterCard} />
+<meta name="twitter:site"        content="@Phaeno" />
+<meta name="twitter:title"       content={title} />
+<meta name="twitter:description" content={description} />
+<meta name="twitter:image"       content={image} />

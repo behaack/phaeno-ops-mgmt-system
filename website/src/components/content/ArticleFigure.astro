@@ -1,0 +1,44 @@
+---
+interface Props {
+  src: string;
+  alt: string;
+  caption?: string;
+  maxWidth?: string;
+}
+
+const {
+  src,
+  alt,
+  caption,
+  maxWidth = '50rem',
+} = Astro.props;
+---
+
+<figure class="article-figure" style={`--article-figure-max-width: ${maxWidth}`}>
+  <img src={src} alt={alt} loading="lazy" />
+  {caption ? <figcaption>{caption}</figcaption> : null}
+</figure>
+
+<style>
+.article-figure {
+  display: grid;
+  justify-items: center;
+  gap: var(--space-3);
+  margin: var(--space-4) 0 var(--space-6);
+}
+
+.article-figure img {
+  display: block;
+  width: 100%;
+  max-width: var(--article-figure-max-width);
+  height: auto;
+}
+
+.article-figure figcaption {
+  max-width: var(--article-figure-max-width);
+  color: var(--color-text-muted);
+  font-size: var(--font-size-sm);
+  line-height: var(--line-height-copy);
+  text-align: center;
+}
+</style>
