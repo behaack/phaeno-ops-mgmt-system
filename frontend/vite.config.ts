@@ -8,14 +8,17 @@ import mdx from '@mdx-js/rollup'
 import viteReact from '@vitejs/plugin-react'
 import tailwindcss from '@tailwindcss/vite'
 
-const config = defineConfig({
+const config = defineConfig(({ command }) => ({
   server: {
     host: '127.0.0.1',
     port: 3000,
-    https: {
-      key: readFileSync(new URL('./certs/localhost-key.pem', import.meta.url)),
-      cert: readFileSync(new URL('./certs/localhost-cert.pem', import.meta.url)),
-    },
+    https:
+      command === 'serve'
+        ? {
+            key: readFileSync(new URL('./certs/localhost-key.pem', import.meta.url)),
+            cert: readFileSync(new URL('./certs/localhost-cert.pem', import.meta.url)),
+          }
+        : undefined,
     proxy: {
       '/api': {
         target: 'https://localhost:44399',
@@ -54,6 +57,6 @@ const config = defineConfig({
     include: ['tests/**/*.test.{ts,tsx}', 'src/**/*.test.{ts,tsx}'],
     css: true,
   },
-})
+}))
 
 export default config
