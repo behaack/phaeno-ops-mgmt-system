@@ -1,19 +1,18 @@
 # Hetzner Portal green deployment
 
-This stack provisions a Phaeno Portal API and PostgreSQL database alongside the
-live standalone Website API. It does not change Nginx or expose the green
-database on the host.
+This stack provisions the production Phaeno Portal API and its isolated
+PostgreSQL database. The Portal API owns the public Website API functionality.
+It does not change Nginx or expose the Portal database on the host.
 
 ## Isolation
 
-- Live Website API: `127.0.0.1:8081`
-- File Browser: `127.0.0.1:8082`
 - Unrelated OCIA API: `127.0.0.1:8083`
-- Portal green API: `127.0.0.1:8084`
-- Portal green PostgreSQL: Docker network only
+- Portal API: `127.0.0.1:8084`
+- Portal PostgreSQL: Docker network only
 
-The green API reads the existing Website documents mount but writes its Lucene
-index and Portal-owned application files to separate green volumes.
+The Portal API reads public Website documents and private Website credentials
+from `/opt/phaeno.portal-green/documents`. Its Lucene index and Portal-owned
+application files use separate Portal volumes.
 
 ## Runtime files
 
@@ -78,14 +77,13 @@ green acceptance gate.
 `.github/workflows/deploy.yml` provides the manual **Deploy Portal Green**
 workflow. It deploys the selected commit to a versioned directory under
 `/opt/phaeno.portal-green/releases`, builds a revision-labelled image, and
-recreates only the isolated Portal green API on `127.0.0.1:8084`.
+recreates only the Portal API on `127.0.0.1:8084`.
 
-The workflow deliberately does not change Nginx, public DNS, the bridge, or the
-legacy rollback API. It verifies the internal Portal health, database ping,
-search, technical brief, invalid reCAPTCHA rejection, unchanged Website row
-counts, deployed image tag/revision, and the continuing public Website dial
-tone. A failed non-migration deployment automatically restores the prior green
-API image.
+The workflow deliberately does not change Nginx or public DNS. It verifies the
+internal Portal health, database ping, search, technical brief, invalid
+reCAPTCHA rejection, unchanged Website row counts, deployed image
+tag/revision, and the continuing public Website dial tone. A failed
+non-migration deployment automatically restores the prior Portal API image.
 
 Configure a protected GitHub environment named `production` with:
 
@@ -109,6 +107,6 @@ never archived or printed. The successful release is exposed through
 records its commit, image tag, release path, migration choice, and Website row
 counts.
 
-This workflow is the pre-cutover green deployment path. It does not authorize
-the Nginx bridge-to-Portal switch or the later retirement of rollback
-containers and databases.
+This is the post-cutover production deployment path. The standalone Website
+API, bridge, File Browser, and legacy database resources were retired on
+2026-07-18 after the final encrypted backup and Portal verification passed.

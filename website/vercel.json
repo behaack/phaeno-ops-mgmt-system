@@ -1,0 +1,33 @@
+{
+  "redirects": [
+    {
+      "source": "/join-us",
+      "destination": "/about/job-openings",
+      "permanent": true
+    },
+    {
+      "source": "/log-in",
+      "destination": "https://portal.phaenobiotech.com/auth/sign-in",
+      "permanent": true
+    },
+    {
+      "source": "/(.*)",
+      "has": [
+        { "type": "host", "value": "phaenobiotech.com" }
+      ],
+      "destination": "https://www.phaenobiotech.com/$1",
+      "permanent": true
+    }
+  ],
+  "headers": [
+    {
+      "source": "/images/(.*)\\.(png|jpg|jpeg|gif|webp|svg|ico)$",
+      "headers": [
+        {
+          "key": "Cache-Control",
+          "value": "public, max-age=2592000, immutable"
+        }
+      ]
+    }
+  ]
+}

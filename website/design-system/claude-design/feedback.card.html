@@ -1,0 +1,45 @@
+export function Tooltip(props) {
+  const { children, label, side = 'top', style } = props;
+  const [open, setOpen] = React.useState(false);
+
+  const sidePos = {
+    top: { bottom: '100%', left: '50%', transform: 'translateX(-50%)', marginBottom: '0.375rem' },
+    bottom: { top: '100%', left: '50%', transform: 'translateX(-50%)', marginTop: '0.375rem' },
+    left: { right: '100%', top: '50%', transform: 'translateY(-50%)', marginRight: '0.375rem' },
+    right: { left: '100%', top: '50%', transform: 'translateY(-50%)', marginLeft: '0.375rem' },
+  };
+
+  return React.createElement(
+    'span',
+    {
+      style: { position: 'relative', display: 'inline-flex', ...style },
+      onMouseEnter: () => setOpen(true),
+      onMouseLeave: () => setOpen(false),
+      onFocus: () => setOpen(true),
+      onBlur: () => setOpen(false),
+    },
+    children,
+    open
+      ? React.createElement(
+          'span',
+          {
+            role: 'tooltip',
+            style: {
+              position: 'absolute',
+              ...sidePos[side],
+              background: 'var(--color-text)',
+              color: 'var(--color-text-on-dark)',
+              fontSize: 'var(--font-size-xs)',
+              padding: '0.375rem 0.625rem',
+              borderRadius: 'var(--radius-sm)',
+              whiteSpace: 'nowrap',
+              boxShadow: 'var(--shadow-sm)',
+              zIndex: 100,
+              pointerEvents: 'none',
+            },
+          },
+          label
+        )
+      : null
+  );
+}

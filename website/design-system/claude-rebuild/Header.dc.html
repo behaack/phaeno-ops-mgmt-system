@@ -1,0 +1,61 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet data-dc-atomics>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@500;600&display=swap" rel="stylesheet">
+<style>
+  body{margin:0}
+  a{color:inherit;text-decoration:none}
+</style>
+</helmet>
+<header style="position:sticky;top:0;z-index:50;display:flex;align-items:center;justify-content:space-between;gap:24px;flex-wrap:wrap;padding:18px 48px;background:#FAF8F2;border-bottom:1px solid rgba(22,33,29,.12);font-family:'IBM Plex Sans',sans-serif">
+  <a href="Home.dc.html" style="display:flex;align-items:center;gap:10px">
+    <svg width="30" height="30" viewBox="0 0 30 30" aria-hidden="true">
+      <circle cx="8" cy="10" r="4" fill="#1B6E63"></circle>
+      <circle cx="20" cy="8" r="3" fill="#DB6B3B"></circle>
+      <circle cx="21" cy="21" r="5" fill="#1B6E63" opacity="0.55"></circle>
+      <line x1="8" y1="10" x2="20" y2="8" stroke="#1B6E63" stroke-width="1.5"></line>
+      <line x1="20" y1="8" x2="21" y2="21" stroke="#1B6E63" stroke-width="1.5"></line>
+    </svg>
+    <span style="font-family:'Space Grotesk',sans-serif;font-weight:700;font-size:20px;color:#16211D;letter-spacing:-0.01em">Phaeno</span>
+  </a>
+  <nav style="display:flex;align-items:center;gap:28px;flex-wrap:wrap">
+    <sc-for list="{{ navItems }}" as="item" hint-placeholder-count="6">
+      <a href="{{ item.href }}" style="font-size:14px;color:{{ item.color }};font-weight:{{ item.weight }};letter-spacing:0.01em" style-hover="color:#1B6E63">{{ item.label }}</a>
+    </sc-for>
+  </nav>
+  <a href="Contact.dc.html" style="background:#DB6B3B;color:#FFF;font-family:'IBM Plex Sans',sans-serif;font-weight:600;font-size:14px;padding:11px 22px;border-radius:999px;white-space:nowrap" style-hover="background:#B8532A">Contact sales</a>
+</header>
+
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;currentPage&quot;: {&quot;editor&quot;: &quot;text&quot;, &quot;default&quot;: &quot;&quot;, &quot;tsType&quot;: &quot;string&quot;}}">
+class Component extends DCLogic {
+  renderVals() {
+    const current = this.props.currentPage || '';
+    const items = [
+      { label: 'Technology', href: 'Technology.dc.html' },
+      { label: 'Why Isoforms', href: 'WhyIsoforms.dc.html' },
+      { label: 'Multi-omics', href: 'MultiOmics.dc.html' },
+      { label: 'About', href: 'About.dc.html' },
+      { label: 'Investors', href: 'Investors.dc.html' },
+      { label: 'Careers', href: 'Careers.dc.html' },
+    ];
+    const navItems = items.map(it => ({
+      ...it,
+      color: it.label === current ? '#16211D' : '#4B5750',
+      weight: it.label === current ? 600 : 500,
+    }));
+    return { navItems };
+  }
+}
+
+</script>
+</body>
+</html>

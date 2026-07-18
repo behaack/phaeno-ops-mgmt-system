@@ -163,19 +163,22 @@ source-controlled settings.
 
 ## Current Website deployment boundary
 
-The checked-in Website deployment material currently describes:
+The production Website boundary is now:
 
-- the public Website UI deployed separately on Vercel;
-- `api.phaenobiotech.com` as the canonical Website API hostname;
-- `webops.phaenobiotech.com` retained temporarily as a compatibility alias;
-- the standalone API bound to `127.0.0.1:8081`;
-- File Browser bound to `127.0.0.1:8082`;
-- `/opt/phaeno.website-api/documents` mounted at `/app/__DOCUMENTS`;
-- GitHub Actions archiving `api/`, uploading it to
-  `/opt/phaeno.website-api`, and running
-  `docker compose up -d --build api`; and
-- public root, search, and database-ping smoke checks after the live container
-  has already been replaced.
+- the public Website UI is deployed separately on Vercel;
+- `api.phaenobiotech.com` is the canonical Website API hostname;
+- `webops.phaenobiotech.com` remains temporarily as a compatibility alias;
+- both API hostnames route to the Portal API on `127.0.0.1:8084`;
+- Website documents are owned under
+  `/opt/phaeno.portal-green/documents` and mounted read-only at
+  `/app/__DOCUMENTS`;
+- the standalone Website API, bridge, File Browser, legacy database, and their
+  dedicated Docker resources have been removed; and
+- `/opt/phaeno.website-api` contains only a temporary compatibility symlink to
+  the Portal-owned documents, protecting the next manual deployment until the
+  checked-in mount-path change is committed; and
+- the Website repository's standalone API deployment workflow remains
+  checked in for history but is disabled in GitHub Actions.
 
 The Website repository's checked-in connection default and deployment prose do
 not represent the actual production database identified by the owner. Treat
@@ -188,9 +191,9 @@ consolidation. After Phase 3 acceptance, DNS and TLS for
 and the prior hostname was preserved as an alias. Repository configuration,
 the technical-brief URL, deployment smoke checks, and the scheduled database
 probe now use the canonical hostname. The Vercel `PUBLIC_API_BASE_URL` setting
-also uses the canonical hostname for all environments. The live Website build
-continues to use the compatibility alias until its next successful production
-deployment.
+also uses the canonical hostname for all environments, and the promoted live
+Website build contains that canonical origin. The compatibility alias remains
+available during the observation window.
 
 ## No-disruption data and traffic cutover
 
@@ -328,6 +331,34 @@ delivered events for both the Portal order and mailing-list templates.
    keeping the public probe URL stable.
 6. Retire the legacy database only under a separate, explicitly approved
    retention and deletion step.
+
+The Phase 4 runtime retirement completed on 2026-07-18 UTC after explicit
+owner approval to release the old resources. A final encrypted archive
+containing the Portal `website` schema dump, the 97-file Website document
+store, File Browser metadata, bridge index, and deployment inventory was
+catalog-validated, encrypted, downloaded off-server, checksum-verified, and
+restore-tested. At retirement the Portal database contained 15 contacts and 4
+orders.
+
+The documents were moved without changing their contents to
+`/opt/phaeno.portal-green/documents`, and Portal was recreated with that
+read-only mount while the bridge temporarily preserved public traffic. Nginx
+then returned both API hostnames to Portal. The File Browser management route
+now returns `410 Gone`.
+
+The standalone API, bridge, File Browser, legacy database container, dedicated
+images, dedicated volumes, Docker network, and both legacy deployment
+directories were removed. A 4 KB compatibility directory containing only the
+Portal documents symlink was then retained because the active manual Portal
+workflow still carries the prior bind path; it can be deleted after this
+repository change is committed and deployed. The legacy Website API GitHub
+Actions workflow was disabled. Final checks returned Portal health `200`,
+database ping `204`, search `200`, technical brief `200`, Website `200`, and no
+retired listeners on ports `8081`, `8082`, or `8085`. The local Website
+repository contains a database-ping workflow definition targeting the
+Portal-owned canonical API, but GitHub currently lists no active scheduled
+monitor after retirement. Moving and enabling that monitor in the Portal
+repository remains a non-blocking repository follow-up.
 
 ## Cutover invariants
 
@@ -468,14 +499,21 @@ representative search `200`, and the technical brief `200`. The compatibility
 hostname continued to return database ping `204`.
 
 Vercel `PUBLIC_API_BASE_URL` was updated for all Website environments to
-`https://api.phaenobiotech.com/api/v1/`. A production rebuild of current
-`main` failed before promotion because `ui/src/styles/global.css` imports the
-missing `ui/src/styles/design-system.css`. A guarded attempt to rebuild the
-still-current known-good production revision was rejected because that
-revision no longer belongs to `main`. Vercel therefore left the existing
-production deployment and assigned domains unchanged. The live Website
-continues operating through the retained compatibility hostname, and the next
-successful Website deployment will bake in the canonical API origin.
+`https://api.phaenobiotech.com/api/v1/`. An initial production rebuild of
+current `main` failed before promotion because `ui/src/styles/global.css`
+imports the missing `ui/src/styles/design-system.css`. The failure did not
+change the serving deployment or assigned domains.
+
+To avoid releasing unrelated Website changes, the exact then-current
+production revision `ce9358d` was rebuilt from the temporary
+`ops/api-hostname-cutover-20260718` branch. Its preview completed in 37
+seconds, and production deployment `GMwAqjzSuXnDVEfr9Np86C4WAdV8` completed
+in 32 seconds with the custom domains assigned. The live Website returned
+`200`, contained the canonical API origin and no compatibility-origin
+reference, and a browser search for `technology` returned seven results.
+The compatibility API hostname remains available for rollback. The missing
+stylesheet on `main` remains a separate Website deployment defect to resolve
+before the next ordinary `main` deployment.
 
 The deployment workflow and server helper were validated statically and by
 repository build checks; creating the workflow does not itself deploy a new

@@ -47,7 +47,7 @@ services:
     ports:
       - 127.0.0.1:8084:8080
     volumes:
-      - /opt/phaeno.website-api/documents:/app/__DOCUMENTS:ro
+      - /opt/phaeno.portal-green/documents:/app/__DOCUMENTS:ro
       - portal_green_app_data:/app/App_Data
       - portal_green_website_index:/app/__GREEN_INDEX
     depends_on:
