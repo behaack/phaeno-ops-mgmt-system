@@ -55,6 +55,7 @@ jobs:
           DEPLOY_KNOWN_HOSTS: ${{ secrets.DEPLOY_KNOWN_HOSTS }}
           DEPLOY_SSH_KEY: ${{ secrets.DEPLOY_SSH_KEY }}
           DEPLOY_USER: ${{ secrets.DEPLOY_USER }}
+          PORTAL_CLERK_AUTHORITY: ${{ vars.PORTAL_CLERK_AUTHORITY }}
           PORTAL_CLERK_SECRET_KEY: ${{ secrets.PORTAL_CLERK_SECRET_KEY }}
           PORTAL_MIGRATION_BACKUP_PUBLIC_KEY: ${{ secrets.PORTAL_MIGRATION_BACKUP_PUBLIC_KEY }}
         run: |
@@ -65,9 +66,10 @@ jobs:
             DEPLOY_KNOWN_HOSTS \
             DEPLOY_SSH_KEY \
             DEPLOY_USER \
+            PORTAL_CLERK_AUTHORITY \
             PORTAL_CLERK_SECRET_KEY; do
             if [ -z "${!name}" ]; then
-              echo "::error::Missing production secret ${name}."
+              echo "::error::Missing production configuration ${name}."
               missing=1
             fi
           done
@@ -77,6 +79,16 @@ jobs:
               sk_test_*|sk_live_*) ;;
               *)
                 echo "::error::PORTAL_CLERK_SECRET_KEY is not a Clerk secret key."
+                missing=1
+                ;;
+            esac
+          fi
+
+          if [ -n "$PORTAL_CLERK_AUTHORITY" ]; then
+            case "$PORTAL_CLERK_AUTHORITY" in
+              https://*.clerk.accounts.dev|https://*.clerk.com) ;;
+              *)
+                echo "::error::PORTAL_CLERK_AUTHORITY is not a supported Clerk issuer."
                 missing=1
                 ;;
             esac
@@ -199,10 +211,13 @@ jobs:
         env:
           DEPLOY_HOST: ${{ secrets.DEPLOY_HOST }}
           DEPLOY_USER: ${{ secrets.DEPLOY_USER }}
+          PORTAL_CLERK_AUTHORITY: ${{ vars.PORTAL_CLERK_AUTHORITY }}
           PORTAL_CLERK_SECRET_KEY: ${{ secrets.PORTAL_CLERK_SECRET_KEY }}
           RELEASE_PATH: ${{ steps.release.outputs.release_path }}
         run: |
-          printf 'Clerk__SecretKey=%s\n' "$PORTAL_CLERK_SECRET_KEY" \
+          printf 'Clerk__Authority=%s\nClerk__SecretKey=%s\n' \
+            "$PORTAL_CLERK_AUTHORITY" \
+            "$PORTAL_CLERK_SECRET_KEY" \
             | ssh -i ~/.ssh/deploy_key "$DEPLOY_USER@$DEPLOY_HOST" \
                 "$RELEASE_PATH/deployment/hetzner/green/install-clerk-runtime-secret.sh '$DEPLOY_ROOT'"
 

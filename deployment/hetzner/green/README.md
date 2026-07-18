@@ -87,6 +87,8 @@ non-migration deployment automatically restores the prior Portal API image.
 
 Configure a protected GitHub environment named `production` with:
 
+- `PORTAL_CLERK_AUTHORITY`: non-secret Clerk JWT issuer matching the Portal
+  frontend publishable key, such as `https://example.clerk.accounts.dev`;
 - `DEPLOY_HOST`: Hetzner SSH host;
 - `DEPLOY_USER`: SSH user with Docker and `/opt/phaeno.portal-green` access;
 - `DEPLOY_SSH_KEY`: private deployment key;
@@ -96,11 +98,12 @@ Configure a protected GitHub environment named `production` with:
 - `PORTAL_MIGRATION_BACKUP_PUBLIC_KEY`: PEM public key used only when an
   authorized migration is requested.
 
-On every deployment, the workflow validates `PORTAL_CLERK_SECRET_KEY`, streams
-it over the pinned SSH connection without placing it in the release archive,
-and atomically replaces only `Clerk__SecretKey` in the root-protected
-`runtime/portal.env`. The API recreation then loads the updated value. The
-workflow never prints the value.
+On every deployment, the workflow validates `PORTAL_CLERK_AUTHORITY` and
+`PORTAL_CLERK_SECRET_KEY`, streams them over the pinned SSH connection without
+placing them in the release archive, and atomically replaces only
+`Clerk__Authority` and `Clerk__SecretKey` in the root-protected
+`runtime/portal.env`. The API recreation then loads the updated values. The
+workflow never prints the secret value.
 
 The workflow input `apply_migrations` defaults to `false`. Selecting `true` is
 the explicit shared-database approval gate. Before running the migration

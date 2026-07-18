@@ -25,8 +25,18 @@ trap cleanup EXIT
     exit 1
 }
 
-IFS= read -r clerk_line
-case "${clerk_line}" in
+IFS= read -r authority_line
+IFS= read -r secret_line
+
+case "${authority_line}" in
+    Clerk__Authority=https://*.clerk.accounts.dev|Clerk__Authority=https://*.clerk.com) ;;
+    *)
+        printf 'Invalid Clerk authority input.\n' >&2
+        exit 1
+        ;;
+esac
+
+case "${secret_line}" in
     Clerk__SecretKey=sk_test_*|Clerk__SecretKey=sk_live_*) ;;
     *)
         printf 'Invalid Clerk runtime secret input.\n' >&2
@@ -35,14 +45,21 @@ case "${clerk_line}" in
 esac
 
 temp="$(mktemp "${RUNTIME_DIR}/portal.env.clerk.XXXXXX")"
-found=0
+authority_found=0
+secret_found=0
 
 while IFS= read -r line || [[ -n "${line}" ]]; do
     case "${line}" in
+        Clerk__Authority=*)
+            if [[ "${authority_found}" -eq 0 ]]; then
+                printf '%s\n' "${authority_line}" >> "${temp}"
+                authority_found=1
+            fi
+            ;;
         Clerk__SecretKey=*)
-            if [[ "${found}" -eq 0 ]]; then
-                printf '%s\n' "${clerk_line}" >> "${temp}"
-                found=1
+            if [[ "${secret_found}" -eq 0 ]]; then
+                printf '%s\n' "${secret_line}" >> "${temp}"
+                secret_found=1
             fi
             ;;
         *)
@@ -51,12 +68,16 @@ while IFS= read -r line || [[ -n "${line}" ]]; do
     esac
 done < "${TARGET}"
 
-if [[ "${found}" -eq 0 ]]; then
-    printf '%s\n' "${clerk_line}" >> "${temp}"
+if [[ "${authority_found}" -eq 0 ]]; then
+    printf '%s\n' "${authority_line}" >> "${temp}"
+fi
+
+if [[ "${secret_found}" -eq 0 ]]; then
+    printf '%s\n' "${secret_line}" >> "${temp}"
 fi
 
 chmod 600 "${temp}"
 mv -f "${temp}" "${TARGET}"
 temp=""
 
-printf 'Installed Clerk runtime secret.\n'
+printf 'Installed Clerk runtime configuration.\n'
