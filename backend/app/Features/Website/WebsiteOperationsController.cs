@@ -26,12 +26,15 @@ public sealed class WebsiteOperationsController(
 
         var mailingListCount = await dbContext.WebContacts
             .AsNoTracking()
+            .Where(contact => contact.UnsubscribedAtUtc == null)
             .CountAsync(cancellationToken);
         var demoRequestCount = await dbContext.WebOrders
             .AsNoTracking()
+            .Where(order => order.CompletedAtUtc == null)
             .CountAsync(cancellationToken);
         var mailingListContacts = await dbContext.WebContacts
             .AsNoTracking()
+            .Where(contact => contact.UnsubscribedAtUtc == null)
             .OrderByDescending(contact => contact.CreatedAtUtc)
             .Take(DashboardItemLimit)
             .Select(contact => new WebOpsMailingListContactDto(
@@ -45,6 +48,7 @@ public sealed class WebsiteOperationsController(
             .ToListAsync(cancellationToken);
         var demoRequests = await dbContext.WebOrders
             .AsNoTracking()
+            .Where(order => order.CompletedAtUtc == null)
             .OrderBy(order => order.OrganizationName)
             .ThenBy(order => order.LastName)
             .ThenBy(order => order.FirstName)
@@ -72,7 +76,9 @@ public sealed class WebsiteOperationsController(
     {
         await RequirePlatformAdministratorAsync(cancellationToken);
 
-        var query = dbContext.WebContacts.AsNoTracking();
+        var query = dbContext.WebContacts
+            .AsNoTracking()
+            .Where(contact => contact.UnsubscribedAtUtc == null);
         var totalCount = await query.CountAsync(cancellationToken);
         page = NormalizePage(page, totalCount);
         var items = await query
@@ -104,7 +110,9 @@ public sealed class WebsiteOperationsController(
     {
         await RequirePlatformAdministratorAsync(cancellationToken);
 
-        var query = dbContext.WebOrders.AsNoTracking();
+        var query = dbContext.WebOrders
+            .AsNoTracking()
+            .Where(order => order.CompletedAtUtc == null);
         var totalCount = await query.CountAsync(cancellationToken);
         page = NormalizePage(page, totalCount);
         var items = await query
@@ -131,13 +139,53 @@ public sealed class WebsiteOperationsController(
             totalCount);
     }
 
+    [HttpPost("mailing-list/{id:guid}/unsubscribe")]
+    public async Task<IActionResult> UnsubscribeMailingListContact(
+        Guid id,
+        CancellationToken cancellationToken)
+    {
+        var actorUserId = await RequirePlatformAdministratorAsync(
+            cancellationToken);
+        var contact = await dbContext.WebContacts
+            .SingleOrDefaultAsync(contact => contact.Id == id, cancellationToken)
+            ?? throw new WebsiteOperationsRecordNotFoundException(
+                "mailing-list signup");
+
+        if (contact.Unsubscribe(actorUserId, DateTimeOffset.UtcNow))
+        {
+            await dbContext.SaveChangesAsync(cancellationToken);
+        }
+
+        return NoContent();
+    }
+
+    [HttpPost("demo-requests/{id:guid}/complete")]
+    public async Task<IActionResult> CompleteDemoRequest(
+        Guid id,
+        CancellationToken cancellationToken)
+    {
+        var actorUserId = await RequirePlatformAdministratorAsync(
+            cancellationToken);
+        var demoRequest = await dbContext.WebOrders
+            .SingleOrDefaultAsync(order => order.Id == id, cancellationToken)
+            ?? throw new WebsiteOperationsRecordNotFoundException(
+                "demo request");
+
+        if (demoRequest.Complete(actorUserId, DateTimeOffset.UtcNow))
+        {
+            await dbContext.SaveChangesAsync(cancellationToken);
+        }
+
+        return NoContent();
+    }
+
     private static int NormalizePage(int page, int totalCount)
     {
         var totalPages = Math.Max(1, (int)Math.Ceiling(totalCount / (double)PageSize));
         return Math.Clamp(page, 1, totalPages);
     }
 
-    private async Task RequirePlatformAdministratorAsync(
+    private async Task<Guid> RequirePlatformAdministratorAsync(
         CancellationToken cancellationToken)
     {
         var actor = await AccountAccess.ReadActiveActorAsync(
@@ -157,5 +205,7 @@ public sealed class WebsiteOperationsController(
                 StatusCodes.Status403Forbidden,
                 "web_ops_access_required");
         }
+
+        return actor.Id;
     }
 }

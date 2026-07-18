@@ -17,4 +17,20 @@ public sealed class WebContact
     public bool? SendBrochure { get; set; }
 
     public DateTimeOffset CreatedAtUtc { get; set; }
+
+    public DateTimeOffset? UnsubscribedAtUtc { get; private set; }
+
+    public Guid? UnsubscribedByUserId { get; private set; }
+
+    public bool Unsubscribe(Guid actorUserId, DateTimeOffset occurredAtUtc)
+    {
+        if (UnsubscribedAtUtc.HasValue)
+        {
+            return false;
+        }
+
+        UnsubscribedAtUtc = occurredAtUtc;
+        UnsubscribedByUserId = actorUserId;
+        return true;
+    }
 }

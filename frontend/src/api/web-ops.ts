@@ -1,3 +1,5 @@
+import axios from 'axios'
+
 import { api } from './client'
 
 type ApiEnvelope<T> = {
@@ -60,6 +62,22 @@ export function getWebOpsMailingList(page: number) {
 
 export function getWebOpsDemoRequests(page: number) {
   return getWebOpsPage<WebOpsDemoRequest>('/web-ops/demo-requests', page)
+}
+
+export async function unsubscribeWebOpsMailingListContact(id: string) {
+  await api.post(`/web-ops/mailing-list/${id}/unsubscribe`)
+}
+
+export async function completeWebOpsDemoRequest(id: string) {
+  await api.post(`/web-ops/demo-requests/${id}/complete`)
+}
+
+export function getWebOpsErrorMessage(error: unknown, fallback: string) {
+  if (axios.isAxiosError<ApiEnvelope<unknown>>(error)) {
+    return error.response?.data.error?.message ?? fallback
+  }
+
+  return error instanceof Error ? error.message : fallback
 }
 
 async function getWebOpsPage<T>(url: string, page: number) {

@@ -131,19 +131,26 @@ into CRM or Portal onboarding must be an explicit workflow.
 
 ## Internal Web Operations dashboard
 
-The POMS home includes a read-only **Web Operations** view for Phaeno platform
-administrators. Mailing-list signups and demo requests appear in separate
-panels, with a two-button tab selector showing one panel at a time. Each panel
-has independent pagination with a fixed page size of 10. Mailing-list contacts
-are ordered newest first; demo requests are ordered deterministically by
-organization and contact. The UI labels the persisted
+The POMS home includes a **Web Operations** view for Phaeno platform
+administrators. Active mailing-list signups and open demo requests appear in
+separate panels, with a two-button tab selector showing one panel at a time.
+Each panel has independent pagination with a fixed page size of 10.
+Mailing-list contacts are ordered newest first; demo requests are ordered
+deterministically by organization and contact. The UI labels the persisted
 `WebOrder` public inquiries as **Demo Requests** without changing the public
 Website contract or persistence model.
 
 The existing additive summary endpoint, `GET /api/web-ops/dashboard`, remains
 available with its five-item bounds for compatibility. The independently
 paginated panels use `GET /api/web-ops/mailing-list?page=...` and
-`GET /api/web-ops/demo-requests?page=...`. All three routes require an
+`GET /api/web-ops/demo-requests?page=...`. A confirmed
+`POST /api/web-ops/mailing-list/{id}/unsubscribe` action removes a signup from
+the active Mailing List, and
+`POST /api/web-ops/demo-requests/{id}/complete` removes a handled inquiry from
+the open Demo Requests queue. Both actions are idempotent soft lifecycle
+transitions: the original Website record remains available for audit, with the
+acting internal user and transition time recorded. Counts, pages, and summary
+data include only active records. All Web Operations routes require an
 authenticated active Phaeno platform administrator. The existing anonymous
 `/api/v1/web-ops/...` routes remain unchanged. This surface does not promote
 Website intake into an Account, Portal request, HubSpot contact, or operational

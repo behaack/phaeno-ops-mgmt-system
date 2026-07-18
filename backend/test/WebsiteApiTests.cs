@@ -1,6 +1,7 @@
 namespace PhaenoPortal.Test;
 
 using PhaenoPortal.App.Features.Website.Crawler.Support;
+using PhaenoPortal.App.Features.Website.Entities;
 using PhaenoPortal.App.Features.Website.Search;
 
 public sealed class WebsiteApiTests
@@ -37,5 +38,43 @@ public sealed class WebsiteApiTests
         string expected)
     {
         Assert.Equal(expected, WebsiteSearchService.RemoveAccents(input));
+    }
+
+    [Fact]
+    public void MailingListUnsubscribeCapturesActorAndTimeOnlyOnce()
+    {
+        var contact = new WebContact();
+        var actorUserId = Guid.NewGuid();
+        var occurredAtUtc = DateTimeOffset.Parse("2026-07-18T16:00:00Z");
+
+        Assert.True(contact.Unsubscribe(actorUserId, occurredAtUtc));
+        Assert.Equal(actorUserId, contact.UnsubscribedByUserId);
+        Assert.Equal(occurredAtUtc, contact.UnsubscribedAtUtc);
+
+        Assert.False(
+            contact.Unsubscribe(
+                Guid.NewGuid(),
+                occurredAtUtc.AddMinutes(5)));
+        Assert.Equal(actorUserId, contact.UnsubscribedByUserId);
+        Assert.Equal(occurredAtUtc, contact.UnsubscribedAtUtc);
+    }
+
+    [Fact]
+    public void DemoRequestCompletionCapturesActorAndTimeOnlyOnce()
+    {
+        var demoRequest = new WebOrder();
+        var actorUserId = Guid.NewGuid();
+        var occurredAtUtc = DateTimeOffset.Parse("2026-07-18T16:05:00Z");
+
+        Assert.True(demoRequest.Complete(actorUserId, occurredAtUtc));
+        Assert.Equal(actorUserId, demoRequest.CompletedByUserId);
+        Assert.Equal(occurredAtUtc, demoRequest.CompletedAtUtc);
+
+        Assert.False(
+            demoRequest.Complete(
+                Guid.NewGuid(),
+                occurredAtUtc.AddMinutes(5)));
+        Assert.Equal(actorUserId, demoRequest.CompletedByUserId);
+        Assert.Equal(occurredAtUtc, demoRequest.CompletedAtUtc);
     }
 }

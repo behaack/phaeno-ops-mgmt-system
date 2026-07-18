@@ -147,7 +147,10 @@ batch entry now have focused unit and rollback-isolated PostgreSQL coverage.
   demo-request ordering, and response-envelope serialization. Cover the
   additive mailing-list and demo-request endpoints for their fixed 10-item
   pages, boundary-page normalization, stable ordering, totals, and the same
-  authorization rules.
+  authorization rules. Cover the platform-admin-only unsubscribe and complete
+  endpoints, missing-record responses, idempotent retries, actor/time capture,
+  audit events, immediate active-count/list filtering, and page normalization
+  after the final item on a page leaves its queue.
 - [ ] HubSpot/Portal lifecycle - cover signed webhook intake, exact Company and
   Deal correlation, duplicate/out-of-order delivery, pending onboarding with no
   access, direct Customer/Partner creation, narrow Portal Prospect creation,
@@ -246,6 +249,10 @@ batch entry now have focused unit and rollback-isolated PostgreSQL coverage.
 
 ## Requested Execution Log
 
+- 2026-07-18: Web Operations unsubscribe and demo-completion lifecycle changes
+  passed the full solution build with zero warnings and zero errors. The
+  additive migration was generated and applied to the local `phaeno_ops`
+  development database. Backend tests were not requested and were not run.
 - 2026-07-17: the additive Phaeno-admin Web Operations dashboard read endpoint
   passed a full solution build with zero warnings and zero errors by using an
   isolated output path because the normal Debug assemblies were locked by the

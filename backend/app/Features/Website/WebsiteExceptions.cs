@@ -33,3 +33,13 @@ public sealed class WebsiteOperationsAccessException(
 
     public override string ErrorCode => errorCode;
 }
+
+public sealed class WebsiteOperationsRecordNotFoundException(string recordType)
+    : DomainException($"The {recordType} record was not found.")
+{
+    public override int StatusCode => StatusCodes.Status404NotFound;
+
+    public override string ErrorType => "not_found";
+
+    public override string ErrorCode => "web_ops_record_not_found";
+}

@@ -55,6 +55,12 @@ public class PersistenceTests
         Assert.Equal(
             "normalized_email",
             contactEntity.FindProperty(nameof(WebContact.NormalizedEmail))?.GetColumnName());
+        Assert.Equal(
+            "unsubscribed_at_utc",
+            contactEntity.FindProperty(nameof(WebContact.UnsubscribedAtUtc))?.GetColumnName());
+        Assert.Equal(
+            "unsubscribed_by_user_id",
+            contactEntity.FindProperty(nameof(WebContact.UnsubscribedByUserId))?.GetColumnName());
         Assert.Contains(
             contactEntity.GetIndexes(),
             index => index.IsUnique
@@ -68,6 +74,12 @@ public class PersistenceTests
         Assert.Equal(
             "organization_name",
             orderEntity.FindProperty(nameof(WebOrder.OrganizationName))?.GetColumnName());
+        Assert.Equal(
+            "completed_at_utc",
+            orderEntity.FindProperty(nameof(WebOrder.CompletedAtUtc))?.GetColumnName());
+        Assert.Equal(
+            "completed_by_user_id",
+            orderEntity.FindProperty(nameof(WebOrder.CompletedByUserId))?.GetColumnName());
     }
 
     [Fact]

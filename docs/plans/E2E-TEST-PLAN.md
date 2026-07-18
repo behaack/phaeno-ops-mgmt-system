@@ -15,10 +15,10 @@ not satisfy this production-activation gate.
   Portal; both contexts retain the Phaeno Inc. legal footer and omit framework
   vendor promotion; the POMS dashboard exposes a keyboard-operable
   viewport-edge sidebar for Order Operations, Lab Operations, Accounts, and
-  read-only Web Operations intake with a two-button selector showing one
+  Web Operations mock intake with a two-button selector showing one
   mailing-list or demo-request panel at a time, independent page-size-10 footer
-  pagination, and one dashboard section visible at a time while external
-  contexts omit it.
+  pagination, no persistence controls on mock records, and one dashboard
+  section visible at a time while external contexts omit it.
 - [x] `frontend/e2e/home.spec.ts` - desktop keeps frequent workspace routes in
   the toolbar, including Docs, while Data provisioning appears under Resources;
   desktop and mobile expose Accounts and the remaining grouped
@@ -109,6 +109,11 @@ not satisfy this production-activation gate.
   pre-organization request association, action-dialog close behavior,
   service-entitlement boundaries, global disable/reactivation, refresh
   persistence, and cross-tenant denial.
+- [ ] Database-backed Web Operations lifecycle journey - verify platform-admin
+  authorization, unsubscribe and demo-completion confirmations, pending and
+  durable error feedback, actor/time audit persistence, immediate count and
+  page refresh, removal from active queues after reload, retained original
+  Website intake, and external/non-admin denial.
 - [ ] Automated WCAG AA accessibility check on the dashboard.
 - [ ] Mobile primary navigation moves into the user menu.
 - [ ] Source-sample draft discard - verify destructive confirmation, required

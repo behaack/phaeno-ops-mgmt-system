@@ -19,6 +19,8 @@ public static class WebsiteModelConfiguration
             entity.Property(item => item.CreatedAtUtc)
                 .IsRequired()
                 .HasDefaultValueSql("CURRENT_TIMESTAMP");
+            entity.Property(item => item.UnsubscribedAtUtc);
+            entity.Property(item => item.UnsubscribedByUserId);
             entity.HasIndex(item => item.NormalizedEmail).IsUnique();
         });
 
@@ -31,6 +33,8 @@ public static class WebsiteModelConfiguration
             entity.Property(item => item.OrganizationName).IsRequired().HasMaxLength(250);
             entity.Property(item => item.Email).IsRequired().HasMaxLength(256);
             entity.Property(item => item.Description).IsRequired();
+            entity.Property(item => item.CompletedAtUtc);
+            entity.Property(item => item.CompletedByUserId);
         });
     }
 }

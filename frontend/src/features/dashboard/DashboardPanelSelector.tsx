@@ -1,5 +1,9 @@
 import { Link } from '@tanstack/react-router'
-import { useQuery } from '@tanstack/react-query'
+import {
+  useMutation,
+  useQuery,
+  useQueryClient,
+} from '@tanstack/react-query'
 import {
   AlertTriangle,
   ArrowRight,
@@ -16,8 +20,10 @@ import { AccountsDashboardContent } from './AccountsDashboardContent'
 import { DashboardHero } from './DashboardHero'
 import { WebOpsDashboardContent } from './WebOpsDashboardContent'
 import {
+  completeWebOpsDemoRequest,
   getWebOpsDemoRequests,
   getWebOpsMailingList,
+  unsubscribeWebOpsMailingListContact,
   type WebOpsDemoRequest,
   type WebOpsMailingListContact,
   type WebOpsPage,
@@ -179,6 +185,7 @@ export function DashboardPanelSelector() {
   const [mailingListPage, setMailingListPage] = useState(1)
   const [demoRequestPage, setDemoRequestPage] = useState(1)
   const { authProvider, session } = usePhaenoSession()
+  const queryClient = useQueryClient()
   const apiEnabled = authProvider !== 'mock'
   const canViewWebOperations = session?.isPlatformAdmin === true
   const mailingList = useQuery({
@@ -190,6 +197,26 @@ export function DashboardPanelSelector() {
     queryKey: ['web-ops', 'demo-requests', demoRequestPage],
     queryFn: () => getWebOpsDemoRequests(demoRequestPage),
     enabled: apiEnabled && canViewWebOperations,
+  })
+  const unsubscribeContact = useMutation({
+    mutationFn: (contactId: string) =>
+      unsubscribeWebOpsMailingListContact(contactId),
+    onSuccess: async () => {
+      if (mailingListPage > 1 && mailingList.data?.items.length === 1) {
+        setMailingListPage((page) => Math.max(1, page - 1))
+      }
+      await queryClient.invalidateQueries({ queryKey: ['web-ops'] })
+    },
+  })
+  const completeDemoRequest = useMutation({
+    mutationFn: (requestId: string) =>
+      completeWebOpsDemoRequest(requestId),
+    onSuccess: async () => {
+      if (demoRequestPage > 1 && demoRequests.data?.items.length === 1) {
+        setDemoRequestPage((page) => Math.max(1, page - 1))
+      }
+      await queryClient.invalidateQueries({ queryKey: ['web-ops'] })
+    },
   })
   const mailingListData = apiEnabled ? mailingList.data : mockMailingListPage
   const demoRequestData = apiEnabled
@@ -271,6 +298,15 @@ export function DashboardPanelSelector() {
                 isLoading: apiEnabled && mailingList.isFetching,
                 onPageChange: setMailingListPage,
                 onRetry: () => void mailingList.refetch(),
+                action: apiEnabled
+                  ? {
+                      error: unsubscribeContact.error,
+                      isPending: unsubscribeContact.isPending,
+                      onExecute: (contact) =>
+                        unsubscribeContact.mutateAsync(contact.id),
+                      onReset: unsubscribeContact.reset,
+                    }
+                  : undefined,
               }}
               demoRequests={{
                 data: demoRequestData,
@@ -278,6 +314,15 @@ export function DashboardPanelSelector() {
                 isLoading: apiEnabled && demoRequests.isFetching,
                 onPageChange: setDemoRequestPage,
                 onRetry: () => void demoRequests.refetch(),
+                action: apiEnabled
+                  ? {
+                      error: completeDemoRequest.error,
+                      isPending: completeDemoRequest.isPending,
+                      onExecute: (request) =>
+                        completeDemoRequest.mutateAsync(request.id),
+                      onReset: completeDemoRequest.reset,
+                    }
+                  : undefined,
               }}
               isMockData={!apiEnabled}
             />

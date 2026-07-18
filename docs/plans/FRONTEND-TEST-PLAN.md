@@ -78,7 +78,10 @@ remain incomplete production-activation gates.
   time; panels render their counts, contact context, technical-brief state,
   explicit mock-data identity, page-size-10 footer paginators, independent
   pagination actions, single-page paginator suppression, and isolated retryable
-  API failures.
+  API failures. Connected panels require confirmation before unsubscribe or
+  demo completion, explain that original intake is retained, invoke the
+  selected record action, and show contextual success feedback; mock panels do
+  not expose persistence actions.
 
 ## Deferred Tests
 
@@ -148,6 +151,11 @@ remain incomplete production-activation gates.
 
 ## Requested Execution Log
 
+- 2026-07-18: Web Operations unsubscribe and demo-completion changes passed
+  focused ESLint, `pnpm run typecheck`, and the client/SSR production build.
+  The repository-wide lint command also traversed generated `.output` and
+  `.vercel` artifacts and failed on those generated files; changed source files
+  passed the focused check. Frontend tests were not requested and were not run.
 - 2026-07-17: POMS dashboard sidebar and Web Operations verification ran
   `pnpm run lint` and `pnpm run typecheck`; both passed. A live mock-session
   browser review verified desktop and 390-pixel responsive layouts, sidebar
