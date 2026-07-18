@@ -91,8 +91,16 @@ Configure a protected GitHub environment named `production` with:
 - `DEPLOY_USER`: SSH user with Docker and `/opt/phaeno.portal-green` access;
 - `DEPLOY_SSH_KEY`: private deployment key;
 - `DEPLOY_KNOWN_HOSTS`: pinned OpenSSH `known_hosts` entry for the server; and
+- `PORTAL_CLERK_SECRET_KEY`: Clerk backend secret for the same instance used by
+  the Portal frontend; and
 - `PORTAL_MIGRATION_BACKUP_PUBLIC_KEY`: PEM public key used only when an
   authorized migration is requested.
+
+On every deployment, the workflow validates `PORTAL_CLERK_SECRET_KEY`, streams
+it over the pinned SSH connection without placing it in the release archive,
+and atomically replaces only `Clerk__SecretKey` in the root-protected
+`runtime/portal.env`. The API recreation then loads the updated value. The
+workflow never prints the value.
 
 The workflow input `apply_migrations` defaults to `false`. Selecting `true` is
 the explicit shared-database approval gate. Before running the migration
@@ -101,8 +109,10 @@ validates its catalog, encrypts it with a random passphrase, wraps that
 passphrase to `PORTAL_MIGRATION_BACKUP_PUBLIC_KEY`, verifies encrypted
 checksums, and removes the plaintext dump and passphrase.
 
-Runtime secrets remain only in `/opt/phaeno.portal-green/runtime`; they are
-never archived or printed. The successful release is exposed through
+Runtime secrets remain outside release archives and source control. The Clerk
+secret is held in the protected GitHub `production` environment and in
+`/opt/phaeno.portal-green/runtime/portal.env`; other runtime secrets remain
+server-only. None are printed. The successful release is exposed through
 `/opt/phaeno.portal-green/current`, and the root-only deployment manifest
 records its commit, image tag, release path, migration choice, and Website row
 counts.

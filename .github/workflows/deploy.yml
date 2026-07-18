@@ -55,16 +55,32 @@ jobs:
           DEPLOY_KNOWN_HOSTS: ${{ secrets.DEPLOY_KNOWN_HOSTS }}
           DEPLOY_SSH_KEY: ${{ secrets.DEPLOY_SSH_KEY }}
           DEPLOY_USER: ${{ secrets.DEPLOY_USER }}
+          PORTAL_CLERK_SECRET_KEY: ${{ secrets.PORTAL_CLERK_SECRET_KEY }}
           PORTAL_MIGRATION_BACKUP_PUBLIC_KEY: ${{ secrets.PORTAL_MIGRATION_BACKUP_PUBLIC_KEY }}
         run: |
           missing=0
 
-          for name in DEPLOY_HOST DEPLOY_KNOWN_HOSTS DEPLOY_SSH_KEY DEPLOY_USER; do
+          for name in \
+            DEPLOY_HOST \
+            DEPLOY_KNOWN_HOSTS \
+            DEPLOY_SSH_KEY \
+            DEPLOY_USER \
+            PORTAL_CLERK_SECRET_KEY; do
             if [ -z "${!name}" ]; then
               echo "::error::Missing production secret ${name}."
               missing=1
             fi
           done
+
+          if [ -n "$PORTAL_CLERK_SECRET_KEY" ]; then
+            case "$PORTAL_CLERK_SECRET_KEY" in
+              sk_test_*|sk_live_*) ;;
+              *)
+                echo "::error::PORTAL_CLERK_SECRET_KEY is not a Clerk secret key."
+                missing=1
+                ;;
+            esac
+          fi
 
           if [ "$APPLY_MIGRATIONS" = "true" ] \
             && [ -z "$PORTAL_MIGRATION_BACKUP_PUBLIC_KEY" ]; then
@@ -174,8 +190,21 @@ jobs:
             --file "/tmp/$archive_name" \
             --directory "$release_path"
           chmod -R u=rwX,go=rX "$release_path"
-          chmod 755 "$release_path/deployment/hetzner/green/deploy-release.sh"
+          chmod 755 \
+            "$release_path/deployment/hetzner/green/deploy-release.sh" \
+            "$release_path/deployment/hetzner/green/install-clerk-runtime-secret.sh"
           REMOTE
+
+      - name: Install Clerk runtime secret
+        env:
+          DEPLOY_HOST: ${{ secrets.DEPLOY_HOST }}
+          DEPLOY_USER: ${{ secrets.DEPLOY_USER }}
+          PORTAL_CLERK_SECRET_KEY: ${{ secrets.PORTAL_CLERK_SECRET_KEY }}
+          RELEASE_PATH: ${{ steps.release.outputs.release_path }}
+        run: |
+          printf 'Clerk__SecretKey=%s\n' "$PORTAL_CLERK_SECRET_KEY" \
+            | ssh -i ~/.ssh/deploy_key "$DEPLOY_USER@$DEPLOY_HOST" \
+                "$RELEASE_PATH/deployment/hetzner/green/install-clerk-runtime-secret.sh '$DEPLOY_ROOT'"
 
       - name: Upload migration-backup public key
         if: ${{ inputs.apply_migrations }}
