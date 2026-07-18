@@ -15,7 +15,7 @@
 **/test-results/
 **/playwright-report/
 
-# Local configuration and secrets
+# Local configuration, documents and secrets
 .env
 .env.*
 !.env.example
@@ -24,6 +24,7 @@ appsettings.Development.json
 frontend/certs/*.csr
 frontend/certs/*.pem
 frontend/certs/*.srl
+backend/app/__DOCUMENTS
 
 # Website data-cutover artifacts contain personal and inquiry data
 operations/website-cutover/snapshots/

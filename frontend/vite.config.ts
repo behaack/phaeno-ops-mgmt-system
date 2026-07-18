@@ -20,13 +20,6 @@ const config = defineConfig(({ command }) => ({
             cert: readFileSync(new URL('./certs/localhost-cert.pem', import.meta.url)),
           }
         : undefined,
-    proxy: {
-      '/api': {
-        target: 'https://localhost:44399',
-        changeOrigin: true,
-        secure: false,
-      },
-    },
   },
   resolve: {
     tsconfigPaths: true,
@@ -49,7 +42,15 @@ const config = defineConfig(({ command }) => ({
     { enforce: 'pre', ...mdx() },
     tailwindcss(),
     tanstackStart(),
-    nitro(),
+    nitro({
+      devProxy: {
+        '/api/**': {
+          target: 'https://localhost:44399',
+          changeOrigin: true,
+          secure: false,
+        },
+      },
+    }),
     viteReact({ include: /\.(js|jsx|md|mdx|ts|tsx)$/ }),
   ],
   test: {
