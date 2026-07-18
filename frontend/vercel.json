@@ -1,3 +1,10 @@
 {
-  "framework": "tanstack-start"
+  "$schema": "https://openapi.vercel.sh/vercel.json",
+  "framework": "tanstack-start",
+  "rewrites": [
+    {
+      "source": "/api/:path*",
+      "destination": "https://api.phaenobiotech.com/api/:path*"
+    }
+  ]
 }
