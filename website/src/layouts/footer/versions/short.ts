@@ -24,11 +24,11 @@ const footer =
       {
         header: 'Resources',
         content: [
-          {
-            type: 'link',
-            label: 'Blog',
-            value: '/blog'
-          },
+          // {
+          //   type: 'link',
+          //   label: 'Blog',
+          //   value: '/blog'
+          // },
           {
             type: 'link',
             label: 'Job Openings',
