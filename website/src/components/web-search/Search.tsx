@@ -2,6 +2,7 @@ import type { articletypes, webtypes } from '@/assets/docTypes'
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { FaMagnifyingGlass, FaX } from 'react-icons/fa6'
 import SearchItem from './SearchItem'
+import { hasVisibleSearchMatch } from './searchText'
 
 export interface ISearchResult {
   id: string
@@ -293,7 +294,17 @@ export default function Search() {
         const json = (await res.json()) as ApiEnvelope<ISearchResult[]>
 
         // ✅ the important part: the array is json.data
-        const list = Array.isArray(json?.data) ? json.data : []
+        const list = Array.isArray(json?.data)
+          ? json.data.filter((result) => hasVisibleSearchMatch(
+              debouncedSearch,
+              [
+                result.pageDisplayTitle,
+                result.pageTitle,
+                result.anchorTitle,
+                result.snippet,
+              ],
+            ))
+          : []
 
         setSearchList(list)
         setAriaMessage(`${list.length} search result${list.length !== 1 ? 's' : ''} found.`)

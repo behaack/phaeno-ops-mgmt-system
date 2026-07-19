@@ -1,4 +1,5 @@
 import type { JSX } from "react";
+import { getSearchTerms } from './searchText';
 
 export interface ISearchResult {
   text: string;
@@ -7,12 +8,6 @@ export interface ISearchResult {
 
 function escapeRegex(value: string) {
   return value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-}
-
-function getSearchTerms(searchStr: string) {
-  return Array.from(
-    new Set(searchStr.match(/[\p{L}\p{N}_']+/gu) ?? []),
-  ).sort((left, right) => right.length - left.length);
 }
 
 function SearchHighlightedSnippet({ text, searchStr }: ISearchResult) {
