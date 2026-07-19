@@ -159,13 +159,14 @@ internal static class ReferenceJourney
                 runKey);
             currentUser.UserId = identities.PlatformAdminUserId;
             var relationshipCustomerLabel = $"Reference Customer {runKey}";
+            var environment = new ReferenceWebHostEnvironment(storageRoot);
             await RunRelationshipLifecycleAsync(
                 dbContext,
                 identities.PlatformAdminSubject,
-                relationshipCustomerLabel);
+                relationshipCustomerLabel,
+                environment);
             ResetRequestScope(dbContext);
 
-            var environment = new ReferenceWebHostEnvironment(storageRoot);
             var provisioningOptions = new DataProvisioningOptions
             {
                 StorageRoot = storageRoot,
@@ -526,7 +527,8 @@ internal static class ReferenceJourney
     private static async Task RunRelationshipLifecycleAsync(
         PSeqOperationsDbContext dbContext,
         string platformAdminSubject,
-        string customerLabel)
+        string customerLabel,
+        IWebHostEnvironment environment)
     {
         var customer = new Organization(customerLabel, OrganizationKind.Customer);
         dbContext.Organizations.Add(customer);
@@ -536,7 +538,8 @@ internal static class ReferenceJourney
 
         var controller = new RelationshipManagementController(
             dbContext,
-            new ReferenceIdentityContext(platformAdminSubject))
+            new ReferenceIdentityContext(platformAdminSubject),
+            environment)
         {
             ControllerContext = new ControllerContext
             {
