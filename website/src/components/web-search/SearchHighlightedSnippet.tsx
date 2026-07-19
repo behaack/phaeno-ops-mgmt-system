@@ -1,21 +1,14 @@
 import type { JSX } from "react";
-import { getSearchTerms } from './searchText';
+import { createSearchTermRegex } from './searchText';
 
 export interface ISearchResult {
   text: string;
   searchStr: string;
 }
 
-function escapeRegex(value: string) {
-  return value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-}
-
 function SearchHighlightedSnippet({ text, searchStr }: ISearchResult) {
   const markerRegex = /\{\{(.*?)\}\}/g;
-  const searchTerms = getSearchTerms(searchStr);
-  const literalRegex = searchTerms.length > 0
-    ? new RegExp(searchTerms.map(escapeRegex).join('|'), 'gi')
-    : null;
+  const literalRegex = createSearchTermRegex(searchStr);
   const parts: (string | JSX.Element)[] = [];
   let lastIndex = 0;
   let partKey = 0;
@@ -30,15 +23,18 @@ function SearchHighlightedSnippet({ text, searchStr }: ISearchResult) {
     let literalIndex = 0;
     let literalMatch: RegExpExecArray | null;
     while ((literalMatch = literalRegex.exec(value)) !== null) {
-      if (literalMatch.index > literalIndex) {
-        parts.push(value.slice(literalIndex, literalMatch.index));
+      const matchStart = literalMatch.index + literalMatch[1].length;
+      const matchEnd = matchStart + literalMatch[2].length;
+
+      if (matchStart > literalIndex) {
+        parts.push(value.slice(literalIndex, matchStart));
       }
       parts.push(
         <mark key={`literal-${partKey++}`} className="web-search-highlight">
-          {literalMatch[0]}
+          {literalMatch[2]}
         </mark>,
       );
-      literalIndex = literalRegex.lastIndex;
+      literalIndex = matchEnd;
     }
 
     if (literalIndex < value.length) {

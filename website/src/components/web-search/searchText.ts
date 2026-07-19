@@ -1,4 +1,10 @@
 const searchTermPattern = /[\p{L}\p{N}_']+/gu;
+const searchTokenCharacterClass = "\\p{L}\\p{N}_'";
+const highlightedTermPattern = /\{\{(.*?)\}\}/g;
+
+function escapeRegex(value: string) {
+  return value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+}
 
 export function getSearchTerms(searchText: string) {
   const terms = searchText.match(searchTermPattern) ?? [];
@@ -15,6 +21,18 @@ export function getSearchTerms(searchText: string) {
     .sort((left, right) => right.length - left.length);
 }
 
+export function createSearchTermRegex(searchText: string, flags = 'giu') {
+  const terms = getSearchTerms(searchText);
+  if (terms.length === 0) {
+    return null;
+  }
+
+  return new RegExp(
+    `(^|[^${searchTokenCharacterClass}])(${terms.map(escapeRegex).join('|')})(?=$|[^${searchTokenCharacterClass}])`,
+    flags,
+  );
+}
+
 export function hasVisibleSearchMatch(
   searchText: string,
   visibleValues: Array<string | undefined>,
@@ -27,7 +45,20 @@ export function hasVisibleSearchMatch(
   }
 
   const visibleText = normalizeSearchText(visibleValues.join(' '));
-  return terms.every((term) => visibleText.includes(term));
+  const unmatchedTerms = terms.filter((term) =>
+    createSearchTermRegex(term, 'iu')?.test(visibleText) !== true);
+  if (unmatchedTerms.length === 0) {
+    return true;
+  }
+
+  const highlightedTokens = new Set(
+    visibleValues.flatMap((value) =>
+      Array.from(value?.matchAll(highlightedTermPattern) ?? [])
+        .map((match) => normalizeSearchText(match[1]))
+        .filter(Boolean)),
+  );
+
+  return highlightedTokens.size >= unmatchedTerms.length;
 }
 
 function normalizeSearchText(value: string) {

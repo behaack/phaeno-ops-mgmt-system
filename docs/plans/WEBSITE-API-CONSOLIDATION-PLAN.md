@@ -114,7 +114,9 @@ supported by the page title actually displayed in search, the result heading,
 summary, or section text. Match counts use those visible fields.
 Hyphenated terms are tokenized consistently, so a search for `read` highlights
 the `read` segment in `short-read`; result group titles, result titles, and
-snippets highlight every displayed occurrence of the literal query.
+snippets highlight displayed occurrences of the literal query only at token
+boundaries, so the same search does not highlight the prefix of `ready` or
+`already`.
 
 The implementation keeps the existing Astro metadata and sitemap contract,
 Google reCAPTCHA Enterprise verification, Mailgun template names, technical
