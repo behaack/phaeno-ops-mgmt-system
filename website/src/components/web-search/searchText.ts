@@ -61,6 +61,22 @@ export function hasVisibleSearchMatch(
   return highlightedTokens.size >= unmatchedTerms.length;
 }
 
+export function hasDistinctSearchSnippet(title: string, snippet: string) {
+  const normalizedSnippet = normalizeDisplayedSearchText(snippet);
+
+  return normalizedSnippet.length > 0
+    && normalizedSnippet !== normalizeDisplayedSearchText(title);
+}
+
+function normalizeDisplayedSearchText(value: string) {
+  return normalizeSearchText(
+    value
+      .replace(highlightedTermPattern, '$1')
+      .replace(/\s+/g, ' ')
+      .trim(),
+  );
+}
+
 function normalizeSearchText(value: string) {
   return value
     .normalize('NFD')

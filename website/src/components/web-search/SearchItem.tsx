@@ -1,6 +1,7 @@
 import type { articletypes, webtypes } from '@/assets/docTypes';
 import { useMemo } from 'react';
 import SearchHighlightedSnippet from './SearchHighlightedSnippet';
+import { hasDistinctSearchSnippet } from './searchText';
 
 export interface ISearchItem {
   id: string;
@@ -105,6 +106,10 @@ export default function SearchItem({
 }: IProps ) {
   const targetUrl = useMemo(() => resolveSearchResultUrl(item.url), [item.url]);
   const pageDisplayTitle = useMemo(() => getPageDisplayTitle(item), [item.pageDisplayTitle, item.pageTitle]);
+  const showSnippet = useMemo(
+    () => hasDistinctSearchSnippet(item.anchorTitle, item.snippet),
+    [item.anchorTitle, item.snippet],
+  );
 
   const isHeader = useMemo(() => {
     if (index === 0) return true;
@@ -172,13 +177,15 @@ export default function SearchItem({
               {item.count} {(item.count === 1) ? 'match' : 'matches'}
             </span>
           </div>
-          <p className="web-search-snippet">
-            <SearchHighlightedSnippet text={item.snippet} searchStr={searchStr} />
-          </p>
+          {showSnippet && (
+            <p className="web-search-snippet">
+              <SearchHighlightedSnippet text={item.snippet} searchStr={searchStr} />
+            </p>
+          )}
         </div>
       </a>
     </li>
-  ), [item, targetUrl, searchStr, active, linkRef, optionId, onFocusOption, onSelect]);
+  ), [item, targetUrl, searchStr, active, linkRef, optionId, onFocusOption, onSelect, showSnippet]);
 
   return (
     <>

@@ -116,7 +116,9 @@ Hyphenated terms are tokenized consistently, so a search for `read` highlights
 the `read` segment in `short-read`; result group titles, result titles, and
 snippets highlight displayed occurrences of the literal query only at token
 boundaries, so the same search does not highlight the prefix of `ready` or
-`already`.
+`already`. When a result snippet repeats its result title after highlight
+markers, case, and whitespace are normalized, the Website renders the title
+only so one indexed occurrence is not presented twice.
 
 The implementation keeps the existing Astro metadata and sitemap contract,
 Google reCAPTCHA Enterprise verification, Mailgun template names, technical
