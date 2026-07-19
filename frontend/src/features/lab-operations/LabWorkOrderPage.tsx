@@ -49,7 +49,7 @@ type WorkAction =
   | { kind: 'resolveException'; exception: LabException }
   | null
 
-export function LabWorkOrderPage({ workOrderId }: { workOrderId: string }) {
+export function LabWorkOrderPage({ workOrderId, mode = 'work' }: { workOrderId: string; mode?: 'work' | 'order-intake' }) {
   const { authProvider, session } = usePhaenoSession()
   const canView = Boolean(session?.capabilities.canManageLabOperations)
   const apiEnabled = canView && authProvider !== 'mock'
@@ -68,20 +68,21 @@ export function LabWorkOrderPage({ workOrderId }: { workOrderId: string }) {
   if (work.error || !work.data) return <PageAlert title="Lab work order could not be loaded" message={getLabOperationsError(work.error, 'Return to Lab operations and try again.')} />
   const data = work.data
   const canOperate = Boolean(session?.capabilities.canOperateLabWork)
+  const intakeMode = mode === 'order-intake'
   return (
     <main className="page-wrap px-4 py-8">
       <section className="mb-6 flex flex-wrap items-start justify-between gap-4">
-        <div><p className="text-sm text-muted-foreground"><Link to="/lab-operations" search={{ section: 'work' }} className="hover:underline">Lab operations</Link> / {data.workOrder.commercialOrderNumber ?? data.workOrder.id}</p><div className="mt-2 flex items-center gap-3"><h1 className="text-3xl font-semibold">{data.workOrder.commercialOrderNumber ?? 'Laboratory work order'}</h1><Status value={data.workOrder.status} /></div><p className="mt-2 text-sm text-muted-foreground">{data.specimens.length} specimen(s) · {data.exceptions.filter((item) => item.status === 'Open').length} open exception(s) · version {data.workOrder.version}</p></div>
-        <div className="flex flex-wrap gap-2">{canOperate ? <><Button type="button" variant="outline" onClick={() => setAction({ kind: 'milestone' })}>Change milestone</Button><Button type="button" variant="outline" onClick={() => setAction({ kind: 'container' })}>New container</Button><Button type="button" onClick={() => setAction({ kind: 'execution' })}><Plus data-icon="inline-start" /> Assign protocol</Button></> : null}{session?.capabilities.canReviewLabWork && data.workOrder.status === 'ScientificReview' ? <Button type="button" onClick={() => setAction({ kind: 'approval' })}>Record scientific approval</Button> : null}</div>
+        <div><p className="text-sm text-muted-foreground">{intakeMode ? <Link to="/order-operations" className="hover:underline">Order operations</Link> : <Link to="/lab-operations" search={{ section: 'work' }} className="hover:underline">Lab operations</Link>} / {data.workOrder.commercialOrderNumber ?? data.workOrder.id}</p><div className="mt-2 flex items-center gap-3"><h1 className="text-3xl font-semibold">{intakeMode ? 'Order intake' : data.workOrder.commercialOrderNumber ?? 'Laboratory work order'}</h1><Status value={data.workOrder.status} /></div>{intakeMode ? <p className="mt-2 font-medium">{data.workOrder.commercialOrderNumber ?? data.workOrder.id}</p> : null}<p className="mt-2 text-sm text-muted-foreground">{data.specimens.length} specimen(s) · {data.exceptions.filter((item) => item.status === 'Open').length} open exception(s) · version {data.workOrder.version}</p></div>
+        {!intakeMode ? <div className="flex flex-wrap gap-2">{canOperate ? <><Button type="button" variant="outline" onClick={() => setAction({ kind: 'milestone' })}>Change milestone</Button><Button type="button" variant="outline" onClick={() => setAction({ kind: 'container' })}>New container</Button><Button type="button" onClick={() => setAction({ kind: 'execution' })}><Plus data-icon="inline-start" /> Assign protocol</Button></> : null}{session?.capabilities.canReviewLabWork && data.workOrder.status === 'ScientificReview' ? <Button type="button" onClick={() => setAction({ kind: 'approval' })}>Record scientific approval</Button> : null}</div> : null}
       </section>
-      <Tabs defaultValue="specimens"><TabsList className="grid h-auto w-full grid-cols-3 lg:grid-cols-6"><TabsTrigger value="specimens">Specimens</TabsTrigger><TabsTrigger value="execution">Execution</TabsTrigger><TabsTrigger value="lineage">Lineage</TabsTrigger><TabsTrigger value="libraries">Libraries</TabsTrigger><TabsTrigger value="exceptions">Exceptions</TabsTrigger><TabsTrigger value="review">Review</TabsTrigger></TabsList>
+      {intakeMode ? <Specimens items={data.specimens} canOperate={canOperate} onAction={setAction} /> : <Tabs defaultValue="specimens"><TabsList className="grid h-auto w-full grid-cols-3 lg:grid-cols-6"><TabsTrigger value="specimens">Specimens</TabsTrigger><TabsTrigger value="execution">Execution</TabsTrigger><TabsTrigger value="lineage">Lineage</TabsTrigger><TabsTrigger value="libraries">Libraries</TabsTrigger><TabsTrigger value="exceptions">Exceptions</TabsTrigger><TabsTrigger value="review">Review</TabsTrigger></TabsList>
         <TabsContent value="specimens"><Specimens items={data.specimens} canOperate={canOperate} onAction={setAction} /></TabsContent>
         <TabsContent value="execution"><Executions items={data.executions} canOperate={canOperate} onAction={setAction} onStart={async (item) => { await transitionLabExecution(item.id, { action: 'start', version: item.version }); await refresh() }} /></TabsContent>
         <TabsContent value="lineage"><Containers items={data.containers} canOperate={canOperate} onPrint={setLabelContainer} /></TabsContent>
         <TabsContent value="libraries"><Libraries items={data.libraries} canOperate={canOperate} onAction={setAction} onCreate={() => setAction({ kind: 'library' })} /></TabsContent>
         <TabsContent value="exceptions"><Exceptions items={data.exceptions} canOperate={canOperate} canResolve={Boolean(session?.capabilities.canSuperviseLabWork)} onAction={setAction} onCreate={() => setAction({ kind: 'exception' })} /></TabsContent>
         <TabsContent value="review"><Review approvals={data.scientificApprovals} /></TabsContent>
-      </Tabs>
+      </Tabs>}
       <WorkActionDialog action={action} workId={workOrderId} workVersion={data.workOrder.version} specimens={data.specimens} containers={data.containers} executions={data.executions} resources={dashboard.data} onClose={() => setAction(null)} onSaved={async (result, completedAction) => {
         setAction(null)
         await refresh()

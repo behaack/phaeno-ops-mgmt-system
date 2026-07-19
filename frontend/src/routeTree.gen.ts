@@ -34,6 +34,7 @@ import { Route as DataAssemblyNewRouteImport } from './routes/data-assembly.new'
 import { Route as DataAssemblyRequestIdRouteImport } from './routes/data-assembly.$requestId'
 import { Route as CustomersCustomerIdRouteImport } from './routes/customers.$customerId'
 import { Route as ReagentOrdersOrderIdEditRouteImport } from './routes/reagent-orders.$orderId.edit'
+import { Route as OrderOperationsIntakeOrderIdRouteImport } from './routes/order-operations.intake.$orderId'
 import { Route as OrderOperationsWorkflowOrderIdRouteImport } from './routes/order-operations.$workflow.$orderId'
 import { Route as LabServicesOrderIdEditRouteImport } from './routes/lab-services.$orderId.edit'
 import { Route as DocsAudienceSlugRouteImport } from './routes/docs.$audience.$slug'
@@ -169,6 +170,12 @@ const ReagentOrdersOrderIdEditRoute =
     path: '/edit',
     getParentRoute: () => ReagentOrdersOrderIdRoute,
   } as any)
+const OrderOperationsIntakeOrderIdRoute =
+  OrderOperationsIntakeOrderIdRouteImport.update({
+    id: '/intake/$orderId',
+    path: '/intake/$orderId',
+    getParentRoute: () => OrderOperationsRoute,
+  } as any)
 const OrderOperationsWorkflowOrderIdRoute =
   OrderOperationsWorkflowOrderIdRouteImport.update({
     id: '/$workflow/$orderId',
@@ -240,6 +247,7 @@ export interface FileRoutesByFullPath {
   '/docs/$audience/$slug': typeof DocsAudienceSlugRoute
   '/lab-services/$orderId/edit': typeof LabServicesOrderIdEditRoute
   '/order-operations/$workflow/$orderId': typeof OrderOperationsWorkflowOrderIdRoute
+  '/order-operations/intake/$orderId': typeof OrderOperationsIntakeOrderIdRoute
   '/reagent-orders/$orderId/edit': typeof ReagentOrdersOrderIdEditRoute
   '/lab-operations/protocols/$protocolId/versions/new': typeof LabOperationsProtocolsProtocolIdVersionsNewRoute
   '/lab-operations/protocols/$protocolId/versions/$versionId/edit': typeof LabOperationsProtocolsProtocolIdVersionsVersionIdEditRoute
@@ -274,6 +282,7 @@ export interface FileRoutesByTo {
   '/docs/$audience/$slug': typeof DocsAudienceSlugRoute
   '/lab-services/$orderId/edit': typeof LabServicesOrderIdEditRoute
   '/order-operations/$workflow/$orderId': typeof OrderOperationsWorkflowOrderIdRoute
+  '/order-operations/intake/$orderId': typeof OrderOperationsIntakeOrderIdRoute
   '/reagent-orders/$orderId/edit': typeof ReagentOrdersOrderIdEditRoute
   '/lab-operations/protocols/$protocolId/versions/new': typeof LabOperationsProtocolsProtocolIdVersionsNewRoute
   '/lab-operations/protocols/$protocolId/versions/$versionId/edit': typeof LabOperationsProtocolsProtocolIdVersionsVersionIdEditRoute
@@ -309,6 +318,7 @@ export interface FileRoutesById {
   '/docs/$audience/$slug': typeof DocsAudienceSlugRoute
   '/lab-services/$orderId/edit': typeof LabServicesOrderIdEditRoute
   '/order-operations/$workflow/$orderId': typeof OrderOperationsWorkflowOrderIdRoute
+  '/order-operations/intake/$orderId': typeof OrderOperationsIntakeOrderIdRoute
   '/reagent-orders/$orderId/edit': typeof ReagentOrdersOrderIdEditRoute
   '/lab-operations/protocols/$protocolId/versions/new': typeof LabOperationsProtocolsProtocolIdVersionsNewRoute
   '/lab-operations/protocols/$protocolId/versions/$versionId/edit': typeof LabOperationsProtocolsProtocolIdVersionsVersionIdEditRoute
@@ -345,6 +355,7 @@ export interface FileRouteTypes {
     | '/docs/$audience/$slug'
     | '/lab-services/$orderId/edit'
     | '/order-operations/$workflow/$orderId'
+    | '/order-operations/intake/$orderId'
     | '/reagent-orders/$orderId/edit'
     | '/lab-operations/protocols/$protocolId/versions/new'
     | '/lab-operations/protocols/$protocolId/versions/$versionId/edit'
@@ -379,6 +390,7 @@ export interface FileRouteTypes {
     | '/docs/$audience/$slug'
     | '/lab-services/$orderId/edit'
     | '/order-operations/$workflow/$orderId'
+    | '/order-operations/intake/$orderId'
     | '/reagent-orders/$orderId/edit'
     | '/lab-operations/protocols/$protocolId/versions/new'
     | '/lab-operations/protocols/$protocolId/versions/$versionId/edit'
@@ -413,6 +425,7 @@ export interface FileRouteTypes {
     | '/docs/$audience/$slug'
     | '/lab-services/$orderId/edit'
     | '/order-operations/$workflow/$orderId'
+    | '/order-operations/intake/$orderId'
     | '/reagent-orders/$orderId/edit'
     | '/lab-operations/protocols/$protocolId/versions/new'
     | '/lab-operations/protocols/$protocolId/versions/$versionId/edit'
@@ -613,6 +626,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ReagentOrdersOrderIdEditRouteImport
       parentRoute: typeof ReagentOrdersOrderIdRoute
     }
+    '/order-operations/intake/$orderId': {
+      id: '/order-operations/intake/$orderId'
+      path: '/intake/$orderId'
+      fullPath: '/order-operations/intake/$orderId'
+      preLoaderRoute: typeof OrderOperationsIntakeOrderIdRouteImport
+      parentRoute: typeof OrderOperationsRoute
+    }
     '/order-operations/$workflow/$orderId': {
       id: '/order-operations/$workflow/$orderId'
       path: '/$workflow/$orderId'
@@ -783,10 +803,12 @@ const LabServicesRouteWithChildren = LabServicesRoute._addFileChildren(
 
 interface OrderOperationsRouteChildren {
   OrderOperationsWorkflowOrderIdRoute: typeof OrderOperationsWorkflowOrderIdRoute
+  OrderOperationsIntakeOrderIdRoute: typeof OrderOperationsIntakeOrderIdRoute
 }
 
 const OrderOperationsRouteChildren: OrderOperationsRouteChildren = {
   OrderOperationsWorkflowOrderIdRoute: OrderOperationsWorkflowOrderIdRoute,
+  OrderOperationsIntakeOrderIdRoute: OrderOperationsIntakeOrderIdRoute,
 }
 
 const OrderOperationsRouteWithChildren = OrderOperationsRoute._addFileChildren(
