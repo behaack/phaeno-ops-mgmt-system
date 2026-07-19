@@ -298,8 +298,7 @@ export default function Search() {
           ? json.data.filter((result) => hasVisibleSearchMatch(
               debouncedSearch,
               [
-                result.pageDisplayTitle,
-                result.pageTitle,
+                result.pageDisplayTitle?.trim() || result.pageTitle,
                 result.anchorTitle,
                 result.snippet,
               ],
@@ -384,6 +383,9 @@ export default function Search() {
               </div>
 
               <button
+                type="button"
+                aria-label="Close search"
+                title="Close search"
                 onClick={toggleSearch}
                 className="web-search-close-btn"
                 onFocus={() => setActiveIndex(-1)}

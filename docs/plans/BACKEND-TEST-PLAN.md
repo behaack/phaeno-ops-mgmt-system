@@ -22,7 +22,8 @@ and rollback-isolated PostgreSQL coverage.
   portal context.
 - [x] `backend/test/WebsiteApiTests.cs` - sitemap URL discovery,
   accent normalization, hyphenated-term highlighting, and rejection of
-  metadata-only false positives for the public Website search path.
+  HTML-page-title-only and search-keyword-only false positives for the public
+  Website search path.
 - [x] `backend/test/PhaenoPortalMetadataTests.cs` - `HealthMetadataIdentifiesTheApi`.
 - [x] `backend/test/PersistenceTests.cs` -
   `PSeqOperationsDbContextMapsEveryEntityToItsOwningSchema`.

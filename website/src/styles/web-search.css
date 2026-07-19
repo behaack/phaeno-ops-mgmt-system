@@ -76,34 +76,47 @@
   border: 0;
 }
 
-.web-search-close-btn {
-  background-color: inherit;
-  color: #000;
-  padding: 0.625rem; /* p-2.5 */
+button.web-search-close-btn {
+  align-items: center;
+  background-color: transparent;
+  border: none;
+  border-radius: var(--radius-md);
+  color: var(--color-text);
+  display: inline-flex;
+  flex: 0 0 auto;
+  height: 2.5rem;
+  justify-content: center;
+  padding: 0;
+  width: 2.5rem;
   box-shadow: none;
   transform: none;
-  border: none;
   appearance: none;
   transition:
     background-color var(--duration-base) var(--ease-standard),
     color var(--duration-fast) var(--ease-standard);
 }
 
-/* Hover */
-.web-search-close-btn:hover {
-  background-color: #e5e7eb; /* gray-200 */
+button.web-search-close-btn:hover:not(:disabled) {
+  background-color: var(--phaeno-neutral-100);
+  color: var(--phaeno-rna-900);
   box-shadow: none;
   transform: none;
 }
 
-/* Focus */
-.web-search-close-btn:focus {
-  background-color: inherit;
+button.web-search-close-btn:focus {
+  background-color: transparent;
+  border-radius: var(--radius-md);
   box-shadow: none;
 }
 
-/* Active */
-.web-search-close-btn:active {
+button.web-search-close-btn:focus-visible {
+  background-color: var(--phaeno-neutral-100);
+  outline: 2px solid var(--color-focus);
+  outline-offset: 2px;
+}
+
+button.web-search-close-btn:active:not(:disabled) {
+  background-color: var(--phaeno-neutral-200);
   box-shadow: none;
   transform: none;
 }

@@ -43,7 +43,7 @@ public sealed class WebsiteApiTests
     }
 
     [Fact]
-    public void SearchHighlightsHyphenatedTermsAndRejectsKeywordOnlyMatches()
+    public void SearchHighlightsHyphenatedTermsAndRejectsHiddenMetadataOnlyMatches()
     {
         var indexPath = Path.Combine(
             Path.GetTempPath(),
@@ -68,6 +68,17 @@ public sealed class WebsiteApiTests
                     Anchor = "reads",
                     AnchorTitle = "Short-read sequencing",
                     Text = "Short-read sequencing produces reads for analysis."
+                },
+                new IndexedPage
+                {
+                    Id = "page-title-only-read",
+                    Url = "https://www.phaenobiotech.com#platform",
+                    PageTitle = "Phaeno | Full-Length RNA Sequencing with Short-Read NGS",
+                    PageDisplayTitle = "Home",
+                    Anchor = "platform",
+                    AnchorTitle = "PSeq platform overview",
+                    Description = "PSeq exposes molecular phenotype by resolving isoforms.",
+                    Text = "PSeq platform overview and molecular phenotype."
                 },
                 new IndexedPage
                 {

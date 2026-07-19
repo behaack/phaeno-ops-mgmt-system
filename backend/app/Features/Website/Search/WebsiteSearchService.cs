@@ -151,8 +151,7 @@ public sealed class WebsiteSearchService : IWebsiteSearchService, IDisposable
             fullText,
             description,
             anchorTitle,
-            pageDisplayTitle,
-            pageTitle);
+            pageDisplayTitle);
 
         var snippet = ExtractSnippet(fullText, stemmedTerms);
         if (string.IsNullOrWhiteSpace(snippet))
