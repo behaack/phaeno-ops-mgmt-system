@@ -231,6 +231,8 @@ import ReCaptchaNotification from '@/components/ReCaptchaNotification.astro';
   overflow: hidden;
   border: 1px solid var(--color-border);
   border-radius: var(--radius-xl);
+  color: var(--color-text);
+  color-scheme: light;
   background: var(--color-surface);
   box-shadow: var(--shadow-sm);
 }
@@ -265,6 +267,18 @@ import ReCaptchaNotification from '@/components/ReCaptchaNotification.astro';
 
 :global(.contact-form-panel--updates) {
   box-shadow: var(--shadow-sm);
+}
+
+:global(.contact-input) {
+  color: var(--color-text);
+  caret-color: var(--color-text);
+}
+
+:global(.contact-input:-webkit-autofill),
+:global(.contact-input:-webkit-autofill:hover),
+:global(.contact-input:-webkit-autofill:focus) {
+  -webkit-text-fill-color: var(--color-text);
+  caret-color: var(--color-text);
 }
 
 :global(.contact-input:focus) {
