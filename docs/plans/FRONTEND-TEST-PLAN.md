@@ -143,6 +143,9 @@ remain incomplete production-activation gates.
   APIs.
 - [ ] Remaining Lab Operations workspace - cover role-specific navigation and
   controls, list/detail loading, receipt/accession, protocol lifecycle,
+  the Phaeno Order Operations **Open lab intake** handoff for placed lab orders,
+  including blocked pre-placement states and navigation to the existing work
+  order,
   system-assigned protocol/library/batch identifiers, required batch names, and
   the system-owned External sequencing type, the dedicated structured
   protocol-version builder's step ordering/duplication/removal, required,

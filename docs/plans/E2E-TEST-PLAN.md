@@ -133,7 +133,9 @@ not satisfy this production-activation gate.
   payment hold, QuickBooks failure, two-tenant isolation, keyboard, and narrow
   viewport scenarios through real authentication and API persistence.
 - [ ] Database-backed Lab Operations journey - accept a Customer quote, prove
-  the already-passing controller/PostgreSQL workflow through real Clerk
+  the Phaeno Order Operations **Open lab intake** handoff to the already-linked
+  work order, then prove the already-passing controller/PostgreSQL workflow
+  through real Clerk
   authentication, the hosted HTTP API, and a browser. Include equipment
   registration with no manual asset-code input, full-width name entry,
   type/location selectors with focused missing-value creation, and date-only

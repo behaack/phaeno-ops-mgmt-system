@@ -533,6 +533,10 @@ export async function getPlatformOrder(workflow: 'lab' | 'reagent' | 'assembly',
   if (workflow === 'reagent') return get<ReagentOrder>(`/platform/${path}/${id}`)
   return get<DataAssemblyRequest>(`/platform/${path}/${id}`)
 }
+export type LabIntake = { orderId: string; orderNumber: string; workOrderId: string }
+export async function getPlatformLabIntake(orderId: string) {
+  return get<LabIntake>(`/platform/lab-service-orders/${orderId}/lab-intake`)
+}
 export async function runPlatformAction<T>(path: string, body: unknown, idempotent = false) { return post<T>(`/platform/${path}`, body, idempotent) }
 export type QuoteLineInput = { catalogItemId: string; description: string; quantity: number; unitPrice: number }
 export async function issuePlatformQuote(workflow: 'lab' | 'assembly', id: string, input: { version: number; lines: QuoteLineInput[]; tax: number; currency: string; expiresAt?: string | null; purpose: 'Initial' | 'Change' }) {

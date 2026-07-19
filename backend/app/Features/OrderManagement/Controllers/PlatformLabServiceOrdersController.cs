@@ -88,6 +88,32 @@ public sealed class PlatformLabServiceOrdersController(
         return await MapAsync(await ReadAsync(orderId, cancellationToken), cancellationToken);
     }
 
+    [HttpGet("{orderId:guid}/lab-intake")]
+    public async Task<LabIntakeDto> GetLabIntake(Guid orderId, CancellationToken cancellationToken)
+    {
+        await requestContext.RequirePlatformAdminAsync(HttpContext, cancellationToken);
+        var order = await dbContext.LabServiceOrders.AsNoTracking()
+            .SingleOrDefaultAsync(item => item.Id == orderId && !item.IsDiscarded, cancellationToken)
+            ?? throw Missing();
+
+        if (order.Status is not (LabServiceOrderStatus.PlacedAwaitingSamples
+            or LabServiceOrderStatus.InProgress
+            or LabServiceOrderStatus.ResultsAvailable))
+        {
+            throw Conflict("lab_intake_not_ready", "Lab intake is available after the laboratory order is placed.");
+        }
+
+        var authorization = await dbContext.CommercialLabAuthorizations.AsNoTracking()
+            .SingleOrDefaultAsync(item => item.CommercialOrderId == order.Id, cancellationToken)
+            ?? throw Conflict("lab_authorization_missing", "The accepted laboratory order has not been authorized.");
+        if (authorization.Status != CommercialLabAuthorizationStatus.Accepted || authorization.LabWorkOrderId is null)
+        {
+            throw Conflict("lab_authorization_missing", "The accepted laboratory order has not been authorized.");
+        }
+
+        return new LabIntakeDto(order.Id, order.OrderNumber, authorization.LabWorkOrderId.Value);
+    }
+
     [HttpPost("{orderId:guid}/begin-quote")]
     public async Task<LabServiceOrderDto> BeginQuote(Guid orderId, [FromBody] VersionRequest request, CancellationToken cancellationToken)
     {

@@ -19,6 +19,11 @@ public sealed record OrderListItemDto(
     DateTime? DueAt = null,
     bool IsOverdue = false);
 
+public sealed record LabIntakeDto(
+    Guid OrderId,
+    string OrderNumber,
+    Guid WorkOrderId);
+
 public sealed record OrderTimelineDto(
     Guid Id,
     string FromStatus,

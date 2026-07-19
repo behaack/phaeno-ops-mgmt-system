@@ -27,6 +27,9 @@ or production activation.
   checksummed container identifiers, browser-rendered Code 39 labels,
   reasoned print/reprint/failure history, exact scan lookup, and scan-first
   QC-passed-library batch entry with duplicate and wrong-context rejection.
+  Phaeno operators can use the placed order's **Open lab intake** action in
+  Order Operations to reach that existing work order; this is a discoverability
+  handoff, not a second work-order creation path.
   The six workspace sections now use the shared
   far-left sidebar beneath the toolbar, with a remembered pinned desktop rail
   and the same non-modal hover, keyboard, and click rail when narrow or

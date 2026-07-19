@@ -47,6 +47,9 @@ separate major TBD.
   authorization/projection/receipt records remain in `commercial_ops`. Existing
   customer order, quote, file, payment, and publication records remain
   authoritative for their Commercial responsibilities in `commercial_ops`.
+  Phaeno operators can use **Open lab intake** on a placed lab order to reach
+  its already-authorized Lab work order; the action does not create work or
+  bypass quote acceptance.
 - Verification state: the prior clean-baseline backend, frontend, and
   desktop/mobile suites passed. The complete Lab slice has a clean backend
   build, frontend lint/typecheck and client/SSR build, and applied local
