@@ -260,11 +260,12 @@ public sealed partial class LabOperationsController
 
     private static LabEquipmentDto MapEquipment(LabEquipment item) =>
         new(item.Id, item.AssetCode, item.Name, item.EquipmentType, item.Location,
-            item.Status.ToString(), item.LastCalibrationAtUtc, item.CalibrationDueAtUtc, item.Version);
+            item.Status.ToString(), item.LastCalibrationOn, item.CalibrationDueOn, item.Version);
 
     private static LabBatchDto MapBatch(LabOperationalBatch item, int memberCount, string? sendoutStatus,
         Guid? sendoutId = null, long? sendoutVersion = null) =>
-        new(item.Id, item.BatchNumber, item.BatchType, item.Status.ToString(), item.Notes,
+        new(item.Id, item.BatchNumber, item.Name, item.BatchType, item.Status.ToString(),
+            item.StartedAtUtc, item.CompletedAtUtc, item.Notes,
             memberCount, sendoutId, sendoutStatus, sendoutVersion, item.Version);
 
     private static LabContainerDto MapContainer(LabContainer item) =>

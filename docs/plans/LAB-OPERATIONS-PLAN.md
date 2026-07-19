@@ -504,8 +504,12 @@ QuickBooks purchase order from an approved replenishment request.
 The initial release includes a lightweight equipment registry sufficient to:
 
 - identify an equipment asset and type
+- assign an immutable, scanner-safe asset code when the equipment is registered
+- select equipment type and location from known laboratory values, with a
+  focused create option when a value is missing
 - record whether it is available for use
-- record calibration status and relevant dates
+- record the most recent calibration and due dates as date-only laboratory
+  facts
 - let a protocol require an equipment type
 - record the specific equipment used during execution
 
@@ -519,6 +523,10 @@ boundary.
 An NGS send-out is an external processing batch that may contain libraries from
 multiple organizations and commercial orders. Lab Operations tracks:
 
+- a human-friendly batch name, system-owned External sequencing type, and
+  immutable POMS batch number
+- draft, in-progress, or complete status with captured UTC start and completion
+  timestamps, entered through the transition confirmation modal
 - included libraries and Phaeno barcodes
 - provider and requested service
 - shipment and manifest identifiers

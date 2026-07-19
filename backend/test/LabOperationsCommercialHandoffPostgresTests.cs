@@ -323,13 +323,15 @@ public class LabOperationsCommercialHandoffPostgresTests
 
             var equipment = await lab.CreateEquipment(
                 new CreateEquipmentRequest(
-                    $"asset-{Guid.NewGuid():N}",
                     "Reference thermal cycler",
                     "ThermalCycler",
                     "Bench 1",
-                    DateTime.UtcNow.AddDays(-1),
-                    DateTime.UtcNow.AddMonths(6)),
+                    DateOnly.FromDateTime(DateTime.UtcNow.AddDays(-1)),
+                    DateOnly.FromDateTime(DateTime.UtcNow.AddMonths(6))),
                 CancellationToken.None);
+            Assert.Matches(
+                "^PH-EQP-[0-9]{8}-[23456789ABCDEFGHJKLMNPQRSTUVWXYZ]{8}$",
+                equipment.AssetCode);
 
             var work = await lab.WorkOrder(workOrderId.Value, CancellationToken.None);
             var specimen = Assert.Single(work.Specimens);
@@ -490,9 +492,11 @@ public class LabOperationsCommercialHandoffPostgresTests
 
             var batch = await lab.CreateBatch(
                 new CreateBatchRequest(
-                    "ExternalSequencing",
+                    "Reference sequencing run",
                     "Reference database-backed journey."),
                 CancellationToken.None);
+            Assert.Equal("Reference sequencing run", batch.Name);
+            Assert.Equal(LabOperationalBatch.ExternalSequencingType, batch.BatchType);
             Assert.Matches(
                 "^PH-BAT-[0-9]{8}-[23456789ABCDEFGHJKLMNPQRSTUVWXYZ]{8}$",
                 batch.BatchNumber);
@@ -508,7 +512,7 @@ public class LabOperationsCommercialHandoffPostgresTests
             Assert.Equal("batch_member_duplicate", duplicate.ErrorCode);
             batch = await lab.TransitionBatch(
                 batch.Id,
-                new BatchTransitionRequest("start", batch.Version),
+                new BatchTransitionRequest("start", batch.Version, DateTime.UtcNow),
                 CancellationToken.None);
             batch = await lab.CreateSendout(
                 batch.Id,
@@ -546,7 +550,7 @@ public class LabOperationsCommercialHandoffPostgresTests
             }
             batch = await lab.TransitionBatch(
                 batch.Id,
-                new BatchTransitionRequest("complete", batch.Version),
+                new BatchTransitionRequest("complete", batch.Version, DateTime.UtcNow.AddMinutes(5)),
                 CancellationToken.None);
             Assert.Equal(LabBatchStatus.Complete.ToString(), batch.Status);
 

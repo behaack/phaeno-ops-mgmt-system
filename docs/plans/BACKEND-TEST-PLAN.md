@@ -8,8 +8,9 @@ Lab Operations is feature-complete for the approved internal application
 scope. The five opt-in provider/projection tests and five opt-in Commercial
 handoff/operator tests below passed together against the migrated local
 `phaeno_ops` database on 2026-07-16. Negative API paths and physical bench
-acceptance remain production-activation coverage. Protocol-key and batch-number
-allocation, barcode normalization, reasoned print outcomes, exact scan lookup,
+acceptance remain production-activation coverage. Protocol-key, batch-name,
+automatic batch-type, and batch-number allocation, barcode normalization,
+reasoned print outcomes, exact scan lookup,
 library-key derivation, and duplicate-safe batch entry now have focused unit
 and rollback-isolated PostgreSQL coverage.
 
@@ -42,7 +43,8 @@ and rollback-isolated PostgreSQL coverage.
   safe-character generation, Code 39 scan normalization, checksum validation,
   and altered-value rejection; plus readable protocol/material-key collision
   handling, material-lot quantity and structured-component invariants, and
-  date-stamped scanner-safe batch-number generation; plus draft definition
+  date-stamped scanner-safe batch-number generation and captured batch lifecycle
+  timestamps; plus draft definition
   updates, approval withdrawal, discarded-version history, and illegal
   post-discard transitions.
 - [x] `backend/test/LabOperationsAuthorizationTests.cs` - exact additive
@@ -133,7 +135,8 @@ and rollback-isolated PostgreSQL coverage.
   numbers, Code 39 scan normalization, reasoned initial/reprint/failure outcomes
   without false print increments, exact submitted/library lineage lookup, and
   duplicate-safe scan-first batching; QC-approved materials, calibrated
-  equipment, execution, library lineage, NGS sendout/custody, exception
+  equipment, system-assigned equipment asset codes, date-only calibration
+  sequencing, execution, library lineage, NGS sendout/custody, exception
   resolution, scientific approval, customer-safe projection delivery, and proof
   that Ready for release creates neither a managed file nor a Lab result release.
   The fixture uses unique

@@ -143,12 +143,17 @@ remain incomplete production-activation gates.
   APIs.
 - [ ] Remaining Lab Operations workspace - cover role-specific navigation and
   controls, list/detail loading, receipt/accession, protocol lifecycle,
-  system-assigned protocol/library/batch identifiers, the dedicated structured
+  system-assigned protocol/library/batch identifiers, required batch names, and
+  the system-owned External sequencing type, the dedicated structured
   protocol-version builder's step ordering/duplication/removal, required,
   optional, and conditional rules, typed-capture validation, materials,
   including controlled definition/supplier/storage selection, prepared-reagent
   component rows, date-only expiration, material QC modal date and
-  failed-reason validation, outputs, equipment, QC gates,
+  failed-reason validation, outputs, equipment creation with a full-width name,
+  generated asset-code guidance, type/location selectors, date-only calibration
+  validation, QC gates,
+  batch status filtering, transition timestamp modal capture, and display of
+  captured start/completion times,
   generated JSON preview, clone-from-controlled
   initialization, draft resume/save/discard, approval withdrawal,
   one-open-candidate action gating, unsaved-change warning, concurrency

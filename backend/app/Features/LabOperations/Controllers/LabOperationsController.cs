@@ -64,8 +64,8 @@ public sealed partial class LabOperationsController(
             .ToListAsync(cancellationToken);
         var equipment = await dbContext.LabEquipment.AsNoTracking().OrderBy(item => item.AssetCode)
             .Select(item => new LabEquipmentDto(item.Id, item.AssetCode, item.Name, item.EquipmentType,
-                item.Location, item.Status.ToString(), item.LastCalibrationAtUtc,
-                item.CalibrationDueAtUtc, item.Version)).ToListAsync(cancellationToken);
+                item.Location, item.Status.ToString(), item.LastCalibrationOn,
+                item.CalibrationDueOn, item.Version)).ToListAsync(cancellationToken);
         var batches = await ReadBatchesAsync(cancellationToken);
         var roles = await ReadRoleAssignmentsAsync(cancellationToken);
 

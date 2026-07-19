@@ -10,11 +10,13 @@ Only a library with passed QC can enter a sequencing batch. If QC fails, preserv
 
 ## Build a batch
 
-A batch may contain libraries from different organizations and Commercial orders. Enter its operational type and optional notes; POMS assigns a date-stamped, scanner-safe batch number when the batch is created. Add only the required library identifiers and operational facts. Do not copy Customer names, prices, order notes, or other confidential Commercial details into the batch manifest.
+A batch may contain libraries from different organizations and Commercial orders. Give it a human-friendly name and optional notes. POMS assigns the current **External sequencing** type and a date-stamped, scanner-safe batch number when the batch is created. The name helps operators recognize the run; the batch number remains the immutable identifier. Add only the required library identifiers and operational facts. Do not copy Customer names, prices, order notes, or other confidential Commercial details into the batch manifest.
 
 For scan-first entry, open **Batches**, select a draft batch under **Scan libraries into a batch**, and scan each physical library container. POMS accepts only a container linked to a **QC passed** library. An unknown barcode, non-library container, library in another state, or duplicate membership is rejected without changing the batch. A successful scan clears and refocuses the field for the next container.
 
 Confirm membership before starting the batch. Once started, preserve the membership history and use supported add, remove, or exception actions rather than rewriting the original manifest. Scanning proves the container identity used for entry; it does not replace the approved physical manifest and custody checks.
+
+When an authorized operator uses **Start** or **Complete batch**, POMS opens a confirmation modal with the observed start or completion time prefilled. The operator can correct the time when the bench event happened before it was entered; POMS stores the submitted value as UTC and retains the server audit timestamp. Use the **Status** filter above the batch list to focus on drafts, in-progress batches, or completed batches without changing which draft batches are available for scanning.
 
 ## Create an outsourced sendout
 

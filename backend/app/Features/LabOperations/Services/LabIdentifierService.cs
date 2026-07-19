@@ -11,6 +11,7 @@ internal static class LabIdentifierService
     private const int RecordKeyMaxLength = 100;
     private const string SafeAlphabet = "23456789ABCDEFGHJKLMNPQRSTUVWXYZ";
     private const int BatchTokenLength = 8;
+    private const int EquipmentTokenLength = 8;
 
     public static string CreateProtocolKey(string name, IEnumerable<string> existingKeys)
     {
@@ -75,6 +76,37 @@ internal static class LabIdentifierService
         }
 
         throw new InvalidOperationException("A unique batch number could not be allocated.");
+    }
+
+    public static string CreateEquipmentAssetCode(DateTime utcNow)
+    {
+        Span<char> token = stackalloc char[EquipmentTokenLength];
+        for (var index = 0; index < token.Length; index++)
+        {
+            token[index] = SafeAlphabet[RandomNumberGenerator.GetInt32(SafeAlphabet.Length)];
+        }
+
+        var date = utcNow.ToUniversalTime().ToString("yyyyMMdd", CultureInfo.InvariantCulture);
+        return $"PH-EQP-{date}-{token}";
+    }
+
+    public static async Task<string> AllocateEquipmentAssetCodeAsync(
+        PSeqOperationsDbContext dbContext,
+        DateTime utcNow,
+        CancellationToken cancellationToken)
+    {
+        for (var attempt = 0; attempt < 8; attempt++)
+        {
+            var assetCode = CreateEquipmentAssetCode(utcNow);
+            if (!await dbContext.LabEquipment
+                .AsNoTracking()
+                .AnyAsync(item => item.AssetCode == assetCode, cancellationToken))
+            {
+                return assetCode;
+            }
+        }
+
+        throw new InvalidOperationException("A unique equipment asset code could not be allocated.");
     }
 
     private static string CreateUniqueKey(string name, IEnumerable<string> existingKeys,

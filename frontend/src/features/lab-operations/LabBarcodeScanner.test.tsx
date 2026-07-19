@@ -54,8 +54,11 @@ describe('LabBatchBarcodeScanner', () => {
         batches={[{
           id: 'batch-1',
           batchNumber: 'BATCH-1',
+          name: 'Reference sequencing batch',
           batchType: 'ExternalSequencing',
           status: 'Draft',
+          startedAtUtc: null,
+          completedAtUtc: null,
           notes: null,
           memberCount: 0,
           sendoutId: null,
@@ -96,8 +99,11 @@ describe('LabBatchBarcodeScanner', () => {
         batches={[{
           id: 'batch-1',
           batchNumber: 'BATCH-1',
+          name: 'Reference sequencing batch',
           batchType: 'ExternalSequencing',
           status: 'Draft',
+          startedAtUtc: null,
+          completedAtUtc: null,
           notes: null,
           memberCount: 0,
           sendoutId: null,

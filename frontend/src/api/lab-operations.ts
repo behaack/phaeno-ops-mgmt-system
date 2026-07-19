@@ -17,8 +17,8 @@ export type LabSupplier = { id: string; name: string; isActive: boolean }
 export type LabStorageLocation = { id: string; name: string; isActive: boolean }
 export type LabPreparedReagentComponent = { id: string; componentMaterialLotId: string; materialKey: string; materialName: string; lotNumber: string; quantity: number; quantityUnit: string }
 export type LabMaterialLot = { id: string; kind: string; materialDefinitionId: string; materialKey: string; name: string; lotNumber: string; supplierId: string | null; supplier: string | null; expirationOrRetestDate: string | null; storageLocationId: string; storageLocation: string; availableQuantity: number; quantityUnit: string; qcDisposition: string; qcPerformedOn: string | null; qcFailureReason: string | null; components: LabPreparedReagentComponent[]; version: number }
-export type LabEquipment = { id: string; assetCode: string; name: string; equipmentType: string; location: string; status: string; lastCalibrationAtUtc: string | null; calibrationDueAtUtc: string | null; version: number }
-export type LabBatch = { id: string; batchNumber: string; batchType: string; status: string; notes: string | null; memberCount: number; sendoutId: string | null; sendoutStatus: string | null; sendoutVersion: number | null; version: number }
+export type LabEquipment = { id: string; assetCode: string; name: string; equipmentType: string; location: string; status: string; lastCalibrationOn: string | null; calibrationDueOn: string | null; version: number }
+export type LabBatch = { id: string; batchNumber: string; name: string; batchType: string; status: string; startedAtUtc: string | null; completedAtUtc: string | null; notes: string | null; memberCount: number; sendoutId: string | null; sendoutStatus: string | null; sendoutVersion: number | null; version: number }
 export type LabOperationsDashboard = { workOrders: LabWorkOrderSummary[]; protocols: LabProtocol[]; materialLots: LabMaterialLot[]; materialDefinitions: LabMaterialDefinition[]; suppliers: LabSupplier[]; storageLocations: LabStorageLocation[]; equipment: LabEquipment[]; batches: LabBatch[]; roleAssignments: LabRoleAssignment[] }
 export type CreateLabMaterialLotInput = {
   kind: 'SupplierLot' | 'PreparedReagent'
@@ -72,13 +72,19 @@ export const recordLabMaterialQc = (id: string, input: {
   resultsJson: string
 }) => post<LabMaterialLot>(`/platform/lab-operations/material-lots/${id}/qc`, input)
 export const consumeLabMaterial = (executionId: string, input: object) => post<LabExecution>(`/platform/lab-operations/executions/${executionId}/material-consumptions`, input)
-export const createLabEquipment = (input: object) => post<LabEquipment>('/platform/lab-operations/equipment', input)
+export const createLabEquipment = (input: {
+  name: string
+  equipmentType: string
+  location: string
+  lastCalibrationOn: string | null
+  calibrationDueOn: string | null
+}) => post<LabEquipment>('/platform/lab-operations/equipment', input)
 export const recordLabEquipmentUsage = (executionId: string, input: object) => post<LabExecution>(`/platform/lab-operations/executions/${executionId}/equipment-usages`, input)
 export const createLabLibrary = (workId: string, input: object) => post<LabLibrary>(`/platform/lab-operations/work-orders/${workId}/libraries`, input)
 export const recordLabLibraryQc = (id: string, input: object) => post<LabLibrary>(`/platform/lab-operations/libraries/${id}/qc`, input)
-export const createLabBatch = (input: { batchType: string; notes?: string | null }) => post<LabBatch>('/platform/lab-operations/batches', input)
+export const createLabBatch = (input: { name: string; notes?: string | null }) => post<LabBatch>('/platform/lab-operations/batches', input)
 export const addLabBatchMember = (id: string, input: object) => post<LabBatch>(`/platform/lab-operations/batches/${id}/members`, input)
-export const transitionLabBatch = (id: string, input: object) => post<LabBatch>(`/platform/lab-operations/batches/${id}/transition`, input)
+export const transitionLabBatch = (id: string, input: { action: 'start' | 'complete'; version: number; occurredAtUtc: string }) => post<LabBatch>(`/platform/lab-operations/batches/${id}/transition`, input)
 export const createLabSendout = (id: string, input: object) => post<LabBatch>(`/platform/lab-operations/batches/${id}/sendout`, input)
 export const transitionLabSendout = (id: string, input: object) => post<LabBatch>(`/platform/lab-operations/sendouts/${id}/transition`, input)
 export const recordLabCustody = (id: string, input: object) => post<LabBatch>(`/platform/lab-operations/sendouts/${id}/custody-events`, input)

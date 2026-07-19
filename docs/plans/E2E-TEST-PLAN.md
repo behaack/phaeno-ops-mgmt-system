@@ -134,18 +134,22 @@ not satisfy this production-activation gate.
   viewport scenarios through real authentication and API persistence.
 - [ ] Database-backed Lab Operations journey - accept a Customer quote, prove
   the already-passing controller/PostgreSQL workflow through real Clerk
-  authentication, the hosted HTTP API, and a browser. The controller/database
+  authentication, the hosted HTTP API, and a browser. Include equipment
+  registration with no manual asset-code input, full-width name entry,
+  type/location selectors with focused missing-value creation, and date-only
+  last-calibration/due-date validation. The controller/database
   portion already proves atomic Lab authorization, additive Lab roles,
   receipt/accession, barcode allocation/scan/print-outcome history,
-  system-assigned protocol/library/batch identifiers, structured protocol
+  system-assigned protocol/library/batch identifiers, named batches with a
+  system-owned External sequencing type, structured protocol
   authoring from protocol identity through ordered steps, typed captures,
   resources, QC gates, draft creation and resume, parallel-candidate rejection,
   discard history, approval withdrawal, controlled-definition cloning, approval
   and activation, active protocol execution with controlled material identity,
   supplier/storage references, date-only expiration/retest, structured
   prepared-reagent component lineage, QC-approved material and calibrated
-  equipment, scan-first library
-  batching, sendout/custody, exception resolution, scientific approval, the
+  equipment, scan-first library batching with status filtering and transition
+  timestamp modal capture, sendout/custody, exception resolution, scientific approval, the
   Customer-safe projection, and no file publication at Ready for release.
   Physical printer/scanner qualification remains a manual bench gate.
 

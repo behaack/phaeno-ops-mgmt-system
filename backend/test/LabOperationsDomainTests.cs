@@ -203,6 +203,39 @@ public class LabOperationsDomainTests
     }
 
     [Fact]
+    public void EquipmentAssetCodesAreDateStampedAndUseScannerSafeCharacters()
+    {
+        var assetCode = LabIdentifierService.CreateEquipmentAssetCode(
+            new DateTime(2026, 7, 18, 12, 0, 0, DateTimeKind.Utc));
+
+        Assert.Matches(
+            "^PH-EQP-20260718-[23456789ABCDEFGHJKLMNPQRSTUVWXYZ]{8}$",
+            assetCode);
+    }
+
+    [Fact]
+    public void EquipmentCalibrationUsesDatesAndRejectsAnInvalidSequence()
+    {
+        var equipment = new LabEquipment(
+            "PH-EQP-20260718-23456789",
+            "Reference thermal cycler",
+            "Thermal cycler",
+            "Bench 1",
+            new DateOnly(2026, 7, 1),
+            new DateOnly(2027, 7, 1));
+
+        Assert.Equal(new DateOnly(2026, 7, 1), equipment.LastCalibrationOn);
+        Assert.Equal(new DateOnly(2027, 7, 1), equipment.CalibrationDueOn);
+        Assert.Throws<ArgumentException>(() => new LabEquipment(
+            "PH-EQP-20260718-ABCDEFGH",
+            "Invalid thermal cycler",
+            "Thermal cycler",
+            "Bench 1",
+            new DateOnly(2026, 7, 2),
+            new DateOnly(2026, 7, 1)));
+    }
+
+    [Fact]
     public void ExecutionCanCompleteWithoutADeviationNote()
     {
         var execution = new LabProtocolExecution(
@@ -308,6 +341,23 @@ public class LabOperationsDomainTests
             "Internal evidence", null, false, null);
 
         Assert.Null(exception.CustomerSafeSummary);
+    }
+
+    [Fact]
+    public void BatchCapturesServerLifecycleTimestamps()
+    {
+        var batch = new LabOperationalBatch("PH-BAT-1", "Reference sequencing run", null);
+        var startedAt = new DateTime(2026, 7, 18, 12, 0, 0, DateTimeKind.Utc);
+        var completedAt = startedAt.AddHours(4);
+
+        batch.Start(startedAt);
+        Assert.Equal(LabBatchStatus.InProgress, batch.Status);
+        Assert.Equal(startedAt, batch.StartedAtUtc);
+        Assert.Null(batch.CompletedAtUtc);
+
+        batch.Complete(completedAt);
+        Assert.Equal(LabBatchStatus.Complete, batch.Status);
+        Assert.Equal(completedAt, batch.CompletedAtUtc);
     }
 
     private static LabWorkOrder WorkOrder(int authorizationVersion) => new(

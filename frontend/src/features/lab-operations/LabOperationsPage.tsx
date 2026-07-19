@@ -5,7 +5,6 @@ import { useState, type FormEvent } from 'react'
 
 import {
   createLabBatch,
-  createLabEquipment,
   createLabProtocol,
   createLabSendout,
   getLabOperationsDashboard,
@@ -31,9 +30,11 @@ import { Label } from '#/components/ui/label'
 import { usePhaenoSession } from '#/features/auth/session-context'
 
 import { LabBarcodeLookup, LabBatchBarcodeScanner } from './LabBarcodeScanner'
+import { EquipmentCreateDialog } from './EquipmentCreateDialog'
 import { MaterialLotCreateDialog } from './MaterialLotCreateDialog'
 
 type CreateKind = 'protocol' | 'material' | 'equipment' | 'batch' | 'role' | null
+type SimpleCreateKind = Exclude<CreateKind, 'material' | 'equipment'>
 export type LabSection = 'work' | 'protocols' | 'materials' | 'equipment' | 'batches' | 'access'
 
 const labSections: ReadonlyArray<WorkspaceSidebarItem<LabSection>> = [
@@ -107,7 +108,30 @@ export function LabOperationsPage({ section, onSectionChange }: { section: LabSe
               }}
             />
           ) : null}
-          <CreateRecordDialog kind={createKind === 'material' ? null : createKind} users={users.data ?? []} onClose={() => setCreateKind(null)} onSaved={async () => { setCreateKind(null); await refresh() }} />
+          {dashboard.data ? (
+            <EquipmentCreateDialog
+              open={createKind === 'equipment'}
+              equipment={dashboard.data.equipment}
+              protocols={dashboard.data.protocols}
+              storageLocations={dashboard.data.storageLocations}
+              onOpenChange={(open) => {
+                if (!open) setCreateKind(null)
+              }}
+              onSaved={async () => {
+                setCreateKind(null)
+                await refresh()
+              }}
+            />
+          ) : null}
+          <CreateRecordDialog
+            kind={createKind === 'material' || createKind === 'equipment' ? null : createKind}
+            users={users.data ?? []}
+            onClose={() => setCreateKind(null)}
+            onSaved={async () => {
+              setCreateKind(null)
+              await refresh()
+            }}
+          />
         </div>
       </WorkspaceSidebar>
     </main>
@@ -601,13 +625,16 @@ function MaterialList({ items, canManage, canApprove, onCreate, refresh }: { ite
 }
 
 function EquipmentList({ items, canManage, onCreate }: { items: Awaited<ReturnType<typeof getLabOperationsDashboard>>['equipment']; canManage: boolean; onCreate: () => void }) {
-  return <Card><CardHeader><div className="flex items-start justify-between gap-3"><div><CardTitle>Equipment</CardTitle><CardDescription>Lightweight asset availability and calibration visibility for execution traceability.</CardDescription></div>{canManage ? <Button type="button" onClick={onCreate}><Plus data-icon="inline-start" /> New equipment</Button> : null}</div></CardHeader><CardContent><div className="divide-y">{items.map((item) => <div key={item.id} className="flex items-center justify-between gap-3 py-3"><div><p className="font-medium">{item.assetCode} · {item.name}</p><p className="text-xs text-muted-foreground">{item.equipmentType} · {item.location}{item.calibrationDueAtUtc ? ` · calibration due ${formatDate(item.calibrationDueAtUtc)}` : ''}</p></div><Status value={item.status} /></div>)}</div></CardContent></Card>
+  return <Card><CardHeader><div className="flex items-start justify-between gap-3"><div><CardTitle>Equipment</CardTitle><CardDescription>Lightweight asset availability and calibration visibility for execution traceability.</CardDescription></div>{canManage ? <Button type="button" onClick={onCreate}><Plus data-icon="inline-start" /> New equipment</Button> : null}</div></CardHeader><CardContent><div className="divide-y">{items.map((item) => <div key={item.id} className="flex items-center justify-between gap-3 py-3"><div><p className="font-medium">{item.assetCode} · {item.name}</p><p className="text-xs text-muted-foreground">{item.equipmentType} · {item.location}{item.calibrationDueOn ? ` · calibration due ${formatDateOnly(item.calibrationDueOn)}` : ''}</p></div><Status value={item.status} /></div>)}</div></CardContent></Card>
 }
 
 function BatchList({ items, canManage, onCreate, refresh }: { items: Awaited<ReturnType<typeof getLabOperationsDashboard>>['batches']; canManage: boolean; onCreate: () => void; refresh: () => Promise<unknown> }) {
   const [dialog, setDialog] = useState<{ batch: LabBatch; kind: 'sendout' | 'custody' } | null>(null)
+  const [transitionDialog, setTransitionDialog] = useState<{ batch: LabBatch; action: 'start' | 'complete' } | null>(null)
   const [form, setForm] = useState<Record<string, string>>({})
-  const transition = useMutation({ mutationFn: ({ id, version, action }: { id: string; version: number; action: string }) => transitionLabBatch(id, { version, action }), onSuccess: refresh })
+  const [statusFilter, setStatusFilter] = useState('All')
+  const [transitionAt, setTransitionAt] = useState('')
+  const transition = useMutation({ mutationFn: ({ id, version, action, occurredAtUtc }: { id: string; version: number; action: 'start' | 'complete'; occurredAtUtc: string }) => transitionLabBatch(id, { version, action, occurredAtUtc }), onSuccess: async () => { setTransitionDialog(null); setTransitionAt(''); await refresh() } })
   const sendoutTransition = useMutation({ mutationFn: ({ item, status }: { item: LabBatch; status: string }) => transitionLabSendout(item.sendoutId!, { status, version: item.sendoutVersion }), onSuccess: refresh })
   const save = useMutation({ mutationFn: async () => {
     if (!dialog) throw new Error('Choose a batch action.')
@@ -616,26 +643,146 @@ function BatchList({ items, canManage, onCreate, refresh }: { items: Awaited<Ret
   }, onSuccess: async () => { setDialog(null); setForm({}); await refresh() } })
   const nextStatus = (status: string | null) => status === 'Preparing' ? 'Shipped' : status === 'Shipped' ? 'ReceivedByProvider' : status === 'ReceivedByProvider' ? 'Sequencing' : status === 'Sequencing' ? 'Complete' : null
   const set = (key: string) => (event: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => setForm((current) => ({ ...current, [key]: event.target.value }))
-  return <><div className="space-y-5">{canManage ? <LabBatchBarcodeScanner batches={items} onAdded={refresh} /> : null}<Card><CardHeader><div className="flex items-start justify-between gap-3"><div><CardTitle>Operational and sequencing batches</CardTitle><CardDescription>Libraries may cross Commercial orders while retaining work-order and specimen lineage.</CardDescription></div>{canManage ? <Button type="button" onClick={onCreate}><Plus data-icon="inline-start" /> New batch</Button> : null}</div></CardHeader><CardContent><div className="divide-y">{items.map((item) => { const next = nextStatus(item.sendoutStatus); return <div key={item.id} className="flex flex-wrap items-center justify-between gap-3 py-3"><div><p className="font-medium">{item.batchNumber}</p><p className="text-xs text-muted-foreground">{item.batchType} · {item.memberCount} libraries{item.sendoutStatus ? ` · sendout ${humanize(item.sendoutStatus)}` : ''}</p></div><div className="flex flex-wrap items-center gap-2"><Status value={item.status} />{canManage && item.status === 'Draft' ? <Button type="button" size="sm" disabled={transition.isPending} onClick={() => transition.mutate({ id: item.id, version: item.version, action: 'start' })}>Start</Button> : null}{canManage && item.status === 'InProgress' && !item.sendoutId && item.memberCount > 0 ? <Button type="button" size="sm" onClick={() => setDialog({ batch: item, kind: 'sendout' })}>Create sendout</Button> : null}{canManage && item.sendoutId ? <Button type="button" size="sm" variant="outline" onClick={() => setDialog({ batch: item, kind: 'custody' })}>Custody event</Button> : null}{canManage && item.sendoutId && next ? <Button type="button" size="sm" disabled={sendoutTransition.isPending} onClick={() => sendoutTransition.mutate({ item, status: next })}>Mark {humanize(next)}</Button> : null}{canManage && item.status === 'InProgress' && (!item.sendoutId || item.sendoutStatus === 'Complete') ? <Button type="button" size="sm" disabled={transition.isPending} onClick={() => transition.mutate({ id: item.id, version: item.version, action: 'complete' })}>Complete batch</Button> : null}</div></div>})}</div></CardContent></Card></div><Dialog open={dialog !== null} onOpenChange={(open) => !open && setDialog(null)}><DialogContent><DialogHeader><DialogTitle>{dialog?.kind === 'sendout' ? 'Create sequencing sendout' : 'Record custody event'}</DialogTitle><DialogDescription>Provider-neutral metadata and custody evidence only; no sequencing files or pipeline orchestration are created.</DialogDescription></DialogHeader><div className="my-5 grid gap-4">{dialog?.kind === 'sendout' ? <><Field label="Provider name" value={form.providerName} onChange={set('providerName')} required /><Field label="Provider reference" value={form.providerReference} onChange={set('providerReference')} /><Field label="Expected completion" type="datetime-local" value={form.expectedCompletionAtUtc} onChange={set('expectedCompletionAtUtc')} /><TextField label="Manifest JSON" value={form.manifestJson || '{}'} onChange={set('manifestJson')} /></> : <><Field label="Event code" value={form.eventCode} onChange={set('eventCode')} required /><Field label="Location or party" value={form.locationOrParty} onChange={set('locationOrParty')} required /><TextField label="Details JSON" value={form.detailsJson || '{}'} onChange={set('detailsJson')} /></>}</div>{save.error ? <Alert variant="destructive" className="mb-4"><AlertTitle>Batch action failed</AlertTitle><AlertDescription>{getLabOperationsError(save.error, 'Check the entered values.')}</AlertDescription></Alert> : null}<DialogFooter><DialogClose asChild><Button type="button" variant="outline">Cancel</Button></DialogClose><Button type="button" disabled={save.isPending} onClick={() => save.mutate()}>Save</Button></DialogFooter></DialogContent></Dialog></>
-}
+  const filteredItems = statusFilter === 'All' ? items : items.filter((item) => item.status === statusFilter)
+  const openTransition = (batch: LabBatch, action: 'start' | 'complete') => { transition.reset(); setTransitionDialog({ batch, action }); setTransitionAt(nowDateTimeLocal()) }
+  const saveTransition = () => {
+    if (!transitionDialog || !transitionAt) return
+    const occurredAtUtc = new Date(transitionAt)
+    if (Number.isNaN(occurredAtUtc.getTime())) return
+    transition.mutate({ id: transitionDialog.batch.id, version: transitionDialog.batch.version, action: transitionDialog.action, occurredAtUtc: occurredAtUtc.toISOString() })
+  }
 
+  return (
+    <>
+      <div className="space-y-5">
+        {canManage ? <LabBatchBarcodeScanner batches={items} onAdded={refresh} /> : null}
+        <Card>
+          <CardHeader>
+            <div className="flex flex-wrap items-start justify-between gap-3">
+              <div>
+                <CardTitle>Operational and sequencing batches</CardTitle>
+                <CardDescription>Libraries may cross Commercial orders while retaining work-order and specimen lineage.</CardDescription>
+              </div>
+              <div className="flex flex-wrap items-end gap-3">
+                <div>
+                  <Label htmlFor="batch-status-filter">Status</Label>
+                  <select
+                    id="batch-status-filter"
+                    className="mt-2 h-9 min-w-44 rounded-lg border border-input bg-background px-3 text-sm"
+                    value={statusFilter}
+                    onChange={(event) => setStatusFilter(event.target.value)}
+                  >
+                    <option value="All">All statuses</option>
+                    <option value="Draft">Draft</option>
+                    <option value="InProgress">In progress</option>
+                    <option value="Complete">Complete</option>
+                  </select>
+                </div>
+                {canManage ? <Button type="button" onClick={onCreate}><Plus data-icon="inline-start" /> New batch</Button> : null}
+              </div>
+            </div>
+          </CardHeader>
+          <CardContent>
+            {filteredItems.length === 0 ? (
+              <p className="py-3 text-sm text-muted-foreground">No batches match this status.</p>
+            ) : (
+              <div className="divide-y">
+                {filteredItems.map((item) => {
+                  const next = nextStatus(item.sendoutStatus)
+                  return (
+                    <div key={item.id} className="flex flex-wrap items-center justify-between gap-3 py-3">
+                      <div>
+                        <p className="font-medium">{item.name}</p>
+                        <p className="text-xs text-muted-foreground">
+                          {item.batchNumber} · {humanize(item.batchType)} · {item.memberCount} libraries
+                          {item.startedAtUtc ? ` · started ${formatDate(item.startedAtUtc)}` : ''}
+                          {item.completedAtUtc ? ` · completed ${formatDate(item.completedAtUtc)}` : ''}
+                          {item.sendoutStatus ? ` · sendout ${humanize(item.sendoutStatus)}` : ''}
+                        </p>
+                      </div>
+                      <div className="flex flex-wrap items-center gap-2">
+                        <Status value={item.status} />
+                        {canManage && item.status === 'Draft' ? <Button type="button" size="sm" disabled={transition.isPending} onClick={() => openTransition(item, 'start')}>Start</Button> : null}
+                        {canManage && item.status === 'InProgress' && !item.sendoutId && item.memberCount > 0 ? <Button type="button" size="sm" onClick={() => setDialog({ batch: item, kind: 'sendout' })}>Create sendout</Button> : null}
+                        {canManage && item.sendoutId ? <Button type="button" size="sm" variant="outline" onClick={() => setDialog({ batch: item, kind: 'custody' })}>Custody event</Button> : null}
+                        {canManage && item.sendoutId && next ? <Button type="button" size="sm" disabled={sendoutTransition.isPending} onClick={() => sendoutTransition.mutate({ item, status: next })}>Mark {humanize(next)}</Button> : null}
+                        {canManage && item.status === 'InProgress' && (!item.sendoutId || item.sendoutStatus === 'Complete') ? <Button type="button" size="sm" disabled={transition.isPending} onClick={() => openTransition(item, 'complete')}>Complete batch</Button> : null}
+                      </div>
+                    </div>
+                  )
+                })}
+              </div>
+            )}
+          </CardContent>
+        </Card>
+      </div>
+      <Dialog open={transitionDialog !== null} onOpenChange={(open) => !open && setTransitionDialog(null)}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>{transitionDialog?.action === 'start' ? 'Start batch' : 'Complete batch'}</DialogTitle>
+            <DialogDescription>Record when the laboratory work actually {transitionDialog?.action === 'start' ? 'started' : 'completed'}. The time is prefilled with now and saved as UTC.</DialogDescription>
+          </DialogHeader>
+          <div className="my-5 grid gap-4">
+            <div>
+              <Label htmlFor="batch-transition-at">{transitionDialog?.action === 'start' ? 'Started at' : 'Completed at'} <span aria-hidden="true">*</span></Label>
+              <Input id="batch-transition-at" className="mt-2" type="datetime-local" value={transitionAt} onChange={(event) => setTransitionAt(event.target.value)} required />
+            </div>
+          </div>
+          {transition.error ? <Alert variant="destructive" className="mb-4"><AlertTitle>Batch transition failed</AlertTitle><AlertDescription>{getLabOperationsError(transition.error, 'Check the entered time and try again.')}</AlertDescription></Alert> : null}
+          <DialogFooter>
+            <DialogClose asChild><Button type="button" variant="outline">Cancel</Button></DialogClose>
+            <Button type="button" disabled={transition.isPending || !transitionAt} onClick={saveTransition}>{transitionDialog?.action === 'start' ? 'Start batch' : 'Complete batch'}</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+      <Dialog open={dialog !== null} onOpenChange={(open) => !open && setDialog(null)}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>{dialog?.kind === 'sendout' ? 'Create sequencing sendout' : 'Record custody event'}</DialogTitle>
+            <DialogDescription>Provider-neutral metadata and custody evidence only; no sequencing files or pipeline orchestration are created.</DialogDescription>
+          </DialogHeader>
+          <div className="my-5 grid gap-4">
+            {dialog?.kind === 'sendout' ? (
+              <>
+                <Field label="Provider name" value={form.providerName} onChange={set('providerName')} required />
+                <Field label="Provider reference" value={form.providerReference} onChange={set('providerReference')} />
+                <Field label="Expected completion" type="datetime-local" value={form.expectedCompletionAtUtc} onChange={set('expectedCompletionAtUtc')} />
+                <TextField label="Manifest JSON" value={form.manifestJson || '{}'} onChange={set('manifestJson')} />
+              </>
+            ) : (
+              <>
+                <Field label="Event code" value={form.eventCode} onChange={set('eventCode')} required />
+                <Field label="Location or party" value={form.locationOrParty} onChange={set('locationOrParty')} required />
+                <TextField label="Details JSON" value={form.detailsJson || '{}'} onChange={set('detailsJson')} />
+              </>
+            )}
+          </div>
+          {save.error ? <Alert variant="destructive" className="mb-4"><AlertTitle>Batch action failed</AlertTitle><AlertDescription>{getLabOperationsError(save.error, 'Check the entered values.')}</AlertDescription></Alert> : null}
+          <DialogFooter>
+            <DialogClose asChild><Button type="button" variant="outline">Cancel</Button></DialogClose>
+            <Button type="button" disabled={save.isPending} onClick={() => save.mutate()}>Save</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+    </>
+  )
+}
 function AccessList({ assignments, canManage, onCreate, refresh }: { assignments: Awaited<ReturnType<typeof getLabOperationsDashboard>>['roleAssignments']; canManage: boolean; onCreate: () => void; refresh: () => Promise<unknown> }) {
   const toggle = useMutation({ mutationFn: (item: typeof assignments[number]) => setLabRole(item.userId, item.role, { isActive: !item.isActive, version: item.version }), onSuccess: refresh })
   return <Card><CardHeader><div className="flex items-start justify-between gap-3"><div><CardTitle>Laboratory roles</CardTitle><CardDescription>Roles are additive and internal to Phaeno; platform administrators retain bootstrap access.</CardDescription></div>{canManage ? <Button type="button" onClick={onCreate}><Plus data-icon="inline-start" /> Assign role</Button> : null}</div></CardHeader><CardContent><div className="divide-y">{assignments.map((item) => <div key={item.id} className="flex items-center justify-between gap-3 py-3"><div><p className="font-medium">{item.userName}</p><p className="text-xs text-muted-foreground">{item.email} · {humanize(item.role)}</p></div><div className="flex items-center gap-2"><Status value={item.isActive ? 'Active' : 'Inactive'} />{canManage ? <Button type="button" size="sm" variant="outline" disabled={toggle.isPending} onClick={() => toggle.mutate(item)}>{item.isActive ? 'Deactivate' : 'Reactivate'}</Button> : null}</div></div>)}</div></CardContent></Card>
 }
 
-function CreateRecordDialog({ kind, users, onClose, onSaved }: { kind: CreateKind; users: Array<{ id: string; firstName: string; lastName: string; email: string }>; onClose: () => void; onSaved: () => Promise<unknown> }) {
+function CreateRecordDialog({ kind, users, onClose, onSaved }: { kind: SimpleCreateKind; users: Array<{ id: string; firstName: string; lastName: string; email: string }>; onClose: () => void; onSaved: () => Promise<unknown> }) {
   const [form, setForm] = useState<Record<string, string>>({})
   const mutation = useMutation({ mutationFn: async () => {
     if (kind === 'protocol') return createLabProtocol({ name: form.name, description: form.description })
-    if (kind === 'equipment') return createLabEquipment({ assetCode: form.assetCode, name: form.name, equipmentType: form.equipmentType, location: form.location, lastCalibrationAtUtc: form.lastCalibrationAtUtc ? new Date(form.lastCalibrationAtUtc).toISOString() : null, calibrationDueAtUtc: form.calibrationDueAtUtc ? new Date(form.calibrationDueAtUtc).toISOString() : null })
-    if (kind === 'batch') return createLabBatch({ batchType: form.batchType, notes: form.notes || null })
+    if (kind === 'batch') return createLabBatch({ name: form.name, notes: form.notes || null })
     if (kind === 'role') return setLabRole(form.userId, form.role || 'Operator', { isActive: true })
     throw new Error('Choose a record type.')
   }, onSuccess: async () => { setForm({}); await onSaved() } })
   const set = (key: string) => (event: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => setForm((current) => ({ ...current, [key]: event.target.value }))
   function submit(event: FormEvent) { event.preventDefault(); mutation.mutate() }
-  return <Dialog open={kind !== null} onOpenChange={(open) => !open && onClose()}><DialogContent><form onSubmit={submit}><DialogHeader><DialogTitle>{kind ? `Create ${humanize(kind)}` : 'Create record'}</DialogTitle><DialogDescription>{kind === 'protocol' ? 'Enter the controlled protocol details. POMS assigns its immutable key.' : kind === 'batch' ? 'Enter the batch details. POMS assigns its batch number.' : 'Required fields are marked. Laboratory records remain internal to Phaeno.'}</DialogDescription></DialogHeader><div className="my-5 grid gap-4 sm:grid-cols-2">{kind === 'protocol' ? <><div className="sm:col-span-2"><Field label="Name" value={form.name} onChange={set('name')} required /></div><TextField label="Description" value={form.description} onChange={set('description')} /></> : null}{kind === 'equipment' ? <><Field label="Asset code" value={form.assetCode} onChange={set('assetCode')} required /><Field label="Name" value={form.name} onChange={set('name')} required /><Field label="Equipment type" value={form.equipmentType} onChange={set('equipmentType')} required /><Field label="Location" value={form.location} onChange={set('location')} required /><Field label="Last calibration" value={form.lastCalibrationAtUtc} onChange={set('lastCalibrationAtUtc')} type="datetime-local" /><Field label="Calibration due" value={form.calibrationDueAtUtc} onChange={set('calibrationDueAtUtc')} type="datetime-local" /></> : null}{kind === 'batch' ? <><Field label="Batch type" value={form.batchType} onChange={set('batchType')} required /><TextField label="Notes" value={form.notes} onChange={set('notes')} /></> : null}{kind === 'role' ? <><SelectField label="Phaeno user" value={form.userId || ''} onChange={set('userId')} options={users.map((user) => ({ value: user.id, label: `${user.firstName} ${user.lastName} · ${user.email}` }))} /><SelectField label="Role" value={form.role || 'Operator'} onChange={set('role')} options={['Operator', 'Supervisor', 'ProtocolAdministrator', 'ScientificReviewer', 'OperationsAdministrator']} /></> : null}</div>{mutation.error ? <Alert variant="destructive" className="mb-4"><AlertTitle>Record was not created</AlertTitle><AlertDescription>{getLabOperationsError(mutation.error, 'Check the entered values.')}</AlertDescription></Alert> : null}<DialogFooter><DialogClose asChild><Button type="button" variant="outline">Cancel</Button></DialogClose><Button type="submit" disabled={mutation.isPending}>{kind ? createActionLabel(kind) : 'Create'}</Button></DialogFooter></form></DialogContent></Dialog>
+  return <Dialog open={kind !== null} onOpenChange={(open) => !open && onClose()}><DialogContent><form onSubmit={submit}><DialogHeader><DialogTitle>{kind ? `Create ${humanize(kind)}` : 'Create record'}</DialogTitle><DialogDescription>{kind === 'protocol' ? 'Enter the controlled protocol details. POMS assigns its immutable key.' : kind === 'batch' ? 'Name the batch. POMS assigns its batch number and external sequencing type.' : 'Required fields are marked. Laboratory records remain internal to Phaeno.'}</DialogDescription></DialogHeader><div className="my-5 grid gap-4 sm:grid-cols-2">{kind === 'protocol' ? <><div className="sm:col-span-2"><Field label="Name" value={form.name} onChange={set('name')} required /></div><TextField label="Description" value={form.description} onChange={set('description')} /></> : null}{kind === 'batch' ? <><div className="sm:col-span-2"><Field label="Batch name" value={form.name} onChange={set('name')} required /></div><TextField label="Notes" value={form.notes} onChange={set('notes')} /></> : null}{kind === 'role' ? <><SelectField label="Phaeno user" value={form.userId || ''} onChange={set('userId')} options={users.map((user) => ({ value: user.id, label: `${user.firstName} ${user.lastName} · ${user.email}` }))} /><SelectField label="Role" value={form.role || 'Operator'} onChange={set('role')} options={['Operator', 'Supervisor', 'ProtocolAdministrator', 'ScientificReviewer', 'OperationsAdministrator']} /></> : null}</div>{mutation.error ? <Alert variant="destructive" className="mb-4"><AlertTitle>Record was not created</AlertTitle><AlertDescription>{getLabOperationsError(mutation.error, 'Check the entered values.')}</AlertDescription></Alert> : null}<DialogFooter><DialogClose asChild><Button type="button" variant="outline">Cancel</Button></DialogClose><Button type="submit" disabled={mutation.isPending}>{kind ? createActionLabel(kind) : 'Create'}</Button></DialogFooter></form></DialogContent></Dialog>
 }
 
 function Field({ label, value = '', onChange, required, type = 'text' }: { label: string; value?: string; onChange: React.ChangeEventHandler<HTMLInputElement>; required?: boolean; type?: string }) { const id = `lab-${label.toLowerCase().replaceAll(' ', '-')}`; return <div><Label htmlFor={id}>{label}{required ? <span aria-hidden="true"> *</span> : null}</Label><Input id={id} className="mt-2" type={type} value={value ?? ''} onChange={onChange} required={required} /></div> }
@@ -647,6 +794,7 @@ function AccessDenied() { return <main className="page-wrap px-4 py-8"><Alert va
 function humanize(value: string) { return value.replace(/([a-z])([A-Z])/g, '$1 $2').replaceAll('_', ' ').replace(/^./, (character) => character.toUpperCase()) }
 function createActionLabel(kind: Exclude<CreateKind, null>) { return kind === 'role' ? 'Assign role' : `Create ${humanize(kind).toLowerCase()}` }
 function formatDate(value: string) { return new Intl.DateTimeFormat('en-US', { dateStyle: 'medium', timeStyle: 'short' }).format(new Date(value)) }
+function nowDateTimeLocal() { const now = new Date(); const offset = now.getTimezoneOffset(); return new Date(now.getTime() - offset * 60_000).toISOString().slice(0, 16) }
 function formatDateOnly(value: string) { return new Intl.DateTimeFormat('en-US', { dateStyle: 'medium', timeZone: 'UTC' }).format(new Date(`${value}T00:00:00Z`)) }
 function todayDateOnly() {
   const now = new Date()

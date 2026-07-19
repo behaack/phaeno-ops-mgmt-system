@@ -2,6 +2,7 @@
 using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 using PhaenoPortal.App.Infrastructure.Persistence;
@@ -11,9 +12,11 @@ using PhaenoPortal.App.Infrastructure.Persistence;
 namespace PSeq.Operations.Api.Migrations
 {
     [DbContext(typeof(PSeqOperationsDbContext))]
-    partial class PSeqOperationsDbContextModelSnapshot : ModelSnapshot
+    [Migration("20260718223156_RefineEquipmentRegistration")]
+    partial class RefineEquipmentRegistration
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -4488,10 +4491,6 @@ namespace PSeq.Operations.Api.Migrations
                         .HasColumnType("character varying(100)")
                         .HasColumnName("batch_type");
 
-                    b.Property<DateTime?>("CompletedAtUtc")
-                        .HasColumnType("timestamp with time zone")
-                        .HasColumnName("completed_at_utc");
-
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("timestamp with time zone")
                         .HasColumnName("created_at");
@@ -4500,20 +4499,10 @@ namespace PSeq.Operations.Api.Migrations
                         .HasColumnType("uuid")
                         .HasColumnName("created_by_user_id");
 
-                    b.Property<string>("Name")
-                        .IsRequired()
-                        .HasMaxLength(255)
-                        .HasColumnType("character varying(255)")
-                        .HasColumnName("name");
-
                     b.Property<string>("Notes")
                         .HasMaxLength(4000)
                         .HasColumnType("character varying(4000)")
                         .HasColumnName("notes");
-
-                    b.Property<DateTime?>("StartedAtUtc")
-                        .HasColumnType("timestamp with time zone")
-                        .HasColumnName("started_at_utc");
 
                     b.Property<string>("Status")
                         .IsRequired()

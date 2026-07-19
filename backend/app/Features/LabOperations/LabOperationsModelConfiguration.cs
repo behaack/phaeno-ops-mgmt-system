@@ -258,8 +258,10 @@ public static class LabOperationsModelConfiguration
             entity.Property(e => e.EquipmentType).HasMaxLength(100).IsRequired();
             entity.Property(e => e.Location).HasMaxLength(255).IsRequired();
             entity.Property(e => e.Status).HasConversion<string>().HasMaxLength(50).IsRequired();
+            entity.Property(e => e.LastCalibrationOn).HasColumnType("date");
+            entity.Property(e => e.CalibrationDueOn).HasColumnType("date");
             entity.HasIndex(e => e.AssetCode).IsUnique();
-            entity.HasIndex(e => new { e.Status, e.CalibrationDueAtUtc });
+            entity.HasIndex(e => new { e.Status, e.CalibrationDueOn });
         });
 
         modelBuilder.Entity<LabEquipmentUsage>(entity =>
@@ -295,8 +297,11 @@ public static class LabOperationsModelConfiguration
             entity.HasKey(e => e.Id);
             ConfigureAudited(entity);
             entity.Property(e => e.BatchNumber).HasMaxLength(100).IsRequired();
+            entity.Property(e => e.Name).HasMaxLength(255).IsRequired();
             entity.Property(e => e.BatchType).HasMaxLength(100).IsRequired();
             entity.Property(e => e.Status).HasConversion<string>().HasMaxLength(50).IsRequired();
+            entity.Property(e => e.StartedAtUtc).HasColumnType("timestamp with time zone");
+            entity.Property(e => e.CompletedAtUtc).HasColumnType("timestamp with time zone");
             entity.Property(e => e.Notes).HasMaxLength(4000);
             entity.HasIndex(e => e.BatchNumber).IsUnique();
         });

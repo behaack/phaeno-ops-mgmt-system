@@ -37,10 +37,11 @@ public sealed record LabMaterialLotDto(
 
 public sealed record LabEquipmentDto(
     Guid Id, string AssetCode, string Name, string EquipmentType, string Location,
-    string Status, DateTime? LastCalibrationAtUtc, DateTime? CalibrationDueAtUtc, long Version);
+    string Status, DateOnly? LastCalibrationOn, DateOnly? CalibrationDueOn, long Version);
 
 public sealed record LabBatchDto(
-    Guid Id, string BatchNumber, string BatchType, string Status, string? Notes,
+    Guid Id, string BatchNumber, string Name, string BatchType, string Status,
+    DateTime? StartedAtUtc, DateTime? CompletedAtUtc, string? Notes,
     int MemberCount, Guid? SendoutId, string? SendoutStatus, long? SendoutVersion, long Version);
 
 public sealed record LabOperationsDashboardDto(
@@ -137,14 +138,14 @@ public sealed record MaterialQcRequest(
     string ResultsJson, long Version);
 public sealed record ConsumeMaterialRequest(Guid LabMaterialLotId, Guid? OutputContainerId,
     decimal Quantity, string QuantityUnit, long LotVersion);
-public sealed record CreateEquipmentRequest(string AssetCode, string Name, string EquipmentType,
-    string Location, DateTime? LastCalibrationAtUtc, DateTime? CalibrationDueAtUtc);
+public sealed record CreateEquipmentRequest(string Name, string EquipmentType,
+    string Location, DateOnly? LastCalibrationOn, DateOnly? CalibrationDueOn);
 public sealed record RecordEquipmentUsageRequest(Guid LabEquipmentId, DateTime UsedAtUtc, string? RunReference);
 public sealed record CreateLibraryRequest(Guid LabSpecimenId, Guid SourceContainerId,
     Guid LibraryContainerId, Guid PreparationExecutionId);
 public sealed record LibraryQcRequest(bool Passed, string ResultsJson, long Version);
-public sealed record CreateBatchRequest(string BatchType, string? Notes);
-public sealed record BatchTransitionRequest(string Action, long Version);
+public sealed record CreateBatchRequest(string Name, string? Notes);
+public sealed record BatchTransitionRequest(string Action, long Version, DateTime? OccurredAtUtc = null);
 public sealed record AddBatchMemberRequest(Guid LabWorkOrderId, Guid LabLibraryId);
 public sealed record CreateSendoutRequest(string ProviderName, string? ProviderReference,
     string ManifestJson, DateTime? ExpectedCompletionAtUtc);

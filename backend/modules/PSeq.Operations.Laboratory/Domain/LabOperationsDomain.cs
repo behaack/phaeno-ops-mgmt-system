@@ -515,20 +515,24 @@ public sealed class LabEquipment : LabAuditedEntity
     public string EquipmentType { get; private set; } = null!;
     public string Location { get; private set; } = null!;
     public LabEquipmentStatus Status { get; private set; } = LabEquipmentStatus.Active;
-    public DateTime? LastCalibrationAtUtc { get; private set; }
-    public DateTime? CalibrationDueAtUtc { get; private set; }
+    public DateOnly? LastCalibrationOn { get; private set; }
+    public DateOnly? CalibrationDueOn { get; private set; }
 
     private LabEquipment() { }
 
     public LabEquipment(string assetCode, string name, string equipmentType, string location,
-        DateTime? lastCalibrationAtUtc, DateTime? calibrationDueAtUtc)
+        DateOnly? lastCalibrationOn, DateOnly? calibrationDueOn)
     {
+        if (lastCalibrationOn.HasValue && calibrationDueOn.HasValue
+            && calibrationDueOn.Value < lastCalibrationOn.Value)
+            throw new ArgumentException("The calibration due date cannot be before the last calibration date.");
+
         AssetCode = Required(assetCode, nameof(assetCode), 100);
         Name = Required(name, nameof(name), 255);
         EquipmentType = Required(equipmentType, nameof(equipmentType), 100);
         Location = Required(location, nameof(location), 255);
-        LastCalibrationAtUtc = lastCalibrationAtUtc;
-        CalibrationDueAtUtc = calibrationDueAtUtc;
+        LastCalibrationOn = lastCalibrationOn;
+        CalibrationDueOn = calibrationDueOn;
     }
 }
 
@@ -612,31 +616,39 @@ public enum LabBatchStatus
 
 public sealed class LabOperationalBatch : LabAuditedEntity
 {
+    public const string ExternalSequencingType = "ExternalSequencing";
+
     public Guid Id { get; private set; } = Guid.NewGuid();
     public string BatchNumber { get; private set; } = null!;
+    public string Name { get; private set; } = null!;
     public string BatchType { get; private set; } = null!;
     public LabBatchStatus Status { get; private set; } = LabBatchStatus.Draft;
+    public DateTime? StartedAtUtc { get; private set; }
+    public DateTime? CompletedAtUtc { get; private set; }
     public string? Notes { get; private set; }
 
     private LabOperationalBatch() { }
 
-    public LabOperationalBatch(string batchNumber, string batchType, string? notes)
+    public LabOperationalBatch(string batchNumber, string name, string? notes)
     {
         BatchNumber = Required(batchNumber, nameof(batchNumber), 100);
-        BatchType = Required(batchType, nameof(batchType), 100);
+        Name = Required(name, nameof(name), 255);
+        BatchType = ExternalSequencingType;
         Notes = Optional(notes, 4000);
     }
 
-    public void Start()
+    public void Start(DateTime utcNow)
     {
         if (Status != LabBatchStatus.Draft) throw new InvalidOperationException("Only a draft batch can start.");
         Status = LabBatchStatus.InProgress;
+        StartedAtUtc = utcNow;
     }
 
-    public void Complete()
+    public void Complete(DateTime utcNow)
     {
         if (Status != LabBatchStatus.InProgress) throw new InvalidOperationException("Only an active batch can complete.");
         Status = LabBatchStatus.Complete;
+        CompletedAtUtc = utcNow;
     }
 }
 

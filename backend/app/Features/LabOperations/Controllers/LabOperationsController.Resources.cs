@@ -145,8 +145,21 @@ public sealed partial class LabOperationsController
     {
         await requestContext.RequireAsync(HttpContext, cancellationToken,
             LabRole.Supervisor, LabRole.OperationsAdministrator);
-        var equipment = new LabEquipment(request.AssetCode, request.Name, request.EquipmentType,
-            request.Location, request.LastCalibrationAtUtc, request.CalibrationDueAtUtc);
+        if (request.LastCalibrationOn > DateOnly.FromDateTime(DateTime.UtcNow))
+            throw Invalid("equipment_calibration_date_invalid", "The last calibration date cannot be in the future.");
+
+        var assetCode = await LabIdentifierService.AllocateEquipmentAssetCodeAsync(
+            dbContext, DateTime.UtcNow, cancellationToken);
+        LabEquipment equipment;
+        try
+        {
+            equipment = new LabEquipment(assetCode, request.Name, request.EquipmentType,
+                request.Location, request.LastCalibrationOn, request.CalibrationDueOn);
+        }
+        catch (ArgumentException exception)
+        {
+            throw Invalid("equipment_details_invalid", exception.Message);
+        }
         dbContext.LabEquipment.Add(equipment);
         await dbContext.SaveChangesAsync(cancellationToken);
         return MapEquipment(equipment);
@@ -164,7 +177,8 @@ public sealed partial class LabOperationsController
             throw Conflict("execution_not_active", "Equipment use can be recorded only during active execution.");
         var equipment = await dbContext.LabEquipment.AsNoTracking()
             .SingleOrDefaultAsync(item => item.Id == request.LabEquipmentId, cancellationToken) ?? throw Missing();
-        if (equipment.Status != LabEquipmentStatus.Active || equipment.CalibrationDueAtUtc < request.UsedAtUtc)
+        if (equipment.Status != LabEquipmentStatus.Active
+            || equipment.CalibrationDueOn < DateOnly.FromDateTime(request.UsedAtUtc))
             throw Conflict("equipment_unavailable", "The equipment is out of service or calibration is overdue.");
         dbContext.LabEquipmentUsages.Add(new LabEquipmentUsage(execution.Id, equipment.Id,
             request.UsedAtUtc, actor.User.Id, request.RunReference));
@@ -221,7 +235,7 @@ public sealed partial class LabOperationsController
             LabRole.Operator, LabRole.Supervisor, LabRole.OperationsAdministrator);
         var batchNumber = await LabIdentifierService.AllocateBatchNumberAsync(
             dbContext, DateTime.UtcNow, cancellationToken);
-        var batch = new LabOperationalBatch(batchNumber, request.BatchType, request.Notes);
+        var batch = new LabOperationalBatch(batchNumber, request.Name, request.Notes);
         dbContext.LabOperationalBatches.Add(batch);
         await dbContext.SaveChangesAsync(cancellationToken);
         return MapBatch(batch, 0, null);
@@ -260,10 +274,11 @@ public sealed partial class LabOperationsController
         var batch = await dbContext.LabOperationalBatches.SingleOrDefaultAsync(item => item.Id == batchId, cancellationToken)
             ?? throw Missing();
         EnsureVersion(batch.Version, request.Version);
+        var occurredAtUtc = request.OccurredAtUtc?.ToUniversalTime() ?? DateTime.UtcNow;
         switch (request.Action.Trim().ToLowerInvariant())
         {
-            case "start": batch.Start(); break;
-            case "complete": batch.Complete(); break;
+            case "start": batch.Start(occurredAtUtc); break;
+            case "complete": batch.Complete(occurredAtUtc); break;
             default: throw Invalid("batch_transition_invalid", "The batch transition is invalid.");
         }
         await dbContext.SaveChangesAsync(cancellationToken);
