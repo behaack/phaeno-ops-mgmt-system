@@ -1,5 +1,7 @@
 namespace PhaenoPortal.Test;
 
+using Microsoft.Extensions.Options;
+using PhaenoPortal.App.Features.Website;
 using PhaenoPortal.App.Features.Website.Crawler.Support;
 using PhaenoPortal.App.Features.Website.Entities;
 using PhaenoPortal.App.Features.Website.Search;
@@ -38,6 +40,63 @@ public sealed class WebsiteApiTests
         string expected)
     {
         Assert.Equal(expected, WebsiteSearchService.RemoveAccents(input));
+    }
+
+    [Fact]
+    public void SearchHighlightsHyphenatedTermsAndRejectsKeywordOnlyMatches()
+    {
+        var indexPath = Path.Combine(
+            Path.GetTempPath(),
+            $"phaeno-website-search-{Guid.NewGuid():N}");
+
+        try
+        {
+            using var service = new WebsiteSearchService(
+                null!,
+                Options.Create(new WebsiteSearchOptions
+                {
+                    SearchIndexLocation = indexPath
+                }));
+            service.RebuildIndex(
+            [
+                new IndexedPage
+                {
+                    Id = "visible-read",
+                    Url = "https://www.phaenobiotech.com/technology#reads",
+                    PageTitle = "Technology",
+                    PageDisplayTitle = "Technology",
+                    Anchor = "reads",
+                    AnchorTitle = "Short-read sequencing",
+                    Text = "Short-read sequencing produces reads for analysis."
+                },
+                new IndexedPage
+                {
+                    Id = "keyword-only-read",
+                    Url = "https://www.phaenobiotech.com/technology#analysis",
+                    PageTitle = "Technology",
+                    PageDisplayTitle = "Technology",
+                    Anchor = "analysis",
+                    AnchorTitle = "Analysis workflow",
+                    Description = "Molecule-level processing for downstream models.",
+                    SearchKeywords = "short-read sequencing",
+                    Text = "Analysis workflow for downstream models."
+                }
+            ]);
+
+            var result = Assert.Single(service.Search("read"));
+
+            Assert.Equal("visible-read", result.Id);
+            Assert.Equal(2, result.Count);
+            Assert.Contains("Short-{{read}}", result.Snippet);
+            Assert.Contains("{{reads}}", result.Snippet);
+        }
+        finally
+        {
+            if (Directory.Exists(indexPath))
+            {
+                Directory.Delete(indexPath, recursive: true);
+            }
+        }
     }
 
     [Fact]

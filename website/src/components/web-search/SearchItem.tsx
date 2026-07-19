@@ -124,7 +124,9 @@ export default function SearchItem({
     <li role="presentation" aria-hidden="true" className="web-search-group">
       <div className="web-search-group-content">
         <div className="web-search-group-heading">
-          <h3 className="web-search-group-title">{pageDisplayTitle}</h3>
+          <h3 className="web-search-group-title">
+            <SearchHighlightedSnippet text={pageDisplayTitle} searchStr={searchStr} />
+          </h3>
         </div>
         <span className="web-search-group-meta">
           {pageSummary.results} {pageSummary.results === 1 ? 'result' : 'results'}, {pageSummary.matches} {pageSummary.matches === 1 ? 'match' : 'matches'}
@@ -163,7 +165,9 @@ export default function SearchItem({
       >
         <div className="web-search-result">
           <div className="web-search-result-heading">
-            <h4 className="web-search-result-title">{item.anchorTitle}</h4>
+            <h4 className="web-search-result-title">
+              <SearchHighlightedSnippet text={item.anchorTitle} searchStr={searchStr} />
+            </h4>
             <span className="web-search-match-count">
               {item.count} {(item.count === 1) ? 'match' : 'matches'}
             </span>

@@ -108,6 +108,13 @@ The existing paths and request shapes remain stable:
 Search responses continue to use the standard API envelope. Successful
 database-ping, contact, and order requests return `204 No Content`.
 
+Website search may use hidden search keywords to find candidate sections, but
+it returns a candidate only when the query is also supported by visible page,
+heading, summary, or section text. Match counts use those visible fields.
+Hyphenated terms are tokenized consistently, so a search for `read` highlights
+the `read` segment in `short-read`; result group titles, result titles, and
+snippets highlight every displayed occurrence of the literal query.
+
 The implementation keeps the existing Astro metadata and sitemap contract,
 Google reCAPTCHA Enterprise verification, Mailgun template names, technical
 brief URL, Lucene index, crawler behavior, and scheduled index rebuild. Known

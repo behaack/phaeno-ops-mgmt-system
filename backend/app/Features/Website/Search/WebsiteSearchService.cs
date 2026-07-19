@@ -145,15 +145,14 @@ public sealed class WebsiteSearchService : IWebsiteSearchService, IDisposable
         var fullText = document.Get("text") ?? string.Empty;
         var pageTitle = document.Get("pageTitle") ?? string.Empty;
         var pageDisplayTitle = document.Get("pageDisplayTitle") ?? pageTitle;
+        var anchorTitle = document.Get("anchorTitle") ?? string.Empty;
         var description = document.Get("description") ?? string.Empty;
-        var metadataText = string.Join(" ", new[]
-        {
-            pageTitle,
-            pageDisplayTitle,
-            document.Get("anchorTitle"),
+        var visibleText = JoinVisibleSearchText(
+            fullText,
             description,
-            document.Get("searchKeywords")
-        }.Where(value => !string.IsNullOrWhiteSpace(value)));
+            anchorTitle,
+            pageDisplayTitle,
+            pageTitle);
 
         var snippet = ExtractSnippet(fullText, stemmedTerms);
         if (string.IsNullOrWhiteSpace(snippet))
@@ -173,13 +172,13 @@ public sealed class WebsiteSearchService : IWebsiteSearchService, IDisposable
             PageTitle = pageTitle,
             PageDisplayTitle = pageDisplayTitle,
             Anchor = document.Get("anchor") ?? string.Empty,
-            AnchorTitle = document.Get("anchorTitle") ?? string.Empty,
+            AnchorTitle = anchorTitle,
             Text = fullText,
             Description = description,
             DocumentType = document.Get("documentType") ?? string.Empty,
             Snippet = snippet,
             Score = score,
-            Count = CountStemmedMatches($"{fullText} {metadataText}", stemmedTerms),
+            Count = CountStemmedMatches(visibleText, stemmedTerms),
             IndexedAt = indexedAtTicks > 0
                 ? new DateTime(indexedAtTicks, DateTimeKind.Utc)
                 : DateTime.UtcNow
@@ -236,6 +235,27 @@ public sealed class WebsiteSearchService : IWebsiteSearchService, IDisposable
                 normalized,
                 StringComparer.OrdinalIgnoreCase));
 
+    private static string JoinVisibleSearchText(params string[] values)
+    {
+        var fragments = new List<string>();
+        foreach (var value in values
+            .Where(value => !string.IsNullOrWhiteSpace(value))
+            .Select(value => value.Trim()))
+        {
+            if (fragments.Any(fragment =>
+                fragment.Contains(value, StringComparison.OrdinalIgnoreCase)))
+            {
+                continue;
+            }
+
+            fragments.RemoveAll(fragment =>
+                value.Contains(fragment, StringComparison.OrdinalIgnoreCase));
+            fragments.Add(value);
+        }
+
+        return string.Join(" ", fragments);
+    }
+
     private static string ExtractSnippet(
         string text,
         IReadOnlyList<string> stemmedTerms,
@@ -250,32 +270,11 @@ public sealed class WebsiteSearchService : IWebsiteSearchService, IDisposable
         var querySet = stemmedTerms
             .Select(term => term.ToLowerInvariant())
             .ToHashSet();
-        var words = new List<(string Stem, int Start, int Length)>();
-        var index = 0;
-        while (index < text.Length)
-        {
-            while (index < text.Length && char.IsWhiteSpace(text[index]))
-            {
-                index++;
-            }
-            if (index >= text.Length)
-            {
-                break;
-            }
-
-            var start = index;
-            while (index < text.Length && !char.IsWhiteSpace(text[index]))
-            {
-                index++;
-            }
-            var word = text[start..index];
-            var clean = word.Trim('\'', '.', ',', ';', ':', '?', '!', '"', ')', '(');
-            words.Add((NormalizeAndStem(clean).ToLowerInvariant(), start, word.Length));
-        }
-
-        var matches = words
-            .Where(word => querySet.Contains(word.Stem))
-            .Select(word => (word.Start, End: word.Start + word.Length))
+        var matches = Regex.Matches(text, "\\b[\\w']+\\b")
+            .Cast<Match>()
+            .Where(match => querySet.Contains(
+                NormalizeAndStem(match.Value).ToLowerInvariant()))
+            .Select(match => (Start: match.Index, End: match.Index + match.Length))
             .ToList();
         if (matches.Count == 0)
         {

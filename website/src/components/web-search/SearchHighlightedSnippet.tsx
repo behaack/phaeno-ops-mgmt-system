@@ -2,35 +2,67 @@ import type { JSX } from "react";
 
 export interface ISearchResult {
   text: string;
-  searchStr: string; // this can be ignored or used to style matches
+  searchStr: string;
 }
 
-function SearchHighlightedSnippet({ text }: ISearchResult) {
-  const regex = /\{\{(.*?)\}\}/g;
+function escapeRegex(value: string) {
+  return value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+}
+
+function getSearchTerms(searchStr: string) {
+  return Array.from(
+    new Set(searchStr.match(/[\p{L}\p{N}_']+/gu) ?? []),
+  ).sort((left, right) => right.length - left.length);
+}
+
+function SearchHighlightedSnippet({ text, searchStr }: ISearchResult) {
+  const markerRegex = /\{\{(.*?)\}\}/g;
+  const searchTerms = getSearchTerms(searchStr);
+  const literalRegex = searchTerms.length > 0
+    ? new RegExp(searchTerms.map(escapeRegex).join('|'), 'gi')
+    : null;
   const parts: (string | JSX.Element)[] = [];
   let lastIndex = 0;
-  let match;
+  let partKey = 0;
 
-  while ((match = regex.exec(text)) !== null) {
-    // Push text before match
-    if (match.index > lastIndex) {
-      parts.push(text.slice(lastIndex, match.index));
+  const pushLiteralMatches = (value: string) => {
+    if (!literalRegex) {
+      if (value) parts.push(value);
+      return;
     }
 
-    // Push highlighted match
+    literalRegex.lastIndex = 0;
+    let literalIndex = 0;
+    let literalMatch: RegExpExecArray | null;
+    while ((literalMatch = literalRegex.exec(value)) !== null) {
+      if (literalMatch.index > literalIndex) {
+        parts.push(value.slice(literalIndex, literalMatch.index));
+      }
+      parts.push(
+        <mark key={`literal-${partKey++}`} className="web-search-highlight">
+          {literalMatch[0]}
+        </mark>,
+      );
+      literalIndex = literalRegex.lastIndex;
+    }
+
+    if (literalIndex < value.length) {
+      parts.push(value.slice(literalIndex));
+    }
+  };
+
+  let markerMatch: RegExpExecArray | null;
+  while ((markerMatch = markerRegex.exec(text)) !== null) {
+    pushLiteralMatches(text.slice(lastIndex, markerMatch.index));
     parts.push(
-      <mark key={match.index} className="web-search-highlight">
-        {match[1]}
-      </mark>
+      <mark key={`marker-${partKey++}`} className="web-search-highlight">
+        {markerMatch[1]}
+      </mark>,
     );
-
-    lastIndex = regex.lastIndex;
+    lastIndex = markerRegex.lastIndex;
   }
 
-  // Push the remaining text
-  if (lastIndex < text.length) {
-    parts.push(text.slice(lastIndex));
-  }
+  pushLiteralMatches(text.slice(lastIndex));
 
   return <span className="w-full">{parts}</span>;
 }

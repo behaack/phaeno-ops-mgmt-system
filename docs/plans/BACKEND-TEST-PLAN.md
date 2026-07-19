@@ -20,8 +20,9 @@ and rollback-isolated PostgreSQL coverage.
   `PSeqOperationsDbContextMapsWebsiteEntitiesToWebsiteSchema` and the
   all-entity schema assertion cover the Website-owned tables in the shared
   portal context.
-- [x] `backend/test/WebsiteApiTests.cs` - sitemap URL discovery and
-  accent-normalization coverage for the public Website search path.
+- [x] `backend/test/WebsiteApiTests.cs` - sitemap URL discovery,
+  accent normalization, hyphenated-term highlighting, and rejection of
+  metadata-only false positives for the public Website search path.
 - [x] `backend/test/PhaenoPortalMetadataTests.cs` - `HealthMetadataIdentifiesTheApi`.
 - [x] `backend/test/PersistenceTests.cs` -
   `PSeqOperationsDbContextMapsEveryEntityToItsOwningSchema`.
