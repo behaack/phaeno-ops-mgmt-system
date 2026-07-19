@@ -115,7 +115,12 @@ remain incomplete production-activation gates.
   ordering actions.
 - [ ] Remaining connected organization/user administration - cover organization
   list/detail, readiness persistence through create/edit, request queue
-  decisions, completed-organization selection for a pre-organization request,
+  decisions, the development-only HubSpot account-entry simulator's
+  relationship/service field rules, required Company/Deal identifiers, error
+  and success feedback, production hiding and queue refresh,
+  approved-request account-creation confirmation, details-page navigation,
+  prominent user management, HubSpot-designated contact invitation messaging,
+  completed-organization selection for other pre-organization requests,
   accessible request-action and Prospect-conversion dialogs that close after
   success, dated entitlement overlap validation,
   invitation create/list/resend/revoke, membership role changes,

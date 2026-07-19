@@ -21,19 +21,23 @@ Do not use organization kind or Portal readiness as a shortcut for access. Curat
 
 Open **Accounts** to search the durable external-account directory. Select the account name to open its dedicated workspace, or use a row's **Edit** action for bounded maintenance of an existing Portal account. Normal onboarding begins in HubSpot, so the standard Accounts list and detail pages do not expose direct account creation or manual request submission.
 
+When the Portal frontend and API are both running in their local development environments, the **HubSpot account intake** card provides **Simulate HubSpot account**. Enter the HubSpot Company name, requested relationship and services, Company and Deal identifiers, requested outcome, and optional internal notes. The simulator creates a durable `HubSpot`-sourced onboarding or Prospect-evaluation request in the account review queue. It never contacts HubSpot and does not create or activate an account, invite a user, grant a service, or mark the request applied by itself.
+
+After approving a new-account request, select **Create account** and confirm the bounded creation action. POMS creates the durable Prospect, Customer, or Partner with **Pending** Portal readiness, associates the request, and opens the account details page. The request remains **Approved** until Phaeno completes and verifies the user, service, or other requested setup and records it with **Mark applied**.
+
 Record readiness as **Not reviewed**, **Pending**, **Ready**, or **Blocked**, with an internal note when useful. Readiness describes operational setup; it does not invite a user, activate a service, or place an order.
 
 ## Review Portal requests
 
-Use the Portal request queue to review onboarding, evaluation, service, relationship, Sales-assisted order, and offboarding handoffs. HubSpot-originated request intake is not connected in the current portal, and the standard Accounts workspace does not provide a manual intake action. Existing durable requests remain reviewable. A future migration or recovery exception must use a separately restricted and audited procedure rather than ordinary account administration.
+Use the Portal request queue to review onboarding, evaluation, service, relationship, Sales-assisted order, and offboarding handoffs. Live HubSpot-originated request intake is not connected in the current portal. The development simulator exercises the durable inbound account-request boundary without becoming a production manual-intake path. Existing durable requests remain reviewable. A future migration or recovery exception must use a separately restricted and audited procedure rather than ordinary account administration.
 
-Approve or decline a pending request with a reason. Approval records the decision only. Complete each approved organization, invitation, entitlement, or order change through its owning workflow, verify the outcome, and then use **Mark applied** to record what was completed. When the request was submitted before an organization existed, select the completed organization while marking it applied; this links the request to that organization’s history. This separation prevents a review click from silently granting access or creating commercial work.
+Approve or decline a pending request with a reason. Approval records the decision only. For an approved onboarding or evaluation request that has no account, use **Create account**; for other pre-organization recovery cases, select the completed organization while marking the request applied. Complete each approved invitation, entitlement, or order change through its owning workflow, verify the outcome, and then use **Mark applied** to record what was completed. This separation prevents a review click or account-creation click from silently granting access or creating commercial work.
 
 Never put specimen, scientific, downstream-customer, credential, or other sensitive operational details in a HubSpot reference or request summary.
 
 ## Invite administrators and members
 
-Open the organization’s **Members** tab, invite the person’s exact sign-in email, and assign **Administrator** only when the person must authorize commercial work or manage membership; otherwise assign **Member**. Ask the recipient to sign in with the invited email and accept the invitation.
+From the account details page, use **Manage users** or open the **Users** tab. Enter the HubSpot-designated contact’s exact sign-in email after Phaeno review, and assign **Administrator** only when the person must authorize commercial work or manage membership; otherwise assign **Member**. A HubSpot contact does not grant Portal access. Ask the recipient to sign in with the invited email and accept the Portal invitation.
 
 Do not create a normal membership directly. Invitation acceptance provides the user-facing consent point and the audit link between invitation, user, and membership.
 

@@ -19,6 +19,18 @@ Do not execute this plan unless explicitly requested.
   simulator rejects replay of the same Deal and handoff path, never contacts
   HubSpot, and does not create an executable order, Trial Project, entitlement,
   or access.
+- Accounts now provides a separate local-development-only HubSpot account
+  simulator. Account entry captures the candidate Company name, requested
+  Prospect/Customer/Partner relationship, allowed requested services, HubSpot
+  Company and Deal identifiers, and safe requested outcome. It creates a
+  pending `HubSpot`-sourced `Onboarding` or `Evaluation` request, rejects replay
+  of the same Company/Deal request identity, and never creates or activates an
+  organization, invitation, membership, entitlement, or order by itself. After
+  approval, a separate Phaeno action can create and associate the durable
+  account with pending Portal readiness, then open its details workspace.
+  Phaeno manages the HubSpot-designated contact through the Portal invitation
+  and membership controls; account creation still grants no user access or
+  service entitlement and does not mark the request applied.
 - Phase 0 developer setup began on 2026-07-15. HubSpot developer project
   `Phaeno Portal Integration` (project ID `317349345`) and its private,
   static-auth app shell (app ID `45850780`) were created on platform version

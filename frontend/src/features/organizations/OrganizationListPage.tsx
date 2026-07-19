@@ -1,16 +1,18 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
-import { Link } from '@tanstack/react-router'
-import { Pencil, Power, PowerOff, RefreshCw } from 'lucide-react'
+import { Link, useNavigate } from '@tanstack/react-router'
+import { Pencil, Plus, Power, PowerOff, RefreshCw } from 'lucide-react'
 import { useMemo, useState } from 'react'
 
 import {
   apiErrorMessage,
   applyRelationshipRequest,
   cancelRelationshipRequest,
+  createAccountFromRelationshipRequest,
   decideRelationshipRequest,
   listOrganizations,
   listRelationshipRequests,
   setOrganizationActive,
+  simulateHubSpotAccountIntake,
   updateOrganization,
   type Organization,
   type RelationshipRequest,
@@ -21,15 +23,21 @@ import { Button } from '#/components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '#/components/ui/card'
 import { Checkbox } from '#/components/ui/checkbox'
 import { Input } from '#/components/ui/input'
+import { AccountProvisionDialog } from './AccountProvisionDialog'
+import { HubSpotAccountSimulationDialog, type HubSpotAccountSimulationValues } from './HubSpotAccountSimulationDialog'
 import { LifecycleActionDialog } from './LifecycleActionDialog'
 import { OrganizationFormDialog, readinessLabel, type OrganizationFormValues } from './OrganizationFormDialog'
 import { RequestActionDialog, type RequestAction } from './RequestActionDialog'
 
 export function OrganizationListPage() {
   const queryClient = useQueryClient()
+  const navigate = useNavigate()
   const [search, setSearch] = useState('')
   const [showInactive, setShowInactive] = useState(false)
   const [editing, setEditing] = useState<Organization | null>(null)
+  const [simulationOpen, setSimulationOpen] = useState(false)
+  const [simulatedRequest, setSimulatedRequest] = useState<RelationshipRequest | null>(null)
+  const [provisionTarget, setProvisionTarget] = useState<RelationshipRequest | null>(null)
   const [deactivationTarget, setDeactivationTarget] = useState<Organization | null>(null)
   const [requestActionTarget, setRequestActionTarget] = useState<{
     action: RequestAction
@@ -65,6 +73,34 @@ export function OrganizationListPage() {
     },
     onSuccess: () => { setRequestActionTarget(null); void refresh() },
   })
+  const accountSimulation = useMutation({
+    mutationFn: (values: HubSpotAccountSimulationValues) => simulateHubSpotAccountIntake({
+      candidateOrganizationName: values.candidateOrganizationName,
+      requestedOrganizationKind: values.requestedOrganizationKind,
+      requestedServices: values.requestedServices,
+      hubSpotCompanyId: values.hubSpotCompanyId,
+      hubSpotDealId: values.hubSpotDealId,
+      summary: values.summary,
+      internalNotes: values.internalNotes || null,
+    }),
+    onSuccess: async (request) => {
+      setSimulatedRequest(request)
+      setSimulationOpen(false)
+      await refresh()
+    },
+  })
+  const accountProvision = useMutation({
+    mutationFn: (request: RelationshipRequest) =>
+      createAccountFromRelationshipRequest(request.id, request.version),
+    onSuccess: async (organization) => {
+      setProvisionTarget(null)
+      await refresh()
+      await navigate({
+        to: '/customers/$customerId',
+        params: { customerId: organization.id },
+      })
+    },
+  })
 
   const externalOrganizations = useMemo(
     () =>
@@ -92,10 +128,31 @@ export function OrganizationListPage() {
         <CardHeader>
           <div className="flex flex-wrap items-center justify-between gap-2">
             <CardTitle><h2>HubSpot account intake</h2></CardTitle>
-            <Badge variant="outline">Not connected</Badge>
+            <div className="flex flex-wrap items-center gap-2">
+              <Badge variant="outline">Not connected</Badge>
+              {import.meta.env.DEV ? (
+                <Button type="button" onClick={() => {
+                  accountSimulation.reset()
+                  setSimulationOpen(true)
+                }}>
+                  <Plus data-icon="inline-start" />
+                  Simulate HubSpot account
+                </Button>
+              ) : null}
+            </div>
           </div>
           <CardDescription>Sales qualifies companies in HubSpot. When an approved evaluation or Closed Won status is ready for handoff, HubSpot will send a pending request to POMS for review. POMS will not activate an account, access, or services automatically.</CardDescription>
         </CardHeader>
+        {simulatedRequest ? (
+          <CardContent>
+            <Alert>
+              <AlertTitle>Simulated account intake received</AlertTitle>
+              <AlertDescription>
+                {simulatedRequest.requestNumber} is waiting in the account review queue.
+              </AlertDescription>
+            </Alert>
+          </CardContent>
+        ) : null}
       </Card>
 
       <Card>
@@ -112,11 +169,35 @@ export function OrganizationListPage() {
 
       <Card>
         <CardHeader><CardTitle><h2>Account review queue</h2></CardTitle><CardDescription>HubSpot onboarding, evaluation, account-change, and offboarding requests will appear here for Phaeno review. Existing durable requests remain reviewable while automated intake is not connected.</CardDescription></CardHeader>
-        <CardContent>{requestsQuery.isLoading ? <p className="text-sm text-muted-foreground">Loading requests…</p> : queue.length ? <div className="space-y-3">{queue.map((request) => <RequestRow key={request.id} request={request} disabled={requestAction.isPending} onAction={(action) => setRequestActionTarget({ action, request })} />)}</div> : <p className="rounded-lg border p-6 text-center text-sm text-muted-foreground">No account requests are waiting for review.</p>}</CardContent>
+        <CardContent>{requestsQuery.isLoading ? <p className="text-sm text-muted-foreground">Loading requests…</p> : queue.length ? <div className="space-y-3">{queue.map((request) => <RequestRow key={request.id} request={request} disabled={requestAction.isPending || accountProvision.isPending} onAction={(action) => setRequestActionTarget({ action, request })} onCreateAccount={() => setProvisionTarget(request)} />)}</div> : <p className="rounded-lg border p-6 text-center text-sm text-muted-foreground">No account requests are waiting for review.</p>}</CardContent>
       </Card>
 
       <OrganizationFormDialog open={Boolean(editing)} organization={editing} isPending={organizationMutation.isPending} error={organizationMutation.error ? apiErrorMessage(organizationMutation.error) : undefined} onOpenChange={(open) => { if (!open) setEditing(null) }} onSubmit={(values) => organizationMutation.mutate(values)} />
+      <HubSpotAccountSimulationDialog
+        open={simulationOpen}
+        isPending={accountSimulation.isPending}
+        error={accountSimulation.error ? apiErrorMessage(accountSimulation.error) : undefined}
+        onOpenChange={(open) => {
+          setSimulationOpen(open)
+          if (!open) accountSimulation.reset()
+        }}
+        onSubmit={(values) => accountSimulation.mutate(values)}
+      />
       <RequestActionDialog action={requestActionTarget?.action ?? null} request={requestActionTarget?.request ?? null} organizations={externalOrganizations} isPending={requestAction.isPending} error={requestAction.error ? apiErrorMessage(requestAction.error) : undefined} onOpenChange={(open) => { if (!open) setRequestActionTarget(null) }} onSubmit={({ explanation, organizationId }) => { if (requestActionTarget) requestAction.mutate({ ...requestActionTarget, organizationId, text: explanation }) }} />
+      <AccountProvisionDialog
+        request={provisionTarget}
+        isPending={accountProvision.isPending}
+        error={accountProvision.error ? apiErrorMessage(accountProvision.error) : undefined}
+        onOpenChange={(open) => {
+          if (!open) {
+            setProvisionTarget(null)
+            accountProvision.reset()
+          }
+        }}
+        onConfirm={() => {
+          if (provisionTarget) accountProvision.mutate(provisionTarget)
+        }}
+      />
       <LifecycleActionDialog
         action={deactivationTarget ? { kind: 'deactivate-organization', organizationName: deactivationTarget.name } : null}
         isPending={activeMutation.isPending}
@@ -128,8 +209,13 @@ export function OrganizationListPage() {
   )
 }
 
-function RequestRow({ disabled, onAction, request }: { disabled: boolean; onAction: (action: RequestAction) => void; request: RelationshipRequest }) {
-  return <div className="rounded-lg border p-4"><div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between"><div><div className="flex flex-wrap items-center gap-2"><span className="font-medium">{request.candidateOrganizationName}</span><Badge variant="outline">{request.requestNumber}</Badge><Badge variant={request.status === 'Approved' ? 'secondary' : 'outline'}>{request.status === 'PendingReview' ? 'Pending review' : request.status}</Badge><Badge variant="outline">{request.source}</Badge></div><p className="mt-2 text-sm">{request.summary}</p><p className="mt-1 text-xs text-muted-foreground">{request.requestType} · {request.requestedServices.length ? request.requestedServices.map(serviceLabel).join(', ') : 'No service change'}</p></div><div className="flex flex-wrap gap-2">{request.status === 'PendingReview' ? <><Button size="sm" disabled={disabled} onClick={() => onAction('approve')}>Approve</Button><Button size="sm" variant="outline" disabled={disabled} onClick={() => onAction('decline')}>Decline</Button></> : <Button size="sm" disabled={disabled} onClick={() => onAction('apply')}>Mark applied</Button>}<Button size="sm" variant="outline" disabled={disabled} onClick={() => onAction('cancel')}>Cancel</Button></div></div></div>
+function RequestRow({ disabled, onAction, onCreateAccount, request }: { disabled: boolean; onAction: (action: RequestAction) => void; onCreateAccount: () => void; request: RelationshipRequest }) {
+  const canCreateAccount = request.status === 'Approved'
+    && !request.organizationId
+    && (request.requestType === 'Onboarding' || request.requestType === 'Evaluation')
+    && (request.requestedOrganizationKind === 'Prospect' || request.requestedOrganizationKind === 'Customer' || request.requestedOrganizationKind === 'Partner')
+
+  return <div className="rounded-lg border p-4"><div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between"><div><div className="flex flex-wrap items-center gap-2"><span className="font-medium">{request.candidateOrganizationName}</span><Badge variant="outline">{request.requestNumber}</Badge><Badge variant={request.status === 'Approved' ? 'secondary' : 'outline'}>{request.status === 'PendingReview' ? 'Pending review' : request.status}</Badge><Badge variant="outline">{request.source}</Badge></div><p className="mt-2 text-sm">{request.summary}</p><p className="mt-1 text-xs text-muted-foreground">{request.requestType} · {request.requestedServices.length ? request.requestedServices.map(serviceLabel).join(', ') : 'No service change'}</p></div><div className="flex flex-wrap gap-2">{request.status === 'PendingReview' ? <><Button size="sm" disabled={disabled} onClick={() => onAction('approve')}>Approve</Button><Button size="sm" variant="outline" disabled={disabled} onClick={() => onAction('decline')}>Decline</Button></> : canCreateAccount ? <Button size="sm" disabled={disabled} onClick={onCreateAccount}>Create account</Button> : request.organizationId ? <><Button asChild size="sm"><Link to="/customers/$customerId" params={{ customerId: request.organizationId }}>Open account</Link></Button><Button size="sm" variant="outline" disabled={disabled} onClick={() => onAction('apply')}>Mark applied</Button></> : <Button size="sm" disabled={disabled} onClick={() => onAction('apply')}>Mark applied</Button>}<Button size="sm" variant="outline" disabled={disabled} onClick={() => onAction('cancel')}>Cancel</Button></div></div></div>
 }
 
 export function serviceLabel(value: string) { return value === 'PSeqLabService' ? 'PSeq Lab Service' : 'PSeq Kit + data assembly' }

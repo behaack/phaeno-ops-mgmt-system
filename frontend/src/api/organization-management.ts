@@ -285,6 +285,22 @@ export async function simulateHubSpotHandoff(input: {
   return unwrap(response.data)
 }
 
+export async function simulateHubSpotAccountIntake(input: {
+  candidateOrganizationName: string
+  requestedOrganizationKind: Exclude<OrganizationKind, 'Phaeno'>
+  requestedServices: PortalService[]
+  hubSpotCompanyId: string
+  hubSpotDealId: string
+  summary: string
+  internalNotes: string | null
+}) {
+  const response = await api.post<ApiEnvelope<RelationshipRequest>>(
+    '/platform/relationships/requests/simulate-hubspot-account',
+    input,
+  )
+  return unwrap(response.data)
+}
+
 export async function decideRelationshipRequest(
   id: string,
   input: { approved: boolean; reason: string; version: number },
@@ -292,6 +308,17 @@ export async function decideRelationshipRequest(
   const response = await api.post<ApiEnvelope<RelationshipRequest>>(
     `/platform/relationships/requests/${id}/decision`,
     input,
+  )
+  return unwrap(response.data)
+}
+
+export async function createAccountFromRelationshipRequest(
+  id: string,
+  version: number,
+) {
+  const response = await api.post<ApiEnvelope<Organization>>(
+    `/platform/relationships/requests/${id}/account`,
+    { version },
   )
   return unwrap(response.data)
 }

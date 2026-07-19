@@ -118,10 +118,26 @@ public sealed record SimulateHubSpotHandoffRequest
     public string? InternalNotes { get; init; }
 }
 
+public sealed record SimulateHubSpotAccountIntakeRequest
+{
+    public required string CandidateOrganizationName { get; init; }
+    public required OrganizationKind RequestedOrganizationKind { get; init; }
+    public IReadOnlyList<PortalService> RequestedServices { get; init; } = [];
+    public required string HubSpotCompanyId { get; init; }
+    public required string HubSpotDealId { get; init; }
+    public required string Summary { get; init; }
+    public string? InternalNotes { get; init; }
+}
+
 public sealed record DecidePortalIntegrationRequest
 {
     public required bool Approved { get; init; }
     public required string Reason { get; init; }
+    public required long Version { get; init; }
+}
+
+public sealed record CreateAccountFromPortalIntegrationRequest
+{
     public required long Version { get; init; }
 }
 

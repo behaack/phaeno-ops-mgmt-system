@@ -7,6 +7,7 @@ using PSeq.Operations.Commercial.Accounts.Application;
 using PSeq.Operations.Commercial.Accounts.Domain;
 using PSeq.Operations.Commercial.Relationships.Application;
 using PSeq.Operations.Commercial.Relationships.Domain;
+using PhaenoPortal.App.Features.Accounts.DTOs;
 using PhaenoPortal.App.Features.Accounts.Services;
 using PhaenoPortal.App.Features.RelationshipManagement.DTOs;
 using PhaenoPortal.App.Features.RelationshipManagement.Services;
@@ -337,6 +338,103 @@ public sealed class RelationshipManagementController(
         return Created($"/api/platform/relationships/requests/{value.Id}", ToDto(value));
     }
 
+    [HttpPost("requests/simulate-hubspot-account")]
+    public async Task<ActionResult<PortalIntegrationRequestDto>> SimulateHubSpotAccountIntake(
+        [FromBody] SimulateHubSpotAccountIntakeRequest request,
+        CancellationToken cancellationToken)
+    {
+        var actor = await RequirePlatformAdminAsync(cancellationToken);
+        if (!environment.IsDevelopment())
+        {
+            throw NotFound(
+                "hubspot_account_simulation_disabled",
+                "HubSpot account simulation is available only in the local development environment.");
+        }
+
+        if (request.RequestedOrganizationKind is not (
+            OrganizationKind.Prospect
+            or OrganizationKind.Customer
+            or OrganizationKind.Partner))
+        {
+            throw new RelationshipManagementException(
+                "hubspot_account_kind_invalid",
+                "Select Prospect, Customer, or Partner as the requested relationship.");
+        }
+
+        var companyId = request.HubSpotCompanyId?.Trim();
+        var dealId = request.HubSpotDealId?.Trim();
+        if (string.IsNullOrWhiteSpace(companyId) || string.IsNullOrWhiteSpace(dealId))
+        {
+            throw new RelationshipManagementException(
+                "hubspot_account_references_required",
+                "Enter both the simulated HubSpot Company and Deal identifiers.");
+        }
+
+        var sourceReference = $"hubspot-company:{companyId};deal:{dealId}";
+        if (sourceReference.Length > 255)
+        {
+            throw new RelationshipManagementException(
+                "hubspot_account_references_invalid",
+                "The combined simulated HubSpot Company and Deal identifiers are too long.");
+        }
+
+        var requestedServices = request.RequestedServices.Distinct().ToList();
+        if (request.RequestedOrganizationKind == OrganizationKind.Prospect)
+        {
+            if (requestedServices.Count != 0)
+            {
+                throw new RelationshipManagementException(
+                    "prospect_services_not_allowed",
+                    "A Prospect evaluation cannot request commercial service entitlements.");
+            }
+        }
+        else
+        {
+            if (requestedServices.Count == 0)
+            {
+                throw new RelationshipManagementException(
+                    "hubspot_account_service_required",
+                    "Select at least one service requested for the new account.");
+            }
+
+            EnsureRequestServicesAllowed(request.RequestedOrganizationKind, requestedServices);
+        }
+
+        var requestType = request.RequestedOrganizationKind == OrganizationKind.Prospect
+            ? PortalIntegrationRequestType.Evaluation
+            : PortalIntegrationRequestType.Onboarding;
+        var duplicate = await dbContext.PortalIntegrationRequests
+            .AsNoTracking()
+            .AnyAsync(value => value.Source == PortalIntegrationRequestSource.HubSpot
+                && value.SourceReference == sourceReference
+                && value.RequestType == requestType,
+                cancellationToken);
+        if (duplicate)
+        {
+            throw Conflict(
+                "hubspot_account_handoff_already_received",
+                "That simulated HubSpot Company and Deal have already produced this account handoff.");
+        }
+
+        var internalNotes = string.IsNullOrWhiteSpace(request.InternalNotes)
+            ? "Development-only simulated HubSpot account intake."
+            : $"Development-only simulated HubSpot account intake. {request.InternalNotes.Trim()}";
+        var value = Execute(() => new PortalIntegrationRequest(
+            null,
+            request.CandidateOrganizationName,
+            requestType,
+            PortalIntegrationRequestSource.HubSpot,
+            request.RequestedOrganizationKind,
+            sourceReference,
+            request.Summary,
+            internalNotes,
+            actor.Id,
+            requestedServices));
+        dbContext.PortalIntegrationRequests.Add(value);
+        await dbContext.SaveChangesAsync(cancellationToken);
+        return Created($"/api/platform/relationships/requests/{value.Id}", ToDto(value));
+    }
+
     [HttpPost("requests/{requestId:guid}/decision")]
     public async Task<PortalIntegrationRequestDto> DecideRequest(
         Guid requestId,
@@ -349,6 +447,76 @@ public sealed class RelationshipManagementController(
         Execute(() => value.Decide(request.Approved, request.Reason, actor.Id, DateTime.UtcNow));
         await dbContext.SaveChangesAsync(cancellationToken);
         return ToDto(value);
+    }
+
+    [HttpPost("requests/{requestId:guid}/account")]
+    public async Task<OrganizationDto> CreateAccountFromRequest(
+        Guid requestId,
+        [FromBody] CreateAccountFromPortalIntegrationRequest request,
+        CancellationToken cancellationToken)
+    {
+        await RequirePlatformAdminAsync(cancellationToken);
+        var value = await RequireRequestAsync(requestId, tracking: true, cancellationToken);
+        EnsureVersion(value.Version, request.Version);
+
+        if (value.Status != PortalIntegrationRequestStatus.Approved)
+        {
+            throw Conflict(
+                "account_request_not_approved",
+                "Approve the account request before creating its account.");
+        }
+
+        if (value.OrganizationId.HasValue)
+        {
+            throw Conflict(
+                "account_request_already_associated",
+                "This request is already associated with an account.");
+        }
+
+        if (value.RequestType is not (
+            PortalIntegrationRequestType.Onboarding
+            or PortalIntegrationRequestType.Evaluation))
+        {
+            throw new RelationshipManagementException(
+                "account_request_type_invalid",
+                "Only an onboarding or evaluation request can create a new account.");
+        }
+
+        if (value.RequestedOrganizationKind is not (
+            OrganizationKind.Prospect
+            or OrganizationKind.Customer
+            or OrganizationKind.Partner))
+        {
+            throw new RelationshipManagementException(
+                "account_request_kind_invalid",
+                "The approved request must identify a Prospect, Customer, or Partner relationship.");
+        }
+
+        var duplicate = await dbContext.Organizations.AsNoTracking()
+            .AnyAsync(organization => organization.Name == value.CandidateOrganizationName, cancellationToken);
+        if (duplicate)
+        {
+            throw Conflict(
+                "account_name_already_exists",
+                "An account with this name already exists. Associate the request with that account instead.");
+        }
+
+        var description = value.Summary.Length <= 1000
+            ? value.Summary
+            : value.Summary[..1000];
+        var organization = new Organization(
+            value.CandidateOrganizationName,
+            value.RequestedOrganizationKind.Value,
+            description);
+        organization.UpdatePortalReadiness(
+            PortalReadinessStatus.Pending,
+            $"Created from approved request {value.RequestNumber}. Phaeno must still configure users and any requested services.");
+
+        dbContext.Organizations.Add(organization);
+        Execute(() => value.AssociateOrganization(organization.Id));
+        await dbContext.SaveChangesAsync(cancellationToken);
+
+        return ToDto(organization);
     }
 
     [HttpPost("requests/{requestId:guid}/applied")]
@@ -536,6 +704,20 @@ public sealed class RelationshipManagementController(
         AppliedAt = value.AppliedAt,
         ApplicationNotes = value.ApplicationNotes,
         RequestedServices = value.RequestedServices.Select(service => service.Service).OrderBy(service => service).ToList(),
+        CreatedAt = value.CreatedAt,
+        UpdatedAt = value.UpdatedAt,
+        Version = value.Version
+    };
+
+    private static OrganizationDto ToDto(Organization value) => new()
+    {
+        Id = value.Id,
+        Name = value.Name,
+        Description = value.Description,
+        Kind = value.Kind,
+        PortalReadiness = value.PortalReadiness,
+        PortalReadinessNote = value.PortalReadinessNote,
+        IsActive = value.IsActive,
         CreatedAt = value.CreatedAt,
         UpdatedAt = value.UpdatedAt,
         Version = value.Version

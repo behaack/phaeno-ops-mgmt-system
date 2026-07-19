@@ -89,9 +89,10 @@ not satisfy this production-activation gate.
   direct Customer/Partner onboarding, designated-admin invitation, selective
   Partner services, existing-organization service change, Customer/Partner
   reclassification, pending offboarding, webhook replay, retry, and HubSpot
-  outage. In local development, prove that Order Intake can simulate both the
-  sales-assisted and Trial Project inbound request shapes without contacting
-  HubSpot or creating executable work.
+  outage. In local development, prove that Accounts can simulate a new
+  Prospect/Customer/Partner account request and that Order Intake can simulate
+  both the sales-assisted and Trial Project inbound request shapes without
+  contacting HubSpot or creating an account or executable work.
 - [ ] Direct/custom sales and HubSpot visibility journey - cover configured-price
   Customer and Partner specimen placement, Partner reagent and assembly sales,
   ineligible work routed to Sales, Closed Won operational handoff, one HubSpot
@@ -109,7 +110,9 @@ not satisfy this production-activation gate.
   Phaeno and external administrator scope, invitation delivery and acceptance,
   resend/revoke, role and membership lifecycle, Prospect conversion with stable
   identity, readiness, request review without implicit provisioning,
-  pre-organization request association, action-dialog close behavior,
+  approved simulated HubSpot account creation and details-page navigation,
+  Phaeno-controlled designated-contact invitation and membership management,
+  other pre-organization request association, action-dialog close behavior,
   service-entitlement boundaries, global disable/reactivation, refresh
   persistence, and cross-tenant denial.
 - [ ] Database-backed Web Operations lifecycle journey - verify platform-admin
