@@ -36,3 +36,4 @@ export const biomarkers = [
     "Discordance": "Splice variants may reduce expression, affecting rituximab efficacy"
   }
 ]
+
