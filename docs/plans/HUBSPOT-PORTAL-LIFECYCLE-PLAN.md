@@ -12,6 +12,13 @@ Do not execute this plan unless explicitly requested.
 - HubSpot is not connected to the running application today. No HubSpot
   dependency, credential, webhook, schema change, migration, deployment, or
   test execution is authorized by this plan alone.
+- Order Operations now provides a local-development-only HubSpot handoff
+  simulator for the already-implemented durable request boundary. It can create
+  a pending `SalesAssistedOrder` request for an existing Customer or Partner or
+  a pending `Evaluation` request representing a proposed Trial Project. The
+  simulator rejects replay of the same Deal and handoff path, never contacts
+  HubSpot, and does not create an executable order, Trial Project, entitlement,
+  or access.
 - Phase 0 developer setup began on 2026-07-15. HubSpot developer project
   `Phaeno Portal Integration` (project ID `317349345`) and its private,
   static-auth app shell (app ID `45850780`) were created on platform version

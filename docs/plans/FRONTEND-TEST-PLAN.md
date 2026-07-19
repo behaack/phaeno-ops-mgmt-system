@@ -95,7 +95,10 @@ remain incomplete production-activation gates.
 - [ ] HubSpot lifecycle components - cover pending-request queues, exact proposed
   changes, readiness review, internal-only HubSpot summary and deep links,
   service-entitlement activation, relationship/offboarding warnings, retryable
-  sync failure, and complete hiding of HubSpot context from external users.
+  sync failure, complete hiding of HubSpot context from external users, and the
+  Order Intake development simulator's sales-assisted versus Trial Project
+  fields, organization-kind filtering, validation, duplicate-Deal feedback,
+  success refresh, and production hiding.
 - [ ] Direct and Sales-assisted sales - cover configured prices for eligible
   Customer/Partner specimen and Partner assembly work, Partner service-specific
   action visibility, Request custom work, Request account change, no

@@ -16,6 +16,11 @@ Do not execute this plan unless explicitly requested.
 - The current application does not implement Trial Projects. Existing code and
   authorization correctly prevent Prospects from viewing, creating, or placing
   orders.
+- Order Operations includes a local-development-only simulator that can create
+  the pending HubSpot-sourced `Evaluation` request that precedes Trial Project
+  review. This exercises only the durable inbound request boundary; it does not
+  implement the Trial Project aggregate, dual approval, Prospect acceptance,
+  sample submission, execution authorization, or result release.
 - The implemented Lab Operations v1 contract already reserves `TrialProject`
   as an authorization source, but no Trial Project currently invokes it. A
   future Trial Project implementation must route approved work through the

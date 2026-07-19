@@ -2,7 +2,11 @@
 
 Order operations is the Commercial workspace for Customer laboratory orders, Partner PSeq kit fulfillment, and Partner data assembly. POMS owns operational state, assignments, tenant-safe communication, fulfillment, and release decisions. QuickBooks Online remains authoritative for estimates, invoices, credits, terms, balances, and payment facts.
 
-Use the far-left sidebar beneath the toolbar to move among **Order intake**, **Lab**, **PSeq kits**, **Assembly**, and **Integrations**. **Order intake** lists placed laboratory orders awaiting specimens and opens their already-authorized Lab work order for receipt and accession. The sidebar header identifies Order operations and, on wider screens, provides the pin or unpin icon. Pointer users can preview an unpinned sidebar by approaching the left edge; keyboard and touch users open it from the edge tab. Choosing a section closes an unpinned sidebar.
+Use the far-left sidebar beneath the toolbar to move among **Order intake**, **Lab**, **PSeq kits**, **Assembly**, and **Integrations**. **Order intake** separates HubSpot-originated handoffs awaiting review from already-authorized laboratory work awaiting specimens. A Closed Won sales-assisted handoff and a requested Trial Project still require Phaeno review; they are not executable work merely because the request arrived. An authorized order opens its linked Lab work order for receipt and accession.
+
+When the Portal API and frontend are both running in their local development environments, **Simulate HubSpot handoff** can create a durable pending request for either a sales-assisted order or a no-charge Trial Project. The simulator requires a unique HubSpot Deal identifier and clearly identifies the resulting request as simulated. It does not contact HubSpot, bypass review, create an executable sales-assisted order, or implement the Trial Project lifecycle. Review the resulting request in **Accounts**.
+
+The sidebar header identifies Order operations and, on wider screens, provides the pin or unpin icon. Pointer users can preview an unpinned sidebar by approaching the left edge; keyboard and touch users open it from the edge tab. Choosing a section closes an unpinned sidebar.
 
 ## Choose the correct queue
 

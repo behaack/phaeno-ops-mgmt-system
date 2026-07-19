@@ -88,7 +88,10 @@ not satisfy this production-activation gate.
   Portal access, approved evaluation to Portal Prospect, Closed Won to pending
   direct Customer/Partner onboarding, designated-admin invitation, selective
   Partner services, existing-organization service change, Customer/Partner
-  reclassification, pending offboarding, webhook replay, retry, and HubSpot outage.
+  reclassification, pending offboarding, webhook replay, retry, and HubSpot
+  outage. In local development, prove that Order Intake can simulate both the
+  sales-assisted and Trial Project inbound request shapes without contacting
+  HubSpot or creating executable work.
 - [ ] Direct/custom sales and HubSpot visibility journey - cover configured-price
   Customer and Partner specimen placement, Partner reagent and assembly sales,
   ineligible work routed to Sales, Closed Won operational handoff, one HubSpot

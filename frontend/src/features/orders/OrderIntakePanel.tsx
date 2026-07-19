@@ -116,7 +116,10 @@ export function OrderIntakePanel({
               </CardDescription>
             </div>
             {import.meta.env.DEV && apiEnabled ? (
-              <Button type="button" onClick={() => setSimulationOpen(true)}>
+              <Button type="button" onClick={() => {
+                simulation.reset()
+                setSimulationOpen(true)
+              }}>
                 <Plus data-icon="inline-start" />
                 Simulate HubSpot handoff
               </Button>
@@ -249,7 +252,10 @@ export function OrderIntakePanel({
       <HubSpotSimulationDialog
         error={simulation.error}
         isPending={simulation.isPending}
-        onOpenChange={setSimulationOpen}
+        onOpenChange={(open) => {
+          setSimulationOpen(open)
+          if (!open) simulation.reset()
+        }}
         onSubmit={(values) => simulation.mutate(values)}
         open={simulationOpen}
         organizations={organizations}
@@ -338,7 +344,8 @@ function HubSpotSimulationDialog({
 
           <div>
             <Label htmlFor="simulation-organization">
-              {path === 'TrialProject' ? 'Existing Prospect' : 'Customer or Partner'} <Required />
+              {path === 'TrialProject' ? 'Prospect' : 'Customer or Partner'}
+              {path === 'SalesAssistedOrder' ? <> <Required /></> : null}
             </Label>
             <select
               id="simulation-organization"

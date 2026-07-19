@@ -234,8 +234,11 @@ and rollback-isolated PostgreSQL coverage.
   entitlement overlap and all effective boundaries, required
   completed-organization association for a
   pre-organization request, request state transitions, controller routing under
-  one `/api` prefix, and the guarantee that approval alone creates no
-  organization, invitation, entitlement, or order.
+  one `/api` prefix, the development-only HubSpot simulator's production 404,
+  platform-admin gate, path-specific organization/service validation, unique
+  Deal replay rejection, `HubSpot` source mapping, and the guarantee that
+  simulation or approval alone creates no organization, invitation,
+  entitlement, order, or Trial Project.
 - [ ] Remaining relationship management persistence - cover audit
   actor/time/version stamping, existing-organization readiness migration
   default, and request-number uniqueness.

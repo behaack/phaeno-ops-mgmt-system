@@ -47,9 +47,14 @@ separate major TBD.
   authorization/projection/receipt records remain in `commercial_ops`. Existing
   customer order, quote, file, payment, and publication records remain
   authoritative for their Commercial responsibilities in `commercial_ops`.
-  Phaeno operators can use the **Order intake** section to find a placed lab
-  order and reach its already-authorized Lab work order; the action does not
-  create work or bypass quote acceptance.
+  Phaeno operators can use the **Order intake** section to review HubSpot-
+  originated sales-assisted and Trial Project handoffs separately from placed
+  lab orders, then reach an already-authorized Lab work order for receipt and
+  accession. A guarded local-development simulator creates durable
+  `HubSpot`-sourced `SalesAssistedOrder` or `Evaluation` requests without
+  contacting HubSpot, creating executable work, or bypassing review. The
+  Trial Project domain and the sales-assisted handoff-to-order conversion remain
+  future implementation.
 - Verification state: the prior clean-baseline backend, frontend, and
   desktop/mobile suites passed. The complete Lab slice has a clean backend
   build, frontend lint/typecheck and client/SSR build, and applied local

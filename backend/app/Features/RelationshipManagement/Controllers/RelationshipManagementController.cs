@@ -250,18 +250,6 @@ public sealed class RelationshipManagementController(
                 "The simulated HubSpot Deal identifier must be 242 characters or fewer.");
         }
 
-        var duplicate = await dbContext.PortalIntegrationRequests
-            .AsNoTracking()
-            .AnyAsync(value => value.Source == PortalIntegrationRequestSource.HubSpot
-                && value.SourceReference == sourceReference,
-                cancellationToken);
-        if (duplicate)
-        {
-            throw Conflict(
-                "hubspot_handoff_already_received",
-                "That simulated HubSpot Deal has already produced a Portal handoff.");
-        }
-
         Organization? organization = null;
         if (request.OrganizationId.HasValue)
         {
@@ -315,6 +303,19 @@ public sealed class RelationshipManagementController(
                 throw new RelationshipManagementException(
                     "hubspot_handoff_path_invalid",
                     "Select a supported HubSpot handoff path.");
+        }
+
+        var duplicate = await dbContext.PortalIntegrationRequests
+            .AsNoTracking()
+            .AnyAsync(value => value.Source == PortalIntegrationRequestSource.HubSpot
+                && value.SourceReference == sourceReference
+                && value.RequestType == requestType,
+                cancellationToken);
+        if (duplicate)
+        {
+            throw Conflict(
+                "hubspot_handoff_already_received",
+                "That simulated HubSpot Deal has already produced this type of Portal handoff.");
         }
 
         var internalNotes = string.IsNullOrWhiteSpace(request.InternalNotes)
