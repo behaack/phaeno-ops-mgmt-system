@@ -30,10 +30,14 @@ or production activation.
   Phaeno operators can use the **Order intake** section in Order Operations to
   reach a placed order's existing work order; this is a discoverability handoff,
   not a second work-order creation path.
-  The six workspace sections now use the shared
+  The five operational workspace sections now use the shared
   far-left sidebar beneath the toolbar, with a remembered pinned desktop rail
   and the same non-modal hover, keyboard, and click rail when narrow or
-  unpinned. The POMS dashboard now includes a Phaeno-only Order Operations /
+  unpinned. Laboratory role administration now lives in the durable Phaeno
+  user record in User management, whose consolidated update preserves the
+  existing audited Laboratory role assignments. Phaeno invitations also retain
+  intended Laboratory roles and activate them only when the invitation is
+  accepted. The POMS dashboard now includes a Phaeno-only Order Operations /
   Lab Operations / Accounts selector whose initial Lab panel is explicitly
   mock data for layout validation, not a connected Laboratory queue or
   production-readiness signal. Current Commercial file

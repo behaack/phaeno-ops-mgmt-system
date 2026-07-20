@@ -40,8 +40,11 @@ export function InviteUserForm({ organizationId }: { organizationId: string }) {
   async function onSubmit(values: InviteFormValues) {
     await createInvitationMutation.mutateAsync({
       organizationId,
+      firstName: values.firstName,
+      lastName: values.lastName,
       email: values.email,
       isOrganizationAdmin: values.role === 'Organization Admin',
+      labRoles: [],
     })
   }
 
@@ -49,6 +52,51 @@ export function InviteUserForm({ organizationId }: { organizationId: string }) {
 
   return (
     <form className="space-y-4" onSubmit={handleSubmit(onSubmit)}>
+      <div className="grid gap-4 sm:grid-cols-2">
+        <div className="grid gap-2">
+          <Label htmlFor="first-name">First name *</Label>
+          <Input
+            id="first-name"
+            autoComplete="given-name"
+            required
+            aria-describedby={
+              errors.firstName ? 'first-name-error' : undefined
+            }
+            aria-invalid={errors.firstName ? 'true' : 'false'}
+            {...register('firstName')}
+          />
+          {errors.firstName ? (
+            <p
+              id="first-name-error"
+              className="text-sm text-destructive"
+              role="alert"
+            >
+              {errors.firstName.message}
+            </p>
+          ) : null}
+        </div>
+        <div className="grid gap-2">
+          <Label htmlFor="last-name">Last name *</Label>
+          <Input
+            id="last-name"
+            autoComplete="family-name"
+            required
+            aria-describedby={errors.lastName ? 'last-name-error' : undefined}
+            aria-invalid={errors.lastName ? 'true' : 'false'}
+            {...register('lastName')}
+          />
+          {errors.lastName ? (
+            <p
+              id="last-name-error"
+              className="text-sm text-destructive"
+              role="alert"
+            >
+              {errors.lastName.message}
+            </p>
+          ) : null}
+        </div>
+      </div>
+
       <div className="grid gap-2">
         <Label htmlFor="email">Email address *</Label>
         <Input
@@ -108,7 +156,8 @@ export function InviteUserForm({ organizationId }: { organizationId: string }) {
         <Alert role="status" aria-live="polite">
           <AlertTitle>Invite sent</AlertTitle>
           <AlertDescription>
-            {submittedInvite.email} was invited as{' '}
+            {submittedInvite.firstName} {submittedInvite.lastName} (
+            {submittedInvite.email}) was invited as{' '}
             {submittedInvite.isOrganizationAdmin ? 'Organization Admin' : 'Member'}.
           </AlertDescription>
         </Alert>

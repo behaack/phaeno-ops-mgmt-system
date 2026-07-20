@@ -72,6 +72,25 @@ public sealed class LabRoleAssignment : LabAuditedEntity
     public void SetActive(bool isActive) => IsActive = isActive;
 }
 
+public sealed class LabRoleInvitationIntent : LabAuditedEntity
+{
+    public Guid Id { get; private set; } = Guid.NewGuid();
+    public Guid OrganizationInvitationId { get; private set; }
+    public LabRole Role { get; private set; }
+
+    private LabRoleInvitationIntent() { }
+
+    public LabRoleInvitationIntent(Guid organizationInvitationId, LabRole role)
+    {
+        OrganizationInvitationId = organizationInvitationId != Guid.Empty
+            ? organizationInvitationId
+            : throw new ArgumentException(
+                "An organization invitation is required.",
+                nameof(organizationInvitationId));
+        Role = role;
+    }
+}
+
 public enum LabContainerKind
 {
     SubmittedSpecimen,

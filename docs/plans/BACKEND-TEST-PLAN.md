@@ -200,11 +200,18 @@ and rollback-isolated PostgreSQL coverage.
   cross-tenant metadata/file/result isolation.
 - [ ] Clerk JWT authentication - validate issuer, audience, signature, and expiry with integration-level test coverage.
 - [ ] Session/bootstrap endpoint - cover unauthorized, disabled, no active memberships, organization unavailable, and ready states with database-backed endpoint tests.
-- [ ] Invitation endpoints - cover create, resend cooldown, pending replacement, inactive organization rejection, disabled user rejection, and active membership rejection.
+- [ ] Invitation endpoints - cover required invited first/last name, intended
+  Phaeno Laboratory-role persistence, non-Phaeno Laboratory-role rejection,
+  roleless-Phaeno-invitation rejection, create, resend cooldown, pending
+  replacement, inactive organization rejection, disabled user rejection, and
+  active membership rejection.
 - [ ] Membership endpoints - cover deactivate, leave, promote, demote, cross-org denial, Phaeno-org denial for customer admins, and last-admin protection.
 - [ ] Platform lifecycle endpoints - cover organization deactivate/reactivate, user disable/reactivate, platform-admin-only access, and last-platform-admin protection.
-- [ ] User read/list endpoints - cover self read, platform read, org-admin organization list, active-default filtering, inactive include filter, and forbidden cross-org access.
-- [ ] Invitation acceptance/decline endpoints - cover verified email match, token hash lookup, single-use behavior, expired/revoked/declined rejection, and membership activation.
+- [ ] User read/list endpoints - cover self read, platform read, org-admin organization list, active-default filtering, inactive include filter, and forbidden cross-org access. Cover the consolidated Phaeno user projection/update endpoint for platform-administrator and Lab Operations Administrator access, profile edits, Platform administrator promotion/demotion with last-admin protection, exact additive Lab-role replacement, inactive-user rejection, optimistic versions, and forbidden non-role/profile changes by a Lab-only access administrator.
+- [ ] Invitation acceptance/decline endpoints - cover verified email match,
+  token hash lookup, single-use behavior, expired/revoked/declined rejection,
+  membership activation, and atomic activation of intended Phaeno Laboratory
+  roles without granting them while pending.
 - [ ] Account domain model - cover Phaeno and Customer organization kinds.
 - [ ] Account domain model - cover multi-organization memberships and selected organization authorization gates.
 - [ ] Account domain model - cover organization admins managing memberships in their own organization.

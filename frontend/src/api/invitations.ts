@@ -9,7 +9,16 @@ export type Invitation = {
   organizationName: string | null
   email: string
   normalizedEmail: string
+  firstName: string
+  lastName: string
   isOrganizationAdmin: boolean
+  labRoles: Array<
+    | 'Operator'
+    | 'Supervisor'
+    | 'ProtocolAdministrator'
+    | 'ScientificReviewer'
+    | 'OperationsAdministrator'
+  >
   status: InvitationStatus
   isExpired: boolean
   expiresAt: string
@@ -35,8 +44,11 @@ export type AcceptedInvitation = Invitation & {
 
 export async function createInvitation(input: {
   organizationId: string
+  firstName: string
+  lastName: string
   email: string
   isOrganizationAdmin: boolean
+  labRoles: Invitation['labRoles']
 }) {
   const response = await api.post<Invitation>('/invitations', input)
   return response.data

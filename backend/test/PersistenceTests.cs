@@ -213,6 +213,8 @@ public class PersistenceTests
         Assert.Equal("organization_invitations", invitationEntity.GetTableName());
         Assert.Equal("id", invitationEntity.FindProperty(nameof(OrganizationInvitation.Id))?.GetColumnName());
         Assert.Equal("organization_id", invitationEntity.FindProperty(nameof(OrganizationInvitation.OrganizationId))?.GetColumnName());
+        Assert.Equal("first_name", invitationEntity.FindProperty(nameof(OrganizationInvitation.FirstName))?.GetColumnName());
+        Assert.Equal("last_name", invitationEntity.FindProperty(nameof(OrganizationInvitation.LastName))?.GetColumnName());
         Assert.Equal("accepted_by_user_id", invitationEntity.FindProperty(nameof(OrganizationInvitation.AcceptedByUserId))?.GetColumnName());
         Assert.Equal("revoked_by_user_id", invitationEntity.FindProperty(nameof(OrganizationInvitation.RevokedByUserId))?.GetColumnName());
         Assert.Contains(
@@ -231,6 +233,23 @@ public class PersistenceTests
         Assert.NotNull(invitationVersionProperty);
         Assert.False(invitationVersionProperty.IsNullable);
         Assert.True(invitationVersionProperty.IsConcurrencyToken);
+
+        var roleIntentEntity = dbContext.Model.FindEntityType(typeof(LabRoleInvitationIntent));
+        Assert.NotNull(roleIntentEntity);
+        Assert.Equal("lab_ops", roleIntentEntity.GetSchema());
+        Assert.Equal("lab_role_invitation_intents", roleIntentEntity.GetTableName());
+        Assert.Equal(
+            "organization_invitation_id",
+            roleIntentEntity
+                .FindProperty(nameof(LabRoleInvitationIntent.OrganizationInvitationId))
+                ?.GetColumnName());
+        Assert.Contains(
+            roleIntentEntity.GetIndexes(),
+            index => index.IsUnique
+                && index.Properties.Select(property => property.Name).SequenceEqual([
+                    nameof(LabRoleInvitationIntent.OrganizationInvitationId),
+                    nameof(LabRoleInvitationIntent.Role)
+                ]));
 
         var auditEventEntity = dbContext.Model.FindEntityType(typeof(AuditEvent));
         Assert.NotNull(auditEventEntity);

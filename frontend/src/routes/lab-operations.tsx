@@ -2,7 +2,7 @@ import { Outlet, createFileRoute, useNavigate, useRouterState } from '@tanstack/
 
 import { LabOperationsPage, type LabSection } from '#/features/lab-operations/LabOperationsPage'
 
-const labSections: LabSection[] = ['work', 'protocols', 'materials', 'equipment', 'batches', 'access']
+const labSections: LabSection[] = ['work', 'protocols', 'materials', 'equipment', 'batches']
 
 export const Route = createFileRoute('/lab-operations')({
   validateSearch: (search: Record<string, unknown>) => ({

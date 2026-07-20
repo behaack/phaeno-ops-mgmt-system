@@ -1,6 +1,7 @@
 namespace PhaenoPortal.App.Features.Accounts.DTOs;
 
 using PSeq.Operations.Commercial.Accounts.Domain;
+using PSeq.Operations.Laboratory.Domain;
 
 public sealed record InvitationDto
 {
@@ -14,7 +15,13 @@ public sealed record InvitationDto
 
     public required string NormalizedEmail { get; init; }
 
+    public required string FirstName { get; init; }
+
+    public required string LastName { get; init; }
+
     public required bool IsOrganizationAdmin { get; init; }
+
+    public required IReadOnlyList<LabRole> LabRoles { get; init; }
 
     public required InvitationStatus Status { get; init; }
 

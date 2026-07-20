@@ -123,9 +123,15 @@ remain incomplete production-activation gates.
   completed-organization selection for other pre-organization requests,
   accessible request-action and Prospect-conversion dialogs that close after
   success, dated entitlement overlap validation,
-  invitation create/list/resend/revoke, membership role changes,
-  Prospect conversion, organization lifecycle, global user lifecycle,
-  optimistic concurrency, and durable refresh behavior against mocked APIs.
+  invitation create/list/resend/revoke, required invitee first/last name,
+  membership role changes, unified user cards with pending-invitation status
+  and accessible action menus, the connected Phaeno user list, consolidated
+  invitation-time and accepted-user Platform
+  administrator and additive laboratory-role editing, Platform-admin versus
+  Lab Operations Administrator control visibility, profile updates,
+  deactivation/reactivation, unsupported mock-role removal, Prospect
+  conversion, organization lifecycle, optimistic concurrency, and durable
+  refresh behavior against mocked APIs.
 - [ ] Auth shell - cover missing Clerk config, signed-out prompt, local unauthorized state, disabled state, no-active-memberships state, and ready state.
 - [ ] Organization switcher - cover auto-selecting one active membership, persisting selected organization, changing selected organization, and sending `X-Organization-Id`.
 - [ ] Invite acceptance page - cover token capture, URL scrubbing, authenticated accept, authenticated decline, and cleared token storage.
@@ -149,8 +155,9 @@ remain incomplete production-activation gates.
   substitutions, backorders, immutable-document downloads, operational queue
   filters, notification recovery, and stale-version/error recovery with mocked
   APIs.
-- [ ] Remaining Lab Operations workspace - cover role-specific navigation and
-  controls, list/detail loading, receipt/accession, protocol lifecycle,
+- [ ] Remaining Lab Operations workspace - cover role-specific controls,
+  the five-section operational sidebar with access administration omitted,
+  list/detail loading, receipt/accession, protocol lifecycle,
   the Phaeno Order Operations **Order intake** section and Open intake handoff
   for placed lab orders,
   including blocked pre-placement states and navigation to the existing work

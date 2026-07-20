@@ -99,12 +99,16 @@ public class AccountDomainTests
         var invitation = new OrganizationInvitation(
             Guid.NewGuid(),
             "person@example.com",
+            "Pat",
+            "Lee",
             isOrganizationAdmin: false,
             tokenHash: "hash",
             expiresAt: now.AddMinutes(-1));
 
         Assert.True(invitation.IsExpired(now));
         Assert.False(invitation.CanBeAccepted(now));
+        Assert.Equal("Pat", invitation.FirstName);
+        Assert.Equal("Lee", invitation.LastName);
     }
 
     [Fact]
@@ -114,6 +118,8 @@ public class AccountDomainTests
         var invitation = new OrganizationInvitation(
             Guid.NewGuid(),
             "person@example.com",
+            "Pat",
+            "Lee",
             isOrganizationAdmin: true,
             tokenHash: "hash",
             expiresAt: now.AddDays(1));
@@ -135,12 +141,16 @@ public class AccountDomainTests
         var declinedInvitation = new OrganizationInvitation(
             Guid.NewGuid(),
             "person@example.com",
+            "Pat",
+            "Lee",
             isOrganizationAdmin: false,
             tokenHash: "decline-hash",
             expiresAt: now.AddDays(1));
         var revokedInvitation = new OrganizationInvitation(
             Guid.NewGuid(),
             "other@example.com",
+            "Other",
+            "Person",
             isOrganizationAdmin: false,
             tokenHash: "revoke-hash",
             expiresAt: now.AddDays(1));

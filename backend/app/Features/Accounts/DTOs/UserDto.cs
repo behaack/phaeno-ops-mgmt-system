@@ -1,6 +1,7 @@
 namespace PhaenoPortal.App.Features.Accounts.DTOs;
 
 using PSeq.Operations.Commercial.Accounts.Domain;
+using PSeq.Operations.Laboratory.Domain;
 
 /// <summary>
 /// Response DTO for user information.
@@ -94,4 +95,38 @@ public sealed record OrganizationMembershipDto
     public required DateTime UpdatedAt { get; init; }
 
     public required long Version { get; init; }
+}
+
+public sealed record PhaenoUserAdministrationDto
+{
+    public required Guid Id { get; init; }
+
+    public required string Email { get; init; }
+
+    public required string FirstName { get; init; }
+
+    public required string LastName { get; init; }
+
+    public required bool IsActive { get; init; }
+
+    public required UserAccountStatus Status { get; init; }
+
+    public required bool IsPlatformAdministrator { get; init; }
+
+    public required Guid MembershipId { get; init; }
+
+    public required long UserVersion { get; init; }
+
+    public required long MembershipVersion { get; init; }
+
+    public required IReadOnlyList<PhaenoLabRoleStateDto> LabRoles { get; init; }
+}
+
+public sealed record PhaenoLabRoleStateDto
+{
+    public required LabRole Role { get; init; }
+
+    public required bool IsActive { get; init; }
+
+    public long? Version { get; init; }
 }

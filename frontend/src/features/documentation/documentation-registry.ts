@@ -83,7 +83,7 @@ export const documentationEntries: readonly DocumentationEntry[] = [
       'Confirm the current organization, understand Prospect access, and find granted data.',
     section: 'Basics',
     order: 10,
-    reviewedAt: '2026-07-16',
+    reviewedAt: '2026-07-20',
     Content: ProspectGettingStarted,
   },
   {
@@ -95,7 +95,7 @@ export const documentationEntries: readonly DocumentationEntry[] = [
       'Accept invitations, confirm the current organization, understand roles, and resolve access problems.',
     section: 'Basics',
     order: 20,
-    reviewedAt: '2026-07-16',
+    reviewedAt: '2026-07-20',
     Content: ProspectAccountAndAccess,
   },
   {
@@ -131,7 +131,7 @@ export const documentationEntries: readonly DocumentationEntry[] = [
       'Understand membership boundaries and what changes when Phaeno converts a Prospect relationship.',
     section: 'Organization',
     order: 50,
-    reviewedAt: '2026-07-16',
+    reviewedAt: '2026-07-20',
     Content: ProspectOrganizationAndTransition,
   },
   {
@@ -154,7 +154,7 @@ export const documentationEntries: readonly DocumentationEntry[] = [
     summary: 'Confirm the current organization, understand access, and find Customer work.',
     section: 'Basics',
     order: 10,
-    reviewedAt: '2026-07-16',
+    reviewedAt: '2026-07-20',
     Content: CustomerGettingStarted,
   },
   {
@@ -165,7 +165,7 @@ export const documentationEntries: readonly DocumentationEntry[] = [
     summary: 'Accept invitations, confirm the current organization, understand roles, and resolve access problems.',
     section: 'Basics',
     order: 20,
-    reviewedAt: '2026-07-16',
+    reviewedAt: '2026-07-20',
     Content: CustomerAccountAndAccess,
   },
   {
@@ -231,7 +231,7 @@ export const documentationEntries: readonly DocumentationEntry[] = [
     summary: 'Accept invitations, confirm the current Partner, understand roles, and resolve access problems.',
     section: 'Basics',
     order: 20,
-    reviewedAt: '2026-07-16',
+    reviewedAt: '2026-07-20',
     Content: PartnerAccountAndAccess,
   },
   {
@@ -286,7 +286,7 @@ export const documentationEntries: readonly DocumentationEntry[] = [
     summary: 'Select the Phaeno workspace, find operational tools, and support users safely.',
     section: 'Basics',
     order: 10,
-    reviewedAt: '2026-07-17',
+    reviewedAt: '2026-07-20',
     Content: PhaenoGettingStarted,
   },
   {
@@ -297,7 +297,7 @@ export const documentationEntries: readonly DocumentationEntry[] = [
     summary: 'Manage organizations, Portal requests, readiness, service entitlements, invitations, and access.',
     section: 'Platform operations',
     order: 20,
-    reviewedAt: '2026-07-16',
+    reviewedAt: '2026-07-20',
     Content: PhaenoOrganizationAndUserAdministration,
   },
   {
@@ -448,12 +448,12 @@ export const documentationEntries: readonly DocumentationEntry[] = [
     audience: 'phaeno',
     locale: null,
     slug: 'lab-operations',
-    overviewTitle: 'Overview and access',
+    overviewTitle: 'Overview',
     title: 'Laboratory operations',
     summary: 'Accession specimens, execute controlled protocols, manage batches and sendouts, and record scientific release readiness.',
     section: 'Laboratory operations',
     order: 50,
-    reviewedAt: '2026-07-16',
+    reviewedAt: '2026-07-20',
     Content: PhaenoLabOperations,
   },
   {

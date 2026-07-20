@@ -13,6 +13,7 @@ public static class AccountAudit
     public const string InviteAccepted = nameof(InviteAccepted);
     public const string UserDisabled = nameof(UserDisabled);
     public const string UserReactivated = nameof(UserReactivated);
+    public const string UserProfileUpdated = nameof(UserProfileUpdated);
     public const string OrganizationDeactivated = nameof(OrganizationDeactivated);
     public const string OrganizationReactivated = nameof(OrganizationReactivated);
     public const string ProspectConverted = nameof(ProspectConverted);

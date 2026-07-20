@@ -117,6 +117,7 @@ public sealed class PSeqOperationsDbContext(
     public DbSet<LabScientificApproval> LabScientificApprovals { get; set; }
     public DbSet<LabProviderCommandReceipt> LabProviderCommandReceipts { get; set; }
     public DbSet<LabRoleAssignment> LabRoleAssignments { get; set; }
+    public DbSet<LabRoleInvitationIntent> LabRoleInvitationIntents { get; set; }
     public DbSet<LabContainer> LabContainers { get; set; }
     public DbSet<LabProtocol> LabProtocols { get; set; }
     public DbSet<LabProtocolVersion> LabProtocolVersions { get; set; }
@@ -241,6 +242,8 @@ public sealed class PSeqOperationsDbContext(
             entity.HasKey(e => e.Id);
             entity.Property(e => e.Email).IsRequired().HasMaxLength(255);
             entity.Property(e => e.NormalizedEmail).IsRequired().HasMaxLength(255);
+            entity.Property(e => e.FirstName).IsRequired().HasMaxLength(100);
+            entity.Property(e => e.LastName).IsRequired().HasMaxLength(100);
             entity.Property(e => e.IsOrganizationAdmin).IsRequired();
             entity.Property(e => e.TokenHash).IsRequired().HasMaxLength(512);
             entity.Property(e => e.ExpiresAt).IsRequired();

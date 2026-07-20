@@ -181,12 +181,18 @@ Partner reagent ordering, Partner data assembly, Phaeno order operations and
 configuration, dedicated Phaeno Lab operations list/detail workspaces, and the
 in-portal documentation system.
 
-Invitation acceptance and the scientific, provisioning, order, and organization
-administration workflows use connected API clients. The standalone user
-administration screen still uses session-only mock data; it demonstrates the
-intended authorization and UI boundary but is not a durable administration
-client. Organization workspaces use the backend account APIs for durable
-organization, request, entitlement, membership, and invitation changes.
+Invitation acceptance and the scientific, provisioning, order, organization,
+and user-administration workflows use connected API clients. Phaeno User
+management projects the internal organization membership and additive
+Laboratory role assignments into one user record, while preserving their
+separate owning schemas and authorization rules. Organization workspaces use
+the backend account APIs for durable organization, request, entitlement,
+membership, invitation, and member-role changes.
+
+Organization invitations persist the invited first and last name. Phaeno
+invitations additionally persist intended Laboratory roles in the Laboratory
+schema. Those intents grant no access while pending; invitation acceptance
+activates them in the same transaction as the Phaeno membership.
 
 User documentation is authored as portable MDX. Prospect, Customer, and Partner
 content is stored by locale, with `en-US` as the only current locale;

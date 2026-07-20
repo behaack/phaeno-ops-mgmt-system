@@ -7,8 +7,8 @@
 - `docs/plans/AUTH-USER-SYSTEM-PLAN.md`: implemented backend account,
   invitation, authorization, bootstrap, and audit behavior; invitation
   acceptance and the Phaeno organization list/detail, request, entitlement,
-  invitation, membership, conversion, and lifecycle workspaces are connected.
-  The standalone global User management screen remains a session-only preview.
+  invitation, membership, conversion, lifecycle, and consolidated User
+  management workspaces are connected to durable APIs.
 - `docs/plans/FILE-MANAGEMENT-PLAN.md`: storage abstraction, folders, versions, retention, and download audit.
 - `docs/plans/ORDER-MANAGEMENT-PLAN.md`: implemented Customer laboratory,
   Partner reagent, Partner data-assembly, and Phaeno operations/configuration

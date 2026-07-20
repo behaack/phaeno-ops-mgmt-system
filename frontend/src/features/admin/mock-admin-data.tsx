@@ -7,8 +7,6 @@ import {
 } from 'react'
 
 export type CustomerStatus = 'Active' | 'Review' | 'Inactive'
-export type ManagedUserStatus = 'Active' | 'Invited' | 'Inactive'
-
 export type CustomerRecord = {
   id: string
   name: string
@@ -21,36 +19,16 @@ export type CustomerRecord = {
   lastReview: string
 }
 
-export type ManagedUser = {
-  id: string
-  customerId?: string
-  firstName: string
-  lastName: string
-  email: string
-  roles: string[]
-  status: ManagedUserStatus
-}
-
 type CustomerInput = Omit<CustomerRecord, 'id' | 'users' | 'lastReview'> & {
   users?: number
   lastReview?: string
 }
 
-type UserInput = Omit<ManagedUser, 'id' | 'customerId' | 'status'>
-
 type MockAdminDataContextValue = {
   customers: CustomerRecord[]
-  phaenoUsers: ManagedUser[]
-  customerUsers: ManagedUser[]
   addCustomer: (customer: CustomerInput) => string
   updateCustomer: (customerId: string, customer: CustomerInput) => void
   deactivateCustomer: (customerId: string) => void
-  addPhaenoUser: (user: UserInput) => void
-  updatePhaenoUser: (userId: string, user: UserInput) => void
-  deactivatePhaenoUser: (userId: string) => void
-  addCustomerUser: (customerId: string, user: UserInput) => void
-  updateCustomerUser: (userId: string, user: UserInput) => void
-  deactivateCustomerUser: (userId: string) => void
 }
 
 const MockAdminDataContext =
@@ -103,94 +81,12 @@ const initialCustomers: CustomerRecord[] = [
   },
 ]
 
-const initialPhaenoUsers: ManagedUser[] = [
-  {
-    id: 'phaeno-bill-haack',
-    firstName: 'Bill',
-    lastName: 'Haack',
-    email: 'bill.haack@phaeno.com',
-    roles: ['Platform admin'],
-    status: 'Active',
-  },
-  {
-    id: 'phaeno-morgan-ellis',
-    firstName: 'Morgan',
-    lastName: 'Ellis',
-    email: 'morgan.ellis@phaeno.com',
-    roles: ['Operations admin'],
-    status: 'Invited',
-  },
-  {
-    id: 'phaeno-priya-shah',
-    firstName: 'Priya',
-    lastName: 'Shah',
-    email: 'priya.shah@phaeno.com',
-    roles: ['Customer manager'],
-    status: 'Active',
-  },
-]
-
-const initialCustomerUsers: ManagedUser[] = [
-  {
-    id: 'northline-admin',
-    customerId: 'northline-labs',
-    firstName: 'Northline',
-    lastName: 'Admin',
-    email: 'admin@northlinelabs.example',
-    roles: ['Organization admin'],
-    status: 'Active',
-  },
-  {
-    id: 'northline-jordan',
-    customerId: 'northline-labs',
-    firstName: 'Jordan',
-    lastName: 'Lee',
-    email: 'jordan.lee@northlinelabs.example',
-    roles: ['Member'],
-    status: 'Active',
-  },
-  {
-    id: 'northline-sam',
-    customerId: 'northline-labs',
-    firstName: 'Sam',
-    lastName: 'Rivera',
-    email: 'sam.rivera@northlinelabs.example',
-    roles: ['Member'],
-    status: 'Invited',
-  },
-  {
-    id: 'valley-admin',
-    customerId: 'valley-diagnostics',
-    firstName: 'Valley',
-    lastName: 'Admin',
-    email: 'admin@valleydiagnostics.example',
-    roles: ['Organization admin'],
-    status: 'Active',
-  },
-  {
-    id: 'summit-admin',
-    customerId: 'summit-pathology',
-    firstName: 'Summit',
-    lastName: 'Admin',
-    email: 'admin@summitpathology.example',
-    roles: ['Organization admin'],
-    status: 'Active',
-  },
-]
-
 export function MockAdminDataProvider({ children }: { children: ReactNode }) {
   const [customers, setCustomers] = useState<CustomerRecord[]>(initialCustomers)
-  const [phaenoUsers, setPhaenoUsers] =
-    useState<ManagedUser[]>(initialPhaenoUsers)
-  const [customerUsers, setCustomerUsers] = useState<ManagedUser[]>(
-    initialCustomerUsers,
-  )
 
   const contextValue = useMemo<MockAdminDataContextValue>(
     () => ({
       customers,
-      phaenoUsers,
-      customerUsers,
       addCustomer(customer) {
         const id = uniqueSlug(customer.name, customers.map((item) => item.id))
         setCustomers((currentCustomers) => [
@@ -217,57 +113,8 @@ export function MockAdminDataProvider({ children }: { children: ReactNode }) {
           ),
         )
       },
-      addPhaenoUser(user) {
-        setPhaenoUsers((currentUsers) => [
-          ...currentUsers,
-          {
-            ...user,
-            id: uniqueSlug(user.email, currentUsers.map((item) => item.id)),
-            status: 'Invited',
-          },
-        ])
-      },
-      updatePhaenoUser(userId, user) {
-        setPhaenoUsers((currentUsers) =>
-          currentUsers.map((currentUser) =>
-            currentUser.id === userId ? { ...currentUser, ...user } : currentUser,
-          ),
-        )
-      },
-      deactivatePhaenoUser(userId) {
-        setPhaenoUsers((currentUsers) =>
-          currentUsers.map((user) =>
-            user.id === userId ? { ...user, status: 'Inactive' } : user,
-          ),
-        )
-      },
-      addCustomerUser(customerId, user) {
-        setCustomerUsers((currentUsers) => [
-          ...currentUsers,
-          {
-            ...user,
-            customerId,
-            id: uniqueSlug(user.email, currentUsers.map((item) => item.id)),
-            status: 'Invited',
-          },
-        ])
-      },
-      updateCustomerUser(userId, user) {
-        setCustomerUsers((currentUsers) =>
-          currentUsers.map((currentUser) =>
-            currentUser.id === userId ? { ...currentUser, ...user } : currentUser,
-          ),
-        )
-      },
-      deactivateCustomerUser(userId) {
-        setCustomerUsers((currentUsers) =>
-          currentUsers.map((user) =>
-            user.id === userId ? { ...user, status: 'Inactive' } : user,
-          ),
-        )
-      },
     }),
-    [customerUsers, customers, phaenoUsers],
+    [customers],
   )
 
   return (

@@ -167,7 +167,9 @@ export function getVisibleMainMenuItems(
 
 export function canManagePhaenoUsers(session: SessionResponse | null) {
   return (
-    isPhaenoEmployee(session) && Boolean(session?.capabilities.canManageAllUsers)
+    isPhaenoEmployee(session) &&
+    (Boolean(session?.capabilities.canManageAllUsers) ||
+      Boolean(session?.capabilities.canManageLabAccess))
   )
 }
 

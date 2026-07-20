@@ -2,11 +2,15 @@
 
 Phaeno administrators manage organizations, Portal readiness, service entitlements, integration requests, and global access. Prospect, Customer, and Partner administrators manage membership only within their own organization. Access is invitation-based and every durable administrative change is audited.
 
-## Know which administration surface is durable
+## Know which administration surface owns each record
 
 The **Accounts** directory and each account workspace are connected to the durable API. The directory contains Prospect, Customer, and Partner accounts; it does not contain the internal Phaeno organization. Changes to account details, Portal requests, service entitlements, members, and invitations made in those workspaces persist and are audited.
 
-The standalone **User management** screen remains a session-only preview. Additions, role changes, deactivations, and reactivations made there do not persist. Use the connected organization workspace for organization-scoped members and invitations. Treat a global user lifecycle change as an authorized Phaeno support task until the standalone screen is connected; never tell a user that a preview-only change completed their request.
+**User management** is also connected to durable account APIs. In the Phaeno context, active accounts and invited people appear in one list alongside global account status and every enforced Phaeno role. A **Pending invitation** status means the recipient has not completed account registration. Open a card’s actions menu to edit or deactivate an active user, reactivate a disabled user, or resend or revoke a pending invitation. Edit one active user to update their name, Platform administrator assignment, and additive laboratory roles together. Platform administrators retain bootstrap access to every laboratory capability even when no explicit laboratory role is assigned.
+
+The role picker contains only roles enforced by the current authorization model: **Platform administrator**, **Lab operator**, **Lab supervisor**, **Protocol administrator**, **Scientific reviewer**, and **Lab operations administrator**. Authentication-provider metadata and unsupported job-title labels do not grant Portal access.
+
+Cards marked **Pending invitation** still represent invitation records, not accepted user records. Enter the person’s first name, last name, and exact sign-in email, then select the Platform administrator and additive laboratory roles they should receive. The pending role intent grants no access. It becomes active only when the recipient accepts and becomes an active Phaeno member.
 
 ## Review and maintain accounts
 
@@ -41,7 +45,9 @@ From the account details page, use **Manage users** or open the **Users** tab. E
 
 Do not create a normal membership directly. Invitation acceptance provides the user-facing consent point and the audit link between invitation, user, and membership.
 
-Resending a pending invitation rotates its private link and is subject to a cooldown. Revoke an invitation that should not be accepted. Never copy invitation tokens into tickets, documentation, or logs.
+For an internal employee, select the Phaeno organization and open **User management**. Use **Add Phaeno user**, enter the person’s first name, last name, and exact sign-in email, and select the narrowest roles needed for their work. Grant **Platform administrator** only when platform-wide administration is required. The card remains marked **Pending invitation** until acceptance; afterward, open its actions menu and choose **Edit** whenever the profile or roles must change.
+
+To follow up before acceptance, find the card marked **Pending invitation**, open its actions menu, and choose **Resend invitation**. Resending rotates the private link and is subject to a cooldown. Revoke an invitation that should not be accepted. Never copy invitation tokens into tickets, documentation, or logs.
 
 ## Convert a Prospect
 
@@ -69,7 +75,7 @@ PSeq Kit includes kit fulfillment followed by data submission and assembly. Do n
 
 Deactivate a membership in the connected organization workspace to remove one organization relationship. Deactivate an organization when none of its memberships should be usable. Each action opens a consequence dialog; verify the named organization or person before confirming.
 
-A deactivated membership is restored through a fresh invitation and acceptance. When all portal access must stop, coordinate the durable global user change through the authorized Phaeno support process rather than the preview-only **User management** screen. A globally disabled user must be reactivated through that same authorized process before membership access can resume. Preserve historical records; do not delete users, memberships, or organizations to resolve access problems.
+A deactivated membership is restored through a fresh invitation and acceptance. When all Portal access must stop, select **Deactivate** on the Phaeno user and confirm the named person. The account, memberships, assigned roles, and audit history remain, but the user immediately loses effective access. Use **Reactivate** to restore an authorized disabled account; then review its memberships and roles before considering access complete. Preserve historical records; do not delete users, memberships, or organizations to resolve access problems.
 
 ## Triage access safely
 

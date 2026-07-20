@@ -17,6 +17,10 @@ public sealed class OrganizationInvitation : IAudit, IConcurrency
 
     public string NormalizedEmail { get; private set; } = null!;
 
+    public string FirstName { get; private set; } = null!;
+
+    public string LastName { get; private set; } = null!;
+
     public bool IsOrganizationAdmin { get; private set; }
 
     public string TokenHash { get; private set; } = null!;
@@ -64,12 +68,15 @@ public sealed class OrganizationInvitation : IAudit, IConcurrency
     public OrganizationInvitation(
         Guid organizationId,
         string email,
+        string firstName,
+        string lastName,
         bool isOrganizationAdmin,
         string tokenHash,
         DateTime expiresAt)
     {
         OrganizationId = organizationId;
         SetEmail(email);
+        SetInviteeName(firstName, lastName);
         IsOrganizationAdmin = isOrganizationAdmin;
         TokenHash = tokenHash;
         ExpiresAt = expiresAt;
@@ -96,13 +103,17 @@ public sealed class OrganizationInvitation : IAudit, IConcurrency
         ExpiresAt = expiresAt;
     }
 
-    public void UpdateIntendedMembership(bool isOrganizationAdmin)
+    public void UpdateIntent(
+        string firstName,
+        string lastName,
+        bool isOrganizationAdmin)
     {
         if (Status != InvitationStatus.Pending)
         {
             throw new InvalidOperationException("Only pending invitations can be updated.");
         }
 
+        SetInviteeName(firstName, lastName);
         IsOrganizationAdmin = isOrganizationAdmin;
     }
 
@@ -172,5 +183,23 @@ public sealed class OrganizationInvitation : IAudit, IConcurrency
     {
         Email = email.Trim();
         NormalizedEmail = User.NormalizeEmail(email);
+    }
+
+    private void SetInviteeName(string firstName, string lastName)
+    {
+        FirstName = RequiredName(firstName, nameof(firstName));
+        LastName = RequiredName(lastName, nameof(lastName));
+    }
+
+    private static string RequiredName(string value, string parameterName)
+    {
+        var normalized = string.IsNullOrWhiteSpace(value)
+            ? throw new ArgumentException("A value is required.", parameterName)
+            : value.Trim();
+        return normalized.Length <= 100
+            ? normalized
+            : throw new ArgumentException(
+                "The value cannot exceed 100 characters.",
+                parameterName);
     }
 }

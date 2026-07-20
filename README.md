@@ -241,7 +241,8 @@ boundary.
   - Invitations are organization-scoped, email-bound, time-limited, and carry a single-use raw token only in the invitation link.
   - The invite page captures and scrubs the token, requires Clerk authentication, then verifies the authenticated email before showing organization or role details.
   - Acceptance creates or reactivates one internal organization membership; it does not collect or store a portal password.
-  - The authorization model permits eligible external organization administrators to manage invitations and memberships only for their selected organization, while authorized Phaeno users manage organizations and platform access. Phaeno organization workspaces are connected to the durable organization, invitation, membership, and entitlement APIs; the standalone User management screen remains a session-only preview.
+  - Invitations retain the invited first name, last name, and membership role. Phaeno invitations also retain intended additive Laboratory roles, which become active only after acceptance.
+  - The authorization model permits eligible external organization administrators to manage invitations and memberships only for their selected organization, while authorized Phaeno users manage organizations and platform access. User management is connected to the durable account and Laboratory-role records: Phaeno invitations and edits consolidate Platform administrator and additive laboratory roles, while external user edits remain scoped to the selected organization membership.
   - Users and organizations are deactivated rather than normally deleted. Reactivating an inactive membership requires a fresh invitation.
 - **Authentication**: Clerk-issued bearer JWTs validated by the ASP.NET Core API.
 - **Multi-factor authentication**: Owned by the configured Clerk authentication policy; the portal does not implement or claim a separate 2FA system.

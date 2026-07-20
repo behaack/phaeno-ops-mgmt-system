@@ -116,6 +116,15 @@ public static class LabOperationsModelConfiguration
             entity.HasIndex(e => new { e.UserId, e.Role }).IsUnique();
         });
 
+        modelBuilder.Entity<LabRoleInvitationIntent>(entity =>
+        {
+            entity.ToTable("lab_role_invitation_intents", laboratorySchema);
+            entity.HasKey(e => e.Id);
+            ConfigureAudited(entity);
+            entity.Property(e => e.Role).HasConversion<string>().HasMaxLength(50).IsRequired();
+            entity.HasIndex(e => new { e.OrganizationInvitationId, e.Role }).IsUnique();
+        });
+
         modelBuilder.Entity<LabContainer>(entity =>
         {
             entity.ToTable("lab_containers", laboratorySchema);

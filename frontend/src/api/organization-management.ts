@@ -126,12 +126,42 @@ export type OrganizationUser = {
   version: number
 }
 
+export type LabRole =
+  | 'Operator'
+  | 'Supervisor'
+  | 'ProtocolAdministrator'
+  | 'ScientificReviewer'
+  | 'OperationsAdministrator'
+
+export type PhaenoLabRoleState = {
+  role: LabRole
+  isActive: boolean
+  version: number | null
+}
+
+export type PhaenoUser = {
+  id: string
+  email: string
+  firstName: string
+  lastName: string
+  isActive: boolean
+  status: 'Invited' | 'Active' | 'Disabled'
+  isPlatformAdministrator: boolean
+  membershipId: string
+  userVersion: number
+  membershipVersion: number
+  labRoles: PhaenoLabRoleState[]
+}
+
 export type Invitation = {
   id: string
   organizationId: string
   organizationName: string | null
   email: string
+  firstName: string
+  lastName: string
   isOrganizationAdmin: boolean
+  labRoles: LabRole[]
   status: 'Pending' | 'Accepted' | 'Revoked' | 'Declined'
   isExpired: boolean
   expiresAt: string
@@ -353,6 +383,33 @@ export async function listOrganizationUsers(organizationId: string) {
   return response.data
 }
 
+export async function listPhaenoUsers() {
+  const response = await api.get<PhaenoUser[]>('/users/phaeno')
+  return response.data
+}
+
+export async function updatePhaenoUser(
+  id: string,
+  input: {
+    firstName: string
+    lastName: string
+    isPlatformAdministrator: boolean
+    userVersion: number
+    membershipVersion: number
+    labRoles: PhaenoLabRoleState[]
+  },
+) {
+  const response = await api.put<PhaenoUser>(`/users/${id}/phaeno`, input)
+  return response.data
+}
+
+export async function setUserActive(id: string, active: boolean) {
+  const response = await api.post<OrganizationUser>(
+    `/users/${id}/${active ? 'reactivate' : 'disable'}`,
+  )
+  return response.data
+}
+
 export async function listInvitations(organizationId: string) {
   const response = await api.get<Invitation[]>('/invitations', {
     params: { organizationId, includeExpired: true },
@@ -362,8 +419,11 @@ export async function listInvitations(organizationId: string) {
 
 export async function createInvitation(input: {
   organizationId: string
+  firstName: string
+  lastName: string
   email: string
   isOrganizationAdmin: boolean
+  labRoles: LabRole[]
 }) {
   const response = await api.post<Invitation>('/invitations', input)
   return response.data
@@ -371,6 +431,11 @@ export async function createInvitation(input: {
 
 export async function revokeInvitation(id: string) {
   const response = await api.post<Invitation>(`/invitations/${id}/revoke`)
+  return response.data
+}
+
+export async function resendInvitation(id: string) {
+  const response = await api.post<Invitation>(`/invitations/${id}/resend`)
   return response.data
 }
 

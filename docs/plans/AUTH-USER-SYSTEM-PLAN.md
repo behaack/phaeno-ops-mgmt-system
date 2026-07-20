@@ -23,10 +23,16 @@ Do not execute this plan unless explicitly requested.
   alongside Order Operations and Lab Operations. This is a layout mock-up, not
   a connected account queue or authorization change.
 - The Phaeno Accounts list/detail, request, entitlement, invitation,
-  membership, conversion, readiness, and lifecycle workspaces are connected to
-  durable APIs. The standalone global User management screen remains a
-  session-only preview; global-user lifecycle operations still require a
-  connected frontend and coverage.
+  membership, conversion, readiness, lifecycle, and User management workspaces
+  are connected to durable APIs. Phaeno User management lists active and
+  disabled internal users plus pending invitations as one card list, edits
+  names, consolidates Platform administrator and additive Laboratory roles on
+  the user record, and exposes audited global deactivation/reactivation.
+  Pending invitations persist the invited first name, last name, and intended
+  Phaeno roles. Laboratory roles activate atomically only after acceptance
+  creates or reactivates an eligible Phaeno membership. The unsupported
+  mock-only Operations admin and Customer manager labels were removed rather
+  than represented as effective authorization.
 - The standard Accounts workspace is an external-account review and operations
   surface. It does not expose direct account creation or manual request intake;
   ordinary onboarding will arrive from HubSpot, while any future manual
@@ -111,8 +117,10 @@ Do not execute this plan unless explicitly requested.
 ## Invitation Model
 
 - v1 is admin-created invite only.
-- Invitations are pending organization memberships for an email.
-- Invite flow is email-first only. Admins enter email, organization, and intended member/admin capability.
+- Invitations are pending organization memberships for a named person and email.
+- Admins enter first name, last name, email, organization, and intended
+  member/admin capability. Phaeno invitations also carry zero or more intended
+  Laboratory roles.
 - Backend resolves existing users by normalized email.
 - One invite token accepts exactly one organization membership.
 - A user needs separate invites for separate organization memberships.
@@ -161,6 +169,7 @@ Do not execute this plan unless explicitly requested.
   - validate invite
   - create or link local user if needed
   - create, reactivate, or update the organization membership
+  - activate any intended Phaeno Laboratory roles
   - mark invite accepted
   - write audit events
   - commit
@@ -400,6 +409,12 @@ Do not execute this plan unless explicitly requested.
       contract and no order endpoint is exposed to Prospect users.
 - [x] Replace the mock Phaeno organization directory/detail with the durable
       organization, invitation, and membership APIs.
+- [x] Replace mock User management with durable Phaeno/external member lists,
+      invitation lifecycle actions, global user lifecycle actions, and
+      consolidated Phaeno platform/Laboratory role editing.
+- [x] Persist invited names and intended Phaeno Laboratory roles, display them
+      on the pending user card, and activate the roles only during accepted
+      Phaeno membership creation/reactivation.
 - [x] Add operational Portal readiness without treating readiness as access or
       service authorization.
 - [x] Add the Phaeno relationship-request queue and dated service-entitlement

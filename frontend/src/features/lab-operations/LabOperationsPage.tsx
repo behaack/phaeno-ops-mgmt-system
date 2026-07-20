@@ -1,6 +1,6 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { Link } from '@tanstack/react-router'
-import { BookOpenCheck, ClipboardList, FlaskConical, Layers3, Microscope, Plus, RefreshCw, ShieldCheck } from 'lucide-react'
+import { BookOpenCheck, ClipboardList, FlaskConical, Layers3, Microscope, Plus, RefreshCw } from 'lucide-react'
 import { useState, type FormEvent } from 'react'
 
 import {
@@ -11,7 +11,6 @@ import {
   getLabOperationsError,
   recordLabMaterialQc,
   recordLabCustody,
-  setLabRole,
   transitionLabBatch,
   transitionLabProtocolVersion,
   transitionLabSendout,
@@ -19,7 +18,6 @@ import {
   type LabMaterialLot,
   type LabProtocol,
 } from '#/api/lab-operations'
-import { listOrganizationUsers } from '#/api/organization-management'
 import { Alert, AlertDescription, AlertTitle } from '#/components/ui/alert'
 import { WorkspaceSidebar, type WorkspaceSidebarItem } from '#/components/WorkspaceSidebar'
 import { Button } from '#/components/ui/button'
@@ -33,9 +31,9 @@ import { LabBarcodeLookup, LabBatchBarcodeScanner } from './LabBarcodeScanner'
 import { EquipmentCreateDialog } from './EquipmentCreateDialog'
 import { MaterialLotCreateDialog } from './MaterialLotCreateDialog'
 
-type CreateKind = 'protocol' | 'material' | 'equipment' | 'batch' | 'role' | null
+type CreateKind = 'protocol' | 'material' | 'equipment' | 'batch' | null
 type SimpleCreateKind = Exclude<CreateKind, 'material' | 'equipment'>
-export type LabSection = 'work' | 'protocols' | 'materials' | 'equipment' | 'batches' | 'access'
+export type LabSection = 'work' | 'protocols' | 'materials' | 'equipment' | 'batches'
 
 const labSections: ReadonlyArray<WorkspaceSidebarItem<LabSection>> = [
   { value: 'work', label: 'Work', description: 'Authorized work and specimen progress', icon: ClipboardList },
@@ -43,21 +41,15 @@ const labSections: ReadonlyArray<WorkspaceSidebarItem<LabSection>> = [
   { value: 'materials', label: 'Materials', description: 'Lots, prepared reagents, and QC', icon: FlaskConical },
   { value: 'equipment', label: 'Equipment', description: 'Assets, availability, and calibration', icon: Microscope },
   { value: 'batches', label: 'Batches', description: 'Operational and sequencing batches', icon: Layers3 },
-  { value: 'access', label: 'Access', description: 'Laboratory roles and permissions', icon: ShieldCheck },
 ]
 
 export function LabOperationsPage({ section, onSectionChange }: { section: LabSection; onSectionChange: (section: LabSection) => void }) {
-  const { authProvider, session, selectedOrganizationId } = usePhaenoSession()
+  const { authProvider, session } = usePhaenoSession()
   const canView = Boolean(session?.capabilities.canManageLabOperations)
   const apiEnabled = canView && authProvider !== 'mock'
   const queryClient = useQueryClient()
   const [createKind, setCreateKind] = useState<CreateKind>(null)
   const dashboard = useQuery({ queryKey: ['lab-operations'], queryFn: getLabOperationsDashboard, enabled: apiEnabled })
-  const users = useQuery({
-    queryKey: ['lab-operations', 'users', selectedOrganizationId],
-    queryFn: () => listOrganizationUsers(selectedOrganizationId!),
-    enabled: apiEnabled && Boolean(selectedOrganizationId) && Boolean(session?.capabilities.canManageLabAccess),
-  })
   const refresh = () => queryClient.invalidateQueries({ queryKey: ['lab-operations'] })
 
   if (!canView) return <AccessDenied />
@@ -91,7 +83,6 @@ export function LabOperationsPage({ section, onSectionChange }: { section: LabSe
           {dashboard.data && section === 'materials' ? <MaterialList items={dashboard.data.materialLots} canManage={Boolean(session?.capabilities.canOperateLabWork)} canApprove={Boolean(session?.capabilities.canSuperviseLabWork)} onCreate={() => setCreateKind('material')} refresh={refresh} /> : null}
           {dashboard.data && section === 'equipment' ? <EquipmentList items={dashboard.data.equipment} canManage={Boolean(session?.capabilities.canSuperviseLabWork)} onCreate={() => setCreateKind('equipment')} /> : null}
           {dashboard.data && section === 'batches' ? <BatchList items={dashboard.data.batches} canManage={Boolean(session?.capabilities.canOperateLabWork)} onCreate={() => setCreateKind('batch')} refresh={refresh} /> : null}
-          {dashboard.data && section === 'access' ? <AccessList assignments={dashboard.data.roleAssignments} canManage={Boolean(session?.capabilities.canManageLabAccess)} onCreate={() => setCreateKind('role')} refresh={refresh} /> : null}
           {dashboard.data ? (
             <MaterialLotCreateDialog
               open={createKind === 'material'}
@@ -125,7 +116,6 @@ export function LabOperationsPage({ section, onSectionChange }: { section: LabSe
           ) : null}
           <CreateRecordDialog
             kind={createKind === 'material' || createKind === 'equipment' ? null : createKind}
-            users={users.data ?? []}
             onClose={() => setCreateKind(null)}
             onSaved={async () => {
               setCreateKind(null)
@@ -767,32 +757,25 @@ function BatchList({ items, canManage, onCreate, refresh }: { items: Awaited<Ret
     </>
   )
 }
-function AccessList({ assignments, canManage, onCreate, refresh }: { assignments: Awaited<ReturnType<typeof getLabOperationsDashboard>>['roleAssignments']; canManage: boolean; onCreate: () => void; refresh: () => Promise<unknown> }) {
-  const toggle = useMutation({ mutationFn: (item: typeof assignments[number]) => setLabRole(item.userId, item.role, { isActive: !item.isActive, version: item.version }), onSuccess: refresh })
-  return <Card><CardHeader><div className="flex items-start justify-between gap-3"><div><CardTitle>Laboratory roles</CardTitle><CardDescription>Roles are additive and internal to Phaeno; platform administrators retain bootstrap access.</CardDescription></div>{canManage ? <Button type="button" onClick={onCreate}><Plus data-icon="inline-start" /> Assign role</Button> : null}</div></CardHeader><CardContent><div className="divide-y">{assignments.map((item) => <div key={item.id} className="flex items-center justify-between gap-3 py-3"><div><p className="font-medium">{item.userName}</p><p className="text-xs text-muted-foreground">{item.email} · {humanize(item.role)}</p></div><div className="flex items-center gap-2"><Status value={item.isActive ? 'Active' : 'Inactive'} />{canManage ? <Button type="button" size="sm" variant="outline" disabled={toggle.isPending} onClick={() => toggle.mutate(item)}>{item.isActive ? 'Deactivate' : 'Reactivate'}</Button> : null}</div></div>)}</div></CardContent></Card>
-}
-
-function CreateRecordDialog({ kind, users, onClose, onSaved }: { kind: SimpleCreateKind; users: Array<{ id: string; firstName: string; lastName: string; email: string }>; onClose: () => void; onSaved: () => Promise<unknown> }) {
+function CreateRecordDialog({ kind, onClose, onSaved }: { kind: SimpleCreateKind; onClose: () => void; onSaved: () => Promise<unknown> }) {
   const [form, setForm] = useState<Record<string, string>>({})
   const mutation = useMutation({ mutationFn: async () => {
     if (kind === 'protocol') return createLabProtocol({ name: form.name, description: form.description })
     if (kind === 'batch') return createLabBatch({ name: form.name, notes: form.notes || null })
-    if (kind === 'role') return setLabRole(form.userId, form.role || 'Operator', { isActive: true })
     throw new Error('Choose a record type.')
   }, onSuccess: async () => { setForm({}); await onSaved() } })
   const set = (key: string) => (event: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => setForm((current) => ({ ...current, [key]: event.target.value }))
   function submit(event: FormEvent) { event.preventDefault(); mutation.mutate() }
-  return <Dialog open={kind !== null} onOpenChange={(open) => !open && onClose()}><DialogContent><form onSubmit={submit}><DialogHeader><DialogTitle>{kind ? `Create ${humanize(kind)}` : 'Create record'}</DialogTitle><DialogDescription>{kind === 'protocol' ? 'Enter the controlled protocol details. POMS assigns its immutable key.' : kind === 'batch' ? 'Name the batch. POMS assigns its batch number and external sequencing type.' : 'Required fields are marked. Laboratory records remain internal to Phaeno.'}</DialogDescription></DialogHeader><div className="my-5 grid gap-4 sm:grid-cols-2">{kind === 'protocol' ? <><div className="sm:col-span-2"><Field label="Name" value={form.name} onChange={set('name')} required /></div><TextField label="Description" value={form.description} onChange={set('description')} /></> : null}{kind === 'batch' ? <><div className="sm:col-span-2"><Field label="Batch name" value={form.name} onChange={set('name')} required /></div><TextField label="Notes" value={form.notes} onChange={set('notes')} /></> : null}{kind === 'role' ? <><SelectField label="Phaeno user" value={form.userId || ''} onChange={set('userId')} options={users.map((user) => ({ value: user.id, label: `${user.firstName} ${user.lastName} · ${user.email}` }))} /><SelectField label="Role" value={form.role || 'Operator'} onChange={set('role')} options={['Operator', 'Supervisor', 'ProtocolAdministrator', 'ScientificReviewer', 'OperationsAdministrator']} /></> : null}</div>{mutation.error ? <Alert variant="destructive" className="mb-4"><AlertTitle>Record was not created</AlertTitle><AlertDescription>{getLabOperationsError(mutation.error, 'Check the entered values.')}</AlertDescription></Alert> : null}<DialogFooter><DialogClose asChild><Button type="button" variant="outline">Cancel</Button></DialogClose><Button type="submit" disabled={mutation.isPending}>{kind ? createActionLabel(kind) : 'Create'}</Button></DialogFooter></form></DialogContent></Dialog>
+  return <Dialog open={kind !== null} onOpenChange={(open) => !open && onClose()}><DialogContent><form onSubmit={submit}><DialogHeader><DialogTitle>{kind ? `Create ${humanize(kind)}` : 'Create record'}</DialogTitle><DialogDescription>{kind === 'protocol' ? 'Enter the controlled protocol details. POMS assigns its immutable key.' : kind === 'batch' ? 'Name the batch. POMS assigns its batch number and external sequencing type.' : 'Required fields are marked. Laboratory records remain internal to Phaeno.'}</DialogDescription></DialogHeader><div className="my-5 grid gap-4 sm:grid-cols-2">{kind === 'protocol' ? <><div className="sm:col-span-2"><Field label="Name" value={form.name} onChange={set('name')} required /></div><TextField label="Description" value={form.description} onChange={set('description')} /></> : null}{kind === 'batch' ? <><div className="sm:col-span-2"><Field label="Batch name" value={form.name} onChange={set('name')} required /></div><TextField label="Notes" value={form.notes} onChange={set('notes')} /></> : null}</div>{mutation.error ? <Alert variant="destructive" className="mb-4"><AlertTitle>Record was not created</AlertTitle><AlertDescription>{getLabOperationsError(mutation.error, 'Check the entered values.')}</AlertDescription></Alert> : null}<DialogFooter><DialogClose asChild><Button type="button" variant="outline">Cancel</Button></DialogClose><Button type="submit" disabled={mutation.isPending}>{kind ? createActionLabel(kind) : 'Create'}</Button></DialogFooter></form></DialogContent></Dialog>
 }
 
 function Field({ label, value = '', onChange, required, type = 'text' }: { label: string; value?: string; onChange: React.ChangeEventHandler<HTMLInputElement>; required?: boolean; type?: string }) { const id = `lab-${label.toLowerCase().replaceAll(' ', '-')}`; return <div><Label htmlFor={id}>{label}{required ? <span aria-hidden="true"> *</span> : null}</Label><Input id={id} className="mt-2" type={type} value={value ?? ''} onChange={onChange} required={required} /></div> }
 function TextField({ label, value = '', onChange }: { label: string; value?: string; onChange: React.ChangeEventHandler<HTMLTextAreaElement> }) { const id = `lab-${label.toLowerCase().replaceAll(' ', '-')}`; return <div className="sm:col-span-2"><Label htmlFor={id}>{label}</Label><textarea id={id} className="mt-2 min-h-20 w-full rounded-lg border bg-background px-3 py-2 text-sm" value={value ?? ''} onChange={onChange} /></div> }
-function SelectField({ label, value, onChange, options }: { label: string; value: string; onChange: React.ChangeEventHandler<HTMLSelectElement>; options: Array<string | { value: string; label: string }> }) { const id = `lab-${label.toLowerCase().replaceAll(' ', '-')}`; return <div><Label htmlFor={id}>{label} <span aria-hidden="true">*</span></Label><select id={id} className="mt-2 h-9 w-full rounded-lg border bg-background px-3 text-sm" value={value} onChange={onChange} required><option value="" disabled>Select…</option>{options.map((option) => { const value = typeof option === 'string' ? option : option.value; const text = typeof option === 'string' ? humanize(option) : option.label; return <option key={value} value={value}>{text}</option> })}</select></div> }
 function Status({ value, prefix }: { value: string; prefix?: string }) { return <span className="rounded-full border bg-muted px-2.5 py-1 text-xs font-medium">{prefix ? `${prefix}: ` : ''}{humanize(value)}</span> }
 function Empty({ children }: { children: React.ReactNode }) { return <p className="py-8 text-center text-sm text-muted-foreground">{children}</p> }
 function AccessDenied() { return <main className="page-wrap px-4 py-8"><Alert variant="destructive"><AlertTitle>Lab operations unavailable</AlertTitle><AlertDescription>An assigned Phaeno laboratory role is required.</AlertDescription></Alert></main> }
 function humanize(value: string) { return value.replace(/([a-z])([A-Z])/g, '$1 $2').replaceAll('_', ' ').replace(/^./, (character) => character.toUpperCase()) }
-function createActionLabel(kind: Exclude<CreateKind, null>) { return kind === 'role' ? 'Assign role' : `Create ${humanize(kind).toLowerCase()}` }
+function createActionLabel(kind: Exclude<CreateKind, null>) { return `Create ${humanize(kind).toLowerCase()}` }
 function formatDate(value: string) { return new Intl.DateTimeFormat('en-US', { dateStyle: 'medium', timeStyle: 'short' }).format(new Date(value)) }
 function nowDateTimeLocal() { const now = new Date(); const offset = now.getTimezoneOffset(); return new Date(now.getTime() - offset * 60_000).toISOString().slice(0, 16) }
 function formatDateOnly(value: string) { return new Intl.DateTimeFormat('en-US', { dateStyle: 'medium', timeZone: 'UTC' }).format(new Date(`${value}T00:00:00Z`)) }

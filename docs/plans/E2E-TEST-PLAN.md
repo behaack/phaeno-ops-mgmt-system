@@ -108,10 +108,16 @@ not satisfy this production-activation gate.
   for project metadata, samples, files, and results.
 - [ ] Database-backed organization and user administration journey - verify
   Phaeno and external administrator scope, invitation delivery and acceptance,
-  resend/revoke, role and membership lifecycle, Prospect conversion with stable
+  unified active and pending-invitation user cards, accessible action menus,
+  required invited names, invitation-time Phaeno role intent with no pre-accept
+  access, atomic role activation on acceptance, resend/revoke, role and
+  membership lifecycle, Prospect conversion with stable
   identity, readiness, request review without implicit provisioning,
   approved simulated HubSpot account creation and details-page navigation,
   Phaeno-controlled designated-contact invitation and membership management,
+  consolidated Phaeno profile, Platform administrator, and additive
+  laboratory-role editing on one durable User management record rather than a
+  separate Lab access panel or the Lab Operations sidebar,
   other pre-organization request association, action-dialog close behavior,
   service-entitlement boundaries, global disable/reactivation, refresh
   persistence, and cross-tenant denial.

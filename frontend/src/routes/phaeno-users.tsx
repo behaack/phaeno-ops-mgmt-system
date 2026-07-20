@@ -1,7 +1,7 @@
 import { createFileRoute } from '@tanstack/react-router'
 
-import { UserManagementPanel } from '#/features/admin/UserManagementPanel'
-import { useMockAdminData } from '#/features/admin/mock-admin-data'
+import { OrganizationUserManagementPanel } from '#/features/admin/OrganizationUserManagementPanel'
+import { PhaenoUserManagementPanel } from '#/features/admin/PhaenoUserManagementPanel'
 import {
   getSelectedMembership,
   usePhaenoSession,
@@ -23,52 +23,47 @@ export const Route = createFileRoute('/phaeno-users')({
   component: UsersPage,
 })
 
-const phaenoRoleOptions = [
-  'Platform admin',
-  'Operations admin',
-  'Customer manager',
-] as const
-
-const customerRoleOptions = ['Organization admin', 'Member'] as const
-
 function UsersPage() {
-  const { session, selectedOrganizationId } = usePhaenoSession()
+  const { authProvider, session, selectedOrganizationId } = usePhaenoSession()
   const selectedMembership = getSelectedMembership(session, selectedOrganizationId)
-  const {
-    addCustomerUser,
-    addPhaenoUser,
-    customers,
-    customerUsers,
-    deactivateCustomerUser,
-    deactivatePhaenoUser,
-    phaenoUsers,
-    updateCustomerUser,
-    updatePhaenoUser,
-  } = useMockAdminData()
-
   const selectedCustomerMembership =
     isExternalOrganizationKind(selectedMembership?.organizationKind)
       ? selectedMembership
       : null
-  const selectedCustomer = customers.find(
-    (customer) => customer.id === selectedOrganizationId,
-  )
   const canManagePhaenoUsers =
-    !selectedCustomer &&
+    selectedMembership?.organizationKind === 'Phaeno' &&
     isPhaenoEmployee(session) &&
-    Boolean(session?.capabilities.canManageAllUsers)
+    (Boolean(session?.capabilities.canManageAllUsers) ||
+      Boolean(session?.capabilities.canManageLabAccess))
   const canManageSelectedCustomerUsers =
-    selectedCustomer &&
+    selectedCustomerMembership &&
     ((Boolean(selectedCustomerMembership?.isOrganizationAdmin) &&
       Boolean(session?.capabilities.canManageMembers)) ||
       (isPhaenoEmployee(session) &&
         Boolean(session?.capabilities.canManageOrganizations)))
 
-  if (canManageSelectedCustomerUsers && selectedCustomer) {
-    const scopedUsers = customerUsers.filter(
-      (user) => user.customerId === selectedCustomer.id,
+  if (authProvider === 'mock') {
+    return (
+      <main className="page-wrap px-4 py-8">
+        <Card className="max-w-2xl">
+          <CardHeader>
+            <CardTitle>Connected authentication required</CardTitle>
+            <CardDescription>
+              User management now reads and writes durable account and role
+              records. Disable the frontend mock-session setting and sign in
+              through the configured identity provider to use it.
+            </CardDescription>
+          </CardHeader>
+        </Card>
+      </main>
     )
+  }
 
+  if (
+    canManageSelectedCustomerUsers &&
+    selectedCustomerMembership &&
+    selectedOrganizationId
+  ) {
     return (
       <main className="page-wrap px-4 py-8">
         <section className="mb-6 max-w-3xl">
@@ -79,25 +74,19 @@ function UsersPage() {
             User management
           </h1>
           <p className="mt-3 max-w-2xl text-sm leading-6 text-muted-foreground sm:text-base">
-            Manage users for {selectedCustomer.name}.
+            Manage users for {selectedCustomerMembership.organizationName}.
           </p>
         </section>
 
-        <UserManagementPanel
-          addLabel="Add customer user"
-          description="Users who belong to the active customer organization."
-          onAddUser={(user) => addCustomerUser(selectedCustomer.id, user)}
-          onDeactivateUser={deactivateCustomerUser}
-          onUpdateUser={updateCustomerUser}
-          roleOptions={customerRoleOptions}
-          title={`${selectedCustomer.name} users`}
-          users={scopedUsers}
+        <OrganizationUserManagementPanel
+          organizationId={selectedOrganizationId}
+          organizationName={selectedCustomerMembership.organizationName}
         />
       </main>
     )
   }
 
-  if (canManagePhaenoUsers) {
+  if (canManagePhaenoUsers && selectedOrganizationId) {
     return (
       <main className="page-wrap px-4 py-8">
         <section className="mb-6 max-w-3xl">
@@ -108,20 +97,15 @@ function UsersPage() {
             User management
           </h1>
           <p className="mt-3 max-w-2xl text-sm leading-6 text-muted-foreground sm:text-base">
-            Manage Phaeno employee accounts, internal roles, and platform-level
-            access.
+            Manage Phaeno employee accounts, platform access, and laboratory
+            roles.
           </p>
         </section>
 
-        <UserManagementPanel
-          addLabel="Add Phaeno user"
-          description="Internal users who belong to the Phaeno parent organization."
-          onAddUser={addPhaenoUser}
-          onDeactivateUser={deactivatePhaenoUser}
-          onUpdateUser={updatePhaenoUser}
-          roleOptions={phaenoRoleOptions}
-          title="Phaeno users"
-          users={phaenoUsers}
+        <PhaenoUserManagementPanel
+          canManageAccounts={Boolean(session?.capabilities.canManageAllUsers)}
+          canManageLabRoles={Boolean(session?.capabilities.canManageLabAccess)}
+          organizationId={selectedOrganizationId}
         />
       </main>
     )

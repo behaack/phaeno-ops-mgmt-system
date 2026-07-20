@@ -21,7 +21,10 @@ describe('InviteUserForm', () => {
       organizationName: 'Acme Health',
       email: 'new.user@example.com',
       normalizedEmail: 'NEW.USER@EXAMPLE.COM',
+      firstName: 'New',
+      lastName: 'User',
       isOrganizationAdmin: true,
+      labRoles: [],
       status: 'Pending',
       isExpired: false,
       expiresAt: '2026-06-08T00:00:00Z',
@@ -43,6 +46,12 @@ describe('InviteUserForm', () => {
 
     renderWithQueryClient(<InviteUserForm organizationId="organization-1" />)
 
+    fireEvent.change(screen.getByLabelText(/first name/i), {
+      target: { value: 'New' },
+    })
+    fireEvent.change(screen.getByLabelText(/last name/i), {
+      target: { value: 'User' },
+    })
     fireEvent.change(screen.getByLabelText(/email address/i), {
       target: { value: 'new.user@example.com' },
     })
@@ -54,8 +63,11 @@ describe('InviteUserForm', () => {
     await waitFor(() => expect(mocks.createInvitation).toHaveBeenCalledTimes(1))
     expect(mocks.createInvitation.mock.calls[0]?.[0]).toEqual({
       organizationId: 'organization-1',
+      firstName: 'New',
+      lastName: 'User',
       email: 'new.user@example.com',
       isOrganizationAdmin: true,
+      labRoles: [],
     })
     expect(await screen.findByText(/invite sent/i)).toBeTruthy()
   })
