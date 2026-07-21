@@ -1,4 +1,4 @@
-export const BLOG_INDEX_PATH = '/blog';
+export const BLOG_INDEX_PATH = '/media/blog';
 export const BLOG_FEED_PATH = '/blog.xml';
 
 export function getBlogPostPath(slug: string) {

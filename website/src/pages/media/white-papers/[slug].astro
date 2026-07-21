@@ -1,0 +1,45 @@
+---
+import { getCollection, render, type CollectionEntry } from 'astro:content'
+import Layout from '@/layouts/Layout.astro'
+import MediaArticlePage from '@/components/MediaArticlePage.astro'
+import ArticleSEOMeta from '@/components/meta-data-helpers/ArticleSEOMeta.astro'
+
+export async function getStaticPaths() {
+  const papers = await getCollection('white_papers')
+  return papers.map((paper) => ({
+    params: { slug: paper.id },
+    props: { paper },
+  }))
+}
+
+const { paper } = Astro.props as { paper: CollectionEntry<'white_papers'> }
+const { title, authors, date, summary, image, link } = paper.data
+const { Content } = await render(paper)
+---
+
+<Layout>
+  <ArticleSEOMeta 
+    slot="head"
+    title={title}
+    description={summary}
+    datePosted={date}
+    authors={authors}
+    image={image}
+    documentType="Web Page"
+    searchTitle={`White Paper - ${title}`}
+  />
+  <MediaArticlePage
+    title={title}
+    summary={summary}
+    image={image}
+    authors={authors}
+    date={date}
+    eyebrow="Phaeno white paper"
+    backHref="/media/white-papers"
+    backLabel="Back to all white papers"
+    headerActionHref={link}
+    headerActionLabel="View PDF"
+  >
+    <Content />
+  </MediaArticlePage>
+</Layout>

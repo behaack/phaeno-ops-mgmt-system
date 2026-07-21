@@ -1,0 +1,52 @@
+---
+import ArticleSEOMeta from '@/components/meta-data-helpers/ArticleSEOMeta.astro'
+import MediaArticlePage from '@/components/MediaArticlePage.astro'
+import Layout from '@/layouts/Layout.astro'
+import { getCollection, render, type CollectionEntry } from 'astro:content'
+import { BLOG_INDEX_PATH } from '@/lib/blogRoutes'
+
+export async function getStaticPaths() {
+  const blogs = await getCollection('blog')
+  return blogs.map((job) => ({
+    params: { slug: job.id },
+    props: { job },
+  }))
+}
+
+const { job: blog } = Astro.props as { job: CollectionEntry<'blog'> }
+const { title, image, authors, date, summary } = blog.data
+const articleSearchKeywords = [
+  title,
+  summary,
+  authors.join(' '),
+  'PSeq phased sequencing full-length RNA whole-molecule RNA isoform-resolved RNA transcriptomics short-read NGS RNA-Seq long-read sequencing machine learning',
+].join(' ')
+const { Content } = await render(blog)
+---
+
+<Layout>
+  <ArticleSEOMeta
+    slot="head"
+    title={title}
+    description={summary}
+    authors={authors}
+    datePosted={date}
+    image={image}
+    documentType="Web Page"
+    searchTitle={`Blog - ${title}`}
+    searchKeywords={articleSearchKeywords}
+  />
+
+  <MediaArticlePage
+    title={title}
+    summary={summary}
+    image={image}
+    authors={authors}
+    date={date}
+    eyebrow="Phaeno insights"
+    backHref={BLOG_INDEX_PATH}
+    backLabel="Back to all articles"
+  >
+    <Content />
+  </MediaArticlePage>
+</Layout>

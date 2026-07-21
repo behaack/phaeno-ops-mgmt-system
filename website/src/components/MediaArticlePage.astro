@@ -1,28 +1,35 @@
 ---
-import ArticleSEOMeta from '@/components/meta-data-helpers/ArticleSEOMeta.astro'
 import ShareWithSocialMedia from '@/components/ShareWithSocialMedia.astro'
-import Layout from '@/layouts/Layout.astro'
-import { getCollection, render, type CollectionEntry } from 'astro:content'
 import { formatContentDate } from '@/lib/dates'
+import { FaExternalLinkAlt } from 'react-icons/fa'
 
-export async function getStaticPaths() {
-  const blogs = await getCollection('blog')
-  return blogs.map((job) => ({
-    params: { slug: job.id },
-    props: { job },
-  }))
+interface Props {
+  title: string
+  summary: string
+  image: string
+  authors: string[]
+  date: Date | string | number
+  eyebrow: string
+  backHref: string
+  backLabel: string
+  headerActionHref?: string
+  headerActionLabel?: string
 }
 
-const path = decodeURIComponent(Astro.url.pathname).toLowerCase()
-const { job: blog } = Astro.props as { job: CollectionEntry<'blog'> }
-const { title, image, authors, date, summary } = blog.data
-const articleSearchKeywords = [
+const {
   title,
   summary,
-  authors.join(' '),
-  'PSeq phased sequencing full-length RNA whole-molecule RNA isoform-resolved RNA transcriptomics short-read NGS RNA-Seq long-read sequencing machine learning',
-].join(' ')
-const { Content } = await render(blog)
+  image,
+  authors,
+  date,
+  eyebrow,
+  backHref,
+  backLabel,
+  headerActionHref,
+  headerActionLabel = 'View PDF',
+} = Astro.props as Props
+
+const sharePath = decodeURIComponent(Astro.url.pathname).toLowerCase()
 const articleHeadingId = title.replace(/\s+/g, '-').toLowerCase()
 const formattedDate = formatContentDate(date, {
   month: 'long',
@@ -31,75 +38,75 @@ const formattedDate = formatContentDate(date, {
 })
 ---
 
-<Layout>
-  <ArticleSEOMeta 
-    slot="head"
-    title={title}
-    description={summary}
-    authors={authors}
-    datePosted={date}
-    image={image}
-    documentType="Web Page"
-    searchTitle={`Blog - ${title}`}
-    searchKeywords={articleSearchKeywords}
-  />
-
-  <main id="main" class="blog-post-page" tabindex="-1">
-    <header class="article-hero" aria-labelledby={articleHeadingId}>
-      <div class="article-hero__inner">
-        <div class="article-hero__copy">
-          <a class="back-link" href="/blog" data-phaeno-search-ignore>
-            <span aria-hidden="true">←</span>
-            Back to all articles
-          </a>
-          <p class="article-eyebrow">Phaeno insights</p>
-          <h1
-            id={articleHeadingId}
-            data-phaeno-search={title}
-            data-phaeno-search-summary={summary}
-          >{title}</h1>
-          <p class="article-deck">{summary}</p>
-          <div class="blog-post-meta" data-phaeno-search-ignore>
-            <span>{authors.join(', ')}</span>
-            <span aria-hidden="true">•</span>
-            <time datetime={new Date(date).toISOString()}>{formattedDate}</time>
-          </div>
-        </div>
-
-        <figure class="article-hero__media" data-phaeno-search-ignore>
-          <img src={image} alt="" loading="eager" fetchpriority="high" />
-        </figure>
-      </div>
-    </header>
-
-    <div class="article-body-shell">
-      <article class="blog-post-content">
-        <Content />
-      </article>
-
-      <footer class="article-footer" data-phaeno-search-ignore>
-        <a class="back-link back-link--light" href="/blog">
+<main id="main" class="media-article-page" tabindex="-1">
+  <header class="article-hero" aria-labelledby={articleHeadingId}>
+    <div class="article-hero__inner">
+      <div class="article-hero__copy">
+        <a class="back-link" href={backHref} data-phaeno-search-ignore>
           <span aria-hidden="true">←</span>
-          Back to all articles
+          {backLabel}
         </a>
-        <div class="article-share">
-          <ShareWithSocialMedia 
-            title={title} 
-            link={path} 
-            summary={summary} 
-          />
+        <p class="article-eyebrow">{eyebrow}</p>
+        <h1
+          id={articleHeadingId}
+          data-phaeno-search={title}
+          data-phaeno-search-summary={summary}
+        >{title}</h1>
+        <p class="article-deck">{summary}</p>
+        {headerActionHref ? (
+          <a
+            class="article-header-action"
+            href={headerActionHref}
+            target="_blank"
+            rel="noopener noreferrer"
+            aria-label={`${headerActionLabel} – opens PDF in a new tab`}
+            data-phaeno-search-ignore
+          >
+            <span>{headerActionLabel}</span>
+            <FaExternalLinkAlt size={12} aria-hidden="true" />
+          </a>
+        ) : null}
+        <div class="article-meta" data-phaeno-search-ignore>
+          <span>{authors.join(', ')}</span>
+          <span aria-hidden="true">•</span>
+          <time datetime={new Date(date).toISOString()}>{formattedDate}</time>
         </div>
-      </footer>
+      </div>
+
+      <figure class="article-hero__media" data-phaeno-search-ignore>
+        <img src={image} alt="" loading="eager" fetchpriority="high" />
+      </figure>
     </div>
-  </main>
-</Layout>
+  </header>
+
+  <div class="article-body-shell">
+    <article class="media-article-content">
+      <slot />
+    </article>
+
+    <footer class="article-footer" data-phaeno-search-ignore>
+      <a class="back-link back-link--light" href={backHref}>
+        <span aria-hidden="true">←</span>
+        {backLabel}
+      </a>
+      <div class="article-share">
+        <ShareWithSocialMedia
+          title={title}
+          link={sharePath}
+          summary={summary}
+        />
+      </div>
+    </footer>
+  </div>
+</main>
 
 <style>
-.blog-post-page {
+.media-article-page {
   background: var(--color-canvas);
 }
 
 .article-hero {
+  width: 100%;
   padding: clamp(2.5rem, 5vw, 4.75rem) var(--page-gutter);
   overflow: hidden;
   color: var(--color-text-on-dark);
@@ -172,7 +179,37 @@ const formattedDate = formatContentDate(date, {
   line-height: 1.5;
 }
 
-.blog-post-meta {
+.article-header-action {
+  display: inline-flex;
+  gap: var(--space-2);
+  align-items: center;
+  width: fit-content;
+  min-height: 2.75rem;
+  margin-top: var(--space-6);
+  padding: .75rem 1rem;
+  border: 1px solid var(--phaeno-green-500);
+  border-radius: var(--radius-pill);
+  color: var(--color-text-on-dark);
+  background: var(--color-action-primary);
+  font-size: var(--font-size-sm);
+  font-weight: var(--font-weight-semibold);
+  line-height: 1;
+  text-decoration: none;
+  transition: background var(--duration-fast) var(--ease-standard), border-color var(--duration-fast) var(--ease-standard), transform var(--duration-fast) var(--ease-standard);
+}
+
+.article-header-action:hover {
+  color: var(--color-text-on-dark);
+  border-color: var(--color-action-primary-hover);
+  background: var(--color-action-primary-hover);
+  transform: translateY(-1px);
+}
+
+.article-header-action + .article-meta {
+  margin-top: var(--space-4);
+}
+
+.article-meta {
   display: flex;
   flex-wrap: wrap;
   gap: .65rem;
@@ -214,20 +251,20 @@ const formattedDate = formatContentDate(date, {
   padding: var(--page-content-start-space) 0 clamp(3.5rem, 7vw, 6rem);
 }
 
-.blog-post-content {
+.media-article-content {
   color: var(--phaeno-neutral-700);
   font-size: clamp(1.05rem, 1.4vw, 1.15rem);
   line-height: 1.75;
 }
 
-.blog-post-content :global(p) {
+.media-article-content :global(p) {
   margin: 0 0 1em;
   padding: 0;
 }
 
-.blog-post-content :global(h2),
-.blog-post-content :global(h3),
-.blog-post-content :global(h4) {
+.media-article-content :global(h2),
+.media-article-content :global(h3),
+.media-article-content :global(h4) {
   color: var(--phaeno-rna-900);
   font-weight: var(--font-weight-semibold);
   letter-spacing: -.025em;
@@ -235,41 +272,41 @@ const formattedDate = formatContentDate(date, {
   text-wrap: balance;
 }
 
-.blog-post-content :global(h2),
-.blog-post-content :global(h3) {
+.media-article-content :global(h2),
+.media-article-content :global(h3) {
   font-size: clamp(1.75rem, 3vw, 2.5rem);
 }
 
-.blog-post-content :global(h2) {
+.media-article-content :global(h2) {
   margin: clamp(2.25rem, 4vw, 3rem) 0 var(--space-4);
 }
 
-.blog-post-content :global(.article-series-navigation--start + h2) {
+.media-article-content :global(.article-series-navigation--start + h2) {
   margin-top: var(--space-8);
 }
 
-.blog-post-content :global(h3) {
+.media-article-content :global(h3) {
   margin: clamp(1.75rem, 3vw, 2.25rem) 0 var(--space-4);
 }
 
-.blog-post-content :global(h4) {
+.media-article-content :global(h4) {
   margin: 2.5rem 0 var(--space-3);
   font-size: clamp(1.3rem, 2vw, 1.65rem);
 }
 
-.blog-post-content :global(ul:not([class])),
-.blog-post-content :global(ol:not([class])) {
+.media-article-content :global(ul:not([class])),
+.media-article-content :global(ol:not([class])) {
   gap: 0;
   margin: 0 0 1.5rem;
   padding-left: 1.4rem;
 }
 
-.blog-post-content :global(ul:not([class]) > li + li),
-.blog-post-content :global(ol:not([class]) > li + li) {
+.media-article-content :global(ul:not([class]) > li + li),
+.media-article-content :global(ol:not([class]) > li + li) {
   margin-top: .5rem;
 }
 
-.blog-post-content :global(a) {
+.media-article-content :global(a) {
   text-decoration-thickness: 1px;
   text-underline-offset: .2em;
 }

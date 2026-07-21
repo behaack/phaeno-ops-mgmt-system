@@ -6,6 +6,11 @@
       "permanent": true
     },
     {
+      "source": "/blog/:item",
+      "destination": "/media/blog/:item",
+      "permanent": true
+    },
+    {
       "source": "/log-in",
       "destination": "https://portal.phaenobiotech.com/auth/sign-in",
       "permanent": true

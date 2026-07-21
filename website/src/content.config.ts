@@ -81,6 +81,7 @@ const white_papers = defineCollection({
     authors: z.array(z.string()),
     date: z.coerce.date(),
     summary: z.string().max(200, 'Maximum length is 200 characters'),
+    link: z.string(),
   }),
 });
 

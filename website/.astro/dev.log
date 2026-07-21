@@ -7,19 +7,14 @@
 {"message":"No files found matching \"**/[^_]*.{md,mdx}\" in directory \"src\\content\\jobs\"","label":"glob-loader","level":"warn"}
 {"message":"Synced content","label":"content","level":"info"}
 {"message":"Re-optimizing dependencies because vite config has changed","label":"vite","level":"info"}
-{"message":" astro  v7.0.6 ready in 3078 ms\n┃ Local    http://localhost:4321/\n┃ Network  use --host to expose","label":"SKIP_FORMAT","level":"info"}
+{"message":" astro  v7.0.6 ready in 5288 ms\n┃ Local    http://localhost:4321/","label":"SKIP_FORMAT","level":"info"}
 {"message":"watching for file changes...","label":null,"level":"info"}
-{"message":"[200] /blog/an-introduction-to-phased-sequencing-part-1 610ms","label":null,"level":"info"}
-{"message":"[200] /blog/an-introduction-to-phased-sequencing-part-1 18ms","label":null,"level":"info"}
-{"message":"[200] /blog/an-introduction-to-phased-sequencing-part-1 47ms","label":null,"level":"info"}
-{"message":"[200] /blog 51ms","label":null,"level":"info"}
-{"message":"[200] /blog 13ms","label":null,"level":"info"}
-{"message":"/src/styles/global.css","label":"watch","level":"info"}
-{"message":"[200] /blog 55ms","label":null,"level":"info"}
-{"message":"[200] /blog 56ms","label":null,"level":"info"}
-{"message":"/src/styles/global.css, /src/pages/blog/[slug].astro?astro&type=style&index=0&lang.css","label":"watch","level":"info"}
-{"message":"[200] /blog 27ms","label":null,"level":"info"}
-{"message":"[200] /blog 28ms","label":null,"level":"info"}
+{"message":"[200] /media/white-papers/pseq-technical-white-paper 132ms","label":null,"level":"info"}
+{"message":"[200] /media/white-papers/pseq-technical-white-paper 30ms","label":null,"level":"info"}
+{"message":"[200] /media/white-papers/pseq-technical-white-paper 12ms","label":null,"level":"info"}
+{"message":"[200] /media/white-papers/pseq-technical-white-paper 15ms","label":null,"level":"info"}
+{"message":"/src/styles/global.css, /src/components/MediaArticlePage.astro?astro&type=style&index=0&lang.css","label":"watch","level":"info"}
+{"message":"[200] /media/white-papers/pseq-technical-white-paper 61ms","label":null,"level":"info"}
 {"message":"/src/styles/global.css","label":"watch","level":"info"}
 {"message":"/src/styles/global.css","label":"watch","level":"info"}
 {"message":"/src/styles/global.css","label":"watch","level":"info"}
@@ -30,65 +25,27 @@
 {"message":"/src/styles/global.css","label":"watch","level":"info"}
 {"message":"/src/styles/global.css","label":"watch","level":"info"}
 {"message":"/src/styles/global.css","label":"watch","level":"info"}
+{"message":"[200] /media/white-papers/pseq-technical-white-paper 49ms","label":null,"level":"info"}
+{"message":"[200] / 67ms","label":null,"level":"info"}
+{"message":"[200] /media/white-papers 52ms","label":null,"level":"info"}
+{"message":"[200] /media/white-papers/pseq-technical-white-paper 16ms","label":null,"level":"info"}
+{"message":"/src/components/MediaArticlePage.astro?astro&type=style&index=0&lang.css","label":"watch","level":"info"}
 {"message":"/src/styles/global.css","label":"watch","level":"info"}
 {"message":"/src/styles/global.css","label":"watch","level":"info"}
-{"message":"/src/styles/global.css, /src/components/MediaCard.astro?astro&type=style&index=0&lang.css","label":"watch","level":"info"}
-{"message":"[200] /blog 45ms","label":null,"level":"info"}
-{"message":"[200] /blog 46ms","label":null,"level":"info"}
-{"message":"/src/components/MediaCard.astro?astro&type=style&index=0&lang.css","label":"watch","level":"info"}
-{"message":"/src/components/MediaCard.astro?astro&type=style&index=0&lang.css","label":"watch","level":"info"}
-{"message":"[200] /blog/an-introduction-to-phased-sequencing-part-3 213ms","label":null,"level":"info"}
-{"message":"[200] /blog/an-introduction-to-phased-sequencing-part-3 52ms","label":null,"level":"info"}
-{"message":"[200] /blog 112ms","label":null,"level":"info"}
-{"message":"[200] /blog/an-introduction-to-phased-sequencing-part-2 105ms","label":null,"level":"info"}
 {"message":"/src/styles/global.css","label":"watch","level":"info"}
-{"message":"[200] /blog/an-introduction-to-phased-sequencing-part-1 19ms","label":null,"level":"info"}
-{"message":"[200] / 40ms","label":null,"level":"info"}
-{"message":"[200] /blog 15ms","label":null,"level":"info"}
-{"message":"[200] / 6ms","label":null,"level":"info"}
-{"message":"[200] /technology 32ms","label":null,"level":"info"}
-{"message":"[200] / 7ms","label":null,"level":"info"}
-{"message":"[200] /blog/an-introduction-to-phased-sequencing-part-2 14ms","label":null,"level":"info"}
-{"message":"[200] /technology 14ms","label":null,"level":"info"}
-{"message":"[200] / 11ms","label":null,"level":"info"}
-{"message":"[200] /blog 12ms","label":null,"level":"info"}
-{"message":"[200] /blog 11ms","label":null,"level":"info"}
-{"message":"[200] /blog 14ms","label":null,"level":"info"}
-{"message":"[200] /blog/an-introduction-to-phased-sequencing-part-1 19ms","label":null,"level":"info"}
-{"message":"[200] /blog 11ms","label":null,"level":"info"}
-{"message":"[200] /blog/an-introduction-to-phased-sequencing-part-1 13ms","label":null,"level":"info"}
-{"message":"[200] /blog/an-introduction-to-phased-sequencing-part-1 15ms","label":null,"level":"info"}
 {"message":"/src/styles/global.css","label":"watch","level":"info"}
-{"message":"Reloaded data from an-introduction-to-phased-sequencing-Part-1.mdx","label":"glob-loader","level":"info"}
 {"message":"/src/styles/global.css","label":"watch","level":"info"}
-{"message":"Reloaded data from an-introduction-to-phased-sequencing-Part-1.mdx","label":"glob-loader","level":"info"}
 {"message":"/src/styles/global.css","label":"watch","level":"info"}
-{"message":"Reloaded data from an-introduction-to-phased-sequencing-Part-1.mdx","label":"glob-loader","level":"info"}
 {"message":"/src/styles/global.css","label":"watch","level":"info"}
-{"message":"Reloaded data from an-introduction-to-phased-sequencing-Part-2.mdx","label":"glob-loader","level":"info"}
 {"message":"/src/styles/global.css","label":"watch","level":"info"}
-{"message":"Reloaded data from an-introduction-to-phased-sequencing-Part-2.mdx","label":"glob-loader","level":"info"}
 {"message":"/src/styles/global.css","label":"watch","level":"info"}
-{"message":"Reloaded data from an-introduction-to-phased-sequencing-Part-2.mdx","label":"glob-loader","level":"info"}
 {"message":"/src/styles/global.css","label":"watch","level":"info"}
-{"message":"Reloaded data from an-introduction-to-phased-sequencing-Part-3.mdx","label":"glob-loader","level":"info"}
+{"message":"[200] /media/white-papers/pseq-technical-white-paper 66ms","label":null,"level":"info"}
+{"message":"[200] /media/white-papers/pseq-technical-white-paper 12ms","label":null,"level":"info"}
+{"message":"[200] /media/blog/an-introduction-to-phased-sequencing-part-1 549ms","label":null,"level":"info"}
+{"message":"[200] /media/white-papers 28ms","label":null,"level":"info"}
+{"message":"[200] /media/white-papers/pseq-technical-white-paper 18ms","label":null,"level":"info"}
+{"message":"Reloaded data from pseq-technical-white-paper.mdx","label":"glob-loader","level":"info"}
 {"message":"/src/styles/global.css","label":"watch","level":"info"}
-{"message":"Reloaded data from an-introduction-to-phased-sequencing-Part-3.mdx","label":"glob-loader","level":"info"}
 {"message":"/src/styles/global.css","label":"watch","level":"info"}
-{"message":"Reloaded data from an-introduction-to-phased-sequencing-Part-1.mdx","label":"glob-loader","level":"info"}
 {"message":"/src/styles/global.css","label":"watch","level":"info"}
-{"message":"Reloaded data from an-introduction-to-phased-sequencing-Part-2.mdx","label":"glob-loader","level":"info"}
-{"message":"/src/styles/global.css","label":"watch","level":"info"}
-{"message":"Reloaded data from an-introduction-to-phased-sequencing-Part-3.mdx","label":"glob-loader","level":"info"}
-{"message":"/src/styles/global.css","label":"watch","level":"info"}
-{"message":"Reloaded data from an-introduction-to-phased-sequencing-Part-2.mdx","label":"glob-loader","level":"info"}
-{"message":"[200] /blog/an-introduction-to-phased-sequencing-part-1 191ms","label":null,"level":"info"}
-{"message":"[200] /blog/an-introduction-to-phased-sequencing-part-1 16ms","label":null,"level":"info"}
-{"message":"[200] /blog/an-introduction-to-phased-sequencing-part-2 96ms","label":null,"level":"info"}
-{"message":"[200] /blog/an-introduction-to-phased-sequencing-part-3 74ms","label":null,"level":"info"}
-{"message":"[200] /blog/an-introduction-to-phased-sequencing-part-1 12ms","label":null,"level":"info"}
-{"message":"[200] /blog/an-introduction-to-phased-sequencing-part-2 10ms","label":null,"level":"info"}
-{"message":"[200] /blog/an-introduction-to-phased-sequencing-part-3 11ms","label":null,"level":"info"}
-{"message":"/src/styles/global.css","label":"watch","level":"info"}
-{"message":"[200] /investors 48ms","label":null,"level":"info"}
-{"message":"[200] /investors 12ms","label":null,"level":"info"}

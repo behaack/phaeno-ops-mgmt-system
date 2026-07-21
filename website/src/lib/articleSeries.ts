@@ -1,3 +1,5 @@
+import { getBlogPostPath } from './blogRoutes';
+
 export interface ArticleSeriesPart {
   number: number;
   title: string;
@@ -15,17 +17,17 @@ export const phasedSequencingSeries: ArticleSeries = {
     {
       number: 1,
       title: 'Why RNA Needs Better Measurement',
-      href: '/blog/an-introduction-to-phased-sequencing-part-1',
+      href: getBlogPostPath('an-introduction-to-phased-sequencing-part-1'),
     },
     {
       number: 2,
       title: 'Preserving Source-Molecule Identity',
-      href: '/blog/an-introduction-to-phased-sequencing-part-2',
+      href: getBlogPostPath('an-introduction-to-phased-sequencing-part-2'),
     },
     {
       number: 3,
       title: 'From Molecular Resolution to Biological Insight',
-      href: '/blog/an-introduction-to-phased-sequencing-part-3',
+      href: getBlogPostPath('an-introduction-to-phased-sequencing-part-3'),
     },
   ],
 };

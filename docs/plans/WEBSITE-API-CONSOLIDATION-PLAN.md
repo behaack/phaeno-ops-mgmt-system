@@ -126,6 +126,12 @@ brief URL, Lucene index, crawler behavior, and scheduled index rebuild. Known
 marketing origins are explicitly allowed by CORS; loopback origins are also
 allowed in Development.
 
+The planned, metadata-driven extension for first-party PDF-backed publication
+landing pages and PDF-assisted internal search is tracked separately in
+`PUBLICATION-SEARCH-INDEXING-PLAN.md`. That plan does not change the currently
+implemented search contract until its phases are explicitly authorized,
+implemented, verified, and recorded here.
+
 ## Persistence ownership
 
 - `PSeqOperationsDbContext` is the only runtime EF Core context.

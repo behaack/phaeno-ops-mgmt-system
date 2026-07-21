@@ -22,6 +22,9 @@
       "type": "string",
       "maxLength": 200
     },
+    "link": {
+      "type": "string"
+    },
     "$schema": {
       "type": "string"
     }
@@ -31,6 +34,7 @@
     "image",
     "authors",
     "date",
-    "summary"
+    "summary",
+    "link"
   ]
 }
