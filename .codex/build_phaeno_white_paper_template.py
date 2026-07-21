@@ -466,7 +466,7 @@ def configure_styles(doc: Document) -> None:
     styles = doc.styles
     normal = styles["Normal"]
     set_style_font(normal, size=9.75, color=NEUTRAL_900)
-    normal.paragraph_format.alignment = WD_ALIGN_PARAGRAPH.JUSTIFY
+    normal.paragraph_format.alignment = WD_ALIGN_PARAGRAPH.LEFT
     normal.paragraph_format.space_before = Pt(0)
     normal.paragraph_format.space_after = Pt(6)
     normal.paragraph_format.line_spacing = 1.25
@@ -805,7 +805,11 @@ def build() -> None:
     meta2 = doc.add_paragraph(style="Phaeno Metadata")
     meta2_run = meta2.add_run("[Month Year]   |   Version [x.x]")
     set_run_font(meta2_run, size=9.5, color=NEUTRAL_600)
-    meta2.paragraph_format.space_after = Pt(0)
+    meta2.paragraph_format.space_after = Pt(3)
+    meta3 = doc.add_paragraph(style="Phaeno Metadata")
+    meta3_run = meta3.add_run("[Research use only / intended use statement, if applicable]")
+    set_run_font(meta3_run, size=8.75, color=NEUTRAL_500)
+    meta3.paragraph_format.space_after = Pt(0)
 
     # Main document section begins at page 1; the cover remains unnumbered.
     body_section = add_section(doc, WD_SECTION.NEW_PAGE, columns=1)
@@ -966,8 +970,9 @@ def build() -> None:
     table_source.add_run("Table 1 source: [Citation or internal dataset identifier].")
 
     # Page 5: Interpretation, recommendations, and conclusion.
-    add_section(doc, WD_SECTION.NEW_PAGE, columns=2)
+    add_section(doc, WD_SECTION.NEW_PAGE, columns=1)
     add_heading(doc, "Interpretation and recommendations", 1, "interpretation", 10)
+    add_section(doc, WD_SECTION.CONTINUOUS, columns=2)
     add_heading(doc, "What the evidence means", 2, "meaning", 11)
     add_body_paragraph(
         doc,
