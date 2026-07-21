@@ -1,5 +1,6 @@
 namespace PhaenoPortal.Test;
 
+using System.Text.Json;
 using Microsoft.Extensions.Options;
 using PhaenoPortal.App.Features.Website;
 using PhaenoPortal.App.Features.Website.Crawler.Support;
@@ -111,6 +112,105 @@ public sealed class WebsiteApiTests
     }
 
     [Fact]
+    public void SearchReturnsLandingResultAndSnippetForPdfOnlyTerm()
+    {
+        var indexPath = Path.Combine(
+            Path.GetTempPath(),
+            $"phaeno-website-search-{Guid.NewGuid():N}");
+
+        try
+        {
+            using var service = CreateSearchService(indexPath);
+            service.RebuildIndex(
+            [
+                new IndexedPage
+                {
+                    Id = "publication",
+                    Url = "https://www.phaenobiotech.com/media/white-papers/example",
+                    PageTitle = "Example White Paper",
+                    PageDisplayTitle = "White Paper - Example",
+                    Description = "A visible overview of the publication.",
+                    DocumentType = "White Paper",
+                    Text = "Visible abstract and contents.",
+                    SourceText = "The PDF contains chromatogram calibration evidence."
+                }
+            ]);
+
+            var result = Assert.Single(service.Search("chromatogram"));
+
+            Assert.Equal("publication", result.Id);
+            Assert.DoesNotContain('#', result.Url);
+            Assert.Contains("{{chromatogram}}", result.Snippet);
+        }
+        finally
+        {
+            DeleteIndex(indexPath);
+        }
+    }
+
+    [Fact]
+    public void SearchPrefersVisibleSnippetAndTitleRankingOverPdfSource()
+    {
+        var indexPath = Path.Combine(
+            Path.GetTempPath(),
+            $"phaeno-website-search-{Guid.NewGuid():N}");
+
+        try
+        {
+            using var service = CreateSearchService(indexPath);
+            service.RebuildIndex(
+            [
+                new IndexedPage
+                {
+                    Id = "visible-and-source",
+                    Url = "https://www.phaenobiotech.com/media/white-papers/visible",
+                    PageTitle = "Molecular Atlas White Paper",
+                    PageDisplayTitle = "Molecular Atlas",
+                    Description = "Visible molecular atlas overview.",
+                    Text = "Visible molecular atlas evidence appears first.",
+                    SourceText = "PDF molecular atlas evidence appears second."
+                },
+                new IndexedPage
+                {
+                    Id = "source-only",
+                    Url = "https://www.phaenobiotech.com/media/white-papers/source",
+                    PageTitle = "Another White Paper",
+                    PageDisplayTitle = "Another White Paper",
+                    Description = "A different topic.",
+                    Text = "No matching visible term.",
+                    SourceText = "Molecular atlas appears only in this PDF."
+                }
+            ]);
+
+            var results = service.Search("molecular atlas");
+
+            Assert.Equal("visible-and-source", results[0].Id);
+            Assert.StartsWith("Visible", results[0].Snippet);
+            Assert.Contains("{{molecular}}", results[0].Snippet);
+        }
+        finally
+        {
+            DeleteIndex(indexPath);
+        }
+    }
+
+    [Fact]
+    public void SearchResponseDoesNotSerializeInternalSourceText()
+    {
+        var json = JsonSerializer.Serialize(new IndexedPage
+        {
+            Text = "Visible internal index text.",
+            SourceText = "Private index-only PDF text.",
+            SearchKeywords = "internal keyword"
+        });
+
+        Assert.DoesNotContain("SourceText", json, StringComparison.OrdinalIgnoreCase);
+        Assert.DoesNotContain("Private index-only PDF text", json);
+        Assert.DoesNotContain("Visible internal index text", json);
+        Assert.DoesNotContain("internal keyword", json);
+    }
+
+    [Fact]
     public void MailingListUnsubscribeCapturesActorAndTimeOnlyOnce()
     {
         var contact = new WebContact();
@@ -146,5 +246,21 @@ public sealed class WebsiteApiTests
                 occurredAtUtc.AddMinutes(5)));
         Assert.Equal(actorUserId, demoRequest.CompletedByUserId);
         Assert.Equal(occurredAtUtc, demoRequest.CompletedAtUtc);
+    }
+
+    private static WebsiteSearchService CreateSearchService(string indexPath) =>
+        new(
+            null!,
+            Options.Create(new WebsiteSearchOptions
+            {
+                SearchIndexLocation = indexPath
+            }));
+
+    private static void DeleteIndex(string indexPath)
+    {
+        if (Directory.Exists(indexPath))
+        {
+            Directory.Delete(indexPath, recursive: true);
+        }
     }
 }

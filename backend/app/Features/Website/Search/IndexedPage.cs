@@ -33,5 +33,8 @@ public sealed class IndexedPage
     public string Text { get; set; } = string.Empty;
 
     [JsonIgnore]
+    public string SourceText { get; set; } = string.Empty;
+
+    [JsonIgnore]
     public DateTime IndexedAt { get; set; } = DateTime.UtcNow;
 }

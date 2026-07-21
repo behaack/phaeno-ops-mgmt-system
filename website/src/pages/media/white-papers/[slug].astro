@@ -2,7 +2,8 @@
 import { getCollection, render, type CollectionEntry } from 'astro:content'
 import Layout from '@/layouts/Layout.astro'
 import MediaArticlePage from '@/components/MediaArticlePage.astro'
-import ArticleSEOMeta from '@/components/meta-data-helpers/ArticleSEOMeta.astro'
+import PublicationSEOMeta from '@/components/meta-data-helpers/PublicationSEOMeta.astro'
+import { getWhitePaperPublication } from '@/lib/publications'
 
 export async function getStaticPaths() {
   const papers = await getCollection('white_papers')
@@ -13,20 +14,35 @@ export async function getStaticPaths() {
 }
 
 const { paper } = Astro.props as { paper: CollectionEntry<'white_papers'> }
-const { title, authors, date, summary, image, link } = paper.data
+const {
+  title,
+  authors,
+  date,
+  dateModified,
+  summary,
+  image,
+  pageCount,
+  version,
+  searchKeywords,
+} = paper.data
+const publication = getWhitePaperPublication(paper, Astro.site)
 const { Content } = await render(paper)
 ---
 
 <Layout>
-  <ArticleSEOMeta 
+  <PublicationSEOMeta
     slot="head"
     title={title}
     description={summary}
-    datePosted={date}
     authors={authors}
-    image={image}
-    documentType="Web Page"
-    searchTitle={`White Paper - ${title}`}
+    datePublished={date}
+    dateModified={dateModified}
+    landingUrl={publication.landingUrl}
+    pdfUrl={publication.pdfUrl}
+    imageUrl={publication.imageUrl}
+    pageCount={pageCount}
+    version={version}
+    searchKeywords={searchKeywords}
   />
   <MediaArticlePage
     title={title}
@@ -37,8 +53,10 @@ const { Content } = await render(paper)
     eyebrow="Phaeno white paper"
     backHref="/media/white-papers"
     backLabel="Back to all white papers"
-    headerActionHref={link}
-    headerActionLabel="View PDF"
+    headerActionHref={publication.pdfPath}
+    headerActionLabel={`View ${pageCount}-page PDF`}
+    pageCount={pageCount}
+    version={version}
   >
     <Content />
   </MediaArticlePage>

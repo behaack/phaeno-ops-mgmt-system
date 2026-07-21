@@ -2,6 +2,25 @@ import { defineCollection } from 'astro:content';
 import { file, glob } from 'astro/loaders';
 import { z } from 'astro/zod';
 
+const normalizedPublicationTerms = z
+  .array(z.string().trim().min(1))
+  .min(1)
+  .transform((values) => {
+    const seen = new Set<string>();
+
+    return values
+      .map((value) => value.replace(/\s+/g, ' ').trim())
+      .filter((value) => {
+        const normalized = value.toLocaleLowerCase('en-US');
+        if (seen.has(normalized)) {
+          return false;
+        }
+
+        seen.add(normalized);
+        return true;
+      });
+  });
+
 const jobs = defineCollection({
   loader: glob({ pattern: '**/[^_]*.{md,mdx}', base: './src/content/jobs' }),
   schema: z.object({
@@ -75,14 +94,28 @@ const scientific_papers = defineCollection({
 
 const white_papers = defineCollection({
   loader: glob({ pattern: '**/[^_]*.{md,mdx}', base: './src/content/white_papers' }),
-  schema: z.object({
-    title: z.string(),
-    image: z.string(),
-    authors: z.array(z.string()),
-    date: z.coerce.date(),
-    summary: z.string().max(200, 'Maximum length is 200 characters'),
-    link: z.string(),
-  }),
+  schema: z
+    .object({
+      title: z.string().trim().min(1),
+      image: z.string().trim().startsWith('/images/'),
+      authors: z.array(z.string().trim().min(1)).min(1),
+      date: z.coerce.date(),
+      dateModified: z.coerce.date().optional(),
+      summary: z.string().trim().min(1).max(200, 'Maximum length is 200 characters'),
+      pageCount: z.number().int().positive(),
+      version: z.string().trim().min(1).optional(),
+      topics: normalizedPublicationTerms,
+      searchKeywords: normalizedPublicationTerms,
+    })
+    .superRefine((paper, context) => {
+      if (paper.dateModified && paper.dateModified < paper.date) {
+        context.addIssue({
+          code: 'custom',
+          path: ['dateModified'],
+          message: 'dateModified cannot be earlier than date',
+        });
+      }
+    }),
 });
 
 export const collections = {

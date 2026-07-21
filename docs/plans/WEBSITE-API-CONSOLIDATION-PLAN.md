@@ -111,7 +111,9 @@ database-ping, contact, and order requests return `204 No Content`.
 Website search may use the HTML page title and hidden search keywords to find
 candidate sections, but it returns a candidate only when the query is also
 supported by the page title actually displayed in search, the result heading,
-summary, or section text. Match counts use those visible fields.
+summary, section text, or an approved first-party publication source. Search
+keywords alone remain insufficient to return a result. Match counts use the
+visible HTML and approved publication-source fields.
 Hyphenated terms are tokenized consistently, so a search for `read` highlights
 the `read` segment in `short-read`; result group titles, result titles, and
 snippets highlight displayed occurrences of the literal query only at token
@@ -120,17 +122,27 @@ boundaries, so the same search does not highlight the prefix of `ready` or
 markers, case, and whitespace are normalized, the Website renders the title
 only so one indexed occurrence is not presented twice.
 
-The implementation keeps the existing Astro metadata and sitemap contract,
-Google reCAPTCHA Enterprise verification, Mailgun template names, technical
-brief URL, Lucene index, crawler behavior, and scheduled index rebuild. Known
-marketing origins are explicitly allowed by CORS; loopback origins are also
-allowed in Development.
+The implementation keeps the existing endpoint and response shape, Google
+reCAPTCHA Enterprise verification, Mailgun template names, technical brief URL,
+durable Lucene index, and scheduled index rebuild. Known marketing origins are
+explicitly allowed by CORS; loopback origins are also allowed in Development.
 
-The planned, metadata-driven extension for first-party PDF-backed publication
-landing pages and PDF-assisted internal search is tracked separately in
-`PUBLICATION-SEARCH-INDEXING-PLAN.md`. That plan does not change the currently
-implemented search contract until its phases are explicitly authorized,
-implemented, verified, and recorded here.
+First-party PDF-backed publication landing pages may declare document mode and
+one same-origin PDF source through Website metadata. The crawler creates one
+landing-page record, extracts PDF text with PdfPig 0.1.15, and stores that text
+in an internal `SourceText` field that is excluded from JSON serialization.
+Lucene indexes visible HTML, PDF source text, and candidate-only keywords in
+separate fields; visible title and HTML matches rank above source-text matches,
+and snippets prefer visible HTML before PDF text.
+
+Document enrichment accepts only the configured first-party path, requires
+HTTPS outside Development, honors robots rules, rejects cross-origin redirects
+and non-PDF responses, limits downloads to 25 MB and extracted text to
+1,000,000 characters, and applies a 30-second timeout. A rejected, unavailable,
+malformed, encrypted, image-only, oversized, or excessive source falls back to
+the HTML landing record without aborting the rebuild. The complete publication
+metadata and external-search design remains in
+`PUBLICATION-SEARCH-INDEXING-PLAN.md`.
 
 ## Persistence ownership
 

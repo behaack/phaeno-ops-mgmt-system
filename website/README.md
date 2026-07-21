@@ -74,6 +74,27 @@ The content collections under `src/content/` hold blog posts, events, jobs,
 news, press releases, scientific papers, and white papers. Keep content schema
 and route behavior aligned when adding or changing entries.
 
+### Adding a PDF-backed white paper
+
+White papers use their content entry ID as the stable slug. A new entry named
+`example-white-paper.mdx` therefore requires these matching public assets:
+
+- `public/white-papers/example-white-paper.pdf`
+- `public/images/media/white-papers/example-white-paper.{png|jpg|jpeg|svg|webp}`
+
+Do not add a PDF link to front matter. The shared publication helper derives
+the landing page and PDF URLs and fails the build when either required asset is
+missing or does not follow the convention. Supply title, summary, at least one
+author, publication date, the local image path, the PDF's current positive page
+count, at least one visible topic, and at least one search keyword. Use optional
+`dateModified` only when it is not earlier than `date`, and optional `version`
+only when the publisher assigns one.
+
+Keep the MDX landing content concise and useful under `Abstract`, `Key topics`,
+and `Contents` headings. The complete publication remains in the PDF; do not
+copy the full body, artificial page breaks, invisible keyword blocks, or
+private review notes into the landing page.
+
 ## Environment configuration
 
 The browser-visible build currently expects:

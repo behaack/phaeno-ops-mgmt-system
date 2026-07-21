@@ -22,8 +22,17 @@ and rollback-isolated PostgreSQL coverage.
   portal context.
 - [x] `backend/test/WebsiteApiTests.cs` - sitemap URL discovery,
   accent normalization, hyphenated-term highlighting, and rejection of
-  HTML-page-title-only and search-keyword-only false positives for the public
-  Website search path.
+  HTML-page-title-only and search-keyword-only false positives, plus PDF-only
+  landing matches, visible-before-PDF snippet selection, source-aware ranking,
+  and exclusion of index-only text from the public Website response.
+- [x] `backend/test/WebsiteDocumentTextExtractorTests.cs` - deterministic
+  two-page PDF reading order, extracted-character limits, and malformed-PDF
+  failure classification for the PdfPig implementation.
+- [x] `backend/test/WebsiteCrawlerTests.cs` - one-record document mode,
+  same-origin source enrichment, external-origin/prefix/redirect/MIME/robots/
+  size rejection, encrypted/malformed/image-only/unavailable/excessive-text
+  fallback, hard extraction timeout, unchanged ordinary section indexing, and
+  successful mixed valid/invalid publication rebuilds.
 - [x] `backend/test/PhaenoPortalMetadataTests.cs` - `HealthMetadataIdentifiesTheApi`.
 - [x] `backend/test/PersistenceTests.cs` -
   `PSeqOperationsDbContextMapsEveryEntityToItsOwningSchema`.

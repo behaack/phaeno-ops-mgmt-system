@@ -10,16 +10,31 @@ reindex, or external search-console change.
 ## Status
 
 - Product direction was approved for planning on 2026-07-21.
+- Phase 1 was implemented locally on 2026-07-21. The Website production build
+  verified the convention-derived landing/PDF pair, visible discovery content,
+  publication metadata, JSON-LD, sitemap behavior, and static PDF output.
+- The owner explicitly authorized completion on 2026-07-21. Phase 2 is now
+  implemented locally with the stable PdfPig 0.1.15 package, guarded document
+  fetching, HTML-only fallback, separate Lucene fields, and focused coverage.
+- Local verification completed with a successful Website production build, a
+  successful backend solution build, and 28 passing Website-focused backend
+  tests. Deployment, public reindex evidence, and webmaster actions remain
+  controlled-release work rather than local completion claims.
 - The design applies to every first-party white paper and is reusable for a
   future first-party PDF-backed publication collection. It must not hardcode a
   publication title, slug, filename, page count, keyword set, or canonical URL.
 - The HTML landing page is the single internal Website search result and the
   preferred external search result. The PDF remains the authoritative reading
   artifact.
-- The current Website and crawler do not implement the publication metadata,
-  PDF text extraction, structured-data, or PDF indexing policy described here.
-- PDF text extraction requires an approved .NET dependency. Repository policy
-  requires explicit approval before that dependency is added.
+- The Website now implements the Phase 1 publication convention, metadata,
+  structured data, and configured PDF indexing policy. The backend crawler
+  still indexes publication landing-page HTML only.
+- PDF text extraction still requires an approved .NET dependency. Repository
+  policy requires explicit approval before that dependency is added. Approval
+  was received and PdfPig 0.1.15 is now referenced by the API project.
+- The current `pseq-technical-white-paper.pdf` is a three-page placeholder, not
+  the planned final publication. Its page count and landing content remain
+  deliberately provisional and must be updated with the final asset.
 
 ## Related documents
 
@@ -89,20 +104,22 @@ Provide a repeatable publication workflow in which:
 
 ## Current implementation
 
-- `website/src/content.config.ts` defines `white_papers` with title, image,
-  authors, date, summary, and a manually supplied link.
+- `website/src/content.config.ts` defines the general white-paper metadata
+  contract, including authors, dates, page count, topics, and search keywords.
+- `website/src/lib/publications.ts` derives and validates the landing, PDF, and
+  representative-image paths from each content entry ID.
 - `website/src/pages/media/white-papers/[slug].astro` emits the landing route
-  and currently identifies it to the crawler as a generic `Web Page`.
-- `website/src/components/meta-data-helpers/ArticleSEOMeta.astro` emits title,
-  description, canonical, Open Graph, social image, and Phaeno search metadata,
-  but no publication JSON-LD or source-document metadata.
+  and generic document-mode source metadata through
+  `PublicationSEOMeta.astro`.
 - `backend/app/Features/Website/Crawler/WebsiteCrawler.cs` discovers sitemap
   HTML URLs, extracts HTML headings and sections, and does not follow or parse
   linked PDFs.
 - `backend/app/Features/Website/Search/WebsiteSearchService.cs` indexes the
   crawler records in Lucene and preserves the rule that hidden keywords alone
   cannot produce a visible result.
-- `website/vercel.json` has no publication-wide PDF indexing rule.
+- `website/vercel.json` configures one publication-wide `X-Robots-Tag:
+  noindex` rule for `/white-papers/*.pdf`; its deployed response remains a
+  release-verification item.
 - The backend has no PDF text extraction package today.
 
 ## General publication contract
@@ -339,37 +356,38 @@ external results.
 
 ### Phase 1: convention and Website metadata
 
-- [ ] Add shared publication route and asset helpers.
-- [ ] Extend the white-paper content schema with the general metadata contract.
-- [ ] Derive PDF links from entry IDs and remove manually authored links.
-- [ ] Add build-time asset and metadata validation.
-- [ ] Update the shared landing layout to show page count and optional version.
-- [ ] Emit generic document-mode crawler metadata.
-- [ ] Emit Article JSON-LD without changing blog metadata.
-- [ ] Add one wildcard Vercel PDF indexing header rule.
-- [ ] Migrate every existing first-party white-paper entry and PDF to the
+- [x] Add shared publication route and asset helpers.
+- [x] Extend the white-paper content schema with the general metadata contract.
+- [x] Derive PDF links from entry IDs and remove manually authored links.
+- [x] Add build-time asset and metadata validation.
+- [x] Update the shared landing layout to show page count and optional version.
+- [x] Emit generic document-mode crawler metadata.
+- [x] Emit Article JSON-LD without changing blog metadata.
+- [x] Add one wildcard Vercel PDF indexing header rule.
+- [x] Migrate every existing first-party white-paper entry and PDF to the
   convention; do not add a one-off compatibility branch.
 
-Phase 1 requires no backend dependency and may ship before PDF extraction.
-Internal search remains HTML-only until Phase 2.
+Phase 1 requires no backend dependency and remains independently deployable.
+The rollout order still deploys and verifies Website metadata before enabling
+the implemented Phase 2 crawler enrichment.
 
 ### Phase 2: safe PDF enrichment
 
-- [ ] Obtain explicit approval for the selected managed PDF extraction
+- [x] Obtain explicit approval for the selected managed PDF extraction
   dependency.
-- [ ] Add `IWebsiteDocumentTextExtractor` and the PDF implementation.
-- [ ] Add source metadata parsing, same-origin validation, bounded fetching,
+- [x] Add `IWebsiteDocumentTextExtractor` and the PDF implementation.
+- [x] Add source metadata parsing, same-origin validation, bounded fetching,
   extraction, and fallback handling to `WebsiteCrawler`.
-- [ ] Add `SourceText` and separate primary/source Lucene fields.
-- [ ] Add source-aware ranking and snippet selection without changing the API
+- [x] Add `SourceText` and separate primary/source Lucene fields.
+- [x] Add source-aware ranking and snippet selection without changing the API
   response envelope.
-- [ ] Add structured crawler metrics and warnings.
-- [ ] Update the implemented search contract in
-  `WEBSITE-API-CONSOLIDATION-PLAN.md` after the behavior ships.
+- [x] Add structured crawler metrics and warnings.
+- [x] Update the locally implemented search contract in
+  `WEBSITE-API-CONSOLIDATION-PLAN.md` without claiming deployment.
 
 ### Phase 3: verification and controlled release
 
-- [ ] Complete the focused tests below and update the living backend and E2E
+- [x] Complete the focused tests below and update the living backend and E2E
   plans with implemented or intentionally deferred coverage.
 - [ ] Deploy the Website changes and verify the public landing pages, sitemap,
   PDF headers, PDFs, and structured data before deploying crawler enrichment.
@@ -400,8 +418,8 @@ Internal search remains HTML-only until Phase 2.
 
 ### Backend unit and integration coverage
 
-Add focused coverage under `backend/test` using small, source-controlled,
-text-based PDF fixtures with no confidential content:
+Focused coverage under `backend/test` uses deterministic text-based PDFs
+generated by source-controlled test code with no confidential content:
 
 - valid PDF text extraction in reading order;
 - same-origin publication source acceptance;

@@ -8,6 +8,14 @@ The internal Lab Operations journey is implemented in the application but its
 database-backed browser proof remains deferred below. Feature completion does
 not satisfy this production-activation gate.
 
+Public Website PDF-backed publication search has focused backend coverage and
+static Website build verification. Browser proof remains intentionally deferred
+until an authorized Website/API release because acceptance requires the
+deployed landing page, Vercel PDF headers, durable scheduled index rebuild, and
+public search endpoint together. That future proof must cover desktop and
+narrow landing layouts, abstract and PDF-only queries returning one landing
+result, result navigation, and the PDF action opening the derived asset.
+
 ## Created Tests
 
 - [x] `frontend/e2e/home.spec.ts` - internal Phaeno context uses POMS in the

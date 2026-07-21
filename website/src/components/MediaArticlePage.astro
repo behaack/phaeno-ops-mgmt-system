@@ -14,6 +14,8 @@ interface Props {
   backLabel: string
   headerActionHref?: string
   headerActionLabel?: string
+  pageCount?: number
+  version?: string
 }
 
 const {
@@ -27,6 +29,8 @@ const {
   backLabel,
   headerActionHref,
   headerActionLabel = 'View PDF',
+  pageCount,
+  version,
 } = Astro.props as Props
 
 const sharePath = decodeURIComponent(Astro.url.pathname).toLowerCase()
@@ -70,6 +74,18 @@ const formattedDate = formatContentDate(date, {
           <span>{authors.join(', ')}</span>
           <span aria-hidden="true">•</span>
           <time datetime={new Date(date).toISOString()}>{formattedDate}</time>
+          {pageCount ? (
+            <>
+              <span aria-hidden="true">•</span>
+              <span>{pageCount} {pageCount === 1 ? 'page' : 'pages'}</span>
+            </>
+          ) : null}
+          {version ? (
+            <>
+              <span aria-hidden="true">•</span>
+              <span>{version.toLocaleLowerCase().startsWith('version') ? version : `Version ${version}`}</span>
+            </>
+          ) : null}
         </div>
       </div>
 

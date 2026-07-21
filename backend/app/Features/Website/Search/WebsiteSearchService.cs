@@ -79,7 +79,23 @@ public sealed class WebsiteSearchService : IWebsiteSearchService, IDisposable
         var query = new BooleanQuery();
         foreach (var term in stemmedTerms)
         {
-            query.Add(new TermQuery(new Term("stemmedText", term)), Occur.MUST);
+            var termQuery = new BooleanQuery
+            {
+                MinimumNumberShouldMatch = 1
+            };
+            termQuery.Add(
+                new TermQuery(new Term("titleStemmedText", term)) { Boost = 6F },
+                Occur.SHOULD);
+            termQuery.Add(
+                new TermQuery(new Term("primaryStemmedText", term)) { Boost = 4F },
+                Occur.SHOULD);
+            termQuery.Add(
+                new TermQuery(new Term("sourceStemmedText", term)) { Boost = 1F },
+                Occur.SHOULD);
+            termQuery.Add(
+                new TermQuery(new Term("keywordStemmedText", term)) { Boost = 0.25F },
+                Occur.SHOULD);
+            query.Add(termQuery, Occur.MUST);
         }
 
         try
@@ -143,17 +159,23 @@ public sealed class WebsiteSearchService : IWebsiteSearchService, IDisposable
         IReadOnlyList<string> stemmedTerms)
     {
         var fullText = document.Get("text") ?? string.Empty;
+        var sourceText = document.Get("sourceText") ?? string.Empty;
         var pageTitle = document.Get("pageTitle") ?? string.Empty;
         var pageDisplayTitle = document.Get("pageDisplayTitle") ?? pageTitle;
         var anchorTitle = document.Get("anchorTitle") ?? string.Empty;
         var description = document.Get("description") ?? string.Empty;
         var visibleText = JoinVisibleSearchText(
             fullText,
+            sourceText,
             description,
             anchorTitle,
             pageDisplayTitle);
 
         var snippet = ExtractSnippet(fullText, stemmedTerms);
+        if (string.IsNullOrWhiteSpace(snippet))
+        {
+            snippet = ExtractSnippet(sourceText, stemmedTerms);
+        }
         if (string.IsNullOrWhiteSpace(snippet))
         {
             snippet = ExtractSnippet(description, stemmedTerms);
@@ -173,6 +195,7 @@ public sealed class WebsiteSearchService : IWebsiteSearchService, IDisposable
             Anchor = document.Get("anchor") ?? string.Empty,
             AnchorTitle = anchorTitle,
             Text = fullText,
+            SourceText = sourceText,
             Description = description,
             DocumentType = document.Get("documentType") ?? string.Empty,
             Snippet = snippet,
@@ -187,22 +210,14 @@ public sealed class WebsiteSearchService : IWebsiteSearchService, IDisposable
     private static Document PrepareDocument(IndexedPage page)
     {
         var document = new Document();
-        var searchableText = string.Join(" ", new[]
+        var titleText = string.Join(" ", new[]
         {
             page.PageTitle,
             page.PageDisplayTitle,
             page.AnchorTitle,
-            page.Description,
-            page.SearchKeywords,
-            page.Text
+            page.Description
         }.Where(value => !string.IsNullOrWhiteSpace(value)));
-        var stemmedText = string.Join(
-            " ",
-            Regex.Matches(searchableText, "\\b[\\w']+\\b")
-                .Cast<Match>()
-                .Select(match => NormalizeAndStem(match.Value))
-                .Where(term => !string.IsNullOrWhiteSpace(term))
-                .Distinct(StringComparer.OrdinalIgnoreCase));
+        var primaryText = JoinVisibleSearchText(page.Text, page.Description);
 
         document.Add(new StringField("id", page.Id, Field.Store.YES));
         document.Add(new StringField("url", page.Url, Field.Store.YES));
@@ -214,15 +229,40 @@ public sealed class WebsiteSearchService : IWebsiteSearchService, IDisposable
                 : page.PageDisplayTitle,
             Field.Store.YES));
         document.Add(new TextField("text", page.Text, Field.Store.YES));
+        document.Add(new StoredField("sourceText", page.SourceText));
         document.Add(new TextField("anchor", page.Anchor, Field.Store.YES));
         document.Add(new TextField("anchorTitle", page.AnchorTitle, Field.Store.YES));
-        document.Add(new TextField("stemmedText", stemmedText, Field.Store.NO));
+        document.Add(new TextField(
+            "titleStemmedText",
+            StemSearchText(titleText),
+            Field.Store.NO));
+        document.Add(new TextField(
+            "primaryStemmedText",
+            StemSearchText(primaryText),
+            Field.Store.NO));
+        document.Add(new TextField(
+            "sourceStemmedText",
+            StemSearchText(page.SourceText),
+            Field.Store.NO));
+        document.Add(new TextField(
+            "keywordStemmedText",
+            StemSearchText(page.SearchKeywords),
+            Field.Store.NO));
         document.Add(new StoredField("description", page.Description));
         document.Add(new StoredField("documentType", page.DocumentType));
         document.Add(new StoredField("searchKeywords", page.SearchKeywords));
         document.Add(new StoredField("indexedAt", page.IndexedAt.Ticks.ToString()));
         return document;
     }
+
+    private static string StemSearchText(string text) =>
+        string.Join(
+            " ",
+            Regex.Matches(text, "\\b[\\w']+\\b")
+                .Cast<Match>()
+                .Select(match => NormalizeAndStem(match.Value))
+                .Where(term => !string.IsNullOrWhiteSpace(term))
+                .Distinct(StringComparer.OrdinalIgnoreCase));
 
     private static int CountStemmedMatches(
         string text,

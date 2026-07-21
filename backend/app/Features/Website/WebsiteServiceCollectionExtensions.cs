@@ -1,6 +1,7 @@
 using Microsoft.Extensions.FileProviders;
 using Microsoft.Extensions.Options;
 using PhaenoPortal.App.Features.Website.Crawler;
+using PhaenoPortal.App.Features.Website.Crawler.Documents;
 using PhaenoPortal.App.Features.Website.Notifications;
 using PhaenoPortal.App.Features.Website.Search;
 using PhaenoPortal.App.Features.Website.Services;
@@ -68,7 +69,13 @@ public static class WebsiteServiceCollectionExtensions
                 ? serviceProvider.GetRequiredService<MailgunWebsiteNotificationSender>()
                 : serviceProvider.GetRequiredService<LoggingWebsiteNotificationSender>());
         services.AddSingleton<IWebsiteSearchService, WebsiteSearchService>();
-        services.AddHttpClient<IWebsiteCrawler, WebsiteCrawler>();
+        services.AddSingleton<IWebsiteDocumentTextExtractor, PdfWebsiteDocumentTextExtractor>();
+        services
+            .AddHttpClient<IWebsiteCrawler, WebsiteCrawler>()
+            .ConfigurePrimaryHttpMessageHandler(() => new HttpClientHandler
+            {
+                AllowAutoRedirect = false
+            });
         services.AddHostedService<WebsiteIndexingBackgroundService>();
 
         return services;

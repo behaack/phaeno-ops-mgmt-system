@@ -8,8 +8,13 @@ import SEOMeta from '@/components/meta-data-helpers/SEOMeta.astro';
 import MediaSearch from '@/components/MediaSearch.astro'
 import MediaNoItems from '@/components/MediaNoItems.astro'
 import { formatContentDate } from '@/lib/dates'
+import { getWhitePaperPublication } from '@/lib/publications'
 
 const papers = await getCollection('white_papers')
+const publications = papers.map((paper) => ({
+  paper,
+  paths: getWhitePaperPublication(paper, Astro.site),
+}))
 ---
 
 <title>White Papers | Phaeno</title>
@@ -26,22 +31,22 @@ const papers = await getCollection('white_papers')
   <main id="main">
     <TopPageBanner title="White Papers" image="image-3"/>
     <section>
-      <MediaSearch listLength={papers.length} placeholder="Search title or author" />
+      <MediaSearch listLength={publications.length} placeholder="Search title, author, or topic" />
       <MediaCollection>
-        {papers.map(paper => (
+        {publications.map(({ paper, paths }) => (
           <MediaCard 
-            searchString={`${paper.data.title} ${paper.data.authors.join(' ')}`.toLowerCase()}
+            searchString={`${paper.data.title} ${paper.data.authors.join(' ')} ${paper.data.topics.join(' ')}`.toLowerCase()}
             title={paper.data.title} 
             image={paper.data.image} 
             summary={paper.data.summary}
-            link={`/media/white-papers/${paper.id}`}
+            link={paths.landingPath}
           >
             <div>{paper.data.authors.join(', ')}</div>
-            <div>{formatContentDate(paper.data.date)}</div>
+            <div>{formatContentDate(paper.data.date)} · {paper.data.pageCount} pages</div>
           </MediaCard>
         ))}      
       </MediaCollection>
-      <MediaNoItems listLength={papers.length} message="No white papers, check back later." />
+      <MediaNoItems listLength={publications.length} message="No white papers, check back later." />
       <br />
     </section>
   </main>

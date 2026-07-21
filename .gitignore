@@ -1,4 +1,5 @@
 # Build output
+tmp
 **/bin/
 **/obj/
 **/dist/

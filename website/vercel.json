@@ -26,6 +26,15 @@
   ],
   "headers": [
     {
+      "source": "/white-papers/(.*)\\.pdf$",
+      "headers": [
+        {
+          "key": "X-Robots-Tag",
+          "value": "noindex"
+        }
+      ]
+    },
+    {
       "source": "/images/(.*)\\.(png|jpg|jpeg|gif|webp|svg|ico)$",
       "headers": [
         {

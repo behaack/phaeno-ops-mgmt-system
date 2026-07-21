@@ -1,0 +1,18 @@
+/**
+ * Intentional addition — the source guidelines define Callouts in prose (Green rule /
+ * RNA blue field / Amber accent / Red) but not as a code component; this gives that
+ * spec a reusable implementation.
+ */
+export interface CalloutProps {
+  children: React.ReactNode;
+  title?: React.ReactNode;
+  /**
+   * takeaway = green rule, scientific takeaway or positive result
+   * mechanism = RNA blue field, platform/technical explanation
+   * evidence = amber accent, source/caveat needing attention
+   * danger = red, error or harmful/destructive state only
+   * @default "takeaway"
+   */
+  tone?: 'takeaway' | 'mechanism' | 'evidence' | 'danger';
+  style?: React.CSSProperties;
+}
