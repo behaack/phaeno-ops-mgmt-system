@@ -41,7 +41,13 @@ NEUTRAL_600 = "595959"
 NEUTRAL_900 = "1D1D1D"
 
 FONT = "Segoe UI"  # Inter's first installed fallback in the Website design system.
-CONTENT_WIDTH_DXA = 9360
+PAGE_WIDTH_IN = 8.5
+BODY_MARGIN_IN = 0.5
+BODY_CONTENT_WIDTH_IN = PAGE_WIDTH_IN - (BODY_MARGIN_IN * 2)
+COVER_MARGIN_IN = 0.0
+COVER_IMAGE_WIDTH_IN = PAGE_WIDTH_IN - (COVER_MARGIN_IN * 2)
+COVER_TEXT_INDENT_IN = 0.0
+CONTENT_WIDTH_DXA = 10800
 TABLE_INDENT_DXA = 120
 CELL_MARGINS_DXA = {"top": 80, "bottom": 80, "start": 120, "end": 120}
 
@@ -313,6 +319,60 @@ def set_picture_alt_text(inline_shape, description: str) -> None:
     inline_shape._inline.docPr.set("descr", description)
 
 
+def place_picture_behind_page(inline_shape) -> None:
+    """Convert an inline picture to a page-anchored, behind-text image."""
+    inline = inline_shape._inline
+    drawing = inline.getparent()
+
+    anchor = OxmlElement("wp:anchor")
+    for attribute, value in {
+        "distT": "0",
+        "distB": "0",
+        "distL": "0",
+        "distR": "0",
+        "simplePos": "0",
+        "relativeHeight": "0",
+        "behindDoc": "1",
+        "locked": "0",
+        "layoutInCell": "1",
+        "allowOverlap": "1",
+    }.items():
+        anchor.set(attribute, value)
+
+    simple_position = OxmlElement("wp:simplePos")
+    simple_position.set("x", "0")
+    simple_position.set("y", "0")
+    anchor.append(simple_position)
+
+    horizontal = OxmlElement("wp:positionH")
+    horizontal.set("relativeFrom", "page")
+    horizontal_offset = OxmlElement("wp:posOffset")
+    horizontal_offset.text = "0"
+    horizontal.append(horizontal_offset)
+    anchor.append(horizontal)
+
+    vertical = OxmlElement("wp:positionV")
+    vertical.set("relativeFrom", "page")
+    vertical_offset = OxmlElement("wp:posOffset")
+    vertical_offset.text = "0"
+    vertical.append(vertical_offset)
+    anchor.append(vertical)
+
+    for tag in ("wp:extent", "wp:effectExtent"):
+        child = inline.find(qn(tag))
+        if child is not None:
+            anchor.append(child)
+
+    anchor.append(OxmlElement("wp:wrapNone"))
+
+    for tag in ("wp:docPr", "wp:cNvGraphicFramePr", "a:graphic"):
+        child = inline.find(qn(tag))
+        if child is not None:
+            anchor.append(child)
+
+    drawing.replace(inline, anchor)
+
+
 def add_spacer(doc: Document, points: float) -> None:
     paragraph = doc.add_paragraph()
     paragraph.paragraph_format.space_before = Pt(0)
@@ -527,6 +587,18 @@ def configure_styles(doc: Document) -> None:
     styles["Phaeno Cover Subtitle"].paragraph_format.space_after = Pt(20)
     styles["Phaeno Cover Subtitle"].paragraph_format.line_spacing = 1.25
     styles["Phaeno Metadata"].paragraph_format.space_after = Pt(3)
+    for cover_style_name in (
+        "Phaeno Cover Kicker",
+        "Phaeno Cover Title",
+        "Phaeno Cover Subtitle",
+        "Phaeno Metadata",
+    ):
+        cover_format = styles[cover_style_name].paragraph_format
+        cover_format.left_indent = Inches(COVER_TEXT_INDENT_IN)
+        cover_format.right_indent = Inches(COVER_TEXT_INDENT_IN)
+    styles["Phaeno Cover Title"].paragraph_format.right_indent = Inches(1.75)
+    styles["Phaeno Cover Subtitle"].paragraph_format.right_indent = Inches(1.75)
+    styles["Phaeno Cover Subtitle"].paragraph_format.space_after = Pt(8)
     styles["Phaeno Contents Title"].paragraph_format.space_after = Pt(6)
     styles["Phaeno Contents Title"].paragraph_format.keep_with_next = True
     styles["Phaeno Lead"].paragraph_format.space_after = Pt(14)
@@ -563,20 +635,20 @@ def configure_styles(doc: Document) -> None:
         style.paragraph_format.space_after = Pt(7 if level == 1 else 4)
         style.paragraph_format.line_spacing = 1.15
         style.paragraph_format.tab_stops.add_tab_stop(
-            Inches(6.25), WD_TAB_ALIGNMENT.RIGHT, WD_TAB_LEADER.DOTS
+            Inches(7.25), WD_TAB_ALIGNMENT.RIGHT, WD_TAB_LEADER.DOTS
         )
 
 
 def set_document_defaults(doc: Document) -> None:
     section = doc.sections[0]
-    section.page_width = Inches(8.5)
+    section.page_width = Inches(PAGE_WIDTH_IN)
     section.page_height = Inches(11)
-    section.top_margin = Inches(1)
-    section.right_margin = Inches(1)
-    section.bottom_margin = Inches(1)
-    section.left_margin = Inches(1)
-    section.header_distance = Inches(0.492)
-    section.footer_distance = Inches(0.492)
+    section.top_margin = Inches(0.35)
+    section.right_margin = Inches(BODY_MARGIN_IN)
+    section.bottom_margin = Inches(BODY_MARGIN_IN)
+    section.left_margin = Inches(BODY_MARGIN_IN)
+    section.header_distance = Inches(0)
+    section.footer_distance = Inches(0.25)
 
     settings = doc.settings.element
     update = settings.find(qn("w:updateFields"))
@@ -596,14 +668,14 @@ def set_document_defaults(doc: Document) -> None:
 
 
 def configure_page_geometry(section) -> None:
-    section.page_width = Inches(8.5)
+    section.page_width = Inches(PAGE_WIDTH_IN)
     section.page_height = Inches(11)
-    section.top_margin = Inches(1)
-    section.right_margin = Inches(1)
-    section.bottom_margin = Inches(1)
-    section.left_margin = Inches(1)
-    section.header_distance = Inches(0.492)
-    section.footer_distance = Inches(0.492)
+    section.top_margin = Inches(BODY_MARGIN_IN)
+    section.right_margin = Inches(BODY_MARGIN_IN)
+    section.bottom_margin = Inches(BODY_MARGIN_IN)
+    section.left_margin = Inches(BODY_MARGIN_IN)
+    section.header_distance = Inches(0.25)
+    section.footer_distance = Inches(0.25)
 
 
 def set_section_columns(section, count: int, *, space_dxa: int = 432) -> None:
@@ -648,12 +720,31 @@ def configure_cover_footer(section) -> None:
     footer.is_linked_to_previous = False
     clear_story(footer)
     paragraph = footer.paragraphs[0]
-    paragraph.paragraph_format.tab_stops.add_tab_stop(Inches(6.5), WD_TAB_ALIGNMENT.RIGHT)
-    left = paragraph.add_run("WHITE PAPER")
-    set_run_font(left, size=8, color=NEUTRAL_500, bold=True, all_caps=True, tracking_twips=18)
+    paragraph.paragraph_format.left_indent = Inches(COVER_TEXT_INDENT_IN)
+    paragraph.paragraph_format.right_indent = Inches(COVER_TEXT_INDENT_IN)
+    paragraph.paragraph_format.tab_stops.add_tab_stop(Inches(BODY_CONTENT_WIDTH_IN), WD_TAB_ALIGNMENT.RIGHT)
+    left = paragraph.add_run("RESEARCH USE ONLY")
+    set_run_font(left, size=8, color=NEUTRAL_500, bold=True, all_caps=True, tracking_twips=12)
     paragraph.add_run("\t")
-    right = paragraph.add_run("phaenobiotech.com")
-    set_run_font(right, size=8, color=NEUTRAL_500)
+    page_label = paragraph.add_run("phaenobiotech.com   |   Page ")
+    set_run_font(page_label, size=8, color=NEUTRAL_500)
+    add_field(paragraph, "PAGE", "1")
+
+
+def configure_cover_header(section, cover_crop: Path) -> None:
+    header = section.header
+    header.is_linked_to_previous = False
+    clear_story(header)
+    paragraph = header.paragraphs[0]
+    paragraph.alignment = WD_ALIGN_PARAGRAPH.CENTER
+    paragraph.paragraph_format.space_before = Pt(0)
+    paragraph.paragraph_format.space_after = Pt(0)
+    paragraph.paragraph_format.line_spacing = 1
+    image_shape = paragraph.add_run().add_picture(
+        str(cover_crop), width=Inches(COVER_IMAGE_WIDTH_IN)
+    )
+    set_picture_alt_text(image_shape, "Phaeno wordmark over an abstract molecular image")
+    place_picture_behind_page(image_shape)
 
 
 def configure_body_header_footer(section) -> None:
@@ -664,7 +755,7 @@ def configure_body_header_footer(section) -> None:
 
     header = section.header.paragraphs[0]
     header.paragraph_format.space_after = Pt(0)
-    header.paragraph_format.tab_stops.add_tab_stop(Inches(6.5), WD_TAB_ALIGNMENT.RIGHT)
+    header.paragraph_format.tab_stops.add_tab_stop(Inches(BODY_CONTENT_WIDTH_IN), WD_TAB_ALIGNMENT.RIGHT)
     label = header.add_run("WHITE PAPER")
     set_run_font(label, size=8, color=GREEN_700, bold=True, all_caps=True, tracking_twips=18)
     header.add_run("\t")
@@ -673,11 +764,11 @@ def configure_body_header_footer(section) -> None:
 
     footer = section.footer.paragraphs[0]
     footer.paragraph_format.space_before = Pt(0)
-    footer.paragraph_format.tab_stops.add_tab_stop(Inches(6.5), WD_TAB_ALIGNMENT.RIGHT)
-    site = footer.add_run("phaenobiotech.com")
-    set_run_font(site, size=8, color=NEUTRAL_500)
+    footer.paragraph_format.tab_stops.add_tab_stop(Inches(BODY_CONTENT_WIDTH_IN), WD_TAB_ALIGNMENT.RIGHT)
+    notice = footer.add_run("RESEARCH USE ONLY")
+    set_run_font(notice, size=8, color=NEUTRAL_500, bold=True, all_caps=True, tracking_twips=12)
     footer.add_run("\t")
-    page_label = footer.add_run("Page ")
+    page_label = footer.add_run("phaenobiotech.com   |   Page ")
     set_run_font(page_label, size=8, color=NEUTRAL_500)
     add_field(footer, "PAGE", "1")
 
@@ -778,76 +869,40 @@ def build() -> None:
     recommended_num_id = create_numbering(doc, kind="decimal")
     reference_num_id = create_numbering(doc, kind="decimal")
 
-    # Title page: editorial-cover pattern with a one-third-page discovery header.
+    # Title page: editorial-cover pattern with a full-bleed discovery image
+    # in the first-page header and editable Word title text layered above it.
     cover_section = doc.sections[0]
+    configure_cover_header(cover_section, cover_crop)
     configure_cover_footer(cover_section)
 
-    image_paragraph = doc.add_paragraph()
-    image_paragraph.paragraph_format.space_after = Pt(18)
-    image_shape = image_paragraph.add_run().add_picture(str(cover_crop), width=Inches(6.5))
-    set_picture_alt_text(image_shape, "Phaeno wordmark over an abstract molecular image")
+    overlay_spacer = doc.add_paragraph()
+    overlay_spacer.paragraph_format.space_before = Pt(0)
+    overlay_spacer.paragraph_format.space_after = Pt(150)
+    overlay_spacer.paragraph_format.line_spacing = Pt(1)
+    overlay_spacer.paragraph_format.line_spacing_rule = WD_LINE_SPACING.EXACTLY
+    spacer_run = overlay_spacer.add_run(" ")
+    set_run_font(spacer_run, size=1, color=RNA_900)
 
     kicker = doc.add_paragraph(style="Phaeno Cover Kicker")
     kicker_run = kicker.add_run("WHITE PAPER TEMPLATE")
-    set_run_font(kicker_run, size=9.5, color=GREEN_700, bold=True, all_caps=True, tracking_twips=28)
+    set_run_font(kicker_run, size=9.5, color=WHITE, bold=True, all_caps=True, tracking_twips=28)
 
     title = doc.add_paragraph(style="Phaeno Cover Title")
     title_run = title.add_run("[White paper title]")
-    set_run_font(title_run, size=28, color=RNA_900, bold=True)
+    set_run_font(title_run, size=29, color=WHITE, bold=True)
 
     subtitle = doc.add_paragraph(style="Phaeno Cover Subtitle")
     subtitle_run = subtitle.add_run("[State the scientific conclusion or question in one clear sentence]")
-    set_run_font(subtitle_run, size=13, color=RNA_600)
+    set_run_font(subtitle_run, size=13, color=RNA_50)
 
-    meta = doc.add_paragraph(style="Phaeno Metadata")
-    meta_run = meta.add_run("Prepared by [author or team]")
-    set_run_font(meta_run, size=9.5, color=NEUTRAL_600, bold=True)
-    meta2 = doc.add_paragraph(style="Phaeno Metadata")
-    meta2_run = meta2.add_run("[Month Year]   |   Version [x.x]")
-    set_run_font(meta2_run, size=9.5, color=NEUTRAL_600)
-    meta2.paragraph_format.space_after = Pt(3)
-    meta3 = doc.add_paragraph(style="Phaeno Metadata")
-    meta3_run = meta3.add_run("[Research use only / intended use statement, if applicable]")
-    set_run_font(meta3_run, size=8.75, color=NEUTRAL_500)
-    meta3.paragraph_format.space_after = Pt(0)
+    title_meta = doc.add_paragraph(style="Phaeno Metadata")
+    title_meta_run = title_meta.add_run("[Month Year]   |   Version [x.x]")
+    set_run_font(title_meta_run, size=9.5, color=WHITE, bold=True)
+    title_meta.paragraph_format.space_after = Pt(24)
 
-    # Main document section begins at page 1; the cover remains unnumbered.
-    body_section = add_section(doc, WD_SECTION.NEW_PAGE, columns=1)
-    restart_page_numbering(body_section, 1)
-    configure_body_header_footer(body_section)
-
-    contents = doc.add_paragraph(style="Phaeno Contents Title")
-    contents.add_run("Contents")
-    note = doc.add_paragraph(style="Phaeno Instruction")
-    note_run = note.add_run("Template note: after editing headings, press Ctrl+A, then F9 in Word to refresh the contents and page numbers.")
-    set_run_font(note_run, size=9, color=NEUTRAL_600, italic=True)
-    set_paragraph_shading(note, NEUTRAL_50)
-    set_paragraph_left_border(note, NEUTRAL_300, size=10, space=6)
-
-    toc_entries = [
-        (1, "Executive summary", "exec_summary", 2),
-        (2, "At a glance", "at_a_glance", 2),
-        (1, "Introduction", "introduction", 3),
-        (2, "Background", "background", 3),
-        (2, "Scope and definitions", "scope", 3),
-        (2, "Approach", "approach", 3),
-        (1, "Evidence and findings", "evidence_findings", 4),
-        (2, "Finding 1: [Conclusion-led heading]", "finding_1", 4),
-        (2, "Finding 2: [Conclusion-led heading]", "finding_2", 4),
-        (1, "Interpretation and recommendations", "interpretation", 5),
-        (2, "What the evidence means", "meaning", 5),
-        (2, "Recommended actions", "recommendations", 5),
-        (1, "Conclusion", "conclusion", 5),
-        (1, "References", "references", 6),
-        (2, "Acknowledgments and disclosures", "acknowledgments", 6),
-        (1, "Appendix A. Methods and supporting detail", "appendix_a", 7),
-        (2, "Method summary", "method_summary", 7),
-        (2, "Supplemental data", "supplemental_data", 7),
-    ]
-    add_toc(doc, toc_entries)
-
-    # Page 2: Executive summary in the standard two-column scientific grid.
-    add_section(doc, WD_SECTION.NEW_PAGE, columns=2)
+    # Page 1 is both the title page and the opening content page.
+    restart_page_numbering(cover_section, 1)
+    add_section(doc, WD_SECTION.CONTINUOUS, columns=2)
     add_heading(doc, "Executive summary", 1, "exec_summary", 1)
     lead = doc.add_paragraph(style="Phaeno Lead")
     lead_run = lead.add_run("[Lead with the answer. In two or three sentences, state what was studied, what the evidence shows, and why it matters.]")
@@ -882,6 +937,40 @@ def build() -> None:
         "Keep sample size, method, units, source, and validation status adjacent to every consequential claim.",
         kind="evidence",
     )
+
+    # Page 2: table of contents.
+    body_section = add_section(doc, WD_SECTION.NEW_PAGE, columns=1)
+    configure_body_header_footer(body_section)
+
+    contents = doc.add_paragraph(style="Phaeno Contents Title")
+    contents.add_run("Contents")
+    note = doc.add_paragraph(style="Phaeno Instruction")
+    note_run = note.add_run("Template note: after editing headings, press Ctrl+A, then F9 in Word to refresh the contents and page numbers.")
+    set_run_font(note_run, size=9, color=NEUTRAL_600, italic=True)
+    set_paragraph_shading(note, NEUTRAL_50)
+    set_paragraph_left_border(note, NEUTRAL_300, size=10, space=6)
+
+    toc_entries = [
+        (1, "Executive summary", "exec_summary", 1),
+        (2, "At a glance", "at_a_glance", 1),
+        (1, "Introduction", "introduction", 3),
+        (2, "Background", "background", 3),
+        (2, "Scope and definitions", "scope", 3),
+        (2, "Approach", "approach", 3),
+        (1, "Evidence and findings", "evidence_findings", 4),
+        (2, "Finding 1: [Conclusion-led heading]", "finding_1", 4),
+        (2, "Finding 2: [Conclusion-led heading]", "finding_2", 4),
+        (1, "Interpretation and recommendations", "interpretation", 5),
+        (2, "What the evidence means", "meaning", 5),
+        (2, "Recommended actions", "recommendations", 5),
+        (1, "Conclusion", "conclusion", 5),
+        (1, "References", "references", 6),
+        (2, "Acknowledgments and disclosures", "acknowledgments", 6),
+        (1, "Appendix A. Methods and supporting detail", "appendix_a", 7),
+        (2, "Method summary", "method_summary", 7),
+        (2, "Supplemental data", "supplemental_data", 7),
+    ]
+    add_toc(doc, toc_entries)
 
     # Page 3: Introduction.
     add_section(doc, WD_SECTION.NEW_PAGE, columns=2)
@@ -935,7 +1024,7 @@ def build() -> None:
     fig_paragraph = doc.add_paragraph()
     fig_paragraph.alignment = WD_ALIGN_PARAGRAPH.CENTER
     fig_paragraph.paragraph_format.space_after = Pt(3)
-    fig_shape = fig_paragraph.add_run().add_picture(str(figure_placeholder), width=Inches(6.3))
+    fig_shape = fig_paragraph.add_run().add_picture(str(figure_placeholder), width=Inches(7.3))
     set_picture_alt_text(fig_shape, "Illustrative evidence figure placeholder with a green line and amber data markers")
     fig_source = doc.add_paragraph(style="Phaeno Citation")
     fig_source.add_run("Source: [Dataset, method, sample size, units, version, and validation status].")
@@ -965,7 +1054,7 @@ def build() -> None:
         cells = comparison.add_row().cells
         for index, value in enumerate(row_values):
             cells[index].text = value
-    style_table(comparison, [2200, 3300, 3860], emphasize_column=2)
+    style_table(comparison, [2520, 3780, 4500], emphasize_column=2)
     table_source = doc.add_paragraph(style="Phaeno Citation")
     table_source.add_run("Table 1 source: [Citation or internal dataset identifier].")
 
@@ -1038,7 +1127,7 @@ def build() -> None:
         cells = method_table.add_row().cells
         for index, value in enumerate(row_values):
             cells[index].text = value
-    style_table(method_table, [1900, 3700, 3760])
+    style_table(method_table, [2160, 4320, 4320])
     method_source = doc.add_paragraph(style="Phaeno Citation")
     method_source.add_run("Table A1. Method details required for reproducibility and review.")
 

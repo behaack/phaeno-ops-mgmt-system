@@ -1,0 +1,44 @@
+---
+title: "PSeq: Whole-Molecule Phased RNA Sequencing on Standard Short-Read NGS"
+image: "/images/media/white-papers/pseq-technical-whitepaper-part-1-platform-overview.png"
+date: "2026-07-26"
+summary: "PSeq combines source-molecule tagging, paired-end short-read NGS, automated transcript reconstruction, and run-specific SQL records for traceable whole-molecule RNA analysis."
+pageCount: 7
+version: "DRAFT"
+topics:
+  - "Whole-molecule phased RNA sequencing"
+  - "PSeq platform architecture"
+  - "Source Molecule Identifier tagging"
+  - "Short-read NGS workflow"
+  - "Traceable RNA data model"
+searchKeywords:
+  - "PSeq"
+  - "whole-molecule RNA sequencing"
+  - "phased RNA sequencing"
+  - "short-read NGS"
+  - "Source Molecule Identifier"
+  - "SMID"
+  - "strand-sense discriminator"
+  - "transcript reconstruction"
+  - "run-specific SQL database"
+---
+
+## Abstract
+
+PSeq is a research-use RNA-sequencing platform that brings whole-molecule resolution and end-to-end phasing to standard short-read next-generation sequencing (NGS). During reverse transcription, a source-molecule tagging reagent labels each RNA sequence, and a library strategy preserves the tag marker across random fragments. Paired-end sequencing runs on unmodified instruments, while an automated pipeline groups reads by Source Molecule Identifier (SMID), identifies the source gene, assembles a consensus sequence, and retains supporting records in a run-specific SQL database.
+
+This paper presents the platform’s core problem, architecture, and operating model. It omits operational reagent recipes and detailed validation results, which are covered in companion papers.
+
+## Key topics
+
+- Full-length RNA sequencing on short-read NGS
+- Quantitative, molecule-resolved transcript isoforms
+- Automated data processing and scalable delivery
+
+## Contents
+
+- Full-length RNA sequencing on short-read NGS sequencers
+- Quantitative isoform sequencing for all genes, at scale
+- Sequencing accuracy
+- Automated data pipeline
+- Data and delivery

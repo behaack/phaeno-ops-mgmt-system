@@ -29,6 +29,9 @@ reindex, or external search-console change.
 - The Website now implements the Phase 1 publication convention, metadata,
   structured data, and configured PDF indexing policy. The backend crawler
   still indexes publication landing-page HTML only.
+- On 2026-07-26 the owner removed author names from the Website white-paper
+  contract. White-paper front matter, cards, landing pages, search text, and
+  structured metadata no longer include authors.
 - PDF text extraction still requires an approved .NET dependency. Repository
   policy requires explicit approval before that dependency is added. Approval
   was received and PdfPig 0.1.15 is now referenced by the API project.
@@ -52,7 +55,7 @@ reindex, or external search-console change.
 Provide a repeatable publication workflow in which:
 
 1. every publication has one useful, indexable HTML landing page;
-2. the landing page carries an abstract, discovery metadata, authorship, and a
+2. the landing page carries an abstract, discovery metadata, and a
    stable link to the full PDF;
 3. internal Website search can match terms found only in the PDF but returns
    one result pointing to the landing page;
@@ -64,7 +67,7 @@ Provide a repeatable publication workflow in which:
 ## Product and UX decisions
 
 - Do not paginate a publication into artificial Website pages.
-- Keep the landing page concise: title, authors, publication date, image,
+- Keep the landing page concise: title, publication date, image,
   abstract, key topics, compact contents list, page count, version when
   applicable, and a clear PDF action.
 - The PDF is the complete publication. The landing page is the discovery and
@@ -105,7 +108,7 @@ Provide a repeatable publication workflow in which:
 ## Current implementation
 
 - `website/src/content.config.ts` defines the general white-paper metadata
-  contract, including authors, dates, page count, topics, and search keywords.
+  contract, including dates, page count, topics, and search keywords.
 - `website/src/lib/publications.ts` derives and validates the landing, PDF, and
   representative-image paths from each content entry ID.
 - `website/src/pages/media/white-papers/[slug].astro` emits the landing route
@@ -145,7 +148,6 @@ Extend the collection schema with this reusable metadata:
 | --- | --- | --- | --- |
 | `title` | string | required | Visible title, metadata, and result title. |
 | `summary` | string | required, maximum 200 characters | Card copy and meta description; not the full abstract. |
-| `authors` | string array | required, non-empty | Visible byline and one structured author object per author. |
 | `date` | date | required | Original publication date. |
 | `dateModified` | date | optional, not before `date` | Material revision date. |
 | `image` | local Website path | required | Card, hero, Open Graph, and structured-data image. |
@@ -192,15 +194,15 @@ article metadata component without changing blog behavior, to emit:
 - an absolute `phaeno:search-source` URL for the derived PDF;
 - `phaeno:search-source-type` set to `application/pdf`;
 - publication page count and version metadata when present; and
-- one `Article` JSON-LD object with `headline`, `description`, separate author
-  objects, `datePublished`, optional `dateModified`, representative image,
-  Phaeno as publisher, `mainEntityOfPage`, and a PDF `MediaObject` encoding.
+- one `Article` JSON-LD object with `headline`, `description`, `datePublished`,
+  optional `dateModified`, representative image, Phaeno as publisher,
+  `mainEntityOfPage`, and a PDF `MediaObject` encoding.
 
 Structured data must describe visible content truthfully. It must not contain a
 full `articleBody` when the full text is available only in the PDF.
 
-Google's supported Article properties include authors, publication and
-modification dates, headline, and representative images:
+Google's supported Article properties include publication and modification
+dates, headline, and representative images:
 https://developers.google.com/search/docs/appearance/structured-data/article
 
 ## Internal search design
@@ -346,8 +348,8 @@ documents both non-HTML `X-Robots-Tag` controls and HTTP canonical headers:
 Vercel supports path-based response headers in `vercel.json`:
 https://vercel.com/docs/project-configuration/vercel-json#headers
 
-The PDF itself must still have selectable text, a document title, authors,
-subject, keywords, language, logical reading order, bookmarks for major
+The PDF itself must still have selectable text, a document title, subject,
+keywords, language, logical reading order, bookmarks for major
 sections, and accessible tagging before publication. These are publication
 quality and accessibility requirements even when the PDF is excluded from
 external results.
@@ -405,7 +407,7 @@ the implemented Phase 2 crawler enrichment.
 ### Website build and generated output
 
 - A conforming publication builds without per-entry route or hosting edits.
-- Missing PDFs, invalid local paths, empty authors/topics/keywords, invalid
+- Missing PDFs, invalid local paths, empty topics/keywords, invalid
   dates, and non-positive page counts fail the build clearly.
 - Generated HTML contains one canonical, unique metadata, crawler source
   metadata, and valid Article JSON-LD.
@@ -439,7 +441,7 @@ repository policy.
 
 ### Browser and deployment verification
 
-- At desktop and narrow widths, the landing page exposes title, authors,
+- At desktop and narrow widths, the landing page exposes title,
   abstract, topics, contents, page count, and PDF action without pagination.
 - Search for an abstract term returns one landing result.
 - Search for a PDF-only term returns the same landing result with a supported

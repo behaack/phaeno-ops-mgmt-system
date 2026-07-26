@@ -33,7 +33,7 @@ const footer =
           //   type: 'link',
           //   label: 'White Papers',
           //   value: '/media/white-papers'
-          // },          
+          // },
           {
             type: 'link',
             label: 'Job Openings',

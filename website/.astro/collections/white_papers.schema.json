@@ -10,14 +10,6 @@
       "type": "string",
       "pattern": "^\\/images\\/.*"
     },
-    "authors": {
-      "minItems": 1,
-      "type": "array",
-      "items": {
-        "type": "string",
-        "minLength": 1
-      }
-    },
     "date": {
       "type": "string",
       "format": "date-time"
@@ -63,7 +55,6 @@
   "required": [
     "title",
     "image",
-    "authors",
     "date",
     "summary",
     "pageCount",

@@ -1,0 +1,49 @@
+---
+title: "PSeq Molecular Tagging and Library Architecture"
+image: "/images/media/white-papers/pseq-technical-whitepaper-part-2-molecular-tagging.png"
+date: "2026-07-26"
+summary: "Design principles for preserving source-molecule identity and strand sense."
+pageCount: 5
+version: "DRAFT"
+topics:
+  - "Source-molecule tagging"
+  - "SMID barcode architecture"
+  - "Strand-sense discriminators"
+  - "PSeq library construction"
+  - "Paired-end read structure"
+searchKeywords:
+  - "PSeq"
+  - "molecular tagging"
+  - "Source Molecule Identifier"
+  - "SMID"
+  - "strand-sense discriminator"
+  - "tagged cDNA"
+  - "intramolecular fragmentation"
+  - "paired-end sequencing"
+---
+
+import ArticleCallout from '@/components/content/ArticleCallout.astro'
+
+## Abstract
+
+Whole-molecule reconstruction from short reads requires more than sequencing depth: the fragments must retain a reliable connection to the molecule from which they originated. PSeq addresses that requirement by introducing a multifunctional tag during reverse transcription and redistributing its marker among random fragments generated from the tagged cDNA. The marker carries a high-diversity Source Molecule Identifier (SMID), fixed sequence landmarks, and strand-sense information that can be recognized after paired-end sequencing.
+
+This paper describes the molecular design and expected read structure of the PSeq library. It is an architectural description, not a reagent recipe or a validation report. Detailed kit compositions and operational procedures remain in controlled SOPs; technical evidence for validation is consolidated in Paper 4 of this series.
+
+<ArticleCallout>
+  **Design objective**: Fragment a source cDNA into a conventional short-read library without losing the identity or strand sense of the RNA molecule from which each fragment arose.
+</ArticleCallout>
+
+## Key topics
+
+- Full-length RNA sequencing on short-read NGS
+- Quantitative, molecule-resolved transcript isoforms
+- Automated data processing and scalable delivery
+
+## Contents
+
+- Full-length RNA sequencing on short-read NGS sequencers
+- Quantitative isoform sequencing for all genes, at scale
+- Sequencing accuracy
+- Automated data pipeline
+- Data and delivery

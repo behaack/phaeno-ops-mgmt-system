@@ -1,0 +1,50 @@
+---
+title: "PSeq Data Pipeline"
+image: "/images/media/white-papers/pseq-technical-whitepaper-part-3-data-pipeline.png"
+date: "2026-07-26"
+summary: "DNA library structure  ●  Computational assembly  ●  Data traceability"
+pageCount: 7
+version: "DRAFT"
+topics:
+  - "PSeq marker parsing"
+  - "SMID-based read clustering"
+  - "Source-gene identification"
+  - "Transcript assembly and consensus"
+  - "Run-specific SQL provenance"
+searchKeywords:
+  - "PSeq"
+  - "PSeq data pipeline"
+  - "FASTQ"
+  - "Source Molecule Identifier"
+  - "SMID clustering"
+  - "reference-guided assembly"
+  - "de novo assembly"
+  - "RNA consensus sequence"
+  - "molecular provenance"
+---
+
+import ArticleCallout from '@/components/content/ArticleCallout.astro'
+
+## Abstract
+
+The PSeq data pipeline is designed to transform paired-end short reads from a tagged RNA library into molecule-specific transcript records. It begins by locating the PSeq marker tag, recovering the Source Molecule Identifier (SMID) and strand signal, and grouping reads that originated from one tagged reverse transcript. Within each molecular bin, the pipeline identifies and retrieves the sequence of the source gene, assembles sequence, creates alignment products, and records the evidence chain in a run-specific SQL database.
+
+This paper describes the computational architecture, data products, deployment model, and provenance strategy. It does not present the validation results themselves; the initial library and pipeline evidence is consolidated in Paper 4 of this series.
+
+<ArticleCallout>
+  **Computational objective**: Turn a population of tagged short reads into independently inspectable molecular records without losing the connection to raw sequence and quality evidence.
+</ArticleCallout>
+
+## Key topics
+
+- Full-length RNA sequencing on short-read NGS
+- Quantitative, molecule-resolved transcript isoforms
+- Automated data processing and scalable delivery
+
+## Contents
+
+- Full-length RNA sequencing on short-read NGS sequencers
+- Quantitative isoform sequencing for all genes, at scale
+- Sequencing accuracy
+- Automated data pipeline
+- Data and delivery

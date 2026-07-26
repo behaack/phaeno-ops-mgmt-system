@@ -1,0 +1,51 @@
+---
+title: "Initial Technical Validation of the PSeq Whole-Molecule RNA Sequencing Platform"
+image: "/images/media/white-papers/pseq-technical-whitepaper-part-4-initial-technical-validation.png"
+date: "2026-07-26"
+summary: "PSeq v1 initial evidence examines library structure, marker placement, SMID-grouped transcript assembly, PRPF31 phasing, and raw-read-to-consensus traceability."
+pageCount: 12
+version: "DRAFT"
+topics:
+  - "PSeq library quality control"
+  - "Marker placement and Sanger confirmation"
+  - "FASTQ read structure"
+  - "PRPF31 molecule-level case study"
+  - "End-to-end splice-junction phasing"
+  - "Consensus traceability and validation limits"
+searchKeywords:
+  - "PSeq"
+  - "PSeq technical validation"
+  - "Bioanalyzer"
+  - "marker placement"
+  - "Sanger sequencing"
+  - "FASTQ read structure"
+  - "PRPF31"
+  - "IGV"
+  - "Sashimi plot"
+  - "SMID"
+  - "consensus accuracy"
+---
+
+## Abstract
+
+PSeq combines source-molecule tagging, short-read library construction, SMID-based read clustering, transcript assembly, and data pipeline constructed  run-specific SQL evidence record. This paper consolidates initial technical evidence for PSeq v1 across that complete chain. The evidence confirms targeted library size-distribution, and key structural properties of library inserts: positionally labeled markers with barcodes, strand discriminators, random-fragment of source molecule, strands sense specified cDNA fragments.
+
+Database assembled records of the sequencing of a representative (PRPF31 gene) transcript, visualized with the open source IGV gene viewer.  Records conform to population-level properties expected for the PSeq DNA library. These include barcodes linked to single transcripts of single source molecules from an identified source gene. Also, the absence of chimeras, with end-to-end high depth overlapping read coverage
+
+The evidence separately conforms to correct automated computational assembly of single, phased, end-to-end consensus transcript sequences, preserving linked records from raw data FASTQ files through assembly steps and final structure, for each molecule, at scale. 
+
+The observations support the successful integration of sample chemistry, conventional NGS on unmodified instruments and computational assembly of full-length transcript populations. They further indicate how whole-molecule alignment records can be interrogated. They should be interpreted as initial internal technical evidence, not as a statistically complete platform validation, clinical validation, or regulatory performance study.
+
+## Key topics
+
+- Full-length RNA sequencing on short-read NGS
+- Quantitative, molecule-resolved transcript isoforms
+- Automated data processing and scalable delivery
+
+## Contents
+
+- Full-length RNA sequencing on short-read NGS sequencers
+- Quantitative isoform sequencing for all genes, at scale
+- Sequencing accuracy
+- Automated data pipeline
+- Data and delivery

@@ -16,7 +16,6 @@ export async function getStaticPaths() {
 const { paper } = Astro.props as { paper: CollectionEntry<'white_papers'> }
 const {
   title,
-  authors,
   date,
   dateModified,
   summary,
@@ -34,7 +33,6 @@ const { Content } = await render(paper)
     slot="head"
     title={title}
     description={summary}
-    authors={authors}
     datePublished={date}
     dateModified={dateModified}
     landingUrl={publication.landingUrl}
@@ -48,7 +46,6 @@ const { Content } = await render(paper)
     title={title}
     summary={summary}
     image={image}
-    authors={authors}
     date={date}
     eyebrow="Phaeno white paper"
     backHref="/media/white-papers"

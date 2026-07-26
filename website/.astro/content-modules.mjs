@@ -1,0 +1,10 @@
+
+export default new Map([
+["src/content/blog/an-introduction-to-phased-sequencing-part-1.mdx", () => import("astro:content-layer-deferred-module?astro%3Acontent-layer-deferred-module=&fileName=src%2Fcontent%2Fblog%2Fan-introduction-to-phased-sequencing-part-1.mdx&astroContentModuleFlag=true")],
+["src/content/blog/an-introduction-to-phased-sequencing-part-2.mdx", () => import("astro:content-layer-deferred-module?astro%3Acontent-layer-deferred-module=&fileName=src%2Fcontent%2Fblog%2Fan-introduction-to-phased-sequencing-part-2.mdx&astroContentModuleFlag=true")],
+["src/content/blog/an-introduction-to-phased-sequencing-part-3.mdx", () => import("astro:content-layer-deferred-module?astro%3Acontent-layer-deferred-module=&fileName=src%2Fcontent%2Fblog%2Fan-introduction-to-phased-sequencing-part-3.mdx&astroContentModuleFlag=true")],
+["src/content/white_papers/pseq-technical-whitepaper-part-1-platform-overview.mdx", () => import("astro:content-layer-deferred-module?astro%3Acontent-layer-deferred-module=&fileName=src%2Fcontent%2Fwhite_papers%2Fpseq-technical-whitepaper-part-1-platform-overview.mdx&astroContentModuleFlag=true")],
+["src/content/white_papers/pseq-technical-whitepaper-part-2-molecular-tagging.mdx", () => import("astro:content-layer-deferred-module?astro%3Acontent-layer-deferred-module=&fileName=src%2Fcontent%2Fwhite_papers%2Fpseq-technical-whitepaper-part-2-molecular-tagging.mdx&astroContentModuleFlag=true")],
+["src/content/white_papers/pseq-technical-whitepaper-part-3-data-pipeline.mdx", () => import("astro:content-layer-deferred-module?astro%3Acontent-layer-deferred-module=&fileName=src%2Fcontent%2Fwhite_papers%2Fpseq-technical-whitepaper-part-3-data-pipeline.mdx&astroContentModuleFlag=true")],
+["src/content/white_papers/pseq-technical-whitepaper-part-4-initial-technical-validation.mdx", () => import("astro:content-layer-deferred-module?astro%3Acontent-layer-deferred-module=&fileName=src%2Fcontent%2Fwhite_papers%2Fpseq-technical-whitepaper-part-4-initial-technical-validation.mdx&astroContentModuleFlag=true")]]);
+		

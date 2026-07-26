@@ -2,7 +2,6 @@
 interface Props {
   title: string
   description: string
-  authors: string[]
   datePublished: Date
   dateModified?: Date
   landingUrl: string
@@ -16,7 +15,6 @@ interface Props {
 const {
   title,
   description,
-  authors,
   datePublished,
   dateModified,
   landingUrl,
@@ -34,7 +32,6 @@ const structuredData = {
   '@type': 'Article',
   headline: title,
   description,
-  author: authors.map((name) => ({ '@type': 'Person', name })),
   datePublished: publishedIso,
   ...(modifiedIso ? { dateModified: modifiedIso } : {}),
   image: imageUrl,

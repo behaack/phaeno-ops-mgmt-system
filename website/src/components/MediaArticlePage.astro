@@ -7,7 +7,7 @@ interface Props {
   title: string
   summary: string
   image: string
-  authors: string[]
+  authors?: string[]
   date: Date | string | number
   eyebrow: string
   backHref: string
@@ -22,7 +22,7 @@ const {
   title,
   summary,
   image,
-  authors,
+  authors = [],
   date,
   eyebrow,
   backHref,
@@ -71,8 +71,12 @@ const formattedDate = formatContentDate(date, {
           </a>
         ) : null}
         <div class="article-meta" data-phaeno-search-ignore>
-          <span>{authors.join(', ')}</span>
-          <span aria-hidden="true">•</span>
+          {authors.length > 0 ? (
+            <>
+              <span>{authors.join(', ')}</span>
+              <span aria-hidden="true">•</span>
+            </>
+          ) : null}
           <time datetime={new Date(date).toISOString()}>{formattedDate}</time>
           {pageCount ? (
             <>
@@ -276,6 +280,7 @@ const formattedDate = formatContentDate(date, {
 .media-article-content :global(p) {
   margin: 0 0 1em;
   padding: 0;
+  font-size: inherit;
 }
 
 .media-article-content :global(h2),

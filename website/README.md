@@ -84,9 +84,9 @@ White papers use their content entry ID as the stable slug. A new entry named
 
 Do not add a PDF link to front matter. The shared publication helper derives
 the landing page and PDF URLs and fails the build when either required asset is
-missing or does not follow the convention. Supply title, summary, at least one
-author, publication date, the local image path, the PDF's current positive page
-count, at least one visible topic, and at least one search keyword. Use optional
+missing or does not follow the convention. Supply title, summary, publication
+date, the local image path, the PDF's current positive page count, at least one
+visible topic, and at least one search keyword. Use optional
 `dateModified` only when it is not earlier than `date`, and optional `version`
 only when the publisher assigns one.
 

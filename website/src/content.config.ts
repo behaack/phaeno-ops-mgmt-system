@@ -98,7 +98,6 @@ const white_papers = defineCollection({
     .object({
       title: z.string().trim().min(1),
       image: z.string().trim().startsWith('/images/'),
-      authors: z.array(z.string().trim().min(1)).min(1),
       date: z.coerce.date(),
       dateModified: z.coerce.date().optional(),
       summary: z.string().trim().min(1).max(200, 'Maximum length is 200 characters'),

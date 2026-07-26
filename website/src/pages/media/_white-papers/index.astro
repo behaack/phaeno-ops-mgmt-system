@@ -31,17 +31,16 @@ const publications = papers.map((paper) => ({
   <main id="main">
     <TopPageBanner title="White Papers" image="image-3"/>
     <section>
-      <MediaSearch listLength={publications.length} placeholder="Search title, author, or topic" />
+      <MediaSearch listLength={publications.length} placeholder="Search title or topic" />
       <MediaCollection>
         {publications.map(({ paper, paths }) => (
           <MediaCard 
-            searchString={`${paper.data.title} ${paper.data.authors.join(' ')} ${paper.data.topics.join(' ')}`.toLowerCase()}
+            searchString={`${paper.data.title} ${paper.data.topics.join(' ')}`.toLowerCase()}
             title={paper.data.title} 
             image={paper.data.image} 
             summary={paper.data.summary}
             link={paths.landingPath}
           >
-            <div>{paper.data.authors.join(', ')}</div>
             <div>{formatContentDate(paper.data.date)} · {paper.data.pageCount} pages</div>
           </MediaCard>
         ))}      
