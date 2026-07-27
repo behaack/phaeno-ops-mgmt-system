@@ -19,17 +19,10 @@ export default defineConfig({
   },
 
   redirects: {
-    // About consolidation
-    '/about': { destination: '/about/about-us', status: 308 },
-    '/mission': { destination: '/about/about-us', status: 308 },
-    '/our-team': { destination: '/about/about-us', status: 308 },
-    '/our-team-2': { destination: '/about/about-us', status: 308 },
-    // Careers
-    '/join-us': { destination: '/about/job-openings', status: 308 },
-    // Login (external)
-    '/log-in': { destination: 'https://portal.phaenobiotech.com/auth/sign-in', status: 308, },
-    // Contact alias
-    '/contactus': { destination: '/contact', status: 308 },
+    // Technology route consolidation
+    '/technology': { destination: '/technology/pseq-platform', status: 308 },
+    '/multi-omics': { destination: '/technology/multi-omics', status: 308 },
+    '/why-isoforms-matter': { destination: '/technology/why-isoforms-matter', status: 308 },
   },
 
   integrations: [

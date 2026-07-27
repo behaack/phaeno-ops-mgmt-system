@@ -24,16 +24,6 @@ const footer =
       {
         header: 'Resources',
         content: [
-          // {
-          //   type: 'link',
-          //   label: 'Blog',
-          //   value: '/blog'
-          // },
-          // {
-          //   type: 'link',
-          //   label: 'White Papers',
-          //   value: '/media/white-papers'
-          // },
           {
             type: 'link',
             label: 'Job Openings',
@@ -43,12 +33,22 @@ const footer =
             type: 'link',
             label: 'Investors',
             value: '/investors'
+          },   
+          {
+            type: 'link',
+            label: 'Blog',
+            value: '/media/blog'
+          },
+          {
+            type: 'link',
+            label: 'White Papers',
+            value: '/media/white-papers'
           },
           {
             type: 'external-link',
             label: 'Customer Portal',
             value: 'https://portal.phaenobiotech.com'
-          },          
+          },                    
         ]
       }      
     ]
@@ -66,17 +66,17 @@ const footer =
           {
             type: 'link',
             label: 'Technology',
-            value: '/technology'
-          },  
-          {
-            type: 'link',
-            label: 'Why RNA Isoforms?',
-            value: '/why-isoforms-matter'
+            value: '/technology/pseq-platform'
           },  
           {
             type: 'link',
             label: 'PSeq & Multi-omics',
-            value: '/multi-omics'
+            value: '/technology/multi-omics'
+          },  
+          {
+            type: 'link',
+            label: 'Why RNA Isoforms?',
+            value: '/technology/why-isoforms-matter/'
           },  
           {
             type: 'link',

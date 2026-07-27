@@ -2,6 +2,7 @@
 function init(): void {
   /* ――― 1. helper to detect the mobile breakpoint ――― */
   const MOBILE_BP = '(max-width: 900px)';
+  const PARENT_FOCUS_KEY = 'phaeno-menu-parent-focus';
   const mqMobile  = window.matchMedia(MOBILE_BP);
   const isMobile  = () => mqMobile.matches;
 
@@ -13,9 +14,11 @@ function init(): void {
 
   setOrientation();
   resetMenuState();
+  restoreParentFocus();
 
   parentLinks.forEach(link => {
     const li = link.parentElement as HTMLElement; // <li> wrapper
+    const submenuLinks = li.querySelectorAll<HTMLAnchorElement>('.sub-menu a');
     
     /* ----------  click  ---------- */
     link.addEventListener('click', (e: MouseEvent) => {
@@ -29,6 +32,24 @@ function init(): void {
         e.preventDefault();
         toggleSubmenu(li, link);
       }
+    });
+
+    submenuLinks.forEach(submenuLink => {
+      submenuLink.addEventListener('click', (e: MouseEvent) => {
+        if (isUnmodifiedPrimaryActivation(e, submenuLink)) {
+          rememberParentFocus(link);
+        }
+
+        close(li, link);
+        link.focus({ preventScroll: true });
+      });
+
+      submenuLink.addEventListener('keydown', (e: KeyboardEvent) => {
+        if (e.key === 'Enter' || e.key === ' ') {
+          e.preventDefault();
+          submenuLink.click();
+        }
+      });
     });
 
     li.addEventListener('keydown', (e: KeyboardEvent) => {
@@ -226,6 +247,41 @@ function init(): void {
         close(li, a);
       });
   }  
+
+  function rememberParentFocus(link: HTMLAnchorElement) {
+    try {
+      sessionStorage.setItem(PARENT_FOCUS_KEY, link.id);
+    } catch {
+      // Focus still returns before navigation when session storage is unavailable.
+    }
+  }
+
+  function restoreParentFocus() {
+    let parentId: string | null = null;
+
+    try {
+      parentId = sessionStorage.getItem(PARENT_FOCUS_KEY);
+      sessionStorage.removeItem(PARENT_FOCUS_KEY);
+    } catch {
+      return;
+    }
+
+    if (!parentId) return;
+
+    const parentLink = document.getElementById(parentId) as HTMLAnchorElement | null;
+    const focusTarget = isMobile() ? menuBtn : parentLink;
+    focusTarget?.focus({ preventScroll: true });
+  }
+
+  function isUnmodifiedPrimaryActivation(e: MouseEvent, link: HTMLAnchorElement) {
+    return e.button === 0 &&
+      !e.altKey &&
+      !e.ctrlKey &&
+      !e.metaKey &&
+      !e.shiftKey &&
+      link.target !== '_blank' &&
+      link.origin === window.location.origin;
+  }
 
   function open(li: HTMLElement, link: HTMLAnchorElement) {
     closeAllSubmenus(); 
