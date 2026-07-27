@@ -50,24 +50,24 @@ const menu: IMenuItem[] = [
       }      
     ]
   },  
-  {
-    index: 3,
-    label: 'Media',
-    path: '/media',
-    submenu: [
-      {
-        index: 3.1,
-        label: 'Blog',
-        path: '/media/blog',
-        submenu: null  
-      }, {
-        index: 3.2,
-        label: 'White Papers',
-        path: '/media/white-papers',
-        submenu: null          
-      }
-    ]
-  }, 
+  // {
+  //   index: 3,
+  //   label: 'Media',
+  //   path: '/media',
+  //   submenu: [
+  //     {
+  //       index: 3.1,
+  //       label: 'Blog',
+  //       path: '/media/blog',
+  //       submenu: null  
+  //     }, {
+  //       index: 3.2,
+  //       label: 'White Papers',
+  //       path: '/media/white-papers',
+  //       submenu: null          
+  //     }
+  //   ]
+  // }, 
   {
     index: 4,
     label: 'Contact',
