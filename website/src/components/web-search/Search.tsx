@@ -27,7 +27,6 @@ type ApiEnvelope<T> = {
 
 export default function Search() {
   const BASE_URL = import.meta.env.PUBLIC_API_BASE_URL
-  const isFirstRender = useRef(true)
   const [open, setOpen] = useState(false)
   const [isClosing, setIsClosing] = useState(false)
   const [searchStr, setSearchStr] = useState('')
@@ -98,13 +97,8 @@ export default function Search() {
   }, [])
 
   useEffect(() => {
-    if (isFirstRender.current) {
-      isFirstRender.current = false
-      return
-    }
-  }, [open])
+    if (!open) return
 
-  useEffect(() => {
     const html = document.documentElement
     const body = document.body
     const originalHtmlOverflow = html.style.overflow
@@ -113,25 +107,16 @@ export default function Search() {
     const originalBodyTop = body.style.top
     const originalBodyWidth = body.style.width
     const originalBodyPaddingRight = body.style.paddingRight
+    const scrollY = window.scrollY
     const scrollBarWidth = window.innerWidth - document.documentElement.clientWidth
 
-    if (open) {
-      const scrollY = window.scrollY
-      html.style.overflow = 'hidden'
-      body.style.overflow = 'hidden'
-      body.style.position = 'fixed'
-      body.style.top = `-${scrollY}px`
-      body.style.width = '100%'
-      if (scrollBarWidth > 0) {
-        body.style.paddingRight = `${scrollBarWidth}px`
-      }
-    } else {
-      html.style.overflow = originalHtmlOverflow
-      body.style.overflow = originalBodyOverflow
-      body.style.position = originalBodyPosition
-      body.style.top = originalBodyTop
-      body.style.width = originalBodyWidth
-      body.style.paddingRight = originalBodyPaddingRight
+    html.style.overflow = 'hidden'
+    body.style.overflow = 'hidden'
+    body.style.position = 'fixed'
+    body.style.top = `-${scrollY}px`
+    body.style.width = '100%'
+    if (scrollBarWidth > 0) {
+      body.style.paddingRight = `${scrollBarWidth}px`
     }
 
     return () => {
@@ -141,11 +126,7 @@ export default function Search() {
       body.style.top = originalBodyTop
       body.style.width = originalBodyWidth
       body.style.paddingRight = originalBodyPaddingRight
-      const top = originalBodyTop
-      if (open && top && top.startsWith('-')) {
-        const y = Math.abs(parseInt(top, 10))
-        if (!Number.isNaN(y)) window.scrollTo(0, y)
-      }
+      window.scrollTo(0, scrollY)
     }
   }, [open])
 

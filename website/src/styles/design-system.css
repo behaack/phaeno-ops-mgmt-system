@@ -22,6 +22,7 @@
   --phaeno-amber-600: #aa820d;
   --phaeno-orange-500: #df6a3c;
   --phaeno-orange-600: #b35d0c;
+  --phaeno-orange-700: #8d4708;
 
   --phaeno-white: #ffffff;
   --phaeno-neutral-50: #f7f8f8;
@@ -48,6 +49,8 @@
   --color-brand-strong: var(--phaeno-green-700);
   --color-action-primary: var(--phaeno-green-600);
   --color-action-primary-hover: var(--phaeno-green-800);
+  --color-action-accent: var(--phaeno-orange-600);
+  --color-action-accent-hover: var(--phaeno-orange-700);
   --color-action-secondary: var(--phaeno-rna-600);
   --color-link: var(--phaeno-orange-600);
   --color-focus: var(--phaeno-orange-600);

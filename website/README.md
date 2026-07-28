@@ -18,9 +18,11 @@ site, Vercel serves it, and the Portal backend owns the anonymous Website API.
 - **Portal application**: `../frontend/`
 
 The Website does not connect directly to PostgreSQL or use authenticated Portal
-data. Search, contact, non-binding order, database-ping, public-document, and
-reCAPTCHA flows consume the versioned anonymous Website API. Changes to that
-contract must be planned and verified across both the Website and backend.
+data. Search, contact, non-binding order, public-document, and reCAPTCHA flows
+consume the versioned anonymous Website API. The database-ping endpoint remains
+available for explicit deployment and operational smoke checks; visitor page
+loads do not call it. Changes to that contract must be planned and verified
+across both the Website and backend.
 
 ## Project structure
 

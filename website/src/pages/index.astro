@@ -134,8 +134,6 @@ const performanceHighlights = [
         {platformFeatures.map((feature, index) => (
           <article
             class:list={['feature-card', { 'feature-card--lead': index === 0 }]}
-            data-motion-reveal
-            data-motion-delay={index * 50}
           >
             <p class="feature-card__eyebrow" data-phaeno-search-ignore>{feature.eyebrow}</p>
             <h3
@@ -424,7 +422,7 @@ const performanceHighlights = [
   gap: var(--space-3);
   padding: .8rem 1.1rem;
   color: var(--color-text-on-dark);
-  background: var(--phaeno-orange-500);
+  background: var(--color-action-accent);
   border-radius: var(--radius-pill);
   font-size: var(--font-size-sm);
   font-weight: var(--font-weight-semibold);
@@ -436,7 +434,7 @@ const performanceHighlights = [
 
 .platform-cta__content > a:hover {
   color: var(--color-text-on-dark);
-  background: var(--phaeno-orange-600);
+  background: var(--color-action-accent-hover);
   box-shadow: var(--shadow-md);
   transform: translateY(-1px);
 }
@@ -552,12 +550,12 @@ const performanceHighlights = [
 }
 
 .closing-cta__primary {
-  background: var(--phaeno-orange-500);
+  background: var(--color-action-accent);
 }
 
 .closing-cta__primary:hover {
   color: var(--color-text-on-dark);
-  background: var(--phaeno-orange-600);
+  background: var(--color-action-accent-hover);
   box-shadow: var(--shadow-md);
   transform: translateY(-1px);
 }

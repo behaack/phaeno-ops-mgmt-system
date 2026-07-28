@@ -410,10 +410,10 @@ repository change is committed and deployed. The legacy Website API GitHub
 Actions workflow was disabled. Final checks returned Portal health `200`,
 database ping `204`, search `200`, technical brief `200`, Website `200`, and no
 retired listeners on ports `8081`, `8082`, or `8085`. The local Website
-repository contains a database-ping workflow definition targeting the
-Portal-owned canonical API, but GitHub currently lists no active scheduled
-monitor after retirement. Moving and enabling that monitor in the Portal
-repository remains a non-blocking repository follow-up.
+previously called database-ping from visitor page loads as a legacy database
+keepalive. That browser request was removed after the database platform changed.
+The endpoint remains available for explicit deployment and operational smoke
+checks; it is not part of the Website's critical request path.
 
 ## Cutover invariants
 
