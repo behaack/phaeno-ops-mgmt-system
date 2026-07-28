@@ -256,7 +256,6 @@ export default function Search() {
           `${BASE_URL}web-ops/search-pages?search=${encodeURIComponent(debouncedSearch)}`,
           {
             method: 'GET',
-            headers: { 'Content-Type': 'application/json' },
             signal: controller.signal,
           },
         )

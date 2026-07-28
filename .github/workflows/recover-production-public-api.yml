@@ -1,0 +1,191 @@
+name: Recover Production Public API
+
+on:
+  workflow_dispatch:
+    inputs:
+      confirmation:
+        description: Type RECOVER PUBLIC API to confirm the guarded recovery
+        required: true
+        type: string
+
+permissions:
+  contents: read
+
+concurrency:
+  group: phaeno-portal-green-production
+  cancel-in-progress: false
+
+env:
+  PUBLIC_WEBSITE_API_URL: https://api.phaenobiotech.com
+
+jobs:
+  recover:
+    name: Recover Nginx and Portal API dial tone
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    environment:
+      name: production
+
+    defaults:
+      run:
+        shell: bash
+
+    steps:
+      - name: Validate recovery request and deployment secrets
+        env:
+          CONFIRMATION: ${{ inputs.confirmation }}
+          DEPLOY_HOST: ${{ secrets.DEPLOY_HOST }}
+          DEPLOY_KNOWN_HOSTS: ${{ secrets.DEPLOY_KNOWN_HOSTS }}
+          DEPLOY_SSH_KEY: ${{ secrets.DEPLOY_SSH_KEY }}
+          DEPLOY_USER: ${{ secrets.DEPLOY_USER }}
+        run: |
+          if [ "$CONFIRMATION" != "RECOVER PUBLIC API" ]; then
+            echo "::error::Confirmation must be exactly RECOVER PUBLIC API."
+            exit 1
+          fi
+
+          missing=0
+          for name in DEPLOY_HOST DEPLOY_KNOWN_HOSTS DEPLOY_SSH_KEY DEPLOY_USER; do
+            if [ -z "${!name}" ]; then
+              echo "::error::Missing production configuration ${name}."
+              missing=1
+            fi
+          done
+          exit "$missing"
+
+      - name: Configure SSH
+        env:
+          DEPLOY_KNOWN_HOSTS: ${{ secrets.DEPLOY_KNOWN_HOSTS }}
+          DEPLOY_SSH_KEY: ${{ secrets.DEPLOY_SSH_KEY }}
+        run: |
+          install -d -m 700 ~/.ssh
+          printf '%s\n' "$DEPLOY_SSH_KEY" > ~/.ssh/deploy_key
+          printf '%s\n' "$DEPLOY_KNOWN_HOSTS" > ~/.ssh/known_hosts
+          chmod 600 ~/.ssh/deploy_key ~/.ssh/known_hosts
+
+      - name: Inspect and recover the public API listener
+        env:
+          DEPLOY_HOST: ${{ secrets.DEPLOY_HOST }}
+          DEPLOY_USER: ${{ secrets.DEPLOY_USER }}
+        run: |
+          ssh -i ~/.ssh/deploy_key "$DEPLOY_USER@$DEPLOY_HOST" 'bash -s' <<'REMOTE'
+          set -Eeuo pipefail
+
+          readonly api_container='phaeno-portal-green-api'
+          readonly db_container='phaeno-portal-green-db'
+
+          if [ "$(id -u)" -eq 0 ]; then
+            service_command=(systemctl)
+            nginx_command=(nginx)
+          else
+            service_command=(sudo -n systemctl)
+            nginx_command=(sudo -n nginx)
+          fi
+
+          probe_api() {
+            curl \
+              --fail \
+              --silent \
+              --show-error \
+              --max-time 10 \
+              --output /dev/null \
+              --header 'X-Forwarded-Proto: https' \
+              http://127.0.0.1:8084/api/health
+          }
+
+          printf 'Host uptime:\n'
+          uptime
+          printf 'Nginx state before recovery: '
+          systemctl is-active nginx || true
+          printf 'TCP listeners before recovery:\n'
+          ss -ltnp || true
+          printf 'Portal containers before recovery:\n'
+          docker ps --all --format 'table {{.Names}}\t{{.Status}}\t{{.Ports}}'
+
+          if ! probe_api; then
+            docker inspect "$db_container" >/dev/null
+            if [ "$(docker inspect "$db_container" --format '{{.State.Running}}')" != 'true' ]; then
+              docker start "$db_container"
+            fi
+
+            db_health='starting'
+            for _ in $(seq 1 30); do
+              db_health="$(docker inspect "$db_container" --format '{{if .State.Health}}{{.State.Health.Status}}{{else}}none{{end}}')"
+              if [ "$db_health" = 'healthy' ]; then
+                break
+              fi
+              sleep 2
+            done
+            if [ "$db_health" != 'healthy' ]; then
+              echo "Portal database is ${db_health}; refusing an automatic database restart." >&2
+              exit 1
+            fi
+
+            docker inspect "$api_container" >/dev/null
+            if [ "$(docker inspect "$api_container" --format '{{.State.Running}}')" = 'true' ]; then
+              docker restart "$api_container"
+            else
+              docker start "$api_container"
+            fi
+
+            api_health='starting'
+            for _ in $(seq 1 30); do
+              api_health="$(docker inspect "$api_container" --format '{{if .State.Health}}{{.State.Health.Status}}{{else}}none{{end}}')"
+              if [ "$api_health" = 'healthy' ]; then
+                break
+              fi
+              sleep 4
+            done
+            if [ "$api_health" != 'healthy' ]; then
+              docker logs --tail 80 "$api_container"
+              echo "Portal API remained ${api_health} after restart." >&2
+              exit 1
+            fi
+          fi
+
+          probe_api
+          "${nginx_command[@]}" -t
+          "${service_command[@]}" restart nginx
+          "${service_command[@]}" is-active --quiet nginx
+
+          printf 'Nginx state after recovery: '
+          systemctl is-active nginx
+          printf 'Portal containers after recovery:\n'
+          docker ps --format 'table {{.Names}}\t{{.Status}}\t{{.Ports}}'
+          REMOTE
+
+      - name: Verify public Website API behavior
+        run: |
+          curl \
+            --fail \
+            --silent \
+            --show-error \
+            --max-time 20 \
+            --output /dev/null \
+            "$PUBLIC_WEBSITE_API_URL/api/health"
+          curl \
+            --fail \
+            --silent \
+            --show-error \
+            --max-time 20 \
+            --output /dev/null \
+            "$PUBLIC_WEBSITE_API_URL/api/v1/web-ops/database-ping"
+          curl \
+            --fail \
+            --silent \
+            --show-error \
+            --max-time 20 \
+            --output /dev/null \
+            --header 'Origin: https://www.phaenobiotech.com' \
+            "$PUBLIC_WEBSITE_API_URL/api/v1/web-ops/search-pages?search=PSeq"
+
+      - name: Record recovery summary
+        run: |
+          {
+            echo '## Production public API recovery'
+            echo
+            echo '- Portal internal health: `healthy`'
+            echo '- Nginx configuration: `valid`'
+            echo '- Nginx service: `active`'
+            echo '- Public health, database ping, and representative search: `passed`'
+          } >> "$GITHUB_STEP_SUMMARY"
