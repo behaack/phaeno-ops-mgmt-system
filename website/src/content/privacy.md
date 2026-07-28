@@ -1,4 +1,4 @@
-**Last Modified: November 21, 2025**
+**Last Modified: July 28, 2026**
 
 ##### **Introduction**
 Phaeno Inc. (“Company”, “we”, “us”, or “our”) respects your privacy and is committed to protecting it through our compliance with this policy.
@@ -28,7 +28,12 @@ We collect:
 We collect this information directly from you, and occasionally from third-party business partners.
 
 ##### **Automatic Data Collection Technologies**
-We use cookies, web storage, web beacons to improve the Website and your experience. You may disable cookies in your browser, but some features may stop working.
+We use cookies, browser storage, and similar technologies where needed to operate, secure, and improve the Website. Browser settings may allow you to control these technologies, although blocking technologies needed for security or operation may affect some features.
+
+###### **Public Website Analytics**
+On [www.phaenobiotech.com](https://www.phaenobiotech.com), we use Vercel Web Analytics to understand aggregate Website traffic and improve our content. The service records page views and may process the event timestamp, page path, referring website, approximate geographic area, device type, operating system, and browser. We remove query strings and page fragments before analytics events are sent, and we do not send information entered into our forms to Web Analytics.
+
+Vercel Web Analytics does not use analytics cookies or create profiles that follow visitors across websites or days. It estimates daily unique visitors using a hash derived from request data that resets after 24 hours. Phaeno receives aggregated reports that are not associated with a visitor's name, email address, or stored IP address. Vercel processes this information as our Website hosting and analytics service provider. For more information, see [Vercel's Web Analytics privacy documentation](https://vercel.com/docs/analytics/privacy-policy).
 
 ##### **How We Use Your Information**
 We use your information to:
@@ -75,8 +80,8 @@ Data may be transferred to and processed in the United States and other countrie
     </tr>
     <tr style="background-color: #f8f9fa;">
       <td style="padding: 12px;">Analytics and website improvement</td>
-      <td style="padding: 12px;">Usage data, cookies, IP address</td>
-      <td style="padding: 12px;">Legitimate interests</td>
+      <td style="padding: 12px;">Aggregate usage data, sanitized page path, referrer, approximate geographic area, device, operating system, and browser information</td>
+      <td style="padding: 12px;">Legitimate interests in understanding and improving the public Website</td>
       <td style="padding: 12px;">Not applicable</td>
     </tr>
     <tr>
@@ -105,6 +110,8 @@ You have the rights above under GDPR/UK GDPR and may lodge a complaint with your
 
 ##### **Choices About How We Use and Disclose Your Information**
 - Disable cookies in your browser settings;
+- Use browser privacy or content-blocking controls if you prefer not to participate in aggregate Website analytics;
+- Contact us to object to processing based on our legitimate interests;
 - Opt out of marketing emails via the unsubscribe link or by contacting us;
 - Opt out of third-party targeted advertising via NAI or your browser.
 

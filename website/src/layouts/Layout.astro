@@ -8,6 +8,7 @@ import MenuBehavior from '@/components/script-components/MenuBehavior.astro';
 import BodyMinHeightBehavior from '@/components/script-components/BodyMinHeightBehavior.astro';
 import DatabasePingBehavior from '@/components/script-components/DatabasePingBehavior.astro';
 import RevealBehavior from '@/components/script-components/RevealBehavior.astro';
+import Analytics from '@vercel/analytics/astro';
 
 /** Canonical URL (per-page, so we keep it) */
 const canonical = new URL(Astro.url.pathname, Astro.site).href;
@@ -57,6 +58,20 @@ const canonical = new URL(Astro.url.pathname, Astro.site).href;
 
     <!-- Page-specific head goes here -->
     <slot name="head" />
+
+    <script is:inline>
+      function webAnalyticsBeforeSend(event) {
+        try {
+          const url = new URL(event.url);
+          url.search = '';
+          url.hash = '';
+          return { ...event, url: url.toString() };
+        } catch {
+          return event;
+        }
+      }
+    </script>
+    <Analytics />
   </head>
 
   <body class="bg-white">
