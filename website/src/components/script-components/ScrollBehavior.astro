@@ -1,5 +1,5 @@
 ---
-/* Consolidated header + scroll + footer-height logic */
+/* Fixed-header visibility behavior. Anchor offsets are handled in CSS. */
 ---
 
 <script>
@@ -8,12 +8,9 @@ document.addEventListener('DOMContentLoaded', () => {
   const header = document.getElementById('site-header') as HTMLElement | null;
   const skipLink = document.getElementById('skip-link') as HTMLElement | null;
 
-  const offset = header?.offsetHeight ?? 80;
-  const anchorGap = 24;
-  let lastScrollY = window.scrollY;
+  let lastScrollY = 0;
   let mouseNearTop = false;
   let hideTimeout: ReturnType<typeof setTimeout> | null = null;
-  let programmaticScroll = false;
 
   // === Header helpers ===
   function isSkipLinkFocus() : boolean {
@@ -44,17 +41,6 @@ if (isHeaderFocused() || isSkipLinkFocus()) return;
     }, TIMEOUT);
   }
 
-  function getAnchorScrollTop(target: HTMLElement): number {
-    const scrollMarginTop = Number.parseFloat(
-      window.getComputedStyle(target).scrollMarginTop,
-    );
-    const targetGap = Number.isFinite(scrollMarginTop) && scrollMarginTop > 0
-      ? scrollMarginTop
-      : anchorGap;
-
-    return target.getBoundingClientRect().top + window.scrollY - offset - targetGap;
-  }
-
   // === Header event handlers ===
   header?.addEventListener('focusin', () => {
     showHeader();
@@ -69,11 +55,6 @@ if (isHeaderFocused() || isSkipLinkFocus()) return;
 
   window.addEventListener('scroll', () => {
     const currentScrollY = window.scrollY;
-
-    if (programmaticScroll) {
-      setTimeout(() => { programmaticScroll = false; }, 300);
-      return;
-    }
 
     if (!mouseNearTop) {
       if (currentScrollY > lastScrollY && currentScrollY > 50) {
@@ -103,36 +84,5 @@ if (isHeaderFocused() || isSkipLinkFocus()) return;
     }
   });
 
-  // === Smooth scroll with offset ===
-  document.querySelectorAll<HTMLAnchorElement>('a[href^="#"]').forEach(anchor => {
-    anchor.addEventListener('click', (e: MouseEvent) => {
-      const href = anchor.getAttribute('href');
-      if (!href) return;
-
-      const target = document.querySelector(href) as HTMLElement | null;
-      if (target) {
-        e.preventDefault();
-        history.pushState(null, '', href);
-        const y = getAnchorScrollTop(target);
-
-        programmaticScroll = true;
-        showHeader();
-        window.scrollTo({ top: y, behavior: 'smooth' });
-      }
-    });
-  });
-
-  // === Scroll to anchor on load with offset ===
-  if (window.location.hash) {
-    const target = document.querySelector(window.location.hash) as HTMLElement | null;
-    if (target) {
-      const y = getAnchorScrollTop(target);
-      programmaticScroll = true;
-      showHeader();
-      setTimeout(() => {
-        window.scrollTo({ top: y, behavior: 'instant' });
-      }, 0);
-    }
-  }
 });
 </script>
