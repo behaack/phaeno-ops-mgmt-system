@@ -250,6 +250,11 @@ li.web-search-item {
   animation: web-search-result-in var(--duration-base) var(--ease-standard) both;
 }
 
+li.web-search-item:focus-within {
+  position: relative;
+  z-index: 1;
+}
+
 @keyframes web-search-result-in {
   from { opacity: 0; transform: translateY(0.25rem); }
   to { opacity: 1; transform: translateY(0); }
