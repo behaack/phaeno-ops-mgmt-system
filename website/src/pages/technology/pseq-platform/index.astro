@@ -38,6 +38,34 @@ import NewSeqCategory from '@/components/NewSeqCategory.astro';
           <NewSeqCategory />
         </div>
       </div>
+      <section
+        id="pseq-clear-signal-architecture"
+        class="clear-signal-architecture"
+        aria-labelledby="pseq-clear-signal-architecture-title"
+      >
+        <div class="clear-signal-architecture__inner">
+          <div class="clear-signal-architecture__heading">
+            <p class="clear-signal-architecture__eyebrow" data-phaeno-search-ignore>The architecture</p>
+            <h2
+              id="pseq-clear-signal-architecture-title"
+              data-phaeno-search="PSeq Clear-Signal Architecture"
+              data-phaeno-search-summary="PSeq preserves source-molecule identity from library preparation through sequence reconstruction and retains traceable supporting evidence."
+              data-phaeno-search-keywords="PSeq Clear-Signal Architecture Source Molecule Identifier SMID molecular identity fragmentation sequence reconstruction traceable evidence"
+            ><span class="clear-signal-architecture__title-line">PSeq Clear&#8209;Signal</span><br />Architecture™</h2>
+          </div>
+          <div class="clear-signal-architecture__copy">
+            <p>
+              PSeq Clear-Signal Architecture™ preserves source-molecule identity from library preparation through
+              sequence reconstruction. A Source Molecule Identifier is assigned before fragmentation, retained across
+              fragments from the same molecule, and used to organize short-read data into molecule-specific records
+              with traceable supporting evidence.
+            </p>
+            <p class="clear-signal-architecture__thesis">
+              <strong>Identify the molecule. Reconstruct its sequence. Preserve the evidence.</strong>
+            </p>
+          </div>
+        </div>
+      </section>
       <h2
         id="new-insights-in-chemistry"
         data-phaeno-search="How PSeq technology works"
@@ -255,7 +283,7 @@ import NewSeqCategory from '@/components/NewSeqCategory.astro';
 .category-timeline-wrap {
   width: 100cqw;
   margin-inline: calc(50% - 50cqw);
-  margin-bottom: var(--space-8);
+  margin-bottom: 0;
   padding: clamp(2rem, 4vw, 3rem) 0;
   background: var(--phaeno-green-50);
 }
@@ -272,6 +300,81 @@ import NewSeqCategory from '@/components/NewSeqCategory.astro';
   border: 0;
   border-radius: 0;
   background: transparent;
+}
+
+.clear-signal-architecture {
+  position: relative;
+  overflow: hidden;
+  width: 100cqw;
+  max-width: none;
+  margin-inline: calc(50% - 50cqw);
+  margin-bottom: clamp(2rem, 4vw, 3rem);
+  color: var(--color-text-on-dark);
+  background:
+    radial-gradient(circle at 88% 10%, rgb(28 127 152 / 32%), transparent 36%),
+    var(--phaeno-rna-900);
+}
+
+.clear-signal-architecture::after {
+  content: '';
+  position: absolute;
+  right: -5rem;
+  bottom: -7rem;
+  width: 17rem;
+  height: 17rem;
+  border: 1px solid rgb(214 227 195 / 22%);
+  border-radius: 50%;
+}
+
+.clear-signal-architecture__inner {
+  position: relative;
+  z-index: 1;
+  display: grid;
+  width: 100%;
+  max-width: var(--content-max-width);
+  grid-template-columns: minmax(18rem, .8fr) minmax(24rem, 1.2fr);
+  gap: clamp(2rem, 5vw, 5rem);
+  align-items: start;
+  margin: 0 auto;
+  padding: clamp(2.5rem, 4vw, 3.5rem) var(--page-gutter);
+}
+
+.clear-signal-architecture__eyebrow {
+  margin: 0 0 var(--space-4);
+  color: var(--phaeno-green-300);
+  font-size: var(--font-size-xs);
+  font-weight: var(--font-weight-semibold);
+  letter-spacing: .16em;
+  text-transform: uppercase;
+}
+
+.clear-signal-architecture h2 {
+  max-width: 15ch;
+  margin: 0;
+  padding: 0;
+  color: var(--color-text-on-dark);
+  font-size: clamp(2rem, 3.8vw, 3.5rem);
+  line-height: 1.02;
+}
+
+.clear-signal-architecture__title-line {
+  white-space: nowrap;
+}
+
+.clear-signal-architecture__copy > p {
+  margin: 0;
+  color: rgb(255 255 255 / 78%);
+  font-size: var(--font-size-lg);
+  line-height: 1.7;
+}
+
+.clear-signal-architecture__copy .clear-signal-architecture__thesis {
+  margin-top: var(--space-6);
+  padding-top: var(--space-6);
+  border-top: 1px solid rgb(255 255 255 / 22%);
+  color: var(--color-text-on-dark);
+  font-size: clamp(1.15rem, 2vw, 1.4rem);
+  line-height: 1.45;
 }
 
 #new-insights-in-chemistry,
@@ -796,6 +899,15 @@ import NewSeqCategory from '@/components/NewSeqCategory.astro';
 }
 
 @media (max-width: 950px) {
+  .clear-signal-architecture__inner {
+    grid-template-columns: 1fr;
+    gap: var(--space-6);
+  }
+
+  .clear-signal-architecture h2 {
+    max-width: 18ch;
+  }
+
   .work-flow-description {
     grid-template-columns: 1fr;
   }

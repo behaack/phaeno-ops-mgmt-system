@@ -49,7 +49,8 @@ const platformFeatures = [
     search: 'PSeq Clear-Signal Architecture signal-first RNA data',
     eyebrow: '01 / Signal',
     title: 'PSeq Clear-Signal Architecture™',
-    summary: 'Full-length 5′–3′ isoform reconstruction, including UTRs, constrained by reads assigned to each captured molecular template.',
+    summary: 'Source-molecule identity is preserved from library preparation through sequence reconstruction, keeping each molecule connected to its supporting evidence.',
+    href: '/technology/pseq-platform#pseq-clear-signal-architecture',
   },
   {
     id: 'individual-molecules',
@@ -145,7 +146,12 @@ const performanceHighlights = [
                 ? <><span class="feature-card__title-line">PSeq Clear-Signal</span><br />Architecture™</>
                 : feature.title}
             </h3>
-            <p>{feature.summary}</p>
+            <p class="feature-card__summary">{feature.summary}</p>
+            {feature.href && (
+              <a class="feature-card__link" href={feature.href}>
+                See more <span aria-hidden="true">→</span>
+              </a>
+            )}
           </article>
         ))}
       </div>
@@ -364,7 +370,7 @@ const performanceHighlights = [
   white-space: nowrap;
 }
 
-.feature-card > p:last-child {
+.feature-card__summary {
   max-width: 38rem;
   margin: var(--space-4) 0 0;
   padding: 0;
@@ -372,8 +378,31 @@ const performanceHighlights = [
   line-height: 1.55;
 }
 
-.feature-card--lead > p:last-child {
+.feature-card--lead .feature-card__summary {
   color: rgb(255 255 255 / .7);
+}
+
+.feature-card__link {
+  display: inline-flex;
+  align-items: center;
+  align-self: flex-start;
+  gap: var(--space-2);
+  margin-top: var(--space-5);
+  color: var(--phaeno-green-200);
+  font-size: var(--font-size-sm);
+  font-weight: var(--font-weight-semibold);
+}
+
+.feature-card__link:hover {
+  color: var(--color-text-on-dark);
+}
+
+.feature-card__link span {
+  transition: transform var(--duration-fast) var(--ease-standard);
+}
+
+.feature-card__link:hover span {
+  transform: translateX(2px);
 }
 
 .platform-cta {
