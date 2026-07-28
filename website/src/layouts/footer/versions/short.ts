@@ -76,7 +76,7 @@ const footer =
           {
             type: 'link',
             label: 'Why RNA Isoforms?',
-            value: '/technology/why-isoforms-matter/'
+            value: '/technology/why-isoforms-matter'
           },  
           {
             type: 'link',

@@ -10,7 +10,7 @@ const menu: IMenuItem[] = [
   {
     index: 1,
     label: 'Technology',
-    path: '/technology',
+    path: '/technology/pseq-platform',
     submenu: null
   },
   {
