@@ -16,6 +16,7 @@ interface Props {
   headerActionLabel?: string
   pageCount?: number
   version?: string
+  imagePosition?: 'left' | 'center' | 'right'
 }
 
 const {
@@ -31,6 +32,7 @@ const {
   headerActionLabel = 'View PDF',
   pageCount,
   version,
+  imagePosition = 'center',
 } = Astro.props as Props
 
 const sharePath = decodeURIComponent(Astro.url.pathname).toLowerCase()
@@ -94,7 +96,13 @@ const formattedDate = formatContentDate(date, {
       </div>
 
       <figure class="article-hero__media" data-phaeno-search-ignore>
-        <img src={image} alt="" loading="eager" fetchpriority="high" />
+        <img
+          src={image}
+          alt=""
+          loading="eager"
+          fetchpriority="high"
+          style={`object-position: ${imagePosition} center`}
+        />
       </figure>
     </div>
   </header>
