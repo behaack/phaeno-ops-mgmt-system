@@ -31,8 +31,9 @@ const { Content } = await render(blog)
     description={summary}
     authors={authors}
     datePosted={date}
+    schemaType="BlogPosting"
     image={image}
-    documentType="Web Page"
+    documentType="Blog Post"
     searchTitle={`Blog - ${title}`}
     searchKeywords={articleSearchKeywords}
   />

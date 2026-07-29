@@ -60,6 +60,11 @@ Pages use shared layouts and SEO helpers, with page-specific content inside
 semantic `main` and section landmarks. Reuse existing components and content
 collection patterns rather than introducing parallel structures.
 
+Ordinary public pages emit `WebPage` or `CollectionPage` JSON-LD linked to the
+site-wide Phaeno `Organization` and `WebSite` entities. Article-like content
+uses the corresponding article metadata helper so authorship, dates, images,
+and canonical identity remain machine-readable.
+
 ## Design, content, and search
 
 Read `src/styles/design-system.css` and the current layout and component
@@ -71,6 +76,13 @@ Searchable pages need meaningful titles, descriptions, `phaeno:document-type`
 metadata, and stable heading IDs. Route, metadata, heading, content, sitemap,
 and RSS changes should be checked together because the Portal-owned crawler
 indexes the deployed public site.
+
+The production build generates `dist/llms.txt` from the URLs in the generated
+sitemap and each page's built title and meta description. Do not hand-edit a
+copy under `public/` or `dist/`. Redirects, `noindex` pages, and routes kept
+unpublished with an underscore-prefixed page directory are excluded; when an
+approved route becomes public and enters the sitemap, its current metadata is
+included automatically on the same build.
 
 The content collections under `src/content/` hold blog posts, events, jobs,
 news, press releases, scientific papers, and white papers. Keep content schema
@@ -97,6 +109,11 @@ and `Contents` headings. The complete publication remains in the PDF; do not
 copy the full body, artificial page breaks, invisible keyword blocks, or
 private review notes into the landing page.
 
+Article and publication metadata must keep visible authorship, publication and
+modification dates, topics, canonical URLs, and JSON-LD aligned with the page.
+Do not add unpublished routes to `llms.txt` manually; the build-derived file is
+the release boundary.
+
 ## Environment configuration
 
 The browser-visible build currently expects:
@@ -121,7 +138,8 @@ Use pnpm and run commands from `website/`:
 | `pnpm astro -- --help` | Show Astro CLI help |
 
 For route, content, metadata, style, or component changes, run `pnpm build` and
-inspect the affected generated HTML, sitemap, and RSS output when applicable.
+inspect the affected generated HTML, sitemap, `llms.txt`, and RSS output when
+applicable.
 For documentation-only changes, validate links and paths and run
 `git diff --check`; an application build is normally unnecessary.
 

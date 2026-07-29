@@ -31,6 +31,37 @@ const {
   searchKeywords = '',
   searchTitle = '',
 } = Astro.props as Props;
+
+const canonicalUrl = new URL(url, Astro.site ?? Astro.url).href;
+const siteUrl = new URL('/', canonicalUrl).href;
+const imageUrl = new URL(image, siteUrl).href;
+const structuredData = {
+  '@context': 'https://schema.org',
+  '@type': documentType === 'List' ? 'CollectionPage' : 'WebPage',
+  '@id': `${canonicalUrl}#webpage`,
+  url: canonicalUrl,
+  name: title,
+  description,
+  inLanguage: 'en-US',
+  primaryImageOfPage: {
+    '@type': 'ImageObject',
+    url: imageUrl,
+  },
+  isPartOf: {
+    '@type': 'WebSite',
+    '@id': `${siteUrl}#website`,
+    name: 'Phaeno',
+    url: siteUrl,
+  },
+  publisher: {
+    '@type': 'Organization',
+    '@id': `${siteUrl}#organization`,
+    name: 'Phaeno',
+    legalName: 'Phaeno Inc.',
+    url: siteUrl,
+  },
+};
+const serializedStructuredData = JSON.stringify(structuredData).replace(/</g, '\\u003c');
 ---
 
 <title>{title}</title>
@@ -38,19 +69,21 @@ const {
 <meta name="phaeno:document-type" content={documentType} />
 {searchTitle ? <meta name="phaeno:search-title" content={searchTitle} /> : null}
 {searchKeywords ? <meta name="phaeno:search-keywords" content={searchKeywords} /> : null}
-<link rel="canonical" href={url} />
+<link rel="canonical" href={canonicalUrl} />
 
 <!-- Open Graph -->
 <meta property="og:type"        content="website" />
 <meta property="og:site_name"   content="Phaeno" />
-<meta property="og:url"         content={url} />
+<meta property="og:url"         content={canonicalUrl} />
 <meta property="og:title"       content={title} />
 <meta property="og:description" content={description} />
-<meta property="og:image"       content={image} />
+<meta property="og:image"       content={imageUrl} />
 
 <!-- Twitter -->
 <meta name="twitter:card"        content={twitterCard} />
 <meta name="twitter:site"        content="@Phaeno" />
 <meta name="twitter:title"       content={title} />
 <meta name="twitter:description" content={description} />
-<meta name="twitter:image"       content={image} />
+<meta name="twitter:image"       content={imageUrl} />
+
+<script type="application/ld+json" set:html={serializedStructuredData} />

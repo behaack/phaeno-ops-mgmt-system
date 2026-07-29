@@ -9,6 +9,7 @@ interface Props {
   imageUrl: string
   pageCount: number
   version?: string
+  topics: string[]
   searchKeywords: string[]
 }
 
@@ -22,23 +23,45 @@ const {
   imageUrl,
   pageCount,
   version,
+  topics,
   searchKeywords,
 } = Astro.props as Props
 
 const publishedIso = datePublished.toISOString()
 const modifiedIso = dateModified?.toISOString()
+const siteUrl = new URL('/', landingUrl).href
+const organizationId = `${siteUrl}#organization`
 const structuredData = {
   '@context': 'https://schema.org',
   '@type': 'Article',
+  '@id': `${landingUrl}#article`,
   headline: title,
   description,
+  url: landingUrl,
   datePublished: publishedIso,
   ...(modifiedIso ? { dateModified: modifiedIso } : {}),
-  image: imageUrl,
+  inLanguage: 'en-US',
+  isAccessibleForFree: true,
+  image: [imageUrl],
+  articleSection: topics,
+  about: topics.map((name) => ({ '@type': 'Thing', name })),
+  keywords: searchKeywords,
   publisher: {
     '@type': 'Organization',
+    '@id': organizationId,
     name: 'Phaeno',
-    url: new URL('/', landingUrl).href,
+    legalName: 'Phaeno Inc.',
+    url: siteUrl,
+    logo: {
+      '@type': 'ImageObject',
+      url: new URL('/images/phaeno-socialmedia-splash.webp', siteUrl).href,
+    },
+  },
+  isPartOf: {
+    '@type': 'WebSite',
+    '@id': `${siteUrl}#website`,
+    name: 'Phaeno',
+    url: siteUrl,
   },
   mainEntityOfPage: {
     '@type': 'WebPage',
@@ -49,6 +72,7 @@ const structuredData = {
     name: `${title} PDF`,
     contentUrl: pdfUrl,
     encodingFormat: 'application/pdf',
+    isAccessibleForFree: true,
   },
 }
 const serializedStructuredData = JSON.stringify(structuredData).replace(/</g, '\\u003c')
@@ -64,6 +88,7 @@ const serializedStructuredData = JSON.stringify(structuredData).replace(/</g, '\
 <meta name="phaeno:search-source-type" content="application/pdf" />
 <meta name="phaeno:publication-page-count" content={String(pageCount)} />
 {version ? <meta name="phaeno:publication-version" content={version} /> : null}
+<link rel="canonical" href={landingUrl} />
 
 <meta property="og:type" content="article" />
 <meta property="og:site_name" content="Phaeno" />

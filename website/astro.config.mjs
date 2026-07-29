@@ -6,6 +6,7 @@ import react from '@astrojs/react';
 import sitemap from '@astrojs/sitemap';
 import { unified } from '@astrojs/markdown-remark';
 import rehypePhaenoHeadingSearch from './src/lib/rehypePhaenoHeadingSearch.js';
+import { llmsTxt } from './src/integrations/llmsTxt';
 
 export default defineConfig({
   site: 'https://www.phaenobiotech.com',
@@ -29,6 +30,7 @@ export default defineConfig({
     mdx(),
     react(),
     sitemap(),
+    llmsTxt(),
     (await import('astro-compress')).default({
       CSS: false,
     }),

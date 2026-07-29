@@ -1,16 +1,17 @@
 ---
-/**
- *  Standard page <head> tags (non-article).
- *  Usage:
- *    <Article slot="head" title="About Phaeno" description="…" />
- */
-import type { webtypes } from '@/assets/docTypes'
+/** Standard metadata and structured data for article-like content. */
+import type { articletypes, webtypes } from '@/assets/docTypes'
+
+type ArticleSchemaType = 'Article' | 'BlogPosting' | 'NewsArticle' | 'ScholarlyArticle'
+
 interface Props {
   title: string;
   description: string;
-  documentType: webtypes;
+  documentType: webtypes | articletypes;
   authors?: string[];
-  datePosted: Date
+  datePosted: Date;
+  dateModified?: Date;
+  schemaType?: ArticleSchemaType;
   /** Absolute page URL (defaults to Astro.url) */
   url?: string;
   /** Social-card image (defaults to site-wide card) */
@@ -29,12 +30,61 @@ const {
   documentType,
   authors=[],
   datePosted,
+  dateModified,
+  schemaType = 'Article',
   url = new URL(Astro.url.pathname, Astro.site).href,
-  image="",
+  image = '/images/phaeno-socialmedia-splash.webp',
   twitterCard = 'summary_large_image',
   searchKeywords = '',
   searchTitle = '',
 } = Astro.props as Props;
+
+const canonicalUrl = new URL(url, Astro.site ?? Astro.url).href;
+const siteUrl = new URL('/', canonicalUrl).href;
+const imageUrl = new URL(image, siteUrl).href;
+const publishedIso = datePosted.toISOString();
+const modifiedIso = dateModified?.toISOString();
+const normalizedAuthors = [...new Set(authors.map((author) => author.trim()).filter(Boolean))];
+const organizationId = `${siteUrl}#organization`;
+const websiteId = `${siteUrl}#website`;
+const structuredData = {
+  '@context': 'https://schema.org',
+  '@type': schemaType,
+  '@id': `${canonicalUrl}#article`,
+  headline: title,
+  description,
+  url: canonicalUrl,
+  datePublished: publishedIso,
+  ...(modifiedIso ? { dateModified: modifiedIso } : {}),
+  inLanguage: 'en-US',
+  isAccessibleForFree: true,
+  image: [imageUrl],
+  author: normalizedAuthors.length
+    ? normalizedAuthors.map((name) => ({ '@type': 'Person', name }))
+    : [{ '@type': 'Organization', '@id': organizationId, name: 'Phaeno' }],
+  publisher: {
+    '@type': 'Organization',
+    '@id': organizationId,
+    name: 'Phaeno',
+    legalName: 'Phaeno Inc.',
+    url: siteUrl,
+    logo: {
+      '@type': 'ImageObject',
+      url: new URL('/images/phaeno-socialmedia-splash.webp', siteUrl).href,
+    },
+  },
+  isPartOf: {
+    '@type': 'WebSite',
+    '@id': websiteId,
+    name: 'Phaeno',
+    url: siteUrl,
+  },
+  mainEntityOfPage: {
+    '@type': 'WebPage',
+    '@id': canonicalUrl,
+  },
+};
+const serializedStructuredData = JSON.stringify(structuredData).replace(/</g, '\\u003c');
 ---
 
 <title>{title}</title>
@@ -42,19 +92,25 @@ const {
 <meta name="phaeno:document-type" content={documentType} />
 {searchTitle ? <meta name="phaeno:search-title" content={searchTitle} /> : null}
 {searchKeywords ? <meta name="phaeno:search-keywords" content={searchKeywords} /> : null}
-<link rel="canonical" href={url} />
+{normalizedAuthors.length ? <meta name="author" content={normalizedAuthors.join(', ')} /> : null}
+<link rel="canonical" href={canonicalUrl} />
 
 <!-- Open Graph -->
-<meta property="og:type"        content="website" />
+<meta property="og:type"        content="article" />
 <meta property="og:site_name"   content="Phaeno" />
-<meta property="og:url"         content={url} />
+<meta property="og:url"         content={canonicalUrl} />
 <meta property="og:title"       content={title} />
 <meta property="og:description" content={description} />
-<meta property="og:image"       content={image} />
+<meta property="og:image"       content={imageUrl} />
+<meta property="article:published_time" content={publishedIso} />
+{modifiedIso ? <meta property="article:modified_time" content={modifiedIso} /> : null}
+{normalizedAuthors.map((author) => <meta property="article:author" content={author} />)}
 
 <!-- Twitter -->
 <meta name="twitter:card"        content={twitterCard} />
 <meta name="twitter:site"        content="@Phaeno" />
 <meta name="twitter:title"       content={title} />
 <meta name="twitter:description" content={description} />
-<meta name="twitter:image"       content={image} />
+<meta name="twitter:image"       content={imageUrl} />
+
+<script type="application/ld+json" set:html={serializedStructuredData} />

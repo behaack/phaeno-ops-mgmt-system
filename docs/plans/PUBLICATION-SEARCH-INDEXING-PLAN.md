@@ -9,6 +9,26 @@ reindex, or external search-console change.
 
 ## Status
 
+- On 2026-07-29 the owner explicitly kept the prepared blog and white-paper
+  landing pages unpublished. Their current route directories remain
+  underscore-prefixed (`media/_blog` and `media/_white-papers`), so Astro does
+  not generate those routes or add them to the sitemap. This preparation does
+  not authorize renaming either directory, adding navigation, deploying, or
+  requesting external indexing.
+- Answer-engine preparation was completed locally on 2026-07-29 without
+  publishing the held routes. Blog metadata now emits `BlogPosting` JSON-LD,
+  authorship, publication dates, absolute images, and stable Phaeno
+  organization/website entity links. White-paper JSON-LD now adds stable
+  entity IDs, visible topics, technical keywords, language, and free-access
+  state while preserving the author-free contract.
+- The Website build now generates `llms.txt` from the generated public sitemap
+  and built page metadata. It automatically excludes unpublished routes,
+  redirects, and `noindex` pages; held articles and white papers will enter it
+  only after an approved route publication causes them to enter the sitemap.
+- Existing public Website pages now emit `WebPage` or `CollectionPage` JSON-LD
+  connected to the stable Phaeno `WebSite` and `Organization` entities. The
+  PSeq platform title and description were also made specific enough to stand
+  alone in search and answer-engine citations.
 - Product direction was approved for planning on 2026-07-21.
 - Phase 1 was implemented locally on 2026-07-21. The Website production build
   verified the convention-derived landing/PDF pair, visible discovery content,
@@ -111,9 +131,18 @@ Provide a repeatable publication workflow in which:
   contract, including dates, page count, topics, and search keywords.
 - `website/src/lib/publications.ts` derives and validates the landing, PDF, and
   representative-image paths from each content entry ID.
-- `website/src/pages/media/white-papers/[slug].astro` emits the landing route
-  and generic document-mode source metadata through
-  `PublicationSEOMeta.astro`.
+- `website/src/pages/media/_white-papers/[slug].astro` contains the prepared
+  landing route and generic document-mode source metadata through
+  `PublicationSEOMeta.astro`; the underscore is the current explicit release
+  hold.
+- `website/src/pages/media/_blog/[slug].astro` contains the prepared blog route
+  and emits `BlogPosting` metadata through `ArticleSEOMeta.astro`; the
+  underscore is the current explicit release hold.
+- `website/src/integrations/llmsTxt.ts` generates `dist/llms.txt` from the
+  sitemap and each built page's title and description after every production
+  build. It does not maintain a separate hand-authored publication list.
+- `website/src/components/meta-data-helpers/SEOMeta.astro` emits the general
+  public-page entity graph used by both current pages and future list routes.
 - `backend/app/Features/Website/Crawler/WebsiteCrawler.cs` discovers sitemap
   HTML URLs, extracts HTML headings and sections, and does not follow or parse
   linked PDFs.
@@ -368,6 +397,10 @@ external results.
 - [x] Add one wildcard Vercel PDF indexing header rule.
 - [x] Migrate every existing first-party white-paper entry and PDF to the
   convention; do not add a one-off compatibility branch.
+- [x] Prepare author-aware article JSON-LD and richer author-free publication
+  JSON-LD without publishing the held routes.
+- [x] Generate `llms.txt` from the actual public sitemap and built metadata so
+  route release state stays authoritative.
 
 Phase 1 requires no backend dependency and remains independently deployable.
 The rollout order still deploys and verifies Website metadata before enabling
@@ -413,6 +446,13 @@ the implemented Phase 2 crawler enrichment.
   metadata, and valid Article JSON-LD.
 - The sitemap contains each landing route exactly once and does not list static
   PDFs.
+- While the publication release hold is active, neither held blog nor
+  white-paper landing routes appear in generated HTML, the sitemap, or
+  `llms.txt`.
+- `llms.txt` contains every indexable sitemap HTML page exactly once, grouped
+  by public content type, using the built title and meta description.
+- Renaming an approved held route to its public path causes its built pages to
+  enter both the sitemap and `llms.txt` without a separate index edit.
 - `robots.txt` allows both the landing and PDF URLs to be crawled so their
   HTML metadata and HTTP indexing rules can be observed.
 - The PDF action shows the correct derived URL and page count.
