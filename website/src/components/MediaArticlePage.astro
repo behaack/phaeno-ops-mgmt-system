@@ -17,6 +17,7 @@ interface Props {
   pageCount?: number
   version?: string
   imagePosition?: 'left' | 'center' | 'right'
+  compactContentSpacing?: boolean
 }
 
 const {
@@ -33,6 +34,7 @@ const {
   pageCount,
   version,
   imagePosition = 'center',
+  compactContentSpacing = false,
 } = Astro.props as Props
 
 const sharePath = decodeURIComponent(Astro.url.pathname).toLowerCase()
@@ -107,7 +109,12 @@ const formattedDate = formatContentDate(date, {
     </div>
   </header>
 
-  <div class="article-body-shell">
+  <div
+    class:list={[
+      'article-body-shell',
+      { 'article-body-shell--compact': compactContentSpacing },
+    ]}
+  >
     <article class="media-article-content">
       <slot />
     </article>
@@ -279,6 +286,10 @@ const formattedDate = formatContentDate(date, {
   padding: var(--page-content-start-space) 0 clamp(3.5rem, 7vw, 6rem);
 }
 
+.article-body-shell--compact {
+  padding-bottom: clamp(var(--space-8), 4vw, var(--space-12));
+}
+
 .media-article-content {
   color: var(--phaeno-neutral-700);
   font-size: clamp(1.05rem, 1.4vw, 1.15rem);
@@ -308,6 +319,10 @@ const formattedDate = formatContentDate(date, {
 
 .media-article-content :global(h2) {
   margin: clamp(2.25rem, 4vw, 3rem) 0 var(--space-4);
+}
+
+.article-body-shell--compact .media-article-content :global(h2:first-child) {
+  margin-top: 0;
 }
 
 .media-article-content :global(.article-series-navigation--start + h2) {
