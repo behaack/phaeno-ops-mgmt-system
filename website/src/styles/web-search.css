@@ -169,6 +169,7 @@ button.web-search-close-btn:active:not(:disabled) {
 
 .web-search-results-scroll {
   background: var(--phaeno-green-50);
+  overflow-x: hidden;
   overflow-y: auto;
   padding: 0.625rem;
   scrollbar-color: #b7c8a4 #eef4e6;
@@ -195,10 +196,13 @@ button.web-search-close-btn:active:not(:disabled) {
   gap: 0.25rem;
   list-style: none;
   margin: 0;
+  min-width: 0;
   padding: 0 0 0.25rem;
+  width: 100%;
 }
 
 .web-search-group {
+  min-width: 0;
   padding: 0.875rem 0.25rem 0.25rem;
 }
 
@@ -229,7 +233,9 @@ button.web-search-close-btn:active:not(:disabled) {
   font-weight: 800;
   line-height: 1.2;
   margin: 0;
+  min-width: 0;
   overflow: hidden;
+  overflow-wrap: anywhere;
   padding: 0;
   text-overflow: ellipsis;
   white-space: nowrap;
@@ -245,6 +251,7 @@ button.web-search-close-btn:active:not(:disabled) {
 
 li.web-search-item {
   border-radius: 4px;
+  min-width: 0;
   padding-block: 0;
   padding-inline: 0.25rem;
   animation: web-search-result-in var(--duration-base) var(--ease-standard) both;
@@ -267,6 +274,8 @@ a.web-search-link {
   border-left: 3px solid transparent;
   display: block;
   border-radius: 4px;
+  max-width: 100%;
+  min-width: 0;
   outline: 2px solid transparent;
   outline-offset: 2px;
   transition:
@@ -277,6 +286,7 @@ a.web-search-link {
 }
 
 .web-search-result {
+  min-width: 0;
   padding: 0.6875rem 0.8125rem;
 }
 
@@ -296,6 +306,7 @@ a.web-search-link {
   margin: 0;
   min-width: 0;
   overflow: hidden;
+  overflow-wrap: anywhere;
   padding: 0;
   text-overflow: ellipsis;
   white-space: nowrap;
@@ -336,6 +347,7 @@ a.web-search-link {
   margin: 0.3125rem 0 0;
   max-width: 100%;
   overflow: hidden;
+  overflow-wrap: anywhere;
   padding: 0;
   -webkit-box-orient: vertical;
   -webkit-line-clamp: 2;
@@ -404,9 +416,12 @@ li.web-search-item-active a.web-search-link:focus-visible {
     align-items: flex-start;
     flex-direction: column;
     gap: 0.25rem;
+    width: 100%;
   }
 
+  .web-search-group-title,
   .web-search-result-title {
+    text-overflow: clip;
     white-space: normal;
   }
 }
