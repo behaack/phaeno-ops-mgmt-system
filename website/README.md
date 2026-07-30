@@ -136,6 +136,8 @@ The browser-visible build currently expects:
 The Vercel Function that proxies private Preview search also expects these
 server-only Preview variables:
 
+- `WEBSITE_PREVIEW_SITE_URL`: the stable protected Preview origin used for
+  canonical URLs and the generated sitemap;
 - `WEBSITE_PREVIEW_SEARCH_API_BASE_URL`: the versioned Portal API base URL;
 - `WEBSITE_PREVIEW_SEARCH_API_KEY`: the shared proxy credential configured in
   the Portal API runtime.
@@ -149,7 +151,10 @@ in browser assets.
 Use a Vercel Preview deployment from a short-lived Website branch or pull
 request. The Vercel project must use `website/` as its root directory, protect
 Preview deployments with Vercel Authentication, and set
-`PUBLIC_SITE_REVIEW_MODE=true` only for the Preview environment.
+`PUBLIC_SITE_REVIEW_MODE=true` only for the Preview environment. When a branch
+is assigned a stable custom hostname, set `WEBSITE_PREVIEW_SITE_URL` to that
+HTTPS origin so its canonical URLs and sitemap remain on the hostname crawled
+by Preview search.
 
 Review mode does not add a visible banner to the Website. It prevents indexing,
 omits Web Analytics, routes Website search through the authenticated

@@ -10,11 +10,16 @@ import { llmsTxt } from './src/integrations/llmsTxt';
 
 const isWebsiteReviewMode =
   process.env.PUBLIC_SITE_REVIEW_MODE?.trim().toLowerCase() === 'true';
+const reviewSiteUrl =
+  process.env.WEBSITE_PREVIEW_SITE_URL?.trim().replace(/\/+$/, '');
 const reviewDeploymentHost =
   process.env.VERCEL_BRANCH_URL?.trim()
   || process.env.VERCEL_URL?.trim();
-const websiteSite = isWebsiteReviewMode && reviewDeploymentHost
-  ? `https://${reviewDeploymentHost.replace(/^https?:\/\//, '')}`
+const websiteSite = isWebsiteReviewMode
+  ? reviewSiteUrl
+    || (reviewDeploymentHost
+      ? `https://${reviewDeploymentHost.replace(/^https?:\/\//, '')}`
+      : 'https://www.phaenobiotech.com')
   : 'https://www.phaenobiotech.com';
 
 export default defineConfig({

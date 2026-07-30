@@ -11,7 +11,9 @@ separate release decisions.
 The Phaeno Website Vercel project uses `website/` as its root, tracks `main` as
 Production, sends unassigned branches to Preview, and protects Preview
 deployments with Vercel Authentication. `PUBLIC_SITE_REVIEW_MODE=true` is
-configured only for Preview.
+configured only for Preview. The review branch is assigned the protected
+`https://dev.phaenobiotech.com` hostname, and `WEBSITE_PREVIEW_SITE_URL` keeps
+the review build's canonical URLs and sitemap on that stable origin.
 
 ## Review contract
 
@@ -21,6 +23,9 @@ configured only for Preview.
   to the team members who need to review them.
 - Set `PUBLIC_SITE_REVIEW_MODE=true` only for the Preview environment. Leave it
   unset or `false` in Production.
+- Set the server-only `WEBSITE_PREVIEW_SITE_URL` to the protected stable
+  Preview origin when the review branch has a custom hostname. The generated
+  Vercel branch hostname remains the fallback for other review deployments.
 - Review builds do not add a visible banner to the Website. They emit
   `noindex, nofollow, noarchive`, omit Vercel Web Analytics, route Website
   search through a same-origin Vercel Function and the Portal API's separate
@@ -53,7 +58,8 @@ The code is disabled by default. Activation requires all of the following in
 the Portal API runtime:
 
 - `WebsitePreviewSearch__Enabled=true`;
-- `WebsitePreviewSearch__Url` set to the stable protected branch URL;
+- `WebsitePreviewSearch__Url` set to the stable protected Preview origin that
+  also owns the review build's canonical URLs and sitemap;
 - `WebsitePreviewSearch__SearchIndexLocation` set to the dedicated mounted
   Preview index volume;
 - `WebsitePreviewSearch__VercelProtectionBypassSecret` set from Vercel's
@@ -69,7 +75,8 @@ They must not use a `PUBLIC_` prefix.
 
 1. Build with `PUBLIC_SITE_REVIEW_MODE=true` and confirm the crawler directive,
    Preview search proxy path, disabled submission services, Media
-   navigation, routes, Preview-origin sitemap, and absence of `llms.txt`.
+   navigation, routes, stable Preview-origin canonical URLs and sitemap, and
+   absence of `llms.txt`.
 2. Build with the flag unset and confirm the review crawler directive is absent
    and live Website interactions retain production
    behavior.
