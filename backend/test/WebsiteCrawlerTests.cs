@@ -150,7 +150,11 @@ public sealed class WebsiteCrawlerTests
                 return TextResponse(
                     """
                     <html><head><title>Technology</title></head><body><main>
-                    <h1 id="overview">Technology overview</h1><p>Overview text.</p>
+                    <h1 id="overview"
+                        data-phaeno-search="Hidden platform result title"
+                        data-phaeno-search-summary="Hidden transcriptomics summary">
+                        Technology overview
+                    </h1><p>Overview text.</p>
                     <h2 id="workflow">Workflow</h2><p>Workflow text.</p>
                     </main></body></html>
                     """,
@@ -162,6 +166,11 @@ public sealed class WebsiteCrawlerTests
         Assert.Equal(2, search.Pages.Count);
         Assert.Contains(search.Pages, page => page.Anchor == "overview");
         Assert.Contains(search.Pages, page => page.Anchor == "workflow");
+        var overview = Assert.Single(search.Pages, page => page.Anchor == "overview");
+        Assert.Equal("Hidden platform result title", overview.AnchorTitle);
+        Assert.Contains("Technology overview", overview.Text);
+        Assert.DoesNotContain("Hidden platform result title", overview.Text);
+        Assert.DoesNotContain("Hidden transcriptomics summary", overview.Text);
         Assert.All(search.Pages, page => Assert.Empty(page.SourceText));
         Assert.Equal(0, extractor.CallCount);
     }

@@ -15,6 +15,7 @@ export interface ISearchItem {
   snippet: string;
   count: number;
   score: number;
+  matchedInDocumentSource?: boolean;
 }
 
 export interface IProps {
@@ -173,8 +174,13 @@ export default function SearchItem({
             <h4 className="web-search-result-title">
               <SearchHighlightedSnippet text={item.anchorTitle} searchStr={searchStr} />
             </h4>
-            <span className="web-search-match-count">
-              {item.count} {(item.count === 1) ? 'match' : 'matches'}
+            <span className="web-search-result-meta">
+              {item.matchedInDocumentSource && (
+                <span className="web-search-match-source">Match in linked PDF</span>
+              )}
+              <span className="web-search-match-count">
+                {item.count} {(item.count === 1) ? 'match' : 'matches'}
+              </span>
             </span>
           </div>
           {showSnippet && (

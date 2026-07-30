@@ -29,6 +29,9 @@ public sealed class IndexedPage
 
     public int? Count { get; set; }
 
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingDefault)]
+    public bool MatchedInDocumentSource { get; set; }
+
     [JsonIgnore]
     public string Text { get; set; } = string.Empty;
 

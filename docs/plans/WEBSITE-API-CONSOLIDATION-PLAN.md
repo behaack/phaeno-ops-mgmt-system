@@ -108,12 +108,13 @@ The existing paths and request shapes remain stable:
 Search responses continue to use the standard API envelope. Successful
 database-ping, contact, and order requests return `204 No Content`.
 
-Website search may use the HTML page title and hidden search keywords to find
-candidate sections, but it returns a candidate only when the query is also
-supported by the page title actually displayed in search, the result heading,
-summary, section text, or an approved first-party publication source. Search
-keywords alone remain insufficient to return a result. Match counts use the
-visible HTML and approved publication-source fields.
+Website search may use the HTML page title, hidden result title, summary, and
+search keywords to find and rank candidate sections, but ordinary pages return
+a candidate only when every query term is also supported by the heading or
+section text visible at the destination. Hidden metadata alone is
+insufficient. Approved first-party publication source text is the bounded
+exception. Match counts use only visible destination HTML and approved
+publication-source text.
 Hyphenated terms are tokenized consistently, so a search for `read` highlights
 the `read` segment in `short-read`; result group titles, result titles, and
 snippets highlight displayed occurrences of the literal query only at token
@@ -122,9 +123,12 @@ boundaries, so the same search does not highlight the prefix of `ready` or
 markers, case, and whitespace are normalized, the Website renders the title
 only so one indexed occurrence is not presented twice.
 
-The implementation keeps the existing endpoint and response shape, Google
+The implementation keeps the existing endpoint and response envelope, Google
 reCAPTCHA Enterprise verification, Mailgun template names, technical brief URL,
-durable Lucene index, and scheduled index rebuild. Known marketing origins are
+durable Lucene index, and scheduled index rebuild. Search result objects add
+the optional `matchedInDocumentSource` flag only when an approved linked
+document is required to support the query, allowing the Website to label the
+exception without exposing indexed source text. Known marketing origins are
 explicitly allowed by CORS; loopback origins are also allowed in Development.
 
 First-party PDF-backed publication landing pages may declare document mode and
@@ -133,7 +137,8 @@ landing-page record, extracts PDF text with PdfPig 0.1.15, and stores that text
 in an internal `SourceText` field that is excluded from JSON serialization.
 Lucene indexes visible HTML, PDF source text, and candidate-only keywords in
 separate fields; visible title and HTML matches rank above source-text matches,
-and snippets prefer visible HTML before PDF text.
+snippets prefer visible HTML before PDF text, and PDF-dependent results are
+labeled `Match in linked PDF` in the Website UI.
 
 Document enrichment accepts only the configured first-party path, requires
 HTTPS outside Development, honors robots rules, rejects cross-origin redirects

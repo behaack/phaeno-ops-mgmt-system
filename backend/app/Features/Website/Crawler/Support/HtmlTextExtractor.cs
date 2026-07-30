@@ -52,15 +52,10 @@ public static class HtmlTextExtractor
             .Trim();
     }
 
-    public static string ExtractSectionText(
-        IElement heading,
-        string? searchTitle = null)
+    public static string ExtractSectionText(IElement heading)
     {
         var builder = new StringBuilder();
-        builder.AppendLine(
-            string.IsNullOrWhiteSpace(searchTitle)
-                ? heading.TextContent.Trim()
-                : searchTitle.Trim());
+        builder.AppendLine(heading.TextContent.Trim());
 
         var current = heading.NextElementSibling;
         while (current is not null && !IsSectionBoundary(current))

@@ -210,7 +210,9 @@ Phaeno's voice is direct, exact, and evidence-led.
 Every searchable page must include a meaningful title, description, and `phaeno:document-type` through the existing SEO helpers. The crawler indexes `<main>` content only.
 
 - Preserve stable heading IDs and meaningful `data-phaeno-search` labels.
-- Put the conclusion in the visible heading; put synonyms and technical variants in search metadata.
+- Put the conclusion in the visible heading. Search metadata may improve a
+  result's title, summary, and ranking, but every ordinary-page query term must
+  also appear in the visible destination heading or section text.
 - Use `data-phaeno-search-ignore` for controls or decorative copy that would pollute snippets.
 - Do not casually change document-type labels; list pages are excluded from Lucene rebuilds.
 

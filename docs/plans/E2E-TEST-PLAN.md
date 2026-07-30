@@ -14,7 +14,9 @@ until an authorized Website/API release because acceptance requires the
 deployed landing page, Vercel PDF headers, durable scheduled index rebuild, and
 public search endpoint together. That future proof must cover desktop and
 narrow landing layouts, abstract and PDF-only queries returning one landing
-result, result navigation, and the PDF action opening the derived asset.
+result, the `Match in linked PDF` source label, rejection of ordinary-page
+hidden-metadata-only matches, result navigation, and the PDF action opening the
+derived asset.
 
 ## Created Tests
 

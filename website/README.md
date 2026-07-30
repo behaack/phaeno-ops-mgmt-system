@@ -77,6 +77,13 @@ metadata, and stable heading IDs. Route, metadata, heading, content, sitemap,
 and RSS changes should be checked together because the Portal-owned crawler
 indexes the deployed public site.
 
+For ordinary pages, hidden search titles, summaries, and keywords may improve
+candidate selection, result presentation, and ranking, but they cannot create
+a result unless every query term is present in the visible destination
+heading or section text. Approved first-party PDF-backed publications are the
+only source-text exception; results that require the linked PDF are labeled
+`Match in linked PDF`.
+
 The production build generates `dist/llms.txt` from the URLs in the generated
 sitemap and each page's built title and meta description. Do not hand-edit a
 copy under `public/` or `dist/`. Redirects, `noindex` pages, and routes kept

@@ -164,12 +164,13 @@ public sealed class WebsiteSearchService : IWebsiteSearchService, IDisposable
         var pageDisplayTitle = document.Get("pageDisplayTitle") ?? pageTitle;
         var anchorTitle = document.Get("anchorTitle") ?? string.Empty;
         var description = document.Get("description") ?? string.Empty;
-        var visibleText = JoinVisibleSearchText(
+        var destinationText = JoinVisibleSearchText(fullText, sourceText);
+        var hasVisiblePageMatch = ContainsAllStemmedTerms(
             fullText,
-            sourceText,
-            description,
-            anchorTitle,
-            pageDisplayTitle);
+            stemmedTerms);
+        var hasDestinationMatch = ContainsAllStemmedTerms(
+            destinationText,
+            stemmedTerms);
 
         var snippet = ExtractSnippet(fullText, stemmedTerms);
         if (string.IsNullOrWhiteSpace(snippet))
@@ -200,7 +201,11 @@ public sealed class WebsiteSearchService : IWebsiteSearchService, IDisposable
             DocumentType = document.Get("documentType") ?? string.Empty,
             Snippet = snippet,
             Score = score,
-            Count = CountStemmedMatches(visibleText, stemmedTerms),
+            Count = hasDestinationMatch
+                ? CountStemmedMatches(destinationText, stemmedTerms)
+                : 0,
+            MatchedInDocumentSource = hasDestinationMatch
+                && !hasVisiblePageMatch,
             IndexedAt = indexedAtTicks > 0
                 ? new DateTime(indexedAtTicks, DateTimeKind.Utc)
                 : DateTime.UtcNow
@@ -273,6 +278,24 @@ public sealed class WebsiteSearchService : IWebsiteSearchService, IDisposable
             .Count(normalized => stemmedTerms.Contains(
                 normalized,
                 StringComparer.OrdinalIgnoreCase));
+
+    private static bool ContainsAllStemmedTerms(
+        string text,
+        IReadOnlyList<string> stemmedTerms)
+    {
+        if (string.IsNullOrWhiteSpace(text))
+        {
+            return false;
+        }
+
+        var textTerms = Regex.Matches(text, "\\b[\\w']+\\b")
+            .Cast<Match>()
+            .Select(match => NormalizeAndStem(match.Value))
+            .Where(term => !string.IsNullOrWhiteSpace(term))
+            .ToHashSet(StringComparer.OrdinalIgnoreCase);
+
+        return stemmedTerms.All(textTerms.Contains);
+    }
 
     private static string JoinVisibleSearchText(params string[] values)
     {

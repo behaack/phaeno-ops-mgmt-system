@@ -92,6 +92,28 @@ public sealed class WebsiteApiTests
                     Description = "Molecule-level processing for downstream models.",
                     SearchKeywords = "short-read sequencing",
                     Text = "Analysis workflow for downstream models."
+                },
+                new IndexedPage
+                {
+                    Id = "hidden-heading-only-read",
+                    Url = "https://www.phaenobiotech.com/technology#models",
+                    PageTitle = "Technology",
+                    PageDisplayTitle = "Technology",
+                    Anchor = "models",
+                    AnchorTitle = "Short-read model inputs",
+                    Description = "A general workflow summary.",
+                    Text = "Model inputs for downstream analysis."
+                },
+                new IndexedPage
+                {
+                    Id = "hidden-summary-only-read",
+                    Url = "https://www.phaenobiotech.com/technology#outputs",
+                    PageTitle = "Technology",
+                    PageDisplayTitle = "Technology",
+                    Anchor = "outputs",
+                    AnchorTitle = "Model outputs",
+                    Description = "Short-read sequencing for model outputs.",
+                    Text = "Structured outputs for downstream analysis."
                 }
             ]);
 
@@ -99,6 +121,7 @@ public sealed class WebsiteApiTests
 
             Assert.Equal("visible-read", result.Id);
             Assert.Equal(2, result.Count);
+            Assert.False(result.MatchedInDocumentSource);
             Assert.Contains("Short-{{read}}", result.Snippet);
             Assert.Contains("{{reads}}", result.Snippet);
         }
@@ -141,6 +164,7 @@ public sealed class WebsiteApiTests
             Assert.Equal("publication", result.Id);
             Assert.DoesNotContain('#', result.Url);
             Assert.Contains("{{chromatogram}}", result.Snippet);
+            Assert.True(result.MatchedInDocumentSource);
         }
         finally
         {
@@ -208,6 +232,52 @@ public sealed class WebsiteApiTests
         Assert.DoesNotContain("Private index-only PDF text", json);
         Assert.DoesNotContain("Visible internal index text", json);
         Assert.DoesNotContain("internal keyword", json);
+    }
+
+    [Fact]
+    public void SearchRequiresEveryTermInVisiblePageOrDocumentSourceText()
+    {
+        var indexPath = Path.Combine(
+            Path.GetTempPath(),
+            $"phaeno-website-search-{Guid.NewGuid():N}");
+
+        try
+        {
+            using var service = CreateSearchService(indexPath);
+            service.RebuildIndex(
+            [
+                new IndexedPage
+                {
+                    Id = "hidden-second-term",
+                    Url = "https://www.phaenobiotech.com/technology#analysis",
+                    PageTitle = "Technology",
+                    PageDisplayTitle = "Technology",
+                    AnchorTitle = "Analysis",
+                    Description = "Transcriptomics for researchers.",
+                    Text = "Molecule-level analysis."
+                },
+                new IndexedPage
+                {
+                    Id = "document-second-term",
+                    Url = "https://www.phaenobiotech.com/media/white-papers/example",
+                    PageTitle = "Example White Paper",
+                    PageDisplayTitle = "White Paper - Example",
+                    Description = "A publication overview.",
+                    DocumentType = "White Paper",
+                    Text = "Molecule-level analysis.",
+                    SourceText = "The linked PDF covers transcriptomics."
+                }
+            ]);
+
+            var result = Assert.Single(service.Search("molecule transcriptomics"));
+
+            Assert.Equal("document-second-term", result.Id);
+            Assert.True(result.MatchedInDocumentSource);
+        }
+        finally
+        {
+            DeleteIndex(indexPath);
+        }
     }
 
     [Fact]

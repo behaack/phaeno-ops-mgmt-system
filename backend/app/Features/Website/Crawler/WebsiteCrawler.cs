@@ -290,9 +290,7 @@ public sealed class WebsiteCrawler : IWebsiteCrawler
                 SearchKeywords =
                     heading.GetAttribute("data-phaeno-search-keywords")?.Trim()
                     ?? string.Empty,
-                Text = HtmlTextExtractor.ExtractSectionText(
-                    heading,
-                    anchorTitle),
+                Text = HtmlTextExtractor.ExtractSectionText(heading),
                 IndexedAt = DateTime.UtcNow
             });
         }

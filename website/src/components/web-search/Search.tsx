@@ -16,6 +16,7 @@ export interface ISearchResult {
   snippet: string
   count: number
   score: number
+  matchedInDocumentSource?: boolean
 }
 
 type ApiEnvelope<T> = {

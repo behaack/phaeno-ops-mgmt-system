@@ -51,6 +51,11 @@ access or private Portal credentials.
 - Give every searchable page a meaningful title, description, and document
   type. Preserve stable heading IDs and the Markdown/MDX heading-processing
   behavior used by Website search.
+- Treat hidden search titles, summaries, and keywords as presentation and
+  ranking metadata, not destination evidence. An ordinary result must be
+  supported by every query term in its visible heading or section text;
+  approved first-party document source text is the only exception and must be
+  labeled in the result.
 - Keep scientific and commercial claims supportable. Escalate changes that
   alter the message, evidence, regulatory risk, or customer promise.
 - Keep secrets out of source. Values prefixed with `PUBLIC_` are compiled into
