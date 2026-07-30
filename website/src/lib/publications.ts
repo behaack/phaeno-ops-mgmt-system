@@ -30,22 +30,15 @@ export function getWhitePaperPublication(
   const slug = paper.id
   const landingPath = `/media/white-papers/${slug}`
   const pdfPath = `/white-papers/${slug}.pdf`
-  const expectedImagePrefix = `/images/media/white-papers/${slug}.`
 
-  if (!paper.data.image.startsWith(expectedImagePrefix)) {
-    throw new Error(
-      `White paper "${slug}" image must follow ${expectedImagePrefix}{extension}.`,
-    )
-  }
+  assertPublicAsset(slug, pdfPath, 'PDF')
+  assertPublicAsset(slug, paper.data.image, 'image')
 
   if (!supportedImageExtensions.has(extname(paper.data.image).toLowerCase())) {
     throw new Error(
       `White paper "${slug}" image must be a local JPEG, PNG, SVG, or WebP asset.`,
     )
   }
-
-  assertPublicAsset(slug, pdfPath, 'PDF')
-  assertPublicAsset(slug, paper.data.image, 'image')
 
   return {
     slug,

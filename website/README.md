@@ -98,16 +98,20 @@ and route behavior aligned when adding or changing entries.
 ### Adding a PDF-backed white paper
 
 White papers use their content entry ID as the stable slug. A new entry named
-`example-white-paper.mdx` therefore requires these matching public assets:
+`example-white-paper.mdx` therefore requires its matching PDF:
 
 - `public/white-papers/example-white-paper.pdf`
-- `public/images/media/white-papers/example-white-paper.{png|jpg|jpeg|svg|webp}`
+
+Its front-matter `image` must reference an existing local JPEG, PNG, SVG, or
+WebP under `public/`. Reuse a shared image when multiple publications use the
+same representative artwork; use a publication-specific asset when the cover
+is distinct.
 
 Do not add a PDF link to front matter. The shared publication helper derives
-the landing page and PDF URLs and fails the build when either required asset is
-missing or does not follow the convention. Supply title, summary, publication
-date, the local image path, the PDF's current positive page count, at least one
-visible topic, and at least one search keyword. Use optional
+the landing page and PDF URLs and fails the build when the PDF or declared
+image is missing or invalid. Supply title, summary, publication date, the local
+image path, the PDF's current positive page count, at least one visible topic,
+and at least one search keyword. Use optional
 `dateModified` only when it is not earlier than `date`, and optional `version`
 only when the publisher assigns one.
 

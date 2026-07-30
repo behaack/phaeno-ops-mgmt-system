@@ -9,6 +9,10 @@ reindex, or external search-console change.
 
 ## Status
 
+- On 2026-07-29 the representative-image contract was simplified to permit a
+  supported local Website image to be shared by multiple publications. The
+  stable slug continues to own the landing page and PDF paths; a distinct
+  per-slug image is required only when the publication has distinct artwork.
 - On 2026-07-29 ordinary Website result eligibility was tightened locally so
   hidden result titles, summaries, and keywords cannot qualify a destination
   by themselves. Approved PDF source text remains the explicit exception, and
@@ -169,12 +173,14 @@ Use the content entry ID as the stable publication slug:
 
 - landing page: `/media/white-papers/{slug}`;
 - PDF asset: `/white-papers/{slug}.pdf`; and
-- representative image: `/images/media/white-papers/{slug}.{extension}`.
+- representative image: an existing supported local Website image declared in
+  front matter, which may be shared across publications when the artwork is
+  identical.
 
 Remove the manually authored PDF link from white-paper front matter. Derive the
 landing and PDF paths through one reusable publication-route helper. Existing
-entries migrate to the convention once; future entries require no route or
-hosting configuration.
+entries migrate to the landing/PDF convention once; future entries require no
+route or hosting configuration.
 
 ### Front matter
 
