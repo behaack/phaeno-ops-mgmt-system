@@ -149,7 +149,9 @@ public sealed class WebsiteCrawlerTests
 
                 return TextResponse(
                     """
-                    <html><head><title>Technology</title></head><body><main>
+                    <html><head><title>Technology</title>
+                    <meta name="phaeno:document-type" content="Web Page">
+                    </head><body><main>
                     <h1 id="overview"
                         data-phaeno-search="Hidden platform result title"
                         data-phaeno-search-summary="Hidden transcriptomics summary">
@@ -171,6 +173,7 @@ public sealed class WebsiteCrawlerTests
         Assert.Contains("Technology overview", overview.Text);
         Assert.DoesNotContain("Hidden platform result title", overview.Text);
         Assert.DoesNotContain("Hidden transcriptomics summary", overview.Text);
+        Assert.All(search.Pages, page => Assert.Equal("Web Page", page.DocumentType));
         Assert.All(search.Pages, page => Assert.Empty(page.SourceText));
         Assert.Equal(0, extractor.CallCount);
     }

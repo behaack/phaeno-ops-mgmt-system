@@ -40,7 +40,8 @@ and rollback-isolated PostgreSQL coverage.
   hidden section metadata from extracted destination-visible text; nested
   heading wrappers retain destination-visible section content such as
   biomarker names and evidence attributions without leaking into the next
-  section.
+  section; section records retain the page's published document type for
+  result labeling and icons.
 - [x] `backend/test/PhaenoPortalMetadataTests.cs` - `HealthMetadataIdentifiesTheApi`.
 - [x] `backend/test/PersistenceTests.cs` -
   `PSeqOperationsDbContextMapsEveryEntityToItsOwningSchema`.

@@ -286,7 +286,7 @@ public sealed class WebsiteCrawler : IWebsiteCrawler
                 Description =
                     heading.GetAttribute("data-phaeno-search-summary")?.Trim()
                     ?? string.Empty,
-                DocumentType = "section",
+                DocumentType = documentType,
                 SearchKeywords =
                     heading.GetAttribute("data-phaeno-search-keywords")?.Trim()
                     ?? string.Empty,
