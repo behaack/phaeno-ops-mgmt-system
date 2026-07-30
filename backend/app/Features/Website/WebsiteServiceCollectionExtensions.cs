@@ -11,6 +11,7 @@ namespace PhaenoPortal.App.Features.Website;
 public static class WebsiteServiceCollectionExtensions
 {
     public const string CorsPolicyName = "Website";
+    public const string PreviewCrawlerHttpClientName = "WebsitePreviewCrawler";
 
     public static IServiceCollection AddWebsiteApi(
         this IServiceCollection services,
@@ -29,6 +30,13 @@ public static class WebsiteServiceCollectionExtensions
             configuration.GetSection(WebsiteSearchOptions.SectionName));
         services.Configure<WebsiteIndexingOptions>(
             configuration.GetSection(WebsiteIndexingOptions.SectionName));
+        services
+            .AddOptions<WebsitePreviewSearchOptions>()
+            .Bind(configuration.GetSection(WebsitePreviewSearchOptions.SectionName))
+            .ValidateOnStart();
+        services.AddSingleton<
+            IValidateOptions<WebsitePreviewSearchOptions>,
+            WebsitePreviewSearchOptionsValidator>();
 
         var websiteOptions = configuration
             .GetSection(WebsiteApiOptions.SectionName)
@@ -69,6 +77,7 @@ public static class WebsiteServiceCollectionExtensions
                 ? serviceProvider.GetRequiredService<MailgunWebsiteNotificationSender>()
                 : serviceProvider.GetRequiredService<LoggingWebsiteNotificationSender>());
         services.AddSingleton<IWebsiteSearchService, WebsiteSearchService>();
+        services.AddSingleton<WebsitePreviewSearchService>();
         services.AddSingleton<IWebsiteDocumentTextExtractor, PdfWebsiteDocumentTextExtractor>();
         services
             .AddHttpClient<IWebsiteCrawler, WebsiteCrawler>()
@@ -76,7 +85,28 @@ public static class WebsiteServiceCollectionExtensions
             {
                 AllowAutoRedirect = false
             });
+        services
+            .AddHttpClient(
+                PreviewCrawlerHttpClientName,
+                (serviceProvider, httpClient) =>
+                {
+                    var previewOptions = serviceProvider
+                        .GetRequiredService<IOptions<WebsitePreviewSearchOptions>>()
+                        .Value;
+                    if (!string.IsNullOrWhiteSpace(
+                        previewOptions.VercelProtectionBypassSecret))
+                    {
+                        httpClient.DefaultRequestHeaders.TryAddWithoutValidation(
+                            "x-vercel-protection-bypass",
+                            previewOptions.VercelProtectionBypassSecret);
+                    }
+                })
+            .ConfigurePrimaryHttpMessageHandler(() => new HttpClientHandler
+            {
+                AllowAutoRedirect = false
+            });
         services.AddHostedService<WebsiteIndexingBackgroundService>();
+        services.AddHostedService<WebsitePreviewIndexingBackgroundService>();
 
         return services;
     }

@@ -4,6 +4,7 @@ import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useGoogleReCaptcha } from "react-google-recaptcha-v3";
 import Spinner from "../Spinner";
+import { isWebsiteReviewMode } from "@/lib/reviewMode";
 
 const BASE_URL = import.meta.env.PUBLIC_API_BASE_URL;
 
@@ -58,6 +59,12 @@ export function ContactForm() {
   const onSubmit = async (data: FormValues) => {
     // reset banner on new submit
     setMessage("");
+
+    if (isWebsiteReviewMode) {
+      setMessage("Submissions are disabled in this team preview.");
+      setIsSuccess(false);
+      return;
+    }
 
     if (!executeRecaptcha) {
       setMessage("reCAPTCHA is not loaded. Please try again.");
@@ -148,6 +155,11 @@ export function ContactForm() {
     <div className="contact-form-panel contact-form-panel--updates">
       <div className="px-6 py-6">
         <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
+          {isWebsiteReviewMode && (
+            <p className="rounded-xl border border-amber-300 bg-amber-50 px-4 py-3 text-sm font-medium text-amber-950">
+              Submissions are disabled in this team preview.
+            </p>
+          )}
           {/* NAME ROW */}
           <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
             <div>
@@ -260,7 +272,7 @@ export function ContactForm() {
 
             <button
               type="submit"
-              disabled={isSubmitting}
+              disabled={isSubmitting || isWebsiteReviewMode}
               aria-busy={isSubmitting}
               className={[
                 "contact-submit inline-flex items-center justify-center gap-2 rounded-lg px-4 py-2 text-sm font-semibold",

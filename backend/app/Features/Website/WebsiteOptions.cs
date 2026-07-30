@@ -88,3 +88,42 @@ public sealed class WebsiteIndexingOptions
 
     public bool RunOnStartup { get; init; } = true;
 }
+
+public sealed class WebsitePreviewSearchOptions
+{
+    public const string SectionName = "WebsitePreviewSearch";
+
+    public bool Enabled { get; init; }
+
+    public string Url { get; init; } = string.Empty;
+
+    public string SiteMap { get; init; } = "sitemap-index.xml";
+
+    public string DocumentSourcePathPrefix { get; init; } = "/white-papers/";
+
+    public int MaxDocumentBytes { get; init; } = 25 * 1024 * 1024;
+
+    public int MaxExtractedCharacters { get; init; } = 1_000_000;
+
+    public int DocumentTimeoutSeconds { get; init; } = 30;
+
+    public string SearchIndexLocation { get; init; } = string.Empty;
+
+    public string VercelProtectionBypassSecret { get; init; } = string.Empty;
+
+    public string ProxyApiKey { get; init; } = string.Empty;
+
+    public int IntervalHours { get; init; } = 24;
+
+    public bool RunOnStartup { get; init; } = true;
+
+    public WebsiteCrawlerOptions ToCrawlerOptions() => new()
+    {
+        Url = Url,
+        SiteMap = SiteMap,
+        DocumentSourcePathPrefix = DocumentSourcePathPrefix,
+        MaxDocumentBytes = MaxDocumentBytes,
+        MaxExtractedCharacters = MaxExtractedCharacters,
+        DocumentTimeoutSeconds = DocumentTimeoutSeconds
+    };
+}

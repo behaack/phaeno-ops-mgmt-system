@@ -18,6 +18,13 @@ result, the `Match in linked PDF` source label, rejection of ordinary-page
 hidden-metadata-only matches, result navigation, and the PDF action opening the
 derived asset.
 
+Private team Preview search browser proof is also deferred until its authorized
+API and Vercel Preview deployments. That proof must show Vercel Authentication
+denying an anonymous visitor, an authenticated team member searching newly
+available Media content through the same-origin proxy, direct API denial
+without the proxy key, Preview-origin result navigation, and unchanged
+production search results.
+
 ## Created Tests
 
 - [x] `frontend/e2e/home.spec.ts` - internal Phaeno context uses POMS in the

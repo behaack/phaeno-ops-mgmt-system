@@ -6,14 +6,17 @@ import Footer from './footer/Footer.astro';
 import ScrollBehavior from '@/components/script-components/ScrollBehavior.astro';
 import MenuBehavior from '@/components/script-components/MenuBehavior.astro';
 import Analytics from '@vercel/analytics/astro';
+import TeamPreviewBanner from '@/components/TeamPreviewBanner.astro';
+import { isWebsiteReviewMode } from '@/lib/reviewMode';
 
 /** Canonical URL (per-page, so we keep it) */
 const canonical = new URL(Astro.url.pathname, Astro.site).href;
 ---
-<html lang="en-US">
+<html lang="en-US" class:list={{ 'team-preview': isWebsiteReviewMode }}>
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
+    {isWebsiteReviewMode && <meta name="robots" content="noindex, nofollow, noarchive" />}
 
     <!-- Canonical & favicon -->
     <link rel="canonical" href={canonical} />
@@ -68,7 +71,7 @@ const canonical = new URL(Astro.url.pathname, Astro.site).href;
         }
       }
     </script>
-    <Analytics />
+    {!isWebsiteReviewMode && <Analytics />}
   </head>
 
   <body class="bg-white">
@@ -81,6 +84,7 @@ const canonical = new URL(Astro.url.pathname, Astro.site).href;
       Skip to main content
     </a>    
 
+    {isWebsiteReviewMode && <TeamPreviewBanner />}
     <Header />
     <div class="page-container">
       <slot />
@@ -93,6 +97,23 @@ const canonical = new URL(Astro.url.pathname, Astro.site).href;
 </html>
 
 <style>
+.team-preview {
+  --team-preview-banner-height: 2.25rem;
+  scroll-padding-top: calc(var(--header-height) + var(--team-preview-banner-height) + var(--space-6));
+}
+
+.team-preview :global(#site-header) {
+  top: var(--team-preview-banner-height);
+}
+
+.team-preview :global(main) {
+  padding-top: calc(var(--heading-height) + var(--team-preview-banner-height));
+}
+
+.team-preview .skip-link {
+  top: calc(var(--team-preview-banner-height) + 1rem);
+}
+
 .page-container {
   display: flex;
   flex-direction: column;
@@ -123,6 +144,10 @@ const canonical = new URL(Astro.url.pathname, Astro.site).href;
 } 
 
 @media (max-width: 725px) {
+  .team-preview .skip-link {
+    top: calc(var(--team-preview-banner-height) + .5rem);
+  }
+
   .skip-link {
     top: .5rem;
     padding: 0.25rem 1rem;

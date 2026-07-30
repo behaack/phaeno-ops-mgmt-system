@@ -127,10 +127,35 @@ The browser-visible build currently expects:
 
 - `PUBLIC_API_BASE_URL`: base URL for the versioned anonymous Website API
 - `PUBLIC_RECAPTCHA_SITE_ID`: public reCAPTCHA site identifier
+- `PUBLIC_SITE_REVIEW_MODE`: set to `true` only for private team Preview builds
+
+The Vercel Function that proxies private Preview search also expects these
+server-only Preview variables:
+
+- `WEBSITE_PREVIEW_SEARCH_API_BASE_URL`: the versioned Portal API base URL;
+- `WEBSITE_PREVIEW_SEARCH_API_KEY`: the shared proxy credential configured in
+  the Portal API runtime.
 
 Keep local values in ignored environment files or the deployment platform.
 Never place secrets in a `PUBLIC_` variable because Astro includes those values
 in browser assets.
+
+## Private team previews
+
+Use a Vercel Preview deployment from a short-lived Website branch or pull
+request. The Vercel project must use `website/` as its root directory, protect
+Preview deployments with Vercel Authentication, and set
+`PUBLIC_SITE_REVIEW_MODE=true` only for the Preview environment.
+
+Review mode identifies the build with a persistent banner, prevents indexing,
+omits Web Analytics, routes Website search through the authenticated
+same-origin Preview proxy and its separate Portal-owned index, prevents
+contact and demo submissions, avoids loading reCAPTCHA, and omits the
+production-facing `llms.txt` artifact. Production must leave the flag unset or
+set it to `false`. Use `vercel dev` rather than the standalone Astro dev server
+when locally exercising the server-side Preview search function.
+The complete operating and verification boundary is in
+`../docs/plans/WEBSITE-TEAM-PREVIEW-PLAN.md`.
 
 ## Commands
 

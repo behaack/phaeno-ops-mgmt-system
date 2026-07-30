@@ -62,6 +62,9 @@ jobs:
           PORTAL_CLERK_AUTHORITY: ${{ vars.PORTAL_CLERK_AUTHORITY }}
           PORTAL_CLERK_SECRET_KEY: ${{ secrets.PORTAL_CLERK_SECRET_KEY }}
           PORTAL_MIGRATION_BACKUP_PUBLIC_KEY: ${{ secrets.PORTAL_MIGRATION_BACKUP_PUBLIC_KEY }}
+          WEBSITE_PREVIEW_SEARCH_URL: ${{ vars.WEBSITE_PREVIEW_SEARCH_URL }}
+          WEBSITE_PREVIEW_SEARCH_VERCEL_BYPASS_SECRET: ${{ secrets.WEBSITE_PREVIEW_SEARCH_VERCEL_BYPASS_SECRET }}
+          WEBSITE_PREVIEW_SEARCH_PROXY_API_KEY: ${{ secrets.WEBSITE_PREVIEW_SEARCH_PROXY_API_KEY }}
         run: |
           missing=0
 
@@ -116,6 +119,24 @@ jobs:
             && [ -z "$PORTAL_MIGRATION_BACKUP_PUBLIC_KEY" ]; then
             echo "::error::PORTAL_MIGRATION_BACKUP_PUBLIC_KEY is required when migrations are authorized."
             missing=1
+          fi
+
+          if [ -n "$WEBSITE_PREVIEW_SEARCH_URL" ]; then
+            case "$WEBSITE_PREVIEW_SEARCH_URL" in
+              https://*) ;;
+              *)
+                echo "::error::WEBSITE_PREVIEW_SEARCH_URL must be an HTTPS URL."
+                missing=1
+                ;;
+            esac
+            if [ -z "$WEBSITE_PREVIEW_SEARCH_VERCEL_BYPASS_SECRET" ]; then
+              echo "::error::WEBSITE_PREVIEW_SEARCH_VERCEL_BYPASS_SECRET is required when Preview search is configured."
+              missing=1
+            fi
+            if [ "${#WEBSITE_PREVIEW_SEARCH_PROXY_API_KEY}" -lt 32 ]; then
+              echo "::error::WEBSITE_PREVIEW_SEARCH_PROXY_API_KEY must contain at least 32 characters."
+              missing=1
+            fi
           fi
 
           exit "$missing"
@@ -223,7 +244,8 @@ jobs:
           chmod 755 \
             "$release_path/deployment/hetzner/green/deploy-release.sh" \
             "$release_path/deployment/hetzner/green/install-bootstrap-runtime-config.sh" \
-            "$release_path/deployment/hetzner/green/install-clerk-runtime-secret.sh"
+            "$release_path/deployment/hetzner/green/install-clerk-runtime-secret.sh" \
+            "$release_path/deployment/hetzner/green/install-website-preview-search-runtime-config.sh"
           REMOTE
 
       - name: Install Clerk runtime secret
@@ -257,6 +279,23 @@ jobs:
             "$PORTAL_BOOTSTRAP_ADMIN_LAST_NAME" \
             | ssh -i ~/.ssh/deploy_key "$DEPLOY_USER@$DEPLOY_HOST" \
                 "$RELEASE_PATH/deployment/hetzner/green/install-bootstrap-runtime-config.sh '$DEPLOY_ROOT'"
+
+      - name: Install Website Preview search runtime configuration
+        if: ${{ vars.WEBSITE_PREVIEW_SEARCH_URL != '' }}
+        env:
+          DEPLOY_HOST: ${{ secrets.DEPLOY_HOST }}
+          DEPLOY_USER: ${{ secrets.DEPLOY_USER }}
+          RELEASE_PATH: ${{ steps.release.outputs.release_path }}
+          WEBSITE_PREVIEW_SEARCH_URL: ${{ vars.WEBSITE_PREVIEW_SEARCH_URL }}
+          WEBSITE_PREVIEW_SEARCH_VERCEL_BYPASS_SECRET: ${{ secrets.WEBSITE_PREVIEW_SEARCH_VERCEL_BYPASS_SECRET }}
+          WEBSITE_PREVIEW_SEARCH_PROXY_API_KEY: ${{ secrets.WEBSITE_PREVIEW_SEARCH_PROXY_API_KEY }}
+        run: |
+          printf 'WebsitePreviewSearch__Enabled=true\nWebsitePreviewSearch__Url=%s\nWebsitePreviewSearch__VercelProtectionBypassSecret=%s\nWebsitePreviewSearch__ProxyApiKey=%s\n' \
+            "$WEBSITE_PREVIEW_SEARCH_URL" \
+            "$WEBSITE_PREVIEW_SEARCH_VERCEL_BYPASS_SECRET" \
+            "$WEBSITE_PREVIEW_SEARCH_PROXY_API_KEY" \
+            | ssh -i ~/.ssh/deploy_key "$DEPLOY_USER@$DEPLOY_HOST" \
+                "$RELEASE_PATH/deployment/hetzner/green/install-website-preview-search-runtime-config.sh '$DEPLOY_ROOT'"
 
       - name: Upload migration-backup public key
         if: ${{ inputs.apply_migrations }}

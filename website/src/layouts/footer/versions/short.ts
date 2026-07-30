@@ -34,16 +34,16 @@ const footer =
             label: 'Investors',
             value: '/investors'
           },   
-          // {
-          //   type: 'link',
-          //   label: 'Blog',
-          //   value: '/media/blog'
-          // },
-          // {
-          //   type: 'link',
-          //   label: 'White Papers',
-          //   value: '/media/white-papers'
-          // },
+          {
+            type: 'link',
+            label: 'Blog',
+            value: '/media/blog'
+          },
+          {
+            type: 'link',
+            label: 'White Papers',
+            value: '/media/white-papers'
+          },
           {
             type: 'external-link',
             label: 'Customer Portal',

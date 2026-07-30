@@ -42,6 +42,7 @@ services:
       WebsiteApi__PublicDocumentsPath: /app/__DOCUMENTS/public
       GoogleAuthSettings__RecaptchaServiceAccountKeyPath: /app/__DOCUMENTS/private/secrets/recaptcha-enterprise-service-account.json
       WebSearchSettings__SearchIndexLocation: /app/__GREEN_INDEX
+      WebsitePreviewSearch__SearchIndexLocation: /app/__PREVIEW_INDEX
       DataProvisioning__StorageRoot: /app/App_Data/provisioning-files
       OrderManagement__StorageRoot: /app/App_Data/order-files
     ports:
@@ -50,6 +51,7 @@ services:
       - /opt/phaeno.portal-green/documents:/app/__DOCUMENTS:ro
       - portal_green_app_data:/app/App_Data
       - portal_green_website_index:/app/__GREEN_INDEX
+      - portal_green_website_preview_index:/app/__PREVIEW_INDEX
     depends_on:
       db:
         condition: service_healthy
@@ -100,6 +102,7 @@ volumes:
   portal_green_postgres_data:
   portal_green_app_data:
   portal_green_website_index:
+  portal_green_website_preview_index:
 
 networks:
   portal_green:

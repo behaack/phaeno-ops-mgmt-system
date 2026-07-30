@@ -1,0 +1,29 @@
+<div class="team-preview-banner" role="status">
+  <strong>Team preview</strong>
+  <span aria-hidden="true">—</span>
+  <span>submissions are disabled</span>
+</div>
+
+<style>
+  .team-preview-banner {
+    position: fixed;
+    inset: 0 0 auto;
+    z-index: 60;
+    min-height: var(--team-preview-banner-height);
+    padding: var(--space-1) var(--page-gutter);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: var(--space-2);
+    border-bottom: 1px solid var(--phaeno-green-700);
+    background: var(--phaeno-green-100);
+    color: var(--color-brand-strong);
+    font-size: var(--font-size-sm);
+    line-height: 1.25;
+    text-align: center;
+  }
+
+  .team-preview-banner strong {
+    font-weight: 700;
+  }
+</style>

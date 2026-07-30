@@ -281,6 +281,99 @@ public sealed class WebsiteApiTests
     }
 
     [Fact]
+    public void PreviewSearchUsesASeparateIndexAndConstantTimeProxyKeyCheck()
+    {
+        var productionIndexPath = Path.Combine(
+            Path.GetTempPath(),
+            $"phaeno-website-production-search-{Guid.NewGuid():N}");
+        var previewIndexPath = Path.Combine(
+            Path.GetTempPath(),
+            $"phaeno-website-preview-search-{Guid.NewGuid():N}");
+
+        try
+        {
+            using var production = CreateSearchService(productionIndexPath);
+            using var preview = new WebsitePreviewSearchService(
+                null!,
+                Options.Create(new WebsiteSearchOptions
+                {
+                    SearchIndexLocation = productionIndexPath
+                }),
+                Options.Create(new WebsitePreviewSearchOptions
+                {
+                    Enabled = true,
+                    SearchIndexLocation = previewIndexPath
+                }));
+
+            production.RebuildIndex(
+            [
+                new IndexedPage
+                {
+                    Id = "production",
+                    Url = "https://www.phaenobiotech.com/technology#production",
+                    PageTitle = "Production",
+                    PageDisplayTitle = "Production",
+                    AnchorTitle = "Production evidence",
+                    Text = "Production evidence."
+                }
+            ]);
+            preview.RebuildIndex(
+            [
+                new IndexedPage
+                {
+                    Id = "preview",
+                    Url = "https://preview.example.com/media/blog#preview",
+                    PageTitle = "Preview",
+                    PageDisplayTitle = "Preview",
+                    AnchorTitle = "Preview evidence",
+                    Text = "Preview evidence."
+                }
+            ]);
+
+            Assert.Single(production.Search("production"));
+            Assert.Empty(production.Search("preview"));
+            Assert.Single(preview.Search("preview"));
+            Assert.Empty(preview.Search("production"));
+
+            const string proxyKey = "a-preview-proxy-key-with-at-least-32-characters";
+            Assert.True(WebsitePreviewSearchController.IsValidProxyApiKey(
+                proxyKey,
+                proxyKey));
+            Assert.False(WebsitePreviewSearchController.IsValidProxyApiKey(
+                proxyKey,
+                "wrong-key"));
+        }
+        finally
+        {
+            DeleteIndex(productionIndexPath);
+            DeleteIndex(previewIndexPath);
+        }
+    }
+
+    [Fact]
+    public void PreviewSearchRejectsTheProductionIndexPath()
+    {
+        var indexPath = Path.Combine(
+            Path.GetTempPath(),
+            $"phaeno-website-shared-search-{Guid.NewGuid():N}");
+
+        var exception = Assert.Throws<InvalidOperationException>(() =>
+            new WebsitePreviewSearchService(
+                null!,
+                Options.Create(new WebsiteSearchOptions
+                {
+                    SearchIndexLocation = indexPath
+                }),
+                Options.Create(new WebsitePreviewSearchOptions
+                {
+                    Enabled = true,
+                    SearchIndexLocation = indexPath
+                })));
+
+        Assert.Contains("must be different", exception.Message);
+    }
+
+    [Fact]
     public void MailingListUnsubscribeCapturesActorAndTimeOnlyOnce()
     {
         var contact = new WebContact();

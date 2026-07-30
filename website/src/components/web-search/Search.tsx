@@ -3,6 +3,7 @@ import { useCallback, useEffect, useRef, useState } from 'react'
 import { FaMagnifyingGlass, FaX } from 'react-icons/fa6'
 import SearchItem from './SearchItem'
 import { hasVisibleSearchMatch } from './searchText'
+import { isWebsiteReviewMode } from '@/lib/reviewMode'
 
 export interface ISearchResult {
   id: string
@@ -28,6 +29,9 @@ type ApiEnvelope<T> = {
 
 export default function Search() {
   const BASE_URL = import.meta.env.PUBLIC_API_BASE_URL
+  const searchEndpoint = isWebsiteReviewMode
+    ? '/api/team-preview/search'
+    : `${BASE_URL}web-ops/search-pages`
   const [open, setOpen] = useState(false)
   const [isClosing, setIsClosing] = useState(false)
   const [searchStr, setSearchStr] = useState('')
@@ -254,7 +258,7 @@ export default function Search() {
     const fetchResults = async () => {
       try {
         const res = await fetch(
-          `${BASE_URL}web-ops/search-pages?search=${encodeURIComponent(debouncedSearch)}`,
+          `${searchEndpoint}?search=${encodeURIComponent(debouncedSearch)}`,
           {
             method: 'GET',
             signal: controller.signal,
@@ -297,7 +301,7 @@ export default function Search() {
 
     fetchResults()
     return () => controller.abort()
-  }, [debouncedSearch, BASE_URL])
+  }, [debouncedSearch, searchEndpoint])
 
   return (
     <>

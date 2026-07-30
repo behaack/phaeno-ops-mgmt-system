@@ -23,20 +23,33 @@ public sealed class WebsiteSearchService : IWebsiteSearchService, IDisposable
     public WebsiteSearchService(
         IWebHostEnvironment hostEnvironment,
         IOptions<WebsiteSearchOptions> options)
+        : this(ResolveIndexPath(
+            hostEnvironment,
+            options.Value.SearchIndexLocation))
     {
-        if (string.IsNullOrWhiteSpace(options.Value.SearchIndexLocation))
-        {
-            throw new InvalidOperationException(
-                "WebSearchSettings:SearchIndexLocation is required.");
-        }
+    }
 
-        var indexPath = Path.IsPathRooted(options.Value.SearchIndexLocation)
-            ? options.Value.SearchIndexLocation
-            : Path.Combine(
-                hostEnvironment.ContentRootPath,
-                options.Value.SearchIndexLocation);
+    internal WebsiteSearchService(string indexPath)
+    {
         System.IO.Directory.CreateDirectory(indexPath);
         directory = FSDirectory.Open(indexPath);
+    }
+
+    internal static string ResolveIndexPath(
+        IWebHostEnvironment hostEnvironment,
+        string configuredPath,
+        string configurationName = "WebSearchSettings:SearchIndexLocation")
+    {
+        if (string.IsNullOrWhiteSpace(configuredPath))
+        {
+            throw new InvalidOperationException(
+                $"{configurationName} is required.");
+        }
+
+        return Path.GetFullPath(
+            Path.IsPathRooted(configuredPath)
+                ? configuredPath
+                : Path.Combine(hostEnvironment.ContentRootPath, configuredPath));
     }
 
     public void RebuildIndex(IEnumerable<IndexedPage> pages)

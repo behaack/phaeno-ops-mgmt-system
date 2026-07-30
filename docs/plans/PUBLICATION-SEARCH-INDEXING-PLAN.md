@@ -15,12 +15,11 @@ reindex, or external search-console change.
   PDF-dependent results now carry an additive source flag for the Website's
   `Match in linked PDF` label. Focused coverage was added; deployment, reindex,
   and public browser verification remain separate release work.
-- On 2026-07-29 the owner explicitly kept the prepared blog and white-paper
-  landing pages unpublished. Their current route directories remain
-  underscore-prefixed (`media/_blog` and `media/_white-papers`), so Astro does
-  not generate those routes or add them to the sitemap. This preparation does
-  not authorize renaming either directory, adding navigation, deploying, or
-  requesting external indexing.
+- On 2026-07-29 the owner authorized the prepared blog and white-paper routes,
+  Media navigation, and footer links for a private team `dev` preview. The
+  route directories are unprefixed in that preview change so Astro generates
+  them and adds them to the preview sitemap and `llms.txt`. This does not
+  authorize a production deployment or external indexing request.
 - Answer-engine preparation was completed locally on 2026-07-29 without
   publishing the held routes. Blog metadata now emits `BlogPosting` JSON-LD,
   authorship, publication dates, absolute images, and stable Phaeno
@@ -137,13 +136,14 @@ Provide a repeatable publication workflow in which:
   contract, including dates, page count, topics, and search keywords.
 - `website/src/lib/publications.ts` derives and validates the landing, PDF, and
   representative-image paths from each content entry ID.
-- `website/src/pages/media/_white-papers/[slug].astro` contains the prepared
+- `website/src/pages/media/white-papers/[slug].astro` contains the prepared
   landing route and generic document-mode source metadata through
-  `PublicationSEOMeta.astro`; the underscore is the current explicit release
-  hold.
-- `website/src/pages/media/_blog/[slug].astro` contains the prepared blog route
-  and emits `BlogPosting` metadata through `ArticleSEOMeta.astro`; the
-  underscore is the current explicit release hold.
+  `PublicationSEOMeta.astro`; it is authorized for the private team `dev`
+  preview but not yet for production deployment or external indexing.
+- `website/src/pages/media/blog/[slug].astro` contains the prepared blog route
+  and emits `BlogPosting` metadata through `ArticleSEOMeta.astro`; it is
+  authorized for the private team `dev` preview but not yet for production
+  deployment or external indexing.
 - `website/src/integrations/llmsTxt.ts` generates `dist/llms.txt` from the
   sitemap and each built page's title and description after every production
   build. It does not maintain a separate hand-authored publication list.

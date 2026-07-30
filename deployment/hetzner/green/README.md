@@ -105,13 +105,28 @@ Configure a protected GitHub environment named `production` with:
 - `PORTAL_MIGRATION_BACKUP_PUBLIC_KEY`: PEM public key used only when an
   authorized migration is requested.
 
+Private Website Preview search remains disabled unless the protected
+environment also defines:
+
+- `WEBSITE_PREVIEW_SEARCH_URL`: non-secret stable Vercel branch URL;
+- `WEBSITE_PREVIEW_SEARCH_VERCEL_BYPASS_SECRET`: Vercel Protection Bypass for
+  Automation secret; and
+- `WEBSITE_PREVIEW_SEARCH_PROXY_API_KEY`: random shared proxy credential with
+  at least 32 characters.
+
+When those values are present, the workflow installs them without printing
+their contents and enables the separately mounted
+`portal_green_website_preview_index` volume. The corresponding Vercel Preview
+Function must receive the proxy key as `WEBSITE_PREVIEW_SEARCH_API_KEY`; never
+place either secret in a `PUBLIC_` variable.
+
 On every deployment, the workflow validates the bootstrap configuration,
-`PORTAL_CLERK_AUTHORITY`, and `PORTAL_CLERK_SECRET_KEY`; streams them over the
-pinned SSH connection without placing them in the release archive; and
-atomically updates only the corresponding `Bootstrap__*`, `Clerk__Authority`,
-and `Clerk__SecretKey` entries in the root-protected `runtime/portal.env`. The
-API recreation then loads the updated values. The workflow never prints the
-secret value.
+`PORTAL_CLERK_AUTHORITY`, and `PORTAL_CLERK_SECRET_KEY`, plus the Preview-search
+settings when a Preview URL is configured. It streams configured values over
+the pinned SSH connection without placing them in the release archive and
+atomically updates only their corresponding entries in the root-protected
+`runtime/portal.env`. The API recreation then loads the updated values. The
+workflow never prints secret values.
 
 The bootstrap seeder uses the exact administrator email to find an existing
 Clerk user. It idempotently creates or activates the local Phaeno organization,

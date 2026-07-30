@@ -8,8 +8,17 @@ import { unified } from '@astrojs/markdown-remark';
 import rehypePhaenoHeadingSearch from './src/lib/rehypePhaenoHeadingSearch.js';
 import { llmsTxt } from './src/integrations/llmsTxt';
 
+const isWebsiteReviewMode =
+  process.env.PUBLIC_SITE_REVIEW_MODE?.trim().toLowerCase() === 'true';
+const reviewDeploymentHost =
+  process.env.VERCEL_BRANCH_URL?.trim()
+  || process.env.VERCEL_URL?.trim();
+const websiteSite = isWebsiteReviewMode && reviewDeploymentHost
+  ? `https://${reviewDeploymentHost.replace(/^https?:\/\//, '')}`
+  : 'https://www.phaenobiotech.com';
+
 export default defineConfig({
-  site: 'https://www.phaenobiotech.com',
+  site: websiteSite,
   trailingSlash: 'never',
   output: 'static',
 
@@ -30,7 +39,7 @@ export default defineConfig({
     mdx(),
     react(),
     sitemap(),
-    llmsTxt(),
+    ...(isWebsiteReviewMode ? [] : [llmsTxt()]),
     (await import('astro-compress')).default({
       CSS: false,
     }),

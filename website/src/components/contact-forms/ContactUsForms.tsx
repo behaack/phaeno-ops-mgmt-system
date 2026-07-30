@@ -3,15 +3,13 @@ import {
 } from "react-google-recaptcha-v3";
 import { ContactForm } from "./ContactForm";
 import { OrderForm } from "./OrderForm";
+import { isWebsiteReviewMode } from "@/lib/reviewMode";
 
 const CAPTCHA_SITE_KEY = import.meta.env.PUBLIC_RECAPTCHA_SITE_ID;
 
 export default function ContactUsForms() {
-  return (
-    <GoogleReCaptchaProvider
-      reCaptchaKey={CAPTCHA_SITE_KEY}
-      scriptProps={{ async: true, defer: true }}
-    >
+  const forms = (
+    <>
       <section className="demo-band" aria-labelledby="request-demo">
         <div className="demo-band__inner">
           <div className="demo-band__intro">
@@ -59,6 +57,17 @@ export default function ContactUsForms() {
           <ContactForm />
         </div>
       </section>
+    </>
+  );
+
+  if (isWebsiteReviewMode) return forms;
+
+  return (
+    <GoogleReCaptchaProvider
+      reCaptchaKey={CAPTCHA_SITE_KEY}
+      scriptProps={{ async: true, defer: true }}
+    >
+      {forms}
     </GoogleReCaptchaProvider>
   );
 }

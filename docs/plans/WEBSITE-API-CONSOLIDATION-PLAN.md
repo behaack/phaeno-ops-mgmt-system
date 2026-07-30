@@ -221,6 +221,15 @@ key/from address, the public-document volume, and a durable writable Lucene
 index path. Secrets must come from the deployment platform rather than
 source-controlled settings.
 
+Private Website Preview search is an additional, disabled-by-default runtime
+profile under `WebsitePreviewSearch`. When enabled, it crawls one protected
+Vercel branch through an automation-bypass header, writes only to a dedicated
+Lucene volume, and exposes its results only through a proxy-key-protected route
+used by the authenticated same-origin Vercel Preview function. The API rejects
+configuration that resolves the Preview and production index locations to the
+same directory. This profile does not change the production crawler, index,
+anonymous search endpoint, or Website intake behavior.
+
 ## Current Website deployment boundary
 
 The production Website boundary is now:

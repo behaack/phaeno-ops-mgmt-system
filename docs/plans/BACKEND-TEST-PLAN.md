@@ -26,7 +26,9 @@ and rollback-isolated PostgreSQL coverage.
   search-keyword-only false positives; all-term visible/source eligibility;
   PDF-only landing matches and source-dependency signaling;
   visible-before-PDF snippet selection, source-aware ranking, and exclusion of
-  index-only text from the public Website response.
+  index-only text from the public Website response; Preview/production Lucene
+  index isolation, rejection of a shared index path, and preview-proxy key
+  comparison.
 - [x] `backend/test/WebsiteDocumentTextExtractorTests.cs` - deterministic
   two-page PDF reading order, extracted-character limits, and malformed-PDF
   failure classification for the PdfPig implementation.
