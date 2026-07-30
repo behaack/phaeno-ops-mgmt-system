@@ -228,9 +228,12 @@ button.web-search-close-btn:active:not(:disabled) {
 }
 
 .web-search-group-title {
+  align-items: flex-start;
   color: var(--phaeno-rna-900);
+  display: flex;
   font-size: 0.875rem;
   font-weight: 800;
+  gap: 0.375rem;
   line-height: 1.2;
   margin: 0;
   min-width: 0;
@@ -239,6 +242,25 @@ button.web-search-close-btn:active:not(:disabled) {
   padding: 0;
   text-overflow: ellipsis;
   white-space: nowrap;
+}
+
+.web-search-group-icon,
+.web-search-group-type,
+.web-search-group-separator {
+  flex: 0 0 auto;
+}
+
+.web-search-group-icon {
+  height: 0.875rem;
+  margin-top: 0.0625rem;
+  width: 0.875rem;
+}
+
+.web-search-group-name {
+  min-width: 0;
+  overflow: hidden;
+  text-align: left;
+  text-overflow: ellipsis;
 }
 
 .web-search-group-meta {
@@ -422,6 +444,11 @@ li.web-search-item-active a.web-search-link:focus-visible {
   .web-search-group-title,
   .web-search-result-title {
     text-overflow: clip;
+    white-space: normal;
+  }
+
+  .web-search-group-name {
+    overflow-wrap: anywhere;
     white-space: normal;
   }
 }

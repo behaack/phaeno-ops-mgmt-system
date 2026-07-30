@@ -176,6 +176,65 @@ public sealed class WebsiteCrawlerTests
     }
 
     [Fact]
+    public async Task NestedSectionHeadingsIncludeVisibleContentOutsideHeadingWrapper()
+    {
+        var search = new CapturingSearchService();
+        var extractor = new StubDocumentTextExtractor(
+            new WebsiteDocumentText("Unused.", 1));
+        var crawler = CreateCrawler(
+            search,
+            extractor,
+            request =>
+            {
+                if (request.RequestUri?.AbsolutePath == "/robots.txt")
+                {
+                    return TextResponse("User-agent: *\nAllow: /", "text/plain");
+                }
+                if (request.RequestUri?.AbsolutePath == "/sitemap-index.xml")
+                {
+                    return TextResponse(
+                        $"<urlset><url><loc>{Origin}/technology/why-isoforms-matter</loc></url></urlset>",
+                        "application/xml");
+                }
+
+                return TextResponse(
+                    """
+                    <html><head><title>Why RNA Isoforms Matter</title></head><body><main>
+                    <section>
+                      <div><p>Clinical evidence</p><h2 id="her2">HER2 evidence</h2></div>
+                      <div><p>HER2 and p95HER2 can diverge.</p></div>
+                      <div>
+                        <figure><figcaption>Jorge S. Reis-Filho</figcaption></figure>
+                        <figure><figcaption>Maurizio Scaltriti</figcaption></figure>
+                      </div>
+                    </section>
+                    <section>
+                      <div><div><p>Beyond HER2</p><h2 id="biomarkers">Other biomarkers</h2></div></div>
+                      <div>
+                        <article><p>EGFR mutation status</p></article>
+                        <article><p>TP53 mutation status</p></article>
+                      </div>
+                    </section>
+                    </main></body></html>
+                    """,
+                    "text/html");
+            });
+
+        await crawler.CrawlAsync();
+
+        var her2 = Assert.Single(search.Pages, page => page.Anchor == "her2");
+        Assert.Contains("HER2 and p95HER2", her2.Text);
+        Assert.Contains("Jorge S. Reis-Filho", her2.Text);
+        Assert.Contains("Maurizio Scaltriti", her2.Text);
+        Assert.DoesNotContain("EGFR", her2.Text);
+
+        var biomarkers = Assert.Single(search.Pages, page => page.Anchor == "biomarkers");
+        Assert.Contains("EGFR", biomarkers.Text);
+        Assert.Contains("TP53", biomarkers.Text);
+        Assert.DoesNotContain("Maurizio Scaltriti", biomarkers.Text);
+    }
+
+    [Fact]
     public async Task MixedValidAndInvalidPublicationsStillCompleteRebuild()
     {
         var search = new CapturingSearchService();

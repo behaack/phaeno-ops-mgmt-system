@@ -57,17 +57,87 @@ public static class HtmlTextExtractor
         var builder = new StringBuilder();
         builder.AppendLine(heading.TextContent.Trim());
 
-        var current = heading.NextElementSibling;
-        while (current is not null && !IsSectionBoundary(current))
+        var scope = FindSectionScope(heading);
+        var current = GetNextNodeAfterSubtree(heading, scope);
+        while (current is not null)
         {
-            if (!ShouldIgnore(current))
+            if (current is IElement element)
             {
-                builder.AppendLine(ExtractCleanText(current));
+                if (IsSectionBoundary(element))
+                {
+                    break;
+                }
+
+                if (ShouldIgnore(element))
+                {
+                    current = GetNextNodeAfterSubtree(element, scope);
+                    continue;
+                }
             }
-            current = current.NextElementSibling;
+
+            if (current is IText text)
+            {
+                AppendText(builder, text.Text);
+            }
+
+            current = current.FirstChild
+                ?? GetNextNodeAfterSubtree(current, scope);
         }
 
         return builder.ToString().Trim();
+    }
+
+    private static IElement FindSectionScope(IElement heading)
+    {
+        var current = heading.ParentElement;
+        while (current is not null)
+        {
+            if (current.LocalName is "section" or "article" or "main")
+            {
+                return current;
+            }
+
+            current = current.ParentElement;
+        }
+
+        return heading;
+    }
+
+    private static INode? GetNextNodeAfterSubtree(INode node, INode scope)
+    {
+        var current = node;
+        while (!ReferenceEquals(current, scope))
+        {
+            if (current.NextSibling is not null)
+            {
+                return current.NextSibling;
+            }
+
+            if (current.Parent is null)
+            {
+                return null;
+            }
+
+            current = current.Parent;
+        }
+
+        return null;
+    }
+
+    private static void AppendText(StringBuilder builder, string value)
+    {
+        value = Regex.Replace(value, @"\s+", " ").Trim();
+        if (string.IsNullOrWhiteSpace(value))
+        {
+            return;
+        }
+
+        if (builder.Length > 0 && !char.IsWhiteSpace(builder[^1]))
+        {
+            builder.Append(' ');
+        }
+
+        builder.Append(value);
     }
 
     private static void ExtractRecursive(INode node, StringBuilder builder)

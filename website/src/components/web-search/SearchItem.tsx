@@ -1,5 +1,6 @@
 import type { articletypes, webtypes } from '@/assets/docTypes';
 import { useMemo } from 'react';
+import { FaFileLines, FaGlobe, FaNewspaper } from 'react-icons/fa6';
 import SearchHighlightedSnippet from './SearchHighlightedSnippet';
 import { hasDistinctSearchSnippet } from './searchText';
 
@@ -56,6 +57,39 @@ function getPageDisplayTitle(item: Pick<ISearchItem, 'pageTitle' | 'pageDisplayT
   return item.pageDisplayTitle?.trim() || item.pageTitle;
 }
 
+const documentPresentations = {
+  'White Paper': {
+    icon: FaFileLines,
+    label: 'White Paper',
+    titlePrefixes: ['White Paper', 'Paper'],
+  },
+  'Blog Post': {
+    icon: FaNewspaper,
+    label: 'Blog',
+    titlePrefixes: ['Blog Post', 'Blog'],
+  },
+  'Web Page': {
+    icon: FaGlobe,
+    label: 'Web Page',
+    titlePrefixes: ['Web Page'],
+  },
+} as const;
+
+function getDocumentPresentation(documentType: ISearchItem['documentType']) {
+  return documentPresentations[documentType as keyof typeof documentPresentations];
+}
+
+function removeDocumentTypePrefix(title: string, prefixes: readonly string[]) {
+  const matchingPrefix = prefixes.find((prefix) => {
+    const remainder = title.slice(prefix.length);
+    return title.toLocaleLowerCase().startsWith(prefix.toLocaleLowerCase())
+      && /^\s*[-–—:]\s*/.test(remainder);
+  });
+
+  if (!matchingPrefix) return title;
+  return title.slice(matchingPrefix.length).replace(/^\s*[-–—:]\s*/, '').trim();
+}
+
 function getSamePageHashTarget(url: string) {
   if (typeof window === 'undefined') return null;
 
@@ -107,6 +141,17 @@ export default function SearchItem({
 }: IProps ) {
   const targetUrl = useMemo(() => resolveSearchResultUrl(item.url), [item.url]);
   const pageDisplayTitle = useMemo(() => getPageDisplayTitle(item), [item.pageDisplayTitle, item.pageTitle]);
+  const documentPresentation = useMemo(
+    () => getDocumentPresentation(item.documentType),
+    [item.documentType],
+  );
+  const groupDisplayTitle = useMemo(
+    () => documentPresentation
+      ? removeDocumentTypePrefix(pageDisplayTitle, documentPresentation.titlePrefixes)
+      : pageDisplayTitle,
+    [documentPresentation, pageDisplayTitle],
+  );
+  const DocumentIcon = documentPresentation?.icon;
   const showSnippet = useMemo(
     () => hasDistinctSearchSnippet(item.anchorTitle, item.snippet),
     [item.anchorTitle, item.snippet],
@@ -131,7 +176,16 @@ export default function SearchItem({
       <div className="web-search-group-content">
         <div className="web-search-group-heading">
           <h3 className="web-search-group-title">
-            <SearchHighlightedSnippet text={pageDisplayTitle} searchStr={searchStr} />
+            {DocumentIcon && documentPresentation && (
+              <>
+                <DocumentIcon className="web-search-group-icon" aria-hidden="true" focusable="false" />
+                <span className="web-search-group-type">{documentPresentation.label}</span>
+                <span className="web-search-group-separator" aria-hidden="true">—</span>
+              </>
+            )}
+            <span className="web-search-group-name">
+              <SearchHighlightedSnippet text={groupDisplayTitle} searchStr={searchStr} />
+            </span>
           </h3>
         </div>
         <span className="web-search-group-meta">
@@ -139,7 +193,7 @@ export default function SearchItem({
         </span>
       </div>
     </li>
-  ), [pageDisplayTitle, pageSummary]);
+  ), [DocumentIcon, documentPresentation, groupDisplayTitle, pageSummary, searchStr]);
 
   const link = useMemo(() => (
     <li

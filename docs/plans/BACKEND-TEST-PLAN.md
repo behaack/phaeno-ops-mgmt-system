@@ -37,7 +37,10 @@ and rollback-isolated PostgreSQL coverage.
   size rejection, encrypted/malformed/image-only/unavailable/excessive-text
   fallback, hard extraction timeout, unchanged ordinary section indexing, and
   successful mixed valid/invalid publication rebuilds, and separation of
-  hidden section metadata from extracted destination-visible text.
+  hidden section metadata from extracted destination-visible text; nested
+  heading wrappers retain destination-visible section content such as
+  biomarker names and evidence attributions without leaking into the next
+  section.
 - [x] `backend/test/PhaenoPortalMetadataTests.cs` - `HealthMetadataIdentifiesTheApi`.
 - [x] `backend/test/PersistenceTests.cs` -
   `PSeqOperationsDbContextMapsEveryEntityToItsOwningSchema`.
