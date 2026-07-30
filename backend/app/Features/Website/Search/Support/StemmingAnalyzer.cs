@@ -1,6 +1,5 @@
 using Lucene.Net.Analysis;
 using Lucene.Net.Analysis.Core;
-using Lucene.Net.Analysis.Snowball;
 using Lucene.Net.Analysis.Standard;
 using Lucene.Net.Util;
 
@@ -17,7 +16,9 @@ public sealed class StemmingAnalyzer : Analyzer
         var tokenizer = new StandardTokenizer(MatchVersion, reader);
         TokenStream tokenStream = new StandardFilter(MatchVersion, tokenizer);
         tokenStream = new LowerCaseFilter(MatchVersion, tokenStream);
-        tokenStream = new SnowballFilter(tokenStream, "English");
+        // WebsiteSearchService normalizes and stems query-field text before it
+        // reaches the analyzer. Stemming again here changes some scientific
+        // terms a second time and makes the stored token differ from the query.
         return new TokenStreamComponents(tokenizer, tokenStream);
     }
 }

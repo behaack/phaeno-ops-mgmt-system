@@ -21,7 +21,8 @@ and rollback-isolated PostgreSQL coverage.
   all-entity schema assertion cover the Website-owned tables in the shared
   portal context.
 - [x] `backend/test/WebsiteApiTests.cs` - sitemap URL discovery,
-  accent normalization, hyphenated-term highlighting, and rejection of
+  accent normalization, single-pass stemming for scientific terms,
+  hyphenated-term highlighting, and rejection of
   HTML-page-title-only, hidden-result-title-only, hidden-summary-only, and
   search-keyword-only false positives; all-term visible/source eligibility;
   PDF-only landing matches and source-dependency signaling;
@@ -40,8 +41,9 @@ and rollback-isolated PostgreSQL coverage.
   hidden section metadata from extracted destination-visible text; nested
   heading wrappers retain destination-visible section content such as
   biomarker names and evidence attributions without leaking into the next
-  section; section records retain the page's published document type for
-  result labeling and icons.
+  section; unanchored nested headings remain part of their indexed parent
+  section; section records retain the page's published document type for result
+  labeling and icons.
 - [x] `backend/test/PhaenoPortalMetadataTests.cs` - `HealthMetadataIdentifiesTheApi`.
 - [x] `backend/test/PersistenceTests.cs` -
   `PSeqOperationsDbContextMapsEveryEntityToItsOwningSchema`.

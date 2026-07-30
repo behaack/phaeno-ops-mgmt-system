@@ -44,6 +44,62 @@ public sealed class WebsiteApiTests
     }
 
     [Fact]
+    public void SearchStemsScientificTermsExactlyOnce()
+    {
+        var indexPath = Path.Combine(
+            Path.GetTempPath(),
+            $"phaeno-website-search-{Guid.NewGuid():N}");
+
+        try
+        {
+            using var service = new WebsiteSearchService(
+                null!,
+                Options.Create(new WebsiteSearchOptions
+                {
+                    SearchIndexLocation = indexPath
+                }));
+            service.RebuildIndex(
+            [
+                new IndexedPage
+                {
+                    Id = "aso-therapies",
+                    Url = "https://www.phaenobiotech.com/technology#aso-therapies",
+                    PageTitle = "Why RNA Isoforms Matter",
+                    PageDisplayTitle = "Why RNA Isoforms Matter",
+                    Anchor = "aso-therapies",
+                    AnchorTitle = "ASO therapy examples for RNA isoforms",
+                    Text = "Antisense oligonucleotide therapies include Nusinersen for spinal muscular atrophy and Eteplirsen for Duchenne muscular dystrophy."
+                }
+            ]);
+
+            var expectedMatches = new Dictionary<string, int>
+            {
+                ["Antisense"] = 1,
+                ["Nusinersen"] = 1,
+                ["Eteplirsen"] = 1,
+                ["Spinal"] = 1,
+                ["muscular"] = 2,
+                ["atrophy"] = 1,
+                ["Duchenne"] = 1,
+                ["dystrophy"] = 1
+            };
+
+            foreach (var (term, matchCount) in expectedMatches)
+            {
+                var result = Assert.Single(service.Search(term));
+                Assert.Equal(matchCount, result.Count);
+            }
+        }
+        finally
+        {
+            if (Directory.Exists(indexPath))
+            {
+                Directory.Delete(indexPath, recursive: true);
+            }
+        }
+    }
+
+    [Fact]
     public void SearchHighlightsHyphenatedTermsAndRejectsHiddenMetadataOnlyMatches()
     {
         var indexPath = Path.Combine(

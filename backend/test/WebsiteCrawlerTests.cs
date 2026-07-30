@@ -218,6 +218,13 @@ public sealed class WebsiteCrawlerTests
                         <article><p>TP53 mutation status</p></article>
                       </div>
                     </section>
+                    <section>
+                      <div><h2 id="aso-therapies">ASO therapies</h2><p>Antisense oligonucleotide therapies</p></div>
+                      <div>
+                        <article><p>Spinal muscular atrophy</p><h3>Nusinersen</h3><p>Promotes SMN2 exon inclusion.</p></article>
+                        <article><p>Duchenne muscular dystrophy</p><h3>Eteplirsen</h3><p>Induces exon skipping.</p></article>
+                      </div>
+                    </section>
                     </main></body></html>
                     """,
                     "text/html");
@@ -235,6 +242,13 @@ public sealed class WebsiteCrawlerTests
         Assert.Contains("EGFR", biomarkers.Text);
         Assert.Contains("TP53", biomarkers.Text);
         Assert.DoesNotContain("Maurizio Scaltriti", biomarkers.Text);
+
+        var therapies = Assert.Single(search.Pages, page => page.Anchor == "aso-therapies");
+        Assert.Contains("Antisense oligonucleotide", therapies.Text);
+        Assert.Contains("Spinal muscular atrophy", therapies.Text);
+        Assert.Contains("Nusinersen", therapies.Text);
+        Assert.Contains("Duchenne muscular dystrophy", therapies.Text);
+        Assert.Contains("Eteplirsen", therapies.Text);
     }
 
     [Fact]

@@ -199,7 +199,7 @@ public static class HtmlTextExtractor
             "svg";
 
     private static bool IsSectionBoundary(IElement element) =>
-        (element.TagName.Length == 2 && element.TagName[0] == 'H')
-        || (element.HasAttribute("id")
-            && element.HasAttribute("data-phaeno-search"));
+        element.HasAttribute("id")
+        && ((element.TagName.Length == 2 && element.TagName[0] == 'H')
+            || element.HasAttribute("data-phaeno-search"));
 }
