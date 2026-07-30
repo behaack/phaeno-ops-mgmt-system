@@ -151,7 +151,7 @@ request. The Vercel project must use `website/` as its root directory, protect
 Preview deployments with Vercel Authentication, and set
 `PUBLIC_SITE_REVIEW_MODE=true` only for the Preview environment.
 
-Review mode identifies the build with a persistent banner, prevents indexing,
+Review mode does not add a visible banner to the Website. It prevents indexing,
 omits Web Analytics, routes Website search through the authenticated
 same-origin Preview proxy and its separate Portal-owned index, prevents
 contact and demo submissions, avoids loading reCAPTCHA, and omits the

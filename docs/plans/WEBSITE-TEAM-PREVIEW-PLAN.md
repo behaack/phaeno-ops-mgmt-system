@@ -2,16 +2,16 @@
 
 ## Status
 
-The repository-side review mode and isolated Preview-search path are
-implemented locally. The owner authorized the Blog and White Papers routes,
-Media navigation, matching footer links, and a separately rebuilt search index
-for a private team `dev` preview. Production publication and external indexing
-remain separate release decisions.
+The repository-side review mode and isolated Preview-search path are deployed
+for the private team Preview. The owner authorized the Blog and White Papers
+routes, Media navigation, matching footer links, and a separately rebuilt
+Preview search index. Production publication and external indexing remain
+separate release decisions.
 
 The Phaeno Website Vercel project uses `website/` as its root, tracks `main` as
-Production, sends unassigned branches to Preview, and already protects Preview
+Production, sends unassigned branches to Preview, and protects Preview
 deployments with Vercel Authentication. `PUBLIC_SITE_REVIEW_MODE=true` is
-configured only for Preview. No branch push or Preview deployment has occurred.
+configured only for Preview.
 
 ## Review contract
 
@@ -21,7 +21,7 @@ configured only for Preview. No branch push or Preview deployment has occurred.
   to the team members who need to review them.
 - Set `PUBLIC_SITE_REVIEW_MODE=true` only for the Preview environment. Leave it
   unset or `false` in Production.
-- Review builds show a persistent `Team preview` banner, emit
+- Review builds do not add a visible banner to the Website. They emit
   `noindex, nofollow, noarchive`, omit Vercel Web Analytics, route Website
   search through a same-origin Vercel Function and the Portal API's separate
   Preview index, prevent contact and demo submissions, do not load reCAPTCHA,
@@ -67,11 +67,11 @@ They must not use a `PUBLIC_` prefix.
 
 ## Verification
 
-1. Build with `PUBLIC_SITE_REVIEW_MODE=true` and confirm the banner, crawler
-   directive, Preview search proxy path, disabled submission services, Media
+1. Build with `PUBLIC_SITE_REVIEW_MODE=true` and confirm the crawler directive,
+   Preview search proxy path, disabled submission services, Media
    navigation, routes, Preview-origin sitemap, and absence of `llms.txt`.
-2. Build with the flag unset and confirm the review banner and crawler
-   directive are absent and live Website interactions retain production
+2. Build with the flag unset and confirm the review crawler directive is absent
+   and live Website interactions retain production
    behavior.
 3. After an authorized API and Website Preview deployment, confirm the Preview
    crawler builds the dedicated index, representative new Media queries return
