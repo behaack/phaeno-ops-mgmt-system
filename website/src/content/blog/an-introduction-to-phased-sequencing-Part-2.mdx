@@ -1,6 +1,6 @@
 ---
 title: "An Introduction to Phased Sequencing: Part 2"
-summary: "How PSeq is designed to preserve source-molecule identity in a short-read workflow."
+summary: "How PSeq preserves source-molecule identity in a short-read workflow."
 image: "/images/media/blog/an-introduction-to-phased-sequencing-part-2.png"
 authors: ["William Agnew"]
 date: '2026-07-15'
@@ -24,9 +24,11 @@ In this series, Phaeno uses **phased sequencing** to describe sequencing archite
 
 Conventional short-read RNA sequencing usually fragments and pools many transcripts before sequencing. The resulting reads can be accurate, abundant, and highly useful, but the experiment generally does not retain a direct record of which distant fragments came from the same captured molecular template. End-to-end transcript structures must therefore be inferred from overlapping evidence collected across a mixed population.
 
-PSeq is designed to change that measurement architecture. Molecular information is associated with each successfully captured RNA-derived cDNA molecule before short-fragment library generation. That information is intended to remain recoverable on the resulting reads, allowing reads from the same captured template to be grouped into molecule-specific sets before assembly.
+**[PSeq Clear-Signal Architecture™](/technology/pseq-platform#pseq-clear-signal-architecture)** changes that measurement architecture. During reverse transcription, a PSeq tagging reagent associates molecular information with each successfully captured RNA-derived cDNA molecule. That information remains recoverable on the resulting reads, allowing the data pipeline to group reads from the same captured template into molecule-specific sets before assembly.
 
-The result is not a long read. It is a collection of short reads assigned to a shared captured template. Assembly can therefore be performed within a source-molecule boundary rather than across an undifferentiated pool of transcript fragments, but reconstruction still depends on coverage continuity, overlap, reference guidance, and transcript-boundary evidence.
+The result is not a long read. It is a collection of short reads assigned to a shared captured template. Assembly therefore occurs within a source-molecule boundary rather than across an undifferentiated pool of transcript fragments. Reconstruction still depends on coverage continuity, overlap, reference guidance, and transcript-boundary evidence.
+
+PSeq is currently a **Research Use Only (RUO)** platform.
 
 ## What source-molecule identity means
 
@@ -66,34 +68,34 @@ Failure at any stage can weaken the intended constraint. Collisions may make dif
 
 ## The PSeq workflow at a conceptual level
 
-The exact chemistry and implementation determine performance, but the source-identity logic can be described as a sequence of six stages.
+The source-identity logic follows six linked stages.
 
 <ArticleConceptList
   ariaLabel="Conceptual stages of the PSeq workflow"
   items={[
     {
       id: 'represent-the-source-molecule',
-      title: 'Represent the source molecule',
+      title: 'Reverse transcribe and tag the source molecule',
       paragraphs: [
-        'An RNA molecule is reverse transcribed so that its sequence can enter a DNA-library workflow compatible with established short-read sequencing systems.',
-        'The reverse transcript is intended to preserve the sequence relationships present in the starting RNA, subject to the completeness and fidelity of reverse transcription.',
-        'The resulting cDNA is a captured representation of the starting RNA. Its observed ends do not by themselves establish the native 5′ or 3′ RNA boundaries.',
+        'During reverse transcription, a PSeq tagging reagent associates molecular information with the RNA-derived cDNA so its sequence can enter a DNA-library workflow compatible with established short-read sequencing systems.',
+        'The resulting tagged cDNA preserves the sequence relationships captured from the starting RNA, subject to the completeness and fidelity of reverse transcription.',
+        'This cDNA is the captured molecular template measured by the workflow. Its observed ends do not by themselves establish the native 5′ or 3′ RNA boundaries.',
       ],
     },
     {
       id: 'associate-molecular-information',
-      title: 'Associate molecular information',
+      title: 'Carry molecular information forward',
       paragraphs: [
-        'PSeq chemistry is designed to associate each successfully captured RNA-derived cDNA molecule with molecular information before short-fragment library generation.',
-        'That information provides the basis for distinguishing reads derived from different captured templates in the same sample.',
+        'The molecular information incorporated during reverse transcription distinguishes captured templates within the same sample.',
+        'As the tagged cDNA is amplified and prepared for library construction, that information preserves the tag-to-template relationship.',
       ],
     },
     {
       id: 'generate-a-short-fragment-library',
       title: 'Generate a short-fragment library',
       paragraphs: [
-        'The tagged material is converted into a sequencing library composed of short DNA fragments. PSeq is designed so that source-molecule information remains associated with those fragments through library preparation.',
-        'The captured cDNA template is no longer physically intact, but its fragments are intended to remain identifiable as a group.',
+        'The tagged material is converted into a sequencing library composed of short DNA fragments. Source-molecule information remains associated with those fragments through library preparation.',
+        'The captured cDNA template is no longer physically intact, but its fragments remain identifiable as a group.',
       ],
     },
     {
@@ -108,7 +110,7 @@ The exact chemistry and implementation determine performance, but the source-ide
       id: 'assign-reads-to-molecule-specific-sets',
       title: 'Assign reads to molecule-specific sets',
       paragraphs: [
-        'After sequencing, molecular information is used to sort reads into sets that are intended to represent individual captured molecular templates.',
+        'After sequencing, molecular information sorts reads into sets representing individual captured molecular templates.',
         'Assignment quality is central: molecule-specific assembly is useful only when the membership of each set is sufficiently accurate and complete.',
       ],
     },
@@ -198,7 +200,7 @@ The relevant validation question is therefore not simply how many reads cover a 
 
 ## What must be validated
 
-A source-molecule workflow should be evaluated with reference materials whose expected sequences, structures, and abundances are known. Synthetic RNA controls, mixtures of defined isoforms, dilution series, replicate libraries, and orthogonal measurements can address different parts of the performance envelope.
+Validation uses reference materials whose expected sequences, structures, and abundances are known. Synthetic RNA controls, mixtures of defined isoforms, dilution series, replicate libraries, and orthogonal measurements address different parts of the performance envelope.
 
 Important measurements include:
 
@@ -223,11 +225,11 @@ PSeq applies source-molecule information toward a different objective: constrain
 
 ## Conclusion
 
-PSeq is designed to preserve the relationship between a successfully captured RNA-derived cDNA molecule and the short reads derived from it. Molecular information is associated before fragmentation, carried through library generation, recovered during sequencing, and used to create molecule-specific read sets.
+PSeq preserves the relationship between a successfully captured RNA-derived cDNA molecule and the short reads derived from it. The tagging reagent associates molecular information during reverse transcription; that information is carried through library generation, recovered during sequencing, and used to create molecule-specific read sets.
 
-That relationship changes transcript assembly from a population-level inference problem into a molecule-constrained reconstruction problem. It may also provide repeated sequence observations that support consensus generation relative to the captured cDNA template.
+That relationship changes transcript assembly from a population-level inference problem into a molecule-constrained reconstruction problem. Repeated sequence observations also support consensus generation relative to the captured cDNA template.
 
-The value of the architecture depends on the integrity of the entire chain. Molecular information must be sufficiently diverse, stable, readable, and error-tolerant. Read assignment must be accurate. Coverage must support the intended reconstruction. Consensus and quantification must be validated independently.
+Initial technical studies have observed the intended marker-plus-cDNA read structure, markers concentrated near the beginning of Read 1, and a traceable molecule-specific reconstruction in a representative PRPF31 example. Current validation is quantifying molecule recovery, assignment accuracy, consensus performance, reproducibility, and abundance measurement across the platform’s intended research uses.
 
 [Part 3 examines how molecule-resolved transcript data could be used in biological discovery, translational research, and machine learning.](/media/blog/an-introduction-to-phased-sequencing-part-3)
 

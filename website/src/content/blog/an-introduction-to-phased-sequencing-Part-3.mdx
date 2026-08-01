@@ -1,6 +1,6 @@
 ---
 title: "An Introduction to Phased Sequencing: Part 3"
-summary: "How molecule-resolved transcript data may support discovery, translational research, and machine learning."
+summary: "How molecule-resolved transcript data support discovery, translational research, and machine learning."
 image: "/images/media/blog/an-introduction-to-phased-sequencing-part-3.png"
 authors: ["William Agnew"]
 date: '2026-07-15'
@@ -24,11 +24,13 @@ Molecule-resolved transcript data describe RNA at a finer level than gene counts
 
 Here, **complete** and **full-length** refer to predefined analytical criteria, not to molecular assignment alone. A study should state whether completeness requires observed 5′ and 3′ boundaries, a complete splice chain, minimum coverage, an end-to-end contiguous consensus, or reference-supported interpolation between covered regions.
 
-That additional structure could be useful in three broad settings. Biological discovery may benefit from a clearer view of transcript diversity and regulation. Translational research may be able to connect specific molecular forms with disease mechanisms, patient subgroups, or treatment response. Machine-learning studies may gain features that preserve biological distinctions obscured by gene-level aggregation.
+That additional structure creates three broad areas of value. Biological discovery gains a clearer view of transcript diversity and regulation. Translational research can connect specific molecular forms with disease mechanisms, patient subgroups, or treatment response. Machine-learning studies gain features that preserve biological distinctions obscured by gene-level aggregation.
 
-None of these outcomes follows automatically from higher resolution. Molecule-resolved data also introduce more features, lower counts per feature, new measurement errors, annotation challenges, and additional opportunities for overfitting. Their value must be demonstrated in direct comparisons with established measurements.
+Higher resolution alone does not guarantee a better scientific or predictive result. Molecule-resolved data also introduce more features, lower counts per feature, new measurement errors, annotation challenges, and additional opportunities for overfitting. Direct comparisons with established measurements determine where the added resolution improves the answer.
 
 The central question is not whether molecule-level data contain more detail. It is whether that detail is accurate, reproducible, biologically relevant, and useful for a defined decision.
+
+PSeq is currently a **Research Use Only (RUO)** platform. The translational and clinical examples in this article describe research directions, not clinical-performance claims.
 
 ## From transcript molecules to analytical features
 
@@ -65,7 +67,7 @@ The appropriate feature representation depends on the scientific question. A dis
       id: 'translational-research',
       title: 'Translational research',
       paragraphs: [
-        'Specific transcript structures may help define disease mechanisms, refine molecular subgroups, or identify candidate markers of response and progression. Molecule-level linkage can be especially relevant when the biological effect depends on which features occur together.',
+        'Specific transcript structures can clarify disease mechanisms, refine molecular subgroups, and identify candidate markers of response and progression. Molecule-level linkage is especially relevant when the biological effect depends on which features occur together.',
         'Association, analytical validity, predictive performance, and clinical utility remain separate questions and require progressively stronger evidence.',
       ],
     },
@@ -73,7 +75,7 @@ The appropriate feature representation depends on the scientific question. A dis
       id: 'machine-learning',
       title: 'Machine learning',
       paragraphs: [
-        'Isoform and molecule-derived features may give models access to biological distinctions that gene-level summaries combine. A model could compare transcript structures, molecular combinations, or isoform distributions rather than relying only on total expression at a locus.',
+        'Isoform and molecule-derived features give models access to biological distinctions that gene-level summaries combine. A model can compare transcript structures, molecular combinations, or isoform distributions rather than relying only on total expression at a locus.',
         'More features also increase sparsity, instability, and overfitting risk. Any gain must survive locked analysis, independent cohorts, and comparison with simpler baselines.',
       ],
     },
@@ -120,7 +122,7 @@ Molecule-resolved data make alternative representations possible. Features could
 
 Recovered molecule groups are analytical observations of captured templates, not automatically unbiased census counts of all RNA molecules in the input. Capture probability, reverse-transcription efficiency, molecular splitting and collision, identifier dropout, duplicate representation, differential recovery by length or sequence, filtering, and assembly thresholds can all affect the relationship between observed groups and input abundance.
 
-The potential advantage is specificity. A feature tied to a defined molecular form may align more closely with a regulatory process or disease mechanism than total gene expression. Primary studies have evaluated isoform-level features in predictive models, including models of breast-cancer histological grade, demonstrating that direct comparisons with gene-level baselines are feasible.
+The advantage is specificity. A feature tied to a defined molecular form can align more closely with a regulatory process or disease mechanism than total gene expression. Primary studies have evaluated isoform-level features in predictive models, including models of breast-cancer histological grade, demonstrating that direct comparisons with gene-level baselines are feasible.
 
 The potential disadvantage is dimensionality. A sample may contain many rare or incompletely annotated isoforms. Splitting one gene count among many transcript features lowers the observations available for each feature. Measurement and annotation changes can create apparent features that do not reproduce.
 
@@ -244,11 +246,11 @@ These studies establish scientific precedent for evaluating extended and isoform
 
 ## Conclusion
 
-Molecule-resolved transcript data could expand transcriptomics from a map of active genes into a map of the molecular forms those genes produce. That may reveal linked sequence and regulatory relationships that are difficult to recover from gene-level or pooled-fragment summaries.
+Molecule-resolved transcript data expand transcriptomics from a map of active genes into a map of the molecular forms those genes produce. This reveals linked sequence and regulatory relationships that are difficult to recover from gene-level or pooled-fragment summaries.
 
-The potential applications are broad: transcript discovery, cell-state characterization, disease-mechanism research, molecular stratification, and predictive modeling. The evidentiary requirements are equally broad. Each application must establish measurement performance, biological relevance, reproducibility, incremental value, and—where appropriate—real-world utility.
+Applications span transcript discovery, cell-state characterization, disease-mechanism research, molecular stratification, and predictive modeling. Each application establishes its value through measurement performance, biological relevance, reproducibility, comparison with established approaches, and—where appropriate—real-world utility.
 
-PSeq is designed to make molecule-resolved transcript measurement compatible with established short-read sequencing systems. Whether that architecture produces useful new information will be answered by direct experiments, careful comparisons, and independent validation.
+[PSeq Clear-Signal Architecture™](/technology/pseq-platform#pseq-clear-signal-architecture) makes molecule-resolved transcript measurement compatible with established short-read sequencing systems. Direct experiments, careful comparisons, and independent validation will define where that architecture provides the most useful new information.
 
 [Return to Part 1 for the measurement problem that motivates phased sequencing.](/media/blog/an-introduction-to-phased-sequencing-part-1)
 

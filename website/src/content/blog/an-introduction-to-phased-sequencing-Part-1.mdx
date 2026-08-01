@@ -26,7 +26,9 @@ These processes generate distinct RNA isoforms from the same genomic locus. Each
 
 Conventional short-read RNA sequencing has transformed biology, but it typically fragments transcripts before sequencing. The resulting reads provide highly accurate local sequence information, while end-to-end structures must often be inferred computationally. Long-read sequencing can preserve more of the original transcript structure, but currently involves different trade-offs in instrumentation, throughput, depth, accuracy, cost, and workflow.
 
-Phaeno’s PSeq technology is designed to preserve source-molecule identity through a short-read sequencing workflow. Reads assigned to the same captured molecular template can therefore be grouped before transcript assembly, converting an otherwise unconstrained reconstruction problem into a molecule-constrained one. Molecular identity narrows the search space; complete reconstruction still depends on the coverage, overlap, reference information, and boundary evidence available for that molecule.
+Phaeno’s **[PSeq Clear-Signal Architecture™](/technology/pseq-platform#pseq-clear-signal-architecture)** preserves source-molecule identity through a short-read sequencing workflow. During reverse transcription, PSeq associates molecular information with each successfully captured RNA-derived cDNA template. That information remains linked to the resulting short-read fragments so reads from the same captured template can be grouped before transcript assembly, converting an otherwise unconstrained reconstruction problem into a molecule-constrained one. Molecular identity narrows the search space; complete reconstruction still depends on the coverage, overlap, reference information, and boundary evidence available for that molecule.
+
+PSeq is currently a **Research Use Only (RUO)** platform.
 
 In this series, Phaeno uses **phased sequencing** to describe sequencing architectures that preserve linkage among observations originating from the same source molecule. This usage is distinct from the common genomic meaning of phasing variants into haplotypes and overlaps conceptually with terms such as molecule-aware sequencing, linked reads, read clouds, and barcoded fragment reconstruction.
 
@@ -160,17 +162,17 @@ These technologies are improving rapidly, and no single description applies to e
 
 The relevant question is not which platform is universally superior. It is which measurement architecture preserves the information required for a particular biological problem.
 
-## PSeq: molecule-constrained assembly using short reads
+## PSeq Clear-Signal Architecture: molecule-constrained assembly using short reads
 
-PSeq is designed to retain source-molecule identity while using existing short-read next-generation sequencing instruments.
+PSeq retains source-molecule identity while using existing short-read next-generation sequencing instruments.
 
-In the PSeq workflow, each successfully captured RNA-derived cDNA molecule is associated with molecular information that is retained as sequencing libraries are generated. After sequencing, reads carrying the same source-molecule identity can be grouped into molecule-specific sets.
+During reverse transcription, the PSeq tagging reagent associates each successfully captured RNA-derived cDNA molecule with molecular information that remains linked as the sequencing library is generated. After sequencing, the data pipeline groups reads carrying the same source-molecule identity into molecule-specific sets.
 
 Transcript assembly is then performed within those sets.
 
-This changes the nature of the reconstruction problem. Conventional transcript assembly evaluates fragments drawn from a mixed population and identifies transcript models that can explain the aggregate data. PSeq instead seeks to reconstruct each captured molecular template using reads assigned to that template.
+This changes the nature of the reconstruction problem. Conventional transcript assembly evaluates fragments drawn from a mixed population and identifies transcript models that can explain the aggregate data. PSeq instead reconstructs each captured molecular template from reads assigned to that template.
 
-The assembly remains computational, but it is constrained by experimental information about molecular origin.
+The assembly remains computational, but experimental information about molecular origin constrains it.
 
 This distinction can be summarized as follows:
 
@@ -343,7 +345,7 @@ The central distinction between conventional RNA sequencing and PSeq is not shor
 
 The distinction is whether those reads retain information about their source molecule.
 
-Conventional RNA sequencing fragments and pools transcripts, then infers end-to-end structures from aggregate evidence. PSeq is designed to fragment successfully captured RNA-derived cDNA molecules while retaining source-molecule identity, allowing reconstruction to be attempted within each associated read set.
+Conventional RNA sequencing fragments and pools transcripts, then infers end-to-end structures from aggregate evidence. PSeq fragments successfully captured RNA-derived cDNA molecules while retaining source-molecule identity, then reconstructs each captured template within its associated read set.
 
 That design seeks to combine three properties:
 
@@ -356,9 +358,9 @@ That design seeks to combine three properties:
   ]}
 />
 
-Whether PSeq achieves these objectives across transcript classes, sample types, and abundance ranges is a question for analytical and experimental validation. Relevant benchmarks will include sensitivity, specificity, consensus accuracy relative to both captured cDNA and original RNA controls, transcript completeness under predefined criteria, isoform quantification, reproducibility, throughput, cost, and comparison with both short- and long-read methods.
+Initial technical studies have observed the intended library structure, marker placement, tag-plus-cDNA read composition, molecule-specific grouping, end-to-end exon and splice-junction coverage for a representative PRPF31 transcript, and traceability from FASTQ evidence to the assembled molecular record.
 
-Those studies are essential because molecule-resolved sequencing is useful only if molecular identity is preserved accurately and the resulting reconstructions reflect the molecules present in the original sample.
+Current validation is defining the broader performance envelope across transcript classes, sample types, and abundance ranges. Relevant benchmarks include sensitivity, specificity, consensus accuracy relative to both captured cDNA and original RNA controls, transcript completeness under predefined criteria, isoform quantification, reproducibility, throughput, cost, and comparison with both short- and long-read methods.
 
 ## Conclusion
 
@@ -366,7 +368,7 @@ RNA is not simply a transient copy of DNA. It is a diverse population of molecul
 
 Conventional RNA sequencing measures this population with exceptional scale and accuracy, but fragmentation often separates features that originally belonged to the same molecule. Computational methods can reconstruct many transcript structures, yet ambiguity remains when multiple isoforms share the same local sequence evidence.
 
-Long-read sequencing restores much of this connectivity by reading extended molecules directly. PSeq takes a different approach: preserving source-molecule identity through a short-read workflow and using that identity to constrain transcript assembly.
+Long-read sequencing restores much of this connectivity by reading extended molecules directly. PSeq Clear-Signal Architecture takes a different approach: it preserves source-molecule identity through a short-read workflow and uses that identity to constrain transcript assembly.
 
 The potential significance of this approach is straightforward. If biological function depends on linked features within individual RNA molecules, then preserving captured molecular templates as units of measurement may reveal information that is obscured by fragment-level or gene-level summaries. Whether a reconstruction is complete, biologically faithful, or functionally important remains a separate question.
 
