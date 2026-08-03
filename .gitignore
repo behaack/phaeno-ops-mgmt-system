@@ -5,6 +5,7 @@ tmp
 **/dist/
 **/build/
 **/.output/
+**/.astro/
 **/.vercel/
 **/.tanstack/
 

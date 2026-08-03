@@ -28,13 +28,12 @@ searchKeywords:
 
 ## Abstract
 
-PSeq combines source-molecule tagging, short-read library construction, SMID-based read clustering, transcript assembly, and data pipeline constructed  run-specific SQL evidence record. This paper consolidates initial technical evidence for PSeq v1 across that complete chain. The evidence confirms targeted library size-distribution, and key structural properties of library inserts: positionally labeled markers with barcodes, strand discriminators, random-fragment of source molecule, strands sense specified cDNA fragments.
-
-Database assembled records of the sequencing of a representative (PRPF31 gene) transcript, visualized with the open source IGV gene viewer.  Records conform to population-level properties expected for the PSeq DNA library. These include barcodes linked to single transcripts of single source molecules from an identified source gene. Also, the absence of chimeras, with end-to-end high depth overlapping read coverage
-
-The evidence separately conforms to correct automated computational assembly of single, phased, end-to-end consensus transcript sequences, preserving linked records from raw data FASTQ files through assembly steps and final structure, for each molecule, at scale. 
-
-The observations support the successful integration of sample chemistry, conventional NGS on unmodified instruments and computational assembly of full-length transcript populations. They further indicate how whole-molecule alignment records can be interrogated. They should be interpreted as initial internal technical evidence, not as a statistically complete platform validation, clinical validation, or regulatory performance study.
+The PSeq platform begins with preparing DNA libraries with a specialized informational architecture.  Conventional NGS  paired-end sequencing then provides the automated data pipeline with all the information required to assemble each individual RNA. 
+Together, these elements form PSeq Clear-Signal Architecture™, an integrated chemistry-to-data framework for whole molecule sequencing.
+This paper presents initial technical validation  for PSeq v1 across the entire chain of operations.   
+In a case study, data assembled for a single transcript are readily visualized with an open-source gene viewer (IGV) designed for examining whole-genome sequences and RNA-Seq data.  
+Stepping through this information for a single transcript from the gene PRPF31 visualizes the pipeline performance at  a level of detail not otherwise available.  This exercise further illustrates the traceability of all steps in the platform chain of operation.  
+This white paper constitutes initial technical validation, not to be construed as a statistically complete platform validation, clinical validation or regulatory performance analysis.
 
 ## Key topics
 
