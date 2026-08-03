@@ -37,14 +37,16 @@ This paper describes the computational architecture, data products, deployment m
 
 ## Key topics
 
-- Full-length RNA sequencing on short-read NGS
-- Quantitative, molecule-resolved transcript isoforms
-- Automated data processing and scalable delivery
+- Marker localization, SMID recovery, and molecule-specific read clustering
+- Source-gene identification and reference retrieval
+- De novo and reference-guided assembly, alignment, and consensus generation
+- Run-specific SQL provenance from FASTQ evidence to molecular records
 
 ## Contents
 
-- Full-length RNA sequencing on short-read NGS sequencers
-- Quantitative isoform sequencing for all genes, at scale
-- Sequencing accuracy
-- Automated data pipeline
-- Data and delivery
+- Input model and ten-stage pipeline
+- Marker parsing, read trimming, deduplication, and SMID binning
+- Source-gene identification and molecule assembly
+- Alignment, consensus, and analysis products
+- Run-specific SQL record layers and molecular provenance
+- Deployment, client reporting, and validation interface
