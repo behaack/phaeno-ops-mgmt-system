@@ -86,6 +86,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
             boxShadow: 'none',
           },
           card: {
+            paddingTop: '0',
             borderRadius: '0',
             background: 'transparent',
             boxShadow: 'none',
@@ -216,7 +217,11 @@ export function AuthGate({ children }: { children: ReactNode }) {
   const { authConfigured, clerkLoaded, signedIn, session, isLoading, error } =
     usePhaenoSession()
 
-  if (!clerkLoaded || isLoading) {
+  if (!clerkLoaded) {
+    return <AuthBootstrapState />
+  }
+
+  if (isLoading) {
     return <AccessState title="Loading access" description="Checking session." />
   }
 
@@ -338,6 +343,19 @@ function AccessState({
         </div>
         {action}
       </section>
+    </main>
+  )
+}
+
+function AuthBootstrapState() {
+  return (
+    <main
+      className="page-wrap flex flex-1 items-center justify-center px-4 py-8"
+      aria-busy="true"
+    >
+      <span className="sr-only" role="status">
+        Checking sign-in status.
+      </span>
     </main>
   )
 }

@@ -134,7 +134,9 @@ remain incomplete production-activation gates.
   refresh behavior against mocked APIs.
 - [ ] Auth shell - cover missing Clerk config, the Phaeno-branded signed-out
   prompt with its brand lockup inside the sign-in container and without the
-  authenticated header or Clerk vendor footer, local unauthorized state,
+  authenticated header or Clerk vendor footer; verify Clerk initialization
+  does not flash the local-access loading card before signed-out sign-in; cover
+  local unauthorized state,
   disabled state, no-active-memberships state, ready state, and Clerk's pending
   required-MFA setup state. Verify the branded `setup-mfa` route does not render
   Portal navigation, does not request `/api/session` before the Clerk session
