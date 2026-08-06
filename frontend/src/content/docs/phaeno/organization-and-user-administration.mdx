@@ -81,4 +81,6 @@ A deactivated membership is restored through a fresh invitation and acceptance. 
 
 Confirm the person’s email, session state, selected organization, active membership, role, and organization status. Use record identifiers and audit events to trace changes. Do not ask for passwords, sign-in codes, invitation tokens, browser storage, or another tenant’s records.
 
+For a user who has lost both the authenticator and all one-time backup codes, verify the person's identity and organization through the approved support procedure. In Clerk, reset the user's MFA enrollments and revoke every active session. Record the administrative recovery without storing codes, authenticator secrets, or recovery links. Tell the user to sign in again and connect a new authenticator; required MFA keeps the session pending until enrollment is complete. An email request starts the review but is not sufficient by itself to authorize the reset.
+
 If two administrators update the same record, the portal can reject the stale action. Reload the latest version, review the intervening change, and then make a deliberate new update rather than overwriting it.

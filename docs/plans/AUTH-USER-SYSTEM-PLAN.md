@@ -14,6 +14,12 @@ Do not execute this plan unless explicitly requested.
   persistence orchestration, Clerk/Postmark adapters, and bootstrap composition.
 - The frontend session shell and invitation acceptance/decline route are
   connected to the API.
+- The signed-out shell applies the Phaeno logo, Portal name, invitation-only
+  access language, and Portal design tokens around Clerk's prebuilt sign-in
+  flow. It omits authenticated application navigation and Clerk's embedded
+  vendor footer. The paid-plan Clerk Dashboard setting that removes
+  **Secured by Clerk** branding remains an environment setting to activate and
+  verify in each Clerk instance.
 - The user menu no longer exposes an organization-context search or act-as
   switcher. Phaeno administrators manage external organizations through the
   Accounts workspace; the authenticated session still supplies the
@@ -61,8 +67,34 @@ Do not execute this plan unless explicitly requested.
 - Do not use Clerk Organizations as the primary tenant model.
 - Do not use Clerk roles, permissions, or metadata for application authorization.
 - Use Clerk prebuilt or hosted authentication UI for v1.
+- Keep the sign-in experience visibly Phaeno-owned while retaining Clerk's
+  prebuilt authentication flow. Omit the embedded vendor footer through Clerk's
+  supported appearance configuration, and also enable the paid-plan Dashboard
+  setting so any other Clerk-managed surface follows the same policy.
+- Show the application header only after authentication. The signed-out and
+  pending-authentication states place the centered Phaeno authentication
+  lockup inside the sign-in container without duplicate global navigation.
 - Disable or hide public Clerk sign-up. Account creation is reached through Phaeno invitation flow only.
 - Local development uses a real Clerk development instance. Automated tests may use auth fakes/test handlers.
+
+### MFA Policy Decision
+
+- Clerk supports authenticator-app codes, SMS codes, and backup codes, and its
+  prebuilt sign-in component handles required MFA setup before a session becomes
+  active.
+- Approved 2026-08-06: require MFA for every invited Portal user; enable
+  authenticator-app codes and one-time backup codes; leave SMS disabled. This
+  avoids collecting phone numbers and reduces SMS delivery, cost, and SIM-swap
+  risk.
+- If a user loses both the authenticator and all backup codes, Phaeno owns the
+  recovery decision. An authorized Phaeno administrator verifies the person's
+  identity and organization, resets the user's Clerk MFA enrollments, revokes
+  active sessions, and requires fresh authenticator enrollment at the next
+  sign-in. Email may initiate the support request but does not automatically
+  bypass MFA.
+- The Portal hosts Clerk's `setup-mfa` task in the branded authentication shell.
+  A pending task is not an active sign-in and cannot reach Portal application
+  data or navigation.
 
 ## Data Model Direction
 
@@ -396,6 +428,22 @@ Do not execute this plan unless explicitly requested.
 - [x] Add explicit audit events for access-changing actions.
 - [x] Remove direct user creation from normal API workflows so membership access is invite-only.
 - [x] Update frontend Clerk auth integration.
+- [x] Apply Phaeno-owned branding and Portal design tokens to the signed-out
+      Clerk surface, omit its vendor footer, and hide authenticated application
+      navigation until sign-in completes.
+- [ ] Enable Clerk's paid-plan **Remove "Secured by Clerk" branding** setting
+      in each intended instance and verify the resulting sign-in surface.
+- [x] Approve the MFA strategy, enforcement, and recovery policy: required
+      authenticator-app MFA, backup codes, no SMS, and Phaeno-admin reset after
+      identity verification when both recovery methods are lost.
+- [x] Add the Phaeno-branded `setup-mfa` session-task route and keep pending
+      sessions outside authenticated Portal navigation and API access.
+- [x] Activate the approved MFA methods and enforcement in the Clerk development
+      instance: authenticator application, backup codes, required MFA, and no
+      SMS.
+- [ ] Repeat the approved MFA policy in each intended production instance and
+      verify new-user setup, existing-user transition, backup codes,
+      second-factor sign-in, session revocation, and administrator reset.
 - [x] Add `/accept-invite` frontend route and token scrubbing.
 - [x] Add frontend access states and selected-organization validation without
       exposing an act-as switcher in the user menu.

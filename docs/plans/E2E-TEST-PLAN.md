@@ -101,6 +101,13 @@ production search results.
 
 ## Deferred Tests
 
+- [ ] Real-Clerk authentication policy journey - verify the Phaeno-branded,
+  invite-only sign-in surface without Clerk vendor branding in the paid
+  instance; password recovery; required authenticator-app enrollment for a new
+  and an existing invited user; one-time backup-code display and sign-in; no SMS
+  option; incomplete MFA setup remaining outside Portal navigation and APIs;
+  and Phaeno-admin reset, active-session revocation, and required re-enrollment
+  when both authenticator and backup codes are lost.
 - [ ] HubSpot-to-Portal lifecycle journey - cover HubSpot-only company with no
   Portal access, approved evaluation to Portal Prospect, Closed Won to pending
   direct Customer/Partner onboarding, designated-admin invitation, selective

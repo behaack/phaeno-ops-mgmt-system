@@ -92,10 +92,10 @@ export const documentationEntries: readonly DocumentationEntry[] = [
     slug: 'account-and-access',
     title: 'Account and access',
     summary:
-      'Accept invitations, confirm the current organization, understand roles, and resolve access problems.',
+      'Accept invitations, complete MFA, confirm the current organization, understand roles, and resolve access problems.',
     section: 'Basics',
     order: 20,
-    reviewedAt: '2026-07-20',
+    reviewedAt: '2026-08-06',
     Content: ProspectAccountAndAccess,
   },
   {
@@ -162,10 +162,10 @@ export const documentationEntries: readonly DocumentationEntry[] = [
     locale: 'en-US',
     slug: 'account-and-access',
     title: 'Account and access',
-    summary: 'Accept invitations, confirm the current organization, understand roles, and resolve access problems.',
+    summary: 'Accept invitations, complete MFA, confirm the current organization, understand roles, and resolve access problems.',
     section: 'Basics',
     order: 20,
-    reviewedAt: '2026-07-20',
+    reviewedAt: '2026-08-06',
     Content: CustomerAccountAndAccess,
   },
   {
@@ -228,10 +228,10 @@ export const documentationEntries: readonly DocumentationEntry[] = [
     locale: 'en-US',
     slug: 'account-and-access',
     title: 'Account and access',
-    summary: 'Accept invitations, confirm the current Partner, understand roles, and resolve access problems.',
+    summary: 'Accept invitations, complete MFA, confirm the current Partner, understand roles, and resolve access problems.',
     section: 'Basics',
     order: 20,
-    reviewedAt: '2026-07-20',
+    reviewedAt: '2026-08-06',
     Content: PartnerAccountAndAccess,
   },
   {
@@ -286,7 +286,7 @@ export const documentationEntries: readonly DocumentationEntry[] = [
     summary: 'Select the Phaeno workspace, find operational tools, and support users safely.',
     section: 'Basics',
     order: 10,
-    reviewedAt: '2026-07-20',
+    reviewedAt: '2026-08-06',
     Content: PhaenoGettingStarted,
   },
   {
@@ -297,7 +297,7 @@ export const documentationEntries: readonly DocumentationEntry[] = [
     summary: 'Manage organizations, Portal requests, readiness, service entitlements, invitations, and access.',
     section: 'Platform operations',
     order: 20,
-    reviewedAt: '2026-07-20',
+    reviewedAt: '2026-08-06',
     Content: PhaenoOrganizationAndUserAdministration,
   },
   {

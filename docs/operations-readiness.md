@@ -41,7 +41,7 @@ Keep environment-specific values outside source control. `appsettings.Developmen
 | --- | --- | --- |
 | `ConnectionStrings:DefaultConnection` | PostgreSQL connection | Managed as a secret; TLS, backup, restore, and connection limits approved. |
 | `Persistence` | Commercial, Laboratory, Website, and migration-history schemas plus the history table | Stable before migration execution; business schemas must be distinct from each other and from `public`. |
-| `Clerk` | JWT authority/audience and Clerk API access | Production Clerk instance and secrets; HTTPS metadata validation enabled. |
+| `Clerk` | JWT authority/audience, Clerk API access, authentication branding, MFA, and recovery | Production Clerk instance and secrets; HTTPS metadata validation enabled; Phaeno branding and paid-plan vendor-badge removal verified; required authenticator-app MFA and one-time backup codes enabled; SMS disabled; Phaeno-admin identity verification, MFA reset, active-session revocation, and re-enrollment recovery owned and tested. |
 | `Bootstrap` | One-time bootstrap link inputs | Disabled or cleared after the initial administrator is linked. |
 | `Invitations` | Token lifetime, resend cooldown, public URL | Public URL and expiry policy approved. |
 | `Postmark` | Transactional sender | Verified sender/domain, production token, stream, delivery and failure monitoring. |

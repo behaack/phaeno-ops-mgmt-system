@@ -23,6 +23,7 @@ import { Route as CustomersRouteImport } from './routes/customers'
 import { Route as AcceptInviteRouteImport } from './routes/accept-invite'
 import { Route as AboutRouteImport } from './routes/about'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as SessionTasksSetupMfaRouteImport } from './routes/session-tasks.setup-mfa'
 import { Route as ReagentOrdersNewRouteImport } from './routes/reagent-orders.new'
 import { Route as ReagentOrdersOrderIdRouteImport } from './routes/reagent-orders.$orderId'
 import { Route as LabServicesNewRouteImport } from './routes/lab-services.new'
@@ -111,6 +112,11 @@ const AboutRoute = AboutRouteImport.update({
 const IndexRoute = IndexRouteImport.update({
   id: '/',
   path: '/',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const SessionTasksSetupMfaRoute = SessionTasksSetupMfaRouteImport.update({
+  id: '/session-tasks/setup-mfa',
+  path: '/session-tasks/setup-mfa',
   getParentRoute: () => rootRouteImport,
 } as any)
 const ReagentOrdersNewRoute = ReagentOrdersNewRouteImport.update({
@@ -242,6 +248,7 @@ export interface FileRoutesByFullPath {
   '/lab-services/new': typeof LabServicesNewRoute
   '/reagent-orders/$orderId': typeof ReagentOrdersOrderIdRouteWithChildren
   '/reagent-orders/new': typeof ReagentOrdersNewRoute
+  '/session-tasks/setup-mfa': typeof SessionTasksSetupMfaRoute
   '/data-assembly/$requestId/edit': typeof DataAssemblyRequestIdEditRoute
   '/data-provisioning/sources/$sourceSampleId': typeof DataProvisioningSourcesSourceSampleIdRoute
   '/docs/$audience/$slug': typeof DocsAudienceSlugRoute
@@ -277,6 +284,7 @@ export interface FileRoutesByTo {
   '/lab-services/new': typeof LabServicesNewRoute
   '/reagent-orders/$orderId': typeof ReagentOrdersOrderIdRouteWithChildren
   '/reagent-orders/new': typeof ReagentOrdersNewRoute
+  '/session-tasks/setup-mfa': typeof SessionTasksSetupMfaRoute
   '/data-assembly/$requestId/edit': typeof DataAssemblyRequestIdEditRoute
   '/data-provisioning/sources/$sourceSampleId': typeof DataProvisioningSourcesSourceSampleIdRoute
   '/docs/$audience/$slug': typeof DocsAudienceSlugRoute
@@ -313,6 +321,7 @@ export interface FileRoutesById {
   '/lab-services/new': typeof LabServicesNewRoute
   '/reagent-orders/$orderId': typeof ReagentOrdersOrderIdRouteWithChildren
   '/reagent-orders/new': typeof ReagentOrdersNewRoute
+  '/session-tasks/setup-mfa': typeof SessionTasksSetupMfaRoute
   '/data-assembly/$requestId/edit': typeof DataAssemblyRequestIdEditRoute
   '/data-provisioning/sources/$sourceSampleId': typeof DataProvisioningSourcesSourceSampleIdRoute
   '/docs/$audience/$slug': typeof DocsAudienceSlugRoute
@@ -350,6 +359,7 @@ export interface FileRouteTypes {
     | '/lab-services/new'
     | '/reagent-orders/$orderId'
     | '/reagent-orders/new'
+    | '/session-tasks/setup-mfa'
     | '/data-assembly/$requestId/edit'
     | '/data-provisioning/sources/$sourceSampleId'
     | '/docs/$audience/$slug'
@@ -385,6 +395,7 @@ export interface FileRouteTypes {
     | '/lab-services/new'
     | '/reagent-orders/$orderId'
     | '/reagent-orders/new'
+    | '/session-tasks/setup-mfa'
     | '/data-assembly/$requestId/edit'
     | '/data-provisioning/sources/$sourceSampleId'
     | '/docs/$audience/$slug'
@@ -420,6 +431,7 @@ export interface FileRouteTypes {
     | '/lab-services/new'
     | '/reagent-orders/$orderId'
     | '/reagent-orders/new'
+    | '/session-tasks/setup-mfa'
     | '/data-assembly/$requestId/edit'
     | '/data-provisioning/sources/$sourceSampleId'
     | '/docs/$audience/$slug'
@@ -447,6 +459,7 @@ export interface RootRouteChildren {
   PhaenoUsersRoute: typeof PhaenoUsersRoute
   ReagentOrdersRoute: typeof ReagentOrdersRouteWithChildren
   DemoTanstackQueryRoute: typeof DemoTanstackQueryRoute
+  SessionTasksSetupMfaRoute: typeof SessionTasksSetupMfaRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -547,6 +560,13 @@ declare module '@tanstack/react-router' {
       path: '/'
       fullPath: '/'
       preLoaderRoute: typeof IndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/session-tasks/setup-mfa': {
+      id: '/session-tasks/setup-mfa'
+      path: '/session-tasks/setup-mfa'
+      fullPath: '/session-tasks/setup-mfa'
+      preLoaderRoute: typeof SessionTasksSetupMfaRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/reagent-orders/new': {
@@ -856,6 +876,7 @@ const rootRouteChildren: RootRouteChildren = {
   PhaenoUsersRoute: PhaenoUsersRoute,
   ReagentOrdersRoute: ReagentOrdersRouteWithChildren,
   DemoTanstackQueryRoute: DemoTanstackQueryRoute,
+  SessionTasksSetupMfaRoute: SessionTasksSetupMfaRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)

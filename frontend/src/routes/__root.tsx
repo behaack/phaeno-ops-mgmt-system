@@ -10,7 +10,11 @@ import Footer from '../components/Footer'
 import Header from '../components/Header'
 import { useApplicationBranding } from '#/components/application-branding'
 import { MockAdminDataProvider } from '#/features/admin/mock-admin-data'
-import { AuthGate, AuthProvider } from '#/features/auth/session-context'
+import {
+  AuthGate,
+  AuthProvider,
+  usePhaenoSession,
+} from '#/features/auth/session-context'
 
 import appCss from '../styles.css?url'
 
@@ -45,8 +49,10 @@ export const Route = createRootRouteWithContext<MyRouterContext>()({
 })
 
 function RootLayout() {
-  const isInviteRoute = useRouterState({
-    select: (state) => state.location.pathname === '/accept-invite',
+  const isPreSessionRoute = useRouterState({
+    select: (state) =>
+      state.location.pathname === '/accept-invite' ||
+      state.location.pathname === '/session-tasks/setup-mfa',
   })
 
   return (
@@ -54,9 +60,9 @@ function RootLayout() {
       <MockAdminDataProvider>
         <ContextualDocumentTitle />
         <div className="flex min-h-screen flex-col">
-          <Header />
+          <AuthenticatedHeader />
           <div className="flex flex-1 flex-col">
-            {isInviteRoute ? (
+            {isPreSessionRoute ? (
               <Outlet />
             ) : (
               <AuthGate>
@@ -69,6 +75,12 @@ function RootLayout() {
       </MockAdminDataProvider>
     </AuthProvider>
   )
+}
+
+function AuthenticatedHeader() {
+  const { signedIn } = usePhaenoSession()
+
+  return signedIn ? <Header /> : null
 }
 
 function ContextualDocumentTitle() {

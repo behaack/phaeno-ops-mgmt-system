@@ -132,7 +132,14 @@ remain incomplete production-activation gates.
   deactivation/reactivation, unsupported mock-role removal, Prospect
   conversion, organization lifecycle, optimistic concurrency, and durable
   refresh behavior against mocked APIs.
-- [ ] Auth shell - cover missing Clerk config, signed-out prompt, local unauthorized state, disabled state, no-active-memberships state, and ready state.
+- [ ] Auth shell - cover missing Clerk config, the Phaeno-branded signed-out
+  prompt with its brand lockup inside the sign-in container and without the
+  authenticated header or Clerk vendor footer, local unauthorized state,
+  disabled state, no-active-memberships state, ready state, and Clerk's pending
+  required-MFA setup state. Verify the branded `setup-mfa` route does not render
+  Portal navigation, does not request `/api/session` before the Clerk session
+  becomes active, and returns to the dashboard after authenticator and
+  backup-code enrollment.
 - [ ] Organization switcher - cover auto-selecting one active membership, persisting selected organization, changing selected organization, and sending `X-Organization-Id`.
 - [ ] Invite acceptance page - cover token capture, URL scrubbing, authenticated accept, authenticated decline, and cleared token storage.
 - [ ] Source-sample workspace - cover metadata/evidence validation, upload

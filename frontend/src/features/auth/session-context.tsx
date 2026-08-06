@@ -2,6 +2,7 @@ import {
   ClerkProvider,
   SignIn,
   SignOutButton,
+  TaskSetupMFA,
   useAuth,
 } from '@clerk/react'
 import { useQuery } from '@tanstack/react-query'
@@ -59,7 +60,46 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   return (
     <ClerkProvider
       publishableKey={publishableKey}
-      appearance={{ elements: { footerAction: 'hidden' } }}
+      taskUrls={{ 'setup-mfa': '/session-tasks/setup-mfa' }}
+      appearance={{
+        variables: {
+          colorPrimary: 'var(--primary)',
+          colorForeground: 'var(--foreground)',
+          colorBackground: 'var(--card)',
+          colorMutedForeground: 'var(--muted-foreground)',
+          colorInput: 'var(--background)',
+          colorInputForeground: 'var(--foreground)',
+          borderRadius: 'var(--radius)',
+          fontFamily: '"Geist Variable", ui-sans-serif, system-ui, sans-serif',
+        },
+        elements: {
+          footer: { display: 'none' },
+          footerAction: { display: 'none' },
+          headerTitle: { display: 'none' },
+          headerSubtitle: { display: 'none' },
+          rootBox: { width: '100%' },
+          cardBox: {
+            width: '100%',
+            border: '0',
+            borderRadius: '0',
+            background: 'transparent',
+            boxShadow: 'none',
+          },
+          card: {
+            borderRadius: '0',
+            background: 'transparent',
+            boxShadow: 'none',
+          },
+          formFieldInput: {
+            borderColor: 'var(--input)',
+            background: 'var(--background)',
+          },
+          formButtonPrimary: {
+            background: 'var(--primary)',
+            color: 'var(--primary-foreground)',
+          },
+        },
+      }}
       localization={{
         signIn: {
           start: {
@@ -304,19 +344,78 @@ function AccessState({
 
 function SignInAccessState() {
   return (
-    <main className="page-wrap flex flex-1 items-center justify-center px-4 py-8">
-      <section className="flex w-full max-w-xl justify-center">
-        <InlineSignIn />
-      </section>
-    </main>
+    <AuthenticationPanel
+      ariaLabel="Phaeno Portal sign in"
+      title="Sign in to Portal"
+      description="Secure, invitation-only access for Phaeno customers, partners, and staff."
+    >
+      <div className="phaeno-sign-in-form flex w-full justify-center">
+        <SignIn routing="hash" fallbackRedirectUrl="/" withSignUp={false} />
+      </div>
+    </AuthenticationPanel>
   )
 }
 
-function InlineSignIn() {
+export function MfaSetupAccessState() {
   return (
-    <div className="phaeno-sign-in-form flex w-full justify-center pt-2">
-      <SignIn routing="hash" fallbackRedirectUrl="/" withSignUp={false} />
-    </div>
+    <AuthenticationPanel
+      ariaLabel="Phaeno Portal multi-factor authentication setup"
+      title="Secure your Portal account"
+      description="Connect an authenticator app, then save your one-time backup codes somewhere safe."
+    >
+      <div className="phaeno-mfa-setup flex w-full justify-center">
+        <TaskSetupMFA redirectUrlComplete="/" />
+      </div>
+    </AuthenticationPanel>
+  )
+}
+
+function AuthenticationPanel({
+  ariaLabel,
+  title,
+  description,
+  children,
+}: {
+  ariaLabel: string
+  title: string
+  description: string
+  children: ReactNode
+}) {
+  return (
+    <main className="page-wrap flex flex-1 items-center justify-center px-4 py-8">
+      <section
+        className="flex w-full max-w-md flex-col items-center"
+        aria-label={ariaLabel}
+      >
+        <div
+          className="w-full overflow-hidden rounded-xl border bg-card"
+          style={{
+            boxShadow:
+              '0 18px 50px color-mix(in oklab, var(--foreground) 10%, transparent)',
+          }}
+        >
+          <div className="flex flex-col items-center px-8 pt-8 text-center">
+            <img
+              src="/phaeno124x40.webp"
+              alt="Phaeno"
+              width={124}
+              height={40}
+              className="h-10 w-[124px] object-contain"
+            />
+            <p className="mt-2 text-xs font-semibold tracking-[0.28em] text-foreground uppercase">
+              Portal
+            </p>
+            <h1 className="mt-6 text-xl font-semibold text-foreground">
+              {title}
+            </h1>
+            <p className="mt-2 max-w-sm text-sm leading-6 text-muted-foreground">
+              {description}
+            </p>
+          </div>
+          {children}
+        </div>
+      </section>
+    </main>
   )
 }
 

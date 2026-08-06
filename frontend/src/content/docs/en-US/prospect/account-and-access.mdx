@@ -13,6 +13,12 @@ Invitation links are private. A link can expire, be revoked, or be replaced by a
 
 The portal does not collect or reset your sign-in password. Use the account recovery offered by the identity service on the sign-in page.
 
+## Protect your account
+
+After your first sign-in step, connect an authenticator app and confirm the code it displays. Save the one-time backup codes shown during setup somewhere private and separate from the device running the authenticator. Never send an authenticator or backup code to Phaeno or your organization administrator.
+
+If you lose the authenticator but still have a backup code, use that code to sign in, then contact Phaeno to reset the authenticator enrollment. If you lose both the authenticator and every backup code, contact Phaeno directly. Phaeno will verify your identity and organization before resetting MFA; all active sessions are revoked and you must connect a new authenticator before Portal access resumes. Email can start the support request but does not itself bypass MFA.
+
 ## Confirm the current organization
 
 The user menu shows the organization active in your current session. Every package, download, and administrative view is scoped to it.
@@ -36,5 +42,7 @@ Prospect administrators manage membership only for their current organization. I
 | Wrong organization shown | Stop before opening data and contact Phaeno to verify the active membership. |
 | Organization unavailable | Ask Phaeno whether the organization is inactive. |
 | Account disabled | Contact Phaeno. A Prospect administrator cannot override a globally disabled account. |
+| Authenticator lost, backup code available | Use one backup code to sign in, then contact Phaeno for an MFA reset. |
+| Authenticator and backup codes lost | Contact Phaeno for identity verification and an MFA reset. Do not send old codes. |
 
 Never send a password, sign-in code, invitation token, or browser storage value in a support message.
