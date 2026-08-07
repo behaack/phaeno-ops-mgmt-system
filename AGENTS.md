@@ -65,6 +65,7 @@ Keep the owner focused on scientific meaning, sequencing and laboratory workflow
 - Use snake_case database identifiers, UUID primary keys named `Id` in C#, and unambiguous role-specific foreign-key names.
 - Keep runtime configuration and credentials out of source; use `ConnectionStrings:DefaultConnection` and environment-specific settings.
 - Create EF migrations when an authorized implementation changes the persisted model, and apply them to the configured local development database after appropriate verification. Get explicit approval before removing a migration or applying one to any shared, staging, or production database.
+- Whenever the persisted database model or an EF migration changes, update `docs/database-erd.md` in the same change so it remains complete across all application schemas, entities, fields, keys, and relationships.
 - Do not add dependencies, change auth, or change a cross-app contract without a short plan and explicit scope.
 - Do not stage, commit, or perform other Git mutations unless asked.
 

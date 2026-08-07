@@ -4,8 +4,6 @@ public sealed class DataProvisioningOptions
 {
     public const string SectionName = "DataProvisioning";
 
-    public string StorageRoot { get; set; } = "App_Data/provisioning-files";
-
     public long MaxUploadBytes { get; set; } = 52_428_800;
 
     public bool EnableSyntheticFixtures { get; set; }

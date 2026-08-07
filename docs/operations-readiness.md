@@ -11,8 +11,8 @@ This document records how the application operates in the current repository and
 | Database | PostgreSQL through one EF Core `PSeqOperationsDbContext`. The current model maps 54 Commercial/current-flow and Lab-projection tables to `commercial_ops`, 22 Laboratory execution tables to `lab_ops`, two public Website intake tables to `website`, and migration history to `public`; `AddWebsiteApi` has not been applied to a shared environment. |
 | Authentication | Clerk-issued bearer JWTs; application authorization comes from internal users, active memberships, and capabilities. |
 | Lab Operations | Feature-complete internal provider with additive Phaeno roles, operator APIs/workspace, receipt and accession, controlled execution, traceability, outsourced NGS sendouts, exceptions, scientific approval, and customer-safe Commercial projections. Production validation and activation remain incomplete. |
-| Curated-data files | Feature-owned local filesystem storage through `IManagedFileStorage`. |
-| Order files | Feature-owned local filesystem storage through `IOperationalFileStorage`. |
+| Curated-data files | `IManagedFileStorage` adapts to the shared `IFileStorage` contract. Development uses local filesystem storage; the Amazon S3 production adapter is implemented but not configured or live-validated. |
+| Order files | `IOperationalFileStorage` adapts to the shared `IFileStorage` contract. Development uses local filesystem storage; the Amazon S3 production adapter is implemented but not configured or live-validated. |
 | File scanning | Environment scanner abstractions. Development can trust configured fixture files; production defaults do not. |
 | Commercial integration | QuickBooks Online adapter. A logging gateway is used when the required QuickBooks configuration is absent. |
 | Relationship CRM | Not implemented. HubSpot is selected for the approved future lifecycle in `docs/plans/HUBSPOT-PORTAL-LIFECYCLE-PLAN.md`. |
@@ -48,8 +48,9 @@ Keep environment-specific values outside source control. `appsettings.Developmen
 | `WebsiteApi`, `GoogleAuthSettings`, and `EmailServiceSettings` | Public origins/documents, technical brief, Google reCAPTCHA Enterprise, and Mailgun templates | Existing production credentials and document volume transferred through the secret/storage platform; CORS, rejection, templates, and PDF delivery verified. |
 | `WebCrawlerSettings`, `WebSearchSettings`, and `ChronJobs:IndexWebsite` | Public-site crawl target, Lucene index path, and rebuild schedule | Durable writable index storage, successful initial crawl, monitoring, and representative search verified. |
 | `WebsitePreviewSearch` | Protected branch crawl target, dedicated Preview Lucene path, Vercel automation bypass, proxy key, and rebuild schedule | Disabled by default; when activated, secrets remain server-side, the index uses its dedicated volume, direct unauthenticated access is denied, and production search remains unchanged. |
-| `DataProvisioning` | Storage root, upload limit, synthetic policy, scanner, allowed kinds | Synthetic fixtures rejected; real file policy, durable storage, and trusted scanner approved. |
-| `OrderManagement` | Operational storage root, upload limit, scanner, allowed kinds | Durable storage, trusted scanner, and real Customer/Partner file policy approved. |
+| `FileStorage` | Provider selection, local development root, and S3 bucket, region, key prefix, optional service URL, and path-style setting | `Provider=S3`; bucket and prefix approved; SDK default credential chain uses a least-privilege workload identity; encryption, lifecycle, permissions, monitoring, and representative upload/download/delete behavior verified. Production refuses the Local provider. |
+| `DataProvisioning` | Upload limit, synthetic policy, scanner, allowed kinds | Synthetic fixtures rejected; real file policy and trusted scanner approved. |
+| `OrderManagement` | Upload limit, scanner, allowed kinds | Trusted scanner and real Customer/Partner file policy approved. |
 | `QuickBooks` | Environment, company/realm, OAuth, API, webhook verifier | Correct company, least-privilege credentials, webhook validation, sandbox journey, reconciliation, and rotation process approved. |
 | Planned `HubSpot` | Account/app identifiers, OAuth or private-app credentials, API, webhook verifier, and property mapping | Not present today. Before activation: least-privilege scopes, non-production proof, webhook validation, reconciliation, monitoring, and rotation approved. |
 | `VITE_CLERK_PUBLISHABLE_KEY` | Frontend Clerk instance | Matches the API's production Clerk configuration. |
@@ -89,7 +90,9 @@ Production is not ready until all applicable gates are evidenced:
 - approved deployment, migration, rollback or forward-fix, and release verification runbooks;
 - production Clerk tenant, invitation URL, bootstrap closure, and authentication policy;
 - connected, tenant-safe organization and user administration UI for durable invitation, membership, role, conversion, and lifecycle operations;
-- production storage and malware scanning for curated-data and order files;
+- production S3 bucket/configuration, least-privilege credentials, encryption,
+  monitoring, representative API-proxied upload/download/delete proof, and
+  malware scanning for curated-data and order files;
 - approved scientific file kinds, Customer analyses, Partner assembly profiles, reagent offerings/prices, shipping rules, credit decisions, and quote validity;
 - representative PSeq bench validation of Lab receipt, accession, protocol,
   material/equipment, library/batch, sendout, exception, review, and correction

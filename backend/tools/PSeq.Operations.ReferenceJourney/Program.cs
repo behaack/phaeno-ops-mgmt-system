@@ -21,6 +21,7 @@ using PhaenoPortal.App.Features.RelationshipManagement.Services;
 using PSeq.Operations.Commercial.Relationships.Domain;
 using PhaenoPortal.App.Infrastructure.Persistence;
 using PhaenoPortal.App.Infrastructure.Persistence.Auditing;
+using PhaenoPortal.App.Infrastructure.Storage;
 
 return await ReferenceJourney.RunAsync();
 
@@ -169,7 +170,6 @@ internal static class ReferenceJourney
 
             var provisioningOptions = new DataProvisioningOptions
             {
-                StorageRoot = storageRoot,
                 MaxUploadBytes = 1_048_576,
                 EnableSyntheticFixtures = true,
                 UseTrustedDevelopmentScanner = true,
@@ -183,9 +183,14 @@ internal static class ReferenceJourney
             var profile = new DataProvisioningProfile(
                 environment,
                 wrappedOptions);
-            var storage = new LocalManagedFileStorage(
+            var localStorage = new LocalFileStorage(
                 environment,
-                wrappedOptions);
+                Options.Create(new FileStorageOptions
+                {
+                    Provider = FileStorageProviders.Local,
+                    LocalRootPath = storageRoot
+                }));
+            var storage = new ManagedFileStorageAdapter(localStorage);
             var scanner = new EnvironmentManagedFileScanner(
                 environment,
                 wrappedOptions);

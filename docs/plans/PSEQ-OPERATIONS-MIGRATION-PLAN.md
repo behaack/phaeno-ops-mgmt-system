@@ -30,8 +30,8 @@ authorize a reset of any shared environment.
   Relationships, and Data Provisioning domain entities and pure application
   code live in Commercial, along with their environment-neutral ports. HTTP,
   EF mapping/orchestration, Clerk/Postmark, bootstrap, environment configuration,
-  local file/scanner, notification dispatch, and API error translation remain
-  in the API.
+  provider-neutral file storage/scanner adapters, notification dispatch, and
+  API error translation remain in the API.
 - Commercial Order Management extraction is complete at the approved safe
   boundary. Commercial
   configuration/catalog, Partner kit ordering and fulfillment, commercial
@@ -363,8 +363,9 @@ Status: completed on 2026-07-16. The context/schema checkpoint, architecture
 guard, Accounts, Relationships, Data Provisioning, and all currently separable
 Commercial Order Management code are implemented. The API retains HTTP,
 EF mapping/orchestration, Clerk/Postmark/QuickBooks adapters,
-environment/configuration, local file/scanner, notification dispatch, and API
-error translation as intended. Mixed order/sample/processing/file/release models
+environment/configuration, provider-neutral file storage/scanner adapters,
+notification dispatch, and API error translation as intended. Mixed
+order/sample/processing/file/release models
 remain at the current API/Commercial persistence boundary because moving them
 would falsely implement the deferred Laboratory or pipeline split. The empty
 Laboratory assembly marker is the registration boundary until real services are

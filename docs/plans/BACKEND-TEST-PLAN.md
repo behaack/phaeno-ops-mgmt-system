@@ -16,6 +16,9 @@ and rollback-isolated PostgreSQL coverage.
 
 ## Created Tests
 
+- [x] `backend/test/FileStorageTests.cs` - local provider round-trip, checksum,
+  deletion, oversize cleanup, feature-area separation, dependency-injection
+  provider selection, and rejection of local storage in Production.
 - [x] `backend/test/PersistenceTests.cs` -
   `PSeqOperationsDbContextMapsWebsiteEntitiesToWebsiteSchema` and the
   all-entity schema assertion cover the Website-owned tables in the shared
@@ -301,6 +304,11 @@ and rollback-isolated PostgreSQL coverage.
 
 ## Requested Execution Log
 
+- 2026-08-07: provider-neutral local/S3 file-storage verification ran `dotnet
+  build backend/PSeq.Operations.slnx -c Release --no-restore` with an isolated
+  artifacts path; all projects, including the new storage test source, compiled
+  with zero warnings and zero errors. Backend tests were not requested and were
+  not run. The S3 adapter was not exercised against a live production bucket.
 - 2026-07-18: one-open-protocol-candidate lifecycle verification compiled the
   complete solution, including updated domain and PostgreSQL journey coverage,
   with zero warnings and zero errors using an isolated output path while the

@@ -19,19 +19,27 @@ scientific pipeline boundary is separately approved.
 
 ## Current Implementation Boundary
 
-The organization-data-provisioning first slice now has a feature-scoped
-`IManagedFileStorage` abstraction, local filesystem implementation,
-server-derived size and SHA-256 metadata, environment-approved file kinds,
-scan-state abstraction, reference-safe draft cleanup, tenant-authorized
-individual/archive downloads, and download audit records. Its feature-scoped EF
-mappings are included in the clean
+The implemented file flows now share the provider-neutral infrastructure
+`IFileStorage` contract with local filesystem and Amazon S3 implementations.
+The existing `IManagedFileStorage` and `IOperationalFileStorage` feature ports
+adapt to that contract through distinct storage areas, preserving their current
+API, authorization, audit, checksum, size-limit, scan, release, and cleanup
+behavior. Development selects local storage. Production must select S3; startup
+validation rejects the Local provider in the Production environment.
+
+The organization-data-provisioning slice includes server-derived size and
+SHA-256 metadata, environment-approved file kinds, scan-state abstraction,
+reference-safe draft cleanup, tenant-authorized individual/archive downloads,
+and download audit records. Its feature-scoped EF mappings are included in the clean
 `20260716220428_InitialPSeqOperations` baseline applied to the configured
 Development database on 2026-07-16.
 
 This does not complete the general file-management plan or its proposed general
-folder/file schema. Production S3,
-production malware-scanner integration, shared folders, general file versions,
-and file behavior outside curated provisioning remain unimplemented.
+folder/file schema. The S3 adapter is implemented, but production bucket,
+credentials, encryption, permissions, monitoring, and runtime validation remain
+incomplete. Production malware-scanner integration, shared folders, general
+file versions, retention processing, and file behavior outside the existing
+curated-data and order-management flows remain unimplemented.
 
 ## Goal
 
@@ -69,21 +77,18 @@ disk or S3.
 ```csharp
 public interface IFileStorage
 {
-    Task<StoredFileResult> PutAsync(
+    Task<FileStorageWriteResult> SaveAsync(
         FileStorageWriteRequest request,
         CancellationToken cancellationToken);
 
-    Task<FileStorageReadResult> GetAsync(
+    Task<Stream> OpenReadAsync(
+        string area,
         string storageKey,
         CancellationToken cancellationToken);
 
-    Task DeleteAsync(
+    Task DeleteIfExistsAsync(
+        string area,
         string storageKey,
-        CancellationToken cancellationToken);
-
-    Task<string?> CreateDownloadUrlAsync(
-        string storageKey,
-        TimeSpan ttl,
         CancellationToken cancellationToken);
 }
 ```
@@ -91,10 +96,13 @@ public interface IFileStorage
 Implementations:
 
 - `LocalFileStorage`: stores bytes under a configured local root such as
-  `App_Data/files`.
+  `App_Data`, separated by feature area.
 - `S3FileStorage`: stores bytes in a configured S3 bucket and key prefix.
-- `FileService`: owns validation, database transaction flow, retention policy
-  lookup, storage calls, and state transitions.
+- Feature adapters translate shared storage results and failures to the stable
+  curated-data and order-management contracts.
+- A future general `FileService` would own the proposed general file/folder
+  validation, database transaction flow, retention policy lookup, storage
+  calls, and state transitions.
 
 ## Configuration
 
@@ -104,11 +112,13 @@ Add a `FileStorage` configuration section.
 {
   "FileStorage": {
     "Provider": "Local",
-    "LocalRootPath": "App_Data/files",
+    "LocalRootPath": "App_Data",
     "S3": {
       "BucketName": "",
       "Region": "",
-      "KeyPrefix": "phaeno-portal"
+      "KeyPrefix": "phaeno-portal",
+      "ServiceUrl": "",
+      "ForcePathStyle": false
     }
   }
 }
@@ -120,24 +130,12 @@ in `appsettings.json`.
 
 ## Dependency Injection
 
-Add a storage registration extension, for example
-`StorageServiceCollectionExtensions.cs`.
+`StorageServiceCollectionExtensions.cs` binds and validates configuration,
+selects the registered provider, and connects the existing feature ports to the
+shared contract.
 
 ```csharp
-services.Configure<FileStorageOptions>(
-    configuration.GetSection(FileStorageOptions.SectionName));
-
-if (environment.IsDevelopment())
-{
-    services.AddScoped<IFileStorage, LocalFileStorage>();
-}
-else
-{
-    services.AddAWSService<IAmazonS3>();
-    services.AddScoped<IFileStorage, S3FileStorage>();
-}
-
-services.AddScoped<IFileService, FileService>();
+services.AddFileStorage(configuration, environment);
 ```
 
 Call the extension from `Program.cs` after persistence registration.
@@ -270,13 +268,15 @@ Behavior:
 
 1. Validate the user has access to the file.
 2. Log a `FileDownloadEvent`.
-3. If the storage provider supports signed URLs, return a short-lived URL.
-4. Otherwise, stream the file through the API with the correct content headers.
+3. Open the object through the selected storage provider.
+4. Stream the file through the API with the correct content headers.
 
-Development local storage should stream through the API. Production S3 storage
-should generally return a short-lived pre-signed URL after authorization. For
-sensitive files, keep proxy-download mode available so the API remains the
-enforcement point.
+Both development local storage and production S3 storage stream through the
+API. This keeps the API as the current enforcement point for authorization,
+payment/release eligibility, quarantine, revocation, and download auditing.
+Pre-signed URLs are deliberately deferred unless a future product requirement
+and threat review establish a delivery mode whose grant can be invalidated
+quickly enough for these files.
 
 Content with an immediate revocation requirement, including curated Prospect
 sample packages, must use proxy-download mode or another delivery mechanism that
@@ -366,34 +366,40 @@ Minimum controls:
   explicitly configured Phaeno-approved scientific kinds.
 - Curated package publication uses a Phaeno-approved configurable file-kind
   list and fails if any package file is unexpected, unsupported, or disallowed.
-- Use short TTLs for signed download URLs.
+- If a future approved flow uses signed download URLs, keep their TTLs short and
+  do not use them where immediate revocation or quarantine is required.
 - Provide an `IFileScanner` hook for managed scientific uploads. A source-sample
   revision cannot become ready while any file is unscanned, scanning, failed, or
   rejected; scanner unavailability is a blocking, retryable readiness error.
 
 ## Package Additions
 
-S3 support likely requires:
+S3 support uses:
 
 ```xml
-<PackageReference Include="AWSSDK.S3" Version="..." />
+<PackageReference Include="AWSSDK.S3" Version="4.0.101.4" />
 ```
-
-Use the latest compatible version when implementing.
 
 ## Implementation Phases
 
-1. Add domain entities, DbSets, EF mappings, and migration.
-2. Add `IFileStorage`, local implementation, options, and DI registration.
-3. Add upload and download endpoints backed by local storage.
-4. Add S3 implementation and production configuration.
-5. Add folder CRUD and policy inheritance.
-6. Add retention worker and cleanup reconciliation logic.
-7. Add tests for local storage, policy resolution, upload/download
-   authorization, and retention expiration.
+1. Proposed general file entities, DbSets, EF mappings, and migration: not
+   started; existing feature-owned metadata remains authoritative.
+2. Shared `IFileStorage`, local implementation, options, and DI registration:
+   complete for the existing feature-owned file flows.
+3. Existing curated-data and order-management upload/download endpoints backed
+   by shared local storage: complete.
+4. S3 implementation and provider-selected production configuration contract:
+   code complete; live production configuration and validation incomplete.
+5. General folder CRUD and policy inheritance: not started.
+6. General retention worker and cleanup reconciliation: not started.
+7. Local storage and provider-selection tests: created. General policy,
+   authorization, and retention-expiration coverage remains future scope.
 
 ## Recommended First Slice
 
-Build local storage first. It proves the domain model, API contract, database
-transactions, and retention behavior without involving AWS. Once the local
-provider is stable, S3 should be a provider swap behind `IFileStorage`.
+The next activation slice is operational: provision the production S3 bucket,
+configure least-privilege workload credentials through the AWS SDK credential
+chain, approve encryption/lifecycle/monitoring controls, configure a trusted
+malware scanner, and validate representative API-proxied upload, download, and
+cleanup behavior. This does not authorize the proposed general folder/file
+model or the separate scientific-pipeline file boundary.

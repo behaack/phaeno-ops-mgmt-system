@@ -3,7 +3,6 @@ namespace PhaenoPortal.App.Features.OrderManagement.Services;
 public sealed class OrderManagementOptions
 {
     public const string SectionName = "OrderManagement";
-    public string StorageRoot { get; set; } = "App_Data/order-files";
     public long MaximumFileBytes { get; set; } = 100 * 1024 * 1024;
     public bool UseTrustedDevelopmentScanner { get; set; }
     public Dictionary<string, string> AllowedFileKinds { get; set; } = new(StringComparer.OrdinalIgnoreCase);

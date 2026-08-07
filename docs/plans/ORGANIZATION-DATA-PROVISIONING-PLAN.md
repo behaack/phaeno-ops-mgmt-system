@@ -877,8 +877,10 @@ Contract requirements:
 
 ## File-Management Integration
 
-- Reuse `IFileStorage`, `FileRecord`, versioning, signed-download, checksum, and
-  retention direction from `docs/plans/FILE-MANAGEMENT-PLAN.md` for binary payloads.
+- Reuse `IFileStorage`, immutable feature-owned file metadata, API-proxied
+  download, checksum, and retention direction from
+  `docs/plans/FILE-MANAGEMENT-PLAN.md` for binary payloads. The proposed general
+  `FileRecord` and versioning model remains unimplemented.
 - Upload source-sample files directly into managed storage. Compute checksums and
   record file kind, size, and scan state server-side; do not accept client-
   supplied storage keys or checksums as authoritative.

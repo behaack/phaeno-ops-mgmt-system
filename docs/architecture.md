@@ -16,7 +16,7 @@ Public Phaeno Website (`website`)
   -> Astro static site deployed independently to Vercel
   -> anonymous `/api/v1/web-ops` endpoints in the same ASP.NET Core API
   -> PostgreSQL through EF Core
-  -> local managed-file storage in the current development implementation
+  -> provider-neutral managed-file storage: local disk in development and Amazon S3 in production
   -> QuickBooks Online, Postmark, Mailgun, and Google reCAPTCHA through configured adapters
 ```
 
@@ -47,7 +47,7 @@ The backend targets .NET 10 as a modular monolith:
 - `app/Features/RelationshipManagement`: HTTP contracts, EF mapping and
   orchestration, authenticated-actor enforcement, and API error translation.
 - `app/Features/DataProvisioning`: HTTP contracts, EF mapping/orchestration,
-  tenant authorization, environment configuration, local file storage,
+  tenant authorization, environment configuration, shared storage adapter,
   scanner implementation, Postmark adapter, and notification dispatch.
 - `app/Features/OrderManagement`: HTTP/EF orchestration, QuickBooks/Postmark and
   hosted-dispatch adapters, plus the Commercial-owned customer lab-service,
@@ -156,10 +156,13 @@ payment state, and file-release state remain separate. Durable integration and
 notification records are dispatched by hosted services and retried without
 recreating the local order or duplicating the intended external document.
 
-The current development implementation uses local operational file storage and
-an environment scanner abstraction. Real production storage, malware scanning,
-scientific analysis definitions, assembly profiles, Partner shipping rules,
-QuickBooks credentials/webhooks, and notification configuration remain explicit
+Curated-data and order-management file ports now adapt to the shared
+`IFileStorage` contract. Development uses local storage, and the production
+provider is Amazon S3. The S3 adapter is implemented, but the production bucket,
+credential path, permissions, encryption, monitoring, and runtime download proof
+are not configured or validated. Production malware scanning, scientific
+analysis definitions, assembly profiles, Partner shipping rules, QuickBooks
+credentials/webhooks, and notification configuration remain explicit
 production-activation inputs rather than source-controlled defaults.
 
 ## Frontend

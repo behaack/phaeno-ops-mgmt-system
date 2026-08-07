@@ -21,11 +21,13 @@ using PhaenoPortal.App.Features.OrderManagement.Services;
 using PhaenoPortal.App.Features.Website;
 using PhaenoPortal.App.Infrastructure.Api;
 using PhaenoPortal.App.Infrastructure.Persistence;
+using PhaenoPortal.App.Infrastructure.Storage;
 using PhaenoPortal.App.Middleware;
 
 var builder = WebApplication.CreateBuilder(args);
 
 builder.Services.AddPersistence(builder.Configuration);
+builder.Services.AddFileStorage(builder.Configuration, builder.Environment);
 builder.Services.AddWebsiteApi(builder.Configuration, builder.Environment);
 builder.Services.Configure<ClerkOptions>(
     builder.Configuration.GetSection(ClerkOptions.SectionName));
@@ -81,9 +83,7 @@ if (builder.Environment.IsDevelopment())
     });
 }
 builder.Services.AddSingleton<DataProvisioningProfile>();
-builder.Services.AddSingleton<IManagedFileStorage, LocalManagedFileStorage>();
 builder.Services.AddSingleton<IManagedFileScanner, EnvironmentManagedFileScanner>();
-builder.Services.AddSingleton<IOperationalFileStorage, LocalOperationalFileStorage>();
 builder.Services.AddSingleton<IOperationalFileScanner, EnvironmentOperationalFileScanner>();
 builder.Services.AddScoped<OrderRequestContext>();
 builder.Services.AddScoped<OrderIdempotencyService>();

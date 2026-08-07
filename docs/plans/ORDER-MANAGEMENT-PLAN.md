@@ -496,10 +496,10 @@ entity, status model, or form merely because each begins with a submission.
   preview is not a production order or account data source.
 - The repository implements the OrderManagement domain, QuickBooks provider
   boundary, durable commercial and notification dispatch, operational file
-  records, local file storage adapter, scan and release states, and all three
-  confirmed workflow surfaces. Production QuickBooks, object storage, malware
-  scanning, and notification delivery still require approved runtime
-  configuration and validation.
+  records, shared local/S3 storage adapter, scan and release states, and all
+  three confirmed workflow surfaces. Production QuickBooks, S3 bucket and
+  credential configuration, object-storage runtime proof, malware scanning, and
+  notification delivery still require approved configuration and validation.
 - Order-management files remain separate from the data-provisioning aggregate
   while following the same environment-scoped storage, checksum, scan, audit,
   and tenant-authorization principles.
