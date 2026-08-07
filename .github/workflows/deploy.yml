@@ -62,11 +62,6 @@ jobs:
           PORTAL_CLERK_AUTHORITY: ${{ vars.PORTAL_CLERK_AUTHORITY }}
           PORTAL_CLERK_SECRET_KEY: ${{ secrets.PORTAL_CLERK_SECRET_KEY }}
           PORTAL_MIGRATION_BACKUP_PUBLIC_KEY: ${{ secrets.PORTAL_MIGRATION_BACKUP_PUBLIC_KEY }}
-          PORTAL_S3_ACCESS_KEY_ID: ${{ secrets.PORTAL_S3_ACCESS_KEY_ID }}
-          PORTAL_S3_BUCKET_NAME: ${{ vars.PORTAL_S3_BUCKET_NAME }}
-          PORTAL_S3_KEY_PREFIX: ${{ vars.PORTAL_S3_KEY_PREFIX }}
-          PORTAL_S3_REGION: ${{ vars.PORTAL_S3_REGION }}
-          PORTAL_S3_SECRET_ACCESS_KEY: ${{ secrets.PORTAL_S3_SECRET_ACCESS_KEY }}
           WEBSITE_PREVIEW_SEARCH_URL: ${{ vars.WEBSITE_PREVIEW_SEARCH_URL }}
           WEBSITE_PREVIEW_SEARCH_VERCEL_BYPASS_SECRET: ${{ secrets.WEBSITE_PREVIEW_SEARCH_VERCEL_BYPASS_SECRET }}
           WEBSITE_PREVIEW_SEARCH_PROXY_API_KEY: ${{ secrets.WEBSITE_PREVIEW_SEARCH_PROXY_API_KEY }}
@@ -83,12 +78,7 @@ jobs:
             PORTAL_BOOTSTRAP_ADMIN_LAST_NAME \
             PORTAL_BOOTSTRAP_ORGANIZATION_NAME \
             PORTAL_CLERK_AUTHORITY \
-            PORTAL_CLERK_SECRET_KEY \
-            PORTAL_S3_ACCESS_KEY_ID \
-            PORTAL_S3_BUCKET_NAME \
-            PORTAL_S3_KEY_PREFIX \
-            PORTAL_S3_REGION \
-            PORTAL_S3_SECRET_ACCESS_KEY; do
+            PORTAL_CLERK_SECRET_KEY; do
             if [ -z "${!name}" ]; then
               echo "::error::Missing production configuration ${name}."
               missing=1
@@ -123,42 +113,6 @@ jobs:
                 missing=1
                 ;;
             esac
-          fi
-
-          if [ -n "$PORTAL_S3_BUCKET_NAME" ] \
-            && { [ "${#PORTAL_S3_BUCKET_NAME}" -lt 3 ] \
-              || [ "${#PORTAL_S3_BUCKET_NAME}" -gt 63 ] \
-              || [[ ! "$PORTAL_S3_BUCKET_NAME" =~ ^[a-z0-9][a-z0-9.-]*[a-z0-9]$ ]] \
-              || [[ "$PORTAL_S3_BUCKET_NAME" == *..* ]] \
-              || [[ "$PORTAL_S3_BUCKET_NAME" =~ ^[0-9]+\.[0-9]+\.[0-9]+\.[0-9]+$ ]]; }; then
-            echo "::error::PORTAL_S3_BUCKET_NAME is not a valid S3 bucket name."
-            missing=1
-          fi
-
-          if [ -n "$PORTAL_S3_REGION" ] \
-            && [[ ! "$PORTAL_S3_REGION" =~ ^[a-z]{2}(-gov)?-[a-z0-9-]+-[0-9]+$ ]]; then
-            echo "::error::PORTAL_S3_REGION is not a valid AWS region."
-            missing=1
-          fi
-
-          if [ -n "$PORTAL_S3_KEY_PREFIX" ] \
-            && { [[ ! "$PORTAL_S3_KEY_PREFIX" =~ ^[A-Za-z0-9][A-Za-z0-9._/-]*[A-Za-z0-9]$ ]] \
-              || [[ "$PORTAL_S3_KEY_PREFIX" == *..* ]] \
-              || [[ "$PORTAL_S3_KEY_PREFIX" == *//* ]]; }; then
-            echo "::error::PORTAL_S3_KEY_PREFIX is not a valid object-key prefix."
-            missing=1
-          fi
-
-          if [ -n "$PORTAL_S3_ACCESS_KEY_ID" ] \
-            && [[ ! "$PORTAL_S3_ACCESS_KEY_ID" =~ ^[A-Z0-9]{16,128}$ ]]; then
-            echo "::error::PORTAL_S3_ACCESS_KEY_ID has an invalid format."
-            missing=1
-          fi
-
-          if [ -n "$PORTAL_S3_SECRET_ACCESS_KEY" ] \
-            && [[ ! "$PORTAL_S3_SECRET_ACCESS_KEY" =~ ^[A-Za-z0-9/+=]{40,256}$ ]]; then
-            echo "::error::PORTAL_S3_SECRET_ACCESS_KEY has an invalid format."
-            missing=1
           fi
 
           if [ "$APPLY_MIGRATIONS" = "true" ] \
@@ -291,6 +245,7 @@ jobs:
             "$release_path/deployment/hetzner/green/deploy-release.sh" \
             "$release_path/deployment/hetzner/green/install-bootstrap-runtime-config.sh" \
             "$release_path/deployment/hetzner/green/install-clerk-runtime-secret.sh" \
+            "$release_path/deployment/hetzner/green/install-disabled-file-storage-runtime-config.sh" \
             "$release_path/deployment/hetzner/green/install-s3-runtime-config.sh" \
             "$release_path/deployment/hetzner/green/install-website-preview-search-runtime-config.sh"
           REMOTE
@@ -327,25 +282,15 @@ jobs:
             | ssh -i ~/.ssh/deploy_key "$DEPLOY_USER@$DEPLOY_HOST" \
                 "$RELEASE_PATH/deployment/hetzner/green/install-bootstrap-runtime-config.sh '$DEPLOY_ROOT'"
 
-      - name: Install S3 runtime configuration
+      - name: Install disabled file-storage runtime configuration
         env:
           DEPLOY_HOST: ${{ secrets.DEPLOY_HOST }}
           DEPLOY_USER: ${{ secrets.DEPLOY_USER }}
-          PORTAL_S3_ACCESS_KEY_ID: ${{ secrets.PORTAL_S3_ACCESS_KEY_ID }}
-          PORTAL_S3_BUCKET_NAME: ${{ vars.PORTAL_S3_BUCKET_NAME }}
-          PORTAL_S3_KEY_PREFIX: ${{ vars.PORTAL_S3_KEY_PREFIX }}
-          PORTAL_S3_REGION: ${{ vars.PORTAL_S3_REGION }}
-          PORTAL_S3_SECRET_ACCESS_KEY: ${{ secrets.PORTAL_S3_SECRET_ACCESS_KEY }}
           RELEASE_PATH: ${{ steps.release.outputs.release_path }}
         run: |
-          printf 'FileStorage__Provider=S3\nFileStorage__S3__BucketName=%s\nFileStorage__S3__Region=%s\nFileStorage__S3__KeyPrefix=%s\nAWS_ACCESS_KEY_ID=%s\nAWS_SECRET_ACCESS_KEY=%s\n' \
-            "$PORTAL_S3_BUCKET_NAME" \
-            "$PORTAL_S3_REGION" \
-            "$PORTAL_S3_KEY_PREFIX" \
-            "$PORTAL_S3_ACCESS_KEY_ID" \
-            "$PORTAL_S3_SECRET_ACCESS_KEY" \
+          printf 'FileStorage__Provider=Disabled\n' \
             | ssh -i ~/.ssh/deploy_key "$DEPLOY_USER@$DEPLOY_HOST" \
-                "$RELEASE_PATH/deployment/hetzner/green/install-s3-runtime-config.sh '$DEPLOY_ROOT'"
+                "$RELEASE_PATH/deployment/hetzner/green/install-disabled-file-storage-runtime-config.sh '$DEPLOY_ROOT'"
 
       - name: Install Website Preview search runtime configuration
         if: ${{ vars.WEBSITE_PREVIEW_SEARCH_URL != '' }}

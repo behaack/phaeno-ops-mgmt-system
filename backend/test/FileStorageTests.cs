@@ -40,13 +40,15 @@ public sealed class FileStorageTests
                 FileStorageAreas.DataProvisioning,
                 stored.StorageKey.Replace('/', Path.DirectorySeparatorChar))));
 
-            await using var read = await storage.OpenReadAsync(
+            await using (var read = await storage.OpenReadAsync(
                 FileStorageAreas.DataProvisioning,
                 stored.StorageKey,
-                CancellationToken.None);
-            using var buffer = new MemoryStream();
-            await read.CopyToAsync(buffer);
-            Assert.Equal(content, buffer.ToArray());
+                CancellationToken.None))
+            {
+                using var buffer = new MemoryStream();
+                await read.CopyToAsync(buffer);
+                Assert.Equal(content, buffer.ToArray());
+            }
 
             await storage.DeleteIfExistsAsync(
                 FileStorageAreas.DataProvisioning,
@@ -147,6 +149,27 @@ public sealed class FileStorageTests
 
         Assert.Throws<OptionsValidationException>(() =>
             provider.GetRequiredService<IFileStorage>());
+    }
+
+    [Fact]
+    public async Task DependencyInjectionSelectsDisabledStorageForProductionWithoutCredentials()
+    {
+        using var provider = BuildProvider(
+            Environments.Production,
+            new Dictionary<string, string?>
+            {
+                ["FileStorage:Provider"] = FileStorageProviders.Disabled
+            });
+
+        var storage = Assert.IsType<DisabledFileStorage>(provider.GetRequiredService<IFileStorage>());
+        await Assert.ThrowsAsync<FileStorageUnavailableException>(() =>
+            storage.SaveAsync(
+                new FileStorageWriteRequest(
+                    FileStorageAreas.DataProvisioning,
+                    new MemoryStream([1]),
+                    ".csv",
+                    10),
+                CancellationToken.None));
     }
 
     [Fact]

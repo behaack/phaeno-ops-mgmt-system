@@ -16,7 +16,7 @@ Public Phaeno Website (`website`)
   -> Astro static site deployed independently to Vercel
   -> anonymous `/api/v1/web-ops` endpoints in the same ASP.NET Core API
   -> PostgreSQL through EF Core
-  -> provider-neutral managed-file storage: local disk in development and Amazon S3 in production
+  -> provider-neutral managed-file storage: local development, disabled production stub, future Amazon S3
   -> QuickBooks Online, Postmark, Mailgun, and Google reCAPTCHA through configured adapters
 ```
 
@@ -158,7 +158,9 @@ recreating the local order or duplicating the intended external document.
 
 Curated-data and order-management file ports now adapt to the shared
 `IFileStorage` contract. Development uses local storage, and the production
-provider is Amazon S3. The S3 adapter is implemented, but the production bucket,
+runtime currently uses a non-persisting `Disabled` adapter so storage readiness
+does not block API startup. File operations return service unavailable while it
+is selected. The S3 adapter is implemented, but the production bucket,
 credential path, permissions, encryption, monitoring, and runtime download proof
 are not configured or validated. Production malware scanning, scientific
 analysis definitions, assembly profiles, Partner shipping rules, QuickBooks

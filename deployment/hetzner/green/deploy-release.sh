@@ -54,17 +54,21 @@ for secret_file in "${COMPOSE_ENV}" "${DATABASE_ENV}" "${PORTAL_ENV}"; do
         || fail "${secret_file} must not be accessible by group or other users."
 done
 
-grep --fixed-strings --line-regexp 'FileStorage__Provider=S3' "${PORTAL_ENV}" > /dev/null \
-    || fail "Portal production runtime must configure FileStorage__Provider=S3."
-for key in \
-    FileStorage__S3__BucketName \
-    FileStorage__S3__Region \
-    FileStorage__S3__KeyPrefix \
-    AWS_ACCESS_KEY_ID \
-    AWS_SECRET_ACCESS_KEY; do
-    grep --extended-regexp --quiet "^${key}=.+$" "${PORTAL_ENV}" \
-        || fail "Portal production runtime is missing ${key}."
-done
+if grep --fixed-strings --line-regexp 'FileStorage__Provider=Disabled' "${PORTAL_ENV}" > /dev/null; then
+    printf 'File storage is disabled; file operations will return service unavailable.\n'
+elif grep --fixed-strings --line-regexp 'FileStorage__Provider=S3' "${PORTAL_ENV}" > /dev/null; then
+    for key in \
+        FileStorage__S3__BucketName \
+        FileStorage__S3__Region \
+        FileStorage__S3__KeyPrefix \
+        AWS_ACCESS_KEY_ID \
+        AWS_SECRET_ACCESS_KEY; do
+        grep --extended-regexp --quiet "^${key}=.+$" "${PORTAL_ENV}" \
+            || fail "Portal S3 runtime is missing ${key}."
+    done
+else
+    fail "Portal production runtime must configure FileStorage__Provider=Disabled or S3."
+fi
 
 exec 9>"${RUNTIME_DIR}/deploy.lock"
 flock --exclusive 9

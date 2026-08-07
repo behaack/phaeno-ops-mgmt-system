@@ -24,8 +24,10 @@ The implemented file flows now share the provider-neutral infrastructure
 The existing `IManagedFileStorage` and `IOperationalFileStorage` feature ports
 adapt to that contract through distinct storage areas, preserving their current
 API, authorization, audit, checksum, size-limit, scan, release, and cleanup
-behavior. Development selects local storage. Production must select S3; startup
-validation rejects the Local provider in the Production environment.
+behavior. Development selects local storage. The production target is S3, and
+startup validation rejects the Local provider in the Production environment.
+Until S3 is provisioned, production explicitly selects a `Disabled` adapter
+that keeps the API healthy but stores no bytes; file operations return HTTP 503.
 
 The organization-data-provisioning slice includes server-derived size and
 SHA-256 metadata, environment-approved file kinds, scan-state abstraction,
@@ -40,6 +42,19 @@ credentials, encryption, permissions, monitoring, and runtime validation remain
 incomplete. Production malware-scanner integration, shared folders, general
 file versions, retention processing, and file behavior outside the existing
 curated-data and order-management flows remain unimplemented.
+
+### Production S3 activation TODO
+
+- [ ] Provision and approve the production S3 bucket, region, and key prefix.
+- [ ] Obtain production AWS access keys for a dedicated least-privilege IAM
+  principal, or replace static keys with an approved workload-identity path.
+- [ ] Store credentials only in the protected deployment secret store and
+  root-protected runtime environment; never commit or log them.
+- [ ] Configure encryption, lifecycle, permissions, monitoring, and rotation.
+- [ ] Inventory and migrate any referenced legacy managed-file bytes.
+- [ ] Validate representative upload, download, deletion, authorization,
+  quarantine/revocation, and rollback behavior before changing production from
+  `Disabled` to `S3`.
 
 ## Goal
 
@@ -389,7 +404,8 @@ S3 support uses:
 3. Existing curated-data and order-management upload/download endpoints backed
    by shared local storage: complete.
 4. S3 implementation and provider-selected production configuration contract:
-   code complete; live production configuration and validation incomplete.
+   code complete; production currently uses the non-persisting `Disabled`
+   adapter, and live S3 configuration and validation are incomplete.
 5. General folder CRUD and policy inheritance: not started.
 6. General retention worker and cleanup reconciliation: not started.
 7. Local storage and provider-selection tests: created. General policy,
@@ -397,9 +413,7 @@ S3 support uses:
 
 ## Recommended First Slice
 
-The next activation slice is operational: provision the production S3 bucket,
-configure least-privilege workload credentials through the AWS SDK credential
-chain, approve encryption/lifecycle/monitoring controls, configure a trusted
-malware scanner, and validate representative API-proxied upload, download, and
-cleanup behavior. This does not authorize the proposed general folder/file
+The next activation slice is the unchecked Production S3 activation TODO above.
+Until that work is explicitly authorized and verified, keep production on the
+`Disabled` adapter. This does not authorize the proposed general folder/file
 model or the separate scientific-pipeline file boundary.

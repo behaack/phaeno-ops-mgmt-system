@@ -4,6 +4,7 @@ using Microsoft.Extensions.Options;
 
 public static class FileStorageProviders
 {
+    public const string Disabled = "Disabled";
     public const string Local = "Local";
     public const string S3 = "S3";
 }
@@ -37,12 +38,17 @@ internal sealed class FileStorageOptionsValidator(IWebHostEnvironment environmen
 {
     public ValidateOptionsResult Validate(string? name, FileStorageOptions options)
     {
+        if (string.Equals(options.Provider, FileStorageProviders.Disabled, StringComparison.OrdinalIgnoreCase))
+        {
+            return ValidateOptionsResult.Success;
+        }
+
         if (string.Equals(options.Provider, FileStorageProviders.Local, StringComparison.OrdinalIgnoreCase))
         {
             if (environment.IsProduction())
             {
                 return ValidateOptionsResult.Fail(
-                    "FileStorage:Provider must be S3 in Production; local application storage is not durable production storage.");
+                    "FileStorage:Provider must be Disabled or S3 in Production; local application storage is not durable production storage.");
             }
 
             return string.IsNullOrWhiteSpace(options.LocalRootPath)
@@ -77,6 +83,6 @@ internal sealed class FileStorageOptionsValidator(IWebHostEnvironment environmen
         }
 
         return ValidateOptionsResult.Fail(
-            $"FileStorage:Provider '{options.Provider}' is unsupported. Registered providers: Local, S3.");
+            $"FileStorage:Provider '{options.Provider}' is unsupported. Registered providers: Disabled, Local, S3.");
     }
 }

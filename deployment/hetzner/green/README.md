@@ -13,9 +13,11 @@ It does not change Nginx or expose the Portal database on the host.
 The Portal API reads public Website documents and private Website credentials
 from `/opt/phaeno.portal-green/documents`. Its Lucene index and Portal-owned
 legacy application files use separate Portal volumes. New production managed
-files use Amazon S3 through the shared storage provider. Keep the legacy
-`portal_green_app_data` volume until existing curated-data and order-file rows
-and bytes have been inventoried and, if necessary, migrated to S3.
+file storage is currently disabled: the API starts, but file operations return
+HTTP 503 and no bytes are written. Amazon S3 remains the production target.
+Keep the legacy `portal_green_app_data` volume until existing curated-data and
+order-file rows and bytes have been inventoried and, if necessary, migrated to
+S3.
 
 ## Runtime files
 
@@ -25,7 +27,7 @@ directory mode `700` and file mode `600`:
 - `compose.env`: versioned image tag and source revision
 - `database.env`: PostgreSQL database, role, and random password
 - `portal.env`: the Portal connection string, transferred Website runtime
-  configuration, S3 provider settings, and AWS runtime credentials
+  configuration, and the explicit disabled file-storage provider setting
 
 These files are ignored and must never be committed or printed.
 
@@ -100,19 +102,12 @@ Configure a protected GitHub environment named `production` with:
   administrator;
 - `PORTAL_CLERK_AUTHORITY`: non-secret Clerk JWT issuer matching the Portal
   frontend publishable key, such as `https://example.clerk.accounts.dev`;
-- `PORTAL_S3_BUCKET_NAME`: non-secret production S3 bucket name;
-- `PORTAL_S3_REGION`: non-secret AWS region containing that bucket;
-- `PORTAL_S3_KEY_PREFIX`: non-secret environment-specific object prefix, such
-  as `phaeno-portal/production`;
 - `DEPLOY_HOST`: Hetzner SSH host;
 - `DEPLOY_USER`: SSH user with Docker and `/opt/phaeno.portal-green` access;
 - `DEPLOY_SSH_KEY`: private deployment key;
 - `DEPLOY_KNOWN_HOSTS`: pinned OpenSSH `known_hosts` entry for the server; and
 - `PORTAL_CLERK_SECRET_KEY`: Clerk backend secret for the same instance used by
   the Portal frontend; and
-- `PORTAL_S3_ACCESS_KEY_ID` and `PORTAL_S3_SECRET_ACCESS_KEY`: credentials for
-  a dedicated least-privilege IAM principal restricted to the configured bucket
-  and key prefix; and
 - `PORTAL_MIGRATION_BACKUP_PUBLIC_KEY`: PEM public key used only when an
   authorized migration is requested.
 
@@ -132,15 +127,18 @@ Function must receive the proxy key as `WEBSITE_PREVIEW_SEARCH_API_KEY`; never
 place either secret in a `PUBLIC_` variable.
 
 On every deployment, the workflow validates the bootstrap configuration,
-`PORTAL_CLERK_AUTHORITY`, `PORTAL_CLERK_SECRET_KEY`, and required S3 settings
-and credentials, plus the Preview-search settings when a Preview URL is
-configured. It streams configured values over the pinned SSH connection
-without placing them in the release archive and atomically updates only their
-corresponding entries in the root-protected `runtime/portal.env`. The API
+`PORTAL_CLERK_AUTHORITY`, and `PORTAL_CLERK_SECRET_KEY`, plus the Preview-search
+settings when a Preview URL is configured. It streams configured values over
+the pinned SSH connection without placing them in the release archive and
+atomically updates only their corresponding entries in the root-protected
+`runtime/portal.env`. The workflow also installs
+`FileStorage__Provider=Disabled` and removes stale S3/AWS entries. The API
 recreation then loads the updated values. The workflow never prints secret
-values. The server-side release script independently refuses to deploy unless
-the production provider is S3 and every required runtime key is populated.
+values. The server-side release script accepts the explicit disabled stub or a
+complete S3 configuration; it continues to reject local production storage.
 
+S3 activation is a TODO in `docs/plans/FILE-MANAGEMENT-PLAN.md`. It includes
+obtaining protected least-privilege AWS keys or an approved workload identity.
 Before the first S3-backed deployment, inventory the existing managed-file
 database records and the retained `portal_green_app_data` volume. Copy any
 referenced legacy objects to

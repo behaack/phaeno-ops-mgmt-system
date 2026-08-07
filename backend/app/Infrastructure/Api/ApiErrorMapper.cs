@@ -1,5 +1,6 @@
 using Microsoft.EntityFrameworkCore;
 using PhaenoPortal.App.Common.Exceptions;
+using PhaenoPortal.App.Infrastructure.Storage;
 
 namespace PhaenoPortal.App.Infrastructure.Api;
 
@@ -7,6 +8,18 @@ public static class ApiErrorMapper
 {
     public static (int StatusCode, ApiError Error) Map(Exception exception)
     {
+        if (exception is FileStorageUnavailableException)
+        {
+            return (
+                StatusCodes.Status503ServiceUnavailable,
+                new ApiError(
+                    type: "service_unavailable",
+                    code: "file_storage_unavailable",
+                    message: "File storage is temporarily unavailable."
+                )
+            );
+        }
+
         if (exception is DbUpdateConcurrencyException)
         {
             return (

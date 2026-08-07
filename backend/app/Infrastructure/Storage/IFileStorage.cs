@@ -44,6 +44,9 @@ public sealed class FileStorageObjectNotFoundException(string area, string stora
     public string StorageKey { get; } = storageKey;
 }
 
+public sealed class FileStorageUnavailableException()
+    : Exception("File storage is not configured for this environment.");
+
 public static class FileStorageAreas
 {
     public const string DataProvisioning = "provisioning-files";

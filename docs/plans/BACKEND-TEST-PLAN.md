@@ -304,6 +304,14 @@ and rollback-isolated PostgreSQL coverage.
 
 ## Requested Execution Log
 
+- 2026-08-07: added source coverage for the credential-free production
+  `DisabledFileStorage` DI selection and its fail-closed storage behavior.
+  `dotnet build backend/PSeq.Operations.slnx --configuration Release
+  --no-restore` compiled all projects with zero warnings and zero errors.
+  The focused Release `FileStorageTests` and `ApiResponseTests` run passed all
+  12 tests, including HTTP 503 mapping. Its first run exposed and then corrected
+  a Windows file-handle lifetime defect in the pre-existing local round-trip
+  test; the storage implementation was unchanged.
 - 2026-08-07: provider-neutral local/S3 file-storage verification ran `dotnet
   build backend/PSeq.Operations.slnx -c Release --no-restore` with an isolated
   artifacts path; all projects, including the new storage test source, compiled

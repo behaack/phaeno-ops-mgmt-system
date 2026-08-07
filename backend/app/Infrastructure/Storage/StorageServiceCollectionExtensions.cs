@@ -22,7 +22,11 @@ public static class StorageServiceCollectionExtensions
 
         var provider = section[nameof(FileStorageOptions.Provider)]
             ?? FileStorageProviders.Local;
-        if (string.Equals(provider, FileStorageProviders.Local, StringComparison.OrdinalIgnoreCase))
+        if (string.Equals(provider, FileStorageProviders.Disabled, StringComparison.OrdinalIgnoreCase))
+        {
+            services.AddSingleton<IFileStorage, DisabledFileStorage>();
+        }
+        else if (string.Equals(provider, FileStorageProviders.Local, StringComparison.OrdinalIgnoreCase))
         {
             services.AddSingleton<IFileStorage, LocalFileStorage>();
         }
@@ -56,7 +60,7 @@ public static class StorageServiceCollectionExtensions
         else
         {
             throw new InvalidOperationException(
-                $"FileStorage provider '{provider}' is unsupported. Registered providers: Local, S3.");
+                $"FileStorage provider '{provider}' is unsupported. Registered providers: Disabled, Local, S3.");
         }
 
         services.AddSingleton<IManagedFileStorage, ManagedFileStorageAdapter>();

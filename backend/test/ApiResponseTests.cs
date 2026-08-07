@@ -5,6 +5,7 @@ using Microsoft.EntityFrameworkCore;
 using PhaenoPortal.App.Common.Exceptions.Conflict;
 using PhaenoPortal.App.Features.Health.DTOs;
 using PhaenoPortal.App.Infrastructure.Api;
+using PhaenoPortal.App.Infrastructure.Storage;
 
 public class ApiResponseTests
 {
@@ -88,5 +89,15 @@ public class ApiResponseTests
         Assert.Equal(409, statusCode);
         Assert.Equal("conflict", error.type);
         Assert.Equal("concurrency_conflict", error.code);
+    }
+
+    [Fact]
+    public void DisabledFileStorageMapsToServiceUnavailable()
+    {
+        var (statusCode, error) = ApiErrorMapper.Map(new FileStorageUnavailableException());
+
+        Assert.Equal(503, statusCode);
+        Assert.Equal("service_unavailable", error.type);
+        Assert.Equal("file_storage_unavailable", error.code);
     }
 }
