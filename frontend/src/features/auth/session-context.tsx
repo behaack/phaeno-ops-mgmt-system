@@ -104,8 +104,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       localization={{
         signIn: {
           start: {
-            title: 'Sign in to Portal',
-            titleCombined: 'Sign in to Portal',
+            title: 'Sign in',
+            titleCombined: 'Sign in',
           },
         },
       }}
@@ -364,7 +364,7 @@ function SignInAccessState() {
   return (
     <AuthenticationPanel
       ariaLabel="Phaeno Portal sign in"
-      title="Sign in to Portal"
+      title="Sign in"
       description="Secure, invitation-only access for Phaeno customers, partners, and staff."
     >
       <div className="phaeno-sign-in-form flex w-full justify-center">
