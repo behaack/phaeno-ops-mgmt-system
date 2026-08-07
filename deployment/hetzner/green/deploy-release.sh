@@ -40,7 +40,7 @@ readonly BACKUP_ROOT="/var/backups/phaeno-portal-deploy"
 [[ "${RELEASE_DIR}" == "${DEPLOY_ROOT}/releases/"* ]] \
     || fail "The release must be under ${DEPLOY_ROOT}/releases."
 
-for command in curl docker flock openssl realpath seq sha256sum shred stat; do
+for command in curl docker flock grep openssl realpath seq sha256sum shred stat; do
     require_command "${command}"
 done
 
@@ -52,6 +52,18 @@ for secret_file in "${COMPOSE_ENV}" "${DATABASE_ENV}" "${PORTAL_ENV}"; do
     mode="$(stat -c '%a' "${secret_file}")"
     (( 10#${mode} % 100 == 0 )) \
         || fail "${secret_file} must not be accessible by group or other users."
+done
+
+grep --fixed-strings --line-regexp 'FileStorage__Provider=S3' "${PORTAL_ENV}" > /dev/null \
+    || fail "Portal production runtime must configure FileStorage__Provider=S3."
+for key in \
+    FileStorage__S3__BucketName \
+    FileStorage__S3__Region \
+    FileStorage__S3__KeyPrefix \
+    AWS_ACCESS_KEY_ID \
+    AWS_SECRET_ACCESS_KEY; do
+    grep --extended-regexp --quiet "^${key}=.+$" "${PORTAL_ENV}" \
+        || fail "Portal production runtime is missing ${key}."
 done
 
 exec 9>"${RUNTIME_DIR}/deploy.lock"
@@ -241,8 +253,12 @@ for attempt in $(seq 1 30); do
     fi
     sleep 4
 done
-[[ "${health}" == "healthy" ]] \
-    || fail "Portal green API did not become healthy."
+if [[ "${health}" != "healthy" ]]; then
+    printf 'Portal green API startup diagnostics follow.\n' >&2
+    compose ps api >&2 || true
+    compose logs --no-color --tail 200 api >&2 || true
+    fail "Portal green API did not become healthy."
+fi
 
 curl \
     --fail \

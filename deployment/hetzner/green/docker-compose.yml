@@ -43,8 +43,6 @@ services:
       GoogleAuthSettings__RecaptchaServiceAccountKeyPath: /app/__DOCUMENTS/private/secrets/recaptcha-enterprise-service-account.json
       WebSearchSettings__SearchIndexLocation: /app/__GREEN_INDEX
       WebsitePreviewSearch__SearchIndexLocation: /app/__PREVIEW_INDEX
-      DataProvisioning__StorageRoot: /app/App_Data/provisioning-files
-      OrderManagement__StorageRoot: /app/App_Data/order-files
     ports:
       - 127.0.0.1:8084:8080
     volumes:
