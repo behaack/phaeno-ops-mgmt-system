@@ -25,6 +25,15 @@ available Media content through the same-origin proxy, direct API denial
 without the proxy key, Preview-origin result navigation, and unchanged
 production search results.
 
+Arabic Website browser proof is deferred until the draft translation has named
+review owners and an authorized protected Preview deployment. That proof must
+cover direct `/ar` deep links, `lang="ar"` and `dir="rtl"`, desktop and narrow
+navigation, keyboard/focus behavior, browser-language suggestion and dismissal,
+stored explicit preference, equivalent-route switching, Arabic form labels and
+validation, English-PDF disclosure, reciprocal alternates, Arabic-only search
+results, bidirectional scientific text, zoom, reduced motion, and unchanged
+English URLs and behavior.
+
 ## Created Tests
 
 - [x] `frontend/e2e/home.spec.ts` - internal Phaeno context uses POMS in the

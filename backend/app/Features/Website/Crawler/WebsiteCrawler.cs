@@ -190,6 +190,8 @@ public sealed class WebsiteCrawler : IWebsiteCrawler
         var document = await browsingContext.OpenAsync(
             request => request.Content(html),
             cancellationToken);
+        var locale = WebsiteLocale.Normalize(
+            document.DocumentElement?.GetAttribute("lang"));
         var title =
             document.QuerySelector("title")?.TextContent?.Trim()
             ?? "(No Page Title)";
@@ -221,18 +223,24 @@ public sealed class WebsiteCrawler : IWebsiteCrawler
         if (string.Equals(searchMode, "document", StringComparison.OrdinalIgnoreCase))
         {
             metrics.DocumentPageCount++;
-            var sourceText = await TryExtractDocumentSourceAsync(
-                root,
-                url,
-                document.QuerySelector("meta[name='phaeno:search-source']")
-                    ?.GetAttribute("content")?.Trim(),
-                document.QuerySelector("meta[name='phaeno:search-source-type']")
-                    ?.GetAttribute("content")?.Trim(),
-                metrics,
-                cancellationToken);
+            var sourceLanguage = WebsiteLocale.Normalize(
+                document.QuerySelector("meta[name='phaeno:search-source-language']")
+                    ?.GetAttribute("content")?.Trim());
+            var sourceText = sourceLanguage == locale
+                ? await TryExtractDocumentSourceAsync(
+                    root,
+                    url,
+                    document.QuerySelector("meta[name='phaeno:search-source']")
+                        ?.GetAttribute("content")?.Trim(),
+                    document.QuerySelector("meta[name='phaeno:search-source-type']")
+                        ?.GetAttribute("content")?.Trim(),
+                    metrics,
+                    cancellationToken)
+                : string.Empty;
             pages.Add(new IndexedPage
             {
                 Url = normalizedUrl,
+                Locale = locale,
                 PageTitle = title,
                 PageDisplayTitle = pageDisplayTitle,
                 Description = description,
@@ -252,6 +260,7 @@ public sealed class WebsiteCrawler : IWebsiteCrawler
             pages.Add(new IndexedPage
             {
                 Url = normalizedUrl,
+                Locale = locale,
                 PageTitle = title,
                 PageDisplayTitle = pageDisplayTitle,
                 Description = description,
@@ -279,6 +288,7 @@ public sealed class WebsiteCrawler : IWebsiteCrawler
             pages.Add(new IndexedPage
             {
                 Url = $"{normalizedUrl}#{id}",
+                Locale = locale,
                 PageTitle = title,
                 PageDisplayTitle = pageDisplayTitle,
                 Anchor = id,

@@ -34,9 +34,51 @@ public sealed class WebsiteCrawlerTests
         Assert.Equal($"{Origin}/media/white-papers/example", page.Url);
         Assert.DoesNotContain('#', page.Url);
         Assert.Equal("White Paper", page.DocumentType);
+        Assert.Equal(WebsiteLocale.Default, page.Locale);
         Assert.Contains("Visible abstract term", page.Text);
         Assert.Contains("chromatogram evidence", page.SourceText);
         Assert.Equal(1, extractor.CallCount);
+    }
+
+    [Fact]
+    public async Task ArabicPageCarriesLocaleWithoutIndexingItsEnglishPdf()
+    {
+        var search = new CapturingSearchService();
+        var extractor = new StubDocumentTextExtractor(
+            new WebsiteDocumentText("English PDF text.", 1));
+        var crawler = CreateCrawler(
+            search,
+            extractor,
+            request => request.RequestUri?.AbsolutePath switch
+            {
+                "/robots.txt" => TextResponse("User-agent: *\nAllow: /", "text/plain"),
+                "/sitemap-index.xml" => TextResponse(
+                    $"<urlset><url><loc>{Origin}/ar/media/white-papers/example</loc></url></urlset>",
+                    "application/xml"),
+                "/ar/media/white-papers/example" => TextResponse(
+                    """
+                    <html lang="ar" dir="rtl"><head>
+                    <title>ورقة PSeq</title>
+                    <meta name="description" content="ملخص عربي.">
+                    <meta name="phaeno:document-type" content="White Paper">
+                    <meta name="phaeno:search-mode" content="document">
+                    <meta name="phaeno:search-source" content="/white-papers/example.pdf">
+                    <meta name="phaeno:search-source-type" content="application/pdf">
+                    <meta name="phaeno:search-source-language" content="en-US">
+                    </head><body><main><h1>ورقة PSeq</h1><p>نص عربي ظاهر.</p></main></body></html>
+                    """,
+                    "text/html"),
+                "/white-papers/example.pdf" => PdfResponse([1, 2, 3]),
+                _ => new HttpResponseMessage(HttpStatusCode.NotFound)
+            });
+
+        await crawler.CrawlAsync();
+
+        var page = Assert.Single(search.Pages);
+        Assert.Equal(WebsiteLocale.Arabic, page.Locale);
+        Assert.Contains("نص عربي", page.Text);
+        Assert.Empty(page.SourceText);
+        Assert.Equal(0, extractor.CallCount);
     }
 
     [Fact]
@@ -487,7 +529,9 @@ public sealed class WebsiteCrawlerTests
             Pages = pages.ToList();
         }
 
-        public IReadOnlyList<IndexedPage> Search(string queryText) => [];
+        public IReadOnlyList<IndexedPage> Search(
+            string queryText,
+            string locale = WebsiteLocale.Default) => [];
     }
 
     private sealed class TestWebHostEnvironment(string environmentName) : IWebHostEnvironment

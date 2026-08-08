@@ -43,8 +43,10 @@ public sealed class WebsitePreviewSearchService : IWebsiteSearchService, IDispos
     public void RebuildIndex(IEnumerable<IndexedPage> pages) =>
         GetEnabledService().RebuildIndex(pages);
 
-    public IReadOnlyList<IndexedPage> Search(string queryText) =>
-        GetEnabledService().Search(queryText);
+    public IReadOnlyList<IndexedPage> Search(
+        string queryText,
+        string locale = WebsiteLocale.Default) =>
+        GetEnabledService().Search(queryText, locale);
 
     public void Dispose() => inner?.Dispose();
 

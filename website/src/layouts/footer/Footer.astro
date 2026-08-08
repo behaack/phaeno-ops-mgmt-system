@@ -1,8 +1,57 @@
 ---
-import footerItems from './versions/short'
 import FooterSection from './components/FooterSection.astro';
 import FooterLink from './components/FooterLink.astro';
 import FooterExternalLink from './components/FooterExternalLink.astro';
+import { getMessages } from '@/i18n/messages';
+import { prefixPathForLocale, type SupportedLocale } from '@/i18n/locales';
+
+interface Props {
+  locale?: SupportedLocale
+}
+
+const { locale = 'en-US' } = Astro.props as Props
+const { footer: footerMessages } = getMessages(locale)
+const localizedPath = (pathname: string) => prefixPathForLocale(locale, pathname)
+const footerItems = {
+  left: {
+    sections: [{
+      header: 'Phaeno Inc.',
+      content: [
+        { type: 'label' as const, label: '5270 California Avenue\r\nSuite 300\r\nIrvine, CA 92617', value: '' },
+        { type: 'email' as const, label: 'info@phaenobiotech.com', value: 'info@phaenobiotech.com' },
+      ],
+    }],
+  },
+  center: {
+    sections: [{
+      header: footerMessages.resources,
+      content: [
+        { type: 'link' as const, label: footerMessages.jobs, value: localizedPath('/about/job-openings') },
+        { type: 'link' as const, label: footerMessages.investors, value: localizedPath('/investors') },
+        { type: 'link' as const, label: footerMessages.blog, value: localizedPath('/media/blog') },
+        { type: 'link' as const, label: footerMessages.whitePapers, value: localizedPath('/media/white-papers') },
+        { type: 'external-link' as const, label: footerMessages.customerPortal, value: 'https://portal.phaenobiotech.com' },
+      ],
+    }],
+  },
+  right: {
+    sections: [{
+      header: footerMessages.siteMap,
+      content: [
+        { type: 'link' as const, label: footerMessages.home, value: localizedPath('/') },
+        { type: 'link' as const, label: footerMessages.pseqPlatform, value: localizedPath('/technology/pseq-platform') },
+        { type: 'link' as const, label: footerMessages.multiOmics, value: localizedPath('/technology/multi-omics') },
+        { type: 'link' as const, label: footerMessages.whyIsoforms, value: localizedPath('/technology/why-isoforms-matter') },
+        { type: 'link' as const, label: footerMessages.about, value: localizedPath('/about/about-us') },
+        { type: 'link' as const, label: footerMessages.contact, value: localizedPath('/contact') },
+      ],
+    }],
+  },
+  bottom: [
+    { type: 'link' as const, label: footerMessages.privacy, value: localizedPath('/privacy') },
+    { type: 'link' as const, label: footerMessages.dataPolicies, value: localizedPath('/data-policies') },
+  ],
+}
 
 const copyYear = new Date().getFullYear()
 ---
@@ -26,14 +75,14 @@ const copyYear = new Date().getFullYear()
         ))}        
       </div>
       <div class="top-container-item footer-follow">
-        <div class="column-header">Follow</div>
+        <div class="column-header">{footerMessages.follow}</div>
         <a href="https://www.linkedin.com/company/phaeno-biotech/" target="_blank" rel="noopener noreferrer">LinkedIn</a>
         <a href="https://www.youtube.com/@phaenobiotech" target="_blank" rel="noopener noreferrer">YouTube</a>
       </div>
     </div>
     <hr />
     <div class="bottom-container">
-      <div class="footer-legal">Copyright &copy;{ copyYear } Phaeno Inc. All data are for research use only (RUO). Not validated for clinical diagnostics.</div>
+      <div class="footer-legal">Copyright &copy;{ copyYear } Phaeno Inc. {footerMessages.legal}</div>
       <div class="footer-policies">
         {footerItems.bottom.map(item => (
           <>
@@ -77,7 +126,7 @@ footer {
   display: flex;
   flex-direction: column;
   padding: 0;
-  text-align: left;
+  text-align: start;
 }
 
 .bottom-container {

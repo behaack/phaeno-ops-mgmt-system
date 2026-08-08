@@ -4,36 +4,41 @@ import {
 import { ContactForm } from "./ContactForm";
 import { OrderForm } from "./OrderForm";
 import { isWebsiteReviewMode } from "@/lib/reviewMode";
+import { getMessages } from "@/i18n/messages";
+import type { SupportedLocale } from "@/i18n/locales";
+import "@/styles/contact-forms.css";
 
 const CAPTCHA_SITE_KEY = import.meta.env.PUBLIC_RECAPTCHA_SITE_ID;
 
-export default function ContactUsForms() {
+interface ContactUsFormsProps {
+  locale?: SupportedLocale;
+}
+
+export default function ContactUsForms({ locale = 'en-US' }: ContactUsFormsProps) {
+  const text = getMessages(locale).contact;
   const forms = (
     <>
       <section className="demo-band" aria-labelledby="request-demo">
         <div className="demo-band__inner">
           <div className="demo-band__intro">
             <p className="demo-band__eyebrow" data-phaeno-search-ignore>
-              For research teams
+              {text.demo.audience}
             </p>
             <h2
               id="request-demo"
-              data-phaeno-search="Request a PSeq demo"
-              data-phaeno-search-summary="Request a PSeq demo to walk through isoform-resolved RNA data with the Phaeno team."
+              data-phaeno-search={text.demo.searchTitle}
+              data-phaeno-search-summary={text.demo.searchSummary}
               data-phaeno-search-keywords="PSeq demo request isoform-resolved RNA data sample project"
-            >See PSeq in Action</h2>
+            >{text.demo.title}</h2>
             <p>
-              Bring us your sample, biological question, or current workflow. We will show you where full-length RNA
-              resolution changes what you can see.
+              {text.demo.introduction}
             </p>
-            <ul className="demo-band__expectations" aria-label="What to expect">
-              <li>Discuss your sample and study goals</li>
-              <li>Explore isoform-resolved PSeq output</li>
-              <li>Hear from a Phaeno scientist in 1–3 business days</li>
+            <ul className="demo-band__expectations" aria-label={text.demo.expectationsLabel}>
+              {text.demo.expectations.map((expectation) => <li key={expectation}>{expectation}</li>)}
             </ul>
           </div>
           <div className="demo-band__form">
-            <OrderForm />
+            <OrderForm locale={locale} />
           </div>
         </div>
       </section>
@@ -41,20 +46,19 @@ export default function ContactUsForms() {
         <div className="updates-band__inner">
           <div className="updates-band__copy">
             <p className="updates-band__eyebrow" data-phaeno-search-ignore>
-              Not ready for a demo?
+              {text.updates.eyebrow}
             </p>
             <h2
               id="sign-up"
-              data-phaeno-search="Get Phaeno updates and the PSeq technical brief"
-              data-phaeno-search-summary="Sign up for Phaeno product releases, validation updates, technical insights, and the PSeq technical brief."
+              data-phaeno-search={text.updates.searchTitle}
+              data-phaeno-search-summary={text.updates.searchSummary}
               data-phaeno-search-keywords="Phaeno updates PSeq technical brief validation updates product releases"
-            >Stay Updated on Phaeno</h2>
+            >{text.updates.title}</h2>
             <p>
-              Follow product releases, validation updates, and technical insights. You can also request the PSeq
-              Technical Brief.
+              {text.updates.introduction}
             </p>
           </div>
-          <ContactForm />
+          <ContactForm locale={locale} />
         </div>
       </section>
     </>

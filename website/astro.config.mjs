@@ -7,9 +7,13 @@ import sitemap from '@astrojs/sitemap';
 import { unified } from '@astrojs/markdown-remark';
 import rehypePhaenoHeadingSearch from './src/lib/rehypePhaenoHeadingSearch.js';
 import { llmsTxt } from './src/integrations/llmsTxt';
+import { localizedSitemap } from './src/integrations/localizedSitemap';
 
 const isWebsiteReviewMode =
   process.env.PUBLIC_SITE_REVIEW_MODE?.trim().toLowerCase() === 'true';
+const arabicMode = process.env.PUBLIC_I18N_ARABIC_MODE?.trim().toLowerCase() ?? 'off';
+const isArabicEnabled =
+  arabicMode === 'published' || (arabicMode === 'preview' && isWebsiteReviewMode);
 const reviewSiteUrl =
   process.env.WEBSITE_PREVIEW_SITE_URL?.trim().replace(/\/+$/, '');
 const reviewDeploymentHost =
@@ -44,6 +48,7 @@ export default defineConfig({
     mdx(),
     react(),
     sitemap(),
+    localizedSitemap({ enabled: isArabicEnabled }),
     ...(isWebsiteReviewMode ? [] : [llmsTxt()]),
     (await import('astro-compress')).default({
       CSS: false,

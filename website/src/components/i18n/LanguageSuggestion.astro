@@ -1,0 +1,122 @@
+---
+import { getMessages } from '@/i18n/messages'
+
+interface Props {
+  alternatePath: string
+}
+
+const { alternatePath } = Astro.props as Props
+const message = getMessages('en-US').language
+---
+
+<aside
+  class="language-suggestion"
+  data-language-suggestion
+  aria-labelledby="language-suggestion-title"
+  hidden
+>
+  <div>
+    <strong id="language-suggestion-title">{message.suggestionTitle}</strong>
+    <p>{message.suggestionBody}</p>
+  </div>
+  <div class="language-suggestion__actions">
+    <a href={alternatePath} data-language-suggestion-accept>{message.accept}</a>
+    <button type="button" data-language-suggestion-dismiss>{message.dismiss}</button>
+  </div>
+</aside>
+
+<script>
+  const readCookie = (name: string) => {
+    const prefix = `${name}=`
+    const value = document.cookie.split(';').map((part) => part.trim()).find((part) => part.startsWith(prefix))
+    return value ? decodeURIComponent(value.slice(prefix.length)) : undefined
+  }
+
+  const suggestion = document.querySelector<HTMLElement>('[data-language-suggestion]')
+  if (suggestion) {
+    const secure = window.location.protocol === 'https:' ? '; Secure' : ''
+    const preferredLocale = readCookie('phaeno_locale')
+    const promptState = readCookie('phaeno_locale_prompt')
+    const browserPrefersArabic = navigator.languages.some((language) => language.toLowerCase() === 'ar' || language.toLowerCase().startsWith('ar-'))
+    const shouldSuggest = promptState !== 'dismissed' && (preferredLocale === 'ar' || (!preferredLocale && browserPrefersArabic))
+
+    if (shouldSuggest) suggestion.hidden = false
+
+    suggestion.querySelector('[data-language-suggestion-accept]')?.addEventListener('click', () => {
+      document.cookie = `phaeno_locale=ar; Path=/; Max-Age=31536000; SameSite=Lax${secure}`
+      document.cookie = `phaeno_locale_prompt=; Path=/; Max-Age=0; SameSite=Lax${secure}`
+    })
+
+    suggestion.querySelector('[data-language-suggestion-dismiss]')?.addEventListener('click', () => {
+      document.cookie = `phaeno_locale=en-US; Path=/; Max-Age=31536000; SameSite=Lax${secure}`
+      document.cookie = `phaeno_locale_prompt=dismissed; Path=/; Max-Age=15552000; SameSite=Lax${secure}`
+      suggestion.hidden = true
+    })
+  }
+</script>
+
+<style>
+.language-suggestion {
+  position: fixed;
+  inset-block-start: calc(var(--header-height) + var(--space-3));
+  inset-inline-end: var(--page-gutter);
+  z-index: 45;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: var(--space-5);
+  align-items: center;
+  width: min(34rem, calc(100vw - (2 * var(--page-gutter))));
+  padding: var(--space-4);
+  border: 1px solid var(--phaeno-green-300);
+  border-radius: var(--radius-xl);
+  color: var(--color-text);
+  background: rgb(255 255 255 / .98);
+  box-shadow: var(--shadow-overlay);
+}
+
+.language-suggestion[hidden] {
+  display: none;
+}
+
+.language-suggestion p {
+  margin: var(--space-1) 0 0;
+  color: var(--color-text-muted);
+  font-size: var(--font-size-sm);
+}
+
+.language-suggestion__actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+}
+
+.language-suggestion__actions a,
+.language-suggestion__actions button {
+  min-height: 2.5rem;
+  padding: .65rem .85rem;
+  border: 1px solid var(--color-action-primary);
+  border-radius: var(--radius-pill);
+  font: inherit;
+  font-size: var(--font-size-xs);
+  font-weight: var(--font-weight-semibold);
+  cursor: pointer;
+}
+
+.language-suggestion__actions a {
+  color: var(--color-text-on-dark);
+  background: var(--color-action-primary);
+  text-decoration: none;
+}
+
+.language-suggestion__actions button {
+  color: var(--color-text);
+  background: var(--color-surface);
+}
+
+@media (max-width: 640px) {
+  .language-suggestion {
+    inset-block-start: 4.5rem;
+    grid-template-columns: 1fr;
+  }
+}
+</style>

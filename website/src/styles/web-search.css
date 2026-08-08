@@ -5,8 +5,7 @@
   align-items: center;
   justify-content: center;
   background: var(--color-surface);
-  margin-left: 0.25rem;
-  margin-right: 0.25rem;
+  margin-inline: 0.25rem;
   padding: 0.625rem;
   color: var(--menu-color);
   border: 1px solid var(--phaeno-green-200);
@@ -259,7 +258,7 @@ button.web-search-close-btn:active:not(:disabled) {
 .web-search-group-name {
   min-width: 0;
   overflow: hidden;
-  text-align: left;
+  text-align: start;
   text-overflow: ellipsis;
 }
 
@@ -293,7 +292,7 @@ li.web-search-item:focus-within {
 a.web-search-link {
   background: #fff;
   border: 1px solid transparent;
-  border-left: 3px solid transparent;
+  border-inline-start: 3px solid transparent;
   display: block;
   border-radius: 4px;
   max-width: 100%;
@@ -401,7 +400,7 @@ li.web-search-item:hover {
 
 li.web-search-item:hover a.web-search-link {
   border-color: var(--phaeno-green-200);
-  border-left-color: var(--color-brand);
+  border-inline-start-color: var(--color-brand);
   box-shadow: 0 4px 12px rgb(15 23 42 / 0.06);
 }
 
@@ -411,7 +410,7 @@ li.web-search-item-active {
 
 li.web-search-item-active a.web-search-link {
   border-color: var(--phaeno-green-200);
-  border-left-color: var(--color-brand);
+  border-inline-start-color: var(--color-brand);
   box-shadow: 0 4px 12px rgb(15 23 42 / 0.06);
 }
 

@@ -8,6 +8,8 @@ public sealed class IndexedPage
 
     public string Url { get; set; } = string.Empty;
 
+    public string Locale { get; set; } = WebsiteLocale.Default;
+
     public string PageTitle { get; set; } = string.Empty;
 
     public string PageDisplayTitle { get; set; } = string.Empty;

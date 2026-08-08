@@ -23,7 +23,8 @@ public sealed class WebsitePreviewSearchController(
     [ProducesResponseType(StatusCodes.Status401Unauthorized)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
     public IActionResult Search(
-        [FromQuery, MinLength(3), MaxLength(200)] string search)
+        [FromQuery, MinLength(3), MaxLength(200)] string search,
+        [FromQuery] string locale = WebsiteLocale.Default)
     {
         var previewOptions = options.Value;
         if (!previewOptions.Enabled || !searchService.IsEnabled)
@@ -37,7 +38,7 @@ public sealed class WebsitePreviewSearchController(
             return Unauthorized();
         }
 
-        return Ok(searchService.Search(search));
+        return Ok(searchService.Search(search, WebsiteLocale.Normalize(locale)));
     }
 
     internal static bool IsValidProxyApiKey(string expected, string provided)

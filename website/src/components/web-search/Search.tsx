@@ -4,6 +4,8 @@ import { FaMagnifyingGlass, FaX } from 'react-icons/fa6'
 import SearchItem from './SearchItem'
 import { hasVisibleSearchMatch } from './searchText'
 import { isWebsiteReviewMode } from '@/lib/reviewMode'
+import { formatMessage, getMessages, getSearchResultsFound } from '@/i18n/messages'
+import type { SupportedLocale } from '@/i18n/locales'
 
 export interface ISearchResult {
   id: string
@@ -27,7 +29,12 @@ type ApiEnvelope<T> = {
   meta: unknown
 }
 
-export default function Search() {
+interface SearchProps {
+  locale?: SupportedLocale
+}
+
+export default function Search({ locale = 'en-US' }: SearchProps) {
+  const text = getMessages(locale).search
   const BASE_URL = import.meta.env.PUBLIC_API_BASE_URL
   const searchEndpoint = isWebsiteReviewMode
     ? '/api/team-preview/search'
@@ -258,7 +265,7 @@ export default function Search() {
     const fetchResults = async () => {
       try {
         const res = await fetch(
-          `${searchEndpoint}?search=${encodeURIComponent(debouncedSearch)}`,
+          `${searchEndpoint}?search=${encodeURIComponent(debouncedSearch)}&locale=${encodeURIComponent(locale)}`,
           {
             method: 'GET',
             signal: controller.signal,
@@ -266,13 +273,12 @@ export default function Search() {
         )
 
         if (!res.ok) {
-          let message = `Request failed (${res.status}).`
+          let message = formatMessage(text.requestFailed, { status: res.status })
           try {
             const detail = await res.json()
             if ((detail as any)?.message) message = (detail as any).message
           } catch {}
-          if (res.status === 500)
-            message = 'Whoops – something went wrong on our side. Please try again.'
+          if (res.status === 500) message = text.serverError
           throw new Error(message)
         }
 
@@ -291,7 +297,7 @@ export default function Search() {
           : []
 
         setSearchList(list)
-        setAriaMessage(`${list.length} search result${list.length !== 1 ? 's' : ''} found.`)
+        setAriaMessage(getSearchResultsFound(locale, list.length))
         resultRefs.current = new Array(list.length).fill(null)
       } catch (err) {
         if (err instanceof DOMException && err.name === 'AbortError') return
@@ -301,7 +307,7 @@ export default function Search() {
 
     fetchResults()
     return () => controller.abort()
-  }, [debouncedSearch, searchEndpoint])
+  }, [debouncedSearch, locale, searchEndpoint, text.requestFailed, text.serverError])
 
   return (
     <>
@@ -309,8 +315,8 @@ export default function Search() {
         ref={triggerRef}
         aria-expanded={open}
         aria-controls="search-modal"
-        aria-label="Open site search"
-        title="Search website"
+        aria-label={text.open}
+        title={text.title}
         onClick={toggleSearch}
         className="web-search-button"
       >
@@ -330,14 +336,14 @@ export default function Search() {
         >
           <div className="web-search-panel">
             <h2 id="search-title" className="sr-only">
-              Search site
+              {text.title}
             </h2>
 
             <div className="flex justify-between items-center px-3 py-2 border-b border-gray-300">
               <div className="flex items-center gap-1 w-full">
                 <FaMagnifyingGlass />
                 <label htmlFor="site-search" className="sr-only">
-                  Search
+                  {text.label}
                 </label>
                 <input
                   id="site-search"
@@ -350,7 +356,7 @@ export default function Search() {
                   aria-haspopup="listbox"
                   aria-describedby="search-status"
                   className="web-search-input"
-                  placeholder="Start typing to search..."
+                  placeholder={text.placeholder}
                   value={searchStr}
                   onChange={(e) => setSearchStr(e.target.value)}
                   onFocus={() => setActiveIndex(-1)}
@@ -369,8 +375,8 @@ export default function Search() {
 
               <button
                 type="button"
-                aria-label="Close search"
-                title="Close search"
+                aria-label={text.close}
+                title={text.close}
                 onClick={toggleSearch}
                 className="web-search-close-btn"
                 onFocus={() => setActiveIndex(-1)}
@@ -402,7 +408,7 @@ export default function Search() {
                 {ariaMessage}
               </div>
               <div id="search-results-title" className="sr-only">
-                Search results
+                {text.resultsHeading}
               </div>
 
               <ul
@@ -440,6 +446,7 @@ export default function Search() {
               >
                 {searchList.map((item, index) => (
                   <SearchItem
+                    locale={locale}
                     key={item.id}
                     list={searchList}
                     index={index}
@@ -458,13 +465,13 @@ export default function Search() {
 
               {!searchList.length && (
                 <div className="text-center p-5 text-gray-700">
-                  {searchStr.length === 0 && <span>Nothing here yet. Let’s find something!</span>}
+                  {searchStr.length === 0 && <span>{text.empty}</span>}
                   {searchStr.length > 0 && searchStr.length < 3 && (
-                    <span>Keep typing... we’ll match full words after 3 characters.</span>
+                    <span>{text.keepTyping}</span>
                   )}
                   {searchStr.length >= 3 && (
                     <span>
-                      No exact word matches found. Try typing the full name or word, or try a different term.
+                      {text.noMatches}
                     </span>
                   )}
                 </div>

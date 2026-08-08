@@ -1,42 +1,26 @@
 ---
 import type { IMenuItem } from "./menu-versions/IMenuItem";
+import { getMessages } from '@/i18n/messages'
+import type { SupportedLocale } from '@/i18n/locales'
 
 interface IProps {
   menuItems: IMenuItem[]
   currentPath: string
+  locale?: SupportedLocale
 }
 
-const { menuItems, currentPath } = Astro.props as IProps;
-const path = currentPath.endsWith("/") ? currentPath.slice(0, -1) : currentPath;
-const rootParts = path.split('/').filter(item => item !== '');
-const rootPath = path.substring(0, path.lastIndexOf("/"));
-const subRootPath = rootPath.substring(0, rootPath.lastIndexOf("/"));
-
-let parentPath = ''
-let subPath = ''
-switch (rootParts.length) {
-  case 0:
-    parentPath = '/';
-    break;
-  case 1:
-    parentPath = path;
-    break;
-  case 2:
-    parentPath = rootPath;
-    subPath = path;
-    break;
-  case 3:
-    parentPath = subRootPath;
-    subPath = rootPath;
-    break;
-  default:
-    break;
-}
+const { menuItems, currentPath, locale = 'en-US' } = Astro.props as IProps;
+const pageMessages = getMessages(locale)
+const trimmedPath = currentPath.endsWith("/") ? currentPath.slice(0, -1) : currentPath;
+const path = trimmedPath || '/'
+const matchesPath = (candidate: string) => path === candidate || path.startsWith(`${candidate}/`)
+const isParentActive = (item: IMenuItem) =>
+  matchesPath(item.path) || Boolean(item.submenu?.some((sub) => matchesPath(sub.path)))
 ---
 
 <nav 
   id="nav" 
-  aria-label="Main navigation"
+  aria-label={pageMessages.mainNavigation}
 >
   <ul
     id="main-menu" 
@@ -44,7 +28,7 @@ switch (rootParts.length) {
     class="main-menu" 
     hidden
     aria-orientation="horizontal"
-    aria-label="Main menu"
+    aria-label={pageMessages.mainMenu}
   >
     {menuItems.map(item => (
       <li
@@ -60,7 +44,7 @@ switch (rootParts.length) {
             id={`parent-${item.path.replace(/\W+/g, '-')}`}
             role="menuitem"
             data-toggle="sub-menu"
-            class={parentPath === item.path ? 'active-parent' : ''}
+            class={isParentActive(item) ? 'active-parent' : ''}
             aria-haspopup="true"
             aria-expanded="false"
           >
@@ -70,8 +54,8 @@ switch (rootParts.length) {
           <a
             href={item.path}
             role="menuitem"
-            class={parentPath === item.path ? 'active' : ''}
-            aria-current={parentPath === item.path ? 'page' : undefined}
+            class={path === item.path ? 'active' : ''}
+            aria-current={path === item.path ? 'page' : undefined}
           >
             <span class="main-menu-label">{item.label}</span>
           </a>
@@ -88,8 +72,8 @@ switch (rootParts.length) {
                 <a
                   href={sub.path ?? '#'}
                   role="menuitem"
-                  class={subPath === sub.path ? ((rootParts.length === 2) ? 'active' : 'active-parent') : ''}
-                  aria-current={subPath === sub.path && rootParts.length === 2 ? 'page' : undefined}
+                  class={path === sub.path ? 'active' : (matchesPath(sub.path) ? 'active-parent' : '')}
+                  aria-current={path === sub.path ? 'page' : undefined}
                   tabindex={-1}
                 >
                   <span class="sub-menu-label">{sub.label}</span>
@@ -192,8 +176,8 @@ switch (rootParts.length) {
   content: '▸';
   font-size: 1rem;
   line-height: 1;
-  margin-left: 0.5rem; /* optional, adjust spacing from label */
-  margin-right: 0;     /* optional, can be omitted */
+  margin-inline-start: 0.5rem;
+  margin-inline-end: 0;
   flex-shrink: 0;      /* prevents squishing on narrow viewports */
   transition: transform var(--duration-fast) var(--ease-standard);
 }
@@ -204,11 +188,19 @@ switch (rootParts.length) {
   transform: rotate(90deg); 
 }
 
+:global(html[dir='rtl']) .main-menu-parent > a > .main-menu-label::after {
+  content: '◂';
+}
+
+:global(html[dir='rtl']) .menu-item.main-menu-parent.open > a > .main-menu-label::after {
+  transform: rotate(-90deg);
+}
+
 /* --- Sub-Menu Settings --- */
 .sub-menu {
   position: absolute;
   top: calc(100%);
-  left: 0;
+  inset-inline-start: 0;
   background: rgb(255 255 255 / 0.98);
   color: var(--submenu-color);
   border: 1px solid var(--phaeno-green-200);
@@ -307,11 +299,16 @@ switch (rootParts.length) {
     transition-delay: 0ms;
   }
 
+  :global(html[dir='rtl']) .menu-item.main-menu-parent:hover > a > .main-menu-label::after,
+  :global(html[dir='rtl']) .menu-item.main-menu-parent.open > a > .main-menu-label::after {
+    transform: rotate(-90deg);
+  }
+
   .main-menu {
     display: block;
     position: absolute;
     top: calc(100% + 1.68rem);
-    right: 0;
+    inset-inline-end: 0;
     background: rgb(255 255 255 / 0.99);
     border: 1px solid var(--phaeno-green-200);
     border-radius: var(--radius-xl);

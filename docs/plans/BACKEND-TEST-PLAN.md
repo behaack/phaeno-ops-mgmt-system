@@ -32,7 +32,10 @@ and rollback-isolated PostgreSQL coverage.
   visible-before-PDF snippet selection, source-aware ranking, and exclusion of
   index-only text from the public Website response; Preview/production Lucene
   index isolation, rejection of a shared index path, and preview-proxy key
-  comparison.
+  comparison; locale-isolated English/Arabic indexing, Arabic diacritic
+  normalization, regional Arabic locale normalization, and unchanged
+  English-default queries. The locale-focused additions are created but have
+  not yet been executed.
 - [x] `backend/test/WebsiteDocumentTextExtractorTests.cs` - deterministic
   two-page PDF reading order, extracted-character limits, and malformed-PDF
   failure classification for the PdfPig implementation.
@@ -46,7 +49,9 @@ and rollback-isolated PostgreSQL coverage.
   biomarker names and evidence attributions without leaking into the next
   section; unanchored nested headings remain part of their indexed parent
   section; section records retain the page's published document type for result
-  labeling and icons.
+  labeling and icons. Added locale coverage verifies `<html lang="ar">`
+  propagation and prevents an Arabic landing record from indexing its linked
+  English PDF; these additions have not yet been executed.
 - [x] `backend/test/PhaenoPortalMetadataTests.cs` - `HealthMetadataIdentifiesTheApi`.
 - [x] `backend/test/PersistenceTests.cs` -
   `PSeqOperationsDbContextMapsEveryEntityToItsOwningSchema`.

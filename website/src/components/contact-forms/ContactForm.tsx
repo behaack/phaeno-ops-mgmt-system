@@ -5,31 +5,40 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { useGoogleReCaptcha } from "react-google-recaptcha-v3";
 import Spinner from "../Spinner";
 import { isWebsiteReviewMode } from "@/lib/reviewMode";
+import { formatMessage, getMessages } from "@/i18n/messages";
+import type { ContactValidationMessages } from "@/i18n/catalogs/types";
+import type { SupportedLocale } from "@/i18n/locales";
 
 const BASE_URL = import.meta.env.PUBLIC_API_BASE_URL;
 
-const schema = z.object({
+function createContactSchema(validation: ContactValidationMessages) {
+  return z.object({
   firstname: z
     .string()
-    .nonempty("Please enter your first name.")
-    .max(60, "Length may not exceed 60 characters."),
+    .nonempty(validation.firstNameRequired)
+    .max(60, validation.maximum60),
   lastname: z
     .string()
-    .nonempty("Please enter your last name.")
-    .max(60, "Length may not exceed 60 characters."),
+    .nonempty(validation.lastNameRequired)
+    .max(60, validation.maximum60),
   organizationname: z
     .string()
-    .nonempty("Please enter your organization.")
-    .max(250, "Length may not exceed 250 characters."),
+    .nonempty(validation.organizationRequired)
+    .max(250, validation.maximum250),
   email: z
     .string()
-    .nonempty("Please enter your email.")
-    .email("Please enter a valid email address.")
-    .max(256, "Length may not exceed 256 characters."),
+    .nonempty(validation.emailRequired)
+    .email(validation.emailInvalid)
+    .max(256, validation.maximum256),
   sendBrochure: z.boolean(),
-});
+  });
+}
 
-export type FormValues = z.infer<typeof schema>;
+export type FormValues = z.infer<ReturnType<typeof createContactSchema>>;
+
+interface ContactFormProps {
+  locale?: SupportedLocale;
+}
 
 /**
  * ContactForm (Updates signup)
@@ -39,7 +48,9 @@ export type FormValues = z.infer<typeof schema>;
  * - Nicer success/error callout
  * - Small helper text for trust
  */
-export function ContactForm() {
+export function ContactForm({ locale = 'en-US' }: ContactFormProps) {
+  const text = getMessages(locale).contact;
+  const schema = createContactSchema(text.validation);
   const formId = useId();
 
   const {
@@ -61,13 +72,13 @@ export function ContactForm() {
     setMessage("");
 
     if (isWebsiteReviewMode) {
-      setMessage("Submissions are disabled in this team preview.");
+      setMessage(text.previewDisabled);
       setIsSuccess(false);
       return;
     }
 
     if (!executeRecaptcha) {
-      setMessage("reCAPTCHA is not loaded. Please try again.");
+      setMessage(text.recaptchaUnavailable);
       setIsSuccess(false);
       return;
     }
@@ -76,7 +87,7 @@ export function ContactForm() {
     try {
       token = await executeRecaptcha("contact_form_submit");
     } catch {
-      setMessage("Failed to get reCAPTCHA token. Please try again.");
+      setMessage(text.recaptchaTokenFailed);
       setIsSuccess(false);
       return;
     }
@@ -93,7 +104,7 @@ export function ContactForm() {
       });
 
       if (!res.ok) {
-        let errorText = `Request failed (${res.status}).`;
+        let errorText = formatMessage(text.requestFailed, { status: res.status });
         try {
           const detail = await res.json();
           if (detail?.message) errorText = detail.message;
@@ -103,37 +114,31 @@ export function ContactForm() {
 
         switch (res.status) {
           case 400:
-            errorText = "Thanks — we already have this email on file.";
+            errorText = text.duplicateEmail;
             break;
           case 403:
-            errorText =
-              "The reCAPTCHA verification failed. Please refresh and try again.";
+            errorText = text.recaptchaFailed;
             break;
           case 500:
-            errorText =
-              "Whoops — something went wrong on our side. Please try again.";
+            errorText = text.serverError;
             break;
         }
         reset();
         throw new Error(errorText);
       }
 
-      let message = "";
-      if (data.sendBrochure) {
-        message = "Thank you! We have added you to our email list and sent you a link to the PSeq Technical Brief. You may unsubscribe at any time.";
-      } else {
-        message = "Thank you! We have added you to our email list. You may unsubscribe at any time.";
-      }
+      const message = data.sendBrochure
+        ? text.updates.successWithBrochure
+        : text.updates.success;
       setMessage(message);
       setIsSuccess(true);
       reset();
     } catch (err: unknown) {
-      let friendlyMessage = "Unexpected error — please try again.";
+      let friendlyMessage = text.unexpectedError;
 
       if (err instanceof Error) {
         if (err.message === "Failed to fetch") {
-          friendlyMessage =
-            "Server is currently unreachable. Do you have a network connection?";
+          friendlyMessage = text.networkError;
         } else {
           friendlyMessage = err.message;
         }
@@ -157,14 +162,14 @@ export function ContactForm() {
         <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
           {isWebsiteReviewMode && (
             <p className="rounded-xl border border-amber-300 bg-amber-50 px-4 py-3 text-sm font-medium text-amber-950">
-              Submissions are disabled in this team preview.
+              {text.previewDisabled}
             </p>
           )}
           {/* NAME ROW */}
           <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
             <div>
               <label htmlFor={`${formId}-firstname`} className={labelBase}>
-                First Name
+                {text.firstName}
               </label>
               <input
                 id={`${formId}-firstname`}
@@ -181,7 +186,7 @@ export function ContactForm() {
 
             <div>
               <label htmlFor={`${formId}-lastname`} className={labelBase}>
-                Last Name
+                {text.lastName}
               </label>
               <input
                 id={`${formId}-lastname`}
@@ -200,7 +205,7 @@ export function ContactForm() {
           {/* ORG */}
           <div>
             <label htmlFor={`${formId}-organization`} className={labelBase}>
-              Organization
+              {text.organization}
             </label>
             <input
               id={`${formId}-organization`}
@@ -218,7 +223,7 @@ export function ContactForm() {
           {/* EMAIL */}
           <div>
             <label htmlFor={`${formId}-email`} className={labelBase}>
-              Email
+              {text.email}
             </label>
             <input
               id={`${formId}-email`}
@@ -226,7 +231,7 @@ export function ContactForm() {
               inputMode="email"
               autoComplete="email"
               className={inputBase}
-              placeholder="name@company.com"
+              placeholder={text.emailPlaceholder}
               {...register("email")}
             />
             {errors.email && (
@@ -245,7 +250,7 @@ export function ContactForm() {
                 type="checkbox"
                 {...register("sendBrochure")}
               />
-              <span>Please email me the PSeq Technical Brief</span>
+              <span>{text.updates.brochureOptIn}</span>
             </label>
           </div>
 
@@ -267,7 +272,7 @@ export function ContactForm() {
 
           <div className="contact-form-actions flex items-center justify-between gap-4 pt-2">
             <p className="text-xs text-slate-700">
-              We’ll never share your email.
+              {text.updates.privacyNote}
             </p>
 
             <button
@@ -280,7 +285,7 @@ export function ContactForm() {
                 "disabled:cursor-not-allowed disabled:opacity-60",
               ].join(" ")}
             >
-              {isSubmitting ? <Spinner size={21} /> : "Get Updates"}
+              {isSubmitting ? <Spinner size={21} /> : text.updates.submit}
             </button>
           </div>
         </form>

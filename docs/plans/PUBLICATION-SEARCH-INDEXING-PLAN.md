@@ -235,6 +235,8 @@ article metadata component without changing blog behavior, to emit:
 - `phaeno:search-mode` set to `document`;
 - an absolute `phaeno:search-source` URL for the derived PDF;
 - `phaeno:search-source-type` set to `application/pdf`;
+- `phaeno:search-source-language` set to the actual PDF language so a localized
+  landing page never indexes a source document in another language;
 - publication page count and version metadata when present; and
 - one `Article` JSON-LD object with `headline`, `description`, `datePublished`,
   optional `dateModified`, representative image, Phaeno as publisher,
@@ -242,6 +244,12 @@ article metadata component without changing blog behavior, to emit:
 
 Structured data must describe visible content truthfully. It must not contain a
 full `articleBody` when the full text is available only in the PDF.
+
+Localized landing pages and assets are independently versioned. The initial
+Arabic review pages link to the existing English PDFs with an explicit
+English-language download label; reciprocal `hreflang` applies only to the HTML
+landing pages. The crawler skips PDF source enrichment when the declared asset
+language differs from the landing-page locale.
 
 Google's supported Article properties include publication and modification
 dates, headline, and representative images:

@@ -100,13 +100,20 @@ second EF Core context.
 The existing paths and request shapes remain stable:
 
 - `GET /api/v1/web-ops/database-ping`
-- `GET /api/v1/web-ops/search-pages?search=...`
+- `GET /api/v1/web-ops/search-pages?search=...&locale=...` (`locale` is optional and defaults to `en-US`)
 - `POST /api/v1/web-ops/contact`
 - `POST /api/v1/web-ops/order`
 - `GET /public/...`
 
 Search responses continue to use the standard API envelope. Successful
 database-ping, contact, and order requests return `204 No Content`.
+
+Website search records now carry an additive locale. The crawler derives it
+from the document's `lang` attribute, Lucene filters each query to one locale,
+and the optional API parameter normalizes Arabic regional tags to `ar` while an
+omitted or unsupported value preserves the existing `en-US` behavior. Arabic
+tokens use Unicode letter boundaries and Arabic normalization without being
+forced through the English stemmer.
 
 Website search may use the HTML page title, hidden result title, summary, and
 search keywords to find and rank candidate sections, but ordinary pages return

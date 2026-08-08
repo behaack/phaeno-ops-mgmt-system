@@ -77,7 +77,7 @@ export async function generateLlmsTxt(outputDirectory: URL) {
       [...sitemapUrls].map((location) => readPublicPage(outputPath, new URL(location))),
     )
   )
-    .filter((page): page is PublicPage => page !== null)
+    .filter((page): page is PublicPage => page !== null && !page.url.pathname.startsWith('/ar'))
     .sort((left, right) => left.url.pathname.localeCompare(right.url.pathname, 'en-US'))
 
   const homePage = pages.find((page) => page.url.pathname === '/')

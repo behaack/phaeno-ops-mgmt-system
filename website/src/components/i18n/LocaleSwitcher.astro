@@ -1,0 +1,74 @@
+---
+import { getMessages } from '@/i18n/messages'
+import { getAlternateLocale, locales, type SupportedLocale } from '@/i18n/locales'
+
+interface Props {
+  locale: SupportedLocale
+  alternatePath: string
+}
+
+const { locale, alternatePath } = Astro.props as Props
+const targetLocale = getAlternateLocale(locale)
+const message = getMessages(locale).language
+const target = locales[targetLocale]
+---
+
+<a
+  class="locale-switcher"
+  href={alternatePath}
+  lang={targetLocale}
+  dir={target.direction}
+  hreflang={targetLocale}
+  data-locale-choice={targetLocale}
+  aria-label={`${message.selectorLabel}: ${target.administrativeName}`}
+>
+  <span aria-hidden="true">文</span>
+  <span>{target.nativeName}</span>
+</a>
+
+<script>
+  document.querySelectorAll<HTMLAnchorElement>('[data-locale-choice]').forEach((link) => {
+    link.addEventListener('click', () => {
+      const locale = link.dataset.localeChoice
+      if (!locale) return
+      const secure = window.location.protocol === 'https:' ? '; Secure' : ''
+      document.cookie = `phaeno_locale=${encodeURIComponent(locale)}; Path=/; Max-Age=31536000; SameSite=Lax${secure}`
+      document.cookie = `phaeno_locale_prompt=; Path=/; Max-Age=0; SameSite=Lax${secure}`
+    })
+  })
+</script>
+
+<style>
+.locale-switcher {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+  min-height: 2.75rem;
+  padding: .55rem .8rem;
+  border: 1px solid var(--phaeno-green-200);
+  border-radius: var(--radius-pill);
+  color: var(--color-text);
+  background: rgb(255 255 255 / .7);
+  font-size: var(--font-size-xs);
+  font-weight: var(--font-weight-semibold);
+  line-height: 1;
+  text-decoration: none;
+  white-space: nowrap;
+}
+
+.locale-switcher:hover {
+  color: var(--color-brand-strong);
+  background: var(--phaeno-green-50);
+}
+
+.locale-switcher:focus-visible {
+  outline: 2px solid var(--color-focus);
+  outline-offset: 2px;
+}
+
+@media (max-width: 1120px) {
+  .locale-switcher span:last-child {
+    display: none;
+  }
+}
+</style>

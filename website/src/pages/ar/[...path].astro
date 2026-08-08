@@ -1,0 +1,19 @@
+---
+import ArabicPage from '@/components/i18n/ArabicPage.astro'
+import { arabicPages } from '@/i18n/arabicPages'
+import { isArabicEnabled } from '@/i18n/locales'
+import { getStaticArabicRoutePath } from '@/i18n/routes'
+
+export function getStaticPaths() {
+  if (!isArabicEnabled) return []
+
+  return arabicPages.map((page) => ({
+    params: { path: getStaticArabicRoutePath(page.route.ar) },
+    props: { page },
+  }))
+}
+
+const { page } = Astro.props
+---
+
+<ArabicPage page={page} />

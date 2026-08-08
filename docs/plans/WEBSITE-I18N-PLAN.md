@@ -1,13 +1,44 @@
 # Public Website internationalization plan
 
-- Status: proposed; planning only
+- Status: implementation in progress; Arabic review preview implemented locally, production publication blocked on review
 - Owner: Product Owner
 - Technical owner: Codex
 - Last updated: 2026-08-07
 
 ## Authorization boundary
 
-This document does not authorize implementation. It does not authorize a dependency change, Website or backend code change, translation purchase or publication, Vercel configuration change, search reindex, deployment, or test execution. Each implementation phase requires an explicit request and must preserve the no-disruption contract below.
+Implementation was authorized by the Product Owner on 2026-08-07. That authorization covers the additive Website and backend code in this plan without a new dependency. It does not authorize publication of unreviewed translation, translation purchase, Vercel configuration, search reindex, deployment, or production activation. The Arabic implementation remains review-gated and must preserve the no-disruption contract below.
+
+## Current implementation checkpoint
+
+Implemented locally on 2026-08-07:
+
+- the default build remains unprefixed `en-US` and generates no Arabic route, selector, suggestion, or localized sitemap entry;
+- `PUBLIC_I18N_ARABIC_MODE=preview` is accepted only together with `PUBLIC_SITE_REVIEW_MODE=true` and generates the complete 16-pair Arabic review route set;
+- all current public English routes have explicit Arabic equivalents, while the four white-paper families use reviewed-in-place explicit Arabic draft slugs connected by `translationKey`;
+- locale-aware layout, `lang`, `dir`, navigation, footer, search controls, contact/demo forms, validation messages, date formatting, sharing text, and logical CSS support RTL;
+- client-side browser-language detection offers Arabic without redirecting, and explicit accept/dismiss or selector choices use first-party functional cookies;
+- Arabic review HTML has localized metadata, self-canonicals, reciprocal `hreflang`, `x-default`, and sitemap alternates; the review build remains `noindex` and omits `llms.txt`;
+- content schemas now carry additive translation identity/status/revision/reviewer and publication-asset language fields;
+- the Website crawler reads document language, the search API accepts an optional `locale` while defaulting to `en-US`, Lucene partitions records by locale, and Arabic Unicode normalization/search is implemented;
+- an Arabic landing page does not index text from its linked English PDF, and the UI/metadata disclose the asset language; and
+- the normal Website build and Arabic review build succeed, as does an isolated backend Release build. Focused backend tests were added but not executed because the repository requires a separate explicit test request.
+
+Implementation note: the pilot uses one typed route-pair registry and one
+static Arabic catch-all route instead of enabling Astro's framework-level
+redirect/fallback behavior. This keeps the existing route tree and redirects
+inert, supports explicit editorial slugs, and still produces ordinary static
+HTML. Native Astro i18n routing may be reconsidered only if it can be proven
+not to change the established unprefixed Website behavior.
+
+Still required before production publication:
+
+- named Arabic language, scientific, marketing, privacy/legal, and accessibility reviewers;
+- human review and acceptance of every draft string and page, with source revisions and review dates recorded;
+- browser/device, assistive-technology, visual, form, and deployed Preview acceptance;
+- execution of the focused backend tests and an isolated Preview search reindex;
+- production Vercel configuration, deployment, search reindex, and post-deploy SEO/search smoke checks; and
+- changing the Arabic release status from `draft` to `published` only after every gate above passes.
 
 ## Outcome
 
@@ -23,9 +54,14 @@ The Website will eventually support:
 | German | `de` | `/de` | LTR | Standard German |
 | Japanese | `ja` | `/ja` | LTR | Use `ja`, not country code `jp` |
 | Chinese | `zh-Hans` | `/zh-hans` | LTR | Simplified Chinese as the initial proposed Chinese locale |
-| Arabic | `ar` | `/ar` | RTL | Modern Standard Arabic as the initial proposed Arabic locale |
+| Arabic | `ar` | `/ar` | RTL | Modern Standard Arabic; confirmed as the first production translation and pilot locale |
 
 Locale identifiers will use BCP 47 language tags. URL segments will be lowercase and stable. Traditional Chinese (`zh-Hant`) is a distinct future product locale, not an alias of Simplified Chinese.
+
+The Product Owner has selected Modern Standard Arabic (`ar`) as the first
+translation. This intentionally front-loads the most demanding layout and
+language boundary so the first production alternate proves the RTL architecture
+rather than postponing it. `en-GB` remains planned but is no longer the pilot.
 
 ## No-disruption contract
 
@@ -98,7 +134,17 @@ Separate two kinds of translatable material:
 1. Shared user-interface messages: navigation, footer, search, form labels, validation, feedback, accessibility text, and common actions. Store these in typed locale catalogs.
 2. Page and publication content: headings, prose, metadata, calls to action, and editorial content. Keep these in content files or typed page data suited to editorial review.
 
-Use an ICU MessageFormat-compatible catalog implementation when implementation is authorized so pluralization, parameters, and Arabic grammar are modeled rather than assembled from fragments. Adding that implementation is a dependency decision and therefore requires explicit approval at implementation time.
+The implemented catalog boundary is `website/src/i18n/catalogs/`: each locale
+has its own file and must satisfy the shared `WebsiteMessages` contract. Shared
+components retrieve the active catalog with `getMessages(locale)` and must not
+contain language-specific conditionals or parallel translated string literals.
+Editorial Arabic page prose remains in `arabicPages.ts` rather than the shared
+UI catalog.
+
+The dependency-free implementation uses named placeholders and native
+`Intl.PluralRules` behind catalog helpers. An ICU MessageFormat-compatible
+library remains a future option if more complex grammar requires it; adding
+that library remains a dependency decision requiring explicit approval.
 
 Use native `Intl` APIs with an explicit active locale for dates and numbers. Preserve the present `en-US` output in default mode. Product names, Phaeno and PSeq marks, gene symbols, transcript/accession identifiers, units, user-entered data, URLs, and code-like values are not translated unless the content glossary explicitly says otherwise.
 
@@ -108,14 +154,136 @@ Existing content files remain `en-US` source records with their current slugs. E
 
 - `locale`, defaulting current records to `en-US`;
 - a stable `translationKey` shared by all language versions;
-- translation status (`draft`, `review`, or `published`);
+- translation status (`not_started`, `draft`, `review`, `published`, `stale`,
+  or `withdrawn`);
 - source revision or source-content hash;
 - reviewer and review date; and
 - optional PDF/file-language metadata.
 
-Localized content may live beneath locale-specific subdirectories while preserving the source slug. Build-time validation must reject duplicate locale/translation-key pairs and must exclude drafts from production.
+Localized content may live beneath locale-specific subdirectories. Existing
+`en-US` slugs remain unchanged; other locales may define an explicit reviewed
+localized slug. Build-time validation must reject duplicate
+locale/translation-key pairs and must exclude drafts from production.
 
 Fallback to English is allowed in authoring preview, never as unlabeled mixed-language production content. When English source content changes, its translations become stale until reviewed against the new source revision. Stale required content blocks that locale's publication.
+
+### Editorial content language management
+
+Internationalization applies to every editorial/content collection, not only
+fixed Website pages. The same model must cover:
+
+- blog posts;
+- white-paper landing pages and their downloadable files;
+- press/media items;
+- job openings;
+- publication metadata, categories, tags, authorship, and related-content
+  links; and
+- future collection-driven Website content.
+
+Treat one subject or publication as a content family and each language version
+as a separately managed member of that family. A stable `translationKey`
+connects the members; URLs or slugs do not establish translation identity.
+Existing content families begin with `en-US` as their source locale, but the
+model must permit future original content to be authored in another supported
+locale.
+
+Each content-language record needs independently reviewable fields for:
+
+- locale and source locale;
+- localized title, summary/excerpt, body, calls to action, and SEO/social
+  metadata;
+- explicit, stable localized slug;
+- translation status (`not_started`, `draft`, `review`, `published`, `stale`,
+  or `withdrawn`);
+- editorial publication status and publication date;
+- source revision/hash and translated-from revision/hash;
+- translator/reviewer identity and review date;
+- localized categories, tags, image alternative text, captions, and author
+  biography where applicable; and
+- linked asset language, version, checksum, media type, and review status.
+
+The current English slugs must never change. A translated item may use a
+reviewed localized slug, but that slug is stored explicitly and remains stable.
+Language switching and related-content resolution use `translationKey`, not a
+guessed slug. If a published localized slug changes, preserve its redirect
+history.
+
+Content publication and translation publication are separate decisions. A
+source article may be published while one or more translations remain draft or
+stale. A locale's blog, white-paper, media, or jobs listing shows only content
+published for that locale. It must not silently insert English cards into a
+German or Arabic listing. An optional, clearly labelled “Available in English”
+section is a future product choice, not the default fallback.
+
+Not every historical article must be translated before a locale launches.
+Define a required launch corpus per locale, including conversion-critical and
+evergreen content. Items outside that corpus may remain available only at their
+source-language URL. Coverage reports must distinguish:
+
+- complete and current translations;
+- translations awaiting review;
+- stale translations;
+- source-only content; and
+- content deliberately excluded from that locale.
+
+#### Blog and news behavior
+
+- Locale listing and archive pages contain only that locale's published posts.
+- A translated post retains the content family's original publication date and
+  may also record a translation publication/update date. The displayed policy
+  must be consistent within a locale.
+- Author identity is shared; author biography and role text may be localized.
+- Related-post links select a published translation in the active locale. If
+  none exists, omit the link rather than silently switching languages.
+- Categories, tags, pagination labels, empty states, dates, and structured data
+  use the active locale.
+- Locale-specific feeds include only posts published in that locale.
+
+#### White papers and downloadable assets
+
+Manage the landing-page translation separately from the downloadable file:
+
+- A translated landing page may temporarily link to an English PDF only when
+  the download action clearly states the file language, for example “Download
+  PDF (English).”
+- A translated landing page must not imply that an English PDF is translated.
+- A translated PDF is a distinct versioned asset with its own language,
+  checksum, review state, and download metadata.
+- Scientific, legal, regulatory, figure, table, caption, and accessibility
+  content inside a translated PDF requires the same human review gate as the
+  landing page.
+- Updating the source PDF marks dependent translations stale until the
+  translated assets are reviewed against the new source version.
+- `hreflang` connects equivalent HTML landing pages. It must not advertise a
+  translated PDF that does not exist.
+- Download analytics record the requested landing-page locale and actual asset
+  language so English-file fallback remains visible operationally.
+
+#### Editorial workflow
+
+The repository-backed content workflow, and any future CMS, must support this
+sequence:
+
+1. Create or update the source content and assign its content-family
+   `translationKey` and source revision.
+2. Select the locales requested for that content; absence from a locale is an
+   explicit state, not an accidental missing file.
+3. Create translation drafts without publishing routes, feeds, sitemap entries,
+   alternate links, related-content links, or search documents.
+4. Complete language, scientific, marketing, legal/privacy, and asset review as
+   applicable.
+5. Run build-time completeness, revision, slug, asset-language, metadata, and
+   reciprocal-link validation.
+6. Publish each approved language independently.
+7. Mark dependent translations stale automatically when translatable source
+   content or an attached source asset changes.
+8. Support withdrawing one translation without removing the source or other
+   translations, and withdrawing the entire content family when required.
+
+Generate a build-time content-language matrix for reviewers. Production builds
+must fail when a record marked `published` lacks required localized metadata,
+references a missing asset, claims an incorrect asset language, or points to a
+stale source revision.
 
 ### Auto-detection and visitor choice
 
@@ -229,13 +397,18 @@ Do not collect a browser's complete language list as analytics data. Treat the s
 - Capture the current output and behavior manifest.
 - Add explicit acceptance fixtures for held content and current redirects.
 - Define per-locale required-route coverage and translation review owners.
-- Confirm the proposed market variants (`es`, `zh-Hans`, and Modern Standard `ar`).
+- Define the required Arabic route/editorial launch corpus and Arabic review
+  owners. Other locale variants do not block the Arabic foundation.
 
 Exit: the current Website has a reproducible no-disruption baseline, with no runtime change.
 
 ### Phase 1 — inert `en-US` foundation
 
+Implementation status: complete locally.
+
 - Add typed locale configuration, route helpers, catalog interfaces, and default locale context.
+- Keep shared UI copy in per-locale typed catalog files; components consume the
+  catalog and never select translated strings themselves.
 - Make layout, metadata, date formatting, shared chrome, and shared controls accept an explicit locale while continuing to render the current values.
 - Add a build/publication manifest with only `en-US` enabled.
 - Keep the selector and detection prompt absent.
@@ -244,8 +417,12 @@ Exit: generated default output matches the Phase 0 baseline; there are no new pu
 
 ### Phase 2 — preview and content workflow
 
+Implementation status: partial. Review-only Arabic routes and additive content metadata are implemented; the reviewer-owned content matrix, glossary, and stale-source automation remain.
+
 - Add preview-only pseudolocales and hardcoded-string detection.
 - Add translation identity, status, source-revision, and review metadata.
+- Add the content-language matrix and preview workflow for blogs, white papers,
+  media, jobs, and linked assets.
 - Establish glossary and review workflow.
 - Exercise text expansion and RTL without publishing a locale.
 
@@ -253,21 +430,33 @@ Exit: a reviewer can inspect a complete preview locale without it leaking into p
 
 ### Phase 3 — localized search and metadata infrastructure
 
+Implementation status: implemented locally and compile-verified. Focused tests and Preview reindex proof remain pending authorization.
+
 - Implement locale-aware crawl/index/search behavior additively.
 - Add localized metadata, canonical/alternate helpers, sitemap validation, and structured-data validation.
 - Prove English compatibility and isolated locale reindexing.
 
 Exit: `en-US` behavior remains intact and a preview locale is independently searchable.
 
-### Phase 4 — `en-GB` pilot
+### Phase 4 — Modern Standard Arabic pilot and RTL proof
 
-- Translate and review the complete required route set in UK English.
-- Verify same-path switching, SEO alternates, forms, search, accessibility, and analytics.
-- Publish the selector only when `en-GB` is complete.
+Implementation status: draft preview implemented. Human translation/scientific/legal review, browser/accessibility acceptance, and production publication remain open.
 
-Exit: `en-GB` is the first production alternate without changing any existing English-US URL.
+- Translate and review the complete required route set in Modern Standard
+  Arabic.
+- Translate and review the approved Arabic editorial launch corpus and verify
+  locale-scoped listings, feeds, assets, and related-content links.
+- Verify Arabic tokenization/search, same-path switching, SEO alternates, forms,
+  scientific bidirectional text, accessibility, mobile behavior, analytics, and
+  the complete RTL acceptance criteria.
+- Publish the selector only when Arabic is complete.
+
+Exit: `ar` is the first production alternate, the complete RTL capability is
+proven, and no existing English-US URL or behavior has changed.
 
 ### Phase 5 — auto-detection and explicit preference
+
+Implementation status: the client-side suggestion and explicit preference are implemented in Arabic review mode. Browser acceptance remains; middleware is intentionally deferred.
 
 - Add browser-language negotiation and the non-blocking first-visit suggestion.
 - Add explicit preference storage and dismissal behavior.
@@ -278,7 +467,11 @@ Exit: detection helps visitors without forcing navigation or destabilizing cache
 
 ### Phase 6 — one locale at a time
 
-Recommended technical risk order is `es`, `de`, `ja`, `zh-Hans`, then `ar`; commercial priority may change the order. Each locale repeats translation, scientific/legal/marketing review, search, SEO, accessibility, performance, and rollback gates. Arabic launches last in this risk-based order because it validates the complete RTL capability.
+After the Arabic pilot, the recommended order is `en-GB`, `es`, `de`, `ja`,
+then `zh-Hans`; commercial priority may change that order. Each locale repeats
+translation, scientific/legal/marketing review, search, SEO, accessibility,
+performance, and rollback gates. The Arabic-first decision deliberately proves
+the highest-risk directional layout boundary before the simpler LTR locales.
 
 Exit per locale: all launch gates pass independently; a failure does not delay fixes or alter already published locales.
 
@@ -286,6 +479,8 @@ Exit per locale: all launch gates pass independently; a failure does not delay f
 
 - Block or withdraw stale localized routes when required source changes have not been reviewed.
 - Monitor search quality, missing translations, broken alternate sets, conversions, errors, and performance by locale.
+- Monitor editorial translation coverage, stale source revisions, missing
+  locale assets, and source-only content by collection.
 - Establish an emergency disable switch per locale that leaves `en-US` untouched.
 - Review the glossary, translation freshness, legal pages, and locale ownership on a scheduled cadence.
 
@@ -311,6 +506,15 @@ Exit per locale: all launch gates pass independently; a failure does not delay f
 - Required navigation, footer, forms, validation, accessibility text, privacy/data-policy content, metadata, search, and core pages are human-reviewed.
 - No production page contains an accidental mix of fallback UI and localized content.
 - Source revisions invalidate stale translations and build gates enforce their status.
+- Blog, white-paper, media, job, and future collection listings contain only
+  content published for the active locale.
+- Every localized content item resolves through a stable `translationKey`, has
+  complete localized metadata, and accurately declares linked asset language.
+- Updating source prose or a source PDF makes dependent translations visibly
+  stale and prevents accidental republication until review.
+- Withdrawing one translation removes only that locale's routes, feeds, search
+  records, alternates, and related-content links unless the entire content
+  family is withdrawn.
 
 ### SEO and discovery
 
@@ -346,7 +550,7 @@ Exit per locale: all launch gates pass independently; a failure does not delay f
 | --- | --- |
 | Build | Static build succeeds; default-route/output manifest comparison passes; no draft/held/pseudolocale route is generated |
 | Unit | Locale parsing, negotiation precedence, regional mapping, route helpers, catalog completeness, translation freshness, and formatting |
-| Content | Required-route coverage, translation-key uniqueness, source-revision status, glossary and reviewer evidence |
+| Content | Required-route and editorial-corpus coverage, translation-key uniqueness, source-revision status, per-locale listing/feed membership, asset-language accuracy, glossary, and reviewer evidence |
 | Browser | Direct URLs, selector, suggestion/dismissal, stored preference, history/back behavior, no-script behavior, keyboard, mobile, zoom, and RTL |
 | HTTP/cache | Representative `Accept-Language`, cookie, bot, asset, deep-link, and root requests; no loops or cache leakage |
 | SEO/AEO | Canonical, reciprocal `hreflang`, `x-default`, sitemap, Open Graph, JSON-LD, RSS, robots, and unchanged English `llms.txt` |
@@ -357,17 +561,36 @@ Exit per locale: all launch gates pass independently; a failure does not delay f
 
 Implementation verification should be batched at phase checkpoints. Adding Website test or i18n dependencies requires explicit approval because `website/` is an independent package root.
 
-## Product decisions to confirm before Phase 1 implementation
+## Settled product decisions and remaining confirmations
 
-These defaults are recommended so planning can proceed without asking the Product Owner to choose technical mechanics:
+Settled:
+
+- Modern Standard Arabic (`ar`) is the first translation and production pilot.
+- The Arabic pilot must prove complete RTL behavior, not only translated prose.
+- `en-GB` remains supported but will not be the first alternate.
+
+The following defaults remain recommended and may be confirmed without asking
+the Product Owner to choose technical mechanics:
 
 1. Use neutral international Spanish (`es`) until a specific country market justifies `es-ES`, `es-MX`, or another regional variant.
 2. Launch Simplified Chinese (`zh-Hans`) first. Treat Traditional Chinese (`zh-Hant`) as a separate future translation and review commitment.
-3. Use Modern Standard Arabic (`ar`) for shared marketing content; introduce a regional Arabic locale only for a demonstrated market need.
-4. Keep first-party PDFs in their source language until separately translated and reviewed; clearly disclose file language on localized landing pages.
-5. Use `en-GB` as the low-risk first locale, followed by commercial-priority rollout constrained by the per-locale launch gates.
+3. Introduce a regional Arabic locale only for a demonstrated market need;
+   shared Arabic content uses Modern Standard Arabic.
+4. Keep first-party PDFs in their source language until separately translated
+   and reviewed; clearly disclose file language on localized landing pages.
+5. After the Arabic pilot, use `en-GB` as the next low-risk locale unless
+   commercial priority selects another language.
+6. Permit historical blogs and white papers to remain source-language-only
+   unless they are included in a locale's approved launch corpus; never mix
+   them silently into localized listings.
 
-Before implementation, the Product Owner needs to confirm only the market/language scope and translation-review ownership. Astro routing, catalog design, middleware boundaries, search architecture, testing, and deployment mechanics remain engineering decisions.
+The initial Arabic review corpus is every currently public static page plus all
+four current white-paper landing pages. Blog and job listings remain empty in
+Arabic because no source items are currently public. Translation-review
+ownership still must be assigned before publication. Decisions for later
+locales may remain open without blocking Arabic review. Astro routing,
+catalog design, middleware boundaries, search architecture, testing, and
+deployment mechanics remain engineering decisions.
 
 ## Primary technical references
 

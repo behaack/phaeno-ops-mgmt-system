@@ -3,6 +3,8 @@ import { useMemo } from 'react';
 import { FaFileLines, FaGlobe, FaNewspaper } from 'react-icons/fa6';
 import SearchHighlightedSnippet from './SearchHighlightedSnippet';
 import { hasDistinctSearchSnippet } from './searchText';
+import { getMessages, getPluralLabel } from '@/i18n/messages';
+import type { SupportedLocale } from '@/i18n/locales';
 
 export interface ISearchItem {
   id: string;
@@ -20,6 +22,7 @@ export interface ISearchItem {
 }
 
 export interface IProps {
+  locale?: SupportedLocale;
   list: ISearchItem[];
   index: number;
   item: ISearchItem;
@@ -60,17 +63,14 @@ function getPageDisplayTitle(item: Pick<ISearchItem, 'pageTitle' | 'pageDisplayT
 const documentPresentations = {
   'White Paper': {
     icon: FaFileLines,
-    label: 'White Paper',
     titlePrefixes: ['White Paper', 'Paper'],
   },
   'Blog Post': {
     icon: FaNewspaper,
-    label: 'Blog',
     titlePrefixes: ['Blog Post', 'Blog'],
   },
   'Web Page': {
     icon: FaGlobe,
-    label: 'Web Page',
     titlePrefixes: ['Web Page'],
   },
 } as const;
@@ -129,6 +129,7 @@ function scrollToHashTarget(hash: string) {
 }
 
 export default function SearchItem({ 
+  locale = 'en-US',
   list, 
   index, 
   item, 
@@ -139,6 +140,7 @@ export default function SearchItem({
   onSelect,
   onFocusOption
 }: IProps ) {
+  const text = getMessages(locale).search;
   const targetUrl = useMemo(() => resolveSearchResultUrl(item.url), [item.url]);
   const pageDisplayTitle = useMemo(() => getPageDisplayTitle(item), [item.pageDisplayTitle, item.pageTitle]);
   const documentPresentation = useMemo(
@@ -179,7 +181,7 @@ export default function SearchItem({
             {DocumentIcon && documentPresentation && (
               <>
                 <DocumentIcon className="web-search-group-icon" aria-hidden="true" focusable="false" />
-                <span className="web-search-group-type">{documentPresentation.label}</span>
+                <span className="web-search-group-type">{text.resultTypes[item.documentType as keyof typeof text.resultTypes]}</span>
                 <span className="web-search-group-separator" aria-hidden="true">—</span>
               </>
             )}
@@ -189,11 +191,11 @@ export default function SearchItem({
           </h3>
         </div>
         <span className="web-search-group-meta">
-          {pageSummary.results} {pageSummary.results === 1 ? 'result' : 'results'}, {pageSummary.matches} {pageSummary.matches === 1 ? 'match' : 'matches'}
+          {pageSummary.results} {getPluralLabel(locale, pageSummary.results, text.resultLabels)}, {pageSummary.matches} {getPluralLabel(locale, pageSummary.matches, text.matchLabels)}
         </span>
       </div>
     </li>
-  ), [DocumentIcon, documentPresentation, groupDisplayTitle, pageSummary, searchStr]);
+  ), [DocumentIcon, documentPresentation, groupDisplayTitle, item.documentType, pageSummary, searchStr, text]);
 
   const link = useMemo(() => (
     <li
@@ -230,10 +232,10 @@ export default function SearchItem({
             </h4>
             <span className="web-search-result-meta">
               {item.matchedInDocumentSource && (
-                <span className="web-search-match-source">Match in linked PDF</span>
+                <span className="web-search-match-source">{text.linkedPdfMatch}</span>
               )}
               <span className="web-search-match-count">
-                {item.count} {(item.count === 1) ? 'match' : 'matches'}
+                {item.count} {getPluralLabel(locale, item.count, text.matchLabels)}
               </span>
             </span>
           </div>
@@ -245,7 +247,7 @@ export default function SearchItem({
         </div>
       </a>
     </li>
-  ), [item, targetUrl, searchStr, active, linkRef, optionId, onFocusOption, onSelect, showSnippet]);
+  ), [item, targetUrl, searchStr, active, linkRef, optionId, onFocusOption, onSelect, showSnippet, text]);
 
   return (
     <>

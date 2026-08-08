@@ -7,11 +7,28 @@ import ScrollBehavior from '@/components/script-components/ScrollBehavior.astro'
 import MenuBehavior from '@/components/script-components/MenuBehavior.astro';
 import Analytics from '@vercel/analytics/astro';
 import { isWebsiteReviewMode } from '@/lib/reviewMode';
+import { getAlternateLocale, getLocaleDefinition, isArabicEnabled, type SupportedLocale } from '@/i18n/locales';
+import { getLocalizedPath } from '@/i18n/routes';
+import { getMessages } from '@/i18n/messages';
+import LanguageSuggestion from '@/components/i18n/LanguageSuggestion.astro';
+
+interface Props {
+  locale?: SupportedLocale
+}
+
+const { locale = 'en-US' } = Astro.props as Props
+const localeDefinition = getLocaleDefinition(locale)
+const pageMessages = getMessages(locale)
 
 /** Canonical URL (per-page, so we keep it) */
 const canonical = new URL(Astro.url.pathname, Astro.site).href;
+const englishPath = getLocalizedPath(Astro.url.pathname, 'en-US')
+const arabicPath = getLocalizedPath(Astro.url.pathname, 'ar')
+const hasAlternates = isArabicEnabled && Boolean(englishPath && arabicPath)
+const alternatePath = getLocalizedPath(Astro.url.pathname, getAlternateLocale(locale))
+const isSourceLocale = locale === localeDefinition.sourceLocale
 ---
-<html lang="en-US">
+<html lang={locale} dir={localeDefinition.direction}>
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
@@ -19,6 +36,13 @@ const canonical = new URL(Astro.url.pathname, Astro.site).href;
 
     <!-- Canonical & favicon -->
     <link rel="canonical" href={canonical} />
+    {hasAlternates && englishPath && arabicPath ? (
+      <>
+        <link rel="alternate" hreflang="en-US" href={new URL(englishPath, Astro.site).href} />
+        <link rel="alternate" hreflang="ar" href={new URL(arabicPath, Astro.site).href} />
+        <link rel="alternate" hreflang="x-default" href={new URL(englishPath, Astro.site).href} />
+      </>
+    ) : null}
     <link rel="icon" type="image/webp" href="/favicon.webp" sizes="64x64">
     <link rel="icon" type="image/png"  href="/favicon.png"  sizes="64x64">
     <link rel="shortcut icon" href="/favicon.ico">    
@@ -80,14 +104,17 @@ const canonical = new URL(Astro.url.pathname, Astro.site).href;
       class="skip-link"
       onclick="document.getElementById('main').focus()"
     >
-      Skip to main content
+      {pageMessages.skipToContent}
     </a>    
 
-    <Header />
+    <Header locale={locale} alternatePath={hasAlternates ? alternatePath : undefined} />
+    {isSourceLocale && hasAlternates && arabicPath ? (
+      <LanguageSuggestion alternatePath={arabicPath} />
+    ) : null}
     <div class="page-container">
       <slot />
     </div>
-    <Footer id="site-footer" />
+    <Footer id="site-footer" locale={locale} />
 
     <ScrollBehavior />
     <MenuBehavior />
@@ -106,7 +133,7 @@ const canonical = new URL(Astro.url.pathname, Astro.site).href;
 .skip-link {
   position: fixed;        /* always relative to viewport */
   top: 1rem;            /* tweak to clear your header */
-  left: 0.5rem;
+  inset-inline-start: 0.5rem;
   z-index: 9999;          /* higher than header/nav */
   background: #fff;
   color: #789946;

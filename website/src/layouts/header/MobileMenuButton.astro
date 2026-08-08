@@ -1,15 +1,24 @@
 ---
+import { getMessages } from '@/i18n/messages'
+import type { SupportedLocale } from '@/i18n/locales'
+
+interface Props {
+  locale?: SupportedLocale
+}
+
+const { locale = 'en-US' } = Astro.props as Props
+const pageMessages = getMessages(locale)
 ---
 
 <button         
   id="burger-button" 
   class="burger"
-  aria-label="Toggle Menu"
+  aria-label={pageMessages.toggleMenu}
   aria-haspopup="true"
   aria-controls="nav"
   aria-expanded="false"    
 >
-  <span class="sr-only">Main menu</span>
+  <span class="sr-only">{pageMessages.mainMenu}</span>
   <span class="line top"></span>
   <span class="line middle"></span>
   <span class="line bottom"></span>

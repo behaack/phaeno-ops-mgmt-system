@@ -5,34 +5,43 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { useGoogleReCaptcha } from "react-google-recaptcha-v3";
 import Spinner from "../Spinner";
 import { isWebsiteReviewMode } from "@/lib/reviewMode";
+import { formatMessage, getMessages } from "@/i18n/messages";
+import type { ContactValidationMessages } from "@/i18n/catalogs/types";
+import type { SupportedLocale } from "@/i18n/locales";
 
 const BASE_URL = import.meta.env.PUBLIC_API_BASE_URL;
 
-const schema = z.object({
+function createOrderSchema(validation: ContactValidationMessages) {
+  return z.object({
   firstname: z
     .string()
-    .nonempty("Please enter your first name.")
-    .max(60, "Length may not exceed 60 characters."),
+    .nonempty(validation.firstNameRequired)
+    .max(60, validation.maximum60),
   lastname: z
     .string()
-    .nonempty("Please enter your last name.")
-    .max(60, "Length may not exceed 60 characters."),
+    .nonempty(validation.lastNameRequired)
+    .max(60, validation.maximum60),
   organizationname: z
     .string()
-    .nonempty("Please enter your organization.")
-    .max(250, "Length may not exceed 250 characters."),
+    .nonempty(validation.organizationRequired)
+    .max(250, validation.maximum250),
   email: z
     .string()
-    .nonempty("Please enter your email.")
-    .email("Please enter a valid email address.")
-    .max(256, "Length may not exceed 256 characters."),
+    .nonempty(validation.emailRequired)
+    .email(validation.emailInvalid)
+    .max(256, validation.maximum256),
   description: z
     .string()
-    .nonempty("Please enter a brief description of your needs.")
-    .max(1000, "Length may not exceed 1000 characters."),
-});
+    .nonempty(validation.descriptionRequired)
+    .max(1000, validation.maximum1000),
+  });
+}
 
-export type FormValues = z.infer<typeof schema>;
+export type FormValues = z.infer<ReturnType<typeof createOrderSchema>>;
+
+interface OrderFormProps {
+  locale?: SupportedLocale;
+}
 
 /**
  * OrderForm (Demo / Project request)
@@ -41,7 +50,9 @@ export type FormValues = z.infer<typeof schema>;
  * - Styled textarea + helper hint
  * - Stronger CTA
  */
-export function OrderForm() {
+export function OrderForm({ locale = 'en-US' }: OrderFormProps) {
+  const text = getMessages(locale).contact;
+  const schema = createOrderSchema(text.validation);
   const formId = useId();
 
   const {
@@ -59,13 +70,13 @@ export function OrderForm() {
     setMessage("");
 
     if (isWebsiteReviewMode) {
-      setMessage("Submissions are disabled in this team preview.");
+      setMessage(text.previewDisabled);
       setIsSuccess(false);
       return;
     }
 
     if (!executeRecaptcha) {
-      setMessage("reCAPTCHA is not loaded. Please try again.");
+      setMessage(text.recaptchaUnavailable);
       setIsSuccess(false);
       return;
     }
@@ -74,7 +85,7 @@ export function OrderForm() {
     try {
       token = await executeRecaptcha("order_form_submit");
     } catch {
-      setMessage("Failed to get reCAPTCHA token. Please try again.");
+      setMessage(text.recaptchaTokenFailed);
       setIsSuccess(false);
       return;
     }
@@ -91,7 +102,7 @@ export function OrderForm() {
       });
 
       if (!res.ok) {
-        let errorText = `Request failed (${res.status}).`;
+        let errorText = formatMessage(text.requestFailed, { status: res.status });
         try {
           const detail = await res.json();
           if (detail?.message) errorText = detail.message;
@@ -101,32 +112,27 @@ export function OrderForm() {
 
         switch (res.status) {
           case 403:
-            errorText =
-              "The reCAPTCHA verification failed. Please refresh and try again.";
+            errorText = text.recaptchaFailed;
             break;
           case 409:
-            errorText = "Thanks — we already have this email on file.";
+            errorText = text.duplicateEmail;
             break;
           case 500:
-            errorText =
-              "Whoops — something went wrong on our side. Please try again.";
+            errorText = text.serverError;
             break;
         }
         throw new Error(errorText);
       }
 
-      setMessage(
-        "Thanks! Request received. A Phaeno scientist will contact you within three business days."
-      );
+      setMessage(text.demo.success);
       setIsSuccess(true);
       reset();
     } catch (err: unknown) {
-      let friendlyMessage = "Unexpected error — please try again.";
+      let friendlyMessage = text.unexpectedError;
 
       if (err instanceof Error) {
         if (err.message === "Failed to fetch") {
-          friendlyMessage =
-            "Server is currently unreachable. Do you have a network connection?";
+          friendlyMessage = text.networkError;
         } else {
           friendlyMessage = err.message;
         }
@@ -150,14 +156,14 @@ export function OrderForm() {
         <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
           {isWebsiteReviewMode && (
             <p className="rounded-xl border border-amber-300 bg-amber-50 px-4 py-3 text-sm font-medium text-amber-950">
-              Submissions are disabled in this team preview.
+              {text.previewDisabled}
             </p>
           )}
           {/* NAME ROW */}
           <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
             <div>
               <label htmlFor={`${formId}-firstname`} className={labelBase}>
-                First Name
+                {text.firstName}
               </label>
               <input
                 id={`${formId}-firstname`}
@@ -174,7 +180,7 @@ export function OrderForm() {
 
             <div>
               <label htmlFor={`${formId}-lastname`} className={labelBase}>
-                Last Name
+                {text.lastName}
               </label>
               <input
                 id={`${formId}-lastname`}
@@ -193,7 +199,7 @@ export function OrderForm() {
           {/* ORG */}
           <div>
             <label htmlFor={`${formId}-organization`} className={labelBase}>
-              Organization
+              {text.organization}
             </label>
             <input
               id={`${formId}-organization`}
@@ -211,7 +217,7 @@ export function OrderForm() {
           {/* EMAIL */}
           <div>
             <label htmlFor={`${formId}-email`} className={labelBase}>
-              Email
+              {text.email}
             </label>
             <input
               id={`${formId}-email`}
@@ -219,7 +225,7 @@ export function OrderForm() {
               inputMode="email"
               autoComplete="email"
               className={inputBase}
-              placeholder="name@company.com"
+              placeholder={text.emailPlaceholder}
               {...register("email")}
             />
             {errors.email && (
@@ -230,7 +236,7 @@ export function OrderForm() {
           {/* DESCRIPTION */}
           <div>
             <label htmlFor={`${formId}-description`} className={labelBase}>
-              Project Description
+              {text.demo.projectDescription}
             </label>
             <textarea
               id={`${formId}-description`}
@@ -238,14 +244,14 @@ export function OrderForm() {
                 inputBase,
                 "min-h-30 resize-y leading-5",
               ].join(" ")}
-              placeholder="Example: isoform-level differential expression in FFPE tumors; need full-length assemblies + ML-ready feature export."
+              placeholder={text.demo.projectPlaceholder}
               {...register("description")}
             />
             {errors.description && (
               <p className="mt-px p-0 text-sm text-red-600">{errors.description.message}</p>
             )}
             <p className="mt-px text-xs text-slate-700">
-              Include sample type, organism, and study goals if you can.
+              {text.demo.projectHint}
             </p>
           </div>
 
@@ -267,7 +273,7 @@ export function OrderForm() {
 
           <div className="contact-form-actions flex items-center justify-between gap-4 pt-2">
             <p className="text-xs text-slate-700">
-              We usually reply within 1–3 business days.
+              {text.demo.replyTime}
             </p>
 
             <button
@@ -280,7 +286,7 @@ export function OrderForm() {
                 "disabled:cursor-not-allowed disabled:opacity-60",
               ].join(" ")}
             >
-              {isSubmitting ? <Spinner size={21} /> : "Request Demo"}
+              {isSubmitting ? <Spinner size={21} /> : text.demo.submit}
             </button>
           </div>
         </form>

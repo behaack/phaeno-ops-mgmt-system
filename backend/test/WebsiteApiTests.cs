@@ -430,6 +430,54 @@ public sealed class WebsiteApiTests
     }
 
     [Fact]
+    public void SearchKeepsEnglishAndArabicResultsInTheirRequestedLocale()
+    {
+        var indexPath = Path.Combine(
+            Path.GetTempPath(),
+            $"phaeno-website-localized-search-{Guid.NewGuid():N}");
+
+        try
+        {
+            using var service = CreateSearchService(indexPath);
+            service.RebuildIndex(
+            [
+                new IndexedPage
+                {
+                    Id = "english-sequencing",
+                    Locale = WebsiteLocale.Default,
+                    Url = "https://www.phaenobiotech.com/technology/pseq-platform",
+                    PageTitle = "PSeq Platform",
+                    PageDisplayTitle = "PSeq Platform",
+                    AnchorTitle = "RNA sequencing",
+                    Text = "Whole-molecule RNA sequencing preserves source identity."
+                },
+                new IndexedPage
+                {
+                    Id = "arabic-sequencing",
+                    Locale = WebsiteLocale.Arabic,
+                    Url = "https://www.phaenobiotech.com/ar/technology/pseq-platform",
+                    PageTitle = "منصة PSeq",
+                    PageDisplayTitle = "منصة PSeq",
+                    AnchorTitle = "تسلسل الرنا",
+                    Text = "يحافظ تسلسل الرنا على هوية جزيء المصدر."
+                }
+            ]);
+
+            var english = Assert.Single(service.Search("sequencing"));
+            Assert.Equal(WebsiteLocale.Default, english.Locale);
+            Assert.Empty(service.Search("sequencing", WebsiteLocale.Arabic));
+
+            var arabic = Assert.Single(service.Search("تَسَلْسُل", "ar-SA"));
+            Assert.Equal(WebsiteLocale.Arabic, arabic.Locale);
+            Assert.Empty(service.Search("تسلسل"));
+        }
+        finally
+        {
+            DeleteIndex(indexPath);
+        }
+    }
+
+    [Fact]
     public void MailingListUnsubscribeCapturesActorAndTimeOnlyOnce()
     {
         var contact = new WebContact();

@@ -2,16 +2,27 @@
 import { Image } from 'astro:assets';
 import Menu from './Menu.astro';
 import SignupButton from '@/components/SignupButton.astro';
-import menu from './menu-versions/short-menu';
 import MobileMenuButton from './MobileMenuButton.astro';
 import Search from '@/components/web-search/Search';
+import LocaleSwitcher from '@/components/i18n/LocaleSwitcher.astro';
+import { getMenu, getMessages } from '@/i18n/messages';
+import { prefixPathForLocale, type SupportedLocale } from '@/i18n/locales';
+
+interface Props {
+  locale?: SupportedLocale
+  alternatePath?: string
+}
+
+const { locale = 'en-US', alternatePath } = Astro.props as Props
+const menu = getMenu(locale)
+const pageMessages = getMessages(locale)
 
 const currentPath = decodeURIComponent(Astro.url.pathname).toLowerCase();
 ---
 
 <header id="site-header" class="visible">
   <div class="header-container">
-    <a class="logo-link" href="/" aria-label="Phaeno – Home">
+    <a class="logo-link" href={prefixPathForLocale(locale, '/')} aria-label={pageMessages.homeLabel}>
       <Image 
         src="/images/phaeno124x40.webp" 
         alt="Phaeno Logo"
@@ -21,11 +32,12 @@ const currentPath = decodeURIComponent(Astro.url.pathname).toLowerCase();
     </a>
     <div class="header-actions flex items-center">
       <div class="signup-holder">
-        <Search client:idle />
-        <SignupButton size="wide" />
+        {alternatePath ? <LocaleSwitcher locale={locale} alternatePath={alternatePath} /> : null}
+        <Search locale={locale} client:idle />
+        <SignupButton size="wide" locale={locale} />
       </div>
-      <MobileMenuButton />
-      <Menu menuItems={menu} currentPath={currentPath} />
+      <MobileMenuButton locale={locale} />
+      <Menu menuItems={menu} currentPath={currentPath} locale={locale} />
     </div>
   </div>
 </header>
@@ -69,7 +81,7 @@ header.visible {
   display: flex;
   align-items: center;
   gap: var(--space-2);
-  margin-left: var(--space-4);
+  margin-inline-start: var(--space-4);
   order: 3;
 }
 
@@ -88,7 +100,7 @@ header.visible {
 
 @media (max-width: 1400px) {
   header {
-    padding-right: .25rem;
+    padding-inline-end: .25rem;
   }
 }
 
@@ -100,7 +112,7 @@ header.visible {
   }
   .signup-holder {
     gap: var(--space-1);
-    margin-left: 0;
+    margin-inline-start: 0;
     order: 0;
   }
 

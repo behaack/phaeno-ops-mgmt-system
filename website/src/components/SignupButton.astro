@@ -1,18 +1,27 @@
 ---
+import { getMessages } from '@/i18n/messages'
+import { getLocalizedPath } from '@/i18n/routes'
+import type { SupportedLocale } from '@/i18n/locales'
+
 interface IProps {
   size: 'narrow' | 'wide'
+  locale?: SupportedLocale
 }
 
-const { size } = Astro.props as IProps
+const { size, locale = 'en-US' } = Astro.props as IProps
+const text = getMessages(locale)
+const href = `${getLocalizedPath('/contact', locale) ?? '/contact'}#request-demo`
 ---
 
 <a
-  href="/contact#request-demo"
+  href={href}
   role="button"
-  aria-label="Request a demo"
+  aria-label={text.requestDemo}
 >
   <span>
-    Request a {(size==='narrow') && <br />}demo
+    {text.requestDemoSegments.map((segment, index) => (
+      <>{index > 0 && (size === 'narrow' ? <br /> : ' ')}{segment}</>
+    ))}
   </span>
 </a>
 

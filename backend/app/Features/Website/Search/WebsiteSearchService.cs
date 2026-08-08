@@ -70,7 +70,9 @@ public sealed class WebsiteSearchService : IWebsiteSearchService, IDisposable
         writer.Commit();
     }
 
-    public IReadOnlyList<IndexedPage> Search(string queryText)
+    public IReadOnlyList<IndexedPage> Search(
+        string queryText,
+        string locale = WebsiteLocale.Default)
     {
         const int hitCount = 30;
         if (string.IsNullOrWhiteSpace(queryText))
@@ -78,9 +80,10 @@ public sealed class WebsiteSearchService : IWebsiteSearchService, IDisposable
             return [];
         }
 
-        var stemmedTerms = Regex.Matches(queryText, "\\b[\\w']+\\b")
+        var normalizedLocale = WebsiteLocale.Normalize(locale);
+        var stemmedTerms = Regex.Matches(queryText, "[\\p{L}\\p{N}_']+")
             .Cast<Match>()
-            .Select(match => NormalizeAndStem(match.Value))
+            .Select(match => NormalizeAndStem(match.Value, normalizedLocale))
             .Where(term => !string.IsNullOrWhiteSpace(term))
             .Distinct(StringComparer.OrdinalIgnoreCase)
             .ToList();
@@ -90,6 +93,9 @@ public sealed class WebsiteSearchService : IWebsiteSearchService, IDisposable
         }
 
         var query = new BooleanQuery();
+        query.Add(
+            new TermQuery(new Term("locale", normalizedLocale)),
+            Occur.MUST);
         foreach (var term in stemmedTerms)
         {
             var termQuery = new BooleanQuery
@@ -118,7 +124,11 @@ public sealed class WebsiteSearchService : IWebsiteSearchService, IDisposable
             var hits = searcher.Search(query, hitCount);
 
             return hits.ScoreDocs
-                .Select(hit => MapResult(searcher.Doc(hit.Doc), hit.Score, stemmedTerms))
+                .Select(hit => MapResult(
+                    searcher.Doc(hit.Doc),
+                    hit.Score,
+                    stemmedTerms,
+                    normalizedLocale))
                 .Where(result => result.Count > 0)
                 .GroupBy(result =>
                     string.IsNullOrWhiteSpace(result.PageDisplayTitle)
@@ -169,7 +179,8 @@ public sealed class WebsiteSearchService : IWebsiteSearchService, IDisposable
     private static IndexedPage MapResult(
         Document document,
         float score,
-        IReadOnlyList<string> stemmedTerms)
+        IReadOnlyList<string> stemmedTerms,
+        string locale)
     {
         var fullText = document.Get("text") ?? string.Empty;
         var sourceText = document.Get("sourceText") ?? string.Empty;
@@ -180,19 +191,21 @@ public sealed class WebsiteSearchService : IWebsiteSearchService, IDisposable
         var destinationText = JoinVisibleSearchText(fullText, sourceText);
         var hasVisiblePageMatch = ContainsAllStemmedTerms(
             fullText,
-            stemmedTerms);
+            stemmedTerms,
+            locale);
         var hasDestinationMatch = ContainsAllStemmedTerms(
             destinationText,
-            stemmedTerms);
+            stemmedTerms,
+            locale);
 
-        var snippet = ExtractSnippet(fullText, stemmedTerms);
+        var snippet = ExtractSnippet(fullText, stemmedTerms, locale);
         if (string.IsNullOrWhiteSpace(snippet))
         {
-            snippet = ExtractSnippet(sourceText, stemmedTerms);
+            snippet = ExtractSnippet(sourceText, stemmedTerms, locale);
         }
         if (string.IsNullOrWhiteSpace(snippet))
         {
-            snippet = ExtractSnippet(description, stemmedTerms);
+            snippet = ExtractSnippet(description, stemmedTerms, locale);
         }
         if (string.IsNullOrWhiteSpace(snippet))
         {
@@ -204,6 +217,7 @@ public sealed class WebsiteSearchService : IWebsiteSearchService, IDisposable
         {
             Id = document.Get("id") ?? string.Empty,
             Url = document.Get("url") ?? string.Empty,
+            Locale = document.Get("locale") ?? WebsiteLocale.Default,
             PageTitle = pageTitle,
             PageDisplayTitle = pageDisplayTitle,
             Anchor = document.Get("anchor") ?? string.Empty,
@@ -215,7 +229,7 @@ public sealed class WebsiteSearchService : IWebsiteSearchService, IDisposable
             Snippet = snippet,
             Score = score,
             Count = hasDestinationMatch
-                ? CountStemmedMatches(destinationText, stemmedTerms)
+                ? CountStemmedMatches(destinationText, stemmedTerms, locale)
                 : 0,
             MatchedInDocumentSource = hasDestinationMatch
                 && !hasVisiblePageMatch,
@@ -228,6 +242,7 @@ public sealed class WebsiteSearchService : IWebsiteSearchService, IDisposable
     private static Document PrepareDocument(IndexedPage page)
     {
         var document = new Document();
+        var locale = WebsiteLocale.Normalize(page.Locale);
         var titleText = string.Join(" ", new[]
         {
             page.PageTitle,
@@ -239,6 +254,7 @@ public sealed class WebsiteSearchService : IWebsiteSearchService, IDisposable
 
         document.Add(new StringField("id", page.Id, Field.Store.YES));
         document.Add(new StringField("url", page.Url, Field.Store.YES));
+        document.Add(new StringField("locale", locale, Field.Store.YES));
         document.Add(new TextField("pageTitle", page.PageTitle, Field.Store.YES));
         document.Add(new TextField(
             "pageDisplayTitle",
@@ -252,19 +268,19 @@ public sealed class WebsiteSearchService : IWebsiteSearchService, IDisposable
         document.Add(new TextField("anchorTitle", page.AnchorTitle, Field.Store.YES));
         document.Add(new TextField(
             "titleStemmedText",
-            StemSearchText(titleText),
+            StemSearchText(titleText, locale),
             Field.Store.NO));
         document.Add(new TextField(
             "primaryStemmedText",
-            StemSearchText(primaryText),
+            StemSearchText(primaryText, locale),
             Field.Store.NO));
         document.Add(new TextField(
             "sourceStemmedText",
-            StemSearchText(page.SourceText),
+            StemSearchText(page.SourceText, locale),
             Field.Store.NO));
         document.Add(new TextField(
             "keywordStemmedText",
-            StemSearchText(page.SearchKeywords),
+            StemSearchText(page.SearchKeywords, locale),
             Field.Store.NO));
         document.Add(new StoredField("description", page.Description));
         document.Add(new StoredField("documentType", page.DocumentType));
@@ -273,37 +289,39 @@ public sealed class WebsiteSearchService : IWebsiteSearchService, IDisposable
         return document;
     }
 
-    private static string StemSearchText(string text) =>
+    private static string StemSearchText(string text, string locale) =>
         string.Join(
             " ",
-            Regex.Matches(text, "\\b[\\w']+\\b")
+            Regex.Matches(text, "[\\p{L}\\p{N}_']+")
                 .Cast<Match>()
-                .Select(match => NormalizeAndStem(match.Value))
+                .Select(match => NormalizeAndStem(match.Value, locale))
                 .Where(term => !string.IsNullOrWhiteSpace(term))
                 .Distinct(StringComparer.OrdinalIgnoreCase));
 
     private static int CountStemmedMatches(
         string text,
-        IReadOnlyList<string> stemmedTerms) =>
-        Regex.Matches(text, "\\b[\\w']+\\b")
+        IReadOnlyList<string> stemmedTerms,
+        string locale) =>
+        Regex.Matches(text, "[\\p{L}\\p{N}_']+")
             .Cast<Match>()
-            .Select(match => NormalizeAndStem(match.Value))
+            .Select(match => NormalizeAndStem(match.Value, locale))
             .Count(normalized => stemmedTerms.Contains(
                 normalized,
                 StringComparer.OrdinalIgnoreCase));
 
     private static bool ContainsAllStemmedTerms(
         string text,
-        IReadOnlyList<string> stemmedTerms)
+        IReadOnlyList<string> stemmedTerms,
+        string locale)
     {
         if (string.IsNullOrWhiteSpace(text))
         {
             return false;
         }
 
-        var textTerms = Regex.Matches(text, "\\b[\\w']+\\b")
+        var textTerms = Regex.Matches(text, "[\\p{L}\\p{N}_']+")
             .Cast<Match>()
-            .Select(match => NormalizeAndStem(match.Value))
+            .Select(match => NormalizeAndStem(match.Value, locale))
             .Where(term => !string.IsNullOrWhiteSpace(term))
             .ToHashSet(StringComparer.OrdinalIgnoreCase);
 
@@ -334,6 +352,7 @@ public sealed class WebsiteSearchService : IWebsiteSearchService, IDisposable
     private static string ExtractSnippet(
         string text,
         IReadOnlyList<string> stemmedTerms,
+        string locale,
         int maxLength = 200,
         int windowSize = 100)
     {
@@ -345,10 +364,10 @@ public sealed class WebsiteSearchService : IWebsiteSearchService, IDisposable
         var querySet = stemmedTerms
             .Select(term => term.ToLowerInvariant())
             .ToHashSet();
-        var matches = Regex.Matches(text, "\\b[\\w']+\\b")
+        var matches = Regex.Matches(text, "[\\p{L}\\p{N}_']+")
             .Cast<Match>()
             .Where(match => querySet.Contains(
-                NormalizeAndStem(match.Value).ToLowerInvariant()))
+                NormalizeAndStem(match.Value, locale).ToLowerInvariant()))
             .Select(match => (Start: match.Index, End: match.Index + match.Length))
             .ToList();
         if (matches.Count == 0)
@@ -389,16 +408,37 @@ public sealed class WebsiteSearchService : IWebsiteSearchService, IDisposable
         return $"{snippet[..(lastSpace > 0 ? lastSpace : maxLength)]}...";
     }
 
-    private static string NormalizeAndStem(string word)
+    private static string NormalizeAndStem(string word, string locale)
     {
-        word = RemoveAccents(word.ToLowerInvariant());
-        word = Regex.Replace(word, "'s\\b", string.Empty);
-        word = Regex.Replace(word, "[^\\w\\s]", string.Empty);
+        var normalizedLocale = WebsiteLocale.Normalize(locale);
+        word = RemoveAccents(word.ToLowerInvariant())
+            .Replace("ـ", string.Empty, StringComparison.Ordinal);
+        if (normalizedLocale == WebsiteLocale.Arabic)
+        {
+            word = word
+                .Replace('أ', 'ا')
+                .Replace('إ', 'ا')
+                .Replace('آ', 'ا')
+                .Replace('ٱ', 'ا')
+                .Replace('ى', 'ي');
+        }
+        else
+        {
+            word = Regex.Replace(word, "'s\\b", string.Empty);
+        }
+        word = Regex.Replace(word, "[^\\p{L}\\p{N}_\\s]", string.Empty);
         word = word.Replace("-", " ");
         if (Regex.IsMatch(word, @"\d{3,}")
-            || !Regex.IsMatch(word, @"[a-zA-Z]"))
+            || (normalizedLocale == WebsiteLocale.Arabic
+                ? !Regex.IsMatch(word, "[\\u0600-\\u06FF\\u0750-\\u077F\\u08A0-\\u08FF]")
+                : !Regex.IsMatch(word, @"[a-zA-Z]")))
         {
             return string.Empty;
+        }
+
+        if (normalizedLocale == WebsiteLocale.Arabic)
+        {
+            return word;
         }
 
         var stemmer = new EnglishStemmer();

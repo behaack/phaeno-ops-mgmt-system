@@ -1,9 +1,12 @@
 ---
 import ShareWithSocialMedia from '@/components/ShareWithSocialMedia.astro'
+import { getMessages, getPageCountLabel, getVersionLabel } from '@/i18n/messages'
+import type { SupportedLocale } from '@/i18n/locales'
 import { formatContentDate } from '@/lib/dates'
 import { FaExternalLinkAlt } from 'react-icons/fa'
 
 interface Props {
+  locale?: SupportedLocale
   title: string
   summary: string
   image: string
@@ -21,6 +24,7 @@ interface Props {
 }
 
 const {
+  locale = 'en-US',
   title,
   summary,
   image,
@@ -30,7 +34,7 @@ const {
   backHref,
   backLabel,
   headerActionHref,
-  headerActionLabel = 'View PDF',
+  headerActionLabel,
   pageCount,
   version,
   imagePosition = 'center',
@@ -43,7 +47,11 @@ const formattedDate = formatContentDate(date, {
   month: 'long',
   day: 'numeric',
   year: 'numeric',
-})
+}, locale)
+const text = getMessages(locale).article
+const resolvedHeaderActionLabel = headerActionLabel ?? text.viewPdf
+const pageLabel = pageCount === undefined ? undefined : getPageCountLabel(locale, pageCount)
+const versionLabel = version === undefined ? undefined : getVersionLabel(locale, version)
 ---
 
 <main id="main" class="media-article-page" tabindex="-1">
@@ -51,7 +59,7 @@ const formattedDate = formatContentDate(date, {
     <div class="article-hero__inner">
       <div class="article-hero__copy">
         <a class="back-link" href={backHref} data-phaeno-search-ignore>
-          <span aria-hidden="true">←</span>
+          <span aria-hidden="true">{text.backArrow}</span>
           {backLabel}
         </a>
         <p class="article-eyebrow">{eyebrow}</p>
@@ -67,10 +75,10 @@ const formattedDate = formatContentDate(date, {
             href={headerActionHref}
             target="_blank"
             rel="noopener noreferrer"
-            aria-label={`${headerActionLabel} – opens PDF in a new tab`}
+            aria-label={`${resolvedHeaderActionLabel} – ${text.pdfNewTab}`}
             data-phaeno-search-ignore
           >
-            <span>{headerActionLabel}</span>
+            <span>{resolvedHeaderActionLabel}</span>
             <FaExternalLinkAlt size={12} aria-hidden="true" />
           </a>
         ) : null}
@@ -85,13 +93,13 @@ const formattedDate = formatContentDate(date, {
           {pageCount ? (
             <>
               <span aria-hidden="true">•</span>
-              <span>{pageCount} {pageCount === 1 ? 'page' : 'pages'}</span>
+              <span>{pageLabel}</span>
             </>
           ) : null}
           {version ? (
             <>
               <span aria-hidden="true">•</span>
-              <span>{version.toLocaleLowerCase().startsWith('version') ? version : `Version ${version}`}</span>
+              <span>{versionLabel}</span>
             </>
           ) : null}
         </div>
@@ -121,11 +129,12 @@ const formattedDate = formatContentDate(date, {
 
     <footer class="article-footer" data-phaeno-search-ignore>
       <a class="back-link back-link--light" href={backHref}>
-        <span aria-hidden="true">←</span>
+        <span aria-hidden="true">{text.backArrow}</span>
         {backLabel}
       </a>
       <div class="article-share">
         <ShareWithSocialMedia
+          locale={locale}
           title={title}
           link={sharePath}
           summary={summary}
@@ -342,7 +351,7 @@ const formattedDate = formatContentDate(date, {
 .media-article-content :global(ol:not([class])) {
   gap: 0;
   margin: 0 0 1.5rem;
-  padding-left: 1.4rem;
+    padding-inline-start: 1.4rem;
 }
 
 .media-article-content :global(ul:not([class]) > li + li),
@@ -420,7 +429,7 @@ const formattedDate = formatContentDate(date, {
   }
 
   .article-share :global(.text-right) {
-    text-align: left;
+    text-align: start;
   }
 
   .article-share :global(.icon-container) {

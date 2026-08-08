@@ -2,6 +2,27 @@ import { defineCollection } from 'astro:content';
 import { file, glob } from 'astro/loaders';
 import { z } from 'astro/zod';
 
+const translationStatus = z.enum([
+  'not_started',
+  'draft',
+  'review',
+  'published',
+  'stale',
+  'withdrawn',
+])
+
+const localizationFields = {
+  locale: z.string().default('en-US'),
+  translationKey: z.string().trim().min(1).optional(),
+  sourceLocale: z.string().default('en-US'),
+  translationStatus: translationStatus.default('published'),
+  sourceRevision: z.string().trim().min(1).optional(),
+  translatedFromRevision: z.string().trim().min(1).optional(),
+  translator: z.string().trim().min(1).optional(),
+  reviewer: z.string().trim().min(1).optional(),
+  reviewedAt: z.coerce.date().optional(),
+}
+
 const normalizedPublicationTerms = z
   .array(z.string().trim().min(1))
   .min(1)
@@ -24,6 +45,7 @@ const normalizedPublicationTerms = z
 const jobs = defineCollection({
   loader: glob({ pattern: '**/[^_]*.{md,mdx}', base: './src/content/jobs' }),
   schema: z.object({
+    ...localizationFields,
     id: z.string(),
     title: z.string(),
     locationType: z.enum(['Remote', 'On-Site']),
@@ -40,6 +62,7 @@ const jobs = defineCollection({
 const blog = defineCollection({
   loader: glob({ pattern: '**/[^_]*.{md,mdx}', base: './src/content/blog' }),
   schema: z.object({
+    ...localizationFields,
     title: z.string(),
     summary: z.string().max(200, 'Maximum length is 200 characters'),
     image: z.string(),
@@ -51,6 +74,7 @@ const blog = defineCollection({
 const events = defineCollection({
   loader: file('src/content/events/events.json'),
   schema: z.object({
+    ...localizationFields,
     id: z.number(),
     name: z.string(),
     location: z.string(),
@@ -63,6 +87,7 @@ const events = defineCollection({
 const news = defineCollection({
   loader: glob({ pattern: '**/[^_]*.{md,mdx}', base: './src/content/news' }),
   schema: z.object({
+    ...localizationFields,
     title: z.string(),
     image: z.string(),
     date: z.coerce.date(),
@@ -73,6 +98,7 @@ const news = defineCollection({
 const press = defineCollection({
   loader: glob({ pattern: '**/[^_]*.{md,mdx}', base: './src/content/press' }),
   schema: z.object({
+    ...localizationFields,
     title: z.string(),
     date: z.coerce.date(),
     summary: z.string(),
@@ -82,6 +108,7 @@ const press = defineCollection({
 const scientific_papers = defineCollection({
   loader: glob({ pattern: '**/[^_]*.{md,mdx}', base: './src/content/scientific_papers' }),
   schema: z.object({
+    ...localizationFields,
     title: z.string(),
     image: z.string(),
     authors: z.array(z.string()),
@@ -96,6 +123,7 @@ const white_papers = defineCollection({
   loader: glob({ pattern: '**/[^_]*.{md,mdx}', base: './src/content/white_papers' }),
   schema: z
     .object({
+      ...localizationFields,
       title: z.string().trim().min(1),
       image: z.string().trim().startsWith('/images/'),
       date: z.coerce.date(),
@@ -105,6 +133,10 @@ const white_papers = defineCollection({
       version: z.string().trim().min(1).optional(),
       topics: normalizedPublicationTerms,
       searchKeywords: normalizedPublicationTerms,
+      assetLanguage: z.string().default('en-US'),
+      assetTranslationStatus: translationStatus.default('published'),
+      assetVersion: z.string().trim().min(1).optional(),
+      assetChecksum: z.string().trim().min(1).optional(),
     })
     .superRefine((paper, context) => {
       if (paper.dateModified && paper.dateModified < paper.date) {

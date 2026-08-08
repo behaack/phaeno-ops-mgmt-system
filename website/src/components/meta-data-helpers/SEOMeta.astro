@@ -5,6 +5,7 @@
  *    <SeoMeta slot="head" title="About Phaeno" description="…" />
  */
 import type { webtypes } from '@/assets/docTypes'
+import type { SupportedLocale } from '@/i18n/locales'
 interface Props {
   title: string;
   description: string;
@@ -19,6 +20,7 @@ interface Props {
   searchKeywords?: string;
   /** Internal site-search page label, separate from the SEO title */
   searchTitle?: string;
+  locale?: SupportedLocale;
 }
 
 const {
@@ -30,6 +32,7 @@ const {
   twitterCard = 'summary_large_image',
   searchKeywords = '',
   searchTitle = '',
+  locale = 'en-US',
 } = Astro.props as Props;
 
 const canonicalUrl = new URL(url, Astro.site ?? Astro.url).href;
@@ -42,7 +45,7 @@ const structuredData = {
   url: canonicalUrl,
   name: title,
   description,
-  inLanguage: 'en-US',
+  inLanguage: locale,
   primaryImageOfPage: {
     '@type': 'ImageObject',
     url: imageUrl,
@@ -78,6 +81,7 @@ const serializedStructuredData = JSON.stringify(structuredData).replace(/</g, '\
 <meta property="og:title"       content={title} />
 <meta property="og:description" content={description} />
 <meta property="og:image"       content={imageUrl} />
+{locale !== 'en-US' ? <meta property="og:locale" content="ar_AR" /> : null}
 
 <!-- Twitter -->
 <meta name="twitter:card"        content={twitterCard} />

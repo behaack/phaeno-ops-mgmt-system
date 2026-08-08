@@ -11,7 +11,12 @@ export async function GET(request: Request) {
     return jsonResponse(404, { message: 'Not found.' })
   }
 
-  const query = new URL(request.url).searchParams.get('search')?.trim() ?? ''
+  const requestUrl = new URL(request.url)
+  const query = requestUrl.searchParams.get('search')?.trim() ?? ''
+  const requestedLocale = requestUrl.searchParams.get('locale')?.trim().toLowerCase() ?? ''
+  const locale = requestedLocale === 'ar' || requestedLocale.startsWith('ar-')
+    ? 'ar'
+    : 'en-US'
   if (query.length < 3 || query.length > 200) {
     return jsonResponse(400, { message: 'Search must contain between 3 and 200 characters.' })
   }
@@ -30,6 +35,7 @@ export async function GET(request: Request) {
     return jsonResponse(503, { message: 'Team preview search is not configured.' })
   }
   upstreamUrl.searchParams.set('search', query)
+  upstreamUrl.searchParams.set('locale', locale)
 
   try {
     const upstream = await fetch(upstreamUrl, {

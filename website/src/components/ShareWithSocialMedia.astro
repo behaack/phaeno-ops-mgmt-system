@@ -1,13 +1,17 @@
 ---
 import { FaLinkedin, FaSquareXTwitter, FaFacebook, FaReddit, FaWhatsapp, FaTelegram, FaEnvelope } from 'react-icons/fa6';
+import { getMessages } from '@/i18n/messages';
+import type { SupportedLocale } from '@/i18n/locales';
 
 interface IProps {
+  locale?: SupportedLocale
   title: string
   link: string
   summary: string
 }
 
-const {title, link, summary} = Astro.props;
+const { locale = 'en-US', title, link, summary } = Astro.props as IProps;
+const text = getMessages(locale).article;
 const fullPath = new URL(link, Astro.site ?? Astro.url.origin).href;
 const shareText = summary ? `${title}: ${summary}` : title;
 const iconSize: number = 25;
@@ -51,14 +55,14 @@ const emailShareUrl = `mailto:?${new URLSearchParams({
 ---
 
 <div class="flex flex-col">
-  <div class="mb-1.5 text-right"><b>Share on social media</b></div>
+  <div class="mb-1.5 text-end"><b>{text.shareHeading}</b></div>
   <div class="icon-container">
     <a 
       class="linked-in"
       target="_blank"       
       rel="noopener noreferrer"
       title="LinkedIn"
-      aria-label="Share this article on LinkedIn – opens in a new tab"
+      aria-label={`${text.shareOn} LinkedIn – ${text.opensNewTab}`}
       href={linkedInShareUrl}
     >
       <FaLinkedin 
@@ -71,7 +75,7 @@ const emailShareUrl = `mailto:?${new URLSearchParams({
       target="_blank" 
       rel="noopener noreferrer"
       title="X"
-      aria-label="Share this article on X – opens in a new tab"
+      aria-label={`${text.shareOn} X – ${text.opensNewTab}`}
       href={xShareUrl}
     >
       <FaSquareXTwitter 
@@ -83,7 +87,7 @@ const emailShareUrl = `mailto:?${new URLSearchParams({
       target="_blank" 
       rel="noopener noreferrer"
       title="Reddit"
-      aria-label="Share this article on Reddit – opens in a new tab"
+      aria-label={`${text.shareOn} Reddit – ${text.opensNewTab}`}
       href={redditShareUrl}
     >
       <FaReddit 
@@ -96,7 +100,7 @@ const emailShareUrl = `mailto:?${new URLSearchParams({
       target="_blank" 
       rel="noopener noreferrer"
       title="Facebook"
-      aria-label="Share this article on Facebook – opens in a new tab"
+      aria-label={`${text.shareOn} Facebook – ${text.opensNewTab}`}
       href={facebookShareUrl}
     >
       <FaFacebook 
@@ -109,7 +113,7 @@ const emailShareUrl = `mailto:?${new URLSearchParams({
       target="_blank" 
       rel="noopener noreferrer"
       title="WhatsApp"
-      aria-label="Share this article on WhatsApp – opens in a new tab"
+      aria-label={`${text.shareOn} WhatsApp – ${text.opensNewTab}`}
       href={whatsappShareUrl}
     >
       <FaWhatsapp size={iconSize} />
@@ -120,7 +124,7 @@ const emailShareUrl = `mailto:?${new URLSearchParams({
       target="_blank" 
       rel="noopener noreferrer"
       title="Telegram"
-      aria-label="Share this article on Telegram – opens in a new tab"
+      aria-label={`${text.shareOn} Telegram – ${text.opensNewTab}`}
       href={telegramShareUrl}
     >
       <FaTelegram size={iconSize} />
@@ -128,7 +132,7 @@ const emailShareUrl = `mailto:?${new URLSearchParams({
 
     <a 
       title="Email"
-      aria-label="Share this article by email – opens your default email application"
+      aria-label={text.shareByEmail}
       href={emailShareUrl}
       rel="nofollow"
     >

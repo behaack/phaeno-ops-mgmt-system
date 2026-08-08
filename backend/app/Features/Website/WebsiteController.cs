@@ -28,8 +28,9 @@ public sealed class WebsiteController(
     [ProducesResponseType(StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
     public IActionResult Search(
-        [FromQuery, MinLength(3), MaxLength(200)] string search) =>
-        Ok(websiteSearchService.Search(search));
+        [FromQuery, MinLength(3), MaxLength(200)] string search,
+        [FromQuery] string locale = WebsiteLocale.Default) =>
+        Ok(websiteSearchService.Search(search, WebsiteLocale.Normalize(locale)));
 
     [HttpPost("contact")]
     [Consumes("application/json")]

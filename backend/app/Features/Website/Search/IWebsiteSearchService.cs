@@ -4,5 +4,7 @@ public interface IWebsiteSearchService
 {
     void RebuildIndex(IEnumerable<IndexedPage> pages);
 
-    IReadOnlyList<IndexedPage> Search(string queryText);
+    IReadOnlyList<IndexedPage> Search(
+        string queryText,
+        string locale = WebsiteLocale.Default);
 }
