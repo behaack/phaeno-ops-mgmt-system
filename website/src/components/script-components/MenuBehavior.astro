@@ -68,8 +68,22 @@ function init(): void {
     });  
   });
 
-  menuBtn.addEventListener('click', toggleMenu);
+  menuBtn.addEventListener('click', () => toggleMenu());
   mqMobile.addEventListener('change', setOrientation);
+
+  document.addEventListener('phaeno:locale-menu-open', (event) => {
+    closeAllSubmenus();
+
+    if (!nav.classList.contains('open')) return;
+
+    const focusWasInMenu = nav.contains(document.activeElement);
+    setMenuOpen(false, false);
+
+    if (focusWasInMenu) {
+      const localeTrigger = (event as CustomEvent<{ trigger?: HTMLButtonElement }>).detail?.trigger;
+      localeTrigger?.focus({ preventScroll: true });
+    }
+  });
 
 
 
@@ -219,19 +233,24 @@ function init(): void {
   }
     
   function toggleMenu() {
-    const open = nav?.classList.toggle('open');          
-    menuBtn?.classList.toggle('open', open);              
-    menuBtn?.setAttribute('aria-expanded', String(open)); 
+    setMenuOpen(!nav.classList.contains('open'));
+  }
+
+  function setMenuOpen(open: boolean, restoreFocus = true) {
+    nav.classList.toggle('open', open);
+    menuBtn.classList.toggle('open', open);
+    menuBtn.setAttribute('aria-expanded', String(open));
     //(menu?.querySelector('ul li a') as HTMLAnchorElement | null)?.focus();
 
     if (open) {
+      document.dispatchEvent(new CustomEvent('phaeno:main-menu-open'));
       /* move focus to first link & start trapping */
       (focusables()[0] as HTMLElement | undefined)?.focus();
-      nav?.addEventListener('keydown', trapFocus);
+      nav.addEventListener('keydown', trapFocus);
     } else {
       /* stop trapping & restore focus to the burger */
-      nav?.removeEventListener('keydown', trapFocus);
-      menuBtn?.focus();
+      nav.removeEventListener('keydown', trapFocus);
+      if (restoreFocus) menuBtn.focus();
       closeAllSubmenus();
     }    
   }

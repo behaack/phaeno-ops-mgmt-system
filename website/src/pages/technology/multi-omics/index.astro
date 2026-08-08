@@ -2,13 +2,12 @@
 import Layout from '@/layouts/Layout.astro'
 import TopPageBanner from '@/components/TopPageBanner.astro'
 import SEOMeta from '@/components/meta-data-helpers/SEOMeta.astro'
-import TranslationReviewNotice from '@/components/i18n/TranslationReviewNotice.astro'
-import type { SupportedLocale } from '@/i18n/locales'
+import { getLocaleDefinition, type SupportedLocale } from '@/i18n/locales'
 import { getPageCatalog } from '@/i18n/pageCatalogs'
 import { getLocalizedPath } from '@/i18n/routes'
 interface Props { locale?: SupportedLocale }
 const { locale = 'en-US' } = Astro.props
-const isTranslation = locale !== 'en-US'
+const isRtl = getLocaleDefinition(locale).direction === 'rtl'
 const content = getPageCatalog(locale).multiOmics
 const fragilities = content.fragilities
 const benefits = content.benefits
@@ -25,8 +24,7 @@ const benefits = content.benefits
     locale={locale}
   />
 
-  <main id="main" class="multiomics-page" tabindex="-1">
-    {isTranslation ? <TranslationReviewNotice englishPath="/technology/multi-omics" /> : null}
+  <main id="main" class:list={['multiomics-page', { 'multiomics-page--rtl': isRtl }]} tabindex="-1">
     <TopPageBanner title={content.banner} image="image-2" locale={locale} />
 
     <div class="page-shell">
@@ -191,6 +189,17 @@ const benefits = content.benefits
   white-space: nowrap;
 }
 
+.multiomics-page--rtl .intro-title__first-line {
+  white-space: normal;
+}
+
+.multiomics-page--rtl .intro-section h2 {
+  max-width: 16ch;
+  font-size: clamp(2.6rem, 4.4vw, 4.25rem);
+  letter-spacing: 0;
+  line-height: 1.08;
+}
+
 .intro-section__copy {
   padding-top: calc(var(--space-12) + var(--space-2));
 }
@@ -245,11 +254,21 @@ const benefits = content.benefits
   white-space: nowrap;
 }
 
+.multiomics-page--rtl .intro-thesis strong {
+  font-size: clamp(1.25rem, 1.7vw, 1.6rem);
+  line-height: 1.35;
+  white-space: normal;
+}
+
 .intro-thesis p {
   max-width: 29rem;
   margin: var(--space-2) 0 0;
   color: rgb(255 255 255 / .7);
   line-height: 1.5;
+}
+
+.multiomics-page--rtl .intro-thesis p {
+  margin-top: var(--space-3);
 }
 
 .fragility-section,

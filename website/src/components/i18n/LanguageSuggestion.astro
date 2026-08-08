@@ -1,29 +1,49 @@
 ---
-import { getMessages } from '@/i18n/messages'
+import { formatMessage, getMessages } from '@/i18n/messages'
+import { locales, type LocalizedLocale } from '@/i18n/locales'
 
-interface Props {
-  alternatePath: string
+interface LocalePath {
+  locale: LocalizedLocale
+  path: string
 }
 
-const { alternatePath } = Astro.props as Props
+interface Props {
+  alternates: LocalePath[]
+}
+
+const { alternates } = Astro.props as Props
 const message = getMessages('en-US').language
 ---
 
-<aside
-  class="language-suggestion"
-  data-language-suggestion
-  aria-labelledby="language-suggestion-title"
-  hidden
->
-  <div>
-    <strong id="language-suggestion-title">{message.suggestionTitle}</strong>
-    <p>{message.suggestionBody}</p>
-  </div>
-  <div class="language-suggestion__actions">
-    <a href={alternatePath} data-language-suggestion-accept>{message.accept}</a>
-    <button type="button" data-language-suggestion-dismiss>{message.dismiss}</button>
-  </div>
-</aside>
+{alternates.map((item) => {
+  const target = locales[item.locale]
+  const values = { language: target.administrativeName }
+  return (
+    <aside
+      class="language-suggestion"
+      data-language-suggestion={item.locale}
+      aria-labelledby={`language-suggestion-title-${item.locale}`}
+      hidden
+    >
+      <div>
+        <strong id={`language-suggestion-title-${item.locale}`}>
+          {formatMessage(message.suggestionTitle, values)}
+        </strong>
+        <p>{formatMessage(message.suggestionBody, values)}</p>
+      </div>
+      <div class="language-suggestion__actions">
+        <a
+          href={item.path}
+          data-language-suggestion-accept
+          data-target-locale={item.locale}
+        >
+          {formatMessage(message.accept, values)}
+        </a>
+        <button type="button" data-language-suggestion-dismiss>{message.dismiss}</button>
+      </div>
+    </aside>
+  )
+})}
 
 <script>
   const readCookie = (name: string) => {
@@ -32,22 +52,36 @@ const message = getMessages('en-US').language
     return value ? decodeURIComponent(value.slice(prefix.length)) : undefined
   }
 
-  const suggestion = document.querySelector<HTMLElement>('[data-language-suggestion]')
-  if (suggestion) {
-    const secure = window.location.protocol === 'https:' ? '; Secure' : ''
+  const suggestions = [...document.querySelectorAll<HTMLElement>('[data-language-suggestion]')]
+  if (suggestions.length > 0) {
+    const availableLocales = suggestions
+      .map((suggestion) => suggestion.dataset.languageSuggestion)
+      .filter((locale): locale is string => Boolean(locale))
+    const normalizeLocale = (language: string) => {
+      const normalized = language.toLowerCase()
+      if (normalized === 'ar' || normalized.startsWith('ar-')) return 'ar'
+      if (normalized === 'fr' || normalized.startsWith('fr-')) return 'fr'
+      return undefined
+    }
     const preferredLocale = readCookie('phaeno_locale')
     const promptState = readCookie('phaeno_locale_prompt')
-    const browserPrefersArabic = navigator.languages.some((language) => language.toLowerCase() === 'ar' || language.toLowerCase().startsWith('ar-'))
-    const shouldSuggest = promptState !== 'dismissed' && (preferredLocale === 'ar' || (!preferredLocale && browserPrefersArabic))
+    const detectedLocale = preferredLocale && availableLocales.includes(preferredLocale)
+      ? preferredLocale
+      : navigator.languages.map(normalizeLocale).find((locale) => locale && availableLocales.includes(locale))
+    const suggestion = suggestions.find((item) => item.dataset.languageSuggestion === detectedLocale)
 
-    if (shouldSuggest) suggestion.hidden = false
+    if (promptState !== 'dismissed' && suggestion) suggestion.hidden = false
 
-    suggestion.querySelector('[data-language-suggestion-accept]')?.addEventListener('click', () => {
-      document.cookie = `phaeno_locale=ar; Path=/; Max-Age=31536000; SameSite=Lax${secure}`
+    suggestion?.querySelector<HTMLElement>('[data-language-suggestion-accept]')?.addEventListener('click', () => {
+      const targetLocale = suggestion.querySelector<HTMLElement>('[data-target-locale]')?.dataset.targetLocale
+      if (!targetLocale) return
+      const secure = window.location.protocol === 'https:' ? '; Secure' : ''
+      document.cookie = `phaeno_locale=${encodeURIComponent(targetLocale)}; Path=/; Max-Age=31536000; SameSite=Lax${secure}`
       document.cookie = `phaeno_locale_prompt=; Path=/; Max-Age=0; SameSite=Lax${secure}`
     })
 
-    suggestion.querySelector('[data-language-suggestion-dismiss]')?.addEventListener('click', () => {
+    suggestion?.querySelector('[data-language-suggestion-dismiss]')?.addEventListener('click', () => {
+      const secure = window.location.protocol === 'https:' ? '; Secure' : ''
       document.cookie = `phaeno_locale=en-US; Path=/; Max-Age=31536000; SameSite=Lax${secure}`
       document.cookie = `phaeno_locale_prompt=dismissed; Path=/; Max-Age=15552000; SameSite=Lax${secure}`
       suggestion.hidden = true

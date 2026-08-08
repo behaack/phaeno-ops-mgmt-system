@@ -13,6 +13,7 @@ export interface IContent {
 
 export interface ISection {
   header: string;
+  direction?: 'ltr' | 'rtl' | 'auto';
   content: IContent[]
 }
 
@@ -23,7 +24,7 @@ interface IProps {
 const { section } = Astro.props as IProps
 ---
 
-<div class="flex flex-col gap-1.5">
+<div class="flex flex-col gap-1.5" dir={section.direction}>
   <div class="column-header">{section.header}</div>
   {section.content.map(item => (              
     <>

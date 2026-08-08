@@ -1,45 +1,195 @@
 ---
 import { getMessages } from '@/i18n/messages'
-import { getAlternateLocale, locales, type SupportedLocale } from '@/i18n/locales'
+import { locales, type SupportedLocale } from '@/i18n/locales'
+
+interface LocalePath {
+  locale: SupportedLocale
+  path: string
+}
 
 interface Props {
   locale: SupportedLocale
-  alternatePath: string
+  localizedPaths: LocalePath[]
 }
 
-const { locale, alternatePath } = Astro.props as Props
-const targetLocale = getAlternateLocale(locale)
+const { locale, localizedPaths } = Astro.props as Props
 const message = getMessages(locale).language
-const target = locales[targetLocale]
+const current = locales[locale]
+const choices = localizedPaths
 ---
 
-<a
-  class="locale-switcher"
-  href={alternatePath}
-  lang={targetLocale}
-  dir={target.direction}
-  hreflang={targetLocale}
-  data-locale-choice={targetLocale}
-  aria-label={`${message.selectorLabel}: ${target.administrativeName}`}
->
-  <span aria-hidden="true">文</span>
-  <span>{target.nativeName}</span>
-</a>
+<div class="locale-switcher" data-locale-switcher>
+  <button
+    type="button"
+    class="locale-switcher__trigger"
+    aria-label={`${message.selectorLabel}: ${current.administrativeName}`}
+    aria-haspopup="menu"
+    aria-expanded="false"
+    aria-controls="locale-menu"
+  >
+    <span aria-hidden="true">文</span>
+    <span class="locale-switcher__name locale-switcher__name--full">{current.nativeName}</span>
+    <span class="locale-switcher__name locale-switcher__name--short" aria-hidden="true">{current.shortName}</span>
+  </button>
+  <ul id="locale-menu" role="menu" aria-label={message.selectorLabel}>
+    {choices.map((item) => {
+      const target = locales[item.locale]
+      const isCurrent = item.locale === locale
+      return (
+        <li role="none">
+          <a
+            href={item.path}
+            role="menuitem"
+            tabindex={-1}
+            lang={item.locale}
+            dir={target.direction}
+            hreflang={item.locale}
+            data-locale-choice={item.locale}
+            aria-current={isCurrent ? 'true' : undefined}
+          >
+            <span>{target.nativeName}</span>
+            {isCurrent ? <span class="locale-switcher__check" aria-hidden="true">✓</span> : null}
+          </a>
+        </li>
+      )
+    })}
+  </ul>
+</div>
 
 <script>
-  document.querySelectorAll<HTMLAnchorElement>('[data-locale-choice]').forEach((link) => {
-    link.addEventListener('click', () => {
-      const locale = link.dataset.localeChoice
-      if (!locale) return
-      const secure = window.location.protocol === 'https:' ? '; Secure' : ''
-      document.cookie = `phaeno_locale=${encodeURIComponent(locale)}; Path=/; Max-Age=31536000; SameSite=Lax${secure}`
-      document.cookie = `phaeno_locale_prompt=; Path=/; Max-Age=0; SameSite=Lax${secure}`
+  document.querySelectorAll<HTMLElement>('[data-locale-switcher]').forEach((switcher) => {
+    const trigger = switcher.querySelector<HTMLButtonElement>('.locale-switcher__trigger')
+    const menu = switcher.querySelector<HTMLElement>('[role="menu"]')
+    const items = Array.from(switcher.querySelectorAll<HTMLAnchorElement>('[role="menuitem"]'))
+    const supportsHover = window.matchMedia('(hover: hover)').matches
+    if (!trigger || !menu || items.length === 0) return
+
+    const setOpen = (open: boolean) => {
+      const wasOpen = trigger.getAttribute('aria-expanded') === 'true'
+      switcher.classList.toggle('open', open)
+      trigger.setAttribute('aria-expanded', String(open))
+
+      if (open && !wasOpen) {
+        document.dispatchEvent(new CustomEvent('phaeno:locale-menu-open', {
+          detail: { trigger },
+        }))
+      }
+    }
+
+    const focusItem = (position: number | 'first' | 'last') => {
+      const currentIndex = items.indexOf(document.activeElement as HTMLAnchorElement)
+      const nextIndex = position === 'first'
+        ? 0
+        : position === 'last'
+          ? items.length - 1
+          : (currentIndex + position + items.length) % items.length
+      items[nextIndex]?.focus()
+    }
+
+    switcher.addEventListener('mouseenter', () => {
+      setOpen(true)
+    })
+    switcher.addEventListener('mouseleave', () => {
+      if (items.includes(document.activeElement as HTMLAnchorElement)) return
+      setOpen(false)
+    })
+
+    switcher.addEventListener('focusout', (event) => {
+      if (!switcher.contains(event.relatedTarget as Node | null)) setOpen(false)
+    })
+
+    trigger.addEventListener('click', () => {
+      setOpen(supportsHover || trigger.getAttribute('aria-expanded') !== 'true')
+    })
+
+    trigger.addEventListener('keydown', (event) => {
+      if (event.key === 'Enter' || event.key === ' ') {
+        event.preventDefault()
+        setOpen(trigger.getAttribute('aria-expanded') !== 'true')
+      } else if (event.key === 'ArrowDown') {
+        event.preventDefault()
+        setOpen(true)
+        focusItem('first')
+      } else if (event.key === 'Escape') {
+        event.preventDefault()
+        setOpen(false)
+      }
+    })
+
+    menu.addEventListener('keydown', (event) => {
+      if (event.key === 'ArrowDown') {
+        event.preventDefault()
+        focusItem(1)
+      } else if (event.key === 'ArrowUp') {
+        event.preventDefault()
+        focusItem(-1)
+      } else if (event.key === 'Home') {
+        event.preventDefault()
+        focusItem('first')
+      } else if (event.key === 'End') {
+        event.preventDefault()
+        focusItem('last')
+      } else if (event.key === 'Escape') {
+        event.preventDefault()
+        setOpen(false)
+        trigger.focus()
+      } else if (event.key === 'Tab') {
+        setOpen(false)
+      } else if (event.key === ' ') {
+        event.preventDefault()
+        ;(event.target as HTMLAnchorElement).click()
+      }
+    })
+
+    document.addEventListener('click', (event) => {
+      if (!switcher.contains(event.target as Node)) setOpen(false)
+    })
+
+    document.addEventListener('phaeno:main-menu-open', () => {
+      setOpen(false)
+    })
+
+    items.forEach((link) => {
+      link.addEventListener('click', () => {
+        const locale = link.dataset.localeChoice
+        if (!locale) return
+        const secure = window.location.protocol === 'https:' ? '; Secure' : ''
+        document.cookie = `phaeno_locale=${encodeURIComponent(locale)}; Path=/; Max-Age=31536000; SameSite=Lax${secure}`
+        document.cookie = `phaeno_locale_prompt=; Path=/; Max-Age=0; SameSite=Lax${secure}`
+      })
     })
   })
 </script>
 
 <style>
 .locale-switcher {
+  --locale-menu-offset: calc((var(--header-height) - 2.75rem) / 2);
+
+  position: relative;
+  font-size: var(--font-size-xs);
+  font-weight: var(--font-weight-semibold);
+  line-height: 1;
+}
+
+.locale-switcher.open {
+  z-index: 1000;
+}
+
+.locale-switcher::after {
+  content: '';
+  position: absolute;
+  inset-block-start: 100%;
+  inset-inline: 0;
+  z-index: 59;
+  height: var(--locale-menu-offset);
+  pointer-events: none;
+}
+
+.locale-switcher.open::after {
+  pointer-events: auto;
+}
+
+.locale-switcher__trigger {
   display: inline-flex;
   align-items: center;
   gap: var(--space-2);
@@ -49,26 +199,124 @@ const target = locales[targetLocale]
   border-radius: var(--radius-pill);
   color: var(--color-text);
   background: rgb(255 255 255 / .7);
-  font-size: var(--font-size-xs);
-  font-weight: var(--font-weight-semibold);
-  line-height: 1;
-  text-decoration: none;
+  cursor: pointer;
   white-space: nowrap;
 }
 
-.locale-switcher:hover {
+.locale-switcher__trigger::after {
+  content: '▸';
+  margin-inline-start: .3rem;
+  color: var(--color-text-muted);
+  transition: transform var(--duration-fast) var(--ease-standard);
+}
+
+.locale-switcher__name--short {
+  display: none;
+}
+
+.locale-switcher__trigger:hover,
+.locale-switcher.open .locale-switcher__trigger {
   color: var(--color-brand-strong);
   background: var(--phaeno-green-50);
 }
 
-.locale-switcher:focus-visible {
+.locale-switcher.open .locale-switcher__trigger::after {
+  transform: rotate(90deg);
+}
+
+:global(html[dir='rtl']) .locale-switcher__trigger::after {
+  content: '◂';
+}
+
+:global(html[dir='rtl']) .locale-switcher.open .locale-switcher__trigger::after {
+  transform: rotate(-90deg);
+}
+
+.locale-switcher__trigger:focus-visible,
+.locale-switcher a:focus-visible {
   outline: 2px solid var(--color-focus);
   outline-offset: 2px;
 }
 
+.locale-switcher ul {
+  position: absolute;
+  display: grid;
+  gap: 0;
+  inset-block-start: calc(100% + var(--locale-menu-offset));
+  inset-inline-end: 0;
+  z-index: 60;
+  min-width: 10rem;
+  margin: 0;
+  padding: var(--space-1);
+  border: 1px solid var(--phaeno-green-200);
+  border-radius: var(--radius-lg);
+  background: rgb(255 255 255 / .99);
+  box-shadow: var(--shadow-md);
+  list-style: none;
+  visibility: hidden;
+  opacity: 0;
+  pointer-events: none;
+  transform: translateY(-.35rem);
+  transition:
+    opacity var(--duration-base) var(--ease-standard),
+    transform var(--duration-base) var(--ease-standard),
+    visibility 0s linear var(--duration-base);
+}
+
+.locale-switcher.open ul {
+  visibility: visible;
+  opacity: 1;
+  pointer-events: auto;
+  transform: translateY(0);
+  transition-delay: 0s;
+}
+
+.locale-switcher li {
+  margin: 0;
+  padding: 0;
+}
+
+.locale-switcher a {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-4);
+  padding: .7rem .8rem;
+  border-radius: var(--radius-md);
+  color: var(--color-text);
+  text-decoration: none;
+  white-space: nowrap;
+}
+
+.locale-switcher a[aria-current='true'] {
+  color: var(--color-brand-strong);
+  background: var(--phaeno-green-50);
+  font-weight: var(--font-weight-semibold);
+}
+
+.locale-switcher__check {
+  color: var(--color-brand-strong);
+  font-size: 1rem;
+  line-height: 1;
+}
+
+.locale-switcher a:hover {
+  color: var(--color-brand-strong);
+  background: var(--phaeno-green-50);
+}
+
 @media (max-width: 1120px) {
-  .locale-switcher span:last-child {
+  .locale-switcher__trigger {
+    gap: var(--space-1);
+    padding-inline: .65rem;
+  }
+
+  .locale-switcher__name--full {
     display: none;
+  }
+
+  .locale-switcher__name--short {
+    display: inline;
   }
 }
 </style>

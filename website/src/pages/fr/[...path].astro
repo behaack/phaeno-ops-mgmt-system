@@ -1,17 +1,17 @@
 ---
 import LocalizedPageRenderer from '@/components/i18n/LocalizedPageRenderer.astro'
 import { getLocalizedWhitePaper } from '@/i18n/localizedPublications'
-import { isArabicEnabled } from '@/i18n/locales'
+import { isFrenchEnabled } from '@/i18n/locales'
 import { getStaticLocalizedRoutePath, localizedRoutePairs } from '@/i18n/routes'
 
 export function getStaticPaths() {
-  if (!isArabicEnabled) return []
+  if (!isFrenchEnabled) return []
 
   return localizedRoutePairs.map((route) => ({
-    params: { path: getStaticLocalizedRoutePath(route.ar, 'ar') },
+    params: { path: getStaticLocalizedRoutePath(route.fr, 'fr') },
     props: {
       route,
-      page: getLocalizedWhitePaper('ar', route.translationKey),
+      page: getLocalizedWhitePaper('fr', route.translationKey),
     },
   }))
 }
@@ -19,4 +19,4 @@ export function getStaticPaths() {
 const { route, page } = Astro.props
 ---
 
-<LocalizedPageRenderer locale="ar" translationKey={route.translationKey} page={page} />
+<LocalizedPageRenderer locale="fr" translationKey={route.translationKey} page={page} />

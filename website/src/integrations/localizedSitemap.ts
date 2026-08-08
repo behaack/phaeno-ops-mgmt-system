@@ -2,27 +2,37 @@ import { readdir, readFile, writeFile } from 'node:fs/promises'
 import { join } from 'node:path'
 import { fileURLToPath } from 'node:url'
 import type { AstroIntegration } from 'astro'
+import type { LocalizedLocale, SupportedLocale } from '../i18n/locales'
 import { localizedRoutePairs } from '../i18n/routes'
 
 const sitemapFilePattern = /^sitemap-\d+\.xml$/
 
 interface Options {
-  enabled: boolean
+  enabledLocales: LocalizedLocale[]
 }
 
-export function localizedSitemap({ enabled }: Options): AstroIntegration {
+const routeKeys: Record<SupportedLocale, 'enUS' | LocalizedLocale> = {
+  'en-US': 'enUS',
+  ar: 'ar',
+  fr: 'fr',
+}
+
+export function localizedSitemap({ enabledLocales }: Options): AstroIntegration {
   return {
     name: 'phaeno-localized-sitemap',
     hooks: {
       'astro:build:done': async ({ dir }) => {
-        if (!enabled) return
-        await addLocalizedAlternates(dir)
+        if (enabledLocales.length === 0) return
+        await addLocalizedAlternates(dir, enabledLocales)
       },
     },
   }
 }
 
-export async function addLocalizedAlternates(outputDirectory: URL) {
+export async function addLocalizedAlternates(
+  outputDirectory: URL,
+  enabledLocales: LocalizedLocale[],
+) {
   const outputPath = fileURLToPath(outputDirectory)
   const sitemapFiles = (await readdir(outputPath))
     .filter((fileName) => sitemapFilePattern.test(fileName))
@@ -50,21 +60,26 @@ export async function addLocalizedAlternates(outputDirectory: URL) {
       const location = decodeXml(locationMatch[1])
       const url = new URL(location)
       const decodedPath = decodeURIComponent(url.pathname).replace(/\/+$/, '') || '/'
-      const pair = localizedRoutePairs.find(
-        (candidate) => candidate.enUS === decodedPath || candidate.ar === decodedPath,
-      )
+      const activeLocales: SupportedLocale[] = ['en-US', ...enabledLocales]
+      const pair = localizedRoutePairs.find((candidate) => (
+        activeLocales.some((locale) => candidate[routeKeys[locale]] === decodedPath)
+      ))
       if (!pair) return urlBlock
 
       const englishUrl = absoluteRouteUrl(pair.enUS, url.origin)
-      const arabicUrl = absoluteRouteUrl(pair.ar, url.origin)
-      if (!locations.has(englishUrl) || !locations.has(arabicUrl)) {
+      const localizedUrls = activeLocales.map((locale) => ({
+        locale,
+        url: absoluteRouteUrl(pair[routeKeys[locale]], url.origin),
+      }))
+      if (localizedUrls.some((item) => !locations.has(item.url))) {
         throw new Error(`Sitemap alternate pair is incomplete for ${pair.translationKey}.`)
       }
 
       const withoutAlternates = urlBlock.replace(/<xhtml:link\b[^>]*\/>/gi, '')
       const alternates = [
-        `<xhtml:link rel="alternate" hreflang="en-US" href="${escapeXml(englishUrl)}"/>`,
-        `<xhtml:link rel="alternate" hreflang="ar" href="${escapeXml(arabicUrl)}"/>`,
+        ...localizedUrls.map((item) => (
+          `<xhtml:link rel="alternate" hreflang="${item.locale}" href="${escapeXml(item.url)}"/>`
+        )),
         `<xhtml:link rel="alternate" hreflang="x-default" href="${escapeXml(englishUrl)}"/>`,
       ].join('')
 

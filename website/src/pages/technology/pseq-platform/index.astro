@@ -3,13 +3,11 @@ import Layout from '@/layouts/Layout.astro';
 import TopPageBanner from '@/components/TopPageBanner.astro';
 import SEOMeta from '@/components/meta-data-helpers/SEOMeta.astro';
 import NewSeqCategory from '@/components/NewSeqCategory.astro';
-import TranslationReviewNotice from '@/components/i18n/TranslationReviewNotice.astro';
 import type { SupportedLocale } from '@/i18n/locales';
 import { getPageCatalog } from '@/i18n/pageCatalogs';
 import { getLocalizedPath } from '@/i18n/routes';
 interface Props { locale?: SupportedLocale }
 const { locale = 'en-US' } = Astro.props
-const isTranslation = locale !== 'en-US'
 const content = getPageCatalog(locale).pseq
 const mechanisms = content.mechanisms
 const workflows = content.workflows
@@ -25,7 +23,6 @@ const workflows = content.workflows
     locale={locale}
   />  
   <main id="main" class="science-page" tabindex="-1">
-    {isTranslation ? <TranslationReviewNotice englishPath="/technology/pseq-platform" /> : null}
     <TopPageBanner title={content.banner} image="image-2" trademark locale={locale} />
     <section>
       <h2

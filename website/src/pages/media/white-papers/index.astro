@@ -9,15 +9,17 @@ import MediaSearch from '@/components/MediaSearch.astro'
 import MediaNoItems from '@/components/MediaNoItems.astro'
 import { formatContentDate } from '@/lib/dates'
 import { getWhitePaperPublication } from '@/lib/publications'
-import TranslationReviewNotice from '@/components/i18n/TranslationReviewNotice.astro'
-import type { SupportedLocale } from '@/i18n/locales'
-import { arabicWhitePapers } from '@/i18n/arabicPages'
+import type { LocalizedLocale, SupportedLocale } from '@/i18n/locales'
+import { getLocalizedWhitePapers } from '@/i18n/localizedPublications'
 import { getPageCountLabel } from '@/i18n/messages'
 import { getPageCatalog } from '@/i18n/pageCatalogs'
 interface Props { locale?: SupportedLocale }
 const { locale = 'en-US' } = Astro.props
 const isTranslation = locale !== 'en-US'
 const content = getPageCatalog(locale).whitePapers
+const localizedPapers = isTranslation
+  ? getLocalizedWhitePapers(locale as LocalizedLocale)
+  : []
 
 const papers = await getCollection('white_papers')
 const publications = papers.map((paper) => ({
@@ -36,20 +38,19 @@ const publications = papers.map((paper) => ({
     locale={locale}
   />    
   <main id="main">
-    {isTranslation ? <TranslationReviewNotice englishPath="/media/white-papers" /> : null}
     <TopPageBanner title={content.banner} image="image-3" locale={locale}/>
     <section>
-      <MediaSearch listLength={publications.length} placeholder={content.searchPlaceholder} />
+      <MediaSearch listLength={isTranslation ? localizedPapers.length : publications.length} placeholder={content.searchPlaceholder} />
       <MediaCollection noResultsMessage={content.noResults}>
-        {isTranslation ? arabicWhitePapers.map((page) => (
+        {isTranslation ? localizedPapers.map((page) => (
           <MediaCard
             searchString={`${page.title} ${page.whitePaper.topics.join(' ')}`.toLowerCase()}
             title={page.title}
             image={page.whitePaper.image}
             summary={page.description}
-            link={page.route.ar}
+            link={page.route[locale as LocalizedLocale]}
           >
-            <div>{formatContentDate(page.whitePaper.date, undefined, 'ar')} · {getPageCountLabel('ar', page.whitePaper.pageCount)}</div>
+            <div>{formatContentDate(page.whitePaper.date, undefined, locale)} · {getPageCountLabel(locale, page.whitePaper.pageCount)}</div>
             <div>{content.pdfLanguage}</div>
           </MediaCard>
         )) : publications.map(({ paper, paths }) => (
@@ -64,7 +65,7 @@ const publications = papers.map((paper) => ({
           </MediaCard>
         ))}      
       </MediaCollection>
-      <MediaNoItems listLength={publications.length} message={content.empty} />
+      <MediaNoItems listLength={isTranslation ? localizedPapers.length : publications.length} message={content.empty} />
       <br />
     </section>
   </main>

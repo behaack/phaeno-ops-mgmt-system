@@ -11,9 +11,17 @@ import { localizedSitemap } from './src/integrations/localizedSitemap';
 
 const isWebsiteReviewMode =
   process.env.PUBLIC_SITE_REVIEW_MODE?.trim().toLowerCase() === 'true';
-const arabicMode = process.env.PUBLIC_I18N_ARABIC_MODE?.trim().toLowerCase() ?? 'off';
+const defaultLocalizedMode = isWebsiteReviewMode ? 'preview' : 'off';
+const arabicMode = process.env.PUBLIC_I18N_ARABIC_MODE?.trim().toLowerCase() ?? defaultLocalizedMode;
 const isArabicEnabled =
   arabicMode === 'published' || (arabicMode === 'preview' && isWebsiteReviewMode);
+const frenchMode = process.env.PUBLIC_I18N_FRENCH_MODE?.trim().toLowerCase() ?? defaultLocalizedMode;
+const isFrenchEnabled =
+  frenchMode === 'published' || (frenchMode === 'preview' && isWebsiteReviewMode);
+const enabledLocalizedLocales = [
+  ...(isArabicEnabled ? ['ar'] : []),
+  ...(isFrenchEnabled ? ['fr'] : []),
+];
 const reviewSiteUrl =
   process.env.WEBSITE_PREVIEW_SITE_URL?.trim().replace(/\/+$/, '');
 const reviewDeploymentHost =
@@ -48,7 +56,7 @@ export default defineConfig({
     mdx(),
     react(),
     sitemap(),
-    localizedSitemap({ enabled: isArabicEnabled }),
+    localizedSitemap({ enabledLocales: enabledLocalizedLocales }),
     ...(isWebsiteReviewMode ? [] : [llmsTxt()]),
     (await import('astro-compress')).default({
       CSS: false,

@@ -5,12 +5,10 @@ import TopPageBanner from '@/components/TopPageBanner.astro';
 import Layout from '@/layouts/Layout.astro';
 import SEOMeta from '@/components/meta-data-helpers/SEOMeta.astro';
 import { formatContentDate } from '@/lib/dates';
-import TranslationReviewNotice from '@/components/i18n/TranslationReviewNotice.astro';
 import type { SupportedLocale } from '@/i18n/locales';
 import { getPageCatalog } from '@/i18n/pageCatalogs';
 interface Props { locale?: SupportedLocale }
 const { locale = 'en-US' } = Astro.props
-const isTranslation = locale !== 'en-US'
 const content = getPageCatalog(locale).jobs
 const jobs = await getCollection('jobs');
 const isJobs = (jobs.length > 0)
@@ -25,7 +23,6 @@ const isJobs = (jobs.length > 0)
     locale={locale}
   />
   <main id="main" tabindex="-1">
-    {isTranslation ? <TranslationReviewNotice englishPath="/about/job-openings" /> : null}
     <TopPageBanner title={content.banner} image="image-3" locale={locale}/>
     <section>
       <div class="careers-intro">

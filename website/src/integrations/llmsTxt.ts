@@ -2,6 +2,7 @@ import { readdir, readFile, writeFile } from 'node:fs/promises'
 import { join } from 'node:path'
 import { fileURLToPath } from 'node:url'
 import type { AstroIntegration } from 'astro'
+import { localizedRoutePairs } from '../i18n/routes'
 
 interface PublicPage {
   title: string
@@ -15,6 +16,8 @@ interface LlmSection {
 }
 
 const sitemapFilePattern = /^sitemap-\d+\.xml$/
+const homeRoutePair = localizedRoutePairs.find((pair) => pair.translationKey === 'page.home')
+const localizedPrefixes = homeRoutePair ? [homeRoutePair.ar, homeRoutePair.fr] : []
 const sections: LlmSection[] = [
   {
     heading: 'Core Website',
@@ -77,7 +80,12 @@ export async function generateLlmsTxt(outputDirectory: URL) {
       [...sitemapUrls].map((location) => readPublicPage(outputPath, new URL(location))),
     )
   )
-    .filter((page): page is PublicPage => page !== null && !page.url.pathname.startsWith('/ar'))
+    .filter((page): page is PublicPage => (
+      page !== null
+      && !localizedPrefixes.some((prefix) => (
+        page.url.pathname === prefix || page.url.pathname.startsWith(`${prefix}/`)
+      ))
+    ))
     .sort((left, right) => left.url.pathname.localeCompare(right.url.pathname, 'en-US'))
 
   const homePage = pages.find((page) => page.url.pathname === '/')

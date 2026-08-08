@@ -64,12 +64,12 @@ function cellState(status: CellStatus) {
               return (
                 <td data-label={label} class:list={{ 'pseq-value': columnIndex === 0 && rowIndex >= 10 }}>
                   {state ? (
-                    <>
+                    <span class="status-result">
                       <span class:list={['status', state.className]} aria-hidden="true">{state.symbol}</span>
                       {isStatusOnly
                         ? <span class="sr-only">{state.label}</span>
                         : <span>{value}</span>}
-                    </>
+                    </span>
                   ) : value}
                 </td>
               )
@@ -131,11 +131,12 @@ thead th {
   font-family: var(--font-family-data);
   font-size: var(--font-size-sm);
   font-weight: var(--font-weight-medium);
-  text-align: left;
+  text-align: center;
 }
 
 thead th:first-child {
   width: 25%;
+  text-align: start;
 }
 
 thead th:nth-child(2) {
@@ -177,7 +178,6 @@ tbody th,
 tbody td {
   padding: .9rem 1rem;
   vertical-align: top;
-  text-align: left;
 }
 
 tbody th {
@@ -185,6 +185,7 @@ tbody th {
   font-size: var(--font-size-sm);
   font-weight: var(--font-weight-semibold);
   line-height: 1.35;
+  text-align: start;
 }
 
 tbody td {
@@ -192,6 +193,7 @@ tbody td {
   font-family: ui-monospace, SFMono-Regular, Consolas, 'Liberation Mono', monospace;
   font-size: .78rem;
   line-height: 1.5;
+  text-align: center;
 }
 
 tbody td:nth-child(2) {
@@ -205,21 +207,15 @@ tbody td:nth-child(2) {
 .status {
   display: inline-block;
   min-width: 1.1em;
-  margin-right: .35rem;
   font-family: var(--font-family-data);
   font-weight: var(--font-weight-semibold);
 }
 
-.status-with-detail {
-  display: grid;
-  width: 100%;
-  grid-template-columns: 1.1em minmax(0, 1fr);
-  column-gap: .35rem;
+.status-result {
+  display: inline-flex;
+  gap: .35rem;
   align-items: start;
-}
-
-.status-with-detail .status {
-  margin-right: 0;
+  unicode-bidi: isolate;
 }
 
 .status--yes {
@@ -299,6 +295,7 @@ tbody td:nth-child(2) {
     grid-template-columns: minmax(7.5rem, 42%) 1fr;
     gap: var(--space-3);
     padding: .35rem 0;
+    text-align: start;
   }
 
   tbody td::before {

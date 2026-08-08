@@ -7,7 +7,7 @@ import ScrollBehavior from '@/components/script-components/ScrollBehavior.astro'
 import MenuBehavior from '@/components/script-components/MenuBehavior.astro';
 import Analytics from '@vercel/analytics/astro';
 import { isWebsiteReviewMode } from '@/lib/reviewMode';
-import { getAlternateLocale, getLocaleDefinition, isArabicEnabled, type SupportedLocale } from '@/i18n/locales';
+import { enabledLocales, getLocaleDefinition, type LocalizedLocale, type SupportedLocale } from '@/i18n/locales';
 import { getLocalizedPath } from '@/i18n/routes';
 import { getMessages } from '@/i18n/messages';
 import LanguageSuggestion from '@/components/i18n/LanguageSuggestion.astro';
@@ -22,11 +22,18 @@ const pageMessages = getMessages(locale)
 
 /** Canonical URL (per-page, so we keep it) */
 const canonical = new URL(Astro.url.pathname, Astro.site).href;
-const englishPath = getLocalizedPath(Astro.url.pathname, 'en-US')
-const arabicPath = getLocalizedPath(Astro.url.pathname, 'ar')
-const hasAlternates = isArabicEnabled && Boolean(englishPath && arabicPath)
-const alternatePath = getLocalizedPath(Astro.url.pathname, getAlternateLocale(locale))
+const localizedPaths = enabledLocales
+  .map((targetLocale) => ({
+    locale: targetLocale,
+    path: getLocalizedPath(Astro.url.pathname, targetLocale),
+  }))
+  .filter((item): item is { locale: SupportedLocale; path: string } => Boolean(item.path))
+const englishPath = localizedPaths.find((item) => item.locale === 'en-US')?.path
+const hasAlternates = localizedPaths.length > 1
 const isSourceLocale = locale === localeDefinition.sourceLocale
+const suggestionAlternates = localizedPaths.filter(
+  (item): item is { locale: LocalizedLocale; path: string } => item.locale !== 'en-US',
+)
 ---
 <html lang={locale} dir={localeDefinition.direction}>
   <head>
@@ -36,10 +43,11 @@ const isSourceLocale = locale === localeDefinition.sourceLocale
 
     <!-- Canonical & favicon -->
     <link rel="canonical" href={canonical} />
-    {hasAlternates && englishPath && arabicPath ? (
+    {hasAlternates && englishPath ? (
       <>
-        <link rel="alternate" hreflang="en-US" href={new URL(englishPath, Astro.site).href} />
-        <link rel="alternate" hreflang="ar" href={new URL(arabicPath, Astro.site).href} />
+        {localizedPaths.map((item) => (
+          <link rel="alternate" hreflang={item.locale} href={new URL(item.path, Astro.site).href} />
+        ))}
         <link rel="alternate" hreflang="x-default" href={new URL(englishPath, Astro.site).href} />
       </>
     ) : null}
@@ -107,9 +115,9 @@ const isSourceLocale = locale === localeDefinition.sourceLocale
       {pageMessages.skipToContent}
     </a>    
 
-    <Header locale={locale} alternatePath={hasAlternates ? alternatePath : undefined} />
-    {isSourceLocale && hasAlternates && arabicPath ? (
-      <LanguageSuggestion alternatePath={arabicPath} />
+    <Header locale={locale} localizedPaths={hasAlternates ? localizedPaths : []} />
+    {isSourceLocale && suggestionAlternates.length > 0 ? (
+      <LanguageSuggestion alternates={suggestionAlternates} />
     ) : null}
     <div class="page-container">
       <slot />

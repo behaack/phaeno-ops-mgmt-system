@@ -5,13 +5,11 @@ import ContactUsForms from '@/components/contact-forms/ContactUsForms';
 import TopPageBanner from '@/components/TopPageBanner.astro';
 import SocialMedia from '@/components/SocialMedia.astro';
 import ReCaptchaNotification from '@/components/ReCaptchaNotification.astro';
-import TranslationReviewNotice from '@/components/i18n/TranslationReviewNotice.astro';
 import type { SupportedLocale } from '@/i18n/locales';
 import { getPageCatalog } from '@/i18n/pageCatalogs';
 //import ScheduleMeeting from '@/components/ScheduleMeeting.astro';
 interface Props { locale?: SupportedLocale }
 const { locale = 'en-US' } = Astro.props
-const isTranslation = locale !== 'en-US'
 const content = getPageCatalog(locale).contact
 ---
 <Layout locale={locale}>
@@ -25,7 +23,6 @@ const content = getPageCatalog(locale).contact
     locale={locale}
   />  
   <main id="main" class="contact-page" tabindex="-1">
-    {isTranslation ? <TranslationReviewNotice englishPath="/contact" /> : null}
     <TopPageBanner title={content.banner} image="image-2" locale={locale}/>
     <section class="contact-content">
       <div class="contact-intro">

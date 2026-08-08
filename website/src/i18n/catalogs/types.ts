@@ -146,9 +146,7 @@ export interface WebsiteMessages {
       suffix: string
     }
   }
-  arabicPreview: {
-    reviewNotice: string
-    englishSource: string
+  localizedPublication: {
     whitePaperSeries: string
     noPublishedContent: string
     backToWhitePapers: string

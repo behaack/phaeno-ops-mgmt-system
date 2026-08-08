@@ -1,6 +1,7 @@
 import type { IMenuItem } from '@/layouts/header/menu-versions/IMenuItem'
 import { ar } from './catalogs/ar'
 import { enUS } from './catalogs/en-US'
+import { fr } from './catalogs/fr'
 import type { PluralLabels, WebsiteMessages } from './catalogs/types'
 import { prefixPathForLocale, type SupportedLocale } from './locales'
 
@@ -9,6 +10,7 @@ export type { WebsiteMessages } from './catalogs/types'
 export const messages: Record<SupportedLocale, WebsiteMessages> = {
   'en-US': enUS,
   ar,
+  fr,
 }
 
 export function getMessages(locale: SupportedLocale) {

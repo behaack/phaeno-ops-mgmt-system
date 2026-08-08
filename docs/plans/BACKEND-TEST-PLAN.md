@@ -32,10 +32,10 @@ and rollback-isolated PostgreSQL coverage.
   visible-before-PDF snippet selection, source-aware ranking, and exclusion of
   index-only text from the public Website response; Preview/production Lucene
   index isolation, rejection of a shared index path, and preview-proxy key
-  comparison; locale-isolated English/Arabic indexing, Arabic diacritic
-  normalization, regional Arabic locale normalization, and unchanged
-  English-default queries. The locale-focused additions are created but have
-  not yet been executed.
+  comparison; locale-isolated English/Arabic/French indexing, Arabic diacritic
+  normalization, French stemming, regional Arabic and French locale
+  normalization, and unchanged English-default queries. The locale-focused
+  additions are created but have not yet been executed.
 - [x] `backend/test/WebsiteDocumentTextExtractorTests.cs` - deterministic
   two-page PDF reading order, extracted-character limits, and malformed-PDF
   failure classification for the PdfPig implementation.

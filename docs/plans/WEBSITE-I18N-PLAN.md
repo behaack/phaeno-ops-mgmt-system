@@ -1,37 +1,38 @@
 # Public Website internationalization plan
 
-- Status: implementation in progress; Arabic review preview implemented locally, production publication blocked on review
+- Status: implementation in progress; Arabic and French review previews implemented locally, production publication blocked on review
 - Owner: Product Owner
 - Technical owner: Codex
 - Last updated: 2026-08-07
 
 ## Authorization boundary
 
-Implementation was authorized by the Product Owner on 2026-08-07. That authorization covers the additive Website and backend code in this plan without a new dependency. It does not authorize publication of unreviewed translation, translation purchase, Vercel configuration, search reindex, deployment, or production activation. The Arabic implementation remains review-gated and must preserve the no-disruption contract below.
+Implementation was authorized by the Product Owner on 2026-08-07. That authorization covers the additive Website and backend code in this plan without a new dependency. It does not authorize publication of unreviewed translation, translation purchase, Vercel configuration, search reindex, deployment, or production activation. The Arabic and French implementations remain review-gated and must preserve the no-disruption contract below.
 
 ## Current implementation checkpoint
 
 Implemented locally on 2026-08-07:
 
-- the default build remains unprefixed `en-US` and generates no Arabic route, selector, suggestion, or localized sitemap entry;
-- `PUBLIC_I18N_ARABIC_MODE=preview` is accepted only together with `PUBLIC_SITE_REVIEW_MODE=true` and generates the complete 16-pair Arabic review route set;
-- all current public English routes have explicit Arabic equivalents, while the four white-paper families use reviewed-in-place explicit Arabic draft slugs connected by `translationKey`;
-- all 16 Arabic routes now carry page-by-page draft translations. The principal static pages render through the same Astro page presentation as their English sources, and the four white-paper landing pages include the complete Abstract, Key topics, Contents, and applicable objective callout while clearly identifying their PDF assets as English;
-- locale-aware layout, `lang`, `dir`, navigation, footer, search controls, contact/demo forms, validation messages, date formatting, sharing text, and logical CSS support RTL;
-- client-side browser-language detection offers Arabic without redirecting, and explicit accept/dismiss or selector choices use first-party functional cookies;
-- Arabic review HTML has localized metadata, self-canonicals, reciprocal `hreflang`, `x-default`, and sitemap alternates; the review build remains `noindex` and omits `llms.txt`;
+- the default build remains unprefixed `en-US` and generates no draft localized route, selector, suggestion, or localized sitemap entry;
+- private team review mode enables the complete 16-pair Arabic and 16-pair French review route sets by default, while locale-specific mode variables may explicitly focus the review build;
+- all current public English routes have explicit Arabic and French equivalents, while the four white-paper families use reviewed-in-place explicit localized draft slugs connected by `translationKey`;
+- all 16 Arabic and 16 French routes carry page-by-page draft translations. Principal static pages render through the same Astro presentation as their English sources, and localized white-paper landing pages include the complete Abstract, Key topics, Contents, and applicable objective callout while identifying their PDF assets as English;
+- locale-aware layout, `lang`, `dir`, navigation, footer, search controls, contact/demo forms, validation messages, date formatting, sharing text, and logical CSS support both French LTR and Arabic RTL;
+- client-side browser-language detection offers enabled translations without redirecting, and explicit accept/dismiss or selector choices use first-party functional cookies;
+- localized review HTML has localized metadata, self-canonicals, reciprocal `hreflang`, `x-default`, and sitemap alternates; the review build remains `noindex` and omits `llms.txt`;
 - content schemas now carry additive translation identity/status/revision/reviewer and publication-asset language fields;
-- the Website crawler reads document language, the search API accepts an optional `locale` while defaulting to `en-US`, Lucene partitions records by locale, and Arabic Unicode normalization/search is implemented;
+- the Website crawler reads document language, the search API accepts an optional `locale` while defaulting to `en-US`, Lucene partitions records by locale, Arabic Unicode normalization/search is implemented, and French uses French stemming;
 - an Arabic landing page does not index text from its linked English PDF, and the UI/metadata disclose the asset language; and
-- the normal Website build and Arabic review build succeed, as does an isolated backend Release build. Focused backend tests were added but not executed because the repository requires a separate explicit test request.
-- a dependency-free generated-HTML parity check now verifies all 16 route pairs for route output, RTL document metadata, core semantic structures, and minimum content coverage, and rejects the obsolete condensed Arabic home page.
+- the normal Website build, three-language review build, and isolated backend Release build succeed. Focused backend tests were added but not executed because the repository requires a separate explicit test request.
+- a dependency-free generated-HTML parity check verifies all 32 localized route pairs for route output, document metadata, core semantic structures, and minimum content coverage, and rejects the obsolete condensed Arabic home page.
 - fixed marketing-page copy now uses symmetric, contract-checked
-  `pageCatalogs/en-US.ts` and `pageCatalogs/ar.ts` files selected through one
-  locale lookup; page templates no longer embed English/Arabic copy branches,
-  and `arabicPages.ts` now contains only Arabic white-paper editorial records.
+  `pageCatalogs/en-US.ts`, `pageCatalogs/ar.ts`, and `pageCatalogs/fr.ts` files
+  selected through one locale lookup; page templates no longer embed locale
+  copy branches, and locale-owned publication files contain only white-paper
+  editorial records.
 
 Implementation note: the pilot uses one typed route-pair registry and one
-static Arabic catch-all route instead of enabling Astro's framework-level
+static catch-all route per localized locale instead of enabling Astro's framework-level
 redirect/fallback behavior. This keeps the existing route tree and redirects
 inert, supports explicit editorial slugs, and still produces ordinary static
 HTML. Native Astro i18n routing may be reconsidered only if it can be proven
@@ -39,12 +40,12 @@ not to change the established unprefixed Website behavior.
 
 Still required before production publication:
 
-- named Arabic language, scientific, marketing, privacy/legal, and accessibility reviewers;
+- named Arabic and French language, scientific, marketing, privacy/legal, and accessibility reviewers;
 - human review and acceptance of every draft string and page, with source revisions and review dates recorded;
 - browser/device, assistive-technology, visual, form, and deployed Preview acceptance;
 - execution of the focused backend tests and an isolated Preview search reindex;
 - production Vercel configuration, deployment, search reindex, and post-deploy SEO/search smoke checks; and
-- changing the Arabic release status from `draft` to `published` only after every gate above passes.
+- changing a localized release status from `draft` to `published` only after every gate above passes for that locale.
 
 ## Outcome
 
@@ -61,13 +62,15 @@ The Website will eventually support:
 | Japanese | `ja` | `/ja` | LTR | Use `ja`, not country code `jp` |
 | Chinese | `zh-Hans` | `/zh-hans` | LTR | Simplified Chinese as the initial proposed Chinese locale |
 | Arabic | `ar` | `/ar` | RTL | Modern Standard Arabic; confirmed as the first production translation and pilot locale |
+| French | `fr` | `/fr` | LTR | Neutral French draft; added as the second review locale before production publication |
 
 Locale identifiers will use BCP 47 language tags. URL segments will be lowercase and stable. Traditional Chinese (`zh-Hant`) is a distinct future product locale, not an alias of Simplified Chinese.
 
 The Product Owner has selected Modern Standard Arabic (`ar`) as the first
 translation. This intentionally front-loads the most demanding layout and
 language boundary so the first production alternate proves the RTL architecture
-rather than postponing it. `en-GB` remains planned but is no longer the pilot.
+rather than postponing it. French is now an additional draft review locale;
+Arabic remains the first production pilot, and `en-GB` remains planned.
 
 ## No-disruption contract
 
@@ -466,7 +469,7 @@ proven, and no existing English-US URL or behavior has changed.
 
 ### Phase 5 — auto-detection and explicit preference
 
-Implementation status: the client-side suggestion and explicit preference are implemented in Arabic review mode. Browser acceptance remains; middleware is intentionally deferred.
+Implementation status: the client-side suggestion and explicit preference are implemented for enabled Arabic and French review locales. Browser acceptance remains; middleware is intentionally deferred.
 
 - Add browser-language negotiation and the non-blocking first-visit suggestion.
 - Add explicit preference storage and dismissal behavior.
@@ -477,8 +480,9 @@ Exit: detection helps visitors without forcing navigation or destabilizing cache
 
 ### Phase 6 — one locale at a time
 
-After the Arabic pilot, the recommended order is `en-GB`, `es`, `de`, `ja`,
-then `zh-Hans`; commercial priority may change that order. Each locale repeats
+French has been added early as a draft review locale by Product Owner request.
+After the Arabic pilot, the remaining recommended order is `en-GB`, `es`, `de`,
+`ja`, then `zh-Hans`; commercial priority may change that order. Each locale repeats
 translation, scientific/legal/marketing review, search, SEO, accessibility,
 performance, and rollback gates. The Arabic-first decision deliberately proves
 the highest-risk directional layout boundary before the simpler LTR locales.
@@ -577,6 +581,7 @@ Settled:
 
 - Modern Standard Arabic (`ar`) is the first translation and production pilot.
 - The Arabic pilot must prove complete RTL behavior, not only translated prose.
+- French (`fr`) is the second implemented review locale but remains a draft.
 - `en-GB` remains supported but will not be the first alternate.
 
 The following defaults remain recommended and may be confirmed without asking
@@ -588,17 +593,18 @@ the Product Owner to choose technical mechanics:
    shared Arabic content uses Modern Standard Arabic.
 4. Keep first-party PDFs in their source language until separately translated
    and reviewed; clearly disclose file language on localized landing pages.
-5. After the Arabic pilot, use `en-GB` as the next low-risk locale unless
+5. After the Arabic pilot, use `en-GB` as the next low-risk not-yet-implemented locale unless
    commercial priority selects another language.
 6. Permit historical blogs and white papers to remain source-language-only
    unless they are included in a locale's approved launch corpus; never mix
    them silently into localized listings.
 
-The initial Arabic review corpus is every currently public static page plus all
-four current white-paper landing pages. Blog and job listings remain empty in
-Arabic because no source items are currently public. Translation-review
-ownership still must be assigned before publication. Decisions for later
-locales may remain open without blocking Arabic review. Astro routing,
+The initial Arabic and French review corpora are every currently public static
+page plus all four current white-paper landing pages. Blog and job listings
+remain empty in those locales because no source items are currently public.
+Translation-review ownership still must be assigned before publication.
+Decisions for later locales may remain open without blocking Arabic or French
+review. Astro routing,
 catalog design, middleware boundaries, search architecture, testing, and
 deployment mechanics remain engineering decisions.
 

@@ -27,9 +27,9 @@ const pageMessages = getMessages(locale)
 <style>
 .burger {
   display: none;
-  flex-direction: column;
-  gap: 6px;
-  background: none;
+  position: relative;
+  background: var(--color-surface);
+  color: var(--menu-color);
   border: none;
   width: 2.75rem;
   height: 2.75rem;
@@ -47,24 +47,47 @@ const pageMessages = getMessages(locale)
 }
 
 .burger:focus {
+  color: var(--menu-focus-color);
   background-color: var(--menu-focus-bgcolor);
   outline: 1px solid var(--focus-ring-color);
   outline-offset: 3px;
-  border-radius: .375rem;
+  border-radius: var(--radius-pill);
+}
+
+.burger:hover,
+.burger:focus:hover {
+  color: var(--menu-hover-color);
+  background-color: var(--phaeno-green-100);
 }
 
 .line {
+  position: absolute;
+  top: 50%;
+  left: 50%;
   width: 21px;
   height: 2px;
   border-radius: 2px;
-  background: var(--color-text);
+  background: currentColor;
+  transform-origin: center;
   transition:
     transform var(--duration-fast) var(--ease-standard),
     opacity var(--duration-fast) var(--ease-standard);
 }
 
+.line.top {
+  transform: translate(-50%, -50%) translateY(-7px);
+}
+
+.line.middle {
+  transform: translate(-50%, -50%);
+}
+
+.line.bottom {
+  transform: translate(-50%, -50%) translateY(7px);
+}
+
 .burger.open .top {
-  transform: rotate(45deg) translate(5px, 5px);
+  transform: translate(-50%, -50%) rotate(45deg);
 }
 
 .burger.open .middle {
@@ -72,7 +95,7 @@ const pageMessages = getMessages(locale)
 }
 
 .burger.open .bottom {
-  transform: rotate(-45deg) translate(7px, -8px);
+  transform: translate(-50%, -50%) rotate(-45deg);
 }
 
 @media (max-width: 900px) {

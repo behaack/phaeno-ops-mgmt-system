@@ -10,10 +10,10 @@ import { prefixPathForLocale, type SupportedLocale } from '@/i18n/locales';
 
 interface Props {
   locale?: SupportedLocale
-  alternatePath?: string
+  localizedPaths?: { locale: SupportedLocale; path: string }[]
 }
 
-const { locale = 'en-US', alternatePath } = Astro.props as Props
+const { locale = 'en-US', localizedPaths = [] } = Astro.props as Props
 const menu = getMenu(locale)
 const pageMessages = getMessages(locale)
 
@@ -31,13 +31,13 @@ const currentPath = decodeURIComponent(Astro.url.pathname).toLowerCase();
       />
     </a>
     <div class="header-actions flex items-center">
+      <Menu menuItems={menu} currentPath={currentPath} locale={locale} />
       <div class="signup-holder">
-        {alternatePath ? <LocaleSwitcher locale={locale} alternatePath={alternatePath} /> : null}
+        {localizedPaths.length > 1 ? <LocaleSwitcher locale={locale} localizedPaths={localizedPaths} /> : null}
         <Search locale={locale} client:idle />
         <SignupButton size="wide" locale={locale} />
       </div>
       <MobileMenuButton locale={locale} />
-      <Menu menuItems={menu} currentPath={currentPath} locale={locale} />
     </div>
   </div>
 </header>
@@ -77,6 +77,10 @@ header.visible {
   max-width: var(--content-max-width);
 }
 
+.header-actions {
+  position: relative;
+}
+
 .signup-holder {
   display: flex;
   align-items: center;
@@ -101,6 +105,13 @@ header.visible {
 @media (max-width: 1400px) {
   header {
     padding-inline-end: .25rem;
+  }
+}
+
+@media (max-width: 1200px) {
+  .signup-holder {
+    gap: var(--space-1);
+    margin-inline-start: var(--space-2);
   }
 }
 

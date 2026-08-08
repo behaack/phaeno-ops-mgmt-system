@@ -16,6 +16,7 @@ const footerItems = {
   left: {
     sections: [{
       header: 'Phaeno Inc.',
+      direction: 'ltr' as const,
       content: [
         { type: 'label' as const, label: '5270 California Avenue\r\nSuite 300\r\nIrvine, CA 92617', value: '' },
         { type: 'email' as const, label: 'info@phaenobiotech.com', value: 'info@phaenobiotech.com' },
@@ -83,7 +84,11 @@ const copyrightLabel = brand.copyright
     </div>
     <hr />
     <div class="bottom-container">
-      <div class="footer-legal">{copyrightLabel} &copy;{ copyYear } Phaeno Inc. {footerMessages.legal}</div>
+      <div class="footer-legal">
+        {copyrightLabel}
+        <span class="footer-legal__company" dir="ltr">&copy;{copyYear} Phaeno Inc.</span>
+        {footerMessages.legal}
+      </div>
       <div class="footer-policies">
         {footerItems.bottom.map(item => (
           <>
@@ -164,6 +169,11 @@ footer {
   display: flex;
   gap: var(--space-6);
   white-space: nowrap;
+}
+
+.footer-legal__company {
+  display: inline-block;
+  unicode-bidi: isolate;
 }
 
 footer :global(a) {

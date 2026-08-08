@@ -1,41 +1,7 @@
-import { localizedRoutePairs, type LocalizedRoutePair } from './routes'
-import type { TranslationStatus } from './locales'
+import { localizedRoutePairs } from './routes'
+import type { LocalizedPublicationInput, LocalizedPublicationPage } from './publicationTypes'
 
-export interface ArabicSection {
-  heading: string
-  paragraphs?: string[]
-  bullets?: string[]
-}
-
-export interface ArabicWhitePaper {
-  pdfPath: string
-  image: string
-  date: string
-  pageCount: number
-  version: string
-  topics: string[]
-  searchKeywords: string[]
-}
-
-export interface ArabicPage {
-  translationKey: string
-  sourceLocale: 'en-US'
-  sourceRevision: string
-  translationStatus: TranslationStatus
-  kind: 'white-paper'
-  title: string
-  metaTitle: string
-  description: string
-  eyebrow: string
-  lead: string
-  sections: ArabicSection[]
-  whitePaper: ArabicWhitePaper
-  route: LocalizedRoutePair
-}
-
-type ArabicPageInput = Omit<ArabicPage, 'sourceLocale' | 'sourceRevision' | 'translationStatus' | 'route'>
-
-function defineArabicPage(input: ArabicPageInput): ArabicPage {
+function defineArabicPage(input: LocalizedPublicationInput): LocalizedPublicationPage {
   const route = localizedRoutePairs.find((candidate) => candidate.translationKey === input.translationKey)
   if (!route) throw new Error(`Missing route pair for Arabic page ${input.translationKey}.`)
 
@@ -48,7 +14,7 @@ function defineArabicPage(input: ArabicPageInput): ArabicPage {
   }
 }
 
-export const arabicWhitePapers: ArabicPage[] = [
+export const arabicWhitePapers: LocalizedPublicationPage[] = [
   defineArabicPage({
     translationKey: 'white-paper.platform-overview',
     kind: 'white-paper',

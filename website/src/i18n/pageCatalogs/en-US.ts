@@ -286,7 +286,7 @@ export const enUSPageContent = {
     banner: 'PSeq & Multi-omics',
     searchKeywords: 'multi-omics PSeq transcript layer proteomics AI machine learning isoform resolution regulatory context batch effects reproducibility omics integration',
     introEyebrow: 'The discovery foundation',
-    introTitle: ['Better multi-omics', 'starts with a resolved transcript layer.'],
+    introTitle: ['Better multi‑omics', 'starts with a resolved transcript layer.'],
     introCopy: 'Multi-omics can be powerful—but it becomes fragile and expensive when upstream measurements are noisy or low-resolution.',
     principle: 'Core principle',
     thesis: 'Better inputs beat more layers.',

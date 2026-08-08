@@ -2,22 +2,24 @@
 import Layout from '@/layouts/Layout.astro'
 import PublicationSEOMeta from '@/components/meta-data-helpers/PublicationSEOMeta.astro'
 import MediaArticlePage from '@/components/MediaArticlePage.astro'
-import TranslationReviewNotice from '@/components/i18n/TranslationReviewNotice.astro'
-import type { ArabicPage } from '@/i18n/arabicPages'
+import type { LocalizedLocale } from '@/i18n/locales'
+import type { LocalizedPublicationPage } from '@/i18n/publicationTypes'
 import { getMessages } from '@/i18n/messages'
+import { prefixPathForLocale } from '@/i18n/locales'
 
 interface Props {
-  page: ArabicPage
+  locale: LocalizedLocale
+  page: LocalizedPublicationPage
 }
 
-const { page } = Astro.props as Props
+const { locale, page } = Astro.props as Props
 const paper = page.whitePaper
-const landingUrl = new URL(page.route.ar, Astro.site).href
+const landingUrl = new URL(page.route[locale], Astro.site).href
 const siteUrl = new URL('/', Astro.site).href
-const text = getMessages('ar').arabicPreview
+const text = getMessages(locale).localizedPublication
 ---
 
-<Layout locale="ar">
+<Layout locale={locale}>
   <PublicationSEOMeta
     slot="head"
     title={page.metaTitle}
@@ -30,20 +32,19 @@ const text = getMessages('ar').arabicPreview
     version={paper.version}
     topics={paper.topics}
     searchKeywords={paper.searchKeywords}
-    locale="ar"
+    locale={locale}
     assetLanguage="en-US"
   />
 
-  <TranslationReviewNotice englishPath={page.route.enUS} />
   <MediaArticlePage
-    locale="ar"
+    locale={locale}
     title={page.title}
     summary={page.description}
     image={paper.image}
     imagePosition="left"
     date={new Date(paper.date)}
     eyebrow={page.eyebrow}
-    backHref="/ar/media/white-papers"
+    backHref={prefixPathForLocale(locale, '/media/white-papers')}
     backLabel={text.backToWhitePapers}
     headerActionHref={paper.pdfPath}
     headerActionLabel={text.downloadEnglishPdf}

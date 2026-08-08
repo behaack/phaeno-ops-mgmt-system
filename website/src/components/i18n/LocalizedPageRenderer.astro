@@ -1,0 +1,44 @@
+---
+import HomePage from '@/pages/index.astro'
+import AboutPage from '@/pages/about/about-us/index.astro'
+import ContactPage from '@/pages/contact/index.astro'
+import InvestorsPage from '@/pages/investors/index.astro'
+import JobsPage from '@/pages/about/job-openings/index.astro'
+import PseqPage from '@/pages/technology/pseq-platform/index.astro'
+import MultiOmicsPage from '@/pages/technology/multi-omics/index.astro'
+import IsoformsPage from '@/pages/technology/why-isoforms-matter/index.astro'
+import BlogPage from '@/pages/media/blog/index.astro'
+import WhitePapersPage from '@/pages/media/white-papers/index.astro'
+import PrivacyPage from '@/pages/privacy/index.astro'
+import DataPoliciesPage from '@/pages/data-policies/index.astro'
+import LocalizedWhitePaperPage from './LocalizedWhitePaperPage.astro'
+import type { LocalizedLocale } from '@/i18n/locales'
+import type { LocalizedPublicationPage } from '@/i18n/publicationTypes'
+
+interface Props {
+  locale: LocalizedLocale
+  translationKey: string
+  page?: LocalizedPublicationPage
+}
+
+const { locale, translationKey, page } = Astro.props as Props
+const staticPageComponents = {
+  'page.home': HomePage,
+  'page.about-us': AboutPage,
+  'page.contact': ContactPage,
+  'page.investors': InvestorsPage,
+  'page.job-openings': JobsPage,
+  'page.pseq-platform': PseqPage,
+  'page.multi-omics': MultiOmicsPage,
+  'page.why-isoforms-matter': IsoformsPage,
+  'page.blog': BlogPage,
+  'page.white-papers': WhitePapersPage,
+  'page.privacy': PrivacyPage,
+  'page.data-policies': DataPoliciesPage,
+} as const
+const StaticPage = staticPageComponents[
+  translationKey as keyof typeof staticPageComponents
+]
+---
+
+{StaticPage ? <StaticPage locale={locale} /> : page ? <LocalizedWhitePaperPage locale={locale} page={page} /> : null}

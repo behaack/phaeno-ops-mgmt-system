@@ -1,16 +1,20 @@
 ---
 import { Content } from '@/content/privacy.md';
 import { Content as ArabicContent } from '@/content/privacy.ar.md';
+import { Content as FrenchContent } from '@/content/privacy.fr.md';
 import Layout from '@/layouts/Layout.astro';
 import TopPageBanner from '@/components/TopPageBanner.astro';
 import SEOMeta from '@/components/meta-data-helpers/SEOMeta.astro';
-import TranslationReviewNotice from '@/components/i18n/TranslationReviewNotice.astro';
 import type { SupportedLocale } from '@/i18n/locales';
 import { getPageCatalog } from '@/i18n/pageCatalogs';
 interface Props { locale?: SupportedLocale }
 const { locale = 'en-US' } = Astro.props
-const isTranslation = locale !== 'en-US'
 const content = getPageCatalog(locale).privacy
+const PrivacyContent = {
+  'en-US': Content,
+  ar: ArabicContent,
+  fr: FrenchContent,
+}[locale]
 ---
 <Layout locale={locale}>
   <SEOMeta 
@@ -22,10 +26,9 @@ const content = getPageCatalog(locale).privacy
     locale={locale}
   />    
   <main id="main">
-    {isTranslation ? <TranslationReviewNotice englishPath="/privacy" /> : null}
     <TopPageBanner title={content.banner} image="image-1" locale={locale}/>
     <section>
-      {isTranslation ? <ArabicContent /> : <Content />}
+      <PrivacyContent />
     </section>
   </main>
 </Layout>

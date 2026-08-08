@@ -441,9 +441,17 @@ public sealed class WebsiteSearchService : IWebsiteSearchService, IDisposable
             return word;
         }
 
-        var stemmer = new EnglishStemmer();
-        stemmer.SetCurrent(word);
-        stemmer.Stem();
-        return stemmer.Current;
+        if (normalizedLocale == WebsiteLocale.French)
+        {
+            var frenchStemmer = new FrenchStemmer();
+            frenchStemmer.SetCurrent(word);
+            frenchStemmer.Stem();
+            return frenchStemmer.Current;
+        }
+
+        var englishStemmer = new EnglishStemmer();
+        englishStemmer.SetCurrent(word);
+        englishStemmer.Stem();
+        return englishStemmer.Current;
     }
 }

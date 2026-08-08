@@ -430,7 +430,7 @@ public sealed class WebsiteApiTests
     }
 
     [Fact]
-    public void SearchKeepsEnglishAndArabicResultsInTheirRequestedLocale()
+    public void SearchKeepsEnglishArabicAndFrenchResultsInTheirRequestedLocale()
     {
         var indexPath = Path.Combine(
             Path.GetTempPath(),
@@ -460,6 +460,16 @@ public sealed class WebsiteApiTests
                     PageDisplayTitle = "منصة PSeq",
                     AnchorTitle = "تسلسل الرنا",
                     Text = "يحافظ تسلسل الرنا على هوية جزيء المصدر."
+                },
+                new IndexedPage
+                {
+                    Id = "french-sequencing",
+                    Locale = WebsiteLocale.French,
+                    Url = "https://www.phaenobiotech.com/fr/technology/pseq-platform",
+                    PageTitle = "Plateforme PSeq",
+                    PageDisplayTitle = "Plateforme PSeq",
+                    AnchorTitle = "Séquençage de l’ARN",
+                    Text = "Le séquençage de l’ARN préserve l’identité de la molécule source."
                 }
             ]);
 
@@ -470,6 +480,10 @@ public sealed class WebsiteApiTests
             var arabic = Assert.Single(service.Search("تَسَلْسُل", "ar-SA"));
             Assert.Equal(WebsiteLocale.Arabic, arabic.Locale);
             Assert.Empty(service.Search("تسلسل"));
+
+            var french = Assert.Single(service.Search("séquençage", "fr-CA"));
+            Assert.Equal(WebsiteLocale.French, french.Locale);
+            Assert.Empty(service.Search("séquençage"));
         }
         finally
         {

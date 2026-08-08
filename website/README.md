@@ -132,7 +132,14 @@ The browser-visible build currently expects:
 - `PUBLIC_API_BASE_URL`: base URL for the versioned anonymous Website API
 - `PUBLIC_RECAPTCHA_SITE_ID`: public reCAPTCHA site identifier
 - `PUBLIC_SITE_REVIEW_MODE`: set to `true` only for private team Preview builds
-- `PUBLIC_I18N_ARABIC_MODE`: leave unset or set to `off` for the normal English-only build; use `preview` only with review mode to generate the draft Arabic route set. `published` remains build-blocked until human review changes the repository release status.
+- `PUBLIC_I18N_ARABIC_MODE`: optional `off`/`preview` override for the draft Arabic route set
+- `PUBLIC_I18N_FRENCH_MODE`: optional `off`/`preview` override for the draft French route set
+
+The normal production build leaves both draft locales off. A private team build
+with `PUBLIC_SITE_REVIEW_MODE=true` enables every draft locale in preview mode
+unless its locale-specific override is explicitly set to `off`. `published`
+remains build-blocked until human review changes that locale's repository
+release status.
 
 The Vercel Function that proxies private Preview search also expects these
 server-only Preview variables:
@@ -157,14 +164,13 @@ is assigned a stable custom hostname, set `WEBSITE_PREVIEW_SITE_URL` to that
 HTTPS origin so its canonical URLs and sitemap remain on the hostname crawled
 by Preview search.
 
-Review mode does not add a visible banner to existing English pages. Draft
-Arabic pages add an explicit translation-review notice. Review mode prevents indexing,
+Review mode does not add a visible banner to Website pages. It prevents indexing,
 omits Web Analytics, routes Website search through the authenticated
 same-origin Preview proxy and its separate Portal-owned index, prevents
 contact and demo submissions, avoids loading reCAPTCHA, and omits the
 production-facing `llms.txt` artifact. Production must leave the flag unset or
-set it to `false`; production must also leave `PUBLIC_I18N_ARABIC_MODE` unset or
-set it to `off` until Arabic is approved. Use `vercel dev` rather than the standalone Astro dev server
+set it to `false`; production must also leave the Arabic and French locale modes
+unset or set them to `off` until those translations are approved. Use `vercel dev` rather than the standalone Astro dev server
 when locally exercising the server-side Preview search function.
 The complete operating and verification boundary is in
 `../docs/plans/WEBSITE-TEAM-PREVIEW-PLAN.md`.
@@ -175,9 +181,9 @@ satisfy the catalog contract in `src/i18n/catalogs/types.ts`. Components use
 conditionals to components. Fixed marketing-page copy lives symmetrically in
 `src/i18n/pageCatalogs/{locale}.ts`, satisfies the shared page-catalog
 contract, and is selected through `getPageCatalog(locale)`. Publication prose
-stays in locale-owned editorial content data; Arabic white-paper preview
-records currently remain in `src/i18n/arabicPages.ts` until they move into the
-localized content-collection workflow.
+stays in locale-owned editorial content data under `arabicPages.ts` and
+`frenchPages.ts` until those records move into the localized
+content-collection workflow.
 
 ## Commands
 
@@ -191,10 +197,10 @@ Use pnpm and run commands from `website/`:
 | `pnpm preview` | Preview the production build locally |
 | `pnpm astro -- --help` | Show Astro CLI help |
 
-To build the Arabic review surface, set both
-`PUBLIC_SITE_REVIEW_MODE=true` and `PUBLIC_I18N_ARABIC_MODE=preview` for that
-build. The output stays static, `noindex`, submission-disabled, and separate
-from the default English-only production output.
+To build all draft review surfaces, set `PUBLIC_SITE_REVIEW_MODE=true`. Locale
+mode variables may explicitly disable or enable an individual draft locale for
+focused review. The output stays static, `noindex`, submission-disabled, and
+separate from the default English-only production output.
 
 For route, content, metadata, style, or component changes, run `pnpm build` and
 inspect the affected generated HTML, sitemap, `llms.txt`, and RSS output when

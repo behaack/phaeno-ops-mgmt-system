@@ -2,12 +2,10 @@
 import SEOMeta from '@/components/meta-data-helpers/SEOMeta.astro';
 import TopPageBanner from '@/components/TopPageBanner.astro';
 import Layout from '@/layouts/Layout.astro';
-import TranslationReviewNotice from '@/components/i18n/TranslationReviewNotice.astro';
 import type { SupportedLocale } from '@/i18n/locales';
 import { getPageCatalog } from '@/i18n/pageCatalogs';
 interface Props { locale?: SupportedLocale }
 const { locale = 'en-US' } = Astro.props
-const isTranslation = locale !== 'en-US'
 const content = getPageCatalog(locale).investors
 ---
 <Layout locale={locale}>
@@ -21,7 +19,6 @@ const content = getPageCatalog(locale).investors
     locale={locale}
   />    
   <main id="main" tabindex="-1">
-    {isTranslation ? <TranslationReviewNotice englishPath="/investors" /> : null}
     <TopPageBanner title={content.banner} image="image-3" locale={locale} />
     <section>
       <h2

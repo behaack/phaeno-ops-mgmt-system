@@ -46,9 +46,9 @@ export const ar = {
   },
   language: {
     selectorLabel: 'اللغة',
-    suggestionTitle: 'هل تريد عرض هذه الصفحة بالعربية؟',
-    suggestionBody: 'تتوفر نسخة عربية تجريبية من هذه الصفحة.',
-    accept: 'عرض العربية',
+    suggestionTitle: 'هل تريد عرض هذه الصفحة باللغة {{language}}؟',
+    suggestionBody: 'تتوفر نسخة تجريبية باللغة {{language}} من هذه الصفحة.',
+    accept: 'عرض {{language}}',
     dismiss: 'المتابعة بالإنجليزية',
   },
   brand: {
@@ -155,9 +155,7 @@ export const ar = {
       suffix: '.',
     },
   },
-  arabicPreview: {
-    reviewNotice: 'نسخة عربية تجريبية قيد المراجعة اللغوية والعلمية.',
-    englishSource: 'عرض المصدر الإنجليزي الحالي',
+  localizedPublication: {
     whitePaperSeries: 'السلسلة التقنية',
     noPublishedContent: 'لا يوجد محتوى منشور',
     backToWhitePapers: 'العودة إلى جميع الأوراق البيضاء',

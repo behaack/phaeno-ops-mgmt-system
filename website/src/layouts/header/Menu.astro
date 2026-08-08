@@ -115,7 +115,7 @@ const isParentActive = (item: IMenuItem) =>
 .main-menu-label {
   display: flex;
   min-height: 2.125rem;
-  justify-content: space-between;
+  justify-content: flex-start;
   align-items: center;
   padding: 0 .7rem;
   border-radius: var(--radius-pill);
@@ -123,9 +123,20 @@ const isParentActive = (item: IMenuItem) =>
   font-weight: var(--font-weight-medium);
   line-height: 1;
   width: 100%;
+  white-space: nowrap;
   transition:
     background-color var(--duration-fast) var(--ease-standard),
     box-shadow var(--duration-fast) var(--ease-standard);
+}
+
+@media (max-width: 1200px) and (min-width: 901px) {
+  .main-menu {
+    gap: 0;
+  }
+
+  .main-menu-label {
+    padding-inline: .45rem;
+  }
 }
 
 .menu-item > a.active {
@@ -176,7 +187,7 @@ const isParentActive = (item: IMenuItem) =>
   content: '▸';
   font-size: 1rem;
   line-height: 1;
-  margin-inline-start: 0.5rem;
+  margin-inline-start: .3rem;
   margin-inline-end: 0;
   flex-shrink: 0;      /* prevents squishing on narrow viewports */
   transition: transform var(--duration-fast) var(--ease-standard);
@@ -192,6 +203,7 @@ const isParentActive = (item: IMenuItem) =>
   content: '◂';
 }
 
+:global(html[dir='rtl']) .menu-item.main-menu-parent:hover > a > .main-menu-label::after,
 :global(html[dir='rtl']) .menu-item.main-menu-parent.open > a > .main-menu-label::after {
   transform: rotate(-90deg);
 }
@@ -288,7 +300,7 @@ const isParentActive = (item: IMenuItem) =>
 
 @media (max-width: 900px) {
   #nav {
-    position: relative;
+    position: static;
   }
 
   #nav.open > .main-menu {
@@ -299,15 +311,10 @@ const isParentActive = (item: IMenuItem) =>
     transition-delay: 0ms;
   }
 
-  :global(html[dir='rtl']) .menu-item.main-menu-parent:hover > a > .main-menu-label::after,
-  :global(html[dir='rtl']) .menu-item.main-menu-parent.open > a > .main-menu-label::after {
-    transform: rotate(-90deg);
-  }
-
   .main-menu {
     display: block;
     position: absolute;
-    top: calc(100% + 1.68rem);
+    top: calc(100% + var(--space-2));
     inset-inline-end: 0;
     background: rgb(255 255 255 / 0.99);
     border: 1px solid var(--phaeno-green-200);

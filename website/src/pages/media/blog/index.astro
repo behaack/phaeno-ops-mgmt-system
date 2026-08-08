@@ -10,12 +10,10 @@ import MediaSearch from '@/components/MediaSearch.astro'
 import MediaNoItems from '@/components/MediaNoItems.astro'
 import { BLOG_FEED_PATH, getBlogPostPath } from '@/lib/blogRoutes'
 import { formatContentDate } from '@/lib/dates'
-import TranslationReviewNotice from '@/components/i18n/TranslationReviewNotice.astro'
 import { prefixPathForLocale, type SupportedLocale } from '@/i18n/locales'
 import { getPageCatalog } from '@/i18n/pageCatalogs'
 interface Props { locale?: SupportedLocale }
 const { locale = 'en-US' } = Astro.props
-const isTranslation = locale !== 'en-US'
 const content = getPageCatalog(locale).blog
 
 const blog = await getCollection('blog')
@@ -31,7 +29,6 @@ const blog = await getCollection('blog')
     locale={locale}
   />  
   <main id="main">
-    {isTranslation ? <TranslationReviewNotice englishPath="/media/blog" /> : null}
     <TopPageBanner title={content.banner} image="image-1" locale={locale}/>
     <section>
     {blog.length ? (

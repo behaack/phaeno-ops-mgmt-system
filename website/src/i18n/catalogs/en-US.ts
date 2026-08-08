@@ -46,9 +46,9 @@ export const enUS = {
   },
   language: {
     selectorLabel: 'Language',
-    suggestionTitle: 'View this page in Arabic?',
-    suggestionBody: 'An Arabic preview is available for this page.',
-    accept: 'View Arabic',
+    suggestionTitle: 'View this page in {{language}}?',
+    suggestionBody: 'A {{language}} preview is available for this page.',
+    accept: 'View {{language}}',
     dismiss: 'Continue in English',
   },
   brand: {
@@ -155,14 +155,12 @@ export const enUS = {
       suffix: ' apply.',
     },
   },
-  arabicPreview: {
-    reviewNotice: 'Arabic preview pending language and scientific review.',
-    englishSource: 'View the current English source',
+  localizedPublication: {
     whitePaperSeries: 'Technical series',
     noPublishedContent: 'No published content',
     backToWhitePapers: 'Back to all white papers',
     downloadEnglishPdf: 'Download PDF (English)',
-    englishPdfDisclosure: 'The linked PDF is the English source and has not been translated into Arabic. The Arabic landing page is separate and remains under review.',
+    englishPdfDisclosure: 'The linked PDF is the English source and has not been translated. This localized landing page is separate and remains under review.',
     pdfLanguageEnglish: 'PDF: English',
   },
   footer: {

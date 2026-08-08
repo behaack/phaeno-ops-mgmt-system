@@ -3,7 +3,6 @@ import Layout from '@/layouts/Layout.astro';
 import Tagline from '@/components/home-page-sections/Tagline.astro';
 import SEOMeta from '@/components/meta-data-helpers/SEOMeta.astro';
 import PerformanceMetrics from '@/components/PerformanceMetrics.astro';
-import TranslationReviewNotice from '@/components/i18n/TranslationReviewNotice.astro';
 import type { SupportedLocale } from '@/i18n/locales';
 import { getPageCatalog } from '@/i18n/pageCatalogs';
 import { getLocalizedPath } from '@/i18n/routes';
@@ -13,7 +12,6 @@ interface Props {
 }
 
 const { locale = 'en-US' } = Astro.props
-const isTranslation = locale !== 'en-US'
 const content = getPageCatalog(locale).home
 
 const homeTitle = content.metaTitle;
@@ -73,7 +71,6 @@ const platformCta = content.platformCta
   <script slot="head" type="application/ld+json" set:html={JSON.stringify(organizationStructuredData)} />
 
   <main class="home-main" id="main" tabindex="-1">
-    {isTranslation ? <TranslationReviewNotice englishPath="/" /> : null}
     <Tagline locale={locale} />
 
     <section class="platform-section">
@@ -167,10 +164,6 @@ const platformCta = content.platformCta
 .home-main {
   container-type: inline-size;
   padding-top: 0;
-}
-
-.home-main > :global(.translation-review) {
-  margin-top: var(--header-height);
 }
 
 .platform-section {

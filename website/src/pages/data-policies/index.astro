@@ -2,12 +2,10 @@
 import TopPageBanner from '@/components/TopPageBanner.astro';
 import Layout from '@/layouts/Layout.astro';
 import SEOMeta from '@/components/meta-data-helpers/SEOMeta.astro';
-import TranslationReviewNotice from '@/components/i18n/TranslationReviewNotice.astro';
 import type { SupportedLocale } from '@/i18n/locales';
 import { getPageCatalog } from '@/i18n/pageCatalogs';
 interface Props { locale?: SupportedLocale }
 const { locale = 'en-US' } = Astro.props
-const isTranslation = locale !== 'en-US'
 const content = getPageCatalog(locale).dataPolicies
 ---
 <Layout locale={locale}>
@@ -20,7 +18,6 @@ const content = getPageCatalog(locale).dataPolicies
     locale={locale}
   />    
   <main id="main">
-    {isTranslation ? <TranslationReviewNotice englishPath="/data-policies" /> : null}
     <TopPageBanner title={content.banner} image="image-2" locale={locale}/>
     <section>
       <p>{content.introPrefix} <b><i>{content.policyName}</i></b> {content.introSuffix} <a href="mailto:info@phaenobiotech.com">info@phaenobiotech.com</a>.</p>
