@@ -81,9 +81,7 @@ public sealed class WebsiteSearchService : IWebsiteSearchService, IDisposable
         }
 
         var normalizedLocale = WebsiteLocale.Normalize(locale);
-        var stemmedTerms = Regex.Matches(queryText, "[\\p{L}\\p{N}_']+")
-            .Cast<Match>()
-            .Select(match => NormalizeAndStem(match.Value, normalizedLocale))
+        var stemmedTerms = ExtractSearchTerms(queryText, normalizedLocale)
             .Where(term => !string.IsNullOrWhiteSpace(term))
             .Distinct(StringComparer.OrdinalIgnoreCase)
             .ToList();
@@ -292,9 +290,7 @@ public sealed class WebsiteSearchService : IWebsiteSearchService, IDisposable
     private static string StemSearchText(string text, string locale) =>
         string.Join(
             " ",
-            Regex.Matches(text, "[\\p{L}\\p{N}_']+")
-                .Cast<Match>()
-                .Select(match => NormalizeAndStem(match.Value, locale))
+            ExtractSearchTerms(text, locale)
                 .Where(term => !string.IsNullOrWhiteSpace(term))
                 .Distinct(StringComparer.OrdinalIgnoreCase));
 
@@ -302,9 +298,7 @@ public sealed class WebsiteSearchService : IWebsiteSearchService, IDisposable
         string text,
         IReadOnlyList<string> stemmedTerms,
         string locale) =>
-        Regex.Matches(text, "[\\p{L}\\p{N}_']+")
-            .Cast<Match>()
-            .Select(match => NormalizeAndStem(match.Value, locale))
+        ExtractSearchTerms(text, locale)
             .Count(normalized => stemmedTerms.Contains(
                 normalized,
                 StringComparer.OrdinalIgnoreCase));
@@ -319,9 +313,7 @@ public sealed class WebsiteSearchService : IWebsiteSearchService, IDisposable
             return false;
         }
 
-        var textTerms = Regex.Matches(text, "[\\p{L}\\p{N}_']+")
-            .Cast<Match>()
-            .Select(match => NormalizeAndStem(match.Value, locale))
+        var textTerms = ExtractSearchTerms(text, locale)
             .Where(term => !string.IsNullOrWhiteSpace(term))
             .ToHashSet(StringComparer.OrdinalIgnoreCase);
 
@@ -366,8 +358,8 @@ public sealed class WebsiteSearchService : IWebsiteSearchService, IDisposable
             .ToHashSet();
         var matches = Regex.Matches(text, "[\\p{L}\\p{N}_']+")
             .Cast<Match>()
-            .Where(match => querySet.Contains(
-                NormalizeAndStem(match.Value, locale).ToLowerInvariant()))
+            .Where(match => NormalizeTermVariants(match.Value, locale)
+                .Any(term => querySet.Contains(term.ToLowerInvariant())))
             .Select(match => (Start: match.Index, End: match.Index + match.Length))
             .ToList();
         if (matches.Count == 0)
@@ -428,15 +420,19 @@ public sealed class WebsiteSearchService : IWebsiteSearchService, IDisposable
         }
         word = Regex.Replace(word, "[^\\p{L}\\p{N}_\\s]", string.Empty);
         word = word.Replace("-", " ");
+        var isCjkLocale = normalizedLocale is WebsiteLocale.SimplifiedChinese
+            or WebsiteLocale.Japanese;
         if (Regex.IsMatch(word, @"\d{3,}")
             || (normalizedLocale == WebsiteLocale.Arabic
                 ? !Regex.IsMatch(word, "[\\u0600-\\u06FF\\u0750-\\u077F\\u08A0-\\u08FF]")
-                : !Regex.IsMatch(word, @"[a-zA-Z]")))
+                : isCjkLocale
+                    ? !Regex.IsMatch(word, "[\\p{L}]")
+                    : !Regex.IsMatch(word, @"[a-zA-Z]")))
         {
             return string.Empty;
         }
 
-        if (normalizedLocale == WebsiteLocale.Arabic)
+        if (normalizedLocale == WebsiteLocale.Arabic || isCjkLocale)
         {
             return word;
         }
@@ -449,9 +445,66 @@ public sealed class WebsiteSearchService : IWebsiteSearchService, IDisposable
             return frenchStemmer.Current;
         }
 
+        if (normalizedLocale == WebsiteLocale.Spanish)
+        {
+            var spanishStemmer = new SpanishStemmer();
+            spanishStemmer.SetCurrent(word);
+            spanishStemmer.Stem();
+            return spanishStemmer.Current;
+        }
+
+        if (normalizedLocale == WebsiteLocale.German)
+        {
+            var germanStemmer = new German2Stemmer();
+            germanStemmer.SetCurrent(word);
+            germanStemmer.Stem();
+            return germanStemmer.Current;
+        }
+
+        if (normalizedLocale == WebsiteLocale.Italian)
+        {
+            var italianStemmer = new ItalianStemmer();
+            italianStemmer.SetCurrent(word);
+            italianStemmer.Stem();
+            return italianStemmer.Current;
+        }
+
         var englishStemmer = new EnglishStemmer();
         englishStemmer.SetCurrent(word);
         englishStemmer.Stem();
         return englishStemmer.Current;
+    }
+
+    private static IEnumerable<string> ExtractSearchTerms(string text, string locale) =>
+        Regex.Matches(text, "[\\p{L}\\p{N}_']+")
+            .Cast<Match>()
+            .SelectMany(match => NormalizeTermVariants(match.Value, locale));
+
+    private static IEnumerable<string> NormalizeTermVariants(string word, string locale)
+    {
+        var normalizedLocale = WebsiteLocale.Normalize(locale);
+        var normalized = NormalizeAndStem(word, normalizedLocale);
+        if (string.IsNullOrWhiteSpace(normalized))
+        {
+            return [];
+        }
+
+        if (normalizedLocale is not (WebsiteLocale.SimplifiedChinese or WebsiteLocale.Japanese))
+        {
+            return [normalized];
+        }
+
+        var characters = normalized.EnumerateRunes()
+            .Select(rune => rune.ToString())
+            .ToArray();
+        if (characters.Length < 2)
+        {
+            return [normalized];
+        }
+
+        return Enumerable.Range(0, characters.Length - 1)
+            .Select(index => characters[index] + characters[index + 1])
+            .Append(normalized)
+            .Distinct(StringComparer.OrdinalIgnoreCase);
     }
 }

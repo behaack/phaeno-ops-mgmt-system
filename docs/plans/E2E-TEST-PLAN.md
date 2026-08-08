@@ -36,6 +36,19 @@ validation, English-PDF disclosure, reciprocal alternates, Arabic-only search
 results, bidirectional scientific text, zoom, reduced motion, and unchanged
 English URLs and behavior.
 
+Spanish, Simplified Chinese, Japanese, German (Germany), Italian, and French
+now have complete protected-Preview route sets and generated-HTML parity
+coverage. Their browser proof remains deferred and must include native-language
+copy review, CJK and long-German line breaking, responsive navigation and
+language-picker fit, keyboard/focus behavior, locale-isolated search, and
+unchanged English production output before any locale is published.
+Local browser regression checks on 2026-08-08 cover the multi-omics
+introduction at 1392 px for Spanish, French, German, Italian, and Japanese:
+the headline and copy columns do not overlap, and the principle-card heading
+and paragraph remain contained. Spanish also stacks at 1024 px without
+horizontal overflow. This is component-level evidence only and does not replace
+the protected deployed-Preview acceptance above.
+
 ## Created Tests
 
 - [x] `frontend/e2e/home.spec.ts` - internal Phaeno context uses POMS in the

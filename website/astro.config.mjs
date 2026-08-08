@@ -12,16 +12,18 @@ import { localizedSitemap } from './src/integrations/localizedSitemap';
 const isWebsiteReviewMode =
   process.env.PUBLIC_SITE_REVIEW_MODE?.trim().toLowerCase() === 'true';
 const defaultLocalizedMode = isWebsiteReviewMode ? 'preview' : 'off';
-const arabicMode = process.env.PUBLIC_I18N_ARABIC_MODE?.trim().toLowerCase() ?? defaultLocalizedMode;
-const isArabicEnabled =
-  arabicMode === 'published' || (arabicMode === 'preview' && isWebsiteReviewMode);
-const frenchMode = process.env.PUBLIC_I18N_FRENCH_MODE?.trim().toLowerCase() ?? defaultLocalizedMode;
-const isFrenchEnabled =
-  frenchMode === 'published' || (frenchMode === 'preview' && isWebsiteReviewMode);
-const enabledLocalizedLocales = [
-  ...(isArabicEnabled ? ['ar'] : []),
-  ...(isFrenchEnabled ? ['fr'] : []),
-];
+const localizedModes = {
+  ar: process.env.PUBLIC_I18N_ARABIC_MODE?.trim().toLowerCase() ?? defaultLocalizedMode,
+  fr: process.env.PUBLIC_I18N_FRENCH_MODE?.trim().toLowerCase() ?? defaultLocalizedMode,
+  es: process.env.PUBLIC_I18N_SPANISH_MODE?.trim().toLowerCase() ?? defaultLocalizedMode,
+  'zh-Hans': process.env.PUBLIC_I18N_SIMPLIFIED_CHINESE_MODE?.trim().toLowerCase() ?? defaultLocalizedMode,
+  ja: process.env.PUBLIC_I18N_JAPANESE_MODE?.trim().toLowerCase() ?? defaultLocalizedMode,
+  'de-DE': process.env.PUBLIC_I18N_GERMAN_MODE?.trim().toLowerCase() ?? defaultLocalizedMode,
+  it: process.env.PUBLIC_I18N_ITALIAN_MODE?.trim().toLowerCase() ?? defaultLocalizedMode,
+};
+const enabledLocalizedLocales = Object.entries(localizedModes)
+  .filter(([, mode]) => mode === 'published' || (mode === 'preview' && isWebsiteReviewMode))
+  .map(([locale]) => locale);
 const reviewSiteUrl =
   process.env.WEBSITE_PREVIEW_SITE_URL?.trim().replace(/\/+$/, '');
 const reviewDeploymentHost =

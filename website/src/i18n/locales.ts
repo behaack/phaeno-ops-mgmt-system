@@ -1,9 +1,10 @@
 import { isWebsiteReviewMode } from '@/lib/reviewMode'
 
-export const supportedLocales = ['en-US', 'ar', 'fr'] as const
+export const localizedLocales = ['ar', 'fr', 'es', 'zh-Hans', 'ja', 'de-DE', 'it'] as const
+export const supportedLocales = ['en-US', ...localizedLocales] as const
 
 export type SupportedLocale = (typeof supportedLocales)[number]
-export type LocalizedLocale = Exclude<SupportedLocale, 'en-US'>
+export type LocalizedLocale = (typeof localizedLocales)[number]
 export type TextDirection = 'ltr' | 'rtl'
 export type TranslationStatus =
   | 'not_started'
@@ -15,7 +16,7 @@ export type TranslationStatus =
 
 export interface LocaleDefinition {
   code: SupportedLocale
-  prefix: '' | `/${LocalizedLocale}`
+  prefix: string
   direction: TextDirection
   nativeName: string
   shortName: string
@@ -59,11 +60,71 @@ export const locales: Record<SupportedLocale, LocaleDefinition> = {
     openGraphLocale: 'fr_FR',
     sourceLocale: 'en-US',
   },
+  es: {
+    code: 'es',
+    prefix: '/es',
+    direction: 'ltr',
+    nativeName: 'Español',
+    shortName: 'ES',
+    administrativeName: 'Spanish',
+    formattingLocale: 'es',
+    openGraphLocale: 'es_ES',
+    sourceLocale: 'en-US',
+  },
+  'zh-Hans': {
+    code: 'zh-Hans',
+    prefix: '/zh-hans',
+    direction: 'ltr',
+    nativeName: '简体中文',
+    shortName: 'ZH',
+    administrativeName: 'Simplified Chinese',
+    formattingLocale: 'zh-Hans',
+    openGraphLocale: 'zh_CN',
+    sourceLocale: 'en-US',
+  },
+  ja: {
+    code: 'ja',
+    prefix: '/ja',
+    direction: 'ltr',
+    nativeName: '日本語',
+    shortName: 'JA',
+    administrativeName: 'Japanese',
+    formattingLocale: 'ja-JP',
+    openGraphLocale: 'ja_JP',
+    sourceLocale: 'en-US',
+  },
+  'de-DE': {
+    code: 'de-DE',
+    prefix: '/de-de',
+    direction: 'ltr',
+    nativeName: 'Deutsch',
+    shortName: 'DE',
+    administrativeName: 'German (Germany)',
+    formattingLocale: 'de-DE',
+    openGraphLocale: 'de_DE',
+    sourceLocale: 'en-US',
+  },
+  it: {
+    code: 'it',
+    prefix: '/it',
+    direction: 'ltr',
+    nativeName: 'Italiano',
+    shortName: 'IT',
+    administrativeName: 'Italian',
+    formattingLocale: 'it-IT',
+    openGraphLocale: 'it_IT',
+    sourceLocale: 'en-US',
+  },
 }
 
 export const translationStatuses: Record<LocalizedLocale, TranslationStatus> = {
   ar: 'draft',
   fr: 'draft',
+  es: 'draft',
+  'zh-Hans': 'draft',
+  ja: 'draft',
+  'de-DE': 'draft',
+  it: 'draft',
 }
 
 const requestedModes: Record<LocalizedLocale, string> = {
@@ -71,20 +132,35 @@ const requestedModes: Record<LocalizedLocale, string> = {
     ?? (isWebsiteReviewMode ? 'preview' : 'off'),
   fr: import.meta.env.PUBLIC_I18N_FRENCH_MODE?.trim().toLowerCase()
     ?? (isWebsiteReviewMode ? 'preview' : 'off'),
+  es: import.meta.env.PUBLIC_I18N_SPANISH_MODE?.trim().toLowerCase()
+    ?? (isWebsiteReviewMode ? 'preview' : 'off'),
+  'zh-Hans': import.meta.env.PUBLIC_I18N_SIMPLIFIED_CHINESE_MODE?.trim().toLowerCase()
+    ?? (isWebsiteReviewMode ? 'preview' : 'off'),
+  ja: import.meta.env.PUBLIC_I18N_JAPANESE_MODE?.trim().toLowerCase()
+    ?? (isWebsiteReviewMode ? 'preview' : 'off'),
+  'de-DE': import.meta.env.PUBLIC_I18N_GERMAN_MODE?.trim().toLowerCase()
+    ?? (isWebsiteReviewMode ? 'preview' : 'off'),
+  it: import.meta.env.PUBLIC_I18N_ITALIAN_MODE?.trim().toLowerCase()
+    ?? (isWebsiteReviewMode ? 'preview' : 'off'),
 }
 
-const localeLabels: Record<LocalizedLocale, string> = {
-  ar: 'Arabic',
-  fr: 'French',
+const localeConfig: Record<LocalizedLocale, { label: string; environmentName: string }> = {
+  ar: { label: 'Arabic', environmentName: 'PUBLIC_I18N_ARABIC_MODE' },
+  fr: { label: 'French', environmentName: 'PUBLIC_I18N_FRENCH_MODE' },
+  es: { label: 'Spanish', environmentName: 'PUBLIC_I18N_SPANISH_MODE' },
+  'zh-Hans': { label: 'Simplified Chinese', environmentName: 'PUBLIC_I18N_SIMPLIFIED_CHINESE_MODE' },
+  ja: { label: 'Japanese', environmentName: 'PUBLIC_I18N_JAPANESE_MODE' },
+  'de-DE': { label: 'German', environmentName: 'PUBLIC_I18N_GERMAN_MODE' },
+  it: { label: 'Italian', environmentName: 'PUBLIC_I18N_ITALIAN_MODE' },
 }
 
-for (const locale of ['ar', 'fr'] as const) {
+for (const locale of localizedLocales) {
   const mode = requestedModes[locale]
-  const label = localeLabels[locale]
+  const { label, environmentName } = localeConfig[locale]
 
   if (!['off', 'preview', 'published'].includes(mode)) {
     throw new Error(
-      `PUBLIC_I18N_${label.toUpperCase()}_MODE must be one of: off, preview, published.`,
+      `${environmentName} must be one of: off, preview, published.`,
     )
   }
 
@@ -109,6 +185,11 @@ export const enabledLocales = supportedLocales.filter((locale) => (
 
 export const isArabicEnabled = enabledLocales.includes('ar')
 export const isFrenchEnabled = enabledLocales.includes('fr')
+export const isSpanishEnabled = enabledLocales.includes('es')
+export const isSimplifiedChineseEnabled = enabledLocales.includes('zh-Hans')
+export const isJapaneseEnabled = enabledLocales.includes('ja')
+export const isGermanEnabled = enabledLocales.includes('de-DE')
+export const isItalianEnabled = enabledLocales.includes('it')
 
 export function isLocaleEnabled(locale: SupportedLocale) {
   return enabledLocales.includes(locale)
@@ -137,5 +218,14 @@ export function normalizeRequestedLocale(value: string | undefined): SupportedLo
   const normalized = value.trim().toLowerCase()
   if (normalized === 'ar' || normalized.startsWith('ar-')) return 'ar'
   if (normalized === 'fr' || normalized.startsWith('fr-')) return 'fr'
+  if (normalized === 'es' || normalized.startsWith('es-')) return 'es'
+  if (normalized === 'zh'
+    || normalized === 'zh-cn'
+    || normalized === 'zh-sg'
+    || normalized === 'zh-hans'
+    || normalized.startsWith('zh-hans-')) return 'zh-Hans'
+  if (normalized === 'ja' || normalized.startsWith('ja-')) return 'ja'
+  if (normalized === 'de' || normalized.startsWith('de-')) return 'de-DE'
+  if (normalized === 'it' || normalized.startsWith('it-')) return 'it'
   return 'en-US'
 }

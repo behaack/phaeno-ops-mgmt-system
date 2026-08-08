@@ -2,6 +2,11 @@
 import { Content } from '@/content/privacy.md';
 import { Content as ArabicContent } from '@/content/privacy.ar.md';
 import { Content as FrenchContent } from '@/content/privacy.fr.md';
+import { Content as SpanishContent } from '@/content/privacy.es.md';
+import { Content as SimplifiedChineseContent } from '@/content/privacy.zh-Hans.md';
+import { Content as JapaneseContent } from '@/content/privacy.ja.md';
+import { Content as GermanContent } from '@/content/privacy.de-DE.md';
+import { Content as ItalianContent } from '@/content/privacy.it.md';
 import Layout from '@/layouts/Layout.astro';
 import TopPageBanner from '@/components/TopPageBanner.astro';
 import SEOMeta from '@/components/meta-data-helpers/SEOMeta.astro';
@@ -14,6 +19,11 @@ const PrivacyContent = {
   'en-US': Content,
   ar: ArabicContent,
   fr: FrenchContent,
+  es: SpanishContent,
+  'zh-Hans': SimplifiedChineseContent,
+  ja: JapaneseContent,
+  'de-DE': GermanContent,
+  it: ItalianContent,
 }[locale]
 ---
 <Layout locale={locale}>

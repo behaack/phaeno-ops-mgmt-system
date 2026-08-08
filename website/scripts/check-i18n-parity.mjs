@@ -3,44 +3,75 @@ import { fileURLToPath } from 'node:url'
 import { dirname, join } from 'node:path'
 
 const root = dirname(dirname(fileURLToPath(import.meta.url)))
+const localizedCodes = ['ar', 'fr', 'es', 'zh-Hans', 'ja', 'de-DE', 'it']
+const prefixes = { ar: 'ar', fr: 'fr', es: 'es', 'zh-Hans': 'zh-hans', ja: 'ja', 'de-DE': 'de-de', it: 'it' }
+const localizedRoute = (enUS) => Object.fromEntries([
+  ['enUS', enUS],
+  ...localizedCodes.map((locale) => [locale, `/${prefixes[locale]}${enUS}`]),
+])
 const routes = [
-  { enUS: '/', ar: '/ar/', fr: '/fr/' },
-  { enUS: '/technology/pseq-platform/', ar: '/ar/technology/pseq-platform/', fr: '/fr/technology/pseq-platform/' },
-  { enUS: '/technology/multi-omics/', ar: '/ar/technology/multi-omics/', fr: '/fr/technology/multi-omics/' },
-  { enUS: '/technology/why-isoforms-matter/', ar: '/ar/technology/why-isoforms-matter/', fr: '/fr/technology/why-isoforms-matter/' },
-  { enUS: '/about/about-us/', ar: '/ar/about/about-us/', fr: '/fr/about/about-us/' },
-  { enUS: '/about/job-openings/', ar: '/ar/about/job-openings/', fr: '/fr/about/job-openings/' },
-  { enUS: '/media/blog/', ar: '/ar/media/blog/', fr: '/fr/media/blog/' },
-  { enUS: '/media/white-papers/', ar: '/ar/media/white-papers/', fr: '/fr/media/white-papers/' },
-  { enUS: '/contact/', ar: '/ar/contact/', fr: '/fr/contact/' },
-  { enUS: '/investors/', ar: '/ar/investors/', fr: '/fr/investors/' },
-  { enUS: '/privacy/', ar: '/ar/privacy/', fr: '/fr/privacy/' },
-  { enUS: '/data-policies/', ar: '/ar/data-policies/', fr: '/fr/data-policies/' },
+  localizedRoute('/'),
+  localizedRoute('/technology/pseq-platform/'),
+  localizedRoute('/technology/multi-omics/'),
+  localizedRoute('/technology/why-isoforms-matter/'),
+  localizedRoute('/about/about-us/'),
+  localizedRoute('/about/job-openings/'),
+  localizedRoute('/media/blog/'),
+  localizedRoute('/media/white-papers/'),
+  localizedRoute('/contact/'),
+  localizedRoute('/investors/'),
+  localizedRoute('/privacy/'),
+  localizedRoute('/data-policies/'),
   {
     enUS: '/media/white-papers/pseq-technical-whitepaper-part-1-platform-overview/',
     ar: '/ar/media/white-papers/التسلسل-المرحلي-للرنا-على-منصات-ngs/',
     fr: '/fr/media/white-papers/sequencage-phase-de-l-arn-sur-plateformes-ngs/',
+    es: '/es/media/white-papers/secuenciacion-fasica-de-arn-en-plataformas-ngs/',
+    'zh-Hans': '/zh-hans/media/white-papers/ngs平台上的rna分阶段测序/',
+    ja: '/ja/media/white-papers/ngsプラットフォームでのrnaフェーズドシーケンシング/',
+    'de-DE': '/de-de/media/white-papers/phasensequenzierung-von-rna-auf-ngs-plattformen/',
+    it: '/it/media/white-papers/sequenziamento-fasico-rna-su-piattaforme-ngs/',
   },
   {
     enUS: '/media/white-papers/pseq-technical-whitepaper-part-2-molecular-tagging/',
     ar: '/ar/media/white-papers/الوسم-الجزيئي-وبنية-المكتبة/',
     fr: '/fr/media/white-papers/marquage-moleculaire-et-architecture-de-bibliotheque/',
+    es: '/es/media/white-papers/marcado-molecular-y-arquitectura-de-bibliotecas/',
+    'zh-Hans': '/zh-hans/media/white-papers/分子标记与文库架构/',
+    ja: '/ja/media/white-papers/分子タグとライブラリー設計/',
+    'de-DE': '/de-de/media/white-papers/molekulare-markierung-und-bibliotheksarchitektur/',
+    it: '/it/media/white-papers/marcatura-molecolare-e-architettura-della-libreria/',
   },
   {
     enUS: '/media/white-papers/pseq-technical-whitepaper-part-3-data-pipeline/',
     ar: '/ar/media/white-papers/مسار-معالجة-بيانات-pseq/',
     fr: '/fr/media/white-papers/pipeline-de-donnees-pseq/',
+    es: '/es/media/white-papers/canalizacion-de-datos-pseq/',
+    'zh-Hans': '/zh-hans/media/white-papers/pseq数据处理流程/',
+    ja: '/ja/media/white-papers/pseqデータパイプライン/',
+    'de-DE': '/de-de/media/white-papers/pseq-datenpipeline/',
+    it: '/it/media/white-papers/pipeline-di-dati-pseq/',
   },
   {
     enUS: '/media/white-papers/pseq-technical-whitepaper-part-4-initial-technical-validation/',
     ar: '/ar/media/white-papers/التحقق-التقني-الأولي-لمنصة-pseq/',
     fr: '/fr/media/white-papers/validation-technique-initiale-de-la-plateforme-pseq/',
+    es: '/es/media/white-papers/validacion-tecnica-inicial-de-la-plataforma-pseq/',
+    'zh-Hans': '/zh-hans/media/white-papers/pseq平台初步技术验证/',
+    ja: '/ja/media/white-papers/pseqプラットフォームの初期技術検証/',
+    'de-DE': '/de-de/media/white-papers/erste-technische-validierung-der-pseq-plattform/',
+    it: '/it/media/white-papers/validazione-tecnica-iniziale-della-piattaforma-pseq/',
   },
 ]
 
 const localeDefinitions = [
   { code: 'ar', direction: 'rtl' },
   { code: 'fr', direction: 'ltr' },
+  { code: 'es', direction: 'ltr' },
+  { code: 'zh-Hans', direction: 'ltr' },
+  { code: 'ja', direction: 'ltr' },
+  { code: 'de-DE', direction: 'ltr' },
+  { code: 'it', direction: 'ltr' },
 ]
 const structuralTags = ['main', 'h1', 'form', 'table', 'tr']
 const errors = []
@@ -118,7 +149,12 @@ for (const locale of enabledLocales) {
 
     const englishLength = visibleText(english).length
     const localizedLength = visibleText(localized).length
-    if (localizedLength < englishLength * 0.45) {
+    const minimumCoverage = locale.code === 'zh-Hans'
+      ? 0.25
+      : locale.code === 'ja'
+        ? 0.35
+        : 0.45
+    if (localizedLength < englishLength * minimumCoverage) {
       errors.push(`${localizedRoute}: visible content is only ${Math.round(localizedLength / englishLength * 100)}% of English`)
     }
   }
@@ -143,6 +179,21 @@ if (enabledLocales.some((locale) => locale.code === 'fr')) {
   const frenchHome = readFileSync(htmlPath('/fr/'), 'utf8')
   if (!frenchHome.includes('Résoudre l’ARN en isoformes complètes, à grande échelle')) {
     errors.push('/fr/: French translation of the English home headline is missing')
+  }
+}
+
+const expectedHomeHeadlines = {
+  es: 'Resolver el ARN en isoformas completas, a escala',
+  'zh-Hans': '大规模解析全长 RNA 异构体',
+  ja: '全長 RNA アイソフォームを大規模に解析',
+  'de-DE': 'RNA vollständig und isoformaufgelöst – im großen Maßstab',
+  it: 'Risolvere l’RNA in isoforme complete, su larga scala',
+}
+for (const [locale, headline] of Object.entries(expectedHomeHeadlines)) {
+  if (!enabledLocales.some((candidate) => candidate.code === locale)) continue
+  const home = readFileSync(htmlPath(`/${locale}/`), 'utf8')
+  if (!home.includes(headline)) {
+    errors.push(`/${locale}/: expected localized home headline is missing`)
   }
 }
 

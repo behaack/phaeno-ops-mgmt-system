@@ -134,8 +134,13 @@ The browser-visible build currently expects:
 - `PUBLIC_SITE_REVIEW_MODE`: set to `true` only for private team Preview builds
 - `PUBLIC_I18N_ARABIC_MODE`: optional `off`/`preview` override for the draft Arabic route set
 - `PUBLIC_I18N_FRENCH_MODE`: optional `off`/`preview` override for the draft French route set
+- `PUBLIC_I18N_SPANISH_MODE`: optional `off`/`preview` override for the draft Spanish route set
+- `PUBLIC_I18N_SIMPLIFIED_CHINESE_MODE`: optional `off`/`preview` override for the draft Simplified Chinese route set
+- `PUBLIC_I18N_JAPANESE_MODE`: optional `off`/`preview` override for the draft Japanese route set
+- `PUBLIC_I18N_GERMAN_MODE`: optional `off`/`preview` override for the draft German (Germany) route set
+- `PUBLIC_I18N_ITALIAN_MODE`: optional `off`/`preview` override for the draft Italian route set
 
-The normal production build leaves both draft locales off. A private team build
+The normal production build leaves every draft locale off. A private team build
 with `PUBLIC_SITE_REVIEW_MODE=true` enables every draft locale in preview mode
 unless its locale-specific override is explicitly set to `off`. `published`
 remains build-blocked until human review changes that locale's repository
@@ -169,8 +174,8 @@ omits Web Analytics, routes Website search through the authenticated
 same-origin Preview proxy and its separate Portal-owned index, prevents
 contact and demo submissions, avoids loading reCAPTCHA, and omits the
 production-facing `llms.txt` artifact. Production must leave the flag unset or
-set it to `false`; production must also leave the Arabic and French locale modes
-unset or set them to `off` until those translations are approved. Use `vercel dev` rather than the standalone Astro dev server
+set it to `false`; production must also leave every locale mode unset or set to
+`off` until that translation is approved. Use `vercel dev` rather than the standalone Astro dev server
 when locally exercising the server-side Preview search function.
 The complete operating and verification boundary is in
 `../docs/plans/WEBSITE-TEAM-PREVIEW-PLAN.md`.
@@ -181,9 +186,8 @@ satisfy the catalog contract in `src/i18n/catalogs/types.ts`. Components use
 conditionals to components. Fixed marketing-page copy lives symmetrically in
 `src/i18n/pageCatalogs/{locale}.ts`, satisfies the shared page-catalog
 contract, and is selected through `getPageCatalog(locale)`. Publication prose
-stays in locale-owned editorial content data under `arabicPages.ts` and
-`frenchPages.ts` until those records move into the localized
-content-collection workflow.
+stays in locale-owned editorial content data under `src/i18n/*Pages.ts` until
+those records move into the localized content-collection workflow.
 
 ## Commands
 

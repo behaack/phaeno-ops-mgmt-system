@@ -61,6 +61,15 @@ const message = getMessages('en-US').language
       const normalized = language.toLowerCase()
       if (normalized === 'ar' || normalized.startsWith('ar-')) return 'ar'
       if (normalized === 'fr' || normalized.startsWith('fr-')) return 'fr'
+      if (normalized === 'es' || normalized.startsWith('es-')) return 'es'
+      if (normalized === 'zh'
+        || normalized === 'zh-cn'
+        || normalized === 'zh-sg'
+        || normalized === 'zh-hans'
+        || normalized.startsWith('zh-hans-')) return 'zh-Hans'
+      if (normalized === 'ja' || normalized.startsWith('ja-')) return 'ja'
+      if (normalized === 'de' || normalized.startsWith('de-')) return 'de-DE'
+      if (normalized === 'it' || normalized.startsWith('it-')) return 'it'
       return undefined
     }
     const preferredLocale = readCookie('phaeno_locale')

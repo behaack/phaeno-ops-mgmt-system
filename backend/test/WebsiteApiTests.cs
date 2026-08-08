@@ -430,7 +430,7 @@ public sealed class WebsiteApiTests
     }
 
     [Fact]
-    public void SearchKeepsEnglishArabicAndFrenchResultsInTheirRequestedLocale()
+    public void SearchKeepsLocalizedResultsInTheirRequestedLocale()
     {
         var indexPath = Path.Combine(
             Path.GetTempPath(),
@@ -470,6 +470,56 @@ public sealed class WebsiteApiTests
                     PageDisplayTitle = "Plateforme PSeq",
                     AnchorTitle = "Séquençage de l’ARN",
                     Text = "Le séquençage de l’ARN préserve l’identité de la molécule source."
+                },
+                new IndexedPage
+                {
+                    Id = "spanish-sequencing",
+                    Locale = WebsiteLocale.Spanish,
+                    Url = "https://www.phaenobiotech.com/es/technology/pseq-platform",
+                    PageTitle = "Plataforma PSeq",
+                    PageDisplayTitle = "Plataforma PSeq",
+                    AnchorTitle = "Secuenciación del ARN",
+                    Text = "La secuenciación del ARN conserva la identidad de la molécula fuente."
+                },
+                new IndexedPage
+                {
+                    Id = "chinese-sequencing",
+                    Locale = WebsiteLocale.SimplifiedChinese,
+                    Url = "https://www.phaenobiotech.com/zh-hans/technology/pseq-platform",
+                    PageTitle = "PSeq 平台",
+                    PageDisplayTitle = "PSeq 平台",
+                    AnchorTitle = "RNA 测序",
+                    Text = "全长 RNA 测序保留源分子身份。"
+                },
+                new IndexedPage
+                {
+                    Id = "japanese-sequencing",
+                    Locale = WebsiteLocale.Japanese,
+                    Url = "https://www.phaenobiotech.com/ja/technology/pseq-platform",
+                    PageTitle = "PSeq プラットフォーム",
+                    PageDisplayTitle = "PSeq プラットフォーム",
+                    AnchorTitle = "RNA シーケンス",
+                    Text = "全長 RNA シーケンスはソース分子の同一性を保持します。"
+                },
+                new IndexedPage
+                {
+                    Id = "german-sequencing",
+                    Locale = WebsiteLocale.German,
+                    Url = "https://www.phaenobiotech.com/de-de/technology/pseq-platform",
+                    PageTitle = "PSeq-Plattform",
+                    PageDisplayTitle = "PSeq-Plattform",
+                    AnchorTitle = "RNA-Sequenzierung",
+                    Text = "Die RNA-Sequenzierung bewahrt die Identität des Quellmoleküls."
+                },
+                new IndexedPage
+                {
+                    Id = "italian-sequencing",
+                    Locale = WebsiteLocale.Italian,
+                    Url = "https://www.phaenobiotech.com/it/technology/pseq-platform",
+                    PageTitle = "Piattaforma PSeq",
+                    PageDisplayTitle = "Piattaforma PSeq",
+                    AnchorTitle = "Sequenziamento dell’RNA",
+                    Text = "Il sequenziamento dell’RNA conserva l’identità della molecola sorgente."
                 }
             ]);
 
@@ -484,6 +534,22 @@ public sealed class WebsiteApiTests
             var french = Assert.Single(service.Search("séquençage", "fr-CA"));
             Assert.Equal(WebsiteLocale.French, french.Locale);
             Assert.Empty(service.Search("séquençage"));
+
+            var spanish = Assert.Single(service.Search("secuenciación", "es-MX"));
+            Assert.Equal(WebsiteLocale.Spanish, spanish.Locale);
+
+            var chinese = Assert.Single(service.Search("RNA 测序", "zh-CN"));
+            Assert.Equal(WebsiteLocale.SimplifiedChinese, chinese.Locale);
+            Assert.Empty(service.Search("RNA 测序", "zh-Hant"));
+
+            var japanese = Assert.Single(service.Search("RNA シーケンス", "ja-JP"));
+            Assert.Equal(WebsiteLocale.Japanese, japanese.Locale);
+
+            var german = Assert.Single(service.Search("Sequenzierung", "de-AT"));
+            Assert.Equal(WebsiteLocale.German, german.Locale);
+
+            var italian = Assert.Single(service.Search("sequenziamento", "it-IT"));
+            Assert.Equal(WebsiteLocale.Italian, italian.Locale);
         }
         finally
         {

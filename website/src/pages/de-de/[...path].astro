@@ -1,0 +1,22 @@
+---
+import LocalizedPageRenderer from '@/components/i18n/LocalizedPageRenderer.astro'
+import { getLocalizedWhitePaper } from '@/i18n/localizedPublications'
+import { isGermanEnabled } from '@/i18n/locales'
+import { getStaticLocalizedRoutePath, localizedRoutePairs } from '@/i18n/routes'
+
+export function getStaticPaths() {
+  if (!isGermanEnabled) return []
+
+  return localizedRoutePairs.map((route) => ({
+    params: { path: getStaticLocalizedRoutePath(route['de-DE'], 'de-DE') },
+    props: {
+      route,
+      page: getLocalizedWhitePaper('de-DE', route.translationKey),
+    },
+  }))
+}
+
+const { route, page } = Astro.props
+---
+
+<LocalizedPageRenderer locale="de-DE" translationKey={route.translationKey} page={page} />

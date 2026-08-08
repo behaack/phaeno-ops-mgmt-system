@@ -2,6 +2,11 @@ import type { IMenuItem } from '@/layouts/header/menu-versions/IMenuItem'
 import { ar } from './catalogs/ar'
 import { enUS } from './catalogs/en-US'
 import { fr } from './catalogs/fr'
+import { es } from './catalogs/es'
+import { zhHans } from './catalogs/zh-Hans'
+import { ja } from './catalogs/ja'
+import { deDE } from './catalogs/de-DE'
+import { it } from './catalogs/it'
 import type { PluralLabels, WebsiteMessages } from './catalogs/types'
 import { prefixPathForLocale, type SupportedLocale } from './locales'
 
@@ -11,6 +16,11 @@ export const messages: Record<SupportedLocale, WebsiteMessages> = {
   'en-US': enUS,
   ar,
   fr,
+  es,
+  'zh-Hans': zhHans,
+  ja,
+  'de-DE': deDE,
+  it,
 }
 
 export function getMessages(locale: SupportedLocale) {

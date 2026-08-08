@@ -15,6 +15,11 @@ const routeKeys: Record<SupportedLocale, 'enUS' | LocalizedLocale> = {
   'en-US': 'enUS',
   ar: 'ar',
   fr: 'fr',
+  es: 'es',
+  'zh-Hans': 'zh-Hans',
+  ja: 'ja',
+  'de-DE': 'de-DE',
+  it: 'it',
 }
 
 export function localizedSitemap({ enabledLocales }: Options): AstroIntegration {
