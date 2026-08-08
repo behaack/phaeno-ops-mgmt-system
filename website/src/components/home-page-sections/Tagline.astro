@@ -1,4 +1,26 @@
 ---
+import type { SupportedLocale } from '@/i18n/locales'
+import { arabicPageContent } from '@/i18n/pageCatalogs/ar'
+
+interface Props {
+  locale?: SupportedLocale
+}
+
+const { locale = 'en-US' } = Astro.props
+const isArabic = locale === 'ar'
+const ar = arabicPageContent.home.hero
+const content = isArabic ? ar : {
+  kicker: 'Phased sequencing / PSeq™',
+  title: 'Turning RNA into full-length, isoform-resolved insight—at scale',
+  subtitle: 'Quantitative, isoform-level outputs designed for downstream ML models—from the short-read instruments you already use.',
+  requestDemo: 'Request a demo',
+  explore: 'Explore the technology',
+  proof: [
+    { value: '5′–3′', label: 'full-length RNA' },
+    { value: 'NGS', label: 'instrument compatible' },
+    { value: 'ML', label: 'model-ready features' },
+  ],
+}
 const bannerUrl = '/images/home-page-banner.webp'
 ---
 <Fragment set:head>
@@ -22,29 +44,27 @@ const bannerUrl = '/images/home-page-banner.webp'
   <div class="hero__signal hero__signal--two" aria-hidden="true"></div>
 
   <div class="hero__content">
-    <p class="hero__kicker" data-phaeno-search-ignore>Phased sequencing / PSeq™</p>
+    <p class="hero__kicker" data-phaeno-search-ignore>{content.kicker}</p>
     <h1
       id="home-hero"
       data-phaeno-search="Full-length isoform-resolved RNA insight at scale"
       data-phaeno-search-summary="Phaeno turns RNA into full-length, isoform-resolved insight for molecule-level transcriptomics and machine learning workflows."
       data-phaeno-search-keywords="Phaeno PSeq full-length RNA sequencing isoform-resolved transcriptomics ML-ready RNA insight"
-    >Turning RNA into full-length, isoform-resolved insight—at scale</h1>
+    >{content.title}</h1>
     <h2
       id="home-output"
       data-phaeno-search="ML-ready isoform-level RNA outputs from short-read sequencing"
       data-phaeno-search-summary="Phaeno produces quantitative, structured isoform-level outputs designed as inputs to downstream machine-learning models."
       data-phaeno-search-keywords="short-read sequencing isoform-level RNA ML-ready outputs machine learning PSeq"
-    >Quantitative, isoform-level outputs designed for downstream ML models—from the short-read instruments you already use.</h2>
+    >{content.subtitle}</h2>
 
     <div class="hero__actions" data-phaeno-search-ignore>
-      <a class="hero__primary" href="/contact#request-demo">Request a demo <span aria-hidden="true">→</span></a>
-      <a class="hero__secondary" href="/technology/pseq-platform">Explore the technology <span aria-hidden="true">→</span></a>
+      <a class="hero__primary" href={isArabic ? '/ar/contact#request-demo' : '/contact#request-demo'}>{content.requestDemo} <span aria-hidden="true">→</span></a>
+      <a class="hero__secondary" href={isArabic ? '/ar/technology/pseq-platform' : '/technology/pseq-platform'}>{content.explore} <span aria-hidden="true">→</span></a>
     </div>
 
     <div class="hero__proof" data-phaeno-search-ignore>
-      <div><strong>5′–3′</strong><span>full-length RNA</span></div>
-      <div><strong>NGS</strong><span>instrument compatible</span></div>
-      <div><strong>ML</strong><span>model-ready features</span></div>
+      {content.proof.map((item) => <div><strong>{item.value}</strong><span>{item.label}</span></div>)}
     </div>
   </div>
 </section>

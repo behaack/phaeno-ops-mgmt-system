@@ -1,15 +1,16 @@
 ---
 interface IProps {
   stacked?: boolean
+  noResultsMessage?: string
 }
 
-const { stacked=false } = Astro.props as IProps
+const { stacked=false, noResultsMessage='No items match your search criteria' } = Astro.props as IProps
 ---
 
 <ul id="mediaList" class={`${(stacked)?'media-stack':'media-list'}`}>
   <slot />
 </ul>
-<p id="noResults" class="text-gray-600 italic text-center" hidden>No items match your search criteria</p>
+<p id="noResults" class="text-gray-600 italic text-center" hidden>{noResultsMessage}</p>
 
 <style>
 .media-list {

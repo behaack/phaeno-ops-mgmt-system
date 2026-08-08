@@ -1,22 +1,24 @@
 ---
+import type { SupportedLocale } from '@/i18n/locales'
 interface IProps {
   title: string
   image: "image-1" | "image-2" | "image-3"
   trademark?: boolean
+  locale?: SupportedLocale
 }
 
-const { title, image, trademark = false } = Astro.props as IProps
-const [trademarkTerm, ...remainingTitleParts] = title.split(' ')
-const remainingTitle = remainingTitleParts.join(' ')
+const { title, image, trademark = false, locale = 'en-US' } = Astro.props as IProps
+const kicker = locale === 'ar' ? 'Phaeno / العلم بكامل دقته' : 'Phaeno / Science in full resolution'
+const [beforeTrademark, afterTrademark = ''] = title.split('PSeq')
 ---
 <div class="top-banner">
   <div class=`${image} background-layer`>
     <div class=`dark-overlay ${image}-overlay`></div>
     <div class="title-holder">
       <div class="inner-title-holder" >
-        <div class="banner-kicker" data-phaeno-search-ignore>Phaeno / Science in full resolution</div>
+        <div class="banner-kicker" data-phaeno-search-ignore>{kicker}</div>
         <h1 class="text-white">
-          {trademark ? <>{trademarkTerm}<sup>™</sup>{remainingTitle && ` ${remainingTitle}`}</> : title}
+          {trademark ? <>{beforeTrademark}<bdi>PSeq<sup>™</sup></bdi>{afterTrademark}</> : title}
         </h1>
       </div>
     </div>

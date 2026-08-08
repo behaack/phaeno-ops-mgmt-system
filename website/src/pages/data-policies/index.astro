@@ -2,19 +2,26 @@
 import TopPageBanner from '@/components/TopPageBanner.astro';
 import Layout from '@/layouts/Layout.astro';
 import SEOMeta from '@/components/meta-data-helpers/SEOMeta.astro';
+import TranslationReviewNotice from '@/components/i18n/TranslationReviewNotice.astro';
+import type { SupportedLocale } from '@/i18n/locales';
+interface Props { locale?: SupportedLocale }
+const { locale = 'en-US' } = Astro.props
+const isArabic = locale === 'ar'
 ---
-<Layout>   
+<Layout locale={locale}>
   <SEOMeta 
     slot="head"
-    title="Data Security, Retention, and Backup Policy | Phaeno"
-    description="Read Phaeno’s data policies and learn how we manage, store, retain, back up, and protect data."
+    title={isArabic ? 'سياسة أمن البيانات والاحتفاظ بها والنسخ الاحتياطي | Phaeno' : 'Data Security, Retention, and Backup Policy | Phaeno'}
+    description={isArabic ? 'اقرأ سياسات بيانات Phaeno وتعرّف كيف ندير البيانات ونخزنها ونحتفظ بها وننسخها احتياطيًا ونحميها.' : 'Read Phaeno’s data policies and learn how we manage, store, retain, back up, and protect data.'}
     documentType="Web Page"
-    searchTitle="Data Policies"
+    searchTitle={isArabic ? 'سياسات البيانات' : 'Data Policies'}
+    locale={locale}
   />    
   <main id="main">
-    <TopPageBanner title="Phaeno Data Policies" image="image-2"/>    
+    {isArabic ? <TranslationReviewNotice englishPath="/data-policies" /> : null}
+    <TopPageBanner title={isArabic ? 'سياسات بيانات Phaeno' : 'Phaeno Data Policies'} image="image-2" locale={locale}/>
     <section>
-      <p>If you would like to learn about our <b><i>data security, retention, and backup policies</i></b>, please contact your account representative or contact us at <a href="mailto:info@phaenobiotech.com">info@phaenobiotech.com</a>.</p>
+      <p>{isArabic ? <>إذا كنت ترغب في معرفة المزيد عن <b><i>سياسات أمن البيانات والاحتفاظ بها والنسخ الاحتياطي</i></b> لدينا، فيُرجى التواصل مع ممثل حسابك أو مراسلتنا على <a href="mailto:info@phaenobiotech.com">info@phaenobiotech.com</a>.</> : <>If you would like to learn about our <b><i>data security, retention, and backup policies</i></b>, please contact your account representative or contact us at <a href="mailto:info@phaenobiotech.com">info@phaenobiotech.com</a>.</>}</p>
     </section>
   </main>
 </Layout>

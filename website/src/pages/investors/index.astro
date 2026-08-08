@@ -2,34 +2,43 @@
 import SEOMeta from '@/components/meta-data-helpers/SEOMeta.astro';
 import TopPageBanner from '@/components/TopPageBanner.astro';
 import Layout from '@/layouts/Layout.astro';
+import TranslationReviewNotice from '@/components/i18n/TranslationReviewNotice.astro';
+import type { SupportedLocale } from '@/i18n/locales';
+import { arabicPageContent } from '@/i18n/pageCatalogs/ar';
+interface Props { locale?: SupportedLocale }
+const { locale = 'en-US' } = Astro.props
+const isArabic = locale === 'ar'
+const ar = arabicPageContent.investors
 ---
-<Layout>
+<Layout locale={locale}>
   <SEOMeta 
     slot="head"
-    title="Investors | Phaeno"
-    description="Explore Phaeno's investment opportunity around PSeq, full-length RNA sequencing, and mapping the functional human genome."
+    title={isArabic ? ar.metaTitle : 'Investors | Phaeno'}
+    description={isArabic ? ar.description : "Explore Phaeno's investment opportunity around PSeq, full-length RNA sequencing, and mapping the functional human genome."}
     documentType="Web Page"
-    searchTitle="Investors"
+    searchTitle={isArabic ? ar.banner : 'Investors'}
     searchKeywords="Phaeno investors PSeq funding full-length RNA sequencing functional human genome short-read NGS transcriptomics"
+    locale={locale}
   />    
   <main id="main" tabindex="-1">
-    <TopPageBanner title="Investors" image="image-3" />
+    {isArabic ? <TranslationReviewNotice englishPath="/investors" /> : null}
+    <TopPageBanner title={isArabic ? ar.banner : 'Investors'} image="image-3" locale={locale} />
     <section>
       <h2
         id="investor-page"
         data-phaeno-search="Phaeno investor opportunity"
         data-phaeno-search-summary="Phaeno is building PSeq to map the functional human genome with full-length, isoform-resolved RNA sequencing on short-read instruments."
         data-phaeno-search-keywords="Phaeno investor opportunity PSeq functional human genome isoform-resolved RNA sequencing"
-      >Investing in the Functional Human Genome</h2>
+      >{isArabic ? ar.heading : 'Investing in the Functional Human Genome'}</h2>
       <p class="max-w-4xl text-lg leading-7 text-neutral-700">
-        Phaeno is developing PSeq to make full-length, isoform-resolved RNA measurement practical on short-read NGS
+        {isArabic ? ar.intro : <>Phaeno is developing PSeq to make full-length, isoform-resolved RNA measurement practical on short-read NGS
         instruments already used at scale. The opportunity is to move transcriptomics beyond collapsed gene counts and
         expose RNA-level biology for studies of phenotype and therapeutic response, with outputs structured for
-        machine-learning-driven discovery.
+        machine-learning-driven discovery.</>}
       </p>
 
       <div class="mt-5 grid gap-4 md:grid-cols-3">
-        <div class="investor-card">
+        {isArabic ? ar.cards.map((card) => <div class="investor-card"><h3>{card.title}</h3><p>{card.copy}</p></div>) : <><div class="investor-card">
           <h3>Why now</h3>
           <p>
             Short-read sequencing infrastructure is mature, but biology increasingly demands molecule-level transcript
@@ -49,7 +58,7 @@ import Layout from '@/layouts/Layout.astro';
             Phaeno has raised $1.4M to date and is engaging qualified investors who can help accelerate validation,
             commercialization, and platform adoption.
           </p>
-        </div>
+        </div></>}
       </div>
 
       <div class="mt-6 rounded-2xl border border-slate-200 bg-slate-50 p-5">
@@ -58,15 +67,15 @@ import Layout from '@/layouts/Layout.astro';
           data-phaeno-search="Contact Phaeno for investor inquiries"
           data-phaeno-search-summary="Qualified investors can contact Phaeno to discuss the PSeq investment opportunity."
           data-phaeno-search-keywords="Phaeno investor inquiry qualified investors PSeq funding"
-        >Investor inquiries</h3>
+        >{isArabic ? ar.inquiries : 'Investor inquiries'}</h3>
         <p class="mb-0">
-          Qualified investors interested in Phaeno's mission can{' '}
+          {isArabic ? 'يمكن للمستثمرين المؤهلين المهتمين برسالة Phaeno ' : "Qualified investors interested in Phaeno's mission can "}
           <a
-            aria-label="Email Phaeno to make an investment inquiry."
+            aria-label={isArabic ? ar.emailLabel : 'Email Phaeno to make an investment inquiry.'}
             href="mailto:info@phaenobiotech.com?subject=Investor Inquiry"
             rel="nofollow"
-          >email us</a>{' '}
-          to start a conversation.
+          >{isArabic ? ar.email : 'email us'}</a>{' '}
+          {isArabic ? 'لبدء محادثة.' : 'to start a conversation.'}
         </p>
       </div>
     </section>

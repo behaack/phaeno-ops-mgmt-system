@@ -10,45 +10,52 @@ import MediaSearch from '@/components/MediaSearch.astro'
 import MediaNoItems from '@/components/MediaNoItems.astro'
 import { BLOG_FEED_PATH, getBlogPostPath } from '@/lib/blogRoutes'
 import { formatContentDate } from '@/lib/dates'
+import TranslationReviewNotice from '@/components/i18n/TranslationReviewNotice.astro'
+import type { SupportedLocale } from '@/i18n/locales'
+interface Props { locale?: SupportedLocale }
+const { locale = 'en-US' } = Astro.props
+const isArabic = locale === 'ar'
 
 const blog = await getCollection('blog')
 ---
 
-<title>Blog | Phaeno</title>
-<meta name="description" content="Stay up to date with the latest news, breakthroughs, and company updates from the team at Phaeno." />
+<title>{isArabic ? 'مدونة Phaeno | Phaeno' : 'Blog | Phaeno'}</title>
+<meta name="description" content={isArabic ? 'تابع أحدث أخبار Phaeno وإنجازاتها وتحديثات فريقها.' : 'Stay up to date with the latest news, breakthroughs, and company updates from the team at Phaeno.'} />
 
-<Layout>
+<Layout locale={locale}>
   <SEOMeta 
     slot="head"
-    title="Our Blog | Phaeno"
-    description="Learn about Phaeno's mission to transform molecular diagnostics through innovative RNA sequencing technology and expert leadership."
+    title={isArabic ? 'مدونة Phaeno | Phaeno' : 'Our Blog | Phaeno'}
+    description={isArabic ? 'مقالات Phaeno حول بيولوجيا الرنا وتسلسل الأشكال الإسوية ومنصة PSeq.' : "Learn about Phaeno's mission to transform molecular diagnostics through innovative RNA sequencing technology and expert leadership."}
     documentType="List"
-    searchTitle="Blog"
+    searchTitle={isArabic ? 'المدونة' : 'Blog'}
+    locale={locale}
   />  
   <main id="main">
-    <TopPageBanner title="Phaeno Blog"  image="image-1"/>
+    {isArabic ? <TranslationReviewNotice englishPath="/media/blog" /> : null}
+    <TopPageBanner title={isArabic ? 'مدونة Phaeno' : 'Phaeno Blog'} image="image-1" locale={locale}/>
     <section>
     {blog.length ? (
       <div class="mb-2 flex justify-end">
         <RSSFeed feedName={BLOG_FEED_PATH}/>
       </div>) : null
     }
-    <MediaSearch listLength={blog.length} placeholder="Search title or author" />
-    <MediaCollection>
+    <MediaSearch listLength={blog.length} placeholder={isArabic ? 'ابحث بالعنوان أو المؤلف' : 'Search title or author'} />
+    <MediaCollection noResultsMessage={isArabic ? 'لا توجد عناصر تطابق معايير البحث.' : 'No items match your search criteria'}>
       {blog.map(paper => (
         <MediaCard
           searchString={`${paper.data.title} ${paper.data.authors.join(' ')}`.toLowerCase()}        
           title={paper.data.title} 
           image={paper.data.image} 
           summary={paper.data.summary}
-          link={getBlogPostPath(paper.id)}
+          link={isArabic ? `/ar${getBlogPostPath(paper.id)}` : getBlogPostPath(paper.id)}
         >
           <div>{paper.data.authors.join(', ')}</div>
           <div>{formatContentDate(paper.data.date)}</div>
         </MediaCard>
       ))}      
     </MediaCollection>  
-    <MediaNoItems listLength={blog.length} message="No blog entries yet. Check back again soon." />
+    <MediaNoItems listLength={blog.length} message={isArabic ? 'لا توجد مقالات منشورة بعد. يُرجى العودة قريبًا.' : 'No blog entries yet. Check back again soon.'} />
     </section>
   </main>
 </Layout>

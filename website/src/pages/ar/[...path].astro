@@ -1,5 +1,17 @@
 ---
 import ArabicPage from '@/components/i18n/ArabicPage.astro'
+import HomePage from '@/pages/index.astro'
+import AboutPage from '@/pages/about/about-us/index.astro'
+import ContactPage from '@/pages/contact/index.astro'
+import InvestorsPage from '@/pages/investors/index.astro'
+import JobsPage from '@/pages/about/job-openings/index.astro'
+import PseqPage from '@/pages/technology/pseq-platform/index.astro'
+import MultiOmicsPage from '@/pages/technology/multi-omics/index.astro'
+import IsoformsPage from '@/pages/technology/why-isoforms-matter/index.astro'
+import BlogPage from '@/pages/media/blog/index.astro'
+import WhitePapersPage from '@/pages/media/white-papers/index.astro'
+import PrivacyPage from '@/pages/privacy/index.astro'
+import DataPoliciesPage from '@/pages/data-policies/index.astro'
 import { arabicPages } from '@/i18n/arabicPages'
 import { isArabicEnabled } from '@/i18n/locales'
 import { getStaticArabicRoutePath } from '@/i18n/routes'
@@ -14,6 +26,18 @@ export function getStaticPaths() {
 }
 
 const { page } = Astro.props
+const isHome = page.translationKey === 'page.home'
+const isAbout = page.translationKey === 'page.about-us'
+const isContact = page.translationKey === 'page.contact'
+const isInvestors = page.translationKey === 'page.investors'
+const isJobs = page.translationKey === 'page.job-openings'
+const isPseq = page.translationKey === 'page.pseq-platform'
+const isMultiOmics = page.translationKey === 'page.multi-omics'
+const isIsoforms = page.translationKey === 'page.why-isoforms-matter'
+const isBlog = page.translationKey === 'page.blog'
+const isWhitePapers = page.translationKey === 'page.white-papers'
+const isPrivacy = page.translationKey === 'page.privacy'
+const isDataPolicies = page.translationKey === 'page.data-policies'
 ---
 
-<ArabicPage page={page} />
+{isHome ? <HomePage locale="ar" /> : isAbout ? <AboutPage locale="ar" /> : isContact ? <ContactPage locale="ar" /> : isInvestors ? <InvestorsPage locale="ar" /> : isJobs ? <JobsPage locale="ar" /> : isPseq ? <PseqPage locale="ar" /> : isMultiOmics ? <MultiOmicsPage locale="ar" /> : isIsoforms ? <IsoformsPage locale="ar" /> : isBlog ? <BlogPage locale="ar" /> : isWhitePapers ? <WhitePapersPage locale="ar" /> : isPrivacy ? <PrivacyPage locale="ar" /> : isDataPolicies ? <DataPoliciesPage locale="ar" /> : <ArabicPage page={page} />}

@@ -1,14 +1,15 @@
 ---
 import type { ITeamMember } from '@/assets/team';
 import TeamMember from './TeamMember.astro';
+import type { SupportedLocale } from '@/i18n/locales';
 
-interface IProp { members: ITeamMember[] }
-const { members } = Astro.props as IProp;
+interface IProp { members: ITeamMember[]; locale?: SupportedLocale }
+const { members, locale = 'en-US' } = Astro.props as IProp;
 ---
 
 <ul class="team-grid">
   {members.map((m) => (
-    <TeamMember member={m} />
+    <TeamMember member={m} locale={locale} />
   ))}
 </ul>
 

@@ -3,39 +3,72 @@ import Layout from '@/layouts/Layout.astro';
 import TopPageBanner from '@/components/TopPageBanner.astro';
 import SEOMeta from '@/components/meta-data-helpers/SEOMeta.astro';
 import NewSeqCategory from '@/components/NewSeqCategory.astro';
+import TranslationReviewNotice from '@/components/i18n/TranslationReviewNotice.astro';
+import type { SupportedLocale } from '@/i18n/locales';
+import { arabicPageContent } from '@/i18n/pageCatalogs/ar';
+interface Props { locale?: SupportedLocale }
+const { locale = 'en-US' } = Astro.props
+const isArabic = locale === 'ar'
+const ar = arabicPageContent.pseq
+const mechanisms = isArabic ? ar.mechanisms : [
+  { step: 'Identify', title: 'Tag every molecule', copy: 'Each RNA molecule is reverse-transcribed using one of 4.3 trillion multifunctional tagging reagents, uniquely labeling individual molecules.', result: '4.3 trillion-tag molecular identity space' },
+  { step: 'Construct', title: 'Build within each molecule', copy: 'Tagged molecules are converted into sequencing-ready DNA libraries using reactions confined to intramolecular rearrangements.', result: 'Sequencing-ready DNA libraries' },
+  { step: 'Resolve', title: 'Process data end to end', copy: 'Standard FASTA files from the sequencer are processed end-to-end by the automated PSeq data pipeline.', result: 'Complete, analysis-ready output' },
+]
+const workflows = isArabic ? ar.workflows : [
+  { stage: 'Apply', title: 'PSeq Chemistry', intro: 'Four molecular preparation steps preserve the identity and structure of each RNA molecule.', items: [
+    ['Molecular tagging', 'Reverse transcription with individual barcodes and strand discriminators.'],
+    ['Isothermal amplification', 'PCR-free amplification.'],
+    ['Intermolecular UMI redistribution', 'SMIDs are relocated to the start of Read 1 in standard paired-end NGS libraries.'],
+    ['Companion tools', 'Retrieve individual, barcode-identified molecules discovered by sequencing.'],
+  ] },
+  { stage: 'Execute', title: 'PSeq Software', intro: 'An automated, molecule-aware pipeline carries sequencing data through preprocessing, quality control, molecular assignment, transcript reconstruction, and structured output.', items: [
+    ['Molecule-aware processing', 'Preprocessing and quality control prepare reads for molecule-specific assignment, which is evaluated before transcript assembly.'],
+    ['Molecule-constrained reconstruction', 'With sufficient depth and coverage, reads assigned to each captured molecular template support a more direct view of individual isoforms than inference from pooled fragments.'],
+    ['Interoperable outputs', 'Structured isoform-level results can connect with biological databases and established bioinformatics, visualization, ML, and AI tools.'],
+  ] },
+  { stage: 'Deliver', title: 'Isoform-Resolved Insights', intro: 'Individual-molecule data, structured for analysis and discovery.', items: [
+    ['Isoform architecture', 'Connected exon and UTR structure within individual RNA molecules.'],
+    ['Protein-coding potential', 'Open reading frames and alternative initiation sites.'],
+    ['Polyadenylation', 'Alternative cleavage and polyadenylation sites.'],
+    ['ML-ready outputs', 'Structured, molecule-level features designed as inputs to downstream ML models.'],
+  ] },
+]
 ---
-<Layout>
+<Layout locale={locale}>
   <SEOMeta 
     slot="head"
-    title="PSeq Platform | Full-Length RNA Sequencing | Phaeno"
-    description="Learn how PSeq preserves source-molecule identity to reconstruct full-length, isoform-resolved RNA with established short-read NGS instruments."
+    title={isArabic ? ar.metaTitle : 'PSeq Platform | Full-Length RNA Sequencing | Phaeno'}
+    description={isArabic ? ar.description : 'Learn how PSeq preserves source-molecule identity to reconstruct full-length, isoform-resolved RNA with established short-read NGS instruments.'}
     documentType="Web Page"
-    searchTitle="PSeq Platform"
+    searchTitle={isArabic ? ar.banner : 'PSeq Platform'}
     searchKeywords="PSeq technology phased sequencing chemistry single-molecule tagging molecular barcodes intramolecular library construction isothermal amplification UMI redistribution automated pipeline NGS instruments"
+    locale={locale}
   />  
   <main id="main" class="science-page" tabindex="-1">
-    <TopPageBanner title="PSeq Technology" image="image-2" trademark />
+    {isArabic ? <TranslationReviewNotice englishPath="/technology/pseq-platform" /> : null}
+    <TopPageBanner title={isArabic ? ar.banner : 'PSeq Technology'} image="image-2" trademark locale={locale} />
     <section>
       <h2
         id="pseq-technology"
         data-phaeno-search="PSeq sequencing technology category"
         data-phaeno-search-summary="Visual overview of PSeq as a phased sequencing category that adds molecule-level isoform resolution to established NGS workflows."
         data-phaeno-search-keywords="PSeq phased sequencing NGS molecular identity molecule-level isoform resolution transcript reconstruction software"
-      >PSeq — A New Category Built Around Resolution</h2>
+      >{isArabic ? ar.categoryTitle : 'PSeq — A New Category Built Around Resolution'}</h2>
       <div class="category-context">
         <p>
-          Sequencing advanced through foundation, scale, and read length. PSeq adds molecule-level isoform resolution.
+          {isArabic ? ar.categoryCopy : <>Sequencing advanced through foundation, scale, and read length. PSeq adds molecule-level isoform resolution.
           By preserving molecular identity through an NGS workflow, it allows reads from the same captured template to
-          be grouped before transcript reconstruction.
+          be grouped before transcript reconstruction.</>}
         </p>
         <p class="category-context__claim">
-          <strong>Not another sequencer.</strong>
-          <span>A new architecture for molecule-resolved RNA measurement.</span>
+          <strong>{isArabic ? ar.notSequencer : 'Not another sequencer.'}</strong>
+          <span>{isArabic ? ar.categoryClaim : 'A new architecture for molecule-resolved RNA measurement.'}</span>
         </p>
       </div>
       <div class="category-timeline-wrap">
         <div class="category-timeline-inner">
-          <NewSeqCategory />
+          <NewSeqCategory locale={locale} />
         </div>
       </div>
       <section
@@ -45,23 +78,23 @@ import NewSeqCategory from '@/components/NewSeqCategory.astro';
       >
         <div class="clear-signal-architecture__inner">
           <div class="clear-signal-architecture__heading">
-            <p class="clear-signal-architecture__eyebrow" data-phaeno-search-ignore>The architecture</p>
+            <p class="clear-signal-architecture__eyebrow" data-phaeno-search-ignore>{isArabic ? ar.architectureEyebrow : 'The architecture'}</p>
             <h2
               id="pseq-clear-signal-architecture-title"
               data-phaeno-search="PSeq Clear-Signal Architecture"
               data-phaeno-search-summary="PSeq preserves source-molecule identity from library preparation through sequence reconstruction and retains traceable supporting evidence."
               data-phaeno-search-keywords="PSeq Clear-Signal Architecture Source Molecule Identifier SMID molecular identity fragmentation sequence reconstruction traceable evidence"
-            ><span class="clear-signal-architecture__title-line">PSeq Clear&#8209;Signal</span><br />Architecture™</h2>
+            >{isArabic ? ar.architectureTitle : <><span class="clear-signal-architecture__title-line">PSeq Clear&#8209;Signal</span><br />Architecture™</>}</h2>
           </div>
           <div class="clear-signal-architecture__copy">
             <p>
-              PSeq Clear-Signal Architecture™ preserves source-molecule identity from library preparation through
+              {isArabic ? ar.architectureCopy : <>PSeq Clear-Signal Architecture™ preserves source-molecule identity from library preparation through
               sequence reconstruction. A Source Molecule Identifier is assigned before fragmentation, retained across
               fragments from the same molecule, and used to organize short-read data into molecule-specific records
-              with traceable supporting evidence.
+              with traceable supporting evidence.</>}
             </p>
             <p class="clear-signal-architecture__thesis">
-              <strong>Identify the molecule. Reconstruct its sequence. Preserve the evidence.</strong>
+              <strong>{isArabic ? ar.architectureThesis : 'Identify the molecule. Reconstruct its sequence. Preserve the evidence.'}</strong>
             </p>
           </div>
         </div>
@@ -71,67 +104,28 @@ import NewSeqCategory from '@/components/NewSeqCategory.astro';
         data-phaeno-search="How PSeq technology works"
         data-phaeno-search-summary="PSeq uses single-molecule tagging, intramolecular library construction, and automated data processing to produce full-length RNA insight."
         data-phaeno-search-keywords="PSeq technology single-molecule tagging intramolecular library construction automated data processing"
-      >How PSeq Technology Works</h2>
+      >{isArabic ? ar.worksTitle : 'How PSeq Technology Works'}</h2>
       <p class="mechanism-intro">
-        Three connected stages transform individual RNA molecules into complete, analysis-ready sequence data.
+        {isArabic ? ar.worksIntro : 'Three connected stages transform individual RNA molecules into complete, analysis-ready sequence data.'}
       </p>
       <div class="mechanism-flow">
-        <article class="mechanism-card mechanism-card--featured">
-          <div class="mechanism-card__step">
-            <span>01</span>
-            <span>Identify</span>
-          </div>
-          <h3>Tag every molecule</h3>
-          <p>
-            Each RNA molecule is reverse-transcribed using one of 4.3 trillion multifunctional tagging reagents,
-            uniquely labeling individual molecules.
-          </p>
-          <div class="mechanism-card__result">4.3 trillion-tag molecular identity space</div>
-        </article>
-
-        <article class="mechanism-card">
-          <div class="mechanism-card__step">
-            <span>02</span>
-            <span>Construct</span>
-          </div>
-          <h3>Build within each molecule</h3>
-          <p>
-            Tagged molecules are converted into sequencing-ready DNA libraries using reactions confined to
-            intramolecular rearrangements.
-          </p>
-          <div class="mechanism-card__result">Sequencing-ready DNA libraries</div>
-        </article>
-
-        <article class="mechanism-card">
-          <div class="mechanism-card__step">
-            <span>03</span>
-            <span>Resolve</span>
-          </div>
-          <h3>Process data end to end</h3>
-          <p>
-            Standard FASTA files from the sequencer are processed end-to-end by the automated PSeq data pipeline.
-          </p>
-          <div class="mechanism-card__result">Complete, analysis-ready output</div>
-        </article>
+        {mechanisms.map((item, index) => <article class:list={['mechanism-card', { 'mechanism-card--featured': index === 0 }]}><div class="mechanism-card__step"><span>{String(index + 1).padStart(2, '0')}</span><span>{item.step}</span></div><h3>{item.title}</h3><p>{item.copy}</p><div class="mechanism-card__result">{item.result}</div></article>)}
       </div>
       <aside class="ngs-compatibility" aria-label="PSeq NGS compatibility">
         <div class="ngs-compatibility__inner">
           <div class="ngs-compatibility__message">
-            <span class="ngs-compatibility__eyebrow">Built for the lab you already run</span>
-            <h3>Standard NGS in. Isoform-resolved data out.</h3>
+            <span class="ngs-compatibility__eyebrow">{isArabic ? ar.compatibilityEyebrow : 'Built for the lab you already run'}</span>
+            <h3>{isArabic ? ar.compatibilityTitle : 'Standard NGS in. Isoform-resolved data out.'}</h3>
           </div>
           <div class="ngs-compatibility__details">
             <p>
-              PSeq runs on unmodified NGS sequencers already in service—without specialized Third Generation instruments,
-              dedicated robotics, or highly specialized staff training.
+              {isArabic ? ar.compatibilityCopy : 'PSeq runs on unmodified NGS sequencers already in service—without specialized Third Generation instruments, dedicated robotics, or highly specialized staff training.'}
             </p>
             <ul aria-label="PSeq compatibility benefits">
-              <li>Existing NGS instruments</li>
-              <li>No dedicated robotics</li>
-              <li>Automated FASTA processing</li>
+              {(isArabic ? ar.compatibilityBenefits : ['Existing NGS instruments', 'No dedicated robotics', 'Automated FASTA processing']).map((item) => <li>{item}</li>)}
             </ul>
-            <a href="/contact#sign-up" class="ngs-compatibility__cta">
-              Request Technical Brief <span aria-hidden="true">→</span>
+            <a href={isArabic ? '/ar/contact#sign-up' : '/contact#sign-up'} class="ngs-compatibility__cta">
+              {isArabic ? ar.technicalBrief : 'Request Technical Brief'} <span aria-hidden="true">→</span>
             </a>
           </div>
         </div>
@@ -141,88 +135,12 @@ import NewSeqCategory from '@/components/NewSeqCategory.astro';
         data-phaeno-search="From sample to isoform-resolved PSeq data"
         data-phaeno-search-summary="Detailed PSeq stages covering molecular tagging, molecule-aware processing, molecule-constrained reconstruction, and ML-ready isoform-level output."
         data-phaeno-search-keywords="PSeq workflow molecular tagging isothermal amplification UMI redistribution molecule-aware processing quality control molecular assignment transcript reconstruction ML-ready isoform output"
-      >From Sample to Isoform-Resolved Data</h2>
+      >{isArabic ? ar.workflowTitle : 'From Sample to Isoform-Resolved Data'}</h2>
       <p class="workflow-detail-intro">
-        PSeq moves from molecular preparation through automated processing to structured, molecule-level output—within
-        the NGS workflow already in use.
+        {isArabic ? ar.workflowIntro : 'PSeq moves from molecular preparation through automated processing to structured, molecule-level output—within the NGS workflow already in use.'}
       </p>
       <div class="workflow-detail-grid">
-        <article class="work-flow-description workflow-card--apply">
-          <header class="workflow-card__header">
-            <span class="workflow-card__stage">Apply</span>
-            <h3>PSeq Chemistry</h3>
-            <p>Four molecular preparation steps preserve the identity and structure of each RNA molecule.</p>
-          </header>
-          <ol class="workflow-card__list workflow-card__list--numbered">
-            <li>
-              <span class="workflow-card__marker" aria-hidden="true">01</span>
-              <div><strong>Molecular tagging</strong><span>Reverse transcription with individual barcodes and strand discriminators.</span></div>
-            </li>
-            <li>
-              <span class="workflow-card__marker" aria-hidden="true">02</span>
-              <div><strong>Isothermal amplification</strong><span>PCR-free amplification.</span></div>
-            </li>
-            <li>
-              <span class="workflow-card__marker" aria-hidden="true">03</span>
-              <div><strong>Intermolecular UMI redistribution</strong><span>SMIDs are relocated to the start of Read 1 in standard paired-end NGS libraries.</span></div>
-            </li>
-            <li>
-              <span class="workflow-card__marker" aria-hidden="true">04</span>
-              <div><strong>Companion tools</strong><span>Retrieve individual, barcode-identified molecules discovered by sequencing.</span></div>
-            </li>
-          </ol>
-        </article>
-        <article class="work-flow-description workflow-card--execute">
-          <header class="workflow-card__header">
-            <span class="workflow-card__stage">Execute</span>
-            <h3>PSeq Software</h3>
-            <p>
-              An automated, molecule-aware pipeline carries sequencing data through preprocessing, quality control,
-              molecular assignment, transcript reconstruction, and structured output.
-            </p>
-          </header>
-          <ul class="workflow-card__list">
-            <li>
-              <div>
-                <strong>Molecule-aware processing</strong>
-                <span>Preprocessing and quality control prepare reads for molecule-specific assignment, which is evaluated before transcript assembly.</span>
-              </div>
-            </li>
-            <li>
-              <div>
-                <strong>Molecule-constrained reconstruction</strong>
-                <span>With sufficient depth and coverage, reads assigned to each captured molecular template support a more direct view of individual isoforms than inference from pooled fragments.</span>
-              </div>
-            </li>
-            <li>
-              <div>
-                <strong>Interoperable outputs</strong>
-                <span>Structured isoform-level results can connect with biological databases and established bioinformatics, visualization, ML, and AI tools.</span>
-              </div>
-            </li>
-          </ul>
-        </article>
-        <article class="work-flow-description workflow-card--deliver">
-          <header class="workflow-card__header">
-            <span class="workflow-card__stage">Deliver</span>
-            <h3><span class="workflow-title__nowrap">Isoform&#8209;Resolved</span> Insights</h3>
-            <p>Individual-molecule data, structured for analysis and discovery.</p>
-          </header>
-          <ul class="workflow-card__list">
-            <li>
-              <div><strong>Isoform architecture</strong><span>Connected exon and UTR structure within individual RNA molecules.</span></div>
-            </li>
-            <li>
-              <div><strong>Protein-coding potential</strong><span>Open reading frames and alternative initiation sites.</span></div>
-            </li>
-            <li>
-              <div><strong>Polyadenylation</strong><span>Alternative cleavage and polyadenylation sites.</span></div>
-            </li>
-            <li>
-              <div><strong>ML-ready outputs</strong><span>Structured, molecule-level features designed as inputs to downstream ML models.</span></div>
-            </li>
-          </ul>
-        </article>
+        {workflows.map((workflow, index) => <article class:list={['work-flow-description', index === 0 ? 'workflow-card--apply' : index === 1 ? 'workflow-card--execute' : 'workflow-card--deliver']}><header class="workflow-card__header"><span class="workflow-card__stage">{workflow.stage}</span><h3>{workflow.title}</h3><p>{workflow.intro}</p></header>{index === 0 ? <ol class="workflow-card__list workflow-card__list--numbered">{workflow.items.map((item, itemIndex) => <li><span class="workflow-card__marker" aria-hidden="true">{String(itemIndex + 1).padStart(2, '0')}</span><div><strong>{item[0]}</strong><span>{item[1]}</span></div></li>)}</ol> : <ul class="workflow-card__list">{workflow.items.map((item) => <li><div><strong>{item[0]}</strong><span>{item[1]}</span></div></li>)}</ul>}</article>)}
       </div>
       <aside
         class="technical-discussion"
@@ -230,12 +148,12 @@ import NewSeqCategory from '@/components/NewSeqCategory.astro';
         data-phaeno-search-ignore
       >
         <div class="technical-discussion__copy">
-          <p class="technical-discussion__eyebrow">Apply PSeq to your work</p>
-          <h2 id="technical-discussion-title">Ready to explore PSeq for your workflow?</h2>
-          <p>Discuss your samples, sequencing setup, and research goals with our team.</p>
+          <p class="technical-discussion__eyebrow">{isArabic ? ar.finalEyebrow : 'Apply PSeq to your work'}</p>
+          <h2 id="technical-discussion-title">{isArabic ? ar.finalTitle : 'Ready to explore PSeq for your workflow?'}</h2>
+          <p>{isArabic ? ar.finalCopy : 'Discuss your samples, sequencing setup, and research goals with our team.'}</p>
         </div>
-        <a class="technical-discussion__cta" href="/contact#request-demo">
-          Request a technical discussion <span aria-hidden="true">→</span>
+        <a class="technical-discussion__cta" href={isArabic ? '/ar/contact#request-demo' : '/contact#request-demo'}>
+          {isArabic ? ar.finalAction : 'Request a technical discussion'} <span aria-hidden="true">→</span>
         </a>
       </aside>
     </section>

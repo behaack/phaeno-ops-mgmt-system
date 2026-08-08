@@ -1,9 +1,11 @@
 ---
 import { FaLinkedin, FaSquareXTwitter, FaYoutube } from 'react-icons/fa6';
+import type { SupportedLocale } from '@/i18n/locales';
 
 interface IProps {
   size?: 'sm' | 'md' | 'lg'
   width?: 'wide' | 'narrow'
+  locale?: SupportedLocale
 }
 
 const sizeMap = {
@@ -13,7 +15,8 @@ const sizeMap = {
 } as const;
 
 
-const { size="sm", width='narrow' } = Astro.props as IProps
+const { size="sm", width='narrow', locale='en-US' } = Astro.props as IProps
+const isArabic = locale === 'ar'
 const iconSize = sizeMap[size];
 ---
 
@@ -22,8 +25,8 @@ const iconSize = sizeMap[size];
     class="linked-in"
     target="_blank" 
     rel="noopener noreferrer"
-    title="Visit us on LinkedIn"
-    aria-label="Visit us on LinkedIn – opens in a new tab"
+    title={isArabic ? 'تابعنا على LinkedIn' : 'Visit us on LinkedIn'}
+    aria-label={isArabic ? 'تابعنا على LinkedIn — يفتح في علامة تبويب جديدة' : 'Visit us on LinkedIn – opens in a new tab'}
     href="https://www.linkedin.com/company/phaeno-biotech/"
   >
     <FaLinkedin
@@ -52,8 +55,8 @@ const iconSize = sizeMap[size];
     class="youtube"
     target="_blank" 
     rel="noopener noreferrer"
-    title="Visit us on YouTube"
-    aria-label="Visit our YouTube channel - opens in a new tab"
+    title={isArabic ? 'تابعنا على YouTube' : 'Visit us on YouTube'}
+    aria-label={isArabic ? 'زيارة قناة Phaeno على YouTube — تفتح في علامة تبويب جديدة' : 'Visit our YouTube channel - opens in a new tab'}
     href="https://www.youtube.com/@phaenobiotech" 
   >
     <FaYoutube

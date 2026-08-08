@@ -16,6 +16,7 @@ Implemented locally on 2026-08-07:
 - the default build remains unprefixed `en-US` and generates no Arabic route, selector, suggestion, or localized sitemap entry;
 - `PUBLIC_I18N_ARABIC_MODE=preview` is accepted only together with `PUBLIC_SITE_REVIEW_MODE=true` and generates the complete 16-pair Arabic review route set;
 - all current public English routes have explicit Arabic equivalents, while the four white-paper families use reviewed-in-place explicit Arabic draft slugs connected by `translationKey`;
+- all 16 Arabic routes now carry page-by-page draft translations. The principal static pages render through the same Astro page presentation as their English sources, and the four white-paper landing pages include the complete Abstract, Key topics, Contents, and applicable objective callout while clearly identifying their PDF assets as English;
 - locale-aware layout, `lang`, `dir`, navigation, footer, search controls, contact/demo forms, validation messages, date formatting, sharing text, and logical CSS support RTL;
 - client-side browser-language detection offers Arabic without redirecting, and explicit accept/dismiss or selector choices use first-party functional cookies;
 - Arabic review HTML has localized metadata, self-canonicals, reciprocal `hreflang`, `x-default`, and sitemap alternates; the review build remains `noindex` and omits `llms.txt`;
@@ -23,6 +24,7 @@ Implemented locally on 2026-08-07:
 - the Website crawler reads document language, the search API accepts an optional `locale` while defaulting to `en-US`, Lucene partitions records by locale, and Arabic Unicode normalization/search is implemented;
 - an Arabic landing page does not index text from its linked English PDF, and the UI/metadata disclose the asset language; and
 - the normal Website build and Arabic review build succeed, as does an isolated backend Release build. Focused backend tests were added but not executed because the repository requires a separate explicit test request.
+- a dependency-free generated-HTML parity check now verifies all 16 route pairs for route output, RTL document metadata, core semantic structures, and minimum content coverage, and rejects the obsolete condensed Arabic home page.
 
 Implementation note: the pilot uses one typed route-pair registry and one
 static Arabic catch-all route instead of enabling Astro's framework-level
@@ -137,9 +139,10 @@ Separate two kinds of translatable material:
 The implemented catalog boundary is `website/src/i18n/catalogs/`: each locale
 has its own file and must satisfy the shared `WebsiteMessages` contract. Shared
 components retrieve the active catalog with `getMessages(locale)` and must not
-contain language-specific conditionals or parallel translated string literals.
-Editorial Arabic page prose remains in `arabicPages.ts` rather than the shared
-UI catalog.
+contain parallel translated string literals. Editorial Arabic page prose stays
+separate from the shared UI catalog: static-page translations live in typed
+data under `website/src/i18n/pageCatalogs/`, while publication landing-page data
+and translation workflow metadata remain in `arabicPages.ts`.
 
 The dependency-free implementation uses named placeholders and native
 `Intl.PluralRules` behind catalog helpers. An ICU MessageFormat-compatible

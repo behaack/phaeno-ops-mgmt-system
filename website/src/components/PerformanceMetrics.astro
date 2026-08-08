@@ -1,6 +1,65 @@
 ---
+import type { SupportedLocale } from '@/i18n/locales'
+import { arabicPageContent } from '@/i18n/pageCatalogs/ar'
+
+interface Props {
+  locale?: SupportedLocale
+}
+
+const { locale = 'en-US' } = Astro.props
+const isArabic = locale === 'ar'
+const ar = arabicPageContent.performance
+
+function cellState(value: string) {
+  if (value === 'yes') return { symbol: '✓', className: 'status--yes', label: ar.yes }
+  if (value === 'no') return { symbol: '✕', className: 'status--no', label: ar.no }
+  return undefined
+}
 ---
 
+{isArabic ? (
+<div class="comparison">
+  <div class="comparison__header">
+    <h2 id="performance-metrics" data-phaeno-search={ar.title} data-phaeno-search-summary={ar.intro}>{ar.title}</h2>
+    <p>{ar.intro}</p>
+  </div>
+  <div class="comparison__table-wrap">
+    <table>
+      <caption class="sr-only">{ar.caption}</caption>
+      <thead>
+        <tr>
+          <th scope="col"><span class="sr-only">{ar.metric}</span></th>
+          <th scope="col" class="pseq-heading"><span class="pseq-heading__label">PSeq</span></th>
+          <th scope="col">{ar.shortRead}<sup>1</sup></th>
+          <th scope="col">{ar.longRead}<sup>2</sup></th>
+        </tr>
+      </thead>
+      <tbody>
+        {ar.rows.map((row, rowIndex) => (
+          <tr class:list={{ 'metrics-start': rowIndex === 10 }}>
+            <th scope="row">{row[0]}</th>
+            {row.slice(1).map((value, columnIndex) => {
+              const state = cellState(value)
+              const label = columnIndex === 0 ? 'PSeq' : columnIndex === 1 ? ar.shortRead : ar.longRead
+              return (
+                <td data-label={label} class:list={{ 'pseq-value': columnIndex === 0 && rowIndex >= 10 }}>
+                  {state
+                    ? <><span class:list={['status', state.className]} aria-hidden="true">{state.symbol}</span><span class="sr-only">{state.label}</span></>
+                    : value}
+                </td>
+              )
+            })}
+          </tr>
+        ))}
+      </tbody>
+    </table>
+  </div>
+  <div class="comparison__notes">
+    <p>{ar.notes}</p>
+    <p>{ar.ruo}</p>
+  </div>
+</div>
+) : (
 <div class="comparison">
   <div class="comparison__header">
     <h2
@@ -117,6 +176,7 @@
     <p>All data are for research use only (RUO); not validated for clinical diagnostics.</p>
   </div>
 </div>
+)}
 
 <style>
 .comparison {

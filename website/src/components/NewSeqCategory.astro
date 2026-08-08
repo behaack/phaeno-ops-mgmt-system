@@ -1,44 +1,34 @@
+---
+import type { SupportedLocale } from '@/i18n/locales'
+interface Props { locale?: SupportedLocale }
+const { locale = 'en-US' } = Astro.props
+const isArabic = locale === 'ar'
+const stages = isArabic ? [
+  { phase: 'التأسيس', year: '1986', title: 'تسلسل سانغر', copy: 'الجيل الأول من التسلسل' },
+  { phase: 'التوسع', year: '2005', title: 'تسلسل الجيل التالي', copy: 'التسلسل على نطاق واسع' },
+  { phase: 'الطول', year: '2011', title: 'تسلسل الجيل الثالث', copy: 'التسلسل طويل القراءة' },
+] : [
+  { phase: 'Foundation', year: '1986', title: 'Sanger Sequencing', copy: 'First-generation sequencing' },
+  { phase: 'Scale', year: '2005', title: 'Next Generation Sequencing', copy: 'Sequencing at scale' },
+  { phase: 'Length', year: '2011', title: 'Third Generation Sequencing', copy: 'Long-read sequencing' },
+]
+---
 <div
   class="sequencing-timeline"
-  aria-label="Sequencing advances from foundation to scale, length, and molecule-level isoform resolution"
+  aria-label={isArabic ? 'تطورات التسلسل من التأسيس إلى التوسع والطول ودقة الأشكال الإسوية على مستوى الجزيء' : 'Sequencing advances from foundation to scale, length, and molecule-level isoform resolution'}
 >
-  <article class="timeline-stage">
-    <div class="timeline-stage__meta">
-      <span>Foundation</span>
-      <time datetime="1986">1986</time>
-    </div>
-    <h3>Sanger<br />Sequencing</h3>
-    <p>First-generation sequencing</p>
-  </article>
-
-  <article class="timeline-stage">
-    <div class="timeline-stage__meta">
-      <span>Scale</span>
-      <time datetime="2005">2005</time>
-    </div>
-    <h3>Next Generation<br />Sequencing</h3>
-    <p>Sequencing at scale</p>
-  </article>
-
-  <article class="timeline-stage">
-    <div class="timeline-stage__meta">
-      <span>Length</span>
-      <time datetime="2011">2011</time>
-    </div>
-    <h3>Third Generation<br />Sequencing</h3>
-    <p>Long-read sequencing</p>
-  </article>
+  {stages.map((stage) => <article class="timeline-stage"><div class="timeline-stage__meta"><span>{stage.phase}</span><time datetime={stage.year}>{stage.year}</time></div><h3>{stage.title}</h3><p>{stage.copy}</p></article>)}
 
   <article class="timeline-stage timeline-stage--pseq">
     <div class="timeline-stage__meta">
-      <span>Resolution</span>
+      <span>{isArabic ? 'الدقة' : 'Resolution'}</span>
       <time datetime="2025">2025</time>
     </div>
     <div class="timeline-stage__pseq-title">
-      <span>Phased Sequencing</span>
+      <span>{isArabic ? 'التسلسل المرحلي' : 'Phased Sequencing'}</span>
       <strong>PSeq</strong>
     </div>
-    <p>Molecular identity <span>•</span> NGS <span>•</span> isoform assembly</p>
+    <p>{isArabic ? 'هوية جزيئية' : 'Molecular identity'} <span>•</span> NGS <span>•</span> {isArabic ? 'تجميع الأشكال الإسوية' : 'isoform assembly'}</p>
   </article>
 </div>
 

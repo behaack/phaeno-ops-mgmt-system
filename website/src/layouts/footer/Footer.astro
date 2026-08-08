@@ -54,6 +54,7 @@ const footerItems = {
 }
 
 const copyYear = new Date().getFullYear()
+const copyrightLabel = locale === 'ar' ? 'حقوق النشر' : 'Copyright'
 ---
 
 <footer id="site-footer">
@@ -82,7 +83,7 @@ const copyYear = new Date().getFullYear()
     </div>
     <hr />
     <div class="bottom-container">
-      <div class="footer-legal">Copyright &copy;{ copyYear } Phaeno Inc. {footerMessages.legal}</div>
+      <div class="footer-legal">{copyrightLabel} &copy;{ copyYear } Phaeno Inc. {footerMessages.legal}</div>
       <div class="footer-policies">
         {footerItems.bottom.map(item => (
           <>

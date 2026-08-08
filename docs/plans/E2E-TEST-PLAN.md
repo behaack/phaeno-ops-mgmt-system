@@ -25,8 +25,10 @@ available Media content through the same-origin proxy, direct API denial
 without the proxy key, Preview-origin result navigation, and unchanged
 production search results.
 
-Arabic Website browser proof is deferred until the draft translation has named
-review owners and an authorized protected Preview deployment. That proof must
+Arabic Website browser proof is authorized for the protected Preview deployment
+as of 2026-08-07. Automated generated-HTML parity now covers all 16 route pairs,
+including RTL document metadata, core semantic structures, minimum translated
+content coverage, and the corrected home-page source alignment. Deployed proof must
 cover direct `/ar` deep links, `lang="ar"` and `dir="rtl"`, desktop and narrow
 navigation, keyboard/focus behavior, browser-language suggestion and dismissal,
 stored explicit preference, equivalent-route switching, Arabic form labels and
