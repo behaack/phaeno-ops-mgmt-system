@@ -1,4 +1,7 @@
 import type { WebsitePageCatalog } from './types'
+import { brandTerms } from '../brandTerms'
+
+const pseqArchitecture = brandTerms.pseqClearSignalArchitecture
 
 export const esPageContent = {
   home: {
@@ -29,9 +32,9 @@ export const esPageContent = {
     features: [
       {
         id: 'clear-signal-architecture',
-        search: 'PSeq Datos de ARN de señal primero de arquitectura de señal clara',
+        search: `${pseqArchitecture.name} datos de ARN centrados en la señal`,
         eyebrow: '01 / Señal',
-        title: 'PSeq Clear-Signal Architecture™',
+        title: pseqArchitecture.mark,
         summary: 'La identidad de la molécula fuente se preserva desde la preparación de la biblioteca mediante la reconstrucción de secuencias, manteniendo cada molécula conectada a su evidencia de respaldo.',
         href: '/es/technology/pseq-platform#pseq-clear-signal-architecture',
       },
@@ -243,8 +246,7 @@ export const esPageContent = {
       isoformAssembly: 'ensamblaje de isoformas',
     },
     architectureEyebrow: 'la arquitectura',
-    architectureTitle: ['PSeq Señal clara', 'Arquitectura™'],
-    architectureCopy: 'PSeq Clear-Signal Architecture™ preserva la identidad de la molécula fuente desde la preparación de la biblioteca hasta la reconstrucción de la secuencia. Se asigna un identificador de molécula de origen antes de la fragmentación, se retiene en todos los fragmentos de la misma molécula y se utiliza para organizar datos de lectura breve en registros específicos de moléculas con evidencia de respaldo rastreable.',
+    architectureCopyAfterMark: ' preserva la identidad de la molécula fuente desde la preparación de la biblioteca hasta la reconstrucción de la secuencia. Se asigna un identificador de molécula de origen antes de la fragmentación, se retiene en todos los fragmentos de la misma molécula y se utiliza para organizar datos de lectura breve en registros específicos de moléculas con evidencia de respaldo rastreable.',
     architectureThesis: 'Identifica la molécula. Reconstruir su secuencia. Preservar la evidencia.',
     worksTitle: 'Cómo funciona la tecnología PSeq',
     worksIntro: 'Tres etapas conectadas transforman moléculas de ARN individuales en datos de secuencia completos y listos para el análisis.',

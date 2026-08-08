@@ -1,5 +1,8 @@
 import { localizedRoutePairs } from './routes'
 import type { LocalizedPublicationInput, LocalizedPublicationPage } from './publicationTypes'
+import { brandTerms } from './brandTerms'
+
+const pseqArchitecture = brandTerms.pseqClearSignalArchitecture
 
 function defineSimplifiedChinesePage(input: LocalizedPublicationInput): LocalizedPublicationPage {
   const route = localizedRoutePairs.find((candidate) => candidate.translationKey === input.translationKey)
@@ -44,7 +47,7 @@ const simplifiedChineseInputs: LocalizedPublicationInput[] = [
         "heading": "内容",
         "bullets": [
           "短读链接问题",
-          "PSeq Clear-Signal 架构和设计原理",
+          `${pseqArchitecture.name} 和设计原理`,
           "端到端运营模式",
           "三个耦合平台组件",
           "分子水平分析和证据追溯",

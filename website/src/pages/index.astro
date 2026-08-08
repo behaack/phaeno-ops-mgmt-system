@@ -106,7 +106,9 @@ const platformCta = content.platformCta
               data-phaeno-search={feature.search}
               data-phaeno-search-summary={feature.summary}
             >
-              {feature.title}
+              {feature.id === 'clear-signal-architecture'
+                ? <bdi dir="ltr">{feature.title}</bdi>
+                : feature.title}
             </h3>
             <p class="feature-card__summary">{feature.summary}</p>
             {feature.href && (

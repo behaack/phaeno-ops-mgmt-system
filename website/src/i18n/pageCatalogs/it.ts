@@ -1,4 +1,7 @@
 import type { WebsitePageCatalog } from './types'
+import { brandTerms } from '../brandTerms'
+
+const pseqArchitecture = brandTerms.pseqClearSignalArchitecture
 
 export const itPageContent = {
   home: {
@@ -29,9 +32,9 @@ export const itPageContent = {
     features: [
       {
         id: 'clear-signal-architecture',
-        search: 'PSeq Dati RNA segnale-primi con architettura Clear-Signal',
+        search: `${pseqArchitecture.name} dati RNA incentrati sul segnale`,
         eyebrow: '01 / Segnale',
-        title: 'PSeq Clear-Signal Architecture™',
+        title: pseqArchitecture.mark,
         summary: 'L\'identità della molecola sorgente viene preservata dalla preparazione della libreria attraverso la ricostruzione della sequenza, mantenendo ciascuna molecola collegata alle sue prove di supporto.',
         href: '/it/technology/pseq-platform#pseq-clear-signal-architecture',
       },
@@ -243,8 +246,7 @@ export const itPageContent = {
       isoformAssembly: 'assemblaggio isoforma',
     },
     architectureEyebrow: 'L\'architettura',
-    architectureTitle: ['PSeq Segnale chiaro', 'Architettura™'],
-    architectureCopy: 'PSeq Clear-Signal Architecture™ preserva l\'identità della molecola sorgente dalla preparazione della libreria fino alla ricostruzione della sequenza. Un identificatore della molecola sorgente viene assegnato prima della frammentazione, conservato tra i frammenti della stessa molecola e utilizzato per organizzare dati di breve lettura in record specifici della molecola con prove di supporto tracciabili.',
+    architectureCopyAfterMark: ' preserva l\'identità della molecola sorgente dalla preparazione della libreria fino alla ricostruzione della sequenza. Un identificatore della molecola sorgente viene assegnato prima della frammentazione, conservato tra i frammenti della stessa molecola e utilizzato per organizzare dati di breve lettura in record specifici della molecola con prove di supporto tracciabili.',
     architectureThesis: 'Identificare la molecola. Ricostruirne la sequenza. Conservare le prove.',
     worksTitle: 'Come funziona la tecnologia PSeq',
     worksIntro: 'Tre fasi collegate trasformano le singole molecole di RNA in dati di sequenza completi e pronti per l\'analisi.',

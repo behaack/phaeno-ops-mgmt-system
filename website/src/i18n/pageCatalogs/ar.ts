@@ -1,5 +1,8 @@
 import { isolateLtr } from '../bidi'
+import { brandTerms } from '../brandTerms'
 import type { WebsitePageCatalog } from './types'
+
+const pseqArchitecture = brandTerms.pseqClearSignalArchitecture
 
 export const arPageContent = {
   home: {
@@ -30,9 +33,9 @@ export const arPageContent = {
     features: [
       {
         id: 'clear-signal-architecture',
-        search: 'بنية الإشارة الواضحة PSeq وبيانات الرنا المرتكزة إلى الإشارة',
+        search: `${pseqArchitecture.name} وبيانات الرنا المرتكزة إلى الإشارة`,
         eyebrow: '01 / الإشارة',
-        title: 'بنية الإشارة الواضحة™ في PSeq',
+        title: pseqArchitecture.mark,
         summary: 'تُحفظ هوية جزيء المصدر من تحضير المكتبة حتى إعادة بناء التسلسل، بحيث يبقى كل جزيء مرتبطًا بالأدلة الداعمة له.',
         href: '/ar/technology/pseq-platform#pseq-clear-signal-architecture',
       },
@@ -244,8 +247,7 @@ export const arPageContent = {
       isoformAssembly: 'تجميع الأشكال الإسوية',
     },
     architectureEyebrow: 'البنية',
-    architectureTitle: ['بنية الإشارة الواضحة™ في PSeq'],
-    architectureCopy: 'تحفظ بنية الإشارة الواضحة™ في PSeq هوية جزيء المصدر من تحضير المكتبة حتى إعادة بناء التسلسل. يُسنَد معرّف جزيء المصدر قبل التجزئة، ويُحتفظ به عبر شظايا الجزيء نفسه، ويُستخدم لتنظيم بيانات القراءة القصيرة في سجلات خاصة بكل جزيء مع أدلة داعمة قابلة للتتبّع.',
+    architectureCopyAfterMark: ' تحافظ على هوية جزيء المصدر من تحضير المكتبة حتى إعادة بناء التسلسل. يُسنَد معرّف جزيء المصدر قبل التجزئة، ويُحتفظ به عبر شظايا الجزيء نفسه، ويُستخدم لتنظيم بيانات القراءة القصيرة في سجلات خاصة بكل جزيء مع أدلة داعمة قابلة للتتبّع.',
     architectureThesis: 'حدّد الجزيء. أعد بناء تسلسله. احتفظ بالأدلة.',
     worksTitle: 'كيف تعمل تقنية PSeq',
     worksIntro: 'تحوّل ثلاث مراحل مترابطة جزيئات الرنا الفردية إلى بيانات تسلسل كاملة وجاهزة للتحليل.',

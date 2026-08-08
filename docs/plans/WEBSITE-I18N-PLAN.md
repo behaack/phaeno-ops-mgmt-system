@@ -31,6 +31,11 @@ Implemented locally through 2026-08-08:
   selected through one locale lookup; page templates no longer embed locale
   copy branches, and locale-owned publication files contain only white-paper
   editorial records; and
+- canonical product marks now live outside the locale catalogs in
+  `website/src/i18n/brandTerms.ts`. `PSeq Clear-Signal Architecture™` remains
+  unchanged in every locale, localized copy supplies only the surrounding
+  grammar or an unmarked explanation, and RTL presentation isolates the Latin
+  mark so its word and symbol order remain intact; and
 - the multi-omics introduction now allows translated thesis headings to wrap,
   reduces the display scale for expanding LTR locales, gives Japanese an
   intentional four-line headline, and stacks the introduction before its
@@ -167,7 +172,7 @@ The dependency-free implementation uses named placeholders and native
 library remains a future option if more complex grammar requires it; adding
 that library remains a dependency decision requiring explicit approval.
 
-Use native `Intl` APIs with an explicit active locale for dates and numbers. Preserve the present `en-US` output in default mode. Product names, Phaeno and PSeq marks, gene symbols, transcript/accession identifiers, units, user-entered data, URLs, and code-like values are not translated unless the content glossary explicitly says otherwise.
+Use native `Intl` APIs with an explicit active locale for dates and numbers. Preserve the present `en-US` output in default mode. Product names, Phaeno and PSeq marks, gene symbols, transcript/accession identifiers, units, user-entered data, URLs, and code-like values are not translated unless the content glossary explicitly says otherwise. Canonical marks are rendered from the shared brand-term registry; translators may localize their surrounding grammar or add a separate unmarked explanatory gloss, but must not translate, reorder, inflect, or move the trademark symbol within the mark.
 
 ### Content collections and translation identity
 

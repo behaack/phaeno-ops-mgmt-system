@@ -6,11 +6,13 @@ import NewSeqCategory from '@/components/NewSeqCategory.astro';
 import type { SupportedLocale } from '@/i18n/locales';
 import { getPageCatalog } from '@/i18n/pageCatalogs';
 import { getLocalizedPath } from '@/i18n/routes';
+import { brandTerms } from '@/i18n/brandTerms';
 interface Props { locale?: SupportedLocale }
 const { locale = 'en-US' } = Astro.props
 const content = getPageCatalog(locale).pseq
 const mechanisms = content.mechanisms
 const workflows = content.workflows
+const clearSignalArchitecture = brandTerms.pseqClearSignalArchitecture
 ---
 <Layout locale={locale}>
   <SEOMeta 
@@ -58,14 +60,15 @@ const workflows = content.workflows
               data-phaeno-search="PSeq Clear-Signal Architecture"
               data-phaeno-search-summary="PSeq preserves source-molecule identity from library preparation through sequence reconstruction and retains traceable supporting evidence."
               data-phaeno-search-keywords="PSeq Clear-Signal Architecture Source Molecule Identifier SMID molecular identity fragmentation sequence reconstruction traceable evidence"
-            >{content.architectureTitle.map((line, index) => index === 0 && content.architectureTitle.length > 1
+              dir="ltr"
+            >{clearSignalArchitecture.titleLines.map((line, index) => index === 0
               ? <span class="clear-signal-architecture__title-line">{line}</span>
               : <>{index > 0 ? <br /> : null}{line}</>
             )}</h2>
           </div>
           <div class="clear-signal-architecture__copy">
             <p>
-              {content.architectureCopy}
+              <bdi dir="ltr">{clearSignalArchitecture.name}</bdi>{content.architectureCopyAfterMark}
             </p>
             <p class="clear-signal-architecture__thesis">
               <strong>{content.architectureThesis}</strong>

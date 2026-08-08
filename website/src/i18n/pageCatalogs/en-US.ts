@@ -1,4 +1,7 @@
 import { biomarkers } from '@/assets/biomarkers'
+import { brandTerms } from '../brandTerms'
+
+const pseqArchitecture = brandTerms.pseqClearSignalArchitecture
 
 export const enUSPageContent = {
   home: {
@@ -29,9 +32,9 @@ export const enUSPageContent = {
     features: [
       {
         id: 'clear-signal-architecture',
-        search: 'PSeq Clear-Signal Architecture signal-first RNA data',
+        search: `${pseqArchitecture.name} signal-first RNA data`,
         eyebrow: '01 / Signal',
-        title: 'PSeq Clear-Signal Architecture™',
+        title: pseqArchitecture.mark,
         summary: 'Source-molecule identity is preserved from library preparation through sequence reconstruction, keeping each molecule connected to its supporting evidence.',
         href: '/technology/pseq-platform#pseq-clear-signal-architecture',
       },
@@ -243,8 +246,7 @@ export const enUSPageContent = {
       isoformAssembly: 'isoform assembly',
     },
     architectureEyebrow: 'The architecture',
-    architectureTitle: ['PSeq Clear‑Signal', 'Architecture™'],
-    architectureCopy: 'PSeq Clear-Signal Architecture™ preserves source-molecule identity from library preparation through sequence reconstruction. A Source Molecule Identifier is assigned before fragmentation, retained across fragments from the same molecule, and used to organize short-read data into molecule-specific records with traceable supporting evidence.',
+    architectureCopyAfterMark: ' preserves source-molecule identity from library preparation through sequence reconstruction. A Source Molecule Identifier is assigned before fragmentation, retained across fragments from the same molecule, and used to organize short-read data into molecule-specific records with traceable supporting evidence.',
     architectureThesis: 'Identify the molecule. Reconstruct its sequence. Preserve the evidence.',
     worksTitle: 'How PSeq Technology Works',
     worksIntro: 'Three connected stages transform individual RNA molecules into complete, analysis-ready sequence data.',

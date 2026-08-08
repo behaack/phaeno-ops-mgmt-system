@@ -1,5 +1,8 @@
 import { localizedRoutePairs } from './routes'
 import type { LocalizedPublicationInput, LocalizedPublicationPage } from './publicationTypes'
+import { brandTerms } from './brandTerms'
+
+const pseqArchitecture = brandTerms.pseqClearSignalArchitecture
 
 function defineJapanesePage(input: LocalizedPublicationInput): LocalizedPublicationPage {
   const route = localizedRoutePairs.find((candidate) => candidate.translationKey === input.translationKey)
@@ -44,7 +47,7 @@ const japaneseInputs: LocalizedPublicationInput[] = [
         "heading": "コンテンツ",
         "bullets": [
           "ショートリードリンケージ問題",
-          "PSeq Clear-Signal アーキテクチャと設計原則",
+          `${pseqArchitecture.name} と設計原則`,
           "エンドツーエンドの運用モデル",
           "3 つの結合されたプラットフォーム コンポーネント",
           "分子レベルの分析と証拠のトレーサビリティ",

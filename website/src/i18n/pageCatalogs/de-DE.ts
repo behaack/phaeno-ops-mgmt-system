@@ -1,4 +1,7 @@
 import type { WebsitePageCatalog } from './types'
+import { brandTerms } from '../brandTerms'
+
+const pseqArchitecture = brandTerms.pseqClearSignalArchitecture
 
 export const deDEPageContent = {
   home: {
@@ -29,9 +32,9 @@ export const deDEPageContent = {
     features: [
       {
         id: 'clear-signal-architecture',
-        search: 'PSeq Signal-First-RNA-Daten der Clear-Signal-Architektur',
+        search: `${pseqArchitecture.name} Signal-First-RNA-Daten`,
         eyebrow: '01 / Signal',
-        title: 'PSeq Clear-Signal Architecture™',
+        title: pseqArchitecture.mark,
         summary: 'Die Identität der Quelle und des Moleküls bleibt von der Bibliotheksvorbereitung bis zur Sequenzrekonstruktion erhalten, sodass jedes Molekül mit seinen unterstützenden Beweisen verbunden bleibt.',
         href: '/de-de/technology/pseq-platform#pseq-clear-signal-architecture',
       },
@@ -243,8 +246,7 @@ export const deDEPageContent = {
       isoformAssembly: 'Isoform-Montage',
     },
     architectureEyebrow: 'Die Architektur',
-    architectureTitle: ['PSeq Klares Signal', 'Architektur™'],
-    architectureCopy: 'PSeq Clear-Signal Architecture™ bewahrt die Identität des Quellmoleküls von der Bibliotheksvorbereitung bis zur Sequenzrekonstruktion. Vor der Fragmentierung wird ein Quellmolekülidentifikator zugewiesen, über Fragmente desselben Moleküls hinweg beibehalten und zum Organisieren kurzgelesener Daten in molekülspezifischen Datensätzen mit nachvollziehbaren Belegen verwendet.',
+    architectureCopyAfterMark: ' bewahrt die Identität des Quellmoleküls von der Bibliotheksvorbereitung bis zur Sequenzrekonstruktion. Vor der Fragmentierung wird ein Quellmolekülidentifikator zugewiesen, über Fragmente desselben Moleküls hinweg beibehalten und zum Organisieren kurzgelesener Daten in molekülspezifischen Datensätzen mit nachvollziehbaren Belegen verwendet.',
     architectureThesis: 'Identifizieren Sie das Molekül. Rekonstruieren Sie die Reihenfolge. Bewahren Sie die Beweise auf.',
     worksTitle: 'So funktioniert die PSeq-Technologie',
     worksIntro: 'Drei miteinander verbundene Stufen verwandeln einzelne RNA-Moleküle in vollständige, analysebereite Sequenzdaten.',

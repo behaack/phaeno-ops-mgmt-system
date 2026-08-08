@@ -1,4 +1,7 @@
 import type { WebsitePageCatalog } from './types'
+import { brandTerms } from '../brandTerms'
+
+const pseqArchitecture = brandTerms.pseqClearSignalArchitecture
 
 export const jaPageContent = {
   home: {
@@ -29,9 +32,9 @@ export const jaPageContent = {
     features: [
       {
         id: 'clear-signal-architecture',
-        search: 'PSeq Clear-Signal Architecture シグナルファースト RNA データ',
+        search: `${pseqArchitecture.name} シグナルファースト RNA データ`,
         eyebrow: '01 / 信号',
-        title: 'PSeq Clear-Signal Architecture™',
+        title: pseqArchitecture.mark,
         summary: 'ソース分子の同一性は、ライブラリーの調製から配列再構築まで維持され、各分子をその裏付けとなる証拠と結び付けた状態に保たれます。',
         href: '/ja/technology/pseq-platform#pseq-clear-signal-architecture',
       },
@@ -243,8 +246,7 @@ export const jaPageContent = {
       isoformAssembly: 'アイソフォームアセンブリ',
     },
     architectureEyebrow: 'アーキテクチャ',
-    architectureTitle: ['PSeq クリアシグナル', 'アーキテクチャ™'],
-    architectureCopy: 'PSeq Clear-Signal Architecture™ は、ライブラリーの調製から配列の再構築までソース分子の同一性を保持します。ソース分子識別子は断片化前に割り当てられ、同じ分子の断片全体で保持され、ショートリードデータを追跡可能な裏付け証拠を含む分子固有の記録に整理するために使用されます。',
+    architectureCopyAfterMark: ' は、ライブラリーの調製から配列の再構築までソース分子の同一性を保持します。ソース分子識別子は断片化前に割り当てられ、同じ分子の断片全体で保持され、ショートリードデータを追跡可能な裏付け証拠を含む分子固有の記録に整理するために使用されます。',
     architectureThesis: '分子を特定します。そのシーケンスを再構築します。証拠を保存してください。',
     worksTitle: 'PSeq テクノロジーの仕組み',
     worksIntro: '3 つの接続されたステージにより、個々の RNA 分子が、すぐに分析できる完全な配列データに変換されます。',

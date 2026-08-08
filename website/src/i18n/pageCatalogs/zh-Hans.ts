@@ -1,4 +1,7 @@
 import type { WebsitePageCatalog } from './types'
+import { brandTerms } from '../brandTerms'
+
+const pseqArchitecture = brandTerms.pseqClearSignalArchitecture
 
 export const zhHansPageContent = {
   home: {
@@ -29,9 +32,9 @@ export const zhHansPageContent = {
     features: [
       {
         id: 'clear-signal-architecture',
-        search: 'PSeq Clear-Signal Architecture 信号优先 RNA 数据',
+        search: `${pseqArchitecture.name} 信号优先 RNA 数据`,
         eyebrow: '01 / 信号',
-        title: 'PSeq Clear-Signal Architecture™',
+        title: pseqArchitecture.mark,
         summary: '通过序列重建，从文库制备过程中保留了源分子身份，使每个分子与其支持证据保持联系。',
         href: '/zh-hans/technology/pseq-platform#pseq-clear-signal-architecture',
       },
@@ -243,8 +246,7 @@ export const zhHansPageContent = {
       isoformAssembly: '同种型组装',
     },
     architectureEyebrow: '架构',
-    architectureTitle: ['PSeq 清晰信号', '建筑™'],
-    architectureCopy: 'PSeq Clear-Signal Architecture™ 通过序列重建保留了文库制备过程中的源分子身份。源分子标识符在片段化之前分配，保留在同一分子的各个片段中，并用于将短读数据组织成具有可追踪支持证据的分子特异性记录。',
+    architectureCopyAfterMark: ' 通过序列重建保留了文库制备过程中的源分子身份。源分子标识符在片段化之前分配，保留在同一分子的各个片段中，并用于将短读数据组织成具有可追踪支持证据的分子特异性记录。',
     architectureThesis: '识别分子。重建其序列。保留证据。',
     worksTitle: 'PSeq 技术的工作原理',
     worksIntro: '三个相连的阶段将单个 RNA 分子转化为完整的、可供分析的序列数据。',

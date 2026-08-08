@@ -1,5 +1,8 @@
 import { localizedRoutePairs } from './routes'
 import type { LocalizedPublicationInput, LocalizedPublicationPage } from './publicationTypes'
+import { brandTerms } from './brandTerms'
+
+const pseqArchitecture = brandTerms.pseqClearSignalArchitecture
 
 function defineItalianPage(input: LocalizedPublicationInput): LocalizedPublicationPage {
   const route = localizedRoutePairs.find((candidate) => candidate.translationKey === input.translationKey)
@@ -44,7 +47,7 @@ const italianInputs: LocalizedPublicationInput[] = [
         "heading": "Contenuto",
         "bullets": [
           "Il problema del collegamento a lettura breve",
-          "PSeq Architettura Clear-Signal e principi di progettazione",
+          `${pseqArchitecture.name} e principi di progettazione`,
           "Modello operativo end-to-end",
           "Tre componenti della piattaforma accoppiati",
           "Analisi a livello molecolare e tracciabilità delle prove",

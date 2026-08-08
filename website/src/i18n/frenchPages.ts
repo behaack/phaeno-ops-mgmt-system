@@ -1,5 +1,8 @@
 import type { LocalizedPublicationInput, LocalizedPublicationPage } from './publicationTypes'
 import { localizedRoutePairs } from './routes'
+import { brandTerms } from './brandTerms'
+
+const pseqArchitecture = brandTerms.pseqClearSignalArchitecture
 
 function defineFrenchPage(input: LocalizedPublicationInput): LocalizedPublicationPage {
   const route = localizedRoutePairs.find((candidate) => candidate.translationKey === input.translationKey)
@@ -44,7 +47,7 @@ export const frenchWhitePapers: LocalizedPublicationPage[] = [
         heading: 'Sommaire',
         bullets: [
           'Le problème de liaison dans les lectures courtes',
-          'Architecture Clear-Signal et principes de conception de PSeq',
+          `${pseqArchitecture.name} et principes de conception`,
           'Modèle opérationnel de bout en bout',
           'Trois composants de plateforme interconnectés',
           'Analyse au niveau moléculaire et traçabilité des preuves',
@@ -152,7 +155,7 @@ export const frenchWhitePapers: LocalizedPublicationPage[] = [
       {
         heading: 'Résumé',
         paragraphs: [
-          'La plateforme PSeq commence par préparer des bibliothèques d’ADN dotées d’une architecture informationnelle spécialisée. Le séquençage NGS paired-end conventionnel fournit ensuite au pipeline de données automatisé toutes les informations nécessaires pour assembler séparément chaque molécule d’ARN. Ensemble, ces éléments forment l’architecture Clear-Signal™ de PSeq, un cadre intégré de la chimie aux données pour le séquençage de molécules complètes.',
+          `La plateforme PSeq commence par préparer des bibliothèques d’ADN dotées d’une architecture informationnelle spécialisée. Le séquençage NGS paired-end conventionnel fournit ensuite au pipeline de données automatisé toutes les informations nécessaires pour assembler séparément chaque molécule d’ARN. Ensemble, ces éléments forment ${pseqArchitecture.mark}, un cadre intégré de la chimie aux données pour le séquençage de molécules complètes.`,
           'Ce livre blanc présente une validation technique initiale de PSeq v1 sur l’ensemble de la chaîne opérationnelle. Dans une étude de cas, les données assemblées d’un seul transcrit peuvent être visualisées facilement avec IGV, le navigateur génomique open source conçu pour inspecter les séquences de génomes complets et les données RNA-Seq. L’examen des informations d’un transcrit unique du gène PRPF31 montre les performances du pipeline à un niveau de détail rarement disponible et illustre la traçabilité de toutes les étapes de la chaîne opérationnelle de la plateforme.',
           'Ce livre blanc constitue une validation technique initiale et ne doit pas être interprété comme une validation statistique complète de la plateforme, une validation clinique ou une analyse de performance réglementaire.',
         ],
