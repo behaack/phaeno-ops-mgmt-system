@@ -7,43 +7,35 @@ import SEOMeta from '@/components/meta-data-helpers/SEOMeta.astro';
 import { formatContentDate } from '@/lib/dates';
 import TranslationReviewNotice from '@/components/i18n/TranslationReviewNotice.astro';
 import type { SupportedLocale } from '@/i18n/locales';
-import { arabicPageContent } from '@/i18n/pageCatalogs/ar';
+import { getPageCatalog } from '@/i18n/pageCatalogs';
 interface Props { locale?: SupportedLocale }
 const { locale = 'en-US' } = Astro.props
-const isArabic = locale === 'ar'
-const ar = arabicPageContent.jobs
+const isTranslation = locale !== 'en-US'
+const content = getPageCatalog(locale).jobs
 const jobs = await getCollection('jobs');
 const isJobs = (jobs.length > 0)
 ---
 <Layout locale={locale}>
   <SEOMeta 
     slot="head"
-    title={isArabic ? ar.metaTitle : 'Job Openings | Phaeno'}
-    description={isArabic ? ar.description : 'Join Phaeno and help shape the future of RNA sequencing. Explore open roles and our company culture.'}
+    title={content.metaTitle}
+    description={content.description}
     documentType="List"
-    searchTitle={isArabic ? ar.banner : 'Jobs'}
+    searchTitle={content.searchTitle}
     locale={locale}
   />
   <main id="main" tabindex="-1">
-    {isArabic ? <TranslationReviewNotice englishPath="/about/job-openings" /> : null}
-    <TopPageBanner title={isArabic ? ar.banner : 'Job Openings'} image="image-3" locale={locale}/>
+    {isTranslation ? <TranslationReviewNotice englishPath="/about/job-openings" /> : null}
+    <TopPageBanner title={content.banner} image="image-3" locale={locale}/>
     <section>
       <div class="careers-intro">
         <div class="careers-intro__copy">
-          {isArabic ? ar.intro.map((paragraph) => <p>{paragraph}</p>) : <><p>
-            We believe great science starts with great people. At Phaeno, we foster a collaborative and inclusive environment where innovation thrives.
-          </p>
-          <p>
-            Our team includes leading experts in chemistry, bioinformatics, and diagnostics — all working together to push the boundaries of RNA technology.
-          </p>
-          <p>
-            Join us and be part of a mission-driven company that’s helping shape the future of precision medicine.
-          </p></>}
+          {content.intro.map((paragraph) => <p>{paragraph}</p>)}
         </div>
         <figure class="careers-intro__image" data-phaeno-search-ignore>
           <img
             src="/images/career-science-team.png"
-            alt={isArabic ? ar.imageAlt : 'Scientists collaborating in a molecular biology laboratory'}
+            alt={content.imageAlt}
             loading="eager"
             decoding="async"
           />
@@ -56,30 +48,30 @@ const isJobs = (jobs.length > 0)
             <input
               id="jobSearch"
               type="text"
-              placeholder={isArabic ? 'ابحث في الوظائف...' : 'Search jobs...'}
+              placeholder={content.searchPlaceholder}
               class="w-full sm:w-2/3 px-4 py-2 rounded-md text-black"
               oninput="filterJobs()"
             />
 
-            <label for="jobType" class="sr-only">{isArabic ? 'نوع الوظيفة' : 'Job type'}</label>
+            <label for="jobType" class="sr-only">{content.typeLabel}</label>
             <select 
               id="jobType" 
               class="w-full sm:w-1/3 px-4 py-2 rounded-md text-black" 
               name="jobType"
-              aria-label={isArabic ? 'نوع الوظيفة' : 'Job type'}
+              aria-label={content.typeLabel}
               onchange="filterJobs()"
             >
-              <option value="">{isArabic ? 'جميع الأنواع' : 'All Types'}</option>
-              <option value="Full-time">{isArabic ? 'دوام كامل' : 'Full-time'}</option>
-              <option value="Part-time">{isArabic ? 'دوام جزئي' : 'Part-time'}</option>
-              <option value="Contract">{isArabic ? 'تعاقد' : 'Contract'}</option>
-              <option value="Temporary">{isArabic ? 'مؤقت' : 'Temporary'}</option>
-              <option value="Intern">{isArabic ? 'تدريب' : 'Intern'}</option>
-              <option value="Other">{isArabic ? 'أخرى' : 'Other'}</option>
+              <option value="">{content.employmentTypes.all}</option>
+              <option value="Full-time">{content.employmentTypes['Full-time']}</option>
+              <option value="Part-time">{content.employmentTypes['Part-time']}</option>
+              <option value="Contract">{content.employmentTypes.Contract}</option>
+              <option value="Temporary">{content.employmentTypes.Temporary}</option>
+              <option value="Intern">{content.employmentTypes.Intern}</option>
+              <option value="Other">{content.employmentTypes.Other}</option>
             </select>    
           </div>
           <div class="mt-2 mb-6 gap-2 flex items-center">
-            <div class="pl-1 text-gray-600">{isArabic ? 'الموقع:' : 'Location:'} </div>
+            <div class="pl-1 text-gray-600">{content.locationLabel} </div>
             <div class="flex gap-9 items-center">
               <label class="inline-flex items-center gap-1">
                 <input 
@@ -89,7 +81,7 @@ const isJobs = (jobs.length > 0)
                   checked
                   onchange="filterJobs()" 
                 />
-                  <span>{isArabic ? 'عن بُعد' : 'Remote'}</span>
+                  <span>{content.remote}</span>
               </label>
       
               <label class="inline-flex items-center gap-1">
@@ -100,14 +92,14 @@ const isJobs = (jobs.length > 0)
                   checked
                   onchange="filterJobs()" 
                 />
-                  <span>{isArabic ? 'في الموقع' : 'On-Site'}</span>
+                  <span>{content.onsite}</span>
               </label>
             </div>       
           </div>                  
         ) 
         : (
           <div class="text-center pt-10">
-            <p id="msgEmpty" class="text-gray-600 italic">{isArabic ? ar.empty : <>Sorry, we don't have any job openings right now.<br/>Check back soon.</>}</p>
+            <p id="msgEmpty" class="text-gray-600 italic">{content.empty}</p>
           </div>
         )
       }
@@ -134,15 +126,15 @@ const isJobs = (jobs.length > 0)
                 </a>
                 <p class="text-sm text-gray-600 p-0 m-0 mb-0.5">{job.data.employmentType} • {job.data.locationType} • {job.data.locationDescription}</p>
                 <p class="text-sm text-gray-600 p-0 m-0 mb-0.5">{job.data.summary}</p>
-                <p class="text-sm text-gray-600 p-0 m-0">{isArabic ? 'نُشرت في' : 'Posted on'} {formatContentDate(job.data.date, undefined, locale)}</p>
+                <p class="text-sm text-gray-600 p-0 m-0">{content.postedOn} {formatContentDate(job.data.date, undefined, locale)}</p>
               </div>
             </div>       
           </li>
         ))}
       </ul>
       <div class="text-center">
-        <p id="msgEmpty" class="text-gray-600 italic" hidden>{isArabic ? ar.empty : <>Sorry, we don't have any job openings right now.<br/>Check back soon.</>}</p>
-        {(isJobs) && <p id="msgNoMatch" class="text-gray-600 italic" hidden>{isArabic ? 'لا توجد وظائف تطابق معاييرك.' : 'No jobs match your criteria.'}</p>}
+        <p id="msgEmpty" class="text-gray-600 italic" hidden>{content.empty}</p>
+        {(isJobs) && <p id="msgNoMatch" class="text-gray-600 italic" hidden>{content.noMatch}</p>}
       </div>
       <br />     
     </section>

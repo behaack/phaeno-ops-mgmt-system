@@ -67,6 +67,23 @@ export interface WebsiteMessages {
     accept: string
     dismiss: string
   }
+  brand: {
+    logoAlt: string
+    bannerKicker: string
+    copyright: string
+  }
+  social: {
+    linkedInTitle: string
+    linkedInLabel: string
+    youTubeTitle: string
+    youTubeLabel: string
+  }
+  team: {
+    photoAlt: string
+    linkedInTitle: string
+    linkedInLabel: string
+    titles: Record<string, string>
+  }
   article: {
     backArrow: string
     viewPdf: string

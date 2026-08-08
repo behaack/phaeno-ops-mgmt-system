@@ -5,7 +5,7 @@
  *    <SeoMeta slot="head" title="About Phaeno" description="…" />
  */
 import type { webtypes } from '@/assets/docTypes'
-import type { SupportedLocale } from '@/i18n/locales'
+import { getLocaleDefinition, type SupportedLocale } from '@/i18n/locales'
 interface Props {
   title: string;
   description: string;
@@ -38,6 +38,8 @@ const {
 const canonicalUrl = new URL(url, Astro.site ?? Astro.url).href;
 const siteUrl = new URL('/', canonicalUrl).href;
 const imageUrl = new URL(image, siteUrl).href;
+const openGraphLocale = getLocaleDefinition(locale).openGraphLocale;
+const shouldEmitOpenGraphLocale = locale !== 'en-US';
 const structuredData = {
   '@context': 'https://schema.org',
   '@type': documentType === 'List' ? 'CollectionPage' : 'WebPage',
@@ -81,7 +83,7 @@ const serializedStructuredData = JSON.stringify(structuredData).replace(/</g, '\
 <meta property="og:title"       content={title} />
 <meta property="og:description" content={description} />
 <meta property="og:image"       content={imageUrl} />
-{locale !== 'en-US' ? <meta property="og:locale" content="ar_AR" /> : null}
+{shouldEmitOpenGraphLocale ? <meta property="og:locale" content={openGraphLocale} /> : null}
 
 <!-- Twitter -->
 <meta name="twitter:card"        content={twitterCard} />

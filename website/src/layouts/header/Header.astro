@@ -25,7 +25,7 @@ const currentPath = decodeURIComponent(Astro.url.pathname).toLowerCase();
     <a class="logo-link" href={prefixPathForLocale(locale, '/')} aria-label={pageMessages.homeLabel}>
       <Image 
         src="/images/phaeno124x40.webp" 
-        alt={locale === 'ar' ? 'شعار Phaeno' : 'Phaeno Logo'}
+        alt={pageMessages.brand.logoAlt}
         height={40}
         width={124}
       />

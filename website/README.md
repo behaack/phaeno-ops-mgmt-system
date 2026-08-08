@@ -172,8 +172,12 @@ The complete operating and verification boundary is in
 Shared interface translations live in `src/i18n/catalogs/{locale}.ts` and must
 satisfy the catalog contract in `src/i18n/catalogs/types.ts`. Components use
 `getMessages(locale)` and route helpers; do not add locale-specific text
-conditionals to components. Editorial page and publication prose stays in its
-locale-owned content data.
+conditionals to components. Fixed marketing-page copy lives symmetrically in
+`src/i18n/pageCatalogs/{locale}.ts`, satisfies the shared page-catalog
+contract, and is selected through `getPageCatalog(locale)`. Publication prose
+stays in locale-owned editorial content data; Arabic white-paper preview
+records currently remain in `src/i18n/arabicPages.ts` until they move into the
+localized content-collection workflow.
 
 ## Commands
 

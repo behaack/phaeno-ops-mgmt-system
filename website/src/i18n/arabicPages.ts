@@ -22,15 +22,14 @@ export interface ArabicPage {
   sourceLocale: 'en-US'
   sourceRevision: string
   translationStatus: TranslationStatus
-  kind: 'standard' | 'empty-list' | 'white-paper-list' | 'white-paper' | 'contact'
+  kind: 'white-paper'
   title: string
   metaTitle: string
   description: string
   eyebrow: string
   lead: string
   sections: ArabicSection[]
-  emptyMessage?: string
-  whitePaper?: ArabicWhitePaper
+  whitePaper: ArabicWhitePaper
   route: LocalizedRoutePair
 }
 
@@ -49,231 +48,7 @@ function defineArabicPage(input: ArabicPageInput): ArabicPage {
   }
 }
 
-export const arabicPages: ArabicPage[] = [
-  defineArabicPage({
-    translationKey: 'page.home',
-    kind: 'standard',
-    title: 'قراءة الرنا بطوله الكامل، جزيئًا بعد جزيء',
-    metaTitle: 'Phaeno | تسلسل الرنا كامل الطول باستخدام PSeq',
-    description: 'تطوّر Phaeno منصة PSeq للحفاظ على هوية جزيء الرنا وإعادة بناء الأشكال الإسوية كاملة الطول باستخدام أجهزة NGS ذات القراءات القصيرة.',
-    eyebrow: 'اكتشاف بيولوجيا الرنا',
-    lead: 'تكشف منصة PSeq البنية الكاملة لنسخ الرنا مع إبقاء كل نتيجة مرتبطة بالأدلة الجزيئية التي أنتجتها.',
-    sections: [
-      {
-        heading: 'من القراءات القصيرة إلى جزيئات قابلة للتتبّع',
-        paragraphs: ['تضيف PSeq معرّفًا إلى جزيء المصدر قبل إنشاء المكتبة، ثم تجمع القراءات التي جاءت من الجزيء نفسه لإعادة بناء تسلسله الكامل واتجاهه.'],
-        bullets: ['هوية جزيئية محفوظة قبل التجزئة', 'إعادة بناء للأشكال الإسوية كاملة الطول', 'سجل أدلة قابل للفحص من FASTQ إلى التسلسل المتوافق عليه'],
-      },
-      {
-        heading: 'مصممة للبنية التحتية القائمة',
-        paragraphs: ['تعمل المكتبات على أجهزة التسلسل المزدوج ذات القراءات القصيرة دون تعديل الجهاز، بينما يحوّل مسار بيانات آلي النتائج إلى سجلات رنا على مستوى الجزيء.'],
-      },
-      {
-        heading: 'للاستخدام البحثي فقط',
-        paragraphs: ['PSeq منصة بحثية قيد التطوير. لا تمثل المواد المعروضة تحققًا سريريًا أو ادعاءً تشخيصيًا أو تنظيميًا.'],
-      },
-    ],
-  }),
-  defineArabicPage({
-    translationKey: 'page.pseq-platform',
-    kind: 'standard',
-    title: 'منصة PSeq',
-    metaTitle: 'منصة PSeq | تسلسل الرنا كامل الطول | Phaeno',
-    description: 'تعرّف على كيفية حفاظ PSeq على هوية جزيء المصدر لإعادة بناء رنا كامل الطول ومحلول الأشكال الإسوية باستخدام أجهزة NGS القياسية.',
-    eyebrow: 'بنية متكاملة من الكيمياء إلى البيانات',
-    lead: 'تجمع PSeq بين وسم جزيء المصدر وبناء المكتبة والتسلسل المزدوج وإعادة البناء الحاسوبي في سير عمل واحد قابل للتتبّع.',
-    sections: [
-      {
-        heading: 'الحفاظ على هوية المصدر',
-        paragraphs: ['يُضاف معرّف جزيء المصدر (SMID) وإشارة اتجاه السلسلة أثناء النسخ العكسي، قبل أن تُجزّأ المكتبة إلى قراءات قصيرة.'],
-      },
-      {
-        heading: 'إعادة بناء على مستوى الجزيء',
-        bullets: ['اكتشاف علامة PSeq في القراءات', 'تجميع القراءات حسب SMID', 'تحديد الجين المصدر', 'التجميع وإنشاء تسلسل متوافق عليه', 'حفظ مصدر كل دليل في قاعدة بيانات خاصة بالتشغيل'],
-      },
-      {
-        heading: 'حدود الاستخدام الحالي',
-        paragraphs: ['المواد الحالية تصف بنية المنصة والتحقق التقني الأولي. ولا ينبغي تفسيرها كتقييم أداء سريري أو تنظيمي مكتمل.'],
-      },
-    ],
-  }),
-  defineArabicPage({
-    translationKey: 'page.multi-omics',
-    kind: 'standard',
-    title: 'PSeq والعلوم متعددة الأوميكس',
-    metaTitle: 'PSeq والعلوم متعددة الأوميكس | Phaeno',
-    description: 'توضح Phaeno كيف يمكن لبيانات الرنا المحلولة حسب الشكل الإسوي تقوية طبقة النسخ في دراسات الأوميكس المتعددة ونماذج الذكاء الاصطناعي.',
-    eyebrow: 'طبقة نسخ أوضح',
-    lead: 'تعتمد تحليلات الأوميكس المتعددة على جودة كل طبقة مدخلة. وتساعد PSeq على تمثيل ما عبّرت عنه الخلية فعليًا بدل اختزال النسخ المختلفة في إشارة جينية واحدة.',
-    sections: [
-      {
-        heading: 'لماذا تتعطل الروابط بين طبقات الأوميكس؟',
-        paragraphs: ['قد تجمع القياسات التقليدية كل نسخ الجين في قيمة واحدة، مع أن الأشكال الإسوية يمكن أن تختلف في البنية والوظيفة والاستقرار والترجمة.'],
-      },
-      {
-        heading: 'ما تضيفه PSeq',
-        bullets: ['بنية نسخة كاملة الطول', 'تحديد مشترك للوصلات والمتغيرات على الجزيء نفسه', 'ميزات قابلة للتتبّع للتحليل الإحصائي والتعلم الآلي', 'ربط أوضح بين النسخ والبروتين والظاهرة الحيوية'],
-      },
-      {
-        heading: 'تفسير منضبط',
-        paragraphs: ['زيادة دقة طبقة الرنا لا تثبت وحدها السببية أو الفائدة السريرية. يجب تقييم كل استنتاج ضمن تصميم الدراسة والأدلة المستقلة.'],
-      },
-    ],
-  }),
-  defineArabicPage({
-    translationKey: 'page.why-isoforms-matter',
-    kind: 'standard',
-    title: 'لماذا تهمّ الأشكال الإسوية للرنا؟',
-    metaTitle: 'أهمية الأشكال الإسوية للرنا | Phaeno',
-    description: 'تحدد الأشكال الإسوية للرنا كيفية عمل الجينات. ويكشف التسلسل كامل الطول ومحلول الأشكال الإسوية بنية النسخ وسلوكها في علم الأحياء.',
-    eyebrow: 'الجين ليس ناتجًا واحدًا',
-    lead: 'يمكن لجين واحد أن ينتج نسخ رنا متعددة تختلف في الوصلات والبدايات والنهايات ومناطق الترميز، وقد تقود هذه الاختلافات إلى وظائف بيولوجية مختلفة.',
-    sections: [
-      {
-        heading: 'الهوية البنيوية مهمة',
-        paragraphs: ['تحديد وفرة الجين وحدها لا يوضح أي نسخة كانت موجودة أو كيف اجتمعت وصلاتها ومتغيراتها على الجزيء نفسه.'],
-      },
-      {
-        heading: 'ما الذي يتيحه القياس كامل الطول؟',
-        bullets: ['تمييز النسخ المتشابهة', 'ربط أحداث الوصل عبر الجزيء', 'اكتشاف تراكيب غير ممثلة جيدًا في المراجع', 'توفير سجل مباشر لفحص التجميع والتوافق'],
-      },
-      {
-        heading: 'من الاكتشاف إلى الفرضية',
-        paragraphs: ['تساعد البيانات المحلولة حسب الشكل الإسوي الباحثين على صياغة فرضيات أدق، لكنها تحتاج إلى تحقق تجريبي مستقل قبل إسناد وظيفة أو أثر سريري.'],
-      },
-    ],
-  }),
-  defineArabicPage({
-    translationKey: 'page.about-us',
-    kind: 'standard',
-    title: 'من نحن',
-    metaTitle: 'عن Phaeno | Phaeno',
-    description: 'تعرّف على رسالة Phaeno وفريقها الساعي إلى رسم خريطة الجينوم البشري الوظيفي باستخدام تقنية PSeq لتسلسل الرنا كامل الطول.',
-    eyebrow: 'Phaeno Biotech',
-    lead: 'نبني أدوات تمكّن الباحثين من رؤية نسخ الرنا كوحدات جزيئية كاملة وقابلة للتتبّع، بهدف تحسين فهم العلاقة بين الجين والوظيفة والظاهرة الحيوية.',
-    sections: [
-      {
-        heading: 'رسالتنا',
-        paragraphs: ['تسعى Phaeno إلى جعل البنية الوظيفية للرنا قابلة للقياس على نطاق واسع، مع الحفاظ على الأدلة التي تربط كل استنتاج بقراءات التسلسل الأصلية.'],
-      },
-      {
-        heading: 'طريقة عملنا',
-        bullets: ['دمج العلوم الجزيئية وهندسة البرمجيات', 'تصميم سير عمل قابل للتكرار والفحص', 'تمييز الدليل التقني الأولي عن التحقق الكامل', 'التعاون مع فرق البحث حول أسئلة بيولوجية محددة'],
-      },
-    ],
-  }),
-  defineArabicPage({
-    translationKey: 'page.job-openings',
-    kind: 'empty-list',
-    title: 'الوظائف المتاحة',
-    metaTitle: 'الوظائف المتاحة | Phaeno',
-    description: 'انضم إلى Phaeno وساهم في تشكيل مستقبل تسلسل الرنا. اطّلع على الوظائف المتاحة وثقافة الشركة.',
-    eyebrow: 'انضم إلى الفريق',
-    lead: 'نجمع بين البيولوجيا الجزيئية وعلوم البيانات وهندسة البرمجيات لبناء منصة بحثية جديدة.',
-    sections: [],
-    emptyMessage: 'لا توجد وظائف منشورة باللغة العربية حاليًا. ستظهر هنا الوظائف بعد نشر نسخة عربية معتمدة منها.',
-  }),
-  defineArabicPage({
-    translationKey: 'page.blog',
-    kind: 'empty-list',
-    title: 'مدونة Phaeno',
-    metaTitle: 'مدونة Phaeno | Phaeno',
-    description: 'مقالات Phaeno حول بيولوجيا الرنا وتسلسل الأشكال الإسوية ومنصة PSeq.',
-    eyebrow: 'رؤى ومواد علمية',
-    lead: 'تحتوي القائمة العربية فقط على المقالات التي اكتملت ترجمتها ومراجعتها ونشرها لهذه اللغة.',
-    sections: [],
-    emptyMessage: 'لا توجد مقالات منشورة باللغة العربية حاليًا.',
-  }),
-  defineArabicPage({
-    translationKey: 'page.white-papers',
-    kind: 'white-paper-list',
-    title: 'الأوراق البيضاء',
-    metaTitle: 'الأوراق البيضاء | Phaeno',
-    description: 'اقرأ الصفحات العربية للأوراق التقنية التي تشرح منصة PSeq وبنيتها الجزيئية ومسار البيانات والتحقق التقني الأولي.',
-    eyebrow: 'السلسلة التقنية لمنصة PSeq',
-    lead: 'تتوفر صفحات هبوط عربية قيد المراجعة. ملفات PDF المرتبطة بها باللغة الإنجليزية ويُشار إلى ذلك بوضوح عند التنزيل.',
-    sections: [],
-  }),
-  defineArabicPage({
-    translationKey: 'page.contact',
-    kind: 'contact',
-    title: 'اتصل بنا',
-    metaTitle: 'اتصل بنا | Phaeno',
-    description: 'تواصل مع Phaeno لمناقشة تقنية PSeq لتسلسل الرنا أو الشراكات أو استفسارات المستثمرين أو تحديثات الشركة.',
-    eyebrow: 'ابدأ محادثة',
-    lead: 'أخبرنا بالسؤال البيولوجي أو سير العمل الذي تعمل عليه. نرحب بالتواصل مع فرق البحث والشركاء والمستثمرين.',
-    sections: [
-      {
-        heading: 'بيانات الاتصال',
-        paragraphs: ['5270 California Avenue, Suite 300, Irvine, CA 92617', 'info@phaenobiotech.com'],
-      },
-    ],
-  }),
-  defineArabicPage({
-    translationKey: 'page.investors',
-    kind: 'standard',
-    title: 'المستثمرون',
-    metaTitle: 'المستثمرون | Phaeno',
-    description: 'استكشف فرصة Phaeno الاستثمارية حول PSeq وتسلسل الرنا كامل الطول ورسم خريطة الجينوم البشري الوظيفي.',
-    eyebrow: 'بناء فئة جديدة من بيانات الرنا',
-    lead: 'تطوّر Phaeno منصة تجمع الكيمياء والمعلوماتية لإنتاج بيانات رنا على مستوى الجزيء باستخدام بنية NGS واسعة الانتشار.',
-    sections: [
-      {
-        heading: 'الفرصة',
-        paragraphs: ['تحتاج الأبحاث الدوائية والبيولوجية إلى تمثيل أدق للنسخ التي تنتجها الخلايا. تستهدف PSeq هذه الفجوة مع الحفاظ على قابلية التتبّع والبنية التشغيلية القياسية.'],
-      },
-      {
-        heading: 'تواصل معنا',
-        paragraphs: ['للحصول على معلومات المستثمرين الحالية، تواصل مع فريق Phaeno عبر صفحة الاتصال. لا تشكل هذه الصفحة عرضًا للأوراق المالية أو نصيحة استثمارية.'],
-      },
-    ],
-  }),
-  defineArabicPage({
-    translationKey: 'page.privacy',
-    kind: 'standard',
-    title: 'سياسة الخصوصية',
-    metaTitle: 'سياسة الخصوصية | Phaeno',
-    description: 'اطّلع على ملخص عربي تجريبي لسياسة خصوصية Phaeno وكيفية جمع المعلومات واستخدامها وحمايتها.',
-    eyebrow: 'مسودة ترجمة للمراجعة',
-    lead: 'هذه ترجمة عربية تجريبية غير معتمدة. يبقى النص الإنجليزي الحالي هو النص المرجعي إلى أن تكتمل المراجعة القانونية واللغوية.',
-    sections: [
-      {
-        heading: 'المعلومات التي نتلقاها',
-        paragraphs: ['قد نتلقى المعلومات التي تقدمها عبر نماذج الموقع، مثل الاسم والمؤسسة وعنوان البريد الإلكتروني ووصف الاستفسار، إضافة إلى بيانات تشغيلية محدودة لازمة لأمن الموقع وأدائه.'],
-      },
-      {
-        heading: 'الاستخدام والحماية',
-        paragraphs: ['نستخدم المعلومات للرد على الطلبات وتقديم المواد المطلوبة وتشغيل الموقع وتحسينه والوفاء بالالتزامات القانونية. نطبق ضوابط مناسبة لتقليل الوصول غير المصرح به.'],
-      },
-      {
-        heading: 'الاختيارات والتواصل',
-        paragraphs: ['يمكنك طلب معلومات حول بياناتك أو تحديث تفضيلات التواصل عبر info@phaenobiotech.com. راجع النسخة الإنجليزية للحصول على النص الكامل المعمول به حاليًا.'],
-      },
-    ],
-  }),
-  defineArabicPage({
-    translationKey: 'page.data-policies',
-    kind: 'standard',
-    title: 'سياسات بيانات Phaeno',
-    metaTitle: 'أمن البيانات والاحتفاظ بها والنسخ الاحتياطي | Phaeno',
-    description: 'اطّلع على ملخص عربي تجريبي لسياسات Phaeno المتعلقة بإدارة البيانات وتخزينها والاحتفاظ بها ونسخها احتياطيًا وحمايتها.',
-    eyebrow: 'مسودة ترجمة للمراجعة',
-    lead: 'هذه ترجمة عربية تجريبية غير معتمدة. تبقى سياسة البيانات الإنجليزية المنشورة هي المرجع حتى اكتمال المراجعة القانونية والأمنية واللغوية.',
-    sections: [
-      {
-        heading: 'إدارة البيانات',
-        paragraphs: ['تهدف ضوابط Phaeno إلى تقييد الوصول إلى البيانات وفق الحاجة العملية، وتسجيل العمليات ذات الصلة، وحماية النقل والتخزين بما يتناسب مع نوع البيانات.'],
-      },
-      {
-        heading: 'الاحتفاظ والنسخ الاحتياطي',
-        paragraphs: ['تُحدد فترات الاحتفاظ وإجراءات النسخ الاحتياطي والاستعادة وفق متطلبات الخدمة والعقود والالتزامات النظامية. لا يغيّر هذا الملخص أي التزام تعاقدي.'],
-      },
-      {
-        heading: 'النص المرجعي',
-        paragraphs: ['يجب الرجوع إلى النسخة الإنجليزية المنشورة للحصول على التفاصيل الكاملة والسياسة المعمول بها حاليًا.'],
-      },
-    ],
-  }),
+export const arabicWhitePapers: ArabicPage[] = [
   defineArabicPage({
     translationKey: 'white-paper.platform-overview',
     kind: 'white-paper',
@@ -354,17 +129,15 @@ export const arabicPages: ArabicPage[] = [
   }),
 ]
 
-const pageKeys = new Set(arabicPages.map((page) => page.translationKey))
-const missingPages = localizedRoutePairs.filter((pair) => !pageKeys.has(pair.translationKey))
-if (missingPages.length > 0) {
-  throw new Error(`Arabic page data is missing: ${missingPages.map((page) => page.translationKey).join(', ')}`)
+const publicationKeys = new Set(arabicWhitePapers.map((page) => page.translationKey))
+const missingPublications = localizedRoutePairs.filter(
+  (pair) => pair.translationKey.startsWith('white-paper.') && !publicationKeys.has(pair.translationKey),
+)
+if (missingPublications.length > 0) {
+  throw new Error(`Arabic publication data is missing: ${missingPublications.map((page) => page.translationKey).join(', ')}`)
 }
 
 export function getArabicPageByPath(pathname: string) {
   const decoded = decodeURIComponent(pathname).replace(/\/+$/, '') || '/ar'
-  return arabicPages.find((page) => page.route.ar === decoded)
+  return arabicWhitePapers.find((page) => page.route.ar === decoded)
 }
-
-export const arabicWhitePapers = arabicPages.filter(
-  (page): page is ArabicPage & { whitePaper: ArabicWhitePaper } => Boolean(page.whitePaper),
-)

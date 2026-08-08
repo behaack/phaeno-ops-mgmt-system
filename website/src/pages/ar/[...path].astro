@@ -1,5 +1,5 @@
 ---
-import ArabicPage from '@/components/i18n/ArabicPage.astro'
+import ArabicWhitePaperPage from '@/components/i18n/ArabicWhitePaperPage.astro'
 import HomePage from '@/pages/index.astro'
 import AboutPage from '@/pages/about/about-us/index.astro'
 import ContactPage from '@/pages/contact/index.astro'
@@ -12,32 +12,40 @@ import BlogPage from '@/pages/media/blog/index.astro'
 import WhitePapersPage from '@/pages/media/white-papers/index.astro'
 import PrivacyPage from '@/pages/privacy/index.astro'
 import DataPoliciesPage from '@/pages/data-policies/index.astro'
-import { arabicPages } from '@/i18n/arabicPages'
+import { arabicWhitePapers } from '@/i18n/arabicPages'
 import { isArabicEnabled } from '@/i18n/locales'
-import { getStaticArabicRoutePath } from '@/i18n/routes'
+import { getStaticArabicRoutePath, localizedRoutePairs } from '@/i18n/routes'
 
 export function getStaticPaths() {
   if (!isArabicEnabled) return []
 
-  return arabicPages.map((page) => ({
-    params: { path: getStaticArabicRoutePath(page.route.ar) },
-    props: { page },
+  return localizedRoutePairs.map((route) => ({
+    params: { path: getStaticArabicRoutePath(route.ar) },
+    props: {
+      route,
+      page: arabicWhitePapers.find((candidate) => candidate.translationKey === route.translationKey),
+    },
   }))
 }
 
-const { page } = Astro.props
-const isHome = page.translationKey === 'page.home'
-const isAbout = page.translationKey === 'page.about-us'
-const isContact = page.translationKey === 'page.contact'
-const isInvestors = page.translationKey === 'page.investors'
-const isJobs = page.translationKey === 'page.job-openings'
-const isPseq = page.translationKey === 'page.pseq-platform'
-const isMultiOmics = page.translationKey === 'page.multi-omics'
-const isIsoforms = page.translationKey === 'page.why-isoforms-matter'
-const isBlog = page.translationKey === 'page.blog'
-const isWhitePapers = page.translationKey === 'page.white-papers'
-const isPrivacy = page.translationKey === 'page.privacy'
-const isDataPolicies = page.translationKey === 'page.data-policies'
+const { route, page } = Astro.props
+const staticPageComponents = {
+  'page.home': HomePage,
+  'page.about-us': AboutPage,
+  'page.contact': ContactPage,
+  'page.investors': InvestorsPage,
+  'page.job-openings': JobsPage,
+  'page.pseq-platform': PseqPage,
+  'page.multi-omics': MultiOmicsPage,
+  'page.why-isoforms-matter': IsoformsPage,
+  'page.blog': BlogPage,
+  'page.white-papers': WhitePapersPage,
+  'page.privacy': PrivacyPage,
+  'page.data-policies': DataPoliciesPage,
+} as const
+const StaticPage = staticPageComponents[
+  route.translationKey as keyof typeof staticPageComponents
+]
 ---
 
-{isHome ? <HomePage locale="ar" /> : isAbout ? <AboutPage locale="ar" /> : isContact ? <ContactPage locale="ar" /> : isInvestors ? <InvestorsPage locale="ar" /> : isJobs ? <JobsPage locale="ar" /> : isPseq ? <PseqPage locale="ar" /> : isMultiOmics ? <MultiOmicsPage locale="ar" /> : isIsoforms ? <IsoformsPage locale="ar" /> : isBlog ? <BlogPage locale="ar" /> : isWhitePapers ? <WhitePapersPage locale="ar" /> : isPrivacy ? <PrivacyPage locale="ar" /> : isDataPolicies ? <DataPoliciesPage locale="ar" /> : <ArabicPage page={page} />}
+{StaticPage ? <StaticPage locale="ar" /> : page ? <ArabicWhitePaperPage page={page} /> : null}

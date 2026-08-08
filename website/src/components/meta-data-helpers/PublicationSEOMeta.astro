@@ -1,4 +1,6 @@
 ---
+import { getLocaleDefinition, type SupportedLocale } from '@/i18n/locales'
+
 interface Props {
   title: string
   description: string
@@ -11,8 +13,8 @@ interface Props {
   version?: string
   topics: string[]
   searchKeywords: string[]
-  locale?: 'en-US' | 'ar'
-  assetLanguage?: 'en-US' | 'ar'
+  locale?: SupportedLocale
+  assetLanguage?: SupportedLocale
 }
 
 const {
@@ -35,6 +37,8 @@ const publishedIso = datePublished.toISOString()
 const modifiedIso = dateModified?.toISOString()
 const siteUrl = new URL('/', landingUrl).href
 const organizationId = `${siteUrl}#organization`
+const openGraphLocale = getLocaleDefinition(locale).openGraphLocale
+const shouldEmitOpenGraphLocale = locale !== 'en-US'
 const structuredData = {
   '@context': 'https://schema.org',
   '@type': 'Article',
@@ -102,7 +106,7 @@ const serializedStructuredData = JSON.stringify(structuredData).replace(/</g, '\
 <meta property="og:title" content={title} />
 <meta property="og:description" content={description} />
 <meta property="og:image" content={imageUrl} />
-{locale !== 'en-US' ? <meta property="og:locale" content="ar_AR" /> : null}
+{shouldEmitOpenGraphLocale ? <meta property="og:locale" content={openGraphLocale} /> : null}
 <meta property="article:published_time" content={publishedIso} />
 {modifiedIso ? <meta property="article:modified_time" content={modifiedIso} /> : null}
 

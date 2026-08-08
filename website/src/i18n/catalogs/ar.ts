@@ -51,6 +51,33 @@ export const ar = {
     accept: 'عرض العربية',
     dismiss: 'المتابعة بالإنجليزية',
   },
+  brand: {
+    logoAlt: 'شعار Phaeno',
+    bannerKicker: 'Phaeno / العلم بكامل دقته',
+    copyright: 'حقوق النشر',
+  },
+  social: {
+    linkedInTitle: 'تابعنا على LinkedIn',
+    linkedInLabel: 'تابعنا على LinkedIn — يفتح في علامة تبويب جديدة',
+    youTubeTitle: 'تابعنا على YouTube',
+    youTubeLabel: 'زيارة قناة Phaeno على YouTube — تفتح في علامة تبويب جديدة',
+  },
+  team: {
+    photoAlt: 'صورة {{firstName}} {{lastName}}',
+    linkedInTitle: 'عرض ملف {{firstName}} على LinkedIn',
+    linkedInLabel: 'زيارة ملف {{firstName}} {{lastName}} على LinkedIn — يفتح في علامة تبويب جديدة',
+    titles: {
+      'Founder, CEO': 'مؤسس، الرئيس التنفيذي',
+      'Founder, CSO': 'مؤسس، الرئيس العلمي',
+      'Founder, CTO': 'مؤسس، الرئيس التقني',
+      'Founder, COO': 'مؤسس، الرئيس التنفيذي للعمليات',
+      'CFO | CBO': 'الرئيس المالي | الرئيس التجاري',
+      'VP, Business Development': 'نائب الرئيس لتطوير الأعمال',
+      'Senior Scientist': 'عالِم أول',
+      'Consulting Scientist': 'عالِم استشاري',
+      'Consulting Software Engineer': 'مهندس برمجيات استشاري',
+    },
+  },
   article: {
     backArrow: '→',
     viewPdf: 'عرض ملف PDF',

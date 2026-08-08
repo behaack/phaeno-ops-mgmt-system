@@ -1,7 +1,7 @@
 ---
 /** Standard metadata and structured data for article-like content. */
 import type { articletypes, webtypes } from '@/assets/docTypes'
-import type { SupportedLocale } from '@/i18n/locales'
+import { getLocaleDefinition, type SupportedLocale } from '@/i18n/locales'
 
 type ArticleSchemaType = 'Article' | 'BlogPosting' | 'NewsArticle' | 'ScholarlyArticle'
 
@@ -45,6 +45,8 @@ const {
 const canonicalUrl = new URL(url, Astro.site ?? Astro.url).href;
 const siteUrl = new URL('/', canonicalUrl).href;
 const imageUrl = new URL(image, siteUrl).href;
+const openGraphLocale = getLocaleDefinition(locale).openGraphLocale;
+const shouldEmitOpenGraphLocale = locale !== 'en-US';
 const publishedIso = datePosted.toISOString();
 const modifiedIso = dateModified?.toISOString();
 const normalizedAuthors = [...new Set(authors.map((author) => author.trim()).filter(Boolean))];
@@ -105,7 +107,7 @@ const serializedStructuredData = JSON.stringify(structuredData).replace(/</g, '\
 <meta property="og:title"       content={title} />
 <meta property="og:description" content={description} />
 <meta property="og:image"       content={imageUrl} />
-{locale !== 'en-US' ? <meta property="og:locale" content="ar_AR" /> : null}
+{shouldEmitOpenGraphLocale ? <meta property="og:locale" content={openGraphLocale} /> : null}
 <meta property="article:published_time" content={publishedIso} />
 {modifiedIso ? <meta property="article:modified_time" content={modifiedIso} /> : null}
 {normalizedAuthors.map((author) => <meta property="article:author" content={author} />)}

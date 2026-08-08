@@ -13,9 +13,11 @@ import TranslationReviewNotice from '@/components/i18n/TranslationReviewNotice.a
 import type { SupportedLocale } from '@/i18n/locales'
 import { arabicWhitePapers } from '@/i18n/arabicPages'
 import { getPageCountLabel } from '@/i18n/messages'
+import { getPageCatalog } from '@/i18n/pageCatalogs'
 interface Props { locale?: SupportedLocale }
 const { locale = 'en-US' } = Astro.props
-const isArabic = locale === 'ar'
+const isTranslation = locale !== 'en-US'
+const content = getPageCatalog(locale).whitePapers
 
 const papers = await getCollection('white_papers')
 const publications = papers.map((paper) => ({
@@ -24,25 +26,22 @@ const publications = papers.map((paper) => ({
 }))
 ---
 
-<title>{isArabic ? 'الأوراق البيضاء | Phaeno' : 'White Papers | Phaeno'}</title>
-<meta name="description" content={isArabic ? 'اقرأ الأوراق البيضاء التقنية التي تنشرها Phaeno.' : 'Read technical White Papers published by Phaeno.'} />
-
 <Layout locale={locale}>
   <SEOMeta 
     slot="head"
-    title={isArabic ? 'الأوراق البيضاء | Phaeno' : 'White Papers | Phaeno'}
-    description={isArabic ? 'اقرأ الصفحات العربية للأوراق التقنية التي تشرح منصة PSeq وبنيتها الجزيئية ومسار البيانات والتحقق التقني الأولي.' : "Learn about Phaeno's mission to transform molecular diagnostics through innovative RNA sequencing technology and expert leadership."}
+    title={content.metaTitle}
+    description={content.description}
     documentType="List"
-    searchTitle={isArabic ? 'الأوراق البيضاء' : 'White Papers'}
+    searchTitle={content.searchTitle}
     locale={locale}
   />    
   <main id="main">
-    {isArabic ? <TranslationReviewNotice englishPath="/media/white-papers" /> : null}
-    <TopPageBanner title={isArabic ? 'الأوراق البيضاء' : 'White Papers'} image="image-3" locale={locale}/>
+    {isTranslation ? <TranslationReviewNotice englishPath="/media/white-papers" /> : null}
+    <TopPageBanner title={content.banner} image="image-3" locale={locale}/>
     <section>
-      <MediaSearch listLength={publications.length} placeholder={isArabic ? 'ابحث بالعنوان أو الموضوع' : 'Search title or topic'} />
-      <MediaCollection noResultsMessage={isArabic ? 'لا توجد عناصر تطابق معايير البحث.' : 'No items match your search criteria'}>
-        {isArabic ? arabicWhitePapers.map((page) => (
+      <MediaSearch listLength={publications.length} placeholder={content.searchPlaceholder} />
+      <MediaCollection noResultsMessage={content.noResults}>
+        {isTranslation ? arabicWhitePapers.map((page) => (
           <MediaCard
             searchString={`${page.title} ${page.whitePaper.topics.join(' ')}`.toLowerCase()}
             title={page.title}
@@ -51,7 +50,7 @@ const publications = papers.map((paper) => ({
             link={page.route.ar}
           >
             <div>{formatContentDate(page.whitePaper.date, undefined, 'ar')} · {getPageCountLabel('ar', page.whitePaper.pageCount)}</div>
-            <div>ملف PDF: الإنجليزية</div>
+            <div>{content.pdfLanguage}</div>
           </MediaCard>
         )) : publications.map(({ paper, paths }) => (
           <MediaCard 
@@ -65,7 +64,7 @@ const publications = papers.map((paper) => ({
           </MediaCard>
         ))}      
       </MediaCollection>
-      <MediaNoItems listLength={publications.length} message={isArabic ? 'لا توجد أوراق بيضاء. يُرجى العودة لاحقًا.' : 'No white papers, check back later.'} />
+      <MediaNoItems listLength={publications.length} message={content.empty} />
       <br />
     </section>
   </main>

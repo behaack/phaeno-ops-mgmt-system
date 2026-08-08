@@ -10,7 +10,7 @@ interface Props {
 }
 
 const { locale = 'en-US' } = Astro.props as Props
-const { footer: footerMessages } = getMessages(locale)
+const { brand, footer: footerMessages } = getMessages(locale)
 const localizedPath = (pathname: string) => prefixPathForLocale(locale, pathname)
 const footerItems = {
   left: {
@@ -54,7 +54,7 @@ const footerItems = {
 }
 
 const copyYear = new Date().getFullYear()
-const copyrightLabel = locale === 'ar' ? 'حقوق النشر' : 'Copyright'
+const copyrightLabel = brand.copyright
 ---
 
 <footer id="site-footer">

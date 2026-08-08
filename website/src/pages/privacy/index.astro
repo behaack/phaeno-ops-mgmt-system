@@ -6,24 +6,26 @@ import TopPageBanner from '@/components/TopPageBanner.astro';
 import SEOMeta from '@/components/meta-data-helpers/SEOMeta.astro';
 import TranslationReviewNotice from '@/components/i18n/TranslationReviewNotice.astro';
 import type { SupportedLocale } from '@/i18n/locales';
+import { getPageCatalog } from '@/i18n/pageCatalogs';
 interface Props { locale?: SupportedLocale }
 const { locale = 'en-US' } = Astro.props
-const isArabic = locale === 'ar'
+const isTranslation = locale !== 'en-US'
+const content = getPageCatalog(locale).privacy
 ---
 <Layout locale={locale}>
   <SEOMeta 
     slot="head"
-    title={isArabic ? 'سياسة الخصوصية | Phaeno' : 'Privacy Policies | Phaeno'}
-    description={isArabic ? 'اقرأ سياسة خصوصية Phaeno وتعرّف كيف نجمع معلوماتك ونستخدمها ونحميها.' : 'Read Phaeno’s Privacy Policy and learn how we collect, use, and protect your information.'}
+    title={content.metaTitle}
+    description={content.description}
     documentType="Web Page"
-    searchTitle={isArabic ? 'سياسة الخصوصية' : 'Privacy Policy'}
+    searchTitle={content.searchTitle}
     locale={locale}
   />    
   <main id="main">
-    {isArabic ? <TranslationReviewNotice englishPath="/privacy" /> : null}
-    <TopPageBanner title={isArabic ? 'سياسة خصوصية Phaeno' : 'Phaeno Privacy Policy'} image="image-1" locale={locale}/>
+    {isTranslation ? <TranslationReviewNotice englishPath="/privacy" /> : null}
+    <TopPageBanner title={content.banner} image="image-1" locale={locale}/>
     <section>
-      {isArabic ? <ArabicContent /> : <Content />}
+      {isTranslation ? <ArabicContent /> : <Content />}
     </section>
   </main>
 </Layout>

@@ -3,6 +3,7 @@ import { Image } from 'astro:assets';
 import { ETeamMemberType, type ITeamMember } from '@/assets/team';
 import { FaLinkedin } from 'react-icons/fa6';
 import type { SupportedLocale } from '@/i18n/locales';
+import { formatMessage, getMessages } from '@/i18n/messages';
 
 const iconSize: number = 30;
 
@@ -12,25 +13,15 @@ interface IProp {
 }
 
 const { member, locale = 'en-US' } = Astro.props as IProp;
-const isArabic = locale === 'ar'
-const titleTranslations: Record<string, string> = {
-  'Founder, CEO': 'مؤسس، الرئيس التنفيذي',
-  'Founder, CSO': 'مؤسس، الرئيس العلمي',
-  'Founder, CTO': 'مؤسس، الرئيس التقني',
-  'Founder, COO': 'مؤسس، الرئيس التنفيذي للعمليات',
-  'CFO | CBO': 'الرئيس المالي | الرئيس التجاري',
-  'VP, Business Development': 'نائب الرئيس لتطوير الأعمال',
-  'Senior Scientist': 'عالِم أول',
-  'Consulting Scientist': 'عالِم استشاري',
-  'Consulting Software Engineer': 'مهندس برمجيات استشاري',
-}
-const memberTitle = isArabic ? (titleTranslations[member.title] ?? member.title) : member.title
+const text = getMessages(locale).team
+const memberTitle = text.titles[member.title] ?? member.title
+const memberValues = { firstName: member.fname, lastName: member.lname }
 ---
 
 <li class="member-card">
   <Image
     src={`/images/team/${member.image}`}
-    alt={isArabic ? `صورة ${member.fname} ${member.lname}` : `Photo of ${member.fname} ${member.lname}`}
+    alt={formatMessage(text.photoAlt, memberValues)}
     class="member-photo"
     height={50}
     width={50}
@@ -47,8 +38,8 @@ const memberTitle = isArabic ? (titleTranslations[member.title] ?? member.title)
       class="member-link"
       target="_blank"
       rel="noopener noreferrer"
-      title={isArabic ? `عرض ملف ${member.fname} على LinkedIn` : `See ${member.fname}'s profile on LinkedIn`}
-      aria-label={isArabic ? `زيارة ملف ${member.fname} ${member.lname} على LinkedIn — يفتح في علامة تبويب جديدة` : `Visit ${member.fname} ${member.lname} on LinkedIn - opens in a new tab`}
+      title={formatMessage(text.linkedInTitle, memberValues)}
+      aria-label={formatMessage(text.linkedInLabel, memberValues)}
       href={member.linkedIn}
     >
       <FaLinkedin

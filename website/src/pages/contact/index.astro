@@ -7,54 +7,54 @@ import SocialMedia from '@/components/SocialMedia.astro';
 import ReCaptchaNotification from '@/components/ReCaptchaNotification.astro';
 import TranslationReviewNotice from '@/components/i18n/TranslationReviewNotice.astro';
 import type { SupportedLocale } from '@/i18n/locales';
-import { arabicPageContent } from '@/i18n/pageCatalogs/ar';
+import { getPageCatalog } from '@/i18n/pageCatalogs';
 //import ScheduleMeeting from '@/components/ScheduleMeeting.astro';
 interface Props { locale?: SupportedLocale }
 const { locale = 'en-US' } = Astro.props
-const isArabic = locale === 'ar'
-const ar = arabicPageContent.contact
+const isTranslation = locale !== 'en-US'
+const content = getPageCatalog(locale).contact
 ---
 <Layout locale={locale}>
   <SEOMeta 
     slot="head"
-    title={isArabic ? ar.metaTitle : 'Contact Us | Phaeno'}
-    description={isArabic ? ar.description : 'Contact Phaeno to discuss PSeq RNA sequencing technology, partnerships, investor inquiries, or company updates.'}
+    title={content.metaTitle}
+    description={content.description}
     documentType="Web Page"
-    searchTitle={isArabic ? ar.banner : 'Contact'}
-    searchKeywords="contact Phaeno PSeq demo request technical brief partnerships investor inquiries company updates Irvine RNA sequencing"
+    searchTitle={content.searchTitle}
+    searchKeywords={content.searchKeywords}
     locale={locale}
   />  
   <main id="main" class="contact-page" tabindex="-1">
-    {isArabic ? <TranslationReviewNotice englishPath="/contact" /> : null}
-    <TopPageBanner title={isArabic ? ar.banner : 'Contact Us'} image="image-2" locale={locale}/>
+    {isTranslation ? <TranslationReviewNotice englishPath="/contact" /> : null}
+    <TopPageBanner title={content.banner} image="image-2" locale={locale}/>
     <section class="contact-content">
       <div class="contact-intro">
         <div>
-          <p class="contact-eyebrow" data-phaeno-search-ignore>{isArabic ? ar.eyebrow : 'Start a conversation'}</p>
+          <p class="contact-eyebrow" data-phaeno-search-ignore>{content.eyebrow}</p>
           <h2
             id="contact-details"
             data-phaeno-search="Phaeno contact details"
             data-phaeno-search-summary="Contact Phaeno in Irvine, California for PSeq demos, technical briefs, partnerships, investor inquiries, and company updates."
             data-phaeno-search-keywords="Phaeno contact Irvine PSeq demo technical brief partnerships investors"
-          >{isArabic ? ar.details : 'Contact Details'}</h2>
+          >{content.details}</h2>
         </div>
         <p class="contact-intro__copy">
-          {isArabic ? ar.intro : 'Tell us what you are trying to resolve. We welcome conversations with research teams, partners, and investors working at the edge of RNA biology.'}
+          {content.intro}
         </p>
       </div>
       <div class="contact-details-container">
         <div class="contact-detail">
-          <h3>{isArabic ? ar.street : 'Street Address'}</h3>
+          <h3>{content.street}</h3>
           <address>5270 California Avenue<br />Suite 300<br />Irvine, CA 92617</address>
         </div>
         <div class="contact-detail">
-          <h3>{isArabic ? ar.touch : 'Get in Touch'}</h3>
+          <h3>{content.touch}</h3>
           <a class="contact-detail__link" href="mailto:info@phaenobiotech.com">
             info@phaenobiotech.com <span aria-hidden="true">↗</span>
           </a>
         </div>
         <div class="contact-detail social-media">
-          <h3>{isArabic ? ar.follow : 'Follow Phaeno'}</h3>
+          <h3>{content.follow}</h3>
           <SocialMedia size="sm" locale={locale} />
         </div>
       </div>

@@ -19,6 +19,7 @@ export interface LocaleDefinition {
   nativeName: string
   administrativeName: string
   formattingLocale: string
+  openGraphLocale: string
   sourceLocale: SupportedLocale
 }
 
@@ -30,6 +31,7 @@ export const locales: Record<SupportedLocale, LocaleDefinition> = {
     nativeName: 'English (US)',
     administrativeName: 'US English',
     formattingLocale: 'en-US',
+    openGraphLocale: 'en_US',
     sourceLocale: 'en-US',
   },
   ar: {
@@ -39,6 +41,7 @@ export const locales: Record<SupportedLocale, LocaleDefinition> = {
     nativeName: 'العربية',
     administrativeName: 'Arabic (Modern Standard)',
     formattingLocale: 'ar',
+    openGraphLocale: 'ar_AR',
     sourceLocale: 'en-US',
   },
 }

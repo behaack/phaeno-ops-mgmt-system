@@ -1,6 +1,7 @@
 ---
 import { FaLinkedin, FaSquareXTwitter, FaYoutube } from 'react-icons/fa6';
 import type { SupportedLocale } from '@/i18n/locales';
+import { getMessages } from '@/i18n/messages';
 
 interface IProps {
   size?: 'sm' | 'md' | 'lg'
@@ -16,7 +17,7 @@ const sizeMap = {
 
 
 const { size="sm", width='narrow', locale='en-US' } = Astro.props as IProps
-const isArabic = locale === 'ar'
+const text = getMessages(locale).social
 const iconSize = sizeMap[size];
 ---
 
@@ -25,8 +26,8 @@ const iconSize = sizeMap[size];
     class="linked-in"
     target="_blank" 
     rel="noopener noreferrer"
-    title={isArabic ? 'تابعنا على LinkedIn' : 'Visit us on LinkedIn'}
-    aria-label={isArabic ? 'تابعنا على LinkedIn — يفتح في علامة تبويب جديدة' : 'Visit us on LinkedIn – opens in a new tab'}
+    title={text.linkedInTitle}
+    aria-label={text.linkedInLabel}
     href="https://www.linkedin.com/company/phaeno-biotech/"
   >
     <FaLinkedin
@@ -55,8 +56,8 @@ const iconSize = sizeMap[size];
     class="youtube"
     target="_blank" 
     rel="noopener noreferrer"
-    title={isArabic ? 'تابعنا على YouTube' : 'Visit us on YouTube'}
-    aria-label={isArabic ? 'زيارة قناة Phaeno على YouTube — تفتح في علامة تبويب جديدة' : 'Visit our YouTube channel - opens in a new tab'}
+    title={text.youTubeTitle}
+    aria-label={text.youTubeLabel}
     href="https://www.youtube.com/@phaenobiotech" 
   >
     <FaYoutube

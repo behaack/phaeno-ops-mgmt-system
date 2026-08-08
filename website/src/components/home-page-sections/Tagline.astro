@@ -1,26 +1,14 @@
 ---
 import type { SupportedLocale } from '@/i18n/locales'
-import { arabicPageContent } from '@/i18n/pageCatalogs/ar'
+import { getPageCatalog } from '@/i18n/pageCatalogs'
+import { getLocalizedPath } from '@/i18n/routes'
 
 interface Props {
   locale?: SupportedLocale
 }
 
 const { locale = 'en-US' } = Astro.props
-const isArabic = locale === 'ar'
-const ar = arabicPageContent.home.hero
-const content = isArabic ? ar : {
-  kicker: 'Phased sequencing / PSeq™',
-  title: 'Turning RNA into full-length, isoform-resolved insight—at scale',
-  subtitle: 'Quantitative, isoform-level outputs designed for downstream ML models—from the short-read instruments you already use.',
-  requestDemo: 'Request a demo',
-  explore: 'Explore the technology',
-  proof: [
-    { value: '5′–3′', label: 'full-length RNA' },
-    { value: 'NGS', label: 'instrument compatible' },
-    { value: 'ML', label: 'model-ready features' },
-  ],
-}
+const content = getPageCatalog(locale).home.hero
 const bannerUrl = '/images/home-page-banner.webp'
 ---
 <Fragment set:head>
@@ -59,8 +47,8 @@ const bannerUrl = '/images/home-page-banner.webp'
     >{content.subtitle}</h2>
 
     <div class="hero__actions" data-phaeno-search-ignore>
-      <a class="hero__primary" href={isArabic ? '/ar/contact#request-demo' : '/contact#request-demo'}>{content.requestDemo} <span aria-hidden="true">→</span></a>
-      <a class="hero__secondary" href={isArabic ? '/ar/technology/pseq-platform' : '/technology/pseq-platform'}>{content.explore} <span aria-hidden="true">→</span></a>
+      <a class="hero__primary" href={`${getLocalizedPath('/contact', locale)}#request-demo`}>{content.requestDemo} <span aria-hidden="true">→</span></a>
+      <a class="hero__secondary" href={getLocalizedPath('/technology/pseq-platform', locale)}>{content.explore} <span aria-hidden="true">→</span></a>
     </div>
 
     <div class="hero__proof" data-phaeno-search-ignore>

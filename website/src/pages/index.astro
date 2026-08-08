@@ -5,18 +5,19 @@ import SEOMeta from '@/components/meta-data-helpers/SEOMeta.astro';
 import PerformanceMetrics from '@/components/PerformanceMetrics.astro';
 import TranslationReviewNotice from '@/components/i18n/TranslationReviewNotice.astro';
 import type { SupportedLocale } from '@/i18n/locales';
-import { arabicPageContent } from '@/i18n/pageCatalogs/ar';
+import { getPageCatalog } from '@/i18n/pageCatalogs';
+import { getLocalizedPath } from '@/i18n/routes';
 
 interface Props {
   locale?: SupportedLocale
 }
 
 const { locale = 'en-US' } = Astro.props
-const isArabic = locale === 'ar'
-const ar = arabicPageContent.home
+const isTranslation = locale !== 'en-US'
+const content = getPageCatalog(locale).home
 
-const homeTitle = isArabic ? ar.metaTitle : 'Phaeno | Full-Length RNA Sequencing with Short-Read NGS';
-const homeDescription = isArabic ? ar.metaDescription : 'Phaeno delivers full-length, isoform-resolved RNA sequencing with short-read NGS instruments and ML-ready molecule-level outputs.';
+const homeTitle = content.metaTitle;
+const homeDescription = content.metaDescription;
 const siteUrl = new URL('/', Astro.site).href;
 const organizationStructuredData = {
   '@context': 'https://schema.org',
@@ -54,73 +55,10 @@ const organizationStructuredData = {
   ],
 };
 
-const englishPlatformFeatures = [
-  {
-    id: 'clear-signal-architecture',
-    search: 'PSeq Clear-Signal Architecture signal-first RNA data',
-    eyebrow: '01 / Signal',
-    title: 'PSeq Clear-Signal Architecture™',
-    summary: 'Source-molecule identity is preserved from library preparation through sequence reconstruction, keeping each molecule connected to its supporting evidence.',
-    href: '/technology/pseq-platform#pseq-clear-signal-architecture',
-  },
-  {
-    id: 'individual-molecules',
-    search: 'A more direct view of individual RNA isoforms with PSeq',
-    eyebrow: '02 / Molecules',
-    title: 'A more direct view of individual isoforms',
-    summary: 'With sufficient depth and coverage, molecule-assigned reads support isoform-level measurement without reconstructing structure from pooled fragments.',
-  },
-  {
-    id: 'automated-pipeline',
-    search: 'Automated molecule-aware PSeq pipeline',
-    eyebrow: '03 / Workflow',
-    title: 'Automated, molecule-aware processing',
-    summary: 'Preprocessing and quality control prepare reads for molecule-specific assignment before transcript assembly.',
-  },
-  {
-    id: 'ml-ready-outputs',
-    search: 'Built for downstream machine learning',
-    eyebrow: '04 / Intelligence',
-    title: 'Built for downstream machine learning',
-    summary: 'Structured, molecule-level features preserve isoform detail for use in ML models and established analysis tools.',
-  },
-];
-
-const englishPerformanceHighlights = [
-  {
-    value: '>87%',
-    label: 'Rare isoform sensitivity',
-    detail: 'at <0.01% abundance',
-  },
-  {
-    value: '>94%',
-    label: 'Full-length isoform recovery',
-  },
-  {
-    value: '<2 hrs',
-    label: 'Hands-on time per sample',
-  },
-  {
-    value: '<24 hrs',
-    label: 'Library-to-FASTA turnaround',
-  },
-];
-const platformFeatures = isArabic ? ar.features : englishPlatformFeatures
-const performanceHighlights = isArabic ? ar.metrics : englishPerformanceHighlights
-const discovery = isArabic ? ar.discovery : {
-  kicker: 'The discovery layer',
-  title: "Phaeno's PSeq™ maps the molecular phenotype.",
-  paragraph: 'Gene-level counts compress biology. Isoforms capture splicing, promoter usage, UTR variation, and transcript-specific regulation—often the true functional drivers.',
-  thesis: 'PSeq reveals the biological drivers obscured by gene-level summaries and incomplete isoform resolution.',
-  multiOmics: 'Explore PSeq + multi-omics',
-  isoforms: 'Why isoforms matter',
-}
-const platformCta = isArabic ? ar.platformCta : {
-  kicker: 'From reads to resolved biology',
-  body: 'See how PSeq chemistry and software recover complete RNA molecules on standard NGS platforms.',
-  action: 'Explore PSeq technology',
-  metricsLabel: 'PSeq performance highlights',
-}
+const platformFeatures = content.features
+const performanceHighlights = content.metrics
+const discovery = content.discovery
+const platformCta = content.platformCta
 ---
 <Layout locale={locale}>
   <SEOMeta 
@@ -128,14 +66,14 @@ const platformCta = isArabic ? ar.platformCta : {
     title={homeTitle}
     description={homeDescription}
     documentType="Web Page"
-    searchTitle={isArabic ? ar.searchTitle : 'Home'}
-    searchKeywords={isArabic ? ar.searchKeywords : 'PSeq phased sequencing full-length RNA sequencing isoform-resolved RNA whole-molecule RNA molecule-level transcriptomics short-read NGS ML-ready outputs machine learning feature matrices'}
+    searchTitle={content.searchTitle}
+    searchKeywords={content.searchKeywords}
     locale={locale}
   />
   <script slot="head" type="application/ld+json" set:html={JSON.stringify(organizationStructuredData)} />
 
   <main class="home-main" id="main" tabindex="-1">
-    {isArabic ? <TranslationReviewNotice englishPath="/" /> : null}
+    {isTranslation ? <TranslationReviewNotice englishPath="/" /> : null}
     <Tagline locale={locale} />
 
     <section class="platform-section">
@@ -154,8 +92,8 @@ const platformCta = isArabic ? ar.platformCta : {
           <p>{discovery.paragraph}</p>
           <p class="platform-thesis">{discovery.thesis}</p>
           <div class="platform-links" data-phaeno-search-ignore>
-            <a class="platform-links__featured" href={isArabic ? '/ar/technology/multi-omics' : '/technology/multi-omics'}>{discovery.multiOmics} <span aria-hidden="true">→</span></a>
-            <a href={isArabic ? '/ar/technology/why-isoforms-matter' : '/technology/why-isoforms-matter'}>{discovery.isoforms} <span aria-hidden="true">→</span></a>
+            <a class="platform-links__featured" href={getLocalizedPath('/technology/multi-omics', locale)}>{discovery.multiOmics} <span aria-hidden="true">→</span></a>
+            <a href={getLocalizedPath('/technology/why-isoforms-matter', locale)}>{discovery.isoforms} <span aria-hidden="true">→</span></a>
           </div>
         </div>
       </div>
@@ -176,7 +114,7 @@ const platformCta = isArabic ? ar.platformCta : {
             <p class="feature-card__summary">{feature.summary}</p>
             {feature.href && (
               <a class="feature-card__link" href={feature.href}>
-                {isArabic ? ar.seeMore : 'See more'} <span aria-hidden="true">→</span>
+                {content.seeMore} <span aria-hidden="true">→</span>
               </a>
             )}
           </article>
@@ -190,7 +128,7 @@ const platformCta = isArabic ? ar.platformCta : {
               <p class="section-kicker">{platformCta.kicker}</p>
               <p>{platformCta.body}</p>
             </div>
-            <a href={isArabic ? '/ar/technology/pseq-platform' : '/technology/pseq-platform'}>{platformCta.action} <span aria-hidden="true">→</span></a>
+            <a href={getLocalizedPath('/technology/pseq-platform', locale)}>{platformCta.action} <span aria-hidden="true">→</span></a>
           </div>
 
           <dl class="platform-metrics" aria-label={platformCta.metricsLabel}>
@@ -215,11 +153,10 @@ const platformCta = isArabic ? ar.platformCta : {
     <section class="closing-cta" data-phaeno-search-ignore>
       <div class="closing-cta__inner">
         <p>
-          <span>{isArabic ? ar.closing : 'Ready to resolve your samples'}</span>
-          {!isArabic ? <span>down to the isoform?</span> : null}
+          {content.closing.map((line) => <span>{line}</span>)}
         </p>
         <div class="closing-cta__actions">
-          <a class="closing-cta__primary" href={isArabic ? '/ar/contact#request-demo' : '/contact#request-demo'}>{isArabic ? ar.hero.requestDemo : 'Request a demo'}</a>
+          <a class="closing-cta__primary" href={`${getLocalizedPath('/contact', locale)}#request-demo`}>{content.hero.requestDemo}</a>
         </div>
       </div>
     </section>

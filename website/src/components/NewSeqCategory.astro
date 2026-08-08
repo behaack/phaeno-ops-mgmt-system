@@ -1,34 +1,27 @@
 ---
 import type { SupportedLocale } from '@/i18n/locales'
+import { getPageCatalog } from '@/i18n/pageCatalogs'
 interface Props { locale?: SupportedLocale }
 const { locale = 'en-US' } = Astro.props
-const isArabic = locale === 'ar'
-const stages = isArabic ? [
-  { phase: 'التأسيس', year: '1986', title: 'تسلسل سانغر', copy: 'الجيل الأول من التسلسل' },
-  { phase: 'التوسع', year: '2005', title: 'تسلسل الجيل التالي', copy: 'التسلسل على نطاق واسع' },
-  { phase: 'الطول', year: '2011', title: 'تسلسل الجيل الثالث', copy: 'التسلسل طويل القراءة' },
-] : [
-  { phase: 'Foundation', year: '1986', title: 'Sanger Sequencing', copy: 'First-generation sequencing' },
-  { phase: 'Scale', year: '2005', title: 'Next Generation Sequencing', copy: 'Sequencing at scale' },
-  { phase: 'Length', year: '2011', title: 'Third Generation Sequencing', copy: 'Long-read sequencing' },
-]
+const content = getPageCatalog(locale).pseq.timeline
+const stages = content.stages
 ---
 <div
   class="sequencing-timeline"
-  aria-label={isArabic ? 'تطورات التسلسل من التأسيس إلى التوسع والطول ودقة الأشكال الإسوية على مستوى الجزيء' : 'Sequencing advances from foundation to scale, length, and molecule-level isoform resolution'}
+  aria-label={content.label}
 >
   {stages.map((stage) => <article class="timeline-stage"><div class="timeline-stage__meta"><span>{stage.phase}</span><time datetime={stage.year}>{stage.year}</time></div><h3>{stage.title}</h3><p>{stage.copy}</p></article>)}
 
   <article class="timeline-stage timeline-stage--pseq">
     <div class="timeline-stage__meta">
-      <span>{isArabic ? 'الدقة' : 'Resolution'}</span>
+      <span>{content.resolution}</span>
       <time datetime="2025">2025</time>
     </div>
     <div class="timeline-stage__pseq-title">
-      <span>{isArabic ? 'التسلسل المرحلي' : 'Phased Sequencing'}</span>
+      <span>{content.phasedSequencing}</span>
       <strong>PSeq</strong>
     </div>
-    <p>{isArabic ? 'هوية جزيئية' : 'Molecular identity'} <span>•</span> NGS <span>•</span> {isArabic ? 'تجميع الأشكال الإسوية' : 'isoform assembly'}</p>
+    <p>{content.molecularIdentity} <span>•</span> NGS <span>•</span> {content.isoformAssembly}</p>
   </article>
 </div>
 

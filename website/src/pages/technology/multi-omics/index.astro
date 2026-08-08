@@ -4,115 +4,52 @@ import TopPageBanner from '@/components/TopPageBanner.astro'
 import SEOMeta from '@/components/meta-data-helpers/SEOMeta.astro'
 import TranslationReviewNotice from '@/components/i18n/TranslationReviewNotice.astro'
 import type { SupportedLocale } from '@/i18n/locales'
-import { arabicPageContent } from '@/i18n/pageCatalogs/ar'
+import { getPageCatalog } from '@/i18n/pageCatalogs'
+import { getLocalizedPath } from '@/i18n/routes'
 interface Props { locale?: SupportedLocale }
 const { locale = 'en-US' } = Astro.props
-const isArabic = locale === 'ar'
-const ar = arabicPageContent.multiOmics
-
-const englishFragilities = [
-  {
-    label: 'Signal',
-    title: 'Errors compound',
-    copy: 'Each layer introduces bias and uncertainty. Integration multiplies those errors—especially when upstream signals are weak.',
-  },
-  {
-    label: 'Models',
-    title: 'Assumptions accumulate',
-    copy: 'Many methods assume correspondence across modalities that biology does not consistently obey.',
-  },
-  {
-    label: 'Operations',
-    title: 'Workflow burden grows',
-    copy: 'More assays mean more samples, more QC, more batch effects, and more operational complexity.',
-  },
-  {
-    label: 'Economics',
-    title: 'Cost scales poorly',
-    copy: 'Marginal biological insight often drops as cost and coordination rise.',
-  },
-  {
-    label: 'Evidence',
-    title: 'Reproducibility suffers',
-    copy: 'Standardization is uneven across modalities, making results difficult to replicate across labs.',
-  },
-  {
-    label: 'Outcomes',
-    title: 'Returns diminish',
-    copy: 'Adding layers can look holistic while producing models that overfit noise.',
-  },
-]
-
-const englishBenefits = [
-  {
-    label: 'Resolution',
-    title: 'Isoform-resolved inputs',
-    copy: 'Reduce transcript-to-protein mismatch by capturing the complete RNA molecules that are actually expressed.',
-    emphasis: true,
-  },
-  {
-    label: 'Proteomics',
-    title: 'Higher-fidelity discovery',
-    copy: 'Improve protein discovery and interpretation with transcript features that preserve molecular identity.',
-  },
-  {
-    label: 'Context',
-    title: 'Regulation stays visible',
-    copy: 'Capture promoter, UTR, and processing signals that shape translation without adding another assay layer.',
-  },
-  {
-    label: 'Workflow',
-    title: 'Fewer moving parts',
-    copy: 'Collapse multiple transcript questions into one sample preparation and sequencing workflow.',
-  },
-  {
-    label: 'Stability',
-    title: 'Less downstream fragility',
-    copy: 'Reduce error compounding and give integration models a more stable biological foundation.',
-  },
-  {
-    label: 'Intelligence',
-    title: 'ML-ready features',
-    copy: 'Produce structured, molecule-level features designed as inputs to downstream machine-learning models.',
-  },
-]
-const fragilities = isArabic ? ar.fragilities : englishFragilities
-const benefits = isArabic ? ar.benefits : englishBenefits
+const isTranslation = locale !== 'en-US'
+const content = getPageCatalog(locale).multiOmics
+const fragilities = content.fragilities
+const benefits = content.benefits
 ---
 
 <Layout locale={locale}>
   <SEOMeta
     slot="head"
-    title={isArabic ? ar.metaTitle : 'PSeq & Multi-omics | Phaeno'}
-    description={isArabic ? ar.description : 'Why multi-omics often breaks down in practice—and how PSeq strengthens the transcript layer for downstream biology and AI.'}
+    title={content.metaTitle}
+    description={content.description}
     documentType="Web Page"
-    searchTitle={isArabic ? ar.banner : 'PSeq & Multi-omics'}
-    searchKeywords="multi-omics PSeq transcript layer proteomics AI machine learning isoform resolution regulatory context batch effects reproducibility omics integration"
+    searchTitle={content.banner}
+    searchKeywords={content.searchKeywords}
     locale={locale}
   />
 
   <main id="main" class="multiomics-page" tabindex="-1">
-    {isArabic ? <TranslationReviewNotice englishPath="/technology/multi-omics" /> : null}
-    <TopPageBanner title={isArabic ? ar.banner : 'PSeq & Multi-omics'} image="image-2" locale={locale} />
+    {isTranslation ? <TranslationReviewNotice englishPath="/technology/multi-omics" /> : null}
+    <TopPageBanner title={content.banner} image="image-2" locale={locale} />
 
     <div class="page-shell">
       <section class="intro-section" aria-labelledby="first-line-discovery-layer">
         <div>
-          <p class="eyebrow">{isArabic ? ar.introEyebrow : 'The discovery foundation'}</p>
+          <p class="eyebrow">{content.introEyebrow}</p>
           <h2
             id="first-line-discovery-layer"
             data-phaeno-search="PSeq as the first-line discovery layer for multi-omics"
             data-phaeno-search-summary="PSeq strengthens the transcript layer so downstream biology, proteomics, and AI do not rest on noisy or low-resolution inputs."
             data-phaeno-search-keywords="PSeq multi-omics transcript layer proteomics AI first-line discovery"
-          >{isArabic ? ar.introTitle : <><span class="intro-title__first-line">Better multi-omics</span><br />starts with a resolved transcript layer.</>}</h2>
+          >{content.introTitle.map((line, index) => index === 0
+            ? <span class="intro-title__first-line">{line}</span>
+            : <><br />{line}</>
+          )}</h2>
         </div>
 
         <div class="intro-section__copy">
-          <p>{isArabic ? ar.introCopy : 'Multi-omics can be powerful—but it becomes fragile and expensive when upstream measurements are noisy or low-resolution.'}</p>
+          <p>{content.introCopy}</p>
           <aside class="intro-thesis" data-phaeno-search-ignore>
-            <span>{isArabic ? ar.principle : 'Core principle'}</span>
-            <strong>{isArabic ? ar.thesis : 'Better inputs beat more layers.'}</strong>
-            <p>{isArabic ? ar.thesisCopy : 'PSeq resolves complete RNA molecules so downstream biology, proteomics, and AI begin with measured structure instead of statistical guesswork.'}</p>
+            <span>{content.principle}</span>
+            <strong>{content.thesis}</strong>
+            <p>{content.thesisCopy}</p>
           </aside>
         </div>
       </section>
@@ -120,15 +57,15 @@ const benefits = isArabic ? ar.benefits : englishBenefits
       <section class="fragility-section" aria-labelledby="why-multi-omics-breaks-down">
         <div class="section-heading section-heading--split">
           <div>
-            <p class="eyebrow">{isArabic ? ar.fragilityEyebrow : 'Where integration fails'}</p>
+            <p class="eyebrow">{content.fragilityEyebrow}</p>
             <h2
               id="why-multi-omics-breaks-down"
               data-phaeno-search="Why multi-omics breaks down in practice"
               data-phaeno-search-summary="Multi-omics workflows can compound errors, add assumptions, increase cost, and reduce reproducibility when upstream measurements are weak."
               data-phaeno-search-keywords="multi-omics errors assumptions workflow burden cost reproducibility diminishing returns"
-            >{isArabic ? ar.fragilityTitle : 'More data does not automatically create more truth.'}</h2>
+            >{content.fragilityTitle}</h2>
           </div>
-          <p>{isArabic ? ar.fragilityCopy : 'When the first biological measurement is incomplete, every downstream layer inherits the uncertainty—and adds its own.'}</p>
+          <p>{content.fragilityCopy}</p>
         </div>
 
         <div class="fragility-grid">
@@ -145,17 +82,17 @@ const benefits = isArabic ? ar.benefits : englishBenefits
       <section class="foundation-section" aria-labelledby="resolution-first-workflow">
         <div class="foundation-section__inner">
           <div class="foundation-section__statement">
-            <p class="eyebrow">{isArabic ? ar.foundationEyebrow : 'Resolve before you integrate'}</p>
+            <p class="eyebrow">{content.foundationEyebrow}</p>
             <h2
               id="resolution-first-workflow"
               data-phaeno-search="A resolution-first workflow for multi-omics"
               data-phaeno-search-summary="PSeq creates a resolved transcript foundation that preserves molecular context for downstream proteomics, biology, and machine learning."
-            >{isArabic ? ar.foundationTitle : 'PSeq is not another layer. It strengthens the layer everything else depends on.'}</h2>
-            <p>{isArabic ? ar.foundationCopy : 'A complete transcript measurement makes every downstream layer more interpretable.'}</p>
+            >{content.foundationTitle}</h2>
+            <p>{content.foundationCopy}</p>
           </div>
 
           <div class="foundation-flow" data-phaeno-search-ignore>
-            {(isArabic ? ar.flow : [{ label: 'Measure', title: 'Resolve complete RNA molecules' }, { label: 'Preserve', title: 'Keep isoform and regulatory context' }, { label: 'Integrate', title: 'Connect cleaner features downstream' }]).map((item) => <article><div><p>{item.label}</p><h3>{item.title}</h3></div></article>)}
+            {content.flow.map((item) => <article><div><p>{item.label}</p><h3>{item.title}</h3></div></article>)}
           </div>
         </div>
       </section>
@@ -163,15 +100,15 @@ const benefits = isArabic ? ar.benefits : englishBenefits
       <section class="benefit-section" aria-labelledby="how-pseq-improves-multi-omics">
         <div class="section-heading section-heading--split">
           <div>
-            <p class="eyebrow">{isArabic ? ar.benefitEyebrow : 'The highest-leverage layer'}</p>
+            <p class="eyebrow">{content.benefitEyebrow}</p>
             <h2
               id="how-pseq-improves-multi-omics"
               data-phaeno-search="How PSeq improves multi-omics"
               data-phaeno-search-summary="PSeq improves the transcript layer with isoform resolution, regulatory context, simpler workflows, and ML-ready molecule-level features."
               data-phaeno-search-keywords="PSeq multi-omics isoform resolution proteomics regulatory context ML-ready inputs"
-            >{isArabic ? ar.benefitTitle : 'One better transcript layer improves the entire stack.'}</h2>
+            >{content.benefitTitle}</h2>
           </div>
-          <p>{isArabic ? ar.benefitCopy : 'Proteomics and multi-omics workflows become more useful when RNA measurements preserve the molecules and regulatory context biology actually produced.'}</p>
+          <p>{content.benefitCopy}</p>
         </div>
 
         <div class="benefit-grid">
@@ -188,12 +125,12 @@ const benefits = isArabic ? ar.benefits : englishBenefits
       <section class="closing-panel" data-phaeno-search-ignore>
         <div class="closing-panel__inner">
           <div>
-            <p class="eyebrow">{isArabic ? ar.closingEyebrow : 'Build on resolved biology'}</p>
-            <h2>{isArabic ? ar.closingTitle : 'Give every downstream layer a stronger starting point.'}</h2>
+            <p class="eyebrow">{content.closingEyebrow}</p>
+            <h2>{content.closingTitle}</h2>
           </div>
           <div class="closing-panel__actions">
-            <a class="button-primary" href={isArabic ? '/ar/contact#request-demo' : '/contact#request-demo'}>{isArabic ? ar.requestDemo : 'Request a demo'}</a>
-            <a class="button-secondary" href={isArabic ? '/ar/technology/pseq-platform' : '/technology/pseq-platform'}>{isArabic ? ar.explore : 'Explore PSeq technology'}</a>
+            <a class="button-primary" href={`${getLocalizedPath('/contact', locale)}#request-demo`}>{content.requestDemo}</a>
+            <a class="button-secondary" href={getLocalizedPath('/technology/pseq-platform', locale)}>{content.explore}</a>
           </div>
         </div>
       </section>

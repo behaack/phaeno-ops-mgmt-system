@@ -25,6 +25,10 @@ Implemented locally on 2026-08-07:
 - an Arabic landing page does not index text from its linked English PDF, and the UI/metadata disclose the asset language; and
 - the normal Website build and Arabic review build succeed, as does an isolated backend Release build. Focused backend tests were added but not executed because the repository requires a separate explicit test request.
 - a dependency-free generated-HTML parity check now verifies all 16 route pairs for route output, RTL document metadata, core semantic structures, and minimum content coverage, and rejects the obsolete condensed Arabic home page.
+- fixed marketing-page copy now uses symmetric, contract-checked
+  `pageCatalogs/en-US.ts` and `pageCatalogs/ar.ts` files selected through one
+  locale lookup; page templates no longer embed English/Arabic copy branches,
+  and `arabicPages.ts` now contains only Arabic white-paper editorial records.
 
 Implementation note: the pilot uses one typed route-pair registry and one
 static Arabic catch-all route instead of enabling Astro's framework-level
@@ -136,13 +140,16 @@ Separate two kinds of translatable material:
 1. Shared user-interface messages: navigation, footer, search, form labels, validation, feedback, accessibility text, and common actions. Store these in typed locale catalogs.
 2. Page and publication content: headings, prose, metadata, calls to action, and editorial content. Keep these in content files or typed page data suited to editorial review.
 
-The implemented catalog boundary is `website/src/i18n/catalogs/`: each locale
-has its own file and must satisfy the shared `WebsiteMessages` contract. Shared
-components retrieve the active catalog with `getMessages(locale)` and must not
-contain parallel translated string literals. Editorial Arabic page prose stays
-separate from the shared UI catalog: static-page translations live in typed
-data under `website/src/i18n/pageCatalogs/`, while publication landing-page data
-and translation workflow metadata remain in `arabicPages.ts`.
+The shared-interface catalog boundary is `website/src/i18n/catalogs/`: each
+locale has its own file and must satisfy the shared `WebsiteMessages` contract.
+Shared components retrieve the active catalog with `getMessages(locale)` and
+must not contain parallel translated string literals. Fixed marketing-page
+copy uses the parallel `website/src/i18n/pageCatalogs/{locale}.ts` files, which
+must satisfy one `WebsitePageCatalog` contract and are selected through
+`getPageCatalog(locale)`. Publication landing-page data and translation
+workflow metadata remain separate editorial content; Arabic white-paper
+preview records currently remain in `arabicPages.ts` pending their move into
+the localized content-collection workflow.
 
 The dependency-free implementation uses named placeholders and native
 `Intl.PluralRules` behind catalog helpers. An ICU MessageFormat-compatible

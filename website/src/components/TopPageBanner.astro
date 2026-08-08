@@ -1,5 +1,6 @@
 ---
 import type { SupportedLocale } from '@/i18n/locales'
+import { getMessages } from '@/i18n/messages'
 interface IProps {
   title: string
   image: "image-1" | "image-2" | "image-3"
@@ -8,7 +9,7 @@ interface IProps {
 }
 
 const { title, image, trademark = false, locale = 'en-US' } = Astro.props as IProps
-const kicker = locale === 'ar' ? 'Phaeno / العلم بكامل دقته' : 'Phaeno / Science in full resolution'
+const kicker = getMessages(locale).brand.bannerKicker
 const [beforeTrademark, afterTrademark = ''] = title.split('PSeq')
 ---
 <div class="top-banner">

@@ -1,66 +1,61 @@
 ---
-import { biomarkers } from '@/assets/biomarkers'
 import SEOMeta from '@/components/meta-data-helpers/SEOMeta.astro'
 import TopPageBanner from '@/components/TopPageBanner.astro'
 import Layout from '@/layouts/Layout.astro'
 import TranslationReviewNotice from '@/components/i18n/TranslationReviewNotice.astro'
 import type { SupportedLocale } from '@/i18n/locales'
-import { arabicPageContent } from '@/i18n/pageCatalogs/ar'
+import { getPageCatalog } from '@/i18n/pageCatalogs'
+import { getLocalizedPath } from '@/i18n/routes'
 interface Props { locale?: SupportedLocale }
 const { locale = 'en-US' } = Astro.props
-const isArabic = locale === 'ar'
-const ar = arabicPageContent.isoforms
-const biomarkerRows = isArabic ? ar.biomarkers : biomarkers
-const resolutionCards = isArabic ? ar.resolutionCards : [
-  { label: 'Encode', title: 'DNA defines potential', copy: 'The genome provides the sequence, but not the final molecular product.' },
-  { label: 'Process', title: 'RNA creates diversity', copy: 'Splicing and transcript processing determine which full-length molecules exist.' },
-  { label: 'Resolve', title: 'Isoforms expose function', copy: 'Complete transcripts reveal the disease-driving and therapeutically relevant forms.' },
-]
-const outcomes = isArabic ? ar.outcomes : [
-  { title: 'Functional diversity becomes visible', copy: 'Mutations take effect only after RNA processing defines which protein isoforms are produced.' },
-  { title: 'Disease-causing isoforms are resolved', copy: 'Pathogenic RNA products can remain invisible to genome sequencing and gene-level summaries.' },
-  { title: 'Localization-associated signals remain visible', copy: 'Isoform-specific UTR features can support hypotheses about RNA localization and trafficking.' },
-]
+const isTranslation = locale !== 'en-US'
+const content = getPageCatalog(locale).isoforms
+const biomarkerRows = content.biomarkers
+const resolutionCards = content.resolutionCards
+const outcomes = content.outcomes
 ---
 
 <Layout locale={locale}>
   <SEOMeta
     slot="head"
-    title={isArabic ? ar.metaTitle : 'Why RNA Isoforms | Phaeno'}
-    description={isArabic ? ar.description : 'RNA isoforms define gene function. Full-length, isoform-resolved RNA sequencing reveals how transcripts actually behave in biology.'}
+    title={content.metaTitle}
+    description={content.description}
     documentType="Web Page"
-    searchTitle={isArabic ? ar.banner : 'Why RNA Isoforms Matter'}
-    searchKeywords="RNA isoforms isoform resolved RNA full-length transcript protein isoforms UTR RNA localization HER2 p95HER2 oncology biomarkers ASO therapies alternative splicing phenotype"
+    searchTitle={content.searchTitle}
+    searchKeywords={content.searchKeywords}
     locale={locale}
   />
 
   <main id="main" class="isoform-page">
-    {isArabic ? <TranslationReviewNotice englishPath="/technology/why-isoforms-matter" /> : null}
-    <TopPageBanner title={isArabic ? ar.banner : 'Why Isoform-Resolved RNA?'} image="image-3" locale={locale} />
+    {isTranslation ? <TranslationReviewNotice englishPath="/technology/why-isoforms-matter" /> : null}
+    <TopPageBanner title={content.banner} image="image-3" locale={locale} />
 
     <div class="page-shell">
       <section class="intro-section" aria-labelledby="full-length-isoform-resolved">
         <div class="intro-section__statement">
-          <p class="eyebrow">{isArabic ? ar.introEyebrow : 'The missing biological layer'}</p>
+          <p class="eyebrow">{content.introEyebrow}</p>
           <h2
             id="full-length-isoform-resolved"
             data-phaeno-search="Full-length isoform-resolved RNA exposes phenotype drivers"
             data-phaeno-search-summary="Full-length, isoform-resolved RNA analysis reveals the processed transcripts and protein isoforms that connect genotype to phenotype."
             data-phaeno-search-keywords="full-length RNA isoform-resolved phenotype drivers alternative splicing protein isoforms"
-          >{isArabic ? ar.introTitle : <>Genes set the possibility.<br /><span>Isoforms shape the phenotype.</span></>}</h2>
+          >{content.introTitle.map((line, index) => index === 0
+            ? line
+            : <><br /><span>{line}</span></>
+          )}</h2>
         </div>
 
         <div class="intro-section__copy">
-          <p class="lead">{isArabic ? ar.introLead : 'A single disease-linked DNA mutation can produce 30+ protein isoforms. Only full-length, isoform-resolved RNA analysis shows which molecules biology actually produced.'}</p>
-          <p>{isArabic ? ar.introCopy : 'Alternative splicing, promoter usage, UTR selection, and other processing steps transform each gene into multiple RNA products—often with different molecular functions and clinical consequences.'}</p>
+          <p class="lead">{content.introLead}</p>
+          <p>{content.introCopy}</p>
         </div>
       </section>
 
       <section class="resolution-section" aria-labelledby="resolution-pathway">
         <div class="section-heading">
-          <p class="eyebrow">{isArabic ? ar.resolutionEyebrow : 'From sequence to function'}</p>
-          <h2 id="resolution-pathway" data-phaeno-search="How RNA processing connects genes to phenotype">{isArabic ? ar.resolutionTitle : 'The phenotype emerges after the gene is read.'}</h2>
-          <p>{isArabic ? ar.resolutionCopy : 'Gene-level counts compress this biology. Isoform resolution preserves the molecular decisions that occur between DNA and function.'}</p>
+          <p class="eyebrow">{content.resolutionEyebrow}</p>
+          <h2 id="resolution-pathway" data-phaeno-search="How RNA processing connects genes to phenotype">{content.resolutionTitle}</h2>
+          <p>{content.resolutionCopy}</p>
         </div>
 
         <div class="resolution-path">
@@ -75,30 +70,30 @@ const outcomes = isArabic ? ar.outcomes : [
       <section class="her2-section" aria-labelledby="protein-isoforms-example-oncology-her2">
         <div class="her2-section__intro">
           <div class="her2-section__heading">
-            <p class="eyebrow">{isArabic ? ar.her2Eyebrow : 'Clinical evidence / HER2'}</p>
+            <p class="eyebrow">{content.her2Eyebrow}</p>
             <h2
               id="protein-isoforms-example-oncology-her2"
               data-phaeno-search="HER2 oncology example for RNA isoforms"
               data-phaeno-search-summary="HER2 examples show how protein expression, gene status, and truncated receptor isoforms can diverge in clinically meaningful ways."
               data-phaeno-search-keywords="HER2 p95HER2 oncology isoforms protein expression gene status discordance"
-            >{isArabic ? ar.her2Title : 'One gene. Different molecular realities.'}</h2>
+            >{content.her2Title}</h2>
           </div>
           <div class="her2-section__summary">
-            <p>{isArabic ? ar.her2Copy : 'Oncologists have long observed a 10% to 25% discordance rate between protein-based and gene-based tests for HER2. The gap is not noise—it can reflect different isoforms, including p95HER2, a truncated receptor that retains an active kinase domain.'}</p>
-            <div class="evidence-stat"><strong>10–25%</strong><span>{isArabic ? ar.her2Stat : 'reported discordance between HER2 gene- and protein-based tests'}</span></div>
+            <p>{content.her2Copy}</p>
+            <div class="evidence-stat"><strong>10–25%</strong><span>{content.her2Stat}</span></div>
           </div>
         </div>
 
         <div class="quote-grid">
           <figure class="evidence-quote">
-            <blockquote>“{isArabic ? ar.quotes[0] : 'Discordance between protein expression and gene status is not uncommon and has significant therapeutic implications.'}”</blockquote>
+            <blockquote>“{content.quotes[0]}”</blockquote>
             <figcaption>
               <img src="/images/reis-filho.webp" alt="Dr. Jorge S. Reis-Filho" loading="lazy" />
               <span><strong>Jorge S. Reis-Filho</strong><small>Memorial Sloan Kettering Cancer Center<br /><i>Breast Cancer Res</i>, 2005</small></span>
             </figcaption>
           </figure>
           <figure class="evidence-quote evidence-quote--dark">
-            <blockquote>“{isArabic ? ar.quotes[1] : 'A subgroup of HER2-overexpressing tumors also express p95HER2, an amino-terminally truncated receptor.'}”</blockquote>
+            <blockquote>“{content.quotes[1]}”</blockquote>
             <figcaption>
               <img src="/images/scaltriti.webp" alt="Dr. Maurizio Scaltriti" loading="lazy" />
               <span><strong>Maurizio Scaltriti</strong><small>Vall d'Hebron University Hospital<br /><i>J. Natl Cancer Inst</i>, 2007</small></span>
@@ -110,27 +105,27 @@ const outcomes = isArabic ? ar.outcomes : [
       <section class="biomarker-section" aria-labelledby="protein-isoforms-example-oncology-other-biomarkers">
         <div class="section-heading section-heading--split">
           <div>
-            <p class="eyebrow">{isArabic ? ar.beyondEyebrow : 'Beyond HER2'}</p>
+            <p class="eyebrow">{content.beyondEyebrow}</p>
             <h2
               id="protein-isoforms-example-oncology-other-biomarkers"
               data-phaeno-search="Oncology biomarker isoform and modification discordance"
               data-phaeno-search-summary="Examples of oncology biomarkers where gene tests and protein tests can diverge because of isoforms, modifications, or expression context."
               data-phaeno-search-keywords="oncology biomarkers EGFR PD-L1 ER PR ALK ROS1 NTRK TP53 CD20 isoform modification discordance"
-            >{isArabic ? ar.beyondTitle : 'The same gap appears across oncology.'}</h2>
+            >{content.beyondTitle}</h2>
           </div>
-          <p>{isArabic ? ar.beyondCopy : 'Across major biomarkers, DNA, RNA, and protein tests answer different questions. Isoform resolution explains part of the distance between them.'}</p>
+          <p>{content.beyondCopy}</p>
         </div>
 
         <div class="biomarker-table" role="table" aria-label="Oncology biomarker test comparison">
           <div class="biomarker-table__header" role="row">
-            {(isArabic ? ar.tableLabels : ['Biomarker', 'Gene test', 'Protein test', 'What can diverge']).map((label) => <div role="columnheader">{label}</div>)}
+            {content.tableLabels.map((label) => <div role="columnheader">{label}</div>)}
           </div>
           {biomarkerRows.map((item) => (
             <article class="biomarker-row" role="row">
               <div class="biomarker-name" role="cell">{item.Biomarker}</div>
-              <div role="cell"><span class="mobile-label">{isArabic ? ar.tableLabels[1] : 'Gene test'}</span>{item.GeneTest}</div>
-              <div role="cell"><span class="mobile-label">{isArabic ? ar.tableLabels[2] : 'Protein test'}</span>{item.ProteinTest}</div>
-              <div role="cell"><span class="mobile-label">{isArabic ? ar.tableLabels[3] : 'What can diverge'}</span>{item.Discordance}</div>
+              <div role="cell"><span class="mobile-label">{content.tableLabels[1]}</span>{item.GeneTest}</div>
+              <div role="cell"><span class="mobile-label">{content.tableLabels[2]}</span>{item.ProteinTest}</div>
+              <div role="cell"><span class="mobile-label">{content.tableLabels[3]}</span>{item.Discordance}</div>
             </article>
           ))}
         </div>
@@ -138,7 +133,7 @@ const outcomes = isArabic ? ar.outcomes : [
 
       <section class="aso-section" aria-labelledby="protein-isoforms-example-antisense-oligonucleotide-therapies">
         <div class="aso-section__inner">
-          <p class="eyebrow">{isArabic ? ar.therapyEyebrow : 'Therapeutic relevance'}</p>
+          <p class="eyebrow">{content.therapyEyebrow}</p>
           <div class="aso-section__body">
             <div class="aso-section__content">
               <h2
@@ -146,11 +141,11 @@ const outcomes = isArabic ? ar.outcomes : [
                 data-phaeno-search="ASO therapy examples for RNA isoforms"
                 data-phaeno-search-summary="Antisense oligonucleotide therapies show how modulating RNA splicing can address disease-linked isoforms that genomic methods miss."
                 data-phaeno-search-keywords="ASO therapies antisense oligonucleotide RNA splicing isoforms nusinersen eteplirsen"
-              >{isArabic ? ar.therapyTitle : 'Isoforms are not just biomarkers. They are therapeutic targets.'}</h2>
-              {(isArabic ? ar.therapyCopy : ['Antisense oligonucleotide therapies modulate RNA splicing to restore or suppress specific molecular forms—intervening at a layer gene-level methods cannot resolve.', 'Tools such as JunctionSeq and BIISQ have helped discover and quantify novel isoforms. By early 2025, 11 ASO drugs had been approved, while individualized cases such as Mila’s custom ASO demonstrated the potential of personalized RNA intervention.']).map((paragraph) => <p>{paragraph}</p>)}
+              >{content.therapyTitle}</h2>
+              {content.therapyCopy.map((paragraph) => <p>{paragraph}</p>)}
             </div>
             <div class="aso-examples">
-              {(isArabic ? ar.therapies : [{ disease: 'Spinal muscular atrophy', name: 'Nusinersen', copy: 'Promotes SMN2 exon 7 inclusion to increase functional protein.' }, { disease: 'Duchenne muscular dystrophy', name: 'Eteplirsen', copy: 'Induces exon 51 skipping to restore a functional reading frame.' }]).map((item) => <article><div><p>{item.disease}</p><h3>{item.name}</h3><p>{item.copy}</p></div></article>)}
+              {content.therapies.map((item) => <article><div><p>{item.disease}</p><h3>{item.name}</h3><p>{item.copy}</p></div></article>)}
             </div>
           </div>
         </div>
@@ -158,14 +153,14 @@ const outcomes = isArabic ? ar.outcomes : [
 
       <section class="references-section" aria-labelledby="references-heading">
         <div class="references-section__heading">
-          <p class="eyebrow">{isArabic ? ar.sources : 'Source material'}</p>
-          <h2 id="references-heading" data-phaeno-search="References for RNA isoforms and oncology biomarkers">{isArabic ? ar.references : 'References'}</h2>
-          <p>{isArabic ? ar.referencesCopy : 'The studies supporting the biological, clinical, and biomarker examples above.'}</p>
+          <p class="eyebrow">{content.sources}</p>
+          <h2 id="references-heading" data-phaeno-search="References for RNA isoforms and oncology biomarkers">{content.references}</h2>
+          <p>{content.referencesCopy}</p>
         </div>
 
         <div class="reference-groups">
           <details id="references-for-her2" open>
-            <summary>{isArabic ? ar.referenceGroups[0] : 'HER2 and breast cancer'} <span aria-hidden="true">+</span></summary>
+            <summary>{content.referenceGroups[0]} <span aria-hidden="true">+</span></summary>
             <div class="reference-list">
               <p><strong>HER2 isoform issue</strong></p>
               <p>Scaltriti M, Rojo F, Ocana A, et al. <i>Expression of p95HER2, a truncated form of the HER2 receptor, and response to anti-HER2 therapies in breast cancer.</i> J Natl Cancer Inst. 2007;99(8):628-638. doi:10.1093/jnci/djk134</p>
@@ -177,7 +172,7 @@ const outcomes = isArabic ? ar.outcomes : [
           </details>
 
           <details>
-            <summary>{isArabic ? ar.referenceGroups[1] : 'Gastric and pan-cancer HER2'} <span aria-hidden="true">+</span></summary>
+            <summary>{content.referenceGroups[1]} <span aria-hidden="true">+</span></summary>
             <div class="reference-list">
               <p>Park SR, Park YS, Ryu MH, et al. <i>Extra-gastric metastases of HER2-positive gastric carcinoma.</i> Sci Rep. 2017;7:13023.</p>
               <p>Kim MA, Jung EJ, Lee HS, et al. <i>Prognostic significance of HER2 gene amplification and protein overexpression in gastric carcinoma.</i> Int J Cancer. 2008;122(4):967-975.</p>
@@ -187,7 +182,7 @@ const outcomes = isArabic ? ar.outcomes : [
           </details>
 
           <details id="references-for-other-bio-markers">
-            <summary>{isArabic ? ar.referenceGroups[2] : 'Other oncology biomarkers'} <span aria-hidden="true">+</span></summary>
+            <summary>{content.referenceGroups[2]} <span aria-hidden="true">+</span></summary>
             <div class="reference-list reference-list--columns">
               <div><p><strong>EGFR</strong></p><p>Sharma SV, Bell DW, Settleman J, Haber DA. <i>Epidermal growth factor receptor mutations in lung cancer.</i> Nat Rev Cancer. 2007;7(3):169–181.</p><p>Wei J, et al. <i>Discordance between EGFR mutation status and EGFR protein expression in non-small cell lung cancer.</i> Oncology Letters. 2019;17(6):5047–5052.</p></div>
               <div><p><strong>PD-L1</strong></p><p>Ilie M, Long-Mira E, Bence C, et al. <i>Comparative study of the PD-L1 status between surgically resected specimens and matched biopsies of NSCLC patients.</i> Ann Oncol. 2016;27(1):147–153.</p><p>Wang Y, et al. <i>PD-L1 expression variability in lung cancer: causes and consequences.</i> Cancer Commun. 2020;40(2):87–98.</p></div>
@@ -199,7 +194,7 @@ const outcomes = isArabic ? ar.outcomes : [
           </details>
 
           <details id="references-for-rna-localization">
-            <summary>{isArabic ? ar.referenceGroups[3] : 'UTRs and RNA localization'} <span aria-hidden="true">+</span></summary>
+            <summary>{content.referenceGroups[3]} <span aria-hidden="true">+</span></summary>
             <div class="reference-list">
               <p>Salehi S, Zare A, Prezza G, et al. <i>Cytosolic Ptbp2 modulates axon growth in motoneurons through axonal localization and translation of Hnrnpr.</i> Nat Commun. 2023;14:4158. doi:10.1038/s41467-023-39787-6.</p>
             </div>
@@ -209,10 +204,10 @@ const outcomes = isArabic ? ar.outcomes : [
 
       <section class="closing-panel" data-phaeno-search-ignore>
         <div class="closing-panel__inner">
-          <p class="eyebrow">{isArabic ? ar.closingEyebrow : 'See biology in full resolution'}</p>
+          <p class="eyebrow">{content.closingEyebrow}</p>
           <div class="closing-panel__content">
-            <h2>{isArabic ? ar.closingTitle : 'Measure the molecules that drive phenotype.'}</h2>
-            <div class="closing-panel__actions"><a class="button-secondary" href={isArabic ? '/ar/technology/pseq-platform' : '/technology/pseq-platform'}>{isArabic ? ar.explore : 'Explore PSeq technology'}</a><a class="button-primary" href={isArabic ? '/ar/contact#request-demo' : '/contact#request-demo'}>{isArabic ? ar.requestDemo : 'Request a demo'}</a></div>
+            <h2>{content.closingTitle}</h2>
+            <div class="closing-panel__actions"><a class="button-secondary" href={getLocalizedPath('/technology/pseq-platform', locale)}>{content.explore}</a><a class="button-primary" href={`${getLocalizedPath('/contact', locale)}#request-demo`}>{content.requestDemo}</a></div>
           </div>
         </div>
       </section>
