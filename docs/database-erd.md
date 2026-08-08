@@ -1555,6 +1555,7 @@ erDiagram
         timestamptz created_at_utc "not null"
         varchar_256 email "not null"
         varchar_60 first_name "not null"
+        varchar_35 language "not null, default en-US"
         varchar_60 last_name "not null"
         varchar_256 normalized_email UK "not null"
         varchar_250 organization_name "not null"
@@ -1569,6 +1570,7 @@ erDiagram
         text description "not null"
         varchar_256 email "not null"
         varchar_60 first_name "not null"
+        varchar_35 language "not null, default en-US"
         varchar_60 last_name "not null"
         varchar_250 organization_name "not null"
     }

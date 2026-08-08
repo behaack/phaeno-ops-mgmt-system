@@ -1,0 +1,55 @@
+<!doctype html>
+<html lang="de-DE">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="color-scheme" content="light dark">
+  <meta name="supported-color-schemes" content="light dark">
+  <meta name="x-apple-disable-message-reformatting">
+  <title>Ihr technischer PSeq-Kurzbericht</title>
+  <style>
+    :root { color-scheme: light dark; supported-color-schemes: light dark; }
+    body { margin: 0; padding: 0; }
+    a { color: #526b1f; }
+    @media (prefers-color-scheme: dark) {
+      body, .email-bg { background-color: #081b1a !important; }
+      .email-card { background-color: #102d2a !important; border-color: #405d58 !important; }
+      .email-text { color: #f4f7f5 !important; }
+      .email-muted { color: #c4d1cd !important; }
+      .email-link { color: #d1df7a !important; }
+      .email-button { background-color: #d1df7a !important; color: #102a2e !important; }
+      .email-rule { border-color: #405d58 !important; }
+    }
+    [data-ogsc] .email-card { background-color: #102d2a !important; }
+    [data-ogsc] .email-text { color: #f4f7f5 !important; }
+    [data-ogsc] .email-muted { color: #c4d1cd !important; }
+    [data-ogsc] .email-link { color: #d1df7a !important; }
+    [data-ogsc] .email-button { background-color: #d1df7a !important; color: #102a2e !important; }
+    @media only screen and (max-width: 620px) {
+      .email-shell { width: 100% !important; }
+      .email-content { padding: 24px !important; }
+    }
+  </style>
+</head>
+<body class="email-bg" style="background-color:#eef2ef; margin:0; padding:0;">
+  <div style="display:none; max-height:0; overflow:hidden; opacity:0;">Der von Ihnen angeforderte zweiseitige technische PSeq-Kurzbericht ist verfügbar.</div>
+  <table role="presentation" class="email-bg" width="100%" cellspacing="0" cellpadding="0" border="0" style="background-color:#eef2ef; width:100%;">
+    <tr><td align="center" style="padding:32px 16px;">
+      <table role="presentation" class="email-shell email-card" width="600" cellspacing="0" cellpadding="0" border="0" style="background-color:#ffffff; border:1px solid #d9e2dc; border-radius:16px; max-width:600px; width:100%;">
+        <tr><td class="email-content" style="padding:36px;">
+          <img src="https://www.phaenobiotech.com/images/phaeno124x40.png" width="124" height="40" alt="Phaeno" style="display:block; border:0; height:40px; width:124px;">
+          <p class="email-text" style="color:#132f46; font-family:Arial,Helvetica,sans-serif; font-size:16px; line-height:1.6; margin:28px 0 0;">Guten Tag {{firstName}} {{lastName}},</p>
+          <p class="email-text" style="color:#132f46; font-family:Arial,Helvetica,sans-serif; font-size:16px; line-height:1.6; margin:16px 0 0;">vielen Dank für Ihr Interesse an der PSeq-Technologie von Phaeno.</p>
+          <p class="email-text" style="color:#132f46; font-family:Arial,Helvetica,sans-serif; font-size:16px; line-height:1.6; margin:16px 0 24px;">Der von Ihnen angeforderte zweiseitige technische PSeq-Kurzbericht ist verfügbar.</p>
+          <table role="presentation" cellspacing="0" cellpadding="0" border="0"><tr><td><a class="email-button" href="{{technicalBriefPath}}" style="background-color:#667d2f; border-radius:999px; color:#ffffff; display:inline-block; font-family:Arial,Helvetica,sans-serif; font-size:15px; font-weight:700; padding:13px 22px; text-decoration:none;">Technischen PSeq-Kurzbericht herunterladen</a></td></tr></table>
+          <p class="email-muted" style="color:#596a70; font-family:Arial,Helvetica,sans-serif; font-size:13px; line-height:1.55; margin:24px 0 0;">Falls die Schaltfläche nicht funktioniert, kopieren Sie diesen Link in Ihren Browser:</p>
+          <p class="email-muted" style="color:#596a70; font-family:Arial,Helvetica,sans-serif; font-size:13px; line-height:1.55; margin:6px 0 0; overflow-wrap:anywhere; word-break:break-word;"><a class="email-link" href="{{technicalBriefPath}}" style="color:#526b1f; text-decoration:underline;">{{technicalBriefPath}}</a></p>
+          <hr class="email-rule" style="border:0; border-top:1px solid #d9e2dc; margin:28px 0;">
+          <p class="email-text" style="color:#132f46; font-family:Arial,Helvetica,sans-serif; font-size:15px; line-height:1.6; margin:0;">Sie haben Fragen? Schreiben Sie uns an <a class="email-link" href="mailto:info@phaenobiotech.com" style="color:#526b1f; text-decoration:underline;">info@phaenobiotech.com</a>.</p>
+          <p class="email-text" style="color:#132f46; font-family:Arial,Helvetica,sans-serif; font-size:15px; line-height:1.6; margin:20px 0 0;">Freundliche Grüße<br>Ihr Phaeno-Team</p>
+        </td></tr>
+      </table>
+    </td></tr>
+  </table>
+</body>
+</html>

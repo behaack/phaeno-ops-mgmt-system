@@ -4,6 +4,8 @@ public sealed class WebOrder
 {
     public Guid Id { get; set; }
 
+    public string Language { get; set; } = "en-US";
+
     public string FirstName { get; set; } = string.Empty;
 
     public string LastName { get; set; } = string.Empty;

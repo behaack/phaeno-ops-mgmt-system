@@ -2,6 +2,7 @@ using Microsoft.EntityFrameworkCore;
 using PhaenoPortal.App.Features.Website.DTOs;
 using PhaenoPortal.App.Features.Website.Entities;
 using PhaenoPortal.App.Features.Website.Notifications;
+using PhaenoPortal.App.Features.Website.Search;
 using PhaenoPortal.App.Infrastructure.Persistence;
 
 namespace PhaenoPortal.App.Features.Website.Services;
@@ -39,6 +40,7 @@ public sealed class WebsiteService(
         var contact = new WebContact
         {
             Id = Guid.NewGuid(),
+            Language = WebsiteLocale.Normalize(request.WebContact.Language),
             FirstName = request.WebContact.FirstName.Trim(),
             LastName = request.WebContact.LastName.Trim(),
             OrganizationName = request.WebContact.OrganizationName.Trim(),
@@ -89,6 +91,7 @@ public sealed class WebsiteService(
         var order = new WebOrder
         {
             Id = Guid.NewGuid(),
+            Language = WebsiteLocale.Normalize(request.WebOrder.Language),
             FirstName = request.WebOrder.FirstName.Trim(),
             LastName = request.WebOrder.LastName.Trim(),
             OrganizationName = request.WebOrder.OrganizationName.Trim(),

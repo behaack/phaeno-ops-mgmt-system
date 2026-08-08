@@ -18,6 +18,9 @@ Implemented locally through 2026-08-08:
 - all current public English routes have explicit equivalents in every review locale. The four white-paper families use explicit localized draft slugs, and the three phased-sequencing blog articles use stable locale-prefixed routes; both are connected by `translationKey`;
 - all 133 localized route pairs carry page-by-page draft translations. Principal static pages render through the same Astro presentation as their English sources, localized white-paper landing pages include the complete Abstract, Key topics, Contents, and applicable objective callout while identifying their PDF assets as English, and each localized blog article preserves the complete MDX body, structured callouts, comparison tables, and series navigation;
 - locale-aware layout, `lang`, `dir`, navigation, footer, search controls, contact/demo forms, validation messages, date formatting, sharing text, and logical CSS support both French LTR and Arabic RTL;
+- both contact-page forms submit the active locale as non-visible metadata; the
+  anonymous Website API accepts it additively, normalizes it to a supported
+  canonical locale, and persists `en-US` for omitted or unsupported values;
 - client-side browser-language detection offers enabled translations without redirecting, and explicit accept/dismiss or selector choices use first-party functional cookies;
 - localized review HTML has localized metadata, self-canonicals, reciprocal `hreflang`, `x-default`, and sitemap alternates; the review build remains `noindex` and omits `llms.txt`;
 - content schemas now carry additive translation identity/status/revision/reviewer and publication-asset language fields;
@@ -192,6 +195,13 @@ localized slug. Build-time validation must reject duplicate
 locale/translation-key pairs and must exclude drafts from production.
 
 Fallback to English is allowed in authoring preview, never as unlabeled mixed-language production content. When English source content changes, its translations become stale until reviewed against the new source revision. Stale required content blocks that locale's publication.
+
+Technical-brief request emails follow the submitted and normalized Website
+locale. Each supported locale has a repository-owned Mailgun HTML source named
+`mailgun-templates/fulfill-web-technical-brief-request.{locale}.html`, including
+`en-US`, and the API selects the matching localized technical-brief URL. The
+single legacy English URL remains a compatibility fallback, not an unlabeled
+localized document.
 
 ### Editorial content language management
 

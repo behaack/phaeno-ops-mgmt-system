@@ -107,6 +107,11 @@ The existing paths and request shapes remain stable:
 
 Search responses continue to use the standard API envelope. Successful
 database-ping, contact, and order requests return `204 No Content`.
+Contact and order inputs also accept an optional `language` value. The public
+Website supplies its active locale without rendering a form control; the API
+normalizes supported regional forms to the canonical Website locale and falls
+back to `en-US` when an older client omits the value or sends an unsupported
+one.
 
 Website search records now carry an additive locale. The crawler derives it
 from the document's `lang` attribute, Lucene filters each query to one locale,
@@ -131,8 +136,24 @@ markers, case, and whitespace are normalized, the Website renders the title
 only so one indexed occurrence is not presented twice.
 
 The implementation keeps the existing endpoint and response envelope, Google
-reCAPTCHA Enterprise verification, Mailgun template names, technical brief URL,
-durable Lucene index, and scheduled index rebuild. Search result objects add
+reCAPTCHA Enterprise verification, durable Lucene index, and scheduled index
+rebuild. Technical-brief fulfillment uses the contact's normalized Website
+locale to select the Mailgun template named
+`fulfill-web-technical-brief-request.{locale}` and the corresponding entry in
+`WebsiteApi:TechnicalBriefUrls`. The canonical locale codes are used without a
+special English alias, so English selects `.en-US`. The legacy
+`WebsiteApi:TechnicalBriefUrl` remains the safe document fallback when a
+localized URL is absent or empty. The source HTML for all eight templates lives
+under `mailgun-templates/` and supports light, dark, narrow-screen, and Arabic
+RTL rendering.
+
+At the 2026-08-08 implementation checkpoint, the repository contains the
+reviewed `en-US` technical-brief PDF only. The seven non-English URL mappings
+reserve the canonical asset names, but those locales must not be activated for
+technical-brief delivery until their translated PDFs are supplied and their
+public URLs are verified.
+
+Search result objects add
 the optional `matchedInDocumentSource` flag only when an approved linked
 document is required to support the query, allowing the Website to label the
 exception without exposing indexed source text. Known marketing origins are
@@ -161,6 +182,8 @@ metadata and external-search design remains in
 - `PSeqOperationsDbContext` is the only runtime EF Core context.
 - `WebContact` maps to `website.web_contacts`.
 - `WebOrder` maps to `website.web_orders`.
+- Both intake tables retain the canonical Website language for the submission;
+  existing rows and clients default to `en-US`.
 - Website columns follow the portal's snake-case database convention.
 - `website.web_contacts.normalized_email` is unique so concurrent duplicate
   submissions cannot create multiple mailing-list contacts.

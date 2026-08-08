@@ -11,6 +11,10 @@ public static class WebsiteModelConfiguration
         {
             entity.ToTable("web_contacts", schema);
             entity.HasKey(item => item.Id);
+            entity.Property(item => item.Language)
+                .IsRequired()
+                .HasMaxLength(35)
+                .HasDefaultValue("en-US");
             entity.Property(item => item.FirstName).IsRequired().HasMaxLength(60);
             entity.Property(item => item.LastName).IsRequired().HasMaxLength(60);
             entity.Property(item => item.OrganizationName).IsRequired().HasMaxLength(250);
@@ -28,6 +32,10 @@ public static class WebsiteModelConfiguration
         {
             entity.ToTable("web_orders", schema);
             entity.HasKey(item => item.Id);
+            entity.Property(item => item.Language)
+                .IsRequired()
+                .HasMaxLength(35)
+                .HasDefaultValue("en-US");
             entity.Property(item => item.FirstName).IsRequired().HasMaxLength(60);
             entity.Property(item => item.LastName).IsRequired().HasMaxLength(60);
             entity.Property(item => item.OrganizationName).IsRequired().HasMaxLength(250);

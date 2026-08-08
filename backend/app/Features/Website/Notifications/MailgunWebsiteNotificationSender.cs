@@ -2,6 +2,7 @@ using System.Net.Http.Headers;
 using System.Text;
 using Microsoft.Extensions.Options;
 using PhaenoPortal.App.Features.Website.Entities;
+using PhaenoPortal.App.Features.Website.Search;
 
 namespace PhaenoPortal.App.Features.Website.Notifications;
 
@@ -32,17 +33,20 @@ public sealed class MailgunWebsiteNotificationSender(
 
     public Task SendTechnicalBriefAsync(
         WebContact contact,
-        CancellationToken cancellationToken = default) =>
-        SendAsync(
-            "fulfill-web-technical-brief-request",
+        CancellationToken cancellationToken = default)
+    {
+        var locale = WebsiteLocale.Normalize(contact.Language);
+        return SendAsync(
+            $"fulfill-web-technical-brief-request.{locale}",
             EmailAddress(contact.FirstName, contact.LastName, contact.Email),
             new Dictionary<string, string?>
             {
                 ["firstName"] = contact.FirstName,
                 ["lastName"] = contact.LastName,
-                ["technicalBriefPath"] = websiteOptions.TechnicalBriefUrl
+                ["technicalBriefPath"] = websiteOptions.GetTechnicalBriefUrl(locale)
             },
             cancellationToken);
+    }
 
     public Task SendOrderAsync(
         WebOrder order,

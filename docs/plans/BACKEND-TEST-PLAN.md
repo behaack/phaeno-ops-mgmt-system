@@ -194,6 +194,12 @@ and rollback-isolated PostgreSQL coverage.
   endpoints, missing-record responses, idempotent retries, actor/time capture,
   audit events, immediate active-count/list filtering, and page normalization
   after the final item on a page leaves its queue.
+- [ ] Public Website intake language metadata - cover contact and demo-request
+  submissions with canonical locales, supported regional variants, omitted
+  values, and unsupported values; verify canonical persistence for both tables
+  and the backward-compatible `en-US` fallback. Cover technical-brief Mailgun
+  template selection and localized `technicalBriefPath` resolution for every
+  supported locale, including the legacy single-URL fallback.
 - [ ] HubSpot/Portal lifecycle - cover signed webhook intake, exact Company and
   Deal correlation, duplicate/out-of-order delivery, pending onboarding with no
   access, direct Customer/Partner creation, narrow Portal Prospect creation,
@@ -310,6 +316,18 @@ and rollback-isolated PostgreSQL coverage.
 
 ## Requested Execution Log
 
+- 2026-08-08: locale-aware Website technical-brief fulfillment passed an
+  eight-locale template/configuration audit, the Website production build, and
+  the backend Release solution build with zero backend warnings or errors. The
+  build confirmed the `en-US` PDF is emitted at its configured public path.
+  Backend tests were not requested and were not run. Mailgun publication and
+  delivery were not performed.
+- 2026-08-08: Website contact and demo-request language metadata passed the
+  Website production build and the backend Release solution build with zero
+  backend warnings or errors. Migration
+  `20260808180452_AddWebsiteSubmissionLanguage` was generated and applied to
+  the local `phaeno_ops` development database, and EF reported no pending model
+  changes. Backend tests were not requested and were not run.
 - 2026-08-07: added source coverage for the credential-free production
   `DisabledFileStorage` DI selection and its fail-closed storage behavior.
   `dotnet build backend/PSeq.Operations.slnx --configuration Release

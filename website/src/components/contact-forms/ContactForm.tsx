@@ -97,7 +97,7 @@ export function ContactForm({ locale = 'en-US' }: ContactFormProps) {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          webContact: data,
+          webContact: { ...data, language: locale },
           recaptchaCode: token,
           recaptchaAction: "contact_form_submit",
         }),

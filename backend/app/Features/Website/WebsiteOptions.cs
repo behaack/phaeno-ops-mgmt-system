@@ -1,5 +1,7 @@
 namespace PhaenoPortal.App.Features.Website;
 
+using PhaenoPortal.App.Features.Website.Search;
+
 public sealed class WebsiteApiOptions
 {
     public const string SectionName = "WebsiteApi";
@@ -9,6 +11,17 @@ public sealed class WebsiteApiOptions
     public string PublicDocumentsPath { get; init; } = "__DOCUMENTS/public";
 
     public string TechnicalBriefUrl { get; init; } = string.Empty;
+
+    public Dictionary<string, string> TechnicalBriefUrls { get; init; } = [];
+
+    public string GetTechnicalBriefUrl(string? locale)
+    {
+        var normalizedLocale = WebsiteLocale.Normalize(locale);
+        return TechnicalBriefUrls.TryGetValue(normalizedLocale, out var localizedUrl)
+            && !string.IsNullOrWhiteSpace(localizedUrl)
+                ? localizedUrl
+                : TechnicalBriefUrl;
+    }
 }
 
 public sealed class WebsiteRecaptchaOptions

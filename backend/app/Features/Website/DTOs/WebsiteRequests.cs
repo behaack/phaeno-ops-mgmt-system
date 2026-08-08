@@ -30,6 +30,9 @@ public sealed class WebOrderRequest
 
 public sealed class WebContactInput
 {
+    [MaxLength(35)]
+    public string? Language { get; init; }
+
     [Required]
     [MaxLength(60)]
     public string FirstName { get; init; } = string.Empty;
@@ -52,6 +55,9 @@ public sealed class WebContactInput
 
 public sealed class WebOrderInput
 {
+    [MaxLength(35)]
+    public string? Language { get; init; }
+
     [Required]
     [MaxLength(60)]
     public string FirstName { get; init; } = string.Empty;

@@ -95,7 +95,7 @@ export function OrderForm({ locale = 'en-US' }: OrderFormProps) {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          webOrder: data,
+          webOrder: { ...data, language: locale },
           recaptchaCode: token,
           recaptchaAction: "order_form_submit",
         }),
