@@ -105,10 +105,9 @@ const message = getMessages('en-US').language
   inset-inline-end: var(--page-gutter);
   z-index: 45;
   display: grid;
-  grid-template-columns: minmax(0, 1fr) auto;
-  gap: var(--space-5);
-  align-items: center;
-  width: min(34rem, calc(100vw - (2 * var(--page-gutter))));
+  grid-template-columns: minmax(0, 1fr);
+  gap: var(--space-3);
+  width: min(32rem, calc(100vw - (2 * var(--page-gutter))));
   padding: var(--space-4);
   border: 1px solid var(--phaeno-green-300);
   border-radius: var(--radius-xl);
@@ -130,6 +129,7 @@ const message = getMessages('en-US').language
 .language-suggestion__actions {
   display: flex;
   flex-wrap: wrap;
+  justify-content: flex-end;
   gap: var(--space-2);
 }
 
@@ -159,7 +159,10 @@ const message = getMessages('en-US').language
 @media (max-width: 640px) {
   .language-suggestion {
     inset-block-start: 4.5rem;
-    grid-template-columns: 1fr;
+  }
+
+  .language-suggestion__actions {
+    justify-content: flex-start;
   }
 }
 </style>
