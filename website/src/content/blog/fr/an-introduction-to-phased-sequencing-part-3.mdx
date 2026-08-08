@@ -1,0 +1,270 @@
+---
+title: "Introduction au séquençage phasé : partie 3"
+summary: "Comment les données de transcription résolues par molécule soutiennent la découverte, la recherche translationnelle et l’apprentissage automatique."
+image: "/images/media/blog/an-introduction-to-phased-sequencing-part-3.png"
+authors: ["William Agnew"]
+date: '2026-07-15'
+locale: 'fr'
+translationKey: 'blog.phased-sequencing.part-3'
+sourceLocale: 'en-US'
+translationStatus: 'draft'
+sourceRevision: '2026-08-08'
+translatedFromRevision: '2026-08-08'
+translator: 'Machine-assisted draft'
+---
+import ArticleCallout from '@/components/content/ArticleCallout.astro';
+import ArticleComparisonTable from '@/components/content/ArticleComparisonTable.astro';
+import ArticleConceptList from '@/components/content/ArticleConceptList.astro';
+import ArticleKeyPoints from '@/components/content/ArticleKeyPoints.astro';
+import ArticleSeriesNavigation from '@/components/content/ArticleSeriesNavigation.astro';
+import { phasedSequencingSeries } from '@/lib/articleSeries';
+
+<ArticleSeriesNavigation
+  series={phasedSequencingSeries}
+  locale="fr"
+  currentPart={3}
+  position="start"
+/>
+
+## Résumé
+
+Les données de transcription résolues par les molécules décrivent l’ARN à un niveau plus fin que le seul nombre de gènes. Au lieu de traiter chaque transcription d'un locus comme interchangeable, ils peuvent représenter des structures isoformes qui répondent à des critères d'exhaustivité prédéfinis, des variantes de séquence liées, des limites de transcription observées, des séquences codantes prédites et des éléments régulateurs en tant que caractéristiques de modèles moléculaires capturés individuels.
+
+Ici, **complet** et **pleine longueur** font référence à des critères analytiques prédéfinis, et non à l'affectation moléculaire seule. Une étude doit indiquer si l'exhaustivité nécessite des limites observées 5' et 3', une chaîne d'épissure complète, une couverture minimale, un consensus contigu de bout en bout ou une interpolation basée sur des références entre les régions couvertes.
+
+Cette structure supplémentaire crée trois grands domaines de valeur. La découverte biologique permet d’avoir une vision plus claire de la diversité et de la régulation des transcriptions. La recherche translationnelle peut relier des formes moléculaires spécifiques aux mécanismes de la maladie, aux sous-groupes de patients ou à la réponse au traitement. Les études d'apprentissage automatique acquièrent des fonctionnalités qui préservent les distinctions biologiques obscurcies par l'agrégation au niveau des gènes.
+
+Une résolution plus élevée ne garantit pas à elle seule un meilleur résultat scientifique ou prédictif. Les données résolues par les molécules introduisent également davantage de fonctionnalités, un nombre inférieur par fonctionnalité, de nouvelles erreurs de mesure, des défis d'annotation et des opportunités supplémentaires de surajustement. Des comparaisons directes avec des mesures établies déterminent où la résolution ajoutée améliore la réponse.
+
+La question centrale n’est pas de savoir si les données au niveau moléculaire contiennent plus de détails. Il s’agit de savoir si ces détails sont précis, reproductibles, biologiquement pertinents et utiles pour une décision définie.
+
+PSeq est actuellement une plate-forme **Research Use Only (RUO)**. Les exemples translationnels et cliniques présentés dans cet article décrivent des orientations de recherche et non des allégations de performances cliniques.
+
+## Des molécules de transcription aux fonctionnalités analytiques
+
+Un modèle moléculaire dérivé de l'ARN capturé peut contenir plusieurs types d'informations à la fois : limites de transcription 5' et 3' observées, combinaisons d'exons, séquence codante prédite, régions non traduites, événements d'édition candidats et variantes de séquence. La résolution moléculaire préserve les relations entre ces caractéristiques. Lorsque les performances et la validation du test le justifient, les limites observées peuvent permettre de déduire l’utilisation du promoteur, du début de la transcription ou du clivage et de la polyadénylation.
+
+L’analyse en aval n’a pas besoin d’utiliser chaque molécule comme variable distincte. Les observations au niveau moléculaire peuvent être résumées en caractéristiques interprétables telles que :
+
+<ArticleKeyPoints
+  ariaLabel="Caractéristiques dérivées des données de transcription résolues par molécule"
+  items={[
+    'L\'abondance estimée des structures de transcription répondant aux critères d\'exhaustivité prédéfinis',
+    'Combinaisons liées d\'événements d\'épissage, d\'édition de candidats et de séquence',
+    'Relations observées entre la limite de la transcription, la séquence de codage prévue et la fin de la transcription',
+    'La distribution des formes moléculaires au sein d\'un échantillon ou d\'un état cellulaire',
+  ]}
+/>
+
+La représentation appropriée des caractéristiques dépend de la question scientifique. Une étude exploratoire peut conserver un large catalogue de transcriptions. Une étude mécanistique peut se concentrer sur un événement d'épissage dans un contexte moléculaire défini. Un modèle prédictif peut nécessiter un ensemble compact de fonctionnalités prédéfinies qui peuvent être mesurées de manière cohérente dans toutes les cohortes.
+
+## Trois domaines de valeur potentiels
+
+<ArticleConceptList
+  ariaLabel="Utilisations potentielles des données de transcription résolues par molécule"
+  items={[
+    {
+      id: 'biological-discovery',
+      title: 'Découverte biologique',
+      paragraphs: [
+        'Les mesures résolues par les molécules peuvent révéler des structures de transcription et des combinaisons de caractéristiques difficiles à reconstruire à partir de fragments regroupés. Ils peuvent améliorer l’annotation des isoformes, clarifier l’utilisation des transcriptions spécifiques aux cellules ou aux tissus et connecter des régions régulatrices distantes avec des séquences codantes prédites.',
+        'Le résultat est une description plus riche des états moléculaires disponibles dans un système biologique, et non une preuve que chaque transcription observée a une fonction distincte.',
+      ],
+    },
+    {
+      id: 'translational-research',
+      title: 'Recherche translationnelle',
+      paragraphs: [
+        'Des structures de transcription spécifiques peuvent clarifier les mécanismes de la maladie, affiner les sous-groupes moléculaires et identifier les marqueurs candidats de réponse et de progression. La liaison au niveau moléculaire est particulièrement pertinente lorsque l’effet biologique dépend des caractéristiques qui se produisent ensemble.',
+        'L\'association, la validité analytique, les performances prédictives et l\'utilité clinique restent des questions distinctes et nécessitent des preuves de plus en plus solides.',
+      ],
+    },
+    {
+      id: 'machine-learning',
+      title: 'Apprentissage automatique',
+      paragraphs: [
+        'Les caractéristiques dérivées des isoformes et des molécules donnent aux modèles accès aux distinctions biologiques combinées aux résumés au niveau des gènes. Un modèle peut comparer les structures de transcription, les combinaisons moléculaires ou les distributions d\'isoformes plutôt que de se fier uniquement à l\'expression totale au niveau d\'un locus.',
+        'L\'augmentation des fonctionnalités augmente également la rareté, l\'instabilité et le risque de surajustement. Tout gain doit survivre à une analyse verrouillée, à des cohortes indépendantes et à une comparaison avec des références plus simples.',
+      ],
+    },
+  ]}
+/>
+
+## Découverte biologique : résoudre le paysage des transcriptions
+
+La diversité des transcriptions est étendue et dépend du contexte. Différents tissus, types de cellules, stades de développement, expositions environnementales et états pathologiques peuvent présenter différentes limites 5 'observées, une utilisation déduite du promoteur, des modèles d'épissage et des limites de transcription 3' observées.
+
+De grandes études à lecture longue prouvent que l’accès à une structure de transcription étendue modifie ce qui peut être observé. Glinos et ses collègues ont utilisé le séquençage d'ARN à lecture longue dans des tissus humains pour identifier une grande diversité de transcription et analyser les structures de transcription associées aux allèles. Un atlas à lecture longue de 29 sous-ensembles de cellules immunitaires a identifié des milliers d'isoformes spécifiques à un type de cellule et connecté des caractéristiques de transcription à des analyses génétiques et associées à la maladie.
+
+Ces études démontrent la valeur scientifique de la structure de transcription liée. Ils n’impliquent pas que chaque isoforme nouvellement observée soit fonctionnelle. Les transcriptions des candidats peuvent provenir de bruits biologiques, d’un traitement incomplet, d’artefacts techniques ou d’événements rares ayant peu de conséquences phénotypiques.
+
+La découverte nécessite donc plusieurs niveaux de preuves :
+
+- observation reproductible à travers des répétitions techniques et biologiques ;
+- confirmation des limites de transcription observées et des jonctions d'épissage ;
+- support quantitatif sur des échantillons ou des populations cellulaires pertinents ;
+- des preuves orthogonales provenant d'essais ciblés ou d'une autre plateforme de mesure ;
+- perturbation ou expérimentations fonctionnelles lorsqu’un rôle causal est proposé.
+
+Les données résolues par les molécules peuvent améliorer la carte de départ. L'interprétation biologique dépend toujours de la conception expérimentale et de la validation.
+
+## Recherche translationnelle : relier la forme moléculaire au phénotype
+
+L’abondance de l’ARN au niveau des gènes peut rester stable tandis que la composition du transcrit change. Une isoforme peut augmenter tandis qu’une autre diminue, laissant le nombre total de gènes à peu près inchangé. Si les isoformes ont des cadres de lecture ouverts ou des régions de régulation différents, l'état biologique peut changer sans signal important au niveau du gène. La séquence d'ARN prend en charge l'inférence du potentiel de codage ; il n'établit pas en soi quel cadre de lecture ouvert est traduit ni si un produit protéique est stable.
+
+Cela crée plusieurs hypothèses translationnelles. Les caractéristiques des isoformes peuvent aider à distinguer les sous-groupes moléculaires, à expliquer l'activité variable des voies, à relier les variantes génétiques à des transcrits modifiés ou à identifier les formes associées à l'évolution de la maladie ou à la réponse au traitement.
+
+Des études primaires montrent pourquoi ces hypothèses sont plausibles. Le séquençage complet des isoformes dans les cardiomyocytes a identifié des modifications de transcription associées à des mutations RBM20 pertinentes pour la maladie. Le profilage des cellules immunitaires à lecture longue reliait les isoformes spécifiques à un type de cellule à des analyses génétiques associées à la maladie. Ces résultats illustrent les itinéraires possibles depuis la structure de transcription jusqu'au mécanisme.
+
+Ils illustrent également les limites. Les résultats peuvent dépendre de la composition tissulaire, de l’état cellulaire, de la qualité de l’échantillon, de la profondeur du séquençage, des filtres analytiques et de l’annotation de référence. Les associations découvertes dans une cohorte peuvent ne pas se reproduire dans une autre. Un marqueur peut être biologiquement intéressant sans être suffisamment précis pour permettre une prédiction ou suffisamment utile pour modifier une décision.
+
+<ArticleCallout>
+  <em>Une association de transcription est une observation biologique. Un biomarqueur nécessite une prédiction reproductible. Un test clinique nécessite en outre une validité analytique, une utilisation définie et la preuve que le résultat améliore les soins.</em>
+</ArticleCallout>
+
+## Machine learning : un espace de fonctionnalités différent
+
+La plupart des modèles transcriptomiques commencent par une matrice dans laquelle les lignes représentent les échantillons et les colonnes représentent les gènes. Chaque valeur résume l'abondance d'ARN attribuée à un locus. Cette représentation est compacte et souvent efficace, mais elle peut regrouper plusieurs formes moléculaires en un seul nombre.
+
+Les données résolues par les molécules rendent possibles des représentations alternatives. Les caractéristiques pourraient décrire l'abondance estimée d'isoformes spécifiques, le rapport des isoformes au sein d'un gène, la présence d'événements de séquence liés, l'utilisation observée de la fin de la transcription ou la distribution des structures moléculaires.
+
+Les groupes de molécules récupérées sont des observations analytiques de modèles capturés, et non des décomptes automatiquement impartiaux de toutes les molécules d'ARN dans l'entrée. La probabilité de capture, l'efficacité de la transcription inverse, la division et la collision moléculaires, l'abandon d'identifiant, la représentation en double, la récupération différentielle par longueur ou séquence, le filtrage et les seuils d'assemblage peuvent tous affecter la relation entre les groupes observés et l'abondance des entrées.
+
+L'avantage est la spécificité. Une caractéristique liée à une forme moléculaire définie peut s’aligner plus étroitement sur un processus de régulation ou un mécanisme pathologique que sur l’expression totale d’un gène. Des études primaires ont évalué les caractéristiques au niveau des isoformes dans des modèles prédictifs, y compris des modèles de grade histologique du cancer du sein, démontrant que des comparaisons directes avec des lignes de base au niveau des gènes sont réalisables.
+
+L’inconvénient potentiel est la dimensionnalité. Un échantillon peut contenir de nombreuses isoformes rares ou incomplètement annotées. La division d'un nombre de gènes entre plusieurs fonctionnalités de transcription réduit les observations disponibles pour chaque fonctionnalité. Les modifications des mesures et des annotations peuvent créer des caractéristiques apparentes qui ne se reproduisent pas.
+
+Les risques courants comprennent :
+
+- **Surajustement :** un modèle apprend des isoformes ou des artefacts techniques spécifiques à une cohorte plutôt que la biologie généralisable.
+- **Fuite de données :** la sélection ou la normalisation des fonctionnalités utilise les informations de l'ensemble d'évaluation.
+- **Confusion par lots :** les différences de bibliothèque, d'instrument, de site ou de traitement sont en corrélation avec le résultat.
+- **Instabilité des caractéristiques :** les définitions de transcription ou les estimations d'abondance changent avec le logiciel, les annotations de référence ou la profondeur de mesure.
+- **Observations clairsemées :** les isoformes rares produisent des estimations peu fiables ou sont absentes de nombreux échantillons.
+- **Perte d'interprétabilité :** un grand espace de fonctionnalités masque les relations moléculaires qui déterminent la prédiction.
+
+Ces risques sont gérables, mais seulement lorsqu’ils sont pris en compte dans la conception de l’étude plutôt qu’après l’apparition d’un résultat favorable du modèle.
+
+## Quatre niveaux de preuve doivent rester distincts
+
+<ArticleComparisonTable
+  ariaLabel="Niveaux de preuve pour les applications de transcription résolues par molécule"
+  rowHeaderLabel="Niveau de preuve"
+  columns={[
+    { key: 'question', label: 'Question', highlighted: true },
+    { key: 'evidence', label: 'Preuves nécessaires' },
+    { key: 'failure', label: 'À quoi ressemble l\'échec' },
+  ]}
+  rows={[
+    {
+      label: 'Validité analytique',
+      values: {
+        question: 'La caractéristique moléculaire peut-elle être mesurée de manière précise et reproductible ?',
+        evidence: 'Contrôles, répétitions, limites de détection, précision, interférences et études intersites',
+        failure: 'La fonctionnalité change en fonction du lot, de la profondeur, de l\'opérateur ou du pipeline d\'analyse.',
+      },
+    },
+    {
+      label: 'Association biologique',
+      values: {
+        question: 'La fonctionnalité suit-elle un état ou un mécanisme biologique ?',
+        evidence: 'Échantillons pertinents, confirmation orthogonale, perturbation et expériences mécanistiques',
+        failure: 'L\'association est technique, indirecte ou non reproductible',
+      },
+    },
+    {
+      label: 'Validité prédictive',
+      values: {
+        question: 'La fonctionnalité améliore-t-elle la prédiction dans les échantillons invisibles ?',
+        evidence: 'Modèles verrouillés, cohortes indépendantes, calibrage et comparaison avec des références établies',
+        failure: 'Les performances chutent après une validation externe ou n\'ajoutent aucune valeur par rapport à des entrées plus simples',
+      },
+    },
+    {
+      label: 'Utilité clinique',
+      values: {
+        question: 'L’utilisation du résultat améliore-t-elle une décision ou un résultat défini ?',
+        evidence: 'Études prospectives dans la population et le flux de travail visés',
+        failure: 'Le résultat est précis mais ne modifie pas les décisions ni n\'améliore les résultats.',
+      },
+    },
+  ]}
+/>
+
+## Concevoir des comparaisons décisives
+
+La valeur des données résolues par les molécules doit être testée par rapport à l’alternative établie la plus solide, et non par rapport à une ligne de base intentionnellement faible. Pour de nombreuses questions, cela signifie comparer des modèles ou des analyses construits à partir de :
+
+- fonctionnalités standard de RNA-sequencing au niveau du gène ;
+- estimations établies de jonction d'épissage ou d'abondance de transcription ;
+- variables cliniques, d'imagerie, génomiques ou protéomiques pertinentes ;
+- des ensembles de fonctionnalités combinés qui testent si les données résolues par molécule ajoutent des informations indépendantes.
+
+Une étude utile doit prédéfinir la question biologique, le protocole de mesure, le pipeline de génération de fonctionnalités, la métrique principale, la référence de comparaison et la cohorte de validation. La découverte et l’évaluation doivent être séparées. Dans la mesure du possible, l’analyse finale doit être verrouillée avant que la cohorte indépendante ne soit examinée.
+
+<ArticleConceptList
+  ariaLabel="Séquence d'évaluation pour les données de transcription résolues par molécule"
+  items={[
+    {
+      id: 'define-the-decision',
+      title: 'Définir la décision',
+      paragraphs: [
+        'Spécifiez la question biologique, translationnelle ou prédictive avant de sélectionner les caractéristiques moléculaires. Une fonctionnalité utile est définie par la décision qu’elle éclaire, et non par sa nouveauté.',
+      ],
+    },
+    {
+      id: 'establish-measurement-performance',
+      title: 'Établir les performances des mesures',
+      paragraphs: [
+        'Caractérisez la récupération, l’affectation, la reconstruction des transcriptions, l’estimation de l’abondance, la reproductibilité et les effets de lots sur la plage d’échantillons prévue.',
+      ],
+    },
+    {
+      id: 'compare-with-strong-baselines',
+      title: 'Comparez avec des références solides',
+      paragraphs: [
+        'Testez si les caractéristiques résolues par les molécules ajoutent des informations au-delà de l’expression des gènes, des mesures d’épissage conventionnelles et d’autres variables déjà disponibles pour la tâche.',
+      ],
+    },
+    {
+      id: 'validate-independently',
+      title: 'Valider indépendamment',
+      paragraphs: [
+        'Utilisez des échantillons, des sites, des opérateurs et des périodes qui n\'ont pas été impliqués dans la découverte de fonctionnalités ou la sélection de modèles. Signaler les modes d’étalonnage et de défaillance ainsi que la discrimination.',
+      ],
+    },
+    {
+      id: 'test-real-world-use',
+      title: 'Testez l\'utilisation dans le monde réel',
+      paragraphs: [
+        'Pour les applications translationnelles, évaluez si la mesure peut être produite de manière fiable dans le cadre du flux de travail prévu et si le fait d\'agir en conséquence améliore une décision définie.',
+      ],
+    },
+  ]}
+/>
+
+## Contexte scientifique sélectionné
+
+- [Variation du transcriptome dans les tissus humains révélée par un séquençage à lecture longue] (https://doi.org/10.1038/s41586-022-05035-y) — preuve principale que la structure de transcription liée peut révéler la diversité tissulaire, les effets associés aux allèles et de nouvelles transcriptions.
+- [Le séquençage des isoformes de transcription complète d'une seule molécule révèle des isoformes d'ARN associées à la maladie dans les cardiomyocytes] (https://doi.org/10.1038/s41467-021-24484-z) - un exemple d'analyse d'isoformes complètes dans un modèle cellulaire pertinent pour la maladie.
+- [Le séquençage à lecture longue de 29 sous-ensembles de cellules immunitaires révèle des isoformes liées à la maladie] (https://doi.org/10.1038/s41467-024-48615-4) — un atlas de cellules immunitaires reliant la structure des isoformes, la spécificité cellulaire et les analyses associées à la maladie.
+- [Détermination du grade histologique du cancer du sein à partir des données RNA-sequencing] (https://doi.org/10.1186/s13058-016-0705-4) — un exemple de comparaison des caractéristiques au niveau des gènes et des isoformes dans la modélisation prédictive.
+
+Ces études établissent un précédent scientifique pour l’évaluation des informations de transcription étendues et au niveau isoforme selon les définitions d’exhaustivité spécifiques à la plate-forme. Ils n'établissent pas les performances de PSeq et ne garantissent pas que les fonctionnalités résolues par molécule amélioreront une application particulière de découverte, de translation ou d'apprentissage automatique.
+
+## Conclusion
+
+Les données de transcription résolues par les molécules élargissent la transcriptomique d'une carte de gènes actifs à une carte des formes moléculaires produites par ces gènes. Cela révèle des séquences liées et des relations de régulation difficiles à récupérer à partir de résumés au niveau du gène ou de fragments regroupés.
+
+Les applications couvrent la découverte de transcriptions, la caractérisation de l’état cellulaire, la recherche sur les mécanismes des maladies, la stratification moléculaire et la modélisation prédictive. Chaque application établit sa valeur grâce aux performances de mesure, à la pertinence biologique, à la reproductibilité, à la comparaison avec des approches établies et, le cas échéant, à l'utilité dans le monde réel.
+
+[PSeq Clear-Signal Architecture™](/technology/pseq-platform#pseq-clear-signal-architecture) makes molecule-resolved transcript measurement compatible with established short-read sequencing systems. Direct experiments, careful comparisons, and independent validation will define where that architecture provides the most useful new information.
+
+[Return to Part 1 for the measurement problem that motivates phased sequencing.](/media/blog/an-introduction-to-phased-sequencing-part-1)
+
+<ArticleSeriesNavigation
+  series={phasedSequencingSeries}
+  locale="fr"
+  currentPart={3}
+  position="end"
+/>

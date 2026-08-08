@@ -1,0 +1,36 @@
+---
+import BlogArticlePage from '@/components/i18n/BlogArticlePage.astro'
+import { getCollection, type CollectionEntry } from 'astro:content'
+import {
+  enabledLocales,
+  getLocaleDefinition,
+  isSupportedLocale,
+  type LocalizedLocale,
+} from '@/i18n/locales'
+import { getBlogEntrySlug, isBlogTranslationVisible } from '@/lib/blogRoutes'
+
+export async function getStaticPaths() {
+  const blogs = await getCollection('blog')
+  return blogs.flatMap((blog) => {
+    const locale = blog.data.locale
+    if (!isSupportedLocale(locale) || locale === 'en-US') return []
+    if (!enabledLocales.includes(locale)) return []
+    if (!isBlogTranslationVisible(locale, blog.data.translationStatus)) return []
+
+    return [{
+      params: {
+        locale: getLocaleDefinition(locale).prefix.replace(/^\//, ''),
+        slug: getBlogEntrySlug(blog.id),
+      },
+      props: { locale, blog },
+    }]
+  })
+}
+
+const { locale, blog } = Astro.props as {
+  locale: LocalizedLocale
+  blog: CollectionEntry<'blog'>
+}
+---
+
+<BlogArticlePage locale={locale} blog={blog} />

@@ -1,0 +1,249 @@
+---
+title: "Introducción a la secuenciación por fases: Parte 2"
+summary: "Cómo PSeq preserva la identidad de la molécula de origen en un flujo de trabajo de lecturas cortas."
+image: "/images/media/blog/an-introduction-to-phased-sequencing-part-2.png"
+authors: ["William Agnew"]
+date: '2026-07-15'
+locale: 'es'
+translationKey: 'blog.phased-sequencing.part-2'
+sourceLocale: 'en-US'
+translationStatus: 'draft'
+sourceRevision: '2026-08-08'
+translatedFromRevision: '2026-08-08'
+translator: 'Machine-assisted draft'
+---
+import ArticleCallout from '@/components/content/ArticleCallout.astro';
+import ArticleComparisonTable from '@/components/content/ArticleComparisonTable.astro';
+import ArticleConceptList from '@/components/content/ArticleConceptList.astro';
+import ArticleKeyPoints from '@/components/content/ArticleKeyPoints.astro';
+import ArticleSeriesNavigation from '@/components/content/ArticleSeriesNavigation.astro';
+import { phasedSequencingSeries } from '@/lib/articleSeries';
+
+<ArticleSeriesNavigation
+  series={phasedSequencingSeries}
+  locale="es"
+  currentPart={2}
+  position="start"
+/>
+
+## Resumen
+
+En esta serie, Phaeno utiliza **secuenciación por fases** para describir arquitecturas de secuenciación que preservan el vínculo entre observaciones que se originan en la misma molécula fuente. La idea es simple: los fragmentos son mucho más informativos cuando se conoce su origen molecular.
+
+La secuenciación de ARN de lectura corta convencional generalmente fragmenta y agrupa muchas transcripciones antes de la secuenciación. Las lecturas resultantes pueden ser precisas, abundantes y muy útiles, pero el experimento generalmente no conserva un registro directo de qué fragmentos distantes provienen de la misma plantilla molecular capturada. Por lo tanto, las estructuras de transcripción de un extremo a otro deben inferirse a partir de evidencia superpuesta recopilada en una población mixta.
+
+**[PSeq Clear-Signal Architecture™](/technology/pseq-platform#pseq-clear-signal-architecture)** cambia esa arquitectura de medición. Durante la transcripción inversa, un reactivo de etiquetado PSeq asocia información molecular con cada molécula de ADNc derivada de ARN capturada con éxito. Esa información sigue siendo recuperable en las lecturas resultantes, lo que permite que la canalización de datos agrupe las lecturas de la misma plantilla capturada en conjuntos de moléculas específicas antes del ensamblaje.
+
+El resultado no es una lectura larga. Es una colección de lecturas breves asignadas a una plantilla capturada compartida. Por lo tanto, el ensamblaje ocurre dentro de un límite entre la molécula fuente y no a través de un conjunto indiferenciado de fragmentos de transcripción. La reconstrucción aún depende de la continuidad de la cobertura, la superposición, la guía de referencia y la evidencia de los límites de la transcripción.
+
+PSeq es actualmente una plataforma **Solo para uso en investigación (RUO)**.
+
+## ¿Qué significa la identidad fuente-molécula?
+
+La identidad fuente-molécula es la información experimental que conecta una observación de secuenciación con una plantilla molecular derivada de ARN capturada individualmente.
+
+En un flujo de trabajo de ADNc, esa plantilla observable es una representación con transcripción inversa de una molécula de ARN inicial, no el ARN original observado directamente. La transcripción inversa puede ser incompleta, puede introducir sustituciones o cambios de plantilla, puede producir más de un producto o puede no producir un producto recuperable. Por lo tanto, un extremo de ADNc observado proporciona evidencia sobre un límite de ARN, pero no es automáticamente una prueba del extremo biológico nativo.
+
+Está relacionado con la indexación de muestras ordinaria, pero es distinta de ella. Un índice de muestra identifica la muestra o biblioteca que produjo una lectura. La información de la molécula fuente opera a un nivel más fino: distingue plantillas moleculares capturadas individualmente dentro de esa muestra o biblioteca.
+
+También es distinto de la anotación de transcripciones. Una anotación puede indicar que una lectura es compatible con un gen o isoforma conocido. La identidad de la molécula fuente establece que un conjunto particular de lecturas se originó a partir de la misma plantilla molecular capturada, independientemente de que esa plantilla coincida o no con una anotación existente.
+
+<ArticleCallout>
+  <em>La identidad de la muestra responde de qué muestra proviene una lectura. Respuestas de identidad de la molécula fuente que capturaron la plantilla molecular derivada de ARN dentro de esa muestra a la que se asignó una lectura.</em>
+</ArticleCallout>
+
+Esta distinción es importante porque dos plantillas moleculares derivadas de ARN del mismo gen pueden tener diferentes uniones de empalme, límites de transcripción observados, variantes de secuencia, eventos de edición candidatos o regiones no traducidas. Una vez que los fragmentos de esas plantillas se mezclan sin una relación de origen recuperable, su disposición de un extremo a otro se convierte en un problema de inferencia computacional.
+
+## Por qué se debe establecer la identidad antes de la fragmentación
+
+La fragmentación separa características de secuencia que originalmente estaban conectadas en la misma molécula. Se pueden observar con precisión una unión de empalme cerca del límite 5' observado, una variante de secuencia en una región codificante predicha y una región no traducida en 3', pero nada en las secuencias de fragmentos por sí solo prueba necesariamente que esas características ocurrieron juntas.
+
+Si el origen molecular se establece antes de la fragmentación y se lleva a la biblioteca de secuenciación, los fragmentos pueden permanecer relacionados incluso después de que la molécula física se haya dividido. La conexión es informativa más que espacial.
+
+De ese diseño se derivan cuatro requisitos:
+
+<ArticleKeyPoints
+  ariaLabel="Requisitos para preservar la identidad de la molécula fuente."
+  items={[
+    'La identidad debe estar asociada con la molécula antes de que se fragmente su secuencia.',
+    'La información de identidad debe sobrevivir a la generación y secuenciación de la biblioteca.',
+    'Las lecturas deben retener suficiente información para una asignación de moléculas confiable',
+    'El sistema de identificación debe distinguir las moléculas tolerando al mismo tiempo el error experimental.',
+  ]}
+/>
+
+El fracaso en cualquier etapa puede debilitar la restricción prevista. Las colisiones pueden hacer que diferentes moléculas parezcan idénticas. El daño de la etiqueta o el error de secuenciación pueden dividir las lecturas de una molécula en varios grupos. La contaminación entre grupos puede introducir fragmentos de moléculas no relacionadas. Estos son riesgos analíticos mensurables, no simplemente detalles de software.
+
+## El flujo de trabajo PSeq a nivel conceptual
+
+La lógica de la identidad fuente sigue seis etapas vinculadas.
+
+<ArticleConceptList
+  ariaLabel="Etapas conceptuales del flujo de trabajo PSeq"
+  items={[
+    {
+      id: 'represent-the-source-molecule',
+      title: 'Transcripción inversa y etiqueta de la molécula fuente.',
+      paragraphs: [
+        'Durante la transcripción inversa, un reactivo de etiquetado PSeq asocia información molecular con el ADNc derivado de ARN para que su secuencia pueda ingresar a un flujo de trabajo de biblioteca de ADN compatible con los sistemas de secuenciación de lectura corta establecidos.',
+        'El ADNc etiquetado resultante conserva las relaciones de secuencia capturadas del ARN inicial, sujeto a la integridad y fidelidad de la transcripción inversa.',
+        'Este ADNc es la plantilla molecular capturada medida por el flujo de trabajo. Sus extremos observados no establecen por sí solos los límites nativos del ARN 5\' o 3\'.',
+      ],
+    },
+    {
+      id: 'associate-molecular-information',
+      title: 'Llevar la información molecular hacia adelante.',
+      paragraphs: [
+        'La información molecular incorporada durante la transcripción inversa distingue las plantillas capturadas dentro de la misma muestra.',
+        'A medida que el ADNc etiquetado se amplifica y se prepara para la construcción de la biblioteca, esa información preserva la relación etiqueta-plantilla.',
+      ],
+    },
+    {
+      id: 'generate-a-short-fragment-library',
+      title: 'Generar una biblioteca de fragmentos cortos',
+      paragraphs: [
+        'El material marcado se convierte en una biblioteca de secuenciación compuesta de fragmentos cortos de ADN. La información de la molécula fuente permanece asociada con esos fragmentos durante la preparación de la biblioteca.',
+        'La plantilla de ADNc capturada ya no está físicamente intacta, pero sus fragmentos siguen siendo identificables como grupo.',
+      ],
+    },
+    {
+      id: 'sequence-on-established-ngs-systems',
+      title: 'Secuencia en sistemas NGS establecidos',
+      paragraphs: [
+        'La biblioteca se lee utilizando instrumentación de secuenciación de próxima generación de lectura corta. Cada plantilla molecular capturada puede estar representada por múltiples fragmentos observados de forma independiente.',
+        'La cobertura de una molécula se puede seleccionar según el experimento, mientras que la recuperación real dependerá de la complejidad, abundancia, longitud de la transcripción y profundidad de secuenciación de la biblioteca.',
+      ],
+    },
+    {
+      id: 'assign-reads-to-molecule-specific-sets',
+      title: 'Asignar lecturas a conjuntos específicos de moléculas',
+      paragraphs: [
+        'Después de la secuenciación, la información molecular clasifica las lecturas en conjuntos que representan plantillas moleculares capturadas individuales.',
+        'La calidad de la tarea es fundamental: el ensamblaje de moléculas específicas es útil sólo cuando la composición de cada conjunto es suficientemente precisa y completa.',
+      ],
+    },
+    {
+      id: 'assemble-and-build-consensus',
+      title: 'Reunir y construir consenso',
+      paragraphs: [
+        'La reconstrucción de la transcripción se realiza dentro de cada conjunto específico de molécula. Las lecturas asignadas a una plantilla capturada se comparan entre sí en lugar de con cada fragmento compatible de la muestra.',
+        'La superposición, la continuidad de la cobertura, la información de referencia y la evidencia de límites observada determinan qué reconstrucción es sustentable. Las observaciones superpuestas y secuenciadas de forma independiente también pueden respaldar la generación de consenso, aunque la precisión y la integridad alcanzables requieren una validación directa.',
+      ],
+    },
+  ]}
+/>
+
+## La identidad limita el montaje; no lo soluciona automaticamente
+
+La identidad de la molécula fuente cambia el espacio de búsqueda disponible para un ensamblador. En el ensamblaje de transcritos convencional, muchos fragmentos de muchos transcritos pueden ser compatibles con el mismo gen. El algoritmo debe identificar uno o más modelos de transcripción que expliquen la evidencia agrupada.
+
+En un flujo de trabajo restringido por moléculas, el ensamblador recibe un conjunto más pequeño de lecturas que se cree que se originan a partir de una plantilla molecular capturada. La pregunta cambia de "¿Qué población de transcripciones explica estos fragmentos?" a "¿Cómo encajan estos fragmentos dentro de esta plantilla capturada, dada la cobertura, la superposición, la información de referencia y la evidencia de límites disponibles?"
+
+Esa restricción puede reducir la ambigüedad, pero no elimina todos los modos de falla. Un conjunto de moléculas específicas que contenga islas de cobertura desconectadas aún puede admitir múltiples reconstrucciones, o ninguna reconstrucción completa.
+
+En este caso, **la integridad de la transcripción** se refiere a un criterio analítico predefinido y no debe asumirse únicamente a partir de la asignación de lecturas a una molécula. El criterio debe indicar si requiere límites observados de 5′ y 3′, una cadena de empalme completa, una cobertura mínima, un consenso contiguo de extremo a extremo o una interpolación basada en referencias.
+
+<ArticleComparisonTable
+  ariaLabel="Qué permite y qué no garantiza la información de la molécula fuente"
+  rowHeaderLabel="Información retenida"
+  columns={[
+    { key: 'enables', label: 'Lo que permite', highlighted: true },
+    { key: 'doesNotGuarantee', label: 'Lo que no garantiza' },
+  ]}
+  rows={[
+    {
+      label: 'identificador molecular',
+      values: {
+        enables: 'Asignación de lecturas a una plantilla molecular capturada candidata',
+        doesNotGuarantee: 'Que cada identificador sea único, esté libre de errores o esté recuperado',
+      },
+    },
+    {
+      label: 'Membresía fragmentada',
+      values: {
+        enables: 'Ensamblaje dentro de un conjunto de lectura específico de molécula',
+        doesNotGuarantee: 'Que cada lectura esté asignada correctamente o que no haya contaminación',
+      },
+    },
+    {
+      label: 'Cobertura de secuencia independiente',
+      values: {
+        enables: 'Consenso entre observaciones superpuestas',
+        doesNotGuarantee: 'Profundidad uniforme, cobertura imparcial o recuperación de los extremos de la transcripción nativa',
+      },
+    },
+    {
+      label: 'Transcripción reconstruida',
+      values: {
+        enables: 'Una hipótesis a nivel molecular para secuencia y estructura vinculadas',
+        doesNotGuarantee: 'Que la reconstrucción sea completa, biológicamente funcional o cuantitativamente imparcial.',
+      },
+    },
+  ]}
+/>
+
+## La tarea de lectura es una medida analítica
+
+Es tentador tratar la clasificación molecular como un paso previo al procesamiento. En la práctica, la calidad de la asignación es una de las medidas de las que depende el resultado final.
+
+Se deben caracterizar varias clases de errores:
+
+- **Colisiones:** dos plantillas moleculares capturadas reciben información molecular que no es suficientemente distinta y se fusionan en un conjunto.
+- **División:** las lecturas de una plantilla molecular capturada parecen tener diferentes identidades y están divididas en varios conjuntos.
+- **Asignación cruzada:** un fragmento se coloca en el conjunto específico de molécula incorrecto.
+- **Pérdida:** la información de identidad no se puede leer con seguridad, por lo que no se pueden asignar observaciones de secuencia útiles.
+- **Representación desigual:** algunas porciones de una molécula se cubren profundamente mientras que otras no se recuperan.
+
+Las tarifas aceptables dependen de la aplicación. El descubrimiento de isoformas, la estimación de abundancia, el análisis de variantes vinculadas y la detección de moléculas raras imponen requisitos diferentes. Un flujo de trabajo destinado a un descubrimiento amplio puede tolerar un perfil de error diferente al de uno destinado a respaldar una decisión clínica.
+
+## El consenso depende de evidencia independiente
+
+La secuenciación de lectura corta puede observar la misma posición de base varias veces en fragmentos asignados a una plantilla molecular capturada. Cuando esas observaciones son suficientemente independientes y están asignadas correctamente, el acuerdo entre ellas puede respaldar una secuencia de consenso.
+
+El consenso es valioso porque las observaciones individuales pueden contener errores de secuenciación o amplificación. Las observaciones repetidas pueden ayudar a distinguir una secuencia molecular reproducible de un error esporádico. Pero las lecturas adicionales no producen automáticamente un consenso imparcial. Los errores compartidos introducidos durante la transcripción inversa, la copia temprana, los efectos del contexto de secuencia o los errores sistemáticos de asignación pueden persistir en todo el conjunto de lectura.
+
+Por lo tanto, el consenso estima la secuencia de la plantilla de ADNc capturada. La fidelidad al ARN original tiene un límite adicional establecido por los errores introducidos antes de que las observaciones a nivel de fragmentos se vuelvan independientes; un error de transcripción inversa, por ejemplo, puede ser indistinguible de la secuencia de la plantilla capturada.
+
+Por lo tanto, la cuestión de validación relevante no es simplemente cuántas lecturas cubren una molécula. Se trata de si el flujo de trabajo completo produce secuencias precisas y reproducibles a nivel de molécula en longitudes, abundancias, composiciones y estructuras de transcripciones realistas.
+
+## Que se debe validar
+
+La validación utiliza materiales de referencia cuyas secuencias, estructuras y abundancias esperadas se conocen. Los controles de ARN sintético, las mezclas de isoformas definidas, las series de dilución, las bibliotecas replicadas y las mediciones ortogonales abordan diferentes partes del rendimiento.
+
+Las medidas importantes incluyen:
+
+- el número y fracción de plantillas moleculares capturadas representadas por grupos recuperables;
+- la tasa de colisión, división, pérdida y asignación cruzada de identificadores moleculares;
+- uniformidad de cobertura en todos los cuerpos y extremos de las transcripciones;
+- precisión del consenso por contexto y profundidad de secuencia;
+- sensibilidad y precisión para estructuras de transcripción conocidas;
+- linealidad de abundancia y reproducibilidad entre réplicas;
+- rendimiento en longitud de transcripción, abundancia, contenido de GC y complejidad estructural;
+- Robustez ante la calidad de la muestra, la cantidad de entrada, el lote, el operador y la variación del instrumento.
+
+Estas mediciones deben informarse por separado. Una alta precisión de consenso entre las plantillas capturadas reconstruidas con éxito no establece una alta recuperación de moléculas. Las estructuras de transcripción precisas no establecen por sí solas una cuantificación imparcial. Un rendimiento sólido en controles sintéticos no garantiza un rendimiento equivalente en muestras biológicas complejas.
+
+Los grupos de moléculas recuperadas son observaciones analíticas de plantillas capturadas, no recuentos censales automáticamente imparciales de todas las moléculas de ARN en la entrada. Su relación con la abundancia de entradas depende de la probabilidad de captura, la eficiencia de la transcripción inversa, la división y colisión molecular, la pérdida de identificadores, la representación duplicada, la recuperación diferencial por longitud o secuencia y los umbrales de filtrado y ensamblaje.
+
+## Contexto científico para identificadores moleculares.
+
+El principio general de la secuenciación con reconocimiento de moléculas es anterior al PSeq. Kivioja y sus colegas demostraron que [los identificadores moleculares únicos pueden distinguir moléculas de ácido nucleico individuales] (https://doi.org/10.1038/nmeth.1778) y respaldar el recuento con reconocimiento de moléculas en la secuenciación de próxima generación.
+
+PSeq aplica información de la molécula fuente hacia un objetivo diferente: restringir la reconstrucción de estructuras de transcripción a partir de lecturas de fragmentos cortos asignados a plantillas moleculares capturadas. El precedente científico respalda el valor de la identificación molecular como principio de medición; no sustituye la validación de la química, la asignación, el ensamblaje o el desempeño por consenso de PSeq.
+
+## Conclusión
+
+PSeq preserva la relación entre una molécula de ADNc derivada de ARN capturada con éxito y las lecturas cortas derivadas de ella. El reactivo de etiquetado asocia información molecular durante la transcripción inversa; esa información se transmite a través de la generación de bibliotecas, se recupera durante la secuenciación y se utiliza para crear conjuntos de lectura específicos de moléculas.
+
+Esa relación cambia el ensamblaje de transcripciones de un problema de inferencia a nivel poblacional a un problema de reconstrucción restringido por moléculas. Las observaciones repetidas de la secuencia también respaldan la generación de consenso en relación con la plantilla de ADNc capturada.
+
+Los estudios técnicos iniciales han observado la estructura de lectura prevista de marcador más ADNc, marcadores concentrados cerca del comienzo de la lectura 1 y una reconstrucción específica de molécula rastreable en un ejemplo representativo de PRPF31. La validación actual consiste en cuantificar la recuperación de moléculas, la precisión de la asignación, el rendimiento del consenso, la reproducibilidad y la medición de la abundancia en los usos de investigación previstos para la plataforma.
+
+[Part 3 examines how molecule-resolved transcript data could be used in biological discovery, translational research, and machine learning.](/media/blog/an-introduction-to-phased-sequencing-part-3)
+
+<ArticleSeriesNavigation
+  series={phasedSequencingSeries}
+  locale="es"
+  currentPart={2}
+  position="end"
+/>

@@ -11,20 +11,21 @@ Implementation was authorized by the Product Owner on 2026-08-07. That authoriza
 
 ## Current implementation checkpoint
 
-Implemented locally on 2026-08-07:
+Implemented locally through 2026-08-08:
 
 - the default build remains unprefixed `en-US` and generates no draft localized route, selector, suggestion, or localized sitemap entry;
-- private team review mode enables complete 16-pair review route sets for Arabic, French, Spanish, Simplified Chinese, Japanese, German (Germany), and Italian by default, while locale-specific mode variables may explicitly focus the review build;
-- all current public English routes have explicit equivalents in every review locale, while the four white-paper families use explicit localized draft slugs connected by `translationKey`;
-- all 112 localized route pairs carry page-by-page draft translations. Principal static pages render through the same Astro presentation as their English sources, and localized white-paper landing pages include the complete Abstract, Key topics, Contents, and applicable objective callout while identifying their PDF assets as English;
+- private team review mode enables complete 19-pair review route sets for Arabic, French, Spanish, Simplified Chinese, Japanese, German (Germany), and Italian by default, while locale-specific mode variables may explicitly focus the review build;
+- all current public English routes have explicit equivalents in every review locale. The four white-paper families use explicit localized draft slugs, and the three phased-sequencing blog articles use stable locale-prefixed routes; both are connected by `translationKey`;
+- all 133 localized route pairs carry page-by-page draft translations. Principal static pages render through the same Astro presentation as their English sources, localized white-paper landing pages include the complete Abstract, Key topics, Contents, and applicable objective callout while identifying their PDF assets as English, and each localized blog article preserves the complete MDX body, structured callouts, comparison tables, and series navigation;
 - locale-aware layout, `lang`, `dir`, navigation, footer, search controls, contact/demo forms, validation messages, date formatting, sharing text, and logical CSS support both French LTR and Arabic RTL;
 - client-side browser-language detection offers enabled translations without redirecting, and explicit accept/dismiss or selector choices use first-party functional cookies;
 - localized review HTML has localized metadata, self-canonicals, reciprocal `hreflang`, `x-default`, and sitemap alternates; the review build remains `noindex` and omits `llms.txt`;
 - content schemas now carry additive translation identity/status/revision/reviewer and publication-asset language fields;
+- localized blog listings, article routes, same-article language switching, series links, social metadata, and three-item review feeds are implemented for all seven review locales; all 21 machine-assisted articles remain `draft` and require native linguistic and scientific review before publication;
 - the Website crawler reads document language, the search API accepts an optional `locale` while defaulting to `en-US`, Lucene partitions records by locale, Arabic Unicode normalization/search is implemented, and French uses French stemming;
 - an Arabic landing page does not index text from its linked English PDF, and the UI/metadata disclose the asset language; and
-- the normal Website build, eight-language review build, and isolated backend Release build succeed. Focused backend tests were added but not executed because the repository requires a separate explicit test request.
-- a dependency-free generated-HTML parity check verifies all 112 localized route pairs for route output, document metadata, core semantic structures, and script-appropriate minimum content coverage, and rejects the obsolete condensed Arabic home page.
+- the normal Website build (20 pages), eight-language review build (153 pages), and isolated backend Release build succeed. Focused backend tests were added but not executed because the repository requires a separate explicit test request.
+- a dependency-free generated-HTML parity check verifies all 133 localized route pairs for route output, document metadata, core semantic structures, and script-appropriate minimum content coverage, and rejects the obsolete condensed Arabic home page.
 - fixed marketing-page copy now uses symmetric, contract-checked
   locale-owned files under `pageCatalogs/`
   selected through one locale lookup; page templates no longer embed locale
@@ -610,10 +611,12 @@ the Product Owner to choose technical mechanics:
    them silently into localized listings.
 
 The review corpus for each of the seven localized locales is every currently
-public static page plus all four current white-paper landing pages. Blog and
-job listings remain empty because no source items are currently public.
+public static page, all four current white-paper landing pages, and all three
+articles in the phased-sequencing blog series. Job listings remain empty
+because no source items are currently public. Localized blog feeds and listing
+membership are review-only until the article drafts pass the publication gates.
 Translation-review ownership still must be assigned before publication. The
-five newest locale drafts require native linguistic, scientific, marketing,
+seven locale drafts require native linguistic, scientific, marketing,
 privacy/legal, accessibility, and visual review; generated draft copy is not
 publication-ready. Decisions for later locales may remain open without
 blocking current review. Astro routing,

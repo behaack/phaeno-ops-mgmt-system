@@ -1,0 +1,390 @@
+---
+title: "Introducción a la secuenciación por fases: Parte 1"
+summary: "Por qué el ARN necesita una mejor medición"
+image: "/images/media/blog/an-introduction-to-phased-sequencing-part-1.png"
+authors: ["William Agnew"]
+date: '2026-07-15'
+locale: 'es'
+translationKey: 'blog.phased-sequencing.part-1'
+sourceLocale: 'en-US'
+translationStatus: 'draft'
+sourceRevision: '2026-08-08'
+translatedFromRevision: '2026-08-08'
+translator: 'Machine-assisted draft'
+---
+import ArticleCallout from '@/components/content/ArticleCallout.astro';
+import ArticleComparisonTable from '@/components/content/ArticleComparisonTable.astro';
+import ArticleConceptList from '@/components/content/ArticleConceptList.astro';
+import ArticleKeyPoints from '@/components/content/ArticleKeyPoints.astro';
+import ArticleSeriesNavigation from '@/components/content/ArticleSeriesNavigation.astro';
+import { phasedSequencingSeries } from '@/lib/articleSeries';
+
+<ArticleSeriesNavigation
+  series={phasedSequencingSeries}
+  locale="es"
+  currentPart={1}
+  position="start"
+/>
+
+## Resumen
+
+La secuencia de ADN establece el marco hereditario de los sistemas biológicos, pero por sí sola no especifica el estado molecular de una célula. Ese estado emerge a través de la transcripción y el procesamiento del ARN: inicio de la transcripción, formación del extremo 3' del ARN, empalme alternativo, edición del ARN, poliadenilación y selección de regiones codificantes y no traducidas.
+
+Estos procesos generan distintas isoformas de ARN a partir del mismo locus genómico. Cada isoforma es una entidad molecular vinculada en la que un límite 5' observado, un uso inferido del promotor, una composición de exones, una secuencia de codificación prevista, eventos de edición candidatos y regiones reguladoras ocurren juntos en la misma transcripción. Preservar esas relaciones puede ser importante porque diferentes isoformas pueden soportar diferentes productos proteicos, diferir en estabilidad o localización, o responder de manera diferente a la regulación celular.
+
+La secuenciación convencional de ARN de lectura corta ha transformado la biología, pero normalmente fragmenta las transcripciones antes de la secuenciación. Las lecturas resultantes proporcionan información de secuencia local muy precisa, mientras que las estructuras de un extremo a otro a menudo deben inferirse computacionalmente. La secuenciación de lectura larga puede preservar una mayor parte de la estructura de la transcripción original, pero actualmente implica diferentes compensaciones en instrumentación, rendimiento, profundidad, precisión, costo y flujo de trabajo.
+
+**[PSeq Clear-Signal Architecture™](/technology/pseq-platform#pseq-clear-signal-architecture)** de Phaeno preserva la identidad de la molécula fuente a través de un flujo de trabajo de secuenciación de lectura corta. Durante la transcripción inversa, PSeq asocia información molecular con cada plantilla de ADNc derivada de ARN capturada con éxito. Esa información permanece vinculada a los fragmentos de lectura corta resultantes, de modo que las lecturas de la misma plantilla capturada se pueden agrupar antes del ensamblaje de la transcripción, convirtiendo un problema de reconstrucción que de otro modo no estaría restringido en uno restringido por moléculas. La identidad molecular reduce el espacio de búsqueda; La reconstrucción completa aún depende de la cobertura, la superposición, la información de referencia y la evidencia de límites disponible para esa molécula.
+
+PSeq es actualmente una plataforma **Solo para uso en investigación (RUO)**.
+
+En esta serie, Phaeno utiliza **secuenciación por fases** para describir arquitecturas de secuenciación que preservan el vínculo entre observaciones que se originan en la misma molécula fuente. Este uso es distinto del significado genómico común de dividir variantes en haplotipos y se superpone conceptualmente con términos como secuenciación con reconocimiento de moléculas, lecturas vinculadas, nubes de lectura y reconstrucción de fragmentos con códigos de barras.
+
+Este artículo explica por qué es importante esa distinción. La Parte 2 describirá cómo PSeq preserva la identidad de la molécula fuente y la Parte 3 examinará el valor potencial de los datos de transcripción resueltos por moléculas en el descubrimiento biológico, la investigación traslacional y el aprendizaje automático.
+
+## La secuencia de ADN por sí sola no especifica el estado celular
+
+El Proyecto Genoma Humano estableció una secuencia de referencia para el genoma humano y proporcionó una base esencial para la biología moderna. También ayudó a aclarar los límites de la información de secuencia considerada de forma aislada.
+
+Las células con genomas casi idénticos pueden adoptar estructuras y funciones marcadamente diferentes. Un hepatocito, una neurona, un linfocito y una célula epitelial generalmente contienen la misma secuencia de ADN heredada, pero difieren ampliamente en morfología, metabolismo, señalización y comportamiento. Estas diferencias surgen de procesos regulatorios que determinan qué porciones del genoma se utilizan, cómo se transcriben y cómo se procesan los ARN resultantes.
+
+El ARN ocupa una posición central en este proceso. Es a la vez un intermediario entre el ADN y la proteína y, en muchos casos, una especie molecular funcional por derecho propio. Los ARN mensajeros codifican proteínas, mientras que los ARN ribosómicos, de transferencia, micro, no codificantes largos y otras clases contribuyen directamente a la traducción, la regulación, la organización del genoma y la señalización celular.
+
+Incluso dentro de los genes que codifican proteínas, la relación entre un locus genómico y sus productos biológicos no es uno a uno. Un solo locus puede producir múltiples transcripciones mediante combinaciones de:
+
+- iniciación de transcripción alternativa;
+- empalme alternativo;
+- escisión y poliadenilación alternativas;
+- edición de ARN;
+- variación en regiones no traducidas;
+- estabilidad y degradación diferencial de la transcripción.
+
+Las transcripciones resultantes pueden codificar distintas secuencias de proteínas, alterar la abundancia de una proteína, cambiar la localización de un ARN o afectar su traducción y degradación. Por lo tanto, la producción biológica de un gen depende no sólo de si el gen se expresa, sino también de qué transcritos se producen y en qué proporciones.
+
+Por esta razón, las isoformas de ARN no deben tratarse simplemente como medidas intercambiables de la actividad genética. Cada transcripción es una disposición vinculada de secuencias y características reguladoras que existe como una molécula física.
+
+## La transcripción como unidad de información vinculada
+
+Una transcripción puede contener varias características biológicamente significativas simultáneamente:
+
+- su límite de transcripción 5 'observado;
+- su estructura de exón y unión de empalme;
+- su marco de lectura abierto previsto o potencial de codificación;
+- variantes de secuencia o eventos de edición de ARN candidatos;
+- sus regiones no traducidas 5 ′ y 3 ′;
+- su límite de transcripción 3 'observado o sitio de escisión y poliadenilación.
+
+La importancia de cualquier característica puede depender de las demás con las que ocurre.
+
+Una variante de secuencia, por ejemplo, puede estar presente sólo en transcritos con un límite 5' observado particular o un uso de promotor inferido. Un evento de omisión de exón puede alterar el marco de lectura previsto en un contexto de transcripción pero no en otro. Una región 3' no traducida puede contener motivos reguladores que afectan la estabilidad, localización o traducción de una isoforma específica. Por lo tanto, dos transcritos del mismo gen pueden diferir funcionalmente incluso cuando comparten la mayor parte de su secuencia.
+
+Esto crea un problema de fases.
+
+En secuenciación, **fase** significa determinar qué características de la secuencia ocurren juntas en la misma molécula física. El concepto es familiar en genómica, donde se pueden asignar variantes a cromosomas maternos o paternos. En transcriptómica, el mismo principio se aplica a combinaciones de uniones de empalme, límites de transcripción observados, variantes de secuencia, eventos de edición candidatos y regiones reguladoras.
+
+Saber que dos características están presentes en una muestra no equivale a saber que ocurren en la misma transcripción.
+
+Esa distinción se vuelve especialmente importante para los genes que producen muchas isoformas superpuestas. Si varios transcritos comparten exones y uniones de empalme, los fragmentos de secuencia cortos pueden ser compatibles con múltiples estructuras de un extremo a otro. Las observaciones locales pueden ser correctas mientras que la disposición global sigue siendo ambigua.
+
+## Tres conceptos relacionados
+
+La terminología que rodea a la secuenciación resuelta por moléculas puede resultar confusa. Tres distinciones son particularmente útiles.
+
+<ArticleConceptList
+  ariaLabel="Tres conceptos relacionados con la resolución de moléculas"
+  items={[
+    {
+      id: 'source-molecule-identity',
+      title: 'Identidad fuente-molécula',
+      paragraphs: [
+        'La identidad de la molécula fuente significa retener información sobre qué plantilla molecular capturada dio lugar a una colección de lecturas de secuenciación.',
+        'En un flujo de trabajo basado en ADNc, esa plantilla es una molécula de ADNc derivada de ARN capturada con éxito: una representación con transcripción inversa de una molécula de ARN inicial, no el ARN original observado directamente.',
+      ],
+    },
+    {
+      id: 'phased-sequencing',
+      title: 'Secuenciación por fases',
+      paragraphs: [
+        'En el uso de Phaeno, la secuenciación en fases determina qué características observadas ocurren juntas en la misma molécula fuente.',
+        'Para el ARN, estas características pueden incluir uniones de empalme, variantes de secuencia, eventos de edición de candidatos, límites de transcripción observados y regiones no traducidas.',
+      ],
+    },
+    {
+      id: 'whole-molecule-resolution',
+      title: 'Resolución de molécula entera',
+      paragraphs: [
+        'La resolución de molécula completa se refiere a la reconstrucción de la estructura de una plantilla molecular capturada individualmente según un criterio de integridad predefinido.',
+        'En un flujo de trabajo de lectura corta, esta reconstrucción sigue siendo computacional. La asignación molecular lo limita, pero la cobertura desconectada aún puede admitir reconstrucciones múltiples o ninguna reconstrucción completa.',
+      ],
+    },
+  ]}
+/>
+
+Estos conceptos están relacionados pero no son idénticos. La identificación molecular permite la fase, y la fase hace que la reconstrucción de la molécula completa sea más manejable.
+
+A lo largo de esta serie, **completo** y **de larga duración** son términos operativos más que consecuencias de la asignación molecular únicamente. Una afirmación de integridad debe indicar si requiere límites observados de 5′ y 3′, una cadena de empalme completa, un umbral de cobertura mínimo, un consenso contiguo de extremo a extremo o una interpolación basada en referencias entre regiones cubiertas.
+
+## El problema de medición creado por la fragmentación
+
+La secuenciación de ARN convencional normalmente convierte el ARN en ADN complementario y fragmenta el material antes o durante la preparación de la biblioteca. Luego, millones de lecturas breves se alinean con un genoma o transcriptoma de referencia y se resumen en mediciones a nivel de gen, exón, unión o transcripción.
+
+Este enfoque ha sido extraordinariamente productivo. La secuenciación de ARN de lectura corta admite:
+
+- análisis diferencial de expresión genética;
+- detección de empalmes;
+- anotación de transcripción;
+- expresión específica de alelo;
+- detección de fusiones;
+- transcriptómica unicelular y espacial;
+- numerosas aplicaciones de diagnóstico y traslación.
+
+Por lo tanto, sus limitaciones deberían describirse con precisión. El problema no es que la secuenciación de ARN de lectura corta no pueda detectar el ARN o no pueda identificar la estructura de la transcripción. Más bien, la fragmentación separa observaciones que originalmente ocurrieron juntas en la misma molécula.
+
+Una vez que se ha perdido el enlace fuente-molécula, la reconstrucción de la transcripción se convierte en un problema de inferencia.
+
+Los métodos computacionales a menudo pueden resolver ese problema, particularmente cuando las isoformas están bien anotadas, la cobertura de secuencia es alta y las estructuras de transcripción son suficientemente distintas. Sin embargo, la ambigüedad aumenta cuando un locus contiene muchas isoformas superpuestas que comparten exones, uniones o regiones de secuencia.
+
+Considere un gen simplificado que contiene dos promotores alternativos, varios exones empalmados alternativamente y dos sitios de poliadenilación. Las lecturas cortas pueden respaldar de forma independiente dos límites 5' observados consistentes con el uso alternativo del promotor, cada unión de empalme y dos límites 3' observados. Sin embargo, esas observaciones pueden seguir siendo compatibles con varias combinaciones diferentes de un extremo a otro.
+
+Por lo tanto, la cuestión es de **identificabilidad**: si los fragmentos observados determinan de forma única las moléculas que los produjeron.
+
+Para el análisis de expresión a nivel genético, esta ambigüedad puede ser aceptable o irrelevante. Para preguntas que involucran estructura de isoforma exacta, variantes vinculadas, edición de ARN candidato o contexto regulatorio, puede ser importante.
+
+## La secuenciación de lectura larga aborda una parte diferente del problema
+
+Las tecnologías de lectura larga de Oxford Nanopore Technologies y Pacific Biosciences abordan la estructura de transcripción generando lecturas que pueden abarcar gran parte o la totalidad de una molécula de ARN o ADN complementario.
+
+Esta es una gran ventaja para el descubrimiento de isoformas y la anotación de transcripciones. Las lecturas largas pueden conectar directamente uniones de empalme distantes y límites de transcripción que las lecturas cortas observan por separado. Han ampliado el número de estructuras de transcripción detectables y mejorado la caracterización de loci complejos.
+
+Los métodos de lectura larga también tienen limitaciones y compensaciones. Según la plataforma, el protocolo y el objetivo experimental, estos pueden incluir:
+
+- la necesidad de instrumentación dedicada;
+- menor número de lecturas en relación con los sistemas de lectura corta de alto rendimiento;
+- profundidad de muestreo reducida para transcripciones de baja abundancia;
+- diferencias en la precisión por lectura y el perfil de error;
+- consideraciones de costos y flujo de trabajo;
+- sesgos de amplificación o preparación de bibliotecas;
+- Finaliza la captura incompleta de la transcripción.
+
+Estas tecnologías están mejorando rápidamente y no hay una descripción única que se aplique a todas las plataformas o aplicaciones. Los métodos de lectura larga y corta no deben considerarse mutuamente excluyentes. Responden a preguntas superpuestas pero distintas y cada vez se utilizan más juntas.
+
+La pregunta relevante no es qué plataforma es universalmente superior. Es qué arquitectura de medición preserva la información requerida para un problema biológico particular.
+
+## PSeq Arquitectura de señal clara: ensamblaje restringido por moléculas mediante lecturas cortas
+
+PSeq conserva la identidad de la molécula fuente mientras utiliza instrumentos de secuenciación de próxima generación de lectura corta existentes.
+
+Durante la transcripción inversa, el reactivo de etiquetado PSeq asocia cada molécula de ADNc derivada de ARN capturada con éxito con información molecular que permanece vinculada a medida que se genera la biblioteca de secuenciación. Después de la secuenciación, la canalización de datos agrupa lecturas que llevan la misma identidad de molécula fuente en conjuntos específicos de moléculas.
+
+Luego se realiza el ensamblaje de transcripciones dentro de esos conjuntos.
+
+Esto cambia la naturaleza del problema de la reconstrucción. El ensamblaje de transcripciones convencional evalúa fragmentos extraídos de una población mixta e identifica modelos de transcripción que pueden explicar los datos agregados. En cambio, PSeq reconstruye cada plantilla molecular capturada a partir de lecturas asignadas a esa plantilla.
+
+El ensamblaje sigue siendo computacional, pero la información experimental sobre el origen molecular lo limita.
+
+Esta distinción se puede resumir de la siguiente manera:
+
+<ArticleCallout>
+  <em>La secuenciación de ARN convencional pregunta qué colección de transcripciones explica de manera más plausible un conjunto mixto de lecturas. PSeq pregunta cómo encajan las lecturas asignadas a la misma plantilla molecular capturada, sujeto a la cobertura, la superposición, la información de referencia y la evidencia de límites disponibles para esa molécula.</em>
+</ArticleCallout>
+
+Debido a que una plantilla molecular capturada puede estar representada por múltiples fragmentos secuenciados de forma independiente, se puede utilizar el consenso para mejorar la precisión de la secuencia. El consenso estima la secuencia de la plantilla de ADNc capturada; La fidelidad al ARN original también depende de los errores introducidos antes de que las observaciones a nivel de fragmentos se vuelvan independientes, incluso durante la transcripción inversa. El rendimiento real dependerá de factores que incluyen la complejidad de la biblioteca, la recuperación de moléculas, la profundidad de lectura, la longitud de la transcripción, la composición de secuencias y los algoritmos de ensamblaje. Estas características deben establecerse mediante validación analítica y estudios comparativos.
+
+Por lo tanto, PSeq debe entenderse como una nueva arquitectura de medición, no como una afirmación de que cada molécula de ARN en una muestra será capturada, representada completamente o recuperada sin errores.
+
+## Comparación de enfoques de medición de ARN.
+
+<ArticleComparisonTable
+  ariaLabel="Comparación de la secuenciación de ARN de lectura corta convencional, la secuenciación de transcripción de lectura larga y PSeq"
+  rowHeaderLabel="Característica"
+  columns={[
+    { key: 'pseq', label: 'PSeq', highlighted: true },
+    { key: 'rnaSeq', label: 'Secuenciación convencional de ARN de lectura corta', shortLabel: 'Secuenciación de ARN de lectura corta' },
+    { key: 'longReadSeq', label: 'Secuenciación de transcripciones de lectura larga', shortLabel: 'Secuenciación de lectura larga' },
+  ]}
+  rows={[
+    {
+      label: 'Salida de secuenciación primaria',
+      values: {
+        rnaSeq: 'Fragmentos cortos de una población de transcripciones mixtas.',
+        longReadSeq: 'Lecturas largas que representan moléculas de biblioteca individuales.',
+        pseq: 'Fragmentos cortos que conservan la identidad de la molécula fuente.',
+      },
+    },
+    {
+      label: 'Enlace fuente-molécula',
+      values: {
+        rnaSeq: 'Generalmente no se retiene en fragmentos distantes',
+        longReadSeq: 'Retenido directamente en la porción de una molécula de biblioteca representada por una lectura',
+        pseq: 'Retenido mediante identificación molecular.',
+      },
+    },
+    {
+      label: 'Estructura de la transcripción',
+      values: {
+        rnaSeq: 'Inferido de evidencia de fragmentos agregados',
+        longReadSeq: 'Directo a través de la porción representada; de un extremo a otro solo cuando la lectura abarca la molécula y los límites relevantes',
+        pseq: 'Reconstruido a partir de lecturas asignadas cuando la cobertura y la evidencia estructural son suficientes',
+      },
+    },
+    {
+      label: 'Instrumentación',
+      values: {
+        rnaSeq: 'Sistemas NGS de lectura corta establecidos',
+        longReadSeq: 'Sistemas dedicados de lectura larga',
+        pseq: 'Sistemas NGS de lectura corta establecidos',
+      },
+    },
+    {
+      label: 'Principales fortalezas',
+      values: {
+        rnaSeq: 'Precisión, escala, profundidad y flujos de trabajo maduros',
+        longReadSeq: 'Conectividad de largo alcance y descubrimiento de isoformas.',
+        pseq: 'Ensamblaje restringido por moléculas con precisión y profundidad de lectura corta',
+      },
+    },
+    {
+      label: 'Limitaciones importantes',
+      values: {
+        rnaSeq: 'Reconstrucción ambigua en loci complejos.',
+        longReadSeq: 'Compensaciones de profundidad, costo, precisión y flujo de trabajo que dependen de la plataforma',
+        pseq: 'Nueva plataforma que requiere validación, evaluación comparativa y adopción exhaustivas',
+      },
+    },
+  ]}
+/>
+
+Esta comparación es necesariamente general. El rendimiento depende del protocolo, instrumento, tipo de muestra y proceso de análisis específicos.
+
+Las observaciones de ADNc de lectura larga también pueden truncarse, concatenarse, quiméricas o derivarse de copias amplificadas. Por lo tanto, “molécula individual” se refiere a la molécula de la biblioteca representada por una lectura y no debe interpretarse automáticamente como una molécula de ARN nativo intacta.
+
+## ¿Qué información adicional puede proporcionar la resolución molecular?
+
+El valor de la medición resuelta por moléculas no es simplemente que produzca una secuencia más larga. Su valor radica en preservar las relaciones entre las características.
+
+<ArticleConceptList
+  ariaLabel="Información proporcionada por medición resuelta por moléculas."
+  items={[
+    {
+      id: 'transcript-isoforms',
+      title: 'Isoformas de transcripción',
+      paragraphs: [
+        'Una medición resuelta por molécula puede determinar qué uniones de empalme, límites de transcripción observados, secuencias codificantes predichas y regiones no traducidas ocurren juntas.',
+        'Esto es particularmente relevante cuando diferentes isoformas comparten la mayor parte de su secuencia pero difieren en un exón o región reguladora funcionalmente importante.',
+      ],
+    },
+    {
+      id: 'linked-sequence-variation',
+      title: 'Variación de secuencia vinculada',
+      paragraphs: [
+        'Una muestra puede contener varias sustituciones, eventos de edición candidatos o mutaciones dentro del mismo gen o genoma de ARN. La secuenciación agregada puede estimar la frecuencia de cada evento, pero puede no establecer si los eventos ocurren en la misma molécula.',
+        'La fase preserva esas combinaciones.',
+        'Esto podría ser útil en entornos como el análisis de poblaciones virales, la variación somática, la transcripción específica de alelos y el análisis de edición de ARN candidato, siempre que la recuperación de la molécula y las características de error estén suficientemente bien controladas.',
+      ],
+    },
+    {
+      id: 'isoform-abundance',
+      title: 'abundancia de isoformas',
+      paragraphs: [
+        'La abundancia a nivel genético combina todas las transcripciones asignadas a un locus. La cuantificación a nivel de transcripción intenta separar ese total entre isoformas, pero las estimaciones pueden ser inestables cuando las isoformas comparten una secuencia sustancial.',
+        'Las observaciones resueltas por moléculas podrían proporcionar una base más directa para estimar la abundancia de estructuras de transcripción específicas. Los grupos de moléculas recuperadas son observaciones analíticas de plantillas capturadas, no recuentos censales automáticamente imparciales de todas las moléculas de ARN en la entrada. La precisión cuantitativa seguirá dependiendo de la probabilidad de captura, la eficiencia de la transcripción inversa, la división y colisión molecular, la eliminación de identificadores, la representación duplicada, la recuperación diferencial, el filtrado, la amplificación y el muestreo.',
+      ],
+    },
+    {
+      id: 'regulatory-context',
+      title: 'Contexto regulatorio',
+      paragraphs: [
+        'La secuencia codificante de proteínas prevista es sólo un componente de una molécula de ARN. Los límites 5 \'observados, el uso inferido del promotor, las regiones no traducidas y los extremos de la transcripción pueden influir en las hipótesis sobre la expresión, localización, traducción y degradación.',
+        'Preservar estos elementos en la misma observación molecular puede ayudar a conectar el potencial de codificación previsto con el contexto regulatorio; La secuencia de ARN por sí sola no establece qué marco de lectura abierto se traduce ni si un producto proteico es estable.',
+      ],
+    },
+  ]}
+/>
+
+## El ARN como componente del fenotipo molecular.
+
+El fenotipo se expresa en múltiples escalas biológicas. Incluye rasgos observables, estados celulares, arquitectura tisular, fisiología, curso de la enfermedad y respuesta al tratamiento.
+
+Ninguna capa molecular es equivalente al fenotipo. El ADN, la cromatina, el ARN, las proteínas, los metabolitos, las interacciones celulares y las exposiciones ambientales contribuyen.
+
+Sin embargo, el transcriptoma ocupa una posición particularmente informativa. Refleja tanto el potencial genómico como el estado regulatorio actual de un sistema biológico. Cambia durante la diferenciación, el estrés, la activación inmune, el envejecimiento, el tratamiento y la progresión de la enfermedad.
+
+Por esa razón, el transcriptoma puede considerarse un componente del fenotipo molecular: un registro dinámico de qué programas genómicos se ejecutan y de qué forma.
+
+Las mediciones de expresión genética capturan una parte importante de ese registro. Las mediciones resueltas en isoformas pueden capturar otras.
+
+Una abreviatura útil es:
+
+<ArticleCallout>
+  <em>La abundancia de ARN a nivel genético indica qué loci contribuyen con ARN detectable y en qué nivel agregado. La estructura de isoforma describe qué formas moleculares contribuyen a esa señal.</em>
+</ArticleCallout>
+
+Esta distinción no debe exagerarse. Muchas cuestiones biológicas se abordan adecuadamente mediante recuentos a nivel de genes, y aumentar la resolución de las características puede introducir ruido, escasez y complejidad analítica adicionales. Por lo tanto, el valor de los datos a nivel de isoformas debe demostrarse empíricamente para cada aplicación.
+
+## Por qué el ARN resuelto por moléculas puede ser importante para el aprendizaje automático
+
+Los modelos de aprendizaje automático no se benefician automáticamente de mediciones más detalladas. Las características adicionales mejoran un modelo sólo cuando contienen información reproducible relevante para la tarea de predicción y pueden medirse con suficiente coherencia.
+
+Los datos resueltos por isoformas podrían ser útiles porque los resúmenes a nivel de genes pueden combinar transcripciones con diferentes efectos biológicos. Si una isoforma aumenta mientras que otra disminuye, la expresión total del gen puede permanecer sin cambios incluso aunque el estado funcional del sistema haya cambiado.
+
+En tal caso, una característica a nivel genético puede oscurecer en lugar de revelar la señal relevante.
+
+Las mediciones resueltas por moléculas podrían proporcionar modelos con características tales como:
+
+- la abundancia estimada de isoformas que cumplen criterios de integridad predefinidos;
+- combinaciones vinculadas de eventos de edición de candidatos y empalmes;
+- se observaron relaciones entre el límite 5′ y la isoforma que pueden respaldar la inferencia del uso del promotor;
+- secuencias codificantes predichas emparejadas con regiones no traducidas;
+- estructuras de transcripción no representadas en anotaciones existentes.
+
+Estas características pueden estar más estrechamente relacionadas con la función molecular que con los recuentos agregados de genes. También pueden mejorar la interpretabilidad al permitir que las predicciones de un modelo se asocien con estructuras de transcripción específicas.
+
+Sin embargo, existen desafíos importantes.
+
+Los conjuntos de datos a nivel de isoforma son de alta dimensión. Muchas isoformas son raras, específicas de tejido o no están anotadas de forma incompleta. Los errores de medición, los efectos de los lotes y los cambios en los procesos de análisis pueden crear características inestables. Un mayor número de variables candidatas también aumenta el riesgo de sobreajuste.
+
+Por lo tanto, el valor potencial de los datos de ARN resueltos por moléculas para el aprendizaje automático depende de una definición rigurosa de características, validación analítica, cohortes independientes y pruebas prospectivas. Debe evaluarse mediante comparaciones directas con la secuenciación de ARN a nivel genético y otras mediciones establecidas.
+
+La hipótesis científica no es que los datos a nivel de isoformas mejorarán todos los modelos. Es que algunas señales biológicas están codificadas en la estructura de transcripción y en el enlace molecular y, por lo tanto, son inaccesibles, diluidas o representadas de manera ambigua en resúmenes a nivel de genes.
+
+## Un tipo diferente de medición de ARN
+
+La distinción central entre la secuenciación de ARN convencional y PSeq no es la de lecturas cortas versus lecturas largas. PSeq también utiliza lecturas cortas.
+
+La distinción es si esas lecturas retienen información sobre su molécula fuente.
+
+La secuenciación de ARN convencional fragmenta y agrupa transcripciones y luego infiere estructuras de un extremo a otro a partir de evidencia agregada. Los fragmentos PSeq capturaron con éxito moléculas de ADNc derivadas de ARN mientras conservaban la identidad de la molécula fuente y luego reconstruyen cada plantilla capturada dentro de su conjunto de lectura asociado.
+
+Ese diseño busca combinar tres propiedades:
+
+<ArticleKeyPoints
+  ariaLabel="Propiedades combinadas por el diseño PSeq"
+  items={[
+    'La precisión básica de la secuenciación de lectura corta',
+    'El rendimiento y la infraestructura instalada de los sistemas NGS establecidos.',
+    'El enlace molecular necesario para la reconstrucción resuelta por isoformas',
+  ]}
+/>
+
+Los estudios técnicos iniciales han observado la estructura prevista de la biblioteca, la ubicación de los marcadores, la composición de lectura de etiqueta más ADNc, la agrupación específica de moléculas, la cobertura de exones de extremo a extremo y de unión de empalme para una transcripción PRPF31 representativa y la trazabilidad desde la evidencia FASTQ hasta el registro molecular ensamblado.
+
+La validación actual está definiendo el ámbito de desempeño más amplio en todas las clases de expedientes académicos, tipos de muestras y rangos de abundancia. Los puntos de referencia relevantes incluyen sensibilidad, especificidad, precisión de consenso en relación con los controles de ADNc capturado y ARN original, integridad de la transcripción según criterios predefinidos, cuantificación de isoformas, reproducibilidad, rendimiento, costo y comparación con métodos de lectura corta y larga.
+
+## Conclusión
+
+El ARN no es simplemente una copia transitoria del ADN. Es una población diversa de especies moleculares en las que la secuencia codificante predicha, la estructura de empalme, los límites de transcripción observados, las regiones reguladoras y la variación de secuencia ocurren en combinaciones vinculadas.
+
+La secuenciación de ARN convencional mide esta población con una escala y precisión excepcionales, pero la fragmentación a menudo separa características que originalmente pertenecían a la misma molécula. Los métodos computacionales pueden reconstruir muchas estructuras de transcripción, pero persiste la ambigüedad cuando múltiples isoformas comparten la misma evidencia de secuencia local.
+
+La secuenciación de lectura larga restaura gran parte de esta conectividad al leer directamente moléculas extendidas. PSeq Clear-Signal Architecture adopta un enfoque diferente: preserva la identidad de la molécula fuente a través de un flujo de trabajo de lectura breve y utiliza esa identidad para restringir el ensamblaje de la transcripción.
+
+La importancia potencial de este enfoque es sencilla. Si la función biológica depende de características vinculadas dentro de moléculas de ARN individuales, entonces preservar las plantillas moleculares capturadas como unidades de medida puede revelar información que está oscurecida por resúmenes a nivel de fragmentos o a nivel de genes. Si una reconstrucción es completa, biológicamente fiel o funcionalmente importante sigue siendo una cuestión aparte.
+
+[Part 2 describes the PSeq workflow in greater detail, including molecular tagging, library construction, read assignment, molecule-specific assembly, and consensus generation.](/media/blog/an-introduction-to-phased-sequencing-part-2)
+
+<ArticleSeriesNavigation
+  series={phasedSequencingSeries}
+  locale="es"
+  currentPart={1}
+  position="end"
+/>

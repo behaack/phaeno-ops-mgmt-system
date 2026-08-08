@@ -189,6 +189,11 @@ export const zhHansPageContent = {
     searchPlaceholder: '搜索标题或作者',
     noResults: '没有符合您搜索条件的商品',
     empty: '还没有博客文章。请尽快回来查看。',
+    articleEyebrow: 'Phaeno 洞见',
+    backToArticles: '返回所有文章',
+    articleSearchTitle: '博客',
+    feedTitle: 'Phaeno – 最新文章',
+    feedDescription: '有关 RNA 测序和 PSeq 平台的洞见',
   },
   whitePapers: {
     metaTitle: '白皮书 | Phaeno',

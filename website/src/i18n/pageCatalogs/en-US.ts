@@ -189,6 +189,11 @@ export const enUSPageContent = {
     searchPlaceholder: 'Search title or author',
     noResults: 'No items match your search criteria',
     empty: 'No blog entries yet. Check back again soon.',
+    articleEyebrow: 'Phaeno insights',
+    backToArticles: 'Back to all articles',
+    articleSearchTitle: 'Blog',
+    feedTitle: 'Phaeno – Latest updates',
+    feedDescription: 'Insights on RNA sequencing and our PSeq platform',
   },
   whitePapers: {
     metaTitle: 'White Papers | Phaeno',

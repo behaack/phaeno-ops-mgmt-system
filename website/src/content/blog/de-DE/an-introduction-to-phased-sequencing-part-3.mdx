@@ -1,0 +1,270 @@
+---
+title: "Eine Einführung in die Phasensequenzierung: Teil 3"
+summary: "Wie molekülaufgelöste Transkriptdaten Entdeckung, translationale Forschung und maschinelles Lernen unterstützen."
+image: "/images/media/blog/an-introduction-to-phased-sequencing-part-3.png"
+authors: ["William Agnew"]
+date: '2026-07-15'
+locale: 'de-DE'
+translationKey: 'blog.phased-sequencing.part-3'
+sourceLocale: 'en-US'
+translationStatus: 'draft'
+sourceRevision: '2026-08-08'
+translatedFromRevision: '2026-08-08'
+translator: 'Machine-assisted draft'
+---
+import ArticleCallout from '@/components/content/ArticleCallout.astro';
+import ArticleComparisonTable from '@/components/content/ArticleComparisonTable.astro';
+import ArticleConceptList from '@/components/content/ArticleConceptList.astro';
+import ArticleKeyPoints from '@/components/content/ArticleKeyPoints.astro';
+import ArticleSeriesNavigation from '@/components/content/ArticleSeriesNavigation.astro';
+import { phasedSequencingSeries } from '@/lib/articleSeries';
+
+<ArticleSeriesNavigation
+  series={phasedSequencingSeries}
+  locale="de-DE"
+  currentPart={3}
+  position="start"
+/>
+
+## Zusammenfassung
+
+Molekülaufgelöste Transkriptdaten beschreiben RNA auf einer feineren Ebene als die Genzählung allein. Anstatt jedes Transkript eines Locus als austauschbar zu behandeln, können sie Isoformstrukturen darstellen, die vordefinierte Vollständigkeitskriterien, verknüpfte Sequenzvarianten, beobachtete Transkriptgrenzen, vorhergesagte Kodierungssequenzen und regulatorische Elemente als Merkmale einzelner erfasster molekularer Vorlagen erfüllen.
+
+Hier beziehen sich **vollständig** und **in voller Länge** auf vordefinierte Analysekriterien und nicht nur auf die molekulare Zuordnung. In einer Studie sollte angegeben werden, ob die Vollständigkeit beobachtete 5′- und 3′-Grenzen, eine vollständige Spleißkette, eine Mindestabdeckung, einen durchgehenden zusammenhängenden Konsens oder eine referenzgestützte Interpolation zwischen abgedeckten Regionen erfordert.
+
+Diese zusätzliche Struktur schafft drei große Wertbereiche. Biologische Entdeckungen gewinnen einen klareren Überblick über die Vielfalt und Regulierung von Transkripten. Translationale Forschung kann bestimmte molekulare Formen mit Krankheitsmechanismen, Patientenuntergruppen oder dem Ansprechen auf die Behandlung in Verbindung bringen. Durch maschinelle Lernstudien werden Funktionen gewonnen, die biologische Unterschiede bewahren, die durch die Aggregation auf Genebene verdeckt werden.
+
+Eine höhere Auflösung allein garantiert kein besseres wissenschaftliches oder prädiktives Ergebnis. Molekülaufgelöste Daten führen außerdem zu mehr Merkmalen, einer geringeren Anzahl pro Merkmal, neuen Messfehlern, Herausforderungen bei der Annotation und zusätzlichen Möglichkeiten für eine Überanpassung. Direkte Vergleiche mit etablierten Messungen zeigen, wo die zusätzliche Auflösung die Antwort verbessert.
+
+Die zentrale Frage ist nicht, ob Daten auf Molekülebene detaillierter sind. Es geht darum, ob dieses Detail genau, reproduzierbar, biologisch relevant und für eine definierte Entscheidung nützlich ist.
+
+PSeq ist derzeit eine **Nur für Forschungszwecke (RUO)**-Plattform. Die translationalen und klinischen Beispiele in diesem Artikel beschreiben Forschungsrichtungen und keine klinischen Leistungsansprüche.
+
+## Von Transkriptmolekülen bis hin zu analytischen Merkmalen
+
+Eine erfasste RNA-abgeleitete molekulare Vorlage kann mehrere Arten von Informationen gleichzeitig enthalten: beobachtete 5′- und 3′-Transkriptgrenzen, Exonkombinationen, vorhergesagte Kodierungssequenz, nicht übersetzte Regionen, mögliche Bearbeitungsereignisse und Sequenzvarianten. Durch die Molekülauflösung bleiben die Beziehungen zwischen diesen Merkmalen erhalten. Wenn die Testleistung und die Validierung dies rechtfertigen, können die beobachteten Grenzen den Rückschluss auf den Promotor, den Transkriptionsstart oder die Verwendung von Spaltung und Polyadenylierung stützen.
+
+Bei der nachgeschalteten Analyse muss nicht jedes Molekül als separate Variable verwendet werden. Beobachtungen auf Molekülebene können in interpretierbare Merkmale zusammengefasst werden wie:
+
+<ArticleKeyPoints
+  ariaLabel="Aus molekülaufgelösten Transkriptdaten abgeleitete Merkmale"
+  items={[
+    'Die geschätzte Häufigkeit von Transkriptstrukturen, die vordefinierte Vollständigkeitskriterien erfüllen',
+    'Verknüpfte Kombinationen aus Spleiß-, Kandidatenbearbeitungs- und Sequenzereignissen',
+    'Beobachtete Transkript-Grenze, vorhergesagte Kodierungssequenz und Transkript-Ende-Beziehungen',
+    'Die Verteilung molekularer Formen innerhalb einer Probe oder eines Zellzustands',
+  ]}
+/>
+
+Die geeignete Merkmalsdarstellung hängt von der wissenschaftlichen Fragestellung ab. Eine Entdeckungsstudie kann einen breiten Katalog von Transkripten enthalten. Eine mechanistische Studie kann sich auf ein Spleißereignis in einem definierten molekularen Kontext konzentrieren. Ein Vorhersagemodell erfordert möglicherweise einen kompakten, vorab festgelegten Funktionsumfang, der kohortenübergreifend konsistent gemessen werden kann.
+
+## Drei potenzielle Wertbereiche
+
+<ArticleConceptList
+  ariaLabel="Mögliche Verwendungsmöglichkeiten molekülaufgelöster Transkriptdaten"
+  items={[
+    {
+      id: 'biological-discovery',
+      title: 'Biologische Entdeckung',
+      paragraphs: [
+        'Molekülaufgelöste Messungen können Transkriptstrukturen und Merkmalskombinationen aufdecken, die sich aus gepoolten Fragmenten nur schwer rekonstruieren lassen. Sie können die Annotation von Isoformen verbessern, die zell- oder gewebespezifische Transkriptverwendung klären und entfernte regulatorische Regionen mit vorhergesagten Kodierungssequenzen verbinden.',
+        'Das Ergebnis ist eine ausführlichere Beschreibung der molekularen Zustände, die einem biologischen System zur Verfügung stehen, und kein Beweis dafür, dass jedes beobachtete Transkript eine bestimmte Funktion hat.',
+      ],
+    },
+    {
+      id: 'translational-research',
+      title: 'Translationale Forschung',
+      paragraphs: [
+        'Spezifische Transkriptstrukturen können Krankheitsmechanismen klären, molekulare Untergruppen verfeinern und mögliche Marker für Reaktion und Fortschreiten identifizieren. Die Verknüpfung auf Molekülebene ist besonders relevant, wenn die biologische Wirkung davon abhängt, welche Merkmale zusammen auftreten.',
+        'Assoziation, analytische Validität, Vorhersageleistung und klinischer Nutzen bleiben getrennte Fragen und erfordern immer stärkere Beweise.',
+      ],
+    },
+    {
+      id: 'machine-learning',
+      title: 'Maschinelles Lernen',
+      paragraphs: [
+        'Von Isoformen und Molekülen abgeleitete Merkmale ermöglichen Modellen den Zugriff auf biologische Unterschiede, die in Zusammenfassungen auf Genebene kombiniert werden. Ein Modell kann Transkriptstrukturen, Molekülkombinationen oder Isoformenverteilungen vergleichen, anstatt sich nur auf die Gesamtexpression an einem Ort zu verlassen.',
+        'Mehr Funktionen erhöhen auch die Sparsität, Instabilität und das Risiko einer Überanpassung. Jeder Gewinn muss einer gesperrten Analyse, unabhängigen Kohorten und einem Vergleich mit einfacheren Basislinien standhalten.',
+      ],
+    },
+  ]}
+/>
+
+## Biologische Entdeckung: Auflösung der Transkriptlandschaft
+
+Die Transkriptvielfalt ist umfangreich und kontextabhängig. Verschiedene Gewebe, Zelltypen, Entwicklungsstadien, Umwelteinflüsse und Krankheitszustände können unterschiedliche beobachtete 5′-Grenzen, abgeleitete Promotorverwendung, Spleißmuster und beobachtete 3′-Transkriptgrenzen aufweisen.
+
+Große Langzeitstudien liefern Hinweise darauf, dass der Zugriff auf die erweiterte Transkriptstruktur das, was beobachtet werden kann, verändert. Glinos und Kollegen verwendeten Long-Read-RNA-Sequenzierung in menschlichen Geweben, um eine umfangreiche Transkriptvielfalt zu identifizieren und Allel-assoziierte Transkriptstrukturen zu analysieren. Ein lange gelesener Atlas von 29 Untergruppen von Immunzellen identifizierte Tausende von zelltypspezifischen Isoformen und verknüpfte Transkriptmerkmale mit genetischen und krankheitsassoziierten Analysen.
+
+Diese Studien belegen den wissenschaftlichen Wert der verknüpften Transkriptstruktur. Sie implizieren nicht, dass jede neu beobachtete Isoform funktionsfähig ist. Kandidatentranskripte können durch biologisches Rauschen, unvollständige Verarbeitung, technische Artefakte oder seltene Ereignisse mit geringen phänotypischen Konsequenzen entstehen.
+
+Für die Entdeckung sind daher mehrere Beweisebenen erforderlich:
+
+- reproduzierbare Beobachtung über technische und biologische Replikate hinweg;
+- Bestätigung der beobachteten Transkriptgrenzen und Spleißverbindungen;
+- quantitative Unterstützung über relevante Proben oder Zellpopulationen hinweg;
+- orthogonale Beweise aus gezielten Tests oder einer anderen Messplattform;
+- Störung oder funktionale Experimente, wenn eine kausale Rolle vorgeschlagen wird.
+
+Molekülaufgelöste Daten können die Ausgangskarte verbessern. Die biologische Interpretation hängt immer noch vom experimentellen Design und der Validierung ab.
+
+## Translationale Forschung: Verbindung der molekularen Form mit dem Phänotyp
+
+Die RNA-Häufigkeit auf Genebene kann stabil bleiben, während sich die Transkriptzusammensetzung ändert. Eine Isoform kann zunehmen, während eine andere abnimmt, sodass die Gesamtgenzahl ungefähr unverändert bleibt. Wenn die Isoformen unterschiedliche vorhergesagte offene Leserahmen oder regulatorische Regionen aufweisen, kann sich der biologische Zustand ohne ein großes Signal auf Genebene ändern. Die RNA-Sequenz unterstützt den Rückschluss auf das Kodierungspotenzial. Es allein stellt nicht fest, welcher offene Leserahmen translatiert wird oder ob ein Proteinprodukt stabil ist.
+
+Dadurch entstehen mehrere Translationshypothesen. Isoformmerkmale könnten dabei helfen, molekulare Untergruppen zu unterscheiden, die Aktivität variabler Signalwege zu erklären, genetische Varianten mit veränderten Transkripten in Verbindung zu bringen oder Formen zu identifizieren, die mit dem Krankheitsverlauf oder dem Ansprechen auf die Behandlung verbunden sind.
+
+Primärstudien zeigen, warum diese Hypothesen plausibel sind. Die vollständige Isoformensequenzierung in Kardiomyozyten identifizierte Transkriptveränderungen, die mit krankheitsrelevanten RBM20-Mutationen verbunden sind. Die Langzeitanalyse von Immunzellprofilen verknüpfte zelltypspezifische Isoformen mit krankheitsassoziierten genetischen Analysen. Diese Ergebnisse veranschaulichen mögliche Wege von der Transkriptstruktur zum Mechanismus.
+
+Sie verdeutlichen auch die Einschränkungen. Die Ergebnisse können von der Gewebezusammensetzung, dem Zellzustand, der Probenqualität, der Sequenzierungstiefe, den Analysefiltern und der Referenzanmerkung abhängen. In einer Kohorte entdeckte Assoziationen reproduzieren sich möglicherweise nicht in einer anderen. Ein Marker kann biologisch interessant sein, ohne dass er genau genug für eine Vorhersage oder nützlich genug ist, um eine Entscheidung zu ändern.
+
+<ArticleCallout>
+  <em>Eine Transkriptassoziation ist eine biologische Beobachtung. Ein Biomarker erfordert eine reproduzierbare Vorhersage. Ein klinischer Test erfordert außerdem analytische Validität, eine definierte Verwendung und den Nachweis, dass das Ergebnis die Pflege verbessert.</em>
+</ArticleCallout>
+
+## Maschinelles Lernen: ein anderer Funktionsraum
+
+Die meisten transkriptomischen Modelle beginnen mit einer Matrix, in der Zeilen Proben und Spalten Gene darstellen. Jeder Wert fasst die Häufigkeit der einem Ort zugeordneten RNA zusammen. Diese Darstellung ist kompakt und oft effektiv, kann jedoch mehrere Molekülformen zu einer Zahl zusammenfassen.
+
+Molekülaufgelöste Daten ermöglichen alternative Darstellungen. Merkmale könnten die geschätzte Häufigkeit spezifischer Isoformen, das Verhältnis von Isoformen innerhalb eines Gens, das Vorhandensein verknüpfter Sequenzereignisse, die beobachtete Verwendung am Transkriptende oder die Verteilung molekularer Strukturen beschreiben.
+
+Bei den wiederhergestellten Molekülgruppen handelt es sich um analytische Beobachtungen erfasster Vorlagen und nicht um automatisch unvoreingenommene Zählungen aller RNA-Moleküle in der Eingabe. Erfassungswahrscheinlichkeit, Reverse-Transkriptions-Effizienz, Molekülspaltung und -kollision, Identifikator-Dropout, Duplikatdarstellung, unterschiedliche Wiederherstellung nach Länge oder Sequenz, Filterung und Assemblierungsschwellenwerte können sich alle auf die Beziehung zwischen beobachteten Gruppen und der Eingabehäufigkeit auswirken.
+
+Der Vorteil liegt in der Spezifität. Ein Merkmal, das an eine definierte molekulare Form gebunden ist, kann enger mit einem Regulierungsprozess oder Krankheitsmechanismus übereinstimmen als die gesamte Genexpression. In Primärstudien wurden Merkmale auf Isoform-Ebene in Vorhersagemodellen, einschließlich Modellen für den histologischen Grad von Brustkrebs, bewertet und gezeigt, dass direkte Vergleiche mit Basislinien auf Genebene möglich sind.
+
+Der potenzielle Nachteil ist die Dimensionalität. Eine Probe kann viele seltene oder unvollständig annotierte Isoformen enthalten. Die Aufteilung einer Genzahl auf viele Transkriptmerkmale verringert die für jedes Merkmal verfügbaren Beobachtungen. Messungen und Anmerkungsänderungen können zu scheinbaren Merkmalen führen, die nicht reproduziert werden können.
+
+Zu den häufigsten Risiken gehören:
+
+- **Überanpassung:** Ein Modell lernt kohortenspezifische Isoformen oder technische Artefakte statt verallgemeinerbarer Biologie.
+- **Datenleck:** Bei der Merkmalsauswahl oder -normalisierung werden Informationen aus dem Bewertungssatz verwendet.
+- **Batch-Confounding:** Bibliotheks-, Instrumenten-, Standort- oder Verarbeitungsunterschiede korrelieren mit dem Ergebnis.
+- **Merkmalsinstabilität:** Transkriptdefinitionen oder Häufigkeitsschätzungen ändern sich je nach Software, Referenzanmerkungen oder Messtiefe.
+- **Spärliche Beobachtungen:** Seltene Isoformen führen zu unzuverlässigen Schätzungen oder fehlen in vielen Proben.
+- **Verlust der Interpretierbarkeit:** Ein großer Merkmalsraum verdeckt, welche molekularen Beziehungen die Vorhersage beeinflussen.
+
+Diese Risiken sind beherrschbar, aber nur, wenn sie im Studiendesign berücksichtigt werden und nicht erst, nachdem ein günstiges Modellergebnis vorliegt.
+
+## Vier Evidenzebenen sollten getrennt bleiben
+
+<ArticleComparisonTable
+  ariaLabel="Evidenzniveau für molekülaufgelöste Transkriptanwendungen"
+  rowHeaderLabel="Beweisniveau"
+  columns={[
+    { key: 'question', label: 'Frage', highlighted: true },
+    { key: 'evidence', label: 'Beweise erforderlich' },
+    { key: 'failure', label: 'Wie Scheitern aussieht' },
+  ]}
+  rows={[
+    {
+      label: 'Analytische Gültigkeit',
+      values: {
+        question: 'Kann das molekulare Merkmal genau und reproduzierbar gemessen werden?',
+        evidence: 'Kontrollen, Replikate, Nachweisgrenzen, Präzision, Interferenz und standortübergreifende Studien',
+        failure: 'Die Funktion ändert sich je nach Batch, Tiefe, Operator oder Analysepipeline',
+      },
+    },
+    {
+      label: 'Biologische Vereinigung',
+      values: {
+        question: 'Verfolgt die Funktion einen biologischen Zustand oder Mechanismus?',
+        evidence: 'Relevante Proben, orthogonale Bestätigung, Störung und mechanistische Experimente',
+        failure: 'Der Zusammenhang ist technisch, indirekt oder nicht reproduzierbar',
+      },
+    },
+    {
+      label: 'Vorhersagevalidität',
+      values: {
+        question: 'Verbessert die Funktion die Vorhersage in unsichtbaren Proben?',
+        evidence: 'Gesperrte Modelle, unabhängige Kohorten, Kalibrierung und Vergleich mit etablierten Basislinien',
+        failure: 'Die Leistung sinkt nach der externen Validierung oder bietet keinen Mehrwert gegenüber einfacheren Eingaben',
+      },
+    },
+    {
+      label: 'Klinischer Nutzen',
+      values: {
+        question: 'Verbessert die Verwendung des Ergebnisses eine definierte Entscheidung oder ein definiertes Ergebnis?',
+        evidence: 'Prospektive Studien in der beabsichtigten Population und im Arbeitsablauf',
+        failure: 'Das Ergebnis ist korrekt, ändert aber weder Entscheidungen noch verbessert es die Ergebnisse',
+      },
+    },
+  ]}
+/>
+
+## Entscheidende Vergleiche entwerfen
+
+Der Wert molekülaufgelöster Daten sollte anhand der stärksten etablierten Alternative getestet werden, nicht anhand einer absichtlich schwachen Basislinie. Bei vielen Fragen bedeutet das, Modelle oder Analysen zu vergleichen, die auf Folgendem basieren:
+
+- Standard-RNA-sequencing-Funktionen auf Genebene;
+- etablierte Schätzungen der Spleißverbindung oder der Transkripthäufigkeit;
+- relevante klinische, bildgebende, genomische oder proteomische Variablen;
+- kombinierte Funktionssätze, die testen, ob molekülaufgelöste Daten unabhängige Informationen hinzufügen.
+
+Eine nützliche Studie sollte die biologische Frage, das Messprotokoll, die Pipeline zur Merkmalsgenerierung, die primäre Metrik, die Vergleichsbasislinie und die Validierungskohorte vordefinieren. Entdeckung und Bewertung sollten getrennt werden. Wann immer möglich, sollte die endgültige Analyse gesperrt werden, bevor die unabhängige Kohorte untersucht wird.
+
+<ArticleConceptList
+  ariaLabel="Auswertungssequenz für molekülaufgelöste Transkriptdaten"
+  items={[
+    {
+      id: 'define-the-decision',
+      title: 'Definieren Sie die Entscheidung',
+      paragraphs: [
+        'Geben Sie die biologische, translationale oder prädiktive Frage an, bevor Sie molekulare Merkmale auswählen. Ein nützliches Merkmal wird durch die Entscheidung definiert, die es beeinflusst, nicht durch seine Neuheit.',
+      ],
+    },
+    {
+      id: 'establish-measurement-performance',
+      title: 'Messleistung ermitteln',
+      paragraphs: [
+        'Charakterisieren Sie die Molekülgewinnung, Zuordnung, Transkriptrekonstruktion, Häufigkeitsschätzung, Reproduzierbarkeit und Chargeneffekte im gesamten beabsichtigten Probenbereich.',
+      ],
+    },
+    {
+      id: 'compare-with-strong-baselines',
+      title: 'Vergleichen Sie mit starken Basislinien',
+      paragraphs: [
+        'Testen Sie, ob molekülaufgelöste Merkmale Informationen hinzufügen, die über die Genexpression, herkömmliche Spleißmaßnahmen und andere Variablen hinausgehen, die für die Aufgabe bereits verfügbar sind.',
+      ],
+    },
+    {
+      id: 'validate-independently',
+      title: 'Unabhängig validieren',
+      paragraphs: [
+        'Verwenden Sie Beispiele, Standorte, Betreiber und Zeiträume, die nicht an der Funktionserkennung oder Modellauswahl beteiligt waren. Melden Sie Kalibrierungs- und Fehlermodi sowie Diskriminierung.',
+      ],
+    },
+    {
+      id: 'test-real-world-use',
+      title: 'Testen Sie den realen Einsatz',
+      paragraphs: [
+        'Bewerten Sie bei translatorischen Anwendungen, ob die Messung innerhalb des vorgesehenen Arbeitsablaufs zuverlässig durchgeführt werden kann und ob die Umsetzung darauf eine definierte Entscheidung verbessert.',
+      ],
+    },
+  ]}
+/>
+
+## Ausgewählter wissenschaftlicher Kontext
+
+- [Transkriptomvariation in menschlichen Geweben durch Long-Read-Sequenzierung aufgedeckt] (https://doi.org/10.1038/s41586-022-05035-y) – primärer Beweis dafür, dass die verknüpfte Transkriptstruktur Gewebevielfalt, Allel-assoziierte Effekte und neuartige Transkripte aufdecken kann.
+- [Einzelmolekül-Transkript-Isoformensequenzierung voller Länge deckt krankheitsassoziierte RNA-Isoformen in Kardiomyozyten auf] (https://doi.org/10.1038/s41467-021-24484-z) – ein Beispiel für die Analyse vollständiger Isoformen in einem krankheitsrelevanten Zellmodell.
+- [Long-Read-Sequenzierung für 29 Untergruppen von Immunzellen enthüllt krankheitsbedingte Isoformen] (https://doi.org/10.1038/s41467-024-48615-4) – ein Immunzellatlas, der Isoformenstruktur, Zellspezifität und krankheitsassoziierte Analysen verbindet.
+- [Bestimmung des histologischen Grades von Brustkrebs anhand von RNA-sequencing-Daten] (https://doi.org/10.1186/s13058-016-0705-4) – ein Beispiel für den Vergleich von Merkmalen auf Gen- und Isoformebene in der prädiktiven Modellierung.
+
+Diese Studien schaffen einen wissenschaftlichen Präzedenzfall für die Bewertung erweiterter Transkriptinformationen auf Isoform-Ebene unter plattformspezifischen Definitionen der Vollständigkeit. Sie belegen nicht die Leistung von PSeq und garantieren nicht, dass molekülbasierte Funktionen eine bestimmte Entdeckungs-, Translations- oder maschinelle Lernanwendung verbessern.
+
+## Abschluss
+
+Molekülaufgelöste Transkriptdaten erweitern die Transkriptomik von einer Karte aktiver Gene zu einer Karte der molekularen Formen, die diese Gene produzieren. Dies offenbart verknüpfte Sequenz- und Regulierungsbeziehungen, die aus Zusammenfassungen auf Genebene oder gepoolten Fragmenten nur schwer wiederhergestellt werden können.
+
+Die Anwendungen umfassen die Entdeckung von Transkripten, die Charakterisierung des Zellzustands, die Erforschung von Krankheitsmechanismen, die molekulare Stratifizierung und die prädiktive Modellierung. Der Wert jeder Anwendung wird anhand der Messleistung, der biologischen Relevanz, der Reproduzierbarkeit, des Vergleichs mit etablierten Ansätzen und – sofern angemessen – des praktischen Nutzens ermittelt.
+
+[PSeq Clear-Signal Architecture™](/technology/pseq-platform#pseq-clear-signal-architecture) makes molecule-resolved transcript measurement compatible with established short-read sequencing systems. Direct experiments, careful comparisons, and independent validation will define where that architecture provides the most useful new information.
+
+[Return to Part 1 for the measurement problem that motivates phased sequencing.](/media/blog/an-introduction-to-phased-sequencing-part-1)
+
+<ArticleSeriesNavigation
+  series={phasedSequencingSeries}
+  locale="de-DE"
+  currentPart={3}
+  position="end"
+/>

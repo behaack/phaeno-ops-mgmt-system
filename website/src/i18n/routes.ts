@@ -65,6 +65,27 @@ export const localizedRoutePairs = [
   },
 ] as const satisfies readonly LocalizedRoutePair[]
 
+export const localizedBlogRoutePairs = [
+  'an-introduction-to-phased-sequencing-part-1',
+  'an-introduction-to-phased-sequencing-part-2',
+  'an-introduction-to-phased-sequencing-part-3',
+].map((slug, index) => ({
+  translationKey: `blog.phased-sequencing.part-${index + 1}`,
+  enUS: `/media/blog/${slug}`,
+  ar: `/ar/media/blog/${slug}`,
+  fr: `/fr/media/blog/${slug}`,
+  es: `/es/media/blog/${slug}`,
+  'zh-Hans': `/zh-hans/media/blog/${slug}`,
+  ja: `/ja/media/blog/${slug}`,
+  'de-DE': `/de-de/media/blog/${slug}`,
+  it: `/it/media/blog/${slug}`,
+})) satisfies LocalizedRoutePair[]
+
+export const allLocalizedRoutePairs: readonly LocalizedRoutePair[] = [
+  ...localizedRoutePairs,
+  ...localizedBlogRoutePairs,
+]
+
 const routeKeys: Record<SupportedLocale, 'enUS' | LocalizedLocale> = {
   'en-US': 'enUS',
   ar: 'ar',
@@ -84,7 +105,7 @@ function normalizePath(pathname: string) {
 
 export function getRoutePair(pathname: string): LocalizedRoutePair | undefined {
   const normalized = normalizePath(decodeURIComponent(pathname))
-  return localizedRoutePairs.find((pair) => (
+  return allLocalizedRoutePairs.find((pair) => (
     Object.values(routeKeys).some((key) => pair[key] === normalized)
   ))
 }

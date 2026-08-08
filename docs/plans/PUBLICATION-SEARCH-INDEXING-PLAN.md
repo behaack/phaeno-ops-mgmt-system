@@ -9,6 +9,12 @@ reindex, or external search-console change.
 
 ## Status
 
+- On 2026-08-08 the three phased-sequencing source articles were present under
+  active blog filenames in the working tree. Review-gated draft translations
+  were added for Arabic, French, Spanish, Simplified Chinese, Japanese, German
+  (Germany), and Italian, together with locale-scoped listings, article routes,
+  feeds, same-article switching, and sitemap alternates. This does not authorize
+  production deployment, external indexing, or publication of any draft locale.
 - On 2026-07-29 the representative-image contract was simplified to permit a
   supported local Website image to be shared by multiple publications. The
   stable slug continues to own the landing page and PDF paths; a distinct
@@ -470,9 +476,10 @@ the implemented Phase 2 crawler enrichment.
   metadata, and valid Article JSON-LD.
 - The sitemap contains each landing route exactly once and does not list static
   PDFs.
-- While the publication release hold is active, neither held blog nor
-  white-paper landing routes appear in generated HTML, the sitemap, or
-  `llms.txt`.
+- While the publication release hold is active, held publications do not appear
+  in generated HTML, the sitemap, or `llms.txt`; the three active English blog
+  filenames are no longer held. Draft localized article routes remain absent
+  from a normal build and appear only in the protected, `noindex` review build.
 - `llms.txt` contains every indexable sitemap HTML page exactly once, grouped
   by public content type, using the built title and meta description.
 - Renaming an approved held route to its public path causes its built pages to

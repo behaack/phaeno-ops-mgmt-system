@@ -189,6 +189,11 @@ export const jaPageContent = {
     searchPlaceholder: 'タイトルまたは著者を検索する',
     noResults: '検索条件に一致する項目はありません',
     empty: 'まだブログエントリがありません。すぐにもう一度確認してください。',
+    articleEyebrow: 'Phaeno の知見',
+    backToArticles: 'すべての記事に戻る',
+    articleSearchTitle: 'ブログ',
+    feedTitle: 'Phaeno – 最新記事',
+    feedDescription: 'RNA シーケンシングと PSeq プラットフォームに関する知見',
   },
   whitePapers: {
     metaTitle: 'ホワイトペーパー | Phaeno',

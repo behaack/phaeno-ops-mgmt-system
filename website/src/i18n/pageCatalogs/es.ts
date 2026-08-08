@@ -189,6 +189,11 @@ export const esPageContent = {
     searchPlaceholder: 'Buscar título o autor',
     noResults: 'Ningún artículo coincide con su criterio de búsqueda',
     empty: 'Aún no hay entradas de blog. Vuelve a consultar pronto.',
+    articleEyebrow: 'Perspectivas de Phaeno',
+    backToArticles: 'Volver a todos los artículos',
+    articleSearchTitle: 'Blog',
+    feedTitle: 'Phaeno – Últimas publicaciones',
+    feedDescription: 'Perspectivas sobre la secuenciación de ARN y nuestra plataforma PSeq',
   },
   whitePapers: {
     metaTitle: 'Libros blancos | Phaeno',

@@ -189,6 +189,11 @@ export const itPageContent = {
     searchPlaceholder: 'Cerca titolo o autore',
     noResults: 'Nessun articolo corrisponde ai tuoi criteri di ricerca',
     empty: 'Nessun post sul blog ancora. Ricontrolla presto.',
+    articleEyebrow: 'Approfondimenti Phaeno',
+    backToArticles: 'Torna a tutti gli articoli',
+    articleSearchTitle: 'Blog',
+    feedTitle: 'Phaeno – Ultimi articoli',
+    feedDescription: 'Approfondimenti sul sequenziamento dell’RNA e sulla piattaforma PSeq',
   },
   whitePapers: {
     metaTitle: 'Libri bianchi | Phaeno',

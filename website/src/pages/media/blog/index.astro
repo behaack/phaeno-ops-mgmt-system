@@ -8,15 +8,23 @@ import TopPageBanner from '@/components/TopPageBanner.astro'
 import SEOMeta from '@/components/meta-data-helpers/SEOMeta.astro'
 import MediaSearch from '@/components/MediaSearch.astro'
 import MediaNoItems from '@/components/MediaNoItems.astro'
-import { BLOG_FEED_PATH, getBlogPostPath } from '@/lib/blogRoutes'
+import {
+  getBlogEntrySlug,
+  getLocalizedBlogFeedPath,
+  getLocalizedBlogPostPath,
+  isBlogTranslationVisible,
+} from '@/lib/blogRoutes'
 import { formatContentDate } from '@/lib/dates'
-import { prefixPathForLocale, type SupportedLocale } from '@/i18n/locales'
+import type { SupportedLocale } from '@/i18n/locales'
 import { getPageCatalog } from '@/i18n/pageCatalogs'
 interface Props { locale?: SupportedLocale }
 const { locale = 'en-US' } = Astro.props
 const content = getPageCatalog(locale).blog
 
-const blog = await getCollection('blog')
+const blog = (await getCollection('blog')).filter((entry) => (
+  entry.data.locale === locale
+  && isBlogTranslationVisible(locale, entry.data.translationStatus)
+))
 ---
 
 <Layout locale={locale}>
@@ -33,7 +41,7 @@ const blog = await getCollection('blog')
     <section>
     {blog.length ? (
       <div class="mb-2 flex justify-end">
-        <RSSFeed feedName={BLOG_FEED_PATH}/>
+        <RSSFeed feedName={getLocalizedBlogFeedPath(locale)}/>
       </div>) : null
     }
     <MediaSearch listLength={blog.length} placeholder={content.searchPlaceholder} />
@@ -44,7 +52,7 @@ const blog = await getCollection('blog')
           title={paper.data.title} 
           image={paper.data.image} 
           summary={paper.data.summary}
-          link={prefixPathForLocale(locale, getBlogPostPath(paper.id))}
+          link={getLocalizedBlogPostPath(locale, getBlogEntrySlug(paper.id))}
         >
           <div>{paper.data.authors.join(', ')}</div>
           <div>{formatContentDate(paper.data.date, undefined, locale)}</div>

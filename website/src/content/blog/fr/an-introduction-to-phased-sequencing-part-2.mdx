@@ -1,0 +1,249 @@
+---
+title: "Introduction au séquençage phasé : partie 2"
+summary: "Comment PSeq préserve l’identité de la molécule source dans un flux de travail à lecture courte."
+image: "/images/media/blog/an-introduction-to-phased-sequencing-part-2.png"
+authors: ["William Agnew"]
+date: '2026-07-15'
+locale: 'fr'
+translationKey: 'blog.phased-sequencing.part-2'
+sourceLocale: 'en-US'
+translationStatus: 'draft'
+sourceRevision: '2026-08-08'
+translatedFromRevision: '2026-08-08'
+translator: 'Machine-assisted draft'
+---
+import ArticleCallout from '@/components/content/ArticleCallout.astro';
+import ArticleComparisonTable from '@/components/content/ArticleComparisonTable.astro';
+import ArticleConceptList from '@/components/content/ArticleConceptList.astro';
+import ArticleKeyPoints from '@/components/content/ArticleKeyPoints.astro';
+import ArticleSeriesNavigation from '@/components/content/ArticleSeriesNavigation.astro';
+import { phasedSequencingSeries } from '@/lib/articleSeries';
+
+<ArticleSeriesNavigation
+  series={phasedSequencingSeries}
+  locale="fr"
+  currentPart={2}
+  position="start"
+/>
+
+## Résumé
+
+Dans cette série, Phaeno utilise le **séquençage phasé** pour décrire des architectures de séquençage qui préservent les liens entre les observations provenant de la même molécule source. L’idée est simple : les fragments sont bien plus informatifs lorsque leur origine moléculaire reste connue.
+
+Le séquençage conventionnel de l’ARN à lecture courte fragmente et regroupe généralement de nombreuses transcriptions avant le séquençage. Les lectures qui en résultent peuvent être précises, abondantes et très utiles, mais l’expérience ne conserve généralement pas d’enregistrement direct des fragments distants provenant du même modèle moléculaire capturé. Les structures de transcription de bout en bout doivent donc être déduites à partir de preuves superposées collectées au sein d’une population mixte.
+
+**[PSeq Clear-Signal Architecture™](/technology/pseq-platform#pseq-clear-signal-architecture)** modifie cette architecture de mesure. Lors de la transcription inverse, un réactif de marquage PSeq associe des informations moléculaires à chaque molécule d'ADNc dérivée de l'ARN capturée avec succès. Ces informations restent récupérables sur les lectures résultantes, permettant au pipeline de données de regrouper les lectures du même modèle capturé en ensembles spécifiques aux molécules avant l'assemblage.
+
+Le résultat n’est pas une longue lecture. Il s'agit d'une collection de courtes lectures attribuées à un modèle capturé partagé. L'assemblage se produit donc dans une limite source-molécule plutôt que dans un pool indifférencié de fragments de transcription. La reconstruction dépend toujours de la continuité de la couverture, du chevauchement, des conseils de référence et des preuves des limites de la transcription.
+
+PSeq est actuellement une plate-forme **Research Use Only (RUO)**.
+
+## Que signifie l'identité source-molécule
+
+L’identité source-molécule est l’information expérimentale qui relie une observation de séquençage à un modèle moléculaire dérivé d’ARN capturé individuel.
+
+Dans un flux de travail d'ADNc, ce modèle observable est une représentation transcrite inverse d'une molécule d'ARN de départ, et non l'ARN d'origine observé directement. La transcription inverse peut être incomplète, introduire des substitutions ou un changement de modèle, produire plusieurs produits ou ne pas parvenir à produire un produit récupérable. Une extrémité d’ADNc observée fournit donc une preuve d’une limite d’ARN mais ne constitue pas automatiquement une preuve de l’extrémité biologique native.
+
+Elle est liée à l'indexation d'échantillons ordinaire, mais distincte de celle-ci. Un index d'échantillon identifie le spécimen ou la bibliothèque qui a produit une lecture. Les informations source-molécule fonctionnent à un niveau plus fin : elles distinguent les modèles moléculaires individuels capturés au sein de cet échantillon ou de cette bibliothèque.
+
+Elle se distingue également de l’annotation de transcription. Une annotation peut indiquer qu'une lecture est compatible avec un gène ou une isoforme connue. L'identité source-molécule indique qu'un ensemble particulier de lectures provient du même modèle moléculaire capturé, que ce modèle corresponde ou non à une annotation existante.
+
+<ArticleCallout>
+  <em>Exemples de réponses d'identité de quel spécimen provient une lecture. Réponses d'identité source-molécule qui ont capturé le modèle moléculaire dérivé de l'ARN dans l'échantillon auquel une lecture a été attribuée.</em>
+</ArticleCallout>
+
+Cette distinction est importante car deux modèles moléculaires dérivés de l'ARN du même gène peuvent avoir des jonctions d'épissage différentes, des limites de transcription observées, des variantes de séquence, des événements d'édition candidats ou des régions non traduites. Une fois que les fragments de ces modèles sont mélangés sans relation source récupérable, leurs arrangements de bout en bout deviennent un problème d'inférence informatique.
+
+## Pourquoi l’identité doit être établie avant la fragmentation
+
+La fragmentation sépare les caractéristiques de séquence qui étaient initialement connectées sur la même molécule. Une jonction d'épissage proche de la limite 5' observée, une variante de séquence dans une région codante prédite et une région non traduite en 3' peuvent toutes être observées avec précision, mais rien dans les séquences de fragments ne prouve nécessairement que ces caractéristiques se sont produites ensemble.
+
+Si l'origine moléculaire est établie avant la fragmentation et transférée dans la bibliothèque de séquençage, les fragments peuvent rester liés même après la division de la molécule physique. La connexion est informationnelle plutôt que spatiale.
+
+Quatre exigences découlent de cette conception :
+
+<ArticleKeyPoints
+  ariaLabel="Exigences pour préserver l'identité de la molécule source"
+  items={[
+    'L\'identité doit être associée à la molécule avant que sa séquence ne soit fragmentée',
+    'Les informations d\'identité doivent survivre à la génération et au séquençage de la bibliothèque',
+    'Les lectures doivent conserver suffisamment d\'informations pour une affectation fiable des molécules',
+    'Le système d\'identification doit distinguer les molécules tout en tolérant les erreurs expérimentales',
+  ]}
+/>
+
+Un échec à n’importe quelle étape peut affaiblir la contrainte souhaitée. Les collisions peuvent donner l’impression que différentes molécules sont identiques. Les dommages causés par les balises ou les erreurs de séquençage peuvent diviser les lectures d’une molécule en plusieurs groupes. La contamination entre groupes peut introduire des fragments de molécules non apparentées. Il s’agit de risques analytiques mesurables, et pas seulement de détails logiciels.
+
+## Le flux de travail PSeq à un niveau conceptuel
+
+La logique source-identité suit six étapes liées.
+
+<ArticleConceptList
+  ariaLabel="Étapes conceptuelles du flux de travail PSeq"
+  items={[
+    {
+      id: 'represent-the-source-molecule',
+      title: 'Transcrire inversement et étiqueter la molécule source',
+      paragraphs: [
+        'Lors de la transcription inverse, un réactif de marquage PSeq associe les informations moléculaires à l\'ADNc dérivé de l\'ARN afin que sa séquence puisse entrer dans un flux de travail de bibliothèque d\'ADN compatible avec les systèmes de séquençage à lecture courte établis.',
+        'L\'ADNc marqué résultant préserve les relations de séquence capturées à partir de l\'ARN de départ, sous réserve de l\'exhaustivité et de la fidélité de la transcription inverse.',
+        'Cet ADNc est le modèle moléculaire capturé mesuré par le flux de travail. Ses extrémités observées n’établissent pas à elles seules les limites natives de l’ARN 5’ ou 3’.',
+      ],
+    },
+    {
+      id: 'associate-molecular-information',
+      title: 'Transmettre les informations moléculaires',
+      paragraphs: [
+        'Les informations moléculaires incorporées lors de la transcription inverse distinguent les modèles capturés au sein du même échantillon.',
+        'À mesure que l’ADNc marqué est amplifié et préparé pour la construction d’une bibliothèque, ces informations préservent la relation étiquette-modèle.',
+      ],
+    },
+    {
+      id: 'generate-a-short-fragment-library',
+      title: 'Générer une bibliothèque de fragments courts',
+      paragraphs: [
+        'Le matériel marqué est converti en une bibliothèque de séquençage composée de courts fragments d\'ADN. Les informations sur la molécule source restent associées à ces fragments grâce à la préparation de la bibliothèque.',
+        'La matrice d\'ADNc capturée n\'est plus physiquement intacte, mais ses fragments restent identifiables en tant que groupe.',
+      ],
+    },
+    {
+      id: 'sequence-on-established-ngs-systems',
+      title: 'Séquence sur les systèmes NGS établis',
+      paragraphs: [
+        'La bibliothèque est lue à l’aide d’instruments de séquençage de nouvelle génération à lecture courte. Chaque modèle moléculaire capturé peut être représenté par plusieurs fragments observés indépendamment.',
+        'La couverture d’une molécule peut être sélectionnée en fonction de l’expérience, tandis que la récupération réelle dépendra de la complexité, de l’abondance, de la longueur de la transcription et de la profondeur du séquençage de la bibliothèque.',
+      ],
+    },
+    {
+      id: 'assign-reads-to-molecule-specific-sets',
+      title: 'Attribuer des lectures à des ensembles spécifiques à une molécule',
+      paragraphs: [
+        'Après le séquençage, les informations moléculaires sont triées en ensembles représentant les modèles moléculaires capturés individuels.',
+        'La qualité de l\'affectation est centrale : l\'assemblage spécifique à une molécule n\'est utile que lorsque l\'appartenance à chaque ensemble est suffisamment précise et complète.',
+      ],
+    },
+    {
+      id: 'assemble-and-build-consensus',
+      title: 'Rassembler et construire un consensus',
+      paragraphs: [
+        'La reconstruction de la transcription est effectuée au sein de chaque ensemble spécifique à une molécule. Les lectures attribuées à un modèle capturé sont comparées les unes aux autres plutôt qu\'à chaque fragment compatible de l\'échantillon.',
+        'Le chevauchement, la continuité de la couverture, les informations de référence et les preuves de limites observées déterminent quelle reconstruction est justifiable. Des observations superposées et séquencées indépendamment peuvent également soutenir la génération d’un consensus, bien que l’exactitude et l’exhaustivité réalisables nécessitent une validation directe.',
+      ],
+    },
+  ]}
+/>
+
+## L’identité contraint l’assemblage ; cela ne le résout pas automatiquement
+
+L'identité source-molécule modifie l'espace de recherche disponible pour un assembleur. Dans l’assemblage de transcrits conventionnel, de nombreux fragments provenant de nombreux transcrits peuvent être compatibles avec le même gène. L'algorithme doit identifier un ou plusieurs modèles de transcription qui expliquent les preuves regroupées.
+
+Dans un flux de travail contraint par les molécules, l'assembleur reçoit un ensemble plus restreint de lectures censées provenir d'un modèle moléculaire capturé. La question change de « Quelle population de transcriptions explique ces fragments ? » à « Comment ces fragments s'intègrent-ils dans ce modèle capturé, compte tenu de la couverture, du chevauchement, des informations de référence et des preuves de limites disponibles ? »
+
+Cette contrainte peut réduire l’ambiguïté, mais elle n’élimine pas tous les modes de défaillance. Un ensemble spécifique à une molécule contenant des îlots de couverture déconnectés peut toujours prendre en charge plusieurs reconstructions, voire aucune reconstruction complète.
+
+Ici, **l'exhaustivité de la transcription** fait référence à un critère analytique prédéfini et ne doit pas être supposé uniquement à partir de l'attribution de lectures à une molécule. Le critère doit indiquer s’il nécessite des limites 5′ et 3′ observées, une chaîne d’épissure complète, une couverture minimale, un consensus contigu de bout en bout ou une interpolation basée sur une référence.
+
+<ArticleComparisonTable
+  ariaLabel="Ce que les informations source-molécule permettent et ce qu'elles ne garantissent pas"
+  rowHeaderLabel="Informations conservées"
+  columns={[
+    { key: 'enables', label: 'Ce qu\'il permet', highlighted: true },
+    { key: 'doesNotGuarantee', label: 'Ce qu\'il ne garantit pas' },
+  ]}
+  rows={[
+    {
+      label: 'Identifiant moléculaire',
+      values: {
+        enables: 'Attribution de lectures à un modèle moléculaire capturé candidat',
+        doesNotGuarantee: 'Que chaque identifiant est unique, sans erreur ou récupéré',
+      },
+    },
+    {
+      label: 'Appartenance aux fragments',
+      values: {
+        enables: 'Assemblage dans un ensemble de lecture spécifique à une molécule',
+        doesNotGuarantee: 'Que chaque lecture est correctement attribuée ou que la contamination est absente',
+      },
+    },
+    {
+      label: 'Couverture de séquence indépendante',
+      values: {
+        enables: 'Consensus sur des observations qui se chevauchent',
+        doesNotGuarantee: 'Profondeur uniforme, couverture impartiale ou récupération des fins de transcription natives',
+      },
+    },
+    {
+      label: 'Transcription reconstituée',
+      values: {
+        enables: 'Une hypothèse au niveau moléculaire pour une séquence et une structure liées',
+        doesNotGuarantee: 'Que la reconstruction est complète, biologiquement fonctionnelle ou quantitativement impartiale',
+      },
+    },
+  ]}
+/>
+
+## L'affectation de lecture est une mesure analytique
+
+Il est tentant de considérer le tri moléculaire comme une étape de prétraitement. En pratique, la qualité de l'affectation est l'une des mesures dont dépend le résultat en aval.
+
+Plusieurs classes d'erreurs doivent être caractérisées :
+
+- **Collision :** deux modèles moléculaires capturés reçoivent des informations moléculaires insuffisamment distinctes et sont fusionnés en un seul ensemble.
+- **Fréparation :** les lectures à partir d'un modèle moléculaire capturé semblent porter des identités différentes et sont réparties sur plusieurs ensembles.
+- **Affectation croisée :** un fragment est placé dans le mauvais ensemble spécifique à la molécule.
+- **Perte :** les informations d'identité ne peuvent pas être lues avec confiance, donc autrement, des observations de séquence utiles ne peuvent pas être attribuées.
+- **Représentation inégale :** certaines parties d'une molécule sont profondément recouvertes tandis que d'autres ne sont pas récupérées.
+
+Les tarifs acceptables dépendent de l’application. La découverte d'isoformes, l'estimation de l'abondance, l'analyse de variantes liées et la détection de molécules rares imposent des exigences différentes. Un flux de travail destiné à une découverte à grande échelle peut tolérer un profil d'erreur différent de celui destiné à soutenir une décision clinique.
+
+## Le consensus dépend de preuves indépendantes
+
+Le séquençage à lecture courte peut observer la même position de base plusieurs fois sur des fragments attribués à un modèle moléculaire capturé. Lorsque ces observations sont suffisamment indépendantes et correctement attribuées, un accord entre elles peut soutenir une séquence consensuelle.
+
+Le consensus est précieux car les observations individuelles peuvent contenir des erreurs de séquençage ou d’amplification. Des observations répétées peuvent aider à distinguer une séquence moléculaire reproductible d'une erreur sporadique. Mais des lectures supplémentaires ne produisent pas automatiquement un consensus impartial. Les erreurs partagées introduites lors de la transcription inverse, de la copie précoce, des effets de contexte de séquence ou des erreurs d'affectation systématiques peuvent persister dans l'ensemble de lecture.
+
+Le consensus estime donc la séquence de la matrice d'ADNc capturée. La fidélité à l'ARN d'origine est soumise à un plafond supplémentaire fixé par les erreurs introduites avant que les observations au niveau des fragments ne deviennent indépendantes ; une erreur de transcription inverse, par exemple, peut être impossible à distinguer de la séquence du modèle capturé.
+
+La question de validation pertinente n’est donc pas simplement de savoir combien de lectures couvrent une molécule. Il s’agit de savoir si le flux de travail complet produit des séquences précises et reproductibles au niveau des molécules sur des longueurs, abondances, compositions et structures de transcription réalistes.
+
+## Ce qui doit être validé
+
+La validation utilise des matériaux de référence dont les séquences, structures et abondances attendues sont connues. Les contrôles d'ARN synthétiques, les mélanges d'isoformes définies, les séries de dilutions, les bibliothèques de répliques et les mesures orthogonales abordent différentes parties de l'enveloppe de performances.
+
+Les mesures importantes incluent :
+
+- le nombre et la fraction de modèles moléculaires capturés représentés par des groupes récupérables ;
+- le taux de collision, de division, de perte et d'attribution croisée d'identifiants moléculaires ;
+- uniformité de la couverture entre les corps et les fins de transcription ;
+- précision du consensus par contexte et profondeur de séquence ;
+- sensibilité et précision pour les structures de transcription connues ;
+- linéarité et reproductibilité de l'abondance entre les répétitions ;
+- performances en termes de longueur de transcription, d’abondance, de contenu GC et de complexité structurelle ;
+- robustesse à la qualité de l'échantillon, à la quantité d'entrée, au lot, à l'opérateur et à la variation de l'instrument.
+
+Ces mesures doivent être rapportées séparément. Une précision consensuelle élevée parmi les modèles capturés reconstruits avec succès n’établit pas une récupération élevée des molécules. Des structures de transcription précises n’établissent pas à elles seules une quantification impartiale. De bonnes performances sur les contrôles synthétiques ne garantissent pas des performances équivalentes dans des échantillons biologiques complexes.
+
+Les groupes de molécules récupérées sont des observations analytiques de modèles capturés, et non des décomptes automatiquement impartiaux de toutes les molécules d'ARN dans l'entrée. Leur relation avec l'abondance des entrées dépend de la probabilité de capture, de l'efficacité de la transcription inverse, de la division et des collisions moléculaires, de l'abandon des identifiants, de la représentation en double, de la récupération différentielle par longueur ou séquence, ainsi que des seuils de filtrage et d'assemblage.
+
+## Contexte scientifique pour les identifiants moléculaires
+
+Le principe général du séquençage sensible aux molécules est antérieur à PSeq. Kivioja et ses collègues ont démontré que [des identifiants moléculaires uniques peuvent distinguer des molécules d'acide nucléique individuelles] (https://doi.org/10.1038/nmeth.1778) et prendre en charge le comptage sensible aux molécules dans le séquençage de nouvelle génération.
+
+PSeq applique les informations sur la molécule source vers un objectif différent : limiter la reconstruction des structures de transcription à partir de lectures de fragments courts attribuées à des modèles moléculaires capturés. Le précédent scientifique soutient la valeur de l’identification moléculaire en tant que principe de mesure ; il ne remplace pas la validation de la chimie, de l'affectation, de l'assemblage ou des performances consensuelles du PSeq.
+
+## Conclusion
+
+PSeq préserve la relation entre une molécule d'ADNc dérivée d'ARN capturée avec succès et les courtes lectures qui en dérivent. Le réactif de marquage associe les informations moléculaires lors de la transcription inverse ; ces informations sont transmises via la génération de bibliothèques, récupérées lors du séquençage et utilisées pour créer des ensembles de lectures spécifiques à une molécule.
+
+Cette relation transforme l’assemblage des transcriptions d’un problème d’inférence au niveau de la population en un problème de reconstruction contraint par les molécules. Les observations de séquences répétées prennent également en charge la génération de consensus par rapport au modèle d'ADNc capturé.
+
+Les premières études techniques ont observé la structure de lecture prévue marqueur-plus-ADNc, les marqueurs concentrés vers le début de la lecture 1 et une reconstruction spécifique à la molécule traçable dans un exemple représentatif de PRPF31. La validation actuelle quantifie la récupération des molécules, la précision de l’affectation, les performances consensuelles, la reproductibilité et la mesure de l’abondance dans les utilisations de recherche prévues par la plateforme.
+
+[Part 3 examines how molecule-resolved transcript data could be used in biological discovery, translational research, and machine learning.](/media/blog/an-introduction-to-phased-sequencing-part-3)
+
+<ArticleSeriesNavigation
+  series={phasedSequencingSeries}
+  locale="fr"
+  currentPart={2}
+  position="end"
+/>

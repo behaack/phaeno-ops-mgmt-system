@@ -1,0 +1,54 @@
+---
+import { render, type CollectionEntry } from 'astro:content'
+import ArticleSEOMeta from '@/components/meta-data-helpers/ArticleSEOMeta.astro'
+import MediaArticlePage from '@/components/MediaArticlePage.astro'
+import Layout from '@/layouts/Layout.astro'
+import { getPageCatalog } from '@/i18n/pageCatalogs'
+import { prefixPathForLocale, type SupportedLocale } from '@/i18n/locales'
+
+interface Props {
+  locale?: SupportedLocale
+  blog: CollectionEntry<'blog'>
+}
+
+const { locale = 'en-US', blog } = Astro.props as Props
+const { title, image, authors, date, summary } = blog.data
+const content = getPageCatalog(locale).blog
+const articleSearchKeywords = [
+  title,
+  summary,
+  authors.join(' '),
+  'PSeq RNA isoform transcript sequencing molecule resolution NGS machine learning',
+].join(' ')
+const { Content } = await render(blog)
+---
+
+<Layout locale={locale}>
+  <ArticleSEOMeta
+    slot="head"
+    title={title}
+    description={summary}
+    authors={authors}
+    datePosted={date}
+    schemaType="BlogPosting"
+    image={image}
+    documentType="Blog Post"
+    searchTitle={`${content.articleSearchTitle} - ${title}`}
+    searchKeywords={articleSearchKeywords}
+    locale={locale}
+  />
+
+  <MediaArticlePage
+    locale={locale}
+    title={title}
+    summary={summary}
+    image={image}
+    authors={authors}
+    date={date}
+    eyebrow={content.articleEyebrow}
+    backHref={prefixPathForLocale(locale, '/media/blog')}
+    backLabel={content.backToArticles}
+  >
+    <Content />
+  </MediaArticlePage>
+</Layout>

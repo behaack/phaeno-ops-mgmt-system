@@ -189,6 +189,11 @@ export const deDEPageContent = {
     searchPlaceholder: 'Suchen Sie nach Titel oder Autor',
     noResults: 'Keine Artikel entsprechen Ihren Suchkriterien',
     empty: 'Noch keine Blogeinträge. Schauen Sie bald noch einmal vorbei.',
+    articleEyebrow: 'Phaeno Einblicke',
+    backToArticles: 'Zurück zu allen Artikeln',
+    articleSearchTitle: 'Blog',
+    feedTitle: 'Phaeno – Neueste Beiträge',
+    feedDescription: 'Einblicke in die RNA-Sequenzierung und unsere PSeq-Plattform',
   },
   whitePapers: {
     metaTitle: 'Whitepapers | Phaeno',

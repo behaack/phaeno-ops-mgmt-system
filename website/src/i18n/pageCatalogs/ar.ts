@@ -190,6 +190,11 @@ export const arPageContent = {
     searchPlaceholder: 'ابحث بالعنوان أو المؤلف',
     noResults: 'لا توجد عناصر تطابق معايير البحث.',
     empty: 'لا توجد مقالات منشورة بعد. يُرجى العودة قريبًا.',
+    articleEyebrow: 'رؤى Phaeno',
+    backToArticles: 'العودة إلى جميع المقالات',
+    articleSearchTitle: 'المدونة',
+    feedTitle: 'Phaeno – أحدث المقالات',
+    feedDescription: 'رؤى حول تسلسل الرنا ومنصة PSeq',
   },
   whitePapers: {
     metaTitle: 'الأوراق البيضاء | Phaeno',

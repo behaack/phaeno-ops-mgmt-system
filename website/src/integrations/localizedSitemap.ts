@@ -3,7 +3,7 @@ import { join } from 'node:path'
 import { fileURLToPath } from 'node:url'
 import type { AstroIntegration } from 'astro'
 import type { LocalizedLocale, SupportedLocale } from '../i18n/locales'
-import { localizedRoutePairs } from '../i18n/routes'
+import { allLocalizedRoutePairs } from '../i18n/routes'
 
 const sitemapFilePattern = /^sitemap-\d+\.xml$/
 
@@ -66,7 +66,7 @@ export async function addLocalizedAlternates(
       const url = new URL(location)
       const decodedPath = decodeURIComponent(url.pathname).replace(/\/+$/, '') || '/'
       const activeLocales: SupportedLocale[] = ['en-US', ...enabledLocales]
-      const pair = localizedRoutePairs.find((candidate) => (
+      const pair = allLocalizedRoutePairs.find((candidate) => (
         activeLocales.some((locale) => candidate[routeKeys[locale]] === decodedPath)
       ))
       if (!pair) return urlBlock

@@ -1,0 +1,390 @@
+---
+title: "Introduzione al sequenziamento fasico: parte 1"
+summary: "Perché l'RNA necessita di misurazioni migliori"
+image: "/images/media/blog/an-introduction-to-phased-sequencing-part-1.png"
+authors: ["William Agnew"]
+date: '2026-07-15'
+locale: 'it'
+translationKey: 'blog.phased-sequencing.part-1'
+sourceLocale: 'en-US'
+translationStatus: 'draft'
+sourceRevision: '2026-08-08'
+translatedFromRevision: '2026-08-08'
+translator: 'Machine-assisted draft'
+---
+import ArticleCallout from '@/components/content/ArticleCallout.astro';
+import ArticleComparisonTable from '@/components/content/ArticleComparisonTable.astro';
+import ArticleConceptList from '@/components/content/ArticleConceptList.astro';
+import ArticleKeyPoints from '@/components/content/ArticleKeyPoints.astro';
+import ArticleSeriesNavigation from '@/components/content/ArticleSeriesNavigation.astro';
+import { phasedSequencingSeries } from '@/lib/articleSeries';
+
+<ArticleSeriesNavigation
+  series={phasedSequencingSeries}
+  locale="it"
+  currentPart={1}
+  position="start"
+/>
+
+## Riepilogo
+
+La sequenza del DNA stabilisce la struttura ereditaria dei sistemi biologici, ma di per sé non specifica lo stato molecolare di una cellula. Questo stato emerge attraverso la trascrizione e l'elaborazione dell'RNA: inizio della trascrizione, formazione dell'estremità 3' dell'RNA, splicing alternativo, editing dell'RNA, poliadenilazione e selezione di regioni codificanti e non tradotte.
+
+Questi processi generano isoforme di RNA distinte dallo stesso locus genomico. Ciascuna isoforma è un'entità molecolare collegata in cui un confine 5' osservato, l'uso dedotto del promotore, la composizione dell'esone, la sequenza di codifica prevista, gli eventi di modifica candidati e le regioni regolatorie si verificano insieme sulla stessa trascrizione. Preservare queste relazioni può essere importante perché diverse isoforme possono supportare diversi prodotti proteici, differire per stabilità o localizzazione o rispondere in modo diverso alla regolazione cellulare.
+
+Il sequenziamento convenzionale dell'RNA a lettura breve ha trasformato la biologia, ma in genere frammenta le trascrizioni prima del sequenziamento. Le letture risultanti forniscono informazioni sulla sequenza locale altamente accurate, mentre le strutture end-to-end devono spesso essere dedotte a livello computazionale. Il sequenziamento a lettura lunga può preservare una parte maggiore della struttura della trascrizione originale, ma attualmente comporta diversi compromessi in termini di strumentazione, produttività, profondità, accuratezza, costi e flusso di lavoro.
+
+**[PSeq Clear-Signal Architecture™](/technology/pseq-platform#pseq-clear-signal-architecture)** di Phaeno preserva l'identità della molecola sorgente attraverso un flusso di lavoro di sequenziamento a lettura breve. Durante la trascrizione inversa, PSeq associa informazioni molecolari a ciascun modello di cDNA derivato da RNA catturato con successo. Tali informazioni rimangono collegate ai frammenti di lettura breve risultanti in modo che le letture dallo stesso modello catturato possano essere raggruppate prima dell'assemblaggio della trascrizione, convertendo un problema di ricostruzione altrimenti non vincolato in uno vincolato dalla molecola. L'identità molecolare restringe lo spazio di ricerca; la ricostruzione completa dipende ancora dalla copertura, dalla sovrapposizione, dalle informazioni di riferimento e dalle prove di confine disponibili per quella molecola.
+
+PSeq è attualmente una piattaforma **Solo per uso di ricerca (RUO)**.
+
+In questa serie, Phaeno utilizza il **sequenziamento fasico** per descrivere architetture di sequenziamento che preservano il collegamento tra osservazioni originate dalla stessa molecola sorgente. Questo utilizzo è distinto dal significato genomico comune della fasatura delle varianti in aplotipi e si sovrappone concettualmente a termini come sequenziamento sensibile alla molecola, letture collegate, nuvole di letture e ricostruzione di frammenti con codice a barre.
+
+Questo articolo spiega perché questa distinzione è importante. La parte 2 descriverà come PSeq preserva l'identità della molecola sorgente e la parte 3 esaminerà il potenziale valore dei dati di trascrizione risolti dalla molecola nella scoperta biologica, nella ricerca traslazionale e nell'apprendimento automatico.
+
+## La sola sequenza del DNA non specifica lo stato cellulare
+
+Il Progetto Genoma Umano ha stabilito una sequenza di riferimento per il genoma umano e ha fornito una base essenziale per la biologia moderna. Ha inoltre contribuito a chiarire i limiti delle informazioni sulla sequenza considerate isolatamente.
+
+Cellule con genomi quasi identici possono adottare strutture e funzioni marcatamente diverse. Un epatocita, un neurone, un linfocita e una cellula epiteliale generalmente contengono la stessa sequenza di DNA ereditato, ma differiscono ampiamente nella morfologia, nel metabolismo, nella segnalazione e nel comportamento. Queste differenze derivano da processi regolatori che determinano quali porzioni del genoma vengono utilizzate, come vengono trascritte e come vengono elaborati gli RNA risultanti.
+
+L’RNA occupa una posizione centrale in questo processo. È sia un intermedio tra DNA e proteine ​​che, in molti casi, una specie molecolare funzionale a sé stante. Gli RNA messaggeri codificano per proteine, mentre ribosomiale, di trasferimento, micro, lungo non codificante e altre classi di RNA contribuiscono direttamente alla traduzione, alla regolazione, all'organizzazione del genoma e alla segnalazione cellulare.
+
+Anche all’interno dei geni codificanti proteine, la relazione tra un locus genomico e i suoi prodotti biologici non è uno a uno. Un singolo locus può produrre più trascrizioni attraverso combinazioni di:
+
+- inizio di trascrizione alternativa;
+- splicing alternativo;
+- scissione alternativa e poliadenilazione;
+- Modifica dell'RNA;
+- variazione nelle regioni non tradotte;
+- stabilità e degradazione differenziale della trascrizione.
+
+Le trascrizioni risultanti possono codificare sequenze proteiche distinte, alterare l'abbondanza di una proteina, cambiare la localizzazione di un RNA o influenzarne la traduzione e la degradazione. La produzione biologica di un gene dipende quindi non solo dal fatto che il gene sia espresso, ma anche da quali trascrizioni vengono prodotte e in quali proporzioni.
+
+Per questo motivo, le isoforme di RNA non dovrebbero essere trattate semplicemente come misurazioni intercambiabili dell’attività genetica. Ogni trascrizione è una disposizione collegata di sequenze e caratteristiche regolatorie che esiste come molecola fisica.
+
+## La trascrizione come unità di informazione concatenata
+
+Una trascrizione può contenere contemporaneamente diverse caratteristiche biologicamente significative:
+
+- il suo confine di trascrizione osservato 5 ';
+- la sua struttura dell'esone e della giunzione di giunzione;
+- il suo previsto quadro di lettura aperto o potenziale di codifica;
+- varianti di sequenza o eventi candidati di modifica dell'RNA;
+- le sue regioni 5' e 3' non tradotte;
+- è osservato il confine della trascrizione 3 'o il sito di scissione e poliadenilazione.
+
+Il significato di una qualsiasi caratteristica può dipendere dalle altre con cui si presenta.
+
+Una variante di sequenza, ad esempio, può essere presente solo nelle trascrizioni con un particolare limite 5' osservato o con un utilizzo dedotto del promotore. Un evento di salto dell'esone può alterare il frame di lettura previsto in un contesto di trascrizione ma non in un altro. Una regione 3' non tradotta può contenere motivi regolatori che influenzano la stabilità, la localizzazione o la traduzione di un'isoforma specifica. Due trascritti dello stesso gene possono quindi differire funzionalmente anche quando condividono la maggior parte della sequenza.
+
+Ciò crea un problema di fase.
+
+Nel sequenziamento, **fasatura** significa determinare quali caratteristiche della sequenza si verificano insieme sulla stessa molecola fisica. Il concetto è familiare nella genomica, dove le varianti possono essere assegnate ai cromosomi materni o paterni. Nella trascrittomica, lo stesso principio si applica alle combinazioni di giunzioni di giunzione, confini osservati della trascrizione, varianti di sequenza, eventi di modifica dei candidati e regioni regolatorie.
+
+Sapere che due caratteristiche sono presenti in un campione non equivale a sapere che si verificano nella stessa trascrizione.
+
+Questa distinzione diventa particolarmente importante per i geni che producono molte isoforme sovrapposte. Se più trascrizioni condividono esoni e giunzioni di giunzione, i frammenti di sequenze brevi possono essere compatibili con più strutture end-to-end. Le osservazioni locali possono essere corrette mentre la disposizione globale rimane ambigua.
+
+## Tre concetti correlati
+
+La terminologia relativa al sequenziamento risolto dalla molecola può creare confusione. Tre distinzioni sono particolarmente utili.
+
+<ArticleConceptList
+  ariaLabel="Tre concetti correlati di risoluzione delle molecole"
+  items={[
+    {
+      id: 'source-molecule-identity',
+      title: 'Identità della molecola sorgente',
+      paragraphs: [
+        'L\'identità della molecola sorgente significa conservare le informazioni su quale modello molecolare catturato ha dato origine a una raccolta di letture di sequenziamento.',
+        'In un flusso di lavoro basato su cDNA, quel modello è una molecola di cDNA derivata da RNA catturata con successo: una rappresentazione con trascrizione inversa di una molecola di RNA iniziale, non dell\'RNA originale osservato direttamente.',
+      ],
+    },
+    {
+      id: 'phased-sequencing',
+      title: 'Sequenziamento per fasi',
+      paragraphs: [
+        'Nell’uso di Phaeno, il sequenziamento fasico determina quali caratteristiche osservate si trovano insieme sulla stessa molecola sorgente.',
+        'Per l\'RNA, queste caratteristiche possono includere giunzioni di giunzione, varianti di sequenza, eventi di modifica dei candidati, confini osservati della trascrizione e regioni non tradotte.',
+      ],
+    },
+    {
+      id: 'whole-molecule-resolution',
+      title: 'Risoluzione dell\'intera molecola',
+      paragraphs: [
+        'La risoluzione dell\'intera molecola si riferisce alla ricostruzione della struttura di un singolo modello molecolare catturato secondo un criterio di completezza predefinito.',
+        'In un flusso di lavoro di lettura breve, questa ricostruzione rimane computazionale. L\'assegnazione molecolare lo vincola, ma una copertura disconnessa può comunque supportare ricostruzioni multiple o nessuna ricostruzione completa.',
+      ],
+    },
+  ]}
+/>
+
+Questi concetti sono correlati ma non identici. L'identificazione molecolare consente la messa in fase e la messa in fase rende più trattabile la ricostruzione dell'intera molecola.
+
+In questa serie, **completo** e **intero** sono termini operativi piuttosto che conseguenze della sola assegnazione molecolare. Una dichiarazione di completezza dovrebbe indicare se richiede confini osservati 5′ e 3′, una catena di giunzione completa, una soglia di copertura minima, un consenso contiguo end-to-end o un’interpolazione supportata da riferimenti tra regioni coperte.
+
+## Il problema della misurazione creato dalla frammentazione
+
+Il sequenziamento convenzionale dell'RNA converte in genere l'RNA in DNA complementare e frammenta il materiale prima o durante la preparazione della libreria. Milioni di letture brevi vengono quindi allineate a un genoma o trascrittoma di riferimento e riassunte in misurazioni a livello di gene, esone, giunzione o trascritto.
+
+Questo approccio è stato straordinariamente produttivo. Il sequenziamento dell'RNA a lettura breve supporta:
+
+- analisi differenziale dell'espressione genica;
+- rilevamento delle giunzioni;
+- annotazione della trascrizione;
+- espressione allele-specifica;
+- rilevamento della fusione;
+- trascrittomica unicellulare e spaziale;
+- numerose applicazioni diagnostiche e traslazionali.
+
+I suoi limiti dovrebbero quindi essere descritti con precisione. Il problema non è che il sequenziamento dell’RNA a lettura breve non riesca a rilevare l’RNA o non possa identificare la struttura della trascrizione. Piuttosto, la frammentazione separa le osservazioni che originariamente avvenivano insieme sulla stessa molecola.
+
+Una volta perso il collegamento sorgente-molecola, la ricostruzione della trascrizione diventa un problema di inferenza.
+
+I metodi computazionali possono spesso risolvere questo problema, in particolare quando le isoforme sono ben annotate, la copertura della sequenza è elevata e le strutture della trascrizione sono sufficientemente distinte. L'ambiguità aumenta, tuttavia, quando un locus contiene molte isoforme sovrapposte che condividono esoni, giunzioni o regioni di sequenza.
+
+Consideriamo un gene semplificato contenente due promotori alternativi, diversi esoni sottoposti a splicing alternativo e due siti di poliadenilazione. Le letture brevi possono supportare in modo indipendente due confini 5' osservati coerenti con l'uso alternativo del promotore, ciascuna giunzione di giunzione e due confini 3' osservati. Tuttavia, tali osservazioni potrebbero rimanere compatibili con diverse combinazioni end-to-end.
+
+La questione è quindi di **identificabilità**: se i frammenti osservati determinano in modo univoco le molecole che li hanno prodotti.
+
+Per l'analisi dell'espressione a livello genico, questa ambiguità può essere accettabile o irrilevante. Per domande che coinvolgono l'esatta struttura dell'isoforma, varianti collegate, modifica dell'RNA candidato o contesto normativo, potrebbe essere consequenziale.
+
+## Il sequenziamento a lettura lunga affronta una parte diversa del problema
+
+Le tecnologie di lettura lunga di Oxford Nanopore Technologies e Pacific Biosciences si avvicinano alla struttura della trascrizione generando letture che possono estendersi su gran parte o tutto un RNA o una molecola di DNA complementare.
+
+Questo è un grande vantaggio per la scoperta di isoforme e l'annotazione della trascrizione. Le letture lunghe possono collegare direttamente giunzioni di giunzione distanti e confini di trascrizione che le letture brevi osservano separatamente. Hanno ampliato il numero di strutture di trascrizione rilevabili e migliorato la caratterizzazione di loci complessi.
+
+Anche i metodi a lettura lunga presentano limitazioni e compromessi. A seconda della piattaforma, del protocollo e dell'obiettivo sperimentale, questi possono includere:
+
+- la necessità di strumentazione dedicata;
+- numero inferiore di letture rispetto ai sistemi di lettura breve ad alto rendimento;
+- profondità di campionamento ridotta per trascrizioni poco abbondanti;
+- differenze nell'accuratezza per lettura e nel profilo di errore;
+- considerazioni sui costi e sul flusso di lavoro;
+- bias di amplificazione o di preparazione della libreria;
+- l'acquisizione incompleta delle estremità della trascrizione.
+
+Queste tecnologie stanno migliorando rapidamente e non esiste una descrizione univoca applicabile a ogni piattaforma o applicazione. I metodi di lettura lunga e di lettura breve non dovrebbero essere considerati mutuamente esclusivi. Rispondono a domande sovrapposte ma distinte e vengono sempre più utilizzati insieme.
+
+La questione rilevante non è quale piattaforma sia universalmente superiore. È quale architettura di misurazione preserva le informazioni richieste per un particolare problema biologico.
+
+## PSeq Architettura Clear-Signal: assemblaggio vincolato dalla molecola utilizzando letture brevi
+
+PSeq mantiene l'identità della molecola sorgente mentre utilizza gli strumenti di sequenziamento di prossima generazione a lettura breve esistenti.
+
+Durante la trascrizione inversa, il reagente di codifica PSeq associa ciascuna molecola di cDNA derivata da RNA catturata con successo con informazioni molecolari che rimangono collegate mentre viene generata la libreria di sequenziamento. Dopo il sequenziamento, la pipeline di dati raggruppa le letture che trasportano la stessa identità della molecola sorgente in set specifici della molecola.
+
+L'assemblaggio della trascrizione viene quindi eseguito all'interno di tali set.
+
+Ciò cambia la natura del problema della ricostruzione. L'assemblaggio di trascrizione convenzionale valuta i frammenti estratti da una popolazione mista e identifica modelli di trascrizione in grado di spiegare i dati aggregati. PSeq ricostruisce invece ciascun modello molecolare catturato dalle letture assegnate a quel modello.
+
+L'assemblaggio rimane computazionale, ma le informazioni sperimentali sull'origine molecolare lo vincolano.
+
+Questa distinzione può essere così riassunta:
+
+<ArticleCallout>
+  <em>Il sequenziamento convenzionale dell'RNA chiede quale raccolta di trascrizioni spieghi più plausibilmente un pool misto di letture. PSeq chiede in che modo le letture assegnate allo stesso modello molecolare catturato si incastrano, in base alla copertura, alla sovrapposizione, alle informazioni di riferimento e alle prove di confine disponibili per quella molecola.</em>
+</ArticleCallout>
+
+Poiché un modello molecolare catturato può essere rappresentato da più frammenti sequenziati in modo indipendente, è possibile utilizzare il consenso per migliorare l'accuratezza della sequenza. Il consenso stima la sequenza del modello di cDNA catturato; la fedeltà all'RNA originale dipende anche dagli errori introdotti prima che le osservazioni a livello di frammento diventino indipendenti, anche durante la trascrizione inversa. Le prestazioni effettive dipenderanno da fattori quali la complessità della libreria, il recupero delle molecole, la profondità di lettura, la lunghezza della trascrizione, la composizione della sequenza e gli algoritmi di assemblaggio. Queste caratteristiche devono essere stabilite attraverso validazioni analitiche e studi comparativi.
+
+PSeq dovrebbe quindi essere inteso come una nuova architettura di misurazione, non come l'affermazione che ogni molecola di RNA in un campione verrà catturata, rappresentata completamente o recuperata senza errori.
+
+## Confronto degli approcci di misurazione dell'RNA
+
+<ArticleComparisonTable
+  ariaLabel="Confronto tra il sequenziamento convenzionale dell'RNA a lettura breve, il sequenziamento della trascrizione a lettura lunga e PSeq"
+  rowHeaderLabel="Caratteristica"
+  columns={[
+    { key: 'pseq', label: 'PSeq', highlighted: true },
+    { key: 'rnaSeq', label: 'Sequenziamento convenzionale dell\'RNA a lettura breve', shortLabel: 'Sequenziamento dell\'RNA a lettura breve' },
+    { key: 'longReadSeq', label: 'Sequenziamento della trascrizione a lettura lunga', shortLabel: 'Sequenziamento a lettura lunga' },
+  ]}
+  rows={[
+    {
+      label: 'Uscita di sequenziamento primaria',
+      values: {
+        rnaSeq: 'Brevi frammenti da una popolazione di trascrizioni miste',
+        longReadSeq: 'Letture lunghe che rappresentano le singole molecole della libreria',
+        pseq: 'Brevi frammenti che mantengono l\'identità della molecola sorgente',
+      },
+    },
+    {
+      label: 'Collegamento sorgente-molecola',
+      values: {
+        rnaSeq: 'Generalmente non trattenuto attraverso frammenti distanti',
+        longReadSeq: 'Trattenuto direttamente nella porzione di una molecola della libreria rappresentata da una lettura',
+        pseq: 'Trattenuto attraverso l\'identificazione molecolare',
+      },
+    },
+    {
+      label: 'Struttura della trascrizione',
+      values: {
+        rnaSeq: 'Dedotto da prove di frammenti aggregati',
+        longReadSeq: 'Diretto attraverso la porzione rappresentata; end-to-end solo quando la lettura abbraccia la molecola e i confini rilevanti',
+        pseq: 'Ricostruito da letture assegnate quando la copertura e le prove strutturali sono sufficienti',
+      },
+    },
+    {
+      label: 'Strumentazione',
+      values: {
+        rnaSeq: 'Sistemi NGS a lettura breve consolidati',
+        longReadSeq: 'Sistemi dedicati a lunga lettura',
+        pseq: 'Sistemi NGS a lettura breve consolidati',
+      },
+    },
+    {
+      label: 'Principali punti di forza',
+      values: {
+        rnaSeq: 'Precisione, scalabilità, profondità, flussi di lavoro maturi',
+        longReadSeq: 'Connettività a lungo raggio e scoperta di isoforme',
+        pseq: 'Assemblaggio vincolato dalla molecola con profondità e precisione di lettura breve',
+      },
+    },
+    {
+      label: 'Limitazioni importanti',
+      values: {
+        rnaSeq: 'Ricostruzione ambigua in loci complessi',
+        longReadSeq: 'Profondità, costi, precisione e compromessi del flusso di lavoro dipendenti dalla piattaforma',
+        pseq: 'Nuova piattaforma che richiede validazione, benchmarking e adozione approfonditi',
+      },
+    },
+  ]}
+/>
+
+Questo confronto è necessariamente generale. Le prestazioni dipendono dal protocollo specifico, dallo strumento, dal tipo di campione e dalla pipeline di analisi.
+
+Le osservazioni di cDNA a lunga lettura possono anche essere troncate, concatenate, chimeriche o derivate da copie amplificate. “Singola molecola” si riferisce quindi alla molecola della libreria rappresentata da una lettura e non deve essere automaticamente interpretata come una molecola di RNA nativa intatta.
+
+## Quali informazioni aggiuntive può fornire la risoluzione delle molecole?
+
+Il valore della misurazione risolta dalla molecola non sta semplicemente nel fatto che produce una sequenza più lunga. Il suo valore risiede nel preservare le relazioni tra le caratteristiche.
+
+<ArticleConceptList
+  ariaLabel="Informazioni fornite dalla misurazione risolta dalla molecola"
+  items={[
+    {
+      id: 'transcript-isoforms',
+      title: 'Isoforme di trascrizione',
+      paragraphs: [
+        'Una misurazione risolta dalla molecola può determinare quali giunzioni di giunzione, confini della trascrizione osservati, sequenze di codifica previste e regioni non tradotte si verificano insieme.',
+        'Ciò è particolarmente rilevante quando diverse isoforme condividono la maggior parte della loro sequenza ma differiscono in un esone o in una regione regolatoria funzionalmente importante.',
+      ],
+    },
+    {
+      id: 'linked-sequence-variation',
+      title: 'Variazione di sequenza collegata',
+      paragraphs: [
+        'Un campione può contenere diverse sostituzioni, eventi di modifica candidati o mutazioni all\'interno dello stesso gene o genoma di RNA. Il sequenziamento aggregato può stimare la frequenza di ciascun evento, ma potrebbe non stabilire se gli eventi si verificano sulla stessa molecola.',
+        'La fase preserva quelle combinazioni.',
+        'Ciò potrebbe essere utile in contesti quali l\'analisi della popolazione virale, la variazione somatica, la trascrizione allele-specifica e l\'analisi di modifica dell\'RNA candidato, a condizione che il recupero della molecola e le caratteristiche dell\'errore siano sufficientemente ben controllate.',
+      ],
+    },
+    {
+      id: 'isoform-abundance',
+      title: 'Abbondanza di isoforme',
+      paragraphs: [
+        'L\'abbondanza a livello genico combina tutte le trascrizioni assegnate a un locus. La quantificazione a livello di trascrizione tenta di separare il totale tra le isoforme, ma le stime potrebbero essere instabili quando le isoforme condividono una sequenza sostanziale.',
+        'Le osservazioni risolte a livello molecolare potrebbero fornire una base più diretta per stimare l\'abbondanza di specifiche strutture di trascrizione. I gruppi di molecole recuperati sono osservazioni analitiche di modelli catturati, non conteggi di censimento automaticamente imparziali di tutte le molecole di RNA nell\'input. L\'accuratezza quantitativa dipenderà ancora dalla probabilità di cattura, dall\'efficienza della trascrizione inversa, dalla suddivisione e collisione molecolare, dall\'eliminazione dell\'identificatore, dalla rappresentazione duplicata, dal recupero differenziale, dal filtraggio, dall\'amplificazione e dal campionamento.',
+      ],
+    },
+    {
+      id: 'regulatory-context',
+      title: 'Contesto normativo',
+      paragraphs: [
+        'La sequenza codificante delle proteine ​​prevista è solo un componente di una molecola di RNA. I confini 5′ osservati, l\'utilizzo dedotto del promotore, le regioni non tradotte e le estremità della trascrizione possono influenzare le ipotesi su espressione, localizzazione, traduzione e degrado.',
+        'Conservare questi elementi nella stessa osservazione molecolare può aiutare a collegare il potenziale di codifica previsto con il contesto normativo; La sola sequenza di RNA non stabilisce quale open reading frame viene tradotto o se un prodotto proteico è stabile.',
+      ],
+    },
+  ]}
+/>
+
+## RNA come componente del fenotipo molecolare
+
+Il fenotipo è espresso su più scale biologiche. Comprende tratti osservabili, stati cellulari, architettura dei tessuti, fisiologia, decorso della malattia e risposta al trattamento.
+
+Nessun singolo strato molecolare è equivalente al fenotipo. Il DNA, la cromatina, l'RNA, le proteine, i metaboliti, le interazioni cellulari e le esposizioni ambientali contribuiscono tutti.
+
+Il trascrittoma occupa tuttavia una posizione particolarmente informativa. Riflette sia il potenziale genomico che l’attuale stato normativo di un sistema biologico. Cambia durante la differenziazione, lo stress, l’attivazione immunitaria, l’invecchiamento, il trattamento e la progressione della malattia.
+
+Per questo motivo, il trascrittoma può essere considerato una componente del fenotipo molecolare: una registrazione dinamica di quali programmi genomici vengono eseguiti e in quale forma.
+
+Le misurazioni dell’espressione genica catturano una parte importante di quel record. Le misurazioni risolte in isoforma possono catturarne un'altra.
+
+Una scorciatoia utile è:
+
+<ArticleCallout>
+  <em>L'abbondanza di RNA a livello genico indica quali loci contribuiscono all'RNA rilevabile e a quale livello aggregato. La struttura dell'isoforma descrive quali forme molecolari contribuiscono a quel segnale.</em>
+</ArticleCallout>
+
+Questa distinzione non dovrebbe essere sopravvalutata. Molte questioni biologiche vengono adeguatamente affrontate utilizzando i conteggi a livello di gene e l'aumento della risoluzione delle caratteristiche può introdurre ulteriore rumore, scarsità e complessità analitica. Il valore dei dati a livello di isoforma deve quindi essere dimostrato empiricamente per ciascuna applicazione.
+
+## Perché l'RNA risolto dalla molecola può essere importante per l'apprendimento automatico
+
+I modelli di apprendimento automatico non beneficiano automaticamente di misurazioni più dettagliate. Funzionalità aggiuntive migliorano un modello solo quando contengono informazioni riproducibili rilevanti per l'attività di previsione e possono essere misurate con sufficiente coerenza.
+
+I dati risolti in isoforme potrebbero essere utili perché i riepiloghi a livello di gene possono combinare trascrizioni con diversi effetti biologici. Se un’isoforma aumenta mentre un’altra diminuisce, l’espressione totale del gene può rimanere invariata anche se lo stato funzionale del sistema è cambiato.
+
+In tal caso, una caratteristica a livello genetico può oscurare anziché rivelare il segnale rilevante.
+
+Le misurazioni risolte a livello molecolare potrebbero fornire modelli con caratteristiche quali:
+
+- l'abbondanza stimata di isoforme che soddisfano criteri di completezza predefiniti;
+- combinazioni collegate di eventi di giunzione ed editing dei candidati;
+- osservate relazioni 5'-limite-isoforma che possono supportare l'inferenza dell'uso del promotore;
+- sequenze di codifica previste accoppiate con regioni non tradotte;
+- strutture di trascrizione non rappresentate nelle annotazioni esistenti.
+
+Queste caratteristiche possono essere più strettamente correlate alla funzione molecolare rispetto al conteggio dei geni aggregati. Possono anche migliorare l’interpretabilità consentendo di associare le previsioni di un modello a specifiche strutture di trascrizione.
+
+Ci sono, tuttavia, sfide importanti.
+
+I set di dati a livello di isoforma sono altamente dimensionali. Molte isoforme sono rare, tessuto-specifiche o annotate in modo incompleto. Errori di misurazione, effetti batch e modifiche nelle pipeline di analisi possono creare caratteristiche instabili. Un numero maggiore di variabili candidate aumenta anche il rischio di overfitting.
+
+Il valore potenziale dei dati sull’RNA risolti dalle molecole per l’apprendimento automatico dipende quindi dalla definizione rigorosa delle caratteristiche, dalla convalida analitica, da coorti indipendenti e da test prospettici. Dovrebbe essere valutato attraverso confronti diretti con il sequenziamento dell'RNA a livello di gene e altre misurazioni consolidate.
+
+L’ipotesi scientifica non è che i dati a livello di isoforma miglioreranno ogni modello. Il fatto è che alcuni segnali biologici sono codificati nella struttura della trascrizione e nel collegamento molecolare e sono quindi inaccessibili, diluiti o rappresentati in modo ambiguo nei riepiloghi a livello di gene.
+
+## Un diverso tipo di misurazione dell’RNA
+
+La distinzione centrale tra il sequenziamento dell'RNA convenzionale e PSeq non è rappresentata dalle letture brevi rispetto alle letture lunghe. PSeq utilizza anche letture brevi.
+
+La distinzione è se quelle letture conservano informazioni sulla loro molecola di origine.
+
+Il sequenziamento convenzionale dell'RNA frammenta e raggruppa le trascrizioni, quindi deduce le strutture end-to-end da prove aggregate. I frammenti PSeq hanno catturato con successo molecole di cDNA derivate da RNA mantenendo l'identità della molecola sorgente, quindi ricostruiscono ciascun modello catturato all'interno del suo set di lettura associato.
+
+Questo progetto cerca di combinare tre proprietà:
+
+<ArticleKeyPoints
+  ariaLabel="Proprietà combinate dal design PSeq"
+  items={[
+    'L\'accuratezza di livello base del sequenziamento a lettura breve',
+    'La velocità effettiva e l\'infrastruttura installata dei sistemi NGS consolidati',
+    'Il collegamento molecolare necessario per la ricostruzione risolta con isoforme',
+  ]}
+/>
+
+Gli studi tecnici iniziali hanno osservato la struttura della libreria prevista, il posizionamento dei marcatori, la composizione della lettura tag-più-cDNA, il raggruppamento specifico della molecola, la copertura end-to-end dell'esone e della giunzione di giunzione per un trascritto PRPF31 rappresentativo e la tracciabilità dalle prove FASTQ al record molecolare assemblato.
+
+La validazione attuale sta definendo un range prestazionale più ampio tra classi di trascrizione, tipi di campioni e intervalli di abbondanza. I parametri di riferimento rilevanti includono sensibilità, specificità, accuratezza del consenso relativa sia ai controlli di cDNA catturati che di RNA originali, completezza della trascrizione secondo criteri predefiniti, quantificazione delle isoforme, riproducibilità, produttività, costo e confronto con metodi sia a breve che a lunga lettura.
+
+## Conclusione
+
+L’RNA non è semplicemente una copia transitoria del DNA. Si tratta di una popolazione diversificata di specie molecolari in cui la sequenza codificante prevista, la struttura di giunzione, i confini della trascrizione osservati, le regioni regolatorie e la variazione della sequenza si verificano in combinazioni collegate.
+
+Il sequenziamento convenzionale dell’RNA misura questa popolazione con scala e precisione eccezionali, ma la frammentazione spesso separa caratteristiche che originariamente appartenevano alla stessa molecola. I metodi computazionali possono ricostruire molte strutture di trascrizione, ma permane ambiguità quando più isoforme condividono la stessa evidenza di sequenza locale.
+
+Il sequenziamento a lettura lunga ripristina gran parte di questa connettività leggendo direttamente le molecole estese. PSeq Clear-Signal Architecture adotta un approccio diverso: preserva l'identità della molecola sorgente attraverso un flusso di lavoro di lettura breve e utilizza tale identità per limitare l'assemblaggio della trascrizione.
+
+Il potenziale significato di questo approccio è semplice. Se la funzione biologica dipende da caratteristiche collegate all’interno delle singole molecole di RNA, allora preservare i modelli molecolari catturati come unità di misura può rivelare informazioni che sono oscurate da riepiloghi a livello di frammento o di gene. Se una ricostruzione sia completa, biologicamente fedele o funzionalmente importante rimane una questione separata.
+
+[Part 2 describes the PSeq workflow in greater detail, including molecular tagging, library construction, read assignment, molecule-specific assembly, and consensus generation.](/media/blog/an-introduction-to-phased-sequencing-part-2)
+
+<ArticleSeriesNavigation
+  series={phasedSequencingSeries}
+  locale="it"
+  currentPart={1}
+  position="end"
+/>

@@ -1,0 +1,249 @@
+---
+title: "Eine Einführung in die Phasensequenzierung: Teil 2"
+summary: "Wie PSeq die Identität des Quellmoleküls in einem Kurzlese-Workflow bewahrt."
+image: "/images/media/blog/an-introduction-to-phased-sequencing-part-2.png"
+authors: ["William Agnew"]
+date: '2026-07-15'
+locale: 'de-DE'
+translationKey: 'blog.phased-sequencing.part-2'
+sourceLocale: 'en-US'
+translationStatus: 'draft'
+sourceRevision: '2026-08-08'
+translatedFromRevision: '2026-08-08'
+translator: 'Machine-assisted draft'
+---
+import ArticleCallout from '@/components/content/ArticleCallout.astro';
+import ArticleComparisonTable from '@/components/content/ArticleComparisonTable.astro';
+import ArticleConceptList from '@/components/content/ArticleConceptList.astro';
+import ArticleKeyPoints from '@/components/content/ArticleKeyPoints.astro';
+import ArticleSeriesNavigation from '@/components/content/ArticleSeriesNavigation.astro';
+import { phasedSequencingSeries } from '@/lib/articleSeries';
+
+<ArticleSeriesNavigation
+  series={phasedSequencingSeries}
+  locale="de-DE"
+  currentPart={2}
+  position="start"
+/>
+
+## Zusammenfassung
+
+In dieser Serie verwendet Phaeno **Phasensequenzierung**, um Sequenzierungsarchitekturen zu beschreiben, die die Verknüpfung zwischen Beobachtungen, die von demselben Quellmolekül stammen, bewahren. Die Idee ist einfach: Fragmente sind viel aussagekräftiger, wenn ihr molekularer Ursprung bekannt bleibt.
+
+Bei der herkömmlichen Short-Read-RNA-Sequenzierung werden vor der Sequenzierung in der Regel viele Transkripte fragmentiert und zusammengefasst. Die daraus resultierenden Messwerte können genau, reichlich und äußerst nützlich sein, das Experiment speichert jedoch im Allgemeinen keine direkte Aufzeichnung darüber, welche entfernten Fragmente von derselben eingefangenen molekularen Vorlage stammen. End-to-End-Transkriptstrukturen müssen daher aus überlappenden Beweisen abgeleitet werden, die in einer gemischten Population gesammelt wurden.
+
+**[PSeq Clear-Signal Architecture™](/technology/pseq-platform#pseq-clear-signal-architecture)** ändert diese Messarchitektur. Während der Reverse Transkription ordnet ein PSeq-Markierungsreagenz molekulare Informationen jedem erfolgreich erfassten RNA-abgeleiteten cDNA-Molekül zu. Diese Informationen bleiben bei den resultierenden Lesevorgängen wiederherstellbar, sodass die Datenpipeline Lesevorgänge aus derselben erfassten Vorlage vor dem Zusammenbau in molekülspezifische Sätze gruppieren kann.
+
+Das Ergebnis ist keine lange Lektüre. Es handelt sich um eine Sammlung kurzer Lesevorgänge, die einer gemeinsam genutzten erfassten Vorlage zugewiesen sind. Der Zusammenbau erfolgt daher innerhalb einer Quelle-Molekül-Grenze und nicht über einen undifferenzierten Pool von Transkriptfragmenten. Die Rekonstruktion hängt immer noch von der Kontinuität der Berichterstattung, Überschneidungen, Referenzleitfäden und Nachweisen über die Transkriptgrenzen ab.
+
+PSeq ist derzeit eine **Nur für Forschungszwecke (RUO)**-Plattform.
+
+## Was Quell-Molekül-Identität bedeutet
+
+Quellmolekülidentität ist die experimentelle Information, die eine Sequenzierungsbeobachtung mit einer einzelnen erfassten RNA-abgeleiteten molekularen Vorlage verbindet.
+
+In einem cDNA-Workflow ist diese beobachtbare Vorlage eine revers transkribierte Darstellung eines Ausgangs-RNA-Moleküls und nicht die direkt beobachtete ursprüngliche RNA. Die umgekehrte Transkription kann unvollständig sein, Substitutionen oder Template-Wechsel einführen, mehr als ein Produkt erzeugen oder kein wiederherstellbares Produkt erzeugen. Ein beobachtetes cDNA-Ende liefert daher einen Hinweis auf eine RNA-Grenze, ist jedoch nicht automatisch ein Beweis für das native biologische Ende.
+
+Es ist mit der gewöhnlichen Stichprobenindizierung verwandt, unterscheidet sich aber davon. Ein Probenindex identifiziert die Probe oder Bibliothek, die einen Lesevorgang erzeugt hat. Quellmolekülinformationen funktionieren auf einer feineren Ebene: Sie unterscheiden einzelne erfasste molekulare Vorlagen innerhalb dieser Probe oder Bibliothek.
+
+Es unterscheidet sich auch von der Transkriptanmerkung. Eine Anmerkung kann angeben, dass ein Lesevorgang mit einem bekannten Gen oder einer bekannten Isoform kompatibel ist. Die Quellmolekülidentität besagt, dass ein bestimmter Satz von Lesevorgängen von derselben erfassten molekularen Vorlage stammt, unabhängig davon, ob diese Vorlage mit einer vorhandenen Annotation übereinstimmt oder nicht.
+
+<ArticleCallout>
+  <em>Beispielidentität antwortet darauf, von welcher Probe ein Lesevorgang stammt. Antworten auf die Identität von Quellmolekülen, die eine RNA-abgeleitete molekulare Vorlage in der Probe erfassten, der ein Messwert zugewiesen wurde.</em>
+</ArticleCallout>
+
+Diese Unterscheidung ist wichtig, da zwei RNA-abgeleitete molekulare Matrizen aus demselben Gen unterschiedliche Spleißverbindungen, beobachtete Transkriptgrenzen, Sequenzvarianten, mögliche Bearbeitungsereignisse oder nicht translatierte Regionen aufweisen können. Sobald Fragmente aus diesen Vorlagen ohne wiederherstellbare Quellbeziehung gemischt werden, wird ihre End-to-End-Anordnung zu einem rechnerischen Inferenzproblem.
+
+## Warum vor der Fragmentierung Identität hergestellt werden muss
+
+Durch die Fragmentierung werden Sequenzmerkmale getrennt, die ursprünglich auf demselben Molekül verbunden waren. Eine Spleißverbindung in der Nähe der beobachteten 5'-Grenze, eine Sequenzvariante in einer vorhergesagten kodierenden Region und eine 3'-untranslatierte Region können alle genau beobachtet werden, doch nichts in den Fragmentsequenzen allein beweist notwendigerweise, dass diese Merkmale zusammen auftraten.
+
+Wenn der molekulare Ursprung vor der Fragmentierung festgestellt und in die Sequenzierungsbibliothek übernommen wird, können die Fragmente auch nach der Teilung des physikalischen Moleküls in Beziehung bleiben. Die Verbindung ist eher informativ als räumlich.
+
+Aus diesem Entwurf ergeben sich vier Anforderungen:
+
+<ArticleKeyPoints
+  ariaLabel="Anforderungen zur Wahrung der Identität des Quellmoleküls"
+  items={[
+    'Die Identität muss mit dem Molekül verknüpft werden, bevor seine Sequenz fragmentiert wird',
+    'Die Identitätsinformationen müssen die Generierung und Sequenzierung der Bibliothek überstehen',
+    'Lesevorgänge müssen genügend Informationen für eine zuverlässige Molekülzuordnung enthalten',
+    'Das Identifizierungssystem muss Moleküle unterscheiden und gleichzeitig experimentelle Fehler tolerieren',
+  ]}
+/>
+
+Ein Fehler in jeder Phase kann die beabsichtigte Einschränkung schwächen. Durch Kollisionen können verschiedene Moleküle identisch erscheinen. Tag-Schäden oder Sequenzierungsfehler können dazu führen, dass Lesevorgänge von einem Molekül in mehrere Gruppen aufgeteilt werden. Durch Kontamination zwischen Gruppen können Fragmente von nicht verwandten Molekülen eingeführt werden. Dabei handelt es sich um messbare analytische Risiken, nicht nur um Softwaredetails.
+
+## Der PSeq-Workflow auf konzeptioneller Ebene
+
+Die Quellenidentitätslogik folgt sechs miteinander verbundenen Stufen.
+
+<ArticleConceptList
+  ariaLabel="Konzeptionelle Phasen des PSeq-Workflows"
+  items={[
+    {
+      id: 'represent-the-source-molecule',
+      title: 'Reverse-Transkription und Markierung des Quellmoleküls',
+      paragraphs: [
+        'Während der reversen Transkription verknüpft ein PSeq-Tagging-Reagenz molekulare Informationen mit der RNA-abgeleiteten cDNA, sodass ihre Sequenz in einen DNA-Bibliotheks-Workflow aufgenommen werden kann, der mit etablierten Short-Read-Sequenzierungssystemen kompatibel ist.',
+        'Die resultierende markierte cDNA behält die von der Ausgangs-RNA erfassten Sequenzbeziehungen bei, vorbehaltlich der Vollständigkeit und Genauigkeit der reversen Transkription.',
+        'Diese cDNA ist die erfasste molekulare Vorlage, die vom Arbeitsablauf gemessen wird. Seine beobachteten Enden allein legen nicht die nativen 5′- oder 3′-RNA-Grenzen fest.',
+      ],
+    },
+    {
+      id: 'associate-molecular-information',
+      title: 'Tragen Sie molekulare Informationen weiter',
+      paragraphs: [
+        'Die bei der Reverse Transkription eingearbeiteten molekularen Informationen unterscheiden erfasste Matrizen innerhalb derselben Probe.',
+        'Während die markierte cDNA amplifiziert und für den Bibliotheksaufbau vorbereitet wird, bewahren diese Informationen die Tag-zu-Template-Beziehung.',
+      ],
+    },
+    {
+      id: 'generate-a-short-fragment-library',
+      title: 'Generieren Sie eine Bibliothek mit kurzen Fragmenten',
+      paragraphs: [
+        'Das markierte Material wird in eine Sequenzierungsbibliothek umgewandelt, die aus kurzen DNA-Fragmenten besteht. Die Quellmolekülinformationen bleiben durch die Bibliotheksvorbereitung mit diesen Fragmenten verknüpft.',
+        'Die erfasste cDNA-Vorlage ist physisch nicht mehr intakt, ihre Fragmente bleiben jedoch als Gruppe identifizierbar.',
+      ],
+    },
+    {
+      id: 'sequence-on-established-ngs-systems',
+      title: 'Ablauf auf etablierten NGS-Systemen',
+      paragraphs: [
+        'Die Bibliothek wird mithilfe von Short-Read-Sequenzierungsinstrumenten der nächsten Generation gelesen. Jede eingefangene molekulare Matrize kann durch mehrere unabhängig voneinander beobachtete Fragmente repräsentiert werden.',
+        'Die Abdeckung über ein Molekül kann je nach Experiment ausgewählt werden, während die tatsächliche Wiederfindung von der Komplexität, Häufigkeit, Transkriptlänge und Sequenzierungstiefe der Bibliothek abhängt.',
+      ],
+    },
+    {
+      id: 'assign-reads-to-molecule-specific-sets',
+      title: 'Weisen Sie Lesevorgänge molekülspezifischen Sätzen zu',
+      paragraphs: [
+        'Nach der Sequenzierung werden die molekularen Informationen in Sätze sortiert, die einzelne erfasste molekulare Vorlagen darstellen.',
+        'Die Qualität der Zuordnung ist von zentraler Bedeutung: Die molekülspezifische Assemblierung ist nur dann sinnvoll, wenn die Zugehörigkeit jedes Satzes hinreichend genau und vollständig ist.',
+      ],
+    },
+    {
+      id: 'assemble-and-build-consensus',
+      title: 'Versammeln Sie sich und bilden Sie einen Konsens',
+      paragraphs: [
+        'Die Transkriptrekonstruktion wird innerhalb jedes molekülspezifischen Satzes durchgeführt. Einer erfassten Vorlage zugewiesene Lesevorgänge werden miteinander verglichen und nicht mit jedem kompatiblen Fragment in der Probe.',
+        'Überlappung, Abdeckungskontinuität, Referenzinformationen und beobachtete Grenznachweise bestimmen, welche Rekonstruktion unterstützt werden kann. Überlappende, unabhängig sequenzierte Beobachtungen können ebenfalls die Konsensbildung unterstützen, obwohl erreichbare Genauigkeit und Vollständigkeit eine direkte Validierung erfordern.',
+      ],
+    },
+  ]}
+/>
+
+## Identität schränkt die Versammlung ein; es löst es nicht automatisch
+
+Die Identität des Quellmoleküls verändert den Suchraum, der einem Assembler zur Verfügung steht. Bei der herkömmlichen Transkriptassemblierung können viele Fragmente aus vielen Transkripten mit demselben Gen kompatibel sein. Der Algorithmus muss ein oder mehrere Transkriptmodelle identifizieren, die die gepoolten Beweise erklären.
+
+In einem molekülbeschränkten Arbeitsablauf erhält der Assembler einen kleineren Satz von Lesevorgängen, von denen angenommen wird, dass sie von einer erfassten molekularen Vorlage stammen. Die Frage ändert sich von „Welche Transkriptpopulation erklärt diese Fragmente?“ zu „Wie passen diese Fragmente angesichts der verfügbaren Abdeckung, Überlappung, Referenzinformationen und Grenznachweise innerhalb dieser erfassten Vorlage zusammen?“
+
+Diese Einschränkung kann die Mehrdeutigkeit reduzieren, beseitigt jedoch nicht jeden Fehlermodus. Ein molekülspezifischer Satz, der getrennte Abdeckungsinseln enthält, unterstützt möglicherweise immer noch mehrere Rekonstruktionen – oder keine vollständige Rekonstruktion.
+
+Hier bezieht sich die **Vollständigkeit des Transkripts** auf ein vordefiniertes Analysekriterium und sollte nicht allein aufgrund der Zuordnung von Lesevorgängen zu einem Molekül angenommen werden. Das Kriterium sollte angeben, ob es beobachtete 5′- und 3′-Grenzen, eine vollständige Spleißkette, eine Mindestabdeckung, einen durchgehenden zusammenhängenden Konsens oder eine referenzgestützte Interpolation erfordert.
+
+<ArticleComparisonTable
+  ariaLabel="Was Quellmolekülinformationen ermöglichen und was nicht"
+  rowHeaderLabel="Zurückgehaltene Informationen"
+  columns={[
+    { key: 'enables', label: 'Was es ermöglicht', highlighted: true },
+    { key: 'doesNotGuarantee', label: 'Was es nicht garantiert' },
+  ]}
+  rows={[
+    {
+      label: 'Molekularer Identifikator',
+      values: {
+        enables: 'Zuweisung von Lesevorgängen zu einer von einem Kandidaten erfassten molekularen Vorlage',
+        doesNotGuarantee: 'Dass jede Kennung eindeutig, fehlerfrei oder wiederhergestellt ist',
+      },
+    },
+    {
+      label: 'Fragmentmitgliedschaft',
+      values: {
+        enables: 'Zusammenbau innerhalb eines molekülspezifischen Lesesatzes',
+        doesNotGuarantee: 'Dass jeder Lesevorgang korrekt zugeordnet wird oder keine Kontamination vorliegt',
+      },
+    },
+    {
+      label: 'Unabhängige Sequenzabdeckung',
+      values: {
+        enables: 'Konsens über sich überschneidende Beobachtungen',
+        doesNotGuarantee: 'Einheitliche Tiefe, unvoreingenommene Abdeckung oder Wiederherstellung nativer Transkriptenden',
+      },
+    },
+    {
+      label: 'Rekonstruiertes Transkript',
+      values: {
+        enables: 'Eine Hypothese auf Molekülebene für verknüpfte Sequenzen und Strukturen',
+        doesNotGuarantee: 'Dass die Rekonstruktion vollständig, biologisch funktionsfähig oder quantitativ unvoreingenommen ist',
+      },
+    },
+  ]}
+/>
+
+## Die Lesezuweisung ist eine analytische Messung
+
+Es ist verlockend, die molekulare Sortierung als einen Vorverarbeitungsschritt zu betrachten. In der Praxis ist die Auftragsqualität eine der Messgrößen, von denen das nachgelagerte Ergebnis abhängt.
+
+Es müssen mehrere Fehlerklassen charakterisiert werden:
+
+- **Kollisionen:** Zwei erfasste molekulare Vorlagen erhalten molekulare Informationen, die nicht ausreichend unterschiedlich sind, und werden zu einem Satz zusammengeführt.
+- **Aufteilung:** Lesevorgänge von einer erfassten molekularen Vorlage scheinen unterschiedliche Identitäten zu tragen und sind auf mehrere Sätze aufgeteilt.
+- **Kreuzzuordnung:** Ein Fragment wird im falschen molekülspezifischen Satz platziert.
+- **Verlust:** Identitätsinformationen können nicht sicher gelesen werden, sodass ansonsten nützliche Sequenzbeobachtungen nicht zugeordnet werden können.
+- **Ungleichmäßige Darstellung:** Einige Teile eines Moleküls sind tief bedeckt, während andere nicht wiederhergestellt werden.
+
+Die akzeptablen Sätze hängen von der Anwendung ab. Die Entdeckung von Isoformen, die Häufigkeitsschätzung, die Analyse verknüpfter Varianten und der Nachweis seltener Moleküle stellen unterschiedliche Anforderungen. Ein Arbeitsablauf, der für eine umfassende Entdeckung gedacht ist, kann ein anderes Fehlerprofil tolerieren als einer, der eine klinische Entscheidung unterstützen soll.
+
+## Der Konsens hängt von unabhängigen Beweisen ab
+
+Durch Short-Read-Sequenzierung kann dieselbe Basenposition mehrmals über Fragmente hinweg beobachtet werden, die einer erfassten molekularen Vorlage zugeordnet sind. Wenn diese Beobachtungen ausreichend unabhängig und korrekt zugeordnet sind, kann die Übereinstimmung zwischen ihnen eine Konsenssequenz unterstützen.
+
+Konsens ist wertvoll, da einzelne Beobachtungen Sequenzierungs- oder Amplifikationsfehler enthalten können. Wiederholte Beobachtungen können dabei helfen, reproduzierbare molekulare Sequenzen von sporadischen Fehlern zu unterscheiden. Aber zusätzliche Lesungen führen nicht automatisch zu einem unvoreingenommenen Konsens. Gemeinsame Fehler, die bei der umgekehrten Transkription, beim frühen Kopieren, bei Sequenzkontexteffekten oder bei systematischen Zuweisungsfehlern auftreten, können im gesamten Lesesatz bestehen bleiben.
+
+Consensus schätzt daher die Sequenz der erfassten cDNA-Matrize. Die Treue zur ursprünglichen RNA unterliegt einer zusätzlichen Obergrenze, die durch Fehler festgelegt wird, die eingeführt werden, bevor Beobachtungen auf Fragmentebene unabhängig werden. Beispielsweise kann ein Reverse-Transkriptionsfehler möglicherweise nicht von der Sequenz der erfassten Vorlage unterschieden werden.
+
+Die relevante Validierungsfrage ist daher nicht einfach, wie viele Lesevorgänge ein Molekül abdecken. Es geht darum, ob der gesamte Arbeitsablauf genaue, reproduzierbare Sequenzen auf Molekülebene über realistische Transkriptlängen, -häufigkeiten, -zusammensetzungen und -strukturen hinweg erzeugt.
+
+## Was muss validiert werden
+
+Bei der Validierung werden Referenzmaterialien verwendet, deren erwartete Sequenzen, Strukturen und Häufigkeiten bekannt sind. Synthetische RNA-Kontrollen, Mischungen definierter Isoformen, Verdünnungsreihen, Replikatbibliotheken und orthogonale Messungen decken verschiedene Teile des Leistungsbereichs ab.
+
+Wichtige Messungen sind:
+
+- die Anzahl und der Anteil der eingefangenen molekularen Template, dargestellt durch wiederherstellbare Gruppen;
+- die Rate der Kollision, Aufspaltung, des Verlusts und der Kreuzzuordnung zwischen molekularen Identifikatoren;
+- Einheitliche Abdeckung über Transkriptkörper und -enden hinweg;
+- Konsensgenauigkeit nach Sequenzkontext und -tiefe;
+- Empfindlichkeit und Präzision für bekannte Transkriptstrukturen;
+- Häufigkeitslinearität und Reproduzierbarkeit über Replikate hinweg;
+- Leistung in Bezug auf Transkriptlänge, Häufigkeit, GC-Gehalt und strukturelle Komplexität;
+- Robustheit gegenüber Probenqualität, Eingabemenge, Charge, Bediener und Gerätevariation.
+
+Diese Messungen sollten separat gemeldet werden. Eine hohe Konsensgenauigkeit zwischen erfolgreich rekonstruierten eingefangenen Templaten führt nicht zu einer hohen Molekülausbeute. Genaue Transkriptstrukturen allein führen nicht zu einer unvoreingenommenen Quantifizierung. Eine starke Leistung bei synthetischen Kontrollen garantiert keine gleichwertige Leistung bei komplexen biologischen Proben.
+
+Bei den wiederhergestellten Molekülgruppen handelt es sich um analytische Beobachtungen erfasster Vorlagen und nicht um automatisch unvoreingenommene Zählungen aller RNA-Moleküle in der Eingabe. Ihre Beziehung zur Input-Häufigkeit hängt von der Einfangwahrscheinlichkeit, der Effizienz der reversen Transkription, der Molekülspaltung und -kollision, dem Auslassen von Identifikatoren, der Duplikatdarstellung, der unterschiedlichen Wiederherstellung nach Länge oder Sequenz sowie den Filter- und Assemblierungsschwellenwerten ab.
+
+## Wissenschaftlicher Kontext für molekulare Identifikatoren
+
+Das allgemeine Prinzip der molekülbewussten Sequenzierung geht auf PSeq zurück. Kivioja und Kollegen zeigten, dass [einzigartige molekulare Identifikatoren einzelne Nukleinsäuremoleküle unterscheiden können] (https://doi.org/10.1038/nmeth.1778) und die molekülbewusste Zählung bei der Sequenzierung der nächsten Generation unterstützen.
+
+PSeq wendet Quellmolekülinformationen für ein anderes Ziel an: die Einschränkung der Rekonstruktion von Transkriptstrukturen aus Lesevorgängen kurzer Fragmente, die erfassten molekularen Vorlagen zugeordnet sind. Der wissenschaftliche Präzedenzfall bestätigt den Wert der molekularen Identifizierung als Messprinzip; Es ersetzt nicht die Validierung der PSeq-Chemie, Zuordnung, Assemblierung oder Konsensleistung.
+
+## Abschluss
+
+PSeq bewahrt die Beziehung zwischen einem erfolgreich erfassten RNA-abgeleiteten cDNA-Molekül und den daraus abgeleiteten kurzen Lesevorgängen. Das Markierungsreagenz verknüpft molekulare Informationen während der reversen Transkription; Diese Informationen werden durch die Bibliotheksgenerierung übertragen, während der Sequenzierung wiederhergestellt und zur Erstellung molekülspezifischer Lesesätze verwendet.
+
+Diese Beziehung verwandelt die Transkriptassemblierung von einem Inferenzproblem auf Populationsebene in ein molekülbeschränktes Rekonstruktionsproblem. Wiederholte Sequenzbeobachtungen unterstützen auch die Konsensgenerierung relativ zur erfassten cDNA-Vorlage.
+
+Erste technische Studien haben die beabsichtigte Marker-plus-cDNA-Read-Struktur, konzentrierte Marker am Anfang von Read 1 und eine nachverfolgbare molekülspezifische Rekonstruktion in einem repräsentativen PRPF31-Beispiel beobachtet. Die aktuelle Validierung umfasst die Quantifizierung der Molekülrückgewinnung, der Zuordnungsgenauigkeit, der Konsensleistung, der Reproduzierbarkeit und der Häufigkeitsmessung für alle beabsichtigten Forschungsanwendungen der Plattform.
+
+[Part 3 examines how molecule-resolved transcript data could be used in biological discovery, translational research, and machine learning.](/media/blog/an-introduction-to-phased-sequencing-part-3)
+
+<ArticleSeriesNavigation
+  series={phasedSequencingSeries}
+  locale="de-DE"
+  currentPart={2}
+  position="end"
+/>

@@ -1,0 +1,270 @@
+---
+title: "Introduzione al sequenziamento fasico: parte 3"
+summary: "Come i dati di trascrizione risolti a livello molecolare supportano la scoperta, la ricerca traslazionale e l'apprendimento automatico."
+image: "/images/media/blog/an-introduction-to-phased-sequencing-part-3.png"
+authors: ["William Agnew"]
+date: '2026-07-15'
+locale: 'it'
+translationKey: 'blog.phased-sequencing.part-3'
+sourceLocale: 'en-US'
+translationStatus: 'draft'
+sourceRevision: '2026-08-08'
+translatedFromRevision: '2026-08-08'
+translator: 'Machine-assisted draft'
+---
+import ArticleCallout from '@/components/content/ArticleCallout.astro';
+import ArticleComparisonTable from '@/components/content/ArticleComparisonTable.astro';
+import ArticleConceptList from '@/components/content/ArticleConceptList.astro';
+import ArticleKeyPoints from '@/components/content/ArticleKeyPoints.astro';
+import ArticleSeriesNavigation from '@/components/content/ArticleSeriesNavigation.astro';
+import { phasedSequencingSeries } from '@/lib/articleSeries';
+
+<ArticleSeriesNavigation
+  series={phasedSequencingSeries}
+  locale="it"
+  currentPart={3}
+  position="start"
+/>
+
+## Riepilogo
+
+I dati di trascrizione risolti dalla molecola descrivono l'RNA a un livello più preciso rispetto al solo conteggio dei geni. Invece di trattare ogni trascrizione da un locus come intercambiabile, possono rappresentare strutture isoformi che soddisfano criteri di completezza predefiniti, varianti di sequenza collegate, confini della trascrizione osservati, sequenze di codifica previste ed elementi regolatori come caratteristiche dei singoli modelli molecolari catturati.
+
+In questo caso, **completo** e **intero** si riferiscono a criteri analitici predefiniti, non solo all'assegnazione molecolare. Uno studio dovrebbe indicare se la completezza richiede confini osservati 5′ e 3′, una catena di giunzione completa, una copertura minima, un consenso contiguo end-to-end o un’interpolazione supportata da riferimenti tra le regioni coperte.
+
+Questa struttura aggiuntiva crea tre ampie aree di valore. La scoperta biologica consente di avere una visione più chiara della diversità e della regolamentazione dei trascritti. La ricerca traslazionale può collegare specifiche forme molecolari ai meccanismi della malattia, ai sottogruppi di pazienti o alla risposta al trattamento. Gli studi sull’apprendimento automatico acquisiscono caratteristiche che preservano le distinzioni biologiche oscurate dall’aggregazione a livello di gene.
+
+Una risoluzione più elevata da sola non garantisce un risultato scientifico o predittivo migliore. I dati risolti a livello molecolare introducono anche più funzionalità, conteggi inferiori per funzionalità, nuovi errori di misurazione, sfide di annotazione e ulteriori opportunità di overfitting. I confronti diretti con le misurazioni stabilite determinano dove la risoluzione aggiunta migliora la risposta.
+
+La questione centrale non è se i dati a livello molecolare contengano più dettagli. È se quel dettaglio è accurato, riproducibile, biologicamente rilevante e utile per una decisione definita.
+
+PSeq è attualmente una piattaforma **Solo per uso di ricerca (RUO)**. Gli esempi traslazionali e clinici in questo articolo descrivono direzioni di ricerca, non affermazioni sulla prestazione clinica.
+
+## Dalle molecole di trascrizione alle caratteristiche analitiche
+
+Un modello molecolare derivato dall'RNA catturato può trasportare diversi tipi di informazioni contemporaneamente: confini osservati della trascrizione 5 'e 3', combinazioni di esoni, sequenza di codifica prevista, regioni non tradotte, eventi di modifica candidati e varianti di sequenza. La risoluzione della molecola preserva le relazioni tra tali caratteristiche. Quando le prestazioni e la validazione del test lo giustificano, i limiti osservati possono supportare l'inferenza del promotore, dell'inizio della trascrizione o dell'utilizzo della scissione e della poliadenilazione.
+
+L'analisi a valle non necessita di utilizzare ogni molecola come variabile separata. Le osservazioni a livello molecolare possono essere riassunte in caratteristiche interpretabili come:
+
+<ArticleKeyPoints
+  ariaLabel="Caratteristiche derivate dai dati di trascrizione risolti dalla molecola"
+  items={[
+    'L\'abbondanza stimata di strutture di trascrizione che soddisfano criteri di completezza predefiniti',
+    'Combinazioni collegate di giunzione, modifica dei candidati ed eventi di sequenza',
+    'Relazioni tra confine-trascrizione osservato, sequenza di codifica prevista e fine trascrizione',
+    'La distribuzione delle forme molecolari all\'interno di un campione o di uno stato cellulare',
+  ]}
+/>
+
+La rappresentazione appropriata delle caratteristiche dipende dalla domanda scientifica. Uno studio di scoperta può conservare un ampio catalogo di trascrizioni. Uno studio meccanicistico può concentrarsi su un evento di giunzione in un contesto molecolare definito. Un modello predittivo può richiedere un insieme di funzionalità compatte e pre-specificate che possano essere misurate in modo coerente tra coorti.
+
+## Tre potenziali aree di valore
+
+<ArticleConceptList
+  ariaLabel="Potenziali usi dei dati di trascrizione risolti da molecole"
+  items={[
+    {
+      id: 'biological-discovery',
+      title: 'Scoperta biologica',
+      paragraphs: [
+        'Le misurazioni risolte a livello molecolare possono rivelare strutture di trascrizione e combinazioni di caratteristiche difficili da ricostruire da frammenti raggruppati. Potrebbero migliorare l\'annotazione delle isoforme, chiarire l\'uso della trascrizione specifica per cellula o tessuto e collegare regioni regolatorie distanti con sequenze di codifica previste.',
+        'Il risultato è una descrizione più ricca degli stati molecolari a disposizione di un sistema biologico, non una prova che ogni trascrizione osservata abbia una funzione distinta.',
+      ],
+    },
+    {
+      id: 'translational-research',
+      title: 'Ricerca traslazionale',
+      paragraphs: [
+        'Strutture di trascrizione specifiche possono chiarire i meccanismi della malattia, perfezionare sottogruppi molecolari e identificare marcatori candidati di risposta e progressione. Il collegamento a livello molecolare è particolarmente rilevante quando l’effetto biologico dipende da quali caratteristiche si verificano insieme.',
+        'Associazione, validità analitica, prestazione predittiva e utilità clinica rimangono questioni separate e richiedono prove progressivamente più forti.',
+      ],
+    },
+    {
+      id: 'machine-learning',
+      title: 'Apprendimento automatico',
+      paragraphs: [
+        'Le caratteristiche isoformi e derivate dalle molecole forniscono ai modelli l\'accesso alle distinzioni biologiche che i riepiloghi a livello di gene combinano. Un modello può confrontare strutture di trascrizione, combinazioni molecolari o distribuzioni di isoforme anziché fare affidamento solo sull\'espressione totale in un locus.',
+        'Ulteriori funzionalità aumentano anche la scarsità, l\'instabilità e il rischio di overfitting. Qualsiasi miglioramento deve sopravvivere ad un’analisi mirata, a gruppi indipendenti e al confronto con linee di base più semplici.',
+      ],
+    },
+  ]}
+/>
+
+## Scoperta biologica: risolvere il panorama delle trascrizioni
+
+La diversità della trascrizione è ampia e dipendente dal contesto. Diversi tessuti, tipi di cellule, stadi di sviluppo, esposizioni ambientali e stati patologici possono mostrare diversi confini 5 'osservati, utilizzo dedotto del promotore, modelli di giunzione e confini 3' osservati di trascrizione.
+
+Grandi studi a lunga lettura forniscono la prova che l’accesso alla struttura estesa della trascrizione cambia ciò che può essere osservato. Glinos e colleghi hanno utilizzato il sequenziamento dell'RNA a lettura lunga nei tessuti umani per identificare un'ampia diversità di trascrizione e analizzare le strutture di trascrizione associate agli alleli. Un atlante di 29 sottoinsiemi di cellule immunitarie ha identificato migliaia di isoforme specifiche del tipo di cellula e ha collegato le caratteristiche della trascrizione con analisi genetiche e associate alla malattia.
+
+Questi studi dimostrano il valore scientifico della struttura della trascrizione collegata. Non implicano che ogni isoforma appena osservata sia funzionale. Le trascrizioni candidate possono derivare da rumore biologico, elaborazione incompleta, artefatti tecnici o eventi rari con poche conseguenze fenotipiche.
+
+La scoperta richiede quindi diversi livelli di prova:
+
+- osservazione riproducibile attraverso repliche tecniche e biologiche;
+- conferma dei confini della trascrizione osservati e delle giunzioni di giunzione;
+- supporto quantitativo tra campioni o popolazioni cellulari rilevanti;
+- prove ortogonali da test mirati o da un'altra piattaforma di misurazione;
+- perturbazioni o esperimenti funzionali quando viene proposto un ruolo causale.
+
+I dati risolti a livello molecolare possono migliorare la mappa iniziale. L'interpretazione biologica dipende ancora dalla progettazione e dalla validazione sperimentale.
+
+## Ricerca traslazionale: connessione della forma molecolare con il fenotipo
+
+L'abbondanza di RNA a livello genico può rimanere stabile mentre la composizione della trascrizione cambia. Un'isoforma può aumentare mentre un'altra diminuisce, lasciando approssimativamente invariata la conta totale dei geni. Se le isoforme hanno diversi frame di lettura aperti o regioni regolatorie previste, lo stato biologico può cambiare senza un grande segnale a livello di gene. La sequenza dell'RNA supporta l'inferenza del potenziale di codifica; da solo non stabilisce quale open reading frame viene tradotto o se un prodotto proteico è stabile.
+
+Ciò crea diverse ipotesi traslazionali. Le caratteristiche delle isoforme potrebbero aiutare a distinguere sottogruppi molecolari, spiegare l'attività variabile del percorso, collegare varianti genetiche con trascrizioni alterate o identificare forme associate al decorso della malattia o alla risposta al trattamento.
+
+Gli studi primari mostrano perché queste ipotesi sono plausibili. Il sequenziamento delle isoforme a lunghezza intera nei cardiomiociti ha identificato cambiamenti di trascrizione associati a mutazioni RBM20 rilevanti per la malattia. La profilazione delle cellule immunitarie a lettura lunga ha collegato le isoforme specifiche del tipo di cellula con le analisi genetiche associate alla malattia. Questi risultati illustrano possibili percorsi dalla struttura della trascrizione al meccanismo.
+
+Illustrano anche i limiti. I risultati possono dipendere dalla composizione del tessuto, dallo stato cellulare, dalla qualità del campione, dalla profondità di sequenziamento, dai filtri analitici e dall'annotazione di riferimento. Le associazioni scoperte in una coorte potrebbero non riprodursi in un'altra. Un marcatore può essere biologicamente interessante senza essere sufficientemente accurato per effettuare previsioni o sufficientemente utile per modificare una decisione.
+
+<ArticleCallout>
+  <em>Un'associazione di trascrizione è un'osservazione biologica. Un biomarcatore richiede una previsione riproducibile. Un test clinico richiede inoltre validità analitica, uso definito e prova che il risultato migliora la cura.</em>
+</ArticleCallout>
+
+## Apprendimento automatico: uno spazio di funzionalità diverso
+
+La maggior parte dei modelli trascrittomici iniziano con una matrice in cui le righe rappresentano i campioni e le colonne rappresentano i geni. Ciascun valore riassume l'abbondanza di RNA assegnato a un locus. Questa rappresentazione è compatta e spesso efficace, ma può comprimere più forme molecolari in un unico numero.
+
+I dati risolti a livello molecolare rendono possibili rappresentazioni alternative. Le caratteristiche potrebbero descrivere l'abbondanza stimata di isoforme specifiche, il rapporto delle isoforme all'interno di un gene, la presenza di eventi di sequenza collegati, l'utilizzo osservato della fine della trascrizione o la distribuzione delle strutture molecolari.
+
+I gruppi di molecole recuperati sono osservazioni analitiche di modelli catturati, non conteggi di censimento automaticamente imparziali di tutte le molecole di RNA nell'input. La probabilità di acquisizione, l'efficienza della trascrizione inversa, la suddivisione e la collisione molecolare, l'abbandono dell'identificatore, la rappresentazione duplicata, il recupero differenziale per lunghezza o sequenza, il filtraggio e le soglie di assemblaggio possono tutti influenzare la relazione tra i gruppi osservati e l'abbondanza di input.
+
+Il vantaggio è la specificità. Una caratteristica legata a una forma molecolare definita può allinearsi più strettamente con un processo regolatorio o un meccanismo di malattia rispetto all’espressione genica totale. Studi primari hanno valutato le caratteristiche a livello di isoforma in modelli predittivi, inclusi modelli di grado istologico del cancro al seno, dimostrando che sono fattibili confronti diretti con le linee di base a livello di gene.
+
+Il potenziale svantaggio è la dimensionalità. Un campione può contenere molte isoforme rare o annotate in modo incompleto. Suddividere il conteggio di un gene tra molte caratteristiche di trascrizione riduce le osservazioni disponibili per ciascuna caratteristica. Le modifiche alle misurazioni e alle annotazioni possono creare caratteristiche apparenti che non si riproducono.
+
+I rischi comuni includono:
+
+- **Overfitting:** un modello apprende isoforme specifiche della coorte o artefatti tecnici piuttosto che una biologia generalizzabile.
+- **Perdita di dati:** la selezione o la normalizzazione delle funzionalità utilizza le informazioni del set di valutazione.
+- **Confondimento batch:** le differenze di libreria, strumento, sito o elaborazione sono correlate al risultato.
+- **Instabilità delle funzionalità:** le definizioni delle trascrizioni o le stime dell'abbondanza cambiano con il software, le annotazioni di riferimento o la profondità di misurazione.
+- **Osservazioni sparse:** le isoforme rare producono stime inaffidabili o sono assenti in molti campioni.
+- **Perdita di interpretabilità:** un ampio spazio di caratteristiche oscura quali relazioni molecolari guidano la previsione.
+
+Questi rischi sono gestibili, ma solo quando vengono affrontati nel disegno dello studio piuttosto che dopo che si presenta un risultato del modello favorevole.
+
+## Quattro livelli di evidenza dovrebbero rimanere separati
+
+<ArticleComparisonTable
+  ariaLabel="Livelli di evidenza per applicazioni di trascrizione risolta da molecole"
+  rowHeaderLabel="Livello di prova"
+  columns={[
+    { key: 'question', label: 'Domanda', highlighted: true },
+    { key: 'evidence', label: 'Servono prove' },
+    { key: 'failure', label: 'Che aspetto ha il fallimento' },
+  ]}
+  rows={[
+    {
+      label: 'Validità analitica',
+      values: {
+        question: 'La caratteristica molecolare può essere misurata in modo accurato e riproducibile?',
+        evidence: 'Controlli, repliche, limiti di rilevamento, precisione, interferenze e studi cross-site',
+        failure: 'La funzionalità cambia in base al batch, alla profondità, all\'operatore o alla pipeline di analisi',
+      },
+    },
+    {
+      label: 'Associazione biologica',
+      values: {
+        question: 'La funzione traccia uno stato o un meccanismo biologico?',
+        evidence: 'Campioni rilevanti, conferma ortogonale, perturbazione ed esperimenti meccanicistici',
+        failure: 'L\'associazione è tecnica, indiretta o non riproducibile',
+      },
+    },
+    {
+      label: 'Validità predittiva',
+      values: {
+        question: 'La funzionalità migliora la previsione nei campioni invisibili?',
+        evidence: 'Modelli bloccati, coorti indipendenti, calibrazione e confronto con linee di base stabilite',
+        failure: 'Le prestazioni diminuiscono dopo la convalida esterna o non aggiungono alcun valore rispetto a input più semplici',
+      },
+    },
+    {
+      label: 'Utilità clinica',
+      values: {
+        question: 'L’utilizzo del risultato migliora una decisione o un risultato definito?',
+        evidence: 'Studi prospettici sulla popolazione prevista e sul flusso di lavoro',
+        failure: 'Il risultato è accurato ma non cambia le decisioni né migliora i risultati',
+      },
+    },
+  ]}
+/>
+
+## Progettare confronti decisivi
+
+Il valore dei dati risolti sulle molecole dovrebbe essere testato rispetto all’alternativa consolidata più forte, non rispetto a una linea di base intenzionalmente debole. Per molte domande, ciò significa confrontare modelli o analisi costruiti a partire da:
+
+- caratteristiche RNA-sequencing standard a livello genetico;
+- stime stabilite delle giunzioni di giunzione o dell'abbondanza di trascrizioni;
+- variabili cliniche, di imaging, genomiche o proteomiche rilevanti;
+- set di funzionalità combinate che verificano se i dati risolti dalle molecole aggiungono informazioni indipendenti.
+
+Uno studio utile dovrebbe predefinire la questione biologica, il protocollo di misurazione, la pipeline di generazione delle funzionalità, la metrica primaria, la linea di base di confronto e la coorte di validazione. La scoperta e la valutazione dovrebbero essere separate. Quando possibile, l’analisi finale dovrebbe essere bloccata prima che venga esaminata la coorte indipendente.
+
+<ArticleConceptList
+  ariaLabel="Sequenza di valutazione per i dati di trascrizione risolti dalla molecola"
+  items={[
+    {
+      id: 'define-the-decision',
+      title: 'Definire la decisione',
+      paragraphs: [
+        'Specificare la domanda biologica, traslazionale o predittiva prima di selezionare le caratteristiche molecolari. Una caratteristica utile è definita dalla decisione che informa, non dalla sua novità.',
+      ],
+    },
+    {
+      id: 'establish-measurement-performance',
+      title: 'Stabilire le prestazioni di misurazione',
+      paragraphs: [
+        'Caratterizzare il recupero delle molecole, l\'assegnazione, la ricostruzione della trascrizione, la stima dell\'abbondanza, la riproducibilità e gli effetti batch nell\'intervallo di campioni previsto.',
+      ],
+    },
+    {
+      id: 'compare-with-strong-baselines',
+      title: 'Confrontare con linee di base forti',
+      paragraphs: [
+        'Verifica se le caratteristiche risolte dalla molecola aggiungono informazioni oltre l\'espressione genica, le misure di splicing convenzionali e altre variabili già disponibili per l\'attività.',
+      ],
+    },
+    {
+      id: 'validate-independently',
+      title: 'Convalidare in modo indipendente',
+      paragraphs: [
+        'Utilizza campioni, siti, operatori e periodi di tempo che non sono stati coinvolti nella scoperta delle funzionalità o nella selezione del modello. Segnalare le modalità di calibrazione e di guasto nonché la discriminazione.',
+      ],
+    },
+    {
+      id: 'test-real-world-use',
+      title: 'Prova l\'uso nel mondo reale',
+      paragraphs: [
+        'Per le applicazioni traslazionali, valutare se la misurazione può essere prodotta in modo affidabile all\'interno del flusso di lavoro previsto e se agire su di essa migliora una decisione definita.',
+      ],
+    },
+  ]}
+/>
+
+## Contesto scientifico selezionato
+
+- [Variazione del trascrittoma nei tessuti umani rivelata dal sequenziamento a lettura lunga](https://doi.org/10.1038/s41586-022-05035-y) — prova primaria che la struttura della trascrizione collegata può rivelare diversità tissutale, effetti associati agli alleli e nuove trascrizioni.
+- [Il sequenziamento di isoforme di trascrizione a lunghezza intera di una singola molecola rivela isoforme di RNA associate alla malattia nei cardiomiociti] (https://doi.org/10.1038/s41467-021-24484-z) - un esempio di analisi di isoforme a lunghezza intera in un modello cellulare rilevante per la malattia.
+- [Il sequenziamento a lunga lettura per 29 sottoinsiemi di cellule immunitarie rivela isoforme legate alla malattia](https://doi.org/10.1038/s41467-024-48615-4) - un atlante di cellule immunitarie che collega la struttura delle isoforme, la specificità cellulare e le analisi associate alla malattia.
+- [Determinazione del grado istologico del cancro al seno dai dati RNA-sequencing](https://doi.org/10.1186/s13058-016-0705-4) — un esempio di confronto delle caratteristiche a livello di gene e isoforma nella modellazione predittiva.
+
+Questi studi stabiliscono un precedente scientifico per la valutazione delle informazioni di trascrizione estese e a livello di isoforma in base alle definizioni di completezza specifiche della piattaforma. Non stabiliscono le prestazioni di PSeq né garantiscono che le funzionalità risolte dalle molecole miglioreranno una particolare applicazione di scoperta, traslazione o apprendimento automatico.
+
+## Conclusione
+
+I dati di trascrizione risolti a livello molecolare espandono la trascrittomica da una mappa di geni attivi a una mappa delle forme molecolari prodotte da tali geni. Ciò rivela sequenze collegate e relazioni regolatorie che sono difficili da recuperare dai riepiloghi a livello di gene o di frammenti raggruppati.
+
+Le applicazioni spaziano dalla scoperta di trascritti, alla caratterizzazione dello stato cellulare, alla ricerca sui meccanismi della malattia, alla stratificazione molecolare e alla modellazione predittiva. Ciascuna applicazione stabilisce il proprio valore attraverso le prestazioni di misurazione, la rilevanza biologica, la riproducibilità, il confronto con approcci consolidati e, ove appropriato, l'utilità nel mondo reale.
+
+[PSeq Clear-Signal Architecture™](/technology/pseq-platform#pseq-clear-signal-architecture) makes molecule-resolved transcript measurement compatible with established short-read sequencing systems. Direct experiments, careful comparisons, and independent validation will define where that architecture provides the most useful new information.
+
+[Return to Part 1 for the measurement problem that motivates phased sequencing.](/media/blog/an-introduction-to-phased-sequencing-part-1)
+
+<ArticleSeriesNavigation
+  series={phasedSequencingSeries}
+  locale="it"
+  currentPart={3}
+  position="end"
+/>

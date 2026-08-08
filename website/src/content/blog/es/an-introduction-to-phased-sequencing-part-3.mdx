@@ -1,0 +1,270 @@
+---
+title: "Introducción a la secuenciación por fases: Parte 3"
+summary: "Cómo los datos de transcripción resueltos a nivel molecular respaldan el descubrimiento, la investigación traslacional y el aprendizaje automático."
+image: "/images/media/blog/an-introduction-to-phased-sequencing-part-3.png"
+authors: ["William Agnew"]
+date: '2026-07-15'
+locale: 'es'
+translationKey: 'blog.phased-sequencing.part-3'
+sourceLocale: 'en-US'
+translationStatus: 'draft'
+sourceRevision: '2026-08-08'
+translatedFromRevision: '2026-08-08'
+translator: 'Machine-assisted draft'
+---
+import ArticleCallout from '@/components/content/ArticleCallout.astro';
+import ArticleComparisonTable from '@/components/content/ArticleComparisonTable.astro';
+import ArticleConceptList from '@/components/content/ArticleConceptList.astro';
+import ArticleKeyPoints from '@/components/content/ArticleKeyPoints.astro';
+import ArticleSeriesNavigation from '@/components/content/ArticleSeriesNavigation.astro';
+import { phasedSequencingSeries } from '@/lib/articleSeries';
+
+<ArticleSeriesNavigation
+  series={phasedSequencingSeries}
+  locale="es"
+  currentPart={3}
+  position="start"
+/>
+
+## Resumen
+
+Los datos de transcripción resueltos por moléculas describen el ARN a un nivel más preciso que el recuento de genes solo. En lugar de tratar cada transcripción de un locus como intercambiable, pueden representar estructuras de isoformas que cumplen con criterios de integridad predefinidos, variantes de secuencias vinculadas, límites de transcripción observados, secuencias codificantes predichas y elementos reguladores como características de plantillas moleculares capturadas individuales.
+
+Aquí, **completo** y **completo** se refieren a criterios analíticos predefinidos, no solo a la asignación molecular. Un estudio debe indicar si la integridad requiere límites observados de 5′ y 3′, una cadena de empalme completa, una cobertura mínima, un consenso contiguo de extremo a extremo o una interpolación basada en referencias entre regiones cubiertas.
+
+Esa estructura adicional crea tres amplias áreas de valor. El descubrimiento biológico obtiene una visión más clara de la diversidad y regulación de la transcripción. La investigación traslacional puede conectar formas moleculares específicas con mecanismos de enfermedades, subgrupos de pacientes o respuestas al tratamiento. Los estudios de aprendizaje automático obtienen características que preservan las distinciones biológicas oscurecidas por la agregación a nivel de genes.
+
+Una resolución más alta por sí sola no garantiza un mejor resultado científico o predictivo. Los datos resueltos por moléculas también introducen más funciones, recuentos más bajos por función, nuevos errores de medición, desafíos de anotación y oportunidades adicionales de sobreajuste. Las comparaciones directas con mediciones establecidas determinan dónde la resolución agregada mejora la respuesta.
+
+La cuestión central no es si los datos a nivel molecular contienen más detalles. Se trata de si ese detalle es preciso, reproducible, biológicamente relevante y útil para una decisión definida.
+
+PSeq es actualmente una plataforma **Solo para uso en investigación (RUO)**. Los ejemplos clínicos y traslacionales de este artículo describen direcciones de investigación, no afirmaciones de desempeño clínico.
+
+## De las moléculas de transcripción a las características analíticas
+
+Una plantilla molecular derivada de ARN capturado puede transportar varios tipos de información a la vez: límites de transcripción observados en 5' y 3', combinaciones de exones, secuencia codificante predicha, regiones no traducidas, eventos de edición de candidatos y variantes de secuencia. La resolución de moléculas preserva las relaciones entre esas características. Cuando el rendimiento y la validación del ensayo lo justifican, los límites observados pueden respaldar la inferencia del uso del promotor, el inicio de la transcripción o la escisión y poliadenilación.
+
+El análisis posterior no necesita utilizar cada molécula como una variable separada. Las observaciones a nivel molecular se pueden resumir en características interpretables como:
+
+<ArticleKeyPoints
+  ariaLabel="Características derivadas de datos de transcripción resueltos por moléculas"
+  items={[
+    'La abundancia estimada de estructuras de transcripción que cumplen con criterios de integridad predefinidos.',
+    'Combinaciones vinculadas de eventos de empalme, edición de candidatos y secuencia',
+    'Relaciones observadas entre el límite de la transcripción, la secuencia de codificación prevista y el final de la transcripción',
+    'La distribución de formas moleculares dentro de una muestra o estado celular.',
+  ]}
+/>
+
+La representación adecuada de las características depende de la pregunta científica. Un estudio de descubrimiento puede conservar un amplio catálogo de transcripciones. Un estudio mecanicista puede centrarse en un evento de empalme en un contexto molecular definido. Un modelo predictivo puede requerir un conjunto de características compacto y preespecificado que pueda medirse de manera consistente en todas las cohortes.
+
+## Tres áreas potenciales de valor
+
+<ArticleConceptList
+  ariaLabel="Usos potenciales de datos de transcripción resueltos por moléculas."
+  items={[
+    {
+      id: 'biological-discovery',
+      title: 'descubrimiento biológico',
+      paragraphs: [
+        'Las mediciones resueltas por moléculas pueden revelar estructuras de transcripción y combinaciones de características que son difíciles de reconstruir a partir de fragmentos agrupados. Pueden mejorar la anotación de isoformas, aclarar el uso de transcripciones específicas de células o tejidos y conectar regiones reguladoras distantes con secuencias codificantes predichas.',
+        'El resultado es una descripción más rica de los estados moleculares disponibles para un sistema biológico, no una prueba de que cada transcripción observada tenga una función distinta.',
+      ],
+    },
+    {
+      id: 'translational-research',
+      title: 'Investigación traslacional',
+      paragraphs: [
+        'Las estructuras de transcripción específicas pueden aclarar los mecanismos de la enfermedad, refinar los subgrupos moleculares e identificar candidatos a marcadores de respuesta y progresión. El enlace a nivel molecular es especialmente relevante cuando el efecto biológico depende de qué características ocurren juntas.',
+        'La asociación, la validez analítica, el rendimiento predictivo y la utilidad clínica siguen siendo cuestiones separadas y requieren evidencia cada vez más sólida.',
+      ],
+    },
+    {
+      id: 'machine-learning',
+      title: 'Aprendizaje automático',
+      paragraphs: [
+        'Las características derivadas de isoformas y moléculas brindan a los modelos acceso a distinciones biológicas que combinan los resúmenes a nivel de genes. Un modelo puede comparar estructuras de transcripción, combinaciones moleculares o distribuciones de isoformas en lugar de depender únicamente de la expresión total en un locus.',
+        'Más funciones también aumentan la escasez, la inestabilidad y el riesgo de sobreajuste. Cualquier ganancia debe sobrevivir al análisis cerrado, a cohortes independientes y a la comparación con líneas de base más simples.',
+      ],
+    },
+  ]}
+/>
+
+## Descubrimiento biológico: resolviendo el panorama de la transcripción
+
+La diversidad de transcripciones es extensa y depende del contexto. Diferentes tejidos, tipos de células, etapas de desarrollo, exposiciones ambientales y estados patológicos pueden mostrar diferentes límites 5' observados, uso inferido del promotor, patrones de empalme y límites de transcripción 3' observados.
+
+Grandes estudios de lectura prolongada proporcionan evidencia de que el acceso a la estructura de transcripción extendida cambia lo que se puede observar. Glinos y sus colegas utilizaron secuenciación de ARN de lectura larga en tejidos humanos para identificar una amplia diversidad de transcripciones y analizar estructuras de transcripciones asociadas a alelos. Un atlas de lectura larga de 29 subconjuntos de células inmunitarias identificó miles de isoformas específicas de tipos celulares y conectó características de transcripción con análisis genéticos y asociados a enfermedades.
+
+Estos estudios demuestran el valor científico de la estructura de transcripción vinculada. No implican que cada isoforma recién observada sea funcional. Las transcripciones candidatas pueden surgir de ruido biológico, procesamiento incompleto, artefactos técnicos o eventos raros con pocas consecuencias fenotípicas.
+
+Por lo tanto, el descubrimiento requiere varios niveles de evidencia:
+
+- observación reproducible a través de réplicas técnicas y biológicas;
+- confirmación de los límites de transcripción observados y las uniones de empalme;
+- soporte cuantitativo entre muestras o poblaciones celulares relevantes;
+- evidencia ortogonal de ensayos específicos u otra plataforma de medición;
+- experimentos de perturbación o funcionales cuando se propone un papel causal.
+
+Los datos resueltos por moléculas pueden mejorar el mapa inicial. La interpretación biológica todavía depende del diseño y la validación experimentales.
+
+## Investigación traslacional: conectando la forma molecular con el fenotipo
+
+La abundancia de ARN a nivel genético puede permanecer estable mientras cambia la composición de la transcripción. Una isoforma puede aumentar a medida que otra disminuye, dejando el recuento total de genes aproximadamente sin cambios. Si las isoformas tienen diferentes marcos de lectura abiertos o regiones reguladoras predichas, el estado biológico puede cambiar sin una gran señal a nivel genético. La secuencia de ARN apoya la inferencia del potencial de codificación; no establece por sí solo qué marco de lectura abierto se traduce ni si un producto proteico es estable.
+
+Eso crea varias hipótesis traslacionales. Las características de las isoformas podrían ayudar a distinguir subgrupos moleculares, explicar la actividad de las vías variables, conectar variantes genéticas con transcripciones alteradas o identificar formas asociadas con el curso de la enfermedad o la respuesta al tratamiento.
+
+Los estudios primarios muestran por qué estas hipótesis son plausibles. La secuenciación de isoformas completa en cardiomiocitos identificó cambios en la transcripción asociados con mutaciones RBM20 relevantes para la enfermedad. Los perfiles de células inmunitarias de lectura larga conectaron isoformas específicas de tipos celulares con análisis genéticos asociados a enfermedades. Estos resultados ilustran posibles rutas desde la estructura de la transcripción al mecanismo.
+
+También ilustran las limitaciones. Los hallazgos pueden depender de la composición del tejido, el estado celular, la calidad de la muestra, la profundidad de la secuenciación, los filtros analíticos y la anotación de referencia. Es posible que las asociaciones descubiertas en una cohorte no se reproduzcan en otra. Un marcador puede ser biológicamente interesante sin ser lo suficientemente preciso para realizar predicciones o lo suficientemente útil como para cambiar una decisión.
+
+<ArticleCallout>
+  <em>Una asociación de transcripción es una observación biológica. Un biomarcador requiere una predicción reproducible. Una prueba clínica requiere además validez analítica, uso definido y evidencia de que el resultado mejora la atención.</em>
+</ArticleCallout>
+
+## Aprendizaje automático: un espacio de funciones diferente
+
+La mayoría de los modelos transcriptómicos comienzan con una matriz en la que las filas representan muestras y las columnas representan genes. Cada valor resume la abundancia de ARN asignado a un locus. Esta representación es compacta y, a menudo, eficaz, pero puede colapsar múltiples formas moleculares en un solo número.
+
+Los datos resueltos por moléculas hacen posibles representaciones alternativas. Las características podrían describir la abundancia estimada de isoformas específicas, la proporción de isoformas dentro de un gen, la presencia de eventos de secuencia vinculados, el uso observado del extremo de la transcripción o las distribuciones de estructuras moleculares.
+
+Los grupos de moléculas recuperadas son observaciones analíticas de plantillas capturadas, no recuentos censales automáticamente imparciales de todas las moléculas de ARN en la entrada. La probabilidad de captura, la eficiencia de la transcripción inversa, la división y colisión molecular, la eliminación de identificadores, la representación duplicada, la recuperación diferencial por longitud o secuencia, el filtrado y los umbrales de ensamblaje pueden afectar la relación entre los grupos observados y la abundancia de entradas.
+
+La ventaja es la especificidad. Una característica ligada a una forma molecular definida puede alinearse más estrechamente con un proceso regulador o mecanismo de enfermedad que la expresión genética total. Los estudios primarios han evaluado características a nivel de isoformas en modelos predictivos, incluidos modelos de grado histológico del cáncer de mama, lo que demuestra que las comparaciones directas con líneas de base a nivel genético son factibles.
+
+La posible desventaja es la dimensionalidad. Una muestra puede contener muchas isoformas raras o anotadas de forma incompleta. Dividir el recuento de un gen entre muchas características de transcripción reduce las observaciones disponibles para cada característica. Los cambios de medidas y anotaciones pueden crear características aparentes que no se reproducen.
+
+Los riesgos comunes incluyen:
+
+- **Sobreajuste:** un modelo aprende isoformas o artefactos técnicos específicos de una cohorte en lugar de biología generalizable.
+- **Fuga de datos:** la selección o normalización de funciones utiliza información del conjunto de evaluación.
+- **Confusión de lotes:** las diferencias entre bibliotecas, instrumentos, sitios o procesamiento se correlacionan con el resultado.
+- **Inestabilidad de características:** las definiciones de transcripción o las estimaciones de abundancia cambian con el software, las anotaciones de referencia o la profundidad de medición.
+- **Observaciones escasas:** las isoformas raras producen estimaciones poco confiables o están ausentes en muchas muestras.
+- **Pérdida de interpretabilidad:** un gran espacio de características oscurece qué relaciones moleculares impulsan la predicción.
+
+Estos riesgos son manejables, pero sólo cuando se abordan en el diseño del estudio y no después de que aparezca un resultado favorable del modelo.
+
+## Cuatro niveles de evidencia deben permanecer separados
+
+<ArticleComparisonTable
+  ariaLabel="Niveles de evidencia para aplicaciones de transcripción resuelta por moléculas"
+  rowHeaderLabel="Nivel de evidencia"
+  columns={[
+    { key: 'question', label: 'Pregunta', highlighted: true },
+    { key: 'evidence', label: 'Se necesita evidencia' },
+    { key: 'failure', label: '¿Cómo se ve el fracaso?' },
+  ]}
+  rows={[
+    {
+      label: 'Validez analítica',
+      values: {
+        question: '¿Se puede medir la característica molecular de forma precisa y reproducible?',
+        evidence: 'Controles, réplicas, límites de detección, precisión, interferencias y estudios entre sitios.',
+        failure: 'La característica cambia según el lote, la profundidad, el operador o la tubería de análisis.',
+      },
+    },
+    {
+      label: 'Asociación biológica',
+      values: {
+        question: '¿La característica rastrea un estado o mecanismo biológico?',
+        evidence: 'Muestras relevantes, confirmación ortogonal, perturbación y experimentos mecanicistas.',
+        failure: 'La asociación es técnica, indirecta o no reproducible.',
+      },
+    },
+    {
+      label: 'Validez predictiva',
+      values: {
+        question: '¿La función mejora la predicción en muestras invisibles?',
+        evidence: 'Modelos bloqueados, cohortes independientes, calibración y comparación con líneas de base establecidas',
+        failure: 'El rendimiento cae después de la validación externa o no agrega valor sobre entradas más simples',
+      },
+    },
+    {
+      label: 'Utilidad clínica',
+      values: {
+        question: '¿El uso del resultado mejora una decisión o resultado definido?',
+        evidence: 'Estudios prospectivos en la población y el flujo de trabajo previstos.',
+        failure: 'El resultado es preciso pero no cambia las decisiones ni mejora los resultados.',
+      },
+    },
+  ]}
+/>
+
+## Diseñar comparaciones decisivas
+
+El valor de los datos resueltos por moléculas debe probarse frente a la alternativa establecida más sólida, no frente a una línea de base intencionalmente débil. Para muchas preguntas, eso significa comparar modelos o análisis elaborados a partir de:
+
+- características estándar de RNA-sequencing a nivel genético;
+- estimaciones establecidas de unión de empalme o abundancia de transcripción;
+- variables clínicas, de imagen, genómicas o proteómicas relevantes;
+- conjuntos de características combinados que prueban si los datos resueltos por moléculas agregan información independiente.
+
+Un estudio útil debe predefinir la pregunta biológica, el protocolo de medición, el proceso de generación de características, la métrica primaria, la línea de base de comparación y la cohorte de validación. El descubrimiento y la evaluación deben separarse. Siempre que sea posible, el análisis final debe bloquearse antes de examinar la cohorte independiente.
+
+<ArticleConceptList
+  ariaLabel="Secuencia de evaluación para datos de transcripción resueltos por moléculas"
+  items={[
+    {
+      id: 'define-the-decision',
+      title: 'Definir la decisión',
+      paragraphs: [
+        'Especifique la pregunta biológica, traslacional o predictiva antes de seleccionar características moleculares. Una característica útil se define por la decisión que informa, no por su novedad.',
+      ],
+    },
+    {
+      id: 'establish-measurement-performance',
+      title: 'Establecer el desempeño de la medición',
+      paragraphs: [
+        'Caracterice la recuperación, asignación, reconstrucción de transcripciones, estimación de abundancia, reproducibilidad y efectos de lotes de moléculas en todo el rango de muestras previsto.',
+      ],
+    },
+    {
+      id: 'compare-with-strong-baselines',
+      title: 'Comparar con líneas de base sólidas',
+      paragraphs: [
+        'Pruebe si las características resueltas por moléculas agregan información más allá de la expresión genética, las medidas de empalme convencionales y otras variables ya disponibles para la tarea.',
+      ],
+    },
+    {
+      id: 'validate-independently',
+      title: 'Validar de forma independiente',
+      paragraphs: [
+        'Utilice muestras, sitios, operadores y períodos de tiempo que no participaron en el descubrimiento de características o la selección de modelos. Informar modos de calibración y falla, así como discriminación.',
+      ],
+    },
+    {
+      id: 'test-real-world-use',
+      title: 'Pruebe el uso en el mundo real',
+      paragraphs: [
+        'Para aplicaciones traslacionales, evalúe si la medición se puede producir de manera confiable dentro del flujo de trabajo previsto y si actuar en consecuencia mejora una decisión definida.',
+      ],
+    },
+  ]}
+/>
+
+## Contexto científico seleccionado
+
+- [Variación del transcriptoma en tejidos humanos revelada mediante secuenciación de lectura larga] (https://doi.org/10.1038/s41586-022-05035-y): evidencia principal de que la estructura de la transcripción vinculada puede revelar diversidad de tejidos, efectos asociados a los alelos y transcripciones novedosas.
+- [La secuenciación de isoformas de transcripción completa de una sola molécula revela isoformas de ARN asociadas a enfermedades en cardiomiocitos] (https://doi.org/10.1038/s41467-021-24484-z): un ejemplo de análisis de isoformas completas en un modelo celular relevante para la enfermedad.
+- [La secuenciación de lectura larga de 29 subconjuntos de células inmunitarias revela isoformas relacionadas con enfermedades] (https://doi.org/10.1038/s41467-024-48615-4): un atlas de células inmunitarias que conecta la estructura de las isoformas, la especificidad celular y los análisis asociados a enfermedades.
+- [Determinación del grado histológico del cáncer de mama a partir de datos de RNA-sequencing](https://doi.org/10.1186/s13058-016-0705-4): un ejemplo de comparación de características a nivel de genes e isoformas en el modelado predictivo.
+
+Estos estudios establecen un precedente científico para evaluar la información de transcripción extendida y a nivel de isoforma bajo definiciones de integridad específicas de la plataforma. No establecen el rendimiento de PSeq ni garantizan que las características resueltas por moléculas mejorarán una aplicación de descubrimiento, traslación o aprendizaje automático en particular.
+
+## Conclusión
+
+Los datos de transcripción resueltos por moléculas amplían la transcriptómica de un mapa de genes activos a un mapa de las formas moleculares que producen esos genes. Esto revela secuencias vinculadas y relaciones regulatorias que son difíciles de recuperar a partir de resúmenes a nivel de genes o de fragmentos agrupados.
+
+Las aplicaciones abarcan el descubrimiento de transcripciones, la caracterización del estado celular, la investigación de mecanismos de enfermedades, la estratificación molecular y el modelado predictivo. Cada aplicación establece su valor a través del rendimiento de la medición, la relevancia biológica, la reproducibilidad, la comparación con enfoques establecidos y, cuando corresponda, la utilidad en el mundo real.
+
+[PSeq Clear-Signal Architecture™](/technology/pseq-platform#pseq-clear-signal-architecture) makes molecule-resolved transcript measurement compatible with established short-read sequencing systems. Direct experiments, careful comparisons, and independent validation will define where that architecture provides the most useful new information.
+
+[Return to Part 1 for the measurement problem that motivates phased sequencing.](/media/blog/an-introduction-to-phased-sequencing-part-1)
+
+<ArticleSeriesNavigation
+  series={phasedSequencingSeries}
+  locale="es"
+  currentPart={3}
+  position="end"
+/>

@@ -90,6 +90,11 @@ export interface WebsiteMessages {
     pdfNewTab: string
     pageLabels: PluralLabels
     version: string
+    seriesNavigation: string
+    continueSeries: string
+    articleSeries: string
+    partOf: string
+    part: string
     shareHeading: string
     shareOn: string
     opensNewTab: string

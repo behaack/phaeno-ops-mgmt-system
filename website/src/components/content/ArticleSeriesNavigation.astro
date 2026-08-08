@@ -1,49 +1,57 @@
 ---
-import type { ArticleSeries } from '@/lib/articleSeries';
+import { getPhasedSequencingSeries, type ArticleSeries } from '@/lib/articleSeries';
+import { formatMessage, getMessages } from '@/i18n/messages';
+import type { SupportedLocale } from '@/i18n/locales';
 
 interface Props {
   series: ArticleSeries;
   currentPart: number;
   position?: 'start' | 'end';
+  locale?: SupportedLocale;
 }
 
 const {
   series,
   currentPart,
   position = 'start',
+  locale = 'en-US',
 } = Astro.props;
 
-const currentIndex = series.parts.findIndex((part) => part.number === currentPart);
+const localizedSeries = series.id === 'phased-sequencing'
+  ? getPhasedSequencingSeries(locale)
+  : series;
+const text = getMessages(locale).article;
+const currentIndex = localizedSeries.parts.findIndex((part) => part.number === currentPart);
 const currentPosition = currentIndex >= 0 ? currentIndex + 1 : currentPart;
-const positionLabel = position === 'start' ? 'Series navigation' : 'Continue through the series';
+const positionLabel = position === 'start' ? text.seriesNavigation : text.continueSeries;
 ---
 
 <nav
   class={`article-series-navigation article-series-navigation--${position}`}
-  aria-label={`${series.title}: ${positionLabel}`}
+  aria-label={`${localizedSeries.title}: ${positionLabel}`}
   data-phaeno-search-ignore
 >
   <div class="article-series-navigation__heading">
     <div>
-      <span class="article-series-navigation__eyebrow">Article series</span>
-      <strong>{series.title}</strong>
+      <span class="article-series-navigation__eyebrow">{text.articleSeries}</span>
+      <strong>{localizedSeries.title}</strong>
     </div>
     <span class="article-series-navigation__position">
-      Part {currentPosition} of {series.parts.length}
+      {formatMessage(text.partOf, { current: currentPosition, total: localizedSeries.parts.length })}
     </span>
   </div>
 
   <ol class="article-series-navigation__parts">
-    {series.parts.map((part) => (
+    {localizedSeries.parts.map((part) => (
       <li data-current={part.number === currentPart ? 'true' : undefined}>
         {part.number === currentPart ? (
           <span class="article-series-navigation__part" aria-current="page">
-            <span class="article-series-navigation__part-number">Part {part.number}</span>
+            <span class="article-series-navigation__part-number">{formatMessage(text.part, { number: part.number })}</span>
             <span>{part.title}</span>
           </span>
         ) : (
           <a class="article-series-navigation__part" href={part.href}>
-            <span class="article-series-navigation__part-number">Part {part.number}</span>
+            <span class="article-series-navigation__part-number">{formatMessage(text.part, { number: part.number })}</span>
             <span>{part.title}</span>
           </a>
         )}
@@ -115,19 +123,19 @@ const positionLabel = position === 'start' ? 'Series navigation' : 'Continue thr
   gap: var(--space-1);
   height: 100%;
   padding: var(--space-3);
-  border-left: 2px solid var(--phaeno-green-200);
+  border-inline-start: 2px solid var(--phaeno-green-200);
   color: var(--phaeno-rna-900);
   line-height: var(--line-height-copy);
   text-decoration: none;
 }
 
 a.article-series-navigation__part:hover {
-  border-left-color: var(--phaeno-green-600);
+  border-inline-start-color: var(--phaeno-green-600);
   background: var(--phaeno-green-50);
 }
 
 .article-series-navigation__parts li[data-current="true"] .article-series-navigation__part {
-  border-left-color: var(--phaeno-rna-600);
+  border-inline-start-color: var(--phaeno-rna-600);
   background: var(--phaeno-rna-50);
   font-weight: var(--font-weight-semibold);
 }

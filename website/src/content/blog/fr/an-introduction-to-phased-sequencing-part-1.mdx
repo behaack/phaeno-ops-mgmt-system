@@ -1,0 +1,390 @@
+---
+title: "Introduction au séquençage phasé : partie 1"
+summary: "Pourquoi l'ARN a besoin d'une meilleure mesure"
+image: "/images/media/blog/an-introduction-to-phased-sequencing-part-1.png"
+authors: ["William Agnew"]
+date: '2026-07-15'
+locale: 'fr'
+translationKey: 'blog.phased-sequencing.part-1'
+sourceLocale: 'en-US'
+translationStatus: 'draft'
+sourceRevision: '2026-08-08'
+translatedFromRevision: '2026-08-08'
+translator: 'Machine-assisted draft'
+---
+import ArticleCallout from '@/components/content/ArticleCallout.astro';
+import ArticleComparisonTable from '@/components/content/ArticleComparisonTable.astro';
+import ArticleConceptList from '@/components/content/ArticleConceptList.astro';
+import ArticleKeyPoints from '@/components/content/ArticleKeyPoints.astro';
+import ArticleSeriesNavigation from '@/components/content/ArticleSeriesNavigation.astro';
+import { phasedSequencingSeries } from '@/lib/articleSeries';
+
+<ArticleSeriesNavigation
+  series={phasedSequencingSeries}
+  locale="fr"
+  currentPart={1}
+  position="start"
+/>
+
+## Résumé
+
+La séquence d'ADN établit la structure héritée des systèmes biologiques, mais elle ne précise pas en elle-même l'état moléculaire d'une cellule. Cet état émerge grâce à la transcription et au traitement de l’ARN : initiation de la transcription, formation de l’extrémité 3′ de l’ARN, épissage alternatif, édition de l’ARN, polyadénylation et sélection des régions codantes et non traduites.
+
+Ces processus génèrent des isoformes d’ARN distinctes à partir du même locus génomique. Chaque isoforme est une entité moléculaire liée dans laquelle une limite 5' observée, l'utilisation déduite du promoteur, la composition des exons, la séquence codante prédite, les événements d'édition candidats et les régions régulatrices se produisent ensemble sur la même transcription. La préservation de ces relations peut être importante car différentes isoformes peuvent prendre en charge différents produits protéiques, différer en termes de stabilité ou de localisation, ou répondre différemment à la régulation cellulaire.
+
+Le séquençage conventionnel de l’ARN à lecture courte a transformé la biologie, mais il fragmente généralement les transcriptions avant le séquençage. Les lectures qui en résultent fournissent des informations de séquence locale très précises, tandis que les structures de bout en bout doivent souvent être déduites par calcul. Le séquençage à lecture longue peut préserver une plus grande partie de la structure de transcription originale, mais implique actuellement différents compromis en termes d'instrumentation, de débit, de profondeur, de précision, de coût et de flux de travail.
+
+Le **[PSeq Clear-Signal Architecture™](/technology/pseq-platform#pseq-clear-signal-architecture)** de Phaeno préserve l'identité de la molécule source grâce à un flux de travail de séquençage à lecture courte. Lors de la transcription inverse, PSeq associe des informations moléculaires à chaque modèle d'ADNc dérivé de l'ARN capturé avec succès. Ces informations restent liées aux fragments à lecture courte résultants, de sorte que les lectures du même modèle capturé peuvent être regroupées avant l'assemblage de la transcription, convertissant ainsi un problème de reconstruction autrement non contraint en un problème contraint par les molécules. L'identité moléculaire rétrécit l'espace de recherche ; une reconstruction complète dépend toujours de la couverture, du chevauchement, des informations de référence et des preuves de limites disponibles pour cette molécule.
+
+PSeq est actuellement une plate-forme **Research Use Only (RUO)**.
+
+Dans cette série, Phaeno utilise le **séquençage phasé** pour décrire des architectures de séquençage qui préservent les liens entre les observations provenant de la même molécule source. Cet usage est distinct de la signification génomique commune de la mise en phase des variants en haplotypes et se chevauche conceptuellement avec des termes tels que séquençage sensible aux molécules, lectures liées, nuages de lecture et reconstruction de fragments à code-barres.
+
+Cet article explique pourquoi cette distinction est importante. La partie 2 décrira comment PSeq préserve l'identité source-molécule, et la partie 3 examinera la valeur potentielle des données de transcription résolues par molécule dans la découverte biologique, la recherche translationnelle et l'apprentissage automatique.
+
+## La séquence d'ADN à elle seule ne précise pas l'état cellulaire
+
+Le Projet Génome Humain a établi une séquence de référence pour le génome humain et a fourni une base essentielle à la biologie moderne. Cela a également permis de clarifier les limites des informations sur les séquences considérées isolément.
+
+Les cellules ayant des génomes presque identiques peuvent adopter des structures et des fonctions nettement différentes. Un hépatocyte, un neurone, un lymphocyte et une cellule épithéliale contiennent généralement la même séquence d'ADN héritée, mais diffèrent considérablement en termes de morphologie, de métabolisme, de signalisation et de comportement. Ces différences proviennent de processus de régulation qui déterminent quelles parties du génome sont utilisées, comment elles sont transcrites et comment les ARN résultants sont traités.
+
+L’ARN occupe une place centrale dans ce processus. C’est à la fois un intermédiaire entre l’ADN et la protéine et, dans de nombreux cas, une espèce moléculaire fonctionnelle à part entière. Les ARN messagers codent pour des protéines, tandis que les classes d'ARN ribosomiques, de transfert, micro-, non codantes longues et autres contribuent directement à la traduction, à la régulation, à l'organisation du génome et à la signalisation cellulaire.
+
+Même au sein des gènes codant pour des protéines, la relation entre un locus génomique et ses produits biologiques n’est pas univoque. Un seul locus peut produire plusieurs transcriptions grâce à des combinaisons de :
+
+- initiation alternative de la transcription ;
+- épissage alternatif ;
+- clivage alternatif et polyadénylation ;
+- Édition d'ARN ;
+- variation dans les régions non traduites ;
+- stabilité et dégradation différentielles des transcriptions.
+
+Les transcrits résultants peuvent coder pour des séquences protéiques distinctes, modifier l’abondance d’une protéine, changer l’endroit où un ARN est localisé ou affecter sa traduction et sa dégradation. La production biologique d’un gène dépend donc non seulement de la question de savoir si le gène est exprimé, mais également des transcrits produits et dans quelles proportions.
+
+Pour cette raison, les isoformes d’ARN ne doivent pas être traitées simplement comme des mesures interchangeables de l’activité des gènes. Chaque transcription est un arrangement lié de séquences et de caractéristiques régulatrices qui existe en tant que molécule physique.
+
+## La transcription comme unité d’information liée
+
+Une transcription peut contenir simultanément plusieurs caractéristiques biologiquement significatives :
+
+- sa limite de transcription 5' observée ;
+- sa structure d'exon et de jonction d'épissure ;
+- son cadre de lecture ouvert prédit ou son potentiel de codage ;
+- des variantes de séquence ou des événements d'édition d'ARN candidats ;
+- ses régions non traduites 5' et 3' ;
+- sa limite de transcription 3 'observée ou son site de clivage et de polyadénylation.
+
+L'importance d'une caractéristique peut dépendre des autres avec lesquelles elle apparaît.
+
+Un variant de séquence, par exemple, peut être présent uniquement dans les transcrits avec une limite 5' particulière observée ou une utilisation déduite du promoteur. Un événement de saut d'exon peut modifier le cadre de lecture prédit dans un contexte de transcription mais pas dans un autre. Une région non traduite en 3 'peut contenir des motifs régulateurs qui affectent la stabilité, la localisation ou la traduction d'une isoforme spécifique. Deux transcrits d’un même gène peuvent donc différer fonctionnellement même lorsqu’ils partagent la majeure partie de leur séquence.
+
+Cela crée un problème de mise en phase.
+
+Dans le séquençage, le **phasage** signifie déterminer quelles caractéristiques de séquence se produisent ensemble sur la même molécule physique. Le concept est familier en génomique, où des variantes peuvent être attribuées aux chromosomes maternels ou paternels. En transcriptomique, le même principe s'applique aux combinaisons de jonctions d'épissage, aux limites de transcription observées, aux variantes de séquence, aux événements d'édition candidats et aux régions régulatrices.
+
+Savoir que deux caractéristiques sont présentes dans un échantillon n’équivaut pas à savoir qu’elles apparaissent sur la même transcription.
+
+Cette distinction devient particulièrement importante pour les gènes qui produisent de nombreuses isoformes qui se chevauchent. Si plusieurs transcrits partagent des exons et des jonctions d’épissage, de courts fragments de séquence peuvent être compatibles avec plusieurs structures de bout en bout. Les observations locales peuvent être correctes alors que la disposition globale reste ambiguë.
+
+## Trois concepts liés
+
+La terminologie entourant le séquençage résolu par molécules peut prêter à confusion. Trois distinctions sont particulièrement utiles.
+
+<ArticleConceptList
+  ariaLabel="Trois concepts liés à la résolution des molécules"
+  items={[
+    {
+      id: 'source-molecule-identity',
+      title: 'Identité source-molécule',
+      paragraphs: [
+        'L’identité source-molécule signifie conserver des informations sur le modèle moléculaire capturé qui a donné lieu à une collection de lectures de séquençage.',
+        'Dans un flux de travail basé sur l\'ADNc, ce modèle est une molécule d\'ADNc dérivée de l\'ARN capturée avec succès : une représentation par transcription inverse d\'une molécule d\'ARN de départ, et non l\'ARN d\'origine observé directement.',
+      ],
+    },
+    {
+      id: 'phased-sequencing',
+      title: 'Séquençage progressif',
+      paragraphs: [
+        'Dans l\'usage de Phaeno, le séquençage phasé détermine quelles caractéristiques observées se trouvent ensemble sur la même molécule source.',
+        'Pour l’ARN, ces caractéristiques peuvent inclure des jonctions d’épissage, des variantes de séquence, des événements d’édition candidats, des limites de transcription observées et des régions non traduites.',
+      ],
+    },
+    {
+      id: 'whole-molecule-resolution',
+      title: 'Résolution de molécule entière',
+      paragraphs: [
+        'La résolution de molécules entières fait référence à la reconstruction de la structure d\'un modèle moléculaire capturé individuel selon un critère d\'exhaustivité prédéfini.',
+        'Dans un flux de travail à lecture courte, cette reconstruction reste informatique. L\'affectation moléculaire le contraint, mais une couverture déconnectée peut toujours prendre en charge plusieurs reconstructions ou aucune reconstruction complète.',
+      ],
+    },
+  ]}
+/>
+
+Ces concepts sont liés mais pas identiques. L'identification moléculaire permet le phasage, et le phasage rend la reconstruction de molécules entières plus facile à gérer.
+
+Tout au long de cette série, **complet** et **pleine longueur** sont des termes opérationnels plutôt que des conséquences de l'affectation moléculaire seule. Une déclaration d'exhaustivité doit indiquer si elle nécessite des limites 5' et 3' observées, une chaîne d'épissure complète, un seuil de couverture minimum, un consensus contigu de bout en bout ou une interpolation prise en charge par des références entre les régions couvertes.
+
+## Le problème de mesure créé par la fragmentation
+
+Le séquençage conventionnel de l’ARN convertit généralement l’ARN en ADN complémentaire et fragmente le matériel avant ou pendant la préparation de la bibliothèque. Des millions de lectures courtes sont ensuite alignées sur un génome ou un transcriptome de référence et résumées en mesures au niveau du gène, de l'exon, de la jonction ou du transcrit.
+
+Cette approche a été extraordinairement productive. Le séquençage d’ARN à lecture courte prend en charge :
+
+- analyse différentielle de l'expression génique ;
+- détection de jonction d'épissure ;
+- annotation de transcription ;
+- expression spécifique d'un allèle ;
+- détection de fusion ;
+- transcriptomique unicellulaire et spatiale ;
+- de nombreuses applications diagnostiques et translationnelles.
+
+Ses limites doivent donc être décrites avec précision. Le problème n’est pas que le séquençage de l’ARN à lecture courte ne parvient pas à détecter l’ARN ou à identifier la structure de la transcription. La fragmentation sépare plutôt les observations qui se sont produites à l’origine ensemble sur la même molécule.
+
+Une fois la liaison source-molécule perdue, la reconstruction de la transcription devient un problème d’inférence.
+
+Les méthodes informatiques peuvent souvent résoudre ce problème, en particulier lorsque les isoformes sont bien annotées, que la couverture des séquences est élevée et que les structures de transcription sont suffisamment distinctes. L'ambiguïté augmente cependant lorsqu'un locus contient de nombreuses isoformes qui se chevauchent et partagent des exons, des jonctions ou des régions de séquence.
+
+Considérons un gène simplifié contenant deux promoteurs alternatifs, plusieurs exons épissés alternativement et deux sites de polyadénylation. Les lectures courtes peuvent prendre en charge indépendamment deux limites 5 'observées, cohérentes avec l'utilisation alternative du promoteur, chaque jonction d'épissage et deux limites 3' observées. Pourtant, ces observations peuvent rester compatibles avec plusieurs combinaisons de bout en bout différentes.
+
+La question est donc celle de l'**identifiabilité** : si les fragments observés déterminent de manière unique les molécules qui les ont produits.
+
+Pour l’analyse de l’expression au niveau des gènes, cette ambiguïté peut être acceptable ou non pertinente. Pour les questions impliquant la structure exacte des isoformes, les variantes liées, l’édition de l’ARN candidat ou le contexte réglementaire, cela peut être conséquent.
+
+## Le séquençage à lecture longue répond à une autre partie du problème
+
+Les technologies à lecture longue de Oxford Nanopore Technologies et Pacific Biosciences approchent la structure de transcription en générant des lectures qui peuvent couvrir la majeure partie ou la totalité d'un ARN ou d'une molécule d'ADN complémentaire.
+
+Il s’agit d’un avantage majeur pour la découverte d’isoformes et l’annotation de transcriptions. Les lectures longues peuvent connecter directement des jonctions d’épissure distantes et des limites de transcription que les lectures courtes observent séparément. Ils ont augmenté le nombre de structures de transcription détectables et amélioré la caractérisation des loci complexes.
+
+Les méthodes à lecture longue présentent également des limites et des compromis. En fonction de la plateforme, du protocole et de l’objectif expérimental, ceux-ci peuvent inclure :
+
+- la nécessité d'une instrumentation dédiée ;
+- nombres de lectures inférieurs par rapport aux systèmes à lecture courte à haut débit ;
+- profondeur d'échantillonnage réduite pour les transcriptions à faible abondance ;
+- différences dans la précision par lecture et le profil d'erreur ;
+- considérations de coût et de flux de travail ;
+- les biais d'amplification ou de préparation de bibliothèques ;
+- capture incomplète des fins de transcription.
+
+Ces technologies s’améliorent rapidement et aucune description unique ne s’applique à chaque plateforme ou application. Les méthodes à lecture longue et à lecture courte ne doivent pas être considérées comme s’excluant mutuellement. Ils répondent à des questions qui se chevauchent mais qui sont distinctes et sont de plus en plus utilisés ensemble.
+
+La question pertinente n’est pas de savoir quelle plateforme est universellement supérieure. C'est quelle architecture de mesure préserve les informations requises pour un problème biologique particulier.
+
+## Architecture à signal clair PSeq : assemblage contraint par molécule à l'aide de lectures courtes
+
+PSeq conserve l’identité de la molécule source tout en utilisant les instruments de séquençage de nouvelle génération à lecture courte existants.
+
+Lors de la transcription inverse, le réactif de marquage PSeq associe chaque molécule d'ADNc dérivée de l'ARN capturée avec succès à des informations moléculaires qui restent liées lors de la génération de la bibliothèque de séquençage. Après le séquençage, le pipeline de données regroupe les lectures portant la même identité source-molécule dans des ensembles spécifiques à la molécule.
+
+L'assemblage des transcriptions est ensuite effectué au sein de ces ensembles.
+
+Cela change la nature du problème de la reconstruction. L'assemblage de transcription conventionnel évalue les fragments tirés d'une population mixte et identifie des modèles de transcription qui peuvent expliquer les données agrégées. PSeq reconstruit à la place chaque modèle moléculaire capturé à partir des lectures attribuées à ce modèle.
+
+L'assemblage reste informatique, mais les informations expérimentales sur l'origine moléculaire le contraignent.
+
+Cette distinction peut être résumée ainsi :
+
+<ArticleCallout>
+  <em>Le séquençage conventionnel de l’ARN demande quelle collection de transcriptions explique de la manière la plus plausible un pool mixte de lectures. PSeq demande comment les lectures attribuées au même modèle moléculaire capturé s'articulent, en fonction de la couverture, du chevauchement, des informations de référence et des preuves de limites disponibles pour cette molécule.</em>
+</ArticleCallout>
+
+Étant donné qu’un modèle moléculaire capturé peut être représenté par plusieurs fragments séquencés indépendamment, le consensus peut être utilisé pour améliorer la précision de la séquence. Le consensus estime la séquence du modèle d'ADNc capturé ; la fidélité à l'ARN d'origine dépend également des erreurs introduites avant que les observations au niveau des fragments ne deviennent indépendantes, y compris lors de la transcription inverse. Les performances réelles dépendront de facteurs tels que la complexité de la bibliothèque, la récupération des molécules, la profondeur de lecture, la longueur de la transcription, la composition des séquences et les algorithmes d'assemblage. Ces caractéristiques doivent être établies par une validation analytique et des études comparatives.
+
+PSeq doit donc être compris comme une nouvelle architecture de mesure, et non comme une affirmation selon laquelle chaque molécule d'ARN d'un échantillon sera capturée, représentée complètement ou récupérée sans erreur.
+
+## Comparaison des approches de mesure de l'ARN
+
+<ArticleComparisonTable
+  ariaLabel="Comparaison du séquençage conventionnel d'ARN à lecture courte, du séquençage de transcription à lecture longue et de PSeq"
+  rowHeaderLabel="Caractéristiques"
+  columns={[
+    { key: 'pseq', label: 'PSeq', highlighted: true },
+    { key: 'rnaSeq', label: 'Séquençage conventionnel d’ARN à lecture courte', shortLabel: 'Séquençage d\'ARN à lecture courte' },
+    { key: 'longReadSeq', label: 'Séquençage des transcriptions à lecture longue', shortLabel: 'Séquençage à lecture longue' },
+  ]}
+  rows={[
+    {
+      label: 'Sortie de séquençage primaire',
+      values: {
+        rnaSeq: 'Courts fragments provenant d\'une population de transcription mixte',
+        longReadSeq: 'Lectures longues représentant des molécules de bibliothèque individuelles',
+        pseq: 'Fragments courts conservant l\'identité de la molécule source',
+      },
+    },
+    {
+      label: 'Liaison source-molécule',
+      values: {
+        rnaSeq: 'Généralement non conservé sur les fragments distants',
+        longReadSeq: 'Directement conservé sur la partie d\'une molécule de bibliothèque représentée par une lecture',
+        pseq: 'Conservé grâce à l’identification moléculaire',
+      },
+    },
+    {
+      label: 'Structure de la transcription',
+      values: {
+        rnaSeq: 'Déduit de preuves de fragments agrégés',
+        longReadSeq: 'Directement à travers la partie représentée ; de bout en bout uniquement lorsque la lecture s\'étend sur la molécule et les limites pertinentes',
+        pseq: 'Reconstruit à partir des lectures assignées lorsque la couverture et les preuves structurelles sont suffisantes',
+      },
+    },
+    {
+      label: 'Instrumentation',
+      values: {
+        rnaSeq: 'Systèmes NGS à lecture courte établis',
+        longReadSeq: 'Systèmes dédiés à lecture longue',
+        pseq: 'Systèmes NGS à lecture courte établis',
+      },
+    },
+    {
+      label: 'Principaux atouts',
+      values: {
+        rnaSeq: 'Précision, évolutivité, profondeur et workflows matures',
+        longReadSeq: 'Connectivité longue portée et découverte d\'isoformes',
+        pseq: 'Assemblage contraint par des molécules avec une profondeur et une précision de lecture courtes',
+      },
+    },
+    {
+      label: 'Limites importantes',
+      values: {
+        rnaSeq: 'Reconstruction ambiguë sur des lieux complexes',
+        longReadSeq: 'Compromis en termes de profondeur, de coût, de précision et de flux de travail en fonction de la plate-forme',
+        pseq: 'Nouvelle plateforme nécessitant une validation, une analyse comparative et une adoption approfondies',
+      },
+    },
+  ]}
+/>
+
+Cette comparaison est nécessairement générale. Les performances dépendent du protocole spécifique, de l’instrument, du type d’échantillon et du pipeline d’analyse.
+
+Les observations d'ADNc à lecture longue peuvent également être tronquées, concaténées, chimériques ou dérivées de copies amplifiées. « Molécule individuelle » fait donc référence à la molécule de bibliothèque représentée par une lecture et ne doit pas automatiquement être interprétée comme une molécule d'ARN natif intacte.
+
+## Quelles informations supplémentaires la résolution moléculaire peut-elle fournir ?
+
+L’intérêt de la mesure résolue par molécule ne réside pas simplement dans le fait qu’elle produit une séquence plus longue. Sa valeur réside dans la préservation des relations entre les fonctionnalités.
+
+<ArticleConceptList
+  ariaLabel="Informations fournies par la mesure résolue par molécule"
+  items={[
+    {
+      id: 'transcript-isoforms',
+      title: 'Isoformes de transcription',
+      paragraphs: [
+        'Une mesure résolue par molécule peut déterminer quelles jonctions d’épissage, les limites de transcription observées, les séquences codantes prédites et les régions non traduites se produisent ensemble.',
+        'Ceci est particulièrement pertinent lorsque différentes isoformes partagent la majeure partie de leur séquence mais diffèrent par un exon ou une région régulatrice fonctionnellement importante.',
+      ],
+    },
+    {
+      id: 'linked-sequence-variation',
+      title: 'Variation de séquence liée',
+      paragraphs: [
+        'Un échantillon peut contenir plusieurs substitutions, événements d\'édition de candidats ou mutations au sein du même gène ou génome d\'ARN. Le séquençage global peut estimer la fréquence de chaque événement, mais il ne peut pas déterminer si les événements se produisent sur la même molécule.',
+        'La mise en phase préserve ces combinaisons.',
+        'Cela pourrait être utile dans des contextes tels que l’analyse de la population virale, la variation somatique, la transcription spécifique d’un allèle et l’analyse de l’édition d’ARN candidat, à condition que la récupération des molécules et les caractéristiques d’erreur soient suffisamment bien contrôlées.',
+      ],
+    },
+    {
+      id: 'isoform-abundance',
+      title: 'Abondance isoforme',
+      paragraphs: [
+        'L\'abondance au niveau génétique combine tous les transcrits attribués à un locus. La quantification au niveau de la transcription tente de séparer ce total entre les isoformes, mais les estimations peuvent être instables lorsque les isoformes partagent une séquence substantielle.',
+        'Les observations résolues par les molécules pourraient fournir une base plus directe pour estimer l\'abondance de structures de transcription spécifiques. Les groupes de molécules récupérées sont des observations analytiques de modèles capturés, et non des décomptes automatiquement impartiaux de toutes les molécules d\'ARN dans l\'entrée. La précision quantitative dépendra toujours de la probabilité de capture, de l’efficacité de la transcription inverse, de la division et des collisions moléculaires, de l’abandon des identifiants, de la représentation en double, de la récupération différentielle, du filtrage, de l’amplification et de l’échantillonnage.',
+      ],
+    },
+    {
+      id: 'regulatory-context',
+      title: 'Contexte réglementaire',
+      paragraphs: [
+        'La séquence codante pour une protéine prédite n’est qu’un composant d’une molécule d’ARN. Les limites 5\' observées, l\'utilisation déduite du promoteur, les régions non traduites et les extrémités de la transcription peuvent influencer les hypothèses sur l\'expression, la localisation, la traduction et la dégradation.',
+        'La préservation de ces éléments dans la même observation moléculaire peut aider à relier le potentiel de codage prédit au contexte réglementaire ; La séquence d\'ARN à elle seule ne permet pas d\'établir quel cadre de lecture ouvert est traduit ni si un produit protéique est stable.',
+      ],
+    },
+  ]}
+/>
+
+## L'ARN en tant que composant du phénotype moléculaire
+
+Le phénotype s'exprime à plusieurs échelles biologiques. Il comprend les traits observables, les états cellulaires, l’architecture tissulaire, la physiologie, l’évolution de la maladie et la réponse au traitement.
+
+Aucune couche moléculaire n’est équivalente au phénotype. L'ADN, la chromatine, l'ARN, les protéines, les métabolites, les interactions cellulaires et les expositions environnementales y contribuent tous.
+
+Le transcriptome occupe néanmoins une place particulièrement informative. Il reflète à la fois le potentiel génomique et l’état régulateur actuel d’un système biologique. Il change au cours de la différenciation, du stress, de l’activation immunitaire, du vieillissement, du traitement et de la progression de la maladie.
+
+Pour cette raison, le transcriptome peut être considéré comme une composante du phénotype moléculaire : un enregistrement dynamique des programmes génomiques exécutés et sous quelle forme.
+
+Les mesures de l’expression génique capturent une partie importante de cet enregistrement. Les mesures résolues par l'isoforme peuvent en capturer une autre.
+
+Un raccourci utile est :
+
+<ArticleCallout>
+  <em>L'abondance de l'ARN au niveau du gène indique quels loci contribuent à l'ARN détectable et à quel niveau global. La structure isoforme décrit quelles formes moléculaires contribuent à ce signal.</em>
+</ArticleCallout>
+
+Cette distinction ne doit pas être exagérée. De nombreuses questions biologiques sont traitées de manière adéquate à l’aide de décomptes au niveau des gènes, et l’augmentation de la résolution des caractéristiques peut introduire du bruit, une parcimonie et une complexité analytique supplémentaires. La valeur des données au niveau isoforme doit donc être démontrée empiriquement pour chaque application.
+
+## Pourquoi l'ARN résolu par molécule peut être important pour l'apprentissage automatique
+
+Les modèles d’apprentissage automatique ne bénéficient pas automatiquement de mesures plus détaillées. Des fonctionnalités supplémentaires améliorent un modèle uniquement lorsqu'elles contiennent des informations reproductibles pertinentes pour la tâche de prédiction et peuvent être mesurées avec suffisamment de cohérence.
+
+Les données résolues par les isoformes pourraient être utiles car les résumés au niveau des gènes peuvent combiner des transcriptions avec différents effets biologiques. Si une isoforme augmente tandis qu’une autre diminue, l’expression totale du gène peut rester inchangée même si l’état fonctionnel du système a changé.
+
+Dans un tel cas, une caractéristique au niveau du gène peut obscurcir plutôt que révéler le signal pertinent.
+
+Les mesures résolues par les molécules pourraient fournir des modèles dotés de fonctionnalités telles que :
+
+- l'abondance estimée des isoformes répondant à des critères d'exhaustivité prédéfinis ;
+- combinaisons liées d'événements d'épissage et d'édition de candidats ;
+- relations observées entre la limite 5′ et l'isoforme qui peuvent étayer la déduction de l'utilisation du promoteur ;
+- des séquences codantes prédites associées à des régions non traduites ;
+- structures de transcription non représentées dans les annotations existantes.
+
+Ces caractéristiques peuvent être plus étroitement liées à la fonction moléculaire qu’au nombre global de gènes. Ils peuvent également améliorer l’interprétabilité en permettant d’associer les prédictions d’un modèle à des structures de transcription spécifiques.
+
+Il existe cependant des défis importants.
+
+Les ensembles de données au niveau isoforme sont de grande dimension. De nombreuses isoformes sont rares, spécifiques à un tissu ou incomplètement annotées. Les erreurs de mesure, les effets de lot et les modifications apportées aux pipelines d'analyse peuvent créer des fonctionnalités instables. Un plus grand nombre de variables candidates augmente également le risque de surapprentissage.
+
+La valeur potentielle des données d’ARN résolues par molécules pour l’apprentissage automatique dépend donc d’une définition rigoureuse des caractéristiques, d’une validation analytique, de cohortes indépendantes et de tests prospectifs. Il doit être évalué par des comparaisons directes avec le séquençage de l’ARN au niveau génétique et d’autres mesures établies.
+
+L’hypothèse scientifique n’est pas que les données au niveau des isoformes amélioreront chaque modèle. Le fait est que certains signaux biologiques sont codés dans la structure de transcription et dans les liaisons moléculaires et sont donc inaccessibles, dilués ou représentés de manière ambiguë dans les résumés au niveau des gènes.
+
+## Un autre type de mesure de l’ARN
+
+La distinction centrale entre le séquençage conventionnel de l’ARN et PSeq n’est pas les lectures courtes par rapport aux lectures longues. PSeq utilise également des lectures courtes.
+
+La distinction est de savoir si ces lectures conservent des informations sur leur molécule source.
+
+Le séquençage conventionnel de l’ARN fragmente et regroupe les transcriptions, puis déduit les structures de bout en bout à partir de preuves globales. Les fragments PSeq ont réussi à capturer les molécules d'ADNc dérivées de l'ARN tout en conservant l'identité de la molécule source, puis à reconstruire chaque modèle capturé dans son ensemble de lectures associé.
+
+Cette conception cherche à combiner trois propriétés :
+
+<ArticleKeyPoints
+  ariaLabel="Propriétés combinées par la conception PSeq"
+  items={[
+    'La précision de base du séquençage à lecture courte',
+    'Le débit et l\'infrastructure installée des systèmes NGS établis',
+    'La liaison moléculaire nécessaire à la reconstruction résolue par les isoformes',
+  ]}
+/>
+
+Les premières études techniques ont observé la structure prévue de la bibliothèque, le placement des marqueurs, la composition de lecture d'étiquettes plus ADNc, le regroupement spécifique à une molécule, la couverture d'exon et de jonction d'épissage de bout en bout pour une transcription représentative de PRPF31 et la traçabilité des preuves FASTQ jusqu'à l'enregistrement moléculaire assemblé.
+
+La validation actuelle définit l'enveloppe de performance plus large à travers les classes de transcription, les types d'échantillons et les plages d'abondance. Les critères pertinents incluent la sensibilité, la spécificité, l'exactitude du consensus par rapport aux contrôles d'ADNc capturés et d'ARN d'origine, l'exhaustivité de la transcription selon des critères prédéfinis, la quantification des isoformes, la reproductibilité, le débit, le coût et la comparaison avec les méthodes à lecture courte et longue.
+
+## Conclusion
+
+L’ARN n’est pas simplement une copie transitoire de l’ADN. Il s'agit d'une population diversifiée d'espèces moléculaires dans laquelle la séquence codante prévue, la structure d'épissage, les limites de transcription observées, les régions régulatrices et la variation de séquence se produisent dans des combinaisons liées.
+
+Le séquençage conventionnel de l’ARN mesure cette population avec une échelle et une précision exceptionnelles, mais la fragmentation sépare souvent les caractéristiques qui appartenaient à l’origine à la même molécule. Les méthodes informatiques peuvent reconstruire de nombreuses structures de transcription, mais l'ambiguïté demeure lorsque plusieurs isoformes partagent la même preuve de séquence locale.
+
+Le séquençage à lecture longue restaure une grande partie de cette connectivité en lisant directement les molécules étendues. L'architecture PSeq Clear-Signal adopte une approche différente : elle préserve l'identité de la molécule source grâce à un flux de travail à lecture courte et utilise cette identité pour contraindre l'assemblage des transcriptions.
+
+L’importance potentielle de cette approche est simple. Si la fonction biologique dépend de caractéristiques liées au sein de molécules d'ARN individuelles, la préservation des modèles moléculaires capturés en tant qu'unités de mesure peut révéler des informations masquées par des résumés au niveau des fragments ou des gènes. La question de savoir si une reconstruction est complète, biologiquement fidèle ou fonctionnellement importante reste une question distincte.
+
+[Part 2 describes the PSeq workflow in greater detail, including molecular tagging, library construction, read assignment, molecule-specific assembly, and consensus generation.](/media/blog/an-introduction-to-phased-sequencing-part-2)
+
+<ArticleSeriesNavigation
+  series={phasedSequencingSeries}
+  locale="fr"
+  currentPart={1}
+  position="end"
+/>

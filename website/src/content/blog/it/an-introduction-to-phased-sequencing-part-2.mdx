@@ -1,0 +1,249 @@
+---
+title: "Introduzione al sequenziamento fasico: parte 2"
+summary: "Come PSeq preserva l'identità della molecola sorgente in un flusso di lavoro a letture corte."
+image: "/images/media/blog/an-introduction-to-phased-sequencing-part-2.png"
+authors: ["William Agnew"]
+date: '2026-07-15'
+locale: 'it'
+translationKey: 'blog.phased-sequencing.part-2'
+sourceLocale: 'en-US'
+translationStatus: 'draft'
+sourceRevision: '2026-08-08'
+translatedFromRevision: '2026-08-08'
+translator: 'Machine-assisted draft'
+---
+import ArticleCallout from '@/components/content/ArticleCallout.astro';
+import ArticleComparisonTable from '@/components/content/ArticleComparisonTable.astro';
+import ArticleConceptList from '@/components/content/ArticleConceptList.astro';
+import ArticleKeyPoints from '@/components/content/ArticleKeyPoints.astro';
+import ArticleSeriesNavigation from '@/components/content/ArticleSeriesNavigation.astro';
+import { phasedSequencingSeries } from '@/lib/articleSeries';
+
+<ArticleSeriesNavigation
+  series={phasedSequencingSeries}
+  locale="it"
+  currentPart={2}
+  position="start"
+/>
+
+## Riepilogo
+
+In questa serie, Phaeno utilizza il **sequenziamento fasico** per descrivere architetture di sequenziamento che preservano il collegamento tra osservazioni originate dalla stessa molecola sorgente. L'idea è semplice: i frammenti sono molto più informativi quando la loro origine molecolare rimane nota.
+
+Il sequenziamento convenzionale dell'RNA a lettura breve solitamente frammenta e raggruppa molte trascrizioni prima del sequenziamento. Le letture risultanti possono essere accurate, abbondanti e molto utili, ma l'esperimento generalmente non conserva una registrazione diretta di quali frammenti distanti provenissero dallo stesso modello molecolare catturato. Le strutture di trascrizione end-to-end devono quindi essere dedotte dalla sovrapposizione di prove raccolte in una popolazione mista.
+
+**[PSeq Clear-Signal Architecture™](/technology/pseq-platform#pseq-clear-signal-architecture)** cambia l'architettura di misurazione. Durante la trascrizione inversa, un reagente di codifica PSeq associa le informazioni molecolari a ciascuna molecola di cDNA derivata dall'RNA catturata con successo. Tali informazioni rimangono recuperabili nelle letture risultanti, consentendo alla pipeline di dati di raggruppare le letture dallo stesso modello catturato in set specifici della molecola prima dell'assemblaggio.
+
+Il risultato non è una lettura lunga. Si tratta di una raccolta di letture brevi assegnate a un modello acquisito condiviso. L'assemblaggio avviene quindi all'interno del confine della molecola sorgente piuttosto che attraverso un pool indifferenziato di frammenti di trascrizione. La ricostruzione dipende ancora dalla continuità della copertura, dalla sovrapposizione, dalla guida di riferimento e dalle prove dei confini della trascrizione.
+
+PSeq è attualmente una piattaforma **Solo per uso di ricerca (RUO)**.
+
+## Cosa significa identità della molecola sorgente
+
+L'identità della molecola sorgente è l'informazione sperimentale che collega un'osservazione di sequenziamento a un modello molecolare derivato da RNA catturato individuale.
+
+In un flusso di lavoro cDNA, quel modello osservabile è una rappresentazione trascritta in modo inverso di una molecola di RNA iniziale, non dell'RNA originale osservato direttamente. La trascrizione inversa può essere incompleta, può introdurre sostituzioni o cambiamenti di modello, può produrre più di un prodotto o potrebbe non riuscire a produrre un prodotto recuperabile. Un'estremità del cDNA osservata fornisce quindi la prova di un confine dell'RNA ma non è automaticamente la prova dell'estremità biologica nativa.
+
+È correlata, ma distinta, dall'indicizzazione ordinaria dei campioni. Un indice di esempio identifica l'esemplare o la libreria che ha prodotto una lettura. Le informazioni sulla molecola sorgente operano a un livello più preciso: distinguono i singoli modelli molecolari catturati all'interno di quel campione o libreria.
+
+È anche distinto dall'annotazione della trascrizione. Un'annotazione può indicare che una lettura è compatibile con un gene o un'isoforma nota. L'identità della molecola sorgente afferma che un particolare insieme di letture ha avuto origine dallo stesso modello molecolare catturato, indipendentemente dal fatto che tale modello corrisponda o meno a un'annotazione esistente.
+
+<ArticleCallout>
+  <em>L'identità del campione risponde da quale campione proviene una lettura. Risposte sull'identità della molecola sorgente che hanno catturato il modello molecolare derivato dall'RNA all'interno del campione a cui è stata assegnata una lettura.</em>
+</ArticleCallout>
+
+Questa distinzione è importante perché due modelli molecolari derivati ​​dall'RNA dello stesso gene possono avere diverse giunzioni di giunzione, confini osservati della trascrizione, varianti di sequenza, eventi di modifica candidati o regioni non tradotte. Una volta che i frammenti di questi modelli vengono mescolati senza una relazione di origine recuperabile, la loro disposizione end-to-end diventa un problema di inferenza computazionale.
+
+## Perché l'identità deve essere stabilita prima della frammentazione
+
+La frammentazione separa le caratteristiche della sequenza originariamente connesse sulla stessa molecola. Una giunzione di giunzione vicino al confine 5' osservato, una variante di sequenza in una regione codificante prevista e una regione 3' non tradotta possono essere tutte osservate accuratamente, ma nulla nelle sequenze di frammenti da solo dimostra necessariamente che tali caratteristiche si siano verificate insieme.
+
+Se l'origine molecolare viene stabilita prima della frammentazione e inserita nella libreria di sequenziamento, i frammenti possono rimanere correlati anche dopo che la molecola fisica è stata divisa. La connessione è informativa piuttosto che spaziale.
+
+Da questo progetto conseguono quattro requisiti:
+
+<ArticleKeyPoints
+  ariaLabel="Requisiti per preservare l'identità della molecola sorgente"
+  items={[
+    'L\'identità deve essere associata alla molecola prima che la sua sequenza venga frammentata',
+    'Le informazioni sull\'identità devono sopravvivere alla generazione e al sequenziamento della libreria',
+    'Le letture devono conservare informazioni sufficienti per l\'assegnazione affidabile delle molecole',
+    'Il sistema identificatore deve distinguere le molecole tollerando l\'errore sperimentale',
+  ]}
+/>
+
+Il fallimento in qualsiasi fase può indebolire il vincolo previsto. Le collisioni possono far sembrare identiche molecole diverse. Il danneggiamento del tag o l'errore di sequenziamento possono dividere le letture da una molecola in più gruppi. La contaminazione tra gruppi può introdurre frammenti di molecole non correlate. Si tratta di rischi analitici misurabili, non semplicemente di dettagli software.
+
+## Il flusso di lavoro PSeq a livello concettuale
+
+La logica dell'identità della fonte segue sei fasi collegate.
+
+<ArticleConceptList
+  ariaLabel="Fasi concettuali del flusso di lavoro PSeq"
+  items={[
+    {
+      id: 'represent-the-source-molecule',
+      title: 'Trascrizione inversa e tagga la molecola sorgente',
+      paragraphs: [
+        'Durante la trascrizione inversa, un reagente di codifica PSeq associa le informazioni molecolari al cDNA derivato dall\'RNA in modo che la sua sequenza possa entrare in un flusso di lavoro della libreria del DNA compatibile con i sistemi di sequenziamento a lettura breve consolidati.',
+        'Il cDNA marcato risultante preserva le relazioni di sequenza catturate dall\'RNA iniziale, soggette alla completezza e alla fedeltà della trascrizione inversa.',
+        'Questo cDNA è il modello molecolare catturato misurato dal flusso di lavoro. Le sue estremità osservate non stabiliscono da sole i confini nativi dell\'RNA 5 \'o 3\'.',
+      ],
+    },
+    {
+      id: 'associate-molecular-information',
+      title: 'Portare avanti le informazioni molecolari',
+      paragraphs: [
+        'Le informazioni molecolari incorporate durante la trascrizione inversa distinguono i modelli catturati all\'interno dello stesso campione.',
+        'Poiché il cDNA contrassegnato viene amplificato e preparato per la costruzione della libreria, tali informazioni preservano la relazione tag-modello.',
+      ],
+    },
+    {
+      id: 'generate-a-short-fragment-library',
+      title: 'Genera una libreria di frammenti brevi',
+      paragraphs: [
+        'Il materiale contrassegnato viene convertito in una libreria di sequenziamento composta da brevi frammenti di DNA. Le informazioni sulla molecola sorgente rimangono associate a tali frammenti attraverso la preparazione della libreria.',
+        'Il modello di cDNA catturato non è più fisicamente intatto, ma i suoi frammenti rimangono identificabili come gruppo.',
+      ],
+    },
+    {
+      id: 'sequence-on-established-ngs-systems',
+      title: 'Sequenza su sistemi NGS consolidati',
+      paragraphs: [
+        'La libreria viene letta utilizzando la strumentazione di sequenziamento di nuova generazione a lettura breve. Ciascun modello molecolare catturato può essere rappresentato da più frammenti osservati in modo indipendente.',
+        'La copertura attraverso una molecola può essere selezionata in base all\'esperimento, mentre il recupero effettivo dipenderà dalla complessità, dall\'abbondanza, dalla lunghezza della trascrizione e dalla profondità di sequenziamento della libreria.',
+      ],
+    },
+    {
+      id: 'assign-reads-to-molecule-specific-sets',
+      title: 'Assegnare letture a set specifici della molecola',
+      paragraphs: [
+        'Dopo il sequenziamento, le informazioni molecolari vengono suddivise in insiemi che rappresentano i singoli modelli molecolari catturati.',
+        'La qualità dell\'assegnazione è centrale: l\'assemblaggio specifico della molecola è utile solo quando l\'appartenenza a ciascun insieme è sufficientemente accurata e completa.',
+      ],
+    },
+    {
+      id: 'assemble-and-build-consensus',
+      title: 'Raccogliere e creare consenso',
+      paragraphs: [
+        'La ricostruzione della trascrizione viene eseguita all\'interno di ciascun set specifico della molecola. Le letture assegnate a un modello catturato vengono confrontate tra loro anziché con ogni frammento compatibile nel campione.',
+        'La sovrapposizione, la continuità della copertura, le informazioni di riferimento e le prove dei confini osservati determinano quale ricostruzione è supportabile. Osservazioni sovrapposte e sequenziate in modo indipendente possono anche supportare la generazione di consenso, sebbene l\'accuratezza e la completezza ottenibili richiedano una convalida diretta.',
+      ],
+    },
+  ]}
+/>
+
+## L'identità vincola l'assemblaggio; non lo risolve automaticamente
+
+L'identità della molecola sorgente modifica lo spazio di ricerca disponibile per un assemblatore. Nell'assemblaggio convenzionale dei trascritti, molti frammenti di molti trascritti possono essere compatibili con lo stesso gene. L'algoritmo deve identificare uno o più modelli di trascrizione che spieghino le prove raccolte.
+
+In un flusso di lavoro vincolato dalla molecola, l'assemblatore riceve un insieme più piccolo di letture che si ritiene provengano da un modello molecolare catturato. La domanda cambia da “Quale popolazione di trascrizioni spiega questi frammenti?” a "Come si inseriscono questi frammenti all'interno di questo modello acquisito, data la copertura, la sovrapposizione, le informazioni di riferimento e le prove di confine disponibili?"
+
+Questo vincolo può ridurre l’ambiguità, ma non elimina ogni modalità di fallimento. Un insieme specifico della molecola contenente isole di copertura disconnesse può comunque supportare ricostruzioni multiple o nessuna ricostruzione completa.
+
+In questo caso, la **completezza della trascrizione** si riferisce a un criterio analitico predefinito e non dovrebbe essere presupposta esclusivamente dall'assegnazione delle letture a una molecola. Il criterio dovrebbe indicare se richiede limiti osservati 5′ e 3′, una catena di giunzione completa, una copertura minima, un consenso contiguo end-to-end o un'interpolazione supportata da riferimenti.
+
+<ArticleComparisonTable
+  ariaLabel="Cosa consentono le informazioni sulla molecola sorgente e cosa non garantiscono"
+  rowHeaderLabel="Informazioni conservate"
+  columns={[
+    { key: 'enables', label: 'Cosa consente', highlighted: true },
+    { key: 'doesNotGuarantee', label: 'Cosa non garantisce' },
+  ]}
+  rows={[
+    {
+      label: 'Identificatore molecolare',
+      values: {
+        enables: 'Assegnazione delle letture a un modello molecolare candidato catturato',
+        doesNotGuarantee: 'Che ogni identificatore sia unico, privo di errori o recuperato',
+      },
+    },
+    {
+      label: 'Appartenenza al frammento',
+      values: {
+        enables: 'Assemblaggio all\'interno di un set di lettura specifico della molecola',
+        doesNotGuarantee: 'Che ogni lettura sia assegnata correttamente o che sia assente contaminazione',
+      },
+    },
+    {
+      label: 'Copertura di sequenze indipendenti',
+      values: {
+        enables: 'Consenso tra osservazioni sovrapposte',
+        doesNotGuarantee: 'Profondità uniforme, copertura imparziale o recupero delle estremità della trascrizione nativa',
+      },
+    },
+    {
+      label: 'Trascrizione ricostruita',
+      values: {
+        enables: 'Un\'ipotesi a livello molecolare per sequenza e struttura collegate',
+        doesNotGuarantee: 'Che la ricostruzione sia completa, biologicamente funzionale o quantitativamente imparziale',
+      },
+    },
+  ]}
+/>
+
+## L'assegnazione di lettura è una misurazione analitica
+
+Si è tentati di trattare lo smistamento molecolare come una fase di preelaborazione. In pratica, la qualità dell'assegnazione è una delle misure da cui dipende il risultato a valle.
+
+È necessario caratterizzare diverse classi di errore:
+
+- **Collisioni:** due modelli molecolari catturati ricevono informazioni molecolari che non sono sufficientemente distinte e vengono unite in un unico set.
+- **Suddivisione:** le letture da un modello molecolare catturato sembrano portare identità diverse e sono divise in più set.
+- **Assegnazione incrociata:** un frammento è inserito nell'insieme specifico della molecola sbagliato.
+- **Perdita:** le informazioni sull'identità non possono essere lette con sicurezza, quindi altrimenti non è possibile assegnare osservazioni di sequenza utili.
+- **Rappresentazione non uniforme:** alcune porzioni di una molecola sono coperte in profondità mentre altre non vengono recuperate.
+
+Le tariffe accettabili dipendono dall'applicazione. La scoperta di isoforme, la stima dell'abbondanza, l'analisi delle varianti collegate e il rilevamento di molecole rare impongono requisiti diversi. Un flusso di lavoro destinato a un'ampia scoperta può tollerare un profilo di errore diverso da quello destinato a supportare una decisione clinica.
+
+## Il consenso dipende da prove indipendenti
+
+Il sequenziamento a lettura breve può osservare la stessa posizione di base più volte attraverso i frammenti assegnati a un modello molecolare catturato. Quando tali osservazioni sono sufficientemente indipendenti e assegnate correttamente, l’accordo tra di esse può supportare una sequenza consenso.
+
+Il consenso è prezioso perché le singole osservazioni possono contenere errori di sequenziamento o amplificazione. Osservazioni ripetute possono aiutare a distinguere la sequenza molecolare riproducibile dall'errore sporadico. Ma ulteriori letture non producono automaticamente un consenso imparziale. Errori condivisi introdotti durante la trascrizione inversa, copia anticipata, effetti del contesto della sequenza o errori di assegnazione sistematica possono persistere nel set di lettura.
+
+Il consenso quindi stima la sequenza del modello di cDNA catturato. La fedeltà all'RNA originale ha un limite aggiuntivo fissato dagli errori introdotti prima che le osservazioni a livello di frammento diventino indipendenti; un errore di trascrizione inversa, ad esempio, potrebbe essere indistinguibile dalla sequenza del modello catturato.
+
+La questione di validazione rilevante quindi non è semplicemente quante letture coprono una molecola. La questione è se l'intero flusso di lavoro produce sequenze accurate e riproducibili a livello di molecola attraverso lunghezze, abbondanze, composizioni e strutture realistiche delle trascrizioni.
+
+## Cosa deve essere convalidato
+
+La validazione utilizza materiali di riferimento di cui sono note le sequenze, le strutture e le abbondanze attese. I controlli di RNA sintetico, le miscele di isoforme definite, le serie di diluizioni, le librerie replicate e le misurazioni ortogonali riguardano diverse parti dell'inviluppo delle prestazioni.
+
+Le misurazioni importanti includono:
+
+- il numero e la frazione di modelli molecolari catturati rappresentati da gruppi recuperabili;
+- il tasso di collisione, scissione, perdita e assegnazione incrociata degli identificatori molecolari;
+- uniformità di copertura tra i corpi e le estremità della trascrizione;
+- accuratezza del consenso in base al contesto e alla profondità della sequenza;
+- sensibilità e precisione per strutture di trascrizione note;
+- linearità dell'abbondanza e riproducibilità tra le repliche;
+- prestazioni in termini di lunghezza della trascrizione, abbondanza, contenuto GC e complessità strutturale;
+- robustezza rispetto alla qualità del campione, alla quantità di input, al lotto, all'operatore e alla variazione dello strumento.
+
+Queste misurazioni dovrebbero essere riportate separatamente. Un'elevata precisione di consenso tra i modelli catturati ricostruiti con successo non stabilisce un elevato recupero delle molecole. Strutture di trascrizione accurate non stabiliscono da sole una quantificazione imparziale. Prestazioni elevate sui controlli sintetici non garantiscono prestazioni equivalenti in campioni biologici complessi.
+
+I gruppi di molecole recuperati sono osservazioni analitiche di modelli catturati, non conteggi di censimento automaticamente imparziali di tutte le molecole di RNA nell'input. La loro relazione con l'abbondanza di input dipende dalla probabilità di cattura, dall'efficienza della trascrizione inversa, dalla suddivisione e collisione molecolare, dall'abbandono dell'identificatore, dalla rappresentazione duplicata, dal recupero differenziale per lunghezza o sequenza e dalle soglie di filtraggio e assemblaggio.
+
+## Contesto scientifico per identificatori molecolari
+
+Il principio generale del sequenziamento consapevole delle molecole è antecedente a PSeq. Kivioja e colleghi hanno dimostrato che [gli identificatori molecolari univoci possono distinguere le singole molecole di acido nucleico](https://doi.org/10.1038/nmeth.1778) e supportano il conteggio basato sulle molecole nel sequenziamento di prossima generazione.
+
+PSeq applica le informazioni sulla molecola sorgente verso un obiettivo diverso: vincolare la ricostruzione delle strutture della trascrizione da letture di frammenti brevi assegnate a modelli molecolari catturati. Il precedente scientifico supporta il valore dell'identificazione molecolare come principio di misurazione; non sostituisce la convalida della chimica, dell'assegnazione, dell'assemblaggio o delle prestazioni del consenso di PSeq.
+
+## Conclusione
+
+PSeq preserva la relazione tra una molecola di cDNA derivata da RNA catturata con successo e le letture brevi derivate da essa. Il reagente di marcatura associa le informazioni molecolari durante la trascrizione inversa; tali informazioni vengono trasportate attraverso la generazione della libreria, recuperate durante il sequenziamento e utilizzate per creare set di lettura specifici della molecola.
+
+Questa relazione trasforma l'assemblaggio della trascrizione da un problema di inferenza a livello di popolazione in un problema di ricostruzione vincolata dalla molecola. Le osservazioni di sequenze ripetute supportano anche la generazione di consenso relativo al modello di cDNA catturato.
+
+Gli studi tecnici iniziali hanno osservato la struttura di lettura marcatore-più-cDNA prevista, i marcatori concentrati vicino all'inizio della lettura 1 e una ricostruzione specifica della molecola tracciabile in un esempio rappresentativo di PRPF31. La validazione attuale sta quantificando il recupero delle molecole, l’accuratezza dell’assegnazione, le prestazioni di consenso, la riproducibilità e la misurazione dell’abbondanza negli usi di ricerca previsti dalla piattaforma.
+
+[Part 3 examines how molecule-resolved transcript data could be used in biological discovery, translational research, and machine learning.](/media/blog/an-introduction-to-phased-sequencing-part-3)
+
+<ArticleSeriesNavigation
+  series={phasedSequencingSeries}
+  locale="it"
+  currentPart={2}
+  position="end"
+/>

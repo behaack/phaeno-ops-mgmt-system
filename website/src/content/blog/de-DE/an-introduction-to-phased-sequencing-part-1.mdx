@@ -1,0 +1,390 @@
+---
+title: "Eine Einführung in die Phasensequenzierung: Teil 1"
+summary: "Warum RNA eine bessere Messung braucht"
+image: "/images/media/blog/an-introduction-to-phased-sequencing-part-1.png"
+authors: ["William Agnew"]
+date: '2026-07-15'
+locale: 'de-DE'
+translationKey: 'blog.phased-sequencing.part-1'
+sourceLocale: 'en-US'
+translationStatus: 'draft'
+sourceRevision: '2026-08-08'
+translatedFromRevision: '2026-08-08'
+translator: 'Machine-assisted draft'
+---
+import ArticleCallout from '@/components/content/ArticleCallout.astro';
+import ArticleComparisonTable from '@/components/content/ArticleComparisonTable.astro';
+import ArticleConceptList from '@/components/content/ArticleConceptList.astro';
+import ArticleKeyPoints from '@/components/content/ArticleKeyPoints.astro';
+import ArticleSeriesNavigation from '@/components/content/ArticleSeriesNavigation.astro';
+import { phasedSequencingSeries } from '@/lib/articleSeries';
+
+<ArticleSeriesNavigation
+  series={phasedSequencingSeries}
+  locale="de-DE"
+  currentPart={1}
+  position="start"
+/>
+
+## Zusammenfassung
+
+Die DNA-Sequenz legt das vererbte Gerüst biologischer Systeme fest, legt jedoch nicht allein den molekularen Zustand einer Zelle fest. Dieser Zustand entsteht durch Transkription und RNA-Verarbeitung: Transkriptionsinitiierung, Bildung des RNA-3′-Endes, alternatives Spleißen, RNA-Editierung, Polyadenylierung und die Auswahl kodierender und nicht translatierter Regionen.
+
+Diese Prozesse erzeugen unterschiedliche RNA-Isoformen aus demselben genomischen Locus. Jede Isoform ist eine verknüpfte molekulare Einheit, in der eine beobachtete 5'-Grenze, eine abgeleitete Promotorverwendung, eine Exon-Zusammensetzung, eine vorhergesagte Kodierungssequenz, Kandidaten-Editierungsereignisse und regulatorische Regionen gemeinsam im selben Transkript auftreten. Die Erhaltung dieser Beziehungen kann wichtig sein, da unterschiedliche Isoformen unterschiedliche Proteinprodukte unterstützen, sich in Stabilität oder Lokalisierung unterscheiden oder unterschiedlich auf zelluläre Regulierung reagieren können.
+
+Die konventionelle Short-Read-RNA-Sequenzierung hat die Biologie verändert, doch typischerweise werden Transkripte vor der Sequenzierung fragmentiert. Die resultierenden Lesevorgänge liefern hochpräzise lokale Sequenzinformationen, während End-to-End-Strukturen häufig rechnerisch abgeleitet werden müssen. Bei der Long-Read-Sequenzierung kann ein größerer Teil der ursprünglichen Transkriptstruktur erhalten bleiben, allerdings sind derzeit unterschiedliche Kompromisse bei der Instrumentierung, dem Durchsatz, der Tiefe, der Genauigkeit, den Kosten und dem Arbeitsablauf erforderlich.
+
+**[PSeq Clear-Signal Architecture™](/technology/pseq-platform#pseq-clear-signal-architecture)** von Phaeno bewahrt die Identität des Quellmoleküls durch einen Short-Read-Sequenzierungsworkflow. Während der umgekehrten Transkription verknüpft PSeq molekulare Informationen mit jeder erfolgreich erfassten RNA-abgeleiteten cDNA-Matrize. Diese Informationen bleiben mit den resultierenden Short-Read-Fragmenten verknüpft, sodass Lesevorgänge aus derselben erfassten Vorlage vor der Transkriptassemblierung gruppiert werden können, wodurch ein ansonsten unbeschränktes Rekonstruktionsproblem in ein molekülbeschränktes Problem umgewandelt wird. Die molekulare Identität schränkt den Suchraum ein; Eine vollständige Rekonstruktion hängt immer noch von der Abdeckung, Überlappung, Referenzinformationen und Grenznachweisen ab, die für dieses Molekül verfügbar sind.
+
+PSeq ist derzeit eine **Nur für Forschungszwecke (RUO)**-Plattform.
+
+In dieser Serie verwendet Phaeno **Phasensequenzierung**, um Sequenzierungsarchitekturen zu beschreiben, die die Verknüpfung zwischen Beobachtungen, die von demselben Quellmolekül stammen, bewahren. Diese Verwendung unterscheidet sich von der üblichen genomischen Bedeutung der Phaseneinteilung von Varianten in Haplotypen und überschneidet sich konzeptionell mit Begriffen wie molekülbewusster Sequenzierung, verknüpften Lesevorgängen, Lesewolken und Barcode-Fragmentrekonstruktion.
+
+In diesem Artikel wird erklärt, warum diese Unterscheidung wichtig ist. In Teil 2 wird beschrieben, wie PSeq die Identität von Quelle und Molekül bewahrt, und in Teil 3 wird der potenzielle Wert molekülaufgelöster Transkriptdaten für die biologische Entdeckung, die translationale Forschung und das maschinelle Lernen untersucht.
+
+## Die DNA-Sequenz allein gibt keinen Hinweis auf den Zellzustand
+
+Das Human Genome Project etablierte eine Referenzsequenz für das menschliche Genom und lieferte eine wesentliche Grundlage für die moderne Biologie. Es trug auch dazu bei, die Grenzen isoliert betrachteter Sequenzinformationen zu verdeutlichen.
+
+Zellen mit nahezu identischen Genomen können deutlich unterschiedliche Strukturen und Funktionen annehmen. Hepatozyten, Neuronen, Lymphozyten und Epithelzellen enthalten im Allgemeinen die gleiche vererbte DNA-Sequenz, unterscheiden sich jedoch erheblich in Morphologie, Stoffwechsel, Signalübertragung und Verhalten. Diese Unterschiede entstehen durch regulatorische Prozesse, die bestimmen, welche Teile des Genoms verwendet werden, wie sie transkribiert werden und wie die resultierenden RNAs verarbeitet werden.
+
+Dabei nimmt die RNA eine zentrale Stellung ein. Es ist sowohl ein Zwischenprodukt zwischen DNA und Protein als auch in vielen Fällen eine eigenständige funktionelle Molekülspezies. Messenger-RNAs kodieren Proteine, während ribosomale, Transfer-, Mikro-, lange nichtkodierende und andere Klassen von RNA direkt zur Translation, Regulation, Genomorganisation und zellulären Signalübertragung beitragen.
+
+Selbst innerhalb proteinkodierender Gene ist die Beziehung zwischen einem Genomort und seinen biologischen Produkten nicht eins zu eins. Ein einzelner Locus kann durch Kombinationen von Folgendem mehrere Transkripte erzeugen:
+
+- alternative Transkriptionsinitiierung;
+- alternatives Spleißen;
+- alternative Spaltung und Polyadenylierung;
+- RNA-Bearbeitung;
+- Variation in nicht übersetzten Regionen;
+- Differenzielle Transkriptstabilität und -abbau.
+
+Die resultierenden Transkripte können unterschiedliche Proteinsequenzen kodieren, die Häufigkeit eines Proteins verändern, den Ort ändern, an dem eine RNA lokalisiert ist, oder ihre Translation und ihren Abbau beeinflussen. Die biologische Leistung eines Gens hängt daher nicht nur davon ab, ob das Gen exprimiert wird, sondern auch davon, welche Transkripte in welchen Anteilen produziert werden.
+
+Aus diesem Grund sollten RNA-Isoformen nicht lediglich als austauschbare Messungen der Genaktivität behandelt werden. Jedes Transkript ist eine verknüpfte Anordnung von Sequenz- und Regulierungsmerkmalen, die als physikalisches Molekül vorliegt.
+
+## Das Transkript als verknüpfte Informationseinheit
+
+Ein Transkript kann mehrere biologisch bedeutsame Merkmale gleichzeitig enthalten:
+
+- seine beobachtete 5'-Transkriptgrenze;
+- seine Exon- und Spleißverbindungsstruktur;
+- sein vorhergesagtes offenes Leserahmen- oder Kodierungspotential;
+- Sequenzvarianten oder mögliche RNA-Editing-Ereignisse;
+- seine 5′- und 3′-untranslatierten Regionen;
+- seine beobachtete 3′-Transkriptgrenze oder Spaltungs- und Polyadenylierungsstelle.
+
+Die Bedeutung eines Merkmals kann von den anderen abhängen, bei denen es auftritt.
+
+Eine Sequenzvariante kann beispielsweise nur in Transkripten mit einer bestimmten beobachteten 5'-Grenze oder einer abgeleiteten Promotorverwendung vorhanden sein. Ein Exon-Skipping-Ereignis kann den vorhergesagten Leserahmen in einem Transkriptkontext verändern, in einem anderen jedoch nicht. Eine nicht translatierte 3′-Region kann regulatorische Motive enthalten, die die Stabilität, Lokalisierung oder Translation einer bestimmten Isoform beeinflussen. Zwei Transkripte desselben Gens können sich daher funktionell unterscheiden, selbst wenn sie den größten Teil ihrer Sequenz teilen.
+
+Dadurch entsteht ein Phasenproblem.
+
+Bei der Sequenzierung bedeutet **Phasenbestimmung** die Bestimmung, welche Sequenzmerkmale gemeinsam auf demselben physikalischen Molekül auftreten. Das Konzept ist aus der Genomik bekannt, wo Varianten mütterlichen oder väterlichen Chromosomen zugeordnet werden können. In der Transkriptomik gilt das gleiche Prinzip für Kombinationen aus Spleißverbindungen, beobachteten Transkriptgrenzen, Sequenzvarianten, Kandidaten-Editierungsereignissen und regulatorischen Regionen.
+
+Zu wissen, dass zwei Merkmale in einer Probe vorhanden sind, ist nicht gleichbedeutend mit dem Wissen, dass sie im selben Transkript vorkommen.
+
+Diese Unterscheidung ist besonders wichtig für Gene, die viele überlappende Isoformen produzieren. Wenn mehrere Transkripte Exons und Spleißverbindungen gemeinsam nutzen, können kurze Sequenzfragmente mit mehreren End-to-End-Strukturen kompatibel sein. Die lokalen Beobachtungen können richtig sein, während die globale Anordnung unklar bleibt.
+
+## Drei verwandte Konzepte
+
+Die Terminologie rund um die molekülaufgelöste Sequenzierung kann verwirrend sein. Drei Unterscheidungen sind besonders nützlich.
+
+<ArticleConceptList
+  ariaLabel="Drei verwandte Konzepte zur Molekülauflösung"
+  items={[
+    {
+      id: 'source-molecule-identity',
+      title: 'Identität zwischen Quelle und Molekül',
+      paragraphs: [
+        'Quellmolekülidentität bedeutet, Informationen darüber zu behalten, welche erfasste molekulare Vorlage zu einer Sammlung von Sequenzierungslesungen geführt hat.',
+        'In einem cDNA-basierten Arbeitsablauf ist diese Vorlage ein erfolgreich erfasstes RNA-abgeleitetes cDNA-Molekül: eine revers transkribierte Darstellung eines Ausgangs-RNA-Moleküls, nicht die direkt beobachtete ursprüngliche RNA.',
+      ],
+    },
+    {
+      id: 'phased-sequencing',
+      title: 'Phasenweise Reihenfolge',
+      paragraphs: [
+        'Bei der Verwendung von Phaeno bestimmt die Phasensequenzierung, welche beobachteten Merkmale gemeinsam auf demselben Quellmolekül auftreten.',
+        'Bei RNA können diese Merkmale Spleißverbindungen, Sequenzvarianten, Kandidaten-Editierungsereignisse, beobachtete Transkriptgrenzen und nicht übersetzte Regionen umfassen.',
+      ],
+    },
+    {
+      id: 'whole-molecule-resolution',
+      title: 'Auflösung ganzer Moleküle',
+      paragraphs: [
+        'Unter Gesamtmolekülauflösung versteht man die Rekonstruktion der Struktur einer einzelnen erfassten molekularen Vorlage unter einem vordefinierten Vollständigkeitskriterium.',
+        'In einem Short-Read-Workflow bleibt diese Rekonstruktion rechnerisch. Die molekulare Zuordnung schränkt dies ein, aber eine getrennte Abdeckung kann dennoch mehrere Rekonstruktionen oder keine vollständige Rekonstruktion unterstützen.',
+      ],
+    },
+  ]}
+/>
+
+Diese Konzepte sind verwandt, aber nicht identisch. Die molekulare Identifizierung ermöglicht die Phaseneinteilung, und die Phaseneinteilung macht die Rekonstruktion ganzer Moleküle leichter durchführbar.
+
+In dieser Serie sind „vollständig“ und „in voller Länge“ operative Begriffe und keine Folgen allein der molekularen Zuordnung. In einem Vollständigkeitsanspruch sollte angegeben werden, ob beobachtete 5′- und 3′-Grenzen, eine vollständige Spleißkette, ein Mindestabdeckungsschwellenwert, ein durchgehender zusammenhängender Konsens oder eine referenzgestützte Interpolation zwischen abgedeckten Regionen erforderlich sind.
+
+## Das durch Fragmentierung verursachte Messproblem
+
+Bei der herkömmlichen RNA-Sequenzierung wird RNA typischerweise in komplementäre DNA umgewandelt und das Material vor oder während der Bibliotheksvorbereitung fragmentiert. Millionen kurzer Lesevorgänge werden dann mit einem Referenzgenom oder -transkriptom abgeglichen und in Messungen auf Gen-, Exon-, Verbindungs- oder Transkriptebene zusammengefasst.
+
+Dieser Ansatz war außerordentlich produktiv. Die Short-Read-RNA-Sequenzierung unterstützt:
+
+- Differenzielle Genexpressionsanalyse;
+- Erkennung von Spleißstellen;
+- Transkriptanmerkung;
+- Allel-spezifische Expression;
+- Fusionserkennung;
+- Einzelzell- und räumliche Transkriptomik;
+- zahlreiche diagnostische und translationale Anwendungen.
+
+Seine Grenzen sollten daher genau beschrieben werden. Das Problem besteht nicht darin, dass die Short-Read-RNA-Sequenzierung die RNA nicht erkennen oder die Transkriptstruktur nicht identifizieren kann. Vielmehr trennt die Fragmentierung Beobachtungen, die ursprünglich gemeinsam am selben Molekül erfolgten.
+
+Sobald die Verbindung zwischen Quelle und Molekül verloren gegangen ist, wird die Rekonstruktion des Transkripts zu einem Inferenzproblem.
+
+Computermethoden können dieses Problem häufig lösen, insbesondere wenn Isoformen gut annotiert sind, die Sequenzabdeckung hoch ist und die Transkriptstrukturen ausreichend unterschiedlich sind. Die Mehrdeutigkeit nimmt jedoch zu, wenn ein Locus viele überlappende Isoformen enthält, die Exons, Verbindungen oder Sequenzregionen gemeinsam haben.
+
+Stellen Sie sich ein vereinfachtes Gen vor, das zwei alternative Promotoren, mehrere alternativ gespleißte Exons und zwei Polyadenylierungsstellen enthält. Kurze Lesevorgänge können unabhängig voneinander zwei beobachtete 5'-Grenzen unterstützen, die mit der alternativen Promotorverwendung übereinstimmen, jede Spleißverbindung und zwei beobachtete 3'-Grenzen. Dennoch bleiben diese Beobachtungen möglicherweise mit mehreren unterschiedlichen End-to-End-Kombinationen kompatibel.
+
+Es geht also um die **Identifizierbarkeit**: ob die beobachteten Fragmente eindeutig die Moleküle bestimmen, die sie erzeugt haben.
+
+Für die Expressionsanalyse auf Genebene kann diese Mehrdeutigkeit akzeptabel oder irrelevant sein. Bei Fragen, die die genaue Isoformenstruktur, verknüpfte Varianten, die Bearbeitung von Kandidaten-RNA oder den regulatorischen Kontext betreffen, kann dies von Bedeutung sein.
+
+## Long-Read-Sequenzierung befasst sich mit einem anderen Teil des Problems
+
+Long-Read-Technologien von Oxford Nanopore Technologies und Pacific Biosciences nähern sich der Transkriptstruktur, indem sie Lesevorgänge generieren, die einen Großteil oder das gesamte RNA- oder komplementäre DNA-Molekül umfassen können.
+
+Dies ist ein großer Vorteil für die Isoformenerkennung und Transkriptannotation. Lange Lesevorgänge können entfernte Spleißverbindungen und Transkriptgrenzen direkt verbinden, die bei kurzen Lesevorgängen separat beobachtet werden. Sie haben die Zahl der nachweisbaren Transkriptstrukturen erweitert und die Charakterisierung komplexer Loci verbessert.
+
+Long-Read-Methoden weisen auch Einschränkungen und Kompromisse auf. Je nach Plattform, Protokoll und Versuchsziel können dazu Folgendes gehören:
+
+- die Notwendigkeit einer speziellen Instrumentierung;
+- geringere Anzahl von Lesevorgängen im Vergleich zu Kurzlesesystemen mit hohem Durchsatz;
+- reduzierte Probentiefe für Transkripte mit geringer Häufigkeit;
+- Unterschiede in der Genauigkeit pro Lesevorgang und im Fehlerprofil;
+- Kosten- und Arbeitsablaufüberlegungen;
+- Amplifikations- oder Bibliotheksvorbereitungsverzerrungen;
+- unvollständige Erfassung der Transkriptenden.
+
+Diese Technologien entwickeln sich rasant weiter und es gibt keine einheitliche Beschreibung, die auf jede Plattform oder Anwendung zutrifft. Long-Read- und Short-Read-Methoden sollten nicht als einander ausschließend betrachtet werden. Sie beantworten sich überschneidende, aber unterschiedliche Fragen und werden zunehmend gemeinsam verwendet.
+
+Die relevante Frage ist nicht, welche Plattform allgemein überlegen ist. Dabei handelt es sich um die Messarchitektur, die die für ein bestimmtes biologisches Problem erforderlichen Informationen bewahrt.
+
+## PSeq Clear-Signal-Architektur: Molekül-beschränkter Zusammenbau mit kurzen Lesevorgängen
+
+PSeq behält die Identität des Quellmoleküls bei, während es vorhandene Short-Read-Sequenzierungsinstrumente der nächsten Generation verwendet.
+
+Während der Reverse Transkription verknüpft das Markierungsreagenz PSeq jedes erfolgreich erfasste RNA-abgeleitete cDNA-Molekül mit molekularen Informationen, die bei der Erstellung der Sequenzierungsbibliothek verknüpft bleiben. Nach der Sequenzierung gruppiert die Datenpipeline Lesevorgänge, die dieselbe Quellmolekülidentität tragen, in molekülspezifische Sätze.
+
+Anschließend erfolgt die Transkriptzusammenstellung innerhalb dieser Sätze.
+
+Dies verändert die Art des Rekonstruktionsproblems. Bei der herkömmlichen Transkriptassemblierung werden Fragmente aus einer gemischten Population ausgewertet und Transkriptmodelle identifiziert, die die aggregierten Daten erklären können. PSeq rekonstruiert stattdessen jede erfasste molekulare Vorlage aus Lesevorgängen, die dieser Vorlage zugewiesen sind.
+
+Der Aufbau bleibt rechnerisch, wird aber durch experimentelle Informationen über den molekularen Ursprung eingeschränkt.
+
+Diese Unterscheidung lässt sich wie folgt zusammenfassen:
+
+<ArticleCallout>
+  <em>Bei der konventionellen RNA-Sequenzierung wird gefragt, welche Sammlung von Transkripten einen gemischten Lesepool am plausibelsten erklärt. PSeq fragt, wie Lesevorgänge, die derselben erfassten molekularen Vorlage zugeordnet sind, zusammenpassen, abhängig von der Abdeckung, Überlappung, Referenzinformationen und Grenznachweisen, die für dieses Molekül verfügbar sind.</em>
+</ArticleCallout>
+
+Da eine erfasste molekulare Vorlage durch mehrere unabhängig sequenzierte Fragmente dargestellt werden kann, kann ein Konsens zur Verbesserung der Sequenzgenauigkeit verwendet werden. Consensus schätzt die Sequenz der erfassten cDNA-Matrize; Die Treue zur ursprünglichen RNA hängt auch von Fehlern ab, die eingeführt werden, bevor Beobachtungen auf Fragmentebene unabhängig werden, einschließlich während der reversen Transkription. Die tatsächliche Leistung hängt von Faktoren wie der Komplexität der Bibliothek, der Molekülwiederherstellung, der Lesetiefe, der Transkriptlänge, der Sequenzzusammensetzung und den Assemblierungsalgorithmen ab. Diese Merkmale müssen durch analytische Validierung und vergleichende Studien ermittelt werden.
+
+PSeq sollte daher als eine neue Messarchitektur verstanden werden und nicht als Anspruch, dass jedes RNA-Molekül in einer Probe erfasst, vollständig dargestellt oder fehlerfrei wiederhergestellt wird.
+
+## Vergleich von RNA-Messansätzen
+
+<ArticleComparisonTable
+  ariaLabel="Vergleich der herkömmlichen Short-Read-RNA-Sequenzierung, der Long-Read-Transkriptsequenzierung und PSeq"
+  rowHeaderLabel="Merkmal"
+  columns={[
+    { key: 'pseq', label: 'PSeq', highlighted: true },
+    { key: 'rnaSeq', label: 'Konventionelle Short-Read-RNA-Sequenzierung', shortLabel: 'Short-read-RNA-Sequenzierung' },
+    { key: 'longReadSeq', label: 'Long-Read-Transkriptsequenzierung', shortLabel: 'Long-Read-Sequenzierung' },
+  ]}
+  rows={[
+    {
+      label: 'Primäre Sequenzierungsausgabe',
+      values: {
+        rnaSeq: 'Kurze Fragmente aus einer gemischten Transkriptpopulation',
+        longReadSeq: 'Lange Lesevorgänge, die einzelne Bibliotheksmoleküle darstellen',
+        pseq: 'Kurze Fragmente, die die Identität des Quellmoleküls bewahren',
+      },
+    },
+    {
+      label: 'Verbindung zwischen Quelle und Molekül',
+      values: {
+        rnaSeq: 'Im Allgemeinen nicht über entfernte Fragmente hinweg erhalten',
+        longReadSeq: 'Wird direkt über den Teil eines Bibliotheksmoleküls hinweg beibehalten, der durch einen Lesevorgang repräsentiert wird',
+        pseq: 'Durch molekulare Identifizierung erhalten',
+      },
+    },
+    {
+      label: 'Transkriptstruktur',
+      values: {
+        rnaSeq: 'Abgeleitet aus aggregierten Fragmentbeweisen',
+        longReadSeq: 'Direkt über den dargestellten Teil; Ende-zu-Ende nur dann, wenn der Lesevorgang das relevante Molekül und die relevanten Grenzen umfasst',
+        pseq: 'Rekonstruiert aus zugewiesenen Lesevorgängen, wenn Abdeckung und strukturelle Beweise ausreichend sind',
+      },
+    },
+    {
+      label: 'Instrumentierung',
+      values: {
+        rnaSeq: 'Etablierte Short-Read-NGS-Systeme',
+        longReadSeq: 'Dedizierte Long-Read-Systeme',
+        pseq: 'Etablierte Short-Read-NGS-Systeme',
+      },
+    },
+    {
+      label: 'Hauptstärken',
+      values: {
+        rnaSeq: 'Genauigkeit, Umfang, Tiefe, ausgereifte Arbeitsabläufe',
+        longReadSeq: 'Fernkonnektivität und Isoformenerkennung',
+        pseq: 'Molekülbeschränkter Zusammenbau mit kurzer Lesetiefe und Genauigkeit',
+      },
+    },
+    {
+      label: 'Wichtige Einschränkungen',
+      values: {
+        rnaSeq: 'Mehrdeutige Rekonstruktion an komplexen Orten',
+        longReadSeq: 'Plattformabhängige Kompromisse in Bezug auf Tiefe, Kosten, Genauigkeit und Workflow',
+        pseq: 'Neue Plattform, die umfangreiche Validierung, Benchmarking und Einführung erfordert',
+      },
+    },
+  ]}
+/>
+
+Dieser Vergleich ist notwendigerweise allgemein. Die Leistung hängt vom spezifischen Protokoll, Instrument, Probentyp und der Analysepipeline ab.
+
+Lange gelesene cDNA-Beobachtungen können auch verkürzt, verkettet, chimär oder von amplifizierten Kopien abgeleitet sein. „Einzelmolekül“ bezieht sich daher auf das Bibliotheksmolekül, das durch einen Read repräsentiert wird, und sollte nicht automatisch als intaktes natives RNA-Molekül interpretiert werden.
+
+## Welche zusätzlichen Informationen kann die Molekülauflösung liefern?
+
+Der Wert der molekülaufgelösten Messung liegt nicht nur darin, dass sie eine längere Sequenz erzeugt. Sein Wert liegt in der Erhaltung der Beziehungen zwischen Features.
+
+<ArticleConceptList
+  ariaLabel="Informationen durch molekülaufgelöste Messung"
+  items={[
+    {
+      id: 'transcript-isoforms',
+      title: 'Transkript-Isoformen',
+      paragraphs: [
+        'Eine molekülaufgelöste Messung kann bestimmen, welche Spleißverbindungen, beobachteten Transkriptgrenzen, vorhergesagten Kodierungssequenzen und untranslatierten Regionen zusammen auftreten.',
+        'Dies ist besonders relevant, wenn verschiedene Isoformen den größten Teil ihrer Sequenz teilen, sich aber in einem funktionell wichtigen Exon oder einer regulatorischen Region unterscheiden.',
+      ],
+    },
+    {
+      id: 'linked-sequence-variation',
+      title: 'Verknüpfte Sequenzvariation',
+      paragraphs: [
+        'Eine Probe kann mehrere Substitutionen, mögliche Bearbeitungsereignisse oder Mutationen innerhalb desselben Gens oder RNA-Genoms enthalten. Mit der Aggregatsequenzierung kann die Häufigkeit jedes Ereignisses abgeschätzt werden, es kann jedoch möglicherweise nicht festgestellt werden, ob die Ereignisse auf demselben Molekül auftreten.',
+        'Durch die Phaseneinstellung bleiben diese Kombinationen erhalten.',
+        'Dies könnte in Umgebungen wie der Viruspopulationsanalyse, der somatischen Variation, der allelspezifischen Transkription und der Analyse der Kandidaten-RNA-Editierung nützlich sein, vorausgesetzt, dass die Molekülwiederherstellung und die Fehlereigenschaften ausreichend gut kontrolliert werden.',
+      ],
+    },
+    {
+      id: 'isoform-abundance',
+      title: 'Isoformenhäufigkeit',
+      paragraphs: [
+        'Die Abundanz auf Genebene fasst alle einem Locus zugeordneten Transkripte zusammen. Bei der Quantifizierung auf Transkriptebene wird versucht, diese Summe auf die Isoformen aufzuteilen. Schätzungen können jedoch instabil sein, wenn Isoformen wesentliche Sequenzen gemeinsam haben.',
+        'Molekülaufgelöste Beobachtungen könnten eine direktere Grundlage für die Abschätzung der Häufigkeit spezifischer Transkriptstrukturen liefern. Bei den wiederhergestellten Molekülgruppen handelt es sich um analytische Beobachtungen erfasster Vorlagen und nicht um automatisch unvoreingenommene Zählungen aller RNA-Moleküle in der Eingabe. Die quantitative Genauigkeit hängt weiterhin von der Einfangwahrscheinlichkeit, der Effizienz der umgekehrten Transkription, der Molekülspaltung und -kollision, dem Auslassen von Identifikatoren, der Duplikatdarstellung, der differenziellen Wiederherstellung, der Filterung, der Amplifikation und der Probenahme ab.',
+      ],
+    },
+    {
+      id: 'regulatory-context',
+      title: 'Regulatorischer Kontext',
+      paragraphs: [
+        'Die vorhergesagte proteinkodierende Sequenz ist nur eine Komponente eines RNA-Moleküls. Beobachtete 5′-Grenzen, abgeleitete Promotornutzung, nicht translatierte Regionen und Transkriptenden können Hypothesen über Expression, Lokalisierung, Translation und Abbau beeinflussen.',
+        'Die Beibehaltung dieser Elemente in derselben molekularen Beobachtung kann dazu beitragen, das vorhergesagte Kodierungspotenzial mit dem regulatorischen Kontext zu verknüpfen. Die RNA-Sequenz allein gibt keinen Aufschluss darüber, welcher offene Leserahmen translatiert wird oder ob ein Proteinprodukt stabil ist.',
+      ],
+    },
+  ]}
+/>
+
+## RNA als Bestandteil des molekularen Phänotyps
+
+Der Phänotyp wird über mehrere biologische Skalen hinweg ausgedrückt. Es umfasst beobachtbare Merkmale, Zellzustände, Gewebearchitektur, Physiologie, Krankheitsverlauf und Reaktion auf die Behandlung.
+
+Keine einzelne molekulare Schicht entspricht dem Phänotyp. DNA, Chromatin, RNA, Proteine, Metaboliten, zelluläre Interaktionen und Umwelteinflüsse tragen alle dazu bei.
+
+Dennoch nimmt das Transkriptom eine besonders aufschlussreiche Stellung ein. Es spiegelt sowohl das genomische Potenzial als auch den aktuellen regulatorischen Zustand eines biologischen Systems wider. Es verändert sich während der Differenzierung, bei Stress, bei der Immunaktivierung, beim Altern, bei der Behandlung und beim Fortschreiten der Krankheit.
+
+Aus diesem Grund kann das Transkriptom als eine Komponente des molekularen Phänotyps betrachtet werden: eine dynamische Aufzeichnung darüber, welche genomischen Programme in welcher Form ausgeführt werden.
+
+Genexpressionsmessungen erfassen einen wichtigen Teil dieser Aufzeichnung. Isoformaufgelöste Messungen können eine andere erfassen.
+
+Eine nützliche Abkürzung ist:
+
+<ArticleCallout>
+  <em>Die RNA-Häufigkeit auf Genebene gibt an, welche Loci nachweisbare RNA beitragen und auf welcher Aggregatebene. Die Isoformenstruktur beschreibt, welche molekularen Formen zu diesem Signal beitragen.</em>
+</ArticleCallout>
+
+Diese Unterscheidung sollte nicht überbewertet werden. Viele biologische Fragen werden mithilfe von Zählungen auf Genebene angemessen beantwortet, und eine zunehmende Merkmalsauflösung kann zu zusätzlichem Rauschen, geringerer Dichte und analytischer Komplexität führen. Der Wert von Daten auf Isoformebene muss daher für jede Anwendung empirisch nachgewiesen werden.
+
+## Warum molekülaufgelöste RNA für maschinelles Lernen wichtig sein könnte
+
+Modelle des maschinellen Lernens profitieren nicht automatisch von detaillierteren Messungen. Zusätzliche Funktionen verbessern ein Modell nur dann, wenn sie reproduzierbare, für die Vorhersageaufgabe relevante Informationen enthalten und mit ausreichender Konsistenz gemessen werden können.
+
+Isoform-aufgelöste Daten könnten nützlich sein, da Zusammenfassungen auf Genebene Transkripte mit unterschiedlichen biologischen Wirkungen kombinieren können. Wenn eine Isoform zunimmt, während eine andere abnimmt, bleibt die Gesamtexpression des Gens möglicherweise unverändert, obwohl sich der Funktionszustand des Systems verschoben hat.
+
+In einem solchen Fall kann ein Merkmal auf Genebene das relevante Signal eher verschleiern als offenbaren.
+
+Molekülaufgelöste Messungen könnten Modelle mit Funktionen liefern wie:
+
+- die geschätzte Häufigkeit von Isoformen, die vordefinierte Vollständigkeitskriterien erfüllen;
+- verknüpfte Kombinationen von Spleiß- und Kandidatenbearbeitungsereignissen;
+- beobachtete 5′-Grenzen-zu-Isoform-Beziehungen, die den Rückschluss auf die Promotornutzung stützen könnten;
+- vorhergesagte kodierende Sequenzen gepaart mit nicht translatierten Regionen;
+- Transkriptstrukturen, die in vorhandenen Anmerkungen nicht dargestellt sind.
+
+Diese Merkmale stehen möglicherweise in engerem Zusammenhang mit der molekularen Funktion als die aggregierten Genzahlen. Sie können auch die Interpretierbarkeit verbessern, indem sie die Verknüpfung der Vorhersagen eines Modells mit bestimmten Transkriptstrukturen ermöglichen.
+
+Es gibt jedoch wichtige Herausforderungen.
+
+Datensätze auf Isoform-Ebene sind hochdimensional. Viele Isoformen sind selten, gewebespezifisch oder unvollständig annotiert. Messfehler, Batch-Effekte und Änderungen in den Analysepipelines können zu instabilen Features führen. Eine größere Anzahl von Kandidatenvariablen erhöht auch das Risiko einer Überanpassung.
+
+Der potenzielle Wert molekülaufgelöster RNA-Daten für maschinelles Lernen hängt daher von einer strengen Merkmalsdefinition, analytischer Validierung, unabhängigen Kohorten und prospektiven Tests ab. Es sollte durch direkte Vergleiche mit der RNA-Sequenzierung auf Genebene und anderen etablierten Messungen bewertet werden.
+
+Die wissenschaftliche Hypothese ist nicht, dass Daten auf Isoformenebene jedes Modell verbessern werden. Es liegt daran, dass einige biologische Signale in der Transkriptstruktur und molekularen Verknüpfung kodiert sind und daher in Zusammenfassungen auf Genebene nicht zugänglich, verwässert oder mehrdeutig dargestellt sind.
+
+## Eine andere Art der RNA-Messung
+
+Der zentrale Unterschied zwischen konventioneller RNA-Sequenzierung und PSeq besteht nicht in kurzen und langen Lesevorgängen. PSeq verwendet auch kurze Lesevorgänge.
+
+Der Unterschied besteht darin, ob diese Lesevorgänge Informationen über ihr Quellmolekül enthalten.
+
+Konventionelle RNA-Sequenzierung fragmentiert und bündelt Transkripte und leitet dann End-to-End-Strukturen aus aggregierten Beweisen ab. PSeq-Fragmente erfassten erfolgreich RNA-abgeleitete cDNA-Moleküle unter Beibehaltung der Identität des Quellmoleküls und rekonstruierten dann jede erfasste Vorlage innerhalb des zugehörigen Lesesatzes.
+
+Dieser Entwurf zielt darauf ab, drei Eigenschaften zu kombinieren:
+
+<ArticleKeyPoints
+  ariaLabel="Eigenschaften vereint durch das PSeq-Design"
+  items={[
+    'Die grundlegende Genauigkeit der Short-Read-Sequenzierung',
+    'Der Durchsatz und die installierte Infrastruktur etablierter NGS-Systeme',
+    'Die molekulare Verknüpfung, die für die isoformenaufgelöste Rekonstruktion erforderlich ist',
+  ]}
+/>
+
+Erste technische Studien haben die beabsichtigte Bibliotheksstruktur, Markerplatzierung, Tag-plus-cDNA-Lesezusammensetzung, molekülspezifische Gruppierung, End-to-End-Exon- und Spleißverbindungsabdeckung für ein repräsentatives PRPF31-Transkript sowie die Rückverfolgbarkeit von FASTQ-Beweisen bis zum zusammengestellten molekularen Datensatz untersucht.
+
+Die aktuelle Validierung definiert den breiteren Leistungsbereich über Transkriptklassen, Probentypen und Häufigkeitsbereiche hinweg. Zu den relevanten Benchmarks gehören Sensitivität, Spezifität, Konsensgenauigkeit im Vergleich zu erfasster cDNA und Original-RNA-Kontrollen, Vollständigkeit des Transkripts unter vordefinierten Kriterien, Isoformenquantifizierung, Reproduzierbarkeit, Durchsatz, Kosten und Vergleich mit Short- und Long-Read-Methoden.
+
+## Abschluss
+
+RNA ist nicht einfach eine vorübergehende Kopie der DNA. Es handelt sich um eine vielfältige Population molekularer Spezies, in der vorhergesagte Kodierungssequenzen, Spleißstrukturen, beobachtete Transkriptgrenzen, regulatorische Regionen und Sequenzvariationen in verknüpften Kombinationen auftreten.
+
+Konventionelle RNA-Sequenzierung misst diese Population mit außergewöhnlichem Umfang und Genauigkeit, aber durch Fragmentierung werden häufig Merkmale getrennt, die ursprünglich zum selben Molekül gehörten. Mit rechnerischen Methoden können viele Transkriptstrukturen rekonstruiert werden. Dennoch bleibt Unklarheit bestehen, wenn mehrere Isoformen dieselben lokalen Sequenznachweise aufweisen.
+
+Die Long-Read-Sequenzierung stellt einen Großteil dieser Konnektivität wieder her, indem erweiterte Moleküle direkt gelesen werden. Die PSeq Clear-Signal-Architektur verfolgt einen anderen Ansatz: Sie bewahrt die Identität des Quellmoleküls durch einen Kurzlese-Workflow und nutzt diese Identität, um die Transkriptassemblierung einzuschränken.
+
+Die potenzielle Bedeutung dieses Ansatzes liegt auf der Hand. Wenn die biologische Funktion von verknüpften Merkmalen innerhalb einzelner RNA-Moleküle abhängt, kann die Beibehaltung erfasster molekularer Vorlagen als Maßeinheiten Informationen offenbaren, die durch Zusammenfassungen auf Fragment- oder Genebene verdeckt werden. Ob eine Rekonstruktion vollständig, biologisch getreu oder funktionell wichtig ist, bleibt eine separate Frage.
+
+[Part 2 describes the PSeq workflow in greater detail, including molecular tagging, library construction, read assignment, molecule-specific assembly, and consensus generation.](/media/blog/an-introduction-to-phased-sequencing-part-2)
+
+<ArticleSeriesNavigation
+  series={phasedSequencingSeries}
+  locale="de-DE"
+  currentPart={1}
+  position="end"
+/>

@@ -26,7 +26,7 @@ without the proxy key, Preview-origin result navigation, and unchanged
 production search results.
 
 Arabic Website browser proof is authorized for the protected Preview deployment
-as of 2026-08-07. Automated generated-HTML parity now covers all 16 route pairs,
+as of 2026-08-07. Automated generated-HTML parity now covers all 19 route pairs,
 including RTL document metadata, core semantic structures, minimum translated
 content coverage, and the corrected home-page source alignment. Deployed proof must
 cover direct `/ar` deep links, `lang="ar"` and `dir="rtl"`, desktop and narrow
@@ -40,6 +40,8 @@ Spanish, Simplified Chinese, Japanese, German (Germany), Italian, and French
 now have complete protected-Preview route sets and generated-HTML parity
 coverage. Their browser proof remains deferred and must include native-language
 copy review, CJK and long-German line breaking, responsive navigation and
+all three localized blog articles, locale-scoped listings and feeds,
+same-article language switching, localized series navigation,
 language-picker fit, keyboard/focus behavior, locale-isolated search, and
 unchanged English production output before any locale is published.
 Local browser regression checks on 2026-08-08 cover the multi-omics
