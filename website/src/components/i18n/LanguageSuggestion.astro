@@ -54,11 +54,10 @@ const message = getMessages('en-US').language
 
   const suggestions = [...document.querySelectorAll<HTMLElement>('[data-language-suggestion]')]
   if (suggestions.length > 0) {
-    const availableLocales = suggestions
-      .map((suggestion) => suggestion.dataset.languageSuggestion)
-      .filter((locale): locale is string => Boolean(locale))
-    const normalizeLocale = (language: string) => {
+    const normalizeLocale = (language: string | undefined) => {
+      if (!language) return undefined
       const normalized = language.toLowerCase()
+      if (normalized === 'en' || normalized.startsWith('en-')) return 'en-US'
       if (normalized === 'ar' || normalized.startsWith('ar-')) return 'ar'
       if (normalized === 'fr' || normalized.startsWith('fr-')) return 'fr'
       if (normalized === 'es' || normalized.startsWith('es-')) return 'es'
@@ -72,14 +71,18 @@ const message = getMessages('en-US').language
       if (normalized === 'it' || normalized.startsWith('it-')) return 'it'
       return undefined
     }
-    const preferredLocale = readCookie('phaeno_locale')
+    const preferredLocale = normalizeLocale(readCookie('phaeno_locale'))
     const promptState = readCookie('phaeno_locale_prompt')
-    const detectedLocale = preferredLocale && availableLocales.includes(preferredLocale)
-      ? preferredLocale
-      : navigator.languages.map(normalizeLocale).find((locale) => locale && availableLocales.includes(locale))
+    const browserLanguages = navigator.languages.length > 0
+      ? navigator.languages
+      : [navigator.language]
+    const shouldSuggest = !preferredLocale && promptState !== 'dismissed'
+    const detectedLocale = shouldSuggest
+      ? browserLanguages.map(normalizeLocale).find(Boolean)
+      : undefined
     const suggestion = suggestions.find((item) => item.dataset.languageSuggestion === detectedLocale)
 
-    if (promptState !== 'dismissed' && suggestion) suggestion.hidden = false
+    if (suggestion) suggestion.hidden = false
 
     suggestion?.querySelector<HTMLElement>('[data-language-suggestion-accept]')?.addEventListener('click', () => {
       const targetLocale = suggestion.querySelector<HTMLElement>('[data-target-locale]')?.dataset.targetLocale
