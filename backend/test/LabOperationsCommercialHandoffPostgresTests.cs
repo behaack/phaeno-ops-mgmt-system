@@ -4,6 +4,7 @@ using System.Text.Json;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Logging.Abstractions;
 using Microsoft.Extensions.Options;
 using PSeq.Operations.Commercial.Accounts.Domain;
 using PSeq.Operations.Commercial.LabOperations.Application;
@@ -881,12 +882,20 @@ public class LabOperationsCommercialHandoffPostgresTests
             var httpContext = new DefaultHttpContext();
             httpContext.Request.Headers["X-Organization-Id"] = CustomerOrganization.Id.ToString();
             httpContext.Request.Headers["Idempotency-Key"] = idempotencyKey;
+            var orderOptions = Options.Create(new OrderManagementOptions());
             return new LabServiceOrdersController(
                 DbContext,
                 new OrderRequestContext(DbContext, new FixedIdentityContext(customerIdentity)),
                 new OrderIdempotencyService(DbContext),
                 NullOperationalFileStorage.Instance,
-                provider)
+                provider,
+                new ReleasedDeliverableDownloadAttemptService(
+                    DbContext,
+                    orderOptions,
+                    NullLogger<ReleasedDeliverableDownloadAttemptService>.Instance),
+                new ReleasedDeliverableDownloadProjectionService(DbContext),
+                NullLogger<CompletionTrackedFileStreamResult>.Instance,
+                NullLogger<CompletionTrackedArchiveResult>.Instance)
             {
                 ControllerContext = new ControllerContext { HttpContext = httpContext }
             };

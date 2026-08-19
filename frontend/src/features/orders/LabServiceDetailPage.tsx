@@ -1,9 +1,9 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { Link } from '@tanstack/react-router'
-import { Download, FileCheck2 } from 'lucide-react'
+import { Download, FileArchive, FileCheck2 } from 'lucide-react'
 import { useState } from 'react'
 
-import { acceptLabQuote, downloadLabResult, getLabOrder, getOrderErrorMessage, recordLabSampleShipment, requestLabCancellation, submitLabOrder, type Quote, withdrawLabOrder } from '#/api/order-management'
+import { acceptLabQuote, downloadLabResult, downloadLabResultPackage, getLabOrder, getOrderErrorMessage, recordLabSampleShipment, requestLabCancellation, submitLabOrder, type OperationalFile, type Quote, withdrawLabOrder } from '#/api/order-management'
 import { Alert, AlertDescription, AlertTitle } from '#/components/ui/alert'
 import { Button } from '#/components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '#/components/ui/card'
@@ -47,6 +47,12 @@ export function LabServiceDetailPage({ orderId }: { orderId: string }) {
       await queryClient.invalidateQueries({ queryKey: ['lab-service-orders'] })
     },
   })
+  const downloadAction = useMutation({
+    mutationFn: async (download: LabResultDownloadRequest) => download.kind === 'package'
+      ? downloadLabResultPackage(orderId, download.releaseId, download.releaseVersion)
+      : downloadLabResult(orderId, download.file),
+    onSuccess: async () => queryClient.invalidateQueries({ queryKey: ['lab-service-order', orderId] }),
+  })
 
   if (!apiEnabled) return <main className="page-wrap px-4 py-8"><Alert><AlertTitle>Connected order detail is unavailable</AlertTitle><AlertDescription>Use a signed-in Customer session to review this laboratory request.</AlertDescription></Alert></main>
   if (orderQuery.isLoading) return <main className="page-wrap px-4 py-8"><p role="status">Loading laboratory order…</p></main>
@@ -63,6 +69,7 @@ export function LabServiceDetailPage({ orderId }: { orderId: string }) {
       {order.tenantSafeReason ? <Alert className="mb-5"><AlertTitle>Action needed</AlertTitle><AlertDescription>{order.tenantSafeReason}</AlertDescription></Alert> : null}
       {order.labCustomerActionSummary ? <Alert className="mb-5"><AlertTitle>Laboratory action needed</AlertTitle><AlertDescription>{order.labCustomerActionSummary}</AlertDescription></Alert> : null}
       {action.error ? <Alert variant="destructive" className="mb-5"><AlertTitle>Order was not updated</AlertTitle><AlertDescription>{getOrderErrorMessage(action.error, 'Reload and try again.')}</AlertDescription></Alert> : null}
+      {downloadAction.error ? <Alert variant="destructive" className="mb-5"><AlertTitle>Download did not complete</AlertTitle><AlertDescription>{getOrderErrorMessage(downloadAction.error, 'The incomplete transfer was not counted. Try again while downloads remain open.')}</AlertDescription></Alert> : null}
 
       {order.labMilestone ? <Card className="mb-5"><CardHeader><CardTitle>Laboratory progress</CardTitle><CardDescription>Current customer-safe milestone from the laboratory record.</CardDescription></CardHeader><CardContent><div className="flex flex-wrap items-center gap-3"><OrderStatusBadge status={order.labMilestone} />{order.labScheduleHealth ? <span className="text-sm text-muted-foreground">Schedule: {humanizeStatus(order.labScheduleHealth)}</span> : null}{order.labExpectedCompletionAtUtc ? <span className="text-sm text-muted-foreground">Expected {formatDate(order.labExpectedCompletionAtUtc)}</span> : null}</div>{order.labPermittedQcProjectionJson ? <details className="mt-3"><summary className="cursor-pointer text-sm font-medium">Approved QC summary</summary><pre className="mt-2 overflow-x-auto rounded-md bg-muted p-3 text-xs">{prettyJson(order.labPermittedQcProjectionJson)}</pre></details> : null}{order.labReadyForRelease ? <p className="mt-3 text-sm">Scientific review is complete. Phaeno must still complete the Commercial release before any result file appears here.</p> : null}</CardContent></Card> : null}
 
@@ -76,15 +83,18 @@ export function LabServiceDetailPage({ orderId }: { orderId: string }) {
               <CardDescription>Scientific readiness and commercial release are separate. Files appear here only after all release gates pass.</CardDescription>
             </CardHeader>
             <CardContent>
-              {order.resultReleases.some((release) => release.releaseStatus === 'Released' && release.retention) ? (
+              {order.resultReleases.some((release) => release.releaseStatus === 'Released') ? (
                 <div className="mb-5 space-y-4">
                   {order.resultReleases
-                    .filter((release) => release.releaseStatus === 'Released' && release.retention)
+                    .filter((release) => release.releaseStatus === 'Released')
                     .map((release) => (
                       <section key={release.id} aria-labelledby={`result-release-${release.id}`}>
-                        <p id={`result-release-${release.id}`} className="text-sm font-medium">
-                          {sampleName(order.samples, release.labSampleId)} · Result release {release.releaseVersion}
-                        </p>
+                        <div className="flex flex-wrap items-center justify-between gap-3">
+                          <p id={`result-release-${release.id}`} className="text-sm font-medium">
+                            {sampleName(order.samples, release.labSampleId)} · Result release {release.releaseVersion}
+                          </p>
+                          <Button type="button" size="sm" variant="outline" disabled={downloadAction.isPending} onClick={() => downloadAction.mutate({ kind: 'package', releaseId: release.id, releaseVersion: release.releaseVersion })}><FileArchive data-icon="inline-start" />{downloadAction.isPending && downloadAction.variables?.kind === 'package' && downloadAction.variables.releaseId === release.id ? 'Downloading…' : 'Download package'}</Button>
+                        </div>
                         <ReleasedDeliverableRetentionNotice retention={release.retention} />
                       </section>
                     ))}
@@ -97,8 +107,9 @@ export function LabServiceDetailPage({ orderId }: { orderId: string }) {
                       <div>
                         <p className="font-medium">{file.fileName}</p>
                         <p className="text-xs text-muted-foreground">{formatBytes(file.sizeBytes)} · Released {file.releasedAt ? formatDate(file.releasedAt) : '—'}</p>
+                        <p className="mt-1 text-xs text-muted-foreground">{fileDownloadStatus(file)}</p>
                       </div>
-                      <Button type="button" variant="outline" onClick={() => downloadLabResult(order.id, file)}><Download data-icon="inline-start" />Download</Button>
+                      <Button type="button" variant="outline" disabled={downloadAction.isPending} onClick={() => downloadAction.mutate({ kind: 'file', file })}><Download data-icon="inline-start" />{downloadAction.isPending && downloadAction.variables?.kind === 'file' && downloadAction.variables.file.id === file.id ? 'Downloading…' : 'Download'}</Button>
                     </li>
                   ))}
                 </ul>
@@ -144,3 +155,11 @@ function formatBytes(value: number) { return new Intl.NumberFormat('en-US', { st
 function sampleName(samples: Array<{ id: string; customerSampleId: string }>, sampleId: string) { return samples.find((sample) => sample.id === sampleId)?.customerSampleId ?? 'Sample' }
 function downloadSnapshot(fileName: string, value: string) { const url = URL.createObjectURL(new Blob([value], { type: 'application/json' })); const link = document.createElement('a'); link.href = url; link.download = fileName; link.click(); URL.revokeObjectURL(url) }
 function prettyJson(value: string) { try { return JSON.stringify(JSON.parse(value), null, 2) } catch { return value } }
+type LabResultDownloadRequest =
+  | { kind: 'file'; file: OperationalFile }
+  | { kind: 'package'; releaseId: string; releaseVersion: number }
+function fileDownloadStatus(file: OperationalFile) {
+  if (file.download?.isDownloaded) return `Downloaded${file.download.downloadedAtUtc ? ` ${formatDateTime(file.download.downloadedAtUtc)}` : ''}`
+  if ((file.download?.activeAttemptCount ?? 0) > 0) return 'Download in progress; it counts only after completion.'
+  return 'Not downloaded'
+}

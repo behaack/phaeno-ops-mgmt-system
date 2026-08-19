@@ -402,9 +402,17 @@ public static class OrderManagementModelConfiguration
         modelBuilder.Entity<OperationalFileDownload>(entity =>
         {
             entity.HasKey(e => e.Id);
+            EnumText(entity.Property(e => e.ReleasedPackageType));
+            EnumText(entity.Property(e => e.Scope));
+            EnumText(entity.Property(e => e.Outcome));
+            Text(entity.Property(e => e.TerminalReasonCode), 100, false);
             Text(entity.Property(e => e.RemoteAddress), 100, false);
             Text(entity.Property(e => e.UserAgent), 1000, false);
-            entity.HasIndex(e => new { e.OrganizationId, e.DownloadedAt });
+            entity.Property(e => e.Version).IsRequired().IsConcurrencyToken();
+            entity.HasIndex(e => new { e.OrganizationId, e.StartedAtUtc });
+            entity.HasIndex(e => new { e.OrganizationId, e.ReleasedPackageType, e.ReleasedPackageId });
+            entity.HasIndex(e => new { e.Outcome, e.LeaseExpiresAtUtc });
+            entity.HasIndex(e => e.TransferId);
             entity.HasIndex(e => e.ManagedOperationalFileId);
             entity.HasOne<ManagedOperationalFile>().WithMany().HasForeignKey(e => e.ManagedOperationalFileId).OnDelete(DeleteBehavior.Restrict);
             entity.HasOne<Organization>().WithMany().HasForeignKey(e => e.OrganizationId).OnDelete(DeleteBehavior.Restrict);

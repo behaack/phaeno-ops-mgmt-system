@@ -213,7 +213,7 @@ export const documentationEntries: readonly DocumentationEntry[] = [
     summary: 'Understand result readiness, credit and payment gates, and QuickBooks documents.',
     section: 'Laboratory work',
     order: 40,
-    reviewedAt: '2026-08-18',
+    reviewedAt: '2026-08-19',
     Content: CustomerResultsAndBilling,
   },
   {
@@ -279,7 +279,7 @@ export const documentationEntries: readonly DocumentationEntry[] = [
     summary: 'Submit inputs, accept a job quote, follow processing, and download outputs.',
     section: 'Partner work',
     order: 40,
-    reviewedAt: '2026-08-18',
+    reviewedAt: '2026-08-19',
     Content: PartnerDataAssembly,
   },
   {
@@ -562,7 +562,7 @@ export const documentationEntries: readonly DocumentationEntry[] = [
     summary: 'Maintain scientific, commercial, and sample-shipping rules and recover durable integrations.',
     section: 'Platform operations',
     order: 60,
-    reviewedAt: '2026-08-18',
+    reviewedAt: '2026-08-19',
     Content: PhaenoConfigurationAndRecovery,
   },
   {

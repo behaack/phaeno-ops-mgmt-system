@@ -40,6 +40,46 @@ describe('ReleasedDeliverableRetentionNotice', () => {
     expect(screen.queryByText('Conditional grace through')).toBeNull()
   })
 
+  it('reports completed package downloads without exposing downloader identity', () => {
+    render(
+      <ReleasedDeliverableRetentionNotice
+        retention={{
+          ...retention,
+          download: {
+            totalFileCount: 2,
+            downloadedFileCount: 2,
+            activeAttemptCount: 0,
+            status: 'Downloaded',
+            completedAtUtc: '2026-08-20T12:00:00Z',
+          },
+        }}
+      />,
+    )
+
+    expect(screen.getByText(/All 2 files downloaded/)).toBeTruthy()
+    expect(screen.getByText(/deletion remains scheduled for the standard time/)).toBeTruthy()
+  })
+
+  it('does not count an active transfer until it completes', () => {
+    render(
+      <ReleasedDeliverableRetentionNotice
+        retention={{
+          ...retention,
+          download: {
+            totalFileCount: 1,
+            downloadedFileCount: 0,
+            activeAttemptCount: 1,
+            status: 'InProgress',
+            completedAtUtc: null,
+          },
+        }}
+      />,
+    )
+
+    expect(screen.getByText(/No file has completed download yet/)).toBeTruthy()
+    expect(screen.getByText(/One download is in progress/)).toBeTruthy()
+  })
+
   it('renders nothing for a historical release without a snapshot', () => {
     const { container } = render(<ReleasedDeliverableRetentionNotice retention={null} />)
 

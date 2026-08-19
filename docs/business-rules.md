@@ -304,6 +304,13 @@ Confirmed Prospect rules:
   that deadline. Customer, Partner, and Prospect organizations may have
   Phaeno-managed partial overrides; every release snapshots its resolved policy
   so later configuration changes affect only future releases.
+- A released file counts as downloaded for its organization only after the
+  server completes the full individual-file response or the full package ZIP
+  that contains it. Started, partial range, failed, cancelled, timed-out,
+  revoked, internal-Phaeno, and legacy completion-unverified attempts do not
+  count. One successful download by any currently authorized organization
+  member satisfies that file without exposing the member's identity to other
+  external users.
 - Customer laboratory result availability is sample-specific. A
   credit-approved Customer may receive an eligible sample result while other
   samples remain in progress; a non-credit Customer waits for the completed job

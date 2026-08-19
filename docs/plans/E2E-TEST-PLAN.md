@@ -333,6 +333,13 @@ the protected deployed-Preview acceptance above.
   timestamp modal capture, sendout/custody, exception resolution, scientific approval, the
   Customer-safe projection, and no file publication at Ready for release.
   Physical printer/scanner qualification remains a manual bench gate.
+- [ ] Released-package completion-aware download journey - through authenticated
+  Customer and Partner sessions, download one full file and one full-package
+  ZIP, confirm package/file state refresh, interrupt a transfer and confirm it
+  remains undownloaded, allow a synthetic short lease to expire, and prove a
+  different tenant cannot discover or download the release. Retention warnings,
+  cutoff, and byte deletion remain outside this journey until their worker is
+  implemented.
 
 ## Requested Execution Log
 

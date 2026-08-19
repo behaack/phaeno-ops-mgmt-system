@@ -40,8 +40,12 @@ builder.Services.Configure<PostmarkOptions>(
     builder.Configuration.GetSection(PostmarkOptions.SectionName));
 builder.Services.Configure<DataProvisioningOptions>(
     builder.Configuration.GetSection(DataProvisioningOptions.SectionName));
-builder.Services.Configure<OrderManagementOptions>(
-    builder.Configuration.GetSection(OrderManagementOptions.SectionName));
+builder.Services.AddOptions<OrderManagementOptions>()
+    .Bind(builder.Configuration.GetSection(OrderManagementOptions.SectionName))
+    .Validate(
+        options => options.HasValidDownloadSettings,
+        "OrderManagement download leases must be 1-1440 minutes and reconciliation must run every 5-300 seconds.")
+    .ValidateOnStart();
 builder.Services.Configure<QuickBooksOptions>(
     builder.Configuration.GetSection(QuickBooksOptions.SectionName));
 if (builder.Environment.IsDevelopment())
@@ -87,6 +91,9 @@ builder.Services.AddSingleton<DataProvisioningProfile>();
 builder.Services.AddSingleton<IManagedFileScanner, EnvironmentManagedFileScanner>();
 builder.Services.AddSingleton<IOperationalFileScanner, EnvironmentOperationalFileScanner>();
 builder.Services.AddScoped<ReleasedDeliverableRetentionSnapshotService>();
+builder.Services.AddScoped<ReleasedDeliverableDownloadAttemptService>();
+builder.Services.AddScoped<ReleasedDeliverableDownloadProjectionService>();
+builder.Services.AddHostedService<ReleasedDeliverableDownloadAttemptReconciler>();
 builder.Services.AddScoped<OrderRequestContext>();
 builder.Services.AddScoped<OrderIdempotencyService>();
 builder.Services.AddScoped<SampleShippingPacketService>();

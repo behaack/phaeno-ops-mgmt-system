@@ -67,6 +67,11 @@ export type OperationalFile = {
   releasedAt: string | null
   createdAt: string
   version: number
+  download?: {
+    isDownloaded: boolean
+    activeAttemptCount: number
+    downloadedAtUtc: string | null
+  } | null
 }
 
 export type Quote = {
@@ -131,6 +136,13 @@ export type ReleasedDeliverableRetention = {
   downloadAccessClosedAtUtc: string | null
   byteDeletedAtUtc: string | null
   deletionOutcome: string | null
+  download?: {
+    totalFileCount: number
+    downloadedFileCount: number
+    activeAttemptCount: number
+    status: 'NoFiles' | 'NotStarted' | 'InProgress' | 'PartiallyDownloaded' | 'Downloaded'
+    completedAtUtc: string | null
+  } | null
 }
 
 export type LabResultRelease = {
@@ -474,6 +486,10 @@ export async function downloadLabResult(orderId: string, file: OperationalFile) 
   const response = await api.get<Blob>(`/lab-service-orders/${orderId}/results/${file.id}/download`, { responseType: 'blob' })
   saveBlob(response.data, file.fileName)
 }
+export async function downloadLabResultPackage(orderId: string, releaseId: string, releaseVersion: number) {
+  const response = await api.get<Blob>(`/lab-service-orders/${orderId}/results/releases/${releaseId}/download`, { responseType: 'blob' })
+  saveBlob(response.data, `results-release-${releaseVersion}.zip`)
+}
 
 export async function listReagentOrders(params?: Record<string, string | number | undefined>) { return get<PagedResult<OrderListItem>>('/reagent-orders', params) }
 export async function getReagentOrder(id: string) { return get<ReagentOrder>(`/reagent-orders/${id}`) }
@@ -525,6 +541,10 @@ export async function withdrawAssemblyRequest(id: string, version: number, reaso
 export async function downloadAssemblyOutput(requestId: string, releaseId: string, file: OperationalFile) {
   const response = await api.get<Blob>(`/data-assembly-requests/${requestId}/outputs/${releaseId}/files/${file.id}/download`, { responseType: 'blob' })
   saveBlob(response.data, file.fileName)
+}
+export async function downloadAssemblyOutputPackage(requestId: string, releaseId: string, releaseVersion: number) {
+  const response = await api.get<Blob>(`/data-assembly-requests/${requestId}/outputs/${releaseId}/download`, { responseType: 'blob' })
+  saveBlob(response.data, `output-release-${releaseVersion}.zip`)
 }
 
 export async function exportOrderList(workflow: 'lab' | 'reagent' | 'assembly', params?: Record<string, string | undefined>) {

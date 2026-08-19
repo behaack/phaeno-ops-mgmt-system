@@ -6,6 +6,7 @@ using PSeq.Operations.Commercial;
 using PSeq.Operations.Commercial.Accounts.Domain;
 using PSeq.Operations.Commercial.DataProvisioning.Domain;
 using PSeq.Operations.Commercial.FileManagement.Domain;
+using PSeq.Operations.Commercial.OrderManagement.Domain;
 using PSeq.Operations.Laboratory;
 using PSeq.Operations.Laboratory.Domain;
 using PhaenoPortal.App.Features.OrderManagement.Domain;
@@ -15,6 +16,34 @@ using PhaenoPortal.App.Features.Website.Entities;
 
 public class PersistenceTests
 {
+    [Fact]
+    public void PSeqOperationsDbContextMapsCompletionAwareOperationalDownloads()
+    {
+        using var dbContext = CreateDbContext();
+
+        var download = dbContext.Model.FindEntityType(typeof(OperationalFileDownload));
+
+        Assert.NotNull(download);
+        Assert.Equal("commercial_ops", download.GetSchema());
+        Assert.Equal("operational_file_downloads", download.GetTableName());
+        Assert.True(download.FindProperty(nameof(OperationalFileDownload.Version))?.IsConcurrencyToken);
+        Assert.False(download.FindProperty(nameof(OperationalFileDownload.LeaseExpiresAtUtc))?.IsNullable);
+        Assert.False(download.FindProperty(nameof(OperationalFileDownload.Outcome))?.IsNullable);
+        Assert.Contains(
+            download.GetIndexes(),
+            index => index.Properties.Select(property => property.Name).SequenceEqual([
+                nameof(OperationalFileDownload.OrganizationId),
+                nameof(OperationalFileDownload.ReleasedPackageType),
+                nameof(OperationalFileDownload.ReleasedPackageId)
+            ]));
+        Assert.Contains(
+            download.GetIndexes(),
+            index => index.Properties.Select(property => property.Name).SequenceEqual([
+                nameof(OperationalFileDownload.Outcome),
+                nameof(OperationalFileDownload.LeaseExpiresAtUtc)
+            ]));
+    }
+
     [Fact]
     public void PSeqOperationsDbContextMapsReleasedDeliverablePolicyHistory()
     {

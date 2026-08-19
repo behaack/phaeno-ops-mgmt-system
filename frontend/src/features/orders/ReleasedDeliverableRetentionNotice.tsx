@@ -9,6 +9,7 @@ export function ReleasedDeliverableRetentionNotice({
 }) {
   if (!retention) return null
 
+  const downloadSummary = formatDownloadSummary(retention)
   const graceIsActive = Boolean(retention.graceActivatedAtUtc)
   const downloadsAreClosed = Boolean(retention.downloadAccessClosedAtUtc)
   const bytesAreDeleted = Boolean(retention.byteDeletedAtUtc)
@@ -34,6 +35,12 @@ export function ReleasedDeliverableRetentionNotice({
               This release keeps the retention dates that were set when it was released.
             </p>
           </div>
+
+          {downloadSummary ? (
+            <p aria-live="polite" className="text-sm font-medium text-foreground">
+              {downloadSummary}
+            </p>
+          ) : null}
 
           <dl className="grid gap-3 text-sm sm:grid-cols-2">
             <div>
@@ -79,14 +86,35 @@ export function ReleasedDeliverableRetentionNotice({
             </p>
           ) : (
             <p className="text-sm">
-              If every file has been downloaded, deletion occurs at the standard time. If any file remains
-              undownloaded then, the whole release receives grace through the conditional date.
+              {retention.download?.status === 'Downloaded'
+                ? 'Every file has completed download, so deletion remains scheduled for the standard time.'
+                : 'If every file has been downloaded, deletion occurs at the standard time. If any file remains undownloaded then, the whole release receives grace through the conditional date.'}
             </p>
           )}
         </div>
       </div>
     </aside>
   )
+}
+
+function formatDownloadSummary(retention: ReleasedDeliverableRetention) {
+  const download = retention.download
+  if (!download || download.status === 'NoFiles') return null
+  const fileLabel = download.totalFileCount === 1 ? 'file' : 'files'
+  const activeSummary = download.activeAttemptCount > 0
+    ? ` ${download.activeAttemptCount === 1 ? 'One download is' : `${download.activeAttemptCount} downloads are`} in progress and will count only after completion.`
+    : ''
+
+  if (download.status === 'Downloaded') {
+    return `All ${download.totalFileCount} ${fileLabel} downloaded${download.completedAtUtc ? ` by ${formatRetentionDateTime(download.completedAtUtc)}` : ''}.`
+  }
+  if (download.status === 'PartiallyDownloaded') {
+    return `${download.downloadedFileCount} of ${download.totalFileCount} ${fileLabel} downloaded.${activeSummary}`
+  }
+  if (download.status === 'InProgress') {
+    return `No file has completed download yet.${activeSummary}`
+  }
+  return `No ${fileLabel} downloaded yet.`
 }
 
 export function formatRetentionDateTime(value: string) {

@@ -261,6 +261,14 @@ remain incomplete production-activation gates.
   substitutions, backorders, immutable-document downloads, operational queue
   filters, notification recovery, and stale-version/error recovery with mocked
   APIs.
+- [x] Released-download status component - cover all-files-downloaded and active
+  non-counting transfer messaging without downloader identity. The focused
+  component tests were created on 2026-08-19 but were not executed because test
+  execution was not requested.
+- [ ] Released-result download interactions - cover Customer and Partner
+  individual-file and full-package ZIP actions, pending-button state, completed
+  query refresh, file/package completion labels, partial state, and tenant-safe
+  failure feedback with mocked APIs.
 - [ ] Remaining Lab Operations workspace - cover role-specific controls,
   the five-section operational sidebar with access administration omitted,
   list/detail loading, receipt/accession, protocol lifecycle,

@@ -606,12 +606,23 @@ erDiagram
     }
     operational_file_downloads {
         uuid id PK "not null"
-        timestamptz downloaded_at "not null"
+        timestamptz completed_at_utc "nullable"
+        boolean counts_for_released_package_retention "not null"
+        timestamptz lease_expires_at_utc "not null"
         uuid managed_operational_file_id FK "not null"
         uuid organization_id FK "not null"
+        varchar_100 outcome "not null"
+        uuid released_package_id "not null"
+        varchar_100 released_package_type "not null"
         varchar_100 remote_address "nullable"
+        varchar_100 scope "not null"
+        timestamptz started_at_utc "not null"
+        timestamptz terminal_at_utc "nullable"
+        varchar_100 terminal_reason_code "nullable"
+        uuid transfer_id "not null"
         varchar_1000 user_agent "nullable"
         uuid user_id FK "not null"
+        bigint version "not null"
     }
     order_cancellation_requests {
         uuid id PK "not null"

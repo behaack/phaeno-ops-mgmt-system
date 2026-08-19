@@ -256,6 +256,19 @@ and rollback-isolated PostgreSQL coverage.
   rejection, invalid draft/approval transitions, expired material, overdue
   calibration, wrong-work-order batch/custody, unresolved blocking exception,
   and cross-tenant HTTP/authentication scenarios.
+- [x] Completion-aware released-download foundation - create domain coverage for
+  immutable `Started` to terminal transitions, successful retention counting,
+  rejection of non-success counting, partial range success remaining
+  non-counting, whole-package completion across every file, active versus
+  expired lease projection, manifest file identity, concurrency-token mapping,
+  and package-query indexes. The focused tests were created on 2026-08-19 but
+  were not executed because test execution was not requested.
+- [ ] Hosted completion-aware download API - prove Customer and Partner tenant
+  authorization, transfer creation before storage open, normal individual and
+  ZIP response completion, partial range and disconnected response behavior,
+  bounded timeout reconciliation, first-terminal-writer concurrency, external
+  projection privacy, and cross-tenant non-discovery through the real HTTP and
+  PostgreSQL path.
 - [ ] Global released-deliverable retention - cover validated global 30-day
   retention, 5-day warning-lead, and 5-day grace defaults; optional Customer-,
   Partner-, and Prospect-organization overrides with partial inheritance,

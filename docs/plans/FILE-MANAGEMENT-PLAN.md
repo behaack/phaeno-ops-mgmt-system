@@ -59,6 +59,23 @@ details. It does not expose policy identifiers, revisions, override sources, or
 change history to external users. The Portal does not yet run warning, grace,
 download-cutoff, notification, or byte-deletion processing.
 
+Completion-aware download evidence is implemented for released Customer
+laboratory results and Partner data-assembly outputs. An individual-file or
+full-package ZIP request now creates immutable `Started` attempts and a frozen
+lease before storage opens. Each package-archive attempt shares one transfer
+identity and one row per included file. Only normal completion of the entire
+server response records `Succeeded` and counts for the owning organization;
+partial range responses, failures, cancellations, and timeouts do not count.
+A small reconciliation service terminalizes abandoned attempts after their
+lease expires without activating retention warnings or deletion. Authorized
+external APIs expose only per-file and package-level completion/progress facts,
+not downloader identity or network telemetry. Historical audit rows are
+preserved as non-counting `legacy_completion_unverified` failures rather than
+being assumed successful.
+Migration `20260819151415_AddCompletionAwareReleasedDownloads` was generated and
+applied only to the configured local development database on 2026-08-19. No
+shared, staging, or production database was changed.
+
 The organization-data-provisioning slice includes server-derived size and
 SHA-256 metadata, environment-approved file kinds, scan-state abstraction,
 reference-safe draft cleanup, tenant-authorized individual/archive downloads,
@@ -870,19 +887,29 @@ S3 support uses:
    and data-assembly output releases snapshot their exact effective policy and
    deadlines; authorized APIs and Customer/Partner details expose only the
    tenant-safe dates and lifecycle state; historical releases are not
-   backfilled. Trial Project release integration, the general retention worker,
-   warning/grace notifications, deadline enforcement, and cleanup reconciliation
-   are not started.
+   backfilled. Completion-aware individual-file and full-package ZIP attempts,
+   bounded leases, terminal outcomes, timeout reconciliation, and derived
+   organization package/file state are complete for Customer laboratory results
+   and Partner assembly outputs. Trial Project release integration, the general
+   retention worker, warning/grace notifications, deadline enforcement, active
+   revocation, and cleanup reconciliation are not started.
 7. Local storage and provider-selection tests: created. Released-deliverable
-   value, inheritance, history-state, and EF mapping tests are created. API
-   authorization and retention-expiration coverage remains future scope.
+   value, inheritance, history-state, download-attempt transition,
+   individual-versus-archive accounting, active-versus-expired projection, and
+   EF mapping tests are created. Hosted API authorization, interrupted response
+   streaming, concurrent terminal ordering, and retention-expiration coverage
+   remains future scope.
 
-## Recommended First Slice
+## Current Checkpoint And Recommended Next Slice
 
 Production S3 activation is explicitly on hold, so keep production on the
-`Disabled` adapter. The next code-only slice is immutable, completion-aware
-download events and package-level download state so the system can distinguish a
-successfully completed file or full-package download from a started, partial,
-failed, cancelled, or timed-out transfer. Implement that evidence before
-activating any warning or deletion worker. This does not authorize the proposed
-general folder/file model or the separate scientific-pipeline file boundary.
+`Disabled` adapter. Immutable completion-aware download evidence and
+package-level state are implemented locally. Before any retention worker is
+activated, execute the focused domain/component tests plus a hosted
+controller/PostgreSQL streaming journey that proves full file/archive success,
+partial and interrupted responses, timeout reconciliation, tenant denial, and
+first-terminal-writer concurrency. After that verification gate, the next
+code-only slice is the idempotent warning/grace/download-cutoff state machine;
+physical byte deletion remains a later storage-activation gate. This does not
+authorize the proposed general folder/file model or the separate scientific-
+pipeline file boundary.

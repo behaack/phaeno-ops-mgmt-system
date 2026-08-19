@@ -5,12 +5,14 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Options;
+using Microsoft.Net.Http.Headers;
 using PSeq.Operations.Commercial.Accounts.Domain;
 using PSeq.Operations.Commercial.FileManagement.Domain;
 using PSeq.Operations.Commercial.OrderManagement.Domain;
 using PhaenoPortal.App.Features.OrderManagement.Domain;
 using PhaenoPortal.App.Features.OrderManagement.DTOs;
 using PhaenoPortal.App.Features.OrderManagement.Services;
+using PhaenoPortal.App.Features.FileManagement.Services;
 using PhaenoPortal.App.Infrastructure.Api;
 using PhaenoPortal.App.Infrastructure.Persistence;
 
@@ -23,7 +25,11 @@ public sealed class DataAssemblyRequestsController(
     OrderIdempotencyService idempotency,
     IOperationalFileStorage fileStorage,
     IOperationalFileScanner fileScanner,
-    IOptions<OrderManagementOptions> options) : ControllerBase
+    IOptions<OrderManagementOptions> options,
+    ReleasedDeliverableDownloadAttemptService downloadAttempts,
+    ReleasedDeliverableDownloadProjectionService downloadProjections,
+    ILogger<CompletionTrackedFileStreamResult> fileDownloadLogger,
+    ILogger<CompletionTrackedArchiveResult> archiveDownloadLogger) : ControllerBase
 {
     private static readonly JsonSerializerOptions JsonOptions = new(JsonSerializerDefaults.Web);
 
@@ -280,7 +286,16 @@ public sealed class DataAssemblyRequestsController(
                 item => item.OrganizationId == tenant.Organization.Id
                     && item.AssemblyOutputReleaseId == release.Id,
                 cancellationToken);
-        return MapRelease(release, files, retention);
+        var downloads = await downloadProjections.ReadAsync(
+            tenant.Organization.Id,
+            ReleasedDeliverablePackageType.AssemblyOutput,
+            new Dictionary<Guid, IReadOnlyCollection<Guid>>
+            {
+                [release.Id] = files.Select(file => file.Id).ToList()
+            },
+            DateTime.UtcNow,
+            cancellationToken);
+        return MapRelease(release, files, retention, downloads.GetValueOrDefault(release.Id));
     }
 
     [HttpGet("{requestId:guid}/outputs/{releaseId:guid}/files/{fileId:guid}/download")]
@@ -288,19 +303,109 @@ public sealed class DataAssemblyRequestsController(
     public async Task<IActionResult> DownloadOutput(Guid requestId, Guid releaseId, Guid fileId, CancellationToken cancellationToken)
     {
         var tenant = await requestContext.RequireTenantAsync(HttpContext, OrganizationKind.Partner, false, cancellationToken);
-        _ = await ReadAsync(requestId, tenant.Organization.Id, cancellationToken);
+        var item = await ReadAsync(requestId, tenant.Organization.Id, cancellationToken);
+        _ = item.OutputReleases.SingleOrDefault(value => value.Id == releaseId
+            && value.ReleaseStatus == FileReleaseStatus.Released) ?? throw Missing();
         var file = await dbContext.ManagedOperationalFiles.FirstOrDefaultAsync(item => item.Id == fileId && item.WorkflowId == requestId
             && item.ParentRecordId == releaseId && item.OrganizationId == tenant.Organization.Id && item.Purpose == OperationalFilePurpose.AssemblyOutput
             && item.ReleaseStatus == FileReleaseStatus.Released && item.ScanStatus == OperationalFileScanStatus.Clean, cancellationToken) ?? throw Missing();
-        var stream = await fileStorage.OpenReadAsync(file.StorageKey, cancellationToken);
+        var utcNow = DateTime.UtcNow;
+        var transfer = await downloadAttempts.StartAsync(
+            [file],
+            tenant.Organization.Id,
+            tenant.Actor.Id,
+            ReleasedDeliverablePackageType.AssemblyOutput,
+            releaseId,
+            OperationalFileDownloadScope.IndividualFile,
+            utcNow,
+            HttpContext.Connection.RemoteIpAddress?.ToString(),
+            Request.Headers.UserAgent.ToString(),
+            cancellationToken);
+        Stream stream;
         try
         {
-            dbContext.OperationalFileDownloads.Add(new OperationalFileDownload(file.Id, tenant.Organization.Id, tenant.Actor.Id,
-                DateTime.UtcNow, HttpContext.Connection.RemoteIpAddress?.ToString(), Request.Headers.UserAgent.ToString()));
-            await dbContext.SaveChangesAsync(cancellationToken);
+            stream = await fileStorage.OpenReadAsync(file.StorageKey, cancellationToken);
         }
-        catch { await stream.DisposeAsync(); throw; }
-        return File(stream, file.ContentType, file.FileName, enableRangeProcessing: true);
+        catch (OperationCanceledException) when (HttpContext.RequestAborted.IsCancellationRequested)
+        {
+            await downloadAttempts.CompleteAsync(
+                transfer.AttemptIds,
+                OperationalFileDownloadOutcome.Cancelled,
+                DateTime.UtcNow,
+                "request_cancelled_before_stream",
+                false,
+                CancellationToken.None);
+            throw;
+        }
+        catch
+        {
+            await downloadAttempts.CompleteAsync(
+                transfer.AttemptIds,
+                OperationalFileDownloadOutcome.Failed,
+                DateTime.UtcNow,
+                "storage_open_failed",
+                false,
+                CancellationToken.None);
+            throw;
+        }
+        return new CompletionTrackedFileStreamResult(
+            stream,
+            file.ContentType,
+            file.FileName,
+            Request.Headers.ContainsKey(HeaderNames.Range),
+            transfer,
+            downloadAttempts,
+            fileDownloadLogger);
+    }
+
+    [HttpGet("{requestId:guid}/outputs/{releaseId:guid}/download")]
+    [SkipApiEnvelope]
+    public async Task<IActionResult> DownloadOutputRelease(
+        Guid requestId,
+        Guid releaseId,
+        CancellationToken cancellationToken)
+    {
+        var tenant = await requestContext.RequireTenantAsync(
+            HttpContext,
+            OrganizationKind.Partner,
+            false,
+            cancellationToken);
+        var item = await ReadAsync(requestId, tenant.Organization.Id, cancellationToken);
+        var release = item.OutputReleases.SingleOrDefault(value => value.Id == releaseId
+            && value.ReleaseStatus == FileReleaseStatus.Released) ?? throw Missing();
+        var files = await dbContext.ManagedOperationalFiles
+            .Where(file => file.WorkflowId == requestId
+                && file.ParentRecordId == releaseId
+                && file.OrganizationId == tenant.Organization.Id
+                && file.Purpose == OperationalFilePurpose.AssemblyOutput
+                && file.ReleaseStatus == FileReleaseStatus.Released
+                && file.ScanStatus == OperationalFileScanStatus.Clean)
+            .ToListAsync(cancellationToken);
+        if (files.Count == 0) throw Missing();
+
+        var utcNow = DateTime.UtcNow;
+        var transfer = await downloadAttempts.StartAsync(
+            files,
+            tenant.Organization.Id,
+            tenant.Actor.Id,
+            ReleasedDeliverablePackageType.AssemblyOutput,
+            release.Id,
+            OperationalFileDownloadScope.PackageArchive,
+            utcNow,
+            HttpContext.Connection.RemoteIpAddress?.ToString(),
+            Request.Headers.UserAgent.ToString(),
+            cancellationToken);
+        return new CompletionTrackedArchiveResult(
+            files.Select(file => new ReleasedDeliverableArchiveFile(
+                file.Id,
+                file.StorageKey,
+                file.FileName,
+                file.ReleasedAt)).ToList(),
+            $"{item.RequestNumber}-output-r{release.ReleaseVersion}.zip",
+            transfer,
+            fileStorage,
+            downloadAttempts,
+            archiveDownloadLogger);
     }
 
     private async Task<DataAssemblyRequest> ReadAsync(Guid id, Guid organizationId, CancellationToken cancellationToken)
@@ -312,6 +417,19 @@ public sealed class DataAssemblyRequestsController(
     {
         var files = await dbContext.ManagedOperationalFiles.AsNoTracking().Where(file => file.WorkflowType == OrderWorkflowTypes.DataAssembly && file.WorkflowId == item.Id).OrderBy(file => file.CreatedAt).ToListAsync(cancellationToken);
         var releaseIds = item.OutputReleases.Select(release => release.Id).ToList();
+        var fileIdsByReleaseId = item.OutputReleases.ToDictionary(
+            release => release.Id,
+            release => (IReadOnlyCollection<Guid>)files
+                .Where(file => file.ParentRecordId == release.Id
+                    && file.Purpose == OperationalFilePurpose.AssemblyOutput)
+                .Select(file => file.Id)
+                .ToList());
+        var downloadByReleaseId = await downloadProjections.ReadAsync(
+            item.OrganizationId,
+            ReleasedDeliverablePackageType.AssemblyOutput,
+            fileIdsByReleaseId,
+            DateTime.UtcNow,
+            cancellationToken);
         var retentionByReleaseId = await dbContext.ReleasedDeliverableRetentionSnapshots
             .AsNoTracking()
             .Where(snapshot => snapshot.OrganizationId == item.OrganizationId
@@ -340,7 +458,8 @@ public sealed class DataAssemblyRequestsController(
                 .Select(value => MapRelease(
                     value,
                     files.Where(file => file.ParentRecordId == value.Id),
-                    retentionByReleaseId.GetValueOrDefault(value.Id))).ToList(),
+                    retentionByReleaseId.GetValueOrDefault(value.Id),
+                    downloadByReleaseId.GetValueOrDefault(value.Id))).ToList(),
             files.Where(file => file.Purpose == OperationalFilePurpose.AssemblyInput && file.ReleaseStatus != FileReleaseStatus.Withdrawn).Select(file => file.ToDto()).ToList(),
             docs.Select(value => value.ToDto(platform)).ToList(), cancellations.Select(value => value.ToDto()).ToList(), timeline.Select(value => value.ToDto(platform)).ToList());
     }
@@ -348,10 +467,14 @@ public sealed class DataAssemblyRequestsController(
     private static AssemblyOutputReleaseDto MapRelease(
         AssemblyOutputRelease release,
         IEnumerable<ManagedOperationalFile> files,
-        ReleasedDeliverableRetentionSnapshot? retention)
+        ReleasedDeliverableRetentionSnapshot? retention,
+        ReleasedDeliverableDownloadProjection? download)
         => new(release.Id, release.InputRevisionId, release.ProcessingRunId, release.ReleaseVersion, release.ManifestJson,
             release.PipelineVersion, release.Provenance, release.QcStatus, release.ReleaseStatus.ToString(), release.GeneratedAt,
-            release.ReleasedAt, files.Select(file => file.ToDto()).ToList(), retention?.ToDto(), release.Version);
+            release.ReleasedAt,
+            files.Select(file => file.ToDto(download?.Files.GetValueOrDefault(file.Id))).ToList(),
+            retention?.ToDto(download),
+            release.Version);
     private void Event(DataAssemblyRequest item, string from, string to, Guid actorId, string? reason = null, string? internalNote = null)
         => dbContext.OrderStatusEvents.Add(new OrderStatusEvent(item.OrganizationId, OrderWorkflowTypes.DataAssembly, item.Id, null, from, to, reason, internalNote, actorId, DateTime.UtcNow));
     private void Notice(DataAssemblyRequest item, string eventType, string subject, string body)

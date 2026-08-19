@@ -3,7 +3,7 @@ import { Link } from '@tanstack/react-router'
 import { Download, FileArchive } from 'lucide-react'
 import { useState } from 'react'
 
-import { acceptAssemblyQuote, downloadAssemblyOutput, getAssemblyRequest, getOrderErrorMessage, requestAssemblyCancellation, submitAssemblyRequest, type Quote, withdrawAssemblyRequest } from '#/api/order-management'
+import { acceptAssemblyQuote, downloadAssemblyOutput, downloadAssemblyOutputPackage, getAssemblyRequest, getOrderErrorMessage, requestAssemblyCancellation, submitAssemblyRequest, type OperationalFile, type Quote, withdrawAssemblyRequest } from '#/api/order-management'
 import { Alert, AlertDescription, AlertTitle } from '#/components/ui/alert'
 import { Button } from '#/components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '#/components/ui/card'
@@ -35,6 +35,12 @@ export function DataAssemblyDetailPage({ requestId }: { requestId: string }) {
     },
     onSuccess: async () => { setDialog(null); setReason(''); setPurchaseOrderNumber(''); await queryClient.invalidateQueries({ queryKey: ['data-assembly-request', requestId] }) },
   })
+  const downloadAction = useMutation({
+    mutationFn: async (download: AssemblyDownloadRequest) => download.kind === 'package'
+      ? downloadAssemblyOutputPackage(requestId, download.releaseId, download.releaseVersion)
+      : downloadAssemblyOutput(requestId, download.releaseId, download.file),
+    onSuccess: async () => queryClient.invalidateQueries({ queryKey: ['data-assembly-request', requestId] }),
+  })
 
   if (!apiEnabled) return <main className="page-wrap px-4 py-8"><Alert><AlertTitle>Connected request detail is unavailable</AlertTitle><AlertDescription>Use a signed-in Partner session to review this assembly request.</AlertDescription></Alert></main>
   if (requestQuery.isLoading) return <main className="page-wrap px-4 py-8"><p role="status">Loading assembly request…</p></main>
@@ -46,6 +52,7 @@ export function DataAssemblyDetailPage({ requestId }: { requestId: string }) {
     <section className="mb-6 flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between"><div><p className="text-sm text-muted-foreground"><Link to="/data-assembly" className="hover:underline">Data assembly</Link> / <span className="font-mono">{request.requestNumber}</span></p><div className="mt-2 flex flex-wrap items-center gap-3"><h1 className="text-3xl font-semibold">{request.projectReference}</h1><OrderStatusBadge status={request.status} /></div><p className="mt-2 text-sm text-muted-foreground">{request.requestNumber} · {request.profileName} v{request.assemblyProfileVersion}</p></div><div className="flex flex-wrap gap-2">{request.canEdit ? <Button type="button" variant="outline" asChild><Link to="/data-assembly/$requestId/edit" params={{ requestId: request.id }}>Edit request</Link></Button> : null}{request.canSubmit ? <Button type="button" onClick={() => action.mutate('submit')} disabled={action.isPending}>Submit for intake</Button> : null}{request.canAcceptQuote ? <Button type="button" onClick={() => setDialog('accept')}>Accept quote</Button> : null}{request.canWithdraw ? <Button type="button" variant="outline" onClick={() => setDialog('withdraw')}>Withdraw</Button> : null}{request.canRequestCancellation ? <Button type="button" variant="outline" onClick={() => setDialog('cancel')}>Request cancellation</Button> : null}</div></section>
     {request.tenantSafeReason ? <Alert className="mb-5"><AlertTitle>Action needed</AlertTitle><AlertDescription>{request.tenantSafeReason}</AlertDescription></Alert> : null}
     {action.error ? <Alert variant="destructive" className="mb-5"><AlertTitle>Request was not updated</AlertTitle><AlertDescription>{getOrderErrorMessage(action.error, 'Reload and try again.')}</AlertDescription></Alert> : null}
+    {downloadAction.error ? <Alert variant="destructive" className="mb-5"><AlertTitle>Download did not complete</AlertTitle><AlertDescription>{getOrderErrorMessage(downloadAction.error, 'The incomplete transfer was not counted. Try again while downloads remain open.')}</AlertDescription></Alert> : null}
     <div className="grid gap-5 lg:grid-cols-[minmax(0,1.5fr)_minmax(18rem,1fr)]"><div className="space-y-5">
       <Card><CardHeader><CardTitle>Input revisions</CardTitle><CardDescription>The submitted profile, metadata, files, validation, and manifest remain traceable.</CardDescription></CardHeader><CardContent><dl className="grid gap-4 sm:grid-cols-2"><div><dt className="text-xs font-medium text-muted-foreground">CURRENT REVISION</dt><dd className="mt-1">{request.inputRevision || 'Draft'}</dd></div><div><dt className="text-xs font-medium text-muted-foreground">REQUESTED OUTPUT</dt><dd className="mt-1">{request.requestedOutput}</dd></div><div className="sm:col-span-2"><dt className="text-xs font-medium text-muted-foreground">PROJECT METADATA</dt><dd className="mt-1 whitespace-pre-wrap text-sm">{metadataText(request.metadataJson)}</dd></div></dl>{request.inputRevisions.length ? <div className="mt-5 divide-y">{request.inputRevisions.map((revision) => <div key={revision.id} className="flex flex-wrap items-center justify-between gap-3 py-3"><div><p className="text-sm font-medium">Revision {revision.revision}</p><p className="text-xs text-muted-foreground">Submitted {formatDateTime(revision.submittedAt)}</p>{revision.correctionReason ? <p className="mt-1 text-sm">Correction: {revision.correctionReason}</p> : null}</div><Button type="button" variant="outline" size="sm" onClick={() => downloadJson(`${request.requestNumber}-input-r${revision.revision}.json`, JSON.stringify({ manifest: JSON.parse(revision.manifestJson), validation: JSON.parse(revision.validationSummaryJson) }, null, 2))}><Download data-icon="inline-start" />Input receipt</Button></div>)}</div> : null}<ul className="mt-5 divide-y">{request.inputFiles.map((file) => <li key={file.id} className="flex justify-between gap-3 py-3 text-sm"><span>{file.fileName}</span><span className="text-muted-foreground">Scan: {humanizeStatus(file.scanStatus)}</span></li>)}</ul></CardContent></Card>
       <Card>
@@ -67,6 +74,7 @@ export function DataAssemblyDetailPage({ requestId }: { requestId: string }) {
                       </div>
                       <div className="flex items-center gap-2">
                         <OrderStatusBadge status={release.releaseStatus} />
+                        <Button type="button" size="sm" variant="outline" disabled={downloadAction.isPending} onClick={() => downloadAction.mutate({ kind: 'package', releaseId: release.id, releaseVersion: release.releaseVersion })}><FileArchive data-icon="inline-start" />{downloadAction.isPending && downloadAction.variables?.kind === 'package' && downloadAction.variables.releaseId === release.id ? 'Downloading…' : 'Download package'}</Button>
                         <Button type="button" size="sm" variant="outline" onClick={() => downloadJson(`${request.requestNumber}-output-r${release.releaseVersion}.json`, release.manifestJson)}><Download data-icon="inline-start" />Manifest</Button>
                       </div>
                     </div>
@@ -74,8 +82,11 @@ export function DataAssemblyDetailPage({ requestId }: { requestId: string }) {
                     <ul className="mt-3 divide-y">
                       {release.files.map((file) => (
                         <li key={file.id} className="flex flex-wrap items-center justify-between gap-3 py-3">
-                          <span className="text-sm">{file.fileName}</span>
-                          <Button type="button" variant="outline" onClick={() => downloadAssemblyOutput(request.id, release.id, file)}><Download data-icon="inline-start" />Download</Button>
+                          <div>
+                            <p className="text-sm">{file.fileName}</p>
+                            <p className="mt-1 text-xs text-muted-foreground">{fileDownloadStatus(file)}</p>
+                          </div>
+                          <Button type="button" variant="outline" disabled={downloadAction.isPending} onClick={() => downloadAction.mutate({ kind: 'file', releaseId: release.id, file })}><Download data-icon="inline-start" />{downloadAction.isPending && downloadAction.variables?.kind === 'file' && downloadAction.variables.file.id === file.id ? 'Downloading…' : 'Download'}</Button>
                         </li>
                       ))}
                     </ul>
@@ -105,3 +116,11 @@ function formatMoney(value: number, currency: string) { return new Intl.NumberFo
 function formatDate(value: string) { return new Intl.DateTimeFormat('en-US', { dateStyle: 'medium' }).format(new Date(value)) }
 function formatDateTime(value: string) { return new Intl.DateTimeFormat('en-US', { dateStyle: 'medium', timeStyle: 'short' }).format(new Date(value)) }
 function downloadJson(fileName: string, value: string) { const url = URL.createObjectURL(new Blob([value], { type: 'application/json' })); const link = document.createElement('a'); link.href = url; link.download = fileName; link.click(); URL.revokeObjectURL(url) }
+type AssemblyDownloadRequest =
+  | { kind: 'file'; releaseId: string; file: OperationalFile }
+  | { kind: 'package'; releaseId: string; releaseVersion: number }
+function fileDownloadStatus(file: OperationalFile) {
+  if (file.download?.isDownloaded) return `Downloaded${file.download.downloadedAtUtc ? ` ${formatDateTime(file.download.downloadedAtUtc)}` : ''}`
+  if ((file.download?.activeAttemptCount ?? 0) > 0) return 'Download in progress; it counts only after completion.'
+  return 'Not downloaded'
+}

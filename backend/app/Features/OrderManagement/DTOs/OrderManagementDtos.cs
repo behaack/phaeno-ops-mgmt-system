@@ -2,6 +2,7 @@ namespace PhaenoPortal.App.Features.OrderManagement.DTOs;
 
 using PSeq.Operations.Commercial.FileManagement.Domain;
 using PSeq.Operations.Commercial.OrderManagement.Domain;
+using PhaenoPortal.App.Features.FileManagement.Services;
 using PhaenoPortal.App.Features.OrderManagement.Domain;
 
 public sealed record PagedResult<T>(IReadOnlyList<T> Items, int Page, int PageSize, int TotalCount);
@@ -59,7 +60,13 @@ public sealed record OperationalFileDto(
     string ReleaseStatus,
     DateTime? ReleasedAt,
     DateTime CreatedAt,
-    long Version);
+    long Version,
+    OperationalFileDownloadStateDto? Download = null);
+
+public sealed record OperationalFileDownloadStateDto(
+    bool IsDownloaded,
+    int ActiveAttemptCount,
+    DateTime? DownloadedAtUtc);
 
 public sealed record CancellationRequestDto(
     Guid Id,
@@ -119,7 +126,15 @@ public sealed record ReleasedDeliverableRetentionDto(
     DateTime? GraceActivatedAtUtc,
     DateTime? DownloadAccessClosedAtUtc,
     DateTime? ByteDeletedAtUtc,
-    string? DeletionOutcome);
+    string? DeletionOutcome,
+    ReleasedDeliverableDownloadStateDto? Download);
+
+public sealed record ReleasedDeliverableDownloadStateDto(
+    int TotalFileCount,
+    int DownloadedFileCount,
+    int ActiveAttemptCount,
+    string Status,
+    DateTime? CompletedAtUtc);
 
 public sealed record LabResultReleaseDto(
     Guid Id,
@@ -491,10 +506,18 @@ public sealed record NotificationMessageDto(Guid Id, string WorkflowType, Guid W
 
 public static class OrderManagementMappings
 {
-    public static OperationalFileDto ToDto(this ManagedOperationalFile file) => new(
+    public static OperationalFileDto ToDto(
+        this ManagedOperationalFile file,
+        ReleasedDeliverableFileDownloadProjection? download = null) => new(
         file.Id, file.ParentRecordId, file.Purpose.ToString(), file.FileName, file.FileKind,
         file.ContentType, file.SizeBytes, file.ScanStatus.ToString(), file.ReleaseStatus.ToString(),
-        file.ReleasedAt, file.CreatedAt, file.Version);
+        file.ReleasedAt, file.CreatedAt, file.Version,
+        download is null
+            ? null
+            : new OperationalFileDownloadStateDto(
+                download.IsDownloaded,
+                download.ActiveAttemptCount,
+                download.DownloadedAtUtc));
 
     public static CommercialDocumentDto ToDto(this CommercialDocumentLink document, bool platform) => new(
         document.Id, document.Kind.ToString(), document.SyncStatus.ToString(), document.DocumentNumber,
@@ -529,14 +552,16 @@ public static class OrderManagementMappings
 
     public static LabResultReleaseDto ToDto(
         this LabResultRelease release,
-        ReleasedDeliverableRetentionSnapshot? retention = null) => new(
+        ReleasedDeliverableRetentionSnapshot? retention = null,
+        ReleasedDeliverableDownloadProjection? download = null) => new(
         release.Id, release.LabSampleId, release.ReleaseVersion, release.AnalysisProfile,
         release.PipelineVersion, release.Provenance, release.QcStatus, release.ManifestJson,
         release.ReleaseStatus.ToString(), release.GeneratedAt, release.ReleasedAt,
-        retention?.ToDto(), release.Version);
+        retention?.ToDto(download), release.Version);
 
     public static ReleasedDeliverableRetentionDto ToDto(
-        this ReleasedDeliverableRetentionSnapshot retention) => new(
+        this ReleasedDeliverableRetentionSnapshot retention,
+        ReleasedDeliverableDownloadProjection? download = null) => new(
         retention.ReleasedAtUtc,
         retention.WarningAtUtc,
         retention.StandardDeletionAtUtc,
@@ -544,7 +569,15 @@ public static class OrderManagementMappings
         retention.GraceActivatedAtUtc,
         retention.DownloadAccessClosedAtUtc,
         retention.ByteDeletedAtUtc,
-        retention.DeletionOutcome);
+        retention.DeletionOutcome,
+        download is null
+            ? null
+            : new ReleasedDeliverableDownloadStateDto(
+                download.TotalFileCount,
+                download.DownloadedFileCount,
+                download.ActiveAttemptCount,
+                download.Status.ToString(),
+                download.CompletedAtUtc));
 
     public static ReagentOrderLineDto ToDto(this PartnerReagentOrderLine line) => new(
         line.Id, line.OfferingId, line.QboCatalogItemId, line.ExternalItemId, line.Description, line.Quantity,
