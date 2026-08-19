@@ -37,6 +37,15 @@ startup validation rejects the Local provider in the Production environment.
 Until S3 is provisioned, production explicitly selects a `Disabled` adapter
 that keeps the API healthy but stores no bytes; file operations return HTTP 503.
 
+The released-deliverable retention configuration foundation is implemented:
+the API persists versioned global defaults and versioned Customer, Partner, or
+Prospect organization overrides, validates the resolved day values, requires a
+reason, retains replacement/removal history, and rejects stale writes. It does
+so through a Phaeno-only File Management page for the global policy and an
+account Retention tab for partial organization overrides. It does not yet
+create released-package policy snapshots or run warning, grace, download-cutoff,
+notification, or byte-deletion processing.
+
 The organization-data-provisioning slice includes server-derived size and
 SHA-256 metadata, environment-approved file kinds, scan-state abstraction,
 reference-safe draft cleanup, tenant-authorized individual/archive downloads,
@@ -838,12 +847,17 @@ S3 support uses:
    code complete; production currently uses the non-persisting `Disabled`
    adapter, and live S3 configuration and validation are incomplete.
 5. General folder CRUD and policy inheritance: not started.
-6. General retention worker and cleanup reconciliation: not started. Its first
-   approved customer-deliverable behavior is the global 30-day retention,
-   5-day undownloaded warning, and conditional 5-day grace default with
-   Customer-, Partner-, and Prospect-organization overrides described above.
-7. Local storage and provider-selection tests: created. General policy,
-   authorization, and retention-expiration coverage remains future scope.
+6. Released-deliverable policy configuration foundation: complete for the
+   versioned global 30-day retention, 5-day undownloaded warning, and conditional
+   5-day grace defaults; partial Customer-, Partner-, and Prospect-organization
+   overrides; validation; required reasons; retained history; optimistic
+   concurrency; Phaeno-only API access; global administration UI; and the
+   Customer, Partner, and Prospect account Retention tab. Released-package
+   snapshots, the general retention worker, warning/grace notifications,
+   deadline enforcement, and cleanup reconciliation are not started.
+7. Local storage and provider-selection tests: created. Released-deliverable
+   value, inheritance, history-state, and EF mapping tests are created. API
+   authorization and retention-expiration coverage remains future scope.
 
 ## Recommended First Slice
 

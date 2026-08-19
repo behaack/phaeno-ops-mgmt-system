@@ -66,6 +66,7 @@ export type SessionCapabilities = {
   canDownloadDataAssemblyOutputs: boolean
   canViewAllOperationalOrders: boolean
   canManageOrderConfiguration: boolean
+  canManageFileManagementConfiguration: boolean
   canQuoteLabServiceWork: boolean
   canManageLabOperations: boolean
   canOperateLabWork: boolean

@@ -297,6 +297,13 @@ Confirmed Prospect rules:
 - Scientific completion and commercial release are separate. A ready file is
   downloadable only after its scan, checksum, provenance/QC, membership,
   commercial-sync, credit/payment, and release rules pass.
+- Released result/output packages use a versioned Phaeno-managed retention
+  policy. The global defaults are 30 exact 24-hour days from release, one
+  undownloaded-package warning 5 days before the standard deadline, and a
+  conditional 5-day grace period when any released file remains undownloaded at
+  that deadline. Customer, Partner, and Prospect organizations may have
+  Phaeno-managed partial overrides; every release snapshots its resolved policy
+  so later configuration changes affect only future releases.
 - Customer laboratory result availability is sample-specific. A
   credit-approved Customer may receive an eligible sample result while other
   samples remain in progress; a non-credit Customer waits for the completed job

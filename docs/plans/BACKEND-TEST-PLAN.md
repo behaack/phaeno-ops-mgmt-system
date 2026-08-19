@@ -19,6 +19,13 @@ and rollback-isolated PostgreSQL coverage.
 - [x] `backend/test/FileStorageTests.cs` - local provider round-trip, checksum,
   deletion, oversize cleanup, feature-area separation, dependency-injection
   provider selection, and rejection of local storage in Production.
+- [x] `backend/test/ReleasedDeliverablePolicyDomainTests.cs` - approved 30/5/5
+  defaults, positive whole-day validation, warning-before-retention validation,
+  partial organization inheritance, invalid resolved-policy rejection,
+  monotonically versioned revisions, and reasoned deactivation history.
+- [x] `backend/test/PersistenceTests.cs` - released-deliverable global-policy and
+  organization-override schema ownership, filtered active-version uniqueness,
+  optimistic-concurrency tokens, and restricted organization ownership.
 - [x] `backend/test/PersistenceTests.cs` -
   `PSeqOperationsDbContextMapsWebsiteEntitiesToWebsiteSchema` and the
   all-entity schema assertion cover the Website-owned tables in the shared

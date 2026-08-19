@@ -122,6 +122,8 @@ public sealed record SessionCapabilitiesDto
 
     public required bool CanManageOrderConfiguration { get; init; }
 
+    public required bool CanManageFileManagementConfiguration { get; init; }
+
     public required bool CanQuoteLabServiceWork { get; init; }
 
     public required bool CanManageLabOperations { get; init; }

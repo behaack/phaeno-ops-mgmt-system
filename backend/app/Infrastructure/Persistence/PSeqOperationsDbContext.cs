@@ -3,12 +3,14 @@ using Microsoft.Extensions.Options;
 using PSeq.Operations.Commercial;
 using PSeq.Operations.Commercial.Accounts.Domain;
 using PSeq.Operations.Commercial.DataProvisioning.Domain;
+using PSeq.Operations.Commercial.FileManagement.Domain;
 using PSeq.Operations.Commercial.LabOperations.Domain;
 using PSeq.Operations.Commercial.OrderManagement.Domain;
 using PSeq.Operations.Commercial.Relationships.Domain;
 using PSeq.Operations.Laboratory;
 using PSeq.Operations.Laboratory.Domain;
 using PhaenoPortal.App.Features.DataProvisioning;
+using PhaenoPortal.App.Features.FileManagement;
 using PhaenoPortal.App.Features.LabOperations;
 using PhaenoPortal.App.Features.OrderManagement;
 using PhaenoPortal.App.Features.OrderManagement.Domain;
@@ -76,6 +78,10 @@ public sealed class PSeqOperationsDbContext(
     public DbSet<DataGovernanceFollowUp> DataGovernanceFollowUps { get; set; }
 
     public DbSet<DataProvisioningNotice> DataProvisioningNotices { get; set; }
+
+    public DbSet<ReleasedDeliverablePolicyDefault> ReleasedDeliverablePolicyDefaults { get; set; }
+
+    public DbSet<OrganizationReleasedDeliverablePolicyOverride> OrganizationReleasedDeliverablePolicyOverrides { get; set; }
 
     public DbSet<QboCatalogItem> QboCatalogItems { get; set; }
     public DbSet<AnalysisDefinition> AnalysisDefinitions { get; set; }
@@ -300,6 +306,7 @@ public sealed class PSeqOperationsDbContext(
         });
 
         DataProvisioningModelConfiguration.Configure(modelBuilder);
+        FileManagementModelConfiguration.Configure(modelBuilder);
         OrderManagementModelConfiguration.Configure(modelBuilder, this.persistenceOptions.CommercialSchema);
         CommercialLabOperationsModelConfiguration.Configure(modelBuilder, this.persistenceOptions.CommercialSchema);
         RelationshipManagementModelConfiguration.Configure(modelBuilder);

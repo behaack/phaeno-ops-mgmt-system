@@ -35,6 +35,7 @@ export const noSessionCapabilities: SessionCapabilities = {
   canDownloadDataAssemblyOutputs: false,
   canViewAllOperationalOrders: false,
   canManageOrderConfiguration: false,
+  canManageFileManagementConfiguration: false,
   canQuoteLabServiceWork: false,
   canManageLabOperations: false,
   canOperateLabWork: false,

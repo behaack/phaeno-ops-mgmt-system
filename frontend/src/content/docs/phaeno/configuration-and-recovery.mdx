@@ -2,6 +2,8 @@
 
 Order configuration controls the active scientific, Partner, commercial, release, and integration rules used by new work. Changes must be audited and should not rewrite immutable order snapshots.
 
+**File management** separately controls the retention policy used by future released result and output packages. Only a Phaeno platform administrator can change these settings.
+
 Use the far-left **Order configuration** sidebar to move among **Defaults**, **Analyses**, **Sample shipping**, **PSeq kits**, **Assembly**, and **Credit & QBO**. On wider screens the sidebar can remain pinned; when it is unpinned or the screen is narrow, open the same non-modal navigation from the edge tab. The selected subject appears in the main pane without duplicating the navigation above the configuration form.
 
 ## Maintain commercial configuration
@@ -35,6 +37,16 @@ Use **Instruction preview** before operational use. Select an exact destination 
 This configuration is shared infrastructure only. It does not create a Prospect Trial Project, grant a Customer promotion, place an order, or activate any real destination or sample type on its own.
 
 Return-kit fulfillment is operated from **Order intake**, not from configuration. The fulfillment record preserves shipper product/lot facts, the exact registered supplier-tube inventory, and outbound tracking. The current Corning vial and Therapak shipper values are pilot candidates only; activate real work only after representative tubes, shipper fit, returned volume, seal, freezing, dry-ice handling, barcode scanning, and degraded-mode procedures pass the physical validation gate.
+
+## Maintain released-deliverable retention
+
+Open **File management** to review or edit the global released-deliverable policy. The starting values are 30 days of standard retention, one undownloaded-package warning 5 days before the standard deadline, and a conditional 5-day grace period when any released file remains undownloaded at that deadline. Every value is a positive whole number of exact 24-hour days, and the warning lead must be shorter than standard retention.
+
+Enter a reason for every change. A new revision applies only to packages released afterward; it never changes a deadline already communicated for an existing release. Prior revisions remain visible in policy history.
+
+To configure an account-specific policy, open the Customer, Partner, or Prospect in **Accounts**, select **Retention**, and add an override. Leave any value blank to inherit that value from the current global policy. The page shows the effective value and source for each field. Removing an override restores global inheritance for future releases and also requires a reason.
+
+The configuration screens establish policy only. Warning delivery, grace activation, download cutoff, and package-byte deletion remain unavailable until the released-package retention worker and production storage are activated.
 
 ## Monitor QuickBooks Online
 

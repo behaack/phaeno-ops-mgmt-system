@@ -8,6 +8,7 @@ import {
   ClipboardList,
   Microscope,
   FlaskConical,
+  FolderClock,
   Package,
   PackageCheck,
   Settings,
@@ -139,6 +140,15 @@ export const mainMenuItems: readonly MainMenuItem[] = [
     visibleWhen: (session, context) =>
       context.selectedOrganizationKind === 'Phaeno' &&
       Boolean(session?.capabilities.canManageOrderConfiguration),
+  },
+  {
+    label: 'File management',
+    to: '/file-management',
+    icon: FolderClock,
+    group: 'administration',
+    visibleWhen: (session, context) =>
+      context.selectedOrganizationKind === 'Phaeno' &&
+      Boolean(session?.capabilities.canManageFileManagementConfiguration),
   },
   {
     label: 'Docs',

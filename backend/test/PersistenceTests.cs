@@ -5,6 +5,7 @@ using Microsoft.Extensions.Options;
 using PSeq.Operations.Commercial;
 using PSeq.Operations.Commercial.Accounts.Domain;
 using PSeq.Operations.Commercial.DataProvisioning.Domain;
+using PSeq.Operations.Commercial.FileManagement.Domain;
 using PSeq.Operations.Laboratory;
 using PSeq.Operations.Laboratory.Domain;
 using PhaenoPortal.App.Infrastructure.Persistence.Auditing;
@@ -13,6 +14,47 @@ using PhaenoPortal.App.Features.Website.Entities;
 
 public class PersistenceTests
 {
+    [Fact]
+    public void PSeqOperationsDbContextMapsReleasedDeliverablePolicyHistory()
+    {
+        using var dbContext = CreateDbContext();
+
+        var global = dbContext.Model.FindEntityType(typeof(ReleasedDeliverablePolicyDefault));
+        Assert.NotNull(global);
+        Assert.Equal("commercial_ops", global.GetSchema());
+        Assert.Equal("released_deliverable_policy_defaults", global.GetTableName());
+        Assert.True(global.FindProperty(nameof(ReleasedDeliverablePolicyDefault.Version))?.IsConcurrencyToken);
+        Assert.Contains(
+            global.GetIndexes(),
+            index => index.IsUnique
+                && index.GetFilter() == "\"is_active\""
+                && index.Properties.Select(property => property.Name)
+                    .SequenceEqual([nameof(ReleasedDeliverablePolicyDefault.IsActive)]));
+
+        var organizationOverride = dbContext.Model.FindEntityType(
+            typeof(OrganizationReleasedDeliverablePolicyOverride));
+        Assert.NotNull(organizationOverride);
+        Assert.Equal("commercial_ops", organizationOverride.GetSchema());
+        Assert.Equal(
+            "organization_released_deliverable_policy_overrides",
+            organizationOverride.GetTableName());
+        Assert.True(organizationOverride
+            .FindProperty(nameof(OrganizationReleasedDeliverablePolicyOverride.Version))
+            ?.IsConcurrencyToken);
+        Assert.Contains(
+            organizationOverride.GetIndexes(),
+            index => index.IsUnique
+                && index.GetFilter() == "\"is_active\""
+                && index.Properties.Select(property => property.Name).SequenceEqual([
+                    nameof(OrganizationReleasedDeliverablePolicyOverride.OrganizationId),
+                    nameof(OrganizationReleasedDeliverablePolicyOverride.IsActive)
+                ]));
+        Assert.Contains(
+            organizationOverride.GetForeignKeys(),
+            foreignKey => foreignKey.PrincipalEntityType.ClrType == typeof(Organization)
+                && foreignKey.DeleteBehavior == DeleteBehavior.Restrict);
+    }
+
     [Fact]
     public void PSeqOperationsDbContextMapsEveryEntityToItsOwningSchema()
     {

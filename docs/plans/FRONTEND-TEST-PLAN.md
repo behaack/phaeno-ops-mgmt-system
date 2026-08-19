@@ -12,6 +12,15 @@ remain incomplete production-activation gates.
 
 ## Created Tests
 
+- [x] `frontend/src/features/file-management/FileManagementPage.test.tsx` -
+  covers Phaeno platform-administrator authorization, the global 30/5/5
+  display, and a reasoned version update.
+- [x] `frontend/src/features/file-management/OrganizationRetentionPolicyPanel.test.tsx`
+  - covers partial global inheritance, an organization-specific update, the
+  required removal reason, and override removal.
+- [ ] File management follow-up coverage - cover invalid effective day
+  combinations, API/concurrency recovery, and connected route behavior.
+
 - [x] `frontend/tests/invite-schema.test.ts` - `inviteSchema` accepts a valid invite payload.
 - [x] `frontend/tests/invite-schema.test.ts` - `inviteSchema` rejects invalid email addresses.
 - [x] `frontend/src/components/navigation.test.ts` - Phaeno context shows Data

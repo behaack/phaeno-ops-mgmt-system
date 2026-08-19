@@ -14,10 +14,10 @@ PostgreSQL system schemas (`pg_catalog`, `information_schema`, and temporary/toa
 | Schema | Entities | Fields | Foreign keys |
 | --- | ---: | ---: | ---: |
 | `public` | 1 | 2 | 0 |
-| `commercial_ops` | 63 | 1010 | 109 |
+| `commercial_ops` | 65 | 1043 | 112 |
 | `lab_ops` | 27 | 308 | 38 |
 | `website` | 2 | 18 | 0 |
-| **Total** | **93** | **1338** | **147** |
+| **Total** | **95** | **1371** | **150** |
 
 ## `public` schema
 
@@ -122,6 +122,52 @@ erDiagram
     organizations ||--o{ organization_invitations : "organization_id"
     organizations ||--o{ organization_memberships : "organization_id"
     users ||--o{ organization_memberships : "user_id"
+```
+
+### Released-deliverable retention configuration
+
+```mermaid
+erDiagram
+    released_deliverable_policy_defaults {
+        uuid id PK "not null"
+        varchar_2000 change_reason "not null"
+        timestamptz created_at "not null"
+        uuid created_by_user_id "nullable"
+        timestamptz deactivated_at "nullable"
+        uuid deactivated_by_user_id "nullable"
+        varchar_2000 deactivation_reason "nullable"
+        boolean is_active UK "not null"
+        integer revision UK "not null"
+        integer standard_retention_days "not null"
+        uuid supersedes_policy_id FK "nullable"
+        integer undownloaded_grace_days "not null"
+        integer undownloaded_warning_lead_days "not null"
+        timestamptz updated_at "not null"
+        uuid updated_by_user_id "nullable"
+        bigint version "not null"
+    }
+    organization_released_deliverable_policy_overrides {
+        uuid id PK "not null"
+        varchar_2000 change_reason "not null"
+        timestamptz created_at "not null"
+        uuid created_by_user_id "nullable"
+        timestamptz deactivated_at "nullable"
+        uuid deactivated_by_user_id "nullable"
+        varchar_2000 deactivation_reason "nullable"
+        boolean is_active UK "not null"
+        uuid organization_id FK,UK "not null"
+        integer revision UK "not null"
+        integer standard_retention_days "nullable"
+        uuid supersedes_override_id FK "nullable"
+        integer undownloaded_grace_days "nullable"
+        integer undownloaded_warning_lead_days "nullable"
+        timestamptz updated_at "not null"
+        uuid updated_by_user_id "nullable"
+        bigint version "not null"
+    }
+    organizations ||--o{ organization_released_deliverable_policy_overrides : "organization_id"
+    released_deliverable_policy_defaults o|--o{ released_deliverable_policy_defaults : "supersedes_policy_id"
+    organization_released_deliverable_policy_overrides o|--o{ organization_released_deliverable_policy_overrides : "supersedes_override_id"
 ```
 
 ### Relationships and catalog

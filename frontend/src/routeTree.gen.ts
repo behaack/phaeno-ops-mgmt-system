@@ -16,6 +16,7 @@ import { Route as OrderOperationsRouteImport } from './routes/order-operations'
 import { Route as OrderConfigurationRouteImport } from './routes/order-configuration'
 import { Route as LabServicesRouteImport } from './routes/lab-services'
 import { Route as LabOperationsRouteImport } from './routes/lab-operations'
+import { Route as FileManagementRouteImport } from './routes/file-management'
 import { Route as DocsRouteImport } from './routes/docs'
 import { Route as DataProvisioningRouteImport } from './routes/data-provisioning'
 import { Route as DataLibraryRouteImport } from './routes/data-library'
@@ -80,6 +81,11 @@ const LabServicesRoute = LabServicesRouteImport.update({
 const LabOperationsRoute = LabOperationsRouteImport.update({
   id: '/lab-operations',
   path: '/lab-operations',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const FileManagementRoute = FileManagementRouteImport.update({
+  id: '/file-management',
+  path: '/file-management',
   getParentRoute: () => rootRouteImport,
 } as any)
 const DocsRoute = DocsRouteImport.update({
@@ -252,6 +258,7 @@ export interface FileRoutesByFullPath {
   '/data-library': typeof DataLibraryRouteWithChildren
   '/data-provisioning': typeof DataProvisioningRouteWithChildren
   '/docs': typeof DocsRouteWithChildren
+  '/file-management': typeof FileManagementRoute
   '/lab-operations': typeof LabOperationsRouteWithChildren
   '/lab-services': typeof LabServicesRouteWithChildren
   '/order-configuration': typeof OrderConfigurationRoute
@@ -291,6 +298,7 @@ export interface FileRoutesByTo {
   '/data-library': typeof DataLibraryRouteWithChildren
   '/data-provisioning': typeof DataProvisioningRouteWithChildren
   '/docs': typeof DocsRouteWithChildren
+  '/file-management': typeof FileManagementRoute
   '/lab-operations': typeof LabOperationsRouteWithChildren
   '/lab-services': typeof LabServicesRouteWithChildren
   '/order-configuration': typeof OrderConfigurationRoute
@@ -331,6 +339,7 @@ export interface FileRoutesById {
   '/data-library': typeof DataLibraryRouteWithChildren
   '/data-provisioning': typeof DataProvisioningRouteWithChildren
   '/docs': typeof DocsRouteWithChildren
+  '/file-management': typeof FileManagementRoute
   '/lab-operations': typeof LabOperationsRouteWithChildren
   '/lab-services': typeof LabServicesRouteWithChildren
   '/order-configuration': typeof OrderConfigurationRoute
@@ -372,6 +381,7 @@ export interface FileRouteTypes {
     | '/data-library'
     | '/data-provisioning'
     | '/docs'
+    | '/file-management'
     | '/lab-operations'
     | '/lab-services'
     | '/order-configuration'
@@ -411,6 +421,7 @@ export interface FileRouteTypes {
     | '/data-library'
     | '/data-provisioning'
     | '/docs'
+    | '/file-management'
     | '/lab-operations'
     | '/lab-services'
     | '/order-configuration'
@@ -450,6 +461,7 @@ export interface FileRouteTypes {
     | '/data-library'
     | '/data-provisioning'
     | '/docs'
+    | '/file-management'
     | '/lab-operations'
     | '/lab-services'
     | '/order-configuration'
@@ -490,6 +502,7 @@ export interface RootRouteChildren {
   DataLibraryRoute: typeof DataLibraryRouteWithChildren
   DataProvisioningRoute: typeof DataProvisioningRouteWithChildren
   DocsRoute: typeof DocsRouteWithChildren
+  FileManagementRoute: typeof FileManagementRoute
   LabOperationsRoute: typeof LabOperationsRouteWithChildren
   LabServicesRoute: typeof LabServicesRouteWithChildren
   OrderConfigurationRoute: typeof OrderConfigurationRoute
@@ -550,6 +563,13 @@ declare module '@tanstack/react-router' {
       path: '/lab-operations'
       fullPath: '/lab-operations'
       preLoaderRoute: typeof LabOperationsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/file-management': {
+      id: '/file-management'
+      path: '/file-management'
+      fullPath: '/file-management'
+      preLoaderRoute: typeof FileManagementRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/docs': {
@@ -955,6 +975,7 @@ const rootRouteChildren: RootRouteChildren = {
   DataLibraryRoute: DataLibraryRouteWithChildren,
   DataProvisioningRoute: DataProvisioningRouteWithChildren,
   DocsRoute: DocsRouteWithChildren,
+  FileManagementRoute: FileManagementRoute,
   LabOperationsRoute: LabOperationsRouteWithChildren,
   LabServicesRoute: LabServicesRouteWithChildren,
   OrderConfigurationRoute: OrderConfigurationRoute,

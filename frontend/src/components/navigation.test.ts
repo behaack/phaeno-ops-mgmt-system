@@ -80,6 +80,7 @@ describe('order navigation permissions', () => {
     const session = createSession('Phaeno', {
       canViewAllOperationalOrders: true,
       canManageOrderConfiguration: true,
+      canManageFileManagementConfiguration: true,
       canManageLabOperations: true,
     })
 
@@ -91,6 +92,7 @@ describe('order navigation permissions', () => {
     expect(labels).toContain('Order ops')
     expect(labels).toContain('Lab ops')
     expect(labels).toContain('Order configuration')
+    expect(labels).toContain('File management')
     expect(labels).not.toContain('Lab services')
     expect(labels).not.toContain('Reagent orders')
   })
@@ -144,6 +146,7 @@ describe('navigation placement', () => {
       canViewAllOperationalOrders: true,
       canManageLabOperations: true,
       canManageOrderConfiguration: true,
+      canManageFileManagementConfiguration: true,
     })
     const context = {
       selectedOrganizationKind: 'Phaeno' as const,
@@ -159,7 +162,7 @@ describe('navigation placement', () => {
       getVisibleMainMenuItems(session, context, 'administration').map(
         (item) => item.label,
       ),
-    ).toEqual(['Accounts', 'Order configuration'])
+    ).toEqual(['Accounts', 'Order configuration', 'File management'])
     expect(
       getVisibleMainMenuItems(session, context, 'resources').map(
         (item) => item.label,
@@ -245,6 +248,7 @@ function createSession(
       canDownloadDataAssemblyOutputs: false,
       canViewAllOperationalOrders: false,
       canManageOrderConfiguration: false,
+      canManageFileManagementConfiguration: false,
       canQuoteLabServiceWork: false,
       canManageLabOperations: false,
       canOperateLabWork: false,

@@ -53,6 +53,11 @@ the protected deployed-Preview acceptance above.
 
 ## Created Tests
 
+- [ ] Released-deliverable retention configuration - cover Phaeno-only global
+  policy navigation and editing plus Customer, Partner, and Prospect account
+  override creation, partial inheritance, history, and removal. The UI is
+  implemented; connected browser coverage remains to be added.
+
 - [x] `frontend/e2e/home.spec.ts` - internal Phaeno context uses POMS in the
   browser title, header, and dashboard while external organization context uses
   Portal; both contexts retain the Phaeno Inc. legal footer and omit framework
