@@ -83,6 +83,8 @@ public sealed class PSeqOperationsDbContext(
 
     public DbSet<OrganizationReleasedDeliverablePolicyOverride> OrganizationReleasedDeliverablePolicyOverrides { get; set; }
 
+    public DbSet<ReleasedDeliverableRetentionSnapshot> ReleasedDeliverableRetentionSnapshots { get; set; }
+
     public DbSet<QboCatalogItem> QboCatalogItems { get; set; }
     public DbSet<AnalysisDefinition> AnalysisDefinitions { get; set; }
     public DbSet<PartnerReagentOffering> PartnerReagentOfferings { get; set; }

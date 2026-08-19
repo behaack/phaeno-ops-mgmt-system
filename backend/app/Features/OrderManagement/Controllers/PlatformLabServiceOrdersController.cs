@@ -10,6 +10,7 @@ using PSeq.Operations.Commercial.LabOperations.Application;
 using PSeq.Operations.Commercial.LabOperations.Domain;
 using PSeq.Operations.Commercial.OrderManagement.Application;
 using PSeq.Operations.Commercial.OrderManagement.Domain;
+using PhaenoPortal.App.Features.FileManagement.Services;
 using PhaenoPortal.App.Features.OrderManagement.Domain;
 using PhaenoPortal.App.Features.OrderManagement.DTOs;
 using PhaenoPortal.App.Features.OrderManagement.Services;
@@ -25,7 +26,8 @@ public sealed class PlatformLabServiceOrdersController(
     IOperationalFileStorage fileStorage,
     IOperationalFileScanner fileScanner,
     IOptions<OrderManagementOptions> options,
-    ILabOperationsProvider labOperationsProvider) : ControllerBase
+    ILabOperationsProvider labOperationsProvider,
+    ReleasedDeliverableRetentionSnapshotService retentionSnapshots) : ControllerBase
 {
     private static readonly JsonSerializerOptions JsonOptions = new(JsonSerializerDefaults.Web);
 
@@ -306,11 +308,13 @@ public sealed class PlatformLabServiceOrdersController(
             && item.WorkflowId == order.Id && item.Kind == CommercialDocumentKind.Invoice && item.SyncStatus == IntegrationStatus.Succeeded && item.Balance == 0, cancellationToken);
         var mayRelease = profile?.LabCreditApproved == true || invoicePaid;
         release.MarkReady(!mayRelease);
+        var releasedAtUtc = DateTime.UtcNow;
         foreach (var item in files)
         {
-            if (mayRelease) item.Release(DateTime.UtcNow); else item.HoldForPayment();
+            if (mayRelease) item.Release(releasedAtUtc); else item.HoldForPayment();
         }
-        if (mayRelease) release.Release(DateTime.UtcNow);
+        if (mayRelease && release.Release(releasedAtUtc))
+            await retentionSnapshots.CaptureLabResultAsync(release, releasedAtUtc, cancellationToken);
         Execute(order.MarkResultsAvailable);
         if (sample.Status == LabSampleStatus.DataProcessing) Execute(() => sample.TransitionTo(LabSampleStatus.DataAvailable, null, null));
         Event(order, "ResultReview", mayRelease ? "ResultReleased" : "PaymentHold", actor.Id, childId: sample.Id);
@@ -429,6 +433,13 @@ public sealed class PlatformLabServiceOrdersController(
     {
         var files = await dbContext.ManagedOperationalFiles.AsNoTracking().Where(item => item.WorkflowType == OrderWorkflowTypes.LabService && item.WorkflowId == order.Id).OrderBy(item => item.CreatedAt).ToListAsync(cancellationToken);
         var releases = await dbContext.LabResultReleases.AsNoTracking().Where(item => item.LabServiceOrderId == order.Id).OrderBy(item => item.GeneratedAt).ToListAsync(cancellationToken);
+        var releaseIds = releases.Select(release => release.Id).ToList();
+        var retentionByReleaseId = await dbContext.ReleasedDeliverableRetentionSnapshots
+            .AsNoTracking()
+            .Where(item => item.OrganizationId == order.OrganizationId
+                && item.LabResultReleaseId.HasValue
+                && releaseIds.Contains(item.LabResultReleaseId.Value))
+            .ToDictionaryAsync(item => item.LabResultReleaseId!.Value, cancellationToken);
         var docs = await dbContext.CommercialDocumentLinks.AsNoTracking().Where(item => item.WorkflowType == OrderWorkflowTypes.LabService && item.WorkflowId == order.Id).OrderBy(item => item.CreatedAt).ToListAsync(cancellationToken);
         var cancellations = await dbContext.OrderCancellationRequests.AsNoTracking().Where(item => item.WorkflowType == OrderWorkflowTypes.LabService && item.WorkflowId == order.Id).OrderBy(item => item.CreatedAt).ToListAsync(cancellationToken);
         var timeline = await dbContext.OrderStatusEvents.AsNoTracking().Where(item => item.WorkflowType == OrderWorkflowTypes.LabService && item.WorkflowId == order.Id).OrderBy(item => item.OccurredAt).ToListAsync(cancellationToken);
@@ -440,7 +451,7 @@ public sealed class PlatformLabServiceOrdersController(
             order.Status.ToString(), order.RequestRevision, order.SubmittedAt, order.PlacedAt, order.CompletedAt, order.TenantSafeReason,
             order.InternalNote, order.CreatedAt, order.UpdatedAt, order.Version, false, false, false, false, false,
             order.Samples.OrderBy(item => item.CreatedAt).Select(item => item.ToDto(true)).ToList(), order.Quotes.OrderByDescending(item => item.Revision).Select(item => item.ToDto()).ToList(),
-            releases.Select(item => item.ToDto()).ToList(), files.Select(item => item.ToDto()).ToList(), docs.Select(item => item.ToDto(true)).ToList(), cancellations.Select(item => item.ToDto()).ToList(), timeline.Select(item => item.ToDto(true)).ToList(),
+            releases.Select(item => item.ToDto(retentionByReleaseId.GetValueOrDefault(item.Id))).ToList(), files.Select(item => item.ToDto()).ToList(), docs.Select(item => item.ToDto(true)).ToList(), cancellations.Select(item => item.ToDto()).ToList(), timeline.Select(item => item.ToDto(true)).ToList(),
             order.AssignedToUserId, order.DueAt,
             RequestRevisions: order.Revisions.OrderByDescending(item => item.Revision).Select(item => new LabRequestRevisionDto(item.Id,
                 item.Revision, item.PreviousRevisionId, item.SnapshotJson, item.CorrectionReason, item.SubmittedByUserId, item.SubmittedAt)).ToList(),

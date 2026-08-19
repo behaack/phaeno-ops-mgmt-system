@@ -391,6 +391,13 @@ public sealed class LabServiceOrdersController(
         var releases = await dbContext.LabResultReleases.AsNoTracking().Where(release => release.LabServiceOrderId == order.Id
             && (platform || release.ReleaseStatus != FileReleaseStatus.Internal))
             .OrderBy(release => release.GeneratedAt).ToListAsync(cancellationToken);
+        var releaseIds = releases.Select(release => release.Id).ToList();
+        var retentionByReleaseId = await dbContext.ReleasedDeliverableRetentionSnapshots
+            .AsNoTracking()
+            .Where(item => item.OrganizationId == order.OrganizationId
+                && item.LabResultReleaseId.HasValue
+                && releaseIds.Contains(item.LabResultReleaseId.Value))
+            .ToDictionaryAsync(item => item.LabResultReleaseId!.Value, cancellationToken);
         var documents = await dbContext.CommercialDocumentLinks.AsNoTracking().Where(item => item.WorkflowType == OrderWorkflowTypes.LabService && item.WorkflowId == order.Id)
             .OrderBy(item => item.CreatedAt).ToListAsync(cancellationToken);
         var cancellationRequests = await dbContext.OrderCancellationRequests.AsNoTracking().Where(item => item.WorkflowType == OrderWorkflowTypes.LabService && item.WorkflowId == order.Id)
@@ -412,7 +419,7 @@ public sealed class LabServiceOrdersController(
             canManage && order.Status is LabServiceOrderStatus.PlacedAwaitingSamples or LabServiceOrderStatus.InProgress or LabServiceOrderStatus.ResultsAvailable,
             order.Samples.OrderBy(item => item.CreatedAt).Select(item => item.ToDto(platform)).ToList(),
             order.Quotes.OrderByDescending(item => item.Revision).Select(item => item.ToDto()).ToList(),
-            releases.Select(item => item.ToDto()).ToList(), files.Select(item => item.ToDto()).ToList(), documents.Select(item => item.ToDto(platform)).ToList(),
+            releases.Select(item => item.ToDto(retentionByReleaseId.GetValueOrDefault(item.Id))).ToList(), files.Select(item => item.ToDto()).ToList(), documents.Select(item => item.ToDto(platform)).ToList(),
             cancellationRequests.Select(item => item.ToDto()).ToList(), timeline.Select(item => item.ToDto(platform)).ToList(),
             RequestRevisions: order.Revisions.OrderByDescending(item => item.Revision).Select(item => new LabRequestRevisionDto(item.Id,
                 item.Revision, item.PreviousRevisionId, item.SnapshotJson, item.CorrectionReason, item.SubmittedByUserId, item.SubmittedAt)).ToList(),

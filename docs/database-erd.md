@@ -14,10 +14,10 @@ PostgreSQL system schemas (`pg_catalog`, `information_schema`, and temporary/toa
 | Schema | Entities | Fields | Foreign keys |
 | --- | ---: | ---: | ---: |
 | `public` | 1 | 2 | 0 |
-| `commercial_ops` | 65 | 1043 | 112 |
+| `commercial_ops` | 66 | 1070 | 117 |
 | `lab_ops` | 27 | 308 | 38 |
 | `website` | 2 | 18 | 0 |
-| **Total** | **95** | **1371** | **150** |
+| **Total** | **96** | **1398** | **155** |
 
 ## `public` schema
 
@@ -165,9 +165,43 @@ erDiagram
         uuid updated_by_user_id "nullable"
         bigint version "not null"
     }
+    released_deliverable_retention_snapshots {
+        uuid id PK "not null"
+        uuid assembly_output_release_id FK,UK "nullable"
+        timestamptz byte_deleted_at_utc "nullable"
+        timestamptz created_at "not null"
+        uuid created_by_user_id "nullable"
+        varchar_100 deletion_outcome "nullable"
+        timestamptz download_access_closed_at_utc "nullable"
+        uuid global_policy_id FK "not null"
+        integer global_policy_revision "not null"
+        timestamptz grace_activated_at_utc "nullable"
+        uuid lab_result_release_id FK,UK "nullable"
+        uuid organization_id FK "not null"
+        uuid organization_policy_override_id FK "nullable"
+        integer organization_policy_override_revision "nullable"
+        timestamptz potential_final_deletion_at_utc "not null"
+        timestamptz released_at_utc "not null"
+        timestamptz standard_deletion_at_utc "not null"
+        integer standard_retention_days "not null"
+        varchar_50 standard_retention_source "not null"
+        integer undownloaded_grace_days "not null"
+        varchar_50 undownloaded_grace_source "not null"
+        integer undownloaded_warning_lead_days "not null"
+        varchar_50 undownloaded_warning_lead_source "not null"
+        timestamptz updated_at "not null"
+        uuid updated_by_user_id "nullable"
+        bigint version "not null"
+        timestamptz warning_at_utc "not null"
+    }
     organizations ||--o{ organization_released_deliverable_policy_overrides : "organization_id"
+    organizations ||--o{ released_deliverable_retention_snapshots : "organization_id"
     released_deliverable_policy_defaults o|--o{ released_deliverable_policy_defaults : "supersedes_policy_id"
+    released_deliverable_policy_defaults ||--o{ released_deliverable_retention_snapshots : "global_policy_id"
     organization_released_deliverable_policy_overrides o|--o{ organization_released_deliverable_policy_overrides : "supersedes_override_id"
+    organization_released_deliverable_policy_overrides o|--o{ released_deliverable_retention_snapshots : "organization_policy_override_id"
+    lab_result_releases o|--o| released_deliverable_retention_snapshots : "lab_result_release_id"
+    assembly_output_releases o|--o| released_deliverable_retention_snapshots : "assembly_output_release_id"
 ```
 
 ### Relationships and catalog

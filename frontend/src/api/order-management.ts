@@ -122,6 +122,17 @@ export type LabSample = {
   version: number
 }
 
+export type ReleasedDeliverableRetention = {
+  releasedAtUtc: string
+  warningAtUtc: string
+  standardDeletionAtUtc: string
+  potentialFinalDeletionAtUtc: string
+  graceActivatedAtUtc: string | null
+  downloadAccessClosedAtUtc: string | null
+  byteDeletedAtUtc: string | null
+  deletionOutcome: string | null
+}
+
 export type LabResultRelease = {
   id: string
   labSampleId: string
@@ -134,6 +145,7 @@ export type LabResultRelease = {
   releaseStatus: string
   generatedAt: string
   releasedAt: string | null
+  retention: ReleasedDeliverableRetention | null
   version: number
 }
 
@@ -340,6 +352,7 @@ export type AssemblyOutputRelease = {
   generatedAt: string
   releasedAt: string | null
   files: OperationalFile[]
+  retention: ReleasedDeliverableRetention | null
   version: number
 }
 

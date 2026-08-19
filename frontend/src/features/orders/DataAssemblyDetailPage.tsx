@@ -12,6 +12,7 @@ import { Input } from '#/components/ui/input'
 import { Label } from '#/components/ui/label'
 import { usePhaenoSession } from '#/features/auth/session-context'
 import { humanizeStatus, OrderStatusBadge } from './OrderStatusBadge'
+import { ReleasedDeliverableRetentionNotice } from './ReleasedDeliverableRetentionNotice'
 
 export function DataAssemblyDetailPage({ requestId }: { requestId: string }) {
   const { authProvider, session } = usePhaenoSession()
@@ -47,7 +48,49 @@ export function DataAssemblyDetailPage({ requestId }: { requestId: string }) {
     {action.error ? <Alert variant="destructive" className="mb-5"><AlertTitle>Request was not updated</AlertTitle><AlertDescription>{getOrderErrorMessage(action.error, 'Reload and try again.')}</AlertDescription></Alert> : null}
     <div className="grid gap-5 lg:grid-cols-[minmax(0,1.5fr)_minmax(18rem,1fr)]"><div className="space-y-5">
       <Card><CardHeader><CardTitle>Input revisions</CardTitle><CardDescription>The submitted profile, metadata, files, validation, and manifest remain traceable.</CardDescription></CardHeader><CardContent><dl className="grid gap-4 sm:grid-cols-2"><div><dt className="text-xs font-medium text-muted-foreground">CURRENT REVISION</dt><dd className="mt-1">{request.inputRevision || 'Draft'}</dd></div><div><dt className="text-xs font-medium text-muted-foreground">REQUESTED OUTPUT</dt><dd className="mt-1">{request.requestedOutput}</dd></div><div className="sm:col-span-2"><dt className="text-xs font-medium text-muted-foreground">PROJECT METADATA</dt><dd className="mt-1 whitespace-pre-wrap text-sm">{metadataText(request.metadataJson)}</dd></div></dl>{request.inputRevisions.length ? <div className="mt-5 divide-y">{request.inputRevisions.map((revision) => <div key={revision.id} className="flex flex-wrap items-center justify-between gap-3 py-3"><div><p className="text-sm font-medium">Revision {revision.revision}</p><p className="text-xs text-muted-foreground">Submitted {formatDateTime(revision.submittedAt)}</p>{revision.correctionReason ? <p className="mt-1 text-sm">Correction: {revision.correctionReason}</p> : null}</div><Button type="button" variant="outline" size="sm" onClick={() => downloadJson(`${request.requestNumber}-input-r${revision.revision}.json`, JSON.stringify({ manifest: JSON.parse(revision.manifestJson), validation: JSON.parse(revision.validationSummaryJson) }, null, 2))}><Download data-icon="inline-start" />Input receipt</Button></div>)}</div> : null}<ul className="mt-5 divide-y">{request.inputFiles.map((file) => <li key={file.id} className="flex justify-between gap-3 py-3 text-sm"><span>{file.fileName}</span><span className="text-muted-foreground">Scan: {humanizeStatus(file.scanStatus)}</span></li>)}</ul></CardContent></Card>
-      <Card><CardHeader><CardTitle>Output releases</CardTitle><CardDescription>Only immutable outputs that passed review, invoice synchronization, and the applicable credit or payment gate can be downloaded.</CardDescription></CardHeader><CardContent>{request.outputReleases.some((release) => release.releaseStatus === 'Released') ? <div className="space-y-5">{request.outputReleases.filter((release) => release.releaseStatus === 'Released').map((release) => <section key={release.id}><div className="flex flex-wrap items-center justify-between gap-2"><div><p className="font-medium">Release {release.releaseVersion}</p><p className="text-xs text-muted-foreground">Pipeline {release.pipelineVersion} · Generated {formatDateTime(release.generatedAt)}</p></div><div className="flex items-center gap-2"><OrderStatusBadge status={release.releaseStatus} /><Button type="button" size="sm" variant="outline" onClick={() => downloadJson(`${request.requestNumber}-output-r${release.releaseVersion}.json`, release.manifestJson)}><Download data-icon="inline-start" />Manifest</Button></div></div><ul className="mt-3 divide-y">{release.files.map((file) => <li key={file.id} className="flex flex-wrap items-center justify-between gap-3 py-3"><span className="text-sm">{file.fileName}</span><Button type="button" variant="outline" onClick={() => downloadAssemblyOutput(request.id, release.id, file)}><Download data-icon="inline-start" />Download</Button></li>)}</ul></section>)}</div> : <div className="flex flex-col items-center py-8 text-center"><FileArchive aria-hidden="true" className="mb-2 size-7 text-muted-foreground" /><p className="font-medium">No downloadable outputs</p><p className="mt-1 max-w-md text-sm text-muted-foreground">Outputs may still be processing, under review, synchronizing to QuickBooks, or awaiting payment.</p></div>}</CardContent></Card>
+      <Card>
+        <CardHeader>
+          <CardTitle>Output releases</CardTitle>
+          <CardDescription>Only immutable outputs that passed review, invoice synchronization, and the applicable credit or payment gate can be downloaded.</CardDescription>
+        </CardHeader>
+        <CardContent>
+          {request.outputReleases.some((release) => release.releaseStatus === 'Released') ? (
+            <div className="space-y-5">
+              {request.outputReleases
+                .filter((release) => release.releaseStatus === 'Released')
+                .map((release) => (
+                  <section key={release.id} aria-labelledby={`assembly-release-${release.id}`}>
+                    <div className="flex flex-wrap items-center justify-between gap-2">
+                      <div>
+                        <p id={`assembly-release-${release.id}`} className="font-medium">Release {release.releaseVersion}</p>
+                        <p className="text-xs text-muted-foreground">Pipeline {release.pipelineVersion} · Generated {formatDateTime(release.generatedAt)}</p>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <OrderStatusBadge status={release.releaseStatus} />
+                        <Button type="button" size="sm" variant="outline" onClick={() => downloadJson(`${request.requestNumber}-output-r${release.releaseVersion}.json`, release.manifestJson)}><Download data-icon="inline-start" />Manifest</Button>
+                      </div>
+                    </div>
+                    <ReleasedDeliverableRetentionNotice retention={release.retention} />
+                    <ul className="mt-3 divide-y">
+                      {release.files.map((file) => (
+                        <li key={file.id} className="flex flex-wrap items-center justify-between gap-3 py-3">
+                          <span className="text-sm">{file.fileName}</span>
+                          <Button type="button" variant="outline" onClick={() => downloadAssemblyOutput(request.id, release.id, file)}><Download data-icon="inline-start" />Download</Button>
+                        </li>
+                      ))}
+                    </ul>
+                  </section>
+                ))}
+            </div>
+          ) : (
+            <div className="flex flex-col items-center py-8 text-center">
+              <FileArchive aria-hidden="true" className="mb-2 size-7 text-muted-foreground" />
+              <p className="font-medium">No downloadable outputs</p>
+              <p className="mt-1 max-w-md text-sm text-muted-foreground">Outputs may still be processing, under review, synchronizing to QuickBooks, or awaiting payment.</p>
+            </div>
+          )}
+        </CardContent>
+      </Card>
       <Card><CardHeader><CardTitle>Timeline</CardTitle></CardHeader><CardContent><ol className="space-y-4">{request.timeline.map((item) => <li key={item.id} className="border-l-2 pl-4"><p className="text-sm font-medium">{humanizeStatus(item.toStatus)}</p><p className="text-xs text-muted-foreground">{formatDateTime(item.occurredAt)}</p>{item.reason ? <p className="mt-1 text-sm">{item.reason}</p> : null}</li>)}</ol></CardContent></Card>
     </div><div className="space-y-5"><Card><CardHeader><CardTitle>Quote and PO</CardTitle><CardDescription>Assembly pricing is per job and immutable by revision.</CardDescription></CardHeader><CardContent>{quote ? <QuoteSummary quote={quote} /> : <p className="text-sm text-muted-foreground">Pricing has not been issued.</p>}{request.purchaseOrderNumber ? <p className="mt-4 border-t pt-4 text-sm">PO <span className="font-mono">{request.purchaseOrderNumber}</span></p> : null}</CardContent></Card><Card><CardHeader><CardTitle>Commercial gate</CardTitle></CardHeader><CardContent>{request.documents.length ? request.documents.map((document) => <div key={document.id} className="border-b py-3 first:pt-0 last:border-0"><div className="flex justify-between gap-2"><span className="text-sm font-medium">{document.kind} {document.documentNumber ?? ''}</span><OrderStatusBadge status={document.syncStatus} /></div><p className="mt-1 text-sm text-muted-foreground">Balance {formatMoney(document.balance, document.currency)}</p></div>) : <p className="text-sm text-muted-foreground">No commercial documents yet.</p>}</CardContent></Card></div></div>
     <Dialog open={dialog === 'accept'} onOpenChange={(open) => !open && setDialog(null)}><DialogContent><DialogHeader><DialogTitle>Accept assembly quote?</DialogTitle><DialogDescription>This freezes the validated input/profile/commercial snapshot and places {request.requestNumber} in the processing queue.</DialogDescription></DialogHeader>{quote ? <QuoteSummary quote={quote} /> : null}<div><Label htmlFor="assemblyPo">Purchase order number <span className="text-[var(--ruby-red,#b4233c)]" aria-hidden="true">*</span></Label><Input id="assemblyPo" value={purchaseOrderNumber} onChange={(event) => setPurchaseOrderNumber(event.target.value)} className="mt-2" /></div><DialogFooter><DialogClose asChild><Button type="button" variant="outline">Keep reviewing</Button></DialogClose><Button type="button" disabled={!purchaseOrderNumber.trim() || action.isPending} onClick={() => action.mutate('accept')}>Accept quote and queue work</Button></DialogFooter></DialogContent></Dialog>

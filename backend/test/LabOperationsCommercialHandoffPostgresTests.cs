@@ -11,6 +11,7 @@ using PSeq.Operations.Commercial.LabOperations.Domain;
 using PSeq.Operations.Commercial.OrderManagement.Domain;
 using PSeq.Operations.Laboratory.Domain;
 using PhaenoPortal.App.Features.Accounts.Services;
+using PhaenoPortal.App.Features.FileManagement.Services;
 using PhaenoPortal.App.Features.LabOperations.Controllers;
 using PhaenoPortal.App.Features.LabOperations.DTOs;
 using PhaenoPortal.App.Features.LabOperations.Services;
@@ -900,7 +901,8 @@ public class LabOperationsCommercialHandoffPostgresTests
                 NullOperationalFileStorage.Instance,
                 NullOperationalFileScanner.Instance,
                 Options.Create(new OrderManagementOptions()),
-                provider)
+                provider,
+                new ReleasedDeliverableRetentionSnapshotService(DbContext))
             {
                 ControllerContext = new ControllerContext
                 {

@@ -22,10 +22,17 @@ and rollback-isolated PostgreSQL coverage.
 - [x] `backend/test/ReleasedDeliverablePolicyDomainTests.cs` - approved 30/5/5
   defaults, positive whole-day validation, warning-before-retention validation,
   partial organization inheritance, invalid resolved-policy rejection,
-  monotonically versioned revisions, and reasoned deactivation history.
+  monotonically versioned revisions, reasoned deactivation history, immutable
+  effective-value/source snapshots, exact UTC deadline calculations, and
+  cross-organization override rejection. The tenant-safe package projection is
+  also checked to expose dates without policy configuration history.
 - [x] `backend/test/PersistenceTests.cs` - released-deliverable global-policy and
   organization-override schema ownership, filtered active-version uniqueness,
-  optimistic-concurrency tokens, and restricted organization ownership.
+  immutable release-target snapshot uniqueness, optimistic-concurrency tokens,
+  and restricted organization, policy, lab-result, and assembly-output
+  relationships.
+- [x] `backend/test/OrderManagementDomainTests.cs` - repeated file and package
+  release attempts preserve the first release timestamp used by retention.
 - [x] `backend/test/PersistenceTests.cs` -
   `PSeqOperationsDbContextMapsWebsiteEntitiesToWebsiteSchema` and the
   all-entity schema assertion cover the Website-owned tables in the shared

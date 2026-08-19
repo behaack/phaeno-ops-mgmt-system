@@ -57,6 +57,11 @@ the protected deployed-Preview acceptance above.
   policy navigation and editing plus Customer, Partner, and Prospect account
   override creation, partial inheritance, history, and removal. The UI is
   implemented; connected browser coverage remains to be added.
+- [ ] Released-package deadline details - cover an authorized Customer result
+  and Partner assembly output showing the frozen standard deletion time with a
+  browser-local zone label and the later date clearly marked as conditional;
+  prove a historical release without a snapshot does not receive invented
+  dates, and prove cross-tenant order/output routes remain denied.
 
 - [x] `frontend/e2e/home.spec.ts` - internal Phaeno context uses POMS in the
   browser title, header, and dashboard while external organization context uses

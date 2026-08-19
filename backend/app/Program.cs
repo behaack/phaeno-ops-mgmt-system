@@ -16,6 +16,7 @@ using PhaenoPortal.App.Features.Accounts.Endpoints;
 using PhaenoPortal.App.Features.Accounts.Services;
 using PhaenoPortal.App.Features.Health.Endpoints;
 using PhaenoPortal.App.Features.DataProvisioning.Services;
+using PhaenoPortal.App.Features.FileManagement.Services;
 using PhaenoPortal.App.Features.LabOperations.Services;
 using PhaenoPortal.App.Features.OrderManagement.Services;
 using PhaenoPortal.App.Features.Website;
@@ -85,6 +86,7 @@ if (builder.Environment.IsDevelopment())
 builder.Services.AddSingleton<DataProvisioningProfile>();
 builder.Services.AddSingleton<IManagedFileScanner, EnvironmentManagedFileScanner>();
 builder.Services.AddSingleton<IOperationalFileScanner, EnvironmentOperationalFileScanner>();
+builder.Services.AddScoped<ReleasedDeliverableRetentionSnapshotService>();
 builder.Services.AddScoped<OrderRequestContext>();
 builder.Services.AddScoped<OrderIdempotencyService>();
 builder.Services.AddScoped<SampleShippingPacketService>();

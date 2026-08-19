@@ -281,6 +281,13 @@ public sealed class PlatformDataAssemblyRequestsController(
     private async Task<DataAssemblyRequestDto> MapAsync(DataAssemblyRequest item, CancellationToken cancellationToken)
     {
         var files = await dbContext.ManagedOperationalFiles.AsNoTracking().Where(file => file.WorkflowType == OrderWorkflowTypes.DataAssembly && file.WorkflowId == item.Id).OrderBy(file => file.CreatedAt).ToListAsync(cancellationToken);
+        var releaseIds = item.OutputReleases.Select(release => release.Id).ToList();
+        var retentionByReleaseId = await dbContext.ReleasedDeliverableRetentionSnapshots
+            .AsNoTracking()
+            .Where(snapshot => snapshot.OrganizationId == item.OrganizationId
+                && snapshot.AssemblyOutputReleaseId.HasValue
+                && releaseIds.Contains(snapshot.AssemblyOutputReleaseId.Value))
+            .ToDictionaryAsync(snapshot => snapshot.AssemblyOutputReleaseId!.Value, cancellationToken);
         var docs = await dbContext.CommercialDocumentLinks.AsNoTracking().Where(value => value.WorkflowType == OrderWorkflowTypes.DataAssembly && value.WorkflowId == item.Id).OrderBy(value => value.CreatedAt).ToListAsync(cancellationToken);
         var cancellations = await dbContext.OrderCancellationRequests.AsNoTracking().Where(value => value.WorkflowType == OrderWorkflowTypes.DataAssembly && value.WorkflowId == item.Id).OrderBy(value => value.CreatedAt).ToListAsync(cancellationToken);
         var timeline = await dbContext.OrderStatusEvents.AsNoTracking().Where(value => value.WorkflowType == OrderWorkflowTypes.DataAssembly && value.WorkflowId == item.Id).OrderBy(value => value.OccurredAt).ToListAsync(cancellationToken);
@@ -295,7 +302,8 @@ public sealed class PlatformDataAssemblyRequestsController(
                     value.Provenance, value.QcStatus, value.StartedAt, value.CompletedAt, value.FailureReason, value.Version)).ToList(),
             item.OutputReleases.OrderByDescending(value => value.ReleaseVersion).Select(value => new AssemblyOutputReleaseDto(value.Id, value.InputRevisionId,
                 value.ProcessingRunId, value.ReleaseVersion, value.ManifestJson, value.PipelineVersion, value.Provenance, value.QcStatus, value.ReleaseStatus.ToString(),
-                value.GeneratedAt, value.ReleasedAt, files.Where(file => file.ParentRecordId == value.Id).Select(file => file.ToDto()).ToList(), value.Version)).ToList(),
+                value.GeneratedAt, value.ReleasedAt, files.Where(file => file.ParentRecordId == value.Id).Select(file => file.ToDto()).ToList(),
+                retentionByReleaseId.GetValueOrDefault(value.Id)?.ToDto(), value.Version)).ToList(),
             files.Where(file => file.Purpose == OperationalFilePurpose.AssemblyInput && file.ReleaseStatus != FileReleaseStatus.Withdrawn).Select(file => file.ToDto()).ToList(),
             docs.Select(value => value.ToDto(true)).ToList(), cancellations.Select(value => value.ToDto()).ToList(), timeline.Select(value => value.ToDto(true)).ToList(),
             item.AssignedToUserId, item.DueAt);

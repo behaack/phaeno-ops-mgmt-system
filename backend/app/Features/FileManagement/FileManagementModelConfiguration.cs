@@ -5,6 +5,7 @@ using Microsoft.EntityFrameworkCore.Metadata.Builders;
 using PSeq.Operations.Commercial.Accounts.Domain;
 using PSeq.Operations.Commercial.Common.Persistence;
 using PSeq.Operations.Commercial.FileManagement.Domain;
+using PhaenoPortal.App.Features.OrderManagement.Domain;
 
 public static class FileManagementModelConfiguration
 {
@@ -48,6 +49,62 @@ public static class FileManagementModelConfiguration
                 .HasForeignKey(item => item.SupersedesOverrideId)
                 .OnDelete(DeleteBehavior.Restrict)
                 .HasConstraintName("fk_org_released_policy_override_supersedes");
+            Audit(entity);
+        });
+
+        modelBuilder.Entity<ReleasedDeliverableRetentionSnapshot>(entity =>
+        {
+            entity.HasKey(item => item.Id);
+            entity.Property(item => item.StandardRetentionSource)
+                .IsRequired()
+                .HasConversion<string>()
+                .HasMaxLength(50);
+            entity.Property(item => item.UndownloadedWarningLeadSource)
+                .IsRequired()
+                .HasConversion<string>()
+                .HasMaxLength(50);
+            entity.Property(item => item.UndownloadedGraceSource)
+                .IsRequired()
+                .HasConversion<string>()
+                .HasMaxLength(50);
+            entity.Property(item => item.DeletionOutcome).HasMaxLength(100);
+            entity.Property(item => item.Version).IsRequired().IsConcurrencyToken();
+            entity.HasIndex(item => item.LabResultReleaseId)
+                .IsUnique()
+                .HasFilter("\"lab_result_release_id\" IS NOT NULL");
+            entity.HasIndex(item => item.AssemblyOutputReleaseId)
+                .IsUnique()
+                .HasFilter("\"assembly_output_release_id\" IS NOT NULL");
+            entity.HasIndex(item => new { item.OrganizationId, item.StandardDeletionAtUtc });
+            entity.HasIndex(item => item.PotentialFinalDeletionAtUtc);
+            entity.HasOne<Organization>()
+                .WithMany()
+                .HasForeignKey(item => item.OrganizationId)
+                .OnDelete(DeleteBehavior.Restrict)
+                .HasConstraintName("fk_released_retention_snapshot_organization");
+            entity.HasOne<ReleasedDeliverablePolicyDefault>()
+                .WithMany()
+                .HasForeignKey(item => item.GlobalPolicyId)
+                .OnDelete(DeleteBehavior.Restrict)
+                .HasConstraintName("fk_released_retention_snapshot_global_policy");
+            entity.HasOne<OrganizationReleasedDeliverablePolicyOverride>()
+                .WithMany()
+                .HasForeignKey(item => item.OrganizationPolicyOverrideId)
+                .OnDelete(DeleteBehavior.Restrict)
+                .HasConstraintName("fk_released_retention_snapshot_org_override");
+            entity.HasOne<LabResultRelease>()
+                .WithMany()
+                .HasForeignKey(item => item.LabResultReleaseId)
+                .OnDelete(DeleteBehavior.Restrict)
+                .HasConstraintName("fk_released_retention_snapshot_lab_result");
+            entity.HasOne<AssemblyOutputRelease>()
+                .WithMany()
+                .HasForeignKey(item => item.AssemblyOutputReleaseId)
+                .OnDelete(DeleteBehavior.Restrict)
+                .HasConstraintName("fk_released_retention_snapshot_assembly_output");
+            entity.ToTable(table => table.HasCheckConstraint(
+                "ck_released_retention_snapshot_one_package",
+                "(lab_result_release_id IS NOT NULL AND assembly_output_release_id IS NULL) OR (lab_result_release_id IS NULL AND assembly_output_release_id IS NOT NULL)"));
             Audit(entity);
         });
     }

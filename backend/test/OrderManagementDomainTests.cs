@@ -195,10 +195,47 @@ public class OrderManagementDomainTests
 
         Assert.Throws<InvalidOperationException>(() => file.Release(Now));
         file.RecordScan(OperationalFileScanStatus.Clean, null);
-        file.Release(Now);
+        Assert.True(file.Release(Now));
+        Assert.False(file.Release(Now.AddMinutes(1)));
 
         Assert.Equal(FileReleaseStatus.Released, file.ReleaseStatus);
         Assert.Equal(Now, file.ReleasedAt);
+    }
+
+    [Fact]
+    public void ReleasedPackagesPreserveTheirFirstReleaseTimestamp()
+    {
+        var organizationId = Guid.NewGuid();
+        var labRelease = new LabResultRelease(
+            organizationId,
+            Guid.NewGuid(),
+            Guid.NewGuid(),
+            1,
+            "profile",
+            "pipeline-1",
+            "provenance",
+            "passed",
+            "{}",
+            Now.AddHours(-1));
+        var assemblyRelease = new AssemblyOutputRelease(
+            organizationId,
+            Guid.NewGuid(),
+            Guid.NewGuid(),
+            Guid.NewGuid(),
+            1,
+            "{}",
+            "pipeline-1",
+            "provenance",
+            "passed",
+            Now.AddHours(-1));
+
+        Assert.True(labRelease.Release(Now));
+        Assert.True(assemblyRelease.Release(Now));
+        Assert.False(labRelease.Release(Now.AddMinutes(1)));
+        Assert.False(assemblyRelease.Release(Now.AddMinutes(1)));
+
+        Assert.Equal(Now, labRelease.ReleasedAt);
+        Assert.Equal(Now, assemblyRelease.ReleasedAt);
     }
 
     [Fact]

@@ -4,6 +4,7 @@ using System.Text.Json;
 using Microsoft.EntityFrameworkCore;
 using PSeq.Operations.Commercial.OrderManagement.Application;
 using PSeq.Operations.Commercial.OrderManagement.Domain;
+using PhaenoPortal.App.Features.FileManagement.Services;
 using PhaenoPortal.App.Features.OrderManagement.Domain;
 using PhaenoPortal.App.Infrastructure.Persistence;
 
@@ -67,6 +68,8 @@ public sealed class OrderIntegrationDispatcher(
         using var scope = scopeFactory.CreateScope();
         var dbContext = scope.ServiceProvider.GetRequiredService<PSeqOperationsDbContext>();
         var gateway = scope.ServiceProvider.GetRequiredService<IQuickBooksGateway>();
+        var retentionSnapshots = scope.ServiceProvider
+            .GetRequiredService<ReleasedDeliverableRetentionSnapshotService>();
         var message = await dbContext.OrderOutboxMessages.FirstOrDefaultAsync(candidate => candidate.Id == messageId, cancellationToken);
         if (message == null || message.Status is IntegrationStatus.Succeeded or IntegrationStatus.NeedsAttention) return;
 
@@ -76,7 +79,7 @@ public sealed class OrderIntegrationDispatcher(
         try
         {
             await using var transaction = await dbContext.Database.BeginTransactionAsync(cancellationToken);
-            await DispatchAsync(dbContext, gateway, message, cancellationToken);
+            await DispatchAsync(dbContext, gateway, retentionSnapshots, message, cancellationToken);
             message.Complete(DateTime.UtcNow);
             await dbContext.SaveChangesAsync(cancellationToken);
             await transaction.CommitAsync(cancellationToken);
@@ -97,6 +100,7 @@ public sealed class OrderIntegrationDispatcher(
     private static async Task DispatchAsync(
         PSeqOperationsDbContext dbContext,
         IQuickBooksGateway gateway,
+        ReleasedDeliverableRetentionSnapshotService retentionSnapshots,
         OrderOutboxMessage message,
         CancellationToken cancellationToken)
     {
@@ -106,13 +110,13 @@ public sealed class OrderIntegrationDispatcher(
                 await SyncCatalogAsync(dbContext, gateway, cancellationToken);
                 break;
             case IntegrationOperation.CreateEstimate:
-                await CreateDocumentAsync(dbContext, gateway, message, isEstimate: true, cancellationToken);
+                await CreateDocumentAsync(dbContext, gateway, retentionSnapshots, message, isEstimate: true, cancellationToken);
                 break;
             case IntegrationOperation.CreateInvoice:
-                await CreateDocumentAsync(dbContext, gateway, message, isEstimate: false, cancellationToken);
+                await CreateDocumentAsync(dbContext, gateway, retentionSnapshots, message, isEstimate: false, cancellationToken);
                 break;
             case IntegrationOperation.RefreshPaymentStatus:
-                await RefreshPaymentAsync(dbContext, gateway, message, cancellationToken);
+                await RefreshPaymentAsync(dbContext, gateway, retentionSnapshots, message, cancellationToken);
                 break;
             default:
                 throw new InvalidOperationException($"Unsupported integration operation {message.Operation}.");
@@ -140,6 +144,7 @@ public sealed class OrderIntegrationDispatcher(
     private static async Task CreateDocumentAsync(
         PSeqOperationsDbContext dbContext,
         IQuickBooksGateway gateway,
+        ReleasedDeliverableRetentionSnapshotService retentionSnapshots,
         OrderOutboxMessage message,
         bool isEstimate,
         CancellationToken cancellationToken)
@@ -177,15 +182,29 @@ public sealed class OrderIntegrationDispatcher(
         }
         else if (message.WorkflowType == OrderWorkflowTypes.DataAssembly)
         {
-            await ApplyAssemblyReleaseGateAsync(dbContext, message.WorkflowId, link.Balance, cancellationToken);
+            await ApplyAssemblyReleaseGateAsync(
+                dbContext,
+                retentionSnapshots,
+                message.WorkflowId,
+                link.Balance,
+                cancellationToken);
         }
         else if (message.WorkflowType == OrderWorkflowTypes.LabService && link.Balance == 0)
         {
-            await ReleaseLabPaymentHoldsAsync(dbContext, message.WorkflowId, cancellationToken);
+            await ReleaseLabPaymentHoldsAsync(
+                dbContext,
+                retentionSnapshots,
+                message.WorkflowId,
+                cancellationToken);
         }
     }
 
-    private static async Task RefreshPaymentAsync(PSeqOperationsDbContext dbContext, IQuickBooksGateway gateway, OrderOutboxMessage message, CancellationToken cancellationToken)
+    private static async Task RefreshPaymentAsync(
+        PSeqOperationsDbContext dbContext,
+        IQuickBooksGateway gateway,
+        ReleasedDeliverableRetentionSnapshotService retentionSnapshots,
+        OrderOutboxMessage message,
+        CancellationToken cancellationToken)
     {
         var payload = JsonSerializer.Deserialize<PaymentRefreshOutboxPayload>(message.PayloadJson, JsonOptions)
             ?? throw new InvalidOperationException("The payment-refresh payload is invalid.");
@@ -195,35 +214,68 @@ public sealed class OrderIntegrationDispatcher(
         if (result.Balance == 0)
         {
             if (message.WorkflowType == OrderWorkflowTypes.LabService)
-                await ReleaseLabPaymentHoldsAsync(dbContext, message.WorkflowId, cancellationToken);
+                await ReleaseLabPaymentHoldsAsync(
+                    dbContext,
+                    retentionSnapshots,
+                    message.WorkflowId,
+                    cancellationToken);
             if (message.WorkflowType == OrderWorkflowTypes.DataAssembly)
-                await ApplyAssemblyReleaseGateAsync(dbContext, message.WorkflowId, result.Balance, cancellationToken);
+                await ApplyAssemblyReleaseGateAsync(
+                    dbContext,
+                    retentionSnapshots,
+                    message.WorkflowId,
+                    result.Balance,
+                    cancellationToken);
         }
     }
 
-    private static async Task ApplyAssemblyReleaseGateAsync(PSeqOperationsDbContext dbContext, Guid requestId, decimal invoiceBalance, CancellationToken cancellationToken)
+    private static async Task ApplyAssemblyReleaseGateAsync(
+        PSeqOperationsDbContext dbContext,
+        ReleasedDeliverableRetentionSnapshotService retentionSnapshots,
+        Guid requestId,
+        decimal invoiceBalance,
+        CancellationToken cancellationToken)
     {
         var request = await dbContext.DataAssemblyRequests.AsNoTracking().FirstAsync(candidate => candidate.Id == requestId, cancellationToken);
         var profile = await dbContext.OrganizationCommercialProfiles.AsNoTracking().FirstOrDefaultAsync(candidate => candidate.OrganizationId == request.OrganizationId, cancellationToken);
         var mayRelease = profile?.AssemblyCreditApproved == true || invoiceBalance == 0;
         var releases = await dbContext.AssemblyOutputReleases.Where(release => release.DataAssemblyRequestId == requestId && release.ReleaseStatus != FileReleaseStatus.Withdrawn).ToListAsync(cancellationToken);
         var files = await dbContext.ManagedOperationalFiles.Where(file => file.WorkflowId == requestId && file.Purpose == OperationalFilePurpose.AssemblyOutput && file.ReleaseStatus != FileReleaseStatus.Withdrawn).ToListAsync(cancellationToken);
+        var releasedAtUtc = DateTime.UtcNow;
         foreach (var release in releases)
         {
-            if (mayRelease) release.Release(DateTime.UtcNow); else release.MarkReady(holdForPayment: true);
+            if (mayRelease && release.Release(releasedAtUtc))
+                await retentionSnapshots.CaptureAssemblyOutputAsync(
+                    release,
+                    releasedAtUtc,
+                    cancellationToken);
+            else if (!mayRelease)
+                release.MarkReady(holdForPayment: true);
         }
         foreach (var file in files)
         {
-            if (mayRelease) file.Release(DateTime.UtcNow); else file.HoldForPayment();
+            if (mayRelease) file.Release(releasedAtUtc); else file.HoldForPayment();
         }
     }
 
-    private static async Task ReleaseLabPaymentHoldsAsync(PSeqOperationsDbContext dbContext, Guid orderId, CancellationToken cancellationToken)
+    private static async Task ReleaseLabPaymentHoldsAsync(
+        PSeqOperationsDbContext dbContext,
+        ReleasedDeliverableRetentionSnapshotService retentionSnapshots,
+        Guid orderId,
+        CancellationToken cancellationToken)
     {
         var releases = await dbContext.LabResultReleases.Where(release => release.LabServiceOrderId == orderId && release.ReleaseStatus == FileReleaseStatus.PaymentHold).ToListAsync(cancellationToken);
         var files = await dbContext.ManagedOperationalFiles.Where(file => file.WorkflowId == orderId && file.Purpose == OperationalFilePurpose.LabResult && file.ReleaseStatus == FileReleaseStatus.PaymentHold).ToListAsync(cancellationToken);
-        foreach (var release in releases) release.Release(DateTime.UtcNow);
-        foreach (var file in files) file.Release(DateTime.UtcNow);
+        var releasedAtUtc = DateTime.UtcNow;
+        foreach (var release in releases)
+        {
+            if (release.Release(releasedAtUtc))
+                await retentionSnapshots.CaptureLabResultAsync(
+                    release,
+                    releasedAtUtc,
+                    cancellationToken);
+        }
+        foreach (var file in files) file.Release(releasedAtUtc);
     }
 
     private static async Task MarkDocumentFailedAsync(PSeqOperationsDbContext dbContext, OrderOutboxMessage message, CancellationToken cancellationToken)

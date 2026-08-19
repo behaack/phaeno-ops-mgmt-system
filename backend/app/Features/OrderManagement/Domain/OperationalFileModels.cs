@@ -69,15 +69,29 @@ public sealed class ManagedOperationalFile : IAudit, IConcurrency
         ParentRecordId = parentRecordId;
     }
 
-    public void MarkReady() => ReleaseStatus = FileReleaseStatus.Ready;
-    public void HoldForPayment() => ReleaseStatus = FileReleaseStatus.PaymentHold;
-
-    public void Release(DateTime utcNow)
+    public void MarkReady()
     {
+        if (ReleaseStatus is FileReleaseStatus.Released or FileReleaseStatus.Withdrawn) return;
+        ReleaseStatus = FileReleaseStatus.Ready;
+    }
+    public void HoldForPayment()
+    {
+        if (ReleaseStatus is FileReleaseStatus.Released or FileReleaseStatus.Withdrawn) return;
+        ReleaseStatus = FileReleaseStatus.PaymentHold;
+    }
+
+    public bool Release(DateTime utcNow)
+    {
+        if (ReleaseStatus == FileReleaseStatus.Released) return false;
+        if (ReleaseStatus == FileReleaseStatus.Withdrawn)
+            throw new InvalidOperationException("A withdrawn managed file cannot be released again.");
         if (ScanStatus != OperationalFileScanStatus.Clean)
             throw new InvalidOperationException("Only clean files can be released.");
+        if (utcNow.Kind != DateTimeKind.Utc)
+            throw new ArgumentException("Release timestamps must use UTC.", nameof(utcNow));
         ReleaseStatus = FileReleaseStatus.Released;
         ReleasedAt = utcNow;
+        return true;
     }
 
     public void Withdraw() => ReleaseStatus = FileReleaseStatus.Withdrawn;

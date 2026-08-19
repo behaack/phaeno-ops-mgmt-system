@@ -11,6 +11,7 @@ import { Dialog, DialogClose, DialogContent, DialogDescription, DialogFooter, Di
 import { Label } from '#/components/ui/label'
 import { usePhaenoSession } from '#/features/auth/session-context'
 import { humanizeStatus, OrderStatusBadge } from './OrderStatusBadge'
+import { ReleasedDeliverableRetentionNotice } from './ReleasedDeliverableRetentionNotice'
 
 export function LabServiceDetailPage({ orderId }: { orderId: string }) {
   const { authProvider, session } = usePhaenoSession()
@@ -69,7 +70,47 @@ export function LabServiceDetailPage({ orderId }: { orderId: string }) {
         <div className="space-y-5">
           <Card><CardHeader><CardTitle>Samples</CardTitle><CardDescription>Each sample progresses independently after physical receipt and accession.</CardDescription></CardHeader><CardContent className="divide-y">{order.samples.map((sample) => <section key={sample.id} className="py-4 first:pt-0 last:pb-0"><div className="flex flex-wrap items-start justify-between gap-2"><div><h2 className="font-medium">{sample.customerSampleId}</h2><p className="mt-1 text-sm text-muted-foreground">{sample.materialType} · {sample.quantity} {sample.quantityUnit} · {sample.biologicalSource}</p></div><div className="flex flex-wrap items-center gap-2"><OrderStatusBadge status={sample.status} />{!sample.receivedAt && order.placedAt ? <Button type="button" size="sm" variant="outline" onClick={() => { setShipmentSampleId(sample.id); setCarrier(sample.carrier ?? ''); setTrackingNumber(sample.trackingNumber ?? ''); setDialog('shipment') }}>Record shipment</Button> : null}</div></div>{sample.accessionId ? <p className="mt-2 text-sm">Accession <span className="font-mono">{sample.accessionId}</span></p> : null}{sample.trackingNumber ? <p className="mt-2 text-sm">Shipment {sample.carrier ?? ''} <span className="font-mono">{sample.trackingNumber}</span></p> : null}{sample.receiptCondition ? <p className="mt-1 text-sm text-muted-foreground">Receipt: {sample.receiptCondition}</p> : null}{sample.tenantSafeReason ? <p className="mt-2 text-sm text-destructive">{sample.tenantSafeReason}</p> : null}</section>)}</CardContent></Card>
 
-          <Card><CardHeader><CardTitle>Files and results</CardTitle><CardDescription>Scientific readiness and commercial release are separate. Files appear here only after all release gates pass.</CardDescription></CardHeader><CardContent>{order.resultFiles.length ? <ul className="divide-y">{order.resultFiles.map((file) => <li key={file.id} className="flex flex-wrap items-center justify-between gap-3 py-3"><div><p className="font-medium">{file.fileName}</p><p className="text-xs text-muted-foreground">{formatBytes(file.sizeBytes)} · Released {file.releasedAt ? formatDate(file.releasedAt) : '—'}</p></div><Button type="button" variant="outline" onClick={() => downloadLabResult(order.id, file)}><Download data-icon="inline-start" />Download</Button></li>)}</ul> : <div className="flex flex-col items-center py-8 text-center"><FileCheck2 aria-hidden="true" className="mb-2 size-7 text-muted-foreground" /><p className="font-medium">No released results</p><p className="mt-1 text-sm text-muted-foreground">Results may still be processing or awaiting payment.</p></div>}</CardContent></Card>
+          <Card>
+            <CardHeader>
+              <CardTitle>Files and results</CardTitle>
+              <CardDescription>Scientific readiness and commercial release are separate. Files appear here only after all release gates pass.</CardDescription>
+            </CardHeader>
+            <CardContent>
+              {order.resultReleases.some((release) => release.releaseStatus === 'Released' && release.retention) ? (
+                <div className="mb-5 space-y-4">
+                  {order.resultReleases
+                    .filter((release) => release.releaseStatus === 'Released' && release.retention)
+                    .map((release) => (
+                      <section key={release.id} aria-labelledby={`result-release-${release.id}`}>
+                        <p id={`result-release-${release.id}`} className="text-sm font-medium">
+                          {sampleName(order.samples, release.labSampleId)} · Result release {release.releaseVersion}
+                        </p>
+                        <ReleasedDeliverableRetentionNotice retention={release.retention} />
+                      </section>
+                    ))}
+                </div>
+              ) : null}
+              {order.resultFiles.length ? (
+                <ul className="divide-y">
+                  {order.resultFiles.map((file) => (
+                    <li key={file.id} className="flex flex-wrap items-center justify-between gap-3 py-3">
+                      <div>
+                        <p className="font-medium">{file.fileName}</p>
+                        <p className="text-xs text-muted-foreground">{formatBytes(file.sizeBytes)} · Released {file.releasedAt ? formatDate(file.releasedAt) : '—'}</p>
+                      </div>
+                      <Button type="button" variant="outline" onClick={() => downloadLabResult(order.id, file)}><Download data-icon="inline-start" />Download</Button>
+                    </li>
+                  ))}
+                </ul>
+              ) : (
+                <div className="flex flex-col items-center py-8 text-center">
+                  <FileCheck2 aria-hidden="true" className="mb-2 size-7 text-muted-foreground" />
+                  <p className="font-medium">No released results</p>
+                  <p className="mt-1 text-sm text-muted-foreground">Results may still be processing or awaiting payment.</p>
+                </div>
+              )}
+            </CardContent>
+          </Card>
 
           {(order.requestRevisions?.length ?? 0) > 0 ? <Card><CardHeader><CardTitle>Submitted request revisions</CardTitle><CardDescription>Each submission preserves the Customer reference, samples, analyses, and instructions that Phaeno reviewed.</CardDescription></CardHeader><CardContent className="divide-y">{order.requestRevisions?.map((revision) => <div key={revision.id} className="flex flex-wrap items-center justify-between gap-3 py-3"><div><p className="font-medium">Revision {revision.revision}</p><p className="text-xs text-muted-foreground">Submitted {formatDateTime(revision.submittedAt)}</p>{revision.correctionReason ? <p className="mt-1 text-sm">Correction: {revision.correctionReason}</p> : null}</div><Button type="button" variant="outline" onClick={() => downloadSnapshot(`${order.orderNumber}-request-r${revision.revision}.json`, revision.snapshotJson)}><Download data-icon="inline-start" />Download snapshot</Button></div>)}</CardContent></Card> : null}
 
@@ -100,5 +141,6 @@ function formatMoney(value: number, currency: string) { return new Intl.NumberFo
 function formatDate(value: string) { return new Intl.DateTimeFormat('en-US', { dateStyle: 'medium' }).format(new Date(value)) }
 function formatDateTime(value: string) { return new Intl.DateTimeFormat('en-US', { dateStyle: 'medium', timeStyle: 'short' }).format(new Date(value)) }
 function formatBytes(value: number) { return new Intl.NumberFormat('en-US', { style: 'unit', unit: value >= 1_000_000 ? 'megabyte' : 'kilobyte', maximumFractionDigits: 1 }).format(value >= 1_000_000 ? value / 1_000_000 : value / 1_000) }
+function sampleName(samples: Array<{ id: string; customerSampleId: string }>, sampleId: string) { return samples.find((sample) => sample.id === sampleId)?.customerSampleId ?? 'Sample' }
 function downloadSnapshot(fileName: string, value: string) { const url = URL.createObjectURL(new Blob([value], { type: 'application/json' })); const link = document.createElement('a'); link.href = url; link.download = fileName; link.click(); URL.revokeObjectURL(url) }
 function prettyJson(value: string) { try { return JSON.stringify(JSON.parse(value), null, 2) } catch { return value } }

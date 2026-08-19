@@ -37,14 +37,27 @@ startup validation rejects the Local provider in the Production environment.
 Until S3 is provisioned, production explicitly selects a `Disabled` adapter
 that keeps the API healthy but stores no bytes; file operations return HTTP 503.
 
-The released-deliverable retention configuration foundation is implemented:
-the API persists versioned global defaults and versioned Customer, Partner, or
-Prospect organization overrides, validates the resolved day values, requires a
-reason, retains replacement/removal history, and rejects stale writes. It does
-so through a Phaeno-only File Management page for the global policy and an
-account Retention tab for partial organization overrides. It does not yet
-create released-package policy snapshots or run warning, grace, download-cutoff,
-notification, or byte-deletion processing.
+The released-deliverable retention configuration and release-snapshot
+foundation is implemented. The API persists versioned global defaults and
+versioned Customer, Partner, or Prospect organization overrides, validates the
+resolved day values, requires a reason, retains replacement/removal history,
+and rejects stale writes. It does so through a Phaeno-only File Management page
+for the global policy and an account Retention tab for partial organization
+overrides. Newly released Customer laboratory-result packages and Partner data-
+assembly output packages now freeze the selected policy identifiers, revisions,
+effective values, per-value sources, and exact UTC warning, standard-deletion,
+and potential-final-deletion timestamps in the same database transaction as
+release. Revisited payment events preserve the original release timestamp and
+do not create another snapshot. Historical packages released before this
+migration are intentionally not backfilled and remain outside retention
+execution until they are assessed explicitly. Trial Project release integration
+remains future scope because that release model is not implemented. The Portal
+now returns a tenant-safe retention projection from authorized laboratory-order,
+assembly-request, and assembly-output APIs and displays the standard deletion
+time plus clearly conditional grace time on Customer result and Partner output
+details. It does not expose policy identifiers, revisions, override sources, or
+change history to external users. The Portal does not yet run warning, grace,
+download-cutoff, notification, or byte-deletion processing.
 
 The organization-data-provisioning slice includes server-derived size and
 SHA-256 metadata, environment-approved file kinds, scan-state abstraction,
@@ -847,21 +860,29 @@ S3 support uses:
    code complete; production currently uses the non-persisting `Disabled`
    adapter, and live S3 configuration and validation are incomplete.
 5. General folder CRUD and policy inheritance: not started.
-6. Released-deliverable policy configuration foundation: complete for the
+6. Released-deliverable policy configuration and release-snapshot foundation:
+   complete for the
    versioned global 30-day retention, 5-day undownloaded warning, and conditional
    5-day grace defaults; partial Customer-, Partner-, and Prospect-organization
    overrides; validation; required reasons; retained history; optimistic
    concurrency; Phaeno-only API access; global administration UI; and the
-   Customer, Partner, and Prospect account Retention tab. Released-package
-   snapshots, the general retention worker, warning/grace notifications,
-   deadline enforcement, and cleanup reconciliation are not started.
+   Customer, Partner, and Prospect account Retention tab. New laboratory-result
+   and data-assembly output releases snapshot their exact effective policy and
+   deadlines; authorized APIs and Customer/Partner details expose only the
+   tenant-safe dates and lifecycle state; historical releases are not
+   backfilled. Trial Project release integration, the general retention worker,
+   warning/grace notifications, deadline enforcement, and cleanup reconciliation
+   are not started.
 7. Local storage and provider-selection tests: created. Released-deliverable
    value, inheritance, history-state, and EF mapping tests are created. API
    authorization and retention-expiration coverage remains future scope.
 
 ## Recommended First Slice
 
-The next activation slice is the unchecked Production S3 activation TODO above.
-Until that work is explicitly authorized and verified, keep production on the
-`Disabled` adapter. This does not authorize the proposed general folder/file
-model or the separate scientific-pipeline file boundary.
+Production S3 activation is explicitly on hold, so keep production on the
+`Disabled` adapter. The next code-only slice is immutable, completion-aware
+download events and package-level download state so the system can distinguish a
+successfully completed file or full-package download from a started, partial,
+failed, cancelled, or timed-out transfer. Implement that evidence before
+activating any warning or deletion worker. This does not authorize the proposed
+general folder/file model or the separate scientific-pipeline file boundary.

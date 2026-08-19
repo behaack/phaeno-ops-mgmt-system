@@ -8,6 +8,7 @@ using PSeq.Operations.Commercial.DataProvisioning.Domain;
 using PSeq.Operations.Commercial.FileManagement.Domain;
 using PSeq.Operations.Laboratory;
 using PSeq.Operations.Laboratory.Domain;
+using PhaenoPortal.App.Features.OrderManagement.Domain;
 using PhaenoPortal.App.Infrastructure.Persistence.Auditing;
 using PhaenoPortal.App.Infrastructure.Persistence;
 using PhaenoPortal.App.Features.Website.Entities;
@@ -53,6 +54,35 @@ public class PersistenceTests
             organizationOverride.GetForeignKeys(),
             foreignKey => foreignKey.PrincipalEntityType.ClrType == typeof(Organization)
                 && foreignKey.DeleteBehavior == DeleteBehavior.Restrict);
+
+        var snapshot = dbContext.Model.FindEntityType(
+            typeof(ReleasedDeliverableRetentionSnapshot));
+        Assert.NotNull(snapshot);
+        Assert.Equal("commercial_ops", snapshot.GetSchema());
+        Assert.Equal("released_deliverable_retention_snapshots", snapshot.GetTableName());
+        Assert.True(snapshot
+            .FindProperty(nameof(ReleasedDeliverableRetentionSnapshot.Version))
+            ?.IsConcurrencyToken);
+        Assert.Contains(
+            snapshot.GetIndexes(),
+            index => index.IsUnique
+                && index.GetFilter() == "\"lab_result_release_id\" IS NOT NULL"
+                && index.Properties.Select(property => property.Name).SequenceEqual([
+                    nameof(ReleasedDeliverableRetentionSnapshot.LabResultReleaseId)
+                ]));
+        Assert.Contains(
+            snapshot.GetIndexes(),
+            index => index.IsUnique
+                && index.GetFilter() == "\"assembly_output_release_id\" IS NOT NULL"
+                && index.Properties.Select(property => property.Name).SequenceEqual([
+                    nameof(ReleasedDeliverableRetentionSnapshot.AssemblyOutputReleaseId)
+                ]));
+        Assert.Contains(
+            snapshot.GetForeignKeys(),
+            foreignKey => foreignKey.PrincipalEntityType.ClrType == typeof(LabResultRelease));
+        Assert.Contains(
+            snapshot.GetForeignKeys(),
+            foreignKey => foreignKey.PrincipalEntityType.ClrType == typeof(AssemblyOutputRelease));
     }
 
     [Fact]

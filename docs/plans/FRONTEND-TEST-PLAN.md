@@ -18,8 +18,13 @@ remain incomplete production-activation gates.
 - [x] `frontend/src/features/file-management/OrganizationRetentionPolicyPanel.test.tsx`
   - covers partial global inheritance, an organization-specific update, the
   required removal reason, and override removal.
+- [x] `frontend/src/features/orders/ReleasedDeliverableRetentionNotice.test.tsx`
+  - covers frozen standard-deletion and conditional-grace display, activated
+  grace labeling, exact machine-readable timestamps, and omission for a
+  historical release without a snapshot.
 - [ ] File management follow-up coverage - cover invalid effective day
-  combinations, API/concurrency recovery, and connected route behavior.
+  combinations, API/concurrency recovery, connected route behavior, and
+  Customer/Partner detail integration around the shared retention notice.
 
 - [x] `frontend/tests/invite-schema.test.ts` - `inviteSchema` accepts a valid invite payload.
 - [x] `frontend/tests/invite-schema.test.ts` - `inviteSchema` rejects invalid email addresses.

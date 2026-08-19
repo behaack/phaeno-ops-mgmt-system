@@ -1,5 +1,6 @@
 namespace PhaenoPortal.App.Features.OrderManagement.DTOs;
 
+using PSeq.Operations.Commercial.FileManagement.Domain;
 using PSeq.Operations.Commercial.OrderManagement.Domain;
 using PhaenoPortal.App.Features.OrderManagement.Domain;
 
@@ -110,6 +111,16 @@ public sealed record LabSampleDto(
     string? InternalNote,
     long Version);
 
+public sealed record ReleasedDeliverableRetentionDto(
+    DateTime ReleasedAtUtc,
+    DateTime WarningAtUtc,
+    DateTime StandardDeletionAtUtc,
+    DateTime PotentialFinalDeletionAtUtc,
+    DateTime? GraceActivatedAtUtc,
+    DateTime? DownloadAccessClosedAtUtc,
+    DateTime? ByteDeletedAtUtc,
+    string? DeletionOutcome);
+
 public sealed record LabResultReleaseDto(
     Guid Id,
     Guid LabSampleId,
@@ -122,6 +133,7 @@ public sealed record LabResultReleaseDto(
     string ReleaseStatus,
     DateTime GeneratedAt,
     DateTime? ReleasedAt,
+    ReleasedDeliverableRetentionDto? Retention,
     long Version);
 
 public sealed record LabRequestRevisionDto(
@@ -296,6 +308,7 @@ public sealed record AssemblyOutputReleaseDto(
     DateTime GeneratedAt,
     DateTime? ReleasedAt,
     IReadOnlyList<OperationalFileDto> Files,
+    ReleasedDeliverableRetentionDto? Retention,
     long Version);
 
 public sealed record DataAssemblyRequestDto(
@@ -514,10 +527,24 @@ public static class OrderManagementMappings
         sample.Carrier, sample.TrackingNumber, sample.CustomerShippedAt, sample.TenantSafeReason,
         platform ? sample.InternalNote : null, sample.Version);
 
-    public static LabResultReleaseDto ToDto(this LabResultRelease release) => new(
+    public static LabResultReleaseDto ToDto(
+        this LabResultRelease release,
+        ReleasedDeliverableRetentionSnapshot? retention = null) => new(
         release.Id, release.LabSampleId, release.ReleaseVersion, release.AnalysisProfile,
         release.PipelineVersion, release.Provenance, release.QcStatus, release.ManifestJson,
-        release.ReleaseStatus.ToString(), release.GeneratedAt, release.ReleasedAt, release.Version);
+        release.ReleaseStatus.ToString(), release.GeneratedAt, release.ReleasedAt,
+        retention?.ToDto(), release.Version);
+
+    public static ReleasedDeliverableRetentionDto ToDto(
+        this ReleasedDeliverableRetentionSnapshot retention) => new(
+        retention.ReleasedAtUtc,
+        retention.WarningAtUtc,
+        retention.StandardDeletionAtUtc,
+        retention.PotentialFinalDeletionAtUtc,
+        retention.GraceActivatedAtUtc,
+        retention.DownloadAccessClosedAtUtc,
+        retention.ByteDeletedAtUtc,
+        retention.DeletionOutcome);
 
     public static ReagentOrderLineDto ToDto(this PartnerReagentOrderLine line) => new(
         line.Id, line.OfferingId, line.QboCatalogItemId, line.ExternalItemId, line.Description, line.Quantity,

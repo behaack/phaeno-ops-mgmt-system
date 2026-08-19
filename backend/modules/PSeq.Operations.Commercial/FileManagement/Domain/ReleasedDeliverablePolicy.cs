@@ -277,3 +277,168 @@ public sealed class OrganizationReleasedDeliverablePolicyOverride : IAudit, ICon
         return value;
     }
 }
+
+public enum ReleasedDeliverablePolicyValueSource
+{
+    GlobalDefault = 1,
+    OrganizationOverride = 2
+}
+
+public sealed class ReleasedDeliverableRetentionSnapshot : IAudit, IConcurrency
+{
+    public Guid Id { get; private set; } = Guid.NewGuid();
+    public Guid OrganizationId { get; private set; }
+    public Guid? LabResultReleaseId { get; private set; }
+    public Guid? AssemblyOutputReleaseId { get; private set; }
+    public Guid GlobalPolicyId { get; private set; }
+    public int GlobalPolicyRevision { get; private set; }
+    public Guid? OrganizationPolicyOverrideId { get; private set; }
+    public int? OrganizationPolicyOverrideRevision { get; private set; }
+    public int StandardRetentionDays { get; private set; }
+    public ReleasedDeliverablePolicyValueSource StandardRetentionSource { get; private set; }
+    public int UndownloadedWarningLeadDays { get; private set; }
+    public ReleasedDeliverablePolicyValueSource UndownloadedWarningLeadSource { get; private set; }
+    public int UndownloadedGraceDays { get; private set; }
+    public ReleasedDeliverablePolicyValueSource UndownloadedGraceSource { get; private set; }
+    public DateTime ReleasedAtUtc { get; private set; }
+    public DateTime WarningAtUtc { get; private set; }
+    public DateTime StandardDeletionAtUtc { get; private set; }
+    public DateTime PotentialFinalDeletionAtUtc { get; private set; }
+    public DateTime? GraceActivatedAtUtc { get; private set; }
+    public DateTime? DownloadAccessClosedAtUtc { get; private set; }
+    public DateTime? ByteDeletedAtUtc { get; private set; }
+    public string? DeletionOutcome { get; private set; }
+    public DateTime CreatedAt { get; private set; } = DateTime.UtcNow;
+    public Guid? CreatedByUserId { get; private set; }
+    public DateTime UpdatedAt { get; private set; } = DateTime.UtcNow;
+    public Guid? UpdatedByUserId { get; private set; }
+    public long Version { get; private set; } = 1;
+
+    private ReleasedDeliverableRetentionSnapshot()
+    {
+    }
+
+    public static ReleasedDeliverableRetentionSnapshot ForLabResult(
+        Guid organizationId,
+        Guid labResultReleaseId,
+        ReleasedDeliverablePolicyDefault globalPolicy,
+        OrganizationReleasedDeliverablePolicyOverride? organizationOverride,
+        DateTime releasedAtUtc) =>
+        Create(
+            organizationId,
+            labResultReleaseId,
+            assemblyOutputReleaseId: null,
+            globalPolicy,
+            organizationOverride,
+            releasedAtUtc);
+
+    public static ReleasedDeliverableRetentionSnapshot ForAssemblyOutput(
+        Guid organizationId,
+        Guid assemblyOutputReleaseId,
+        ReleasedDeliverablePolicyDefault globalPolicy,
+        OrganizationReleasedDeliverablePolicyOverride? organizationOverride,
+        DateTime releasedAtUtc) =>
+        Create(
+            organizationId,
+            labResultReleaseId: null,
+            assemblyOutputReleaseId,
+            globalPolicy,
+            organizationOverride,
+            releasedAtUtc);
+
+    public void MarkCreated(DateTime utcNow, Guid? actorUserId)
+    {
+        CreatedAt = RequireUtc(utcNow);
+        CreatedByUserId = actorUserId;
+    }
+
+    public void MarkUpdated(DateTime utcNow, Guid? actorUserId)
+    {
+        UpdatedAt = RequireUtc(utcNow);
+        UpdatedByUserId = actorUserId;
+    }
+
+    public void IncrementVersion() => Version++;
+
+    private static ReleasedDeliverableRetentionSnapshot Create(
+        Guid organizationId,
+        Guid? labResultReleaseId,
+        Guid? assemblyOutputReleaseId,
+        ReleasedDeliverablePolicyDefault globalPolicy,
+        OrganizationReleasedDeliverablePolicyOverride? organizationOverride,
+        DateTime releasedAtUtc)
+    {
+        if (organizationId == Guid.Empty)
+        {
+            throw new ArgumentException("Organization is required.", nameof(organizationId));
+        }
+
+        if ((labResultReleaseId.HasValue && assemblyOutputReleaseId.HasValue)
+            || (!labResultReleaseId.HasValue && !assemblyOutputReleaseId.HasValue)
+            || labResultReleaseId == Guid.Empty
+            || assemblyOutputReleaseId == Guid.Empty)
+        {
+            throw new ArgumentException("Exactly one released deliverable is required.");
+        }
+
+        ArgumentNullException.ThrowIfNull(globalPolicy);
+        if (!globalPolicy.IsActive)
+        {
+            throw new ArgumentException("The global policy must be active.", nameof(globalPolicy));
+        }
+
+        if (organizationOverride is { IsActive: false })
+        {
+            throw new ArgumentException("The organization override must be active.", nameof(organizationOverride));
+        }
+
+        if (organizationOverride != null && organizationOverride.OrganizationId != organizationId)
+        {
+            throw new ArgumentException(
+                "The organization override must belong to the released deliverable organization.",
+                nameof(organizationOverride));
+        }
+
+        releasedAtUtc = RequireUtc(releasedAtUtc);
+        var globalValues = globalPolicy.ReadValues();
+        var effectiveValues = organizationOverride?.Resolve(globalValues) ?? globalValues;
+        var standardDeletionAtUtc = releasedAtUtc.AddDays(effectiveValues.StandardRetentionDays);
+
+        return new ReleasedDeliverableRetentionSnapshot
+        {
+            OrganizationId = organizationId,
+            LabResultReleaseId = labResultReleaseId,
+            AssemblyOutputReleaseId = assemblyOutputReleaseId,
+            GlobalPolicyId = globalPolicy.Id,
+            GlobalPolicyRevision = globalPolicy.Revision,
+            OrganizationPolicyOverrideId = organizationOverride?.Id,
+            OrganizationPolicyOverrideRevision = organizationOverride?.Revision,
+            StandardRetentionDays = effectiveValues.StandardRetentionDays,
+            StandardRetentionSource = organizationOverride?.StandardRetentionDays.HasValue == true
+                ? ReleasedDeliverablePolicyValueSource.OrganizationOverride
+                : ReleasedDeliverablePolicyValueSource.GlobalDefault,
+            UndownloadedWarningLeadDays = effectiveValues.UndownloadedWarningLeadDays,
+            UndownloadedWarningLeadSource = organizationOverride?.UndownloadedWarningLeadDays.HasValue == true
+                ? ReleasedDeliverablePolicyValueSource.OrganizationOverride
+                : ReleasedDeliverablePolicyValueSource.GlobalDefault,
+            UndownloadedGraceDays = effectiveValues.UndownloadedGraceDays,
+            UndownloadedGraceSource = organizationOverride?.UndownloadedGraceDays.HasValue == true
+                ? ReleasedDeliverablePolicyValueSource.OrganizationOverride
+                : ReleasedDeliverablePolicyValueSource.GlobalDefault,
+            ReleasedAtUtc = releasedAtUtc,
+            WarningAtUtc = standardDeletionAtUtc.AddDays(-effectiveValues.UndownloadedWarningLeadDays),
+            StandardDeletionAtUtc = standardDeletionAtUtc,
+            PotentialFinalDeletionAtUtc = standardDeletionAtUtc.AddDays(effectiveValues.UndownloadedGraceDays)
+        };
+    }
+
+    private static DateTime RequireUtc(DateTime value)
+    {
+        if (value.Kind != DateTimeKind.Utc)
+        {
+            throw new ArgumentException("Retention timestamps must use UTC.", nameof(value));
+        }
+
+        return value;
+    }
+}
