@@ -342,6 +342,17 @@ export async function decideRelationshipRequest(
   return unwrap(response.data)
 }
 
+export async function completeRelationshipRequestAccountCreation(
+  id: string,
+  version: number,
+) {
+  const response = await api.post<ApiEnvelope<Organization>>(
+    `/platform/relationships/requests/${id}/account`,
+    { version },
+  )
+  return unwrap(response.data)
+}
+
 export async function applyRelationshipRequest(
   id: string,
   input: { notes: string; organizationId?: string | null; version: number },

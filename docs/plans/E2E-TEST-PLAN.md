@@ -279,7 +279,10 @@ the protected deployed-Preview acceptance above.
   access, atomic role activation on acceptance, resend/revoke, role and
   membership lifecycle, Prospect conversion with stable
   identity, readiness, account creation limited to eligible new-account
-  approvals, atomic simulated HubSpot approval and details-page navigation,
+  approvals, Account directory/Review queue tab separation, removal of an
+  associated approved request from the review queue, atomic simulated HubSpot
+  approval, stranded approved-request account-creation recovery, account-
+  workspace request completion, and details-page navigation,
   Phaeno-controlled designated-contact invitation and membership management,
   consolidated Phaeno profile, Platform administrator, and additive
   laboratory-role editing on one durable User management record rather than a

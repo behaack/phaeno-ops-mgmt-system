@@ -204,10 +204,10 @@ function actionContent(action: RequestAction, createsAccountOnApproval: boolean)
       }
     case 'apply':
       return {
-        title: 'Mark request applied',
+        title: 'Complete account request',
         description: 'Confirm the owning organization, invitation, entitlement, or order work was completed first.',
         label: 'Completed work',
-        submitLabel: 'Mark applied',
+        submitLabel: 'Complete request',
       }
     case 'cancel':
       return {

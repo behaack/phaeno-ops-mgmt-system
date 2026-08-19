@@ -67,4 +67,23 @@ describe('RequestActionDialog', () => {
     expect(screen.getByRole('dialog', { name: 'Approve Portal request' })).toBeTruthy()
     expect(screen.getByRole('button', { name: 'Approve request' })).toBeTruthy()
   })
+
+  it('uses completion language for fulfilled approved work', () => {
+    render(
+      <RequestActionDialog
+        action="apply"
+        isPending={false}
+        onOpenChange={vi.fn()}
+        onSubmit={vi.fn()}
+        request={{
+          ...onboardingRequest,
+          organizationId: '00000000-0000-0000-0000-000000000301',
+          status: 'Approved',
+        }}
+      />,
+    )
+
+    expect(screen.getByRole('dialog', { name: 'Complete account request' })).toBeTruthy()
+    expect(screen.getByRole('button', { name: 'Complete request' })).toBeTruthy()
+  })
 })

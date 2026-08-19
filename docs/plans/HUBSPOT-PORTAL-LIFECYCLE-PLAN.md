@@ -44,7 +44,13 @@ Do not execute this plan unless explicitly requested.
   controls; approval still grants no user access or service entitlement,
   creates no order, and does not mark the request applied. The separate
   account-creation endpoint remains a restricted recovery path for approved
-  requests saved before this behavior changed, not a normal Accounts action.
+  requests saved before this behavior changed. The queue exposes **Complete
+  account creation** only for an eligible approved request with no associated
+  account; the normal pending-review path remains atomic approval and creation.
+  The Accounts workspace separates **Account directory** and **Review queue**
+  into tab panels. An associated approved request leaves the review queue and
+  remains in the account workspace's **Requests** tab until setup is verified
+  with **Complete request**; the persisted status remains `Applied`.
 - Phase 0 developer setup began on 2026-07-15. HubSpot developer project
   `Phaeno Portal Integration` (project ID `317349345`) and its private,
   static-auth app shell (app ID `45850780`) were created on platform version
@@ -899,7 +905,15 @@ disposable manual proof records described above are live in the Free account.
   make and verify those owning changes before marking the request applied.
 - The Phaeno UI now provides organization list/detail, readiness, member and
   invitation administration, entitlements, Prospect conversion, and request
-  review. Live HubSpot ingestion, outbound status synchronization,
+  review. The Accounts list separates the durable directory from the review
+  queue with tab panels. The review queue shows pending decisions and only
+  retains approved requests that have no associated account as recovery
+  exceptions. Associated approved requests move to the owning account's
+  **Requests** tab, where Phaeno uses **Complete request** after setup is
+  verified. An eligible approved onboarding/evaluation request left without an
+  account by the earlier two-step workflow now exposes a bounded **Complete
+  account creation** recovery action backed by the restricted recovery endpoint.
+  Live HubSpot ingestion, outbound status synchronization,
   reconciliation, and paid-tier automation remain Phase 1 work.
 - A real-Clerk local acceptance journey was completed on 2026-07-15 against the
   local API and PostgreSQL database. It proved manual pre-organization request

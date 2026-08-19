@@ -215,7 +215,10 @@ remain incomplete production-activation gates.
   decisions, the development-only HubSpot account-entry simulator's
   relationship/service field rules, required Company/Deal identifiers, error
   and success feedback, production hiding and queue refresh,
-  approve-and-create account confirmation, details-page navigation,
+  separate Account directory and Review queue tab panels, pending-only review
+  filtering with an unassociated approved-request recovery exception, approve-
+  and-create account confirmation, stranded account-creation recovery,
+  details-page navigation, account-workspace request completion language,
   prominent user management, HubSpot-designated contact invitation messaging,
   completed-organization selection for other pre-organization requests,
   accessible request-action and Prospect-conversion dialogs that close after
