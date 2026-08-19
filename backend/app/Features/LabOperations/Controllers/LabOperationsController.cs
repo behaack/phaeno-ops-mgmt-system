@@ -95,6 +95,7 @@ public sealed partial class LabOperationsController(
         var containers = await dbContext.LabContainers.AsNoTracking().Where(item => item.LabWorkOrderId == work.Id)
             .OrderBy(item => item.Barcode).Select(item => new LabContainerDto(item.Id,
                 item.LabSpecimenId, item.ParentContainerId, item.Kind.ToString(), item.Barcode,
+                item.BarcodeSource.ToString(), item.ExternalBarcodeReferenceId,
                 item.Label, item.LabelPrintCount, item.Location, item.Quantity, item.QuantityUnit,
                 item.Status.ToString(), item.RetainUntilUtc, item.Version)).ToListAsync(cancellationToken);
         var executions = await dbContext.LabProtocolExecutions.AsNoTracking().Where(item => item.LabWorkOrderId == work.Id)

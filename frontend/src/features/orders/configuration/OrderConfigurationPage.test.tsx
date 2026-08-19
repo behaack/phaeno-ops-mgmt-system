@@ -33,6 +33,7 @@ describe('OrderConfigurationPage', () => {
     })).toBeTruthy()
     expect(screen.getByRole('button', { name: /^Defaults/ }).getAttribute('aria-current')).toBe('page')
     expect(screen.getByRole('button', { name: /^Analyses/ })).toBeTruthy()
+    expect(screen.getByRole('button', { name: /^Sample shipping/ })).toBeTruthy()
     expect(screen.getByRole('button', { name: /^PSeq kits/ })).toBeTruthy()
     expect(screen.getByRole('button', { name: /^Assembly/ })).toBeTruthy()
     expect(screen.getByRole('button', { name: /^Credit & QBO/ })).toBeTruthy()

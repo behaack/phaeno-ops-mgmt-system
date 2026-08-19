@@ -14,9 +14,241 @@ public static class OrderManagementModelConfiguration
         ConfigureCatalog(modelBuilder);
         ConfigureCommercial(modelBuilder);
         ConfigureCommercialLabServiceRecords(modelBuilder, commercialSchema);
+        ConfigureSampleShipping(modelBuilder);
         ConfigureReagents(modelBuilder);
         ConfigureAssembly(modelBuilder);
         ConfigureWorkflowSupport(modelBuilder);
+    }
+
+    private static void ConfigureSampleShipping(ModelBuilder modelBuilder)
+    {
+        modelBuilder.Entity<SampleShippingDestination>(entity =>
+        {
+            entity.HasKey(e => e.Id);
+            Text(entity.Property(e => e.Code), 50);
+            Text(entity.Property(e => e.Name), 255);
+            Text(entity.Property(e => e.RecipientName), 255);
+            Text(entity.Property(e => e.OrganizationName), 255);
+            Text(entity.Property(e => e.AddressLine1), 255);
+            Text(entity.Property(e => e.AddressLine2), 255, false);
+            Text(entity.Property(e => e.City), 150);
+            Text(entity.Property(e => e.StateOrProvince), 150);
+            Text(entity.Property(e => e.PostalCode), 50);
+            Text(entity.Property(e => e.CountryCode), 2);
+            Text(entity.Property(e => e.ReceivingPhone), 50, false);
+            Text(entity.Property(e => e.ReceivingEmail), 255, false);
+            Text(entity.Property(e => e.ReceivingHours), 1000);
+            Text(entity.Property(e => e.TimeZoneId), 100);
+            Text(entity.Property(e => e.ClosureInstructions), 2000, false);
+            Text(entity.Property(e => e.DeliveryInstructions), 4000);
+            Text(entity.Property(e => e.CarrierRestrictions), 2000, false);
+            entity.HasIndex(e => new { e.DefinitionKey, e.Revision }).IsUnique();
+            entity.HasIndex(e => new { e.Code, e.Revision }).IsUnique();
+            entity.HasIndex(e => new { e.IsActive, e.EffectiveFrom, e.EffectiveTo });
+            entity.HasOne<SampleShippingDestination>()
+                .WithMany()
+                .HasForeignKey(e => e.SupersedesDestinationId)
+                .OnDelete(DeleteBehavior.Restrict);
+            Audit(entity);
+        });
+
+        modelBuilder.Entity<SampleTypeDefinition>(entity =>
+        {
+            entity.HasKey(e => e.Id);
+            Text(entity.Property(e => e.Code), 50);
+            Text(entity.Property(e => e.Name), 255);
+            Text(entity.Property(e => e.Description), 2000);
+            Text(entity.Property(e => e.MaterialClass), 255);
+            Quantity(entity.Property(e => e.MinimumQuantity));
+            Quantity(entity.Property(e => e.MaximumQuantity));
+            Text(entity.Property(e => e.QuantityUnit), 100);
+            Text(entity.Property(e => e.PrimaryContainerRequirements), 2000);
+            Text(entity.Property(e => e.TemperatureRequirements), 2000);
+            Text(entity.Property(e => e.StabilizerRequirements), 2000, false);
+            Text(entity.Property(e => e.PackagingInstructions), 4000);
+            Text(entity.Property(e => e.LabelingInstructions), 4000);
+            Text(entity.Property(e => e.ProhibitedIdentifiers), 2000);
+            Text(entity.Property(e => e.SafetyRequirements), 2000);
+            Text(entity.Property(e => e.CarrierRestrictions), 2000, false);
+            entity.HasIndex(e => new { e.DefinitionKey, e.Revision }).IsUnique();
+            entity.HasIndex(e => new { e.Code, e.Revision }).IsUnique();
+            entity.HasIndex(e => new { e.IsActive, e.EffectiveFrom, e.EffectiveTo });
+            entity.HasOne<SampleTypeDefinition>()
+                .WithMany()
+                .HasForeignKey(e => e.SupersedesSampleTypeId)
+                .OnDelete(DeleteBehavior.Restrict);
+            Audit(entity);
+        });
+
+        modelBuilder.Entity<SampleShippingInstructionRule>(entity =>
+        {
+            entity.HasKey(e => e.Id);
+            Text(entity.Property(e => e.CompatibilityGroup), 50);
+            Text(entity.Property(e => e.PackingInstructions), 4000);
+            Text(entity.Property(e => e.TemperatureInstructions), 4000);
+            Text(entity.Property(e => e.CarrierInstructions), 4000);
+            Text(entity.Property(e => e.DispatchInstructions), 4000);
+            Text(entity.Property(e => e.DeliveryInstructions), 4000);
+            Text(entity.Property(e => e.RequiredDocuments), 4000);
+            Text(entity.Property(e => e.ExceptionInstructions), 4000);
+            Text(entity.Property(e => e.InternationalCustomsInstructions), 4000, false);
+            entity.HasIndex(e => new { e.DefinitionKey, e.Revision }).IsUnique();
+            entity.HasIndex(e => new { e.DestinationId, e.SampleTypeDefinitionId, e.EffectiveFrom });
+            entity.HasIndex(e => new { e.IsActive, e.EffectiveFrom, e.EffectiveTo });
+            entity.HasOne<SampleShippingDestination>()
+                .WithMany()
+                .HasForeignKey(e => e.DestinationId)
+                .OnDelete(DeleteBehavior.Restrict);
+            entity.HasOne<SampleTypeDefinition>()
+                .WithMany()
+                .HasForeignKey(e => e.SampleTypeDefinitionId)
+                .OnDelete(DeleteBehavior.Restrict);
+            entity.HasOne<SampleShippingInstructionRule>()
+                .WithMany()
+                .HasForeignKey(e => e.SupersedesInstructionRuleId)
+                .OnDelete(DeleteBehavior.Restrict);
+            Audit(entity);
+        });
+
+        modelBuilder.Entity<SampleShipment>(entity =>
+        {
+            entity.HasKey(e => e.Id);
+            Text(entity.Property(e => e.ShipmentNumber), 100);
+            EnumText(entity.Property(e => e.AuthorizationSource));
+            Text(entity.Property(e => e.AuthorizationReference), 100);
+            Text(entity.Property(e => e.AuthorizationName), 255);
+            EnumText(entity.Property(e => e.Status));
+            Text(entity.Property(e => e.Carrier), 255, false);
+            Text(entity.Property(e => e.TrackingNumber), 255, false);
+            entity.HasIndex(e => e.ShipmentNumber).IsUnique();
+            entity.HasIndex(e => new { e.AuthorizationSource, e.AuthorizationSourceId });
+            entity.HasIndex(e => e.LabWorkOrderId);
+            entity.HasIndex(e => new { e.OrganizationId, e.Status });
+            entity.HasOne<Organization>()
+                .WithMany()
+                .HasForeignKey(e => e.OrganizationId)
+                .OnDelete(DeleteBehavior.Restrict);
+            entity.HasOne<SampleShippingDestination>()
+                .WithMany()
+                .HasForeignKey(e => e.DestinationId)
+                .OnDelete(DeleteBehavior.Restrict);
+            Audit(entity);
+        });
+
+        modelBuilder.Entity<SampleReturnKit>(entity =>
+        {
+            entity.HasKey(e => e.Id);
+            Text(entity.Property(e => e.KitNumber), 100);
+            EnumText(entity.Property(e => e.AuthorizationSource));
+            Text(entity.Property(e => e.TubeSupplierName), 255);
+            Text(entity.Property(e => e.TubeProductNumber), 100);
+            Text(entity.Property(e => e.TubeLotNumber), 100, false);
+            Text(entity.Property(e => e.ShipperSupplierName), 255);
+            Text(entity.Property(e => e.ShipperProductNumber), 100);
+            EnumText(entity.Property(e => e.Status));
+            Text(entity.Property(e => e.OutboundCarrier), 255, false);
+            Text(entity.Property(e => e.OutboundTrackingNumber), 255, false);
+            entity.HasIndex(e => e.KitNumber).IsUnique();
+            entity.HasIndex(e => e.SampleShipmentId).IsUnique();
+            entity.HasIndex(e => new { e.OrganizationId, e.Status });
+            entity.HasIndex(e => new { e.AuthorizationSource, e.AuthorizationSourceId });
+            entity.HasOne<SampleShipment>()
+                .WithOne(e => e.ReturnKit)
+                .HasForeignKey<SampleReturnKit>(e => e.SampleShipmentId)
+                .OnDelete(DeleteBehavior.Restrict);
+            entity.HasOne<Organization>()
+                .WithMany()
+                .HasForeignKey(e => e.OrganizationId)
+                .OnDelete(DeleteBehavior.Restrict);
+            Audit(entity);
+        });
+
+        modelBuilder.Entity<RegisteredSampleTube>(entity =>
+        {
+            entity.HasKey(e => e.Id);
+            Text(entity.Property(e => e.SupplierBarcode), 100);
+            EnumText(entity.Property(e => e.Status));
+            entity.HasIndex(e => e.SupplierBarcode).IsUnique();
+            entity.HasIndex(e => new { e.SampleReturnKitId, e.Status });
+            entity.HasOne<SampleReturnKit>()
+                .WithMany(e => e.Tubes)
+                .HasForeignKey(e => e.SampleReturnKitId)
+                .OnDelete(DeleteBehavior.Restrict);
+            Audit(entity);
+        });
+
+        modelBuilder.Entity<SampleShipmentItem>(entity =>
+        {
+            entity.HasKey(e => e.Id);
+            Text(entity.Property(e => e.CustomerSampleId), 100);
+            Text(entity.Property(e => e.SampleName), 255);
+            Quantity(entity.Property(e => e.Quantity));
+            Text(entity.Property(e => e.QuantityUnit), 100);
+            entity.HasIndex(e => new { e.SampleShipmentId, e.SubmittedSpecimenId }).IsUnique();
+            entity.HasIndex(e => new { e.SampleShipmentId, e.CustomerSampleId }).IsUnique();
+            entity.HasIndex(e => e.SampleTypeDefinitionId);
+            entity.HasIndex(e => e.RegisteredSampleTubeId).IsUnique();
+            entity.HasOne<SampleShipment>()
+                .WithMany(e => e.Items)
+                .HasForeignKey(e => e.SampleShipmentId)
+                .OnDelete(DeleteBehavior.Restrict);
+            entity.HasOne<SampleTypeDefinition>()
+                .WithMany()
+                .HasForeignKey(e => e.SampleTypeDefinitionId)
+                .OnDelete(DeleteBehavior.Restrict);
+            entity.HasOne<RegisteredSampleTube>()
+                .WithMany()
+                .HasForeignKey(e => e.RegisteredSampleTubeId)
+                .OnDelete(DeleteBehavior.Restrict);
+            Audit(entity);
+        });
+
+        modelBuilder.Entity<SampleTubeAssignmentEvent>(entity =>
+        {
+            entity.HasKey(e => e.Id);
+            Text(entity.Property(e => e.CustomerSampleId), 100);
+            Text(entity.Property(e => e.SupplierBarcode), 100);
+            EnumText(entity.Property(e => e.Action));
+            Text(entity.Property(e => e.Reason), 1000, false);
+            entity.HasIndex(e => new { e.SampleShipmentId, e.OccurredAt });
+            entity.HasIndex(e => new { e.RegisteredSampleTubeId, e.OccurredAt });
+            entity.HasOne<SampleShipment>()
+                .WithMany()
+                .HasForeignKey(e => e.SampleShipmentId)
+                .OnDelete(DeleteBehavior.Restrict);
+            entity.HasOne<SampleShipmentItem>()
+                .WithMany()
+                .HasForeignKey(e => e.SampleShipmentItemId)
+                .OnDelete(DeleteBehavior.Restrict);
+            entity.HasOne<RegisteredSampleTube>()
+                .WithMany()
+                .HasForeignKey(e => e.RegisteredSampleTubeId)
+                .OnDelete(DeleteBehavior.Restrict);
+        });
+
+        modelBuilder.Entity<SampleShippingPacketRevision>(entity =>
+        {
+            entity.HasKey(e => e.Id);
+            Text(entity.Property(e => e.PacketNumber), 100);
+            Text(entity.Property(e => e.Barcode), 20);
+            Json(entity.Property(e => e.DestinationSnapshotJson));
+            Json(entity.Property(e => e.InstructionSnapshotJson));
+            Json(entity.Property(e => e.ManifestSnapshotJson));
+            Text(entity.Property(e => e.VoidReason), 2000, false);
+            entity.Ignore(e => e.IsVoided);
+            entity.HasIndex(e => e.PacketNumber).IsUnique();
+            entity.HasIndex(e => e.Barcode).IsUnique();
+            entity.HasIndex(e => new { e.SampleShipmentId, e.Revision }).IsUnique();
+            entity.HasOne<SampleShipment>()
+                .WithMany(e => e.PacketRevisions)
+                .HasForeignKey(e => e.SampleShipmentId)
+                .OnDelete(DeleteBehavior.Restrict);
+            entity.HasOne<SampleShippingPacketRevision>()
+                .WithMany()
+                .HasForeignKey(e => e.ReplacedByPacketRevisionId)
+                .OnDelete(DeleteBehavior.Restrict);
+            Audit(entity);
+        });
     }
 
     private static void ConfigureCatalog(ModelBuilder modelBuilder)

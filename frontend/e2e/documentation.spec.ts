@@ -136,7 +136,15 @@ async function selectOrganization(
 
 async function openSidebarIfCollapsed(page: import('@playwright/test').Page) {
   const trigger = page.getByRole('button', {
-    name: /^Open Documentation navigation/,
+    name: /^(?:Open|Close) Documentation navigation/,
   })
-  if (await trigger.isVisible()) await trigger.click()
+  if ((page.viewportSize()?.width ?? 1280) < 1024) {
+    await expect(trigger).toBeVisible()
+    await expect(async () => {
+      if (await trigger.getAttribute('aria-expanded') !== 'true') {
+        await trigger.click()
+      }
+      await expect(trigger).toHaveAttribute('aria-expanded', 'true')
+    }).toPass()
+  }
 }

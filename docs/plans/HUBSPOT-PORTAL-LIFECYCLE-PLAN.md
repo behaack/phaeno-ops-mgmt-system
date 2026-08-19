@@ -9,6 +9,17 @@ Do not execute this plan unless explicitly requested.
 
 - Product direction was approved on 2026-07-15 for planning purposes.
 - HubSpot is the selected relationship CRM and planned integration target.
+- Product direction was refined on 2026-08-18: a Trial Project request supplies
+  only the Deal, company, primary contact, Sales owner, business objective,
+  commercial justification, and intended conversion relationship. POMS owns
+  definition and approval of all scientific and operational scope. HubSpot
+  receives only relationship-safe milestones and a POMS deep link.
+- Product direction was refined on 2026-08-18: POMS owns Trial Project
+  `Completed` and `Closed incomplete` status, while HubSpot owns the commercial
+  outcome. Final outcomes are `Converted to Customer`, `Converted to Partner`,
+  or reason-required `Closed without conversion`; `Follow-up scheduled` is
+  nonterminal and requires an owner and date. No outcome automatically changes
+  the Portal organization kind.
 - HubSpot is not connected to the running application today. No HubSpot
   dependency, credential, webhook, schema change, migration, deployment, or
   test execution is authorized by this plan alone.
@@ -216,6 +227,20 @@ control in the Portal.
 | Billable items, estimates, invoices, tax, freight, balances, terms, and paid status | QuickBooks Online | Portal consumes authoritative facts and publishes approved high-level sale/payment summaries to HubSpot. |
 | Authentication sessions and external identity | Clerk | Portal retains authorization authority; no HubSpot role or contact grants access. |
 
+Trial Projects are RUO and accept no PHI. HubSpot may receive a relationship-
+safe indication that the current RUO/no-PHI terms were accepted, but it must
+never receive sample identifiers, patient identifiers, raw files, scientific
+results, or suspected prohibited-data values.
+Residual-material retention duration, return destination and handling,
+shipping payer, return tracking, and destruction records also remain in POMS
+and Lab Operations rather than HubSpot.
+
+For a Trial Project, the inbound HubSpot request is commercial-only: Deal,
+company, primary contact, Sales owner, business objective, commercial
+justification, and intended conversion relationship. POMS owns the sample
+allowance, submission window, material requirements, analyses, deliverables,
+shipping constraints, acceptance criteria, approvals, and amendments.
+
 ## Confirmed Product Decisions
 
 - Customer and Partner remain mutually exclusive organization types at one
@@ -227,6 +252,12 @@ control in the Portal.
   or synchronize the Partner's downstream-customer identity. An optional PO,
   project code, or internal reference is opaque Partner data.
 - Most HubSpot companies never receive Portal access.
+- Trial Project scientific and operational scope is never authored in or
+  synchronized from HubSpot. Authorized Phaeno users define it in POMS after
+  the commercial request is received.
+- Trial Project execution status and commercial disposition remain separate.
+  HubSpot owns the final commercial outcome or owned/dated follow-up; POMS owns
+  result-package completion and any explicit organization conversion.
 - Every ordinary external-organization onboarding request originates in
   HubSpot. An audited Phaeno-only path is reserved for migration, recovery, or
   another documented non-sales exception.
@@ -251,8 +282,12 @@ control in the Portal.
   and audit history are preserved.
 - A HubSpot commercial close or contract termination cannot directly deactivate
   an active Portal organization. It creates a pending offboarding request so
-  open work, result access, retention, billing, and required downloads can be
-  reviewed.
+  open work, released-package deadlines, retention, billing, and required
+  downloads can be reviewed.
+- Deletion of a non-converting Prospect's released Trial package also cannot
+  deactivate the Portal organization automatically. Deactivation follows
+  commercial closeout and requires an authorized Phaeno user to confirm that no
+  other active Trial Project, grant, or commercial relationship remains.
 - External administrators cannot directly change legal identity,
   Customer/Partner classification, contracted services, billing identity, or
   commercial terms. `Request account change` routes the request to HubSpot.
@@ -325,10 +360,12 @@ The standard POMS **Accounts** workspace reflects this ownership boundary:
 ### 2. Evaluation Access
 
 1. Sales explicitly requests an approved evaluation from the HubSpot Deal.
-2. The Portal records a pending integration request idempotently.
+2. The Portal records a pending, commercial-only integration request
+   idempotently using the HubSpot request identity.
 3. A curated-data evaluation follows the data-provisioning approval boundary.
 4. A Trial Project follows the commercial and scientific approvals in
-   `PROSPECT-TRIAL-PROJECT-PLAN.md`.
+   `PROSPECT-TRIAL-PROJECT-PLAN.md`; authorized Phaeno users define the
+   scientific and operational scope in POMS.
 5. Only after approval does Phaeno create or link a Portal Prospect and invite
    the designated administrator.
 6. The Portal publishes invitation, acceptance, evaluation, and conversion
@@ -379,8 +416,10 @@ The standard POMS **Accounts** workspace reflects this ownership boundary:
 1. A HubSpot close, termination, or Sales request cancels an unactivated
    onboarding request when no access was granted.
 2. For an active organization, HubSpot creates a pending offboarding request.
-3. Phaeno reviews open work, Trial or result-access commitments, outstanding
-   billing, required downloads, retention, and legal or operational holds.
+3. Phaeno reviews open work, released-package deadlines, outstanding billing,
+   required downloads, active grants and commercial relationships, retention,
+   and legal or operational holds. A released-package deletion event alone is
+   not an offboarding decision.
 4. An authorized Phaeno user schedules or performs deactivation with a safe
    external reason.
 5. The Portal publishes the final access state to HubSpot. Neither system
@@ -599,6 +638,12 @@ request type, Company, Deal when applicable, designated administrator when
 applicable, intended organization type, requested services, commercial outcome,
 effective timing, relationship-safe notes, and a deterministic idempotency key.
 
+For a Trial Project `EvaluationRequested` handoff, the permitted business
+payload is narrower: Deal, company, primary contact, Sales owner, business
+objective, commercial justification, and intended conversion relationship. It
+contains no samples, sample identifiers, scientific inputs, analyses,
+deliverables, shipping facts, laboratory instructions, or result content.
+
 ### Portal Request Lifecycle
 
 `Received` -> `Pending review` -> `Approved` -> `Applying` -> `Completed`
@@ -624,6 +669,13 @@ approved snapshot.
 - custom-work or account-change request submitted; and
 - reconciliation mismatch detected or cleared.
 
+For a Trial Project, POMS may publish `Completed` or `Closed incomplete` as a
+relationship-safe milestone. HubSpot separately records `Converted to Customer`,
+`Converted to Partner`, or `Closed without conversion`. Closed without
+conversion requires a reason. `Follow-up scheduled` requires a Sales owner and
+date and is not terminal. None of these HubSpot values directly changes Portal
+access, organization kind, or Trial Project state.
+
 ## Data Excluded From HubSpot
 
 - specimen and accession identifiers;
@@ -631,7 +683,10 @@ approved snapshot.
 - patient, subject, or protected-health information;
 - scientific metadata, requested sequences, analyses, QC details, and results;
 - chain-of-custody details and internal laboratory notes;
+- physical-material retention, return, tracking, and destruction details;
 - uploaded or generated files and file names that may reveal scientific facts;
+- organization-level digital retention overrides, package download state,
+  warning/grace delivery, and file-byte deletion details;
 - Portal membership lists beyond the explicitly linked administrator;
 - credentials, invitation tokens, webhook secrets, raw integration payloads,
   and internal exception details; and
@@ -902,8 +957,9 @@ disposable manual proof records described above are live in the Free account.
 ## Acceptance Scenarios
 
 1. A HubSpot lead or ordinary prospect never appears in the Portal.
-2. An approved Trial request creates one pending request and, after approval,
-   one Portal Prospect and one invitation despite webhook replay.
+2. An approved commercial-only Trial request creates one pending request;
+   Phaeno defines and approves scientific scope in POMS, and one Portal Prospect
+   and one invitation are created after approval despite webhook replay.
 3. Closed Won for a direct buyer creates a pending onboarding request, not an
    active tenant. Phaeno approval activates only the selected services.
 4. The designated administrator is invited; other HubSpot contacts and later
@@ -924,17 +980,25 @@ disposable manual proof records described above are live in the Free account.
     Partner services.
 11. A HubSpot termination cannot deactivate an active Portal organization until
     the offboarding review completes.
-12. HubSpot outage, duplicate delivery, or outbound failure does not block
+12. Deletion of a non-converting Prospect's released Trial package does not
+    automatically deactivate the organization; explicit audited Phaeno approval
+    follows commercial closeout and confirms there is no other active Trial
+    Project, grant, or commercial relationship.
+13. HubSpot outage, duplicate delivery, or outbound failure does not block
     Portal access, order operations, result release, or QuickBooks authority.
-13. Two organizations cannot discover or mutate each other's CRM links,
+14. Two organizations cannot discover or mutate each other's CRM links,
     integration requests, orders, users, specimens, files, or results.
-14. A later expected-completion override requires a controlled customer-safe
+15. A later expected-completion override requires a controlled customer-safe
     reason, preserves the original target, updates the ordering organization's
     Portal timeline, and sends one de-duplicated notification while keeping the
     internal note private.
-15. HubSpot shows the current Order-level expected completion and schedule
+16. HubSpot shows the current Order-level expected completion and schedule
     health so Sales can understand a delay, but it receives no reason text,
     specimen fact, internal note, or batch detail.
+17. A completed Trial Project remains operationally complete regardless of its
+    HubSpot commercial outcome. Follow-up remains unresolved with an owner and
+    date; a final conversion outcome still requires an authorized POMS action,
+    and closed without conversion requires a HubSpot reason.
 
 ## Success Measures
 

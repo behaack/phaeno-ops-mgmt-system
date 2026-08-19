@@ -13,8 +13,9 @@ is now feature-complete: accepted quote/cancellation handoff, roles, operator
 workflows, Laboratory persistence, and durable customer-safe projections are
 implemented. This plan remains authoritative for commercial ordering, pricing,
 files, payment, and publication; laboratory execution follows the Lab
-Operations plan and contract. Pipeline and scientific-file ownership remain a
-separate major TBD.
+Operations plan and contract. Raw/intermediate pipeline file ownership remains
+a separate major TBD. The post-release customer deliverable lifecycle is owned
+by `FILE-MANAGEMENT-PLAN.md`.
 
 ## Status
 
@@ -80,6 +81,39 @@ separate major TBD.
   submission for no-charge try-before-you-buy work. It is not an order, quote,
   invoice, or general Prospect capability and is owned by
   `PROSPECT-TRIAL-PROJECT-PLAN.md`.
+- A Trial Project creates no QuickBooks order, estimate, invoice, payment, or
+  zero-dollar transaction. Estimated retail value and anticipated internal cost
+  remain POMS-owned internal reporting facts; future QuickBooks representation
+  requires a separate explicitly Finance-approved change.
+- Trial Project work is RUO and accepts no PHI. POMS uses the Prospect's non-PHI
+  sample identifier and tube-barcode crosswalk while the Prospect retains any
+  identity mapping outside POMS. Suspected prohibited data blocks the affected
+  sample or shipment under the Trial Project's restricted hold and disposition
+  rules.
+- A Trial Project may freeze Phaeno or Prospect responsibility for a pre-
+  approved residual-material return. That payer designation does not create a
+  Phaeno order, invoice, payment gate, or QuickBooks transaction.
+- Approved future direction: immutable customer-facing result/output packages
+  for Trial, Customer Lab Service, and Partner workflows use one configurable
+  global retention default. Initial settings are 30 exact 24-hour days from
+  release, a warning 5 exact 24-hour days before that deadline when any file
+  remains undownloaded, and a further 5-day whole-package grace period when any
+  file is still undownloaded at the standard deadline. An authorized Phaeno user
+  may configure Customer-, Partner-, or Prospect-organization overrides.
+  Release snapshots the effective settings and dates. This configuration,
+  warning, grace, and deletion behavior is not implemented in the current
+  application.
+- `SAMPLE-SHIPPING-AND-INTAKE-PLAN.md` owns a shared pre-receipt
+  shipment-packet workflow for an accepted Prospect Trial Project and a future
+  Customer promotional no-charge order. It includes versioned destinations,
+  controlled sample types, detailed shipping instructions, printable ship-to
+  label/manifest packets, packet barcodes, and scan-first intake. The shared
+  configuration, return-kit and registered supplier-tube inventory, external
+  assignment/correction crosswalk, printable packet and retained CSV, packet-
+  plus-tube comparison scan, and Lab supplier-barcode adoption are implemented.
+  Trial/freebie parent authorization and issuance remain later phases. This
+  foundation does not alter the current paid-order or Trial Project boundaries
+  by itself.
 - Initial ordering authority is organization-admin-only. Active Customer
   organization administrators may create and place Customer lab service orders;
   active Partner organization administrators may create and place enabled
@@ -754,15 +788,36 @@ pre-production alignment.
   submitter is an administrator, duplicate administrator fan-out is suppressed.
 - All organization administrators receive high-impact notices: cancellation by
   Phaeno, result/output release or payment hold, reagent substitution request,
-  shipment/backorder, and a result/output correction or withdrawal.
+  shipment/backorder, a result/output correction or withdrawal, an
+  undownloaded-package warning, and activation of a final deletion grace
+  period.
+- Released-package warning and grace emails include the normal authenticated
+  Portal package-detail link, never an attachment, bearer link, or direct file-
+  download URL. The Portal rechecks current membership, tenant scope, release
+  gates, and file state.
+- Each package receives at most one scheduled undownloaded warning email and one
+  scheduled grace-activation email, with no daily reminder cadence. The Portal
+  warning remains while files are undownloaded before grace; once grace is
+  active, its final-deadline countdown remains until package-byte deletion.
+  Delayed warning processing suppresses a stale message when all files finish
+  before outbox creation; a message already queued is not recalled, and its
+  authenticated destination shows current package state.
 - Non-admin members do not receive transactional email by default. They see the
   organization timeline and can access released files while their membership is
   active.
+- One successful file or complete-package download by any currently authorized
+  organization member satisfies the applicable download state for the whole
+  organization. Other administrators and members do not need duplicate
+  downloads, and internal Phaeno access does not count.
+- If a required released-package warning or grace notice has no active
+  organization administrator recipient, its deadline remains unchanged and
+  POMS creates an urgent, tenant-safe Phaeno Operations item.
 - Appropriate Phaeno operational queues receive new submissions, cancellation
   requests, holds, validation failures, work awaiting action, overdue work, and
   failed QuickBooks or notification delivery.
 - Notification delivery uses an outbox/durable retry boundary. A delivery
-  failure is visible to Phaeno but never rolls back the authoritative action.
+  failure is visible to Phaeno but never rolls back the authoritative action or
+  extends a released-package retention deadline.
 - QuickBooks estimates, invoices, credits, and payment links remain authoritative
   QuickBooks documents linked from the portal; the portal does not generate a
   competing invoice.
@@ -787,16 +842,93 @@ pre-production alignment.
 - Tenant users see a curated, Customer/Partner-safe timeline. Authorized Phaeno
   users see the full audit history, internal operational notes, configuration
   changes, and integration attempts.
-- The initial release performs no automatic deletion. Orders, quotes, commercial
-  snapshots, status histories, manifests, documents, input/output/result files,
-  and download audit records are retained indefinitely and are never hard-
-  deleted through normal workflows.
+- The implemented initial release performs no automatic deletion. Orders,
+  quotes, commercial snapshots, status histories, manifests, documents, input/
+  output/result files, and download audit records are currently retained
+  indefinitely and are never hard-deleted through normal workflows.
+- The approved future exception is the immutable customer-facing released
+  deliverable package owned by `FILE-MANAGEMENT-PLAN.md`. Its release snapshots
+  the effective standard-retention, warning-lead, and grace values resolved from
+  the global 30/5/5 defaults, each an exact 24-hour interval, and any active
+  Customer-, Partner-, or Prospect-organization override. If all package files
+  were downloaded, its download access closes at the standard deadline and
+  asynchronous byte deletion is queued. If any file remains undownloaded, all
+  active organization administrators receive the advance warning and then the
+  grace notice; access closes at the final deadline and asynchronous deletion of
+  the entire package's bytes is queued. Cleanup delay never restores access, and
+  a package is never deleted piecemeal.
+- A download authorized and started before the applicable cutoff may finish
+  within its bounded timeout and counts only after successful stream completion.
+  New downloads, retries, range resumes, and archive requests at or after the
+  cutoff are denied. Physical deletion waits for an active pre-cutoff lease to
+  complete or expire without reopening access or changing grace or final dates.
+- The finish allowance applies only to an ordinary retention cutoff. Emergency
+  quarantine, package withdrawal or correction, membership deactivation, or
+  organization deactivation revokes the lease and stops the active stream. The
+  attempt is recorded as revoked and does not satisfy package-download status;
+  bytes already transferred cannot be recalled.
+- Durable server event order resolves completion/revocation races. The first
+  terminal outcome committed wins; a success committed first remains successful,
+  while revocation committed first stops the stream. An incomplete transfer at
+  the standard deadline is undownloaded for grace activation. Partial transfers
+  do not count, simultaneous leases stay independently bounded, and disconnects
+  or restarts provide no resume right.
+- Maximum lease duration is Phaeno operational configuration, not an
+  organization retention override, and changes only newly issued leases.
+  Restoring access allows a fresh request only while the package deadline remains
+  in the future.
+- Each configured retention day is an exact 24-hour interval from the UTC
+  package-release instant. Warning and deletion work occurs at the calculated
+  instant rather than midnight; Portal views show the same instant in the
+  current user's labelled local time zone with a UTC fallback.
+- Package metadata, names, sizes, checksums, provenance, release facts,
+  notification and download audit, policy snapshot, access-closed timestamp,
+  byte-deletion timestamp, and deletion outcome remain after byte deletion.
+  Input files, manifests, generated documents, commercial records, and raw/
+  intermediate pipeline artifacts remain outside this policy until their own
+  retention rules are separately approved.
+- A corrected result/output creates a new immutable package with its own
+  effective-policy snapshot, full retention clock, download tracking, and
+  notices. The superseded package becomes externally unavailable immediately,
+  its prior downloads do not satisfy the correction, and its bytes continue
+  under its existing policy or hold until deletion while metadata/audit remain.
+- A preservation hold protects package bytes but never extends external access,
+  resets the frozen clock, or creates another warning/grace sequence. Releasing
+  an overdue hold queues deletion immediately; otherwise the original schedule
+  continues.
+- File-byte deletion provides no Customer or Partner self-service restore action
+  and no Phaeno restoration/regeneration promise. When source material still
+  exists and Phaeno explicitly authorizes regeneration, the result is a new
+  linked immutable release with recorded actor/reason, a fresh effective-policy
+  snapshot, clock, download state, and notices; the deleted release is never
+  revived or changed.
+- A permanent tenant-safe package receipt remains downloadable to an active
+  organization administrator before and after byte deletion. It includes the
+  package ID, filenames, sizes, checksums, release date, download-attempt start/
+  completion timestamps and outcomes, successful downloader names, access-
+  closed date, actual byte-deletion date, and outcome. A post-cutoff success is
+  identified as a transfer that began under pre-cutoff authorization. It
+  describes a revoked attempt only as access having ended and contains no
+  confidential revocation reason, file content, scientific result values,
+  internal notes, network telemetry, or storage identifiers.
+  Ordinary members see package status without the member-level download audit.
+- The initial receipt appears as an accessible Portal record and a printable PDF
+  generated from the same retained facts, with generation timestamp and package
+  state. It labels the displayed user time zone and includes canonical UTC for
+  each retention timestamp. CSV receipt export is deferred until demonstrated
+  customer demand.
+- Each sample-scoped file maps to the ordering organization's frozen non-PHI
+  sample identifier, original submitted-tube supplier barcode, and Phaeno
+  accession identifier when applicable. A combined/project-level file is
+  labelled as such and lists every included sample identifier. Internal derived-
+  container barcodes and scientific lineage stay out of the tenant receipt.
 - Discarding an unsubmitted draft soft-deactivates and hides it from default
   lists while preserving its minimal record, audit, and managed files under the
   same no-automatic-deletion policy.
-- A later retention or exceptional purge design must receive separate product,
-  legal/compliance, tenant-notice, and referential-integrity review before any
-  cleanup is enabled. Cancellation, rejection, replacement, supersession, and
+- Any exceptional purge or retention design for records and files outside the
+  approved released-deliverable policy requires separate product, legal/
+  compliance, tenant-notice, and referential-integrity review before cleanup is
+  enabled. Cancellation, rejection, replacement, supersession, and
   deactivation do not delete history.
 
 ### External-System Boundary
@@ -1503,7 +1635,9 @@ configuration and deployment authority.
 - [x] QuickBooks ownership, estimates/invoices/payment, tax/freight/currency,
   idempotency, failure, and reconciliation boundaries are explicit.
 - [x] Notification recipients/events, documents, search, queues, CSV export,
-  audit views, and no-auto-deletion retention are explicit.
+  audit views, the approved future released-deliverable global 30/5/5 defaults
+  and organization overrides, and preservation of all other records/files are
+  explicit.
 - [x] Domain aggregates, API route/command shapes, frontend surfaces,
   reliability/security rules, implementation phases, and acceptance scenarios
   are defined.
@@ -1530,8 +1664,11 @@ deployment; the unchecked activation gate above remains binding.
 - In-browser scientific file viewers, arbitrary free-form scientific workflows,
   and activation of any production analysis/assembly profile without approved
   real scientific rules.
-- Automatic retention deletion, organization self-service purge, legal hold,
-  exceptional purge, and configurable retention periods.
+- Organization self-service purge, self-service legal-hold administration,
+  exceptional purge, and retention policies for inputs, documents, commercial
+  records, and raw/intermediate pipeline files. Automatic released-deliverable
+  deletion under the global configurable policy is approved future scope, not
+  deferred product scope.
 - Scheduled reports, bulk file/document export, custom report builders, advanced
   analytics, and data-warehouse feeds.
 - Customer/Partner-authored catalog items, negotiated-price editing by Partners,

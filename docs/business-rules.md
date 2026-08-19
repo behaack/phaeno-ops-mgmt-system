@@ -255,6 +255,20 @@ Confirmed Prospect rules:
 - An approved Commercial cancellation reaches Lab before the Commercial order
   commits cancellation. Received or started work requires manual review rather
   than forced history rewriting.
+- Shared sample shipping uses a Phaeno-fulfilled return kit with an exact
+  inventory of globally unique permanent supplier-tube barcodes. An external
+  Prospect or Customer administrator associates each tube with one non-PHI
+  Customer sample identifier; Phaeno retains the current crosswalk and every
+  correction, while the external organization owns the meaning of its
+  identifier in its own records.
+- Packet issuance freezes the destination, instructions, manifest, and tube-
+  to-sample crosswalk. Intake compares both packet and tube before receipt.
+  Accession adopts the validated supplier barcode as the submitted container's
+  authoritative identity without printing a second label; derived containers
+  continue to receive POMS-generated barcodes.
+- Shared shipping capability does not itself approve a Prospect Trial Project
+  or grant/place a Customer promotional no-charge order. Those parent
+  authorizations remain distinct business workflows.
 - A Partner can place reagent orders.
 - A Partner can submit data to Phaeno for data assembly and later download the
   assembled data/results for availability to the Partner's customers.
@@ -311,5 +325,6 @@ Continued workflow, activation, and ownership requirements are recorded in:
 - `docs/plans/ORGANIZATION-DATA-PROVISIONING-PLAN.md`
 - `docs/plans/FILE-MANAGEMENT-PLAN.md`
 - `docs/plans/ORDER-MANAGEMENT-PLAN.md`
+- `docs/plans/SAMPLE-SHIPPING-AND-INTAKE-PLAN.md`
 
 Treat any remaining proposed entities or statuses in those plans as unimplemented until code and tests establish them.

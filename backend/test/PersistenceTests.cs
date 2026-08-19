@@ -91,7 +91,7 @@ public class PersistenceTests
             .Where(entityType => entityType.ClrType.Assembly == laboratoryAssembly)
             .ToList();
 
-        Assert.Equal(26, laboratoryEntities.Count);
+        Assert.Equal(27, laboratoryEntities.Count);
         Assert.Equal(
             "lab_work_orders",
             dbContext.Model.FindEntityType(typeof(LabWorkOrder))?.GetTableName());

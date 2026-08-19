@@ -50,7 +50,7 @@ audience-facing help.
 
 Phaeno operational guides use one expandable level for **Data provisioning**, **Order operations**, and **Laboratory operations**. Each group contains an overview plus substantive workflow-specific guide pages. The active group opens automatically, and users may expand or collapse a group with its labeled disclosure button. Opening a group collapses the previously open group so only one documentation subject is expanded at a time. Do not add a second nesting level.
 
-The sidebar is pinned by default on wide screens and can be unpinned to an edge tab; pin controls are omitted on narrow screens. Pointer users may preview an unpinned rail by approaching the left edge; keyboard and touch users open the same non-modal rail from the tab. Choosing a guide closes an unpinned rail and moves through normal route navigation.
+The sidebar is pinned by default on wide screens and can be unpinned to an edge tab; pin controls are omitted on narrow screens. Fine-pointer users may preview a wide, unpinned rail by approaching the left edge. Keyboard, click, and touch users open the same non-modal rail from the tab. On narrow or coarse-pointer layouts it stays open until the user chooses a guide, toggles the tab, or presses Escape; choosing a guide moves through normal route navigation.
 
 The current MDX corpus is compiled into browser assets, so route and navigation filtering is a product-experience boundary, not a confidentiality control. Every bundled guide, including Phaeno guidance, must be safe to distribute and must never contain secrets or restricted internal evidence. If future Phaeno procedures require confidentiality, serve that content through an authenticated, backend-authorized endpoint rather than a public static asset.
 

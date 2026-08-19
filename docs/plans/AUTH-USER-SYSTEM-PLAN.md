@@ -309,6 +309,11 @@ Do not execute this plan unless explicitly requested.
   or Partner or reclassify an existing Customer as Partner or Partner as
   Customer. HubSpot supplies the approved commercial request; the Portal applies
   it only after operational and access review.
+- A Trial Project's HubSpot outcome never converts the Prospect automatically.
+  `Converted to Customer` or `Converted to Partner` supports a separate audited
+  POMS action; `Closed without conversion` leaves the organization a Prospect,
+  and `Follow-up scheduled` remains nonterminal until Sales records a final
+  outcome.
 - Prospect conversion preserves the organization, users, memberships, and audit
   history rather than creating a new tenant.
 - Prospect conversion also preserves every curated-package grant and pinned
@@ -355,6 +360,49 @@ Do not execute this plan unless explicitly requested.
   organization-scoped operational data. They do not inherit the
   organization-wide curated Prospect-package rule and remain scoped to the same
   organization after conversion.
+- For released-deliverable retention, one successful download by any member
+  currently authorized for the owning external organization satisfies the file
+  for that organization. It is not a per-user completion requirement, internal
+  Phaeno access does not count, and later membership changes do not erase a
+  valid historical organization download event.
+- Released-package download authorization closes at the exact snapshotted
+  standard or final deadline independently of asynchronous storage cleanup.
+  Remaining storage bytes never grant access after that instant.
+- A request that passed current membership, tenant, and package authorization
+  and started streaming before that cutoff may finish only under its bounded,
+  server-bound lease. The lease cannot authorize a new request, retry, range
+  resume, user, organization, file, or archive scope at or after the cutoff;
+  only successful completion of the original stream counts as a download.
+- The retention-cutoff allowance does not survive a higher-priority access
+  change. Emergency quarantine, withdrawal/correction, membership deactivation,
+  or organization deactivation immediately revokes matching active leases,
+  stops their response streams, and records a non-counting `Revoked` outcome.
+  Bytes already delivered before enforcement cannot be recalled.
+- Durable server order resolves a concurrent terminal transition: a successful
+  completion committed before revocation remains successful, while revocation
+  committed first wins. Client timestamps do not decide the race. Reactivation
+  never resumes the old stream; it permits a fresh request only if current
+  authorization succeeds and the package cutoff is still in the future.
+- An active external organization administrator may view and export the
+  permanent tenant-safe receipt for its organization's released package,
+  including downloader member names and timestamps. Ordinary active members see
+  package availability/deletion status but not member-level download audit.
+  External receipt views reduce a revoked outcome to `Access ended`; authorized
+  Phaeno users retain the full reason and operational audit. No role can use a
+  receipt to recover deleted bytes.
+- Converting a Prospect organization to Customer or Partner does not reset or
+  extend a released Trial package's snapshotted standard or final deletion
+  deadline. The package continues under the released-deliverable policy values
+  resolved from the global defaults and the Prospect organization's active
+  override at release, including its conditional grace period. A later
+  organization-kind or override change does not rewrite that snapshot, and
+  there is no project-amendment extension path. Package metadata, result records,
+  and audit history remain preserved after file bytes are deleted.
+- Trial package-byte deletion does not automatically deactivate a non-
+  converting Prospect organization. After commercial closeout, an authorized
+  Phaeno user may deactivate it only after confirming there is no other active
+  Trial Project, curated-data grant, or commercial relationship. The action and
+  reason are audited and do not delete retained operational history.
 - Backend authorization derives the access policy from the data's ownership and
   classification, not merely the organization's current phase.
 - Customer and Partner organization administrators manage member access to

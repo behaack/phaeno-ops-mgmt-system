@@ -541,6 +541,8 @@ const mockSession: SessionResponse = {
     canAcceptLabServiceQuotes: false,
     canRequestLabServiceCancellation: false,
     canViewSampleProgress: false,
+    canViewSampleShipping: false,
+    canManageSampleShipping: false,
     canDownloadLabResults: false,
     canViewReagentOrders: false,
     canCreateReagentOrders: false,

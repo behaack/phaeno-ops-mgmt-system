@@ -9,6 +9,7 @@ import {
   Microscope,
   FlaskConical,
   Package,
+  PackageCheck,
   Settings,
   Workflow,
   type LucideIcon,
@@ -84,6 +85,15 @@ export const mainMenuItems: readonly MainMenuItem[] = [
     visibleWhen: (session, context) =>
       context.selectedOrganizationKind === 'Customer' &&
       Boolean(session?.capabilities.canViewLabServiceOrders),
+  },
+  {
+    label: 'Samples & shipping',
+    to: '/sample-shipping',
+    icon: PackageCheck,
+    group: 'workspace',
+    visibleWhen: (session, context) =>
+      (context.selectedOrganizationKind === 'Prospect' || context.selectedOrganizationKind === 'Customer') &&
+      Boolean(session?.capabilities.canViewSampleShipping),
   },
   {
     label: 'Reagent orders',

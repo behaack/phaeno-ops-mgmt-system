@@ -51,9 +51,12 @@ or production activation.
   separately owned handoff to Phaeno's existing automated data pipeline.
 - Phaeno will not initially run NGS in-house.
 - The boundary from generated NGS files through Phaeno's automated pipeline,
-  file management, retention, provenance, and output storage is a major TBD.
-  This plan assumes only that approved customer output files eventually become
-  available for release through the Portal.
+  including raw/intermediate storage, retention, provenance, and output
+  generation, is a major TBD. This plan assumes only that approved customer
+  output files eventually become available for release through the Portal.
+  `FILE-MANAGEMENT-PLAN.md` owns the settled post-release lifecycle: global
+  30/5/5 defaults, Customer/Partner/Prospect organization overrides, release-
+  time snapshot, undownloaded warnings, grace, and package-byte deletion.
 - This plan supersedes the laboratory-execution direction in
   `ORDER-MANAGEMENT-PLAN.md`. That plan remains authoritative for commercial
   ordering, pricing, fulfillment, files, payment, and publication.
@@ -83,6 +86,16 @@ or production activation.
   Code 39 rendering, reasoned print outcomes, scan lookup, scan-first batching,
   lineage, and workflow evidence passed; real printer, scanner, label-stock,
   degraded-mode, and operator observations remain pending.
+- `SAMPLE-SHIPPING-AND-INTAKE-PLAN.md` owns the separate pre-receipt
+  shipment-packet barcode and scan handoff for accepted Prospect Trial Projects
+  and future Customer promotional no-charge orders. Its shared configuration,
+  return-kit and registered supplier-tube inventory, external crosswalk,
+  immutable printable packet, and read-only packet-plus-tube comparison scan
+  are implemented; the owning Trial/freebie issuance workflows remain later
+  phases. A comparison scan does not record custody. At accession, a validated
+  registered supplier barcode is adopted as the submitted container's
+  authoritative identity without a second label; POMS continues to allocate
+  its own authoritative barcodes for derived containers.
 - Phase 0 Step 4 is complete in design and local execution. The approved clean
   development database and migration reset, solution/project restructure, and
   schema baseline sequence are recorded in
@@ -218,9 +231,9 @@ Ownership and implementation remain TBD for:
 - intermediate pipeline artifacts
 - file provenance, checksums, and lineage across the pipeline
 - scientific file storage and lifecycle
-- raw, intermediate, and customer-output retention policy
+- raw and intermediate pipeline retention policy
 - the final technical handoff by which customer output files become available
-  to Commercial Operations
+  to Commercial Operations as an immutable released package
 
 No initial Lab Operations design may silently claim this area or create a
 competing scientific file-management system.
@@ -608,9 +621,29 @@ The system should be capable of recording:
 - exhausted, returned, transferred, or disposed status
 - final disposition date, operator, method, and reason
 
-Actual retention periods are a policy TBD. The system must not automatically
-record physical material as disposed merely because a date has passed; an
-authorized operator confirms the disposition.
+Except for the confirmed Trial Project rule below, actual retention periods are
+a policy TBD. The system must not automatically record physical material as
+disposed merely because a date has passed; an authorized operator confirms the
+disposition.
+
+The Trial Project policy is the first service-specific exception to that TBD:
+
+- remaining extracted RNA is retained for 30 calendar days after `Completed` or
+  `Closed incomplete` by default;
+- the exact duration and `Destroy` or pre-approved `Return` disposition are
+  frozen on the Trial Project, and later configuration changes do not rewrite
+  it;
+- return is allowed only when approved before the first sample shipment, with
+  destination, handling, and shipping payer frozen in the terms;
+- a retain-until date creates due work but never an automatic disposition;
+- an authorized operator records exhaustion, return, or destruction with date,
+  method, reason, actor, and return tracking when applicable; and
+- Trial material cannot be reused for research, training, validation, another
+  project, or another organization without separate written authorization.
+
+This Trial-specific rule does not settle retention periods for paid Customer or
+Partner work. A controlled hold or incident-preservation requirement supersedes
+the normal due date until authorized disposition.
 
 ## Initial Release Scope
 
@@ -641,7 +674,10 @@ Explicitly excluded or deferred:
 - pharmaceutical-submission-oriented GxP or Part 11 controls
 - raw NGS and intermediate file management
 - automated data-pipeline orchestration
-- scientific file provenance, lifecycle, and retention policy
+- raw/intermediate scientific file provenance, lifecycle, and retention policy
+- the technical output-generation and handoff contract into an immutable
+  customer-facing release; post-release retention is already assigned to File
+  Management
 
 ## Future Extension Paths
 
@@ -802,9 +838,16 @@ targets are imposed.
 
 ## Open Decisions and Major TBDs
 
-1. **Pipeline and scientific file management:** ownership, storage, orchestration,
-   provenance, retention, security, and output-availability contract.
-2. **Physical retention policy:** actual periods and service-specific rules.
+1. **Pipeline and scientific file management:** ownership, storage,
+   orchestration, raw/intermediate provenance and retention, security, output
+   generation, and the technical handoff into the immutable released package.
+   The post-release customer deliverable policy is settled under File
+   Management with global 30/5/5 defaults and Customer/Partner/Prospect
+   organization overrides.
+2. **Physical retention policy:** paid Customer and Partner periods and other
+   service-specific rules. The configurable Trial Project default is settled at
+   30 calendar days after terminal operational closure, with operator-confirmed
+   destruction or a return frozen before first shipment.
 3. **Operator workflow validation:** software preflight is complete; minimum
    required fields, batch-entry behavior, labels, scanners, degraded mode, and
    exception paths still require the physical acceptance session in

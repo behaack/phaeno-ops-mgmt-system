@@ -356,7 +356,7 @@ public sealed class WebsiteSearchService : IWebsiteSearchService, IDisposable
         var querySet = stemmedTerms
             .Select(term => term.ToLowerInvariant())
             .ToHashSet();
-        var matches = Regex.Matches(text, "[\\p{L}\\p{N}_']+")
+        var matches = Regex.Matches(text, "[\\p{L}\\p{M}\\p{N}_']+")
             .Cast<Match>()
             .Where(match => NormalizeTermVariants(match.Value, locale)
                 .Any(term => querySet.Contains(term.ToLowerInvariant())))
@@ -421,6 +421,7 @@ public sealed class WebsiteSearchService : IWebsiteSearchService, IDisposable
         word = Regex.Replace(word, "[^\\p{L}\\p{N}_\\s]", string.Empty);
         word = word.Replace("-", " ");
         var isCjkLocale = normalizedLocale is WebsiteLocale.SimplifiedChinese
+            or WebsiteLocale.TraditionalChinese
             or WebsiteLocale.Japanese;
         if (Regex.IsMatch(word, @"\d{3,}")
             || (normalizedLocale == WebsiteLocale.Arabic
@@ -476,7 +477,7 @@ public sealed class WebsiteSearchService : IWebsiteSearchService, IDisposable
     }
 
     private static IEnumerable<string> ExtractSearchTerms(string text, string locale) =>
-        Regex.Matches(text, "[\\p{L}\\p{N}_']+")
+        Regex.Matches(text, "[\\p{L}\\p{M}\\p{N}_']+")
             .Cast<Match>()
             .SelectMany(match => NormalizeTermVariants(match.Value, locale));
 
@@ -489,22 +490,20 @@ public sealed class WebsiteSearchService : IWebsiteSearchService, IDisposable
             return [];
         }
 
-        if (normalizedLocale is not (WebsiteLocale.SimplifiedChinese or WebsiteLocale.Japanese))
+        if (normalizedLocale is not (WebsiteLocale.SimplifiedChinese
+            or WebsiteLocale.TraditionalChinese
+            or WebsiteLocale.Japanese))
         {
             return [normalized];
         }
 
-        var characters = normalized.EnumerateRunes()
+        if (!Regex.IsMatch(normalized, "[\\u3040-\\u30ff\\u3400-\\u9fff]"))
+        {
+            return [normalized];
+        }
+
+        return normalized.EnumerateRunes()
             .Select(rune => rune.ToString())
-            .ToArray();
-        if (characters.Length < 2)
-        {
-            return [normalized];
-        }
-
-        return Enumerable.Range(0, characters.Length - 1)
-            .Select(index => characters[index] + characters[index + 1])
-            .Append(normalized)
             .Distinct(StringComparer.OrdinalIgnoreCase);
     }
 }

@@ -150,7 +150,7 @@ test('selects an eligible source request and uses lifecycle dialogs in the organ
   await expect(page.getByText('Commercial term ended.')).toBeVisible()
   await expect(page.getByRole('button', { name: 'End now' })).toHaveCount(0)
 
-  await page.getByRole('tab', { name: 'Members' }).click()
+  await page.getByRole('tab', { name: 'Users' }).click()
   await page.getByRole('button', { name: 'Deactivate' }).click()
   const memberDialog = page.getByRole('dialog', { name: 'Deactivate membership' })
   await expect(memberDialog).toContainText('member@example.com')

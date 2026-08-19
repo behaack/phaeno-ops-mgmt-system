@@ -148,14 +148,120 @@ the protected deployed-Preview acceptance above.
   ineligible work routed to Sales, Closed Won operational handoff, one HubSpot
   Order per commitment with payment summary, no routine Deal, no scientific or
   downstream-customer data in HubSpot, and two-tenant isolation.
-- [ ] Prospect Trial Project journey - cover HubSpot-originated request, commercial
-  and scientific approval, Prospect invitation and acceptance, bounded sample
-  submission of up to five extracted-RNA samples, sixth-sample and wrong-type
-  denial, Phaeno receipt/processing, standard FASTQ/FASTA/BAM result release,
-  the three-month access default and an approved override both beginning only
-  with complete-package release, completion, explicit Customer or Partner
-  conversion, normal-order denial before conversion, and two-tenant isolation
-  for project metadata, samples, files, and results.
+- [ ] Released-deliverable retention journeys - cover the global 30/5/5
+  defaults, authorized Customer/Partner/Prospect organization override and
+  partial inheritance, release-time effective-policy snapshot, and a later
+  default or override change affecting only future releases; exact 24-hour UTC
+  calculations without midnight rounding across a daylight-saving boundary;
+  labelled browser-local display with UTC fallback; and local plus UTC values
+  in the PDF. Prove the all-
+  downloaded path has no warning and closes access plus queues package-byte
+  deletion at the standard deadline; the partially or never-downloaded path
+  sends the advance warning to all active organization administrators, activates
+  and announces the full grace period at the standard deadline, and closes
+  access plus queues atomic package-byte deletion at the final deadline;
+  download authorization closes at the exact applicable deadline even when
+  asynchronous byte deletion is delayed or fails, Operations receives the
+  failure, and the receipt preserves both timestamps; a file and complete-
+  archive transfer started under valid pre-cutoff authorization may finish
+  within its bounded timeout and counts only after successful completion while
+  every request whose lease would commit exactly at/after cutoff, including a
+  new, retry, range-resume, or archive request, is denied; partial file/archive,
+  failed, cancelled, disconnected, timed-out, and restart-abandoned streams do
+  not count or gain resume authority; an incomplete standard-deadline lease
+  activates grace despite later completion; deletion waits for all simultaneous
+  eligible leases only until they complete or reach their unchanged original
+  expiries, without reopening access or changing grace/final dates; a lease-
+  duration configuration change affects only newly issued leases; the receipt
+  preserves lease start/completion/outcome and
+  identifies a post-cutoff success as pre-cutoff authorized; emergency
+  quarantine, withdrawal/correction, membership deactivation, and organization
+  deactivation each stop a matching active response stream, record a non-
+  counting revoked attempt, expose only a tenant-safe access-ended state, and
+  cannot recall bytes already delivered; concurrent completion/revocation uses
+  the first durable terminal transition rather than client time, and restored
+  access allows only a fresh pre-deadline request; a complete archive counts
+  every file while individual downloads count only their files; one
+  authorized member's download satisfies the
+  organization without requiring every member to download, and a later
+  membership change preserves that history; a grace-period download does not
+  shorten grace; holds preserve bytes without extending access or resetting the
+  clock/notices, and releasing an overdue hold immediately queues deletion; no
+  active administrator produces urgent
+  Phaeno Operations work without changing a deadline; warning and grace links
+  require sign-in and current tenant authorization at the package page and never
+  grant direct file access; exactly two scheduled emails are possible with no
+  daily reminders; delayed processing suppresses a stale warning before outbox
+  creation, while an already-queued message remains and opens current state;
+  the pre-grace warning clears after complete download while activated grace
+  remains visible through deletion; a correction immediately withdraws the old
+  package and creates a new release with a fresh effective-policy snapshot,
+  full clock, independent download tracking and notices while old-package bytes
+  follow their prior policy/hold; deletion exposes no customer restore action;
+  an authorized regeneration, when source material exists, creates a new linked
+  immutable reissue with fresh policy/dates/download state while the deleted
+  release remains unchanged; and metadata, notification, download, and deletion
+  history remain after bytes are unavailable, including a permanent tenant-safe
+  receipt with member-level download details for organization administrators,
+  status-only visibility for ordinary members, prohibited-field exclusion, and
+  matching Portal/PDF facts with generation time and represented state, no CSV
+  receipt action, sample-scoped non-PHI Customer-ID/original-tube-barcode/
+  accession mapping, complete included-sample lists for combined files, no
+  derived-container leakage, and two-tenant denial across Trial, Customer, and
+  Partner flows.
+- [ ] Prospect Trial Project journey - cover a commercial-only HubSpot-originated
+  request, POMS-owned scientific scoping, relationship-safe HubSpot milestones
+  and deep link, commercial and scientific/operations approval using default and
+  delegated coverage, delegate revocation and wrong-domain denial, actual
+  approver and authority-source audit, rejection when one dual-authorized user attempts both
+  approvals, successful two-person approval for initial and amended scope
+  versions, both decisions remaining required, Prospect invitation and
+  acceptance of versioned RUO/no-PHI terms, shipment-confirmation affirmation,
+  non-PHI sample identifiers, prominent RUO result labeling, prohibited-data
+  rejection or restricted quarantine without propagation followed by authorized
+  disposition, bounded sample submission through the project's approved
+  extracted-RNA sample allowance,
+  over-allowance and wrong-type
+  denial, eligible destination and detailed-instruction resolution, Phaeno
+  return-kit preparation with an exact registered-tube inventory, Prospect
+  tube-to-sample assignment/correction and retained CSV, printable frozen
+  shipment packet/crosswalk and barcode, Phaeno packet-plus-tube comparison
+  scan without implicit receipt, matched receipt/accession that adopts the
+  permanent supplier barcode without a second label, derived-container POMS
+  label verification, an approved replacement linked to the original sample,
+  exactly one restored slot after a Phaeno-caused processing failure, no
+  automatic restored slot for a Prospect-supplied sample problem, and an
+  explicit Phaeno exception path that does not rewrite the frozen allowance,
+  the configurable 30-day residual-material default and a project override,
+  frozen destruction versus pre-first-shipment return with identified shipping
+  payer, post-shipment return denial, retain-until work without automatic
+  disposition, operator-confirmed destruction or separate tracked return, and
+  no reuse without separate written authorization,
+  Phaeno processing, configurable FASTQ/FASTA/BAM default selection, exact
+  deliverable/version snapshot at approval, a later configuration change that
+  affects only future projects, and amendment/reapproval for changing an
+  approved project's deliverables,
+  the effective global-plus-Prospect-organization retention policy beginning
+  only with release of the project's complete frozen package and no project-
+  level override, POMS `Completed`
+  versus reason-required `Closed incomplete`, final Customer conversion,
+  Partner conversion, and closed-without-conversion HubSpot outcomes,
+  nonterminal follow-up with an owner and date, explicit Customer or Partner
+  conversion without an automatic transition or a reset or extension of the
+  frozen Trial package deletion dates, byte deletion with preserved project and
+  audit history, continued organization access for a non-converting Prospect,
+  blocked deactivation while another active Trial Project, grant, or commercial
+  relationship exists, explicit audited Phaeno closeout deactivation, normal-
+  order denial before conversion, retained POMS estimated retail value and
+  anticipated internal cost, no QuickBooks transaction or payment gate even
+  during a QuickBooks outage, and two-tenant isolation for project metadata,
+  samples, files, and results.
+- [ ] Customer promotional freebie and shared shipping journey - cover a named
+  Customer's one-time no-charge placement, zero amount due without a payment
+  gate, the same return-kit/tube-crosswalk/packet/comparison-scan/Lab-adoption
+  path, multiple active destinations, compatible multi-type grouping,
+  mandatory incompatible split shipments, immutable reprint/replacement
+  behavior, and two-tenant non-discovery.
 - [ ] Database-backed organization and user administration journey - verify
   Phaeno and external administrator scope, invitation delivery and acceptance,
   unified active and pending-invitation user cards, accessible action menus,
@@ -281,6 +387,13 @@ the protected deployed-Preview acceptance above.
   require the five shared-sidebar subjects and Defaults as the initial active
   selection. The Playwright suite was not executed because E2E execution was
   not separately requested.
+- 2026-08-18: the registered supplier-tube workflow was implemented and its
+  browser coverage plan was expanded. The completion pass ran the existing
+  mock-session Playwright suite on an isolated port with the required test-only
+  session setting: all 30 desktop/mobile tests passed. This suite verifies the
+  surrounding responsive/navigation baseline; it does not substantiate the
+  still-unimplemented authenticated Trial Project or Customer promotional
+  shipping journey, nor physical tube/shipper/scanner acceptance.
 - 2026-07-16: the barcode software slice passed its full 41-test frontend
   regression suite and 113-test backend/database suite. No mock Playwright
   scenario can substantiate an authenticated hosted scan or physical

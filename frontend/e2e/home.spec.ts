@@ -251,12 +251,42 @@ test('keeps workspace navigation concise and groups the user menu', async ({
 })
 
 test('locks background scrolling while a modal is open', async ({ page }) => {
-  await page.goto('/phaeno-users')
-  await page.waitForLoadState('networkidle')
+  await page.route(/^https:\/\/127\.0\.0\.1:\d+\/api\//, async (route) => {
+    const url = new URL(route.request().url())
+    if (url.pathname === '/api/organizations') {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify([{
+          id: '00000000-0000-0000-0000-000000000101',
+          name: 'Atlas Research',
+          description: 'Synthetic customer for modal coverage.',
+          kind: 'Customer',
+          portalReadiness: 'Ready',
+          portalReadinessNote: 'Configured for test coverage.',
+          isActive: true,
+          createdAt: '2026-07-15T10:00:00Z',
+          updatedAt: '2026-07-15T10:00:00Z',
+          version: 1,
+        }]),
+      })
+      return
+    }
+    if (url.pathname === '/api/platform/relationships/requests') {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({ success: true, data: [], error: null }),
+      })
+      return
+    }
+    await route.fulfill({ status: 404, body: '{}' })
+  })
+  await page.goto('/customers')
 
-  await page.getByRole('button', { name: 'Add Phaeno user' }).click()
+  await page.getByRole('button', { name: 'Deactivate' }).click()
   await expect(
-    page.getByRole('dialog', { name: 'Add Phaeno user' }),
+    page.getByRole('dialog', { name: 'Deactivate organization' }),
   ).toBeVisible()
   await expect
     .poll(() =>
@@ -277,10 +307,17 @@ async function openDashboardNavigation(page: Page) {
   const navigation = page.getByRole('navigation', {
     name: 'POMS dashboard sections',
   })
-  if (!(await navigation.isVisible())) {
-    await page.getByRole('button', {
-      name: /Open POMS dashboard navigation/,
-    }).click()
+  if ((page.viewportSize()?.width ?? 1280) < 1024) {
+    const trigger = page.getByRole('button', {
+      name: /(?:Open|Close) POMS dashboard navigation/,
+    })
+    await expect(trigger).toBeVisible()
+    await expect(async () => {
+      if (await trigger.getAttribute('aria-expanded') !== 'true') {
+        await trigger.click()
+      }
+      await expect(trigger).toHaveAttribute('aria-expanded', 'true')
+    }).toPass()
   }
   await expect(navigation).toBeVisible()
   return navigation

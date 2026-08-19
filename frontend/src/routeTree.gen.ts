@@ -9,6 +9,7 @@
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
 import { Route as rootRouteImport } from './routes/__root'
+import { Route as SampleShippingRouteImport } from './routes/sample-shipping'
 import { Route as ReagentOrdersRouteImport } from './routes/reagent-orders'
 import { Route as PhaenoUsersRouteImport } from './routes/phaeno-users'
 import { Route as OrderOperationsRouteImport } from './routes/order-operations'
@@ -24,6 +25,7 @@ import { Route as AcceptInviteRouteImport } from './routes/accept-invite'
 import { Route as AboutRouteImport } from './routes/about'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as SessionTasksSetupMfaRouteImport } from './routes/session-tasks.setup-mfa'
+import { Route as SampleShippingShipmentIdRouteImport } from './routes/sample-shipping.$shipmentId'
 import { Route as ReagentOrdersNewRouteImport } from './routes/reagent-orders.new'
 import { Route as ReagentOrdersOrderIdRouteImport } from './routes/reagent-orders.$orderId'
 import { Route as LabServicesNewRouteImport } from './routes/lab-services.new'
@@ -34,6 +36,7 @@ import { Route as DataLibraryDatasetIdRouteImport } from './routes/data-library.
 import { Route as DataAssemblyNewRouteImport } from './routes/data-assembly.new'
 import { Route as DataAssemblyRequestIdRouteImport } from './routes/data-assembly.$requestId'
 import { Route as CustomersCustomerIdRouteImport } from './routes/customers.$customerId'
+import { Route as SampleShippingShipmentIdPacketRouteImport } from './routes/sample-shipping.$shipmentId.packet'
 import { Route as ReagentOrdersOrderIdEditRouteImport } from './routes/reagent-orders.$orderId.edit'
 import { Route as OrderOperationsIntakeOrderIdRouteImport } from './routes/order-operations.intake.$orderId'
 import { Route as OrderOperationsWorkflowOrderIdRouteImport } from './routes/order-operations.$workflow.$orderId'
@@ -44,6 +47,11 @@ import { Route as DataAssemblyRequestIdEditRouteImport } from './routes/data-ass
 import { Route as LabOperationsProtocolsProtocolIdVersionsNewRouteImport } from './routes/lab-operations.protocols.$protocolId.versions.new'
 import { Route as LabOperationsProtocolsProtocolIdVersionsVersionIdEditRouteImport } from './routes/lab-operations.protocols.$protocolId.versions.$versionId.edit'
 
+const SampleShippingRoute = SampleShippingRouteImport.update({
+  id: '/sample-shipping',
+  path: '/sample-shipping',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ReagentOrdersRoute = ReagentOrdersRouteImport.update({
   id: '/reagent-orders',
   path: '/reagent-orders',
@@ -119,6 +127,12 @@ const SessionTasksSetupMfaRoute = SessionTasksSetupMfaRouteImport.update({
   path: '/session-tasks/setup-mfa',
   getParentRoute: () => rootRouteImport,
 } as any)
+const SampleShippingShipmentIdRoute =
+  SampleShippingShipmentIdRouteImport.update({
+    id: '/$shipmentId',
+    path: '/$shipmentId',
+    getParentRoute: () => SampleShippingRoute,
+  } as any)
 const ReagentOrdersNewRoute = ReagentOrdersNewRouteImport.update({
   id: '/new',
   path: '/new',
@@ -170,6 +184,12 @@ const CustomersCustomerIdRoute = CustomersCustomerIdRouteImport.update({
   path: '/$customerId',
   getParentRoute: () => CustomersRoute,
 } as any)
+const SampleShippingShipmentIdPacketRoute =
+  SampleShippingShipmentIdPacketRouteImport.update({
+    id: '/packet',
+    path: '/packet',
+    getParentRoute: () => SampleShippingShipmentIdRoute,
+  } as any)
 const ReagentOrdersOrderIdEditRoute =
   ReagentOrdersOrderIdEditRouteImport.update({
     id: '/edit',
@@ -238,6 +258,7 @@ export interface FileRoutesByFullPath {
   '/order-operations': typeof OrderOperationsRouteWithChildren
   '/phaeno-users': typeof PhaenoUsersRoute
   '/reagent-orders': typeof ReagentOrdersRouteWithChildren
+  '/sample-shipping': typeof SampleShippingRouteWithChildren
   '/customers/$customerId': typeof CustomersCustomerIdRoute
   '/data-assembly/$requestId': typeof DataAssemblyRequestIdRouteWithChildren
   '/data-assembly/new': typeof DataAssemblyNewRoute
@@ -248,6 +269,7 @@ export interface FileRoutesByFullPath {
   '/lab-services/new': typeof LabServicesNewRoute
   '/reagent-orders/$orderId': typeof ReagentOrdersOrderIdRouteWithChildren
   '/reagent-orders/new': typeof ReagentOrdersNewRoute
+  '/sample-shipping/$shipmentId': typeof SampleShippingShipmentIdRouteWithChildren
   '/session-tasks/setup-mfa': typeof SessionTasksSetupMfaRoute
   '/data-assembly/$requestId/edit': typeof DataAssemblyRequestIdEditRoute
   '/data-provisioning/sources/$sourceSampleId': typeof DataProvisioningSourcesSourceSampleIdRoute
@@ -256,6 +278,7 @@ export interface FileRoutesByFullPath {
   '/order-operations/$workflow/$orderId': typeof OrderOperationsWorkflowOrderIdRoute
   '/order-operations/intake/$orderId': typeof OrderOperationsIntakeOrderIdRoute
   '/reagent-orders/$orderId/edit': typeof ReagentOrdersOrderIdEditRoute
+  '/sample-shipping/$shipmentId/packet': typeof SampleShippingShipmentIdPacketRoute
   '/lab-operations/protocols/$protocolId/versions/new': typeof LabOperationsProtocolsProtocolIdVersionsNewRoute
   '/lab-operations/protocols/$protocolId/versions/$versionId/edit': typeof LabOperationsProtocolsProtocolIdVersionsVersionIdEditRoute
 }
@@ -274,6 +297,7 @@ export interface FileRoutesByTo {
   '/order-operations': typeof OrderOperationsRouteWithChildren
   '/phaeno-users': typeof PhaenoUsersRoute
   '/reagent-orders': typeof ReagentOrdersRouteWithChildren
+  '/sample-shipping': typeof SampleShippingRouteWithChildren
   '/customers/$customerId': typeof CustomersCustomerIdRoute
   '/data-assembly/$requestId': typeof DataAssemblyRequestIdRouteWithChildren
   '/data-assembly/new': typeof DataAssemblyNewRoute
@@ -284,6 +308,7 @@ export interface FileRoutesByTo {
   '/lab-services/new': typeof LabServicesNewRoute
   '/reagent-orders/$orderId': typeof ReagentOrdersOrderIdRouteWithChildren
   '/reagent-orders/new': typeof ReagentOrdersNewRoute
+  '/sample-shipping/$shipmentId': typeof SampleShippingShipmentIdRouteWithChildren
   '/session-tasks/setup-mfa': typeof SessionTasksSetupMfaRoute
   '/data-assembly/$requestId/edit': typeof DataAssemblyRequestIdEditRoute
   '/data-provisioning/sources/$sourceSampleId': typeof DataProvisioningSourcesSourceSampleIdRoute
@@ -292,6 +317,7 @@ export interface FileRoutesByTo {
   '/order-operations/$workflow/$orderId': typeof OrderOperationsWorkflowOrderIdRoute
   '/order-operations/intake/$orderId': typeof OrderOperationsIntakeOrderIdRoute
   '/reagent-orders/$orderId/edit': typeof ReagentOrdersOrderIdEditRoute
+  '/sample-shipping/$shipmentId/packet': typeof SampleShippingShipmentIdPacketRoute
   '/lab-operations/protocols/$protocolId/versions/new': typeof LabOperationsProtocolsProtocolIdVersionsNewRoute
   '/lab-operations/protocols/$protocolId/versions/$versionId/edit': typeof LabOperationsProtocolsProtocolIdVersionsVersionIdEditRoute
 }
@@ -311,6 +337,7 @@ export interface FileRoutesById {
   '/order-operations': typeof OrderOperationsRouteWithChildren
   '/phaeno-users': typeof PhaenoUsersRoute
   '/reagent-orders': typeof ReagentOrdersRouteWithChildren
+  '/sample-shipping': typeof SampleShippingRouteWithChildren
   '/customers/$customerId': typeof CustomersCustomerIdRoute
   '/data-assembly/$requestId': typeof DataAssemblyRequestIdRouteWithChildren
   '/data-assembly/new': typeof DataAssemblyNewRoute
@@ -321,6 +348,7 @@ export interface FileRoutesById {
   '/lab-services/new': typeof LabServicesNewRoute
   '/reagent-orders/$orderId': typeof ReagentOrdersOrderIdRouteWithChildren
   '/reagent-orders/new': typeof ReagentOrdersNewRoute
+  '/sample-shipping/$shipmentId': typeof SampleShippingShipmentIdRouteWithChildren
   '/session-tasks/setup-mfa': typeof SessionTasksSetupMfaRoute
   '/data-assembly/$requestId/edit': typeof DataAssemblyRequestIdEditRoute
   '/data-provisioning/sources/$sourceSampleId': typeof DataProvisioningSourcesSourceSampleIdRoute
@@ -329,6 +357,7 @@ export interface FileRoutesById {
   '/order-operations/$workflow/$orderId': typeof OrderOperationsWorkflowOrderIdRoute
   '/order-operations/intake/$orderId': typeof OrderOperationsIntakeOrderIdRoute
   '/reagent-orders/$orderId/edit': typeof ReagentOrdersOrderIdEditRoute
+  '/sample-shipping/$shipmentId/packet': typeof SampleShippingShipmentIdPacketRoute
   '/lab-operations/protocols/$protocolId/versions/new': typeof LabOperationsProtocolsProtocolIdVersionsNewRoute
   '/lab-operations/protocols/$protocolId/versions/$versionId/edit': typeof LabOperationsProtocolsProtocolIdVersionsVersionIdEditRoute
 }
@@ -349,6 +378,7 @@ export interface FileRouteTypes {
     | '/order-operations'
     | '/phaeno-users'
     | '/reagent-orders'
+    | '/sample-shipping'
     | '/customers/$customerId'
     | '/data-assembly/$requestId'
     | '/data-assembly/new'
@@ -359,6 +389,7 @@ export interface FileRouteTypes {
     | '/lab-services/new'
     | '/reagent-orders/$orderId'
     | '/reagent-orders/new'
+    | '/sample-shipping/$shipmentId'
     | '/session-tasks/setup-mfa'
     | '/data-assembly/$requestId/edit'
     | '/data-provisioning/sources/$sourceSampleId'
@@ -367,6 +398,7 @@ export interface FileRouteTypes {
     | '/order-operations/$workflow/$orderId'
     | '/order-operations/intake/$orderId'
     | '/reagent-orders/$orderId/edit'
+    | '/sample-shipping/$shipmentId/packet'
     | '/lab-operations/protocols/$protocolId/versions/new'
     | '/lab-operations/protocols/$protocolId/versions/$versionId/edit'
   fileRoutesByTo: FileRoutesByTo
@@ -385,6 +417,7 @@ export interface FileRouteTypes {
     | '/order-operations'
     | '/phaeno-users'
     | '/reagent-orders'
+    | '/sample-shipping'
     | '/customers/$customerId'
     | '/data-assembly/$requestId'
     | '/data-assembly/new'
@@ -395,6 +428,7 @@ export interface FileRouteTypes {
     | '/lab-services/new'
     | '/reagent-orders/$orderId'
     | '/reagent-orders/new'
+    | '/sample-shipping/$shipmentId'
     | '/session-tasks/setup-mfa'
     | '/data-assembly/$requestId/edit'
     | '/data-provisioning/sources/$sourceSampleId'
@@ -403,6 +437,7 @@ export interface FileRouteTypes {
     | '/order-operations/$workflow/$orderId'
     | '/order-operations/intake/$orderId'
     | '/reagent-orders/$orderId/edit'
+    | '/sample-shipping/$shipmentId/packet'
     | '/lab-operations/protocols/$protocolId/versions/new'
     | '/lab-operations/protocols/$protocolId/versions/$versionId/edit'
   id:
@@ -421,6 +456,7 @@ export interface FileRouteTypes {
     | '/order-operations'
     | '/phaeno-users'
     | '/reagent-orders'
+    | '/sample-shipping'
     | '/customers/$customerId'
     | '/data-assembly/$requestId'
     | '/data-assembly/new'
@@ -431,6 +467,7 @@ export interface FileRouteTypes {
     | '/lab-services/new'
     | '/reagent-orders/$orderId'
     | '/reagent-orders/new'
+    | '/sample-shipping/$shipmentId'
     | '/session-tasks/setup-mfa'
     | '/data-assembly/$requestId/edit'
     | '/data-provisioning/sources/$sourceSampleId'
@@ -439,6 +476,7 @@ export interface FileRouteTypes {
     | '/order-operations/$workflow/$orderId'
     | '/order-operations/intake/$orderId'
     | '/reagent-orders/$orderId/edit'
+    | '/sample-shipping/$shipmentId/packet'
     | '/lab-operations/protocols/$protocolId/versions/new'
     | '/lab-operations/protocols/$protocolId/versions/$versionId/edit'
   fileRoutesById: FileRoutesById
@@ -458,12 +496,20 @@ export interface RootRouteChildren {
   OrderOperationsRoute: typeof OrderOperationsRouteWithChildren
   PhaenoUsersRoute: typeof PhaenoUsersRoute
   ReagentOrdersRoute: typeof ReagentOrdersRouteWithChildren
+  SampleShippingRoute: typeof SampleShippingRouteWithChildren
   DemoTanstackQueryRoute: typeof DemoTanstackQueryRoute
   SessionTasksSetupMfaRoute: typeof SessionTasksSetupMfaRoute
 }
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
+    '/sample-shipping': {
+      id: '/sample-shipping'
+      path: '/sample-shipping'
+      fullPath: '/sample-shipping'
+      preLoaderRoute: typeof SampleShippingRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/reagent-orders': {
       id: '/reagent-orders'
       path: '/reagent-orders'
@@ -569,6 +615,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof SessionTasksSetupMfaRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/sample-shipping/$shipmentId': {
+      id: '/sample-shipping/$shipmentId'
+      path: '/$shipmentId'
+      fullPath: '/sample-shipping/$shipmentId'
+      preLoaderRoute: typeof SampleShippingShipmentIdRouteImport
+      parentRoute: typeof SampleShippingRoute
+    }
     '/reagent-orders/new': {
       id: '/reagent-orders/new'
       path: '/new'
@@ -638,6 +691,13 @@ declare module '@tanstack/react-router' {
       fullPath: '/customers/$customerId'
       preLoaderRoute: typeof CustomersCustomerIdRouteImport
       parentRoute: typeof CustomersRoute
+    }
+    '/sample-shipping/$shipmentId/packet': {
+      id: '/sample-shipping/$shipmentId/packet'
+      path: '/packet'
+      fullPath: '/sample-shipping/$shipmentId/packet'
+      preLoaderRoute: typeof SampleShippingShipmentIdPacketRouteImport
+      parentRoute: typeof SampleShippingShipmentIdRoute
     }
     '/reagent-orders/$orderId/edit': {
       id: '/reagent-orders/$orderId/edit'
@@ -860,6 +920,32 @@ const ReagentOrdersRouteWithChildren = ReagentOrdersRoute._addFileChildren(
   ReagentOrdersRouteChildren,
 )
 
+interface SampleShippingShipmentIdRouteChildren {
+  SampleShippingShipmentIdPacketRoute: typeof SampleShippingShipmentIdPacketRoute
+}
+
+const SampleShippingShipmentIdRouteChildren: SampleShippingShipmentIdRouteChildren =
+  {
+    SampleShippingShipmentIdPacketRoute: SampleShippingShipmentIdPacketRoute,
+  }
+
+const SampleShippingShipmentIdRouteWithChildren =
+  SampleShippingShipmentIdRoute._addFileChildren(
+    SampleShippingShipmentIdRouteChildren,
+  )
+
+interface SampleShippingRouteChildren {
+  SampleShippingShipmentIdRoute: typeof SampleShippingShipmentIdRouteWithChildren
+}
+
+const SampleShippingRouteChildren: SampleShippingRouteChildren = {
+  SampleShippingShipmentIdRoute: SampleShippingShipmentIdRouteWithChildren,
+}
+
+const SampleShippingRouteWithChildren = SampleShippingRoute._addFileChildren(
+  SampleShippingRouteChildren,
+)
+
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   AboutRoute: AboutRoute,
@@ -875,6 +961,7 @@ const rootRouteChildren: RootRouteChildren = {
   OrderOperationsRoute: OrderOperationsRouteWithChildren,
   PhaenoUsersRoute: PhaenoUsersRoute,
   ReagentOrdersRoute: ReagentOrdersRouteWithChildren,
+  SampleShippingRoute: SampleShippingRouteWithChildren,
   DemoTanstackQueryRoute: DemoTanstackQueryRoute,
   SessionTasksSetupMfaRoute: SessionTasksSetupMfaRoute,
 }

@@ -62,6 +62,7 @@ public sealed record LabSpecimenDto(
 
 public sealed record LabContainerDto(
     Guid Id, Guid? LabSpecimenId, Guid? ParentContainerId, string Kind, string Barcode,
+    string BarcodeSource, Guid? ExternalBarcodeReferenceId,
     string Label, int LabelPrintCount, string Location, decimal? Quantity,
     string? QuantityUnit, string Status, DateTime? RetainUntilUtc, long Version);
 
@@ -118,7 +119,8 @@ public sealed record ProtocolTransitionRequest(string Action, long ProtocolVersi
 public sealed record WorkMilestoneRequest(string Status, long Version);
 public sealed record SpecimenReceiptRequest(DateTime ReceivedAtUtc, string? ReceiptCondition, string? CurrentLocation, long Version);
 public sealed record SpecimenAccessionRequest(string AccessionNumber, string Label, string Location,
-    decimal? Quantity, string? QuantityUnit, DateTime? RetainUntilUtc, long Version);
+    decimal? Quantity, string? QuantityUnit, DateTime? RetainUntilUtc, long Version,
+    string? SampleShippingPacketBarcode = null, string? SupplierTubeBarcode = null);
 public sealed record SpecimenDispositionRequest(string Disposition, string? ReasonCode, long Version);
 public sealed record CreateContainerRequest(Guid? LabSpecimenId, Guid? ParentContainerId, string Kind,
     string Label, string Location, decimal? Quantity, string? QuantityUnit, DateTime? RetainUntilUtc);

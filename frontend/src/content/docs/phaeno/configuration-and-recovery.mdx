@@ -2,7 +2,7 @@
 
 Order configuration controls the active scientific, Partner, commercial, release, and integration rules used by new work. Changes must be audited and should not rewrite immutable order snapshots.
 
-Use the far-left **Order configuration** sidebar to move among **Defaults**, **Analyses**, **PSeq kits**, **Assembly**, and **Credit & QBO**. On wider screens the sidebar can remain pinned; when it is unpinned or the screen is narrow, open the same non-modal navigation from the edge tab. The selected subject appears in the main pane without duplicating the navigation above the configuration form.
+Use the far-left **Order configuration** sidebar to move among **Defaults**, **Analyses**, **Sample shipping**, **PSeq kits**, **Assembly**, and **Credit & QBO**. On wider screens the sidebar can remain pinned; when it is unpinned or the screen is narrow, open the same non-modal navigation from the edge tab. The selected subject appears in the main pane without duplicating the navigation above the configuration form.
 
 ## Maintain commercial configuration
 
@@ -19,6 +19,22 @@ Set the default quote-validity period in configuration. The initial default is 3
 Analysis definitions describe required Customer sample fields, instructions, expected outputs, and linked quoteable items. Assembly profiles describe Partner metadata, allowed files, validation, expected output contract, availability, and linked quoteable items.
 
 Deactivate configuration that must not be used for new work. Existing orders keep their accepted definitions, profile versions, prices, currency, and commercial snapshots.
+
+## Maintain sample-shipping configuration
+
+Use **Sample shipping** to maintain three controlled record sets:
+
+- ship-to destinations with the full address, receiving team, receiving hours and time zone, closure guidance, delivery directions, and carrier restrictions;
+- sample types with material, quantity, primary-container, temperature, packaging, customer-label, prohibited-identifier, safety, and transit requirements; and
+- one instruction rule for an exact destination revision and sample-type revision, including compatibility grouping, packing, carrier, dispatch, delivery, required-document, exception, and optional customs instructions.
+
+New records default to inactive. Activate a revision only after the address and scientific and operational instructions are approved. Selecting **Create revision** copies the current content into a new record and ends the prior revision when the new revision becomes effective; it does not rewrite history or any packet snapshot already issued.
+
+Use **Instruction preview** before operational use. Select an exact destination revision, one or more sample-type revisions, and the time to evaluate. POMS displays the full resolved ship-to and detailed preparation instructions. If a required combination rule is missing, compatibility groups differ, or a type requires its own package, POMS blocks a combined preview so the work can be corrected or split.
+
+This configuration is shared infrastructure only. It does not create a Prospect Trial Project, grant a Customer promotion, place an order, or activate any real destination or sample type on its own.
+
+Return-kit fulfillment is operated from **Order intake**, not from configuration. The fulfillment record preserves shipper product/lot facts, the exact registered supplier-tube inventory, and outbound tracking. The current Corning vial and Therapak shipper values are pilot candidates only; activate real work only after representative tubes, shipper fit, returned volume, seal, freezing, dry-ice handling, barcode scanning, and degraded-mode procedures pass the physical validation gate.
 
 ## Monitor QuickBooks Online
 

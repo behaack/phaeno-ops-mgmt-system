@@ -270,6 +270,7 @@ public sealed partial class LabOperationsController
 
     private static LabContainerDto MapContainer(LabContainer item) =>
         new(item.Id, item.LabSpecimenId, item.ParentContainerId, item.Kind.ToString(), item.Barcode,
+            item.BarcodeSource.ToString(), item.ExternalBarcodeReferenceId,
             item.Label, item.LabelPrintCount, item.Location, item.Quantity, item.QuantityUnit,
             item.Status.ToString(), item.RetainUntilUtc, item.Version);
 

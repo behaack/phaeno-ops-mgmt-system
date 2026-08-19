@@ -5,12 +5,14 @@ import CustomerDataAndOrganization from '#/content/docs/en-US/customer/data-and-
 import CustomerGettingStarted from '#/content/docs/en-US/customer/getting-started.mdx'
 import CustomerLabServices from '#/content/docs/en-US/customer/lab-services.mdx'
 import CustomerResultsAndBilling from '#/content/docs/en-US/customer/results-and-billing.mdx'
+import CustomerSampleShipping from '#/content/docs/en-US/customer/sample-shipping.mdx'
 import CustomerStatusesAndTroubleshooting from '#/content/docs/en-US/customer/statuses-and-troubleshooting.mdx'
 import ProspectAccountAndAccess from '#/content/docs/en-US/prospect/account-and-access.mdx'
 import ProspectDataGovernanceAndDownloads from '#/content/docs/en-US/prospect/data-governance-and-downloads.mdx'
 import ProspectDataLibrary from '#/content/docs/en-US/prospect/data-library.mdx'
 import ProspectGettingStarted from '#/content/docs/en-US/prospect/getting-started.mdx'
 import ProspectOrganizationAndTransition from '#/content/docs/en-US/prospect/organization-and-transition.mdx'
+import ProspectSampleShipping from '#/content/docs/en-US/prospect/sample-shipping.mdx'
 import ProspectStatusesAndTroubleshooting from '#/content/docs/en-US/prospect/statuses-and-troubleshooting.mdx'
 import PartnerAccountAndAccess from '#/content/docs/en-US/partner/account-and-access.mdx'
 import PartnerDataAndOrganization from '#/content/docs/en-US/partner/data-and-organization.mdx'
@@ -101,6 +103,18 @@ export const documentationEntries: readonly DocumentationEntry[] = [
   {
     audience: 'prospect',
     locale: 'en-US',
+    slug: 'sample-shipping',
+    title: 'Prepare and ship samples',
+    summary:
+      'Associate Phaeno-supplied tube barcodes with your sample identifiers, retain the crosswalk, and ship an authorized Trial Project package.',
+    section: 'Trial Project',
+    order: 25,
+    reviewedAt: '2026-08-18',
+    Content: ProspectSampleShipping,
+  },
+  {
+    audience: 'prospect',
+    locale: 'en-US',
     slug: 'data-library',
     title: 'Use the Data Library',
     summary:
@@ -178,6 +192,18 @@ export const documentationEntries: readonly DocumentationEntry[] = [
     order: 30,
     reviewedAt: '2026-07-16',
     Content: CustomerLabServices,
+  },
+  {
+    audience: 'customer',
+    locale: 'en-US',
+    slug: 'sample-shipping',
+    title: 'Prepare and ship samples',
+    summary:
+      'Associate Phaeno-supplied tube barcodes with your sample identifiers, retain the crosswalk, and ship an authorized promotional-order package.',
+    section: 'Laboratory work',
+    order: 35,
+    reviewedAt: '2026-08-18',
+    Content: CustomerSampleShipping,
   },
   {
     audience: 'customer',
@@ -366,10 +392,10 @@ export const documentationEntries: readonly DocumentationEntry[] = [
     slug: 'order-operations',
     overviewTitle: 'Overview and queue triage',
     title: 'Order operations',
-    summary: 'Operate Customer lab, Partner PSeq kit, and Partner assembly workflows.',
+    summary: 'Operate Customer lab, sample-return-kit, Partner PSeq kit, and Partner assembly workflows.',
     section: 'Order operations',
     order: 40,
-    reviewedAt: '2026-07-17',
+    reviewedAt: '2026-08-18',
     Content: PhaenoOrderOperations,
   },
   {
@@ -462,10 +488,10 @@ export const documentationEntries: readonly DocumentationEntry[] = [
     slug: 'lab-receipt-accession',
     parentSlug: 'lab-operations',
     title: 'Receipt and accession',
-    summary: 'Record physical receipt, accession, labels, intake decisions, and container lineage.',
+    summary: 'Record physical receipt, supplier or POMS barcode accession, intake decisions, and container lineage.',
     section: 'Laboratory operations',
     order: 51,
-    reviewedAt: '2026-07-16',
+    reviewedAt: '2026-08-18',
     Content: PhaenoLabReceiptAccession,
   },
   {
@@ -533,10 +559,10 @@ export const documentationEntries: readonly DocumentationEntry[] = [
     locale: null,
     slug: 'configuration-and-recovery',
     title: 'Configuration and integration recovery',
-    summary: 'Maintain scientific and commercial rules and recover durable integrations.',
+    summary: 'Maintain scientific, commercial, and sample-shipping rules and recover durable integrations.',
     section: 'Platform operations',
     order: 60,
-    reviewedAt: '2026-07-17',
+    reviewedAt: '2026-08-18',
     Content: PhaenoConfigurationAndRecovery,
   },
   {

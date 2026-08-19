@@ -87,6 +87,8 @@ builder.Services.AddSingleton<IManagedFileScanner, EnvironmentManagedFileScanner
 builder.Services.AddSingleton<IOperationalFileScanner, EnvironmentOperationalFileScanner>();
 builder.Services.AddScoped<OrderRequestContext>();
 builder.Services.AddScoped<OrderIdempotencyService>();
+builder.Services.AddScoped<SampleShippingPacketService>();
+builder.Services.AddScoped<SampleShippingWorkflowReader>();
 builder.Services.AddScoped<ILabOperationsProvider, InternalLabOperationsProvider>();
 builder.Services.AddScoped<LabOperationsRequestContext>();
 builder.Services.AddHostedService<LabOperationsProjectionDispatcher>();

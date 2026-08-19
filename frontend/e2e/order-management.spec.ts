@@ -52,7 +52,15 @@ async function openSidebarIfCollapsed(
   workspaceLabel: string,
 ) {
   const trigger = page.getByRole('button', {
-    name: new RegExp(`^Open ${workspaceLabel} navigation`),
+    name: new RegExp(`^(?:Open|Close) ${workspaceLabel} navigation`),
   })
-  if (await trigger.isVisible()) await trigger.click()
+  if ((page.viewportSize()?.width ?? 1280) < 1024) {
+    await expect(trigger).toBeVisible()
+    await expect(async () => {
+      if (await trigger.getAttribute('aria-expanded') !== 'true') {
+        await trigger.click()
+      }
+      await expect(trigger).toHaveAttribute('aria-expanded', 'true')
+    }).toPass()
+  }
 }

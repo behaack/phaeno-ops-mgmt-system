@@ -83,6 +83,15 @@ public sealed class PSeqOperationsDbContext(
     public DbSet<AssemblyProfile> AssemblyProfiles { get; set; }
     public DbSet<OrganizationCommercialProfile> OrganizationCommercialProfiles { get; set; }
     public DbSet<OrderSystemConfiguration> OrderSystemConfigurations { get; set; }
+    public DbSet<SampleShippingDestination> SampleShippingDestinations { get; set; }
+    public DbSet<SampleTypeDefinition> SampleTypeDefinitions { get; set; }
+    public DbSet<SampleShippingInstructionRule> SampleShippingInstructionRules { get; set; }
+    public DbSet<SampleShipment> SampleShipments { get; set; }
+    public DbSet<SampleShipmentItem> SampleShipmentItems { get; set; }
+    public DbSet<SampleReturnKit> SampleReturnKits { get; set; }
+    public DbSet<RegisteredSampleTube> RegisteredSampleTubes { get; set; }
+    public DbSet<SampleTubeAssignmentEvent> SampleTubeAssignmentEvents { get; set; }
+    public DbSet<SampleShippingPacketRevision> SampleShippingPacketRevisions { get; set; }
     public DbSet<CommercialDocumentLink> CommercialDocumentLinks { get; set; }
     public DbSet<OrderOutboxMessage> OrderOutboxMessages { get; set; }
     public DbSet<OrderIdempotencyRecord> OrderIdempotencyRecords { get; set; }

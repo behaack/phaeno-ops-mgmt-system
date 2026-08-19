@@ -29,7 +29,7 @@
   implemented version 1 Commercial-to-Lab boundary; and
   `docs/plans/PSEQ-OPERATIONS-MIGRATION-PLAN.md` records the completed clean
   Development reset and restructure. The local database is `phaeno_ops`, with
-  54 tables in `commercial_ops`, 22 Laboratory tables in `lab_ops`, and EF
+  63 tables in `commercial_ops`, 27 Laboratory tables in `lab_ops`, and EF
   history in `public`. Validation and production activation remain incomplete:
   database-backed Lab suites, representative bench/label/scanner work,
   external NGS operating details, deployment, and production content are
@@ -38,6 +38,15 @@
 - `docs/plans/PROSPECT-TRIAL-PROJECT-PLAN.md`: approved future no-charge,
   closed-ended Prospect Trial Project requested from HubSpot and governed in
   the Portal. It is not implemented.
+- `docs/plans/SAMPLE-SHIPPING-AND-INTAKE-PLAN.md`: approved shared direction
+  for shared Prospect Trial Project and Customer promotional freebie sample
+  shipping, including multiple controlled destinations and sample types,
+  detailed versioned instructions, printable ship-to label/manifest packets,
+  pre-receipt packet barcodes, and scan-first Lab intake. Shared configuration,
+  return-kit and registered-tube inventory, external tube-to-sample assignment,
+  retained crosswalk/print/CSV outputs, packet-plus-tube comparison scanning,
+  and Lab supplier-barcode adoption are implemented; Trial/freebie parent
+  issuance, physical validation, and production activation remain future work.
 - `docs/plans/ORGANIZATION-DATA-PROVISIONING-PLAN.md`: Phaeno source-sample registry,
   curated package governance, Prospect/Customer/Partner grants, and tenant
   access. The confirmed baseline and completion/governance slices are

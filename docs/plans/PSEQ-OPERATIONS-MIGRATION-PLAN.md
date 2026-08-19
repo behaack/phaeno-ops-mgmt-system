@@ -579,14 +579,17 @@ The reset/restructure is complete. The achieved outcomes are:
 - current Portal behavior works with freshly seeded data
 - the internal provider, current-flow routing, durable projections, additive
   roles, and operator workflows are shipped
-- the unresolved pipeline/file boundary remains unresolved
+- the raw/intermediate pipeline-file boundary remains unresolved; the separate
+  File Management plan later settled a future post-release customer-package
+  retention policy, but this migration did not implement it
 
 ## Explicitly Deferred
 
 This plan still does not settle:
 
-- pipeline orchestration or scientific file ownership
-- raw, intermediate, or customer-output retention
+- pipeline orchestration or raw/intermediate scientific file ownership
+- raw or intermediate pipeline-file retention; released customer package
+  retention is now approved future scope in `FILE-MANAGEMENT-PLAN.md`
 - a third-party LIMS vendor
 - in-house NGS
 - physical material retention periods

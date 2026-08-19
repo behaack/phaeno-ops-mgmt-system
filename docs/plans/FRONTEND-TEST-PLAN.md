@@ -21,6 +21,9 @@ remain incomplete production-activation gates.
 - [x] `frontend/src/components/navigation.test.ts` - order navigation is scoped
   to Customer lab, Partner reagent/assembly, and Phaeno operations/configuration
   capabilities without leaking the other organization-kind surfaces.
+- [x] `frontend/src/components/navigation.test.ts` - Samples & shipping appears
+  for authorized Prospect and Customer contexts and remains hidden from Partner
+  contexts.
 - [x] `frontend/src/components/navigation.test.ts` - Docs navigation is
   available as a primary workspace destination in Prospect, Customer, Partner,
   and Phaeno organization contexts.
@@ -77,9 +80,14 @@ remain incomplete production-activation gates.
   require structured component lots, and modal related-reference creation
   requires names.
 - [x] `frontend/src/features/orders/configuration/OrderConfigurationPage.test.tsx`
-  - the five Order Configuration subjects use the shared viewport-edge
+  - the six Order Configuration subjects, including Sample shipping, use the shared viewport-edge
   sidebar, identify Defaults initially, and update the active subject when the
   user selects another panel.
+- [x] `frontend/src/features/orders/configuration/SampleShippingConfigurationPanel.test.tsx`
+  - current versioned destinations, sample types, and combination rules render;
+  instruction preview submits exact revisions and presents resolved content;
+  and destination changes open an immutable successor revision instead of
+  editing the current record.
 - [x] `frontend/src/features/dashboard/WebOpsDashboardContent.test.tsx` -
   the two-button selector shows one mailing-list or demo-request panel at a
   time; panels render their counts, contact context, technical-brief state,
@@ -104,15 +112,90 @@ remain incomplete production-activation gates.
   action visibility, Request custom work, Request account change, no
   downstream-customer requirement, operational confirmation for Closed Won
   handoffs, and durable failure feedback.
+- [ ] Global released-deliverable retention components - cover Phaeno-only
+  global 30/5/5 default configuration, Customer/Partner/Prospect organization-
+  level overrides with inherited-value presentation, validation, required
+  reason, and audit history; release-time effective-policy and source display;
+  warning, standard-deletion, conditional-grace, and final-deletion dates;
+  organization-level rather than per-user download completion;
+  tenant-safe undownloaded-package and grace banners; deleted bytes unavailable
+  while package metadata/history remain; urgent Phaeno Operations work when no
+  active organization administrator can receive a required notice; warning and
+  grace emails linking to the authenticated package detail rather than directly
+  to a file; suppression of a delayed stale warning before outbox creation and
+  current package state when an already-queued warning link is opened; pre-grace
+  warning clearance after all files are downloaded;
+  activated grace remaining visible despite a later download; no daily-reminder
+  state; immediate superseded-package unavailability with retained history and
+  a clearly separate corrected package carrying fresh dates/download state; and
+  deleted-package history with no restore action plus a separately linked
+  authorized reissue when present; permanent receipt export for organization
+  administrators before and after deletion; ordinary-member status without
+  downloader identity; equivalent accessible Portal and printable-PDF receipt
+  facts with generation time/state, labelled browser-local timestamps, UTC
+  alongside local PDF timestamps, UTC fallback, and no CSV action;
+  exact-deadline `Downloads closed` behavior, optional `Deletion processing`
+  status without a download action, a pre-cutoff transfer's bounded `Download
+  in progress` state after the cutoff with no resume/retry/range/archive action,
+  and receipt start/completion timestamps and outcome identifying a successful
+  post-cutoff completion as pre-cutoff authorized; higher-priority quarantine,
+  withdrawal/correction, membership deactivation, and organization deactivation
+  stopping an active transfer with a tenant-safe access-ended message, no retry,
+  no confidential reason disclosure, and a non-counting revoked outcome;
+  partial/abandoned transfers remaining undownloaded, restored access offering a
+  fresh request only before cutoff, and preservation holds never displaying an
+  extended or reset access deadline; and
+  accessible states across supported viewports, keyboard, and screen-reader use.
+  Verify clear sample-scoped customer-ID/tube-barcode/accession mapping, combined-file
+  included-sample lists, and no internal derived-container identifiers.
 - [ ] Prospect Trial Project components - cover Phaeno request review and dual
-  approval, frozen-scope preview/amendment, Prospect acceptance, bounded sample
-  submission for extracted RNA, the five-sample allowance and deadline states,
-  schedule-without-guaranteed-TAT messaging, standard FASTQ/FASTA/BAM
-  deliverables, the three-month result-access default and approval-time
-  override, access beginning with complete-package release rather than a
-  partial release, member view-only state, tenant-safe progress/results,
-  terminal-state reasons, HubSpot retry visibility, and continued hiding of normal
-  ordering actions.
+  approval with commercial-only HubSpot context, POMS-owned scientific scope,
+  safe HubSpot milestones and deep link, CBO/COO defaults, domain-specific
+  delegate designation/revocation, clear primary-versus-delegate authority,
+  denial outside the assigned domain, retained reasons/dates, both decisions remaining required,
+  same-person second-approval prevention with a clear different-approver
+  requirement for initial and amended scope versions,
+  frozen-scope preview/amendment, Prospect acceptance, prominent RUO language,
+  current versioned no-PHI affirmation at project acceptance and shipment
+  confirmation, safe prohibited-data feedback that does not redisplay the
+  suspected value, bounded sample submission for extracted RNA, the project's
+  approved allowance and deadline states,
+  samples-and-shipping grouping, eligible destination selection, detailed
+  instruction review, printable ship-to label/internal manifest packets,
+  packet replacement and receipt/exception status, explicit sample-replacement
+  approval, original-sample lineage, Phaeno-caused restored-slot status, and
+  Prospect-supplied-problem exception status without a silent allowance change,
+  frozen residual-material duration/disposition preview and terms, configured
+  default versus project override, return destination/handling/shipping-payer
+  presentation, post-shipment return denial, due-versus-operator-confirmed
+  disposition, and no-reuse messaging,
+  schedule-without-guaranteed-TAT messaging, configurable deliverable catalog
+  and default selection with FASTQ/FASTA/BAM initially selected, approval-time
+  frozen deliverable/version preview, immutable approved selections with an
+  amendment path, effective global-plus-Prospect-organization retention values
+  frozen only when the complete package is released rather than on a partial
+  release or at project approval, no project-level override, conversion without
+  new or extended deletion dates, unavailable files after byte deletion with
+  retained authorized project history, continued organization access after
+  package deletion, explicit Phaeno closeout
+  deactivation with blocking active-trial/grant/relationship feedback and a
+  required retained reason, Phaeno-only estimated retail value and anticipated
+  internal cost reporting with no QuickBooks document or payment state, member
+  view-only state, tenant-safe progress/results,
+  complete-package-gated completion, required incomplete-close reason, distinct
+  POMS operational and HubSpot commercial outcomes, owned/dated unresolved
+  follow-up, explicit conversion with no automatic transition, terminal-state
+  reasons, HubSpot retry visibility, and continued hiding of normal ordering
+  actions.
+- [ ] Remaining shared sample shipping and Customer freebie components - add
+  focused component coverage for return-kit registration/fulfillment, external
+  scan/manual tube assignment and correction reasons, retained CSV, packet
+  confirmation, full-page print layout, record-shipped facts, packet-plus-tube
+  comparison outcomes, and Lab supplier-barcode adoption without a print-label
+  action. Also cover missing/incompatible setup, multi-destination and split-
+  shipment behavior, packet reprint/void behavior, one-time promotional
+  placement with explicit no-charge treatment, and preservation of order-
+  versus-Trial terminology.
 - [ ] Remaining connected organization/user administration - cover organization
   list/detail, readiness persistence through create/edit, request queue
   decisions, the development-only HubSpot account-entry simulator's
@@ -242,6 +325,13 @@ remain incomplete production-activation gates.
   focused test passed, all 42 tests in 17 files passed, and the client and SSR
   production builds completed. The existing advisory client chunk-size warning
   remains.
+- 2026-08-18: the registered supplier-tube workflow passed `pnpm run lint`,
+  `pnpm run typecheck`, and the client/SSR `pnpm run build`. The build retained
+  only the existing advisory chunk-size warning. The completion pass then ran
+  all 60 frontend tests in 22 files with no failures, including focused
+  configuration, tube correction, and packet-replacement coverage. It also
+  corrected narrow-layout workspace drawer persistence and the related unit
+  and browser tests.
 - 2026-07-16: barcode completion verification ran `pnpm run lint`, `pnpm run
   typecheck`, `pnpm run test`, and `pnpm run build`. Lint and typecheck passed,
   all 41 tests in 16 files passed, and the client and SSR production builds

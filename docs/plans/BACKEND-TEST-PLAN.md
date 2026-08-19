@@ -135,6 +135,12 @@ and rollback-isolated PostgreSQL coverage.
 - [x] `backend/test/OrderManagementDomainTests.cs` - operational-file scan and
   release gating, separate lab/assembly credit decisions, configurable quote
   validity, and failed-notification manual recovery.
+- [x] `backend/test/SampleShippingDomainTests.cs` - packet-barcode allocation,
+  scanner framing and checksum rejection, deterministic compatibility and
+  mandatory split rejection, effective revision boundaries, and immutable
+  packet snapshots with void/replacement identity; supplier-tube barcode
+  normalization, exact return-kit tube-count enforcement, tube-to-sample
+  assignment, and supplier-barcode adoption by a submitted Lab container.
 - [x] `backend/test/RelationshipManagementDomainTests.cs` - an approved request
   authorizes only its associated organization and requested service,
   onboarding-only requests cannot source service entitlements, and entitlement
@@ -173,6 +179,19 @@ and rollback-isolated PostgreSQL coverage.
   The fixture uses unique
   Customer/Phaeno identities and removes its Commercial, Laboratory, account,
   idempotency, notification, and audit records.
+- [x] `backend/test/SampleShippingPostgresTests.cs` - opt-in authenticated
+  controller/PostgreSQL coverage for destination, sample-type, and combination-
+  rule revisions; active-rule overlap rejection; return-kit registration and
+  fulfillment; global supplier-barcode uniqueness; tenant-scoped assignment,
+  correction history, and non-discovery; frozen destination, instruction,
+  manifest, and tube-crosswalk snapshots; CSV crosswalk output; concurrent
+  first-packet uniqueness; malformed, unknown, voided, mismatched, expected,
+  and repeated packet-plus-tube scan outcomes; exact registered supplier-
+  barcode adoption at Lab accession; and repeated-accession denial. The fixture
+  uses `PSEQ_OPERATIONS_REFERENCE_CONNECTION`, verifies a fully migrated
+  database, and removes its run-specific shipping, Lab, account, configuration,
+  and audit records. The suite passed against the local `phaeno_ops`
+  development database on 2026-08-18.
 - [x] `backend/tools/PSeq.Operations.ReferenceJourney` - controller-level
   authenticated PostgreSQL journey covering approved service-request source
   enforcement, rejection of an onboarding-only source, usable entitlement
@@ -223,16 +242,132 @@ and rollback-isolated PostgreSQL coverage.
   rejection, invalid draft/approval transitions, expired material, overdue
   calibration, wrong-work-order batch/custody, unresolved blocking exception,
   and cross-tenant HTTP/authentication scenarios.
-- [ ] Prospect Trial Projects - cover idempotent HubSpot request intake, dual
-  approval, frozen scope/amendments, Prospect acceptance, project-specific
-  submit authorization, extracted-RNA-only validation, the five-sample cap,
-  deadlines/analyses, schedule updates without a fixed turnaround SLA, member
-  view-versus-submit behavior, the three-month default and approval-time access
-  override snapshot, default changes not rewriting approved projects, the
-  approved access clock starting only when the complete standard result package
-  is released, result release without payment, replacement lineage, terminal
-  states, HubSpot retry, conversion preservation, normal-order denial, and
-  cross-tenant metadata/file/result isolation.
+- [ ] Global released-deliverable retention - cover validated global 30-day
+  retention, 5-day warning-lead, and 5-day grace defaults; optional Customer-,
+  Partner-, and Prospect-organization overrides with partial inheritance,
+  required reasons and audit history; authorization denial for external users;
+  resolution and source/version snapshot at package release; global or
+  organization changes affecting only later releases; exact UTC calculations
+  using 24-hour configured-day intervals across daylight-saving transitions
+  with no midnight/end-of-day rounding; successful individual
+  versus complete-archive download accounting; one authorized member download
+  satisfying the organization without per-user completion; later membership
+  change preserving that event; failed, cancelled, unauthorized, and internal
+  Phaeno downloads not counting; no warning and standard-deadline access close
+  plus atomic package-byte deletion queueing when all files were downloaded;
+  download denial at the exact applicable deadline even while byte deletion is
+  pending or retrying; a pre-cutoff file or archive lease finishing successfully
+  after the cutoff and counting only on stream completion; strict denial when
+  lease creation would commit exactly at the cutoff; partial file and archive
+  streams counting nothing; failed, cancelled, disconnected, and timed-out
+  leases not counting; denial of new, retry, range-resume, and archive requests
+  at or after cutoff; an incomplete lease at the standard deadline activating
+  grace despite later completion; simultaneous eligible leases delaying physical
+  deletion only until every lease terminates or reaches its original expiry,
+  without renewal, reopened access, changed grace/final dates, or a premature
+  cleanup failure; an operational lease-duration change affecting only new
+  leases; restart reconciliation to a non-counting terminal outcome with no
+  resume right; emergency
+  quarantine, withdrawal/correction, membership deactivation, and organization
+  deactivation each revoking a matching active lease, stopping further stream
+  delivery, recording a non-counting `Revoked` outcome, and not depending on the
+  retention-worker interval; durable completion/revocation ordering where the
+  first committed terminal transition wins, client time is ignored, and restored
+  access permits only a fresh pre-deadline request; one de-
+  duplicated warning to all active organization administrators, grace
+  activation and notice, full grace despite a later download, and final-deadline
+  access close plus atomic package-byte deletion queueing when any file was
+  undownloaded; idempotent retries, notification failure without deadline
+  extension, no-active-administrator urgent Operations work without deadline
+  extension, authenticated package-detail links with no bearer secret,
+  attachment, or direct download URL, authorization recheck on arrival,
+  exactly one warning plus one grace email and no recurring reminders; delayed
+  warning suppression when all files succeed before outbox creation, with no
+  recall after outbox creation; warning-state clearance when all files are
+  downloaded before grace; activated grace persisting despite later download;
+  preservation holds protecting bytes without extending access, resetting the
+  clock/notices, or delaying deletion after an overdue hold is released;
+  correction immediately
+  withdrawing the superseded package, independent old-package retention/
+  deletion, a fresh effective-policy snapshot/clock/download state/notices for
+  the corrected package, old downloads not satisfying the correction, retained
+  metadata/audit, no customer restore operation, authorized regeneration only
+  when source material exists, a new linked immutable reissue with Phaeno actor/
+  reason and fresh effective policy, the deleted release remaining unchanged,
+  permanent receipt generation before and after byte deletion, tenant admin
+  access to downloader names plus attempt start/completion timestamps and
+  outcomes, including a post-cutoff success's pre-cutoff authorization;
+  ordinary-member status without member-level audit, exclusion of file contents/
+  scientific values/internal notes/network telemetry/storage identifiers,
+  distinct access-closed and actual byte-
+  deletion timestamps, overdue cleanup escalation without renewed access,
+  equivalent Portal/PDF data with PDF generation timestamp and represented
+  state, no initial CSV route, and Trial/
+  Customer/Partner frozen file-lineage snapshots. Cover sample-scoped mapping to
+  non-PHI Customer sample ID, original submitted-tube supplier barcode, and
+  Phaeno accession; complete included-sample membership for combined/project-
+  level files; no false single-sample mapping; exclusion of derived-container
+  barcodes; and tenant isolation.
+- [ ] Prospect Trial Projects - cover idempotent commercial-only HubSpot request
+  intake, rejection or exclusion of scientific fields from that boundary,
+  POMS-owned scientific scoping, relationship-safe outbound milestones and deep
+  links, dual approval with default CBO/COO authority, domain-specific delegate
+  designation and revocation, primary-versus-delegate attribution, denial outside the
+  authorized domain, retained actor/authority/reason/timestamps, both decisions
+  still required under delegated coverage, rejection when one dual-authorized
+  user attempts both affirmative decisions, two different acting users required
+  for initial and amended scope versions, later delegate revocation preserving
+  valid historical approvals, frozen scope/amendments, Prospect acceptance,
+  versioned RUO/no-PHI affirmation at project acceptance and shipment
+  confirmation, structured PHI/direct-identifier rejection, restricted hold
+  without sensitive propagation into logs, audits, notifications, or HubSpot,
+  blocked receipt progression/processing/release until authorized disposition,
+  project-specific
+  submit authorization, extracted-RNA-only validation, enforcement of each
+  project's frozen approved sample allowance,
+  deadlines/analyses, eligible shipping destinations, versioned detailed
+  instructions, immutable packet allocation/void/replacement, scan-first
+  read-only Lab-work resolution, partial receipt, schedule updates without a
+  fixed turnaround SLA, member
+  view-versus-submit behavior, configurable deliverable catalog with
+  FASTQ/FASTA/BAM as
+  the current default selection, exact deliverable/version snapshots at
+  approval, catalog/default changes affecting only future projects,
+  deliverable changes after approval requiring amendment/reapproval, default
+  changes not rewriting approved projects, the package-retention clock starting
+  only when the project's complete frozen result package is released, effective
+  global-plus-Prospect-organization policy snapshot with no project-level
+  override, result
+  release without payment, replacement approval and
+  original-sample lineage, exactly one restored slot after a Phaeno-caused
+  processing failure, no automatic restoration for a Prospect-supplied sample
+  problem, an explicit recorded Phaeno exception, no silent allowance rewrite,
+  configurable 30-day residual-material default, immutable project-specific
+  retention/disposition snapshot, future-only configuration changes, retain-
+  until calculation at terminal closure, no automatic disposition, authorized
+  exhaustion/destruction recording, pre-first-shipment return approval with
+  destination/handling/payer, separate return tracking, post-shipment return
+  denial, controlled-hold suspension, and rejection of material reuse without a
+  separate written-authorization workflow,
+  complete-package enforcement before `Completed`, a required reason for the
+  `Closed incomplete` outcome, separate final HubSpot outcomes, required
+  owner/date for nonterminal follow-up, denial of automatic conversion from any HubSpot
+  outcome, explicit authorized POMS conversion, terminal states, HubSpot retry,
+  conversion preservation without resetting or extending the frozen standard
+  or final package-deletion deadline, byte deletion with retained project/
+  result/audit history, no automatic organization deactivation on package
+  deletion, rejection of deactivation while another active
+  Trial Project, grant, or commercial relationship exists, explicit audited
+  Phaeno closeout deactivation, retained internal estimated retail value and
+  anticipated cost, no QuickBooks records or outbox work through the complete
+  journey, continuity during QuickBooks unavailability, normal-order denial,
+  and cross-tenant metadata/file/result isolation.
+- [ ] Remaining sample-shipping hosted HTTP and Customer freebies - exercise the
+  shared journey through the real ASP.NET authentication middleware and API
+  envelope after an owning authorization can create the shipment; then cover
+  one-time named-Customer promotional grant consumption, no-charge placement
+  and Lab authorization atomicity, and absence of a payment gate or
+  manufactured QuickBooks invoice by default.
 - [ ] Clerk JWT authentication - validate issuer, audience, signature, and expiry with integration-level test coverage.
 - [ ] Session/bootstrap endpoint - cover unauthorized, disabled, no active memberships, organization unavailable, and ready states with database-backed endpoint tests.
 - [ ] Invitation endpoints - cover required invited first/last name, intended
@@ -316,6 +451,22 @@ and rollback-isolated PostgreSQL coverage.
 
 ## Requested Execution Log
 
+- 2026-08-18: the shared sample-shipping PostgreSQL slice added three passing
+  controller/database journeys and corrected EF state for newly registered
+  UUID-keyed tubes and packet revisions. Running every opt-in PostgreSQL test
+  exposed an existing nested-transaction failure in the Lab material-lot path;
+  that endpoint now joins an ambient transaction while retaining its own
+  transaction for ordinary requests. The complete backend suite then passed
+  against the local `phaeno_ops` database: 176 passed, 0 skipped, 0 failed.
+- 2026-08-18: the registered supplier-tube workflow compiled in a clean
+  `dotnet build backend/PSeq.Operations.slnx --no-restore` with zero warnings
+  and zero errors. Migration `20260818221045_AddRegisteredSampleTubeWorkflow`
+  was generated and applied to the confirmed local `phaeno_ops` database.
+  EF reported no pending model changes. The completion pass ran the full
+  backend suite: 163 tests passed, 10 existing database-environment tests were
+  skipped, and no tests failed. Focused sample-shipping and persistence
+  coverage passed 9 tests. Authenticated database/API coverage for the future
+  Trial Project and Customer promotional parents remains deferred above.
 - 2026-08-08: locale-aware Website technical-brief fulfillment passed an
   eight-locale template/configuration audit, the Website production build, and
   the backend Release solution build with zero backend warnings or errors. The

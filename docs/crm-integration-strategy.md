@@ -88,6 +88,18 @@ HubSpot owns:
 - Investor relationships
 - Partner relationships
 
+For a Trial Project, HubSpot initiates only the commercial request: Deal,
+company, primary contact, Sales owner, business objective, commercial
+justification, and intended conversion relationship. Phaeno staff define all
+sample allowances, submission windows, analyses, deliverables, shipping
+constraints, and other scientific or operational scope in the Portal. HubSpot
+receives only relationship-safe milestones and an internal Portal deep link.
+HubSpot also owns the commercial disposition: `Converted to Customer`,
+`Converted to Partner`, reason-required `Closed without conversion`, or
+nonterminal `Follow-up scheduled` with an owner and date. Portal operational
+completion remains independent, and no HubSpot disposition automatically
+changes an organization's Portal kind or access.
+
 ## Integration Architecture
 
 ```text
@@ -215,6 +227,9 @@ scientific storage unless a separately approved future boundary says otherwise:
 - QC metrics and results
 - Bioinformatics inputs and outputs
 - Laboratory protocols and workflow details
+- Physical-material retention, return, tracking, and destruction details
+- Organization-level digital retention overrides, package download state,
+  warning/grace delivery, and file-byte deletion details
 - Scientific report contents
 - Raw instrument data
 - Sample-level scientific metadata

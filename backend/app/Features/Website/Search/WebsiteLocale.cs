@@ -7,6 +7,7 @@ public static class WebsiteLocale
     public const string French = "fr";
     public const string Spanish = "es";
     public const string SimplifiedChinese = "zh-Hans";
+    public const string TraditionalChinese = "zh-Hant";
     public const string Japanese = "ja";
     public const string German = "de-DE";
     public const string Italian = "it";
@@ -44,6 +45,15 @@ public static class WebsiteLocale
             || normalized.StartsWith("zh-Hans-", StringComparison.OrdinalIgnoreCase))
         {
             return SimplifiedChinese;
+        }
+
+        if (normalized.Equals("zh-TW", StringComparison.OrdinalIgnoreCase)
+            || normalized.Equals("zh-HK", StringComparison.OrdinalIgnoreCase)
+            || normalized.Equals("zh-MO", StringComparison.OrdinalIgnoreCase)
+            || normalized.Equals(TraditionalChinese, StringComparison.OrdinalIgnoreCase)
+            || normalized.StartsWith("zh-Hant-", StringComparison.OrdinalIgnoreCase))
+        {
+            return TraditionalChinese;
         }
 
         if (normalized.Equals(Japanese, StringComparison.OrdinalIgnoreCase)

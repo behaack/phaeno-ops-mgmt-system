@@ -90,6 +90,10 @@ public sealed record SessionCapabilitiesDto
 
     public required bool CanViewSampleProgress { get; init; }
 
+    public required bool CanViewSampleShipping { get; init; }
+
+    public required bool CanManageSampleShipping { get; init; }
+
     public required bool CanDownloadLabResults { get; init; }
 
     public required bool CanViewReagentOrders { get; init; }

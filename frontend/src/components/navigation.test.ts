@@ -113,6 +113,29 @@ describe('documentation navigation permissions', () => {
   )
 })
 
+describe('sample-shipping navigation permissions', () => {
+  it.each<OrganizationKind>(['Prospect', 'Customer'])(
+    'shows Samples & shipping for an authorized %s context',
+    (kind) => {
+      const session = createSession(kind, { canViewSampleShipping: true })
+
+      expect(getVisibleMainMenuItems(session, {
+        selectedOrganizationKind: kind,
+        selectedMembership: session.memberships.at(-1),
+      }).map((item) => item.label)).toContain('Samples & shipping')
+    },
+  )
+
+  it('does not show Samples & shipping for a Partner context', () => {
+    const session = createSession('Partner', { canViewSampleShipping: true })
+
+    expect(getVisibleMainMenuItems(session, {
+      selectedOrganizationKind: 'Partner',
+      selectedMembership: session.memberships.at(-1),
+    }).map((item) => item.label)).not.toContain('Samples & shipping')
+  })
+})
+
 describe('navigation placement', () => {
   it('keeps frequent Phaeno work in the toolbar and moves secondary destinations to the menu', () => {
     const session = createSession('Phaeno', {
@@ -206,6 +229,8 @@ function createSession(
       canAcceptLabServiceQuotes: false,
       canRequestLabServiceCancellation: false,
       canViewSampleProgress: false,
+      canViewSampleShipping: false,
+      canManageSampleShipping: false,
       canDownloadLabResults: false,
       canViewReagentOrders: false,
       canCreateReagentOrders: false,

@@ -62,7 +62,7 @@ backend/app/
 - `modules/PSeq.Operations.Commercial/Accounts`: account domain entities, pure authorization policy, invitation-token logic, and the invitation-delivery port.
 - `modules/PSeq.Operations.Commercial/Relationships`: relationship requests, service entitlements, and service-eligibility policy.
 - `modules/PSeq.Operations.Commercial/DataProvisioning`: curated-data domain entities, environment-neutral policy, deterministic manifest construction, and file/notification ports.
-- `modules/PSeq.Operations.Commercial/OrderManagement`: commercial configuration/catalog, Partner kit ordering and fulfillment, request-revision and quote records, external download audit, commercial workflow and integration records, and environment-neutral QuickBooks/notification ports.
+- `modules/PSeq.Operations.Commercial/OrderManagement`: commercial configuration/catalog, Partner kit ordering and fulfillment, shared sample-shipping configuration, return-kit and registered supplier-tube inventory, frozen packet/crosswalk records, request-revision and quote records, external download audit, commercial workflow and integration records, and environment-neutral QuickBooks/notification ports.
 - `modules/PSeq.Operations.Commercial/LabOperations`: the provider-neutral v1
   Commercial-to-Lab command, acknowledgment, projection, event-envelope, and
   provider-port types. Commercial owns this boundary; Laboratory execution and
@@ -117,18 +117,17 @@ The backend uses Entity Framework Core with PostgreSQL through the Npgsql provid
 - Current business-model target: Commercial/current-flow and Lab projection
   entities map to `commercial_ops`; Laboratory execution entities map to
   `lab_ops`; Website intake entities map to `website`; no default schema is used
-- Laboratory schema: `lab_ops`, with 22 explicitly mapped Laboratory tables
+- Laboratory schema: `lab_ops`, with 27 explicitly mapped Laboratory tables
 - EF migrations history table: `public.__ef_migrations_history`
 - Connection string key: `ConnectionStrings:DefaultConnection`
 
-The verified pre-Website disposable Development database is named `phaeno_ops`.
-It was rebuilt on 2026-07-16 from `InitialPSeqOperations`, then extended by
-`AddLabOperationsFoundation`, `AddLabProviderCommandReceipts`,
-`CompleteLabOperations`, `AddLabQcProjection`,
-and `EnforceLabLibraryLineage`. The generated `AddWebsiteApi` migration has not
-been applied by this work. The current model contains 54 tables in
-`commercial_ops`, 26 Laboratory tables in `lab_ops`, two Website tables in
-`website`, and migration history in `public`; it has no `portal` schema.
+The verified disposable Development database is named `phaeno_ops`. It was
+rebuilt on 2026-07-16 from `InitialPSeqOperations` and extended through the
+current feature migrations. The latest sample-shipping migrations are
+`AddSampleShippingFoundation` and `AddRegisteredSampleTubeWorkflow`; both were
+applied to the confirmed local database. The current model contains 63 tables
+in `commercial_ops`, 27 Laboratory tables in `lab_ops`, two Website tables
+in `website`, and migration history in `public`; it has no `portal` schema.
 
 Use environment configuration for non-development database credentials. In ASP.NET Core configuration, the connection string can be supplied with `ConnectionStrings__DefaultConnection`.
 

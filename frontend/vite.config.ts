@@ -9,7 +9,7 @@ import { nitro } from 'nitro/vite'
 import viteReact from '@vitejs/plugin-react'
 import tailwindcss from '@tailwindcss/vite'
 
-const config = defineConfig(({ command }) => ({
+const config = defineConfig(({ command, mode }) => ({
   server: {
     host: '127.0.0.1',
     port: 3000,
@@ -41,16 +41,20 @@ const config = defineConfig(({ command }) => ({
   plugins: [
     { enforce: 'pre', ...mdx() },
     tailwindcss(),
-    tanstackStart(),
-    nitro({
-      devProxy: {
-        '/api/**': {
-          target: 'https://localhost:44399',
-          changeOrigin: true,
-          secure: false,
-        },
-      },
-    }),
+    ...(mode === 'test'
+      ? []
+      : [
+          tanstackStart(),
+          nitro({
+            devProxy: {
+              '/api/**': {
+                target: 'https://localhost:44399',
+                changeOrigin: true,
+                secure: false,
+              },
+            },
+          }),
+        ]),
     viteReact({ include: /\.(js|jsx|md|mdx|ts|tsx)$/ }),
   ],
   test: {

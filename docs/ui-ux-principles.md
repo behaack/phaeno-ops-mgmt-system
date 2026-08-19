@@ -67,7 +67,7 @@ Use task-oriented entry points with record-centered workspaces.
   not place direct account creation or manual intake actions on the standard
   Accounts list or detail page; show the disconnected integration state
   honestly until automated intake is operational.
-- Multi-section workspaces use one shared sidebar anchored to the far-left viewport edge beneath the primary toolbar. On wide screens it may remain pinned; when unpinned or narrow, hovering at the pointer edge previews the same rail and the persistent edge tab provides keyboard and click access.
+- Multi-section workspaces use one shared sidebar anchored to the far-left viewport edge beneath the primary toolbar. On wide screens it may remain pinned; when unpinned, a fine pointer may preview the same rail from the viewport edge. The persistent edge tab provides keyboard, click, and touch access. On narrow or coarse-pointer layouts, the rail stays open until the user selects a section, toggles the tab, or presses Escape.
 - The unpinned rail is non-modal: it does not add a backdrop, trap focus, blur the page, or move content. A pinned rail preserves the normal centered page position when it fits in the available left margin and reflows the page only when the rail would otherwise overlap it.
 - Remember the sidebar pin preference as a low-risk presentation setting, and show pin controls only on wide layouts. Keep section selection, keyboard focus, Escape behavior, and accessible names intact across pinned and unpinned states, and do not render duplicate navigation for one viewport.
 - Searchable lists provide access to core records.

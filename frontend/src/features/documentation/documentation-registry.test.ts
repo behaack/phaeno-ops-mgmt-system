@@ -22,7 +22,11 @@ describe('documentation registry', () => {
               50, 51, 52, 53, 54, 55, 56,
               60, 70,
             ]
-          : [10, 20, 30, 40, 50, 60]),
+          : audience === 'prospect'
+            ? [10, 20, 25, 30, 40, 50, 60]
+            : audience === 'customer'
+              ? [10, 20, 30, 35, 40, 50, 60]
+              : [10, 20, 30, 40, 50, 60]),
       ])
       expect(entries.every((entry) => entry.audience === audience)).toBe(true)
     }
@@ -72,6 +76,12 @@ describe('documentation registry', () => {
     )
     expect(getDocumentationEntry('customer', 'lab-services')?.title).toBe(
       'Request laboratory services',
+    )
+    expect(getDocumentationEntry('prospect', 'sample-shipping')?.title).toBe(
+      'Prepare and ship samples',
+    )
+    expect(getDocumentationEntry('customer', 'sample-shipping')?.title).toBe(
+      'Prepare and ship samples',
     )
     expect(getDocumentationEntry('phaeno', 'lab-operations')?.title).toBe(
       'Laboratory operations',

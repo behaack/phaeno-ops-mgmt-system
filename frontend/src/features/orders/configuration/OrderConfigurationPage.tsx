@@ -3,6 +3,7 @@ import {
   Boxes,
   ChartSpline,
   Landmark,
+  PackageCheck,
   RefreshCw,
   Settings,
   Workflow,
@@ -18,9 +19,10 @@ import { AnalysisConfigurationPanel } from './AnalysisConfigurationPanel'
 import { AssemblyConfigurationPanel } from './AssemblyConfigurationPanel'
 import { CommercialConfigurationPanel } from './CommercialConfigurationPanel'
 import { ReagentConfigurationPanel } from './ReagentConfigurationPanel'
+import { SampleShippingConfigurationPanel } from './SampleShippingConfigurationPanel'
 import { SystemConfigurationPanel } from './SystemConfigurationPanel'
 
-type ConfigurationSection = 'system' | 'analyses' | 'reagents' | 'assembly' | 'commercial'
+type ConfigurationSection = 'system' | 'analyses' | 'sample-shipping' | 'reagents' | 'assembly' | 'commercial'
 
 const configurationSections: ReadonlyArray<WorkspaceSidebarItem<ConfigurationSection>> = [
   {
@@ -34,6 +36,12 @@ const configurationSections: ReadonlyArray<WorkspaceSidebarItem<ConfigurationSec
     label: 'Analyses',
     description: 'Scientific analysis definitions and pricing links',
     icon: ChartSpline,
+  },
+  {
+    value: 'sample-shipping',
+    label: 'Sample shipping',
+    description: 'Destinations, sample types, and detailed packet instructions',
+    icon: PackageCheck,
   },
   {
     value: 'reagents',
@@ -80,7 +88,7 @@ export function OrderConfigurationPage() {
               <p className="mt-2 max-w-3xl text-sm leading-6 text-muted-foreground">
                 Link QuickBooks items to scientific services, maintain Partner-negotiated
                 reagent prices, version assembly profiles, and control credit-dependent
-                release behavior.
+                release behavior and sample-shipping packets.
               </p>
             </div>
             <Button
@@ -112,6 +120,7 @@ export function OrderConfigurationPage() {
           {configuration.isLoading ? <p role="status">Loading order configuration…</p> : null}
           {configuration.data && section === 'system' ? <SystemConfigurationPanel configuration={configuration.data} /> : null}
           {configuration.data && section === 'analyses' ? <AnalysisConfigurationPanel configuration={configuration.data} /> : null}
+          {section === 'sample-shipping' ? <SampleShippingConfigurationPanel apiEnabled={apiEnabled} /> : null}
           {configuration.data && section === 'reagents' ? <ReagentConfigurationPanel configuration={configuration.data} /> : null}
           {configuration.data && section === 'assembly' ? <AssemblyConfigurationPanel configuration={configuration.data} /> : null}
           {configuration.data && section === 'commercial' ? <CommercialConfigurationPanel configuration={configuration.data} /> : null}
