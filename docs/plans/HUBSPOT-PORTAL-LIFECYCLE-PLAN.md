@@ -36,12 +36,15 @@ Do not execute this plan unless explicitly requested.
   Company and Deal identifiers, and safe requested outcome. It creates a
   pending `HubSpot`-sourced `Onboarding` or `Evaluation` request, rejects replay
   of the same Company/Deal request identity, and never creates or activates an
-  organization, invitation, membership, entitlement, or order by itself. After
-  approval, a separate Phaeno action can create and associate the durable
-  account with pending Portal readiness, then open its details workspace.
-  Phaeno manages the HubSpot-designated contact through the Portal invitation
-  and membership controls; account creation still grants no user access or
-  service entitlement and does not mark the request applied.
+  organization, invitation, membership, entitlement, or order by itself.
+  Approving an unassociated onboarding or evaluation request now atomically
+  creates and associates the durable Prospect, Customer, or Partner with
+  pending Portal readiness, then opens its details workspace. Phaeno manages
+  the HubSpot-designated contact through the Portal invitation and membership
+  controls; approval still grants no user access or service entitlement,
+  creates no order, and does not mark the request applied. The separate
+  account-creation endpoint remains a restricted recovery path for approved
+  requests saved before this behavior changed, not a normal Accounts action.
 - Phase 0 developer setup began on 2026-07-15. HubSpot developer project
   `Phaeno Portal Integration` (project ID `317349345`) and its private,
   static-auth app shell (app ID `45850780`) were created on platform version
@@ -310,12 +313,12 @@ The intended automated handoff is:
 3. POMS validates the source identifiers and request revision, applies a
    deterministic idempotency key, and records or returns the same pending
    request for duplicate delivery.
-4. An authorized Phaeno user reviews the request. Receipt and approval do not
-   by themselves create access, enable a service, send an invitation, or place
-   an order.
-5. POMS creates or links the external account, completes readiness and access
-   work through the owning workflows, and records the request as applied only
-   after those outcomes are verified.
+4. An authorized Phaeno user reviews the request. Approving an unassociated
+   onboarding or evaluation request atomically creates and links the external
+   account with pending Portal readiness. Receipt or approval does not create
+   access, enable a service, send an invitation, or place an order.
+5. POMS completes readiness and access work through the owning workflows and
+   records the request as applied only after those outcomes are verified.
 6. POMS publishes the safe request status, Portal account identifier, and
    approved lifecycle summaries back to HubSpot through the durable outbound
    integration boundary.
@@ -890,9 +893,10 @@ disposable manual proof records described above are live in the Free account.
   exception.
 - A durable manual/HubSpot request model and Phaeno review queue now cover
   onboarding, evaluation, service change, relationship change,
-  Sales-assisted order, and offboarding. Approval never creates an
-  organization, invitation, entitlement, or order; operations must make and
-  verify the owning change before marking the request applied.
+  Sales-assisted order, and offboarding. Approval of an unassociated onboarding
+  or evaluation request atomically creates its pending-readiness organization;
+  no approval creates an invitation, entitlement, or order. Operations must
+  make and verify those owning changes before marking the request applied.
 - The Phaeno UI now provides organization list/detail, readiness, member and
   invitation administration, entitlements, Prospect conversion, and request
   review. Live HubSpot ingestion, outbound status synchronization,
@@ -961,7 +965,9 @@ disposable manual proof records described above are live in the Free account.
    Phaeno defines and approves scientific scope in POMS, and one Portal Prospect
    and one invitation are created after approval despite webhook replay.
 3. Closed Won for a direct buyer creates a pending onboarding request, not an
-   active tenant. Phaeno approval activates only the selected services.
+   active tenant. Phaeno approval creates the pending Customer or Partner
+   account, while selected services remain inactive until explicit entitlement
+   setup is completed.
 4. The designated administrator is invited; other HubSpot contacts and later
    Portal members are not synchronized automatically.
 5. An entitled Customer places a configured-price PSeq Lab Service directly;

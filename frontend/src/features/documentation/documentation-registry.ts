@@ -312,7 +312,7 @@ export const documentationEntries: readonly DocumentationEntry[] = [
     summary: 'Select the Phaeno workspace, find operational tools, and support users safely.',
     section: 'Basics',
     order: 10,
-    reviewedAt: '2026-08-06',
+    reviewedAt: '2026-08-19',
     Content: PhaenoGettingStarted,
   },
   {
@@ -323,7 +323,7 @@ export const documentationEntries: readonly DocumentationEntry[] = [
     summary: 'Manage organizations, Portal requests, readiness, service entitlements, invitations, and access.',
     section: 'Platform operations',
     order: 20,
-    reviewedAt: '2026-08-06',
+    reviewedAt: '2026-08-19',
     Content: PhaenoOrganizationAndUserAdministration,
   },
   {

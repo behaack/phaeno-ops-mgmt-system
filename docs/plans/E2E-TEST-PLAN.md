@@ -278,8 +278,8 @@ the protected deployed-Preview acceptance above.
   required invited names, invitation-time Phaeno role intent with no pre-accept
   access, atomic role activation on acceptance, resend/revoke, role and
   membership lifecycle, Prospect conversion with stable
-  identity, readiness, request review without implicit provisioning,
-  approved simulated HubSpot account creation and details-page navigation,
+  identity, readiness, account creation limited to eligible new-account
+  approvals, atomic simulated HubSpot approval and details-page navigation,
   Phaeno-controlled designated-contact invitation and membership management,
   consolidated Phaeno profile, Platform administrator, and additive
   laboratory-role editing on one durable User management record rather than a

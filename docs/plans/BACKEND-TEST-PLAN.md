@@ -444,12 +444,13 @@ and rollback-isolated PostgreSQL coverage.
   platform-admin gate, path-specific organization/service validation, unique
   Deal replay rejection, the account simulator's Prospect/Customer/Partner and
   service validation, Company-plus-Deal replay rejection, `HubSpot` source
-  mapping, and the guarantee that simulation or approval alone creates no
-  organization, invitation, entitlement, order, or Trial Project. Cover the
-  separate approved-request account-creation endpoint, including supported
-  request type/kind validation, duplicate-name and stale-version rejection,
+  mapping, and the guarantee that simulation alone creates no organization,
+  invitation, entitlement, order, or Trial Project. Cover atomic approval plus
+  account creation for unassociated onboarding/evaluation requests, including
+  supported kind validation, duplicate-name and stale-version rejection,
   durable request association, Pending readiness, and the guarantee that it
   creates no invitation or entitlement and does not mark the request applied.
+  Retain coverage of the separate endpoint as a legacy-request recovery path.
 - [ ] Remaining relationship management persistence - cover audit
   actor/time/version stamping, existing-organization readiness migration
   default, and request-number uniqueness.

@@ -445,6 +445,12 @@ public sealed class RelationshipManagementController(
         var value = await RequireRequestAsync(requestId, tracking: true, cancellationToken);
         EnsureVersion(value.Version, request.Version);
         Execute(() => value.Decide(request.Approved, request.Reason, actor.Id, DateTime.UtcNow));
+
+        if (request.Approved && IsNewAccountRequest(value))
+        {
+            await CreateAndAssociateAccountAsync(value, cancellationToken);
+        }
+
         await dbContext.SaveChangesAsync(cancellationToken);
         return ToDto(value);
     }
@@ -458,62 +464,7 @@ public sealed class RelationshipManagementController(
         await RequirePlatformAdminAsync(cancellationToken);
         var value = await RequireRequestAsync(requestId, tracking: true, cancellationToken);
         EnsureVersion(value.Version, request.Version);
-
-        if (value.Status != PortalIntegrationRequestStatus.Approved)
-        {
-            throw Conflict(
-                "account_request_not_approved",
-                "Approve the account request before creating its account.");
-        }
-
-        if (value.OrganizationId.HasValue)
-        {
-            throw Conflict(
-                "account_request_already_associated",
-                "This request is already associated with an account.");
-        }
-
-        if (value.RequestType is not (
-            PortalIntegrationRequestType.Onboarding
-            or PortalIntegrationRequestType.Evaluation))
-        {
-            throw new RelationshipManagementException(
-                "account_request_type_invalid",
-                "Only an onboarding or evaluation request can create a new account.");
-        }
-
-        if (value.RequestedOrganizationKind is not (
-            OrganizationKind.Prospect
-            or OrganizationKind.Customer
-            or OrganizationKind.Partner))
-        {
-            throw new RelationshipManagementException(
-                "account_request_kind_invalid",
-                "The approved request must identify a Prospect, Customer, or Partner relationship.");
-        }
-
-        var duplicate = await dbContext.Organizations.AsNoTracking()
-            .AnyAsync(organization => organization.Name == value.CandidateOrganizationName, cancellationToken);
-        if (duplicate)
-        {
-            throw Conflict(
-                "account_name_already_exists",
-                "An account with this name already exists. Associate the request with that account instead.");
-        }
-
-        var description = value.Summary.Length <= 1000
-            ? value.Summary
-            : value.Summary[..1000];
-        var organization = new Organization(
-            value.CandidateOrganizationName,
-            value.RequestedOrganizationKind.Value,
-            description);
-        organization.UpdatePortalReadiness(
-            PortalReadinessStatus.Pending,
-            $"Created from approved request {value.RequestNumber}. Phaeno must still configure users and any requested services.");
-
-        dbContext.Organizations.Add(organization);
-        Execute(() => value.AssociateOrganization(organization.Id));
+        var organization = await CreateAndAssociateAccountAsync(value, cancellationToken);
         await dbContext.SaveChangesAsync(cancellationToken);
 
         return ToDto(organization);
@@ -594,6 +545,73 @@ public sealed class RelationshipManagementController(
 
         return await query.FirstOrDefaultAsync(value => value.Id == requestId, cancellationToken)
             ?? throw NotFound("relationship_request_not_found", "The Portal integration request was not found.");
+    }
+
+    private static bool IsNewAccountRequest(PortalIntegrationRequest value) =>
+        !value.OrganizationId.HasValue
+        && value.RequestType is PortalIntegrationRequestType.Onboarding or PortalIntegrationRequestType.Evaluation
+        && value.RequestedOrganizationKind is OrganizationKind.Prospect or OrganizationKind.Customer or OrganizationKind.Partner;
+
+    private async Task<Organization> CreateAndAssociateAccountAsync(
+        PortalIntegrationRequest value,
+        CancellationToken cancellationToken)
+    {
+        if (value.Status != PortalIntegrationRequestStatus.Approved)
+        {
+            throw Conflict(
+                "account_request_not_approved",
+                "Approve the account request before creating its account.");
+        }
+
+        if (value.OrganizationId.HasValue)
+        {
+            throw Conflict(
+                "account_request_already_associated",
+                "This request is already associated with an account.");
+        }
+
+        if (value.RequestType is not (
+            PortalIntegrationRequestType.Onboarding
+            or PortalIntegrationRequestType.Evaluation))
+        {
+            throw new RelationshipManagementException(
+                "account_request_type_invalid",
+                "Only an onboarding or evaluation request can create a new account.");
+        }
+
+        if (value.RequestedOrganizationKind is not (
+            OrganizationKind.Prospect
+            or OrganizationKind.Customer
+            or OrganizationKind.Partner))
+        {
+            throw new RelationshipManagementException(
+                "account_request_kind_invalid",
+                "The approved request must identify a Prospect, Customer, or Partner relationship.");
+        }
+
+        var duplicate = await dbContext.Organizations.AsNoTracking()
+            .AnyAsync(organization => organization.Name == value.CandidateOrganizationName, cancellationToken);
+        if (duplicate)
+        {
+            throw Conflict(
+                "account_name_already_exists",
+                "An account with this name already exists. Associate the request with that account instead.");
+        }
+
+        var description = value.Summary.Length <= 1000
+            ? value.Summary
+            : value.Summary[..1000];
+        var organization = new Organization(
+            value.CandidateOrganizationName,
+            value.RequestedOrganizationKind.Value,
+            description);
+        organization.UpdatePortalReadiness(
+            PortalReadinessStatus.Pending,
+            $"Created from approved request {value.RequestNumber}. Phaeno must still configure users and any requested services.");
+
+        dbContext.Organizations.Add(organization);
+        Execute(() => value.AssociateOrganization(organization.Id));
+        return organization;
     }
 
     private async Task EnsureSourceRequestAsync(Guid? requestId, Guid organizationId, PortalService service, CancellationToken cancellationToken)

@@ -63,7 +63,11 @@ export function RequestActionDialog({
 
   if (!action || !request) return null
 
-  const content = actionContent(action)
+  const createsAccountOnApproval = action === 'approve'
+    && !request.organizationId
+    && (request.requestType === 'Onboarding' || request.requestType === 'Evaluation')
+    && (request.requestedOrganizationKind === 'Prospect' || request.requestedOrganizationKind === 'Customer' || request.requestedOrganizationKind === 'Partner')
+  const content = actionContent(action, createsAccountOnApproval)
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -175,15 +179,22 @@ export function RequestActionDialog({
   )
 }
 
-function actionContent(action: RequestAction) {
+function actionContent(action: RequestAction, createsAccountOnApproval: boolean) {
   switch (action) {
     case 'approve':
-      return {
-        title: 'Approve Portal request',
-        description: 'Approval records the decision but does not provision access, services, or an order.',
-        label: 'Approval reason',
-        submitLabel: 'Approve request',
-      }
+      return createsAccountOnApproval
+        ? {
+            title: 'Approve and create Portal account',
+            description: 'Approval creates the account with pending Portal readiness. It does not invite users, activate requested services, or create an order.',
+            label: 'Approval reason',
+            submitLabel: 'Approve and create account',
+          }
+        : {
+            title: 'Approve Portal request',
+            description: 'Approval records the decision but does not provision access, services, or an order.',
+            label: 'Approval reason',
+            submitLabel: 'Approve request',
+          }
     case 'decline':
       return {
         title: 'Decline Portal request',
