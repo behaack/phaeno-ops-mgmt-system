@@ -24,6 +24,7 @@ import {
   type SessionResponse,
 } from '#/api/session'
 import { Button } from '#/components/ui/button'
+import { readStoredInviteToken } from '#/features/auth/invitation-storage'
 
 const SELECTED_ORGANIZATION_STORAGE_KEY = 'phaeno.selectedOrganizationId'
 
@@ -252,17 +253,25 @@ export function AuthGate({ children }: { children: ReactNode }) {
   }
 
   const stateContent = getAccessStateContent(session?.state)
+  const hasPendingInvitation = Boolean(readStoredInviteToken())
   return (
     <AccessState
       title={stateContent.title}
       description={stateContent.description}
       action={
-        <SignOutButton redirectUrl="/">
-          <Button type="button" variant="outline">
-            <LogOut aria-hidden="true" />
-            Sign out
-          </Button>
-        </SignOutButton>
+        <div className="flex flex-wrap gap-2">
+          {hasPendingInvitation && session?.state !== 'disabled' ? (
+            <Button asChild>
+              <a href="/accept-invite">Continue invitation</a>
+            </Button>
+          ) : null}
+          <SignOutButton redirectUrl="/">
+            <Button type="button" variant="outline">
+              <LogOut aria-hidden="true" />
+              Sign out
+            </Button>
+          </SignOutButton>
+        </div>
       }
     />
   )

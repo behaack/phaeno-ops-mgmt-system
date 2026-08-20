@@ -1,7 +1,7 @@
 import { zodResolver } from '@hookform/resolvers/zod'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { Link } from '@tanstack/react-router'
-import { ArrowLeft, Pencil, Plus, UserPlus, Users } from 'lucide-react'
+import { ArrowLeft, Copy, Pencil, Plus, UserPlus, Users } from 'lucide-react'
 import { useState } from 'react'
 import { useForm } from 'react-hook-form'
 import { z } from 'zod'
@@ -10,6 +10,7 @@ import {
   apiErrorMessage,
   applyRelationshipRequest,
   convertProspect,
+  createDevelopmentInvitationLink,
   createEntitlement,
   createInvitation,
   deactivateMembership,
@@ -24,6 +25,7 @@ import {
   revokeInvitation,
   updateMembershipRole,
   updateOrganization,
+  type DevelopmentInvitationLink,
   type RelationshipRequest,
   type ServiceEntitlement,
 } from '#/api/organization-management'
@@ -51,6 +53,7 @@ export function OrganizationDetailPage({ organizationId }: { organizationId: str
   const [entitlementOpen, setEntitlementOpen] = useState(false)
   const [conversionTarget, setConversionTarget] = useState<'Customer' | 'Partner' | null>(null)
   const [lifecycleTarget, setLifecycleTarget] = useState<DetailLifecycleTarget>(null)
+  const [developmentInviteLink, setDevelopmentInviteLink] = useState<DevelopmentInvitationLink | null>(null)
   const [requestActionTarget, setRequestActionTarget] = useState<{
     action: RequestAction
     request: RelationshipRequest
@@ -77,11 +80,12 @@ export function OrganizationDetailPage({ organizationId }: { organizationId: str
   const inviteMutation = useMutation({ mutationFn: (values: InviteValues) => createInvitation({ organizationId, firstName: values.firstName, lastName: values.lastName, email: values.email, isOrganizationAdmin: values.role === 'Administrator', labRoles: [] }), onSuccess: async () => { await refresh(); setInviteOpen(false) } })
   const memberMutation = useMutation({ mutationFn: async ({ membershipId, action, isAdmin }: { membershipId: string; action: 'role' | 'deactivate'; isAdmin?: boolean }) => action === 'role' ? updateMembershipRole(membershipId, Boolean(isAdmin)) : deactivateMembership(membershipId), onSuccess: () => { setLifecycleTarget(null); void refresh() } })
   const inviteAction = useMutation({ mutationFn: revokeInvitation, onSuccess: refresh })
+  const developmentLinkMutation = useMutation({ mutationFn: createDevelopmentInvitationLink, onSuccess: async (result) => { setDevelopmentInviteLink(result); await client.invalidateQueries({ queryKey: ['organization-invitations', organizationId] }) } })
   const entitlementMutation = useMutation({ mutationFn: (values: EntitlementFormValues) => createEntitlement(organizationId, { service: values.service, effectiveFrom: new Date(values.effectiveFrom).toISOString(), effectiveTo: values.effectiveTo ? new Date(values.effectiveTo).toISOString() : null, configurationStatus: values.configurationStatus, sourceRequestId: values.sourceRequestId || null, notes: values.notes || null }), onSuccess: async () => { await refresh(); setEntitlementOpen(false) } })
   const endMutation = useMutation({ mutationFn: ({ entitlement, reason }: { entitlement: ServiceEntitlement; reason: string }) => endEntitlement(organizationId, entitlement.id, { effectiveTo: new Date().toISOString(), reason, version: entitlement.version }), onSuccess: () => { setLifecycleTarget(null); void refresh() } })
   const requestAction = useMutation({ mutationFn: ({ request, action, text }: { request: RelationshipRequest; action: RequestAction; text: string }) => action === 'apply' ? applyRelationshipRequest(request.id, { notes: text, version: request.version }) : decideRelationshipRequest(request.id, { approved: action === 'approve', reason: text, version: request.version }), onSuccess: () => { setRequestActionTarget(null); void refresh() } })
 
-  const error = organizationQuery.error ?? summaryQuery.error ?? usersQuery.error ?? invitationsQuery.error ?? entitlementsQuery.error ?? requestsQuery.error ?? editMutation.error ?? conversionMutation.error ?? inviteMutation.error ?? memberMutation.error ?? inviteAction.error ?? entitlementMutation.error ?? endMutation.error ?? requestAction.error
+  const error = organizationQuery.error ?? summaryQuery.error ?? usersQuery.error ?? invitationsQuery.error ?? entitlementsQuery.error ?? requestsQuery.error ?? editMutation.error ?? conversionMutation.error ?? inviteMutation.error ?? memberMutation.error ?? inviteAction.error ?? developmentLinkMutation.error ?? entitlementMutation.error ?? endMutation.error ?? requestAction.error
   if (organizationQuery.isLoading) return <main className="page-wrap px-4 py-8"><p className="text-sm text-muted-foreground">Loading organization…</p></main>
   if (!organization) return <NotFound />
 
@@ -102,7 +106,46 @@ export function OrganizationDetailPage({ organizationId }: { organizationId: str
 
       <Card><CardContent className="pt-6"><Tabs value={activeTab} onValueChange={setActiveTab}><TabsList className="flex h-auto flex-wrap"><TabsTrigger value="overview">Overview</TabsTrigger><TabsTrigger value="members">Users</TabsTrigger><TabsTrigger value="services">Services</TabsTrigger><TabsTrigger value="requests">Requests</TabsTrigger><TabsTrigger value="retention">Retention</TabsTrigger></TabsList>
         <TabsContent value="overview" className="mt-5 space-y-4"><div className="grid gap-4 md:grid-cols-2"><Info label="Relationship type" value={organization.kind} /><Info label="Status" value={organization.isActive ? 'Active' : 'Inactive'} /><Info label="Portal readiness" value={readinessLabel(organization.portalReadiness)} /><Info label="Pending requests" value={`${summary?.pendingRequestCount ?? 0}`} /></div><div className="rounded-lg border p-4"><h2 className="font-medium">Readiness note</h2><p className="mt-2 text-sm text-muted-foreground">{organization.portalReadinessNote || 'No readiness note recorded.'}</p></div>{organization.kind === 'Prospect' ? <div className="rounded-lg border p-4"><h2 className="font-medium">Convert qualified prospect</h2><p className="mt-1 text-sm text-muted-foreground">Conversion changes the relationship type only. Access, invitations, and services remain explicit.</p><div className="mt-3 flex gap-2"><Button size="sm" disabled={conversionMutation.isPending} onClick={() => setConversionTarget('Customer')}>Convert to customer</Button><Button size="sm" variant="outline" disabled={conversionMutation.isPending} onClick={() => setConversionTarget('Partner')}>Convert to partner</Button></div></div> : null}</TabsContent>
-        <TabsContent value="members" className="mt-5 space-y-5"><div className="flex items-center justify-between gap-3"><div><h2 className="font-medium">Account users and invitations</h2><p className="text-sm text-muted-foreground">HubSpot may identify an account contact, but only a Phaeno-reviewed Portal invitation grants access. Assign the designated administrator here.</p></div><Button size="sm" onClick={() => setInviteOpen(true)}><UserPlus data-icon="inline-start" />Invite user</Button></div><div className="space-y-3">{(usersQuery.data ?? []).map((user) => { const membership = user.memberships.find((value) => value.organizationId === organizationId); if (!membership) return null; return <div key={user.id} className="flex flex-col gap-3 rounded-lg border p-4 sm:flex-row sm:items-center sm:justify-between"><div><p className="font-medium">{user.firstName} {user.lastName}</p><p className="text-sm text-muted-foreground">{user.email} · {membership.isOrganizationAdmin ? 'Administrator' : 'Member'} · {membership.isActive ? user.status : 'Membership inactive'}</p></div><div className="flex gap-2">{membership.isActive ? <><Button size="sm" variant="outline" disabled={memberMutation.isPending} onClick={() => memberMutation.mutate({ membershipId: membership.id, action: 'role', isAdmin: !membership.isOrganizationAdmin })}>{membership.isOrganizationAdmin ? 'Make member' : 'Make admin'}</Button><Button size="sm" variant="destructive" disabled={memberMutation.isPending} onClick={() => setLifecycleTarget({ kind: 'member', membershipId: membership.id, email: user.email })}>Deactivate</Button></> : null}</div></div> })}{!usersQuery.isLoading && !(usersQuery.data ?? []).length ? <p className="rounded-lg border p-6 text-center text-sm text-muted-foreground">No account users yet.</p> : null}</div><div><h3 className="mb-3 font-medium">Pending invitations</h3><div className="space-y-2">{pendingInvitations.map((invite) => <div key={invite.id} className="flex items-center justify-between gap-3 rounded-lg border p-3"><div><p className="text-sm font-medium">{invite.firstName} {invite.lastName}</p><p className="text-xs text-muted-foreground">{invite.email} · {invite.isOrganizationAdmin ? 'Administrator' : 'Member'} · expires {formatDate(invite.expiresAt)}</p></div><Button size="sm" variant="outline" disabled={inviteAction.isPending} onClick={() => inviteAction.mutate(invite.id)}>Revoke</Button></div>)}{!pendingInvitations.length ? <p className="text-sm text-muted-foreground">No pending invitations.</p> : null}</div></div></TabsContent>
+        <TabsContent value="members" className="mt-5 space-y-5">
+          <div className="flex items-center justify-between gap-3">
+            <div>
+              <h2 className="font-medium">Account users and invitations</h2>
+              <p className="text-sm text-muted-foreground">HubSpot may identify an account contact, but only a Phaeno-reviewed Portal invitation grants access. Assign the designated administrator here.</p>
+            </div>
+            <Button size="sm" onClick={() => setInviteOpen(true)}><UserPlus data-icon="inline-start" />Invite user</Button>
+          </div>
+          <div className="space-y-3">
+            {(usersQuery.data ?? []).map((user) => {
+              const membership = user.memberships.find((value) => value.organizationId === organizationId)
+              if (!membership) return null
+              return <div key={user.id} className="flex flex-col gap-3 rounded-lg border p-4 sm:flex-row sm:items-center sm:justify-between"><div><p className="font-medium">{user.firstName} {user.lastName}</p><p className="text-sm text-muted-foreground">{user.email} · {membership.isOrganizationAdmin ? 'Administrator' : 'Member'} · {membership.isActive ? user.status : 'Membership inactive'}</p></div><div className="flex gap-2">{membership.isActive ? <><Button size="sm" variant="outline" disabled={memberMutation.isPending} onClick={() => memberMutation.mutate({ membershipId: membership.id, action: 'role', isAdmin: !membership.isOrganizationAdmin })}>{membership.isOrganizationAdmin ? 'Make member' : 'Make admin'}</Button><Button size="sm" variant="destructive" disabled={memberMutation.isPending} onClick={() => setLifecycleTarget({ kind: 'member', membershipId: membership.id, email: user.email })}>Deactivate</Button></> : null}</div></div>
+            })}
+            {!usersQuery.isLoading && !(usersQuery.data ?? []).length ? <p className="rounded-lg border p-6 text-center text-sm text-muted-foreground">No account users yet.</p> : null}
+          </div>
+          <div>
+            <h3 className="mb-3 font-medium">Pending invitations</h3>
+            <div className="space-y-2">
+              {pendingInvitations.map((invite) => (
+                <div key={invite.id} className="flex flex-col gap-3 rounded-lg border p-3 sm:flex-row sm:items-center sm:justify-between">
+                  <div>
+                    <p className="text-sm font-medium">{invite.firstName} {invite.lastName}</p>
+                    <p className="text-xs text-muted-foreground">{invite.email} · {invite.isOrganizationAdmin ? 'Administrator' : 'Member'} · expires {formatDate(invite.expiresAt)}</p>
+                  </div>
+                  <div className="flex flex-wrap gap-2">
+                    {import.meta.env.DEV ? (
+                      <Button size="sm" variant="outline" disabled={developmentLinkMutation.isPending} onClick={() => developmentLinkMutation.mutate(invite.id)}>
+                        <Copy data-icon="inline-start" />
+                        Create sign-in link
+                      </Button>
+                    ) : null}
+                    <Button size="sm" variant="outline" disabled={inviteAction.isPending} onClick={() => inviteAction.mutate(invite.id)}>Revoke</Button>
+                  </div>
+                </div>
+              ))}
+              {!pendingInvitations.length ? <p className="text-sm text-muted-foreground">No pending invitations.</p> : null}
+            </div>
+          </div>
+        </TabsContent>
         <TabsContent value="services" className="mt-5 space-y-4"><div className="flex items-center justify-between gap-3"><div><h2 className="font-medium">Service entitlements</h2><p className="text-sm text-muted-foreground">PSeq Kit always includes its data-assembly phase; it is not a separate entitlement.</p></div>{organization.kind === 'Customer' || organization.kind === 'Partner' ? <Button size="sm" onClick={() => setEntitlementOpen(true)}><Plus data-icon="inline-start" />Add entitlement</Button> : null}</div><div className="space-y-3">{(entitlementsQuery.data ?? []).map((value) => <div key={value.id} className="flex flex-col gap-3 rounded-lg border p-4 sm:flex-row sm:items-start sm:justify-between"><div><div className="flex flex-wrap gap-2"><span className="font-medium">{serviceLabel(value.service)}</span><Badge variant={value.isUsable ? 'secondary' : 'outline'}>{value.endReason ? 'Ended' : value.isUsable ? 'Usable' : value.configurationStatus}</Badge></div><p className="mt-2 text-sm text-muted-foreground">{formatDate(value.effectiveFrom)} to {value.effectiveTo ? formatDate(value.effectiveTo) : 'open ended'}</p>{value.notes ? <p className="mt-1 text-sm">{value.notes}</p> : null}{value.endReason ? <p className="mt-1 text-sm text-muted-foreground">Ended: {value.endReason}</p> : null}</div>{value.isEffective ? <Button size="sm" variant="outline" disabled={endMutation.isPending} onClick={() => setLifecycleTarget({ kind: 'entitlement', entitlement: value })}>End now</Button> : null}</div>)}{!entitlementsQuery.isLoading && !(entitlementsQuery.data ?? []).length ? <p className="rounded-lg border p-6 text-center text-sm text-muted-foreground">No service entitlements recorded.</p> : null}</div></TabsContent>
         <TabsContent value="requests" className="mt-5 space-y-4"><div><h2 className="font-medium">Account request history</h2><p className="text-sm text-muted-foreground">Approved requests move here from the review queue. Complete the requested account setup in its owning tabs, then complete the request here.</p></div><div className="space-y-3">{(requestsQuery.data ?? []).map((request) => <div key={request.id} className="rounded-lg border p-4"><div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between"><div><div className="flex flex-wrap gap-2"><span className="font-medium">{request.requestNumber}</span><Badge variant="outline">{requestStatusLabel(request.status)}</Badge><Badge variant="outline">{request.source}</Badge></div><p className="mt-2 text-sm">{request.summary}</p><p className="mt-1 text-xs text-muted-foreground">{request.requestType} · {formatDate(request.createdAt)}</p></div><div className="flex gap-2">{request.status === 'PendingReview' ? <><Button size="sm" disabled={requestAction.isPending} onClick={() => setRequestActionTarget({ action: 'approve', request })}>Approve</Button><Button size="sm" variant="outline" disabled={requestAction.isPending} onClick={() => setRequestActionTarget({ action: 'decline', request })}>Decline</Button></> : request.status === 'Approved' ? <Button size="sm" disabled={requestAction.isPending} onClick={() => setRequestActionTarget({ action: 'apply', request })}>Complete request</Button> : null}</div></div></div>)}{!requestsQuery.isLoading && !(requestsQuery.data ?? []).length ? <p className="rounded-lg border p-6 text-center text-sm text-muted-foreground">No account requests recorded.</p> : null}</div></TabsContent>
         <TabsContent value="retention" className="mt-5"><OrganizationRetentionPolicyPanel enabled={activeTab === 'retention'} organizationId={organizationId} organizationName={organization.name} /></TabsContent>
@@ -111,6 +154,12 @@ export function OrganizationDetailPage({ organizationId }: { organizationId: str
       <OrganizationFormDialog open={editOpen} organization={organization} isPending={editMutation.isPending} error={editMutation.error ? apiErrorMessage(editMutation.error) : undefined} onOpenChange={setEditOpen} onSubmit={(values) => editMutation.mutate(values)} />
       <OrganizationConversionDialog organization={organization} targetKind={conversionTarget} isPending={conversionMutation.isPending} error={conversionMutation.error ? apiErrorMessage(conversionMutation.error) : undefined} onOpenChange={(open) => { if (!open) setConversionTarget(null) }} onConfirm={() => { if (conversionTarget) conversionMutation.mutate(conversionTarget) }} />
       <InviteDialog open={inviteOpen} isPending={inviteMutation.isPending} error={inviteMutation.error ? apiErrorMessage(inviteMutation.error) : undefined} onOpenChange={setInviteOpen} onSubmit={(values) => inviteMutation.mutate(values)} />
+      <DevelopmentInviteLinkDialog
+        invitationLink={developmentInviteLink}
+        onOpenChange={(open) => {
+          if (!open) setDevelopmentInviteLink(null)
+        }}
+      />
       <EntitlementDialog open={entitlementOpen} organization={organization} requests={requestsQuery.data ?? []} isPending={entitlementMutation.isPending} error={entitlementMutation.error ? apiErrorMessage(entitlementMutation.error) : undefined} onOpenChange={setEntitlementOpen} onSubmit={(values) => entitlementMutation.mutate(values)} />
       <RequestActionDialog action={requestActionTarget?.action ?? null} request={requestActionTarget?.request ?? null} isPending={requestAction.isPending} error={requestAction.error ? apiErrorMessage(requestAction.error) : undefined} onOpenChange={(open) => { if (!open) setRequestActionTarget(null) }} onSubmit={({ explanation }) => { if (requestActionTarget) requestAction.mutate({ ...requestActionTarget, text: explanation }) }} />
       <LifecycleActionDialog
@@ -140,6 +189,67 @@ const inviteSchema = z.object({
   role: z.enum(['Administrator', 'Member']),
 })
 type InviteValues = z.infer<typeof inviteSchema>
+
+export function DevelopmentInviteLinkDialog({
+  invitationLink,
+  onOpenChange,
+}: {
+  invitationLink: DevelopmentInvitationLink | null
+  onOpenChange: (open: boolean) => void
+}) {
+  const [copyStatus, setCopyStatus] = useState<string | null>(null)
+
+  const copyLink = async () => {
+    if (!invitationLink) return
+
+    try {
+      await navigator.clipboard.writeText(invitationLink.inviteUrl)
+      setCopyStatus('Sign-in link copied.')
+    } catch {
+      setCopyStatus('Automatic copy was unavailable. Select the link and copy it manually.')
+    }
+  }
+
+  const handleOpenChange = (open: boolean) => {
+    if (!open) setCopyStatus(null)
+    onOpenChange(open)
+  }
+
+  return (
+    <Dialog
+      open={Boolean(invitationLink)}
+      onOpenChange={handleOpenChange}
+    >
+      <DialogContent>
+        <DialogHeader>
+          <DialogTitle>Development sign-in link</DialogTitle>
+          <DialogDescription>
+            This fresh link replaces the prior invitation link. Copy it into a private window,
+            then sign in or create the invited development account.
+          </DialogDescription>
+        </DialogHeader>
+        <div className="grid gap-2">
+          <Label htmlFor="development-invite-link">Sign-in link</Label>
+          <Input
+            id="development-invite-link"
+            readOnly
+            value={invitationLink?.inviteUrl ?? ''}
+            onFocus={(event) => event.currentTarget.select()}
+          />
+          {copyStatus ? <p className="text-sm text-muted-foreground" role="status">{copyStatus}</p> : null}
+        </div>
+        <DialogFooter>
+          <Button type="button" variant="outline" onClick={() => handleOpenChange(false)}>Close</Button>
+          <Button type="button" onClick={() => void copyLink()}>
+            <Copy data-icon="inline-start" />
+            Copy link
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
+  )
+}
+
 function InviteDialog({ error, isPending, onOpenChange, onSubmit, open }: { error?: string; isPending: boolean; onOpenChange: (open: boolean) => void; onSubmit: (values: InviteValues) => void; open: boolean }) {
   const form = useForm<InviteValues>({ resolver: zodResolver(inviteSchema), defaultValues: { firstName: '', lastName: '', email: '', role: 'Member' } })
   return <Dialog open={open} onOpenChange={(value) => { onOpenChange(value); if (!value) form.reset() }}><DialogContent><DialogHeader><DialogTitle>Invite account user</DialogTitle><DialogDescription>Enter the HubSpot-designated contact after Phaeno review. Portal access begins only after the recipient accepts this invitation.</DialogDescription></DialogHeader>{error ? <Alert variant="destructive"><AlertDescription>{error}</AlertDescription></Alert> : null}<form id="invite-user" className="grid gap-4" noValidate onSubmit={form.handleSubmit(onSubmit)}><div className="grid gap-4 sm:grid-cols-2"><div className="grid gap-1.5"><Label htmlFor="invite-first-name">First name *</Label><Input id="invite-first-name" autoComplete="given-name" required aria-invalid={Boolean(form.formState.errors.firstName)} {...form.register('firstName')} />{form.formState.errors.firstName ? <p className="text-sm text-destructive" role="alert">{form.formState.errors.firstName.message}</p> : null}</div><div className="grid gap-1.5"><Label htmlFor="invite-last-name">Last name *</Label><Input id="invite-last-name" autoComplete="family-name" required aria-invalid={Boolean(form.formState.errors.lastName)} {...form.register('lastName')} />{form.formState.errors.lastName ? <p className="text-sm text-destructive" role="alert">{form.formState.errors.lastName.message}</p> : null}</div></div><div className="grid gap-1.5"><Label htmlFor="invite-email">Email <span className="text-[var(--ruby-red,#b4233c)]" aria-hidden="true">*</span></Label><Input id="invite-email" type="email" aria-invalid={Boolean(form.formState.errors.email)} {...form.register('email')} />{form.formState.errors.email ? <p className="text-sm text-destructive" role="alert">{form.formState.errors.email.message}</p> : null}</div><div className="grid gap-1.5"><Label htmlFor="invite-role">Role</Label><select id="invite-role" className="h-9 cursor-pointer rounded-lg border border-input bg-background px-3 text-sm" {...form.register('role')}><option value="Member">Member</option><option value="Administrator">Organization administrator</option></select></div></form><DialogFooter><Button type="button" variant="outline" onClick={() => onOpenChange(false)}>Cancel</Button><Button type="submit" form="invite-user" disabled={isPending}>{isPending ? 'Sending…' : 'Send invitation'}</Button></DialogFooter></DialogContent></Dialog>

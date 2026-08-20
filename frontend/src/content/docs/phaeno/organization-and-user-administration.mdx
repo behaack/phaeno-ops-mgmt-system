@@ -49,7 +49,9 @@ Do not create a normal membership directly. Invitation acceptance provides the u
 
 For an internal employee, select the Phaeno organization and open **User management**. Use **Add Phaeno user**, enter the person’s first name, last name, and exact sign-in email, and select the narrowest roles needed for their work. Grant **Platform administrator** only when platform-wide administration is required. The card remains marked **Pending invitation** until acceptance; afterward, open its actions menu and choose **Edit** whenever the profile or roles must change.
 
-To follow up before acceptance, find the card marked **Pending invitation**, open its actions menu, and choose **Resend invitation**. Resending rotates the private link and is subject to a cooldown. Revoke an invitation that should not be accepted. Never copy invitation tokens into tickets, documentation, or logs.
+To follow up before acceptance, find the card marked **Pending invitation**, open its actions menu, and choose **Resend invitation**. Resending rotates the private link and is subject to a cooldown. Revoke an invitation that should not be accepted.
+
+In local development, an external account's **Users** tab also provides **Create sign-in link**. It replaces the prior invitation link and displays a fresh link that you can copy into a private window. On the invitation page, choose **Sign in or create account**; if the fake email does not yet exist in the Clerk development instance, choose **Sign up**, create it with that exact invited email, and then accept the invitation. This development control is not available in production. Use it only with fake development accounts, and do not put a real invitation link into tickets or documentation.
 
 ## Convert a Prospect
 

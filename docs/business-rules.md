@@ -14,6 +14,9 @@
 - Onboarding is invite-only; public self-registration is not the product model.
 - Invitations are organization-scoped and have explicit lifecycle states: `Pending`, `Accepted`, `Revoked`, and `Declined`.
 - Invitation tokens must be protected and expire according to configuration.
+- Local development may expose a newly rotated invitation link to an authorized
+  account administrator for synthetic invitee testing. That action is audited
+  without storing the raw link and is not registered in Production.
 - Email delivery uses Postmark when configured and a logging implementation for local/unconfigured environments.
 - Invite acceptance must connect the external Clerk identity to the intended internal user and membership without bypassing tenant checks.
 

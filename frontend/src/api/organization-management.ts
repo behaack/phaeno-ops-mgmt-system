@@ -1,7 +1,7 @@
-import axios from 'axios'
-
 import { api } from './client'
 import type { OrganizationKind } from './session'
+
+export { apiErrorMessage } from './api-error'
 
 type ApiEnvelope<T> = {
   success: boolean
@@ -169,6 +169,12 @@ export type Invitation = {
   lastSentAt: string | null
   lastSendError: string | null
   version: number
+}
+
+export type DevelopmentInvitationLink = {
+  invitationId: string
+  inviteUrl: string
+  expiresAt: string
 }
 
 export async function listOrganizations(includeInactive = true) {
@@ -439,6 +445,13 @@ export async function resendInvitation(id: string) {
   return response.data
 }
 
+export async function createDevelopmentInvitationLink(id: string) {
+  const response = await api.post<DevelopmentInvitationLink>(
+    `/invitations/${id}/development-link`,
+  )
+  return response.data
+}
+
 export async function updateMembershipRole(
   membershipId: string,
   isOrganizationAdmin: boolean,
@@ -452,15 +465,6 @@ export async function updateMembershipRole(
 export async function deactivateMembership(membershipId: string) {
   const response = await api.post(`/memberships/${membershipId}/deactivate`)
   return response.data
-}
-
-export function apiErrorMessage(error: unknown) {
-  if (axios.isAxiosError(error)) {
-    const envelope = error.response?.data as ApiEnvelope<unknown> | undefined
-    return envelope?.error?.message ?? error.message
-  }
-
-  return error instanceof Error ? error.message : 'The request could not be completed.'
 }
 
 function unwrap<T>(envelope: ApiEnvelope<T>) {

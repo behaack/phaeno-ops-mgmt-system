@@ -97,7 +97,7 @@ export const documentationEntries: readonly DocumentationEntry[] = [
       'Accept invitations, complete MFA, confirm the current organization, understand roles, and resolve access problems.',
     section: 'Basics',
     order: 20,
-    reviewedAt: '2026-08-06',
+    reviewedAt: '2026-08-19',
     Content: ProspectAccountAndAccess,
   },
   {
@@ -179,7 +179,7 @@ export const documentationEntries: readonly DocumentationEntry[] = [
     summary: 'Accept invitations, complete MFA, confirm the current organization, understand roles, and resolve access problems.',
     section: 'Basics',
     order: 20,
-    reviewedAt: '2026-08-06',
+    reviewedAt: '2026-08-19',
     Content: CustomerAccountAndAccess,
   },
   {
@@ -257,7 +257,7 @@ export const documentationEntries: readonly DocumentationEntry[] = [
     summary: 'Accept invitations, complete MFA, confirm the current Partner, understand roles, and resolve access problems.',
     section: 'Basics',
     order: 20,
-    reviewedAt: '2026-08-06',
+    reviewedAt: '2026-08-19',
     Content: PartnerAccountAndAccess,
   },
   {

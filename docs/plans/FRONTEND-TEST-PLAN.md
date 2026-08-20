@@ -28,6 +28,7 @@ remain incomplete production-activation gates.
 
 - [x] `frontend/tests/invite-schema.test.ts` - `inviteSchema` accepts a valid invite payload.
 - [x] `frontend/tests/invite-schema.test.ts` - `inviteSchema` rejects invalid email addresses.
+- [x] `frontend/src/features/organizations/OrganizationDetailPage.test.tsx` - the development sign-in-link dialog exposes the generated link and copies it with an announced status.
 - [x] `frontend/src/components/navigation.test.ts` - Phaeno context shows Data
   provisioning and hides the tenant Data Library.
 - [x] `frontend/src/components/navigation.test.ts` - Prospect, Customer, and
@@ -243,7 +244,14 @@ remain incomplete production-activation gates.
   becomes active, and returns to the dashboard after authenticator and
   backup-code enrollment.
 - [ ] Organization switcher - cover auto-selecting one active membership, persisting selected organization, changing selected organization, and sending `X-Organization-Id`.
-- [ ] Invite acceptance page - cover token capture, URL scrubbing, authenticated accept, authenticated decline, and cleared token storage.
+- [ ] Invite acceptance page - cover token capture, URL scrubbing, authenticated
+  accept, authenticated decline, cleared token storage, the development-only
+  first-time account entry, the production sign-in-only boundary, current Clerk
+  email presentation, actionable API failures, and sign-out account switching
+  without clearing the captured invitation. Cover the forced `/accept-invite`
+  return after both Clerk sign-in and development account creation, plus the
+  access-gate recovery action when a pending token is already stored and the
+  post-acceptance session refresh before continuing into the application.
 - [ ] Source-sample workspace - cover metadata/evidence validation, upload
   progress and scan state, complete readiness errors, immutable ready state,
   archive confirmation, and discard failure/concurrency states with mocked API

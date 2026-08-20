@@ -144,6 +144,18 @@ the protected deployed-Preview acceptance above.
   option; incomplete MFA setup remaining outside Portal navigation and APIs;
   and Phaeno-admin reset, active-session revocation, and required re-enrollment
   when both authenticator and backup codes are lost.
+- [ ] Local-development invitation shortcut - create a fresh sign-in link from
+  an authorized external-account invitation, copy it into a private browser,
+  create a first-time Clerk development identity with the exact invited email,
+  accept the invitation, and verify that the account membership becomes active.
+  Verify that Clerk returns to `/accept-invite` after account verification rather
+  than entering the application before Portal acceptance has completed. If the
+  user reaches the access gate first, verify **Continue invitation** resumes the
+  stored invitation.
+  Start once with a different Clerk account already signed in and verify the
+  page identifies that email, explains the mismatch, signs out without losing
+  the invitation, and continues with the invited identity. Confirm that the
+  development shortcut control and endpoint are absent from Production.
 - [ ] HubSpot-to-Portal lifecycle journey - cover HubSpot-only company with no
   Portal access, approved evaluation to Portal Prospect, Closed Won to pending
   direct Customer/Partner onboarding, designated-admin invitation, selective

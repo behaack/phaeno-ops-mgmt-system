@@ -217,6 +217,11 @@ and rollback-isolated PostgreSQL coverage.
 
 ## Deferred Tests
 
+- [ ] Development invitation sign-in link - cover Development-only endpoint
+  registration, authorized pending-invitation token rotation and audit without
+  raw-link persistence, inactive/non-pending rejection, tenant denial, and the
+  production not-found boundary.
+
 - [ ] Internal Web Operations dashboard endpoint - cover authenticated Phaeno
   platform-administrator access, external and non-admin denial, total counts,
   five-item bounds, newest-first mailing-list ordering, deterministic

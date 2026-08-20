@@ -14,6 +14,19 @@ Do not execute this plan unless explicitly requested.
   persistence orchestration, Clerk/Postmark adapters, and bootstrap composition.
 - The frontend session shell and invitation acceptance/decline route are
   connected to the API.
+- The invitation review page identifies the current Clerk email, displays the
+  API's actionable failure reason, and preserves the captured token while a user
+  signs out to switch to the invited email. Clerk sign-in and development
+  account creation return to `/accept-invite` so the authenticated user can
+  complete the explicit Portal acceptance step before entering the application.
+  If authentication nevertheless reaches the access gate first, a saved pending
+  invitation provides a direct **Continue invitation** recovery action. A
+  successful acceptance refreshes the Portal session before the user continues,
+  making the new organization membership available immediately.
+- Local development can rotate a pending invitation token through an audited,
+  authorized API action and show the resulting sign-in link to the administrator.
+  The development invitation page permits first-time Clerk account creation;
+  neither capability is exposed by a production build or production API.
 - The signed-out shell applies the Phaeno logo, Portal name, invitation-only
   access language, and Portal design tokens around Clerk's prebuilt sign-in
   flow. It omits authenticated application navigation and Clerk's embedded
@@ -74,7 +87,10 @@ Do not execute this plan unless explicitly requested.
 - Show the application header only after authentication. The signed-out and
   pending-authentication states place the centered Phaeno authentication
   lockup inside the sign-in container without duplicate global navigation.
-- Disable or hide public Clerk sign-up. Account creation is reached through Phaeno invitation flow only.
+- Disable or hide public Clerk sign-up in production. Account creation is reached
+  through the Phaeno invitation flow only. Local development may expose Clerk
+  sign-up from a captured invitation link so fake invitees can complete the real
+  acceptance workflow without manual Clerk Dashboard provisioning.
 - Local development uses a real Clerk development instance. Automated tests may use auth fakes/test handlers.
 
 ### MFA Policy Decision
@@ -168,7 +184,8 @@ Do not execute this plan unless explicitly requested.
 
 - Invitation tokens expire after 7 days.
 - Store only a cryptographic hash of invite tokens.
-- Send the raw token only in the invitation email link.
+- Send the raw token only in the invitation email link, except for the
+  authenticated and authorized local-development sign-in-link action.
 - Resend rotates the raw token, stored hash, and expiry.
 - Invite tokens are strictly single-use after successful acceptance.
 - Accept and decline requests submit tokens in the POST request body, not URL path or query.
@@ -221,6 +238,10 @@ Do not execute this plan unless explicitly requested.
   - optional `LastSendError`
 - Enforce a 5-minute resend cooldown per pending invite.
 - Pending and effectively expired invites can be resent, subject to cooldown.
+- Local development also provides **Create sign-in link** for pending invitations.
+  It rotates the token and expiry without recording an email send or applying the
+  resend cooldown, returns the raw link only in that response, and records an
+  audit event without the token or URL.
 
 ## Backend Authentication
 
@@ -520,7 +541,7 @@ Do not execute this plan unless explicitly requested.
 
 - Clerk Organizations as primary tenant model.
 - Clerk roles or metadata as app authorization source.
-- Public self-signup.
+- Production public self-signup.
 - Domain-based auto-provisioning or approved-domain invite restrictions.
 - Clerk authorization-critical webhooks.
 - Postmark delivery/bounce webhooks.
