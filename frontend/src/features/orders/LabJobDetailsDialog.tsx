@@ -26,7 +26,8 @@ import { usePhaenoSession } from '#/features/auth/session-context'
 import { labSampleToWrite } from './lab-order-write'
 
 const jobDetailsSchema = z.object({
-  customerReference: z.string().trim().max(255, 'Customer reference must be 255 characters or fewer.'),
+  customerReference: z.string().trim().min(1, 'Job name is required.').max(255, 'Job name must be 255 characters or fewer.'),
+  description: z.string().trim().max(2000, 'Description must be 2,000 characters or fewer.'),
 })
 
 type JobDetailsValues = z.infer<typeof jobDetailsSchema>
@@ -50,29 +51,37 @@ export function LabJobDetailsDialog({
   const apiEnabled = authProvider !== 'mock' && canCreate
   const form = useForm<JobDetailsValues>({
     resolver: zodResolver(jobDetailsSchema),
-    defaultValues: { customerReference: '' },
+    defaultValues: { customerReference: '', description: '' },
   })
 
   useEffect(() => {
     if (!open) return
-    form.reset({ customerReference: order?.customerReference ?? '' })
+    form.reset({
+      customerReference: order?.customerReference ?? '',
+      description: order?.description ?? '',
+    })
   }, [form, open, order])
 
   const mutation = useMutation({
     mutationFn: async (values: JobDetailsValues) => {
-      const customerReference = values.customerReference || undefined
+      const customerReference = values.customerReference
+      const description = values.description || undefined
       if (!order) {
-        return createLabOrder({ customerReference, samples: [] })
+        return createLabOrder({ customerReference, description, samples: [] })
       }
 
       return updateLabOrder(order.id, {
         customerReference,
+        description,
         samples: order.samples.map(labSampleToWrite),
         version: order.version,
       })
     },
     onSuccess: async (savedOrder) => {
-      form.reset({ customerReference: savedOrder.customerReference ?? '' })
+      form.reset({
+        customerReference: savedOrder.customerReference,
+        description: savedOrder.description ?? '',
+      })
       await Promise.all([
         queryClient.invalidateQueries({ queryKey: ['lab-service-orders'] }),
         queryClient.invalidateQueries({
@@ -96,8 +105,8 @@ export function LabJobDetailsDialog({
           </DialogTitle>
           <DialogDescription>
             Create the job first, then add its physical samples from the job
-            detail page. Use an internal reference and do not enter patient names
-            or identifiers.
+            detail page. Give it a recognizable internal name and do not enter
+            patient names or identifiers.
           </DialogDescription>
         </DialogHeader>
 
@@ -134,44 +143,71 @@ export function LabJobDetailsDialog({
           noValidate
           onSubmit={form.handleSubmit((values) => mutation.mutate(values))}
         >
-          <Label htmlFor={`${formId}-reference`}>Customer reference</Label>
+          <Label htmlFor={`${formId}-reference`} className="gap-0.5">
+            <span>Job name</span><span className="text-destructive" aria-hidden="true">*</span>
+          </Label>
           <Input
             id={`${formId}-reference`}
             className="mt-2"
+            required
+            aria-invalid={Boolean(form.formState.errors.customerReference)}
+            aria-describedby={`${formId}-reference-help${form.formState.errors.customerReference ? ` ${formId}-reference-error` : ''}`}
             {...form.register('customerReference')}
           />
-          <p className="mt-2 text-xs text-muted-foreground">
-            Optional. Use a reference that is useful to your organization.
+          <p id={`${formId}-reference-help`} className="mt-2 text-xs text-muted-foreground">
+            Use a short name your organization will recognize. Job names must
+            be unique within your organization.
           </p>
           {form.formState.errors.customerReference ? (
-            <p className="mt-1 text-sm text-destructive" role="alert">
+            <p id={`${formId}-reference-error`} className="mt-1 text-sm text-destructive" role="alert">
               {form.formState.errors.customerReference.message}
+            </p>
+          ) : null}
+
+          <Label htmlFor={`${formId}-description`} className="mt-4">
+            Description <span className="font-normal text-muted-foreground">(optional)</span>
+          </Label>
+          <textarea
+            id={`${formId}-description`}
+            className="mt-2 min-h-24 w-full rounded-lg border border-input bg-background px-3 py-2 text-sm focus-visible:ring-3 focus-visible:ring-ring/50 focus-visible:outline-none"
+            aria-invalid={Boolean(form.formState.errors.description)}
+            aria-describedby={form.formState.errors.description ? `${formId}-description-error` : undefined}
+            {...form.register('description')}
+          />
+          {form.formState.errors.description ? (
+            <p id={`${formId}-description-error`} className="mt-1 text-sm text-destructive" role="alert">
+              {form.formState.errors.description.message}
             </p>
           ) : null}
         </form>
 
-        <DialogFooter>
-          <Button
-            type="button"
-            variant="outline"
-            disabled={mutation.isPending}
-            onClick={() => requestOpenChange(false)}
-          >
-            Cancel
-          </Button>
-          <Button
-            type="submit"
-            form={formId}
-            disabled={!canSave || mutation.isPending}
-          >
-            {mutation.isPending
-              ? editing
-                ? 'Saving…'
-                : 'Creating…'
-              : editing
-                ? 'Save job details'
-                : 'Create job'}
-          </Button>
+        <DialogFooter className="flex-col items-stretch sm:flex-row sm:items-center sm:justify-between">
+          <p className="text-xs text-muted-foreground">
+            <span className="text-destructive">*</span> Required
+          </p>
+          <div className="flex flex-col-reverse gap-2 sm:flex-row">
+            <Button
+              type="button"
+              variant="outline"
+              disabled={mutation.isPending}
+              onClick={() => requestOpenChange(false)}
+            >
+              Cancel
+            </Button>
+            <Button
+              type="submit"
+              form={formId}
+              disabled={!canSave || mutation.isPending}
+            >
+              {mutation.isPending
+                ? editing
+                  ? 'Saving…'
+                  : 'Creating…'
+                : editing
+                  ? 'Save job details'
+                  : 'Create job'}
+            </Button>
+          </div>
         </DialogFooter>
       </DialogContent>
     </Dialog>

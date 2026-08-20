@@ -94,8 +94,8 @@ the protected deployed-Preview acceptance above.
   the Data Library without exposing connected data in mock mode.
 - [x] `frontend/e2e/order-management.spec.ts` - Customer mock context exposes
   laboratory services; Request lab service opens the bounded Job details modal
-  without embedding sample fields, and connected creation remains clearly
-  paused in mock-session mode.
+  with required Job name and optional Description, without embedding sample
+  fields, and connected creation remains clearly paused in mock-session mode.
 - [x] `frontend/e2e/order-management.spec.ts` - Partner mock context exposes
   reagent ordering and data assembly.
 - [x] `frontend/e2e/order-management.spec.ts` - Phaeno mock context exposes
@@ -330,10 +330,11 @@ the protected deployed-Preview acceptance above.
   admin/member, Partner admin/member, Prospect denial, Phaeno operations,
   payment hold, QuickBooks failure, two-tenant isolation, keyboard, and narrow
   viewport scenarios through real authentication and API persistence. Include
-  the Customer Lab path from Job details modal to the initially empty draft
-  detail page, Add/Edit sample modals, confirmed sample removal, blocked zero-
-  sample submission, no-PHI confirmation, and successful submission after at
-  least one sample is saved.
+  required and duplicate Job-name validation, optional Description persistence,
+  generated eight-character Job-number display, and the Customer Lab path from
+  Job details modal to the initially empty draft detail page, Add/Edit sample
+  modals, confirmed sample removal, blocked zero-sample submission, no-PHI
+  confirmation, and successful submission after at least one sample is saved.
 - [ ] Database-backed Lab Operations journey - accept a Customer quote, prove
   the visible Phaeno Order Operations **Order intake** section and Open intake
   handoff to the already-linked
@@ -367,6 +368,12 @@ the protected deployed-Preview acceptance above.
 
 ## Requested Execution Log
 
+- 2026-08-19: the complete Playwright mock-session suite passed on desktop and
+  mobile Chromium: 30 tests passed and none failed. Customer Lab coverage
+  verifies the required Job name and optional Description in the bounded create
+  modal. Account administration coverage now follows the separate Account
+  Directory and Review Queue tabs and waits for the API-loaded account row
+  before interaction so server-rendered markup is not clicked before hydration.
 - 2026-08-19: the external-context home scenario was extended to require
   capability-appropriate Customer dashboard cards, explicit mock-session live-
   data messaging, and absence of all Phaeno Accounts metrics. A live Customer

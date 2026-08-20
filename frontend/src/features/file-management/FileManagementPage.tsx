@@ -127,9 +127,11 @@ export function FileManagementPage() {
         <>
           <Card>
             <CardHeader>
-              <CardTitle>Global released-deliverable policy</CardTitle>
+              <CardTitle>
+                <h2>Global released-deliverable policy</h2>
+              </CardTitle>
               <CardDescription>
-                Revision {configuration.global.revision}. One configured day is an exact 24-hour interval from release.
+                <span>Revision {configuration.global.revision}</span>. One configured day is an exact 24-hour interval from release.
               </CardDescription>
             </CardHeader>
             <CardContent className="space-y-5">
@@ -146,7 +148,9 @@ export function FileManagementPage() {
 
           <Card>
             <CardHeader>
-              <CardTitle>Policy history</CardTitle>
+              <CardTitle>
+                <h2>Policy history</h2>
+              </CardTitle>
               <CardDescription>Prior revisions remain available for audit and never recalculate an existing package.</CardDescription>
             </CardHeader>
             <CardContent>

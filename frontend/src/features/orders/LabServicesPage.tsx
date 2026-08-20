@@ -48,7 +48,7 @@ export function LabServicesPage() {
       <Card>
         <CardHeader>
           <CardTitle>Laboratory requests</CardTitle>
-          <CardDescription>Search by portal order number or your Customer reference.</CardDescription>
+          <CardDescription>Search by Job name, Job number, or sample identifier.</CardDescription>
           <div className="relative mt-3 max-w-md">
             <label htmlFor="labOrderSearch" className="sr-only">Search laboratory requests</label>
             <Search aria-hidden="true" className="absolute top-1/2 left-3 size-4 -translate-y-1/2 text-muted-foreground" />
@@ -62,8 +62,8 @@ export function LabServicesPage() {
           {(orders.data?.items.length ?? 0) > 0 ? (
             <div className="overflow-x-auto">
               <table className="w-full text-left text-sm">
-                <thead className="border-b text-muted-foreground"><tr><th className="px-2 py-3 font-medium">Order</th><th className="px-2 py-3 font-medium">Reference</th><th className="px-2 py-3 font-medium">Status</th><th className="px-2 py-3 font-medium">Updated</th></tr></thead>
-                <tbody>{orders.data?.items.map((order) => <tr key={order.id} className="border-b last:border-0"><td className="px-2 py-3"><Link to="/lab-services/$orderId" params={{ orderId: order.id }} className="font-medium text-primary underline-offset-4 hover:underline">{order.number}</Link></td><td className="px-2 py-3">{order.reference ?? '—'}</td><td className="px-2 py-3"><OrderStatusBadge status={order.status} /></td><td className="px-2 py-3 text-muted-foreground">{formatDate(order.updatedAt)}</td></tr>)}</tbody>
+                <thead className="border-b text-muted-foreground"><tr><th className="px-2 py-3 font-medium">Job name</th><th className="px-2 py-3 font-medium">Job number</th><th className="px-2 py-3 font-medium">Status</th><th className="px-2 py-3 font-medium">Updated</th></tr></thead>
+                <tbody>{orders.data?.items.map((order) => <tr key={order.id} className="border-b last:border-0"><td className="px-2 py-3"><Link to="/lab-services/$orderId" params={{ orderId: order.id }} className="font-medium text-primary underline-offset-4 hover:underline">{order.reference ?? 'Unnamed job'}</Link></td><td className="px-2 py-3 font-mono">{order.number}</td><td className="px-2 py-3"><OrderStatusBadge status={order.status} /></td><td className="px-2 py-3 text-muted-foreground">{formatDate(order.updatedAt)}</td></tr>)}</tbody>
               </table>
             </div>
           ) : !orders.isLoading ? (

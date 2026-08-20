@@ -31,6 +31,9 @@ test('confirms organization deactivation in an accessible dialog', async ({ page
 
   await page.goto('/customers')
   await expect(page.getByRole('heading', { name: 'Accounts' })).toBeVisible()
+  await expect(page.getByRole('heading', { name: 'Account directory' })).toBeVisible()
+  await expect(page.getByRole('link', { name: 'Atlas Research' })).toBeVisible()
+  await page.getByRole('tab', { name: 'Review queue' }).click()
   await expect(
     page.getByRole('heading', { name: 'HubSpot account intake' }),
   ).toBeVisible()
@@ -40,6 +43,7 @@ test('confirms organization deactivation in an accessible dialog', async ({ page
   ).toHaveCount(0)
   await expect(page.getByRole('button', { name: 'New request' })).toHaveCount(0)
   await expect(page.getByRole('button', { name: 'Request' })).toHaveCount(0)
+  await page.getByRole('tab', { name: 'Account directory' }).click()
   await expect(page.getByRole('textbox', { name: 'Search accounts' })).toBeVisible()
   await expect(page.getByRole('link', { name: 'Phaeno Inc.' })).toHaveCount(0)
   await expect(page.locator('html')).toHaveClass(/dark/)

@@ -126,7 +126,8 @@ export function LabSampleDialog({
         item.id === sample?.id ? savedSample : labSampleToWrite(item),
       )
       return updateLabOrder(order.id, {
-        customerReference: order.customerReference ?? undefined,
+        customerReference: order.customerReference,
+        description: order.description ?? undefined,
         samples: sample ? existingSamples : [...existingSamples, savedSample],
         version: order.version,
       })

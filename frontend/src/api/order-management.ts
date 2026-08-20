@@ -175,7 +175,8 @@ export type LabServiceOrder = {
   id: string
   organizationId: string
   orderNumber: string
-  customerReference: string | null
+  customerReference: string
+  description: string | null
   submissionInstructions: string
   status: string
   requestRevision: number
@@ -466,10 +467,10 @@ export async function listLabOrders(params?: Record<string, string | number | un
 }
 export async function getLabOrder(id: string) { return get<LabServiceOrder>(`/lab-service-orders/${id}`) }
 export async function listAnalysisDefinitions() { return get<AnalysisDefinition[]>('/order-catalog/analyses') }
-export async function createLabOrder(input: { customerReference?: string; samples: LabSampleWrite[] }) {
+export async function createLabOrder(input: { customerReference: string; description?: string; samples: LabSampleWrite[] }) {
   return post<LabServiceOrder>('/lab-service-orders', input, true)
 }
-export async function updateLabOrder(id: string, input: { customerReference?: string; samples: LabSampleWrite[]; version: number }) {
+export async function updateLabOrder(id: string, input: { customerReference: string; description?: string; samples: LabSampleWrite[]; version: number }) {
   return patch<LabServiceOrder>(`/lab-service-orders/${id}`, input)
 }
 export async function submitLabOrder(id: string, version: number) { return post<LabServiceOrder>(`/lab-service-orders/${id}/submit-for-quote`, { version }, true) }

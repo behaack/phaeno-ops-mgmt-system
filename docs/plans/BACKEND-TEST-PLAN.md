@@ -141,13 +141,18 @@ and rollback-isolated PostgreSQL coverage.
   files without a scanner integration.
 - [x] `backend/test/DataProvisioningProfileTests.cs` - unconfigured scientific
   file kinds are rejected.
-- [x] `backend/test/OrderManagementDomainTests.cs` - laboratory request/quote
-  transitions, immutable request revisions, sample stages, and quote expiry.
+- [x] `backend/test/OrderManagementDomainTests.cs` - required and normalized Lab
+  Job names, trimmed optional descriptions, eight-character mixed Job numbers
+  with ambiguous-character and offensive-fragment rejection, laboratory
+  request/quote transitions, immutable request revisions, sample stages, and
+  quote expiry.
 - [ ] Laboratory empty-draft controller coverage - prove an authorized Customer
-  administrator may create a draft with no samples, update it with the first
-  valid sample, and cannot submit until at least one sample exists; retain
-  tenant, role, active-analysis, duplicate-identifier, limit, and concurrency
-  enforcement.
+  administrator may create a draft with no samples, receives a unique generated
+  Job number, must supply a case-insensitively unique Job name within the
+  Customer organization, may save an optional Description, may update the draft
+  with the first valid sample, and cannot submit until at least one sample
+  exists; retain tenant, role, active-analysis, duplicate-identifier, limit,
+  and concurrency enforcement.
 - [x] `backend/test/OrderManagementDomainTests.cs` - negotiated reagent price
   snapshots, effective quantity rules, destination restrictions, immutable
   placement confirmation, approved substitutions, partial shipment, and
@@ -492,6 +497,11 @@ and rollback-isolated PostgreSQL coverage.
 
 ## Requested Execution Log
 
+- 2026-08-19: Lab Job identity verification ran the complete Release backend
+  suite: 192 tests passed, 13 opt-in PostgreSQL tests were skipped by their
+  existing environment guards, and no tests failed. The run covered required
+  normalized Job names, generated mixed eight-character Job numbers,
+  offensive-fragment rejection, and the updated Commercial-to-Lab handoff.
 - 2026-08-18: the shared sample-shipping PostgreSQL slice added three passing
   controller/database journeys and corrected EF state for newly registered
   UUID-keyed tubes and packet revisions. Running every opt-in PostgreSQL test

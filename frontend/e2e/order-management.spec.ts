@@ -10,7 +10,8 @@ test('shows Customer laboratory services in mock mode', async ({ page }) => {
 
   const jobDetails = page.getByRole('dialog', { name: 'Job details' })
   await expect(jobDetails).toBeVisible()
-  await expect(jobDetails.getByLabel('Customer reference')).toBeVisible()
+  await expect(jobDetails.getByLabel('Job name')).toBeVisible()
+  await expect(jobDetails.getByLabel('Description (optional)')).toBeVisible()
   await expect(jobDetails.getByLabel('Customer sample ID')).toHaveCount(0)
   await expect(jobDetails.getByRole('button', { name: 'Create job' })).toBeDisabled()
 })

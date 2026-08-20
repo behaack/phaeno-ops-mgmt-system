@@ -12,7 +12,7 @@ public class OrderManagementDomainTests
     public void LabRequestRequiresSamplesAndFreezesAcceptedQuote()
     {
         var actor = Guid.NewGuid();
-        var order = new LabServiceOrder(Guid.NewGuid(), OrderNumberGenerator.Lab(), "customer-job", "Ship cold");
+        var order = new LabServiceOrder(Guid.NewGuid(), OrderNumberGenerator.Lab(), "customer-job", null, "Ship cold");
         Assert.Throws<InvalidOperationException>(() => order.Submit(actor, Now));
         order.Samples.Add(Sample(order.Id, "S-1"));
         order.Submit(actor, Now);
@@ -26,7 +26,45 @@ public class OrderManagementDomainTests
 
         Assert.Equal(LabServiceOrderStatus.PlacedAwaitingSamples, order.Status);
         Assert.Equal(QuoteStatus.Accepted, quote.Status);
-        Assert.Throws<InvalidOperationException>(() => order.UpdateDraft("changed"));
+        Assert.Throws<InvalidOperationException>(() => order.UpdateDraft("changed", null));
+    }
+
+    [Fact]
+    public void LabJobRequiresNameAndNormalizesEditableDetails()
+    {
+        Assert.Throws<ArgumentException>(() => new LabServiceOrder(
+            Guid.NewGuid(), OrderNumberGenerator.Lab(), " ", null, "Ship cold"));
+
+        var order = new LabServiceOrder(
+            Guid.NewGuid(), OrderNumberGenerator.Lab(), "  Study Alpha  ", "  Initial scope  ", "Ship cold");
+
+        Assert.Equal("Study Alpha", order.CustomerReference);
+        Assert.Equal("STUDY ALPHA", order.NormalizedJobName);
+        Assert.Equal("Initial scope", order.Description);
+
+        order.UpdateDraft("  Study Beta  ", "  Revised scope  ");
+
+        Assert.Equal("Study Beta", order.CustomerReference);
+        Assert.Equal("STUDY BETA", order.NormalizedJobName);
+        Assert.Equal("Revised scope", order.Description);
+    }
+
+    [Fact]
+    public void LabJobNumbersAreEightUnambiguousMixedCharactersWithoutBlockedTerms()
+    {
+        const string allowed = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
+        Assert.False(OrderNumberGenerator.IsAcceptableLabJobNumber("SHIT2345"));
+        Assert.False(OrderNumberGenerator.IsAcceptableLabJobNumber("A55D2345"));
+        var generated = Enumerable.Range(0, 1_000).Select(_ => OrderNumberGenerator.Lab()).ToList();
+
+        Assert.All(generated, value =>
+        {
+            Assert.Equal(8, value.Length);
+            Assert.All(value, character => Assert.Contains(character, allowed));
+            Assert.Contains(value, char.IsLetter);
+            Assert.Contains(value, char.IsDigit);
+            Assert.True(OrderNumberGenerator.IsAcceptableLabJobNumber(value));
+        });
     }
 
     [Fact]

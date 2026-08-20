@@ -355,7 +355,7 @@ export function OrderIntakePanel({
                   <p className="mt-1 text-xs text-muted-foreground">
                     {organizations.find((organization) => organization.id === item.organizationId)?.name ?? item.organizationId}
                     {' · '}
-                    {item.reference ?? 'No customer reference'}
+                    {item.reference ?? 'Unnamed job'}
                     {' · '}
                     updated {formatDateTime(item.updatedAt)}
                   </p>

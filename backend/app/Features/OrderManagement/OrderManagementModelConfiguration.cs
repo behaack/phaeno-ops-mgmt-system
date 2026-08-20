@@ -445,13 +445,16 @@ public static class OrderManagementModelConfiguration
             entity.ToTable("lab_service_orders", commercialSchema);
             entity.HasKey(e => e.Id);
             Text(entity.Property(e => e.OrderNumber), 50);
-            Text(entity.Property(e => e.CustomerReference), 255, false);
+            Text(entity.Property(e => e.CustomerReference), 255);
+            Text(entity.Property(e => e.NormalizedJobName), 255);
+            Text(entity.Property(e => e.Description), 2000, false);
             Text(entity.Property(e => e.SubmissionInstructionsSnapshot), 8000);
             EnumText(entity.Property(e => e.Status));
             EnumText(entity.Property(e => e.ResumeStatus), false);
             Text(entity.Property(e => e.TenantSafeReason), 2000, false);
             Text(entity.Property(e => e.InternalNote), 4000, false);
             entity.HasIndex(e => e.OrderNumber).IsUnique();
+            entity.HasIndex(e => new { e.OrganizationId, e.NormalizedJobName }).IsUnique();
             entity.HasIndex(e => new { e.OrganizationId, e.Status, e.CreatedAt });
             entity.HasIndex(e => new { e.AssignedToUserId, e.DueAt });
             entity.HasIndex(e => e.CurrentQuoteId);

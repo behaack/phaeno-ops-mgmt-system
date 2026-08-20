@@ -50,7 +50,39 @@ public sealed class OrderIdempotencyService(PSeqOperationsDbContext dbContext)
 
 public static class OrderNumberGenerator
 {
-    public static string Lab() => Generate("LAB");
+    private const string JobNumberLetters = "ABCDEFGHJKLMNPQRSTUVWXYZ";
+    private const string JobNumberDigits = "23456789";
+    private const string JobNumberCharacters = JobNumberLetters + JobNumberDigits;
+    private static readonly string[] BlockedJobNumberFragments =
+    [
+        "ARSE", "ASS", "BASTARD", "BITCH", "BLOWJOB", "COCK", "CUNT", "DAMN", "DICK",
+        "FAG", "FUCK", "HELL", "PISS", "PRICK", "PUSSY", "SHIT", "SLUT", "TITS", "WHORE"
+    ];
+
+    public static string Lab()
+    {
+        Span<char> value = stackalloc char[8];
+        while (true)
+        {
+            for (var index = 0; index < value.Length; index++)
+                value[index] = JobNumberCharacters[RandomNumberGenerator.GetInt32(JobNumberCharacters.Length)];
+
+            var candidate = new string(value);
+            if (candidate.Any(character => JobNumberLetters.Contains(character))
+                && candidate.Any(character => JobNumberDigits.Contains(character))
+                && IsAcceptableLabJobNumber(candidate))
+                return candidate;
+        }
+    }
+
+    public static bool IsAcceptableLabJobNumber(string candidate)
+    {
+        var screened = candidate.ToUpperInvariant()
+            .Replace('2', 'Z').Replace('3', 'E').Replace('4', 'A')
+            .Replace('5', 'S').Replace('6', 'G').Replace('7', 'T').Replace('8', 'B').Replace('9', 'G');
+        return !BlockedJobNumberFragments.Any(screened.Contains);
+    }
+
     public static string Reagent() => Generate("REAG");
     public static string Assembly() => Generate("ASM");
     public static string Shipment() => Generate("SHIP");

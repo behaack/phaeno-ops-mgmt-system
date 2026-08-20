@@ -447,7 +447,7 @@ public sealed class PlatformLabServiceOrdersController(
             .SingleOrDefaultAsync(item => item.CommercialOrderId == order.Id, cancellationToken);
         var projection = authorization is null ? null : await dbContext.CommercialLabWorkProjections.AsNoTracking()
             .SingleOrDefaultAsync(item => item.AuthorizationId == authorization.AuthorizationId, cancellationToken);
-        return new LabServiceOrderDto(order.Id, order.OrganizationId, order.OrderNumber, order.CustomerReference, order.SubmissionInstructionsSnapshot,
+        return new LabServiceOrderDto(order.Id, order.OrganizationId, order.OrderNumber, order.CustomerReference, order.Description, order.SubmissionInstructionsSnapshot,
             order.Status.ToString(), order.RequestRevision, order.SubmittedAt, order.PlacedAt, order.CompletedAt, order.TenantSafeReason,
             order.InternalNote, order.CreatedAt, order.UpdatedAt, order.Version, false, false, false, false, false,
             order.Samples.OrderBy(item => item.CreatedAt).Select(item => item.ToDto(true)).ToList(), order.Quotes.OrderByDescending(item => item.Revision).Select(item => item.ToDto()).ToList(),

@@ -606,9 +606,11 @@ pre-production alignment.
   scope uses an immutable change-quote revision. Acceptance appends an order
   amendment without rewriting the original placement; the added work remains
   blocked until acceptance. Decline leaves the existing accepted scope intact.
-- A Customer lab request has one optional Customer reference/PO field. Cost
-  centers, requisition numbers, and commercial attachments are not required in
-  the initial release.
+- A Customer lab request requires a Customer-entered Job name that is unique
+  case-insensitively within that Customer organization. It may include an
+  optional Description. Neither field is a PO or commercial authorization;
+  cost centers, requisition numbers, and commercial attachments are not
+  required in the initial release.
 - A Partner reagent order requires a PO number at placement. A Partner data-
   assembly request requires a PO number at quote acceptance. PO values are
   immutable commercial snapshots and synchronize to QuickBooks.
@@ -998,9 +1000,13 @@ append-only.
 
 `LabServiceOrder` is the root from draft through completion and owns:
 
-- server identity and unique human-readable `LAB-` number
+- server identity and an immutable, globally unique eight-character Job number.
+  New numbers use unambiguous uppercase letters and digits, contain at least one
+  of each, and reject common profane or offensive fragments (including obvious
+  number substitutions) before assignment
 - owning Customer organization and creating/submitting users
-- optional Customer reference/PO
+- required Customer-visible Job name with a normalized organization-scoped
+  uniqueness key, plus an optional Description
 - workflow state, submitted/placed/completed timestamps, and cancellation state
 - immutable request revisions and placement snapshot
 - current quote revision and linked QuickBooks documents
@@ -1321,8 +1327,10 @@ Customer navigation:
 - `Lab services` appears only with Customer view capability.
 - The list provides status/date search, filters, empty/loading/error states, and
   `Request lab service` only for administrators.
-- `Request lab service` opens a bounded Job details modal. Creating the empty
-  draft opens its record workspace; the draft may temporarily have no samples.
+- `Request lab service` opens a bounded Job details modal with a required,
+  organization-unique Job name and optional Description. Creating the empty
+  draft assigns the immutable Job number and opens its record workspace; the
+  draft may temporarily have no samples.
 - The record workspace owns its sample collection. It shows a sample list with
   Add, Edit, and confirmed Remove actions. Add and Edit open a bounded sample-
   details modal containing the scientific intake fields and per-sample
@@ -1493,20 +1501,22 @@ Execution checkpoint:
 ### Customer Lab Service
 
 1. An active Customer administrator creates the Job details draft in a modal
-   and lands on its record workspace. The initially empty draft cannot be
-   submitted. The administrator adds each sample through the sample-details
-   modal, supplies all required metadata, selects active analyses, reviews the
-   no-PHI declaration, and submits one immutable request revision. A non-admin
-   cannot create or submit it, and another Customer cannot discover it.
+   with a required organization-unique Job name and optional Description. The
+   system assigns an immutable eight-character Job number and lands on the
+   record workspace. The initially empty draft cannot be submitted. The
+   administrator adds each sample through the sample-details modal, supplies
+   all required metadata, selects active analyses, reviews the no-PHI
+   declaration, and submits one immutable request revision. A non-admin cannot
+   create or submit it, and another Customer cannot discover it.
 2. Phaeno returns a field-specific change request. The Customer submits a new
    revision; both versions and the reason remain visible in the permitted
    timeline.
 3. Phaeno issues an itemized job quote. It is not Customer-visible until the
    QuickBooks estimate sync succeeds. A newer revision supersedes the first;
    expired or superseded quotes cannot be accepted.
-4. Customer-admin acceptance freezes samples, analyses, instructions, prices,
-   currency, expiration, and Customer reference. Repeated acceptance with the
-   same idempotency key returns the same placed job.
+4. Customer-admin acceptance freezes the Job name, Description, samples,
+   analyses, instructions, prices, currency, and expiration. Repeated
+   acceptance with the same idempotency key returns the same placed job.
 5. Phaeno records receipt, condition, immutable accession id, and independent
    progress for each sample. A held/rejected sample requires a Customer-safe
    reason; a replacement is linked without erasing the original.

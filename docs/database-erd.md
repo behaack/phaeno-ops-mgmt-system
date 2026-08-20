@@ -14,10 +14,10 @@ PostgreSQL system schemas (`pg_catalog`, `information_schema`, and temporary/toa
 | Schema | Entities | Fields | Foreign keys |
 | --- | ---: | ---: | ---: |
 | `public` | 1 | 2 | 0 |
-| `commercial_ops` | 66 | 1070 | 117 |
+| `commercial_ops` | 66 | 1072 | 117 |
 | `lab_ops` | 27 | 308 | 38 |
 | `website` | 2 | 18 | 0 |
-| **Total** | **96** | **1398** | **155** |
+| **Total** | **96** | **1400** | **155** |
 
 ## `public` schema
 
@@ -1021,12 +1021,14 @@ erDiagram
         timestamptz created_at "not null"
         uuid created_by_user_id "nullable"
         uuid current_quote_id "nullable"
-        varchar_255 customer_reference "nullable"
+        varchar_255 customer_reference "not null"
+        varchar_2000 description "nullable"
         timestamptz due_at "nullable"
         varchar_4000 internal_note "nullable"
         boolean is_discarded "not null"
         varchar_50 order_number UK "not null"
-        uuid organization_id FK "not null"
+        varchar_255 normalized_job_name UK "not null"
+        uuid organization_id FK,UK "not null"
         timestamptz placed_at "nullable"
         integer request_revision "not null"
         varchar_100 resume_status "nullable"

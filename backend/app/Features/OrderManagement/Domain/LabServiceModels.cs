@@ -8,7 +8,9 @@ public sealed class LabServiceOrder : IAudit, IConcurrency
     public Guid Id { get; private set; } = Guid.NewGuid();
     public Guid OrganizationId { get; private set; }
     public string OrderNumber { get; private set; } = null!;
-    public string? CustomerReference { get; private set; }
+    public string CustomerReference { get; private set; } = null!;
+    public string NormalizedJobName { get; private set; } = null!;
+    public string? Description { get; private set; }
     public string SubmissionInstructionsSnapshot { get; private set; } = string.Empty;
     public LabServiceOrderStatus Status { get; private set; } = LabServiceOrderStatus.DraftRequest;
     public LabServiceOrderStatus? ResumeStatus { get; private set; }
@@ -39,18 +41,26 @@ public sealed class LabServiceOrder : IAudit, IConcurrency
         Guid organizationId,
         string orderNumber,
         string? customerReference,
+        string? description,
         string submissionInstructionsSnapshot)
     {
         OrganizationId = organizationId;
         OrderNumber = OrderText.Required(orderNumber, nameof(orderNumber), 50);
-        CustomerReference = OrderText.Optional(customerReference, 255);
+        CustomerReference = OrderText.Required(customerReference, "Job name", 255);
+        NormalizedJobName = NormalizeJobName(CustomerReference);
+        Description = OrderText.Optional(description, 2000);
         SubmissionInstructionsSnapshot = OrderText.Optional(submissionInstructionsSnapshot, 8000) ?? string.Empty;
     }
 
-    public void UpdateDraft(string? customerReference)
+    public static string NormalizeJobName(string? jobName)
+        => OrderText.Required(jobName, "Job name", 255).ToUpperInvariant();
+
+    public void UpdateDraft(string? customerReference, string? description)
     {
         EnsureStatus(LabServiceOrderStatus.DraftRequest, LabServiceOrderStatus.ChangesRequested);
-        CustomerReference = OrderText.Optional(customerReference, 255);
+        CustomerReference = OrderText.Required(customerReference, "Job name", 255);
+        NormalizedJobName = NormalizeJobName(CustomerReference);
+        Description = OrderText.Optional(description, 2000);
     }
 
     public void Submit(Guid actorUserId, DateTime utcNow)

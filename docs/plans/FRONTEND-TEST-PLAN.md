@@ -116,11 +116,12 @@ remain incomplete production-activation gates.
 ## Deferred Tests
 
 - [ ] Customer laboratory draft workspace - cover Job details create/edit modal
-  validation and dirty-dismissal, redirect after empty-draft creation, the
-  zero-sample detail empty state, Add/Edit sample modal validation and analysis
-  selection, confirmed sample removal including the last sample, optimistic-
-  version recovery, and no-PHI submission confirmation that stays unavailable
-  until at least one sample exists.
+  required-name and Description validation, duplicate-name feedback, and dirty-
+  dismissal; redirect after empty-draft creation; Job name/Job number display;
+  the zero-sample detail empty state; Add/Edit sample modal validation and
+  analysis selection; confirmed sample removal including the last sample;
+  optimistic-version recovery; and no-PHI submission confirmation that stays
+  unavailable until at least one sample exists.
 - [ ] `frontend/src/features/dashboard/ExternalDashboardContent.test.tsx` -
   cover Customer, Prospect, and Partner card selection, connected summary and
   error states, organization switching, and complete absence of internal mock
@@ -327,6 +328,11 @@ remain incomplete production-activation gates.
 
 ## Requested Execution Log
 
+- 2026-08-19: Lab Job identity and modal-form verification passed the complete
+  frontend unit suite (28 files, 76 tests), `pnpm run lint:ci`, `pnpm run
+  typecheck`, and the client/SSR production build. The unit gate also restored
+  semantic headings and an independently addressable revision label in the
+  released-deliverable policy card without changing its visual behavior.
 - 2026-08-19: external dashboard isolation passed `pnpm run typecheck`, the
   repository frontend lint command, and `git diff --check`. A live Customer
   mock-session browser review confirmed that only Lab services, Samples &

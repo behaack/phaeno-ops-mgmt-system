@@ -123,9 +123,12 @@ public sealed class LabServiceOrdersController(
         var key = idempotency.RequireKey(HttpContext);
         var replay = await idempotency.ReadAsync<LabServiceOrderDto>(tenant.Actor.Id, "lab-order:create", key, request, cancellationToken);
         if (replay != null) return replay;
+        var normalizedJobName = NormalizeJobName(request.CustomerReference);
+        await EnsureUniqueJobNameAsync(tenant.Organization.Id, normalizedJobName, null, cancellationToken);
         await ValidateSamplesAsync(request.Samples, cancellationToken, requireAtLeastOne: false);
         var config = await dbContext.OrderSystemConfigurations.AsNoTracking().OrderBy(item => item.CreatedAt).FirstOrDefaultAsync(cancellationToken);
-        var order = new LabServiceOrder(tenant.Organization.Id, OrderNumberGenerator.Lab(), request.CustomerReference,
+        var order = new LabServiceOrder(tenant.Organization.Id, await GenerateUniqueJobNumberAsync(cancellationToken), request.CustomerReference,
+            request.Description,
             config?.SampleSubmissionInstructions ?? string.Empty);
         AddSamples(order, request.Samples);
         dbContext.LabServiceOrders.Add(order);
@@ -144,8 +147,10 @@ public sealed class LabServiceOrdersController(
         var tenant = await requestContext.RequireTenantAsync(HttpContext, OrganizationKind.Customer, true, cancellationToken);
         var order = await ReadOrderAsync(orderId, tenant.Organization.Id, cancellationToken);
         EnsureVersion(order.Version, request.Version);
+        var normalizedJobName = NormalizeJobName(request.CustomerReference);
+        await EnsureUniqueJobNameAsync(tenant.Organization.Id, normalizedJobName, order.Id, cancellationToken);
         await ValidateSamplesAsync(request.Samples, cancellationToken, requireAtLeastOne: false);
-        Execute(() => order.UpdateDraft(request.CustomerReference));
+        Execute(() => order.UpdateDraft(request.CustomerReference, request.Description));
         var existingById = order.Samples.ToDictionary(item => item.Id);
         var requestIds = request.Samples.Where(item => item.Id.HasValue).Select(item => item.Id!.Value).ToHashSet();
         var removed = order.Samples.Where(item => !requestIds.Contains(item.Id)).ToList();
@@ -532,7 +537,7 @@ public sealed class LabServiceOrdersController(
         var projection = authorization is null ? null : await dbContext.CommercialLabWorkProjections.AsNoTracking()
             .SingleOrDefaultAsync(item => item.AuthorizationId == authorization.AuthorizationId, cancellationToken);
         var editable = order.Status is LabServiceOrderStatus.DraftRequest or LabServiceOrderStatus.ChangesRequested;
-        return new LabServiceOrderDto(order.Id, order.OrganizationId, order.OrderNumber, order.CustomerReference,
+        return new LabServiceOrderDto(order.Id, order.OrganizationId, order.OrderNumber, order.CustomerReference, order.Description,
             order.SubmissionInstructionsSnapshot, order.Status.ToString(), order.RequestRevision, order.SubmittedAt,
             order.PlacedAt, order.CompletedAt, order.TenantSafeReason, platform ? order.InternalNote : null,
             order.CreatedAt, order.UpdatedAt, order.Version,
@@ -567,6 +572,7 @@ public sealed class LabServiceOrdersController(
         return JsonSerializer.Serialize(new
         {
             order.CustomerReference,
+            order.Description,
             submissionInstructions = order.SubmissionInstructionsSnapshot,
             samples = order.Samples.OrderBy(item => item.CreatedAt).Select(item => new
             {
@@ -576,6 +582,38 @@ public sealed class LabServiceOrdersController(
             }),
             analyses
         }, JsonSerializerOptions);
+    }
+
+    private async Task EnsureUniqueJobNameAsync(
+        Guid organizationId,
+        string normalizedJobName,
+        Guid? excludedOrderId,
+        CancellationToken cancellationToken)
+    {
+        var exists = await dbContext.LabServiceOrders.AsNoTracking().AnyAsync(order =>
+            order.OrganizationId == organizationId
+            && order.NormalizedJobName == normalizedJobName
+            && (!excludedOrderId.HasValue || order.Id != excludedOrderId.Value), cancellationToken);
+        if (exists)
+            throw Conflict("duplicate_job_name", "A job with this name already exists for your organization.");
+    }
+
+    private async Task<string> GenerateUniqueJobNumberAsync(CancellationToken cancellationToken)
+    {
+        for (var attempt = 0; attempt < 10; attempt++)
+        {
+            var candidate = OrderNumberGenerator.Lab();
+            if (!await dbContext.LabServiceOrders.AsNoTracking().AnyAsync(order => order.OrderNumber == candidate, cancellationToken))
+                return candidate;
+        }
+
+        throw Conflict("job_number_unavailable", "A unique Job number could not be generated. Try creating the job again.");
+    }
+
+    private static string NormalizeJobName(string? jobName)
+    {
+        try { return LabServiceOrder.NormalizeJobName(jobName); }
+        catch (ArgumentException exception) { throw Invalid("invalid_job_name", exception.Message); }
     }
 
     private static IReadOnlyList<Guid> AnalysisIds(string value)

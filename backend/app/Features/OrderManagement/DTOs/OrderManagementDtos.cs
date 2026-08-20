@@ -164,7 +164,8 @@ public sealed record LabServiceOrderDto(
     Guid Id,
     Guid OrganizationId,
     string OrderNumber,
-    string? CustomerReference,
+    string CustomerReference,
+    string? Description,
     string SubmissionInstructions,
     string Status,
     int RequestRevision,
@@ -470,7 +471,7 @@ public sealed record LabSampleWriteRequest(
     IReadOnlyList<Guid> AnalysisDefinitionIds,
     Guid? ReplacementForSampleId = null);
 
-public sealed record LabOrderWriteRequest(string? CustomerReference, IReadOnlyList<LabSampleWriteRequest> Samples, long? Version = null);
+public sealed record LabOrderWriteRequest(string? CustomerReference, string? Description, IReadOnlyList<LabSampleWriteRequest> Samples, long? Version = null);
 public sealed record SampleShipmentRequest(long Version, string? Carrier, string? TrackingNumber, DateTime? ShippedAt);
 public sealed record LabSampleReceiptRequest(long Version, DateTime ReceivedAt, string ReceiptCondition);
 public sealed record LabSampleAccessionRequest(long Version, string AccessionId);

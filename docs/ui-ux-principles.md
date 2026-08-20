@@ -142,7 +142,11 @@ Prioritize clarity and error prevention over maximum visual compactness.
 - Place persistent labels above controls; placeholders never replace labels.
 - Group fields by the user's mental model and workflow, not the data model.
 - Use concise helper text only when it prevents a likely mistake.
-- Mark genuinely required controls with actual required validation, the established ruby-red `*`, and a required-field legend.
+- Mark genuinely required controls with actual required validation and the
+  established ruby-red `*`. Keep the marker visually adjacent to its label,
+  without the standard label-to-control gap. Every form with required controls
+  includes a visible `* Required` legend. In modal forms, place that legend in
+  the modal footer before the action group in reading order.
 - Prepopulate safe defaults from known context, but never assume consequential scientific or business values silently.
 - Use radio buttons for a small exclusive set, checkboxes for independent choices, and searchable selectors for large record sets.
 - Use switches only for settings that take effect immediately; use checkboxes for values saved with a form.
