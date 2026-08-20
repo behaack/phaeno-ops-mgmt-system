@@ -115,6 +115,16 @@ remain incomplete production-activation gates.
 
 ## Deferred Tests
 
+- [ ] Customer laboratory draft workspace - cover Job details create/edit modal
+  validation and dirty-dismissal, redirect after empty-draft creation, the
+  zero-sample detail empty state, Add/Edit sample modal validation and analysis
+  selection, confirmed sample removal including the last sample, optimistic-
+  version recovery, and no-PHI submission confirmation that stays unavailable
+  until at least one sample exists.
+- [ ] `frontend/src/features/dashboard/ExternalDashboardContent.test.tsx` -
+  cover Customer, Prospect, and Partner card selection, connected summary and
+  error states, organization switching, and complete absence of internal mock
+  Accounts metrics from external dashboards.
 - [ ] HubSpot lifecycle components - cover pending-request queues, exact proposed
   changes, readiness review, internal-only HubSpot summary and deep links,
   service-entitlement activation, relationship/offboarding warnings, retryable
@@ -317,6 +327,13 @@ remain incomplete production-activation gates.
 
 ## Requested Execution Log
 
+- 2026-08-19: external dashboard isolation passed `pnpm run typecheck`, the
+  repository frontend lint command, and `git diff --check`. A live Customer
+  mock-session browser review confirmed that only Lab services, Samples &
+  shipping, Data Library, and durable User management starting points render;
+  the Phaeno Accounts metrics are absent and the browser produced no new
+  errors. Frontend and Playwright test suites were not requested and were not
+  run.
 - 2026-07-18: one-open-protocol-candidate workflow verification passed focused
   ESLint, `pnpm run typecheck`, and the client/SSR production build. A live
   authenticated browser review confirmed that Draft v1 replaces Add version

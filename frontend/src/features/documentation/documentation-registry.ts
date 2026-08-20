@@ -85,7 +85,7 @@ export const documentationEntries: readonly DocumentationEntry[] = [
       'Confirm the current organization, understand Prospect access, and find granted data.',
     section: 'Basics',
     order: 10,
-    reviewedAt: '2026-07-20',
+    reviewedAt: '2026-08-19',
     Content: ProspectGettingStarted,
   },
   {
@@ -121,7 +121,7 @@ export const documentationEntries: readonly DocumentationEntry[] = [
       'Review explicitly granted package versions and verify file or archive downloads.',
     section: 'Data access',
     order: 30,
-    reviewedAt: '2026-07-16',
+    reviewedAt: '2026-08-19',
     Content: ProspectDataLibrary,
   },
   {
@@ -168,7 +168,7 @@ export const documentationEntries: readonly DocumentationEntry[] = [
     summary: 'Confirm the current organization, understand access, and find Customer work.',
     section: 'Basics',
     order: 10,
-    reviewedAt: '2026-07-20',
+    reviewedAt: '2026-08-19',
     Content: CustomerGettingStarted,
   },
   {
@@ -221,10 +221,10 @@ export const documentationEntries: readonly DocumentationEntry[] = [
     locale: 'en-US',
     slug: 'data-and-organization',
     title: 'Data Library and organization access',
-    summary: 'Use assigned data packages and understand Customer organization membership and its current interface boundary.',
+    summary: 'Use assigned data packages and manage Customer organization membership.',
     section: 'Data and access',
     order: 50,
-    reviewedAt: '2026-07-16',
+    reviewedAt: '2026-08-19',
     Content: CustomerDataAndOrganization,
   },
   {
@@ -246,7 +246,7 @@ export const documentationEntries: readonly DocumentationEntry[] = [
     summary: 'Confirm the current Partner, understand access, and find Partner work.',
     section: 'Basics',
     order: 10,
-    reviewedAt: '2026-07-16',
+    reviewedAt: '2026-08-19',
     Content: PartnerGettingStarted,
   },
   {
@@ -287,10 +287,10 @@ export const documentationEntries: readonly DocumentationEntry[] = [
     locale: 'en-US',
     slug: 'data-and-organization',
     title: 'Data Library, billing, and organization access',
-    summary: 'Use curated data, understand commercial documents, and understand Partner membership and its current interface boundary.',
+    summary: 'Use curated data, understand commercial documents, and manage Partner membership.',
     section: 'Data and access',
     order: 50,
-    reviewedAt: '2026-07-16',
+    reviewedAt: '2026-08-19',
     Content: PartnerDataAndOrganization,
   },
   {

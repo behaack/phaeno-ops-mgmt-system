@@ -113,6 +113,9 @@ and rollback-isolated PostgreSQL coverage.
 - [x] `backend/test/AccountDomainTests.cs` - `UserDeactivateDoesNotDeactivateMemberships`.
 - [x] `backend/test/ExternalIdentityContextTests.cs` - `ClaimsExternalIdentityContextReadsClerkSubjectAndVerifiedEmail`.
 - [x] `backend/test/ExternalIdentityContextTests.cs` - `ClaimsExternalIdentityContextReturnsNullForUnauthenticatedUser`.
+- [x] `backend/test/ClerkVerifiedEmailResolverTests.cs` - `IsVerifiedReadsVerifiedEmailFromClerkWhenClaimsOmitEmail`.
+- [x] `backend/test/ClerkVerifiedEmailResolverTests.cs` - `IsVerifiedRejectsAClerkEmailThatIsNotVerified`.
+- [x] `backend/test/ClerkVerifiedEmailResolverTests.cs` - `IsVerifiedUsesMatchingVerifiedClaimsWithoutCallingClerk`.
 - [x] `backend/test/AccountAuthorizationTests.cs` - `PlatformAdminCanManageCustomerOrganizationMembers`.
 - [x] `backend/test/AccountAuthorizationTests.cs` - `CustomerOrgAdminCannotManagePhaenoOrganizationMembers`.
 - [x] `backend/test/AccountAuthorizationTests.cs` - `CustomerOrgAdminCanManageOwnCustomerOrganizationMembers`.
@@ -140,6 +143,11 @@ and rollback-isolated PostgreSQL coverage.
   file kinds are rejected.
 - [x] `backend/test/OrderManagementDomainTests.cs` - laboratory request/quote
   transitions, immutable request revisions, sample stages, and quote expiry.
+- [ ] Laboratory empty-draft controller coverage - prove an authorized Customer
+  administrator may create a draft with no samples, update it with the first
+  valid sample, and cannot submit until at least one sample exists; retain
+  tenant, role, active-analysis, duplicate-identifier, limit, and concurrency
+  enforcement.
 - [x] `backend/test/OrderManagementDomainTests.cs` - negotiated reagent price
   snapshots, effective quantity rules, destination restrictions, immutable
   placement confirmation, approved substitutions, partial shipment, and

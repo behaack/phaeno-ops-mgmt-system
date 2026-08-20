@@ -145,6 +145,13 @@ builder.Services.AddHttpClient<ClerkBootstrapUserProvisioner>((services, httpCli
 });
 builder.Services.AddScoped<IClerkBootstrapUserProvisioner>(
     services => services.GetRequiredService<ClerkBootstrapUserProvisioner>());
+builder.Services.AddHttpClient<ClerkVerifiedEmailResolver>((services, httpClient) =>
+{
+    var clerkOptions = services.GetRequiredService<IOptions<ClerkOptions>>().Value;
+    httpClient.BaseAddress = new Uri(clerkOptions.ApiBaseUrl.TrimEnd('/') + "/");
+});
+builder.Services.AddScoped<IVerifiedExternalEmailResolver>(
+    services => services.GetRequiredService<ClerkVerifiedEmailResolver>());
 builder.Services.AddScoped<LoggingInvitationEmailSender>();
 builder.Services.AddHttpClient<PostmarkInvitationEmailSender>((services, httpClient) =>
 {

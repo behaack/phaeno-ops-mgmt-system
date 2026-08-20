@@ -71,7 +71,10 @@ the protected deployed-Preview acceptance above.
   Web Operations mock intake with a two-button selector showing one
   mailing-list or demo-request panel at a time, independent page-size-10 footer
   pagination, no persistence controls on mock records, and one dashboard
-  section visible at a time while external contexts omit it.
+  section visible at a time while external contexts omit it. External context
+  instead shows its role-appropriate organization workflow cards, labels
+  connected summaries as paused in mock-session mode, and never renders the
+  internal Accounts metrics.
 - [x] `frontend/e2e/home.spec.ts` - desktop keeps frequent workspace routes in
   the toolbar, including Docs, while Data provisioning appears under Resources;
   desktop and mobile expose Accounts and the remaining grouped
@@ -90,7 +93,9 @@ the protected deployed-Preview acceptance above.
 - [x] `frontend/e2e/data-provisioning.spec.ts` - Prospect mock context exposes
   the Data Library without exposing connected data in mock mode.
 - [x] `frontend/e2e/order-management.spec.ts` - Customer mock context exposes
-  laboratory services and request creation.
+  laboratory services; Request lab service opens the bounded Job details modal
+  without embedding sample fields, and connected creation remains clearly
+  paused in mock-session mode.
 - [x] `frontend/e2e/order-management.spec.ts` - Partner mock context exposes
   reagent ordering and data assembly.
 - [x] `frontend/e2e/order-management.spec.ts` - Phaeno mock context exposes
@@ -324,7 +329,11 @@ the protected deployed-Preview acceptance above.
 - [ ] Database-backed order-management journeys - execute the approved Customer
   admin/member, Partner admin/member, Prospect denial, Phaeno operations,
   payment hold, QuickBooks failure, two-tenant isolation, keyboard, and narrow
-  viewport scenarios through real authentication and API persistence.
+  viewport scenarios through real authentication and API persistence. Include
+  the Customer Lab path from Job details modal to the initially empty draft
+  detail page, Add/Edit sample modals, confirmed sample removal, blocked zero-
+  sample submission, no-PHI confirmation, and successful submission after at
+  least one sample is saved.
 - [ ] Database-backed Lab Operations journey - accept a Customer quote, prove
   the visible Phaeno Order Operations **Order intake** section and Open intake
   handoff to the already-linked
@@ -358,6 +367,11 @@ the protected deployed-Preview acceptance above.
 
 ## Requested Execution Log
 
+- 2026-08-19: the external-context home scenario was extended to require
+  capability-appropriate Customer dashboard cards, explicit mock-session live-
+  data messaging, and absence of all Phaeno Accounts metrics. A live Customer
+  mock-session browser review confirmed the rendered desktop result. The
+  Playwright suite was not requested and was not run.
 - 2026-07-18: a live authenticated browser review verified the material-lot QC
   workflow without recording a decision. Pending rows show `QC: Pending` and
   one `Record QC` action. The modal identifies the lot, defaults the required QC

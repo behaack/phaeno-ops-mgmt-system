@@ -91,6 +91,25 @@ test('uses Portal branding in an external organization context', async ({ page }
   await expect(page.getByRole('button', {
     name: /Open POMS dashboard navigation/,
   })).toHaveCount(0)
+  await expect(
+    page.getByRole('heading', { name: 'Your work', level: 2 }),
+  ).toBeVisible()
+  await expect(
+    page.getByText('Connected summaries are paused in mock-session mode'),
+  ).toBeVisible()
+  await expect(page.getByText('Organizations', { exact: true })).toHaveCount(0)
+  await expect(page.getByText('Active users', { exact: true })).toHaveCount(0)
+  await expect(page.getByText('Pending invites', { exact: true })).toHaveCount(0)
+  await expect(page.getByText('Partner links', { exact: true })).toHaveCount(0)
+  await expect(
+    page.getByRole('link', { name: 'Open Data Library' }),
+  ).toBeVisible()
+  await expect(
+    page.getByRole('link', { name: 'Open lab services' }),
+  ).toBeVisible()
+  await expect(
+    page.getByRole('link', { name: 'Open sample shipping' }),
+  ).toBeVisible()
 })
 
 test('keeps workspace navigation concise and groups the user menu', async ({

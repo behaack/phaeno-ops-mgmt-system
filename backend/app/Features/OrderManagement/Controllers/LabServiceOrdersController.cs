@@ -123,7 +123,7 @@ public sealed class LabServiceOrdersController(
         var key = idempotency.RequireKey(HttpContext);
         var replay = await idempotency.ReadAsync<LabServiceOrderDto>(tenant.Actor.Id, "lab-order:create", key, request, cancellationToken);
         if (replay != null) return replay;
-        await ValidateSamplesAsync(request.Samples, cancellationToken);
+        await ValidateSamplesAsync(request.Samples, cancellationToken, requireAtLeastOne: false);
         var config = await dbContext.OrderSystemConfigurations.AsNoTracking().OrderBy(item => item.CreatedAt).FirstOrDefaultAsync(cancellationToken);
         var order = new LabServiceOrder(tenant.Organization.Id, OrderNumberGenerator.Lab(), request.CustomerReference,
             config?.SampleSubmissionInstructions ?? string.Empty);
@@ -144,7 +144,7 @@ public sealed class LabServiceOrdersController(
         var tenant = await requestContext.RequireTenantAsync(HttpContext, OrganizationKind.Customer, true, cancellationToken);
         var order = await ReadOrderAsync(orderId, tenant.Organization.Id, cancellationToken);
         EnsureVersion(order.Version, request.Version);
-        await ValidateSamplesAsync(request.Samples, cancellationToken);
+        await ValidateSamplesAsync(request.Samples, cancellationToken, requireAtLeastOne: false);
         Execute(() => order.UpdateDraft(request.CustomerReference));
         var existingById = order.Samples.ToDictionary(item => item.Id);
         var requestIds = request.Samples.Where(item => item.Id.HasValue).Select(item => item.Id!.Value).ToHashSet();
@@ -461,9 +461,17 @@ public sealed class LabServiceOrdersController(
             .FirstOrDefaultAsync(order => order.Id == orderId && order.OrganizationId == organizationId && !order.IsDiscarded, cancellationToken)
             ?? throw Missing();
 
-    private async Task ValidateSamplesAsync(IReadOnlyList<LabSampleWriteRequest> samples, CancellationToken cancellationToken)
+    private async Task ValidateSamplesAsync(
+        IReadOnlyList<LabSampleWriteRequest> samples,
+        CancellationToken cancellationToken,
+        bool requireAtLeastOne = true)
     {
-        if (samples.Count == 0) throw Invalid("sample_required", "At least one sample is required.");
+        if (samples.Count == 0)
+        {
+            if (requireAtLeastOne)
+                throw Invalid("sample_required", "At least one sample is required.");
+            return;
+        }
         if (samples.Count > 100) throw Invalid("sample_limit", "A laboratory request cannot contain more than 100 samples.");
         if (samples.Select(item => item.CustomerSampleId.Trim()).Distinct(StringComparer.OrdinalIgnoreCase).Count() != samples.Count)
             throw Invalid("duplicate_customer_sample_id", "Customer sample identifiers must be unique within the request.");

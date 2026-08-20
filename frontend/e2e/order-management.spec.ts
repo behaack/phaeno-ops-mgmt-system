@@ -6,7 +6,13 @@ test('shows Customer laboratory services in mock mode', async ({ page }) => {
 
   await expect(page.getByRole('heading', { name: 'Lab services' })).toBeVisible()
   await expect(page.getByText('Connected orders are paused in mock-session mode')).toBeVisible()
-  await expect(page.getByRole('link', { name: 'Request lab service' })).toBeVisible()
+  await page.getByRole('link', { name: 'Request lab service' }).click()
+
+  const jobDetails = page.getByRole('dialog', { name: 'Job details' })
+  await expect(jobDetails).toBeVisible()
+  await expect(jobDetails.getByLabel('Customer reference')).toBeVisible()
+  await expect(jobDetails.getByLabel('Customer sample ID')).toHaveCount(0)
+  await expect(jobDetails.getByRole('button', { name: 'Create job' })).toBeDisabled()
 })
 
 test('shows Partner reagent and data-assembly work in mock mode', async ({ page }) => {

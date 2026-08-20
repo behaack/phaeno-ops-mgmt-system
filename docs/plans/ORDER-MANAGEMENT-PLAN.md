@@ -1321,8 +1321,15 @@ Customer navigation:
 - `Lab services` appears only with Customer view capability.
 - The list provides status/date search, filters, empty/loading/error states, and
   `Request lab service` only for administrators.
-- Creation is a dedicated resumable workflow with job details, repeatable sample
-  cards, per-sample analyses, safety confirmation, review, and submit-for-quote.
+- `Request lab service` opens a bounded Job details modal. Creating the empty
+  draft opens its record workspace; the draft may temporarily have no samples.
+- The record workspace owns its sample collection. It shows a sample list with
+  Add, Edit, and confirmed Remove actions. Add and Edit open a bounded sample-
+  details modal containing the scientific intake fields and per-sample
+  analyses.
+- Submit-for-pricing remains on the record workspace, requires at least one
+  sample, and requires the current no-PHI confirmation before freezing the
+  submitted revision.
 - The record workspace uses clear sections for overview, samples, quote and
   commercial status, files/results, and timeline. It shows Customer-visible
   custody facts and makes scientific readiness vs payment release unmistakable.
@@ -1485,10 +1492,12 @@ Execution checkpoint:
 
 ### Customer Lab Service
 
-1. An active Customer administrator creates a multi-sample draft, supplies all
-   required metadata, selects active analyses, reviews the no-PHI declaration,
-   and submits one immutable request revision. A non-admin cannot create or
-   submit it, and another Customer cannot discover it.
+1. An active Customer administrator creates the Job details draft in a modal
+   and lands on its record workspace. The initially empty draft cannot be
+   submitted. The administrator adds each sample through the sample-details
+   modal, supplies all required metadata, selects active analyses, reviews the
+   no-PHI declaration, and submits one immutable request revision. A non-admin
+   cannot create or submit it, and another Customer cannot discover it.
 2. Phaeno returns a field-specific change request. The Customer submits a new
    revision; both versions and the reason remain visible in the permitted
    timeline.

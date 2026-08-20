@@ -18,7 +18,7 @@
   account administrator for synthetic invitee testing. That action is audited
   without storing the raw link and is not registered in Production.
 - Email delivery uses Postmark when configured and a logging implementation for local/unconfigured environments.
-- Invite acceptance must connect the external Clerk identity to the intended internal user and membership without bypassing tenant checks.
+- Invite acceptance must connect the external Clerk identity to the intended internal user and membership without bypassing tenant checks. The invited email must match the authenticated Clerk user's verified primary email; when Clerk's session token omits email claims, the API verifies that primary email directly with Clerk before changing Portal access.
 
 ## Lifecycle, audit, and concurrency
 

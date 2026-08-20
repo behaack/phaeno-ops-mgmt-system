@@ -465,6 +465,7 @@ export async function listLabOrders(params?: Record<string, string | number | un
   return get<PagedResult<OrderListItem>>('/lab-service-orders', params)
 }
 export async function getLabOrder(id: string) { return get<LabServiceOrder>(`/lab-service-orders/${id}`) }
+export async function listAnalysisDefinitions() { return get<AnalysisDefinition[]>('/order-catalog/analyses') }
 export async function createLabOrder(input: { customerReference?: string; samples: LabSampleWrite[] }) {
   return post<LabServiceOrder>('/lab-service-orders', input, true)
 }

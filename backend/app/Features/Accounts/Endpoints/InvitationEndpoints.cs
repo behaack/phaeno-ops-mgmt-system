@@ -386,17 +386,13 @@ public static class InvitationEndpoints
         PSeqOperationsDbContext dbContext,
         InvitationTokenService tokenService,
         IExternalIdentityContext externalIdentityContext,
+        IVerifiedExternalEmailResolver verifiedEmailResolver,
         CancellationToken cancellationToken)
     {
         var identity = externalIdentityContext.Read(httpContext);
         if (identity == null)
         {
             return TypedResults.Unauthorized();
-        }
-
-        if (!identity.IsEmailVerified)
-        {
-            throw new BadRequestException("Invitation email must match a verified authenticated email.");
         }
 
         var utcNow = DateTime.UtcNow;
@@ -410,6 +406,15 @@ public static class InvitationEndpoints
             throw new BadRequestException("Invitation cannot be accepted.");
         }
 
+        if (!await verifiedEmailResolver.IsVerifiedAsync(
+                identity,
+                invitation.Email,
+                cancellationToken))
+        {
+            throw new BadRequestException("Invitation email must match a verified authenticated email.");
+        }
+
+        identity = identity with { Email = invitation.Email, IsEmailVerified = true };
         ValidateInvitationForAuthenticatedEmail(invitation, identity, utcNow);
         var intendedLabRoles = await ReadIntendedLabRolesAsync(
             dbContext,
@@ -545,17 +550,13 @@ public static class InvitationEndpoints
         PSeqOperationsDbContext dbContext,
         InvitationTokenService tokenService,
         IExternalIdentityContext externalIdentityContext,
+        IVerifiedExternalEmailResolver verifiedEmailResolver,
         CancellationToken cancellationToken)
     {
         var identity = externalIdentityContext.Read(httpContext);
         if (identity == null)
         {
             return TypedResults.Unauthorized();
-        }
-
-        if (!identity.IsEmailVerified)
-        {
-            throw new BadRequestException("Invitation email must match a verified authenticated email.");
         }
 
         var utcNow = DateTime.UtcNow;
@@ -569,6 +570,15 @@ public static class InvitationEndpoints
             throw new BadRequestException("Invitation cannot be declined.");
         }
 
+        if (!await verifiedEmailResolver.IsVerifiedAsync(
+                identity,
+                invitation.Email,
+                cancellationToken))
+        {
+            throw new BadRequestException("Invitation email must match a verified authenticated email.");
+        }
+
+        identity = identity with { Email = invitation.Email, IsEmailVerified = true };
         ValidateInvitationForAuthenticatedEmail(invitation, identity, utcNow);
 
         var declinedByUserId = await dbContext.Users

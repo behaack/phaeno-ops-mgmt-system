@@ -41,6 +41,12 @@ Do not execute this plan unless explicitly requested.
   readiness, and activity summaries under a Phaeno-only **Accounts** panel
   alongside Order Operations and Lab Operations. This is a layout mock-up, not
   a connected account queue or authorization change.
+- Prospect, Customer, and Partner dashboards do not reuse that internal mock
+  Accounts panel. They show only capability-eligible, organization-scoped
+  workflow cards backed by the existing tenant APIs: Customer laboratory work
+  and sample shipping, Prospect sample shipping, Partner reagent and data-
+  assembly work, assigned Data Library packages, and durable User management
+  for organization administrators.
 - The Phaeno Accounts list/detail, request, entitlement, invitation,
   membership, conversion, readiness, lifecycle, and User management workspaces
   are connected to durable APIs. Phaeno User management lists active and
@@ -209,7 +215,7 @@ Do not execute this plan unless explicitly requested.
 
 - Invitation emails link to a Phaeno `/accept-invite` page first.
 - Before Clerk authentication, the invite page shows only generic Phaeno invitation information.
-- After Clerk authentication, backend validates token and email match before returning organization or role details.
+- After Clerk authentication, backend validates token and email match before returning organization or role details. Clerk's default session token does not include email-verification claims, so the API uses a matching verified claim when configured and otherwise resolves the authenticated subject's verified primary email through Clerk's Backend API before acceptance or decline.
 - Acceptance requires explicit user action after authentication.
 - Decline requires Clerk authentication with the invited verified email.
 - Clerk primary email must be verified.

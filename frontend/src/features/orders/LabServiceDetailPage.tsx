@@ -1,22 +1,39 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { Link } from '@tanstack/react-router'
-import { Download, FileArchive, FileCheck2 } from 'lucide-react'
+import { Download, FileArchive, FileCheck2, Pencil, Plus, Trash2 } from 'lucide-react'
 import { useState } from 'react'
 
-import { acceptLabQuote, downloadLabResult, downloadLabResultPackage, getLabOrder, getOrderErrorMessage, recordLabSampleShipment, requestLabCancellation, submitLabOrder, type OperationalFile, type Quote, withdrawLabOrder } from '#/api/order-management'
+import { acceptLabQuote, downloadLabResult, downloadLabResultPackage, getLabOrder, getOrderErrorMessage, recordLabSampleShipment, requestLabCancellation, submitLabOrder, type LabSample, type OperationalFile, type Quote, updateLabOrder, withdrawLabOrder } from '#/api/order-management'
 import { Alert, AlertDescription, AlertTitle } from '#/components/ui/alert'
 import { Button } from '#/components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '#/components/ui/card'
+import { Checkbox } from '#/components/ui/checkbox'
 import { Dialog, DialogClose, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '#/components/ui/dialog'
 import { Label } from '#/components/ui/label'
 import { usePhaenoSession } from '#/features/auth/session-context'
+import { LabJobDetailsDialog } from './LabJobDetailsDialog'
+import { LabSampleDialog } from './LabSampleDialog'
+import { labSampleToWrite } from './lab-order-write'
 import { humanizeStatus, OrderStatusBadge } from './OrderStatusBadge'
 import { ReleasedDeliverableRetentionNotice } from './ReleasedDeliverableRetentionNotice'
 
-export function LabServiceDetailPage({ orderId }: { orderId: string }) {
+export function LabServiceDetailPage({
+  orderId,
+  initialJobDetailsOpen = false,
+  onJobDetailsOpenChange,
+}: {
+  orderId: string
+  initialJobDetailsOpen?: boolean
+  onJobDetailsOpenChange?: (open: boolean) => void
+}) {
   const { authProvider, session } = usePhaenoSession()
   const queryClient = useQueryClient()
   const [dialog, setDialog] = useState<'accept' | 'cancel' | 'withdraw' | 'shipment' | null>(null)
+  const [jobDetailsOpen, setJobDetailsOpen] = useState(initialJobDetailsOpen)
+  const [sampleDialog, setSampleDialog] = useState<LabSample | null | undefined>(undefined)
+  const [sampleToRemove, setSampleToRemove] = useState<LabSample | null>(null)
+  const [submitOpen, setSubmitOpen] = useState(false)
+  const [prohibitedDataConfirmed, setProhibitedDataConfirmed] = useState(false)
   const [cancellationReason, setCancellationReason] = useState('')
   const [shipmentSampleId, setShipmentSampleId] = useState('')
   const [carrier, setCarrier] = useState('')
@@ -41,10 +58,16 @@ export function LabServiceDetailPage({ orderId }: { orderId: string }) {
       }
       return requestLabCancellation(order.id, order.version, cancellationReason)
     },
-    onSuccess: async () => {
+    onSuccess: async (_order, kind) => {
       setDialog(null); setCancellationReason(''); setShipmentSampleId(''); setCarrier(''); setTrackingNumber('')
-      await queryClient.invalidateQueries({ queryKey: ['lab-service-order', orderId] })
-      await queryClient.invalidateQueries({ queryKey: ['lab-service-orders'] })
+      if (kind === 'submit') {
+        setSubmitOpen(false)
+        setProhibitedDataConfirmed(false)
+      }
+      await Promise.all([
+        queryClient.invalidateQueries({ queryKey: ['lab-service-order', orderId] }),
+        queryClient.invalidateQueries({ queryKey: ['lab-service-orders'] }),
+      ])
     },
   })
   const downloadAction = useMutation({
@@ -52,6 +75,24 @@ export function LabServiceDetailPage({ orderId }: { orderId: string }) {
       ? downloadLabResultPackage(orderId, download.releaseId, download.releaseVersion)
       : downloadLabResult(orderId, download.file),
     onSuccess: async () => queryClient.invalidateQueries({ queryKey: ['lab-service-order', orderId] }),
+  })
+  const removeSampleAction = useMutation({
+    mutationFn: async (sampleId: string) => {
+      const order = orderQuery.data
+      if (!order) throw new Error('The job has not loaded.')
+      return updateLabOrder(order.id, {
+        customerReference: order.customerReference ?? undefined,
+        samples: order.samples.filter((sample) => sample.id !== sampleId).map(labSampleToWrite),
+        version: order.version,
+      })
+    },
+    onSuccess: async () => {
+      setSampleToRemove(null)
+      await Promise.all([
+        queryClient.invalidateQueries({ queryKey: ['lab-service-order', orderId] }),
+        queryClient.invalidateQueries({ queryKey: ['lab-service-orders'] }),
+      ])
+    },
   })
 
   if (!apiEnabled) return <main className="page-wrap px-4 py-8"><Alert><AlertTitle>Connected order detail is unavailable</AlertTitle><AlertDescription>Use a signed-in Customer session to review this laboratory request.</AlertDescription></Alert></main>
@@ -64,7 +105,26 @@ export function LabServiceDetailPage({ orderId }: { orderId: string }) {
     <main className="page-wrap px-4 py-8">
       <section className="mb-6 flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
         <div><p className="text-sm text-muted-foreground"><Link to="/lab-services" className="hover:underline">Lab services</Link> / <span className="font-mono">{order.orderNumber}</span></p><div className="mt-2 flex flex-wrap items-center gap-3"><h1 className="text-3xl font-semibold">{order.orderNumber}</h1><OrderStatusBadge status={order.status} /></div><p className="mt-2 text-sm text-muted-foreground">{order.customerReference || 'No Customer reference'} · Updated {formatDate(order.updatedAt)}</p></div>
-        <div className="flex flex-wrap gap-2">{order.canEdit ? <Button type="button" variant="outline" asChild><Link to="/lab-services/$orderId/edit" params={{ orderId: order.id }}>Edit request</Link></Button> : null}{order.canSubmit ? <Button type="button" onClick={() => action.mutate('submit')} disabled={action.isPending}>Submit for pricing</Button> : null}{order.canAcceptQuote ? <Button type="button" onClick={() => setDialog('accept')}>Accept quote</Button> : null}{order.canWithdraw ? <Button type="button" variant="outline" onClick={() => setDialog('withdraw')}>Withdraw</Button> : null}{order.canRequestCancellation ? <Button type="button" variant="outline" onClick={() => setDialog('cancel')}>Request cancellation</Button> : null}</div>
+        <div className="flex flex-wrap gap-2">
+          {order.canEdit ? (
+            <Button type="button" variant="outline" onClick={() => setJobDetailsOpen(true)}>
+              <Pencil data-icon="inline-start" />
+              Job details
+            </Button>
+          ) : null}
+          {order.canSubmit ? (
+            <Button
+              type="button"
+              onClick={() => { action.reset(); setSubmitOpen(true) }}
+              disabled={action.isPending || order.samples.length === 0}
+            >
+              Submit for pricing
+            </Button>
+          ) : null}
+          {order.canAcceptQuote ? <Button type="button" onClick={() => setDialog('accept')}>Accept quote</Button> : null}
+          {order.canWithdraw ? <Button type="button" variant="outline" onClick={() => setDialog('withdraw')}>Withdraw</Button> : null}
+          {order.canRequestCancellation ? <Button type="button" variant="outline" onClick={() => setDialog('cancel')}>Request cancellation</Button> : null}
+        </div>
       </section>
       {order.tenantSafeReason ? <Alert className="mb-5"><AlertTitle>Action needed</AlertTitle><AlertDescription>{order.tenantSafeReason}</AlertDescription></Alert> : null}
       {order.labCustomerActionSummary ? <Alert className="mb-5"><AlertTitle>Laboratory action needed</AlertTitle><AlertDescription>{order.labCustomerActionSummary}</AlertDescription></Alert> : null}
@@ -75,7 +135,83 @@ export function LabServiceDetailPage({ orderId }: { orderId: string }) {
 
       <div className="grid gap-5 lg:grid-cols-[minmax(0,1.5fr)_minmax(18rem,1fr)]">
         <div className="space-y-5">
-          <Card><CardHeader><CardTitle>Samples</CardTitle><CardDescription>Each sample progresses independently after physical receipt and accession.</CardDescription></CardHeader><CardContent className="divide-y">{order.samples.map((sample) => <section key={sample.id} className="py-4 first:pt-0 last:pb-0"><div className="flex flex-wrap items-start justify-between gap-2"><div><h2 className="font-medium">{sample.customerSampleId}</h2><p className="mt-1 text-sm text-muted-foreground">{sample.materialType} · {sample.quantity} {sample.quantityUnit} · {sample.biologicalSource}</p></div><div className="flex flex-wrap items-center gap-2"><OrderStatusBadge status={sample.status} />{!sample.receivedAt && order.placedAt ? <Button type="button" size="sm" variant="outline" onClick={() => { setShipmentSampleId(sample.id); setCarrier(sample.carrier ?? ''); setTrackingNumber(sample.trackingNumber ?? ''); setDialog('shipment') }}>Record shipment</Button> : null}</div></div>{sample.accessionId ? <p className="mt-2 text-sm">Accession <span className="font-mono">{sample.accessionId}</span></p> : null}{sample.trackingNumber ? <p className="mt-2 text-sm">Shipment {sample.carrier ?? ''} <span className="font-mono">{sample.trackingNumber}</span></p> : null}{sample.receiptCondition ? <p className="mt-1 text-sm text-muted-foreground">Receipt: {sample.receiptCondition}</p> : null}{sample.tenantSafeReason ? <p className="mt-2 text-sm text-destructive">{sample.tenantSafeReason}</p> : null}</section>)}</CardContent></Card>
+          <Card>
+            <CardHeader>
+              <div className="flex flex-wrap items-start justify-between gap-3">
+                <div>
+                  <CardTitle>Samples</CardTitle>
+                  <CardDescription>
+                    Add each physical sample separately. Samples progress independently after receipt and accession.
+                  </CardDescription>
+                </div>
+                {order.canEdit && order.samples.length > 0 ? (
+                  <Button
+                    type="button"
+                    onClick={() => setSampleDialog(null)}
+                    disabled={order.samples.length >= 100}
+                  >
+                    <Plus data-icon="inline-start" />
+                    Add sample
+                  </Button>
+                ) : null}
+              </div>
+            </CardHeader>
+            <CardContent>
+              {order.samples.length ? (
+                <div className="divide-y">
+                  {order.samples.map((sample) => (
+                    <section key={sample.id} className="py-4 first:pt-0 last:pb-0">
+                      <div className="flex flex-wrap items-start justify-between gap-2">
+                        <div>
+                          <h2 className="font-medium">{sample.customerSampleId}</h2>
+                          <p className="mt-1 text-sm text-muted-foreground">
+                            {sample.materialType} · {sample.quantity} {sample.quantityUnit} · {sample.biologicalSource}
+                          </p>
+                        </div>
+                        <div className="flex flex-wrap items-center gap-2">
+                          <OrderStatusBadge status={sample.status} />
+                          {order.canEdit ? (
+                            <>
+                              <Button type="button" size="sm" variant="outline" onClick={() => setSampleDialog(sample)}>
+                                <Pencil data-icon="inline-start" />
+                                Edit
+                              </Button>
+                              <Button type="button" size="sm" variant="outline" onClick={() => { removeSampleAction.reset(); setSampleToRemove(sample) }}>
+                                <Trash2 data-icon="inline-start" />
+                                Remove
+                              </Button>
+                            </>
+                          ) : null}
+                          {!sample.receivedAt && order.placedAt ? (
+                            <Button type="button" size="sm" variant="outline" onClick={() => { setShipmentSampleId(sample.id); setCarrier(sample.carrier ?? ''); setTrackingNumber(sample.trackingNumber ?? ''); setDialog('shipment') }}>
+                              Record shipment
+                            </Button>
+                          ) : null}
+                        </div>
+                      </div>
+                      {sample.accessionId ? <p className="mt-2 text-sm">Accession <span className="font-mono">{sample.accessionId}</span></p> : null}
+                      {sample.trackingNumber ? <p className="mt-2 text-sm">Shipment {sample.carrier ?? ''} <span className="font-mono">{sample.trackingNumber}</span></p> : null}
+                      {sample.receiptCondition ? <p className="mt-1 text-sm text-muted-foreground">Receipt: {sample.receiptCondition}</p> : null}
+                      {sample.tenantSafeReason ? <p className="mt-2 text-sm text-destructive">{sample.tenantSafeReason}</p> : null}
+                    </section>
+                  ))}
+                </div>
+              ) : (
+                <div className="flex flex-col items-center py-8 text-center">
+                  <p className="font-medium">No samples added</p>
+                  <p className="mt-1 max-w-md text-sm text-muted-foreground">
+                    Add at least one sample before submitting this job for pricing.
+                  </p>
+                  {order.canEdit ? (
+                    <Button type="button" className="mt-4" onClick={() => setSampleDialog(null)}>
+                      <Plus data-icon="inline-start" />
+                      Add sample
+                    </Button>
+                  ) : null}
+                </div>
+              )}
+            </CardContent>
+          </Card>
 
           <Card>
             <CardHeader>
@@ -137,8 +273,88 @@ export function LabServiceDetailPage({ orderId }: { orderId: string }) {
       <Dialog open={dialog === 'accept'} onOpenChange={(open) => !open && setDialog(null)}><DialogContent><DialogHeader><DialogTitle>Accept quote for {order.orderNumber}?</DialogTitle><DialogDescription>This places the complete quoted scope and authorizes Phaeno to perform the work. The accepted snapshot remains in the order history.</DialogDescription></DialogHeader>{quote ? <QuoteSummary quote={quote} /> : null}<DialogFooter><DialogClose asChild><Button type="button" variant="outline">Keep reviewing</Button></DialogClose><Button type="button" onClick={() => action.mutate('accept')} disabled={action.isPending}>{action.isPending ? 'Accepting…' : 'Accept quote and place order'}</Button></DialogFooter></DialogContent></Dialog>
       <Dialog open={dialog === 'cancel' || dialog === 'withdraw'} onOpenChange={(open) => !open && setDialog(null)}><DialogContent><DialogHeader><DialogTitle>{dialog === 'withdraw' ? 'Withdraw' : 'Request cancellation for'} {order.orderNumber}</DialogTitle><DialogDescription>{dialog === 'withdraw' ? 'This closes the request before work is placed.' : 'Phaeno will review completed work and financial effects before deciding the request.'}</DialogDescription></DialogHeader><div><Label htmlFor="cancellationReason">Reason <span className="text-[var(--ruby-red,#b4233c)]" aria-hidden="true">*</span></Label><textarea id="cancellationReason" value={cancellationReason} onChange={(event) => setCancellationReason(event.target.value)} className="mt-2 min-h-24 w-full rounded-lg border border-input bg-background px-3 py-2 text-sm focus-visible:ring-3 focus-visible:ring-ring/50 focus-visible:outline-none" /></div><DialogFooter><DialogClose asChild><Button type="button" variant="outline">Keep order</Button></DialogClose><Button type="button" variant="destructive" disabled={!cancellationReason.trim() || action.isPending} onClick={() => action.mutate(dialog === 'withdraw' ? 'withdraw' : 'cancel')}>{action.isPending ? 'Updating…' : dialog === 'withdraw' ? 'Withdraw request' : 'Request cancellation'}</Button></DialogFooter></DialogContent></Dialog>
       <Dialog open={dialog === 'shipment'} onOpenChange={(open) => !open && setDialog(null)}><DialogContent><DialogHeader><DialogTitle>Record sample shipment</DialogTitle><DialogDescription>Add the carrier and tracking number after the sample leaves your organization.</DialogDescription></DialogHeader><div className="grid gap-4"><div><Label htmlFor="sampleCarrier">Carrier</Label><input id="sampleCarrier" value={carrier} onChange={(event) => setCarrier(event.target.value)} className="mt-2 h-9 w-full rounded-lg border border-input bg-background px-3 text-sm" /></div><div><Label htmlFor="sampleTrackingNumber">Tracking number</Label><input id="sampleTrackingNumber" value={trackingNumber} onChange={(event) => setTrackingNumber(event.target.value)} className="mt-2 h-9 w-full rounded-lg border border-input bg-background px-3 text-sm" /></div></div><DialogFooter><DialogClose asChild><Button type="button" variant="outline">Cancel</Button></DialogClose><Button type="button" disabled={action.isPending} onClick={() => action.mutate('shipment')}>{action.isPending ? 'Saving…' : 'Record shipment'}</Button></DialogFooter></DialogContent></Dialog>
+
+      <Dialog open={Boolean(sampleToRemove)} onOpenChange={(open) => { if (!open && !removeSampleAction.isPending) setSampleToRemove(null) }}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Remove {sampleToRemove?.customerSampleId}?</DialogTitle>
+            <DialogDescription>
+              This removes the sample from the draft job. It can be added again later if needed.
+            </DialogDescription>
+          </DialogHeader>
+          {removeSampleAction.error ? (
+            <Alert variant="destructive" role="alert">
+              <AlertTitle>Sample was not removed</AlertTitle>
+              <AlertDescription>{getOrderErrorMessage(removeSampleAction.error, 'Reload the job and try again.')}</AlertDescription>
+            </Alert>
+          ) : null}
+          <DialogFooter>
+            <DialogClose asChild><Button type="button" variant="outline" disabled={removeSampleAction.isPending}>Keep sample</Button></DialogClose>
+            <Button type="button" variant="destructive" disabled={!sampleToRemove || removeSampleAction.isPending} onClick={() => sampleToRemove && removeSampleAction.mutate(sampleToRemove.id)}>
+              {removeSampleAction.isPending ? 'Removing…' : 'Remove sample'}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={submitOpen} onOpenChange={(open) => { setSubmitOpen(open); if (!open) setProhibitedDataConfirmed(false) }}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Submit {order.orderNumber} for pricing?</DialogTitle>
+            <DialogDescription>
+              Submission requests pricing; it does not authorize laboratory work. Work begins only after an issued quote is accepted.
+            </DialogDescription>
+          </DialogHeader>
+          {action.error && action.variables === 'submit' ? (
+            <Alert variant="destructive" role="alert">
+              <AlertTitle>Request was not submitted</AlertTitle>
+              <AlertDescription>{getOrderErrorMessage(action.error, 'Reload the job and try again.')}</AlertDescription>
+            </Alert>
+          ) : null}
+          <label htmlFor="lab-prohibited-data-confirmation" className="flex cursor-pointer items-start gap-3 rounded-lg border p-4">
+            <Checkbox
+              id="lab-prohibited-data-confirmation"
+              checked={prohibitedDataConfirmed}
+              onCheckedChange={(checked) => setProhibitedDataConfirmed(checked === true)}
+            />
+            <span className="text-sm leading-5">
+              I confirm that this request and its sample identifiers contain no patient identifiers, PHI, or unnecessary personal data.
+              <span className="ml-1 text-[var(--ruby-red,#b4233c)]" aria-hidden="true">*</span>
+            </span>
+          </label>
+          <DialogFooter>
+            <DialogClose asChild><Button type="button" variant="outline">Keep reviewing</Button></DialogClose>
+            <Button type="button" disabled={!prohibitedDataConfirmed || action.isPending} onClick={() => action.mutate('submit')}>
+              {action.isPending ? 'Submitting…' : 'Submit request for pricing'}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      <LabJobDetailsDialog
+        open={jobDetailsOpen}
+        order={order}
+        onOpenChange={handleJobDetailsOpenChange}
+        onSaved={() => {
+          handleJobDetailsOpenChange(false)
+        }}
+      />
+      <LabSampleDialog
+        open={sampleDialog !== undefined}
+        order={order}
+        sample={sampleDialog}
+        onOpenChange={(open) => { if (!open) setSampleDialog(undefined) }}
+        onSaved={() => {
+          setSampleDialog(undefined)
+        }}
+      />
     </main>
   )
+
+  function handleJobDetailsOpenChange(open: boolean) {
+    setJobDetailsOpen(open)
+    onJobDetailsOpenChange?.(open)
+  }
 }
 
 function QuoteSummary({ quote }: { quote: Quote }) {

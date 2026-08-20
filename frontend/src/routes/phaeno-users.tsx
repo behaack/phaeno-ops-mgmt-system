@@ -26,7 +26,7 @@ export const Route = createFileRoute('/phaeno-users')({
 function UsersPage() {
   const { authProvider, session, selectedOrganizationId } = usePhaenoSession()
   const selectedMembership = getSelectedMembership(session, selectedOrganizationId)
-  const selectedCustomerMembership =
+  const selectedExternalMembership =
     isExternalOrganizationKind(selectedMembership?.organizationKind)
       ? selectedMembership
       : null
@@ -35,9 +35,9 @@ function UsersPage() {
     isPhaenoEmployee(session) &&
     (Boolean(session?.capabilities.canManageAllUsers) ||
       Boolean(session?.capabilities.canManageLabAccess))
-  const canManageSelectedCustomerUsers =
-    selectedCustomerMembership &&
-    ((Boolean(selectedCustomerMembership?.isOrganizationAdmin) &&
+  const canManageSelectedExternalUsers =
+    selectedExternalMembership &&
+    ((Boolean(selectedExternalMembership?.isOrganizationAdmin) &&
       Boolean(session?.capabilities.canManageMembers)) ||
       (isPhaenoEmployee(session) &&
         Boolean(session?.capabilities.canManageOrganizations)))
@@ -60,27 +60,27 @@ function UsersPage() {
   }
 
   if (
-    canManageSelectedCustomerUsers &&
-    selectedCustomerMembership &&
+    canManageSelectedExternalUsers &&
+    selectedExternalMembership &&
     selectedOrganizationId
   ) {
     return (
       <main className="page-wrap px-4 py-8">
         <section className="mb-6 max-w-3xl">
           <Badge variant="secondary" className="mb-3">
-            Customer user administration
+            {selectedExternalMembership.organizationKind} user administration
           </Badge>
           <h1 className="text-3xl font-semibold leading-tight">
             User management
           </h1>
           <p className="mt-3 max-w-2xl text-sm leading-6 text-muted-foreground sm:text-base">
-            Manage users for {selectedCustomerMembership.organizationName}.
+            Manage users for {selectedExternalMembership.organizationName}.
           </p>
         </section>
 
         <OrganizationUserManagementPanel
           organizationId={selectedOrganizationId}
-          organizationName={selectedCustomerMembership.organizationName}
+          organizationName={selectedExternalMembership.organizationName}
         />
       </main>
     )

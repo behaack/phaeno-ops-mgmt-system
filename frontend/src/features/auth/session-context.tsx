@@ -633,6 +633,9 @@ function MockSessionProvider({ children }: { children: ReactNode }) {
         canRequestLabServiceCancellation:
           selectedMembership?.organizationKind === 'Customer' && selectedMembership.isOrganizationAdmin,
         canViewSampleProgress: selectedMembership?.organizationKind === 'Customer',
+        canViewSampleShipping:
+          selectedMembership?.organizationKind === 'Prospect' ||
+          selectedMembership?.organizationKind === 'Customer',
         canDownloadLabResults: selectedMembership?.organizationKind === 'Customer',
         canViewReagentOrders: selectedMembership?.organizationKind === 'Partner',
         canCreateReagentOrders:
