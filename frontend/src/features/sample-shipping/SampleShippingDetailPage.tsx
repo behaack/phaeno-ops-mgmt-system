@@ -55,7 +55,41 @@ export function SampleShippingDetailPage({ shipmentId }: { shipmentId: string })
 
   return (
     <main className="page-wrap px-4 py-8">
-      <section className="mb-6 flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between"><div><Link to="/sample-shipping" className="inline-flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground"><ArrowLeft className="size-4" />Samples and shipping</Link><div className="mt-3 flex flex-wrap items-center gap-3"><h1 className="text-3xl font-semibold">{shipment.shipmentNumber}</h1><Badge variant="outline">{humanize(shipment.status)}</Badge></div><p className="mt-2 text-sm text-muted-foreground">{shipment.authorizationReference} · {shipment.destinationName}</p></div><div className="flex flex-wrap gap-2">{shipment.currentPacket ? <><Button variant="outline" asChild><Link to="/sample-shipping/$shipmentId/packet" params={{ shipmentId }}><Printer data-icon="inline-start" />View packet</Link></Button><Button variant="outline" disabled={download.isPending} onClick={() => download.mutate()}><Download data-icon="inline-start" />Crosswalk CSV</Button></> : null}{canManage && readyToConfirm ? <Button onClick={() => setPacketAction('confirm')}>Review and confirm packet</Button> : null}{canManage && shipment.status === 'ReadyToShip' && shipment.currentPacket ? <Button variant="outline" onClick={() => setPacketAction('replace')}>Replace packet</Button> : null}{canManage && shipment.status === 'ReadyToShip' ? <Button onClick={() => setShipmentOpen(true)}>Record shipment</Button> : null}</div></section>
+      <section className="mb-6 flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
+        <div>
+          {shipment.authorizationSource === 'CustomerPromotionalOrder' ? (
+            <Link
+              to="/lab-services/$orderId"
+              params={{ orderId: shipment.authorizationSourceId }}
+              className="inline-flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground"
+            >
+              <ArrowLeft aria-hidden="true" className="size-4" />
+              Back to lab job {shipment.authorizationReference}
+            </Link>
+          ) : (
+            <Link to="/sample-shipping" className="inline-flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground">
+              <ArrowLeft aria-hidden="true" className="size-4" />
+              Samples and shipping
+            </Link>
+          )}
+          <div className="mt-3 flex flex-wrap items-center gap-3">
+            <h1 className="text-3xl font-semibold">{shipment.shipmentNumber}</h1>
+            <Badge variant="outline">{humanize(shipment.status)}</Badge>
+          </div>
+          <p className="mt-2 text-sm text-muted-foreground">{shipment.authorizationReference} · {shipment.destinationName}</p>
+        </div>
+        <div className="flex flex-wrap gap-2">
+          {shipment.currentPacket ? (
+            <>
+              <Button variant="outline" asChild><Link to="/sample-shipping/$shipmentId/packet" params={{ shipmentId }}><Printer data-icon="inline-start" />View packet</Link></Button>
+              <Button variant="outline" disabled={download.isPending} onClick={() => download.mutate()}><Download data-icon="inline-start" />Crosswalk CSV</Button>
+            </>
+          ) : null}
+          {canManage && readyToConfirm ? <Button onClick={() => setPacketAction('confirm')}>Review and confirm packet</Button> : null}
+          {canManage && shipment.status === 'ReadyToShip' && shipment.currentPacket ? <Button variant="outline" onClick={() => setPacketAction('replace')}>Replace packet</Button> : null}
+          {canManage && shipment.status === 'ReadyToShip' ? <Button onClick={() => setShipmentOpen(true)}>Record shipment</Button> : null}
+        </div>
+      </section>
       {error ? <Alert variant="destructive" className="mb-5"><AlertTitle>Shipment was not updated</AlertTitle><AlertDescription>{apiErrorMessage(error)}</AlertDescription></Alert> : null}
 
       <div className="grid gap-5 lg:grid-cols-[minmax(0,1.6fr)_minmax(18rem,0.8fr)]">

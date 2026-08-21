@@ -74,7 +74,9 @@ the protected deployed-Preview acceptance above.
   section visible at a time while external contexts omit it. External context
   instead shows its role-appropriate organization workflow cards, labels
   connected summaries as paused in mock-session mode, and never renders the
-  internal Accounts metrics.
+  internal Accounts metrics. Customer context keeps Data Library and Lab
+  services as separate starting points while omitting a peer sample-shipping
+  card because shipping is part of each lab job.
 - [x] `frontend/e2e/home.spec.ts` - desktop keeps frequent workspace routes in
   the toolbar, including Docs, while Data provisioning appears under Resources;
   desktop and mobile expose Accounts and the remaining grouped

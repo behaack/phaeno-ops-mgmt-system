@@ -1450,6 +1450,9 @@ Contract rules:
 Customer navigation:
 
 - `Lab services` appears only with Customer view capability.
+- Customer sample preparation and shipping are job steps inside `Lab services`;
+  they do not appear as a separate primary-navigation destination. Prospect
+  Trial Project shipping retains its independently authorized entry point.
 - The list provides status/date search, filters, empty/loading/error states, and
   `Request lab service` only for administrators.
 - `Request lab service` opens a bounded Job details modal with a required,
@@ -1463,9 +1466,19 @@ Customer navigation:
 - Submit-for-pricing remains on the record workspace, requires at least one
   sample, and requires the current no-PHI confirmation before freezing the
   submitted revision.
-- The record workspace uses clear sections for overview, samples, quote and
-  commercial status, files/results, and timeline. It shows Customer-visible
-  custody facts and makes scientific readiness vs payment release unmistakable.
+- The record workspace keeps job actions, action-needed messages, and current
+  laboratory progress visible above four responsive tabs: `Samples & shipping`,
+  `Quote & billing`, `Data & results`, and `Timeline`. The tabs preserve all
+  Customer-visible custody, commercial, release, revision-history, and milestone
+  facts while avoiding one long two-column page.
+- `Samples and shipping` unlocks after placement, owns the snapshotted
+  submission instructions, and presents either the job's authorized return-kit/
+  packet shipments or the current carrier/tracking actions for unreceived
+  samples. A Customer shipment detail returns to its owning lab job.
+- `Data and results` links into a job-scoped Data Library view. That view uses
+  the existing tenant-authorized result-package and file-download contracts,
+  preserves a return path to the job, and keeps the top-level organization Data
+  Library available for separately assigned curated packages.
 - Quote acceptance shows the complete immutable scope, expiration, itemized
   totals, instructions, credit/payment behavior, and confirmation consequence.
 

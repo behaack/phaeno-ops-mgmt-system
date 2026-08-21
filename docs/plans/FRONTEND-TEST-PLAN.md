@@ -40,8 +40,8 @@ remain incomplete production-activation gates.
   to Customer lab, Partner reagent/assembly, and Phaeno operations/configuration
   capabilities without leaking the other organization-kind surfaces.
 - [x] `frontend/src/components/navigation.test.ts` - Samples & shipping appears
-  for authorized Prospect and Customer contexts and remains hidden from Partner
-  contexts.
+  as a standalone destination only for authorized Prospect contexts; Customer
+  shipping remains inside Lab services and Partner contexts remain excluded.
 - [x] `frontend/src/components/navigation.test.ts` - Docs navigation is
   available as a primary workspace destination in Prospect, Customer, Partner,
   and Phaeno organization contexts.
@@ -283,10 +283,13 @@ remain incomplete production-activation gates.
   separation, investigation purpose, clear-versus-withdraw confirmation,
   affected-organization reminders, and Phaeno-recorded attestation.
 - [ ] Tenant Data Library - cover granted package cards, metadata/manifest
-  detail, authenticated file/archive downloads, error feedback, and
-  organization-admin history isolation with mocked API responses.
+  detail, job-scoped result-package and file downloads reached from Lab
+  services, job/list return paths, error feedback, and organization-admin
+  history isolation with mocked API responses.
 - [ ] Order workflow components - cover resumable drafts, profile-driven
-  metadata, quote acceptance/expiry, upload and scan feedback, payment holds,
+  metadata, the Customer Lab job's responsive `Samples & shipping`, `Quote &
+  billing`, `Data & results`, and `Timeline` tabs, quote acceptance/expiry,
+  upload and scan feedback, payment holds,
   substitutions, backorders, immutable-document downloads, operational queue
   filters, notification recovery, and stale-version/error recovery with mocked
   APIs.
@@ -294,10 +297,10 @@ remain incomplete production-activation gates.
   non-counting transfer messaging without downloader identity. The focused
   component tests were created on 2026-08-19 but were not executed because test
   execution was not requested.
-- [ ] Released-result download interactions - cover Customer and Partner
-  individual-file and full-package ZIP actions, pending-button state, completed
-  query refresh, file/package completion labels, partial state, and tenant-safe
-  failure feedback with mocked APIs.
+- [ ] Released-result download interactions - cover Customer job-detail and
+  Data Library individual-file and full-package ZIP actions, Partner outputs,
+  pending-button state, completed query refresh, file/package completion
+  labels, partial state, and tenant-safe failure feedback with mocked APIs.
 - [ ] Remaining Lab Operations workspace - cover role-specific controls,
   the five-section operational sidebar with access administration omitted,
   list/detail loading, receipt/accession, protocol lifecycle,

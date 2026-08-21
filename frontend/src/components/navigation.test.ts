@@ -116,17 +116,29 @@ describe('documentation navigation permissions', () => {
 })
 
 describe('sample-shipping navigation permissions', () => {
-  it.each<OrganizationKind>(['Prospect', 'Customer'])(
-    'shows Samples & shipping for an authorized %s context',
-    (kind) => {
-      const session = createSession(kind, { canViewSampleShipping: true })
+  it('shows Samples & shipping for an authorized Prospect context', () => {
+    const session = createSession('Prospect', { canViewSampleShipping: true })
 
-      expect(getVisibleMainMenuItems(session, {
-        selectedOrganizationKind: kind,
-        selectedMembership: session.memberships.at(-1),
-      }).map((item) => item.label)).toContain('Samples & shipping')
-    },
-  )
+    expect(getVisibleMainMenuItems(session, {
+      selectedOrganizationKind: 'Prospect',
+      selectedMembership: session.memberships.at(-1),
+    }).map((item) => item.label)).toContain('Samples & shipping')
+  })
+
+  it('keeps Customer sample shipping inside Lab services', () => {
+    const session = createSession('Customer', {
+      canViewLabServiceOrders: true,
+      canViewSampleShipping: true,
+    })
+
+    const labels = getVisibleMainMenuItems(session, {
+      selectedOrganizationKind: 'Customer',
+      selectedMembership: session.memberships.at(-1),
+    }).map((item) => item.label)
+
+    expect(labels).toContain('Lab services')
+    expect(labels).not.toContain('Samples & shipping')
+  })
 
   it('does not show Samples & shipping for a Partner context', () => {
     const session = createSession('Partner', { canViewSampleShipping: true })

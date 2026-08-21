@@ -168,7 +168,7 @@ export const documentationEntries: readonly DocumentationEntry[] = [
     summary: 'Confirm the current organization, understand access, and find Customer work.',
     section: 'Basics',
     order: 10,
-    reviewedAt: '2026-08-19',
+    reviewedAt: '2026-08-20',
     Content: CustomerGettingStarted,
   },
   {
@@ -187,10 +187,10 @@ export const documentationEntries: readonly DocumentationEntry[] = [
     locale: 'en-US',
     slug: 'lab-services',
     title: 'Request laboratory services',
-    summary: 'Create a request, submit samples, accept a quote, and track laboratory work.',
+    summary: 'Create a job, accept pricing, prepare and ship samples, and open released job data.',
     section: 'Laboratory work',
     order: 30,
-    reviewedAt: '2026-07-16',
+    reviewedAt: '2026-08-20',
     Content: CustomerLabServices,
   },
   {
@@ -202,7 +202,7 @@ export const documentationEntries: readonly DocumentationEntry[] = [
       'Associate Phaeno-supplied tube barcodes with your sample identifiers, retain the crosswalk, and ship an authorized promotional-order package.',
     section: 'Laboratory work',
     order: 35,
-    reviewedAt: '2026-08-18',
+    reviewedAt: '2026-08-20',
     Content: CustomerSampleShipping,
   },
   {
@@ -213,7 +213,7 @@ export const documentationEntries: readonly DocumentationEntry[] = [
     summary: 'Understand result readiness, credit and payment gates, and QuickBooks documents.',
     section: 'Laboratory work',
     order: 40,
-    reviewedAt: '2026-08-19',
+    reviewedAt: '2026-08-20',
     Content: CustomerResultsAndBilling,
   },
   {
@@ -221,7 +221,7 @@ export const documentationEntries: readonly DocumentationEntry[] = [
     locale: 'en-US',
     slug: 'data-and-organization',
     title: 'Data Library and organization access',
-    summary: 'Use assigned data packages and manage Customer organization membership.',
+    summary: 'Use released lab-job data, assigned curated packages, and Customer organization access.',
     section: 'Data and access',
     order: 50,
     reviewedAt: '2026-08-20',

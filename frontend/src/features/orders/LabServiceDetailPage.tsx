@@ -1,16 +1,19 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { Link } from '@tanstack/react-router'
-import { Download, FileArchive, FileCheck2, Pencil, Plus, Trash2 } from 'lucide-react'
+import { Download, FileArchive, FileCheck2, Library, PackageCheck, Pencil, Plus, Trash2 } from 'lucide-react'
 import { useState } from 'react'
 
 import { acceptLabQuote, downloadLabResult, downloadLabResultPackage, getLabOrder, getOrderErrorMessage, recordLabSampleShipment, requestLabCancellation, submitLabOrder, type LabSample, type OperationalFile, type Quote, updateLabOrder, withdrawLabOrder } from '#/api/order-management'
+import { getSampleShipments } from '#/api/sample-shipping'
 import { Alert, AlertDescription, AlertTitle } from '#/components/ui/alert'
+import { Badge } from '#/components/ui/badge'
 import { Button } from '#/components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '#/components/ui/card'
 import { Checkbox } from '#/components/ui/checkbox'
 import { Dialog, DialogClose, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '#/components/ui/dialog'
 import { Label } from '#/components/ui/label'
 import { RequiredDialogFooter, RequiredFieldName, RequiredMark } from '#/components/ui/required-field'
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '#/components/ui/tabs'
 import { usePhaenoSession } from '#/features/auth/session-context'
 import { LabJobDetailsDialog } from './LabJobDetailsDialog'
 import { LabSampleDialog } from './LabSampleDialog'
@@ -40,7 +43,10 @@ export function LabServiceDetailPage({
   const [carrier, setCarrier] = useState('')
   const [trackingNumber, setTrackingNumber] = useState('')
   const apiEnabled = Boolean(session?.capabilities.canViewLabServiceOrders) && authProvider !== 'mock'
+  const canViewShipping = Boolean(session?.capabilities.canViewSampleShipping)
+  const canViewData = Boolean(session?.capabilities.canViewOrganizationDatasets)
   const orderQuery = useQuery({ queryKey: ['lab-service-order', orderId], queryFn: () => getLabOrder(orderId), enabled: apiEnabled })
+  const shipmentsQuery = useQuery({ queryKey: ['sample-shipments'], queryFn: getSampleShipments, enabled: apiEnabled && canViewShipping })
   const action = useMutation({
     mutationFn: async (kind: 'submit' | 'accept' | 'cancel' | 'withdraw' | 'shipment') => {
       const order = orderQuery.data
@@ -103,6 +109,11 @@ export function LabServiceDetailPage({
 
   const order = orderQuery.data
   const quote = currentQuote(order.quotes)
+  const jobShipments = (shipmentsQuery.data ?? []).filter(
+    (shipment) => shipment.authorizationSource === 'CustomerPromotionalOrder'
+      && shipment.authorizationSourceId === order.id,
+  )
+  const awaitingShipment = order.samples.filter((sample) => !sample.receivedAt)
   return (
     <main className="page-wrap px-4 py-8">
       <section className="mb-6 flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
@@ -135,8 +146,15 @@ export function LabServiceDetailPage({
 
       {order.labMilestone ? <Card className="mb-5"><CardHeader><CardTitle>Laboratory progress</CardTitle><CardDescription>Current customer-safe milestone from the laboratory record.</CardDescription></CardHeader><CardContent><div className="flex flex-wrap items-center gap-3"><OrderStatusBadge status={order.labMilestone} />{order.labScheduleHealth ? <span className="text-sm text-muted-foreground">Schedule: {humanizeStatus(order.labScheduleHealth)}</span> : null}{order.labExpectedCompletionAtUtc ? <span className="text-sm text-muted-foreground">Expected {formatDate(order.labExpectedCompletionAtUtc)}</span> : null}</div>{order.labPermittedQcProjectionJson ? <details className="mt-3"><summary className="cursor-pointer text-sm font-medium">Approved QC summary</summary><pre className="mt-2 overflow-x-auto rounded-md bg-muted p-3 text-xs">{prettyJson(order.labPermittedQcProjectionJson)}</pre></details> : null}{order.labReadyForRelease ? <p className="mt-3 text-sm">Scientific review is complete. Phaeno must still complete the Commercial release before any result file appears here.</p> : null}</CardContent></Card> : null}
 
-      <div className="grid gap-5 lg:grid-cols-[minmax(0,1.5fr)_minmax(18rem,1fr)]">
-        <div className="space-y-5">
+      <Tabs defaultValue="samples">
+        <TabsList aria-label="Lab job sections" className="grid h-auto w-full grid-cols-2 sm:w-fit sm:grid-cols-4">
+          <TabsTrigger value="samples">Samples &amp; shipping</TabsTrigger>
+          <TabsTrigger value="quote">Quote &amp; billing</TabsTrigger>
+          <TabsTrigger value="data">Data &amp; results</TabsTrigger>
+          <TabsTrigger value="timeline">Timeline</TabsTrigger>
+        </TabsList>
+
+        <TabsContent value="samples" className="mt-5 space-y-5">
           <Card>
             <CardHeader>
               <div className="flex flex-wrap items-start justify-between gap-3">
@@ -184,11 +202,6 @@ export function LabServiceDetailPage({
                               </Button>
                             </>
                           ) : null}
-                          {!sample.receivedAt && order.placedAt ? (
-                            <Button type="button" size="sm" variant="outline" onClick={() => { setShipmentSampleId(sample.id); setCarrier(sample.carrier ?? ''); setTrackingNumber(sample.trackingNumber ?? ''); setDialog('shipment') }}>
-                              Record shipment
-                            </Button>
-                          ) : null}
                         </div>
                       </div>
                       {sample.accessionId ? <p className="mt-2 text-sm">Accession <span className="font-mono">{sample.accessionId}</span></p> : null}
@@ -217,8 +230,127 @@ export function LabServiceDetailPage({
 
           <Card>
             <CardHeader>
-              <CardTitle>Files and results</CardTitle>
-              <CardDescription>Scientific readiness and commercial release are separate. Files appear here only after all release gates pass.</CardDescription>
+              <CardTitle>Samples and shipping</CardTitle>
+              <CardDescription>
+                Prepare and return this job's samples after the laboratory work is authorized.
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-5">
+              {!order.placedAt ? (
+                <div className="flex flex-col items-center py-8 text-center">
+                  <PackageCheck aria-hidden="true" className="mb-2 size-7 text-muted-foreground" />
+                  <p className="font-medium">Shipping begins after authorization</p>
+                  <p className="mt-1 max-w-lg text-sm text-muted-foreground">
+                    Complete the request and accept the current quote before preparing samples for shipment.
+                  </p>
+                </div>
+              ) : (
+                <>
+                  <section aria-labelledby="submission-instructions-heading" className="rounded-lg border bg-muted/20 p-4">
+                    <h3 id="submission-instructions-heading" className="font-medium">Submission instructions</h3>
+                    <p className="mt-2 whitespace-pre-wrap text-sm leading-6 text-muted-foreground">
+                      {order.submissionInstructions || 'Phaeno is preparing the submission instructions for this job.'}
+                    </p>
+                  </section>
+
+                  {shipmentsQuery.error ? (
+                    <Alert variant="destructive">
+                      <AlertTitle>Authorized shipments could not be loaded</AlertTitle>
+                      <AlertDescription>{getOrderErrorMessage(shipmentsQuery.error, 'Reload the job and try again.')}</AlertDescription>
+                    </Alert>
+                  ) : null}
+
+                  {shipmentsQuery.isLoading ? (
+                    <p role="status" className="text-sm text-muted-foreground">Loading authorized shipments…</p>
+                  ) : null}
+
+                  {jobShipments.length > 0 ? (
+                    <div className="divide-y">
+                      {jobShipments.map((shipment) => {
+                        const matchedCount = shipment.crosswalk.filter((item) => item.supplierTubeBarcode).length
+                        return (
+                          <section key={shipment.id} className="flex flex-wrap items-center justify-between gap-3 py-4 first:pt-0 last:pb-0">
+                            <div>
+                              <div className="flex flex-wrap items-center gap-2">
+                                <p className="font-medium">Shipment {shipment.shipmentNumber}</p>
+                                <Badge variant="outline">{humanizeStatus(shipment.status)}</Badge>
+                              </div>
+                              <p className="mt-1 text-sm text-muted-foreground">
+                                {shipment.destinationName} · {matchedCount} of {shipment.crosswalk.length} tubes matched
+                              </p>
+                            </div>
+                            <Button asChild variant="outline">
+                              <Link to="/sample-shipping/$shipmentId" params={{ shipmentId: shipment.id }}>
+                                Open shipment
+                              </Link>
+                            </Button>
+                          </section>
+                        )
+                      })}
+                    </div>
+                  ) : !shipmentsQuery.isLoading ? (
+                    awaitingShipment.length > 0 ? (
+                      <div>
+                        <p className="text-sm text-muted-foreground">
+                          Record carrier details after each sample leaves your organization.
+                        </p>
+                        <div className="mt-3 divide-y">
+                          {awaitingShipment.map((sample) => (
+                            <section key={sample.id} className="flex flex-wrap items-center justify-between gap-3 py-3">
+                              <div>
+                                <p className="font-medium">{sample.customerSampleId}</p>
+                                <p className="mt-1 text-sm text-muted-foreground">
+                                  {sample.trackingNumber
+                                    ? `${sample.carrier ?? 'Carrier'} · ${sample.trackingNumber}`
+                                    : 'Shipment not recorded'}
+                                </p>
+                              </div>
+                              <Button
+                                type="button"
+                                variant="outline"
+                                onClick={() => {
+                                  setShipmentSampleId(sample.id)
+                                  setCarrier(sample.carrier ?? '')
+                                  setTrackingNumber(sample.trackingNumber ?? '')
+                                  setDialog('shipment')
+                                }}
+                              >
+                                Record shipment
+                              </Button>
+                            </section>
+                          ))}
+                        </div>
+                      </div>
+                    ) : (
+                      <p className="text-sm text-muted-foreground">
+                        Every sample in this job has been received by Phaeno.
+                      </p>
+                    )
+                  ) : null}
+                </>
+              )}
+            </CardContent>
+          </Card>
+
+        </TabsContent>
+
+        <TabsContent value="data" className="mt-5">
+          <Card>
+            <CardHeader>
+              <div className="flex flex-wrap items-start justify-between gap-3">
+                <div>
+                  <CardTitle>Data and results</CardTitle>
+                  <CardDescription>Scientific readiness and commercial release are separate. Files appear here only after all release gates pass.</CardDescription>
+                </div>
+                {canViewData ? (
+                  <Button asChild variant="outline">
+                    <Link to="/data-library" search={{ jobId: order.id }}>
+                      <Library data-icon="inline-start" />
+                      Open in Data Library
+                    </Link>
+                  </Button>
+                ) : null}
+              </div>
             </CardHeader>
             <CardContent>
               {order.resultReleases.some((release) => release.releaseStatus === 'Released') ? (
@@ -260,17 +392,55 @@ export function LabServiceDetailPage({
               )}
             </CardContent>
           </Card>
+        </TabsContent>
+
+        <TabsContent value="quote" className="mt-5 space-y-5">
+          <Card>
+            <CardHeader>
+              <CardTitle>Quote and commercial status</CardTitle>
+              <CardDescription>Job-specific pricing is immutable by revision.</CardDescription>
+            </CardHeader>
+            <CardContent>
+              {quote ? (
+                <>
+                  <QuoteSummary quote={quote} />
+                  <Button
+                    type="button"
+                    variant="outline"
+                    className="mt-4"
+                    onClick={() => downloadSnapshot(`${order.orderNumber}-quote-r${quote.revision}.json`, JSON.stringify({ ...quote, lines: parseLines(quote.linesJson) }, null, 2))}
+                  >
+                    <Download data-icon="inline-start" />
+                    Download quote
+                  </Button>
+                </>
+              ) : (
+                <p className="text-sm text-muted-foreground">Phaeno has not issued pricing yet.</p>
+              )}
+              {order.documents.map((document) => (
+                <div key={document.id} className="mt-4 border-t pt-4">
+                  <div className="flex items-center justify-between gap-2">
+                    <span className="text-sm font-medium">{document.kind} {document.documentNumber ?? ''}</span>
+                    <OrderStatusBadge status={document.syncStatus} />
+                  </div>
+                  <p className="mt-1 text-sm text-muted-foreground">Balance {formatMoney(document.balance, document.currency)}</p>
+                  {document.documentUrl ? (
+                    <a href={document.documentUrl} target="_blank" rel="noreferrer" className="mt-2 inline-block text-sm text-primary hover:underline">
+                      Open in QuickBooks
+                    </a>
+                  ) : null}
+                </div>
+              ))}
+            </CardContent>
+          </Card>
 
           {(order.requestRevisions?.length ?? 0) > 0 ? <Card><CardHeader><CardTitle>Submitted request revisions</CardTitle><CardDescription>Each submission preserves the Job name, description, samples, analyses, and instructions that Phaeno reviewed.</CardDescription></CardHeader><CardContent className="divide-y">{order.requestRevisions?.map((revision) => <div key={revision.id} className="flex flex-wrap items-center justify-between gap-3 py-3"><div><p className="font-medium">Revision {revision.revision}</p><p className="text-xs text-muted-foreground">Submitted {formatDateTime(revision.submittedAt)}</p>{revision.correctionReason ? <p className="mt-1 text-sm">Correction: {revision.correctionReason}</p> : null}</div><Button type="button" variant="outline" onClick={() => downloadSnapshot(`${order.orderNumber}-request-r${revision.revision}.json`, revision.snapshotJson)}><Download data-icon="inline-start" />Download snapshot</Button></div>)}</CardContent></Card> : null}
+        </TabsContent>
 
+        <TabsContent value="timeline" className="mt-5">
           <Card><CardHeader><CardTitle>Timeline</CardTitle><CardDescription>Customer-safe milestones and reasons for this request.</CardDescription></CardHeader><CardContent><ol className="space-y-4">{order.timeline.map((item) => <li key={item.id} className="border-l-2 border-border pl-4"><p className="text-sm font-medium">{humanizeStatus(item.toStatus)}</p><p className="text-xs text-muted-foreground">{formatDateTime(item.occurredAt)}</p>{item.reason ? <p className="mt-1 text-sm">{item.reason}</p> : null}</li>)}</ol></CardContent></Card>
-        </div>
-
-        <div className="space-y-5">
-          <Card><CardHeader><CardTitle>Quote and commercial status</CardTitle><CardDescription>Job-specific pricing is immutable by revision.</CardDescription></CardHeader><CardContent>{quote ? <><QuoteSummary quote={quote} /><Button type="button" variant="outline" className="mt-4" onClick={() => downloadSnapshot(`${order.orderNumber}-quote-r${quote.revision}.json`, JSON.stringify({ ...quote, lines: parseLines(quote.linesJson) }, null, 2))}><Download data-icon="inline-start" />Download quote</Button></> : <p className="text-sm text-muted-foreground">Phaeno has not issued pricing yet.</p>}{order.documents.map((document) => <div key={document.id} className="mt-4 border-t pt-4"><div className="flex items-center justify-between gap-2"><span className="text-sm font-medium">{document.kind} {document.documentNumber ?? ''}</span><OrderStatusBadge status={document.syncStatus} /></div><p className="mt-1 text-sm text-muted-foreground">Balance {formatMoney(document.balance, document.currency)}</p>{document.documentUrl ? <a href={document.documentUrl} target="_blank" rel="noreferrer" className="mt-2 inline-block text-sm text-primary hover:underline">Open in QuickBooks</a> : null}</div>)}</CardContent></Card>
-          <Card><CardHeader><CardTitle>Sample submission</CardTitle></CardHeader><CardContent><p className="whitespace-pre-wrap text-sm leading-6">{order.submissionInstructions || 'Phaeno will provide submission instructions with the quote.'}</p></CardContent></Card>
-        </div>
-      </div>
+        </TabsContent>
+      </Tabs>
 
       <Dialog open={dialog === 'accept'} onOpenChange={(open) => !open && setDialog(null)}><DialogContent><DialogHeader><DialogTitle>Accept quote for {order.orderNumber}?</DialogTitle><DialogDescription>This places the complete quoted scope and authorizes Phaeno to perform the work. The accepted snapshot remains in the order history.</DialogDescription></DialogHeader>{quote ? <QuoteSummary quote={quote} /> : null}<DialogFooter><DialogClose asChild><Button type="button" variant="outline">Keep reviewing</Button></DialogClose><Button type="button" onClick={() => action.mutate('accept')} disabled={action.isPending}>{action.isPending ? 'Accepting…' : 'Accept quote and place order'}</Button></DialogFooter></DialogContent></Dialog>
       <Dialog open={dialog === 'cancel' || dialog === 'withdraw'} onOpenChange={(open) => !open && setDialog(null)}><DialogContent><DialogHeader><DialogTitle>{dialog === 'withdraw' ? 'Withdraw' : 'Request cancellation for'} {order.orderNumber}</DialogTitle><DialogDescription>{dialog === 'withdraw' ? 'This closes the request before work is placed.' : 'Phaeno will review completed work and financial effects before deciding the request.'}</DialogDescription></DialogHeader><div><Label htmlFor="cancellationReason"><RequiredFieldName>Reason</RequiredFieldName></Label><textarea id="cancellationReason" value={cancellationReason} onChange={(event) => setCancellationReason(event.target.value)} className="mt-2 min-h-24 w-full rounded-lg border border-input bg-background px-3 py-2 text-sm focus-visible:ring-3 focus-visible:ring-ring/50 focus-visible:outline-none" /></div><RequiredDialogFooter><DialogClose asChild><Button type="button" variant="outline">Keep order</Button></DialogClose><Button type="button" variant="destructive" disabled={!cancellationReason.trim() || action.isPending} onClick={() => action.mutate(dialog === 'withdraw' ? 'withdraw' : 'cancel')}>{action.isPending ? 'Updating…' : dialog === 'withdraw' ? 'Withdraw request' : 'Request cancellation'}</Button></RequiredDialogFooter></DialogContent></Dialog>

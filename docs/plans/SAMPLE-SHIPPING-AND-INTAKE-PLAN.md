@@ -10,6 +10,11 @@ procedure change.
 
 ## Status
 
+- Customer sample shipping was placed inside the owning Lab service job UI on
+  2026-08-20. Customer primary navigation and dashboard no longer present it as
+  a peer workspace; Prospect shipping remains standalone until the Trial
+  Project detail workflow owns it. The shared shipment records, packet routes,
+  and authorization boundaries remain separate underneath.
 - Product direction was approved for planning on 2026-08-17.
 - Phase 1 shared configuration and packet foundation was implemented on
   2026-08-17. It includes versioned destination, sample-type, and instruction
@@ -731,6 +736,9 @@ client without validating the selected tenant and frozen authorization scope.
 - After placement, it uses the same **Samples and shipping** experience and
   packet behavior as a Trial Project while retaining order terminology and
   commercial history.
+- Customer primary navigation does not expose a separate **Samples and
+  shipping** destination. The Lab service job is the starting point and every
+  Customer shipment detail returns to that job.
 
 ### Phaeno Intake
 

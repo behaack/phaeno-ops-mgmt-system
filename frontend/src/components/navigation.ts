@@ -93,7 +93,7 @@ export const mainMenuItems: readonly MainMenuItem[] = [
     icon: PackageCheck,
     group: 'workspace',
     visibleWhen: (session, context) =>
-      (context.selectedOrganizationKind === 'Prospect' || context.selectedOrganizationKind === 'Customer') &&
+      context.selectedOrganizationKind === 'Prospect' &&
       Boolean(session?.capabilities.canViewSampleShipping),
   },
   {

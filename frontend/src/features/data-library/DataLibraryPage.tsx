@@ -1,14 +1,23 @@
-import { useQuery } from '@tanstack/react-query'
+import { type UseMutationResult, useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { Link } from '@tanstack/react-router'
-import { Download, FileArchive, Library, ShieldCheck } from 'lucide-react'
+import { ArrowLeft, Download, FileArchive, FileCheck2, Library, ShieldCheck } from 'lucide-react'
 
 import {
   getApiErrorMessage,
   listDownloadHistory,
   listTenantDatasets,
 } from '#/api/data-provisioning'
+import {
+  downloadLabResult,
+  downloadLabResultPackage,
+  getLabOrder,
+  getOrderErrorMessage,
+  type LabServiceOrder,
+  type OperationalFile,
+} from '#/api/order-management'
 import { Alert, AlertDescription, AlertTitle } from '#/components/ui/alert'
 import { Badge } from '#/components/ui/badge'
+import { Button } from '#/components/ui/button'
 import {
   Card,
   CardContent,
@@ -20,22 +29,38 @@ import {
   getSelectedMembership,
   usePhaenoSession,
 } from '#/features/auth/session-context'
+import { ReleasedDeliverableRetentionNotice } from '#/features/orders/ReleasedDeliverableRetentionNotice'
 import { GovernanceNoticePanel } from './GovernanceNoticePanel'
 
-export function DataLibraryPage() {
+export function DataLibraryPage({ jobId }: { jobId?: string }) {
   const { authProvider, session, selectedOrganizationId } = usePhaenoSession()
+  const queryClient = useQueryClient()
   const canView = Boolean(session?.capabilities.canViewOrganizationDatasets)
+  const canViewLab = Boolean(session?.capabilities.canViewLabServiceOrders)
   const apiEnabled = canView && authProvider !== 'mock'
   const selectedMembership = getSelectedMembership(session, selectedOrganizationId)
   const datasetsQuery = useQuery({
     queryKey: ['curated-data', selectedOrganizationId],
     queryFn: listTenantDatasets,
-    enabled: apiEnabled,
+    enabled: apiEnabled && !jobId,
   })
   const historyQuery = useQuery({
     queryKey: ['curated-data', selectedOrganizationId, 'downloads'],
     queryFn: listDownloadHistory,
-    enabled: apiEnabled && Boolean(selectedMembership?.isOrganizationAdmin),
+    enabled: apiEnabled && !jobId && Boolean(selectedMembership?.isOrganizationAdmin),
+  })
+  const jobQuery = useQuery({
+    queryKey: ['lab-service-order', jobId],
+    queryFn: () => getLabOrder(jobId!),
+    enabled: apiEnabled && canViewLab && Boolean(jobId),
+  })
+  const jobDownload = useMutation({
+    mutationFn: async (request: JobDownloadRequest) => request.kind === 'package'
+      ? downloadLabResultPackage(request.orderId, request.releaseId, request.releaseVersion)
+      : downloadLabResult(request.orderId, request.file),
+    onSuccess: async (_value, request) => {
+      await queryClient.invalidateQueries({ queryKey: ['lab-service-order', request.orderId] })
+    },
   })
 
   if (!canView) {
@@ -50,6 +75,19 @@ export function DataLibraryPage() {
           </CardHeader>
         </Card>
       </main>
+    )
+  }
+
+  if (jobId) {
+    return (
+      <JobDataLibrary
+        jobId={jobId}
+        canViewLab={canViewLab}
+        order={jobQuery.data}
+        isLoading={jobQuery.isLoading}
+        error={jobQuery.error}
+        download={jobDownload}
+      />
     )
   }
 
@@ -165,6 +203,192 @@ export function DataLibraryPage() {
   )
 }
 
+function JobDataLibrary({
+  jobId,
+  canViewLab,
+  order,
+  isLoading,
+  error,
+  download,
+}: {
+  jobId: string
+  canViewLab: boolean
+  order: LabServiceOrder | undefined
+  isLoading: boolean
+  error: Error | null
+  download: UseMutationResult<void, Error, JobDownloadRequest>
+}) {
+  if (!canViewLab) {
+    return (
+      <main className="page-wrap px-4 py-8">
+        <Alert variant="destructive">
+          <AlertTitle>Job data unavailable</AlertTitle>
+          <AlertDescription>
+            This selected organization cannot view the requested laboratory job.
+          </AlertDescription>
+        </Alert>
+      </main>
+    )
+  }
+
+  if (isLoading) {
+    return <main className="page-wrap px-4 py-8"><p role="status">Loading job data…</p></main>
+  }
+
+  if (error || !order) {
+    return (
+      <main className="page-wrap px-4 py-8">
+        <Alert variant="destructive">
+          <AlertTitle>Job data could not be loaded</AlertTitle>
+          <AlertDescription>{getOrderErrorMessage(error, 'Return to the lab job and try again.')}</AlertDescription>
+        </Alert>
+      </main>
+    )
+  }
+
+  const releasedPackages = order.resultReleases.filter(
+    (release) => release.releaseStatus === 'Released',
+  )
+  const hasData = releasedPackages.length > 0 || order.resultFiles.length > 0
+
+  return (
+    <main className="page-wrap px-4 py-8">
+      <section className="mb-6 flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
+        <div className="max-w-3xl">
+          <Link
+            to="/lab-services/$orderId"
+            params={{ orderId: jobId }}
+            className="inline-flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground"
+          >
+            <ArrowLeft aria-hidden="true" className="size-4" />
+            Back to {order.orderNumber}
+          </Link>
+          <Badge variant="secondary" className="mt-4 mb-3 block w-fit">Lab job data</Badge>
+          <h1 className="text-3xl font-semibold leading-tight">Data Library</h1>
+          <p className="mt-3 text-sm leading-6 text-muted-foreground sm:text-base">
+            Released data for {order.customerReference} ({order.orderNumber}).
+          </p>
+        </div>
+        <Button asChild variant="outline">
+          <Link to="/data-library" search={{}}>View organization Data Library</Link>
+        </Button>
+      </section>
+
+      {download.error ? (
+        <Alert variant="destructive" className="mb-5" role="alert">
+          <AlertTitle>Job data could not be downloaded</AlertTitle>
+          <AlertDescription>{getOrderErrorMessage(download.error, 'Try the download again.')}</AlertDescription>
+        </Alert>
+      ) : null}
+
+      <Card>
+        <CardHeader>
+          <CardTitle>Released job data</CardTitle>
+          <CardDescription>
+            Data appears here only after scientific, file, and commercial release gates pass.
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          {hasData ? (
+            <div className="space-y-5">
+              {releasedPackages.map((release) => (
+                <section key={release.id} aria-labelledby={`job-data-release-${release.id}`}>
+                  <div className="flex flex-wrap items-center justify-between gap-3">
+                    <div>
+                      <p id={`job-data-release-${release.id}`} className="font-medium">
+                        {sampleName(order, release.labSampleId)} · Result release {release.releaseVersion}
+                      </p>
+                      <p className="mt-1 text-xs text-muted-foreground">
+                        {release.analysisProfile} · Pipeline {release.pipelineVersion} · QC {release.qcStatus}
+                      </p>
+                    </div>
+                    <Button
+                      type="button"
+                      variant="outline"
+                      disabled={download.isPending}
+                      onClick={() => download.mutate({
+                        kind: 'package',
+                        orderId: order.id,
+                        releaseId: release.id,
+                        releaseVersion: release.releaseVersion,
+                      })}
+                    >
+                      <FileArchive data-icon="inline-start" />
+                      {download.isPending && download.variables?.kind === 'package' && download.variables.releaseId === release.id
+                        ? 'Downloading…'
+                        : 'Download package'}
+                    </Button>
+                  </div>
+                  <ReleasedDeliverableRetentionNotice retention={release.retention} />
+                </section>
+              ))}
+
+              {order.resultFiles.length > 0 ? (
+                <ul className="divide-y border-t">
+                  {order.resultFiles.map((file) => (
+                    <li key={file.id} className="flex flex-wrap items-center justify-between gap-3 py-3">
+                      <div>
+                        <p className="font-medium">{file.fileName}</p>
+                        <p className="mt-1 text-xs text-muted-foreground">
+                          {formatBytes(file.sizeBytes)} · {fileDownloadStatus(file)}
+                        </p>
+                      </div>
+                      <Button
+                        type="button"
+                        variant="outline"
+                        disabled={download.isPending}
+                        onClick={() => download.mutate({ kind: 'file', orderId: order.id, file })}
+                      >
+                        <Download data-icon="inline-start" />
+                        {download.isPending && download.variables?.kind === 'file' && download.variables.file.id === file.id
+                          ? 'Downloading…'
+                          : 'Download'}
+                      </Button>
+                    </li>
+                  ))}
+                </ul>
+              ) : null}
+            </div>
+          ) : (
+            <div className="flex flex-col items-center py-10 text-center">
+              <FileCheck2 aria-hidden="true" className="mb-2 size-7 text-muted-foreground" />
+              <p className="font-medium">No released job data yet</p>
+              <p className="mt-1 max-w-lg text-sm text-muted-foreground">
+                Return to the lab job to review processing, scientific readiness, and any payment or release gate.
+              </p>
+              <Button asChild variant="outline" className="mt-4">
+                <Link to="/lab-services/$orderId" params={{ orderId: jobId }}>Return to job</Link>
+              </Button>
+            </div>
+          )}
+        </CardContent>
+      </Card>
+    </main>
+  )
+}
+
 function formatDate(value: string) {
   return new Intl.DateTimeFormat(undefined, { dateStyle: 'medium', timeStyle: 'short' }).format(new Date(value))
 }
+
+function formatBytes(value: number) {
+  return new Intl.NumberFormat('en-US', {
+    style: 'unit',
+    unit: value >= 1_000_000 ? 'megabyte' : 'kilobyte',
+    maximumFractionDigits: 1,
+  }).format(value >= 1_000_000 ? value / 1_000_000 : value / 1_000)
+}
+
+function sampleName(order: LabServiceOrder, sampleId: string) {
+  return order.samples.find((sample) => sample.id === sampleId)?.customerSampleId ?? 'Sample'
+}
+
+function fileDownloadStatus(file: OperationalFile) {
+  if (file.download?.isDownloaded) return 'Downloaded'
+  if ((file.download?.activeAttemptCount ?? 0) > 0) return 'Download in progress'
+  return 'Not downloaded'
+}
+
+type JobDownloadRequest =
+  | { kind: 'package'; orderId: string; releaseId: string; releaseVersion: number }
+  | { kind: 'file'; orderId: string; file: OperationalFile }

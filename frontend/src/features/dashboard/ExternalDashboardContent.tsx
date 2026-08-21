@@ -100,7 +100,7 @@ export function ExternalDashboardContent({
   const shipments = useQuery({
     queryKey: ['sample-shipments'],
     queryFn: getSampleShipments,
-    enabled: apiEnabled && canViewShipping,
+    enabled: apiEnabled && kind === 'Prospect' && canViewShipping,
   })
   const datasets = useQuery({
     queryKey: ['curated-data', selectedOrganizationId],
@@ -128,7 +128,7 @@ export function ExternalDashboardContent({
       <WorkflowCard
         key="lab-services"
         title="Lab services"
-        description="Request laboratory work and follow samples through released results."
+        description="Request laboratory work, prepare and ship samples, and follow released results."
         icon={FlaskConical}
         href="/lab-services"
         actionLabel="Open lab services"
@@ -142,7 +142,7 @@ export function ExternalDashboardContent({
     )
   }
 
-  if (canViewShipping) {
+  if (kind === 'Prospect' && canViewShipping) {
     cards.push(
       <WorkflowCard
         key="sample-shipping"

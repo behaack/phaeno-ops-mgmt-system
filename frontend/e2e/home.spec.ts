@@ -109,7 +109,7 @@ test('uses Portal branding in an external organization context', async ({ page }
   ).toBeVisible()
   await expect(
     page.getByRole('link', { name: 'Open sample shipping' }),
-  ).toBeVisible()
+  ).toHaveCount(0)
 })
 
 test('keeps workspace navigation concise and groups the user menu', async ({
