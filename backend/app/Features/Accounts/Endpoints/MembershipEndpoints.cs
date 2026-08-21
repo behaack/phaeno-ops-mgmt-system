@@ -81,7 +81,10 @@ public static class MembershipEndpoints
             externalIdentityContext,
             cancellationToken);
 
-        if (actor == null || !CanManageMembership(actor, membership))
+        if (actor == null
+            || !AccountAuthorization.CanAdministrativelyDeactivateMembership(
+                actor,
+                membership))
         {
             return TypedResults.Forbid();
         }

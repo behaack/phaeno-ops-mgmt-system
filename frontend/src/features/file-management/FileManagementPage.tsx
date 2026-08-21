@@ -15,9 +15,10 @@ import { Alert, AlertDescription, AlertTitle } from '#/components/ui/alert'
 import { Badge } from '#/components/ui/badge'
 import { Button } from '#/components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '#/components/ui/card'
-import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '#/components/ui/dialog'
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '#/components/ui/dialog'
 import { Input } from '#/components/ui/input'
 import { Label } from '#/components/ui/label'
+import { RequiredDialogFooter, RequiredFieldName } from '#/components/ui/required-field'
 import { usePhaenoSession } from '#/features/auth/session-context'
 
 const policySchema = z.object({
@@ -184,12 +185,11 @@ export function FileManagementPage() {
             </DialogDescription>
           </DialogHeader>
           <form id="global-retention-policy-form" noValidate className="space-y-4" onSubmit={form.handleSubmit((values) => mutation.mutate(values))}>
-            <p className="text-sm text-muted-foreground"><span className="text-[var(--ruby-red,#b4233c)]" aria-hidden="true">*</span> Required fields</p>
             <NumberField form={form} name="standardRetentionDays" label="Standard retention (days)" />
             <NumberField form={form} name="undownloadedWarningLeadDays" label="Undownloaded warning lead (days)" />
             <NumberField form={form} name="undownloadedGraceDays" label="Conditional grace (days)" />
             <div>
-              <Label htmlFor="global-policy-reason">Change reason <span className="text-[var(--ruby-red,#b4233c)]" aria-hidden="true">*</span></Label>
+              <Label htmlFor="global-policy-reason"><RequiredFieldName>Change reason</RequiredFieldName></Label>
               <textarea
                 id="global-policy-reason"
                 className="mt-2 min-h-24 w-full rounded-lg border border-input bg-background px-3 py-2 text-sm focus-visible:ring-3 focus-visible:ring-ring/50 focus-visible:outline-none"
@@ -207,12 +207,12 @@ export function FileManagementPage() {
               <AlertDescription>{fileManagementErrorMessage(mutation.error, 'Reload the policy and try again.')}</AlertDescription>
             </Alert>
           ) : null}
-          <DialogFooter>
+          <RequiredDialogFooter>
             <Button type="button" variant="outline" disabled={mutation.isPending} onClick={() => setEditOpen(false)}>Cancel</Button>
             <Button type="submit" form="global-retention-policy-form" disabled={!form.formState.isDirty || mutation.isPending}>
               {mutation.isPending ? 'Saving…' : 'Save changes'}
             </Button>
-          </DialogFooter>
+          </RequiredDialogFooter>
         </DialogContent>
       </Dialog>
     </main>
@@ -230,7 +230,7 @@ function NumberField({ form, label, name }: {
 }) {
   const error = form.formState.errors[name]
   const id = `global-policy-${name}`
-  return <div><Label htmlFor={id}>{label} <span className="text-[var(--ruby-red,#b4233c)]" aria-hidden="true">*</span></Label><Input id={id} type="number" min={1} step={1} className="mt-2" required aria-invalid={Boolean(error)} aria-describedby={error ? `${id}-error` : undefined} {...form.register(name, { valueAsNumber: true })} />{error ? <p id={`${id}-error`} role="alert" className="mt-1 text-sm text-destructive">{error.message}</p> : null}</div>
+  return <div><Label htmlFor={id}><RequiredFieldName>{label}</RequiredFieldName></Label><Input id={id} type="number" min={1} step={1} className="mt-2" required aria-invalid={Boolean(error)} aria-describedby={error ? `${id}-error` : undefined} {...form.register(name, { valueAsNumber: true })} />{error ? <p id={`${id}-error`} role="alert" className="mt-1 text-sm text-destructive">{error.message}</p> : null}</div>
 }
 
 function formatDateTime(value: string) {

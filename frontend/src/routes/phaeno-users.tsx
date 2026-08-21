@@ -62,23 +62,22 @@ function UsersPage() {
   if (
     canManageSelectedExternalUsers &&
     selectedExternalMembership &&
-    selectedOrganizationId
+    selectedOrganizationId &&
+    session?.user
   ) {
     return (
       <main className="page-wrap px-4 py-8">
         <section className="mb-6 max-w-3xl">
           <Badge variant="secondary" className="mb-3">
-            {selectedExternalMembership.organizationKind} user administration
+            User management
           </Badge>
           <h1 className="text-3xl font-semibold leading-tight">
-            User management
+            Manage users for {selectedExternalMembership.organizationName}
           </h1>
-          <p className="mt-3 max-w-2xl text-sm leading-6 text-muted-foreground sm:text-base">
-            Manage users for {selectedExternalMembership.organizationName}.
-          </p>
         </section>
 
         <OrganizationUserManagementPanel
+          currentUserId={session.user.id}
           organizationId={selectedOrganizationId}
           organizationName={selectedExternalMembership.organizationName}
         />
@@ -86,7 +85,7 @@ function UsersPage() {
     )
   }
 
-  if (canManagePhaenoUsers && selectedOrganizationId) {
+  if (canManagePhaenoUsers && selectedOrganizationId && session?.user) {
     return (
       <main className="page-wrap px-4 py-8">
         <section className="mb-6 max-w-3xl">
@@ -105,6 +104,7 @@ function UsersPage() {
         <PhaenoUserManagementPanel
           canManageAccounts={Boolean(session?.capabilities.canManageAllUsers)}
           canManageLabRoles={Boolean(session?.capabilities.canManageLabAccess)}
+          currentUserId={session.user.id}
           organizationId={selectedOrganizationId}
         />
       </main>

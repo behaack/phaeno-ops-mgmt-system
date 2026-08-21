@@ -23,9 +23,14 @@ import { Badge } from '#/components/ui/badge'
 import { Button } from '#/components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '#/components/ui/card'
 import { Checkbox } from '#/components/ui/checkbox'
-import { Dialog, DialogClose, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '#/components/ui/dialog'
+import { Dialog, DialogClose, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '#/components/ui/dialog'
 import { Input } from '#/components/ui/input'
 import { Label } from '#/components/ui/label'
+import {
+  RequiredDialogFooter,
+  RequiredFieldName,
+  RequiredLegend,
+} from '#/components/ui/required-field'
 
 const codePattern = /^[A-Za-z0-9][A-Za-z0-9_-]*$/
 const positiveOptionalNumber = z.string().refine(
@@ -303,7 +308,7 @@ function DestinationDialog({ item, onClose }: { item: SampleShippingDestination 
           <div className="flex items-center gap-2"><Checkbox id="destination-active" checked={form.watch('isActive')} onCheckedChange={(value) => form.setValue('isActive', value === true, { shouldDirty: true })} /><Label htmlFor="destination-active" className="cursor-pointer font-normal">Active for packet resolution</Label></div>
         </form>
         {mutation.error ? <SaveError title="Destination revision was not saved" error={mutation.error} /> : null}
-        <DialogFooter><DialogClose asChild><Button type="button" variant="outline">Cancel</Button></DialogClose><Button type="submit" form="sample-shipping-destination-form" disabled={mutation.isPending}>{mutation.isPending ? 'Saving revision…' : item ? 'Create revision' : 'Add destination'}</Button></DialogFooter>
+        <RequiredDialogFooter><DialogClose asChild><Button type="button" variant="outline">Cancel</Button></DialogClose><Button type="submit" form="sample-shipping-destination-form" disabled={mutation.isPending}>{mutation.isPending ? 'Saving revision…' : item ? 'Create revision' : 'Add destination'}</Button></RequiredDialogFooter>
       </DialogContent>
     </Dialog>
   )
@@ -360,7 +365,7 @@ function SampleTypeDialog({ item, onClose }: { item: SampleTypeDefinition | null
           <div className="flex items-center gap-2"><Checkbox id="sample-type-active" checked={form.watch('isActive')} onCheckedChange={(value) => form.setValue('isActive', value === true, { shouldDirty: true })} /><Label htmlFor="sample-type-active" className="cursor-pointer font-normal">Active for packet resolution</Label></div>
         </form>
         {mutation.error ? <SaveError title="Sample-type revision was not saved" error={mutation.error} /> : null}
-        <DialogFooter><DialogClose asChild><Button type="button" variant="outline">Cancel</Button></DialogClose><Button type="submit" form="sample-type-form" disabled={mutation.isPending}>{mutation.isPending ? 'Saving revision…' : item ? 'Create revision' : 'Add sample type'}</Button></DialogFooter>
+        <RequiredDialogFooter><DialogClose asChild><Button type="button" variant="outline">Cancel</Button></DialogClose><Button type="submit" form="sample-type-form" disabled={mutation.isPending}>{mutation.isPending ? 'Saving revision…' : item ? 'Create revision' : 'Add sample type'}</Button></RequiredDialogFooter>
       </DialogContent>
     </Dialog>
   )
@@ -409,7 +414,7 @@ function InstructionRuleDialog({ configuration, item, onClose }: { configuration
           <div className="flex items-center gap-2"><Checkbox id="shipping-rule-active" checked={form.watch('isActive')} onCheckedChange={(value) => form.setValue('isActive', value === true, { shouldDirty: true })} /><Label htmlFor="shipping-rule-active" className="cursor-pointer font-normal">Active for packet resolution</Label></div>
         </form>
         {mutation.error ? <SaveError title="Instruction-rule revision was not saved" error={mutation.error} /> : null}
-        <DialogFooter><DialogClose asChild><Button type="button" variant="outline">Cancel</Button></DialogClose><Button type="submit" form="sample-shipping-rule-form" disabled={mutation.isPending}>{mutation.isPending ? 'Saving revision…' : item ? 'Create revision' : 'Add instruction rule'}</Button></DialogFooter>
+        <RequiredDialogFooter><DialogClose asChild><Button type="button" variant="outline">Cancel</Button></DialogClose><Button type="submit" form="sample-shipping-rule-form" disabled={mutation.isPending}>{mutation.isPending ? 'Saving revision…' : item ? 'Create revision' : 'Add instruction rule'}</Button></RequiredDialogFooter>
       </DialogContent>
     </Dialog>
   )
@@ -429,9 +434,10 @@ function InstructionPreview({ configuration }: { configuration: SampleShippingCo
       <CardHeader><div className="flex items-start gap-3"><SearchCheck className="mt-0.5 size-5 text-primary" /><div><CardTitle>Instruction preview</CardTitle><CardDescription>Resolve exactly what a shipment packet would freeze at a selected time. Incompatible sample types are blocked and must be split.</CardDescription></div></div></CardHeader>
       <CardContent className="space-y-5">
         <form noValidate className="grid gap-5 sm:grid-cols-2" onSubmit={form.handleSubmit((values) => { setPreview(null); mutation.mutate(values) })}>
+          <RequiredLegend className="sm:col-span-2" />
           <Field label="Destination revision" id="preview-destination" required error={form.formState.errors.destinationId?.message}><select id="preview-destination" className="h-9 w-full rounded-lg border border-input bg-background px-3 text-sm" {...form.register('destinationId')}><option value="">Select destination…</option>{configuration.destinations.map((item) => <option key={item.id} value={item.id}>{item.code} · rev {item.revision} · {item.name}</option>)}</select></Field>
           <Field label="Effective at" id="preview-effective" required error={form.formState.errors.effectiveAt?.message}><Input id="preview-effective" type="datetime-local" {...form.register('effectiveAt')} /></Field>
-          <fieldset className="sm:col-span-2"><legend className="text-sm font-medium">Sample-type revisions <Required /></legend><div className="mt-2 grid gap-2 sm:grid-cols-2">{configuration.sampleTypes.map((item) => { const id = `preview-sample-${item.id}`; const checked = selectedSampleTypes.includes(item.id); return <label key={item.id} htmlFor={id} className="flex cursor-pointer items-start gap-3 rounded-lg border p-3"><Checkbox id={id} checked={checked} onCheckedChange={(value) => form.setValue('sampleTypeDefinitionIds', value === true ? [...selectedSampleTypes, item.id] : selectedSampleTypes.filter((valueId) => valueId !== item.id), { shouldValidate: true })} /><span><span className="block text-sm font-medium">{item.name}</span><span className="block text-xs text-muted-foreground">{item.code} · revision {item.revision} · {formatEffectiveRange(item)}</span></span></label> })}</div><ErrorText message={form.formState.errors.sampleTypeDefinitionIds?.message} /></fieldset>
+          <fieldset className="sm:col-span-2"><legend className="text-sm font-medium"><RequiredFieldName>Sample-type revisions</RequiredFieldName></legend><div className="mt-2 grid gap-2 sm:grid-cols-2">{configuration.sampleTypes.map((item) => { const id = `preview-sample-${item.id}`; const checked = selectedSampleTypes.includes(item.id); return <label key={item.id} htmlFor={id} className="flex cursor-pointer items-start gap-3 rounded-lg border p-3"><Checkbox id={id} checked={checked} onCheckedChange={(value) => form.setValue('sampleTypeDefinitionIds', value === true ? [...selectedSampleTypes, item.id] : selectedSampleTypes.filter((valueId) => valueId !== item.id), { shouldValidate: true })} /><span><span className="block text-sm font-medium">{item.name}</span><span className="block text-xs text-muted-foreground">{item.code} · revision {item.revision} · {formatEffectiveRange(item)}</span></span></label> })}</div><ErrorText message={form.formState.errors.sampleTypeDefinitionIds?.message} /></fieldset>
           <div className="flex justify-end sm:col-span-2"><Button type="submit" disabled={mutation.isPending || !configuration.destinations.length || !configuration.sampleTypes.length}>{mutation.isPending ? 'Resolving…' : 'Preview instructions'}</Button></div>
         </form>
         {mutation.error ? <SaveError title="Instructions could not be resolved" error={mutation.error} /> : null}
@@ -476,14 +482,13 @@ function SaveError({ title, error }: { title: string; error: unknown }) {
 }
 
 function Field({ children, error, full, id, label, required }: { children: React.ReactNode; error?: string; full?: boolean; id: string; label: string; required?: boolean }) {
-  return <div className={full ? 'sm:col-span-2' : undefined}><Label htmlFor={id}>{label}{required ? <> <Required /></> : null}</Label><div className="mt-2">{children}</div><ErrorText message={error} /></div>
+  return <div className={full ? 'sm:col-span-2' : undefined}><Label htmlFor={id}>{required ? <RequiredFieldName>{label}</RequiredFieldName> : label}</Label><div className="mt-2">{children}</div><ErrorText message={error} /></div>
 }
 
 function TextArea({ id, registration, rows }: { id: string; registration: UseFormRegisterReturn; rows: number }) {
   return <textarea id={id} rows={rows} className="w-full rounded-lg border border-input bg-background px-3 py-2 text-sm focus-visible:ring-3 focus-visible:ring-ring/50 focus-visible:outline-none" {...registration} />
 }
 
-function Required() { return <span className="text-[var(--ruby-red,#b4233c)]" aria-hidden="true">*</span> }
 function ErrorText({ message }: { message?: string }) { return message ? <p className="mt-1 text-sm text-destructive" role="alert">{message}</p> : null }
 
 function destinationValues(item: SampleShippingDestination): DestinationValues {

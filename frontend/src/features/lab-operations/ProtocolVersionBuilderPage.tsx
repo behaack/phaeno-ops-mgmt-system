@@ -46,6 +46,7 @@ import {
 } from '#/components/ui/dialog'
 import { Input } from '#/components/ui/input'
 import { Label } from '#/components/ui/label'
+import { RequiredFieldName, RequiredLegend } from '#/components/ui/required-field'
 import { usePhaenoSession } from '#/features/auth/session-context'
 
 import {
@@ -348,9 +349,7 @@ export function ProtocolVersionBuilderPage({
         noValidate
         onSubmit={form.handleSubmit((values) => mutation.mutate(values))}
       >
-        <p className="text-sm text-muted-foreground">
-          <span className="text-[var(--ruby-red,#b4233c)]" aria-hidden="true">*</span> Required field
-        </p>
+        <RequiredLegend />
 
         <Card>
           <CardHeader>
@@ -687,8 +686,7 @@ function Field({
   return (
     <div>
       <Label htmlFor={id}>
-        {label}
-        {required ? <span className="ml-1 text-[var(--ruby-red,#b4233c)]" aria-hidden="true">*</span> : null}
+        {required ? <RequiredFieldName>{label}</RequiredFieldName> : label}
       </Label>
       {description ? <p id={`${id}-description`} className="mt-1 text-xs text-muted-foreground">{description}</p> : null}
       <div className="mt-2">{children}</div>

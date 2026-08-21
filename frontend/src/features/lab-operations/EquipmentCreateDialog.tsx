@@ -16,10 +16,10 @@ import {
   Dialog,
   DialogContent,
   DialogDescription,
-  DialogFooter,
   DialogHeader,
   DialogTitle,
 } from '#/components/ui/dialog'
+import { RequiredDialogFooter, RequiredFieldName } from '#/components/ui/required-field'
 import { Input } from '#/components/ui/input'
 import { Label } from '#/components/ui/label'
 
@@ -265,12 +265,12 @@ export function EquipmentCreateDialog({
               </Alert>
             ) : null}
 
-            <DialogFooter>
+            <RequiredDialogFooter>
               <Button type="button" variant="outline" onClick={close}>Cancel</Button>
               <Button type="submit" disabled={form.formState.isSubmitting}>
                 {form.formState.isSubmitting ? 'Creating…' : 'Create equipment'}
               </Button>
-            </DialogFooter>
+            </RequiredDialogFooter>
           </form>
         </DialogContent>
       </Dialog>
@@ -305,8 +305,7 @@ function FormField({
   return (
     <div>
       <Label htmlFor={id}>
-        {label}
-        {required ? <span className="text-destructive" aria-hidden="true"> *</span> : null}
+        {required ? <RequiredFieldName>{label}</RequiredFieldName> : label}
       </Label>
       <div className="mt-2">{children}</div>
       {error ? <p className="mt-1 text-sm text-destructive" role="alert">{error}</p> : null}
@@ -348,7 +347,7 @@ function ReferenceCreateDialog({
           </DialogHeader>
           <div className="my-5">
             <Label htmlFor="new-equipment-reference">
-              {label} <span className="text-destructive" aria-hidden="true">*</span>
+              <RequiredFieldName>{label}</RequiredFieldName>
             </Label>
             <Input
               id="new-equipment-reference"
@@ -360,10 +359,10 @@ function ReferenceCreateDialog({
             />
             {error ? <p className="mt-1 text-sm text-destructive" role="alert">{error}</p> : null}
           </div>
-          <DialogFooter>
+          <RequiredDialogFooter>
             <Button type="button" variant="outline" onClick={onCancel}>Cancel</Button>
             <Button type="submit">Use {equipmentType ? 'equipment type' : 'location'}</Button>
-          </DialogFooter>
+          </RequiredDialogFooter>
         </form>
       </DialogContent>
     </Dialog>

@@ -97,7 +97,7 @@ export const documentationEntries: readonly DocumentationEntry[] = [
       'Accept invitations, complete MFA, confirm the current organization, understand roles, and resolve access problems.',
     section: 'Basics',
     order: 20,
-    reviewedAt: '2026-08-19',
+    reviewedAt: '2026-08-20',
     Content: ProspectAccountAndAccess,
   },
   {
@@ -145,7 +145,7 @@ export const documentationEntries: readonly DocumentationEntry[] = [
       'Understand membership boundaries and what changes when Phaeno converts a Prospect relationship.',
     section: 'Organization',
     order: 50,
-    reviewedAt: '2026-07-20',
+    reviewedAt: '2026-08-20',
     Content: ProspectOrganizationAndTransition,
   },
   {
@@ -179,7 +179,7 @@ export const documentationEntries: readonly DocumentationEntry[] = [
     summary: 'Accept invitations, complete MFA, confirm the current organization, understand roles, and resolve access problems.',
     section: 'Basics',
     order: 20,
-    reviewedAt: '2026-08-19',
+    reviewedAt: '2026-08-20',
     Content: CustomerAccountAndAccess,
   },
   {
@@ -224,7 +224,7 @@ export const documentationEntries: readonly DocumentationEntry[] = [
     summary: 'Use assigned data packages and manage Customer organization membership.',
     section: 'Data and access',
     order: 50,
-    reviewedAt: '2026-08-19',
+    reviewedAt: '2026-08-20',
     Content: CustomerDataAndOrganization,
   },
   {
@@ -257,7 +257,7 @@ export const documentationEntries: readonly DocumentationEntry[] = [
     summary: 'Accept invitations, complete MFA, confirm the current Partner, understand roles, and resolve access problems.',
     section: 'Basics',
     order: 20,
-    reviewedAt: '2026-08-19',
+    reviewedAt: '2026-08-20',
     Content: PartnerAccountAndAccess,
   },
   {
@@ -323,7 +323,7 @@ export const documentationEntries: readonly DocumentationEntry[] = [
     summary: 'Manage organizations, Portal requests, readiness, service entitlements, invitations, and access.',
     section: 'Platform operations',
     order: 20,
-    reviewedAt: '2026-08-19',
+    reviewedAt: '2026-08-20',
     Content: PhaenoOrganizationAndUserAdministration,
   },
   {

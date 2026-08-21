@@ -294,7 +294,8 @@ the protected deployed-Preview acceptance above.
   unified active and pending-invitation user cards, accessible action menus,
   required invited names, invitation-time Phaeno role intent with no pre-accept
   access, atomic role activation on acceptance, resend/revoke, role and
-  membership lifecycle, Prospect conversion with stable
+  membership lifecycle, omission of administrative self-deactivation actions,
+  direct API self-deactivation denial, Prospect conversion with stable
   identity, readiness, account creation limited to eligible new-account
   approvals, Account directory/Review queue tab separation, removal of an
   associated approved request from the review queue, atomic simulated HubSpot

@@ -18,9 +18,10 @@ import { Alert, AlertDescription, AlertTitle } from '#/components/ui/alert'
 import { Badge } from '#/components/ui/badge'
 import { Button } from '#/components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '#/components/ui/card'
-import { Dialog, DialogClose, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '#/components/ui/dialog'
+import { Dialog, DialogClose, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '#/components/ui/dialog'
 import { Input } from '#/components/ui/input'
 import { Label } from '#/components/ui/label'
+import { RequiredDialogFooter, RequiredMark as Required } from '#/components/ui/required-field'
 import { OrderStatusBadge } from './OrderStatusBadge'
 import { ReturnKitFulfillmentPanel } from './ReturnKitFulfillmentPanel'
 
@@ -526,12 +527,12 @@ function HubSpotSimulationDialog({
             <textarea id="simulation-notes" rows={3} className="w-full rounded-lg border border-input bg-background px-3 py-2 text-sm focus-visible:ring-3 focus-visible:ring-ring/50 focus-visible:outline-none" {...form.register('internalNotes')} />
           </Field>
         </form>
-        <DialogFooter>
+        <RequiredDialogFooter>
           <DialogClose asChild><Button type="button" variant="outline">Cancel</Button></DialogClose>
           <Button type="submit" form="hubspot-handoff-simulation" disabled={isPending}>
             {isPending ? 'Creating handoff…' : 'Create simulated handoff'}
           </Button>
-        </DialogFooter>
+        </RequiredDialogFooter>
       </DialogContent>
     </Dialog>
   )
@@ -586,10 +587,6 @@ function Field({
 
 function FieldError({ message }: { message?: string }) {
   return message ? <p className="mt-1 text-sm text-destructive" role="alert">{message}</p> : null
-}
-
-function Required() {
-  return <span className="text-[var(--ruby-red,#b4233c)]" aria-hidden="true">*</span>
 }
 
 function formatDateTime(value: string) {

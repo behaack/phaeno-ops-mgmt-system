@@ -5,9 +5,10 @@ import { getOrderErrorMessage, runPlatformAction, type OrderConfiguration, type 
 import { Alert, AlertDescription, AlertTitle } from '#/components/ui/alert'
 import { Button } from '#/components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '#/components/ui/card'
-import { Dialog, DialogClose, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '#/components/ui/dialog'
+import { Dialog, DialogClose, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '#/components/ui/dialog'
 import { Input } from '#/components/ui/input'
 import { Label } from '#/components/ui/label'
+import { RequiredDialogFooter as DialogFooter } from '#/components/ui/required-field'
 import { CancellationDecisionPanel } from './CancellationDecisionPanel'
 
 export function ReagentOperationsPanel({ order, configuration, onSaved }: { order: ReagentOrder; configuration: OrderConfiguration; onSaved: () => Promise<void> }) {

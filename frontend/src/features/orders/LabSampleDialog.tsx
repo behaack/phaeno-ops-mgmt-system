@@ -18,12 +18,15 @@ import {
   Dialog,
   DialogContent,
   DialogDescription,
-  DialogFooter,
   DialogHeader,
   DialogTitle,
 } from '#/components/ui/dialog'
 import { Input } from '#/components/ui/input'
 import { Label } from '#/components/ui/label'
+import {
+  RequiredDialogFooter,
+  RequiredFieldName,
+} from '#/components/ui/required-field'
 import { usePhaenoSession } from '#/features/auth/session-context'
 import { labSampleToWrite, readAnalysisIds } from './lab-order-write'
 
@@ -188,15 +191,6 @@ export function LabSampleDialog({
             className="space-y-5 pb-4"
             onSubmit={form.handleSubmit((values) => mutation.mutate(values))}
           >
-            <p className="text-sm text-muted-foreground">
-              <span
-                className="text-[var(--ruby-red,#b4233c)]"
-                aria-hidden="true"
-              >
-                *
-              </span>{' '}
-              Required field
-            </p>
             <div className="grid gap-4 sm:grid-cols-2">
               <Field
                 label="Customer sample ID"
@@ -308,13 +302,7 @@ export function LabSampleDialog({
             </Field>
             <fieldset>
               <legend className="text-sm font-medium">
-                Requested analyses{' '}
-                <span
-                  className="text-[var(--ruby-red,#b4233c)]"
-                  aria-hidden="true"
-                >
-                  *
-                </span>
+                <RequiredFieldName>Requested analyses</RequiredFieldName>
               </legend>
               {analyses.isLoading ? (
                 <p className="mt-2 text-sm text-muted-foreground" role="status">
@@ -351,7 +339,7 @@ export function LabSampleDialog({
           </form>
         </div>
 
-        <DialogFooter className="border-t bg-muted/40 px-4 py-3">
+        <RequiredDialogFooter className="border-t bg-muted/40 px-4 py-3">
           <Button
             type="button"
             variant="outline"
@@ -371,7 +359,7 @@ export function LabSampleDialog({
                 ? 'Save sample details'
                 : 'Add sample'}
           </Button>
-        </DialogFooter>
+        </RequiredDialogFooter>
       </DialogContent>
     </Dialog>
   )
@@ -442,15 +430,7 @@ function Field({
   return (
     <div>
       <Label htmlFor={id}>
-        {label}
-        {required ? (
-          <span
-            className="ml-1 text-[var(--ruby-red,#b4233c)]"
-            aria-hidden="true"
-          >
-            *
-          </span>
-        ) : null}
+        {required ? <RequiredFieldName>{label}</RequiredFieldName> : label}
       </Label>
       <div className="mt-2">{children}</div>
       <FieldError message={error} />

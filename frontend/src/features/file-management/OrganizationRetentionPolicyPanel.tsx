@@ -16,9 +16,10 @@ import {
 import { Alert, AlertDescription, AlertTitle } from '#/components/ui/alert'
 import { Badge } from '#/components/ui/badge'
 import { Button } from '#/components/ui/button'
-import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '#/components/ui/dialog'
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '#/components/ui/dialog'
 import { Input } from '#/components/ui/input'
 import { Label } from '#/components/ui/label'
+import { RequiredDialogFooter, RequiredFieldName } from '#/components/ui/required-field'
 
 const optionalPositiveDays = z.string().trim().refine(
   (value) => value === '' || (/^\d+$/.test(value) && Number(value) > 0),
@@ -175,7 +176,7 @@ export function OrganizationRetentionPolicyPanel({
             <ReasonField id="organization-retention-reason" error={overrideForm.formState.errors.reason} registration={overrideForm.register('reason')} />
           </form>
           {upsert.error && !(upsert.error instanceof LocalValidationError) ? <Alert variant="destructive"><AlertTitle>Override was not saved</AlertTitle><AlertDescription>{fileManagementErrorMessage(upsert.error, 'Reload the account and try again.')}</AlertDescription></Alert> : null}
-          <DialogFooter><Button type="button" variant="outline" disabled={upsert.isPending} onClick={() => setEditOpen(false)}>Cancel</Button><Button type="submit" form="organization-retention-override-form" disabled={!overrideForm.formState.isDirty || upsert.isPending}>{upsert.isPending ? 'Saving…' : 'Save changes'}</Button></DialogFooter>
+          <RequiredDialogFooter><Button type="button" variant="outline" disabled={upsert.isPending} onClick={() => setEditOpen(false)}>Cancel</Button><Button type="submit" form="organization-retention-override-form" disabled={!overrideForm.formState.isDirty || upsert.isPending}>{upsert.isPending ? 'Saving…' : 'Save changes'}</Button></RequiredDialogFooter>
         </DialogContent>
       </Dialog>
 
@@ -186,7 +187,7 @@ export function OrganizationRetentionPolicyPanel({
             <ReasonField id="remove-organization-retention-reason" error={removalForm.formState.errors.reason} registration={removalForm.register('reason')} />
           </form>
           {remove.error ? <Alert variant="destructive"><AlertTitle>Override was not removed</AlertTitle><AlertDescription>{fileManagementErrorMessage(remove.error, 'Reload the account and try again.')}</AlertDescription></Alert> : null}
-          <DialogFooter><Button type="button" variant="outline" disabled={remove.isPending} onClick={() => setRemoveOpen(false)}>Keep override</Button><Button type="submit" variant="destructive" form="remove-organization-retention-override-form" disabled={remove.isPending}>{remove.isPending ? 'Removing…' : 'Remove override'}</Button></DialogFooter>
+          <RequiredDialogFooter><Button type="button" variant="outline" disabled={remove.isPending} onClick={() => setRemoveOpen(false)}>Keep override</Button><Button type="submit" variant="destructive" form="remove-organization-retention-override-form" disabled={remove.isPending}>{remove.isPending ? 'Removing…' : 'Remove override'}</Button></RequiredDialogFooter>
         </DialogContent>
       </Dialog>
     </div>
@@ -206,7 +207,7 @@ function OptionalDayField({ form, inherited, label, name }: { form: ReturnType<t
 }
 
 function ReasonField({ id, error, registration }: { id: string; error?: FieldError; registration: UseFormRegisterReturn }) {
-  return <div><Label htmlFor={id}>Change reason <span className="text-[var(--ruby-red,#b4233c)]" aria-hidden="true">*</span></Label><textarea id={id} required className="mt-2 min-h-24 w-full rounded-lg border border-input bg-background px-3 py-2 text-sm focus-visible:ring-3 focus-visible:ring-ring/50 focus-visible:outline-none" aria-invalid={Boolean(error)} aria-describedby={error ? `${id}-error` : undefined} {...registration} />{error ? <p id={`${id}-error`} role="alert" className="mt-1 text-sm text-destructive">{String(error.message)}</p> : null}</div>
+  return <div><Label htmlFor={id}><RequiredFieldName>Change reason</RequiredFieldName></Label><textarea id={id} required className="mt-2 min-h-24 w-full rounded-lg border border-input bg-background px-3 py-2 text-sm focus-visible:ring-3 focus-visible:ring-ring/50 focus-visible:outline-none" aria-invalid={Boolean(error)} aria-describedby={error ? `${id}-error` : undefined} {...registration} />{error ? <p id={`${id}-error`} role="alert" className="mt-1 text-sm text-destructive">{String(error.message)}</p> : null}</div>
 }
 
 function readOptionalDays(value: string) { return value === '' ? null : Number(value) }

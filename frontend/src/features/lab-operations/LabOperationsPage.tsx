@@ -25,6 +25,10 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '#/com
 import { Dialog, DialogClose, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '#/components/ui/dialog'
 import { Input } from '#/components/ui/input'
 import { Label } from '#/components/ui/label'
+import {
+  RequiredDialogFooter,
+  RequiredFieldName,
+} from '#/components/ui/required-field'
 import { usePhaenoSession } from '#/features/auth/session-context'
 
 import { LabBarcodeLookup, LabBatchBarcodeScanner } from './LabBarcodeScanner'
@@ -506,7 +510,7 @@ function MaterialList({ items, canManage, canApprove, onCreate, refresh }: { ite
             <div className="my-5 grid gap-4">
               <div className="grid gap-1.5">
                 <Label htmlFor="material-qc-date">
-                  QC date <span className="text-destructive" aria-hidden="true">*</span>
+                  <RequiredFieldName>QC date</RequiredFieldName>
                 </Label>
                 <Input
                   id="material-qc-date"
@@ -523,7 +527,7 @@ function MaterialList({ items, canManage, canApprove, onCreate, refresh }: { ite
 
               <fieldset className="grid gap-3" aria-invalid={qcAttempted && !qcOutcome}>
                 <legend className="mb-1 text-sm font-medium">
-                  QC outcome <span className="text-destructive" aria-hidden="true">*</span>
+                  <RequiredFieldName>QC outcome</RequiredFieldName>
                 </legend>
                 <Label htmlFor="material-qc-passed" className={`flex cursor-pointer items-start gap-3 rounded-lg border p-4 font-normal transition-colors ${
                   qcOutcome === 'Passed' ? 'border-primary bg-primary/5 ring-1 ring-primary' : 'hover:bg-muted/40'
@@ -574,7 +578,7 @@ function MaterialList({ items, canManage, canApprove, onCreate, refresh }: { ite
               {qcOutcome === 'Failed' ? (
                 <div className="grid gap-1.5">
                   <Label htmlFor="material-qc-failure-reason">
-                    Failure reason <span className="text-destructive" aria-hidden="true">*</span>
+                    <RequiredFieldName>Failure reason</RequiredFieldName>
                   </Label>
                   <textarea
                     id="material-qc-failure-reason"
@@ -601,12 +605,12 @@ function MaterialList({ items, canManage, canApprove, onCreate, refresh }: { ite
               </Alert>
             ) : null}
 
-            <DialogFooter>
+            <RequiredDialogFooter>
               <Button type="button" variant="outline" disabled={qc.isPending} onClick={closeQcDialog}>Cancel</Button>
               <Button type="submit" disabled={qc.isPending}>
                 {qc.isPending ? 'Recording…' : 'Record QC outcome'}
               </Button>
-            </DialogFooter>
+            </RequiredDialogFooter>
           </form>
         </DialogContent>
       </Dialog>
@@ -714,15 +718,15 @@ function BatchList({ items, canManage, onCreate, refresh }: { items: Awaited<Ret
           </DialogHeader>
           <div className="my-5 grid gap-4">
             <div>
-              <Label htmlFor="batch-transition-at">{transitionDialog?.action === 'start' ? 'Started at' : 'Completed at'} <span aria-hidden="true">*</span></Label>
+              <Label htmlFor="batch-transition-at"><RequiredFieldName>{transitionDialog?.action === 'start' ? 'Started at' : 'Completed at'}</RequiredFieldName></Label>
               <Input id="batch-transition-at" className="mt-2" type="datetime-local" value={transitionAt} onChange={(event) => setTransitionAt(event.target.value)} required />
             </div>
           </div>
           {transition.error ? <Alert variant="destructive" className="mb-4"><AlertTitle>Batch transition failed</AlertTitle><AlertDescription>{getLabOperationsError(transition.error, 'Check the entered time and try again.')}</AlertDescription></Alert> : null}
-          <DialogFooter>
+          <RequiredDialogFooter>
             <DialogClose asChild><Button type="button" variant="outline">Cancel</Button></DialogClose>
             <Button type="button" disabled={transition.isPending || !transitionAt} onClick={saveTransition}>{transitionDialog?.action === 'start' ? 'Start batch' : 'Complete batch'}</Button>
-          </DialogFooter>
+          </RequiredDialogFooter>
         </DialogContent>
       </Dialog>
       <Dialog open={dialog !== null} onOpenChange={(open) => !open && setDialog(null)}>
@@ -748,10 +752,10 @@ function BatchList({ items, canManage, onCreate, refresh }: { items: Awaited<Ret
             )}
           </div>
           {save.error ? <Alert variant="destructive" className="mb-4"><AlertTitle>Batch action failed</AlertTitle><AlertDescription>{getLabOperationsError(save.error, 'Check the entered values.')}</AlertDescription></Alert> : null}
-          <DialogFooter>
+          <RequiredDialogFooter>
             <DialogClose asChild><Button type="button" variant="outline">Cancel</Button></DialogClose>
             <Button type="button" disabled={save.isPending} onClick={() => save.mutate()}>Save</Button>
-          </DialogFooter>
+          </RequiredDialogFooter>
         </DialogContent>
       </Dialog>
     </>
@@ -766,10 +770,10 @@ function CreateRecordDialog({ kind, onClose, onSaved }: { kind: SimpleCreateKind
   }, onSuccess: async () => { setForm({}); await onSaved() } })
   const set = (key: string) => (event: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => setForm((current) => ({ ...current, [key]: event.target.value }))
   function submit(event: FormEvent) { event.preventDefault(); mutation.mutate() }
-  return <Dialog open={kind !== null} onOpenChange={(open) => !open && onClose()}><DialogContent><form onSubmit={submit}><DialogHeader><DialogTitle>{kind ? `Create ${humanize(kind)}` : 'Create record'}</DialogTitle><DialogDescription>{kind === 'protocol' ? 'Enter the controlled protocol details. POMS assigns its immutable key.' : kind === 'batch' ? 'Name the batch. POMS assigns its batch number and external sequencing type.' : 'Required fields are marked. Laboratory records remain internal to Phaeno.'}</DialogDescription></DialogHeader><div className="my-5 grid gap-4 sm:grid-cols-2">{kind === 'protocol' ? <><div className="sm:col-span-2"><Field label="Name" value={form.name} onChange={set('name')} required /></div><TextField label="Description" value={form.description} onChange={set('description')} /></> : null}{kind === 'batch' ? <><div className="sm:col-span-2"><Field label="Batch name" value={form.name} onChange={set('name')} required /></div><TextField label="Notes" value={form.notes} onChange={set('notes')} /></> : null}</div>{mutation.error ? <Alert variant="destructive" className="mb-4"><AlertTitle>Record was not created</AlertTitle><AlertDescription>{getLabOperationsError(mutation.error, 'Check the entered values.')}</AlertDescription></Alert> : null}<DialogFooter><DialogClose asChild><Button type="button" variant="outline">Cancel</Button></DialogClose><Button type="submit" disabled={mutation.isPending}>{kind ? createActionLabel(kind) : 'Create'}</Button></DialogFooter></form></DialogContent></Dialog>
+  return <Dialog open={kind !== null} onOpenChange={(open) => !open && onClose()}><DialogContent><form onSubmit={submit}><DialogHeader><DialogTitle>{kind ? `Create ${humanize(kind)}` : 'Create record'}</DialogTitle><DialogDescription>{kind === 'protocol' ? 'Enter the controlled protocol details. POMS assigns its immutable key.' : kind === 'batch' ? 'Name the batch. POMS assigns its batch number and external sequencing type.' : 'Laboratory records remain internal to Phaeno.'}</DialogDescription></DialogHeader><div className="my-5 grid gap-4 sm:grid-cols-2">{kind === 'protocol' ? <><div className="sm:col-span-2"><Field label="Name" value={form.name} onChange={set('name')} required /></div><TextField label="Description" value={form.description} onChange={set('description')} /></> : null}{kind === 'batch' ? <><div className="sm:col-span-2"><Field label="Batch name" value={form.name} onChange={set('name')} required /></div><TextField label="Notes" value={form.notes} onChange={set('notes')} /></> : null}</div>{mutation.error ? <Alert variant="destructive" className="mb-4"><AlertTitle>Record was not created</AlertTitle><AlertDescription>{getLabOperationsError(mutation.error, 'Check the entered values.')}</AlertDescription></Alert> : null}<RequiredDialogFooter><DialogClose asChild><Button type="button" variant="outline">Cancel</Button></DialogClose><Button type="submit" disabled={mutation.isPending}>{kind ? createActionLabel(kind) : 'Create'}</Button></RequiredDialogFooter></form></DialogContent></Dialog>
 }
 
-function Field({ label, value = '', onChange, required, type = 'text' }: { label: string; value?: string; onChange: React.ChangeEventHandler<HTMLInputElement>; required?: boolean; type?: string }) { const id = `lab-${label.toLowerCase().replaceAll(' ', '-')}`; return <div><Label htmlFor={id}>{label}{required ? <span aria-hidden="true"> *</span> : null}</Label><Input id={id} className="mt-2" type={type} value={value ?? ''} onChange={onChange} required={required} /></div> }
+function Field({ label, value = '', onChange, required, type = 'text' }: { label: string; value?: string; onChange: React.ChangeEventHandler<HTMLInputElement>; required?: boolean; type?: string }) { const id = `lab-${label.toLowerCase().replaceAll(' ', '-')}`; return <div><Label htmlFor={id}>{required ? <RequiredFieldName>{label}</RequiredFieldName> : label}</Label><Input id={id} className="mt-2" type={type} value={value ?? ''} onChange={onChange} required={required} /></div> }
 function TextField({ label, value = '', onChange }: { label: string; value?: string; onChange: React.ChangeEventHandler<HTMLTextAreaElement> }) { const id = `lab-${label.toLowerCase().replaceAll(' ', '-')}`; return <div className="sm:col-span-2"><Label htmlFor={id}>{label}</Label><textarea id={id} className="mt-2 min-h-20 w-full rounded-lg border bg-background px-3 py-2 text-sm" value={value ?? ''} onChange={onChange} /></div> }
 function Status({ value, prefix }: { value: string; prefix?: string }) { return <span className="rounded-full border bg-muted px-2.5 py-1 text-xs font-medium">{prefix ? `${prefix}: ` : ''}{humanize(value)}</span> }
 function Empty({ children }: { children: React.ReactNode }) { return <p className="py-8 text-center text-sm text-muted-foreground">{children}</p> }

@@ -13,6 +13,7 @@ import { Button } from '#/components/ui/button'
 import { Dialog, DialogClose, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '#/components/ui/dialog'
 import { Input } from '#/components/ui/input'
 import { Label } from '#/components/ui/label'
+import { RequiredFieldName, RequiredLegend } from '#/components/ui/required-field'
 
 import { Code39Barcode } from './Code39Barcode'
 
@@ -110,7 +111,7 @@ export function LabLabelDialog({
 
             <div>
               <Label htmlFor="lab-label-print-reason">
-                Print reason <span aria-hidden="true">*</span>
+                <RequiredFieldName>Print reason</RequiredFieldName>
               </Label>
               <Input
                 className="mt-2"
@@ -176,12 +177,14 @@ export function LabLabelDialog({
           </>
         ) : null}
 
-        <DialogFooter>
-          <DialogClose asChild>
-            <Button type="button" variant="outline">Close</Button>
-          </DialogClose>
-          {printDialogClosed ? (
-            <>
+        <DialogFooter className="flex-col items-stretch sm:flex-row sm:items-center sm:justify-between">
+          {label.data ? <RequiredLegend /> : null}
+          <div className="flex flex-col-reverse gap-2 sm:flex-row">
+            <DialogClose asChild>
+              <Button type="button" variant="outline">Close</Button>
+            </DialogClose>
+            {printDialogClosed ? (
+              <>
               <Button
                 disabled={!reason.trim() || record.isPending}
                 onClick={openPrintDialog}
@@ -205,16 +208,17 @@ export function LabLabelDialog({
               >
                 <CheckCircle2 data-icon="inline-start" /> Label printed
               </Button>
-            </>
-          ) : (
-            <Button
-              disabled={!label.data || !reason.trim()}
-              onClick={openPrintDialog}
-              type="button"
-            >
-              <Printer data-icon="inline-start" /> Open print dialog
-            </Button>
-          )}
+              </>
+            ) : (
+              <Button
+                disabled={!label.data || !reason.trim()}
+                onClick={openPrintDialog}
+                type="button"
+              >
+                <Printer data-icon="inline-start" /> Open print dialog
+              </Button>
+            )}
+          </div>
         </DialogFooter>
       </DialogContent>
     </Dialog>

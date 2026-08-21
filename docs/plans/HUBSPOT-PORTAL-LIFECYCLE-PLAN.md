@@ -759,6 +759,31 @@ access, organization kind, or Trial Project state.
 - Keep HubSpot context internal and all external-facing labels, errors, and
   feedback internationalization-enabled.
 
+### Exact Direct Lab Service Boundary
+
+`ORDER-MANAGEMENT-PLAN.md` now owns the exact additive sequence for versioned
+Lab Service offering configuration, backward-compatible commercial-entry
+identity, and direct standard placement. The CRM contract for that sequence is:
+
+- a draft, catalog preview, standard-eligibility failure, or custom-work request
+  is not a HubSpot Order and is not counted as a sale;
+- only the authoritative Portal commitment queues the relationship-safe HubSpot
+  Order summary and its single bundled PSeq Lab Service line;
+- the summary carries the Portal order identity, ordering organization, bundled
+  product, committed quantity and total, current expected completion date, and
+  schedule health, but no specimen facts, scientific files, internal notes, or
+  laboratory-batch composition;
+- Portal and QuickBooks state remain authoritative. HubSpot delivery is durable,
+  retryable, and reconciled, but CRM failure never rewrites or rolls back an
+  otherwise valid committed order; and
+- the existing manual per-job quote path and future Sales-assisted handoff keep
+  distinct entry modes while converging on the same committed-sale summary.
+
+The Product Owner must resolve the commitment-quantity decision recorded in
+`ORDER-MANAGEMENT-PLAN.md` before direct placement is implemented. Offering
+configuration may proceed independently once its EF migration is explicitly
+authorized.
+
 ### HubSpot Configuration
 
 - Define the Company, Contact, Deal, Order, and Line Item properties required by

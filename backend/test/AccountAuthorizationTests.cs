@@ -95,6 +95,81 @@ public class AccountAuthorizationTests
     }
 
     [Fact]
+    public void OrganizationAdminCannotAdministrativelyDeactivateOwnMembership()
+    {
+        var organization = new Organization("Customer", OrganizationKind.Customer);
+        var actor = new User("admin@example.com", "Org", "Admin");
+        actor.Activate();
+        var membership = new OrganizationMembership(
+            actor.Id,
+            organization.Id,
+            isOrganizationAdmin: true);
+        AttachOrganization(membership, organization);
+        actor.Memberships.Add(membership);
+
+        Assert.False(AccountAuthorization.CanAdministrativelyDeactivateMembership(
+            actor,
+            membership));
+    }
+
+    [Fact]
+    public void OrganizationAdminCanAdministrativelyDeactivateAnotherMembership()
+    {
+        var organization = new Organization("Customer", OrganizationKind.Customer);
+        var actor = new User("admin@example.com", "Org", "Admin");
+        actor.Activate();
+        var actorMembership = new OrganizationMembership(
+            actor.Id,
+            organization.Id,
+            isOrganizationAdmin: true);
+        AttachOrganization(actorMembership, organization);
+        actor.Memberships.Add(actorMembership);
+        var targetMembership = new OrganizationMembership(
+            Guid.NewGuid(),
+            organization.Id,
+            isOrganizationAdmin: false);
+        AttachOrganization(targetMembership, organization);
+
+        Assert.True(AccountAuthorization.CanAdministrativelyDeactivateMembership(
+            actor,
+            targetMembership));
+    }
+
+    [Fact]
+    public void PlatformAdminCannotAdministrativelyDisableOwnAccount()
+    {
+        var organization = new Organization("Phaeno", OrganizationKind.Phaeno);
+        var actor = new User("admin@phaeno.com", "Phaeno", "Admin");
+        actor.Activate();
+        var membership = new OrganizationMembership(
+            actor.Id,
+            organization.Id,
+            isOrganizationAdmin: true);
+        AttachOrganization(membership, organization);
+        actor.Memberships.Add(membership);
+
+        Assert.False(AccountAuthorization.CanAdministrativelyDisableUser(actor, actor));
+    }
+
+    [Fact]
+    public void PlatformAdminCanAdministrativelyDisableAnotherAccount()
+    {
+        var organization = new Organization("Phaeno", OrganizationKind.Phaeno);
+        var actor = new User("admin@phaeno.com", "Phaeno", "Admin");
+        actor.Activate();
+        var membership = new OrganizationMembership(
+            actor.Id,
+            organization.Id,
+            isOrganizationAdmin: true);
+        AttachOrganization(membership, organization);
+        actor.Memberships.Add(membership);
+        var target = new User("user@phaeno.com", "Phaeno", "User");
+        target.Activate();
+
+        Assert.True(AccountAuthorization.CanAdministrativelyDisableUser(actor, target));
+    }
+
+    [Fact]
     public void ActiveProspectMemberCanViewOnlyOwnOrganizationDatasets()
     {
         var prospect = new Organization("Prospect", OrganizationKind.Prospect);

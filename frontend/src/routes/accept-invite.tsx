@@ -22,6 +22,7 @@ import {
 } from '#/components/ui/card'
 import { Input } from '#/components/ui/input'
 import { Label } from '#/components/ui/label'
+import { RequiredFieldName, RequiredLegend } from '#/components/ui/required-field'
 import {
   clearStoredInviteToken,
   readStoredInviteToken,
@@ -215,22 +216,29 @@ export function AcceptInvitePage() {
               }
             }}
           >
+            <RequiredLegend />
             <div className="grid gap-2">
-              <Label htmlFor="first-name">First name</Label>
+              <Label htmlFor="first-name">
+                <RequiredFieldName>First name</RequiredFieldName>
+              </Label>
               <Input
                 id="first-name"
                 value={firstName}
                 onChange={(event) => setFirstName(event.target.value)}
                 autoComplete="given-name"
+                required
               />
             </div>
             <div className="grid gap-2">
-              <Label htmlFor="last-name">Last name</Label>
+              <Label htmlFor="last-name">
+                <RequiredFieldName>Last name</RequiredFieldName>
+              </Label>
               <Input
                 id="last-name"
                 value={lastName}
                 onChange={(event) => setLastName(event.target.value)}
                 autoComplete="family-name"
+                required
               />
             </div>
             {actionError ? (

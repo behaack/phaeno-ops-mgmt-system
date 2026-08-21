@@ -420,8 +420,15 @@ and rollback-isolated PostgreSQL coverage.
   roleless-Phaeno-invitation rejection, create, resend cooldown, pending
   replacement, inactive organization rejection, disabled user rejection, and
   active membership rejection.
-- [ ] Membership endpoints - cover deactivate, leave, promote, demote, cross-org denial, Phaeno-org denial for customer admins, and last-admin protection.
-- [ ] Platform lifecycle endpoints - cover organization deactivate/reactivate, user disable/reactivate, platform-admin-only access, and last-platform-admin protection.
+- [ ] Membership endpoints - cover deactivate, leave, promote, demote,
+  administrative self-deactivation denial, cross-org denial, Phaeno-org denial
+  for customer admins, and last-admin protection. Pure authorization coverage
+  confirms that an administrator may deactivate another membership but not
+  their own.
+- [ ] Platform lifecycle endpoints - cover organization deactivate/reactivate,
+  user disable/reactivate, self-disable denial, platform-admin-only access, and
+  last-platform-admin protection. Pure authorization coverage confirms that a
+  platform administrator may disable another account but not their own.
 - [ ] User read/list endpoints - cover self read, platform read, org-admin organization list, active-default filtering, inactive include filter, and forbidden cross-org access. Cover the consolidated Phaeno user projection/update endpoint for platform-administrator and Lab Operations Administrator access, profile edits, Platform administrator promotion/demotion with last-admin protection, exact additive Lab-role replacement, inactive-user rejection, optimistic versions, and forbidden non-role/profile changes by a Lab-only access administrator.
 - [ ] Invitation acceptance/decline endpoints - cover verified email match,
   token hash lookup, single-use behavior, expired/revoked/declined rejection,

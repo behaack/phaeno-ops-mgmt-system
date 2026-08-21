@@ -13,11 +13,14 @@ import {
   Dialog,
   DialogContent,
   DialogDescription,
-  DialogFooter,
   DialogHeader,
   DialogTitle,
 } from '#/components/ui/dialog'
 import { Label } from '#/components/ui/label'
+import {
+  RequiredDialogFooter,
+  RequiredFieldName,
+} from '#/components/ui/required-field'
 import { selectClass, textareaClass } from './OrganizationFormDialog'
 
 export type RequestAction = 'approve' | 'decline' | 'apply' | 'cancel'
@@ -105,13 +108,7 @@ export function RequestActionDialog({
           {action === 'apply' && !request.organizationId ? (
             <div className="mb-3 grid gap-1.5">
               <Label htmlFor="request-action-organization">
-                Completed organization
-                <span
-                  className="ml-1 text-[var(--ruby-red,#b4233c)]"
-                  aria-hidden="true"
-                >
-                  *
-                </span>
+                <RequiredFieldName>Completed organization</RequiredFieldName>
               </Label>
               <select
                 id="request-action-organization"
@@ -136,13 +133,7 @@ export function RequestActionDialog({
             </div>
           ) : null}
           <Label htmlFor="request-action-explanation">
-            {content.label}
-            <span
-              className="ml-1 text-[var(--ruby-red,#b4233c)]"
-              aria-hidden="true"
-            >
-              *
-            </span>
+            <RequiredFieldName>{content.label}</RequiredFieldName>
           </Label>
           <textarea
             id="request-action-explanation"
@@ -157,7 +148,7 @@ export function RequestActionDialog({
             </p>
           ) : null}
         </form>
-        <DialogFooter>
+        <RequiredDialogFooter>
           <Button
             type="button"
             variant="outline"
@@ -173,7 +164,7 @@ export function RequestActionDialog({
           >
             {isPending ? 'Saving…' : content.submitLabel}
           </Button>
-        </DialogFooter>
+        </RequiredDialogFooter>
       </DialogContent>
     </Dialog>
   )

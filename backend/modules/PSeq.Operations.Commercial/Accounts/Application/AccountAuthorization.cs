@@ -41,6 +41,23 @@ public static class AccountAuthorization
         return CanManageOrganizationMembers(user, organizationId, organizationKind);
     }
 
+    public static bool CanAdministrativelyDeactivateMembership(
+        User actor,
+        OrganizationMembership membership)
+    {
+        return actor.Id != membership.UserId
+            && membership.Organization != null
+            && CanManageOrganizationMembers(
+                actor,
+                membership.OrganizationId,
+                membership.Organization.Kind);
+    }
+
+    public static bool CanAdministrativelyDisableUser(User actor, User target)
+    {
+        return actor.Id != target.Id && IsPlatformAdmin(actor);
+    }
+
     public static bool HasActiveMembership(User user, Guid organizationId)
     {
         return user.Memberships.Any(membership =>

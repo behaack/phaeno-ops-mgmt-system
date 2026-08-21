@@ -10,12 +10,15 @@ import {
   DialogClose,
   DialogContent,
   DialogDescription,
-  DialogFooter,
   DialogHeader,
   DialogTitle,
 } from '#/components/ui/dialog'
 import { Input } from '#/components/ui/input'
 import { Label } from '#/components/ui/label'
+import {
+  RequiredDialogFooter,
+  RequiredFieldName,
+} from '#/components/ui/required-field'
 
 const customerFormSchema = z.object({
   name: z.string().trim().min(1, 'Enter a customer name.'),
@@ -111,9 +114,6 @@ export function CustomerFormDialog({
           noValidate
           onSubmit={form.handleSubmit(submit)}
         >
-          <p className="text-sm text-muted-foreground">
-            <Required /> Required field
-          </p>
           <Field
             error={form.formState.errors.name?.message}
             id={`${formId}-name`}
@@ -182,7 +182,7 @@ export function CustomerFormDialog({
           </Field>
         </form>
 
-        <DialogFooter className="border-t bg-muted/20 px-6 py-4">
+        <RequiredDialogFooter className="border-t bg-muted/20 px-6 py-4">
           <DialogClose asChild>
             <Button type="button" variant="outline">
               Cancel
@@ -195,7 +195,7 @@ export function CustomerFormDialog({
           >
             {isEditing ? 'Save changes' : 'Create customer'}
           </Button>
-        </DialogFooter>
+        </RequiredDialogFooter>
       </DialogContent>
     </Dialog>
   )
@@ -217,8 +217,7 @@ function Field({
   return (
     <div className="grid gap-1.5">
       <Label htmlFor={id}>
-        {label}
-        {required ? <Required /> : null}
+        {required ? <RequiredFieldName>{label}</RequiredFieldName> : label}
       </Label>
       {children}
       {error ? (
@@ -227,17 +226,6 @@ function Field({
         </p>
       ) : null}
     </div>
-  )
-}
-
-function Required() {
-  return (
-    <span
-      className="ml-1 text-[var(--ruby-red,#b4233c)]"
-      aria-hidden="true"
-    >
-      *
-    </span>
   )
 }
 

@@ -281,6 +281,131 @@ the current order aggregates.
   infers a downstream-customer identity; an optional PO or project reference is
   opaque Partner data.
 
+### Exact Configured Lab Service Implementation Sequence
+
+This sequence expands the approved direction into implementable boundaries. It
+does not authorize a migration by itself, and it does not replace the current
+manual per-job quote path until the configured path is complete and activated.
+
+#### Slice 1 — Versioned Offering Configuration
+
+- Add a Commercial-owned `LabServiceOffering` configuration record in
+  `commercial_ops`. It has a UUID identity, immutable offering name/version and
+  QuickBooks catalog-item link, customer-facing description, included active
+  analysis-definition identifiers, allowed material types, included output
+  contract, published minimum/maximum turnaround days, effective dates, active
+  and synthetic flags, centralized audit fields, and optimistic concurrency.
+- The selling unit is fixed by policy to one specimen and is not an editable
+  offering field. The linked active QuickBooks item supplies the current base
+  unit price and currency; POMS does not create a second mutable standard-price
+  source.
+- Editing availability or effective dates preserves the record and audit
+  history. Changing the offering identity, QuickBooks item, included scientific
+  scope, output contract, or published turnaround creates a new offering
+  version. There is no hard-delete endpoint.
+- Add platform-admin create/update endpoints under
+  `/api/platform/order-configuration/lab-service-offerings`, include offerings
+  in `OrderConfigurationDto`, and add a dedicated Lab Service offerings panel
+  to Order configuration. Existing catalog, analysis, reagent, assembly, and
+  commercial-profile contracts remain compatible.
+- Add `/api/order-catalog/lab-service-offerings` for the selected active
+  Customer or Partner tenant. The response exposes only effective,
+  non-synthetic offerings whose QuickBooks item and included analysis
+  definitions remain active. Catalog visibility requires an active PSeq Lab
+  Service entitlement whose configuration state is ready; placement separately
+  requires an active organization administrator.
+- The persistence slice requires an EF migration, a complete ERD update, domain
+  and controller coverage, frontend configuration coverage, and living test-plan
+  updates. Do not create or apply that migration until migration work is
+  explicitly requested. Applying it to a shared environment requires separate
+  approval.
+
+#### Slice 2 — Backward-Compatible Commercial Entry Identity
+
+- Add a frozen commercial-entry mode to `LabServiceOrder`: `ManualQuote` for
+  the current Customer request/quote flow, `ConfiguredDirect` for the new
+  standard path, and `SalesAssisted` for an accepted HubSpot handoff. Existing
+  rows backfill to `ManualQuote` without changing their status, quote, Lab work,
+  QuickBooks document, or file history.
+- Configured orders retain the selected offering identity/version and an
+  immutable commercial snapshot containing the bundled product name, linked
+  QuickBooks item/external item, currency, unit price, committed quantity,
+  subtotal/total, included scientific/output scope, published turnaround range,
+  and the configuration versions used at commitment.
+- Reuse the current `LabServiceQuote` acceptance and
+  `CommercialLabAuthorization` transaction boundary. Configured placement
+  creates and accepts a single-line system-generated commercial snapshot in one
+  serializable transaction; it does not expose a negotiation step or permit a
+  user-entered price. The existing manual quote issuance and acceptance routes
+  remain unchanged.
+
+#### Slice 3 — Direct Standard Placement
+
+- Add an idempotent
+  `POST /api/lab-service-orders/{orderId}/place-standard` endpoint with order
+  version, offering identifier/version, and the required prohibited-data
+  confirmation. The server never accepts price, currency, turnaround, or
+  included-scope values from the client.
+- At commitment the server rechecks active organization and membership,
+  organization-administrator authority, PSeq Lab Service entitlement and ready
+  configuration state, effective offering and QuickBooks item, scientific
+  compatibility for every declared specimen, quantity rules, organization
+  QuickBooks linkage, and the absence of custom scope. A failed standard check
+  leaves the draft unchanged and returns an actionable `Request custom work`
+  outcome.
+- A successful transaction freezes the commercial snapshot, marks the order
+  `Placed/Awaiting samples`, authorizes the linked Lab work, creates the
+  QuickBooks estimate outbox message, records status/audit history, and stores
+  the idempotent response. Either the order placement and Lab authorization
+  commit together or neither does.
+- Customer and Partner organization administrators use the same placement
+  contract. Tenant scoping continues to use the selected organization, and a
+  Partner's optional PO or project reference remains opaque; no downstream-
+  customer identity is collected or inferred.
+- The Customer/Partner UI selects an eligible offering before specimen entry,
+  shows included scope, per-specimen price, committed quantity, complete price,
+  and published turnaround before commitment, and clearly separates `Place
+  standard order` from `Request custom work`. Members retain view-only access.
+- HubSpot publication is an outbound relationship summary derived after the
+  authoritative Portal commitment. CRM delivery failure is visible and
+  retryable but does not mutate or roll back an otherwise committed Portal/Lab/
+  QuickBooks transaction. Live HubSpot publication remains gated by the owning
+  lifecycle plan and provider configuration.
+
+#### Rollout and Compatibility Gates
+
+- Deploy additive schema/API support with no active production offerings first;
+  the current manual quote workflow remains the only available placement path.
+- Activate one non-synthetic offering only after QuickBooks catalog linkage,
+  scientific scope, output contract, published turnaround, entitlement
+  readiness, tenant authorization, idempotency, audit, and Customer/Partner
+  browser acceptance pass in the target environment.
+- Existing manual-quote orders never change entry mode or commercial snapshot.
+  A configured draft that no longer qualifies for standard placement may still
+  route to the existing manual/Sales-assisted path without rewriting history.
+- PSeq Kit and removal of standalone data-assembly selling remain separate
+  approved slices. Configured Lab Service placement must not silently broaden
+  into either change.
+
+#### Blocking Product Decision — Commitment Quantity
+
+The approved text currently requires both a complete price before commitment
+and a commercial line quantity equal to the specimens Phaeno accepts during
+post-placement intake. Those events cannot determine one immutable quantity at
+the same time.
+
+- Recommended default: the committed quantity is the number of specimens the
+  organization declares and places. Phaeno acceptance starts turnaround and
+  scientific work; a rejected specimen creates an explicit audited commercial
+  adjustment or credit rather than silently rewriting the original snapshot.
+- Alternative: defer buyer commitment and the QuickBooks estimate until Phaeno
+  accepts the specimens. This removes true price-before-commitment placement and
+  requires a pre-commercial shipment/intake authorization distinct from the
+  current Commercial Lab authorization.
+
+Do not implement Slice 3 until the Product Owner selects this billing behavior.
+Slice 1 remains independently implementable after migration authorization.
+
 ## Implemented Initial-Release Workflows
 
 The workflows below describe current application behavior. Their manual

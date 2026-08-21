@@ -16,12 +16,15 @@ import {
   Dialog,
   DialogContent,
   DialogDescription,
-  DialogFooter,
   DialogHeader,
   DialogTitle,
 } from '#/components/ui/dialog'
 import { Input } from '#/components/ui/input'
 import { Label } from '#/components/ui/label'
+import {
+  RequiredDialogFooter,
+  RequiredFieldName,
+} from '#/components/ui/required-field'
 import { usePhaenoSession } from '#/features/auth/session-context'
 import { labSampleToWrite } from './lab-order-write'
 
@@ -143,8 +146,8 @@ export function LabJobDetailsDialog({
           noValidate
           onSubmit={form.handleSubmit((values) => mutation.mutate(values))}
         >
-          <Label htmlFor={`${formId}-reference`} className="gap-0.5">
-            <span>Job name</span><span className="text-destructive" aria-hidden="true">*</span>
+          <Label htmlFor={`${formId}-reference`}>
+            <RequiredFieldName>Job name</RequiredFieldName>
           </Label>
           <Input
             id={`${formId}-reference`}
@@ -181,11 +184,7 @@ export function LabJobDetailsDialog({
           ) : null}
         </form>
 
-        <DialogFooter className="flex-col items-stretch sm:flex-row sm:items-center sm:justify-between">
-          <p className="text-xs text-muted-foreground">
-            <span className="text-destructive">*</span> Required
-          </p>
-          <div className="flex flex-col-reverse gap-2 sm:flex-row">
+        <RequiredDialogFooter>
             <Button
               type="button"
               variant="outline"
@@ -207,8 +206,7 @@ export function LabJobDetailsDialog({
                   ? 'Save job details'
                   : 'Create job'}
             </Button>
-          </div>
-        </DialogFooter>
+        </RequiredDialogFooter>
       </DialogContent>
     </Dialog>
   )

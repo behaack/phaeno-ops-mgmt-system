@@ -7,9 +7,10 @@ import type { Organization, PortalService } from '#/api/organization-management'
 import { Alert, AlertDescription } from '#/components/ui/alert'
 import { Button } from '#/components/ui/button'
 import { Checkbox } from '#/components/ui/checkbox'
-import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '#/components/ui/dialog'
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '#/components/ui/dialog'
 import { Input } from '#/components/ui/input'
 import { Label } from '#/components/ui/label'
+import { RequiredDialogFooter, RequiredMark as Required } from '#/components/ui/required-field'
 import { selectClass, textareaClass } from './OrganizationFormDialog'
 
 const schema = z.object({
@@ -55,7 +56,7 @@ export function RelationshipRequestDialog({ error, isPending, onOpenChange, onSu
           <div className="grid gap-1.5"><Label htmlFor="request-source">Source reference</Label><Input id="request-source" placeholder="HubSpot record or internal reference" {...form.register('sourceReference')} /></div>
           <div className="grid gap-1.5"><Label htmlFor="request-notes">Internal notes</Label><textarea id="request-notes" className={textareaClass} rows={3} {...form.register('internalNotes')} /></div>
         </form>
-        <DialogFooter><Button type="button" variant="outline" onClick={() => onOpenChange(false)}>Cancel</Button><Button type="submit" form="relationship-request" disabled={isPending}>{isPending ? 'Submitting…' : 'Submit for review'}</Button></DialogFooter>
+        <RequiredDialogFooter><Button type="button" variant="outline" onClick={() => onOpenChange(false)}>Cancel</Button><Button type="submit" form="relationship-request" disabled={isPending}>{isPending ? 'Submitting…' : 'Submit for review'}</Button></RequiredDialogFooter>
       </DialogContent>
     </Dialog>
   )
@@ -64,8 +65,6 @@ export function RelationshipRequestDialog({ error, isPending, onOpenChange, onSu
 function CheckField({ checked, disabled, label, onCheckedChange }: { checked: boolean; disabled: boolean; label: string; onCheckedChange: (checked: boolean | 'indeterminate') => void }) {
   return <label className="flex cursor-pointer items-center gap-2 text-sm"><Checkbox checked={checked} disabled={disabled} onCheckedChange={onCheckedChange} />{label}</label>
 }
-
-function Required() { return <span className="ml-1 text-[var(--ruby-red,#b4233c)]" aria-hidden="true">*</span> }
 
 function valuesFor(organization: Organization | null): RelationshipRequestFormValues {
   const kind = organization?.kind === 'Phaeno' ? 'Prospect' : (organization?.kind ?? 'Prospect')

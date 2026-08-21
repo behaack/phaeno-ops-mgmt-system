@@ -12,6 +12,9 @@ remain incomplete production-activation gates.
 
 ## Created Tests
 
+- [x] `frontend/src/components/ui/required-field.test.tsx` - covers the shared
+  adjacent required marker, its exclusion from accessible field names, and the
+  required-legend-before-actions contract for modal form footers.
 - [x] `frontend/src/features/file-management/FileManagementPage.test.tsx` -
   covers Phaeno platform-administrator authorization, the global 30/5/5
   display, and a reasoned version update.
@@ -244,6 +247,10 @@ remain incomplete production-activation gates.
   deactivation/reactivation, unsupported mock-role removal, Prospect
   conversion, organization lifecycle, optimistic concurrency, and durable
   refresh behavior against mocked APIs.
+- [x] `frontend/src/features/admin/user-management-self-deactivation.test.tsx`
+  - administrative action menus omit membership and global-account
+  deactivation for the signed-in user while retaining deactivation for another
+  user.
 - [ ] Auth shell - cover missing Clerk config, the Phaeno-branded signed-out
   prompt with its brand lockup inside the sign-in container and without the
   authenticated header or Clerk vendor footer; verify Clerk initialization

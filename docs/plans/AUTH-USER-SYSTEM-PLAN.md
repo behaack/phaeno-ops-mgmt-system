@@ -325,9 +325,12 @@ Do not execute this plan unless explicitly requested.
   organization.
 - Organization admins cannot invite users into Phaeno/internal organizations.
 - Organization admins cannot grant Phaeno-level access.
-- Organization admins can mark memberships inactive for their own organization.
+- Organization admins can mark another user's membership inactive for their
+  own organization. Administrative membership deactivation cannot target the
+  acting user's own membership.
 - Organization admins cannot globally disable or reactivate users.
-- Phaeno admins can globally disable and reactivate users.
+- Phaeno admins can globally disable and reactivate other users. An
+  administrator cannot globally disable their own account.
 - Organization admins can promote or demote users within their own organization with last-admin protection.
 - Users can leave an organization themselves unless they are the last active org admin.
 - Reactivating an inactive membership requires fresh invite acceptance.

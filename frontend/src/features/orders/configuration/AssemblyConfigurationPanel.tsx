@@ -11,9 +11,10 @@ import { Badge } from '#/components/ui/badge'
 import { Button } from '#/components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '#/components/ui/card'
 import { Checkbox } from '#/components/ui/checkbox'
-import { Dialog, DialogClose, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '#/components/ui/dialog'
+import { Dialog, DialogClose, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '#/components/ui/dialog'
 import { Input } from '#/components/ui/input'
 import { Label } from '#/components/ui/label'
+import { RequiredDialogFooter as DialogFooter } from '#/components/ui/required-field'
 
 const schema = z.object({ qboCatalogItemId: z.string().uuid('Select a QuickBooks item.'), name: z.string().trim().min(1).max(255), profileVersion: z.coerce.number().int().positive(), description: z.string().max(2000), instructions: z.string().max(8000), metadataSchemaJson: z.string().refine(isJson), allowedFileKindsJson: z.string().refine(isJson), outputContractJson: z.string().refine(isJson), maximumFileSizeBytes: z.coerce.number().int().positive(), maximumTotalSizeBytes: z.coerce.number().int().positive(), isActive: z.boolean(), isSynthetic: z.boolean() }).refine((value) => value.maximumTotalSizeBytes >= value.maximumFileSizeBytes, { path: ['maximumTotalSizeBytes'], message: 'Total size must be at least the per-file size.' })
 type FormValues = z.input<typeof schema>

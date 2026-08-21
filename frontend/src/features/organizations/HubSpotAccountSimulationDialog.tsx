@@ -7,9 +7,10 @@ import type { PortalService } from '#/api/organization-management'
 import { Alert, AlertDescription } from '#/components/ui/alert'
 import { Button } from '#/components/ui/button'
 import { Checkbox } from '#/components/ui/checkbox'
-import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '#/components/ui/dialog'
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '#/components/ui/dialog'
 import { Input } from '#/components/ui/input'
 import { Label } from '#/components/ui/label'
+import { RequiredDialogFooter, RequiredFieldName, RequiredMark as Required } from '#/components/ui/required-field'
 import { selectClass, textareaClass } from './OrganizationFormDialog'
 
 const schema = z.object({
@@ -112,7 +113,7 @@ export function HubSpotAccountSimulationDialog({
 
           {requestedKind !== 'Prospect' ? (
             <fieldset>
-              <legend className="text-sm font-medium">Requested services <Required /></legend>
+              <legend className="text-sm font-medium"><RequiredFieldName>Requested services</RequiredFieldName></legend>
               <div className="mt-2 grid gap-2 sm:grid-cols-2">
                 <ServiceOption
                   checked={requestedServices.includes('PSeqLabService')}
@@ -153,12 +154,12 @@ export function HubSpotAccountSimulationDialog({
             <textarea id="hubspot-account-notes" rows={3} className={textareaClass} {...form.register('internalNotes')} />
           </Field>
         </form>
-        <DialogFooter>
+        <RequiredDialogFooter>
           <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>Cancel</Button>
           <Button type="submit" form="hubspot-account-simulation" disabled={isPending}>
             {isPending ? 'Creating request…' : 'Create simulated intake'}
           </Button>
-        </DialogFooter>
+        </RequiredDialogFooter>
       </DialogContent>
     </Dialog>
   )
@@ -207,8 +208,4 @@ function ServiceOption({
 
 function FieldError({ message }: { message?: string }) {
   return message ? <p className="text-sm text-destructive" role="alert">{message}</p> : null
-}
-
-function Required() {
-  return <span className="text-[var(--ruby-red,#b4233c)]" aria-hidden="true">*</span>
 }
