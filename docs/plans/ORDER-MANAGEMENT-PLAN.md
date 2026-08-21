@@ -505,6 +505,14 @@ commercial direction is implemented and verified.
 - Each requested sample requires its Customer sample identifier, sample/material
   type, biological source or species, quantity and unit, storage/handling
   requirements, requested analysis, and a safety/biohazard declaration.
+- The Customer sample form explains the expected scientific content with
+  persistent helper text rather than hover-only instructions. During the
+  initial tube-only intake period, Customers enter an integer **Quantity
+  (tubes)** and do not choose a unit; the write contract and persisted sample
+  continue to carry `quantityUnit` with the fixed value `tube` so later
+  multi-unit support does not require a storage-contract change. Requested
+  analyses remain an explicit multi-select and always show a visible loading,
+  failure, empty-catalog, or available-choice state.
 - Collection date, concentration, and Customer notes are optional sample fields.
 - Patient identifiers and unnecessary personal or health data are prohibited in
   sample metadata and free-text instructions.

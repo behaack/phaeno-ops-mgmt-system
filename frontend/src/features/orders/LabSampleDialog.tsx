@@ -30,6 +30,8 @@ import {
 import { usePhaenoSession } from '#/features/auth/session-context'
 import { labSampleToWrite, readAnalysisIds } from './lab-order-write'
 
+const TUBE_QUANTITY_UNIT = 'tube'
+
 const sampleSchema = z.object({
   customerSampleId: z
     .string()
@@ -46,12 +48,10 @@ const sampleSchema = z.object({
     .trim()
     .min(1, 'Biological source is required.')
     .max(500),
-  quantity: z.coerce.number().positive('Quantity must be greater than zero.'),
-  quantityUnit: z
-    .string()
-    .trim()
-    .min(1, 'Quantity unit is required.')
-    .max(100),
+  quantity: z.coerce
+    .number()
+    .int('Quantity must be a whole number of tubes.')
+    .positive('Quantity must be at least one tube.'),
   storageRequirements: z
     .string()
     .trim()
@@ -79,7 +79,6 @@ const emptySample: SampleFormInput = {
   materialType: '',
   biologicalSource: '',
   quantity: 1,
-  quantityUnit: 'tube',
   storageRequirements: '',
   safetyDeclaration: '',
   concentration: '',
@@ -149,6 +148,8 @@ export function LabSampleDialog({
 
   const editing = Boolean(sample)
   const formId = sample ? `lab-sample-${sample.id}` : `lab-sample-new-${order.id}`
+  const analysisOptions = analyses.data ?? []
+  const analysisOptionsUnavailable = !apiEnabled || analyses.isError
 
   return (
     <Dialog open={open} onOpenChange={requestOpenChange}>
@@ -195,72 +196,93 @@ export function LabSampleDialog({
               <Field
                 label="Customer sample ID"
                 id={`${formId}-identifier`}
+                description="Your internal, non-patient identifier for this sample. It must be unique within this job."
                 required
                 error={form.formState.errors.customerSampleId?.message}
               >
                 <Input
                   id={`${formId}-identifier`}
+                  aria-invalid={Boolean(form.formState.errors.customerSampleId)}
+                  aria-describedby={fieldDescriptionIds(
+                    `${formId}-identifier`,
+                    form.formState.errors.customerSampleId?.message,
+                  )}
                   {...form.register('customerSampleId')}
                 />
               </Field>
               <Field
                 label="Material type"
                 id={`${formId}-material`}
+                description="The physical material contained in the tube, such as extracted RNA, tissue, or lysate."
                 required
                 error={form.formState.errors.materialType?.message}
               >
                 <Input
                   id={`${formId}-material`}
                   placeholder="RNA, tissue, extract…"
+                  aria-invalid={Boolean(form.formState.errors.materialType)}
+                  aria-describedby={fieldDescriptionIds(
+                    `${formId}-material`,
+                    form.formState.errors.materialType?.message,
+                  )}
                   {...form.register('materialType')}
                 />
               </Field>
               <Field
                 label="Biological source"
                 id={`${formId}-source`}
+                description="The organism or species and source tissue or cell type, such as human PBMCs or mouse liver."
                 required
                 error={form.formState.errors.biologicalSource?.message}
               >
                 <Input
                   id={`${formId}-source`}
+                  placeholder="Human PBMCs, mouse liver…"
+                  aria-invalid={Boolean(form.formState.errors.biologicalSource)}
+                  aria-describedby={fieldDescriptionIds(
+                    `${formId}-source`,
+                    form.formState.errors.biologicalSource?.message,
+                  )}
                   {...form.register('biologicalSource')}
                 />
               </Field>
-              <div className="grid grid-cols-2 gap-3">
-                <Field
-                  label="Quantity"
+              <Field
+                label="Quantity (tubes)"
+                id={`${formId}-quantity`}
+                description="The number of tubes you will send for this sample."
+                required
+                error={form.formState.errors.quantity?.message}
+              >
+                <Input
                   id={`${formId}-quantity`}
-                  required
-                  error={form.formState.errors.quantity?.message}
-                >
-                  <Input
-                    id={`${formId}-quantity`}
-                    type="number"
-                    step="any"
-                    {...form.register('quantity')}
-                  />
-                </Field>
-                <Field
-                  label="Unit"
-                  id={`${formId}-unit`}
-                  required
-                  error={form.formState.errors.quantityUnit?.message}
-                >
-                  <Input
-                    id={`${formId}-unit`}
-                    {...form.register('quantityUnit')}
-                  />
-                </Field>
-              </div>
+                  type="number"
+                  min="1"
+                  step="1"
+                  inputMode="numeric"
+                  aria-invalid={Boolean(form.formState.errors.quantity)}
+                  aria-describedby={fieldDescriptionIds(
+                    `${formId}-quantity`,
+                    form.formState.errors.quantity?.message,
+                  )}
+                  {...form.register('quantity')}
+                />
+              </Field>
               <Field
                 label="Concentration (optional)"
                 id={`${formId}-concentration`}
+                description="The numeric concentration, if known. Use the measurement unit specified in the analysis instructions."
                 error={form.formState.errors.concentration?.message}
               >
                 <Input
                   id={`${formId}-concentration`}
                   type="number"
                   step="any"
+                  min="0"
+                  aria-invalid={Boolean(form.formState.errors.concentration)}
+                  aria-describedby={fieldDescriptionIds(
+                    `${formId}-concentration`,
+                    form.formState.errors.concentration?.message,
+                  )}
                   {...form.register('concentration')}
                 />
               </Field>
@@ -268,11 +290,18 @@ export function LabSampleDialog({
             <Field
               label="Storage requirements"
               id={`${formId}-storage`}
+              description="Describe the required storage and transport temperature and any freeze/thaw limits."
               required
               error={form.formState.errors.storageRequirements?.message}
             >
               <textarea
                 id={`${formId}-storage`}
+                placeholder="For example: Ship frozen on dry ice; avoid thawing."
+                aria-invalid={Boolean(form.formState.errors.storageRequirements)}
+                aria-describedby={fieldDescriptionIds(
+                  `${formId}-storage`,
+                  form.formState.errors.storageRequirements?.message,
+                )}
                 {...form.register('storageRequirements')}
                 className="min-h-20 w-full rounded-lg border border-input bg-background px-3 py-2 text-sm focus-visible:ring-3 focus-visible:ring-ring/50 focus-visible:outline-none"
               />
@@ -280,11 +309,18 @@ export function LabSampleDialog({
             <Field
               label="Safety declaration"
               id={`${formId}-safety`}
+              description='Identify biohazards or other handling risks. Enter "No known hazards" when none apply.'
               required
               error={form.formState.errors.safetyDeclaration?.message}
             >
               <textarea
                 id={`${formId}-safety`}
+                placeholder="No known hazards"
+                aria-invalid={Boolean(form.formState.errors.safetyDeclaration)}
+                aria-describedby={fieldDescriptionIds(
+                  `${formId}-safety`,
+                  form.formState.errors.safetyDeclaration?.message,
+                )}
                 {...form.register('safetyDeclaration')}
                 className="min-h-20 w-full rounded-lg border border-input bg-background px-3 py-2 text-sm focus-visible:ring-3 focus-visible:ring-ring/50 focus-visible:outline-none"
               />
@@ -292,47 +328,92 @@ export function LabSampleDialog({
             <Field
               label="Notes (optional)"
               id={`${formId}-notes`}
+              description="Add sample-specific details not captured above. Do not include names or direct identifiers."
               error={form.formState.errors.notes?.message}
             >
               <textarea
                 id={`${formId}-notes`}
+                aria-invalid={Boolean(form.formState.errors.notes)}
+                aria-describedby={fieldDescriptionIds(
+                  `${formId}-notes`,
+                  form.formState.errors.notes?.message,
+                )}
                 {...form.register('notes')}
                 className="min-h-20 w-full rounded-lg border border-input bg-background px-3 py-2 text-sm focus-visible:ring-3 focus-visible:ring-ring/50 focus-visible:outline-none"
               />
             </Field>
-            <fieldset>
+            <fieldset
+              aria-describedby={`${formId}-analyses-help${form.formState.errors.analysisDefinitionIds ? ` ${formId}-analyses-error` : ''}`}
+            >
               <legend className="text-sm font-medium">
                 <RequiredFieldName>Requested analyses</RequiredFieldName>
               </legend>
-              {analyses.isLoading ? (
-                <p className="mt-2 text-sm text-muted-foreground" role="status">
-                  Loading analyses…
-                </p>
-              ) : null}
-              <div className="mt-2 grid gap-2 sm:grid-cols-2">
-                {(analyses.data ?? []).map((analysis) => (
-                  <label
-                    key={analysis.id}
-                    className="flex cursor-pointer items-start gap-2 rounded-lg border p-3"
-                  >
-                    <input
-                      type="checkbox"
-                      value={analysis.id}
-                      {...form.register('analysisDefinitionIds')}
-                      className="mt-0.5 size-4 accent-primary"
-                    />
-                    <span>
-                      <span className="block text-sm font-medium">
-                        {analysis.name}
-                      </span>
-                      <span className="block text-xs text-muted-foreground">
-                        {analysis.description}
-                      </span>
-                    </span>
-                  </label>
-                ))}
+              <p
+                id={`${formId}-analyses-help`}
+                className="mt-1 text-xs text-muted-foreground"
+              >
+                Select every analysis Phaeno should perform on this sample.
+              </p>
+              <div
+                className="mt-2 rounded-lg border border-input p-3"
+                aria-busy={analyses.isLoading}
+              >
+                {analyses.isLoading ? (
+                  <p className="text-sm text-muted-foreground" role="status">
+                    Loading analysis choices…
+                  </p>
+                ) : null}
+                {analysisOptionsUnavailable ? (
+                  <p className="text-sm text-muted-foreground">
+                    Analysis choices are unavailable while this form is not
+                    connected. Close the form and try again from a connected
+                    Customer session.
+                  </p>
+                ) : null}
+                {analyses.isSuccess && analysisOptions.length === 0 ? (
+                  <p className="text-sm text-muted-foreground" role="status">
+                    No analyses are currently available. Contact Phaeno before
+                    adding this sample.
+                  </p>
+                ) : null}
+                {analysisOptions.length > 0 ? (
+                  <div className="grid gap-2 sm:grid-cols-2">
+                    {analysisOptions.map((analysis) => (
+                      <label
+                        key={analysis.id}
+                        className="flex cursor-pointer items-start gap-2 rounded-lg border p-3"
+                      >
+                        <input
+                          type="checkbox"
+                          value={analysis.id}
+                          {...form.register('analysisDefinitionIds')}
+                          className="mt-0.5 size-4 accent-primary"
+                        />
+                        <span>
+                          <span className="block text-sm font-medium">
+                            {analysis.name}
+                          </span>
+                          {analysis.description ? (
+                            <span className="block text-xs text-muted-foreground">
+                              {analysis.description}
+                            </span>
+                          ) : null}
+                          {analysis.submissionInstructions ? (
+                            <span className="mt-1 block text-xs text-muted-foreground">
+                              <span className="font-medium text-foreground">
+                                Submission instructions:
+                              </span>{' '}
+                              {analysis.submissionInstructions}
+                            </span>
+                          ) : null}
+                        </span>
+                      </label>
+                    ))}
+                  </div>
+                ) : null}
               </div>
               <FieldError
+                id={`${formId}-analyses-error`}
                 message={form.formState.errors.analysisDefinitionIds?.message}
               />
             </fieldset>
@@ -351,7 +432,13 @@ export function LabSampleDialog({
           <Button
             type="submit"
             form={formId}
-            disabled={!apiEnabled || mutation.isPending || analyses.isLoading}
+            disabled={
+              !apiEnabled ||
+              mutation.isPending ||
+              analyses.isLoading ||
+              analyses.isError ||
+              analysisOptions.length === 0
+            }
           >
             {mutation.isPending
               ? 'Saving…'
@@ -387,7 +474,7 @@ function sampleValuesToWrite(
     materialType: values.materialType,
     biologicalSource: values.biologicalSource,
     quantity: values.quantity,
-    quantityUnit: values.quantityUnit,
+    quantityUnit: TUBE_QUANTITY_UNIT,
     storageRequirements: values.storageRequirements,
     safetyDeclaration: values.safetyDeclaration,
     concentration:
@@ -405,7 +492,6 @@ function sampleToForm(sample: LabSample): SampleFormInput {
     materialType: sample.materialType,
     biologicalSource: sample.biologicalSource,
     quantity: sample.quantity,
-    quantityUnit: sample.quantityUnit,
     storageRequirements: sample.storageRequirements,
     safetyDeclaration: sample.safetyDeclaration,
     concentration: sample.concentration ?? '',
@@ -417,12 +503,14 @@ function sampleToForm(sample: LabSample): SampleFormInput {
 function Field({
   label,
   id,
+  description,
   required,
   error,
   children,
 }: {
   label: string
   id: string
+  description: string
   required?: boolean
   error?: string
   children: ReactNode
@@ -432,15 +520,22 @@ function Field({
       <Label htmlFor={id}>
         {required ? <RequiredFieldName>{label}</RequiredFieldName> : label}
       </Label>
+      <p id={`${id}-help`} className="mt-1 text-xs text-muted-foreground">
+        {description}
+      </p>
       <div className="mt-2">{children}</div>
-      <FieldError message={error} />
+      <FieldError id={`${id}-error`} message={error} />
     </div>
   )
 }
 
-function FieldError({ message }: { message?: string }) {
+function fieldDescriptionIds(id: string, error?: string) {
+  return `${id}-help${error ? ` ${id}-error` : ''}`
+}
+
+function FieldError({ id, message }: { id: string; message?: string }) {
   return message ? (
-    <p className="mt-1 text-sm text-destructive" role="alert">
+    <p id={id} className="mt-1 text-sm text-destructive" role="alert">
       {message}
     </p>
   ) : null

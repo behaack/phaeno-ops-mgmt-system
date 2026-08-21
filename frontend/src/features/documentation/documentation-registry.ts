@@ -190,7 +190,7 @@ export const documentationEntries: readonly DocumentationEntry[] = [
     summary: 'Create a job, accept pricing, prepare and ship samples, and open released job data.',
     section: 'Laboratory work',
     order: 30,
-    reviewedAt: '2026-08-20',
+    reviewedAt: '2026-08-21',
     Content: CustomerLabServices,
   },
   {

@@ -121,8 +121,10 @@ remain incomplete production-activation gates.
 - [ ] Customer laboratory draft workspace - cover Job details create/edit modal
   required-name and Description validation, duplicate-name feedback, and dirty-
   dismissal; redirect after empty-draft creation; Job name/Job number display;
-  the zero-sample detail empty state; Add/Edit sample modal validation and
-  analysis selection; confirmed sample removal including the last sample;
+  the zero-sample detail empty state; Add/Edit sample modal helper text,
+  integer tube quantity with fixed backend unit, explicit analysis loading/error/
+  empty/available states, required analysis multi-selection, and validation;
+  confirmed sample removal including the last sample;
   optimistic-version recovery; and no-PHI submission confirmation that stays
   unavailable until at least one sample exists.
 - [ ] `frontend/src/features/dashboard/ExternalDashboardContent.test.tsx` -
