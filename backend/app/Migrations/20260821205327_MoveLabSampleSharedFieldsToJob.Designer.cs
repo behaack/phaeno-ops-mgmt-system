@@ -2,6 +2,7 @@
 using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 using PhaenoPortal.App.Infrastructure.Persistence;
@@ -11,9 +12,11 @@ using PhaenoPortal.App.Infrastructure.Persistence;
 namespace PSeq.Operations.Api.Migrations
 {
     [DbContext(typeof(PSeqOperationsDbContext))]
-    partial class PSeqOperationsDbContextModelSnapshot : ModelSnapshot
+    [Migration("20260821205327_MoveLabSampleSharedFieldsToJob")]
+    partial class MoveLabSampleSharedFieldsToJob
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -7528,10 +7531,6 @@ namespace PSeq.Operations.Api.Migrations
                         .HasColumnType("timestamp with time zone")
                         .HasColumnName("due_at");
 
-                    b.Property<bool>("HasMixedBiologicalSources")
-                        .HasColumnType("boolean")
-                        .HasColumnName("has_mixed_biological_sources");
-
                     b.Property<string>("InternalNote")
                         .HasMaxLength(4000)
                         .HasColumnType("character varying(4000)")
@@ -7575,11 +7574,6 @@ namespace PSeq.Operations.Api.Migrations
                         .HasMaxLength(2000)
                         .HasColumnType("character varying(2000)")
                         .HasColumnName("safety_declaration");
-
-                    b.Property<string>("SharedBiologicalSource")
-                        .HasMaxLength(500)
-                        .HasColumnType("character varying(500)")
-                        .HasColumnName("shared_biological_source");
 
                     b.Property<string>("Status")
                         .IsRequired()

@@ -12,7 +12,8 @@ public class OrderManagementDomainTests
     public void LabRequestRequiresSamplesAndFreezesAcceptedQuote()
     {
         var actor = Guid.NewGuid();
-        var order = new LabServiceOrder(Guid.NewGuid(), OrderNumberGenerator.Lab(), "customer-job", null, "Ship cold");
+        var order = new LabServiceOrder(Guid.NewGuid(), OrderNumberGenerator.Lab(), "customer-job", null,
+            false, "Human PBMCs", "Keep frozen.", "No known hazards.", "Ship cold");
         Assert.Throws<InvalidOperationException>(() => order.Submit(actor, Now));
         order.Samples.Add(Sample(order.Id, "S-1"));
         order.Submit(actor, Now);
@@ -26,27 +27,42 @@ public class OrderManagementDomainTests
 
         Assert.Equal(LabServiceOrderStatus.PlacedAwaitingSamples, order.Status);
         Assert.Equal(QuoteStatus.Accepted, quote.Status);
-        Assert.Throws<InvalidOperationException>(() => order.UpdateDraft("changed", null));
+        Assert.Throws<InvalidOperationException>(() => order.UpdateDraft(
+            "changed", null, false, "Human PBMCs", "Keep frozen.", "No known hazards."));
     }
 
     [Fact]
     public void LabJobRequiresNameAndNormalizesEditableDetails()
     {
         Assert.Throws<ArgumentException>(() => new LabServiceOrder(
-            Guid.NewGuid(), OrderNumberGenerator.Lab(), " ", null, "Ship cold"));
+            Guid.NewGuid(), OrderNumberGenerator.Lab(), " ", null,
+            false, "Human PBMCs", "Keep frozen.", "No known hazards.", "Ship cold"));
+        Assert.Throws<ArgumentException>(() => new LabServiceOrder(
+            Guid.NewGuid(), OrderNumberGenerator.Lab(), "Study", null,
+            false, null, "Keep frozen.", "No known hazards.", "Ship cold"));
 
         var order = new LabServiceOrder(
-            Guid.NewGuid(), OrderNumberGenerator.Lab(), "  Study Alpha  ", "  Initial scope  ", "Ship cold");
+            Guid.NewGuid(), OrderNumberGenerator.Lab(), "  Study Alpha  ", "  Initial scope  ",
+            false, "  Human PBMCs  ", "  Keep frozen.  ", "  No known hazards.  ", "Ship cold");
 
         Assert.Equal("Study Alpha", order.CustomerReference);
         Assert.Equal("STUDY ALPHA", order.NormalizedJobName);
         Assert.Equal("Initial scope", order.Description);
+        Assert.False(order.HasMixedBiologicalSources);
+        Assert.Equal("Human PBMCs", order.SharedBiologicalSource);
+        Assert.Equal("Keep frozen.", order.StorageRequirements);
+        Assert.Equal("No known hazards.", order.SafetyDeclaration);
 
-        order.UpdateDraft("  Study Beta  ", "  Revised scope  ");
+        order.UpdateDraft("  Study Beta  ", "  Revised scope  ",
+            true, null, "  Store at -80 C.  ", "  BSL-2 handling.  ");
 
         Assert.Equal("Study Beta", order.CustomerReference);
         Assert.Equal("STUDY BETA", order.NormalizedJobName);
         Assert.Equal("Revised scope", order.Description);
+        Assert.True(order.HasMixedBiologicalSources);
+        Assert.Null(order.SharedBiologicalSource);
+        Assert.Equal("Store at -80 C.", order.StorageRequirements);
+        Assert.Equal("BSL-2 handling.", order.SafetyDeclaration);
     }
 
     [Fact]

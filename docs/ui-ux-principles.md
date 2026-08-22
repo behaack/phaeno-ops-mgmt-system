@@ -127,7 +127,9 @@ Use a dedicated page when a task has several meaningful sections or steps, needs
 - Do not use a modal or drawer as the primary detail workspace for a major record.
 - Use drawers for supplemental viewing and quick context, not primary data entry.
 - Avoid nested modals. One controlled exception is allowed when a user must create a missing related record without abandoning the parent workflow.
-- Modal headers, close controls, and action footers remain visible while long bodies scroll.
+- Modal headers, close controls, and action footers remain fixed. Only the body
+  between the header and footer scrolls when content exceeds the available height.
+- Modals require an explicit dismissal. Clicking the backdrop or elsewhere outside the modal never closes it; users close with the visible close control, a named cancel action, or the Escape key.
 - When a modal dialog or application menu is open, lock the underlying page at
   its current position. Only the active overlay may scroll, and closing it
   restores the page without a position jump.

@@ -142,17 +142,24 @@ and rollback-isolated PostgreSQL coverage.
 - [x] `backend/test/DataProvisioningProfileTests.cs` - unconfigured scientific
   file kinds are rejected.
 - [x] `backend/test/OrderManagementDomainTests.cs` - required and normalized Lab
-  Job names, trimmed optional descriptions, eight-character mixed Job numbers
-  with ambiguous-character and offensive-fragment rejection, laboratory
-  request/quote transitions, immutable request revisions, sample stages, and
-  quote expiry.
+  Job names, required and normalized job-level storage and safety values,
+  shared-versus-mixed biological-source validation and normalization, trimmed
+  optional Job notes, eight-character mixed Job numbers with ambiguous-
+  character and offensive-fragment rejection, laboratory request/quote
+  transitions, immutable request revisions, sample stages, and quote expiry.
 - [ ] Laboratory empty-draft controller coverage - prove an authorized Customer
   administrator may create a draft with no samples, receives a unique generated
   Job number, must supply a case-insensitively unique Job name within the
-  Customer organization, may save an optional Description, may update the draft
-  with the first valid sample, and cannot submit until at least one sample
-  exists; retain tenant, role, active-analysis, duplicate-identifier, limit,
-  and concurrency enforcement.
+  Customer organization plus required shared storage and safety values, must
+  choose shared or mixed biological sources, may save optional Job notes, may
+  update the draft with the first valid sample, and
+  cannot submit until at least one sample exists; retain tenant, role,
+  duplicate-identifier, limit, and concurrency enforcement; persist the server-
+  owned `extracted_rna` material type and `tube` quantity unit; stamp shared
+  storage and safety into every sample snapshot regardless of compatibility
+  values supplied by a client; stamp the shared job source into every sample or
+  retain each mixed-source value; accept the dormant empty analysis-ID list; and
+  authorize every sample with the standard `pseq-lab-service` key.
 - [x] `backend/test/OrderManagementDomainTests.cs` - negotiated reagent price
   snapshots, effective quantity rules, destination restrictions, immutable
   placement confirmation, approved substitutions, partial shipment, and

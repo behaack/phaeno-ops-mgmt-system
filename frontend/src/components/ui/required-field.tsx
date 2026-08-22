@@ -36,6 +36,8 @@ function RequiredDialogFooter({
   )
 }
 
+RequiredDialogFooter.dialogRegion = 'footer' as const
+
 export {
   RequiredDialogFooter,
   RequiredFieldName,

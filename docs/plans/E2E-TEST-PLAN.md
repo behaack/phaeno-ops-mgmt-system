@@ -96,8 +96,10 @@ the protected deployed-Preview acceptance above.
   the Data Library without exposing connected data in mock mode.
 - [x] `frontend/e2e/order-management.spec.ts` - Customer mock context exposes
   laboratory services; Request lab service opens the bounded Job details modal
-  with required Job name and optional Description, without embedding sample
-  fields, and connected creation remains clearly paused in mock-session mode.
+  with required Job name, shared-versus-mixed biological-source choice, storage
+  requirements, and safety declaration plus optional Job notes, without
+  embedding per-sample fields; outside clicks do not dismiss it, and connected
+  creation remains clearly paused in mock-session mode.
 - [x] `frontend/e2e/order-management.spec.ts` - Partner mock context exposes
   reagent ordering and data assembly.
 - [x] `frontend/e2e/order-management.spec.ts` - Phaeno mock context exposes
@@ -333,9 +335,11 @@ the protected deployed-Preview acceptance above.
   admin/member, Partner admin/member, Prospect denial, Phaeno operations,
   payment hold, QuickBooks failure, two-tenant isolation, keyboard, and narrow
   viewport scenarios through real authentication and API persistence. Include
-  required and duplicate Job-name validation, optional Description persistence,
-  generated eight-character Job-number display, and the Customer Lab path from
-  Job details modal to the initially empty draft detail page, Add/Edit sample
+  required and duplicate Job-name validation, required shared storage and safety
+  persistence, shared-versus-mixed source selection and conditional source
+  entry, optional Job-notes persistence, generated eight-character Job-number
+  and shared sample-profile display, and the Customer Lab path from Job
+  details modal to the initially empty draft detail page, compact Add/Edit sample
   modals, confirmed sample removal, blocked zero-sample submission, no-PHI
   confirmation, and successful submission after at least one sample is saved.
 - [ ] Database-backed Lab Operations journey - accept a Customer quote, prove
@@ -373,8 +377,10 @@ the protected deployed-Preview acceptance above.
 
 - 2026-08-19: the complete Playwright mock-session suite passed on desktop and
   mobile Chromium: 30 tests passed and none failed. Customer Lab coverage
-  verifies the required Job name and optional Description in the bounded create
-  modal. Account administration coverage now follows the separate Account
+  verified the then-current required Job name and optional Description in the
+  bounded create modal; the maintained scenario now expects required storage
+  and safety plus optional Job notes. Account administration coverage follows
+  the separate Account
   Directory and Review Queue tabs and waits for the API-loaded account row
   before interaction so server-rendered markup is not clicked before hydration.
 - 2026-08-19: the external-context home scenario was extended to require

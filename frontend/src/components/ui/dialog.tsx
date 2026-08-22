@@ -48,23 +48,36 @@ function DialogOverlay({
 function DialogContent({
   children,
   className,
+  onInteractOutside,
+  onPointerDownOutside,
   showCloseButton = true,
   ...props
 }: React.ComponentProps<typeof DialogPrimitive.Content> & {
   showCloseButton?: boolean
 }) {
+  const arrangedChildren = arrangeDialogChildren(children)
+
   return (
     <DialogPortal>
       <DialogOverlay />
       <DialogPrimitive.Content
         data-slot="dialog-content"
+        onInteractOutside={(event) => {
+          onInteractOutside?.(event)
+          event.preventDefault()
+        }}
+        onPointerDownOutside={(event) => {
+          onPointerDownOutside?.(event)
+          event.preventDefault()
+        }}
         className={cn(
-          "fixed top-1/2 left-1/2 z-50 grid max-h-[calc(100dvh-2rem)] w-[calc(100%-2rem)] max-w-lg -translate-x-1/2 -translate-y-1/2 gap-4 overflow-y-auto rounded-lg border bg-popover p-4 text-popover-foreground shadow-lg outline-none data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=closed]:zoom-out-95 data-[state=open]:animate-in data-[state=open]:fade-in-0 data-[state=open]:zoom-in-95",
+          "fixed top-1/2 left-1/2 z-50 flex max-h-[calc(100dvh-2rem)] w-[calc(100%-2rem)] max-w-lg -translate-x-1/2 -translate-y-1/2 flex-col gap-4 rounded-lg border bg-popover p-4 text-popover-foreground shadow-lg outline-none data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=closed]:zoom-out-95 data-[state=open]:animate-in data-[state=open]:fade-in-0 data-[state=open]:zoom-in-95",
           className,
+          "overflow-hidden",
         )}
         {...props}
       >
-        {children}
+        {arrangedChildren}
         {showCloseButton ? (
           <DialogPrimitive.Close
             data-slot="dialog-close"
@@ -77,6 +90,87 @@ function DialogContent({
       </DialogPrimitive.Content>
     </DialogPortal>
   )
+}
+
+type DialogRegion = "header" | "footer"
+type DialogRegionComponent = React.ElementType & {
+  dialogRegion?: DialogRegion
+}
+
+function dialogRegion(child: React.ReactNode): DialogRegion | undefined {
+  if (!React.isValidElement(child)) return undefined
+  return (child.type as DialogRegionComponent).dialogRegion
+}
+
+function splitDialogChildren(children: React.ReactNode) {
+  const header: React.ReactNode[] = []
+  const body: React.ReactNode[] = []
+  const footer: React.ReactNode[] = []
+
+  for (const child of React.Children.toArray(children)) {
+    const region = dialogRegion(child)
+    if (region === "header") header.push(child)
+    else if (region === "footer") footer.push(child)
+    else body.push(child)
+  }
+
+  return { header, body, footer }
+}
+
+function scrollableDialogBody(children: React.ReactNode, key: string) {
+  return (
+    <div
+      key={key}
+      data-slot="dialog-body"
+      className="grid min-h-0 flex-1 gap-4 overflow-y-auto overscroll-contain"
+    >
+      {children}
+    </div>
+  )
+}
+
+function arrangeDialogChildren(children: React.ReactNode) {
+  const regions = splitDialogChildren(children)
+  const formsWithRegions = regions.body.flatMap((child) => {
+    if (
+      !React.isValidElement<React.ComponentProps<"form">>(child) ||
+      child.type !== "form"
+    ) {
+      return []
+    }
+
+    const childRegions = splitDialogChildren(child.props.children)
+    return childRegions.header.length > 0 || childRegions.footer.length > 0
+      ? [{ form: child, regions: childRegions }]
+      : []
+  })
+
+  if (formsWithRegions.length === 1) {
+    const { form, regions: formRegions } = formsWithRegions[0]
+    const scrollingChildren = regions.body.flatMap((child) =>
+      child === form ? formRegions.body : [child],
+    )
+    const arrangedForm = React.cloneElement(
+      form,
+      {
+        className: cn(
+          form.props.className,
+          "flex min-h-0 flex-1 flex-col gap-4 overflow-hidden",
+        ),
+      },
+      ...formRegions.header,
+      scrollableDialogBody(scrollingChildren, "dialog-form-body"),
+      ...formRegions.footer,
+    )
+
+    return [...regions.header, arrangedForm, ...regions.footer]
+  }
+
+  return [
+    ...regions.header,
+    scrollableDialogBody(regions.body, "dialog-body"),
+    ...regions.footer,
+  ]
 }
 
 function DialogHeader({ className, ...props }: React.ComponentProps<"div">) {
@@ -98,6 +192,9 @@ function DialogFooter({ className, ...props }: React.ComponentProps<"div">) {
     />
   )
 }
+
+DialogHeader.dialogRegion = "header" as const
+DialogFooter.dialogRegion = "footer" as const
 
 function DialogTitle({
   className,
@@ -124,6 +221,9 @@ function DialogDescription({
     />
   )
 }
+
+DialogTitle.dialogRegion = "header" as const
+DialogDescription.dialogRegion = "header" as const
 
 export {
   Dialog,

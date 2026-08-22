@@ -90,6 +90,10 @@ export function LabServiceDetailPage({
       return updateLabOrder(order.id, {
         customerReference: order.customerReference,
         description: order.description ?? undefined,
+        hasMixedBiologicalSources: order.hasMixedBiologicalSources,
+        sharedBiologicalSource: order.sharedBiologicalSource ?? undefined,
+        storageRequirements: order.storageRequirements,
+        safetyDeclaration: order.safetyDeclaration,
         samples: order.samples.filter((sample) => sample.id !== sampleId).map(labSampleToWrite),
         version: order.version,
       })
@@ -114,10 +118,12 @@ export function LabServiceDetailPage({
       && shipment.authorizationSourceId === order.id,
   )
   const awaitingShipment = order.samples.filter((sample) => !sample.receivedAt)
+  const sourceProfileComplete =
+    order.hasMixedBiologicalSources || Boolean(order.sharedBiologicalSource?.trim())
   return (
     <main className="page-wrap px-4 py-8">
       <section className="mb-6 flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
-        <div><p className="text-sm text-muted-foreground"><Link to="/lab-services" className="hover:underline">Lab services</Link> / <span className="font-mono">{order.orderNumber}</span></p><div className="mt-2 flex flex-wrap items-center gap-3"><h1 className="text-3xl font-semibold">{order.customerReference}</h1><OrderStatusBadge status={order.status} /></div><p className="mt-2 text-sm text-muted-foreground">Job number <span className="font-mono">{order.orderNumber}</span> · Updated {formatDate(order.updatedAt)}</p>{order.description ? <p className="mt-3 max-w-3xl whitespace-pre-wrap text-sm leading-6">{order.description}</p> : null}</div>
+        <div><p className="text-sm text-muted-foreground"><Link to="/lab-services" className="hover:underline">Lab services</Link> / <span className="font-mono">{order.orderNumber}</span></p><div className="mt-2 flex flex-wrap items-center gap-3"><h1 className="text-3xl font-semibold">{order.customerReference}</h1><OrderStatusBadge status={order.status} /></div>{order.description ? <p className="mt-2 max-w-3xl whitespace-pre-wrap text-sm leading-6">{order.description}</p> : null}<p className="mt-2 text-sm text-muted-foreground">Updated {formatDate(order.updatedAt)}</p></div>
         <div className="flex flex-wrap gap-2">
           {order.canEdit ? (
             <Button type="button" variant="outline" onClick={() => setJobDetailsOpen(true)}>
@@ -157,6 +163,43 @@ export function LabServiceDetailPage({
         <TabsContent value="samples" className="mt-5 space-y-5">
           <Card>
             <CardHeader>
+              <CardTitle>Job sample profile</CardTitle>
+              <CardDescription>
+                These requirements apply to every sample in this job.
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <dl className="grid gap-4 sm:grid-cols-2">
+                <div>
+                  <dt className="text-xs font-medium uppercase tracking-wide text-muted-foreground">Sample type</dt>
+                  <dd className="mt-1 text-sm">Extracted RNA</dd>
+                </div>
+                <div>
+                  <dt className="text-xs font-medium uppercase tracking-wide text-muted-foreground">Quantity unit</dt>
+                  <dd className="mt-1 text-sm">Tubes</dd>
+                </div>
+                <div>
+                  <dt className="text-xs font-medium uppercase tracking-wide text-muted-foreground">Biological source</dt>
+                  <dd className="mt-1 text-sm">
+                    {order.hasMixedBiologicalSources
+                      ? 'Varies by sample'
+                      : order.sharedBiologicalSource ?? 'Not set — edit Job details'}
+                  </dd>
+                </div>
+                <div>
+                  <dt className="text-xs font-medium uppercase tracking-wide text-muted-foreground">Storage requirements</dt>
+                  <dd className="mt-1 whitespace-pre-wrap text-sm">{order.storageRequirements}</dd>
+                </div>
+                <div>
+                  <dt className="text-xs font-medium uppercase tracking-wide text-muted-foreground">Safety declaration</dt>
+                  <dd className="mt-1 whitespace-pre-wrap text-sm">{order.safetyDeclaration}</dd>
+                </div>
+              </dl>
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardHeader>
               <div className="flex flex-wrap items-start justify-between gap-3">
                 <div>
                   <CardTitle>Samples</CardTitle>
@@ -167,11 +210,19 @@ export function LabServiceDetailPage({
                 {order.canEdit && order.samples.length > 0 ? (
                   <Button
                     type="button"
-                    onClick={() => setSampleDialog(null)}
-                    disabled={order.samples.length >= 100}
+                    onClick={() =>
+                      sourceProfileComplete
+                        ? setSampleDialog(null)
+                        : setJobDetailsOpen(true)
+                    }
+                    disabled={sourceProfileComplete && order.samples.length >= 100}
                   >
-                    <Plus data-icon="inline-start" />
-                    Add sample
+                    {sourceProfileComplete ? (
+                      <Plus data-icon="inline-start" />
+                    ) : (
+                      <Pencil data-icon="inline-start" />
+                    )}
+                    {sourceProfileComplete ? 'Add sample' : 'Complete job details'}
                   </Button>
                 ) : null}
               </div>
@@ -185,7 +236,10 @@ export function LabServiceDetailPage({
                         <div>
                           <h2 className="font-medium">{sample.customerSampleId}</h2>
                           <p className="mt-1 text-sm text-muted-foreground">
-                            {sample.materialType} · {sample.quantity} {sample.quantityUnit} · {sample.biologicalSource}
+                            {formatTubeQuantity(sample.quantity)}
+                            {order.hasMixedBiologicalSources
+                              ? ` · ${sample.biologicalSource}`
+                              : null}
                           </p>
                         </div>
                         <div className="flex flex-wrap items-center gap-2">
@@ -218,9 +272,21 @@ export function LabServiceDetailPage({
                     Add at least one sample before submitting this job for pricing.
                   </p>
                   {order.canEdit ? (
-                    <Button type="button" className="mt-4" onClick={() => setSampleDialog(null)}>
-                      <Plus data-icon="inline-start" />
-                      Add sample
+                    <Button
+                      type="button"
+                      className="mt-4"
+                      onClick={() =>
+                        sourceProfileComplete
+                          ? setSampleDialog(null)
+                          : setJobDetailsOpen(true)
+                      }
+                    >
+                      {sourceProfileComplete ? (
+                        <Plus data-icon="inline-start" />
+                      ) : (
+                        <Pencil data-icon="inline-start" />
+                      )}
+                      {sourceProfileComplete ? 'Add sample' : 'Complete job details'}
                     </Button>
                   ) : null}
                 </div>
@@ -540,6 +606,7 @@ function formatMoney(value: number, currency: string) { return new Intl.NumberFo
 function formatDate(value: string) { return new Intl.DateTimeFormat('en-US', { dateStyle: 'medium' }).format(new Date(value)) }
 function formatDateTime(value: string) { return new Intl.DateTimeFormat('en-US', { dateStyle: 'medium', timeStyle: 'short' }).format(new Date(value)) }
 function formatBytes(value: number) { return new Intl.NumberFormat('en-US', { style: 'unit', unit: value >= 1_000_000 ? 'megabyte' : 'kilobyte', maximumFractionDigits: 1 }).format(value >= 1_000_000 ? value / 1_000_000 : value / 1_000) }
+function formatTubeQuantity(value: number) { return `${value} ${value === 1 ? 'tube' : 'tubes'}` }
 function sampleName(samples: Array<{ id: string; customerSampleId: string }>, sampleId: string) { return samples.find((sample) => sample.id === sampleId)?.customerSampleId ?? 'Sample' }
 function downloadSnapshot(fileName: string, value: string) { const url = URL.createObjectURL(new Blob([value], { type: 'application/json' })); const link = document.createElement('a'); link.href = url; link.download = fileName; link.click(); URL.revokeObjectURL(url) }
 function prettyJson(value: string) { try { return JSON.stringify(JSON.parse(value), null, 2) } catch { return value } }

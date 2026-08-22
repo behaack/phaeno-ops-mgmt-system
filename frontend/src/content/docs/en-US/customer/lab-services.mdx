@@ -5,10 +5,10 @@ Customer organization administrators use Lab services to prepare a job, describe
 ## Create a draft
 
 1. Open **Lab services** and select **Request lab service**.
-2. In **Job details**, enter a required **Job name** that is unique within your organization. You may also add an optional **Description**. Do not enter a patient name or identifier.
+2. In **Job details**, enter a required **Job name** that is unique within your organization. Choose whether all samples have the same **Biological source**. If they do, enter it once for the job; if sources vary, you will enter one for each sample. Enter the **Storage requirements** and **Safety declaration** shared by every sample, and any optional **Job notes**. Do not enter a patient name or identifier.
 3. Select **Create job**. The portal assigns an immutable eight-character **Job number** using unambiguous uppercase letters and numbers.
 4. The new job opens on its detail page. On **Samples & shipping**, select **Add sample** under **Samples**.
-5. Enter that sample's non-patient identifier, the material in the tube, its biological source, the number of tubes, optional concentration, storage and transport requirements, safety declaration, and any sample-specific notes. Select every analysis Phaeno should perform, then select **Add sample**. If no analyses are available, contact Phaeno before adding the sample.
+5. Enter that sample's non-patient identifier and number of tubes. If you said sources vary, also enter that sample's biological source; otherwise the job's shared source is used automatically. All samples are extracted RNA, use the job-level storage and safety information, and receive the same standard data-file set, so there is no material-type, unit, storage, safety, notes, analysis, or output selection in the sample form. Select **Add sample**.
 6. Repeat **Add sample** for each physical sample. Use **Edit** if its draft information needs to change, or **Remove** to take an incorrect sample out of the draft.
 
 The job remains a draft while samples are being added. Other members can see organization work but cannot create, edit, submit, or commercially approve it unless they are an organization administrator.
@@ -23,7 +23,7 @@ When corrections are requested, create and submit a new revision. The prior revi
 
 Laboratory services are priced per job. Open **Quote & billing** to review the job's commercial status. Phaeno issues an itemized, immutable quote for the accepted scope. The quote is available only after its QuickBooks Online estimate has synchronized successfully.
 
-Before accepting, confirm the sample list, analysis, price, currency, and expiration date. Only a Customer organization administrator can accept the current unexpired quote.
+Before accepting, confirm the sample list, standard service scope, price, currency, and expiration date. Only a Customer organization administrator can accept the current unexpired quote.
 
 If the scope changes after acceptance, Phaeno issues a separate change quote. Added work does not begin until the applicable change is accepted.
 

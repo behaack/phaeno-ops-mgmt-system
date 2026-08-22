@@ -493,8 +493,8 @@ commercial direction is implemented and verified.
   Phaeno configuration area, including laboratory address, packing, labeling,
   temperature, safety, and carrier guidance.
 - Portal-owned analysis definitions may add analysis-specific submission
-  requirements. Quote acceptance snapshots the complete applicable instruction
-  set so later configuration changes do not rewrite a placed job.
+  requirements when differentiated services are introduced. They remain
+  dormant during the current standard-output period.
 - Phaeno receives and accessions the samples.
 - Every requested sample has a required Customer-provided sample identifier that
   is unique within its lab-service request/order. The same Customer identifier
@@ -502,26 +502,46 @@ commercial direction is implemented and verified.
 - At physical receipt, Phaeno assigns a separate globally unique accession
   identifier. Both identifiers remain immutable, visible, and searchable in
   Customer and authorized Phaeno tracking views.
-- Each requested sample requires its Customer sample identifier, sample/material
-  type, biological source or species, quantity and unit, storage/handling
-  requirements, requested analysis, and a safety/biohazard declaration.
+- Each job requires storage/handling requirements and a safety/biohazard
+  declaration that apply to every sample. Optional Job notes hold free text for
+  the job as a whole. The Customer must state whether every sample shares one
+  biological source. A shared source is entered once at job level and copied to
+  every sample snapshot; when sources vary, each sample requires its own source.
+  Each requested sample always requires only its Customer sample identifier and
+  quantity in addition to that conditional source. During the initial
+  single-material period, every sample is extracted RNA; Customers do not choose
+  a material type.
+- The API and persisted sample retain `materialType`, `quantityUnit`,
+  `storageRequirements`, and `safetyDeclaration` for compatibility and complete
+  laboratory snapshots. The server enforces `extracted_rna` and copies the
+  current job-level storage and safety values into every draft sample on save.
+  A submitted or placed snapshot therefore remains self-contained if the model
+  later supports controlled material types, units, or per-sample exceptions.
 - The Customer sample form explains the expected scientific content with
   persistent helper text rather than hover-only instructions. During the
   initial tube-only intake period, Customers enter an integer **Quantity
   (tubes)** and do not choose a unit; the write contract and persisted sample
   continue to carry `quantityUnit` with the fixed value `tube` so later
-  multi-unit support does not require a storage-contract change. Requested
-  analyses remain an explicit multi-select and always show a visible loading,
-  failure, empty-catalog, or available-choice state.
-- Collection date, concentration, and Customer notes are optional sample fields.
+  multi-unit support does not require a storage-contract change. Customers do
+  not select an analysis or output package during the current standard-output
+  period. New samples keep an empty dormant analysis-ID list, edits preserve
+  legacy values, and every sample is authorized under the standard
+  `pseq-lab-service` key and receives the same standard data-file set.
+- Collection date, concentration, and per-sample notes are not collected in the
+  current Customer intake because no current validation, quote, shipping, or
+  Lab Operations handoff rule requires them. Their nullable backend/API fields
+  remain for compatibility, and Customer edits preserve previously stored
+  values. A unitless optional concentration is not scientifically useful.
+  If a future analysis requires submitter-declared concentration, introduce an
+  analysis-specific required value with a defined unit.
 - Patient identifiers and unnecessary personal or health data are prohibited in
   sample metadata and free-text instructions.
-- One Customer lab-service request/order may contain multiple samples. Each
-  sample may request one or more active Phaeno analysis definitions linked to
-  synchronized QuickBooks billable items.
-- Phaeno may refine the proposed per-sample analysis set while preparing the
-  job-specific quote. Customer acceptance freezes the final per-sample analyses,
-  quantities, units, and prices in the placement snapshot.
+- One Customer lab-service request/order may contain multiple samples. Every
+  sample follows the same standard PSeq Lab Service and output contract.
+- Phaeno prepares the job-specific quote for that standard scope. Customer
+  acceptance freezes the Job notes, shared storage and safety declarations,
+  final per-sample quantities, units, standard service, standard data-file
+  contract, and prices in the placement snapshot.
 - Phaeno analyzes the samples in the laboratory.
 - Phaeno processes the resulting data.
 - Resulting data is made available to the Customer through the portal.
@@ -740,10 +760,11 @@ pre-production alignment.
   amendment without rewriting the original placement; the added work remains
   blocked until acceptance. Decline leaves the existing accepted scope intact.
 - A Customer lab request requires a Customer-entered Job name that is unique
-  case-insensitively within that Customer organization. It may include an
-  optional Description. Neither field is a PO or commercial authorization;
-  cost centers, requisition numbers, and commercial attachments are not
-  required in the initial release.
+  case-insensitively within that Customer organization, shared storage
+  requirements, and a shared safety declaration. It may include optional Job
+  notes. None of these fields is a PO or commercial authorization; cost centers,
+  requisition numbers, and commercial attachments are not required in the
+  initial release.
 - A Partner reagent order requires a PO number at placement. A Partner data-
   assembly request requires a PO number at quote acceptance. PO values are
   immutable commercial snapshots and synchronize to QuickBooks.
@@ -808,23 +829,30 @@ pre-production alignment.
 
 ### Customer Lab-Service Contents
 
-- Required sample fields are Customer sample identifier, sample/material type,
-  biological source/species, quantity and unit, storage/handling requirements,
-  requested analysis, and safety/biohazard declaration. Collection date,
-  concentration, and Customer notes are optional.
+- Required job fields are shared storage/handling requirements and a shared
+  safety/biohazard declaration plus an explicit shared-versus-mixed biological-
+  source choice; Job notes are optional. A shared source is required once at job
+  level, while a mixed job requires a source/species for every sample. Required
+  Customer-entered sample fields are otherwise Customer sample identifier and
+  tube quantity. All accepted samples are initially
+  extracted RNA, so material type and unit are not Customer inputs. The backend
+  persists the server-enforced `extracted_rna` and `tube` values and copies the
+  shared job requirements into each sample snapshot. Customer intake does not
+  collect collection date, concentration, or per-sample notes unless a future
+  workflow defines a scientifically valid need.
 - Patient identifiers and unnecessary personal or health data are prohibited in
   fields, notes, and files. The initial release is not a PHI intake workflow.
-- One request may include multiple samples. Each sample may include one or more
-  active analyses. Phaeno may refine them while quoting; quote acceptance freezes
-  the final sample, analysis, quantity, unit, instruction, and price snapshot.
+- One request may include multiple samples. Customers do not select per-sample
+  analyses or outputs; every sample receives the standard data-file set. Quote
+  acceptance freezes the final sample, quantity, unit, standard service,
+  instruction, output-contract, and price snapshot.
 - The Customer sample identifier is unique within the job. Phaeno assigns a
   globally unique accession identifier at receipt. Both remain immutable,
   visible, and searchable.
-- An active analysis definition specifies the required intake fields, applicable
-  submission instructions, supported result-artifact kinds, and validation
-  rules. As a representative non-production contract, an analysis may produce a
-  human-readable report, tabular results, and a machine-readable data archive,
-  each with file metadata, checksum, provenance, and generation time.
+- The analysis-definition model is retained for future differentiated services
+  but is not a Customer intake requirement during the standard-output period.
+  Future activation may specify required intake fields, submission instructions,
+  supported result-artifact kinds, and validation rules.
 - Exact production analyses and scientifically valid result formats are Phaeno-
   approved configuration content. A production analysis cannot be activated
   until its real instructions, allowed file kinds, required result artifacts,
@@ -1139,7 +1167,8 @@ append-only.
   number substitutions) before assignment
 - owning Customer organization and creating/submitting users
 - required Customer-visible Job name with a normalized organization-scoped
-  uniqueness key, plus an optional Description
+  uniqueness key, required shared storage requirements and safety declaration,
+  plus optional Job notes
 - workflow state, submitted/placed/completed timestamps, and cancellation state
 - immutable request revisions and placement snapshot
 - current quote revision and linked QuickBooks documents
@@ -1147,8 +1176,9 @@ append-only.
 
 Supporting records are:
 
-- `LabServiceRequestRevision`: immutable submitted sample/analysis/instruction
-  facts, linked to the previous revision when corrected.
+- `LabServiceRequestRevision`: immutable submitted job profile, sample,
+  standard-service, and instruction facts, linked to the previous revision when
+  corrected.
 - `LabServiceQuote` and `LabServiceQuoteLine`: immutable numbered revisions,
   initial/change purpose, issue/expiry/supersession/acceptance facts, itemized
   prices/totals/currency, accepted amendment effect, and QuickBooks estimate
@@ -1464,13 +1494,23 @@ Customer navigation:
 - The list provides status/date search, filters, empty/loading/error states, and
   `Request lab service` only for administrators.
 - `Request lab service` opens a bounded Job details modal with a required,
-  organization-unique Job name and optional Description. Creating the empty
-  draft assigns the immutable Job number and opens its record workspace; the
-  draft may temporarily have no samples.
-- The record workspace owns its sample collection. It shows a sample list with
-  Add, Edit, and confirmed Remove actions. Add and Edit open a bounded sample-
-  details modal containing the scientific intake fields and per-sample
-  analyses.
+  organization-unique Job name, required shared storage requirements and safety
+  declaration, a required choice between one shared or mixed biological sources,
+  and optional Job notes. The shared choice exposes one required source field;
+  the mixed choice moves that field into each sample modal. Existing sample
+  values are prefilled when switching to mixed, while switching to shared asks
+  for confirmation before replacing existing sample values. Creating the empty
+  draft assigns the
+  immutable Job number and opens its record workspace; the draft may temporarily
+  have no samples.
+- The record workspace shows the shared job sample profile once and owns its
+  sample collection. It shows a sample list with Add, Edit, and confirmed Remove
+  actions. Add and Edit open a bounded modal containing Customer sample ID and
+  tube quantity, plus biological source only when the job is mixed-source. The
+  list shows the shared source once in the job profile instead of repeating it.
+- The job header shows the optional Job notes directly below the Job name, then
+  the updated date. The immutable Job number appears once in the breadcrumb and
+  is not repeated in the header metadata.
 - Submit-for-pricing remains on the record workspace, requires at least one
   sample, and requires the current no-PHI confirmation before freezing the
   submitted revision.
@@ -1647,22 +1687,25 @@ Execution checkpoint:
 ### Customer Lab Service
 
 1. An active Customer administrator creates the Job details draft in a modal
-   with a required organization-unique Job name and optional Description. The
-   system assigns an immutable eight-character Job number and lands on the
-   record workspace. The initially empty draft cannot be submitted. The
-   administrator adds each sample through the sample-details modal, supplies
-   all required metadata, selects active analyses, reviews the no-PHI
-   declaration, and submits one immutable request revision. A non-admin cannot
-   create or submit it, and another Customer cannot discover it.
+   with a required organization-unique Job name, shared storage requirements,
+   shared safety declaration, a shared-versus-mixed biological-source choice,
+   and optional Job notes. The system assigns an
+   immutable eight-character Job number and lands on the record workspace. The
+   initially empty draft cannot be submitted. The administrator adds each
+   sample's Customer ID and tube quantity plus each source only when mixed,
+   reviews the
+   no-PHI declaration, and submits one immutable request revision. A non-admin
+   cannot create or submit it, and another Customer cannot discover it.
 2. Phaeno returns a field-specific change request. The Customer submits a new
    revision; both versions and the reason remain visible in the permitted
    timeline.
 3. Phaeno issues an itemized job quote. It is not Customer-visible until the
    QuickBooks estimate sync succeeds. A newer revision supersedes the first;
    expired or superseded quotes cannot be accepted.
-4. Customer-admin acceptance freezes the Job name, Description, samples,
-   analyses, instructions, prices, currency, and expiration. Repeated
-   acceptance with the same idempotency key returns the same placed job.
+4. Customer-admin acceptance freezes the Job name, Job notes, shared storage and
+   safety declarations, samples, standard service/output scope, instructions,
+   prices, currency, and expiration. Repeated acceptance with the same
+   idempotency key returns the same placed job.
 5. Phaeno records receipt, condition, immutable accession id, and independent
    progress for each sample. A held/rejected sample requires a Customer-safe
    reason; a replacement is linked without erasing the original.

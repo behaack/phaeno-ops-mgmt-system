@@ -118,12 +118,26 @@ remain incomplete production-activation gates.
 
 ## Deferred Tests
 
+- [x] `frontend/src/components/ui/dialog.test.tsx` - shared modal content ignores
+  outside pointer interaction and remains open until the user invokes an
+  explicit dismissal control; shared modal structure keeps direct and form-
+  wrapped headers and footers outside the scrolling body; all app dialogs
+  inherit both behaviors.
 - [ ] Customer laboratory draft workspace - cover Job details create/edit modal
-  required-name and Description validation, duplicate-name feedback, and dirty-
-  dismissal; redirect after empty-draft creation; Job name/Job number display;
-  the zero-sample detail empty state; Add/Edit sample modal helper text,
-  integer tube quantity with fixed backend unit, explicit analysis loading/error/
-  empty/available states, required analysis multi-selection, and validation;
+  required-name/storage/safety, required shared-versus-mixed biological-source
+  choice, conditional shared-source validation, mixed-to-shared replacement
+  confirmation, and optional Job-notes validation; duplicate-name feedback and
+  dirty-dismissal; redirect after empty-draft creation; Job name,
+  notes-before-updated header order, single breadcrumb Job number, and shared
+  sample-profile display with one shared source or `Varies by sample`; the zero-sample detail empty
+  state; Add/Edit sample modal helper text and only Customer sample ID,
+  conditional per-sample biological source, and integer tube quantity as inputs;
+  vertically aligned paired controls without reserved helper height when
+  Quantity is unpaired; fixed extracted-RNA
+  material type and tube unit without Customer inputs; absence of concentration,
+  per-sample notes, storage, safety, and analysis/output inputs while preserving
+  legacy nullable values on edit; empty analysis IDs for new samples with legacy
+  values preserved on edit; and validation;
   confirmed sample removal including the last sample;
   optimistic-version recovery; and no-PHI submission confirmation that stays
   unavailable until at least one sample exists.

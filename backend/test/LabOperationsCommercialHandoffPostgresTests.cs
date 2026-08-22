@@ -757,6 +757,10 @@ public class LabOperationsCommercialHandoffPostgresTests
                 OrderNumberGenerator.Lab(),
                 "reference-handoff",
                 null,
+                false,
+                "synthetic_reference",
+                "frozen",
+                "No special hazards declared.",
                 "Ship frozen");
             order.Samples.Add(new LabSample(
                 order.Id,

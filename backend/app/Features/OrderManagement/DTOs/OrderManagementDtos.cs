@@ -166,6 +166,10 @@ public sealed record LabServiceOrderDto(
     string OrderNumber,
     string CustomerReference,
     string? Description,
+    bool HasMixedBiologicalSources,
+    string? SharedBiologicalSource,
+    string StorageRequirements,
+    string SafetyDeclaration,
     string SubmissionInstructions,
     string Status,
     int RequestRevision,
@@ -471,7 +475,15 @@ public sealed record LabSampleWriteRequest(
     IReadOnlyList<Guid> AnalysisDefinitionIds,
     Guid? ReplacementForSampleId = null);
 
-public sealed record LabOrderWriteRequest(string? CustomerReference, string? Description, IReadOnlyList<LabSampleWriteRequest> Samples, long? Version = null);
+public sealed record LabOrderWriteRequest(
+    string? CustomerReference,
+    string? Description,
+    bool HasMixedBiologicalSources,
+    string? SharedBiologicalSource,
+    string StorageRequirements,
+    string SafetyDeclaration,
+    IReadOnlyList<LabSampleWriteRequest> Samples,
+    long? Version = null);
 public sealed record SampleShipmentRequest(long Version, string? Carrier, string? TrackingNumber, DateTime? ShippedAt);
 public sealed record LabSampleReceiptRequest(long Version, DateTime ReceivedAt, string ReceiptCondition);
 public sealed record LabSampleAccessionRequest(long Version, string AccessionId);

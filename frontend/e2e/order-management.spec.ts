@@ -10,10 +10,21 @@ test('shows Customer laboratory services in mock mode', async ({ page }) => {
 
   const jobDetails = page.getByRole('dialog', { name: 'Job details' })
   await expect(jobDetails).toBeVisible()
+  await expect(jobDetails.locator(':scope > [data-slot="dialog-header"]')).toBeVisible()
+  await expect(jobDetails.locator(':scope > [data-slot="dialog-body"]')).toBeVisible()
+  await expect(jobDetails.locator(':scope > [data-slot="dialog-footer"]')).toBeVisible()
   await expect(jobDetails.getByLabel('Job name')).toBeVisible()
-  await expect(jobDetails.getByLabel('Description (optional)')).toBeVisible()
+  await expect(jobDetails.getByText('Do all samples share the same biological source?')).toBeVisible()
+  await expect(jobDetails.getByText('Yes — same source')).toBeVisible()
+  await expect(jobDetails.getByText('No — sources vary')).toBeVisible()
+  await expect(jobDetails.getByLabel('Storage requirements')).toBeVisible()
+  await expect(jobDetails.getByLabel('Safety declaration')).toBeVisible()
+  await expect(jobDetails.getByLabel('Job notes (optional)')).toBeVisible()
   await expect(jobDetails.getByLabel('Customer sample ID')).toHaveCount(0)
   await expect(jobDetails.getByRole('button', { name: 'Create job' })).toBeDisabled()
+
+  await page.mouse.click(4, 4)
+  await expect(jobDetails).toBeVisible()
 })
 
 test('shows Partner reagent and data-assembly work in mock mode', async ({ page }) => {

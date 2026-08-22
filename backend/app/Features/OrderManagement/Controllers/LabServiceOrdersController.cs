@@ -32,6 +32,9 @@ public sealed class LabServiceOrdersController(
     ILogger<CompletionTrackedArchiveResult> archiveDownloadLogger) : ControllerBase
 {
     private static readonly JsonSerializerOptions JsonSerializerOptions = new(JsonSerializerDefaults.Web);
+    private const string StandardLabServiceKey = "pseq-lab-service";
+    private const string StandardMaterialType = "extracted_rna";
+    private const string StandardQuantityUnit = "tube";
 
     [HttpGet]
     public async Task<PagedResult<OrderListItemDto>> List(
@@ -125,10 +128,14 @@ public sealed class LabServiceOrdersController(
         if (replay != null) return replay;
         var normalizedJobName = NormalizeJobName(request.CustomerReference);
         await EnsureUniqueJobNameAsync(tenant.Organization.Id, normalizedJobName, null, cancellationToken);
-        await ValidateSamplesAsync(request.Samples, cancellationToken, requireAtLeastOne: false);
+        ValidateSamples(request.Samples, requireAtLeastOne: false);
         var config = await dbContext.OrderSystemConfigurations.AsNoTracking().OrderBy(item => item.CreatedAt).FirstOrDefaultAsync(cancellationToken);
         var order = new LabServiceOrder(tenant.Organization.Id, await GenerateUniqueJobNumberAsync(cancellationToken), request.CustomerReference,
             request.Description,
+            request.HasMixedBiologicalSources,
+            request.SharedBiologicalSource,
+            request.StorageRequirements,
+            request.SafetyDeclaration,
             config?.SampleSubmissionInstructions ?? string.Empty);
         AddSamples(order, request.Samples);
         dbContext.LabServiceOrders.Add(order);
@@ -149,8 +156,14 @@ public sealed class LabServiceOrdersController(
         EnsureVersion(order.Version, request.Version);
         var normalizedJobName = NormalizeJobName(request.CustomerReference);
         await EnsureUniqueJobNameAsync(tenant.Organization.Id, normalizedJobName, order.Id, cancellationToken);
-        await ValidateSamplesAsync(request.Samples, cancellationToken, requireAtLeastOne: false);
-        Execute(() => order.UpdateDraft(request.CustomerReference, request.Description));
+        ValidateSamples(request.Samples, requireAtLeastOne: false);
+        Execute(() => order.UpdateDraft(
+            request.CustomerReference,
+            request.Description,
+            request.HasMixedBiologicalSources,
+            request.SharedBiologicalSource,
+            request.StorageRequirements,
+            request.SafetyDeclaration));
         var existingById = order.Samples.ToDictionary(item => item.Id);
         var requestIds = request.Samples.Where(item => item.Id.HasValue).Select(item => item.Id!.Value).ToHashSet();
         var removed = order.Samples.Where(item => !requestIds.Contains(item.Id)).ToList();
@@ -166,13 +179,13 @@ public sealed class LabServiceOrdersController(
             {
                 if (!existingById.TryGetValue(item.Id.Value, out var sample))
                     throw Missing();
-                Execute(() => sample.UpdateMetadata(item.CustomerSampleId, item.MaterialType, item.BiologicalSource,
-                    item.Quantity, item.QuantityUnit, item.StorageRequirements, item.SafetyDeclaration,
-                    item.CollectionDate, item.Concentration, item.Notes, JsonSerializer.Serialize(item.AnalysisDefinitionIds)));
+                Execute(() => sample.UpdateMetadata(item.CustomerSampleId, StandardMaterialType, BiologicalSource(order, item),
+                    item.Quantity, StandardQuantityUnit, order.StorageRequirements, order.SafetyDeclaration,
+                    item.CollectionDate, item.Concentration, item.Notes, sample.AnalysisDefinitionIdsJson));
             }
             else
             {
-                order.Samples.Add(ToSample(order.Id, item));
+                order.Samples.Add(ToSample(order, item));
             }
         }
         await dbContext.SaveChangesAsync(cancellationToken);
@@ -247,7 +260,7 @@ public sealed class LabServiceOrdersController(
             LabWorkAuthorizationSource.CommercialOrder,
             order.Id,
             order.OrganizationId,
-            "pseq-lab-service",
+            StandardLabServiceKey,
             1,
             "quoted-turnaround",
             order.OrderNumber,
@@ -263,8 +276,7 @@ public sealed class LabServiceOrdersController(
                 sample.CollectionDate,
                 sample.Concentration,
                 sample.Notes,
-                JsonSerializer.Deserialize<List<Guid>>(sample.AnalysisDefinitionIdsJson, JsonSerializerOptions)
-                    ?.Select(id => id.ToString()).ToList() ?? [])).ToList());
+                [StandardLabServiceKey])).ToList());
         var authorization = new CommercialLabAuthorization(
             authorizationId, order.Id, order.OrganizationId, 1, commandId,
             JsonSerializer.Serialize(command, JsonSerializerOptions));
@@ -466,9 +478,8 @@ public sealed class LabServiceOrdersController(
             .FirstOrDefaultAsync(order => order.Id == orderId && order.OrganizationId == organizationId && !order.IsDiscarded, cancellationToken)
             ?? throw Missing();
 
-    private async Task ValidateSamplesAsync(
+    private static void ValidateSamples(
         IReadOnlyList<LabSampleWriteRequest> samples,
-        CancellationToken cancellationToken,
         bool requireAtLeastOne = true)
     {
         if (samples.Count == 0)
@@ -480,23 +491,22 @@ public sealed class LabServiceOrdersController(
         if (samples.Count > 100) throw Invalid("sample_limit", "A laboratory request cannot contain more than 100 samples.");
         if (samples.Select(item => item.CustomerSampleId.Trim()).Distinct(StringComparer.OrdinalIgnoreCase).Count() != samples.Count)
             throw Invalid("duplicate_customer_sample_id", "Customer sample identifiers must be unique within the request.");
-        var ids = samples.SelectMany(item => item.AnalysisDefinitionIds).Distinct().ToList();
-        if (ids.Count == 0) throw Invalid("analysis_required", "Select at least one analysis for every sample.");
-        if (samples.Any(item => item.AnalysisDefinitionIds.Count == 0))
-            throw Invalid("analysis_required", "Select at least one analysis for every sample.");
-        var activeCount = await dbContext.AnalysisDefinitions.AsNoTracking().CountAsync(item => ids.Contains(item.Id) && item.IsActive && !item.IsSynthetic, cancellationToken);
-        if (activeCount != ids.Count) throw Invalid("analysis_unavailable", "One or more selected analyses are no longer available.");
     }
 
     private static void AddSamples(LabServiceOrder order, IReadOnlyList<LabSampleWriteRequest> samples)
     {
-        foreach (var item in samples) order.Samples.Add(ToSample(order.Id, item));
+        foreach (var item in samples) order.Samples.Add(ToSample(order, item));
     }
 
-    private static LabSample ToSample(Guid orderId, LabSampleWriteRequest item) => new(orderId, item.CustomerSampleId,
-        item.MaterialType, item.BiologicalSource, item.Quantity, item.QuantityUnit, item.StorageRequirements,
-        item.SafetyDeclaration, item.CollectionDate, item.Concentration, item.Notes,
-        JsonSerializer.Serialize(item.AnalysisDefinitionIds), item.ReplacementForSampleId);
+    private static LabSample ToSample(LabServiceOrder order, LabSampleWriteRequest item) => new(order.Id, item.CustomerSampleId,
+        StandardMaterialType, BiologicalSource(order, item), item.Quantity, StandardQuantityUnit, order.StorageRequirements,
+        order.SafetyDeclaration, item.CollectionDate, item.Concentration, item.Notes,
+        "[]", item.ReplacementForSampleId);
+
+    private static string BiologicalSource(LabServiceOrder order, LabSampleWriteRequest item)
+        => order.HasMixedBiologicalSources
+            ? item.BiologicalSource
+            : order.SharedBiologicalSource!;
 
     private async Task<LabServiceOrderDto> MapAsync(LabServiceOrder order, bool canManage, bool platform, CancellationToken cancellationToken)
     {
@@ -538,6 +548,8 @@ public sealed class LabServiceOrdersController(
             .SingleOrDefaultAsync(item => item.AuthorizationId == authorization.AuthorizationId, cancellationToken);
         var editable = order.Status is LabServiceOrderStatus.DraftRequest or LabServiceOrderStatus.ChangesRequested;
         return new LabServiceOrderDto(order.Id, order.OrganizationId, order.OrderNumber, order.CustomerReference, order.Description,
+            order.HasMixedBiologicalSources, order.SharedBiologicalSource,
+            order.StorageRequirements, order.SafetyDeclaration,
             order.SubmissionInstructionsSnapshot, order.Status.ToString(), order.RequestRevision, order.SubmittedAt,
             order.PlacedAt, order.CompletedAt, order.TenantSafeReason, platform ? order.InternalNote : null,
             order.CreatedAt, order.UpdatedAt, order.Version,
@@ -572,7 +584,12 @@ public sealed class LabServiceOrdersController(
         return JsonSerializer.Serialize(new
         {
             order.CustomerReference,
-            order.Description,
+            jobNotes = order.Description,
+            order.HasMixedBiologicalSources,
+            order.SharedBiologicalSource,
+            order.StorageRequirements,
+            order.SafetyDeclaration,
+            serviceKey = StandardLabServiceKey,
             submissionInstructions = order.SubmissionInstructionsSnapshot,
             samples = order.Samples.OrderBy(item => item.CreatedAt).Select(item => new
             {

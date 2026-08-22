@@ -11,6 +11,10 @@ public sealed class LabServiceOrder : IAudit, IConcurrency
     public string CustomerReference { get; private set; } = null!;
     public string NormalizedJobName { get; private set; } = null!;
     public string? Description { get; private set; }
+    public bool HasMixedBiologicalSources { get; private set; }
+    public string? SharedBiologicalSource { get; private set; }
+    public string StorageRequirements { get; private set; } = null!;
+    public string SafetyDeclaration { get; private set; } = null!;
     public string SubmissionInstructionsSnapshot { get; private set; } = string.Empty;
     public LabServiceOrderStatus Status { get; private set; } = LabServiceOrderStatus.DraftRequest;
     public LabServiceOrderStatus? ResumeStatus { get; private set; }
@@ -42,6 +46,10 @@ public sealed class LabServiceOrder : IAudit, IConcurrency
         string orderNumber,
         string? customerReference,
         string? description,
+        bool hasMixedBiologicalSources,
+        string? sharedBiologicalSource,
+        string storageRequirements,
+        string safetyDeclaration,
         string submissionInstructionsSnapshot)
     {
         OrganizationId = organizationId;
@@ -49,18 +57,30 @@ public sealed class LabServiceOrder : IAudit, IConcurrency
         CustomerReference = OrderText.Required(customerReference, "Job name", 255);
         NormalizedJobName = NormalizeJobName(CustomerReference);
         Description = OrderText.Optional(description, 2000);
+        SetBiologicalSourceProfile(hasMixedBiologicalSources, sharedBiologicalSource);
+        StorageRequirements = OrderText.Required(storageRequirements, "Storage requirements", 2000);
+        SafetyDeclaration = OrderText.Required(safetyDeclaration, "Safety declaration", 2000);
         SubmissionInstructionsSnapshot = OrderText.Optional(submissionInstructionsSnapshot, 8000) ?? string.Empty;
     }
 
     public static string NormalizeJobName(string? jobName)
         => OrderText.Required(jobName, "Job name", 255).ToUpperInvariant();
 
-    public void UpdateDraft(string? customerReference, string? description)
+    public void UpdateDraft(
+        string? customerReference,
+        string? description,
+        bool hasMixedBiologicalSources,
+        string? sharedBiologicalSource,
+        string storageRequirements,
+        string safetyDeclaration)
     {
         EnsureStatus(LabServiceOrderStatus.DraftRequest, LabServiceOrderStatus.ChangesRequested);
         CustomerReference = OrderText.Required(customerReference, "Job name", 255);
         NormalizedJobName = NormalizeJobName(CustomerReference);
         Description = OrderText.Optional(description, 2000);
+        SetBiologicalSourceProfile(hasMixedBiologicalSources, sharedBiologicalSource);
+        StorageRequirements = OrderText.Required(storageRequirements, "Storage requirements", 2000);
+        SafetyDeclaration = OrderText.Required(safetyDeclaration, "Safety declaration", 2000);
     }
 
     public void Submit(Guid actorUserId, DateTime utcNow)
@@ -179,6 +199,14 @@ public sealed class LabServiceOrder : IAudit, IConcurrency
     public void Assign(Guid? userId, DateTime? dueAt) { AssignedToUserId = userId; DueAt = userId.HasValue ? dueAt : null; }
 
     public bool IsTerminal() => Status is LabServiceOrderStatus.Completed or LabServiceOrderStatus.Cancelled or LabServiceOrderStatus.Declined;
+
+    private void SetBiologicalSourceProfile(bool hasMixedBiologicalSources, string? sharedBiologicalSource)
+    {
+        HasMixedBiologicalSources = hasMixedBiologicalSources;
+        SharedBiologicalSource = hasMixedBiologicalSources
+            ? null
+            : OrderText.Required(sharedBiologicalSource, "Biological source", 500);
+    }
 
     private void Transition(LabServiceOrderStatus from, LabServiceOrderStatus to)
     {

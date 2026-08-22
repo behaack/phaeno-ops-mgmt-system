@@ -448,6 +448,9 @@ public static class OrderManagementModelConfiguration
             Text(entity.Property(e => e.CustomerReference), 255);
             Text(entity.Property(e => e.NormalizedJobName), 255);
             Text(entity.Property(e => e.Description), 2000, false);
+            Text(entity.Property(e => e.SharedBiologicalSource), 500, false);
+            Text(entity.Property(e => e.StorageRequirements), 2000);
+            Text(entity.Property(e => e.SafetyDeclaration), 2000);
             Text(entity.Property(e => e.SubmissionInstructionsSnapshot), 8000);
             EnumText(entity.Property(e => e.Status));
             EnumText(entity.Property(e => e.ResumeStatus), false);
