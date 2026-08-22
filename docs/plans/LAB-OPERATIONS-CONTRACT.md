@@ -221,6 +221,12 @@ rules are fixed:
 - Commercial owns the submitted declarations and service authorization.
 - Lab validates actual received material and creates accession/container facts.
 - Declared data is never silently converted into an observed Lab fact.
+- For Customer Lab Service work, Commercial sends the initial authorization only
+  after the price-accepted sample roster is finalized. `DeclaredQuantity` with
+  unit `tube` is the number of expected submitted physical containers for one
+  biological specimen. Lab creates one specimen/accession and may attach
+  multiple registered-supplier submitted containers to it, one per received
+  tube, while preserving each container barcode and any missing-tube exception.
 - The payload contains no price, quote, invoice, credit, payment, HubSpot deal,
   or Portal membership data.
 - The payload contains no Customer-versus-Partner branch.

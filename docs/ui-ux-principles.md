@@ -129,6 +129,15 @@ Use a dedicated page when a task has several meaningful sections or steps, needs
 - Avoid nested modals. One controlled exception is allowed when a user must create a missing related record without abandoning the parent workflow.
 - Modal headers, close controls, and action footers remain fixed. Only the body
   between the header and footer scrolls when content exceeds the available height.
+  The shared modal header and footer use a subtle muted surface with bottom and
+  top dividers respectively, distinguishing fixed context and actions from
+  scrolling content in both themes.
+  The shared scroll body retains a bottom inset so the final control and its
+  focus ring remain fully visible above the fixed footer.
+- General save, permission, network, and server feedback in a modal uses the
+  shared feedback region inside the shaded fixed header. Direct destructive
+  alerts inherit this placement automatically. Field-level validation remains
+  beside the affected control.
 - Modals require an explicit dismissal. Clicking the backdrop or elsewhere outside the modal never closes it; users close with the visible close control, a named cancel action, or the Escape key.
 - When a modal dialog or application menu is open, lock the underlying page at
   its current position. Only the active overlay may scroll, and closing it
@@ -144,6 +153,11 @@ Prioritize clarity and error prevention over maximum visual compactness.
 - Place persistent labels above controls; placeholders never replace labels.
 - Group fields by the user's mental model and workflow, not the data model.
 - Use concise helper text only when it prevents a likely mistake.
+- Place helper text immediately below its field label and before the control.
+  Place validation text tightly below the control, use the same compact type
+  size as helper text, and retain the destructive color and alert semantics.
+  Use the shared field-description, field-error, and control primitives so this
+  structure and spacing do not drift between forms.
 - Mark genuinely required controls with actual required validation and the
   established ruby-red `*`. Keep the marker visually adjacent to its label,
   without the standard label-to-control gap. Every form with required controls
@@ -176,7 +190,11 @@ Validation is progressive:
 - On submit, validate the complete form, including cross-field rules.
 - Treat server validation as authoritative and map failures to fields whenever possible.
 - Long forms show an error summary with a count and links or focus movement to affected fields.
-- Concurrency conflicts preserve the user's work and provide a safe review or reload path.
+- Concurrency conflicts automatically load the latest record while preserving
+  the user's entered values. A save may retry once only when the editable server
+  state is unchanged; otherwise the fixed modal feedback region explains that
+  the refreshed values must be reviewed before saving again. Never silently
+  discard entered values or overwrite another user's editable changes.
 
 ## Actions and safeguards
 

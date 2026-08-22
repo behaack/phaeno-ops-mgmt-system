@@ -2,6 +2,7 @@ import * as React from "react"
 import { Dialog as DialogPrimitive } from "radix-ui"
 import { XIcon } from "lucide-react"
 
+import { Alert } from "#/components/ui/alert"
 import { cn } from "#/lib/utils"
 
 function Dialog({
@@ -71,7 +72,7 @@ function DialogContent({
           event.preventDefault()
         }}
         className={cn(
-          "fixed top-1/2 left-1/2 z-50 flex max-h-[calc(100dvh-2rem)] w-[calc(100%-2rem)] max-w-lg -translate-x-1/2 -translate-y-1/2 flex-col gap-4 rounded-lg border bg-popover p-4 text-popover-foreground shadow-lg outline-none data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=closed]:zoom-out-95 data-[state=open]:animate-in data-[state=open]:fade-in-0 data-[state=open]:zoom-in-95",
+          "fixed top-1/2 left-1/2 z-50 flex max-h-[calc(100dvh-2rem)] w-[calc(100%-2rem)] max-w-lg -translate-x-1/2 -translate-y-1/2 flex-col gap-4 rounded-lg border bg-popover p-4 text-popover-foreground shadow-lg outline-none [--dialog-inset:1rem] data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=closed]:zoom-out-95 data-[state=open]:animate-in data-[state=open]:fade-in-0 data-[state=open]:zoom-in-95",
           className,
           "overflow-hidden",
         )}
@@ -92,29 +93,37 @@ function DialogContent({
   )
 }
 
-type DialogRegion = "header" | "footer"
+type DialogRegion = "header" | "feedback" | "footer"
 type DialogRegionComponent = React.ElementType & {
   dialogRegion?: DialogRegion
 }
 
 function dialogRegion(child: React.ReactNode): DialogRegion | undefined {
   if (!React.isValidElement(child)) return undefined
+  if (
+    child.type === Alert
+    && (child.props as React.ComponentProps<typeof Alert>).variant === "destructive"
+  ) {
+    return "feedback"
+  }
   return (child.type as DialogRegionComponent).dialogRegion
 }
 
 function splitDialogChildren(children: React.ReactNode) {
   const header: React.ReactNode[] = []
+  const feedback: React.ReactNode[] = []
   const body: React.ReactNode[] = []
   const footer: React.ReactNode[] = []
 
   for (const child of React.Children.toArray(children)) {
     const region = dialogRegion(child)
     if (region === "header") header.push(child)
+    else if (region === "feedback") feedback.push(child)
     else if (region === "footer") footer.push(child)
     else body.push(child)
   }
 
-  return { header, body, footer }
+  return { header, feedback, body, footer }
 }
 
 function scrollableDialogBody(children: React.ReactNode, key: string) {
@@ -122,11 +131,34 @@ function scrollableDialogBody(children: React.ReactNode, key: string) {
     <div
       key={key}
       data-slot="dialog-body"
-      className="grid min-h-0 flex-1 gap-4 overflow-y-auto overscroll-contain"
+      className="grid min-h-0 flex-1 gap-4 overflow-y-auto overscroll-contain pb-2"
     >
       {children}
     </div>
   )
+}
+
+function fixedDialogHeader(
+  children: React.ReactNode[],
+  feedback: React.ReactNode[],
+  key: string,
+) {
+  if (children.length === 0 && feedback.length === 0) return []
+  if (
+    children.length === 1
+    && React.isValidElement(children[0])
+    && children[0].type === DialogHeader
+  ) {
+    const header = children[0] as React.ReactElement<React.ComponentProps<typeof DialogHeader>>
+    return [React.cloneElement(
+      header,
+      { key },
+      ...React.Children.toArray(header.props.children),
+      ...feedback,
+    )]
+  }
+
+  return [<DialogHeader key={key}>{children}{feedback}</DialogHeader>]
 }
 
 function arrangeDialogChildren(children: React.ReactNode) {
@@ -140,13 +172,20 @@ function arrangeDialogChildren(children: React.ReactNode) {
     }
 
     const childRegions = splitDialogChildren(child.props.children)
-    return childRegions.header.length > 0 || childRegions.footer.length > 0
+    return childRegions.header.length > 0
+      || childRegions.feedback.length > 0
+      || childRegions.footer.length > 0
       ? [{ form: child, regions: childRegions }]
       : []
   })
 
   if (formsWithRegions.length === 1) {
     const { form, regions: formRegions } = formsWithRegions[0]
+    const formHeader = fixedDialogHeader(
+      formRegions.header,
+      formRegions.feedback,
+      "dialog-form-header",
+    )
     const scrollingChildren = regions.body.flatMap((child) =>
       child === form ? formRegions.body : [child],
     )
@@ -158,16 +197,20 @@ function arrangeDialogChildren(children: React.ReactNode) {
           "flex min-h-0 flex-1 flex-col gap-4 overflow-hidden",
         ),
       },
-      ...formRegions.header,
+      ...formHeader,
       scrollableDialogBody(scrollingChildren, "dialog-form-body"),
       ...formRegions.footer,
     )
 
-    return [...regions.header, arrangedForm, ...regions.footer]
+    return [
+      ...fixedDialogHeader(regions.header, regions.feedback, "dialog-header"),
+      arrangedForm,
+      ...regions.footer,
+    ]
   }
 
   return [
-    ...regions.header,
+    ...fixedDialogHeader(regions.header, regions.feedback, "dialog-header"),
     scrollableDialogBody(regions.body, "dialog-body"),
     ...regions.footer,
   ]
@@ -177,7 +220,10 @@ function DialogHeader({ className, ...props }: React.ComponentProps<"div">) {
   return (
     <div
       data-slot="dialog-header"
-      className={cn("flex flex-col gap-1.5 pr-8", className)}
+      className={cn(
+        "-mx-[var(--dialog-inset)] -mt-[var(--dialog-inset)] flex shrink-0 flex-col gap-1.5 border-b bg-muted/40 px-[var(--dialog-inset)] py-4 pr-12",
+        className,
+      )}
       {...props}
     />
   )
@@ -187,13 +233,27 @@ function DialogFooter({ className, ...props }: React.ComponentProps<"div">) {
   return (
     <div
       data-slot="dialog-footer"
-      className={cn("flex flex-col-reverse gap-2 sm:flex-row sm:justify-end", className)}
+      className={cn(
+        "-mx-[var(--dialog-inset)] -mb-[var(--dialog-inset)] flex shrink-0 flex-col-reverse gap-2 border-t bg-muted/40 px-[var(--dialog-inset)] py-4 sm:flex-row sm:justify-end",
+        className,
+      )}
+      {...props}
+    />
+  )
+}
+
+function DialogFeedback({ className, ...props }: React.ComponentProps<"div">) {
+  return (
+    <div
+      data-slot="dialog-feedback"
+      className={cn("mt-2 shrink-0", className)}
       {...props}
     />
   )
 }
 
 DialogHeader.dialogRegion = "header" as const
+DialogFeedback.dialogRegion = "feedback" as const
 DialogFooter.dialogRegion = "footer" as const
 
 function DialogTitle({
@@ -230,6 +290,7 @@ export {
   DialogClose,
   DialogContent,
   DialogDescription,
+  DialogFeedback,
   DialogFooter,
   DialogHeader,
   DialogTitle,

@@ -1,12 +1,15 @@
 import { zodResolver } from '@hookform/resolvers/zod'
 import { useMutation, useQueryClient } from '@tanstack/react-query'
-import { useEffect } from 'react'
-import { useForm } from 'react-hook-form'
+import { Minus, Plus } from 'lucide-react'
+import { useEffect, useRef } from 'react'
+import { useFieldArray, useForm } from 'react-hook-form'
 import { z } from 'zod'
 
 import {
   createLabOrder,
+  getLabOrder,
   getOrderErrorMessage,
+  isOrderConcurrencyError,
   updateLabOrder,
   type LabServiceOrder,
 } from '#/api/order-management'
@@ -16,35 +19,40 @@ import {
   Dialog,
   DialogContent,
   DialogDescription,
+  DialogFeedback,
   DialogHeader,
   DialogTitle,
 } from '#/components/ui/dialog'
+import { FieldDescription, FieldError } from '#/components/ui/field'
 import { Input } from '#/components/ui/input'
 import { Label } from '#/components/ui/label'
 import {
   RequiredDialogFooter,
   RequiredFieldName,
 } from '#/components/ui/required-field'
+import { Textarea } from '#/components/ui/textarea'
 import { usePhaenoSession } from '#/features/auth/session-context'
-import { labSampleToWrite } from './lab-order-write'
+
+const duplicateBiologicalSourcesMessage = 'Duplicate biological sources are not permitted.'
+const duplicateBiologicalSourcesMessages = new Set([
+  duplicateBiologicalSourcesMessage,
+  'Each biological source can appear only once.',
+])
 
 const jobDetailsSchema = z.object({
   customerReference: z.string().trim().min(1, 'Job name is required.').max(255, 'Job name must be 255 characters or fewer.'),
-  biologicalSourceMode: z.enum(['shared', 'mixed'], {
-    error: 'Choose whether biological sources are shared or mixed.',
-  }),
-  sharedBiologicalSource: z.string().trim().max(500, 'Biological source must be 500 characters or fewer.'),
+  sourceGroups: z.array(z.object({
+    biologicalSource: z.string().trim().min(1, 'Biological source is required.').max(500),
+    specimenCount: z.coerce.number().int('Use a whole number.').positive('Enter at least one sample.'),
+  })).min(1, 'Add at least one biological source.'),
   storageRequirements: z.string().trim().min(1, 'Storage requirements are required.').max(2000, 'Storage requirements must be 2,000 characters or fewer.'),
   safetyDeclaration: z.string().trim().min(1, 'Safety declaration is required.').max(2000, 'Safety declaration must be 2,000 characters or fewer.'),
   jobNotes: z.string().trim().max(2000, 'Job notes must be 2,000 characters or fewer.'),
 }).superRefine((values, context) => {
-  if (values.biologicalSourceMode === 'shared' && !values.sharedBiologicalSource) {
-    context.addIssue({
-      code: 'custom',
-      path: ['sharedBiologicalSource'],
-      message: 'Biological source is required when all samples share one source.',
-    })
-  }
+  const sourceTotal = values.sourceGroups.reduce((sum, group) => sum + group.specimenCount, 0)
+  if (sourceTotal > 100) context.addIssue({ code: 'custom', path: ['sourceGroups'], message: 'A Job can contain at most 100 samples.' })
+  const sources = normalizedBiologicalSources(values.sourceGroups)
+  if (new Set(sources).size !== sources.length) context.addIssue({ code: 'custom', path: ['sourceGroups'], message: duplicateBiologicalSourcesMessage })
 })
 
 type JobDetailsFormInput = z.input<typeof jobDetailsSchema>
@@ -69,42 +77,27 @@ export function LabJobDetailsDialog({
   const apiEnabled = authProvider !== 'mock' && canCreate
   const form = useForm<JobDetailsFormInput, unknown, JobDetailsValues>({
     resolver: zodResolver(jobDetailsSchema),
+    mode: 'onBlur',
     defaultValues: {
       customerReference: '',
-      biologicalSourceMode: undefined,
-      sharedBiologicalSource: '',
+      sourceGroups: [{ biologicalSource: '', specimenCount: 1 }],
       storageRequirements: '',
       safetyDeclaration: '',
       jobNotes: '',
     },
   })
-
-  useEffect(() => {
-    if (!open) return
-    form.reset({
-      customerReference: order?.customerReference ?? '',
-      biologicalSourceMode: order
-        ? order.hasMixedBiologicalSources
-          ? 'mixed'
-          : order.sharedBiologicalSource
-            ? 'shared'
-            : undefined
-        : undefined,
-      sharedBiologicalSource: order?.sharedBiologicalSource ?? '',
-      storageRequirements: order?.storageRequirements ?? '',
-      safetyDeclaration: order?.safetyDeclaration ?? '',
-      jobNotes: order?.description ?? '',
-    })
-  }, [form, open, order])
+  const sourceGroups = useFieldArray({ control: form.control, name: 'sourceGroups' })
+  const baseOrderRef = useRef<LabServiceOrder | null>(order ?? null)
+  const saveVersionRef = useRef<number | null>(order?.version ?? null)
+  const resetKeyRef = useRef<string | null>(null)
 
   const mutation = useMutation({
     mutationFn: async (values: JobDetailsValues) => {
       const customerReference = values.customerReference
       const description = values.jobNotes || undefined
-      const hasMixedBiologicalSources = values.biologicalSourceMode === 'mixed'
-      const sharedBiologicalSource = hasMixedBiologicalSources
-        ? undefined
-        : values.sharedBiologicalSource
+      const requestedSpecimenCount = values.sourceGroups.reduce((sum, group) => sum + group.specimenCount, 0)
+      const hasMixedBiologicalSources = values.sourceGroups.length > 1
+      const sharedBiologicalSource = hasMixedBiologicalSources ? undefined : values.sourceGroups[0].biologicalSource
       const storageRequirements = values.storageRequirements
       const safetyDeclaration = values.safetyDeclaration
       if (!order) {
@@ -116,31 +109,58 @@ export function LabJobDetailsDialog({
           storageRequirements,
           safetyDeclaration,
           samples: [],
+          requestedSpecimenCount,
+          sourceGroups: values.sourceGroups,
         })
       }
 
-      return updateLabOrder(order.id, {
+      const baseOrder = baseOrderRef.current ?? order
+      const saveVersion = saveVersionRef.current ?? baseOrder.version
+      const update = (version: number) => updateLabOrder(baseOrder.id, {
         customerReference,
         description,
         hasMixedBiologicalSources,
         sharedBiologicalSource,
         storageRequirements,
         safetyDeclaration,
-        samples: order.samples.map(labSampleToWrite),
-        version: order.version,
+        samples: [],
+        version,
+        requestedSpecimenCount,
+        sourceGroups: values.sourceGroups,
+      })
+
+      try {
+        return await update(saveVersion)
+      } catch (error) {
+        if (!isOrderConcurrencyError(error)) throw error
+
+        let latestOrder: LabServiceOrder
+        try {
+          latestOrder = await getLabOrder(baseOrder.id)
+        } catch {
+          throw new Error('The Job changed while you were editing, but the latest record could not be loaded. Close this editor, reopen it, and try again.')
+        }
+
+        baseOrderRef.current = latestOrder
+        saveVersionRef.current = latestOrder.version
+        if (sameEditableJobDetails(baseOrder, latestOrder)) {
+          return update(latestOrder.version)
+        }
+
+        throw new RefreshedJobConflictError(latestOrder)
+      }
+    },
+    onError: (error) => {
+      if (!(error instanceof RefreshedJobConflictError)) return
+      form.reset(jobDetailsFormValues(error.latestOrder), {
+        keepDirtyValues: true,
+        keepErrors: true,
       })
     },
     onSuccess: async (savedOrder) => {
-      form.reset({
-        customerReference: savedOrder.customerReference,
-        biologicalSourceMode: savedOrder.hasMixedBiologicalSources
-          ? 'mixed'
-          : 'shared',
-        sharedBiologicalSource: savedOrder.sharedBiologicalSource ?? '',
-        storageRequirements: savedOrder.storageRequirements,
-        safetyDeclaration: savedOrder.safetyDeclaration,
-        jobNotes: savedOrder.description ?? '',
-      })
+      baseOrderRef.current = savedOrder
+      saveVersionRef.current = savedOrder.version
+      form.reset(jobDetailsFormValues(savedOrder))
       await Promise.all([
         queryClient.invalidateQueries({ queryKey: ['lab-service-orders'] }),
         queryClient.invalidateQueries({
@@ -151,52 +171,84 @@ export function LabJobDetailsDialog({
     },
   })
 
+  useEffect(() => {
+    if (!open) {
+      resetKeyRef.current = null
+      return
+    }
+
+    const resetKey = order?.id ?? 'new-job'
+    if (resetKeyRef.current === resetKey) return
+    resetKeyRef.current = resetKey
+    baseOrderRef.current = order ?? null
+    saveVersionRef.current = order?.version ?? null
+    form.reset(jobDetailsFormValues(order))
+  }, [form, open, order])
+
   const formId = order ? `job-details-${order.id}` : 'create-lab-job'
   const editing = Boolean(order)
   const canSave = apiEnabled && (!editing || Boolean(order?.canEdit))
-  const biologicalSourceMode = form.watch('biologicalSourceMode')
+  const watchedSourceGroups = form.watch('sourceGroups')
+  const sourceTotal = watchedSourceGroups.reduce((sum, group) => sum + (Number(group.specimenCount) || 0), 0)
+  const normalizedSources = normalizedBiologicalSources(watchedSourceGroups)
+  const hasDuplicateSources = new Set(normalizedSources).size !== normalizedSources.length
+  const schemaSourceGroupsError = form.formState.errors.sourceGroups?.root?.message ?? form.formState.errors.sourceGroups?.message
+  const duplicateErrorHasBeenShown = schemaSourceGroupsError
+    ? duplicateBiologicalSourcesMessages.has(schemaSourceGroupsError)
+    : false
+  const sourceGroupsError = hasDuplicateSources && (form.formState.isSubmitted || duplicateErrorHasBeenShown)
+    ? duplicateBiologicalSourcesMessage
+    : duplicateErrorHasBeenShown
+      ? undefined
+      : schemaSourceGroupsError
 
   return (
     <Dialog open={open} onOpenChange={requestOpenChange}>
-      <DialogContent className="max-h-[90dvh] overflow-y-auto sm:max-w-2xl">
-        <DialogHeader>
+      <DialogContent className="max-h-[90dvh] p-0 [--dialog-inset:0px] sm:max-w-3xl">
+        <DialogHeader className="pt-5 pr-12 pl-5">
           <DialogTitle>
-            {editing ? 'Edit job details' : 'Job details'}
+            {editing ? 'Edit Job pricing details' : 'Job pricing details'}
           </DialogTitle>
           <DialogDescription>
-            Set the information shared by every sample in this job. Add each
-            physical sample from the job detail page. Do not enter patient
-            names or identifiers.
+            Enter each biological source and its sample count for pricing.
+            Individual sample IDs and tube barcodes are added only after you
+            accept the price.
           </DialogDescription>
         </DialogHeader>
 
-        {authProvider === 'mock' ? (
-          <Alert>
-            <AlertTitle>Creation is paused in mock-session mode</AlertTitle>
-            <AlertDescription>
-              Connect a real Customer session to create a laboratory job.
-            </AlertDescription>
-          </Alert>
+        {authProvider === 'mock' || !canCreate || mutation.error ? (
+          <DialogFeedback className="space-y-2">
+            {authProvider === 'mock' ? (
+              <Alert>
+                <AlertTitle>Creation is paused in mock-session mode</AlertTitle>
+                <AlertDescription>
+                  Connect a real Customer session to create a laboratory job.
+                </AlertDescription>
+              </Alert>
+            ) : null}
+            {!canCreate ? (
+              <Alert variant="destructive">
+                <AlertTitle>Job details cannot be changed</AlertTitle>
+                <AlertDescription>
+                  An active Customer organization administrator is required.
+                </AlertDescription>
+              </Alert>
+            ) : null}
+            {mutation.error ? (
+              <Alert variant="destructive" role="alert">
+                <AlertTitle>Job details were not saved</AlertTitle>
+                <AlertDescription>
+                  {getOrderErrorMessage(
+                    mutation.error,
+                    'Review the job details and try again.',
+                  )}
+                </AlertDescription>
+              </Alert>
+            ) : null}
+          </DialogFeedback>
         ) : null}
-        {!canCreate ? (
-          <Alert variant="destructive">
-            <AlertTitle>Job details cannot be changed</AlertTitle>
-            <AlertDescription>
-              An active Customer organization administrator is required.
-            </AlertDescription>
-          </Alert>
-        ) : null}
-        {mutation.error ? (
-          <Alert variant="destructive" role="alert">
-            <AlertTitle>Job details were not saved</AlertTitle>
-            <AlertDescription>
-              {getOrderErrorMessage(
-                mutation.error,
-                'Review the job details and try again.',
-              )}
-            </AlertDescription>
-          </Alert>
-        ) : null}
+
+        <div className="px-5">
 
         <form
           id={formId}
@@ -206,6 +258,10 @@ export function LabJobDetailsDialog({
           <Label htmlFor={`${formId}-reference`}>
             <RequiredFieldName>Job name</RequiredFieldName>
           </Label>
+          <FieldDescription id={`${formId}-reference-help`}>
+            Use a short name your organization will recognize. Job names must
+            be unique within your organization.
+          </FieldDescription>
           <Input
             id={`${formId}-reference`}
             className="mt-2"
@@ -214,154 +270,132 @@ export function LabJobDetailsDialog({
             aria-describedby={`${formId}-reference-help${form.formState.errors.customerReference ? ` ${formId}-reference-error` : ''}`}
             {...form.register('customerReference')}
           />
-          <p id={`${formId}-reference-help`} className="mt-2 text-xs text-muted-foreground">
-            Use a short name your organization will recognize. Job names must
-            be unique within your organization.
-          </p>
-          {form.formState.errors.customerReference ? (
-            <p id={`${formId}-reference-error`} className="mt-1 text-sm text-destructive" role="alert">
-              {form.formState.errors.customerReference.message}
-            </p>
-          ) : null}
+          <FieldError id={`${formId}-reference-error`}>
+            {form.formState.errors.customerReference?.message}
+          </FieldError>
 
-          <fieldset
-            className="mt-4"
-            aria-describedby={`${formId}-source-mode-help${form.formState.errors.biologicalSourceMode ? ` ${formId}-source-mode-error` : ''}`}
-          >
-            <legend className="text-sm font-medium">
-              <RequiredFieldName>
-                Do all samples share the same biological source?
-              </RequiredFieldName>
-            </legend>
-            <p id={`${formId}-source-mode-help`} className="mt-1 text-xs text-muted-foreground">
-              Biological source includes the organism or species and source
-              tissue or cell type.
-            </p>
-            <div className="mt-2 grid gap-2 sm:grid-cols-2">
-              <label className="flex cursor-pointer items-start gap-3 rounded-lg border border-input p-3">
-                <input
-                  type="radio"
-                  value="shared"
-                  className="mt-0.5 size-4 accent-primary"
-                  {...form.register('biologicalSourceMode')}
-                />
-                <span>
-                  <span className="block text-sm font-medium">Yes — same source</span>
-                  <span className="mt-1 block text-xs text-muted-foreground">
-                    Enter the source once for the whole job.
-                  </span>
-                </span>
-              </label>
-              <label className="flex cursor-pointer items-start gap-3 rounded-lg border border-input p-3">
-                <input
-                  type="radio"
-                  value="mixed"
-                  className="mt-0.5 size-4 accent-primary"
-                  {...form.register('biologicalSourceMode')}
-                />
-                <span>
-                  <span className="block text-sm font-medium">No — sources vary</span>
-                  <span className="mt-1 block text-xs text-muted-foreground">
-                    Enter a source for each sample.
-                  </span>
-                </span>
-              </label>
+          <fieldset className="mt-4">
+            <legend className="text-sm font-medium"><RequiredFieldName>Biological-source composition</RequiredFieldName></legend>
+            <FieldDescription>List each organism/species and tissue or cell type with its sample count.</FieldDescription>
+            <div className="mt-3 overflow-hidden rounded-lg border">
+              <div className="grid grid-cols-[minmax(0,1fr)_5.5rem_2.25rem] gap-3 border-b bg-muted/40 px-3 py-2 sm:grid-cols-[minmax(0,1fr)_9rem_2.25rem]">
+                <span className="text-sm font-medium"><RequiredFieldName>Biological source</RequiredFieldName></span>
+                <span className="text-sm font-medium"><RequiredFieldName>Samples</RequiredFieldName></span>
+                <span className="sr-only">Actions</span>
+              </div>
+              <div className="divide-y">
+                {sourceGroups.fields.map((field, index) => {
+                  const sourceErrorId = `${formId}-source-${index}-error`
+                  const countErrorId = `${formId}-source-count-${index}-error`
+                  const sourceError = form.formState.errors.sourceGroups?.[index]?.biologicalSource
+                  const countError = form.formState.errors.sourceGroups?.[index]?.specimenCount
+
+                  return (
+                    <div key={field.id} className="grid grid-cols-[minmax(0,1fr)_5.5rem_2.25rem] items-start gap-3 p-3 sm:grid-cols-[minmax(0,1fr)_9rem_2.25rem]">
+                      <div>
+                        <Label className="sr-only" htmlFor={`${formId}-source-${index}`}>
+                          Biological source for source group {index + 1}
+                        </Label>
+                        <Input
+                          id={`${formId}-source-${index}`}
+                          required
+                          placeholder="Human PBMCs, mouse liver…"
+                          aria-invalid={Boolean(sourceError)}
+                          aria-describedby={sourceError ? sourceErrorId : undefined}
+                          {...form.register(`sourceGroups.${index}.biologicalSource`)}
+                        />
+                        <FieldError id={sourceErrorId}>{sourceError?.message}</FieldError>
+                      </div>
+                      <div>
+                        <Label className="sr-only" htmlFor={`${formId}-source-count-${index}`}>
+                          Samples for source group {index + 1}
+                        </Label>
+                        <Input
+                          id={`${formId}-source-count-${index}`}
+                          required
+                          type="number"
+                          min="1"
+                          max="100"
+                          step="1"
+                          inputMode="numeric"
+                          aria-invalid={Boolean(countError)}
+                          aria-describedby={countError ? countErrorId : undefined}
+                          {...form.register(`sourceGroups.${index}.specimenCount`)}
+                        />
+                        <FieldError id={countErrorId}>{countError?.message}</FieldError>
+                      </div>
+                      <Button type="button" size="icon" variant="outline" aria-label={`Remove source group ${index + 1}`} disabled={sourceGroups.fields.length === 1} onClick={() => sourceGroups.remove(index)}><Minus /></Button>
+                    </div>
+                  )
+                })}
+              </div>
             </div>
-            {form.formState.errors.biologicalSourceMode ? (
-              <p id={`${formId}-source-mode-error`} className="mt-1 text-sm text-destructive" role="alert">
-                {form.formState.errors.biologicalSourceMode.message}
-              </p>
-            ) : null}
+            <FieldError>{sourceGroupsError}</FieldError>
+            <div className="mt-3 flex flex-wrap items-center justify-between gap-3">
+              <Button type="button" variant="outline" onClick={() => sourceGroups.append({ biologicalSource: '', specimenCount: 1 })}><Plus data-icon="inline-start" />Add source</Button>
+              <p className="text-sm text-muted-foreground">Total samples: {sourceTotal}</p>
+            </div>
           </fieldset>
-
-          {biologicalSourceMode === 'shared' ? (
-            <div className="mt-4">
-              <Label htmlFor={`${formId}-shared-source`}>
-                <RequiredFieldName>Biological source</RequiredFieldName>
-              </Label>
-              <Input
-                id={`${formId}-shared-source`}
-                className="mt-2"
-                placeholder="Human PBMCs, mouse liver…"
-                aria-invalid={Boolean(form.formState.errors.sharedBiologicalSource)}
-                aria-describedby={`${formId}-shared-source-help${form.formState.errors.sharedBiologicalSource ? ` ${formId}-shared-source-error` : ''}`}
-                {...form.register('sharedBiologicalSource')}
-              />
-              <p id={`${formId}-shared-source-help`} className="mt-1 text-xs text-muted-foreground">
-                This value will be copied into every sample in the job.
-              </p>
-              {form.formState.errors.sharedBiologicalSource ? (
-                <p id={`${formId}-shared-source-error`} className="mt-1 text-sm text-destructive" role="alert">
-                  {form.formState.errors.sharedBiologicalSource.message}
-                </p>
-              ) : null}
-            </div>
-          ) : null}
 
           <Label htmlFor={`${formId}-storage`} className="mt-4">
             <RequiredFieldName>Storage requirements</RequiredFieldName>
           </Label>
-          <textarea
+          <FieldDescription id={`${formId}-storage-help`}>
+            Describe the storage and transport temperature and any freeze/thaw
+            limits for every sample in this job.
+          </FieldDescription>
+          <Textarea
             id={`${formId}-storage`}
-            className="mt-2 min-h-24 w-full rounded-lg border border-input bg-transparent px-3 py-2 text-sm placeholder:text-muted-foreground/60 focus-visible:ring-3 focus-visible:ring-ring/50 focus-visible:outline-none dark:bg-input/30"
+            className="mt-2 min-h-24"
             placeholder="For example: Ship frozen on dry ice; avoid thawing."
             aria-invalid={Boolean(form.formState.errors.storageRequirements)}
             aria-describedby={`${formId}-storage-help${form.formState.errors.storageRequirements ? ` ${formId}-storage-error` : ''}`}
             {...form.register('storageRequirements')}
           />
-          <p id={`${formId}-storage-help`} className="mt-1 text-xs text-muted-foreground">
-            Describe the storage and transport temperature and any freeze/thaw
-            limits for every sample in this job.
-          </p>
-          {form.formState.errors.storageRequirements ? (
-            <p id={`${formId}-storage-error`} className="mt-1 text-sm text-destructive" role="alert">
-              {form.formState.errors.storageRequirements.message}
-            </p>
-          ) : null}
+          <FieldError id={`${formId}-storage-error`}>
+            {form.formState.errors.storageRequirements?.message}
+          </FieldError>
 
           <Label htmlFor={`${formId}-safety`} className="mt-4">
             <RequiredFieldName>Safety declaration</RequiredFieldName>
           </Label>
-          <textarea
+          <FieldDescription id={`${formId}-safety-help`}>
+            Identify biohazards or handling risks shared by the job. Enter “No
+            known hazards” when none apply.
+          </FieldDescription>
+          <Textarea
             id={`${formId}-safety`}
-            className="mt-2 min-h-24 w-full rounded-lg border border-input bg-transparent px-3 py-2 text-sm placeholder:text-muted-foreground/60 focus-visible:ring-3 focus-visible:ring-ring/50 focus-visible:outline-none dark:bg-input/30"
+            className="mt-2 min-h-24"
             placeholder="No known hazards"
             aria-invalid={Boolean(form.formState.errors.safetyDeclaration)}
             aria-describedby={`${formId}-safety-help${form.formState.errors.safetyDeclaration ? ` ${formId}-safety-error` : ''}`}
             {...form.register('safetyDeclaration')}
           />
-          <p id={`${formId}-safety-help`} className="mt-1 text-xs text-muted-foreground">
-            Identify biohazards or handling risks shared by the job. Enter “No
-            known hazards” when none apply.
-          </p>
-          {form.formState.errors.safetyDeclaration ? (
-            <p id={`${formId}-safety-error`} className="mt-1 text-sm text-destructive" role="alert">
-              {form.formState.errors.safetyDeclaration.message}
-            </p>
-          ) : null}
+          <FieldError id={`${formId}-safety-error`}>
+            {form.formState.errors.safetyDeclaration?.message}
+          </FieldError>
 
           <Label htmlFor={`${formId}-notes`} className="mt-4">
             Job notes <span className="font-normal text-muted-foreground">(optional)</span>
           </Label>
-          <textarea
+          <FieldDescription id={`${formId}-notes-help`}>
+            Add information that applies to the job as a whole. Do not include
+            names or direct identifiers.
+          </FieldDescription>
+          <Textarea
             id={`${formId}-notes`}
-            className="mt-2 min-h-24 w-full rounded-lg border border-input bg-transparent px-3 py-2 text-sm placeholder:text-muted-foreground/60 focus-visible:ring-3 focus-visible:ring-ring/50 focus-visible:outline-none dark:bg-input/30"
+            className="mt-2 min-h-24"
             aria-invalid={Boolean(form.formState.errors.jobNotes)}
             aria-describedby={`${formId}-notes-help${form.formState.errors.jobNotes ? ` ${formId}-notes-error` : ''}`}
             {...form.register('jobNotes')}
           />
-          <p id={`${formId}-notes-help`} className="mt-1 text-xs text-muted-foreground">
-            Add information that applies to the job as a whole. Do not include
-            names or direct identifiers.
-          </p>
-          {form.formState.errors.jobNotes ? (
-            <p id={`${formId}-notes-error`} className="mt-1 text-sm text-destructive" role="alert">
-              {form.formState.errors.jobNotes.message}
-            </p>
-          ) : null}
+          <FieldError id={`${formId}-notes-error`}>
+            {form.formState.errors.jobNotes?.message}
+          </FieldError>
         </form>
+        </div>
 
-        <RequiredDialogFooter>
+        <RequiredDialogFooter className="border-t bg-muted/40 px-5 py-4">
             <Button
               type="button"
               variant="outline"
@@ -397,28 +431,61 @@ export function LabJobDetailsDialog({
     ) {
       return
     }
+    if (!nextOpen) mutation.reset()
     onOpenChange(nextOpen)
   }
 
-  function submit(values: JobDetailsValues) {
-    const replacingSampleSources =
-      order?.hasMixedBiologicalSources === true &&
-      values.biologicalSourceMode === 'shared' &&
-      order.samples.some(
-        (sample) =>
-          sample.biologicalSource.trim().toLocaleLowerCase() !==
-          values.sharedBiologicalSource.trim().toLocaleLowerCase(),
-      )
+  function submit(values: JobDetailsValues) { mutation.mutate(values) }
+}
 
-    if (
-      replacingSampleSources &&
-      !window.confirm(
-        'Use this biological source for every sample? This replaces the source on all existing draft samples.',
-      )
-    ) {
-      return
-    }
-
-    mutation.mutate(values)
+class RefreshedJobConflictError extends Error {
+  constructor(readonly latestOrder: LabServiceOrder) {
+    super('The Job changed while you were editing. The latest record was loaded, and your entries were kept. Review them and save again.')
+    this.name = 'RefreshedJobConflictError'
   }
+}
+
+function jobDetailsFormValues(order?: LabServiceOrder | null): JobDetailsFormInput {
+  return {
+    customerReference: order?.customerReference ?? '',
+    sourceGroups: order?.sourceGroups?.length
+      ? order.sourceGroups.map((group) => ({
+          biologicalSource: group.biologicalSource,
+          specimenCount: group.specimenCount,
+        }))
+      : [{
+          biologicalSource: order?.sharedBiologicalSource ?? '',
+          specimenCount: order?.requestedSpecimenCount || 1,
+        }],
+    storageRequirements: order?.storageRequirements ?? '',
+    safetyDeclaration: order?.safetyDeclaration ?? '',
+    jobNotes: order?.description ?? '',
+  }
+}
+
+function sameEditableJobDetails(left: LabServiceOrder, right: LabServiceOrder) {
+  return JSON.stringify(editableJobDetails(left)) === JSON.stringify(editableJobDetails(right))
+}
+
+function editableJobDetails(order: LabServiceOrder) {
+  return {
+    status: order.status,
+    customerReference: order.customerReference,
+    description: order.description ?? '',
+    requestedSpecimenCount: order.requestedSpecimenCount,
+    sourceGroups: order.sourceGroups
+      .map((group) => ({
+        biologicalSource: group.biologicalSource.trim().toLocaleLowerCase(),
+        specimenCount: group.specimenCount,
+      }))
+      .sort((left, right) => left.biologicalSource.localeCompare(right.biologicalSource)),
+    storageRequirements: order.storageRequirements,
+    safetyDeclaration: order.safetyDeclaration,
+  }
+}
+
+function normalizedBiologicalSources(groups: Array<{ biologicalSource?: string }>) {
+  return groups
+    .map((group) => group.biologicalSource?.trim().toLocaleLowerCase() ?? '')
+    .filter(Boolean)
 }

@@ -43,6 +43,7 @@ public sealed class SampleShippingWorkflowController(
         var tenant = await requestContext.RequireSampleShippingTenantAsync(HttpContext, true, cancellationToken);
         var shipment = await dbContext.SampleShipments
             .Include(item => item.Items)
+                .ThenInclude(item => item.TubeSlots)
             .Include(item => item.PacketRevisions)
             .Include(item => item.ReturnKit)
                 .ThenInclude(item => item!.Tubes)
@@ -61,20 +62,27 @@ public sealed class SampleShippingWorkflowController(
         if (shipment.ReturnKit is not { Status: SampleReturnKitStatus.Fulfilled } kit)
             throw Conflict("sample_return_kit_not_fulfilled", "Phaeno must fulfill the registered return kit before tubes can be matched.");
         var item = shipment.Items.SingleOrDefault(value => value.Id == shipmentItemId) ?? throw Missing();
-        EnsureVersion(item.Version, request.Version);
+        var slot = request.TubeSlotId.HasValue
+            ? item.TubeSlots.SingleOrDefault(value => value.Id == request.TubeSlotId.Value) ?? throw Missing()
+            : null;
+        if (item.TubeSlots.Count > 0 && slot is null)
+            throw Invalid("sample_tube_slot_required", "Select the specific tube slot to match.");
+        EnsureVersion(slot?.Version ?? item.Version, request.Version);
         if (!SupplierTubeBarcode.TryNormalize(request.SupplierBarcode, out var normalized))
             throw Invalid("supplier_tube_barcode_invalid", "Scan or enter the complete barcode from a Phaeno-supplied tube.");
         var tube = kit.Tubes.SingleOrDefault(value => value.SupplierBarcode == normalized)
             ?? throw Missing("supplier_tube_not_in_kit", "That tube is not part of this Phaeno return kit.");
-        var otherAssignment = shipment.Items.SingleOrDefault(value =>
-            value.Id != item.Id && value.RegisteredSampleTubeId == tube.Id);
-        if (otherAssignment != null)
-            throw Conflict("supplier_tube_already_assigned", "That tube is already matched to another sample in this shipment.");
-        if (item.RegisteredSampleTubeId == tube.Id)
+        var assignedElsewhere = shipment.Items.Any(value =>
+            value.RegisteredSampleTubeId == tube.Id
+            || value.TubeSlots.Any(valueSlot => valueSlot.RegisteredSampleTubeId == tube.Id
+                && (slot is null || valueSlot.Id != slot.Id)));
+        if (assignedElsewhere)
+            throw Conflict("supplier_tube_already_assigned", "That tube is already matched to another tube slot in this shipment.");
+        if ((slot?.RegisteredSampleTubeId ?? item.RegisteredSampleTubeId) == tube.Id)
             return await reader.ReadAsync(shipment.Id, tenant.Organization.Id, cancellationToken);
 
         var now = DateTime.UtcNow;
-        var previousTubeId = item.RegisteredSampleTubeId;
+        var previousTubeId = slot?.RegisteredSampleTubeId ?? item.RegisteredSampleTubeId;
         if (currentPacket is not null && string.IsNullOrWhiteSpace(request.Reason))
             throw Invalid(
                 "sample_tube_correction_reason_required",
@@ -84,18 +92,18 @@ public sealed class SampleShippingWorkflowController(
             if (string.IsNullOrWhiteSpace(request.Reason))
                 throw Invalid("sample_tube_correction_reason_required", "Enter a reason for changing the tube assignment.");
             var previousTube = kit.Tubes.Single(value => value.Id == previousTubeId.Value);
-            item.ClearTube();
+            if (slot is null) item.ClearTube(); else slot.ClearTube();
             previousTube.MarkAvailable();
             dbContext.SampleTubeAssignmentEvents.Add(new SampleTubeAssignmentEvent(
-                shipment.Id, item.Id, previousTube.Id, item.CustomerSampleId,
+                shipment.Id, item.Id, slot?.Id, previousTube.Id, item.CustomerSampleId,
                 previousTube.SupplierBarcode, SampleTubeAssignmentAction.Cleared,
                 request.Reason, tenant.Actor.Id, now));
         }
 
         tube.MarkAssigned(now);
-        item.AssignTube(tube.Id, now);
+        if (slot is null) item.AssignTube(tube.Id, now); else slot.AssignTube(tube.Id, now);
         dbContext.SampleTubeAssignmentEvents.Add(new SampleTubeAssignmentEvent(
-            shipment.Id, item.Id, tube.Id, item.CustomerSampleId,
+            shipment.Id, item.Id, slot?.Id, tube.Id, item.CustomerSampleId,
             tube.SupplierBarcode,
             previousTubeId.HasValue ? SampleTubeAssignmentAction.Reassigned : SampleTubeAssignmentAction.Assigned,
             request.Reason, tenant.Actor.Id, now));
@@ -172,12 +180,14 @@ public sealed class SampleShippingWorkflowController(
             || samples.ValueKind != JsonValueKind.Array)
             throw Conflict("sample_shipping_crosswalk_unavailable", "The frozen packet crosswalk could not be read.");
         var builder = new StringBuilder();
-        builder.AppendLine("Shipment number,Packet number,Customer sample ID,Sample name,Sample type,Supplier tube barcode");
+        builder.AppendLine("Shipment number,Packet number,Customer sample ID,Tube ordinal,Tube count,Sample name,Sample type,Supplier tube barcode");
         foreach (var item in samples.EnumerateArray())
         {
             builder.Append(Csv(shipment.ShipmentNumber)).Append(',')
                 .Append(Csv(shipment.CurrentPacket!.PacketNumber)).Append(',')
                 .Append(Csv(SnapshotText(item, "customerSampleId"))).Append(',')
+                .Append(SnapshotNumber(item, "tubeOrdinal", 1)).Append(',')
+                .Append(SnapshotNumber(item, "tubeCount", 1)).Append(',')
                 .Append(Csv(SnapshotText(item, "sampleName"))).Append(',')
                 .Append(Csv(SnapshotText(item, "sampleTypeName"))).Append(',')
                 .Append(Csv(SnapshotText(item, "supplierTubeBarcode"))).AppendLine();
@@ -192,6 +202,11 @@ public sealed class SampleShippingWorkflowController(
         item.TryGetProperty(propertyName, out var value) && value.ValueKind == JsonValueKind.String
             ? value.GetString() ?? string.Empty
             : string.Empty;
+
+    private static int SnapshotNumber(JsonElement item, string propertyName, int fallback) =>
+        item.TryGetProperty(propertyName, out var value) && value.TryGetInt32(out var number)
+            ? number
+            : fallback;
 
     private static DateTime RequireUtc(DateTime value, string label)
     {

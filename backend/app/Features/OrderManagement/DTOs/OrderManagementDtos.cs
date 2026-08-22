@@ -118,6 +118,12 @@ public sealed record LabSampleDto(
     string? InternalNote,
     long Version);
 
+public sealed record LabServiceSourceGroupDto(
+    Guid Id,
+    string BiologicalSource,
+    int SpecimenCount,
+    long Version);
+
 public sealed record ReleasedDeliverableRetentionDto(
     DateTime ReleasedAtUtc,
     DateTime WarningAtUtc,
@@ -202,7 +208,12 @@ public sealed record LabServiceOrderDto(
     int LabCustomerActionCount = 0,
     string? LabCustomerActionSummary = null,
     string? LabPermittedQcProjectionJson = null,
-    bool LabReadyForRelease = false);
+    bool LabReadyForRelease = false,
+    int RequestedSpecimenCount = 0,
+    IReadOnlyList<LabServiceSourceGroupDto>? SourceGroups = null,
+    DateTime? SampleRosterFinalizedAt = null,
+    bool CanEditSamples = false,
+    bool CanFinalizeSamples = false);
 
 public sealed record ReagentOrderLineDto(
     Guid Id,
@@ -483,7 +494,34 @@ public sealed record LabOrderWriteRequest(
     string StorageRequirements,
     string SafetyDeclaration,
     IReadOnlyList<LabSampleWriteRequest> Samples,
-    long? Version = null);
+    long? Version = null,
+    int RequestedSpecimenCount = 0,
+    IReadOnlyList<LabServiceSourceGroupWriteRequest>? SourceGroups = null);
+public sealed record LabServiceSourceGroupWriteRequest(string BiologicalSource, int SpecimenCount);
+public sealed record LabSampleRosterWriteRequest(
+    string CustomerSampleId,
+    string BiologicalSource,
+    int TubeCount,
+    DateTime? CollectionDate = null,
+    decimal? Concentration = null,
+    string? Notes = null,
+    long? Version = null,
+    long? OrderVersion = null);
+public sealed record LabSampleImportRowDto(
+    int RowNumber,
+    string CustomerSampleId,
+    string BiologicalSource,
+    int TubeCount);
+public sealed record LabSampleImportErrorDto(int RowNumber, string Column, string Message);
+public sealed record LabSampleImportPreviewDto(
+    Guid PreviewId,
+    int ValidRowCount,
+    int BlankRowCount,
+    IReadOnlyList<LabSampleImportRowDto> Rows,
+    IReadOnlyList<LabSampleImportErrorDto> Errors,
+    IReadOnlyDictionary<string, int> SourceCounts,
+    DateTime ExpiresAt);
+public sealed record ConfirmLabSampleImportRequest(long Version);
 public sealed record SampleShipmentRequest(long Version, string? Carrier, string? TrackingNumber, DateTime? ShippedAt);
 public sealed record LabSampleReceiptRequest(long Version, DateTime ReceivedAt, string ReceiptCondition);
 public sealed record LabSampleAccessionRequest(long Version, string AccessionId);

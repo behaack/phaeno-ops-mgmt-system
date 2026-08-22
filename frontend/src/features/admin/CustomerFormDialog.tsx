@@ -91,7 +91,7 @@ export function CustomerFormDialog({
   return (
     <Dialog open={open} onOpenChange={changeOpen}>
       <DialogContent
-        className="gap-0 overflow-hidden p-0 sm:max-w-2xl"
+        className="gap-0 overflow-hidden p-0 [--dialog-inset:0px] sm:max-w-2xl"
         onCloseAutoFocus={(event) => {
           if (returnFocusRef?.current) {
             event.preventDefault()
@@ -99,7 +99,7 @@ export function CustomerFormDialog({
           }
         }}
       >
-        <DialogHeader className="border-b px-6 py-5">
+        <DialogHeader className="border-b py-5 pr-12 pl-6">
           <DialogTitle>
             {isEditing ? `Edit ${customer.name}` : 'New customer'}
           </DialogTitle>

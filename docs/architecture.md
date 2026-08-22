@@ -86,8 +86,9 @@ configuration, Partner kit, request-revision, quote, workflow, integration, and
 notification rules, ports, and external download audit therefore remain usable
 independently of the current HTTP, EF, Clerk, QuickBooks, and Postmark adapters.
 The Lab Operations provider port follows the same dependency direction. Quote
-acceptance creates the Commercial authorization and invokes the internal
-provider in one serializable database transaction. Approved cancellation also
+acceptance freezes the priced scope and opens sample-roster entry. Finalizing
+the exact compliant roster creates the Commercial authorization and invokes
+the internal provider in one serializable database transaction. Approved cancellation also
 reaches Lab before Commercial commits the decision. Lab writes produce durable,
 versioned events; the hosted dispatcher applies idempotent Commercial
 projections and receipts. Ready for release and reviewer-permitted QC cross this

@@ -22,6 +22,7 @@ public sealed class SampleShippingPacketService(PSeqOperationsDbContext dbContex
 
         var shipment = await dbContext.SampleShipments
             .Include(item => item.Items)
+                .ThenInclude(item => item.TubeSlots)
             .Include(item => item.PacketRevisions)
             .Include(item => item.ReturnKit)
                 .ThenInclude(item => item!.Tubes)
@@ -55,12 +56,16 @@ public sealed class SampleShippingPacketService(PSeqOperationsDbContext dbContex
                 "sample_return_kit_not_fulfilled",
                 "The Phaeno return kit must be fulfilled before the shipping packet can be issued.",
                 StatusCodes.Status409Conflict);
-        if (shipment.Items.Any(item => !item.RegisteredSampleTubeId.HasValue))
+        if (shipment.Items.Any(item => item.TubeSlots.Count > 0
+            ? item.TubeSlots.Any(slot => !slot.RegisteredSampleTubeId.HasValue)
+            : !item.RegisteredSampleTubeId.HasValue))
             throw new OrderManagementException(
                 "sample_tube_assignment_incomplete",
-                "Match every expected sample to one Phaeno-supplied tube before issuing the packet.",
+                "Match every expected tube slot to one Phaeno-supplied tube before issuing the packet.",
                 StatusCodes.Status409Conflict);
-        var assignedTubeIds = shipment.Items.Select(item => item.RegisteredSampleTubeId!.Value).ToList();
+        var assignedTubeIds = shipment.Items.SelectMany(item => item.TubeSlots.Count > 0
+            ? item.TubeSlots.Select(slot => slot.RegisteredSampleTubeId!.Value)
+            : [item.RegisteredSampleTubeId!.Value]).ToList();
         if (assignedTubeIds.Distinct().Count() != assignedTubeIds.Count)
             throw new OrderManagementException(
                 "sample_tube_assignment_duplicate",
@@ -297,7 +302,25 @@ public sealed class SampleShippingPacketService(PSeqOperationsDbContext dbContex
             shipment.LabWorkOrderId,
             samples = shipment.Items
                 .OrderBy(item => item.CustomerSampleId)
-                .Select(item => new
+                .SelectMany(item => item.TubeSlots.Count > 0
+                    ? item.TubeSlots.OrderBy(slot => slot.Ordinal).Select(slot => new
+                    {
+                        item.SubmittedSpecimenId,
+                        item.SampleTypeDefinitionId,
+                        sampleTypeName = sampleTypesById[item.SampleTypeDefinitionId].Name,
+                        item.CustomerSampleId,
+                        item.SampleName,
+                        item.Quantity,
+                        item.QuantityUnit,
+                        tubeSlotId = (Guid?)slot.Id,
+                        tubeOrdinal = slot.Ordinal,
+                        tubeCount = item.TubeSlots.Count,
+                        registeredSampleTubeId = slot.RegisteredSampleTubeId,
+                        supplierTubeBarcode = slot.RegisteredSampleTubeId.HasValue
+                            ? tubesById[slot.RegisteredSampleTubeId.Value].SupplierBarcode
+                            : null
+                    })
+                    : new[] { new
                 {
                     item.SubmittedSpecimenId,
                     item.SampleTypeDefinitionId,
@@ -306,10 +329,13 @@ public sealed class SampleShippingPacketService(PSeqOperationsDbContext dbContex
                     item.SampleName,
                     item.Quantity,
                     item.QuantityUnit,
+                    tubeSlotId = (Guid?)null,
+                    tubeOrdinal = 1,
+                    tubeCount = 1,
                     registeredSampleTubeId = item.RegisteredSampleTubeId,
                     supplierTubeBarcode = item.RegisteredSampleTubeId.HasValue
                         ? tubesById[item.RegisteredSampleTubeId.Value].SupplierBarcode
                         : null
-                })
+                } })
         }, SnapshotOptions);
 }

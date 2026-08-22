@@ -80,7 +80,7 @@ export function OrderIntakePanel({
   const [createdHandoff, setCreatedHandoff] = useState<RelationshipRequest | null>(null)
   const orders = useQuery({
     queryKey: ['platform-orders', 'lab', 'intake'],
-    queryFn: () => listPlatformOrders('lab', { status: 'PlacedAwaitingSamples' }),
+    queryFn: () => listPlatformOrders('lab', { status: 'PlacedAwaitingSamples', readyForIntake: true }),
     enabled: apiEnabled,
   })
   const handoffs = useQuery({
@@ -261,7 +261,7 @@ export function OrderIntakePanel({
                 <div className="mt-5 border-t pt-5">
                   <h3 className="font-medium">Expected tube crosswalk</h3>
                   <p className="mt-1 text-sm text-muted-foreground">Scan each physical tube and compare it with the frozen Customer sample mapping before recording receipt or accession.</p>
-                  <div className="mt-3 overflow-x-auto"><table className="w-full text-left text-sm"><thead className="border-b text-muted-foreground"><tr><th className="px-2 py-2 font-medium">Customer sample ID</th><th className="px-2 py-2 font-medium">Sample</th><th className="px-2 py-2 font-medium">Expected tube</th><th className="px-2 py-2 font-medium">State</th></tr></thead><tbody>{packetScan.data.crosswalk.map((item) => <tr key={item.shipmentItemId} className="border-b last:border-0"><td className="px-2 py-2 font-medium">{item.customerSampleId}</td><td className="px-2 py-2">{item.sampleName}</td><td className="px-2 py-2 font-mono">{item.supplierTubeBarcode ?? 'Missing assignment'}</td><td className="px-2 py-2">{formatCompactStatus(item.tubeStatus)}</td></tr>)}</tbody></table></div>
+                  <div className="mt-3 overflow-x-auto"><table className="w-full text-left text-sm"><thead className="border-b text-muted-foreground"><tr><th className="px-2 py-2 font-medium">Customer sample ID</th><th className="px-2 py-2 font-medium">Sample</th><th className="px-2 py-2 font-medium">Expected tube</th><th className="px-2 py-2 font-medium">State</th></tr></thead><tbody>{packetScan.data.crosswalk.map((item) => <tr key={item.tubeSlotId ?? item.shipmentItemId} className="border-b last:border-0"><td className="px-2 py-2 font-medium">{item.customerSampleId}<p className="mt-1 text-xs font-normal text-muted-foreground">Tube {item.tubeOrdinal ?? 1} of {item.tubeCount ?? 1}</p></td><td className="px-2 py-2">{item.sampleName}</td><td className="px-2 py-2 font-mono">{item.supplierTubeBarcode ?? 'Missing assignment'}</td><td className="px-2 py-2">{formatCompactStatus(item.tubeStatus)}</td></tr>)}</tbody></table></div>
                   <form className="mt-4 flex flex-col gap-3 sm:flex-row sm:items-end" onSubmit={(event) => { event.preventDefault(); const value = tubeBarcode.trim(); if (value) tubeScan.mutate(value) }}><div className="w-full max-w-xl"><Label htmlFor="registered-tube-barcode">Supplier tube barcode</Label><Input ref={tubeBarcodeInput} id="registered-tube-barcode" className="mt-2 font-mono uppercase" value={tubeBarcode} onChange={(event) => setTubeBarcode(event.target.value)} autoComplete="off" spellCheck={false} /></div><Button type="submit" disabled={!tubeBarcode.trim() || tubeScan.isPending}><ScanLine data-icon="inline-start" />{tubeScan.isPending ? 'Comparing…' : 'Compare tube'}</Button></form>
                   {tubeScan.error ? <Alert variant="destructive" className="mt-3"><AlertTitle>Tube could not be checked</AlertTitle><AlertDescription>{getOrderErrorMessage(tubeScan.error, 'Check the complete barcode and scan again.')}</AlertDescription></Alert> : null}
                   {tubeScan.data ? <Alert variant={tubeScan.data.isExpected ? 'default' : 'destructive'} className="mt-3"><AlertTitle>{tubeScan.data.isExpected ? (tubeScan.data.isAccessioned ? 'Tube was already accessioned' : 'Tube matches this packet') : 'Stop: tube does not match this packet'}</AlertTitle><AlertDescription>{tubeScan.data.isExpected ? `${tubeScan.data.supplierTubeBarcode} maps to Customer sample ${tubeScan.data.customerSampleId}. This comparison did not record receipt or accession.` : tubeScanOutcome(tubeScan.data.outcome)}</AlertDescription></Alert> : null}
@@ -599,8 +599,9 @@ function formatSourceReference(value: string | null) {
     : value ?? 'No HubSpot Deal reference'
 }
 
-function formatAuthorizationSource(value: 'ProspectTrialProject' | 'CustomerPromotionalOrder') {
-  return value === 'ProspectTrialProject' ? 'Trial Project' : 'Customer promotional order'
+function formatAuthorizationSource(value: 'ProspectTrialProject' | 'CustomerPromotionalOrder' | 'CustomerLabServiceOrder') {
+  if (value === 'ProspectTrialProject') return 'Trial Project'
+  return value === 'CustomerLabServiceOrder' ? 'Customer Lab Service Job' : 'Customer promotional order'
 }
 
 function tubeScanOutcome(value: string) {

@@ -203,6 +203,22 @@ public static class OrderManagementModelConfiguration
             Audit(entity);
         });
 
+        modelBuilder.Entity<SampleShipmentTubeSlot>(entity =>
+        {
+            entity.HasKey(e => e.Id);
+            entity.HasIndex(e => new { e.SampleShipmentItemId, e.Ordinal }).IsUnique();
+            entity.HasIndex(e => e.RegisteredSampleTubeId).IsUnique();
+            entity.HasOne<SampleShipmentItem>()
+                .WithMany(e => e.TubeSlots)
+                .HasForeignKey(e => e.SampleShipmentItemId)
+                .OnDelete(DeleteBehavior.Restrict);
+            entity.HasOne<RegisteredSampleTube>()
+                .WithMany()
+                .HasForeignKey(e => e.RegisteredSampleTubeId)
+                .OnDelete(DeleteBehavior.Restrict);
+            Audit(entity);
+        });
+
         modelBuilder.Entity<SampleTubeAssignmentEvent>(entity =>
         {
             entity.HasKey(e => e.Id);
@@ -219,6 +235,10 @@ public static class OrderManagementModelConfiguration
             entity.HasOne<SampleShipmentItem>()
                 .WithMany()
                 .HasForeignKey(e => e.SampleShipmentItemId)
+                .OnDelete(DeleteBehavior.Restrict);
+            entity.HasOne<SampleShipmentTubeSlot>()
+                .WithMany()
+                .HasForeignKey(e => e.SampleShipmentTubeSlotId)
                 .OnDelete(DeleteBehavior.Restrict);
             entity.HasOne<RegisteredSampleTube>()
                 .WithMany()
@@ -452,6 +472,7 @@ public static class OrderManagementModelConfiguration
             Text(entity.Property(e => e.StorageRequirements), 2000);
             Text(entity.Property(e => e.SafetyDeclaration), 2000);
             Text(entity.Property(e => e.SubmissionInstructionsSnapshot), 8000);
+            Json(entity.Property(e => e.PlacementSnapshotJson), false);
             EnumText(entity.Property(e => e.Status));
             EnumText(entity.Property(e => e.ResumeStatus), false);
             Text(entity.Property(e => e.TenantSafeReason), 2000, false);
@@ -463,6 +484,34 @@ public static class OrderManagementModelConfiguration
             entity.HasIndex(e => e.CurrentQuoteId);
             entity.HasOne<Organization>().WithMany().HasForeignKey(e => e.OrganizationId).OnDelete(DeleteBehavior.Restrict);
             entity.HasOne<User>().WithMany().HasForeignKey(e => e.AssignedToUserId).OnDelete(DeleteBehavior.Restrict);
+            entity.HasOne<User>().WithMany().HasForeignKey(e => e.SampleRosterFinalizedByUserId).OnDelete(DeleteBehavior.Restrict);
+            Audit(entity);
+        });
+
+        modelBuilder.Entity<LabServiceSourceGroup>(entity =>
+        {
+            entity.ToTable("lab_service_source_groups", commercialSchema);
+            entity.HasKey(e => e.Id);
+            Text(entity.Property(e => e.BiologicalSource), 500);
+            Text(entity.Property(e => e.NormalizedBiologicalSource), 500);
+            entity.HasIndex(e => new { e.LabServiceOrderId, e.NormalizedBiologicalSource }).IsUnique();
+            entity.HasOne<LabServiceOrder>().WithMany(e => e.SourceGroups)
+                .HasForeignKey(e => e.LabServiceOrderId).OnDelete(DeleteBehavior.Restrict);
+            Audit(entity);
+        });
+
+        modelBuilder.Entity<LabSampleImportPreview>(entity =>
+        {
+            entity.ToTable("lab_sample_import_previews", commercialSchema);
+            entity.HasKey(e => e.Id);
+            Text(entity.Property(e => e.FileSha256), 64);
+            Json(entity.Property(e => e.RowsJson));
+            Json(entity.Property(e => e.ErrorsJson));
+            entity.HasIndex(e => new { e.LabServiceOrderId, e.CreatedAt });
+            entity.HasIndex(e => e.ExpiresAt);
+            entity.HasOne<LabServiceOrder>().WithMany().HasForeignKey(e => e.LabServiceOrderId).OnDelete(DeleteBehavior.Restrict);
+            entity.HasOne<Organization>().WithMany().HasForeignKey(e => e.OrganizationId).OnDelete(DeleteBehavior.Restrict);
+            entity.HasOne<User>().WithMany().HasForeignKey(e => e.ActorUserId).OnDelete(DeleteBehavior.Restrict);
             Audit(entity);
         });
 

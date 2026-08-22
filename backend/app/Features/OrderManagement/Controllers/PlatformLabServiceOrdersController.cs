@@ -40,6 +40,7 @@ public sealed class PlatformLabServiceOrdersController(
         [FromQuery] bool unassigned = false,
         [FromQuery] bool overdue = false,
         [FromQuery] bool holds = false,
+        [FromQuery] bool readyForIntake = false,
         [FromQuery] DateTime? updatedFrom = null,
         [FromQuery] DateTime? updatedTo = null,
         [FromQuery] int page = 1,
@@ -66,6 +67,7 @@ public sealed class PlatformLabServiceOrdersController(
         if (assignedToUserId.HasValue) query = query.Where(order => order.AssignedToUserId == assignedToUserId.Value);
         if (unassigned) query = query.Where(order => order.AssignedToUserId == null);
         if (holds) query = query.Where(order => order.Status == LabServiceOrderStatus.OnHold);
+        if (readyForIntake) query = query.Where(order => order.SampleRosterFinalizedAt != null);
         if (overdue)
         {
             var now = DateTime.UtcNow;
@@ -172,6 +174,9 @@ public sealed class PlatformLabServiceOrdersController(
             throw Conflict("quote_not_allowed", "A quote can be issued only while pricing this request.");
         if (request.Lines.Count == 0) throw Invalid("quote_lines_required", "At least one quote line is required.");
         if (request.Lines.Any(line => line.Quantity <= 0 || line.UnitPrice < 0)) throw Invalid("invalid_quote_line", "Quote quantities must be positive and prices cannot be negative.");
+        if (!request.Lines.Any(line => line.Quantity == order.RequestedSpecimenCount))
+            throw Invalid("quote_specimen_quantity_mismatch",
+                $"At least one specimen-priced quote line must use the Job's committed quantity of {order.RequestedSpecimenCount}.");
         var itemIds = request.Lines.Select(line => line.CatalogItemId).Distinct().ToList();
         var catalog = await dbContext.QboCatalogItems.AsNoTracking().Where(item => itemIds.Contains(item.Id) && item.IsActive)
             .ToDictionaryAsync(item => item.Id, cancellationToken);
@@ -426,7 +431,8 @@ public sealed class PlatformLabServiceOrdersController(
     }
 
     private async Task<LabServiceOrder> ReadAsync(Guid orderId, CancellationToken cancellationToken)
-        => await dbContext.LabServiceOrders.Include(order => order.Samples).Include(order => order.Quotes).Include(order => order.Revisions)
+        => await dbContext.LabServiceOrders.Include(order => order.Samples).Include(order => order.SourceGroups)
+            .Include(order => order.Quotes).Include(order => order.Revisions)
             .FirstOrDefaultAsync(order => order.Id == orderId && !order.IsDiscarded, cancellationToken) ?? throw Missing();
 
     private async Task<LabServiceOrderDto> MapAsync(LabServiceOrder order, CancellationToken cancellationToken)
@@ -463,7 +469,13 @@ public sealed class PlatformLabServiceOrdersController(
             LabCustomerActionCount: projection?.ActiveCustomerActionCount ?? 0,
             LabCustomerActionSummary: projection?.CustomerSafeSummary,
             LabPermittedQcProjectionJson: projection?.PermittedQcProjectionJson,
-            LabReadyForRelease: projection?.Milestone == "ReadyForRelease");
+            LabReadyForRelease: projection?.Milestone == "ReadyForRelease",
+            RequestedSpecimenCount: order.RequestedSpecimenCount,
+            SourceGroups: order.SourceGroups.OrderBy(group => group.BiologicalSource)
+                .Select(group => new LabServiceSourceGroupDto(group.Id, group.BiologicalSource, group.SpecimenCount, group.Version)).ToList(),
+            SampleRosterFinalizedAt: order.SampleRosterFinalizedAt,
+            CanEditSamples: false,
+            CanFinalizeSamples: false);
     }
 
     private void Event(LabServiceOrder order, string from, string to, Guid actorId, string? reason = null, string? internalNote = null, Guid? childId = null)

@@ -5,10 +5,10 @@ import { useForm } from 'react-hook-form'
 import { z } from 'zod'
 
 import {
+  addLabSample,
   getOrderErrorMessage,
-  updateLabOrder,
+  updateLabSample,
   type LabSample,
-  type LabSampleWrite,
   type LabServiceOrder,
 } from '#/api/order-management'
 import { Alert, AlertDescription, AlertTitle } from '#/components/ui/alert'
@@ -17,6 +17,7 @@ import {
   Dialog,
   DialogContent,
   DialogDescription,
+  DialogFeedback,
   DialogHeader,
   DialogTitle,
 } from '#/components/ui/dialog'
@@ -27,10 +28,6 @@ import {
   RequiredFieldName,
 } from '#/components/ui/required-field'
 import { usePhaenoSession } from '#/features/auth/session-context'
-import { labSampleToWrite, readAnalysisIds } from './lab-order-write'
-
-const STANDARD_MATERIAL_TYPE = 'extracted_rna'
-const TUBE_QUANTITY_UNIT = 'tube'
 
 const sampleSchema = z.object({
   customerSampleId: z
@@ -70,7 +67,7 @@ export function LabSampleDialog({
   const { authProvider, session } = usePhaenoSession()
   const queryClient = useQueryClient()
   const canEdit =
-    Boolean(session?.capabilities.canCreateLabServiceRequests) && order.canEdit
+    Boolean(session?.capabilities.canCreateLabServiceRequests) && order.canEditSamples
   const apiEnabled = authProvider !== 'mock' && canEdit
   const form = useForm<SampleFormInput, unknown, SampleValues>({
     resolver: zodResolver(sampleSchema),
@@ -84,20 +81,17 @@ export function LabSampleDialog({
 
   const mutation = useMutation({
     mutationFn: (values: SampleValues) => {
-      const savedSample = sampleValuesToWrite(values, order, sample)
-      const existingSamples = order.samples.map((item) =>
-        item.id === sample?.id ? savedSample : labSampleToWrite(item),
-      )
-      return updateLabOrder(order.id, {
-        customerReference: order.customerReference,
-        description: order.description ?? undefined,
-        hasMixedBiologicalSources: order.hasMixedBiologicalSources,
-        sharedBiologicalSource: order.sharedBiologicalSource ?? undefined,
-        storageRequirements: order.storageRequirements,
-        safetyDeclaration: order.safetyDeclaration,
-        samples: sample ? existingSamples : [...existingSamples, savedSample],
-        version: order.version,
-      })
+      const input = {
+        customerSampleId: values.customerSampleId,
+        biologicalSource: values.biologicalSource,
+        tubeCount: values.quantity,
+        collectionDate: sample?.collectionDate,
+        concentration: sample?.concentration,
+        notes: sample?.notes,
+      }
+      return sample
+        ? updateLabSample(order.id, sample.id, { ...input, version: sample.version })
+        : addLabSample(order.id, { ...input, orderVersion: order.version })
     },
     onSuccess: async (savedOrder) => {
       form.reset(sampleToForm(sample, savedOrder))
@@ -116,23 +110,21 @@ export function LabSampleDialog({
 
   return (
     <Dialog open={open} onOpenChange={requestOpenChange}>
-      <DialogContent className="max-w-3xl overflow-hidden p-0">
-        <DialogHeader className="px-4 pt-4">
+      <DialogContent className="max-w-3xl overflow-hidden p-0 [--dialog-inset:0px]">
+        <DialogHeader className="pt-4 pr-12 pl-4">
           <DialogTitle>{editing ? 'Edit sample details' : 'Add sample'}</DialogTitle>
           <DialogDescription>
             Sample type: Extracted RNA. Enter the scientific intake information.
             Storage, safety, and notes are set for the job. Every sample receives
             the standard data-file set.{' '}
-            {order.hasMixedBiologicalSources
-              ? 'Enter this sample’s biological source.'
-              : 'The shared biological source is set in Job details.'}{' '}
+            Choose one of the biological sources accepted with the Job.{' '}
             Do not use patient names or direct identifiers.
           </DialogDescription>
         </DialogHeader>
 
-        <div className="max-h-[65dvh] overflow-y-auto px-4">
-          {mutation.error ? (
-            <Alert variant="destructive" className="mb-4" role="alert">
+        {mutation.error ? (
+          <DialogFeedback>
+            <Alert variant="destructive" role="alert">
               <AlertTitle>Sample was not saved</AlertTitle>
               <AlertDescription>
                 {getOrderErrorMessage(
@@ -141,7 +133,10 @@ export function LabSampleDialog({
                 )}
               </AlertDescription>
             </Alert>
-          ) : null}
+          </DialogFeedback>
+        ) : null}
+
+        <div className="max-h-[65dvh] overflow-y-auto px-4">
           <form
             id={formId}
             noValidate
@@ -167,7 +162,7 @@ export function LabSampleDialog({
                   {...form.register('customerSampleId')}
                 />
               </Field>
-              {order.hasMixedBiologicalSources ? (
+              {order.sourceGroups.length > 1 ? (
                 <Field
                   label="Biological source"
                   id={`${formId}-source`}
@@ -176,23 +171,26 @@ export function LabSampleDialog({
                   required
                   error={form.formState.errors.biologicalSource?.message}
                 >
-                  <Input
+                  <select
                     id={`${formId}-source`}
-                    placeholder="Human PBMCs, mouse liver…"
+                    className="h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm focus-visible:ring-3 focus-visible:ring-ring/50 focus-visible:outline-none"
                     aria-invalid={Boolean(form.formState.errors.biologicalSource)}
                     aria-describedby={fieldDescriptionIds(
                       `${formId}-source`,
                       form.formState.errors.biologicalSource?.message,
                     )}
                     {...form.register('biologicalSource')}
-                  />
+                  >
+                    <option value="">Select a source</option>
+                    {order.sourceGroups.map((group) => <option key={group.id} value={group.biologicalSource}>{group.biologicalSource}</option>)}
+                  </select>
                 </Field>
               ) : null}
               <Field
                 label="Quantity (tubes)"
                 id={`${formId}-quantity`}
                 description="The number of tubes you will send for this sample."
-                alignControl={!order.hasMixedBiologicalSources}
+                alignControl={order.sourceGroups.length === 1}
                 required
                 error={form.formState.errors.quantity?.message}
               >
@@ -252,32 +250,6 @@ export function LabSampleDialog({
   }
 }
 
-function sampleValuesToWrite(
-  values: SampleValues,
-  order: LabServiceOrder,
-  sample?: LabSample | null,
-): LabSampleWrite {
-  return {
-    id: sample?.id,
-    customerSampleId: values.customerSampleId,
-    materialType: STANDARD_MATERIAL_TYPE,
-    biologicalSource: order.hasMixedBiologicalSources
-      ? values.biologicalSource
-      : order.sharedBiologicalSource ?? '',
-    quantity: values.quantity,
-    quantityUnit: TUBE_QUANTITY_UNIT,
-    storageRequirements: order.storageRequirements,
-    safetyDeclaration: order.safetyDeclaration,
-    concentration: sample?.concentration ?? null,
-    notes: sample?.notes ?? null,
-    analysisDefinitionIds: sample
-      ? readAnalysisIds(sample.analysisDefinitionIdsJson)
-      : [],
-    collectionDate: sample?.collectionDate,
-    replacementForSampleId: sample?.replacementForSampleId,
-  }
-}
-
 function sampleToForm(
   sample: LabSample | null | undefined,
   order: LabServiceOrder,
@@ -285,7 +257,7 @@ function sampleToForm(
   return {
     customerSampleId: sample?.customerSampleId ?? '',
     biologicalSource:
-      sample?.biologicalSource ?? order.sharedBiologicalSource ?? '',
+      sample?.biologicalSource ?? order.sourceGroups[0]?.biologicalSource ?? order.sharedBiologicalSource ?? '',
     quantity: sample?.quantity ?? 1,
   }
 }

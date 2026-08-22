@@ -6,7 +6,8 @@ using PSeq.Operations.Commercial.Common.Persistence;
 public enum SampleShipmentAuthorizationSource
 {
     ProspectTrialProject,
-    CustomerPromotionalOrder
+    CustomerPromotionalOrder,
+    CustomerLabServiceOrder
 }
 
 public enum SampleShipmentStatus
@@ -452,8 +453,8 @@ public sealed class SampleReturnKit : IAudit, IConcurrency
     {
         if (sampleShipmentId == Guid.Empty || organizationId == Guid.Empty || authorizationSourceId == Guid.Empty)
             throw new ArgumentException("Shipment, organization, and authorization identifiers are required.");
-        if (requiredTubeCount < 1 || requiredTubeCount > 100)
-            throw new ArgumentOutOfRangeException(nameof(requiredTubeCount), "A return kit must contain between 1 and 100 tubes.");
+        if (requiredTubeCount < 1 || requiredTubeCount > 10_000)
+            throw new ArgumentOutOfRangeException(nameof(requiredTubeCount), "A return kit must contain between 1 and 10,000 tubes.");
 
         KitNumber = SampleShippingText.Reference(kitNumber, nameof(kitNumber));
         SampleShipmentId = sampleShipmentId;
@@ -573,6 +574,7 @@ public sealed class SampleTubeAssignmentEvent
     public Guid Id { get; private set; } = Guid.NewGuid();
     public Guid SampleShipmentId { get; private set; }
     public Guid SampleShipmentItemId { get; private set; }
+    public Guid? SampleShipmentTubeSlotId { get; private set; }
     public Guid RegisteredSampleTubeId { get; private set; }
     public string CustomerSampleId { get; private set; } = null!;
     public string SupplierBarcode { get; private set; } = null!;
@@ -593,12 +595,27 @@ public sealed class SampleTubeAssignmentEvent
         string? reason,
         Guid actorUserId,
         DateTime occurredAt)
+        : this(sampleShipmentId, sampleShipmentItemId, null, registeredSampleTubeId,
+            customerSampleId, supplierBarcode, action, reason, actorUserId, occurredAt) { }
+
+    public SampleTubeAssignmentEvent(
+        Guid sampleShipmentId,
+        Guid sampleShipmentItemId,
+        Guid? sampleShipmentTubeSlotId,
+        Guid registeredSampleTubeId,
+        string customerSampleId,
+        string supplierBarcode,
+        SampleTubeAssignmentAction action,
+        string? reason,
+        Guid actorUserId,
+        DateTime occurredAt)
     {
         if (sampleShipmentId == Guid.Empty || sampleShipmentItemId == Guid.Empty
             || registeredSampleTubeId == Guid.Empty || actorUserId == Guid.Empty)
             throw new ArgumentException("Shipment, item, tube, and actor identifiers are required.");
         SampleShipmentId = sampleShipmentId;
         SampleShipmentItemId = sampleShipmentItemId;
+        SampleShipmentTubeSlotId = sampleShipmentTubeSlotId;
         RegisteredSampleTubeId = registeredSampleTubeId;
         CustomerSampleId = SampleShippingText.Reference(customerSampleId, nameof(customerSampleId));
         SupplierBarcode = supplierBarcode;
@@ -726,6 +743,7 @@ public sealed class SampleShipmentItem : IAudit, IConcurrency
     public DateTime UpdatedAt { get; private set; } = DateTime.UtcNow;
     public Guid? UpdatedByUserId { get; private set; }
     public long Version { get; private set; } = 1;
+    public ICollection<SampleShipmentTubeSlot> TubeSlots { get; private set; } = [];
 
     private SampleShipmentItem() { }
 
@@ -762,6 +780,53 @@ public sealed class SampleShipmentItem : IAudit, IConcurrency
     {
         if (!RegisteredSampleTubeId.HasValue)
             throw new InvalidOperationException("This sample does not have a tube assignment.");
+        var previous = RegisteredSampleTubeId.Value;
+        RegisteredSampleTubeId = null;
+        TubeAssignedAt = null;
+        return previous;
+    }
+
+    public void MarkCreated(DateTime utcNow, Guid? actorUserId) { CreatedAt = utcNow; CreatedByUserId = actorUserId; }
+    public void MarkUpdated(DateTime utcNow, Guid? actorUserId) { UpdatedAt = utcNow; UpdatedByUserId = actorUserId; }
+    public void IncrementVersion() => Version++;
+}
+
+public sealed class SampleShipmentTubeSlot : IAudit, IConcurrency
+{
+    public Guid Id { get; private set; } = Guid.NewGuid();
+    public Guid SampleShipmentItemId { get; private set; }
+    public int Ordinal { get; private set; }
+    public Guid? RegisteredSampleTubeId { get; private set; }
+    public DateTime? TubeAssignedAt { get; private set; }
+    public DateTime CreatedAt { get; private set; } = DateTime.UtcNow;
+    public Guid? CreatedByUserId { get; private set; }
+    public DateTime UpdatedAt { get; private set; } = DateTime.UtcNow;
+    public Guid? UpdatedByUserId { get; private set; }
+    public long Version { get; private set; } = 1;
+
+    private SampleShipmentTubeSlot() { }
+
+    public SampleShipmentTubeSlot(Guid sampleShipmentItemId, int ordinal)
+    {
+        if (sampleShipmentItemId == Guid.Empty)
+            throw new ArgumentException("A shipment item is required.", nameof(sampleShipmentItemId));
+        if (ordinal < 1) throw new ArgumentOutOfRangeException(nameof(ordinal));
+        SampleShipmentItemId = sampleShipmentItemId;
+        Ordinal = ordinal;
+    }
+
+    public void AssignTube(Guid registeredSampleTubeId, DateTime assignedAt)
+    {
+        if (registeredSampleTubeId == Guid.Empty)
+            throw new ArgumentException("A registered tube is required.", nameof(registeredSampleTubeId));
+        RegisteredSampleTubeId = registeredSampleTubeId;
+        TubeAssignedAt = assignedAt;
+    }
+
+    public Guid ClearTube()
+    {
+        if (!RegisteredSampleTubeId.HasValue)
+            throw new InvalidOperationException("This tube slot does not have a tube assignment.");
         var previous = RegisteredSampleTubeId.Value;
         RegisteredSampleTubeId = null;
         TubeAssignedAt = null;

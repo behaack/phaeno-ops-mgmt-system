@@ -121,12 +121,14 @@ remain incomplete production-activation gates.
 - [x] `frontend/src/components/ui/dialog.test.tsx` - shared modal content ignores
   outside pointer interaction and remains open until the user invokes an
   explicit dismissal control; shared modal structure keeps direct and form-
-  wrapped headers and footers outside the scrolling body; all app dialogs
-  inherit both behaviors.
-- [ ] Customer laboratory draft workspace - cover Job details create/edit modal
-  required-name/storage/safety, required shared-versus-mixed biological-source
-  choice, conditional shared-source validation, mixed-to-shared replacement
-  confirmation, and optional Job-notes validation; duplicate-name feedback and
+  wrapped headers and footers outside the scrolling body; shared headers and
+  footers inherit theme-safe muted surfaces and dividers; general feedback and
+  direct destructive alerts render inside the fixed header; all app dialogs
+  inherit these behaviors.
+- [ ] Customer laboratory draft workspace - cover Job pricing-details
+  create/edit modal required name, biological-source composition,
+  storage/safety, derived sample total, duplicate nonblank source validation,
+  and optional Job-notes validation; duplicate-name feedback and
   dirty-dismissal; redirect after empty-draft creation; Job name,
   notes-before-updated header order, single breadcrumb Job number, and shared
   sample-profile display with one shared source or `Varies by sample`; the zero-sample detail empty
@@ -139,8 +141,11 @@ remain incomplete production-activation gates.
   legacy nullable values on edit; empty analysis IDs for new samples with legacy
   values preserved on edit; and validation;
   confirmed sample removal including the last sample;
-  optimistic-version recovery; and no-PHI submission confirmation that stays
-  unavailable until at least one sample exists.
+  fixed-header modal errors, automatic optimistic-version refresh that
+  preserves dirty values, one safe retry only for unchanged editable server
+  state, latest-Job reload plus reconfirmation for stale pricing submission,
+  successful first-revision insertion, and the post-acceptance sample-list
+  boundary.
 - [ ] `frontend/src/features/dashboard/ExternalDashboardContent.test.tsx` -
   cover Customer, Prospect, and Partner card selection, connected summary and
   error states, organization switching, and complete absence of internal mock
@@ -425,6 +430,18 @@ remain incomplete production-activation gates.
   line and temporary support/policy placeholder, and confirmed the former
   framework/vendor list is absent. Test execution was not requested and was not
   run.
+- 2026-08-22: Customer Lab Service coverage must verify the Job specimen-count
+  and dynamic source-group form with one shared visible column header and
+  accessible row-specific control names, the derived read-only total with no
+  separate sample-count input, helper text between each field label and control,
+  shared field-description/error/textarea primitives, compact helper-sized
+  validation text immediately below controls,
+  source-total validation, nonblank duplicate-source validation on blur/submit
+  that clears or returns as source text changes, absence of sample
+  controls before price acceptance, post-acceptance manual sample CRUD, CSV
+  preview/error/atomic-replacement states, no-PHI finalization confirmation,
+  and multi-tube crosswalk labels and assignment payloads. TypeScript checking
+  passed; component tests were not requested and were not run.
 - 2026-07-16: the Accounts list and detail surfaces were aligned with the
   documented HubSpot-originated intake intent. `pnpm run lint` and `pnpm run
   typecheck` passed, and a live Phaeno mock-session browser check confirmed the

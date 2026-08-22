@@ -171,11 +171,12 @@ the current order aggregates.
 - Standard Customer and Partner PSeq Lab Service uses a configured bundle price
   and places specimen processing plus data assembly as one commercial product.
   Scientific intake validation still occurs before laboratory work begins.
-- The PSeq Lab Service selling unit is one accepted specimen. Commercial Line
-  Item quantity equals the accepted specimen count. Each configured offering
-  defines the processing and data output included per specimen. Unusual
-  specimens, output requirements, failed-input remediation, and bespoke
-  analysis route to Sales-assisted work.
+- The PSeq Lab Service selling unit is one committed specimen. Commercial Line
+  Item quantity equals the specimen count declared on the Job and frozen when
+  the organization accepts the price. Each configured offering defines the
+  processing and data output included per specimen. Unusual specimens, output
+  requirements, failed-input remediation, and bespoke analysis route to
+  Sales-assisted work.
 - Small standard PSeq Lab Service orders use the configured per-specimen price
   without a customer-specific minimum batch charge. Phaeno may assign eligible
   specimens from multiple customer orders to one internal laboratory batch to
@@ -348,24 +349,27 @@ manual per-job quote path until the configured path is complete and activated.
   included-scope values from the client.
 - At commitment the server rechecks active organization and membership,
   organization-administrator authority, PSeq Lab Service entitlement and ready
-  configuration state, effective offering and QuickBooks item, scientific
-  compatibility for every declared specimen, quantity rules, organization
-  QuickBooks linkage, and the absence of custom scope. A failed standard check
-  leaves the draft unchanged and returns an actionable `Request custom work`
-  outcome.
+  configuration state, effective offering and QuickBooks item, the complete
+  Job-level pricing profile, scientific compatibility of every declared source
+  group, quantity rules, organization QuickBooks linkage, and the absence of
+  custom scope. Individual sample records do not exist yet and are not required
+  for pricing or acceptance. A failed standard check leaves the draft unchanged
+  and returns an actionable `Request custom work` outcome.
 - A successful transaction freezes the commercial snapshot, marks the order
-  `Placed/Awaiting samples`, authorizes the linked Lab work, creates the
-  QuickBooks estimate outbox message, records status/audit history, and stores
-  the idempotent response. Either the order placement and Lab authorization
-  commit together or neither does.
+  `Placed/Awaiting samples`, creates the QuickBooks estimate outbox message,
+  records status/audit history, and stores the idempotent response. It does not
+  authorize specimen-specific Lab work because individual samples cannot exist
+  before placement. Finalizing a compliant post-acceptance sample roster creates
+  the initial Commercial Lab authorization and Lab work order atomically.
 - Customer and Partner organization administrators use the same placement
   contract. Tenant scoping continues to use the selected organization, and a
   Partner's optional PO or project reference remains opaque; no downstream-
   customer identity is collected or inferred.
-- The Customer/Partner UI selects an eligible offering before specimen entry,
-  shows included scope, per-specimen price, committed quantity, complete price,
-  and published turnaround before commitment, and clearly separates `Place
-  standard order` from `Request custom work`. Members retain view-only access.
+- The Customer/Partner UI selects an eligible offering and completes the Job-
+  level pricing profile before specimen entry. It shows included scope, per-
+  specimen price, committed quantity, complete price, and published turnaround
+  before commitment, and clearly separates `Place standard order` from
+  `Request custom work`. Members retain view-only access.
 - HubSpot publication is an outbound relationship summary derived after the
   authoritative Portal commitment. CRM delivery failure is visible and
   retryable but does not mutate or roll back an otherwise committed Portal/Lab/
@@ -387,24 +391,155 @@ manual per-job quote path until the configured path is complete and activated.
   approved slices. Configured Lab Service placement must not silently broaden
   into either change.
 
-#### Blocking Product Decision — Commitment Quantity
+#### Approved Product Decision — Price and Acceptance Before Sample Entry
 
-The approved text currently requires both a complete price before commitment
-and a commercial line quantity equal to the specimens Phaeno accepts during
-post-placement intake. Those events cannot determine one immutable quantity at
-the same time.
+The Job, rather than an enumerated sample list, owns every declaration required
+to determine eligibility and price. A Customer cannot create, import, edit, or
+remove individual samples until Phaeno has issued the price and an authorized
+organization administrator has accepted it. Quote acceptance is the commercial
+commitment boundary and opens sample-list preparation.
 
-- Recommended default: the committed quantity is the number of specimens the
-  organization declares and places. Phaeno acceptance starts turnaround and
-  scientific work; a rejected specimen creates an explicit audited commercial
-  adjustment or credit rather than silently rewriting the original snapshot.
-- Alternative: defer buyer commitment and the QuickBooks estimate until Phaeno
-  accepts the specimens. This removes true price-before-commitment placement and
-  requires a pre-commercial shipment/intake authorization distinct from the
-  current Commercial Lab authorization.
+The Job-level pricing profile contains:
 
-Do not implement Slice 3 until the Product Owner selects this billing behavior.
-Slice 1 remains independently implementable after migration authorization.
+- the requested specimen count, derived from the biological-source group counts,
+  limited to the supported order range, and used as the quantity for the
+  specimen-priced commercial line;
+- one or more biological-source groups, each with a source and specimen count;
+  group counts must be positive and their sum must equal the requested specimen
+  count;
+- the fixed `pseq-lab-service` service, extracted-RNA material, tube intake
+  unit, and standard data-output contract during the current single-service
+  period;
+- the existing shared storage/handling requirements and safety/biohazard
+  declaration; and
+- optional Job notes for relevant context. Notes never replace a required
+  structured pricing declaration.
+
+One biological-source group represents a shared-source Job. Multiple groups
+represent a mixed-source Job and provide Phaeno with the composition needed to
+confirm standard eligibility without requiring sample identifiers. The Job's
+source mode is derived from these groups rather than separately asking the
+Customer to keep a mixed-source flag consistent with the source composition.
+
+The Job-pricing form presents biological-source groups as a compact row set
+under one shared `Biological source` / `Samples` header. It does not repeat
+those visible field titles for every group or ask the Customer to enter a
+separate total; it calculates and displays the total from the group counts.
+Each row retains its own accessible control names and row-specific validation.
+Instructional helper text appears immediately below its field label and before
+the corresponding control so the expectation is available before data entry.
+Validation text sits tightly below its control and uses the same compact type
+size as helper text while retaining the destructive color and alert semantics.
+Composition-level validation appears below the source rows and before the Add
+source action so users encounter the problem before the next available action.
+The duplicate rule says `Duplicate biological sources are not permitted.` It
+ignores blank source rows, appears on blur or submit, and then reevaluates from
+the current nonblank source values as the Customer edits them.
+
+Tube quantity is not part of the commercial specimen count. The Customer
+provides each sample's positive integer tube quantity later, when preparing the
+sample list. Those quantities drive return-kit and shipping preparation but do
+not silently change the accepted per-specimen price.
+
+The pricing and commitment rules are:
+
+- submitting a Job for pricing requires a complete, internally consistent Job-
+  level pricing profile and requires zero individual sample records;
+- existing draft sample rows from the former workflow are preserved rather
+  than deleted by migration. The Customer must explicitly remove each labeled
+  legacy row before pricing submission, then enter the current roster only
+  after price acceptance;
+- a standard specimen-priced quote line must use the Job's requested specimen
+  count; additional legitimate fee or adjustment lines retain their own units
+  and quantities;
+- quote acceptance freezes the Job pricing profile as the committed commercial
+  snapshot and moves the Job to `Placed/Awaiting samples`;
+- quote acceptance does not create a specimen-specific Lab authorization;
+  finalizing the compliant sample roster creates the initial immutable
+  authorization and linked Lab work order;
+- rejected or removed committed specimens produce an explicit audited
+  commercial adjustment or credit rather than silently rewriting the accepted
+  snapshot; and
+- any post-acceptance change to specimen count, source-group composition, or
+  other price-bearing scope requires an immutable change quote and Customer
+  acceptance before the affected samples can proceed.
+
+After acceptance, the Customer may prepare the sample list incrementally. A
+partially entered list remains a valid draft and shows overall and per-source
+progress, such as `37 of 100 samples entered`; compliance is enforced when the
+Customer finalizes the list for shipping, not after every row. Manual Add/Edit
+remains available, and the implementation must include a validated CSV import
+for large Jobs so Customers are not forced through 100 separate dialogs.
+
+The sample-list import contract is:
+
+- imports accept only comma-delimited UTF-8 `.csv` files. An optional UTF-8 byte
+  order mark and correctly quoted commas are supported; Excel `.xlsx`, legacy
+  `.xls`, macro-enabled workbooks, tab-delimited files, and other spreadsheet
+  formats are not accepted;
+- CSV import and the downloadable Job-specific CSV template are unavailable
+  until the Job price has been accepted. The sample-list page displays the
+  accepted total and allowed biological-source groups beside the template and
+  upload controls;
+- the import columns are `customer_sample_id`, `biological_source`, and
+  `tube_count`. One row represents one biological specimen, never one physical
+  tube. Material, quantity unit, storage/handling, safety, service,
+  and output are intentionally omitted because they are inherited from the
+  accepted Job and cannot vary in the uploaded file;
+- `customer_sample_id` is always parsed, normalized, stored, and previewed as
+  text. Numeric-looking identifiers and leading zeros are never intentionally
+  converted by the Portal. The download and upload guidance warns that Excel
+  may reformat identifiers unless that column is imported and edited as Text;
+- `biological_source` may be blank for a one-source Job and is then inherited
+  from the accepted Job. It is required for a mixed-source Job and must match
+  one of the committed source groups;
+- blank trailing rows are ignored. A partially populated row is invalid.
+  Unknown columns and duplicate headers are rejected rather than ignored or
+  silently retained;
+- the original upload is parsed ephemerally and is not retained as the sample
+  record. The Portal persists only validated normalized sample facts plus audit
+  metadata for the import event;
+- upload first produces a server-validated preview containing valid-row count,
+  total and per-source progress, ignored blank rows, and row-specific errors.
+  No samples change until an administrator confirms that preview; and
+- confirming an import is atomic and replaces the current editable draft
+  sample list. The confirmation names that consequence explicitly, uses the
+  Job's current version for concurrency protection, and leaves the previous
+  draft unchanged if any row or Job-level compliance check fails. Manual edits
+  may be made after a successful import and before finalization.
+
+Finalizing the sample list requires all of the following:
+
+- the number of sample records exactly equals the committed specimen count;
+- every Customer sample identifier is present, non-PHI, and unique within the
+  Job;
+- every sample selects one of the committed biological-source groups, and the
+  count assigned to each group exactly matches that group's committed count;
+- every sample uses the fixed extracted-RNA material and a positive integer tube
+  quantity; and
+- storage/handling, safety, service, and output facts are inherited from the
+  frozen Job profile and cannot diverge per sample.
+
+The UI must explain each mismatch, identify the remaining or excess count by
+source, and link an administrator to the change-quote path when the actual work
+cannot comply with the accepted Job. The API enforces the same rules before a
+shipping packet, return kit, or Lab intake authorization can be created. Manual
+entry and CSV import use the same server-side normalization and compliance
+rules.
+
+One Customer sample may contain one or more physical submitted tubes. The
+committed commercial quantity counts specimens; return-kit capacity and barcode
+work count physical tubes. Finalizing the roster creates one stable submitted-
+specimen identity per sample and the declared number of child tube slots. Phaeno
+registers exactly one manufacturer barcode to each physical tube in the return
+kit, and the Customer later assigns one registered barcode to each slot through
+the guided scan workflow. Barcodes are never accepted in the sample-list CSV.
+The frozen shipment packet repeats the Customer sample identifier for each tube
+slot and labels the slot ordinal, such as `Tube 2 of 3`.
+
+This decision resolves the prior price-before-commitment versus post-intake
+acceptance conflict. Slice 1 remains independently implementable after migration
+authorization; later slices must use this Job-profile-first contract.
 
 ## Implemented Initial-Release Workflows
 
@@ -475,13 +610,14 @@ commercial direction is implemented and verified.
   and bank-account data never enters or passes through Phaeno Portal.
 - Quote revisions are immutable. Issuing a revision supersedes the prior quote,
   and only the latest unexpired quote may be accepted.
-- Physical samples are normally sent only after quote acceptance. The placed
-  order provides the Customer with sample-submission instructions and enters an
-  awaiting-samples stage.
+- Physical samples are sent only after quote acceptance and exact sample-roster
+  finalization. Acceptance opens roster entry; finalization provides the
+  Customer with sample-submission instructions and creates the authorized
+  shipment in the awaiting-samples stage.
 - If physical samples arrive before quote acceptance, Phaeno records their
   receipt and chain-of-custody facts but places them on commercial hold. No
   laboratory work may begin until an authorized Customer administrator accepts
-  the quote.
+  the quote and finalizes an exact compliant sample roster.
 - Customer administrators may record carrier, tracking number, and ship date.
   The Customer-visible custody timeline includes those supplied shipping facts,
   Phaeno receipt date/time, receipt condition or exception, accession identifier,
@@ -678,6 +814,10 @@ entity, status model, or form merely because each begins with a submission.
 - Frontend routes stay thin; feature UI belongs under
   `frontend/src/features` and API integration under `frontend/src/api`.
 - Mutable records use optimistic concurrency and centralized auditing.
+- When a Customer modal encounters a genuine optimistic-concurrency conflict,
+  the Portal loads the latest Job automatically and preserves entered values.
+  It retries once only when the editable Job details are unchanged; otherwise a
+  fixed alert below the modal header requires review before another save.
 - The connected Phaeno organization workspace is authoritative for durable
   organization-scoped administration. The standalone global User management
   preview is not a production order or account data source.

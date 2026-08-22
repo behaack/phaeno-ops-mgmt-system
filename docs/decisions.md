@@ -323,8 +323,9 @@ Commercial Operations owns the Customer order, authorization, quote, customer-
 safe projection, files, payment, and publication. Laboratory owns work orders,
 receipt/accession, physical lineage, controlled execution, materials and
 equipment, libraries and batches, outsourced NGS sendouts/custody, exceptions,
-and scientific approval in `lab_ops`. Accepted quote authorization and approved
-cancellation cross the versioned provider boundary transactionally; durable
+and scientific approval in `lab_ops`. Quote acceptance freezes pricing; exact
+sample-roster finalization creates the Commercial authorization. That
+authorization and approved cancellation cross the versioned provider boundary transactionally; durable
 events update Commercial projections without exposing the Laboratory schema.
 
 Ready for release is scientific readiness, not file publication. It creates no

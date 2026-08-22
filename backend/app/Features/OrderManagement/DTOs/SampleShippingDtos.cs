@@ -214,7 +214,10 @@ public sealed record SampleShippingCrosswalkItemDto(
     Guid? RegisteredSampleTubeId,
     string? SupplierTubeBarcode,
     string TubeStatus,
-    long Version);
+    long Version,
+    Guid? TubeSlotId = null,
+    int TubeOrdinal = 1,
+    int TubeCount = 1);
 
 public sealed record RegisteredSampleTubeDto(
     Guid Id,
@@ -300,7 +303,8 @@ public sealed record FulfillSampleReturnKitRequest(
 public sealed record AssignSampleTubeRequest(
     string SupplierBarcode,
     string? Reason,
-    long Version);
+    long Version,
+    Guid? TubeSlotId = null);
 
 public sealed record IssueSampleShippingPacketRequest(
     long Version,

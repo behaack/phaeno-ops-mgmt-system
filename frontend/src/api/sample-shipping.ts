@@ -150,7 +150,7 @@ export type SampleShippingPacketScan = {
   shipmentStatus: string
   organizationId: string
   organizationName: string
-  authorizationSource: 'ProspectTrialProject' | 'CustomerPromotionalOrder'
+  authorizationSource: 'ProspectTrialProject' | 'CustomerPromotionalOrder' | 'CustomerLabServiceOrder'
   authorizationSourceId: string
   authorizationReference: string
   authorizationName: string
@@ -181,6 +181,9 @@ export type SampleShippingCrosswalkItem = {
   supplierTubeBarcode: string | null
   tubeStatus: string
   version: number
+  tubeSlotId?: string | null
+  tubeOrdinal?: number
+  tubeCount?: number
 }
 
 export type RegisteredSampleTube = {
@@ -197,7 +200,7 @@ export type SampleReturnKit = {
   kitNumber: string
   sampleShipmentId: string
   organizationId: string
-  authorizationSource: 'ProspectTrialProject' | 'CustomerPromotionalOrder'
+  authorizationSource: 'ProspectTrialProject' | 'CustomerPromotionalOrder' | 'CustomerLabServiceOrder'
   authorizationSourceId: string
   tubeSupplierName: string
   tubeProductNumber: string
@@ -218,7 +221,7 @@ export type SampleShipmentWorkflow = {
   shipmentNumber: string
   organizationId: string
   organizationName: string
-  authorizationSource: 'ProspectTrialProject' | 'CustomerPromotionalOrder'
+  authorizationSource: 'ProspectTrialProject' | 'CustomerPromotionalOrder' | 'CustomerLabServiceOrder'
   authorizationSourceId: string
   authorizationReference: string
   authorizationName: string
@@ -312,6 +315,7 @@ export async function assignSampleTube(shipmentId: string, shipmentItemId: strin
   supplierBarcode: string
   reason?: string | null
   version: number
+  tubeSlotId?: string | null
 }) {
   const response = await api.put<ApiEnvelope<SampleShipmentWorkflow>>(
     `/sample-shipping/${shipmentId}/items/${shipmentItemId}/tube`, input,

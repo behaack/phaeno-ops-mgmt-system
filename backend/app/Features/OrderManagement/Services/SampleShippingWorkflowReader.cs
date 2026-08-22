@@ -17,6 +17,7 @@ public sealed class SampleShippingWorkflowReader(PSeqOperationsDbContext dbConte
 
         var shipments = await query
             .Include(item => item.Items)
+                .ThenInclude(item => item.TubeSlots)
             .Include(item => item.PacketRevisions)
             .Include(item => item.ReturnKit)
                 .ThenInclude(item => item!.Tubes)
@@ -37,6 +38,7 @@ public sealed class SampleShippingWorkflowReader(PSeqOperationsDbContext dbConte
             query = query.Where(item => item.OrganizationId == organizationId.Value);
         var shipment = await query
             .Include(item => item.Items)
+                .ThenInclude(item => item.TubeSlots)
             .Include(item => item.PacketRevisions)
             .Include(item => item.ReturnKit)
                 .ThenInclude(item => item!.Tubes)
@@ -93,23 +95,35 @@ public sealed class SampleShippingWorkflowReader(PSeqOperationsDbContext dbConte
                 ?? new Dictionary<Guid, RegisteredSampleTube>();
             var crosswalk = shipment.Items
                 .OrderBy(item => item.CustomerSampleId)
-                .Select(item =>
+                .SelectMany(item =>
                 {
-                    RegisteredSampleTube? tube = null;
-                    var hasTube = item.RegisteredSampleTubeId.HasValue
-                        && tubes.TryGetValue(item.RegisteredSampleTubeId.Value, out tube);
-                    return new SampleShippingCrosswalkItemDto(
-                        item.Id,
-                        item.SubmittedSpecimenId,
-                        item.CustomerSampleId,
-                        item.SampleName,
-                        sampleTypes.GetValueOrDefault(item.SampleTypeDefinitionId, "Unavailable sample type"),
-                        item.Quantity,
-                        item.QuantityUnit,
-                        item.RegisteredSampleTubeId,
-                        hasTube ? tube!.SupplierBarcode : null,
-                        hasTube ? tube!.Status.ToString() : "Unassigned",
-                        item.Version);
+                    var slots = item.TubeSlots.OrderBy(slot => slot.Ordinal).ToList();
+                    if (slots.Count == 0)
+                    {
+                        RegisteredSampleTube? legacyTube = null;
+                        var hasLegacyTube = item.RegisteredSampleTubeId.HasValue
+                            && tubes.TryGetValue(item.RegisteredSampleTubeId.Value, out legacyTube);
+                        return new[] { new SampleShippingCrosswalkItemDto(
+                            item.Id, item.SubmittedSpecimenId, item.CustomerSampleId, item.SampleName,
+                            sampleTypes.GetValueOrDefault(item.SampleTypeDefinitionId, "Unavailable sample type"),
+                            item.Quantity, item.QuantityUnit, item.RegisteredSampleTubeId,
+                            hasLegacyTube ? legacyTube!.SupplierBarcode : null,
+                            hasLegacyTube ? legacyTube!.Status.ToString() : "Unassigned", item.Version) };
+                    }
+
+                    return slots.Select(slot =>
+                    {
+                        RegisteredSampleTube? tube = null;
+                        var hasTube = slot.RegisteredSampleTubeId.HasValue
+                            && tubes.TryGetValue(slot.RegisteredSampleTubeId.Value, out tube);
+                        return new SampleShippingCrosswalkItemDto(
+                            item.Id, item.SubmittedSpecimenId, item.CustomerSampleId, item.SampleName,
+                            sampleTypes.GetValueOrDefault(item.SampleTypeDefinitionId, "Unavailable sample type"),
+                            item.Quantity, item.QuantityUnit, slot.RegisteredSampleTubeId,
+                            hasTube ? tube!.SupplierBarcode : null,
+                            hasTube ? tube!.Status.ToString() : "Unassigned", slot.Version,
+                            slot.Id, slot.Ordinal, slots.Count);
+                    });
                 }).ToList();
             var currentPacket = shipment.PacketRevisions
                 .Where(item => !item.IsVoided)

@@ -3,21 +3,21 @@ import { Link } from '@tanstack/react-router'
 import { Download, FileArchive, FileCheck2, Library, PackageCheck, Pencil, Plus, Trash2 } from 'lucide-react'
 import { useState } from 'react'
 
-import { acceptLabQuote, downloadLabResult, downloadLabResultPackage, getLabOrder, getOrderErrorMessage, recordLabSampleShipment, requestLabCancellation, submitLabOrder, type LabSample, type OperationalFile, type Quote, updateLabOrder, withdrawLabOrder } from '#/api/order-management'
+import { acceptLabQuote, confirmLabSampleImport, deleteLabSample, downloadLabResult, downloadLabResultPackage, downloadLabSampleTemplate, finalizeLabSampleRoster, getLabOrder, getOrderErrorMessage, isOrderConcurrencyError, previewLabSampleImport, recordLabSampleShipment, requestLabCancellation, submitLabOrder, type LabSample, type LabSampleImportPreview, type OperationalFile, type Quote, withdrawLabOrder } from '#/api/order-management'
 import { getSampleShipments } from '#/api/sample-shipping'
 import { Alert, AlertDescription, AlertTitle } from '#/components/ui/alert'
 import { Badge } from '#/components/ui/badge'
 import { Button } from '#/components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '#/components/ui/card'
 import { Checkbox } from '#/components/ui/checkbox'
-import { Dialog, DialogClose, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '#/components/ui/dialog'
+import { Dialog, DialogClose, DialogContent, DialogDescription, DialogFeedback, DialogFooter, DialogHeader, DialogTitle } from '#/components/ui/dialog'
 import { Label } from '#/components/ui/label'
+import { Input } from '#/components/ui/input'
 import { RequiredDialogFooter, RequiredFieldName, RequiredMark } from '#/components/ui/required-field'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '#/components/ui/tabs'
 import { usePhaenoSession } from '#/features/auth/session-context'
 import { LabJobDetailsDialog } from './LabJobDetailsDialog'
 import { LabSampleDialog } from './LabSampleDialog'
-import { labSampleToWrite } from './lab-order-write'
 import { humanizeStatus, OrderStatusBadge } from './OrderStatusBadge'
 import { ReleasedDeliverableRetentionNotice } from './ReleasedDeliverableRetentionNotice'
 
@@ -38,10 +38,15 @@ export function LabServiceDetailPage({
   const [sampleToRemove, setSampleToRemove] = useState<LabSample | null>(null)
   const [submitOpen, setSubmitOpen] = useState(false)
   const [prohibitedDataConfirmed, setProhibitedDataConfirmed] = useState(false)
+  const [submitConcurrencyMessage, setSubmitConcurrencyMessage] = useState<string | null>(null)
   const [cancellationReason, setCancellationReason] = useState('')
   const [shipmentSampleId, setShipmentSampleId] = useState('')
   const [carrier, setCarrier] = useState('')
   const [trackingNumber, setTrackingNumber] = useState('')
+  const [sampleImportOpen, setSampleImportOpen] = useState(false)
+  const [sampleImportFile, setSampleImportFile] = useState<File | null>(null)
+  const [sampleImportPreview, setSampleImportPreview] = useState<LabSampleImportPreview | null>(null)
+  const [rosterConfirmed, setRosterConfirmed] = useState(false)
   const apiEnabled = Boolean(session?.capabilities.canViewLabServiceOrders) && authProvider !== 'mock'
   const canViewShipping = Boolean(session?.capabilities.canViewSampleShipping)
   const canViewData = Boolean(session?.capabilities.canViewOrganizationDatasets)
@@ -76,6 +81,19 @@ export function LabServiceDetailPage({
         queryClient.invalidateQueries({ queryKey: ['lab-service-orders'] }),
       ])
     },
+    onError: async (error, kind) => {
+      if (kind !== 'submit' || !isOrderConcurrencyError(error)) return
+
+      setProhibitedDataConfirmed(false)
+      try {
+        const latest = await orderQuery.refetch()
+        setSubmitConcurrencyMessage(latest.data
+          ? 'The latest Job has been loaded. Review the current pricing details, then confirm and submit again.'
+          : 'The latest Job could not be loaded. Close this window, refresh the Job, and try again.')
+      } catch {
+        setSubmitConcurrencyMessage('The latest Job could not be loaded. Close this window, refresh the Job, and try again.')
+      }
+    },
   })
   const downloadAction = useMutation({
     mutationFn: async (download: LabResultDownloadRequest) => download.kind === 'package'
@@ -87,16 +105,9 @@ export function LabServiceDetailPage({
     mutationFn: async (sampleId: string) => {
       const order = orderQuery.data
       if (!order) throw new Error('The job has not loaded.')
-      return updateLabOrder(order.id, {
-        customerReference: order.customerReference,
-        description: order.description ?? undefined,
-        hasMixedBiologicalSources: order.hasMixedBiologicalSources,
-        sharedBiologicalSource: order.sharedBiologicalSource ?? undefined,
-        storageRequirements: order.storageRequirements,
-        safetyDeclaration: order.safetyDeclaration,
-        samples: order.samples.filter((sample) => sample.id !== sampleId).map(labSampleToWrite),
-        version: order.version,
-      })
+      const sample = order.samples.find((item) => item.id === sampleId)
+      if (!sample) throw new Error('The sample no longer exists.')
+      return deleteLabSample(order.id, sample.id, sample.version)
     },
     onSuccess: async () => {
       setSampleToRemove(null)
@@ -104,6 +115,36 @@ export function LabServiceDetailPage({
         queryClient.invalidateQueries({ queryKey: ['lab-service-order', orderId] }),
         queryClient.invalidateQueries({ queryKey: ['lab-service-orders'] }),
       ])
+    },
+  })
+  const importPreviewAction = useMutation({
+    mutationFn: async () => {
+      const order = orderQuery.data
+      if (!order || !sampleImportFile) throw new Error('Choose a CSV file first.')
+      return previewLabSampleImport(order.id, sampleImportFile, order.version)
+    },
+    onSuccess: setSampleImportPreview,
+  })
+  const importConfirmAction = useMutation({
+    mutationFn: async () => {
+      const order = orderQuery.data
+      if (!order || !sampleImportPreview) throw new Error('Preview the CSV file first.')
+      return confirmLabSampleImport(order.id, sampleImportPreview.previewId, order.version)
+    },
+    onSuccess: async () => {
+      setSampleImportOpen(false); setSampleImportFile(null); setSampleImportPreview(null)
+      await queryClient.invalidateQueries({ queryKey: ['lab-service-order', orderId] })
+    },
+  })
+  const finalizeRosterAction = useMutation({
+    mutationFn: async () => {
+      const order = orderQuery.data
+      if (!order) throw new Error('The Job has not loaded.')
+      return finalizeLabSampleRoster(order.id, order.version)
+    },
+    onSuccess: async () => {
+      setRosterConfirmed(false)
+      await Promise.all([queryClient.invalidateQueries({ queryKey: ['lab-service-order', orderId] }), queryClient.invalidateQueries({ queryKey: ['sample-shipments'] })])
     },
   })
 
@@ -114,12 +155,11 @@ export function LabServiceDetailPage({
   const order = orderQuery.data
   const quote = currentQuote(order.quotes)
   const jobShipments = (shipmentsQuery.data ?? []).filter(
-    (shipment) => shipment.authorizationSource === 'CustomerPromotionalOrder'
+    (shipment) => shipment.authorizationSource === 'CustomerLabServiceOrder'
       && shipment.authorizationSourceId === order.id,
   )
   const awaitingShipment = order.samples.filter((sample) => !sample.receivedAt)
-  const sourceProfileComplete =
-    order.hasMixedBiologicalSources || Boolean(order.sharedBiologicalSource?.trim())
+  const sourceProfileComplete = order.requestedSpecimenCount > 0 && order.sourceGroups.length > 0
   return (
     <main className="page-wrap px-4 py-8">
       <section className="mb-6 flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
@@ -134,8 +174,8 @@ export function LabServiceDetailPage({
           {order.canSubmit ? (
             <Button
               type="button"
-              onClick={() => { action.reset(); setSubmitOpen(true) }}
-              disabled={action.isPending || order.samples.length === 0}
+              onClick={() => { action.reset(); setSubmitConcurrencyMessage(null); setSubmitOpen(true) }}
+              disabled={action.isPending || !sourceProfileComplete}
             >
               Submit for pricing
             </Button>
@@ -179,12 +219,12 @@ export function LabServiceDetailPage({
                   <dd className="mt-1 text-sm">Tubes</dd>
                 </div>
                 <div>
+                  <dt className="text-xs font-medium uppercase tracking-wide text-muted-foreground">Committed samples</dt>
+                  <dd className="mt-1 text-sm">{order.requestedSpecimenCount}</dd>
+                </div>
+                <div>
                   <dt className="text-xs font-medium uppercase tracking-wide text-muted-foreground">Biological source</dt>
-                  <dd className="mt-1 text-sm">
-                    {order.hasMixedBiologicalSources
-                      ? 'Varies by sample'
-                      : order.sharedBiologicalSource ?? 'Not set — edit Job details'}
-                  </dd>
+                  <dd className="mt-1 text-sm">{order.sourceGroups.map((group) => `${group.biologicalSource} (${group.specimenCount})`).join(', ')}</dd>
                 </div>
                 <div>
                   <dt className="text-xs font-medium uppercase tracking-wide text-muted-foreground">Storage requirements</dt>
@@ -204,30 +244,30 @@ export function LabServiceDetailPage({
                 <div>
                   <CardTitle>Samples</CardTitle>
                   <CardDescription>
-                    Add each physical sample separately. Samples progress independently after receipt and accession.
+                    {order.placedAt
+                      ? `${order.samples.length} of ${order.requestedSpecimenCount} samples entered. Add them manually or replace the draft from CSV.`
+                      : 'Sample entry opens only after your organization accepts the Job price.'}
                   </CardDescription>
                 </div>
-                {order.canEdit && order.samples.length > 0 ? (
-                  <Button
-                    type="button"
-                    onClick={() =>
-                      sourceProfileComplete
-                        ? setSampleDialog(null)
-                        : setJobDetailsOpen(true)
-                    }
-                    disabled={sourceProfileComplete && order.samples.length >= 100}
-                  >
-                    {sourceProfileComplete ? (
-                      <Plus data-icon="inline-start" />
-                    ) : (
-                      <Pencil data-icon="inline-start" />
-                    )}
-                    {sourceProfileComplete ? 'Add sample' : 'Complete job details'}
-                  </Button>
+                {order.canEditSamples ? (
+                  <div className="flex flex-wrap gap-2">
+                    <Button type="button" variant="outline" onClick={() => void downloadLabSampleTemplate(order.id, order.orderNumber)}><Download data-icon="inline-start" />CSV template</Button>
+                    <Button type="button" variant="outline" onClick={() => { setSampleImportPreview(null); setSampleImportFile(null); setSampleImportOpen(true) }}>Upload CSV</Button>
+                    <Button type="button" onClick={() => setSampleDialog(null)} disabled={order.samples.length >= order.requestedSpecimenCount}><Plus data-icon="inline-start" />Add sample</Button>
+                  </div>
                 ) : null}
               </div>
             </CardHeader>
             <CardContent>
+              {!order.placedAt && order.samples.length > 0 ? (
+                <Alert className="mb-4">
+                  <AlertTitle>This draft contains sample rows from the former workflow</AlertTitle>
+                  <AlertDescription>
+                    Remove each legacy row before submitting the Job for pricing.
+                    You can enter the sample roster again after accepting the price.
+                  </AlertDescription>
+                </Alert>
+              ) : null}
               {order.samples.length ? (
                 <div className="divide-y">
                   {order.samples.map((sample) => (
@@ -244,7 +284,7 @@ export function LabServiceDetailPage({
                         </div>
                         <div className="flex flex-wrap items-center gap-2">
                           <OrderStatusBadge status={sample.status} />
-                          {order.canEdit ? (
+                          {order.canEditSamples ? (
                             <>
                               <Button type="button" size="sm" variant="outline" onClick={() => setSampleDialog(sample)}>
                                 <Pencil data-icon="inline-start" />
@@ -255,6 +295,11 @@ export function LabServiceDetailPage({
                                 Remove
                               </Button>
                             </>
+                          ) : !order.placedAt && order.canEdit ? (
+                            <Button type="button" size="sm" variant="outline" onClick={() => { removeSampleAction.reset(); setSampleToRemove(sample) }}>
+                              <Trash2 data-icon="inline-start" />
+                              Remove legacy row
+                            </Button>
                           ) : null}
                         </div>
                       </div>
@@ -269,28 +314,28 @@ export function LabServiceDetailPage({
                 <div className="flex flex-col items-center py-8 text-center">
                   <p className="font-medium">No samples added</p>
                   <p className="mt-1 max-w-md text-sm text-muted-foreground">
-                    Add at least one sample before submitting this job for pricing.
+                    {order.placedAt
+                      ? `Enter exactly ${order.requestedSpecimenCount} samples, then finalize the list for return-kit preparation.`
+                      : 'Submit the Job for pricing and accept the price before entering any sample IDs.'}
                   </p>
-                  {order.canEdit ? (
+                  {order.canEditSamples ? (
                     <Button
                       type="button"
                       className="mt-4"
-                      onClick={() =>
-                        sourceProfileComplete
-                          ? setSampleDialog(null)
-                          : setJobDetailsOpen(true)
-                      }
+                      onClick={() => setSampleDialog(null)}
                     >
-                      {sourceProfileComplete ? (
-                        <Plus data-icon="inline-start" />
-                      ) : (
-                        <Pencil data-icon="inline-start" />
-                      )}
-                      {sourceProfileComplete ? 'Add sample' : 'Complete job details'}
+                      <Plus data-icon="inline-start" />Add sample
                     </Button>
                   ) : null}
                 </div>
               )}
+              {order.canEditSamples && order.samples.length > 0 ? (
+                <section className="mt-5 space-y-3 border-t pt-5">
+                  <div className="flex items-start gap-3"><Checkbox id="roster-confirm" checked={rosterConfirmed} onCheckedChange={(value) => setRosterConfirmed(value === true)} /><Label htmlFor="roster-confirm" className="font-normal leading-5">I reviewed the sample IDs, confirmed they contain no patient identifiers or PHI, and confirm that the source and tube counts match the accepted Job.</Label></div>
+                  {finalizeRosterAction.error ? <Alert variant="destructive"><AlertTitle>Sample list was not finalized</AlertTitle><AlertDescription>{getOrderErrorMessage(finalizeRosterAction.error, 'Review the count mismatches and try again.')}</AlertDescription></Alert> : null}
+                  <div className="flex justify-end"><Button type="button" disabled={!rosterConfirmed || !order.canFinalizeSamples || finalizeRosterAction.isPending} onClick={() => finalizeRosterAction.mutate()}>{finalizeRosterAction.isPending ? 'Finalizing…' : 'Finalize sample list'}</Button></div>
+                </section>
+              ) : null}
             </CardContent>
           </Card>
 
@@ -508,7 +553,7 @@ export function LabServiceDetailPage({
         </TabsContent>
       </Tabs>
 
-      <Dialog open={dialog === 'accept'} onOpenChange={(open) => !open && setDialog(null)}><DialogContent><DialogHeader><DialogTitle>Accept quote for {order.orderNumber}?</DialogTitle><DialogDescription>This places the complete quoted scope and authorizes Phaeno to perform the work. The accepted snapshot remains in the order history.</DialogDescription></DialogHeader>{quote ? <QuoteSummary quote={quote} /> : null}<DialogFooter><DialogClose asChild><Button type="button" variant="outline">Keep reviewing</Button></DialogClose><Button type="button" onClick={() => action.mutate('accept')} disabled={action.isPending}>{action.isPending ? 'Accepting…' : 'Accept quote and place order'}</Button></DialogFooter></DialogContent></Dialog>
+      <Dialog open={dialog === 'accept'} onOpenChange={(open) => !open && setDialog(null)}><DialogContent><DialogHeader><DialogTitle>Accept quote for {order.orderNumber}?</DialogTitle><DialogDescription>This accepts the priced scope and opens sample-list entry. It does not authorize laboratory work; that occurs only after the exact sample list is finalized. The accepted snapshot remains in the Job history.</DialogDescription></DialogHeader>{quote ? <QuoteSummary quote={quote} /> : null}<DialogFooter><DialogClose asChild><Button type="button" variant="outline">Keep reviewing</Button></DialogClose><Button type="button" onClick={() => action.mutate('accept')} disabled={action.isPending}>{action.isPending ? 'Accepting…' : 'Accept price and open sample entry'}</Button></DialogFooter></DialogContent></Dialog>
       <Dialog open={dialog === 'cancel' || dialog === 'withdraw'} onOpenChange={(open) => !open && setDialog(null)}><DialogContent><DialogHeader><DialogTitle>{dialog === 'withdraw' ? 'Withdraw' : 'Request cancellation for'} {order.orderNumber}</DialogTitle><DialogDescription>{dialog === 'withdraw' ? 'This closes the request before work is placed.' : 'Phaeno will review completed work and financial effects before deciding the request.'}</DialogDescription></DialogHeader><div><Label htmlFor="cancellationReason"><RequiredFieldName>Reason</RequiredFieldName></Label><textarea id="cancellationReason" value={cancellationReason} onChange={(event) => setCancellationReason(event.target.value)} className="mt-2 min-h-24 w-full rounded-lg border border-input bg-background px-3 py-2 text-sm focus-visible:ring-3 focus-visible:ring-ring/50 focus-visible:outline-none" /></div><RequiredDialogFooter><DialogClose asChild><Button type="button" variant="outline">Keep order</Button></DialogClose><Button type="button" variant="destructive" disabled={!cancellationReason.trim() || action.isPending} onClick={() => action.mutate(dialog === 'withdraw' ? 'withdraw' : 'cancel')}>{action.isPending ? 'Updating…' : dialog === 'withdraw' ? 'Withdraw request' : 'Request cancellation'}</Button></RequiredDialogFooter></DialogContent></Dialog>
       <Dialog open={dialog === 'shipment'} onOpenChange={(open) => !open && setDialog(null)}><DialogContent><DialogHeader><DialogTitle>Record sample shipment</DialogTitle><DialogDescription>Add the carrier and tracking number after the sample leaves your organization.</DialogDescription></DialogHeader><div className="grid gap-4"><div><Label htmlFor="sampleCarrier">Carrier</Label><input id="sampleCarrier" value={carrier} onChange={(event) => setCarrier(event.target.value)} className="mt-2 h-9 w-full rounded-lg border border-input bg-background px-3 text-sm" /></div><div><Label htmlFor="sampleTrackingNumber">Tracking number</Label><input id="sampleTrackingNumber" value={trackingNumber} onChange={(event) => setTrackingNumber(event.target.value)} className="mt-2 h-9 w-full rounded-lg border border-input bg-background px-3 text-sm" /></div></div><DialogFooter><DialogClose asChild><Button type="button" variant="outline">Cancel</Button></DialogClose><Button type="button" disabled={action.isPending} onClick={() => action.mutate('shipment')}>{action.isPending ? 'Saving…' : 'Record shipment'}</Button></DialogFooter></DialogContent></Dialog>
 
@@ -517,7 +562,8 @@ export function LabServiceDetailPage({
           <DialogHeader>
             <DialogTitle>Remove {sampleToRemove?.customerSampleId}?</DialogTitle>
             <DialogDescription>
-              This removes the sample from the draft job. It can be added again later if needed.
+              This removes the sample from the draft Job. It can be entered
+              again after the price is accepted.
             </DialogDescription>
           </DialogHeader>
           {removeSampleAction.error ? (
@@ -535,18 +581,18 @@ export function LabServiceDetailPage({
         </DialogContent>
       </Dialog>
 
-      <Dialog open={submitOpen} onOpenChange={(open) => { setSubmitOpen(open); if (!open) setProhibitedDataConfirmed(false) }}>
+      <Dialog open={submitOpen} onOpenChange={(open) => { setSubmitOpen(open); if (!open) { setProhibitedDataConfirmed(false); setSubmitConcurrencyMessage(null) } }}>
         <DialogContent>
           <DialogHeader>
             <DialogTitle>Submit {order.orderNumber} for pricing?</DialogTitle>
             <DialogDescription>
-              Submission requests pricing; it does not authorize laboratory work. Work begins only after an issued quote is accepted.
+              Submission requests pricing; it does not authorize laboratory work. Sample entry opens after an issued quote is accepted, and work is authorized only after the exact sample list is finalized.
             </DialogDescription>
           </DialogHeader>
           {action.error && action.variables === 'submit' ? (
             <Alert variant="destructive" role="alert">
               <AlertTitle>Request was not submitted</AlertTitle>
-              <AlertDescription>{getOrderErrorMessage(action.error, 'Reload the job and try again.')}</AlertDescription>
+              <AlertDescription>{submitConcurrencyMessage ?? getOrderErrorMessage(action.error, 'Reload the job and try again.')}</AlertDescription>
             </Alert>
           ) : null}
           <label htmlFor="lab-prohibited-data-confirmation" className="flex cursor-pointer items-start gap-3 rounded-lg border p-4">
@@ -556,7 +602,7 @@ export function LabServiceDetailPage({
               onCheckedChange={(checked) => setProhibitedDataConfirmed(checked === true)}
             />
             <span className="text-sm leading-5">
-              I confirm that this request and its sample identifiers contain no patient identifiers, PHI, or unnecessary personal data.
+              I confirm that these Job pricing details contain no patient identifiers, PHI, or unnecessary personal data.
               {' '}<RequiredMark />
             </span>
           </label>
@@ -566,6 +612,18 @@ export function LabServiceDetailPage({
               {action.isPending ? 'Submitting…' : 'Submit request for pricing'}
             </Button>
           </RequiredDialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={sampleImportOpen} onOpenChange={(open) => { setSampleImportOpen(open); if (!open) { setSampleImportFile(null); setSampleImportPreview(null); importPreviewAction.reset(); importConfirmAction.reset() } }}>
+        <DialogContent className="max-h-[90dvh] overflow-hidden p-0 [--dialog-inset:0px] sm:max-w-3xl">
+          <DialogHeader className="pt-5 pr-12 pl-5"><DialogTitle>Upload sample list CSV</DialogTitle><DialogDescription>Use the Job template and keep identifiers formatted as text. The CSV cannot contain barcodes. Confirming a valid preview replaces the current editable sample list.</DialogDescription></DialogHeader>
+          {importPreviewAction.error || importConfirmAction.error ? <DialogFeedback><Alert variant="destructive"><AlertTitle>Sample list was not imported</AlertTitle><AlertDescription>{getOrderErrorMessage(importPreviewAction.error ?? importConfirmAction.error, 'Review the file and try again.')}</AlertDescription></Alert></DialogFeedback> : null}
+          <div className="max-h-[65dvh] space-y-4 overflow-y-auto px-5">
+            <div><Label htmlFor="sample-list-csv"><RequiredFieldName>CSV file</RequiredFieldName></Label><Input id="sample-list-csv" className="mt-2" type="file" accept=".csv,text/csv" onChange={(event) => { setSampleImportFile(event.target.files?.[0] ?? null); setSampleImportPreview(null) }} /></div>
+            {sampleImportPreview ? <section className="space-y-3 rounded-lg border p-4" aria-live="polite"><div><h3 className="font-medium">Preview</h3><p className="mt-1 text-sm text-muted-foreground">{sampleImportPreview.validRowCount} valid rows · {sampleImportPreview.blankRowCount} blank rows ignored</p></div><ul className="text-sm">{order.sourceGroups.map((group) => <li key={group.id}>{group.biologicalSource}: {sampleImportPreview.sourceCounts[group.biologicalSource] ?? 0} of {group.specimenCount}</li>)}</ul>{sampleImportPreview.errors.length ? <Alert variant="destructive"><AlertTitle>{sampleImportPreview.errors.length} issue{sampleImportPreview.errors.length === 1 ? '' : 's'} must be corrected</AlertTitle><AlertDescription><ul className="mt-2 list-disc space-y-1 pl-5">{sampleImportPreview.errors.map((error, index) => <li key={`${error.rowNumber}-${error.column}-${index}`}>{error.rowNumber > 0 ? `Row ${error.rowNumber}, ` : ''}{error.column}: {error.message}</li>)}</ul></AlertDescription></Alert> : <Alert><AlertTitle>Ready to replace the draft list</AlertTitle><AlertDescription>All sample and source counts match the accepted Job.</AlertDescription></Alert>}</section> : null}
+          </div>
+          <RequiredDialogFooter className="border-t bg-muted/40 px-5 py-4"><Button type="button" variant="outline" onClick={() => setSampleImportOpen(false)}>Cancel</Button><Button type="button" variant="secondary" disabled={!sampleImportFile || importPreviewAction.isPending} onClick={() => importPreviewAction.mutate()}>{importPreviewAction.isPending ? 'Validating…' : 'Preview CSV'}</Button><Button type="button" disabled={!sampleImportPreview || sampleImportPreview.errors.length > 0 || importConfirmAction.isPending} onClick={() => importConfirmAction.mutate()}>{importConfirmAction.isPending ? 'Replacing…' : 'Replace sample list'}</Button></RequiredDialogFooter>
         </DialogContent>
       </Dialog>
 

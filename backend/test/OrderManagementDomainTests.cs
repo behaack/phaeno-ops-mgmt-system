@@ -9,14 +9,15 @@ public class OrderManagementDomainTests
     private static readonly DateTime Now = new(2026, 7, 14, 12, 0, 0, DateTimeKind.Utc);
 
     [Fact]
-    public void LabRequestRequiresSamplesAndFreezesAcceptedQuote()
+    public void LabRequestPricesFromJobProfileAndOpensSamplesAfterQuoteAcceptance()
     {
         var actor = Guid.NewGuid();
         var order = new LabServiceOrder(Guid.NewGuid(), OrderNumberGenerator.Lab(), "customer-job", null,
-            false, "Human PBMCs", "Keep frozen.", "No known hazards.", "Ship cold");
+            1, false, "Human PBMCs", "Keep frozen.", "No known hazards.", "Ship cold");
         Assert.Throws<InvalidOperationException>(() => order.Submit(actor, Now));
-        order.Samples.Add(Sample(order.Id, "S-1"));
+        order.SourceGroups.Add(new LabServiceSourceGroup(order.Id, "Human PBMCs", 1));
         order.Submit(actor, Now);
+        Assert.Empty(order.Samples);
         order.BeginQuotePreparation();
         var quote = new LabServiceQuote(order.Id, 1, QuotePurpose.Initial, "[]", 100, 5, "USD", Now, Now.AddDays(30));
         quote.MarkIssued();
@@ -27,6 +28,10 @@ public class OrderManagementDomainTests
 
         Assert.Equal(LabServiceOrderStatus.PlacedAwaitingSamples, order.Status);
         Assert.Equal(QuoteStatus.Accepted, quote.Status);
+        Assert.True(order.CanEditSampleRoster);
+        order.Samples.Add(Sample(order.Id, "S-1"));
+        order.FinalizeSampleRoster(actor, Now.AddMinutes(2));
+        Assert.False(order.CanEditSampleRoster);
         Assert.Throws<InvalidOperationException>(() => order.UpdateDraft(
             "changed", null, false, "Human PBMCs", "Keep frozen.", "No known hazards."));
     }

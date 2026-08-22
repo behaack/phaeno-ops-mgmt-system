@@ -1,10 +1,10 @@
 # Customer lab authorization
 
-Customer laboratory work enters Order Ops as a Commercial request. Order Ops validates the submitted service, samples, metadata, and files; prepares the quote; and records the Customer’s authorization. Laboratory execution begins only after that authorization succeeds.
+Customer laboratory work enters Order Ops as a Commercial request. Order Ops validates the Job-level specimen count, biological-source composition, storage, safety, and service profile before pricing. Individual samples do not exist yet.
 
 ## Review the request
 
-Confirm that the Customer has an active laboratory-service entitlement and that the selected service is currently offered. Review every submitted sample, required service metadata, files, and Customer notes. Request a targeted correction when information is incomplete or unsafe rather than rewriting Customer data internally.
+Confirm that the Customer has an active laboratory-service entitlement and that the selected service is currently offered. Review the requested specimen count, each source group and count, shared handling and safety declarations, and Customer notes. Request a targeted correction when information is incomplete or unsafe rather than rewriting Customer data internally.
 
 Keep internal review notes separate from the tenant-safe reason shown to the Customer. The initial workflow is not a PHI intake path; do not ask for or store patient-identifying information.
 
@@ -14,11 +14,10 @@ The quote is a versioned, immutable Commercial proposal for one job. Confirm the
 
 Customer acceptance performs one Commercial operation that:
 
-- records the accepted quote revision and purchase-order snapshot when required;
-- creates the immutable laboratory work authorization; and
-- creates the linked Lab work order through the provider-neutral boundary.
+- records the accepted quote revision and frozen pricing profile; and
+- opens post-acceptance sample-list preparation.
 
-Do not create a Lab work order manually if this operation fails. Refresh the order and retry the durable authorization command.
+After the Customer enters or imports the exact compliant sample list, finalization atomically creates the immutable laboratory work authorization, linked Lab work order, shipment, and physical tube slots. Do not create a Lab work order manually if finalization fails. Resolve the reported roster or shipping-configuration issue and retry the durable operation.
 
 ## Respect the Lab boundary
 

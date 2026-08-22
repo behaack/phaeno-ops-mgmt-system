@@ -127,6 +127,13 @@ export type LabSample = {
   version: number
 }
 
+export type LabServiceSourceGroup = {
+  id: string
+  biologicalSource: string
+  specimenCount: number
+  version: number
+}
+
 export type ReleasedDeliverableRetention = {
   releasedAtUtc: string
   warningAtUtc: string
@@ -214,6 +221,11 @@ export type LabServiceOrder = {
   labCustomerActionSummary?: string | null
   labPermittedQcProjectionJson?: string | null
   labReadyForRelease?: boolean
+  requestedSpecimenCount: number
+  sourceGroups: LabServiceSourceGroup[]
+  sampleRosterFinalizedAt: string | null
+  canEditSamples: boolean
+  canFinalizeSamples: boolean
 }
 
 export type ReagentOrderLine = {
@@ -471,16 +483,66 @@ export async function listLabOrders(params?: Record<string, string | number | un
 }
 export async function getLabOrder(id: string) { return get<LabServiceOrder>(`/lab-service-orders/${id}`) }
 export async function listAnalysisDefinitions() { return get<AnalysisDefinition[]>('/order-catalog/analyses') }
-export async function createLabOrder(input: { customerReference: string; description?: string; hasMixedBiologicalSources: boolean; sharedBiologicalSource?: string; storageRequirements: string; safetyDeclaration: string; samples: LabSampleWrite[] }) {
+export type LabPricingProfileWrite = {
+  requestedSpecimenCount: number
+  sourceGroups: Array<{ biologicalSource: string; specimenCount: number }>
+}
+export async function createLabOrder(input: { customerReference: string; description?: string; hasMixedBiologicalSources: boolean; sharedBiologicalSource?: string; storageRequirements: string; safetyDeclaration: string; samples: LabSampleWrite[] } & LabPricingProfileWrite) {
   return post<LabServiceOrder>('/lab-service-orders', input, true)
 }
-export async function updateLabOrder(id: string, input: { customerReference: string; description?: string; hasMixedBiologicalSources: boolean; sharedBiologicalSource?: string; storageRequirements: string; safetyDeclaration: string; samples: LabSampleWrite[]; version: number }) {
+export async function updateLabOrder(id: string, input: { customerReference: string; description?: string; hasMixedBiologicalSources: boolean; sharedBiologicalSource?: string; storageRequirements: string; safetyDeclaration: string; samples: LabSampleWrite[]; version: number } & LabPricingProfileWrite) {
   return patch<LabServiceOrder>(`/lab-service-orders/${id}`, input)
 }
 export async function submitLabOrder(id: string, version: number) { return post<LabServiceOrder>(`/lab-service-orders/${id}/submit-for-quote`, { version }, true) }
 export async function withdrawLabOrder(id: string, version: number, reason: string) { return post<LabServiceOrder>(`/lab-service-orders/${id}/withdraw`, { version, reason }) }
 export async function acceptLabQuote(orderId: string, quoteId: string, version: number) {
   return post<LabServiceOrder>(`/lab-service-orders/${orderId}/quotes/${quoteId}/accept`, { version, quoteId }, true)
+}
+export type LabSampleRosterWrite = {
+  customerSampleId: string
+  biologicalSource: string
+  tubeCount: number
+  collectionDate?: string | null
+  concentration?: number | null
+  notes?: string | null
+  version?: number
+  orderVersion?: number
+}
+export async function addLabSample(orderId: string, input: LabSampleRosterWrite) {
+  return post<LabServiceOrder>(`/lab-service-orders/${orderId}/samples`, input)
+}
+export async function updateLabSample(orderId: string, sampleId: string, input: LabSampleRosterWrite) {
+  return patch<LabServiceOrder>(`/lab-service-orders/${orderId}/samples/${sampleId}`, input)
+}
+export async function deleteLabSample(orderId: string, sampleId: string, version: number) {
+  const response = await api.delete<ApiEnvelope<LabServiceOrder>>(`/lab-service-orders/${orderId}/samples/${sampleId}`, { data: { version } })
+  return unwrap(response.data)
+}
+export type LabSampleImportPreview = {
+  previewId: string
+  validRowCount: number
+  blankRowCount: number
+  rows: Array<{ rowNumber: number; customerSampleId: string; biologicalSource: string; tubeCount: number }>
+  errors: Array<{ rowNumber: number; column: string; message: string }>
+  sourceCounts: Record<string, number>
+  expiresAt: string
+}
+export async function previewLabSampleImport(orderId: string, file: File, version: number) {
+  const form = new FormData()
+  form.append('file', file)
+  form.append('version', String(version))
+  const response = await api.post<ApiEnvelope<LabSampleImportPreview>>(`/lab-service-orders/${orderId}/samples/import-preview`, form, { headers: { 'Content-Type': undefined } })
+  return unwrap(response.data)
+}
+export async function confirmLabSampleImport(orderId: string, previewId: string, version: number) {
+  return post<LabServiceOrder>(`/lab-service-orders/${orderId}/samples/import-previews/${previewId}/confirm`, { version })
+}
+export async function finalizeLabSampleRoster(orderId: string, version: number) {
+  return post<LabServiceOrder>(`/lab-service-orders/${orderId}/samples/finalize`, { version })
+}
+export async function downloadLabSampleTemplate(orderId: string, orderNumber: string) {
+  const response = await api.get<Blob>(`/lab-service-orders/${orderId}/samples/template.csv`, { responseType: 'blob' })
+  saveBlob(response.data, `${orderNumber}-sample-list.csv`)
 }
 export async function requestLabCancellation(id: string, version: number, reason: string) {
   return post<LabServiceOrder>(`/lab-service-orders/${id}/cancellation-requests`, { version, reason, scopeJson: '{}' }, true)
@@ -656,6 +718,12 @@ function unwrap<T>(envelope: ApiEnvelope<T>) {
 export function getOrderErrorMessage(error: unknown, fallback: string) {
   if (axios.isAxiosError<ApiEnvelope<unknown>>(error)) return error.response?.data.error?.message ?? fallback
   return error instanceof Error ? error.message : fallback
+}
+
+export function isOrderConcurrencyError(error: unknown) {
+  return axios.isAxiosError<ApiEnvelope<unknown>>(error)
+    && error.response?.status === 409
+    && error.response.data.error?.code === 'concurrency_conflict'
 }
 
 function saveBlob(blob: Blob, fileName: string) {

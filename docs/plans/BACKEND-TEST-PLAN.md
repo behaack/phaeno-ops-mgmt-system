@@ -147,19 +147,17 @@ and rollback-isolated PostgreSQL coverage.
   optional Job notes, eight-character mixed Job numbers with ambiguous-
   character and offensive-fragment rejection, laboratory request/quote
   transitions, immutable request revisions, sample stages, and quote expiry.
-- [ ] Laboratory empty-draft controller coverage - prove an authorized Customer
-  administrator may create a draft with no samples, receives a unique generated
-  Job number, must supply a case-insensitively unique Job name within the
-  Customer organization plus required shared storage and safety values, must
-  choose shared or mixed biological sources, may save optional Job notes, may
-  update the draft with the first valid sample, and
-  cannot submit until at least one sample exists; retain tenant, role,
-  duplicate-identifier, limit, and concurrency enforcement; persist the server-
-  owned `extracted_rna` material type and `tube` quantity unit; stamp shared
-  storage and safety into every sample snapshot regardless of compatibility
-  values supplied by a client; stamp the shared job source into every sample or
-  retain each mixed-source value; accept the dormant empty analysis-ID list; and
-  authorize every sample with the standard `pseq-lab-service` key.
+- [ ] Laboratory pricing-profile controller coverage - prove an authorized
+  Customer administrator may create a draft with no sample records, receives a
+  unique generated Job number, must supply a case-insensitively unique Job name
+  plus a complete source-count composition, storage, and safety profile, and
+  may save optional Job notes. Prove submission requires zero sample records,
+  inserts the first immutable request revision rather than treating it as a
+  stale update, and retains tenant, role, duplicate-name, limit, idempotency,
+  and genuine stale-version enforcement. After quote acceptance, prove manual
+  and CSV sample entry use the server-owned `extracted_rna` material type and
+  `tube` quantity unit and cannot be finalized until identifiers and source
+  counts exactly comply with the accepted Job profile.
 - [x] `backend/test/OrderManagementDomainTests.cs` - negotiated reagent price
   snapshots, effective quantity rules, destination restrictions, immutable
   placement confirmation, approved substitutions, partial shipment, and
@@ -456,7 +454,8 @@ and rollback-isolated PostgreSQL coverage.
 - [ ] Order-management authenticated HTTP/PostgreSQL journey - cover Customer,
   Partner, Prospect, Phaeno, cross-tenant non-discovery, optimistic concurrency,
   idempotency, file ownership, download audit, and outbox atomicity through the
-  real API host.
+  real API host. Include adding and reconciling Job biological-source rows on an
+  existing draft without treating new child records as stale updates.
 - [ ] QuickBooks adapter contract suite - cover catalog/payment synchronization,
   estimates, invoices, credits, partial-shipment invoices, webhook replay and
   signature rejection, bounded retry, and reconciliation mismatches against a
@@ -569,6 +568,14 @@ and rollback-isolated PostgreSQL coverage.
   errors. The Debug build could not replace assemblies held by the active
   Visual Studio/IIS Express session. Backend tests were not requested and were
   not run.
+- 2026-08-22: Job-profile-first pricing and post-acceptance sample-roster
+  coverage was added for domain sequencing and strict CSV parsing, including
+  text-preserved identifiers, quoted commas, single-source inheritance, and
+  committed count/source mismatches. Follow-on hosted PostgreSQL coverage must
+  exercise atomic CSV replacement, finalization rollback, authorization plus
+  shipment creation, multi-tube accession, and legacy one-tube compatibility.
+  The API and module projects compiled with zero warnings and errors; tests
+  were not requested and were not run.
 - 2026-07-18: Web Operations unsubscribe and demo-completion lifecycle changes
   passed the full solution build with zero warnings and zero errors. The
   additive migration was generated and applied to the local `phaeno_ops`

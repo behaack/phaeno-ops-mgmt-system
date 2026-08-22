@@ -65,6 +65,12 @@ procedure change.
   Portal before shipment. Phaeno owns preserving and returning that crosswalk;
   the external organization owns the scientific meaning of its identifier in
   its own records.
+- Product direction was extended on 2026-08-22 to normal paid Customer Lab
+  Service jobs. Pricing and acceptance precede all sample entry. A finalized
+  post-acceptance roster creates the initial specimen-specific Lab
+  authorization and shared shipment. One declared specimen may use multiple
+  submitted tubes; each physical tube receives its own registered supplier
+  barcode assignment while retaining one specimen identity and accession.
 - Trial Project work is RUO and accepts no PHI. Trial instructions, manifests,
   shipment confirmation, and retained crosswalks use only non-PHI identifiers
   and preserve the versioned RUO/no-PHI affirmation required by the owning
@@ -369,53 +375,62 @@ carrier, hazardous-material, or timing rules.
 
 ## Shared Shipment Workflow
 
-1. Phaeno assembles the outbound return kit and scans every permanent supplier
-   tube barcode into the kit record. A tube may belong to only one active kit,
-   shipment, or expected sample assignment.
-2. The external organization opens its accepted Trial Project or placed
-   Customer freebie and reviews the approved sample allowance.
-3. The organization administrator declares each sample using the allowed
+1. The external organization opens its accepted Trial Project, placed Customer
+   promotional order, or price-accepted Customer Lab Service job and reviews
+   the approved sample allowance.
+2. The organization administrator declares each sample using the allowed
    sample types and required metadata. The Customer sample identifier is unique
    within the owning authorization and must not contain a patient name, medical
-   record number, date of birth, or other prohibited PHI.
-4. The Portal validates allowance, submission window, sample facts,
+   record number, date of birth, or other prohibited PHI. A normal paid Lab
+   Service job supports manual entry or validated CSV import only after price
+   acceptance.
+3. The Portal validates allowance, submission window, sample facts,
    destination eligibility, and instruction compatibility.
-5. For each expected sample, the administrator scans the side barcode on one
-   Phaeno-supplied tube or enters its complete human-readable value. The Portal
+4. Finalizing the roster freezes its declared specimen and tube counts, creates
+   or confirms the specimen-specific Lab authorization, and creates the
+   compatible planned shipment groups. One tube slot is created for each
+   physical tube declared by a sample.
+5. Phaeno assembles each outbound return kit and scans every permanent supplier
+   tube barcode into the kit record. The required tube count is derived from
+   the shipment's tube slots and cannot be manually changed. A tube may belong
+   to only one active kit, shipment, or expected tube-slot assignment.
+6. For each tube slot, the administrator scans the side barcode on one Phaeno-
+   supplied tube or enters its complete human-readable value. The Portal
    verifies that the tube belongs to the active kit, is unused, and is not
-   assigned to another sample, then displays the resulting Customer sample
-   identifier-to-tube barcode crosswalk for explicit review.
+   assigned to another slot, then displays the resulting Customer sample
+   identifier-and-slot-to-tube barcode crosswalk for explicit review.
    For a Trial Project, shipment confirmation also requires the current
    versioned RUO/no-PHI affirmation.
-6. The Portal groups compatible samples into one or more proposed shipments.
+7. The Portal groups compatible samples into one or more proposed shipments.
    The user reviews the samples, destination, and detailed instructions before
    confirming each shipment.
-7. Confirmation freezes the destination, sample-type versions, resolved
+8. Confirmation freezes the destination, sample-type versions, resolved
    instructions, expected sample list, tube-to-sample crosswalk, and
    authorization reference in an immutable packet revision.
-8. POMS allocates one unique, checksummed, Code 39-safe packet barcode and a
+9. POMS allocates one unique, checksummed, Code 39-safe packet barcode and a
    human-readable packet number. The packet barcode is never reassigned.
-9. The user prints or downloads a retained customer copy of the crosswalk and
+10. The user prints or downloads a retained customer copy of the crosswalk and
    shipping packet, follows the instructions, places the submission manifest
    inside the package, applies the ship-to label, and adds the carrier's
    postage/tracking label separately. The normal workflow requires no
    customer-printed or handwritten tube label.
-10. The user may record carrier, tracking number, and ship date. These facts do
+11. The user may record carrier, tracking number, and ship date. These facts do
    not change the frozen instructions or expected contents.
-11. At Phaeno, an operator scans or manually enters the packet barcode. The scan
+12. At Phaeno, an operator scans or manually enters the packet barcode. The scan
    resolves the exact authorization, organization, destination, expected
    samples, registered tube barcodes, packet status, and existing Lab work order
    without changing state.
-12. The operator confirms the physical package, scans each tube, and compares
+13. The operator confirms the physical package, scans each tube, and compares
     the physical contents with the frozen crosswalk before recording receipt.
     An unknown, duplicate, missing, unexpected, unreadable, or mismatched tube
     stops automatic intake and opens the approved exception path.
-13. Accession creates the authoritative submitted-container record and
-    accession number while adopting the registered supplier barcode as that
-    tube's authoritative physical identity. The operator verifies the scan under
-    the approved bench procedure; no second barcode label is added in the
-    normal submitted-tube path. Derived containers continue to receive
-    POMS-generated barcodes.
+14. Accession creates one authoritative specimen accession and one submitted-
+    container record for each received physical tube. Every container adopts
+    its registered supplier barcode as its authoritative physical identity and
+    links to the same specimen when multiple tubes contain that specimen. The
+    operator verifies each scan under the approved bench procedure; no second
+    barcode label is added in the normal submitted-tube path. Derived containers
+    continue to receive POMS-generated barcodes.
 
 ## Printable Shipping Packet
 
@@ -549,9 +564,9 @@ second tube label in the normal workflow.
 ### Responsibility Boundary
 
 - Phaeno owns selecting and qualifying the tube, registering each physical tube
-  barcode to the outbound kit, presenting the assignment workflow, enforcing a
-  one-tube-to-one-sample mapping, preserving the crosswalk, and returning a
-  durable copy to the external organization.
+  barcode to the outbound kit, presenting the assignment workflow, enforcing
+  that each tube maps to exactly one sample tube slot, preserving the crosswalk,
+  and returning a durable copy to the external organization.
 - The external organization owns the scientific meaning and internal records
   behind its Customer sample identifier. It selects an expected sample and
   scans or completely enters the barcode of the Phaeno-supplied tube into which
@@ -568,8 +583,9 @@ second tube label in the normal workflow.
   or foreign barcodes cannot be assigned merely because they are well formed.
 - The customer-facing assignment step supports scanner input and complete
   human-readable manual entry; owning a scanner is not a condition of service.
-- One registered tube maps to no more than one active expected sample, and one
-  expected sample maps to no more than one active submitted tube.
+- One registered tube maps to no more than one active expected tube slot. One
+  expected sample owns one or more tube slots according to its finalized tube
+  count, and every slot maps to no more than one active submitted tube.
 - Before packet confirmation, the customer may explicitly remove and replace an
   incorrect tube assignment. The history retains the prior value and actor.
 - Packet confirmation freezes the crosswalk. A later correction or replacement
@@ -633,6 +649,7 @@ A sample shipment references exactly one authorization source kind and ID:
 
 - `CustomerPromotionalOrder`
 - `ProspectTrialProject`
+- `CustomerLabServiceOrder`
 
 The concrete implementation may refine names, but it must preserve source
 separation, organization ownership, immutable packet revisions, one active

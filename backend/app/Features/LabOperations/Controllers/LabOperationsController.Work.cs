@@ -54,7 +54,10 @@ public sealed partial class LabOperationsController
         var work = await RequireWorkOrderAsync(workOrderId, cancellationToken);
         var specimen = await RequireSpecimenAsync(work.Id, specimenId, cancellationToken);
         EnsureVersion(specimen.Version, request.Version);
-        Execute(() => specimen.AssignAccession(request.AccessionNumber));
+        if (string.IsNullOrWhiteSpace(specimen.AccessionNumber))
+            Execute(() => specimen.AssignAccession(request.AccessionNumber));
+        else if (!string.Equals(specimen.AccessionNumber, request.AccessionNumber?.Trim(), StringComparison.Ordinal))
+            throw Conflict("specimen_accession_mismatch", "Additional tubes for this specimen must use its existing accession number.");
         var hasPacketBarcode = !string.IsNullOrWhiteSpace(request.SampleShippingPacketBarcode);
         var hasSupplierTubeBarcode = !string.IsNullOrWhiteSpace(request.SupplierTubeBarcode);
         if (hasPacketBarcode != hasSupplierTubeBarcode)
@@ -88,7 +91,10 @@ public sealed partial class LabOperationsController
             registeredTube = await dbContext.RegisteredSampleTubes
                 .SingleOrDefaultAsync(item => item.SupplierBarcode == supplierBarcode, cancellationToken)
                 ?? throw Conflict("supplier_tube_not_registered", "The supplier tube barcode is not registered in POMS.");
-            if (shipmentItem.RegisteredSampleTubeId != registeredTube.Id)
+            var slotMatches = await dbContext.SampleShipmentTubeSlots.AsNoTracking()
+                .AnyAsync(slot => slot.SampleShipmentItemId == shipmentItem.Id
+                    && slot.RegisteredSampleTubeId == registeredTube.Id, cancellationToken);
+            if (shipmentItem.RegisteredSampleTubeId != registeredTube.Id && !slotMatches)
                 throw Conflict("supplier_tube_sample_mismatch", "The scanned tube is not matched to this Customer sample on the frozen crosswalk.");
             if (registeredTube.Status != RegisteredSampleTubeStatus.Assigned)
                 throw Conflict("supplier_tube_state_invalid", "The registered supplier tube is not available for accession.");

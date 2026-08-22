@@ -187,10 +187,10 @@ export const documentationEntries: readonly DocumentationEntry[] = [
     locale: 'en-US',
     slug: 'lab-services',
     title: 'Request laboratory services',
-    summary: 'Create a job, accept pricing, prepare and ship samples, and open released job data.',
+    summary: 'Price a Job from its sample profile, then enter or import, finalize, and ship its sample list.',
     section: 'Laboratory work',
     order: 30,
-    reviewedAt: '2026-08-21',
+    reviewedAt: '2026-08-22',
     Content: CustomerLabServices,
   },
   {
@@ -199,10 +199,10 @@ export const documentationEntries: readonly DocumentationEntry[] = [
     slug: 'sample-shipping',
     title: 'Prepare and ship samples',
     summary:
-      'Associate Phaeno-supplied tube barcodes with your sample identifiers, retain the crosswalk, and ship an authorized promotional-order package.',
+      'Match each Phaeno-supplied tube to a finalized sample tube slot, retain the crosswalk, and ship the package.',
     section: 'Laboratory work',
     order: 35,
-    reviewedAt: '2026-08-20',
+    reviewedAt: '2026-08-22',
     Content: CustomerSampleShipping,
   },
   {
@@ -235,7 +235,7 @@ export const documentationEntries: readonly DocumentationEntry[] = [
     summary: 'Interpret job, sample, quote, payment, scan, and release states and resolve common problems.',
     section: 'Support',
     order: 60,
-    reviewedAt: '2026-07-16',
+    reviewedAt: '2026-08-22',
     Content: CustomerStatusesAndTroubleshooting,
   },
   {
@@ -392,10 +392,10 @@ export const documentationEntries: readonly DocumentationEntry[] = [
     slug: 'order-operations',
     overviewTitle: 'Overview and queue triage',
     title: 'Order operations',
-    summary: 'Operate Customer lab, sample-return-kit, Partner PSeq kit, and Partner assembly workflows.',
+    summary: 'Operate Customer Lab rosters and return kits, Partner PSeq kits, and Partner assembly workflows.',
     section: 'Order operations',
     order: 40,
-    reviewedAt: '2026-08-18',
+    reviewedAt: '2026-08-22',
     Content: PhaenoOrderOperations,
   },
   {
@@ -404,10 +404,10 @@ export const documentationEntries: readonly DocumentationEntry[] = [
     slug: 'order-customer-lab-authorization',
     parentSlug: 'order-operations',
     title: 'Customer lab authorization',
-    summary: 'Review Customer submissions, issue synchronized quotes, and create the Lab authorization safely.',
+    summary: 'Review Job pricing profiles, issue synchronized quotes, and authorize Lab work after roster finalization.',
     section: 'Order operations',
     order: 41,
-    reviewedAt: '2026-07-16',
+    reviewedAt: '2026-08-22',
     Content: PhaenoOrderCustomerLabAuthorization,
   },
   {
@@ -479,7 +479,7 @@ export const documentationEntries: readonly DocumentationEntry[] = [
     summary: 'Accession specimens, execute controlled protocols, manage batches and sendouts, and record scientific release readiness.',
     section: 'Laboratory operations',
     order: 50,
-    reviewedAt: '2026-07-20',
+    reviewedAt: '2026-08-22',
     Content: PhaenoLabOperations,
   },
   {
@@ -491,7 +491,7 @@ export const documentationEntries: readonly DocumentationEntry[] = [
     summary: 'Record physical receipt, supplier or POMS barcode accession, intake decisions, and container lineage.',
     section: 'Laboratory operations',
     order: 51,
-    reviewedAt: '2026-08-18',
+    reviewedAt: '2026-08-22',
     Content: PhaenoLabReceiptAccession,
   },
   {

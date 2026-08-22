@@ -335,13 +335,12 @@ the protected deployed-Preview acceptance above.
   admin/member, Partner admin/member, Prospect denial, Phaeno operations,
   payment hold, QuickBooks failure, two-tenant isolation, keyboard, and narrow
   viewport scenarios through real authentication and API persistence. Include
-  required and duplicate Job-name validation, required shared storage and safety
-  persistence, shared-versus-mixed source selection and conditional source
-  entry, optional Job-notes persistence, generated eight-character Job-number
-  and shared sample-profile display, and the Customer Lab path from Job
-  details modal to the initially empty draft detail page, compact Add/Edit sample
-  modals, confirmed sample removal, blocked zero-sample submission, no-PHI
-  confirmation, and successful submission after at least one sample is saved.
+  required and duplicate Job-name validation, required storage and safety
+  persistence, biological-source composition with derived sample total,
+  duplicate-source validation, optional Job-notes persistence, generated
+  eight-character Job-number, fixed modal save feedback, concurrency refresh
+  with preserved entries, pricing submission with no sample records, and
+  post-acceptance manual and CSV sample-list preparation.
 - [ ] Database-backed Lab Operations journey - accept a Customer quote, prove
   the visible Phaeno Order Operations **Order intake** section and Open intake
   handoff to the already-linked
@@ -499,6 +498,15 @@ the protected deployed-Preview acceptance above.
 - 2026-07-16: Documentation scenarios were updated for automatic
   current-organization audience filtering and topic icons. The suite was not
   executed because E2E execution was not requested.
+- 2026-08-22: add a connected Customer administrator journey that submits a
+  100-sample Job pricing profile without sample records, accepts the issued
+  price, downloads and previews a CSV, atomically confirms the roster,
+  finalizes only after exact count/source compliance, and matches registered
+  barcodes across repeated `Tube N of N` crosswalk rows. Also assert members
+  remain view-only, pre-acceptance sample/API attempts are rejected, the first
+  immutable submission revision is inserted successfully, and a genuine stale
+  submission reloads the latest Job and requires reconfirmation. E2E execution
+  was not requested and was not run.
 - 2026-07-16: Data provisioning, Order operations, and Documentation scenarios
   were updated for the shared pinned/edge sidebar on desktop and narrow
   layouts. The suite was not executed because E2E execution was not requested.

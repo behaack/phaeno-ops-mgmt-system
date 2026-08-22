@@ -225,8 +225,13 @@ Confirmed Prospect rules:
   laboratory analysis, data processing, and release of resulting data through
   the portal.
 - Customers can track the progress of their samples through the portal.
-- Customer quote acceptance atomically authorizes the corresponding Lab work;
-  a failed Lab authorization records no accepted quote.
+- A Customer Lab Service Job must contain its committed specimen count,
+  biological-source groups and counts, shared storage requirements, and safety
+  declaration before pricing. Individual samples cannot be entered before the
+  price is accepted. Quote acceptance freezes the commercial profile and opens
+  sample-list preparation; finalizing the exact compliant roster atomically
+  creates the corresponding Lab authorization, Lab work, shipment, specimen
+  identities, and physical tube slots.
 - Lab receipt, accession, physical lineage, protocol execution, materials,
   equipment, library/batch membership, NGS sendout/custody, internal exceptions,
   and scientific approval are Phaeno-only records. Customers see only the
@@ -261,7 +266,8 @@ Confirmed Prospect rules:
 - Shared sample shipping uses a Phaeno-fulfilled return kit with an exact
   inventory of globally unique permanent supplier-tube barcodes. An external
   Prospect or Customer administrator associates each tube with one non-PHI
-  Customer sample identifier; Phaeno retains the current crosswalk and every
+  Customer sample tube slot. One specimen can own multiple physical tube slots;
+  Phaeno retains the current crosswalk and every
   correction, while the external organization owns the meaning of its
   identifier in its own records.
 - Packet issuance freezes the destination, instructions, manifest, and tube-

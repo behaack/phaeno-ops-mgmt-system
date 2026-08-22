@@ -96,6 +96,7 @@ public sealed class PSeqOperationsDbContext(
     public DbSet<SampleShippingInstructionRule> SampleShippingInstructionRules { get; set; }
     public DbSet<SampleShipment> SampleShipments { get; set; }
     public DbSet<SampleShipmentItem> SampleShipmentItems { get; set; }
+    public DbSet<SampleShipmentTubeSlot> SampleShipmentTubeSlots { get; set; }
     public DbSet<SampleReturnKit> SampleReturnKits { get; set; }
     public DbSet<RegisteredSampleTube> RegisteredSampleTubes { get; set; }
     public DbSet<SampleTubeAssignmentEvent> SampleTubeAssignmentEvents { get; set; }
@@ -109,6 +110,8 @@ public sealed class PSeqOperationsDbContext(
     public DbSet<OrderStatusEvent> OrderStatusEvents { get; set; }
     public DbSet<OrderCancellationRequest> OrderCancellationRequests { get; set; }
     public DbSet<LabServiceOrder> LabServiceOrders { get; set; }
+    public DbSet<LabServiceSourceGroup> LabServiceSourceGroups { get; set; }
+    public DbSet<LabSampleImportPreview> LabSampleImportPreviews { get; set; }
     public DbSet<LabServiceRequestRevision> LabServiceRequestRevisions { get; set; }
     public DbSet<LabSample> LabSamples { get; set; }
     public DbSet<LabServiceQuote> LabServiceQuotes { get; set; }
