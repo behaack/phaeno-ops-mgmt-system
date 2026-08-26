@@ -5,6 +5,7 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using PSeq.Operations.Commercial.Accounts.Application;
 using PSeq.Operations.Commercial.Accounts.Domain;
+using PSeq.Operations.Commercial.Crm.Domain;
 using PSeq.Operations.Commercial.Relationships.Application;
 using PSeq.Operations.Commercial.Relationships.Domain;
 using PhaenoPortal.App.Features.Accounts.DTOs;
@@ -18,8 +19,7 @@ using PhaenoPortal.App.Infrastructure.Persistence;
 [Route("api/platform/relationships")]
 public sealed class RelationshipManagementController(
     PSeqOperationsDbContext dbContext,
-    IExternalIdentityContext externalIdentityContext,
-    IWebHostEnvironment environment) : ControllerBase
+    IExternalIdentityContext externalIdentityContext) : ControllerBase
 {
     [HttpGet("organizations/{organizationId:guid}/summary")]
     public async Task<OrganizationRelationshipSummaryDto> GetOrganizationSummary(
@@ -222,219 +222,6 @@ public sealed class RelationshipManagementController(
         return Created($"/api/platform/relationships/requests/{value.Id}", ToDto(value));
     }
 
-    [HttpPost("requests/simulate-hubspot")]
-    public async Task<ActionResult<PortalIntegrationRequestDto>> SimulateHubSpotHandoff(
-        [FromBody] SimulateHubSpotHandoffRequest request,
-        CancellationToken cancellationToken)
-    {
-        var actor = await RequirePlatformAdminAsync(cancellationToken);
-        if (!environment.IsDevelopment())
-        {
-            throw NotFound(
-                "hubspot_handoff_simulation_disabled",
-                "HubSpot handoff simulation is available only in the local development environment.");
-        }
-
-        var dealId = request.HubSpotDealId?.Trim();
-        if (string.IsNullOrWhiteSpace(dealId))
-        {
-            throw new RelationshipManagementException(
-                "hubspot_deal_required",
-                "Enter the simulated HubSpot Deal identifier.");
-        }
-
-        var sourceReference = $"hubspot-deal:{dealId}";
-        if (sourceReference.Length > 255)
-        {
-            throw new RelationshipManagementException(
-                "hubspot_deal_invalid",
-                "The simulated HubSpot Deal identifier must be 242 characters or fewer.");
-        }
-
-        Organization? organization = null;
-        if (request.OrganizationId.HasValue)
-        {
-            organization = await RequireOrganizationAsync(request.OrganizationId.Value, cancellationToken);
-        }
-
-        PortalIntegrationRequestType requestType;
-        OrganizationKind requestedKind;
-        IReadOnlyList<PortalService> requestedServices;
-        string candidateName;
-
-        switch (request.Path)
-        {
-            case HubSpotHandoffSimulationPath.SalesAssistedOrder:
-                if (organization == null
-                    || organization.Kind is not (OrganizationKind.Customer or OrganizationKind.Partner))
-                {
-                    throw new RelationshipManagementException(
-                        "sales_assisted_organization_required",
-                        "Select an existing Customer or Partner for a sales-assisted order handoff.");
-                }
-                if (!request.RequestedService.HasValue)
-                {
-                    throw new RelationshipManagementException(
-                        "sales_assisted_service_required",
-                        "Select the service covered by the sales-assisted handoff.");
-                }
-
-                EnsureServiceAllowed(organization.Kind, request.RequestedService.Value);
-                requestType = PortalIntegrationRequestType.SalesAssistedOrder;
-                requestedKind = organization.Kind;
-                requestedServices = [request.RequestedService.Value];
-                candidateName = organization.Name;
-                break;
-
-            case HubSpotHandoffSimulationPath.TrialProject:
-                if (organization != null && organization.Kind != OrganizationKind.Prospect)
-                {
-                    throw new RelationshipManagementException(
-                        "trial_prospect_required",
-                        "Select an existing Prospect or enter a new Prospect candidate for a Trial Project request.");
-                }
-
-                requestType = PortalIntegrationRequestType.Evaluation;
-                requestedKind = OrganizationKind.Prospect;
-                requestedServices = [];
-                candidateName = organization?.Name ?? request.CandidateOrganizationName ?? string.Empty;
-                break;
-
-            default:
-                throw new RelationshipManagementException(
-                    "hubspot_handoff_path_invalid",
-                    "Select a supported HubSpot handoff path.");
-        }
-
-        var duplicate = await dbContext.PortalIntegrationRequests
-            .AsNoTracking()
-            .AnyAsync(value => value.Source == PortalIntegrationRequestSource.HubSpot
-                && value.SourceReference == sourceReference
-                && value.RequestType == requestType,
-                cancellationToken);
-        if (duplicate)
-        {
-            throw Conflict(
-                "hubspot_handoff_already_received",
-                "That simulated HubSpot Deal has already produced this type of Portal handoff.");
-        }
-
-        var internalNotes = string.IsNullOrWhiteSpace(request.InternalNotes)
-            ? "Development-only simulated HubSpot handoff."
-            : $"Development-only simulated HubSpot handoff. {request.InternalNotes.Trim()}";
-        var value = Execute(() => new PortalIntegrationRequest(
-            organization?.Id,
-            candidateName,
-            requestType,
-            PortalIntegrationRequestSource.HubSpot,
-            requestedKind,
-            sourceReference,
-            request.Summary,
-            internalNotes,
-            actor.Id,
-            requestedServices));
-        dbContext.PortalIntegrationRequests.Add(value);
-        await dbContext.SaveChangesAsync(cancellationToken);
-        return Created($"/api/platform/relationships/requests/{value.Id}", ToDto(value));
-    }
-
-    [HttpPost("requests/simulate-hubspot-account")]
-    public async Task<ActionResult<PortalIntegrationRequestDto>> SimulateHubSpotAccountIntake(
-        [FromBody] SimulateHubSpotAccountIntakeRequest request,
-        CancellationToken cancellationToken)
-    {
-        var actor = await RequirePlatformAdminAsync(cancellationToken);
-        if (!environment.IsDevelopment())
-        {
-            throw NotFound(
-                "hubspot_account_simulation_disabled",
-                "HubSpot account simulation is available only in the local development environment.");
-        }
-
-        if (request.RequestedOrganizationKind is not (
-            OrganizationKind.Prospect
-            or OrganizationKind.Customer
-            or OrganizationKind.Partner))
-        {
-            throw new RelationshipManagementException(
-                "hubspot_account_kind_invalid",
-                "Select Prospect, Customer, or Partner as the requested relationship.");
-        }
-
-        var companyId = request.HubSpotCompanyId?.Trim();
-        var dealId = request.HubSpotDealId?.Trim();
-        if (string.IsNullOrWhiteSpace(companyId) || string.IsNullOrWhiteSpace(dealId))
-        {
-            throw new RelationshipManagementException(
-                "hubspot_account_references_required",
-                "Enter both the simulated HubSpot Company and Deal identifiers.");
-        }
-
-        var sourceReference = $"hubspot-company:{companyId};deal:{dealId}";
-        if (sourceReference.Length > 255)
-        {
-            throw new RelationshipManagementException(
-                "hubspot_account_references_invalid",
-                "The combined simulated HubSpot Company and Deal identifiers are too long.");
-        }
-
-        var requestedServices = request.RequestedServices.Distinct().ToList();
-        if (request.RequestedOrganizationKind == OrganizationKind.Prospect)
-        {
-            if (requestedServices.Count != 0)
-            {
-                throw new RelationshipManagementException(
-                    "prospect_services_not_allowed",
-                    "A Prospect evaluation cannot request commercial service entitlements.");
-            }
-        }
-        else
-        {
-            if (requestedServices.Count == 0)
-            {
-                throw new RelationshipManagementException(
-                    "hubspot_account_service_required",
-                    "Select at least one service requested for the new account.");
-            }
-
-            EnsureRequestServicesAllowed(request.RequestedOrganizationKind, requestedServices);
-        }
-
-        var requestType = request.RequestedOrganizationKind == OrganizationKind.Prospect
-            ? PortalIntegrationRequestType.Evaluation
-            : PortalIntegrationRequestType.Onboarding;
-        var duplicate = await dbContext.PortalIntegrationRequests
-            .AsNoTracking()
-            .AnyAsync(value => value.Source == PortalIntegrationRequestSource.HubSpot
-                && value.SourceReference == sourceReference
-                && value.RequestType == requestType,
-                cancellationToken);
-        if (duplicate)
-        {
-            throw Conflict(
-                "hubspot_account_handoff_already_received",
-                "That simulated HubSpot Company and Deal have already produced this account handoff.");
-        }
-
-        var internalNotes = string.IsNullOrWhiteSpace(request.InternalNotes)
-            ? "Development-only simulated HubSpot account intake."
-            : $"Development-only simulated HubSpot account intake. {request.InternalNotes.Trim()}";
-        var value = Execute(() => new PortalIntegrationRequest(
-            null,
-            request.CandidateOrganizationName,
-            requestType,
-            PortalIntegrationRequestSource.HubSpot,
-            request.RequestedOrganizationKind,
-            sourceReference,
-            request.Summary,
-            internalNotes,
-            actor.Id,
-            requestedServices));
-        dbContext.PortalIntegrationRequests.Add(value);
-        await dbContext.SaveChangesAsync(cancellationToken);
-        return Created($"/api/platform/relationships/requests/{value.Id}", ToDto(value));
-    }
-
     [HttpPost("requests/{requestId:guid}/decision")]
     public async Task<PortalIntegrationRequestDto> DecideRequest(
         Guid requestId,
@@ -451,6 +238,11 @@ public sealed class RelationshipManagementController(
             await CreateAndAssociateAccountAsync(value, cancellationToken);
         }
 
+        if (request.Approved)
+        {
+            await EnsureCrmPortalAccountLinkAsync(value, actor.Id, cancellationToken);
+        }
+
         await dbContext.SaveChangesAsync(cancellationToken);
         return ToDto(value);
     }
@@ -461,10 +253,11 @@ public sealed class RelationshipManagementController(
         [FromBody] CreateAccountFromPortalIntegrationRequest request,
         CancellationToken cancellationToken)
     {
-        await RequirePlatformAdminAsync(cancellationToken);
+        var actor = await RequirePlatformAdminAsync(cancellationToken);
         var value = await RequireRequestAsync(requestId, tracking: true, cancellationToken);
         EnsureVersion(value.Version, request.Version);
         var organization = await CreateAndAssociateAccountAsync(value, cancellationToken);
+        await EnsureCrmPortalAccountLinkAsync(value, actor.Id, cancellationToken);
         await dbContext.SaveChangesAsync(cancellationToken);
 
         return ToDto(organization);
@@ -492,6 +285,7 @@ public sealed class RelationshipManagementController(
             Execute(() => value.AssociateOrganization(request.OrganizationId.Value));
         }
 
+        await EnsureCrmPortalAccountLinkAsync(value, actor.Id, cancellationToken);
         Execute(() => value.MarkApplied(request.Notes, actor.Id, DateTime.UtcNow));
         await dbContext.SaveChangesAsync(cancellationToken);
         return ToDto(value);
@@ -629,6 +423,44 @@ public sealed class RelationshipManagementController(
         {
             throw Conflict("source_request_not_eligible", "The source request must belong to this organization, be approved or applied, and include the selected service.");
         }
+    }
+
+    private async Task EnsureCrmPortalAccountLinkAsync(PortalIntegrationRequest request, Guid actorUserId, CancellationToken cancellationToken)
+    {
+        if (!request.OrganizationId.HasValue)
+        {
+            return;
+        }
+
+        var handoff = await dbContext.CrmHandoffs.FirstOrDefaultAsync(value => value.RelationshipRequestId == request.Id, cancellationToken);
+        if (handoff is null)
+        {
+            return;
+        }
+
+        var exists = await dbContext.CrmPortalAccountLinks.AnyAsync(
+            value => value.CompanyId == handoff.CompanyId && value.OrganizationId == request.OrganizationId.Value,
+            cancellationToken);
+        if (exists)
+        {
+            return;
+        }
+
+        dbContext.CrmPortalAccountLinks.Add(new CrmPortalAccountLink(
+            handoff.CompanyId,
+            request.OrganizationId.Value,
+            $"Portal account associated through {request.RequestNumber}.",
+            actorUserId,
+            DateTime.UtcNow));
+        dbContext.CrmActivities.Add(new CrmActivity(
+            CrmActivityType.PortalEvent,
+            "Portal account linked",
+            $"Portal request {request.RequestNumber} was associated with a Portal organization.",
+            DateTime.UtcNow,
+            CrmActivityVisibility.Internal,
+            actorUserId,
+            handoff.CompanyId,
+            opportunityId: handoff.OpportunityId));
     }
 
     private async Task EnsureNoOverlapAsync(

@@ -8,21 +8,21 @@ This document records how the application operates in the current repository and
 | --- | --- |
 | Frontend | React 19 and TanStack Start, served by Vite in development and built as client plus SSR assets. |
 | API | .NET 10 ASP.NET Core application. |
-| Database | PostgreSQL through one EF Core `PSeqOperationsDbContext`. The current model maps 54 Commercial/current-flow and Lab-projection tables to `commercial_ops`, 22 Laboratory execution tables to `lab_ops`, two public Website intake tables to `website`, and migration history to `public`; `AddWebsiteApi` has not been applied to a shared environment. |
+| Database | PostgreSQL through one EF Core `PSeqOperationsDbContext`. The current model maps 85 Commercial/current-flow and Lab-projection tables to `commercial_ops`, 27 Laboratory execution tables to `lab_ops`, two public Website intake tables to `website`, and migration history to `public`; the latest migrations have been applied only to the configured local development database. |
 | Authentication | Clerk-issued bearer JWTs; application authorization comes from internal users, active memberships, and capabilities. |
 | Lab Operations | Feature-complete internal provider with additive Phaeno roles, operator APIs/workspace, receipt and accession, controlled execution, traceability, outsourced NGS sendouts, exceptions, scientific approval, and customer-safe Commercial projections. Production validation and activation remain incomplete. |
 | Curated-data files | `IManagedFileStorage` adapts to the shared `IFileStorage` contract. Development uses local filesystem storage. Production currently selects a non-persisting `Disabled` adapter, so the API starts but file operations return HTTP 503. The S3 adapter is implemented but not configured or live-validated. |
 | Order files | `IOperationalFileStorage` adapts to the shared `IFileStorage` contract. Development uses local filesystem storage. Production currently selects a non-persisting `Disabled` adapter, so the API starts but file operations return HTTP 503. The S3 adapter is implemented but not configured or live-validated. |
 | File scanning | Environment scanner abstractions. Development can trust configured fixture files; production defaults do not. |
 | Commercial integration | QuickBooks Online adapter. A logging gateway is used when the required QuickBooks configuration is absent. |
-| Relationship CRM | Not implemented. HubSpot is selected for the approved future lifecycle in `docs/plans/HUBSPOT-PORTAL-LIFECYCLE-PLAN.md`. |
+| Relationship CRM | A standalone first-party POMS CRM is implemented for Companies, Contacts, Leads, Opportunities, pipelines, Activities, Tasks, reporting, administration, and controlled Portal handoffs. HubSpot is absent from the runtime and deferred as a possible optional adapter. |
 | Email and notices | Portal transactional flows use Postmark when configured. Public Website contact/order templates use Mailgun when configured; logging senders are the local fallback. |
 | Public Website API | Anonymous `/api/v1/web-ops` search, database ping, contact, and order endpoints plus `/public` document hosting are implemented in Portal. Historical data and public traffic have not been cut over. |
 | Background work | Hosted dispatchers retry order integrations, order notifications, data-provisioning notices, and Lab-to-Commercial projection delivery. A hosted Website crawler rebuilds the Lucene index on its configured interval. |
 | Help | Browser-bundled MDX with Customer/Partner locale metadata and Phaeno US-English content. Backend search is not implemented. |
 | Organization/user administration UI | Invitation acceptance and Phaeno organization list/detail, request, entitlement, invitation, membership, conversion, lifecycle, and User management workspaces use durable APIs. Invitations retain the person’s name and intended membership role. Phaeno invitations and user edits consolidate Platform administrator and additive Laboratory roles; pending Laboratory-role intent activates only on acceptance, while external administration remains organization-scoped. |
 
-Phaeno Portal is the operational source of truth. QuickBooks Online is authoritative only for the commercial facts defined in `docs/business-rules.md`. No ERP, third-party LIMS, or CRM is connected to the running application; Laboratory execution is owned by the internal Lab Operations provider.
+Phaeno Portal is the operational source of truth. Its first-party CRM owns relationship and pipeline records, while QuickBooks Online is authoritative only for the commercial facts defined in `docs/business-rules.md`. No ERP, third-party LIMS, or external CRM is connected to the running application; Laboratory execution is owned by the internal Lab Operations provider.
 
 ## Health and basic verification
 
@@ -52,7 +52,7 @@ Keep environment-specific values outside source control. `appsettings.Developmen
 | `DataProvisioning` | Upload limit, synthetic policy, scanner, allowed kinds | Synthetic fixtures rejected; real file policy and trusted scanner approved. |
 | `OrderManagement` | Upload limit, scanner, allowed kinds | Trusted scanner and real Customer/Partner file policy approved. |
 | `QuickBooks` | Environment, company/realm, OAuth, API, webhook verifier | Correct company, least-privilege credentials, webhook validation, sandbox journey, reconciliation, and rotation process approved. |
-| Planned `HubSpot` | Account/app identifiers, OAuth or private-app credentials, API, webhook verifier, and property mapping | Not present today. Before activation: least-privilege scopes, non-production proof, webhook validation, reconciliation, monitoring, and rotation approved. |
+| Future external CRM adapter | Provider/account identifiers, credentials, API, webhook verifier, and field mapping | Not present or required today. Before any activation: fresh product scope, field ownership, least-privilege access, non-production proof, webhook validation, reconciliation, monitoring, and rotation approved. |
 | `VITE_CLERK_PUBLISHABLE_KEY` | Frontend Clerk instance | Matches the API's production Clerk configuration. |
 | `VITE_API_BASE_URL` | Frontend API base URL | Points to the approved API origin or reverse proxy. |
 | `VITE_USE_MOCK_SESSION` | Development mock session | Must not enable mock access in production. |
@@ -69,8 +69,11 @@ Committed migrations currently cover:
 4. `CompleteLabOperations`.
 5. `AddLabQcProjection`.
 6. `EnforceLabLibraryLineage`.
-7. `AddWebsiteApi`, generated for the `website` schema and not applied to a
-   shared environment by the consolidation work.
+7. Subsequent additive Website, invitation, Lab, shipping, retention, and Job
+   workflow migrations through `BackfillJobPricingProfiles`.
+8. `AddCrmCompanyFoundation`, `CompleteCoreCrm`, and
+   `AllowRepeatCrmCompanyContactHistory`, applied to the configured local
+   development database only.
 
 Use the repository-local EF tool manifest and commands documented in `README.md`. A migration committed or applied to one developer database is not proof that it ran in another environment. Before a shared-environment migration, record the target, backup/restore point, expected duration, application compatibility, verification query or smoke test, and rollback/forward-fix decision. Never apply a migration to shared, staging, or production data without explicit authorization.
 
@@ -103,9 +106,9 @@ Production is not ready until all applicable gates are evidenced:
   exchange, custody expectations, returned-output handshake, and support
   ownership;
 - QuickBooks sandbox end-to-end validation, production company connection, webhook verification, payment reconciliation, duplicate prevention, and credential rotation;
-- when the approved CRM plan enters scope, HubSpot non-production validation,
-  Company/Contact/Deal/Order mapping, webhook verification, duplicate
-  prevention, reconciliation, least-privilege credentials, Sales layouts, and
+- production migration and authenticated validation of the first-party CRM for
+  Companies, Contacts, Leads, Opportunities, pipelines, Activities, Tasks,
+  reporting, CRM-to-Portal handoffs, duplicate prevention, authorization, and
   operational ownership;
 - Postmark sender/domain verification, template review, delivery/bounce monitoring, and retry ownership;
 - Website historical-row copy with count/hash comparison, reCAPTCHA and
@@ -127,8 +130,8 @@ Until these gates are complete, a passing local build or test suite demonstrates
 - A general shared-folder and file-version product outside the feature-owned file boundaries.
 - A confidential Phaeno runbook delivery system; browser-bundled help must remain distributable.
 - Backend-indexed help search and additional Customer/Partner locales.
-- HubSpot integration until the approved lifecycle plan is explicitly
-  implemented and production-validated.
+- Any external CRM integration until a fresh adapter plan is explicitly
+  approved, implemented, and production-validated.
 - A third-party LIMS adapter and ownership cutover unless an approved future
   workflow establishes the need.
 - Exceptional curated-package purge and any automated retention deletion workflow.

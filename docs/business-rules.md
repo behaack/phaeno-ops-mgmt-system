@@ -20,6 +20,48 @@
 - Email delivery uses Postmark when configured and a logging implementation for local/unconfigured environments.
 - Invite acceptance must connect the external Clerk identity to the intended internal user and membership without bypassing tenant checks. The invited email must match the authenticated Clerk user's verified primary email; when Clerk's session token omits email claims, the API verifies that primary email directly with Clerk before changing Portal access.
 
+## Customer relationship management
+
+- A CRM Company is a commercial relationship record, not a Portal organization.
+- Creating, editing, deactivating, or reactivating a CRM Company does not create
+  a Portal account, user, membership, invitation, entitlement, order, or
+  executable scientific work.
+- The CRM workspace is restricted to active Phaeno platform
+  administrators. Backend authorization remains authoritative even when the
+  navigation item is hidden.
+- The first-party CRM owns Companies, Contacts, effective-dated Company/Contact
+  relationships, Leads, Opportunities, configurable pipelines and stages,
+  Activities, Tasks, ownership, follow-up, saved definitions, custom fields,
+  duplicate review, controlled merge, import/export, search, and operational
+  reporting.
+- Every Company, Contact, Lead, Opportunity, and Task has an internal Phaeno
+  owner. A record defaults to the creating administrator when no eligible owner
+  is supplied, and authorized updates may reassign it.
+- CRM records use audited soft deactivation and optimistic concurrency. Merge
+  preserves the losing record and redirects its supported relationships to the
+  chosen surviving record.
+- A Contact may have effective-dated relationships with multiple Companies and
+  a Company may have multiple Contacts. Historical relationships are retained;
+  only one active primary Company is allowed per Contact.
+- Lead qualification, disqualification, and conversion are explicit decisions.
+  Conversion can create or reuse a Company and may create a Contact and an
+  Opportunity; it never creates a Portal account or operational work.
+- Opportunity stage transitions retain immutable history. Closed outcomes use
+  Won, Lost, or Abandoned stages, and stages may require a reason.
+- Reports never imply currency conversion. Opportunity counts include every
+  currency, while aggregate amount and weighted-forecast figures are USD-only
+  until an approved conversion policy is implemented.
+- Manual Activities may be Notes, Calls, Meetings, Emails, or Status Changes.
+  System, Portal, and Task events are reserved for application-created audit
+  context. Tasks support ownership, priority, reminders, status, and daily,
+  weekly, or monthly recurrence.
+- A CRM-to-Portal handoff creates a pending, reviewable relationship request.
+  Intake alone never creates access, activates services, or starts scientific
+  or operational work. Approved Portal account creation records a stable,
+  auditable CRM Company link.
+- Scientific, patient, sample, file, QC, custody, and protected data are outside
+  the CRM boundary.
+
 ## Lifecycle, audit, and concurrency
 
 - Users and organizations are deactivated rather than hard-deleted in normal workflows.
@@ -29,8 +71,9 @@
 
 ## Current implementation boundary
 
-The current code implements `Phaeno`, `Prospect`, `Customer`, and `Partner`
-organizations; invite-only multi-organization membership; Phaeno-owned curated
+The current code implements the first-party CRM described above; `Phaeno`,
+`Prospect`, `Customer`, and `Partner` organizations; invite-only
+multi-organization membership; Phaeno-owned curated
 data provisioning; Customer laboratory services; Partner reagent ordering;
 Partner data assembly; a Phaeno-only internal Lab Operations workflow; and
 Phaeno operational/configuration workspaces. The approved Lab application scope
@@ -40,7 +83,8 @@ incomplete.
 
 The general shared-folder/file-management model, production storage and malware
 scanning, real production scientific definitions and profiles, production
-QuickBooks/Postmark configuration, CRM or third-party LIMS integration, and an
+QuickBooks/Postmark configuration, connected CRM communications or marketing
+automation, external CRM adapters, third-party LIMS integration, and an
 established production deployment path are not implemented production
 capabilities.
 

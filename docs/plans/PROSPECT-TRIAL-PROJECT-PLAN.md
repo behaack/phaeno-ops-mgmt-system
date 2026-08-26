@@ -21,6 +21,8 @@ Do not execute this plan unless explicitly requested.
   review. This exercises only the durable inbound request boundary; it does not
   implement the Trial Project aggregate, dual approval, Prospect acceptance,
   sample submission, execution authorization, or result release.
+  Product direction changed on 2026-08-26: this simulator is superseded
+  implementation debt and will be replaced by first-party CRM intake.
 - The implemented Lab Operations v1 contract already reserves `TrialProject`
   as an authorization source, but no Trial Project currently invokes it. A
   future Trial Project implementation must route approved work through the
@@ -88,20 +90,22 @@ Do not execute this plan unless explicitly requested.
   expected. Prospect-visible terms and result-release artifacts state `For
   Research Use Only. Not for use in diagnostic procedures.` The Prospect uses
   non-PHI sample identifiers and retains any identity mapping outside POMS.
-- Product direction was clarified on 2026-08-18: the initial HubSpot-to-POMS
-  handoff carries only commercial request context: the Deal, company, primary
-  contact, Sales owner, business objective, commercial justification, and
+- Product direction was clarified on 2026-08-18 and superseded only in its
+  external-system assumption on 2026-08-26: the first-party CRM-to-POMS handoff
+  carries only commercial request context: the Opportunity, Company, primary
+  Contact, Phaeno owner, business objective, commercial justification, and
   intended conversion relationship. Phaeno staff define the proposed sample
   allowance, submission window, analyses, deliverables, and other scientific
-  scope in POMS. HubSpot receives only relationship-safe milestones and a POMS
-  deep link.
+  scope in the Trial Project workflow. CRM receives only relationship-safe
+  milestones and a POMS deep link.
 - Product direction was clarified on 2026-08-18: Trial Project execution and
   commercial conversion are separate outcomes. POMS records `Completed` only
   after the complete approved result package is released. Otherwise POMS uses
-  `Closed incomplete` with a required reason. HubSpot records `Converted to Customer`,
-  `Converted to Partner`, or `Closed without conversion` with a required reason.
+  `Closed incomplete` with a required reason. First-party CRM records
+  `Converted to Customer`, `Converted to Partner`, or `Closed without
+  conversion` with a required reason.
   It may instead use nonterminal `Follow-up scheduled` with a required owner and
-  date. No HubSpot outcome converts the organization automatically.
+  date. No CRM outcome converts the organization automatically.
 - Product direction was clarified on 2026-08-18: the default residual-material
   policy is to retain remaining extracted RNA for 30 calendar days after
   terminal POMS closure and then destroy it. The retention duration is
@@ -112,16 +116,19 @@ Do not execute this plan unless explicitly requested.
 - This approved digital-file policy is not implemented. The current application
   has no Trial Project result package, download-state warning, grace-period, or
   automatic released-file deletion worker.
-- HubSpot is the selected relationship CRM and planned integration target, but
-  no CRM integration exists in the running application. The workflow must
-  support a manual handoff before automation is required.
-- No implementation, dependency, schema, authentication, migration, HubSpot
-  integration, or test execution is authorized by this planning decision.
+- POMS will include the full first-party CRM defined by `CRM-PLAN.md`. HubSpot
+  is a deferred optional adapter, and no external CRM integration exists in the
+  running application.
+- No implementation, dependency, schema, authentication, migration, external
+  CRM integration, or test execution is authorized by this planning decision.
 
 ## Related Documents
 
-- `../crm-integration-strategy.md` owns the durable HubSpot/Portal boundary, and
-  `HUBSPOT-PORTAL-LIFECYCLE-PLAN.md` owns its active lifecycle contract.
+- `CRM-PLAN.md` owns first-party CRM, and
+  `STANDALONE-COMMERCIAL-LIFECYCLE-PLAN.md` owns the CRM/Portal boundary.
+  `../crm-integration-strategy.md` and
+  `HUBSPOT-PORTAL-LIFECYCLE-PLAN.md` retain the deferred external-adapter
+  boundary and historical design.
 - `AUTH-USER-SYSTEM-PLAN.md` owns organization, membership, invitation, and
   conversion authorization.
 - `ORDER-MANAGEMENT-PLAN.md` owns Customer and Partner commercial ordering and
@@ -155,10 +162,10 @@ trial.
 
 ## Confirmed Product Decisions
 
-- Sales representatives live in HubSpot and manage companies, contacts,
-  opportunities, relationship activity, and the commercial pipeline there.
-- A Sales representative requests a Trial Project from the HubSpot Deal.
-- The HubSpot request contains commercial context only. Scientific scope is
+- Sales representatives use the first-party POMS CRM to manage Companies,
+  Contacts, Opportunities, relationship activity, and commercial pipelines.
+- A Sales representative requests a Trial Project from the CRM Opportunity.
+- The CRM request contains commercial context only. Scientific scope is
   proposed, reviewed, approved, and amended only in POMS.
 - Expressed interest alone does not create a Portal organization or Trial
   Project. The request must pass the approved review process.
@@ -215,7 +222,7 @@ trial.
   samples, results, and audit history, but it does not reset or extend the
   Trial Project result package's snapshotted standard or final deletion
   deadlines.
-- Scientific/operational completion and the HubSpot commercial outcome are
+- Scientific/operational completion and the CRM commercial outcome are
   independent. A completed Trial Project may still close without conversion or
   remain in scheduled commercial follow-up.
 - Trial package deletion and organization deactivation are separate events.
@@ -288,7 +295,7 @@ trial.
 - POMS does not request, accept, or need PHI. Patient names, medical-record
   numbers, dates of birth, direct patient identifiers, and unnecessary personal
   or health information are prohibited in every field, filename, upload, tube
-  label, manifest, note, notification, audit detail, and HubSpot record.
+  label, manifest, note, notification, audit detail, and CRM record.
 - The Prospect creates one non-PHI sample identifier per submitted sample and
   owns the scientific meaning and any person-to-sample crosswalk exclusively in
   its own records. Phaeno preserves only the non-PHI sample-to-tube crosswalk
@@ -340,9 +347,9 @@ trial.
 
 ## System Ownership
 
-### HubSpot
+### First-Party CRM
 
-HubSpot owns:
+The POMS CRM owns:
 
 - company and relationship contacts
 - sales opportunity and pipeline stage
@@ -383,12 +390,12 @@ The Portal owns:
 
 ### Sales Representative
 
-- qualifies the Prospect in HubSpot
+- qualifies the Prospect in first-party CRM
 - requests the Trial Project from the associated opportunity
 - explains the commercial objective and expected conversion value
 - supplies relationship-safe business context but does not define or transmit
-  the Trial Project's scientific scope in HubSpot
-- follows the read-only trial status returned to HubSpot
+  the Trial Project's scientific scope in CRM
+- follows the read-only trial status linked into CRM
 - records `Converted to Customer` or `Converted to Partner` as the final outcome
 - records `Closed without conversion` only with a required reason
 - may instead keep the decision nonterminal as `Follow-up scheduled` with a
@@ -456,51 +463,50 @@ The Portal owns:
 - cannot submit samples, amend the project, or receive ordering authority in
   the initial release
 
-## HubSpot Request
+## First-Party CRM Request
 
-The Sales request contains at least:
+The CRM Opportunity request contains at least:
 
-- HubSpot Company and Deal identifiers
+- POMS CRM Company and Opportunity identifiers
 - Prospect company and primary contact
 - Sales representative and account owner
 - intended relationship: Customer, Partner, or undetermined
 - business objective and commercial justification
 
-The HubSpot request does not carry proposed samples, scientific inputs,
+The CRM request does not carry proposed samples, scientific inputs,
 analyses, deliverables, shipping facts, or laboratory instructions. After POMS
 receives the commercial request, authorized Phaeno users define the proposed
 sample allowance, submission window, permitted material, analyses,
 deliverables, shipping constraints, and measurable scientific acceptance
 criteria in the Trial Project review workflow.
 
-HubSpot request receipt must be idempotent. A retried webhook or manual retry must
-not create a second Portal organization or Trial Project for the same approved
-request.
+CRM request application must be idempotent. A repeated command must not create
+a second Portal organization or Trial Project for the same approved request.
 
-## HubSpot Pipeline Behavior
+## First-Party CRM Pipeline Behavior
 
-- The HubSpot Deal stage represents commercial progress; the Portal Trial
+- The CRM Opportunity stage represents commercial progress; the Portal Trial
   Project status represents scientific and operational progress.
 - Recommended commercial progression is `Qualified` -> `Evaluation proposed`
   -> `Trial requested` -> `Trial active` -> `Conversion decision` -> `Closed
   won` or `Closed lost`.
 - Moving an opportunity to `Trial requested` submits or enables the request but
   does not itself approve the Trial Project or authorize samples.
-- The Portal publishes its approval and operational status into separate
-  read-only HubSpot fields so Sales can follow progress without editing scientific
-  state.
+- The Portal publishes its approval and operational status as relationship-safe
+  CRM activity and summary fields so Sales can follow progress without editing
+  scientific state.
 - Sales remains responsible for the opportunity stage and close decision. The
   Portal remains authoritative for approval, submission eligibility, samples,
   results, and completion.
-- `Follow-up scheduled` keeps the Deal in `Conversion decision` and requires a
+- `Follow-up scheduled` keeps the Opportunity in `Conversion decision` and requires a
   Sales owner and follow-up date. It is not a final outcome.
-- `Converted to Customer` and `Converted to Partner` are final HubSpot outcomes
+- `Converted to Customer` and `Converted to Partner` are final CRM outcomes
   that may support, but never perform, the corresponding authorized POMS
   conversion. `Closed without conversion` is final and requires a reason.
 
 ## Approval Workflow
 
-1. Sales submits `Trial requested` from the HubSpot Deal.
+1. Sales submits `Trial requested` from the CRM Opportunity.
 2. The Portal records a pending request without granting Prospect access.
 3. The Chief Business Officer or an active authorized commercial delegate
    approves, declines, or requests clarification.
@@ -517,15 +523,15 @@ request.
 7. Acceptance permits sample submission only while the project-specific frozen
    submission window is open and its approved allowance remains available.
 
-A declined request returns a concise HubSpot-safe reason. Internal notes and
-scientific review details remain in the Portal.
+A declined request returns a concise relationship-safe reason. Internal notes
+and scientific review details remain in the owning POMS workflow.
 
 ## Frozen Trial Scope
 
 Approval snapshots:
 
 - Trial Project number, name, and objective
-- Prospect organization and HubSpot Deal reference
+- Prospect organization and CRM Opportunity reference
 - Sales owner and both actual approvers, including each approval domain and
   primary-versus-delegate authority source
 - approved sample allowance, with no universal maximum
@@ -826,9 +832,10 @@ Phaeno cross-organization work occurs only through authorized platform views.
 - Prospect navigation does not expose Customer ordering, Partner reagent,
   Partner assembly, quote, invoice, or payment surfaces.
 
-## HubSpot Synchronization
+## CRM Link And Future External Synchronization
 
-The Portal may publish only approved commercial summaries:
+The Trial Project may expose only approved commercial summaries to first-party
+CRM and any future external CRM adapter:
 
 - request received
 - approved, declined, returned, cancelled, or expired
@@ -842,31 +849,31 @@ The Portal may publish only approved commercial summaries:
 - organization converted to Customer or Partner, or retained as Prospect after
   commercial closeout
 
-Do not send sample identifiers, raw files, scientific results, QC details,
-custody details, internal notes, or other sensitive operational content to the
-HubSpot.
+Do not place sample identifiers, raw files, scientific results, QC details,
+custody details, internal notes, or other sensitive operational content in CRM.
 
-Once a Trial Project exists, a HubSpot outage or delayed synchronization must not
-block Portal sample receipt, processing, result release, or closure. Failed HubSpot
-status publication is visible and retryable.
+Once a Trial Project exists, a CRM projection failure or future external CRM
+outage must not block Portal sample receipt, processing, result release, or
+closure. Failed summary publication is visible and retryable to authorized
+Phaeno users.
 
 ## Conversion And Closure
 
-- POMS operational status and HubSpot commercial outcome are separate. Trial
+- POMS operational status and CRM commercial outcome are separate. Trial
   completion does not imply commercial conversion, and a commercial outcome
   does not rewrite Trial Project completion.
 - POMS records `Completed` only when the complete approved result package is
   released. Otherwise the terminal operational outcome is `Closed incomplete`
   with a required Prospect-safe reason.
-- Sales records exactly one final commercial outcome in HubSpot:
+- Sales records exactly one final commercial outcome in first-party CRM:
   `Converted to Customer`, `Converted to Partner`, or `Closed without conversion`.
   Closed without conversion requires a reason.
 - Sales may instead record `Follow-up scheduled` with a required owner and date.
   That state is nonterminal and remains unresolved until Sales records a final
   commercial outcome.
 - An authorized Phaeno user explicitly converts the same Prospect organization
-  to Customer or Partner when the commercial decision warrants it. A HubSpot
-  stage or outcome never performs the conversion automatically.
+  to Customer or Partner when the commercial decision warrants it. A CRM stage
+  or outcome never performs the conversion automatically.
 - Conversion preserves Trial Projects, samples, results, memberships, stable
   identifiers, curated-data grants, and audit history. It does not reset or
   extend a released Trial package's snapshotted warning, standard-deletion, or
@@ -879,7 +886,7 @@ status publication is visible and retryable.
 - The first paid transaction is a new Customer or Partner record. It does not
   mutate or replace the Trial Project.
 - A lost, abandoned, or expired opportunity closes the commercial evaluation.
-  HubSpot records it as `Closed without conversion` with a reason. Trial result
+  CRM records it as `Closed without conversion` with a reason. Trial result
   package bytes remain governed by their snapshotted retention terms, but
   deletion does not deactivate the Prospect organization automatically.
 - After commercial closeout, an authorized Phaeno user may explicitly
@@ -892,7 +899,7 @@ status publication is visible and retryable.
 
 Audit at least:
 
-- HubSpot request receipt and idempotency identity
+- CRM request application and idempotency identity
 - commercial and scientific decisions, actors, reasons, and timestamps
 - enforcement that the two affirmative decisions for each initial or amended
   scope version were made by different acting users
@@ -914,10 +921,10 @@ Audit at least:
   holds; byte-deletion outcome; and retained metadata
 - submission closure, expiration, cancellation, completion, and incomplete
   closure
-- HubSpot publication attempts and retries
+- CRM summary publication attempts and retries
 - organization conversion or deactivation
 
-Use optimistic concurrency on mutable records, durable retry for HubSpot
+Use optimistic concurrency on mutable records, durable retry for CRM summary
 publication, managed-file scanning and authorization, tenant-scoped reads and
 writes, and append-only status history for consequential transitions. Trial
 data must never be exposed through the Phaeno-owned curated Prospect catalog.
@@ -944,9 +951,10 @@ data must never be exposed through the Phaeno-owned curated Prospect catalog.
 3. Add Phaeno request-review and operational workspaces.
 4. Add Prospect Trial Project list/detail, acceptance, sample submission,
    progress, and released-result download/retention lifecycle.
-5. Validate the workflow with a manual HubSpot handoff and Portal deep links.
-6. Add the HubSpot adapter, idempotent request intake, status publication,
-   retry, and reconciliation only after the manual workflow is proven.
+5. Validate the workflow through the first-party CRM handoff and Portal deep
+   links.
+6. Add first-party CRM summary publication, retry, and reconciliation after the
+   authoritative workflow is proven. Defer any HubSpot adapter.
 7. Complete production scientific configuration, storage, scanning,
    notification, operational runbooks, and full authenticated verification.
 
@@ -992,7 +1000,7 @@ data must never be exposed through the Phaeno-owned curated Prospect catalog.
   controlled preservation holds without extending access or resetting dates,
   and retains the required metadata and complete audit history without
   promising byte restoration
-- only one Trial Project is created for one HubSpot request identity
+- only one Trial Project is created for one CRM request identity
 - Prospect organization admins can submit only within an approved, accepted,
   open Trial Project
 - Prospect members can view but cannot submit in the initial release
@@ -1001,7 +1009,7 @@ data must never be exposed through the Phaeno-owned curated Prospect catalog.
 - structured patient identifiers and other prohibited PHI are rejected
 - suspected prohibited data places the affected sample or shipment in a
   restricted hold that blocks receipt progression, processing, and release;
-  logs, audits, notifications, and HubSpot receive only safe incident metadata
+  logs, audits, notifications, and CRM receive only safe incident metadata
 - sample limits, deadlines, types, analyses, and amendment versions are enforced
 - Prospects retain no normal ordering capability
 - cross-tenant reads, writes, files, and results are denied
@@ -1028,10 +1036,11 @@ data must never be exposed through the Phaeno-owned curated Prospect catalog.
   QuickBooks transaction and do not depend on QuickBooks availability
 - POMS retains estimated retail value and anticipated internal cost for
   authorized internal reporting without exposing them to the Prospect
-- HubSpot outages do not block operational transitions
+- CRM projection failures and future external CRM outages do not block
+  operational transitions
 - POMS rejects `Completed` until the complete approved package is released and
   requires a reason for `Closed incomplete`
-- HubSpot commercial outcomes never cause an automatic organization conversion;
+- CRM commercial outcomes never cause an automatic organization conversion;
   Customer or Partner conversion requires a separate authorized POMS action
 - conversion preserves the complete trial history and enables only the target
   organization-kind capabilities
@@ -1069,9 +1078,9 @@ data must never be exposed through the Phaeno-owned curated Prospect catalog.
 - Phaeno configuration clearly distinguishes eligible deliverables from the
   default selection, and approval previews the exact deliverables and versions
   that will be frozen for the project
-- internal notes and HubSpot context never appear in Prospect-facing output
+- internal notes and CRM context never appear in Prospect-facing output
 - Phaeno views clearly separate POMS operational completion from the read-only
-  HubSpot commercial outcome; `Follow-up scheduled` shows its owner and date as
+  CRM commercial outcome; `Follow-up scheduled` shows its owner and date as
   unresolved, and incomplete closure shows its required Prospect-safe reason
 - estimated retail value, anticipated internal cost, and Finance reporting stay
   in authorized Phaeno views and never appear to the Prospect
@@ -1087,7 +1096,7 @@ data must never be exposed through the Phaeno-owned curated Prospect catalog.
 
 ### End To End
 
-- HubSpot-originated request through primary and delegated approval coverage in
+- first-party CRM-originated request through primary and delegated approval coverage in
   both domains, rejection of a same-person second approval, two-person approval
   of the initial and amended scope versions, commercial-only request fields,
   POMS-owned scientific scoping, safe outbound milestones and deep link,
@@ -1098,7 +1107,7 @@ data must never be exposed through the Phaeno-owned curated Prospect catalog.
   release, frozen residual-material retention and operator-confirmed destruction
   or pre-approved return, complete-package-gated `Completed` or reasoned
   `Closed incomplete`,
-  each final HubSpot outcome plus nonterminal owned/dated follow-up, explicit
+  each final CRM outcome plus nonterminal owned/dated follow-up, explicit
   authorized conversion with no automatic transition, and conversion without
   resetting or extending the released package's frozen deletion dates
 - FASTQ/FASTA/BAM default selection, a future configured deliverable/default
@@ -1111,7 +1120,7 @@ data must never be exposed through the Phaeno-owned curated Prospect catalog.
   final-deadline deletion when any file remains, and retained metadata/audit
 - package deletion follows the frozen deadlines after conversion while the
   Trial Project and audit history remain preserved
-- decline, expiration, cancellation, amendment, replacement, HubSpot retry, and
+- decline, expiration, cancellation, amendment, replacement, CRM summary retry, and
   closed-without-conversion journeys
 - a non-converting Prospect remains active when Trial package bytes are deleted,
   cannot be deactivated while another active Trial Project, grant, or commercial
@@ -1152,10 +1161,10 @@ Do not run tests or execute this verification plan until explicitly requested.
   Prospect-organization overrides; complete-package deletion unit; release-time
   effective-policy snapshot; and retained-metadata rules remain the
   implementation contract
-- the confirmed commercial-only HubSpot request fields, `Trial requested` stage
+- the confirmed commercial-only CRM request fields, `Trial requested` stage
   behavior, controlled manual handoff, POMS-owned scientific scoping, and safe
   outbound milestones remain the implementation contract
-- the confirmed separation of POMS operational completion, HubSpot final
+- the confirmed separation of POMS operational completion, CRM final
   commercial outcomes, nonterminal owned/dated follow-up, and explicit POMS
   conversion remains the implementation contract
 - production storage, scanner, scientific definitions, notification, and
@@ -1174,7 +1183,7 @@ Do not run tests or execute this verification plan until explicitly requested.
   remain an offline process
 - partner-managed customer trials
 - bulk campaign-based Trial Project creation
-- HubSpot storage of scientific data or result content
+- CRM storage of scientific data or result content
 - reuse of Prospect trial samples or results as Phaeno-owned curated data
   without a separately approved ownership, consent, and de-identification
   workflow

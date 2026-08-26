@@ -29,7 +29,7 @@ public class OrderManagementDomainTests
         Assert.Equal(LabServiceOrderStatus.PlacedAwaitingSamples, order.Status);
         Assert.Equal(QuoteStatus.Accepted, quote.Status);
         Assert.True(order.CanEditSampleRoster);
-        order.Samples.Add(Sample(order.Id, "S-1"));
+        order.Samples.Add(Sample(order.Id, "S-1", "Human PBMCs"));
         order.FinalizeSampleRoster(actor, Now.AddMinutes(2));
         Assert.False(order.CanEditSampleRoster);
         Assert.Throws<InvalidOperationException>(() => order.UpdateDraft(
@@ -335,6 +335,6 @@ public class OrderManagementDomainTests
         Assert.Throws<InvalidOperationException>(() => notification.Retry(Now));
     }
 
-    private static LabSample Sample(Guid orderId, string id) => new(orderId, id, "RNA", "Synthetic control", 1,
+    private static LabSample Sample(Guid orderId, string id, string biologicalSource = "Synthetic control") => new(orderId, id, "RNA", biologicalSource, 1,
         "tube", "Frozen", "No PHI; non-hazardous synthetic material", Now.AddDays(-1), 10, null, "[]");
 }

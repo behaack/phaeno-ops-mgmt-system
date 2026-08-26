@@ -64,6 +64,7 @@ describe('SampleShippingDetailPage', () => {
       shipment.crosswalk[0].shipmentItemId,
       {
         supplierBarcode: 'TUBE-0002',
+        tubeSlotId: null,
         reason: 'Customer moved the sample to the unused registered tube.',
         version: shipment.crosswalk[0].version,
       },

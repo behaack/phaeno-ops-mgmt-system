@@ -31,6 +31,11 @@ The backend targets .NET 10 as a modular monolith:
 - `modules/PSeq.Operations.Commercial/Accounts`: users, organizations,
   memberships, invitations, pure authorization policy, invitation-token logic,
   and the invitation-delivery port.
+- `modules/PSeq.Operations.Commercial/Crm`: provider-neutral first-party CRM
+  Companies, Contacts and effective-dated relationships, Leads, Opportunities,
+  pipelines/stages, Activities, Tasks, administration records, and controlled
+  Portal handoff/link records. CRM aggregates never grant Portal access or
+  create executable work.
 - `modules/PSeq.Operations.Commercial/Relationships`: Portal integration
   requests, organization service entitlements, and service-eligibility policy.
 - `modules/PSeq.Operations.Commercial/DataProvisioning`: Phaeno source samples,
@@ -44,6 +49,10 @@ The backend targets .NET 10 as a modular monolith:
   notification ports.
 - `app/Features/Accounts`: HTTP endpoints/contracts, authenticated-actor lookup,
   EF-backed orchestration, Clerk/Postmark adapters, and bootstrap composition.
+- `app/Features/Crm`: platform-authorized CRM HTTP contracts, EF mapping,
+  list/search/pagination, lifecycle and merge orchestration, pipeline/reporting
+  projections, import/export, data-quality review, controlled Portal handoffs,
+  and API error translation.
 - `app/Features/RelationshipManagement`: HTTP contracts, EF mapping and
   orchestration, authenticated-actor enforcement, and API error translation.
 - `app/Features/DataProvisioning`: HTTP contracts, EF mapping/orchestration,
@@ -81,7 +90,7 @@ The backend targets .NET 10 as a modular monolith:
 All `/api` failures should use the existing error envelope. Persistence applies auditing and optimistic concurrency centrally rather than in individual endpoints.
 
 The API references Commercial, while Commercial does not reference the API or
-Laboratory. Extracted account, relationship, data-provisioning, commercial
+Laboratory. Extracted account, CRM, relationship, data-provisioning, commercial
 configuration, Partner kit, request-revision, quote, workflow, integration, and
 notification rules, ports, and external download audit therefore remain usable
 independently of the current HTTP, EF, Clerk, QuickBooks, and Postmark adapters.

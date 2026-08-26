@@ -1,6 +1,46 @@
-# CRM Integration Strategy
+# First-Party CRM And Future External CRM Strategy
 
-## Status
+## Current Direction
+
+Product direction changed on 2026-08-26. POMS will be a standalone application
+with a full first-party CRM. It must not require HubSpot credentials,
+identifiers, webhooks, availability, or parallel data entry for any CRM, Portal
+account, Trial Project, order, or operational workflow.
+
+The standalone version 1 is implemented in the current repository and migrated
+in the configured local development database. It has not been deployed or
+validated in a shared signed-in environment. Connected communications,
+marketing automation, committed-sale projections, and any external adapter
+remain separately scoped work.
+
+`plans/CRM-PLAN.md` owns first-party CRM capability.
+`plans/STANDALONE-COMMERCIAL-LIFECYCLE-PLAN.md` owns transitions from CRM into
+Portal accounts and operational workflows. The former HubSpot design in this
+document and `plans/HUBSPOT-PORTAL-LIFECYCLE-PLAN.md` is retained only as a
+future-adapter reference.
+
+The durable current boundary is:
+
+- POMS CRM owns Companies, Contacts, Leads, Opportunities, pipelines,
+  Activities, Tasks, ownership, follow-up, and commercial reporting.
+- Existing POMS domains continue to own Portal access, readiness, entitlements,
+  Trial Projects, orders, scientific operations, results, files, audit, and the
+  approved QuickBooks boundary.
+- CRM and operational records use stable POMS identifiers and explicit links.
+- A future external CRM is optional and isolated behind provider-neutral
+  import, export, or synchronization contracts.
+- External synchronization can never grant access, activate services, create
+  executable work, overwrite POMS operational authority, or block an
+  authoritative POMS transaction.
+- Scientific, patient, sample, file, QC, custody, internal-note, and protected
+  data never cross the external CRM boundary.
+
+Everything after the historical marker below documents the superseded
+HubSpot-first direction. Do not use it as current implementation authority.
+
+## Historical HubSpot-First Strategy
+
+## Historical Status
 
 This document is the approved durable boundary for a planned HubSpot
 integration. HubSpot is the selected relationship CRM and planned integration
@@ -12,11 +52,10 @@ has no CRM scopes, webhooks, runtime credentials, or Portal connection. Phaeno
 Portal still has no running CRM integration today, and QuickBooks Online
 remains the only implemented external business system.
 
-Nothing below describes current Portal behavior or authorizes implementation.
-`plans/HUBSPOT-PORTAL-LIFECYCLE-PLAN.md` owns the approved active workflow,
-field-boundary, implementation, verification, and production-readiness plan.
+Nothing in this historical section describes current Portal behavior or
+authorizes implementation.
 
-## Purpose
+## Historical Purpose
 
 Use HubSpot for generic sales and relationship capabilities rather than
 recreating them in the Portal. Keep Portal development focused on Phaeno's

@@ -70,10 +70,10 @@ describe('LabBatchBarcodeScanner', () => {
       />,
     )
 
-    fireEvent.change(screen.getByLabelText('Draft batch'), {
+    fireEvent.change(screen.getByLabelText(/Draft batch/), {
       target: { value: 'batch-1' },
     })
-    const scanner = screen.getByLabelText('Library barcode')
+    const scanner = screen.getByLabelText(/Library barcode/)
     fireEvent.change(scanner, { target: { value: 'PH-L-23456789AB-C' } })
     fireEvent.submit(scanner.closest('form')!)
 
@@ -115,10 +115,10 @@ describe('LabBatchBarcodeScanner', () => {
       />,
     )
 
-    fireEvent.change(screen.getByLabelText('Draft batch'), {
+    fireEvent.change(screen.getByLabelText(/Draft batch/), {
       target: { value: 'batch-1' },
     })
-    const scanner = screen.getByLabelText('Library barcode')
+    const scanner = screen.getByLabelText(/Library barcode/)
     fireEvent.change(scanner, { target: { value: 'PH-S-23456789AB-C' } })
     fireEvent.submit(scanner.closest('form')!)
 

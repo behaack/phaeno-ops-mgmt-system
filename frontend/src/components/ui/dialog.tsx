@@ -144,6 +144,11 @@ function fixedDialogHeader(
   key: string,
 ) {
   if (children.length === 0 && feedback.length === 0) return []
+  const keyedFeedback = feedback.map((child, index) =>
+    React.isValidElement(child)
+      ? React.cloneElement(child, { key: `${key}-feedback-${index}` })
+      : <React.Fragment key={`${key}-feedback-${index}`}>{child}</React.Fragment>,
+  )
   if (
     children.length === 1
     && React.isValidElement(children[0])
@@ -154,11 +159,11 @@ function fixedDialogHeader(
       header,
       { key },
       ...React.Children.toArray(header.props.children),
-      ...feedback,
+      ...keyedFeedback,
     )]
   }
 
-  return [<DialogHeader key={key}>{children}{feedback}</DialogHeader>]
+  return [<DialogHeader key={key}>{children}{keyedFeedback}</DialogHeader>]
 }
 
 function arrangeDialogChildren(children: React.ReactNode) {

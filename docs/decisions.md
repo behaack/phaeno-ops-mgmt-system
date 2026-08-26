@@ -269,7 +269,7 @@ audience and locale. Browser-bundled help contains no confidential procedures.
 
 ## 2026-07-15: HubSpot is the relationship CRM and Portal access is an explicit handoff
 
-Status: confirmed by the Product Owner for planning; not implemented.
+Status: superseded on 2026-08-26; retained as decision history.
 
 HubSpot owns companies, relationship contacts, account ownership, Deals,
 commercial qualification, and commercial outcomes. Most HubSpot companies never
@@ -285,7 +285,9 @@ the request. Portal-created users do not automatically become HubSpot contacts.
 
 ## 2026-07-15: Customer and Partner are exclusive types with service entitlements
 
-Status: confirmed by the Product Owner for planning; not implemented.
+Status: confirmed by the Product Owner. The initial first-party CRM Company
+foundation is implemented locally; the remaining CRM and standalone handoff
+phases are not yet implemented or deployed.
 
 An organization is Customer or Partner, not both simultaneously. The same
 organization may change type at an explicit reviewed cutover while preserving
@@ -305,13 +307,14 @@ Eligible Customers and Partners may commit to standard configured-price work
 directly in the Portal. Standard specimen processing and Partner data assembly
 must show the complete configured price before commitment; Partner reagents use
 active organization-specific negotiated pricing. Unsupported or negotiated
-work creates a HubSpot custom-work request instead of an order.
+work creates a first-party CRM custom-work request instead of an order.
 
-Closed Won custom work creates a pending sales-assisted-order handoff for
+Won custom work creates a pending sales-assisted-order handoff for
 operational validation. It does not silently create active work. Every committed
-Portal sale is published to HubSpot as a relationship-safe Order summary, while
-routine direct sales do not create Deals. QuickBooks remains authoritative for
-financial facts, and scientific data never enters HubSpot.
+Portal sale is published as a relationship-safe first-party CRM summary, while
+routine direct sales do not automatically create Opportunities. QuickBooks
+remains authoritative for financial facts, and scientific data never enters
+CRM.
 
 ## 2026-07-16: Commercial and Laboratory execution are separate, replaceable domains
 
@@ -352,6 +355,28 @@ separate approved workflow. The standalone Website API remains the live
 rollback path until historical rows, credentials, files, traffic, and
 production smoke checks have been cut over and reconciled.
 
+## 2026-08-26: POMS is standalone-first with a full first-party CRM
+
+Status: confirmed by the Product Owner for planning; not implemented.
+
+POMS will include a full first-party CRM for Companies, Contacts, Leads,
+Opportunities, pipelines, Activities, Tasks, ownership, follow-up, and
+commercial reporting. Core CRM, Portal account, Trial Project, commercial, and
+operational workflows must require no HubSpot credential, identifier, webhook,
+availability, or parallel data entry.
+
+CRM Companies and Contacts remain distinct from Portal organizations, users,
+and memberships. An explicit, audited CRM-to-Portal handoff may propose or link
+a Portal Account, Trial Project, custom-work request, or lifecycle change, but
+no CRM record or stage directly grants access, activates a service, or creates
+executable scientific work.
+
+HubSpot is deferred as a possible future import, export, or synchronization
+adapter. Provider-specific models and delivery state stay outside core CRM and
+operational domains. The 2026-07-15 HubSpot-first decision is superseded except
+for its still-valid safety boundaries around explicit Portal access,
+idempotency, data minimization, and operational authority.
+
 ## Open decisions
 
 - Any exceptional curated-package purge process.
@@ -362,7 +387,8 @@ production smoke checks have been cut over and reconciled.
   workflow.
 - Backend help-search implementation, ranking, locale fallback, and reindexing.
 - Future LIMS selection only if an approved workflow later requires one.
-- HubSpot account capabilities, field mapping, configured-price service rules,
-  sandbox validation, and production activation remain in the owning plans.
+- First-party CRM capability, configured-price service rules, and production
+  activation remain in the owning plans. Any future HubSpot field mapping and
+  sandbox validation require fresh adapter scope.
 
 Open items belong in the relevant `docs/plans/` document until resolved.

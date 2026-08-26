@@ -12,14 +12,17 @@
 | API envelope | The standard `success`, `data`, `error`, and `meta` response shape. |
 | Audit event | An append-only record of a persisted entity change and its actor/request context. |
 | Concurrency version | The numeric version used to reject stale updates. |
-| HubSpot prospect | A commercially interesting company or contact managed in HubSpot. This does not create a Portal organization, invitation, or access. |
-| Portal Prospect | An approved evaluation tenant with Trial Project or explicitly granted curated-data access. It is not every HubSpot prospect and may later convert to Customer or Partner. |
+| CRM Company | A first-party POMS commercial or relationship organization. It may exist without a Portal organization, invitation, or access. |
+| CRM Contact | A person associated with one or more CRM Companies. It is not a Portal user or organization membership. |
+| CRM Lead | A person or company relationship not yet qualified into an Opportunity. It grants no Portal access. |
+| CRM Opportunity | A potential commercial outcome tracked through a first-party POMS pipeline. It may create an explicit commercial handoff but never grants Portal access or executable work by stage alone. |
+| Portal Prospect | An approved evaluation tenant with Trial Project or explicitly granted curated-data access. It is not every CRM Company, Contact, Lead, or Opportunity and may later convert to Customer or Partner. |
 | Customer | An end-user organization that can place lab service orders, track submitted samples, and access resulting data released through the portal. |
 | Partner | An external organization that may be entitled to submit specimens for Phaeno processing, order reagents, or submit data for assembly. Partner specimen work does not require downstream-customer identity. |
 | Service entitlement | An approved organization-specific capability controlling which Customer or Partner sales and operational workflows are available. Organization kind alone does not grant every service. |
 | Direct Portal sale | Standard configured work whose complete price and terms can be accepted in the Portal without Sales negotiation. |
-| Sales-assisted work | Bespoke or exceptional work managed as a HubSpot Deal before a pending operational handoff creates executable Portal work. |
-| HubSpot Order summary | The relationship-safe HubSpot record for one committed Portal sale. It is not the Portal operational record or the QuickBooks financial authority. |
+| Sales-assisted work | Bespoke or exceptional work managed as a first-party CRM Opportunity before a pending operational handoff creates executable Portal work. |
+| CRM sale summary | The relationship-safe CRM projection for one committed Portal sale. It is not the Portal operational record or the QuickBooks financial authority. |
 | Lab service order | A Customer request involving physical sample submission, Phaeno accessioning and laboratory analysis, data processing, and portal delivery of resulting data. |
 | Commercial Operations | The domain that owns customer-facing orders, authorization, quotes, safe status projections, files, payment gates, and publication. It does not own detailed laboratory execution. |
 | Lab Operations | The Phaeno-only execution domain and replaceable provider that owns authorized laboratory work, receipt/accession, physical lineage, controlled protocols, materials/equipment, libraries/batches, NGS sendouts, exceptions, and scientific approval. |

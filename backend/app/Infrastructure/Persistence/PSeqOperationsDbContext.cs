@@ -2,6 +2,7 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Options;
 using PSeq.Operations.Commercial;
 using PSeq.Operations.Commercial.Accounts.Domain;
+using PSeq.Operations.Commercial.Crm.Domain;
 using PSeq.Operations.Commercial.DataProvisioning.Domain;
 using PSeq.Operations.Commercial.FileManagement.Domain;
 using PSeq.Operations.Commercial.LabOperations.Domain;
@@ -10,6 +11,7 @@ using PSeq.Operations.Commercial.Relationships.Domain;
 using PSeq.Operations.Laboratory;
 using PSeq.Operations.Laboratory.Domain;
 using PhaenoPortal.App.Features.DataProvisioning;
+using PhaenoPortal.App.Features.Crm;
 using PhaenoPortal.App.Features.FileManagement;
 using PhaenoPortal.App.Features.LabOperations;
 using PhaenoPortal.App.Features.OrderManagement;
@@ -130,6 +132,25 @@ public sealed class PSeqOperationsDbContext(
     public DbSet<OrganizationServiceEntitlement> OrganizationServiceEntitlements { get; set; }
     public DbSet<PortalIntegrationRequest> PortalIntegrationRequests { get; set; }
     public DbSet<PortalIntegrationRequestService> PortalIntegrationRequestServices { get; set; }
+    public DbSet<CrmCompany> CrmCompanies { get; set; }
+    public DbSet<CrmContact> CrmContacts { get; set; }
+    public DbSet<CrmCompanyContact> CrmCompanyContacts { get; set; }
+    public DbSet<CrmLead> CrmLeads { get; set; }
+    public DbSet<CrmPipeline> CrmPipelines { get; set; }
+    public DbSet<CrmPipelineStage> CrmPipelineStages { get; set; }
+    public DbSet<CrmOpportunity> CrmOpportunities { get; set; }
+    public DbSet<CrmOpportunityContact> CrmOpportunityContacts { get; set; }
+    public DbSet<CrmOpportunityStageHistory> CrmOpportunityStageHistory { get; set; }
+    public DbSet<CrmActivity> CrmActivities { get; set; }
+    public DbSet<CrmTask> CrmTasks { get; set; }
+    public DbSet<CrmSavedView> CrmSavedViews { get; set; }
+    public DbSet<CrmCustomFieldDefinition> CrmCustomFieldDefinitions { get; set; }
+    public DbSet<CrmCustomFieldValue> CrmCustomFieldValues { get; set; }
+    public DbSet<CrmMergeRecord> CrmMergeRecords { get; set; }
+    public DbSet<CrmImportBatch> CrmImportBatches { get; set; }
+    public DbSet<CrmExportRecord> CrmExportRecords { get; set; }
+    public DbSet<CrmHandoff> CrmHandoffs { get; set; }
+    public DbSet<CrmPortalAccountLink> CrmPortalAccountLinks { get; set; }
     public DbSet<LabWorkOrder> LabWorkOrders { get; set; }
     public DbSet<LabWorkAuthorizationVersion> LabWorkAuthorizationVersions { get; set; }
     public DbSet<LabSpecimen> LabSpecimens { get; set; }
@@ -314,6 +335,7 @@ public sealed class PSeqOperationsDbContext(
         FileManagementModelConfiguration.Configure(modelBuilder);
         OrderManagementModelConfiguration.Configure(modelBuilder, this.persistenceOptions.CommercialSchema);
         CommercialLabOperationsModelConfiguration.Configure(modelBuilder, this.persistenceOptions.CommercialSchema);
+        CrmModelConfiguration.Configure(modelBuilder);
         RelationshipManagementModelConfiguration.Configure(modelBuilder);
         LabOperationsModelConfiguration.Configure(modelBuilder, this.persistenceOptions.LaboratorySchema);
         WebsiteModelConfiguration.Configure(modelBuilder, this.persistenceOptions.WebsiteSchema);

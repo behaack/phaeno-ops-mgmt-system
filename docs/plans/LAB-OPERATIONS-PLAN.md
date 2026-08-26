@@ -201,7 +201,8 @@ directly.
 - Customer, Partner, and Prospect relationship state
 - Organizations, users, memberships, invitations, and entitlements
 - Quotes, pricing, commercial orders, order snapshots, and amendments
-- HubSpot and QuickBooks commercial integrations
+- first-party CRM and QuickBooks commercial integrations, plus any future
+  external CRM adapter
 - Customer and Partner submission experiences
 - Authorization to begin paid or approved no-charge work
 - Customer-facing milestones, expected timing, and exception communication

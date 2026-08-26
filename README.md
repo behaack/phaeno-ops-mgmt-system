@@ -60,6 +60,7 @@ backend/app/
   Provisioning, Health, Order Management, Lab Operations, and the public
   Website API.
 - `modules/PSeq.Operations.Commercial/Accounts`: account domain entities, pure authorization policy, invitation-token logic, and the invitation-delivery port.
+- `modules/PSeq.Operations.Commercial/Crm`: first-party CRM relationship records, beginning with durable Companies that remain separate from Portal accounts and access.
 - `modules/PSeq.Operations.Commercial/Relationships`: relationship requests, service entitlements, and service-eligibility policy.
 - `modules/PSeq.Operations.Commercial/DataProvisioning`: curated-data domain entities, environment-neutral policy, deterministic manifest construction, and file/notification ports.
 - `modules/PSeq.Operations.Commercial/OrderManagement`: commercial configuration/catalog, Partner kit ordering and fulfillment, shared sample-shipping configuration, return-kit and registered supplier-tube inventory, frozen packet/crosswalk records, request-revision and quote records, external download audit, commercial workflow and integration records, and environment-neutral QuickBooks/notification ports.

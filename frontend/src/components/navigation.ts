@@ -9,6 +9,7 @@ import {
   Microscope,
   FlaskConical,
   FolderClock,
+  Handshake,
   Package,
   PackageCheck,
   Settings,
@@ -48,6 +49,16 @@ export const mainMenuItems: readonly MainMenuItem[] = [
     icon: LayoutDashboard,
     group: 'workspace',
     exact: true,
+  },
+  {
+    label: 'CRM',
+    to: '/crm',
+    icon: Handshake,
+    group: 'workspace',
+    visibleWhen: (session, context) =>
+      isPhaenoEmployee(session) &&
+      context.selectedOrganizationKind === 'Phaeno' &&
+      Boolean(session?.capabilities.canManageOrganizations),
   },
   {
     label: 'Accounts',

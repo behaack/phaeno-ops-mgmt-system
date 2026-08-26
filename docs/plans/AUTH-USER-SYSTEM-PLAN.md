@@ -58,10 +58,11 @@ Do not execute this plan unless explicitly requested.
   creates or reactivates an eligible Phaeno membership. The unsupported
   mock-only Operations admin and Customer manager labels were removed rather
   than represented as effective authorization.
-- The standard Accounts workspace is an external-account review and operations
-  surface. It does not expose direct account creation or manual request intake;
-  ordinary onboarding will arrive from HubSpot, while any future manual
-  migration or recovery path must be separately restricted and audited.
+- The standard Accounts workspace is a Portal-account review and operations
+  surface. Ordinary onboarding begins from an explicit first-party CRM Company
+  action. A restricted direct proposal path may support migration and recovery;
+  both routes use the same audited review boundary and grant no access by
+  themselves.
 - Organization create and edit actions use modal forms, and selecting an
   organization opens a dedicated, view-first detail route.
 
@@ -124,11 +125,11 @@ Do not execute this plan unless explicitly requested.
 - Replace single-organization user assumptions with an organization membership model.
 - A user has identity, profile, and global lifecycle fields.
 - An organization has tenant metadata, kind, and active/inactive status.
-- Portal Prospect is an approved evaluation tenant, not every commercially
-  interesting HubSpot company. A Portal Prospect can later convert in place to
-  Customer or Partner while preserving organization identity and history.
+- Portal Prospect is an approved evaluation tenant, not every CRM Company,
+  Contact, Lead, or Opportunity. A Portal Prospect can later convert in place
+  to Customer or Partner while preserving organization identity and history.
 - A company already approved to buy may be onboarded directly as a Customer or
-  Partner after the pending HubSpot-to-Portal review; it does not need to pass
+  Partner after the pending CRM-to-Portal review; it does not need to pass
   through Portal Prospect.
 - A membership links a user to an organization and stores per-organization capability, initially org-admin or member.
 - Selected organization context is required for tenant-scoped requests.
@@ -337,9 +338,10 @@ Do not execute this plan unless explicitly requested.
 - Phaeno admins can mark an organization inactive even if it has active users or memberships.
 - Only an authorized Phaeno user can convert a Prospect organization to Customer
   or Partner or reclassify an existing Customer as Partner or Partner as
-  Customer. HubSpot supplies the approved commercial request; the Portal applies
-  it only after operational and access review.
-- A Trial Project's HubSpot outcome never converts the Prospect automatically.
+  Customer. The first-party CRM supplies the approved commercial context; the
+  Portal applies the change only after operational and access review.
+- A Trial Project's CRM commercial outcome never converts the Prospect
+  automatically.
   `Converted to Customer` or `Converted to Partner` supports a separate audited
   POMS action; `Closed without conversion` leaves the organization a Prospect,
   and `Follow-up scheduled` remains nonterminal until Sales records a final
@@ -363,9 +365,9 @@ Do not execute this plan unless explicitly requested.
   entitled specimen processing, and download of completed assembly or specimen
   outputs. Partner services are enabled independently; Partner kind alone does
   not grant every Partner service.
-- HubSpot relationship contacts and Portal memberships are separate. Only the
-  designated initial Portal administrator is linked during onboarding; users
-  invited later in the Portal do not automatically become HubSpot contacts.
+- CRM Contacts and Portal memberships are separate. Only the designated initial
+  Portal administrator is explicitly linked during onboarding; users invited
+  later in the Portal do not automatically become CRM Contacts.
 - Prospect organization administrators manage their users but cannot assign
   sample-data access. Only an authorized Phaeno user can manage the eligible
   Prospect sample-data catalog or grant sample data to a Prospect organization.

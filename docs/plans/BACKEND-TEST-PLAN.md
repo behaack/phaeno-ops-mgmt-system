@@ -256,17 +256,35 @@ and rollback-isolated PostgreSQL coverage.
   and the backward-compatible `en-US` fallback. Cover technical-brief Mailgun
   template selection and localized `technicalBriefPath` resolution for every
   supported locale, including the legacy single-URL fallback.
-- [ ] HubSpot/Portal lifecycle - cover signed webhook intake, exact Company and
-  Deal correlation, duplicate/out-of-order delivery, pending onboarding with no
-  access, direct Customer/Partner creation, narrow Portal Prospect creation,
-  designated-admin invitation, service entitlements, Customer/Partner
-  reclassification, offboarding review, durable publication, reconciliation,
-  outage tolerance, and scientific-data exclusion.
-- [ ] HubSpot committed-sale publication - cover one HubSpot Order per committed
-  specimen, reagent, or assembly sale; no routine Deal creation; Company and
-  originating-Deal associations; amount/currency/status/payment summaries;
-  cancellation/refund history; retry without duplication; and QuickBooks/Portal
-  authority over inbound HubSpot edits.
+- [x] CRM domain foundation - cover Company normalization, validation, and
+  record-preserving lifecycle; Contact normalization and merge identity; Lead
+  qualification/conversion identity; Pipeline terminal rules; Opportunity
+  close/reopen behavior; Task state; immutable Portal activities; typed custom
+  fields; and effective-dated Company/Contact history. The 11 focused tests are
+  maintained in `backend/test/CrmCompanyDomainTests.cs`.
+- [x] Controller route materialization - build the complete MVC controller
+  endpoint collection so reserved route-token conflicts and other startup-time
+  route-construction failures are caught before runtime. Coverage is maintained
+  in `backend/test/ControllerRouteTests.cs`.
+- [ ] Remaining first-party CRM foundation - cover Company API authorization,
+  list/search/pagination, duplicate-name handling, concurrency, audit and
+  scientific-data exclusion; then Contact, multi-company contact
+  association, Lead, Opportunity, configurable Pipeline/Stage, ownership,
+  Activity, Note, Task, reminder, saved-view, custom-field, import/export,
+  duplicate detection, controlled merge, search/report projection, optimistic
+  concurrency, soft deactivation, authorization, field visibility, audit, and
+  scientific/protected-data exclusion.
+- [ ] CRM/Portal lifecycle - cover explicit Company-to-Portal proposal/link,
+  pending onboarding with no access, direct Customer/Partner creation, narrow
+  Portal Prospect creation, designated-admin invitation, service entitlements,
+  Trial Project and custom-work handoffs, Customer/Partner reclassification,
+  offboarding review, idempotent retries, relationship-safe summary
+  publication, reconciliation, and domain authority.
+- [ ] CRM committed-sale publication - cover one relationship-safe summary per
+  committed specimen, reagent, or assembly sale; no routine Opportunity
+  creation; Company and originating-Opportunity associations when present;
+  amount/currency/status/payment summaries; cancellation/refund history; retry
+  without duplication; and QuickBooks/Portal authority over CRM projections.
 - [ ] Direct configured-price work - cover entitled Customer and Partner
   specimen placement, Partner data-assembly placement, ineligible/custom-work
   routing, immutable pricing snapshots, Partner downstream-identity omission,
@@ -358,7 +376,7 @@ and rollback-isolated PostgreSQL coverage.
   Phaeno accession; complete included-sample membership for combined/project-
   level files; no false single-sample mapping; exclusion of derived-container
   barcodes; and tenant isolation.
-- [ ] Prospect Trial Projects - cover idempotent commercial-only HubSpot request
+- [ ] Prospect Trial Projects - cover idempotent commercial-only CRM request
   intake, rejection or exclusion of scientific fields from that boundary,
   POMS-owned scientific scoping, relationship-safe outbound milestones and deep
   links, dual approval with default CBO/COO authority, domain-specific delegate
@@ -370,7 +388,7 @@ and rollback-isolated PostgreSQL coverage.
   valid historical approvals, frozen scope/amendments, Prospect acceptance,
   versioned RUO/no-PHI affirmation at project acceptance and shipment
   confirmation, structured PHI/direct-identifier rejection, restricted hold
-  without sensitive propagation into logs, audits, notifications, or HubSpot,
+  without sensitive propagation into logs, audits, notifications, or CRM,
   blocked receipt progression/processing/release until authorized disposition,
   project-specific
   submit authorization, extracted-RNA-only validation, enforcement of each
@@ -400,9 +418,10 @@ and rollback-isolated PostgreSQL coverage.
   denial, controlled-hold suspension, and rejection of material reuse without a
   separate written-authorization workflow,
   complete-package enforcement before `Completed`, a required reason for the
-  `Closed incomplete` outcome, separate final HubSpot outcomes, required
-  owner/date for nonterminal follow-up, denial of automatic conversion from any HubSpot
-  outcome, explicit authorized POMS conversion, terminal states, HubSpot retry,
+  `Closed incomplete` outcome, separate final CRM outcomes, required
+  owner/date for nonterminal follow-up, denial of automatic conversion from any
+  CRM outcome, explicit authorized POMS conversion, terminal states, CRM
+  summary retry,
   conversion preservation without resetting or extending the frozen standard
   or final package-deletion deadline, byte deletion with retained project/
   result/audit history, no automatic organization deactivation on package
@@ -465,18 +484,19 @@ and rollback-isolated PostgreSQL coverage.
 
 ## Remaining Coverage
 
-- [ ] Remaining relationship management - cover platform-admin authorization,
+- [ ] Remaining relationship management - cover authorized CRM and
+  platform-admin boundaries,
   organization creation with persisted readiness, organization summary
   derivation, readiness concurrency, service eligibility by organization kind,
   entitlement overlap and all effective boundaries, required
   completed-organization association for a
   pre-organization request, request state transitions, controller routing under
-  one `/api` prefix, the development-only HubSpot simulator's production 404,
-  platform-admin gate, path-specific organization/service validation, unique
-  Deal replay rejection, the account simulator's Prospect/Customer/Partner and
-  service validation, Company-plus-Deal replay rejection, `HubSpot` source
-  mapping, and the guarantee that simulation alone creates no organization,
-  invitation, entitlement, order, or Trial Project. Cover atomic approval plus
+  one `/api` prefix, first-party CRM Company/Opportunity correlation,
+  path-specific organization/service validation, request idempotency, the
+  standalone proposal's Prospect/Customer/Partner and service validation,
+  provider-neutral source mapping, and the guarantee that intake alone creates
+  no organization, invitation, entitlement, order, or Trial Project. Cover
+  atomic approval plus
   account creation for unassociated onboarding/evaluation requests, including
   supported kind validation, duplicate-name and stale-version rejection,
   durable request association, Pending readiness, and the guarantee that it
@@ -510,6 +530,15 @@ and rollback-isolated PostgreSQL coverage.
 
 ## Requested Execution Log
 
+- 2026-08-26: standalone CRM verification passed the complete Release backend
+  suite: 210 tests passed, 13 opt-in PostgreSQL tests were skipped by their
+  existing environment guards, and no tests failed. The Release solution build
+  completed with zero warnings and zero errors. EF reported no model changes
+  after the three additive CRM migrations; those migrations were applied only
+  to the configured local development database. The API also started and
+  listened locally after the five CRM lifecycle routes stopped using ASP.NET's
+  reserved `action` route token; the controller-route materialization test now
+  protects that startup boundary.
 - 2026-08-19: Lab Job identity verification ran the complete Release backend
   suite: 192 tests passed, 13 opt-in PostgreSQL tests were skipped by their
   existing environment guards, and no tests failed. The run covered required

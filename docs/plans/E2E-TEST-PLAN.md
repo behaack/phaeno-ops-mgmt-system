@@ -116,8 +116,9 @@ the protected deployed-Preview acceptance above.
   for every context, and substantive MDX content renders on guide routes.
 - [x] `frontend/e2e/customers.spec.ts` - desktop and mobile organization
   administration is titled Accounts, excludes the internal Phaeno organization,
-  identifies HubSpot intake as not connected, omits standard direct-account and
-  manual-request actions from list/detail surfaces, and uses accessible
+  identifies first-party CRM account intake, links to CRM Companies, omits
+  standard direct-account and manual-request actions from list/detail surfaces,
+  and uses accessible
   consequence dialogs for organization,
   membership, and entitlement lifecycle actions; focus returns to the invoking
   control, ended entitlements retain their reason, and the entitlement source
@@ -165,20 +166,31 @@ the protected deployed-Preview acceptance above.
   page identifies that email, explains the mismatch, signs out without losing
   the invitation, and continues with the invited identity. Confirm that the
   development shortcut control and endpoint are absent from Production.
-- [ ] HubSpot-to-Portal lifecycle journey - cover HubSpot-only company with no
-  Portal access, approved evaluation to Portal Prospect, Closed Won to pending
+- [x] First-party CRM Company create boundary journey - on desktop and narrow
+  layouts, cover list rendering, the standalone CRM/Portal warning, accessible
+  create dialog, normalized create payload, detail navigation, and proof that
+  Company creation makes no Portal write. Maintained in
+  `frontend/e2e/crm.spec.ts`.
+- [ ] Remaining first-party CRM Company journey - cover search, view, edit,
+  deactivate, reactivate, and proof that each action leaves Portal accounts,
+  access, entitlements, and work unchanged.
+- [ ] Remaining first-party CRM journey - cover Contact, Lead, qualification,
+  Opportunity, configurable Pipeline/Stage, Activity, Note, Task, reminder,
+  ownership, search, table/board views, reporting, duplicate review/merge,
+  import/export boundaries, authorization, field visibility, and scientific/
+  protected-data exclusion across desktop and narrow layouts.
+- [ ] CRM-to-Portal lifecycle journey - cover CRM-only Company with no Portal
+  access, approved evaluation to Portal Prospect, won Opportunity to pending
   direct Customer/Partner onboarding, designated-admin invitation, selective
-  Partner services, existing-organization service change, Customer/Partner
-  reclassification, pending offboarding, webhook replay, retry, and HubSpot
-  outage. In local development, prove that Accounts can simulate a new
-  Prospect/Customer/Partner account request and that Order Intake can simulate
-  both the sales-assisted and Trial Project inbound request shapes without
-  contacting HubSpot or creating an account or executable work.
-- [ ] Direct/custom sales and HubSpot visibility journey - cover configured-price
+  Partner services, Trial Project and custom-work handoffs, existing-
+  organization service change, Customer/Partner reclassification, pending
+  offboarding, idempotent replay, retry, and relationship-safe summary
+  reconciliation without creating access or executable work from intake alone.
+- [ ] Direct/custom sales and CRM visibility journey - cover configured-price
   Customer and Partner specimen placement, Partner reagent and assembly sales,
-  ineligible work routed to Sales, Closed Won operational handoff, one HubSpot
-  Order per commitment with payment summary, no routine Deal, no scientific or
-  downstream-customer data in HubSpot, and two-tenant isolation.
+  ineligible work routed to Sales, won Opportunity operational handoff, one CRM
+  sale summary per commitment with payment summary, no routine Opportunity, no
+  scientific or downstream-customer data in CRM, and two-tenant isolation.
 - [ ] Released-deliverable retention journeys - cover the global 30/5/5
   defaults, authorized Customer/Partner/Prospect organization override and
   partial inheritance, release-time effective-policy snapshot, and a later
@@ -240,8 +252,8 @@ the protected deployed-Preview acceptance above.
   accession mapping, complete included-sample lists for combined files, no
   derived-container leakage, and two-tenant denial across Trial, Customer, and
   Partner flows.
-- [ ] Prospect Trial Project journey - cover a commercial-only HubSpot-originated
-  request, POMS-owned scientific scoping, relationship-safe HubSpot milestones
+- [ ] Prospect Trial Project journey - cover a commercial-only CRM-originated
+  request, POMS-owned scientific scoping, relationship-safe CRM milestones
   and deep link, commercial and scientific/operations approval using default and
   delegated coverage, delegate revocation and wrong-domain denial, actual
   approver and authority-source audit, rejection when one dual-authorized user attempts both
@@ -276,7 +288,7 @@ the protected deployed-Preview acceptance above.
   only with release of the project's complete frozen package and no project-
   level override, POMS `Completed`
   versus reason-required `Closed incomplete`, final Customer conversion,
-  Partner conversion, and closed-without-conversion HubSpot outcomes,
+  Partner conversion, and closed-without-conversion CRM outcomes,
   nonterminal follow-up with an owner and date, explicit Customer or Partner
   conversion without an automatic transition or a reset or extension of the
   frozen Trial package deletion dates, byte deletion with preserved project and
@@ -302,7 +314,7 @@ the protected deployed-Preview acceptance above.
   direct API self-deactivation denial, Prospect conversion with stable
   identity, readiness, account creation limited to eligible new-account
   approvals, Account directory/Review queue tab separation, removal of an
-  associated approved request from the review queue, atomic simulated HubSpot
+  associated approved request from the review queue, atomic first-party CRM
   approval, stranded approved-request account-creation recovery, account-
   workspace request completion, and details-page navigation,
   Phaeno-controlled designated-contact invitation and membership management,
@@ -374,6 +386,13 @@ the protected deployed-Preview acceptance above.
 
 ## Requested Execution Log
 
+- 2026-08-26: the complete Playwright mock-session suite passed on desktop and
+  mobile Chromium: 32 tests passed and none failed. The new CRM journey proved
+  standalone Company creation and no Portal mutation; the Accounts journey
+  proved first-party CRM intake language. Verification used a manually started
+  local server with `VITE_USE_MOCK_SESSION=true` because the default local
+  setting uses real Clerk and Playwright's first readiness probe can reach
+  Nitro before its SSR environment is available.
 - 2026-08-19: the complete Playwright mock-session suite passed on desktop and
   mobile Chromium: 30 tests passed and none failed. Customer Lab coverage
   verified the then-current required Job name and optional Description in the

@@ -150,18 +150,32 @@ remain incomplete production-activation gates.
   cover Customer, Prospect, and Partner card selection, connected summary and
   error states, organization switching, and complete absence of internal mock
   Accounts metrics from external dashboards.
-- [ ] HubSpot lifecycle components - cover pending-request queues, exact proposed
-  changes, readiness review, internal-only HubSpot summary and deep links,
-  service-entitlement activation, relationship/offboarding warnings, retryable
-  sync failure, complete hiding of HubSpot context from external users, and the
-  Order Intake development simulator's sales-assisted versus Trial Project
-  fields, organization-kind filtering, validation, duplicate-Deal feedback,
-  success refresh, and production hiding.
+- [x] CRM foundation components - cover the Company create/edit form's required
+  fields and CRM/Portal warning, lifecycle confirmation consequences, CRM
+  navigation placement, standalone Lead capture and conditional Company
+  requirement, and controlled merge target/reason behavior. The six focused
+  CRM tests are maintained under `frontend/src/features/crm/`, with navigation
+  coverage in `frontend/src/components/navigation.test.ts`.
+- [ ] Remaining first-party CRM components - cover the Company directory and
+  detail query/mutation states, responsive table and pagination, authorization,
+  then Contacts, Leads,
+  Opportunities, pipeline table/board views, stage transitions, Activities,
+  Notes, Tasks, reminders, ownership, CRM home attention states, saved views,
+  reports, imports/exports, duplicate review, merge consequences, loading/empty/
+  error states, authorization, field visibility, accessible interaction, and
+  supported viewports.
+- [ ] CRM-to-Portal lifecycle components - cover CRM Company account proposal/
+  linking, pending-request queues, exact proposed changes, readiness review,
+  internal relationship-safe summaries and deep links, service-entitlement
+  activation, Trial Project and custom-work handoffs, relationship/offboarding
+  warnings, retryable projection failure, complete hiding of CRM context from
+  external users, organization-kind filtering, validation, idempotency
+  feedback, and successful refresh.
 - [ ] Direct and Sales-assisted sales - cover configured prices for eligible
   Customer/Partner specimen and Partner assembly work, Partner service-specific
   action visibility, Request custom work, Request account change, no
-  downstream-customer requirement, operational confirmation for Closed Won
-  handoffs, and durable failure feedback.
+  downstream-customer requirement, operational confirmation for newly won CRM
+  Opportunity handoffs, and durable failure feedback.
 - [ ] Global released-deliverable retention components - cover Phaeno-only
   global 30/5/5 default configuration, Customer/Partner/Prospect organization-
   level overrides with inherited-value presentation, validation, required
@@ -199,8 +213,8 @@ remain incomplete production-activation gates.
   Verify clear sample-scoped customer-ID/tube-barcode/accession mapping, combined-file
   included-sample lists, and no internal derived-container identifiers.
 - [ ] Prospect Trial Project components - cover Phaeno request review and dual
-  approval with commercial-only HubSpot context, POMS-owned scientific scope,
-  safe HubSpot milestones and deep link, CBO/COO defaults, domain-specific
+  approval with commercial-only CRM context, POMS-owned scientific scope,
+  safe CRM milestones and deep link, CBO/COO defaults, domain-specific
   delegate designation/revocation, clear primary-versus-delegate authority,
   denial outside the assigned domain, retained reasons/dates, both decisions remaining required,
   same-person second-approval prevention with a clear different-approver
@@ -233,9 +247,9 @@ remain incomplete production-activation gates.
   internal cost reporting with no QuickBooks document or payment state, member
   view-only state, tenant-safe progress/results,
   complete-package-gated completion, required incomplete-close reason, distinct
-  POMS operational and HubSpot commercial outcomes, owned/dated unresolved
+  POMS operational and CRM commercial outcomes, owned/dated unresolved
   follow-up, explicit conversion with no automatic transition, terminal-state
-  reasons, HubSpot retry visibility, and continued hiding of normal ordering
+  reasons, CRM summary retry visibility, and continued hiding of normal ordering
   actions.
 - [ ] Remaining shared sample shipping and Customer freebie components - add
   focused component coverage for return-kit registration/fulfillment, external
@@ -248,14 +262,14 @@ remain incomplete production-activation gates.
   versus-Trial terminology.
 - [ ] Remaining connected organization/user administration - cover organization
   list/detail, readiness persistence through create/edit, request queue
-  decisions, the development-only HubSpot account-entry simulator's
-  relationship/service field rules, required Company/Deal identifiers, error
-  and success feedback, production hiding and queue refresh,
+  decisions, the first-party CRM account-proposal and restricted direct-
+  proposal relationship/service field rules, CRM Company/Opportunity linking,
+  error and success feedback, and queue refresh,
   separate Account directory and Review queue tab panels, pending-only review
   filtering with an unassociated approved-request recovery exception, approve-
   and-create account confirmation, stranded account-creation recovery,
   details-page navigation, account-workspace request completion language,
-  prominent user management, HubSpot-designated contact invitation messaging,
+  prominent user management, CRM-designated Contact invitation messaging,
   completed-organization selection for other pre-organization requests,
   accessible request-action and Prospect-conversion dialogs that close after
   success, dated entitlement overlap validation,
@@ -359,6 +373,13 @@ remain incomplete production-activation gates.
 
 ## Requested Execution Log
 
+- 2026-08-26: standalone CRM verification passed `pnpm run lint`, `pnpm run
+  typecheck`, the complete frontend unit suite (35 files, 92 tests), and the
+  client/SSR production build. The build retains only the existing advisory
+  plugin-timing and main-chunk-size warnings. The React quality review kept
+  owner/saved-view server state in TanStack Query, avoided an initial
+  unfiltered Opportunity request, and preserved accessible required-field and
+  dialog behavior.
 - 2026-08-19: Lab Job identity and modal-form verification passed the complete
   frontend unit suite (28 files, 76 tests), `pnpm run lint:ci`, `pnpm run
   typecheck`, and the client/SSR production build. The unit gate also restored

@@ -16,7 +16,7 @@ describe('documentation registry', () => {
       expect(entries.map((entry) => entry.order)).toEqual([
         ...(audience === 'phaeno'
           ? [
-              10, 20,
+              10, 15, 20,
               30, 31, 32, 33, 34,
               40, 41, 42, 43, 44, 45, 46,
               50, 51, 52, 53, 54, 55, 56,

@@ -22,6 +22,7 @@ import { Route as DataProvisioningRouteImport } from './routes/data-provisioning
 import { Route as DataLibraryRouteImport } from './routes/data-library'
 import { Route as DataAssemblyRouteImport } from './routes/data-assembly'
 import { Route as CustomersRouteImport } from './routes/customers'
+import { Route as CrmRouteImport } from './routes/crm'
 import { Route as AcceptInviteRouteImport } from './routes/accept-invite'
 import { Route as AboutRouteImport } from './routes/about'
 import { Route as IndexRouteImport } from './routes/index'
@@ -37,6 +38,13 @@ import { Route as DataLibraryDatasetIdRouteImport } from './routes/data-library.
 import { Route as DataAssemblyNewRouteImport } from './routes/data-assembly.new'
 import { Route as DataAssemblyRequestIdRouteImport } from './routes/data-assembly.$requestId'
 import { Route as CustomersCustomerIdRouteImport } from './routes/customers.$customerId'
+import { Route as CrmTasksRouteImport } from './routes/crm.tasks'
+import { Route as CrmReportsRouteImport } from './routes/crm.reports'
+import { Route as CrmOpportunitiesRouteImport } from './routes/crm.opportunities'
+import { Route as CrmLeadsRouteImport } from './routes/crm.leads'
+import { Route as CrmContactsRouteImport } from './routes/crm.contacts'
+import { Route as CrmCompaniesRouteImport } from './routes/crm.companies'
+import { Route as CrmAdministrationRouteImport } from './routes/crm.administration'
 import { Route as SampleShippingShipmentIdPacketRouteImport } from './routes/sample-shipping.$shipmentId.packet'
 import { Route as ReagentOrdersOrderIdEditRouteImport } from './routes/reagent-orders.$orderId.edit'
 import { Route as OrderOperationsIntakeOrderIdRouteImport } from './routes/order-operations.intake.$orderId'
@@ -45,6 +53,10 @@ import { Route as LabServicesOrderIdEditRouteImport } from './routes/lab-service
 import { Route as DocsAudienceSlugRouteImport } from './routes/docs.$audience.$slug'
 import { Route as DataProvisioningSourcesSourceSampleIdRouteImport } from './routes/data-provisioning.sources.$sourceSampleId'
 import { Route as DataAssemblyRequestIdEditRouteImport } from './routes/data-assembly.$requestId.edit'
+import { Route as CrmOpportunitiesOpportunityIdRouteImport } from './routes/crm.opportunities.$opportunityId'
+import { Route as CrmLeadsLeadIdRouteImport } from './routes/crm.leads.$leadId'
+import { Route as CrmContactsContactIdRouteImport } from './routes/crm.contacts.$contactId'
+import { Route as CrmCompaniesCompanyIdRouteImport } from './routes/crm.companies.$companyId'
 import { Route as LabOperationsProtocolsProtocolIdVersionsNewRouteImport } from './routes/lab-operations.protocols.$protocolId.versions.new'
 import { Route as LabOperationsProtocolsProtocolIdVersionsVersionIdEditRouteImport } from './routes/lab-operations.protocols.$protocolId.versions.$versionId.edit'
 
@@ -111,6 +123,11 @@ const DataAssemblyRoute = DataAssemblyRouteImport.update({
 const CustomersRoute = CustomersRouteImport.update({
   id: '/customers',
   path: '/customers',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const CrmRoute = CrmRouteImport.update({
+  id: '/crm',
+  path: '/crm',
   getParentRoute: () => rootRouteImport,
 } as any)
 const AcceptInviteRoute = AcceptInviteRouteImport.update({
@@ -190,6 +207,41 @@ const CustomersCustomerIdRoute = CustomersCustomerIdRouteImport.update({
   path: '/$customerId',
   getParentRoute: () => CustomersRoute,
 } as any)
+const CrmTasksRoute = CrmTasksRouteImport.update({
+  id: '/tasks',
+  path: '/tasks',
+  getParentRoute: () => CrmRoute,
+} as any)
+const CrmReportsRoute = CrmReportsRouteImport.update({
+  id: '/reports',
+  path: '/reports',
+  getParentRoute: () => CrmRoute,
+} as any)
+const CrmOpportunitiesRoute = CrmOpportunitiesRouteImport.update({
+  id: '/opportunities',
+  path: '/opportunities',
+  getParentRoute: () => CrmRoute,
+} as any)
+const CrmLeadsRoute = CrmLeadsRouteImport.update({
+  id: '/leads',
+  path: '/leads',
+  getParentRoute: () => CrmRoute,
+} as any)
+const CrmContactsRoute = CrmContactsRouteImport.update({
+  id: '/contacts',
+  path: '/contacts',
+  getParentRoute: () => CrmRoute,
+} as any)
+const CrmCompaniesRoute = CrmCompaniesRouteImport.update({
+  id: '/companies',
+  path: '/companies',
+  getParentRoute: () => CrmRoute,
+} as any)
+const CrmAdministrationRoute = CrmAdministrationRouteImport.update({
+  id: '/administration',
+  path: '/administration',
+  getParentRoute: () => CrmRoute,
+} as any)
 const SampleShippingShipmentIdPacketRoute =
   SampleShippingShipmentIdPacketRouteImport.update({
     id: '/packet',
@@ -236,6 +288,27 @@ const DataAssemblyRequestIdEditRoute =
     path: '/edit',
     getParentRoute: () => DataAssemblyRequestIdRoute,
   } as any)
+const CrmOpportunitiesOpportunityIdRoute =
+  CrmOpportunitiesOpportunityIdRouteImport.update({
+    id: '/$opportunityId',
+    path: '/$opportunityId',
+    getParentRoute: () => CrmOpportunitiesRoute,
+  } as any)
+const CrmLeadsLeadIdRoute = CrmLeadsLeadIdRouteImport.update({
+  id: '/$leadId',
+  path: '/$leadId',
+  getParentRoute: () => CrmLeadsRoute,
+} as any)
+const CrmContactsContactIdRoute = CrmContactsContactIdRouteImport.update({
+  id: '/$contactId',
+  path: '/$contactId',
+  getParentRoute: () => CrmContactsRoute,
+} as any)
+const CrmCompaniesCompanyIdRoute = CrmCompaniesCompanyIdRouteImport.update({
+  id: '/$companyId',
+  path: '/$companyId',
+  getParentRoute: () => CrmCompaniesRoute,
+} as any)
 const LabOperationsProtocolsProtocolIdVersionsNewRoute =
   LabOperationsProtocolsProtocolIdVersionsNewRouteImport.update({
     id: '/protocols/$protocolId/versions/new',
@@ -253,6 +326,7 @@ export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/about': typeof AboutRoute
   '/accept-invite': typeof AcceptInviteRoute
+  '/crm': typeof CrmRouteWithChildren
   '/customers': typeof CustomersRouteWithChildren
   '/data-assembly': typeof DataAssemblyRouteWithChildren
   '/data-library': typeof DataLibraryRouteWithChildren
@@ -266,6 +340,13 @@ export interface FileRoutesByFullPath {
   '/phaeno-users': typeof PhaenoUsersRoute
   '/reagent-orders': typeof ReagentOrdersRouteWithChildren
   '/sample-shipping': typeof SampleShippingRouteWithChildren
+  '/crm/administration': typeof CrmAdministrationRoute
+  '/crm/companies': typeof CrmCompaniesRouteWithChildren
+  '/crm/contacts': typeof CrmContactsRouteWithChildren
+  '/crm/leads': typeof CrmLeadsRouteWithChildren
+  '/crm/opportunities': typeof CrmOpportunitiesRouteWithChildren
+  '/crm/reports': typeof CrmReportsRoute
+  '/crm/tasks': typeof CrmTasksRoute
   '/customers/$customerId': typeof CustomersCustomerIdRoute
   '/data-assembly/$requestId': typeof DataAssemblyRequestIdRouteWithChildren
   '/data-assembly/new': typeof DataAssemblyNewRoute
@@ -278,6 +359,10 @@ export interface FileRoutesByFullPath {
   '/reagent-orders/new': typeof ReagentOrdersNewRoute
   '/sample-shipping/$shipmentId': typeof SampleShippingShipmentIdRouteWithChildren
   '/session-tasks/setup-mfa': typeof SessionTasksSetupMfaRoute
+  '/crm/companies/$companyId': typeof CrmCompaniesCompanyIdRoute
+  '/crm/contacts/$contactId': typeof CrmContactsContactIdRoute
+  '/crm/leads/$leadId': typeof CrmLeadsLeadIdRoute
+  '/crm/opportunities/$opportunityId': typeof CrmOpportunitiesOpportunityIdRoute
   '/data-assembly/$requestId/edit': typeof DataAssemblyRequestIdEditRoute
   '/data-provisioning/sources/$sourceSampleId': typeof DataProvisioningSourcesSourceSampleIdRoute
   '/docs/$audience/$slug': typeof DocsAudienceSlugRoute
@@ -293,6 +378,7 @@ export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/about': typeof AboutRoute
   '/accept-invite': typeof AcceptInviteRoute
+  '/crm': typeof CrmRouteWithChildren
   '/customers': typeof CustomersRouteWithChildren
   '/data-assembly': typeof DataAssemblyRouteWithChildren
   '/data-library': typeof DataLibraryRouteWithChildren
@@ -306,6 +392,13 @@ export interface FileRoutesByTo {
   '/phaeno-users': typeof PhaenoUsersRoute
   '/reagent-orders': typeof ReagentOrdersRouteWithChildren
   '/sample-shipping': typeof SampleShippingRouteWithChildren
+  '/crm/administration': typeof CrmAdministrationRoute
+  '/crm/companies': typeof CrmCompaniesRouteWithChildren
+  '/crm/contacts': typeof CrmContactsRouteWithChildren
+  '/crm/leads': typeof CrmLeadsRouteWithChildren
+  '/crm/opportunities': typeof CrmOpportunitiesRouteWithChildren
+  '/crm/reports': typeof CrmReportsRoute
+  '/crm/tasks': typeof CrmTasksRoute
   '/customers/$customerId': typeof CustomersCustomerIdRoute
   '/data-assembly/$requestId': typeof DataAssemblyRequestIdRouteWithChildren
   '/data-assembly/new': typeof DataAssemblyNewRoute
@@ -318,6 +411,10 @@ export interface FileRoutesByTo {
   '/reagent-orders/new': typeof ReagentOrdersNewRoute
   '/sample-shipping/$shipmentId': typeof SampleShippingShipmentIdRouteWithChildren
   '/session-tasks/setup-mfa': typeof SessionTasksSetupMfaRoute
+  '/crm/companies/$companyId': typeof CrmCompaniesCompanyIdRoute
+  '/crm/contacts/$contactId': typeof CrmContactsContactIdRoute
+  '/crm/leads/$leadId': typeof CrmLeadsLeadIdRoute
+  '/crm/opportunities/$opportunityId': typeof CrmOpportunitiesOpportunityIdRoute
   '/data-assembly/$requestId/edit': typeof DataAssemblyRequestIdEditRoute
   '/data-provisioning/sources/$sourceSampleId': typeof DataProvisioningSourcesSourceSampleIdRoute
   '/docs/$audience/$slug': typeof DocsAudienceSlugRoute
@@ -334,6 +431,7 @@ export interface FileRoutesById {
   '/': typeof IndexRoute
   '/about': typeof AboutRoute
   '/accept-invite': typeof AcceptInviteRoute
+  '/crm': typeof CrmRouteWithChildren
   '/customers': typeof CustomersRouteWithChildren
   '/data-assembly': typeof DataAssemblyRouteWithChildren
   '/data-library': typeof DataLibraryRouteWithChildren
@@ -347,6 +445,13 @@ export interface FileRoutesById {
   '/phaeno-users': typeof PhaenoUsersRoute
   '/reagent-orders': typeof ReagentOrdersRouteWithChildren
   '/sample-shipping': typeof SampleShippingRouteWithChildren
+  '/crm/administration': typeof CrmAdministrationRoute
+  '/crm/companies': typeof CrmCompaniesRouteWithChildren
+  '/crm/contacts': typeof CrmContactsRouteWithChildren
+  '/crm/leads': typeof CrmLeadsRouteWithChildren
+  '/crm/opportunities': typeof CrmOpportunitiesRouteWithChildren
+  '/crm/reports': typeof CrmReportsRoute
+  '/crm/tasks': typeof CrmTasksRoute
   '/customers/$customerId': typeof CustomersCustomerIdRoute
   '/data-assembly/$requestId': typeof DataAssemblyRequestIdRouteWithChildren
   '/data-assembly/new': typeof DataAssemblyNewRoute
@@ -359,6 +464,10 @@ export interface FileRoutesById {
   '/reagent-orders/new': typeof ReagentOrdersNewRoute
   '/sample-shipping/$shipmentId': typeof SampleShippingShipmentIdRouteWithChildren
   '/session-tasks/setup-mfa': typeof SessionTasksSetupMfaRoute
+  '/crm/companies/$companyId': typeof CrmCompaniesCompanyIdRoute
+  '/crm/contacts/$contactId': typeof CrmContactsContactIdRoute
+  '/crm/leads/$leadId': typeof CrmLeadsLeadIdRoute
+  '/crm/opportunities/$opportunityId': typeof CrmOpportunitiesOpportunityIdRoute
   '/data-assembly/$requestId/edit': typeof DataAssemblyRequestIdEditRoute
   '/data-provisioning/sources/$sourceSampleId': typeof DataProvisioningSourcesSourceSampleIdRoute
   '/docs/$audience/$slug': typeof DocsAudienceSlugRoute
@@ -376,6 +485,7 @@ export interface FileRouteTypes {
     | '/'
     | '/about'
     | '/accept-invite'
+    | '/crm'
     | '/customers'
     | '/data-assembly'
     | '/data-library'
@@ -389,6 +499,13 @@ export interface FileRouteTypes {
     | '/phaeno-users'
     | '/reagent-orders'
     | '/sample-shipping'
+    | '/crm/administration'
+    | '/crm/companies'
+    | '/crm/contacts'
+    | '/crm/leads'
+    | '/crm/opportunities'
+    | '/crm/reports'
+    | '/crm/tasks'
     | '/customers/$customerId'
     | '/data-assembly/$requestId'
     | '/data-assembly/new'
@@ -401,6 +518,10 @@ export interface FileRouteTypes {
     | '/reagent-orders/new'
     | '/sample-shipping/$shipmentId'
     | '/session-tasks/setup-mfa'
+    | '/crm/companies/$companyId'
+    | '/crm/contacts/$contactId'
+    | '/crm/leads/$leadId'
+    | '/crm/opportunities/$opportunityId'
     | '/data-assembly/$requestId/edit'
     | '/data-provisioning/sources/$sourceSampleId'
     | '/docs/$audience/$slug'
@@ -416,6 +537,7 @@ export interface FileRouteTypes {
     | '/'
     | '/about'
     | '/accept-invite'
+    | '/crm'
     | '/customers'
     | '/data-assembly'
     | '/data-library'
@@ -429,6 +551,13 @@ export interface FileRouteTypes {
     | '/phaeno-users'
     | '/reagent-orders'
     | '/sample-shipping'
+    | '/crm/administration'
+    | '/crm/companies'
+    | '/crm/contacts'
+    | '/crm/leads'
+    | '/crm/opportunities'
+    | '/crm/reports'
+    | '/crm/tasks'
     | '/customers/$customerId'
     | '/data-assembly/$requestId'
     | '/data-assembly/new'
@@ -441,6 +570,10 @@ export interface FileRouteTypes {
     | '/reagent-orders/new'
     | '/sample-shipping/$shipmentId'
     | '/session-tasks/setup-mfa'
+    | '/crm/companies/$companyId'
+    | '/crm/contacts/$contactId'
+    | '/crm/leads/$leadId'
+    | '/crm/opportunities/$opportunityId'
     | '/data-assembly/$requestId/edit'
     | '/data-provisioning/sources/$sourceSampleId'
     | '/docs/$audience/$slug'
@@ -456,6 +589,7 @@ export interface FileRouteTypes {
     | '/'
     | '/about'
     | '/accept-invite'
+    | '/crm'
     | '/customers'
     | '/data-assembly'
     | '/data-library'
@@ -469,6 +603,13 @@ export interface FileRouteTypes {
     | '/phaeno-users'
     | '/reagent-orders'
     | '/sample-shipping'
+    | '/crm/administration'
+    | '/crm/companies'
+    | '/crm/contacts'
+    | '/crm/leads'
+    | '/crm/opportunities'
+    | '/crm/reports'
+    | '/crm/tasks'
     | '/customers/$customerId'
     | '/data-assembly/$requestId'
     | '/data-assembly/new'
@@ -481,6 +622,10 @@ export interface FileRouteTypes {
     | '/reagent-orders/new'
     | '/sample-shipping/$shipmentId'
     | '/session-tasks/setup-mfa'
+    | '/crm/companies/$companyId'
+    | '/crm/contacts/$contactId'
+    | '/crm/leads/$leadId'
+    | '/crm/opportunities/$opportunityId'
     | '/data-assembly/$requestId/edit'
     | '/data-provisioning/sources/$sourceSampleId'
     | '/docs/$audience/$slug'
@@ -497,6 +642,7 @@ export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   AboutRoute: typeof AboutRoute
   AcceptInviteRoute: typeof AcceptInviteRoute
+  CrmRoute: typeof CrmRouteWithChildren
   CustomersRoute: typeof CustomersRouteWithChildren
   DataAssemblyRoute: typeof DataAssemblyRouteWithChildren
   DataLibraryRoute: typeof DataLibraryRouteWithChildren
@@ -607,6 +753,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof CustomersRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/crm': {
+      id: '/crm'
+      path: '/crm'
+      fullPath: '/crm'
+      preLoaderRoute: typeof CrmRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/accept-invite': {
       id: '/accept-invite'
       path: '/accept-invite'
@@ -712,6 +865,55 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof CustomersCustomerIdRouteImport
       parentRoute: typeof CustomersRoute
     }
+    '/crm/tasks': {
+      id: '/crm/tasks'
+      path: '/tasks'
+      fullPath: '/crm/tasks'
+      preLoaderRoute: typeof CrmTasksRouteImport
+      parentRoute: typeof CrmRoute
+    }
+    '/crm/reports': {
+      id: '/crm/reports'
+      path: '/reports'
+      fullPath: '/crm/reports'
+      preLoaderRoute: typeof CrmReportsRouteImport
+      parentRoute: typeof CrmRoute
+    }
+    '/crm/opportunities': {
+      id: '/crm/opportunities'
+      path: '/opportunities'
+      fullPath: '/crm/opportunities'
+      preLoaderRoute: typeof CrmOpportunitiesRouteImport
+      parentRoute: typeof CrmRoute
+    }
+    '/crm/leads': {
+      id: '/crm/leads'
+      path: '/leads'
+      fullPath: '/crm/leads'
+      preLoaderRoute: typeof CrmLeadsRouteImport
+      parentRoute: typeof CrmRoute
+    }
+    '/crm/contacts': {
+      id: '/crm/contacts'
+      path: '/contacts'
+      fullPath: '/crm/contacts'
+      preLoaderRoute: typeof CrmContactsRouteImport
+      parentRoute: typeof CrmRoute
+    }
+    '/crm/companies': {
+      id: '/crm/companies'
+      path: '/companies'
+      fullPath: '/crm/companies'
+      preLoaderRoute: typeof CrmCompaniesRouteImport
+      parentRoute: typeof CrmRoute
+    }
+    '/crm/administration': {
+      id: '/crm/administration'
+      path: '/administration'
+      fullPath: '/crm/administration'
+      preLoaderRoute: typeof CrmAdministrationRouteImport
+      parentRoute: typeof CrmRoute
+    }
     '/sample-shipping/$shipmentId/packet': {
       id: '/sample-shipping/$shipmentId/packet'
       path: '/packet'
@@ -768,6 +970,34 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof DataAssemblyRequestIdEditRouteImport
       parentRoute: typeof DataAssemblyRequestIdRoute
     }
+    '/crm/opportunities/$opportunityId': {
+      id: '/crm/opportunities/$opportunityId'
+      path: '/$opportunityId'
+      fullPath: '/crm/opportunities/$opportunityId'
+      preLoaderRoute: typeof CrmOpportunitiesOpportunityIdRouteImport
+      parentRoute: typeof CrmOpportunitiesRoute
+    }
+    '/crm/leads/$leadId': {
+      id: '/crm/leads/$leadId'
+      path: '/$leadId'
+      fullPath: '/crm/leads/$leadId'
+      preLoaderRoute: typeof CrmLeadsLeadIdRouteImport
+      parentRoute: typeof CrmLeadsRoute
+    }
+    '/crm/contacts/$contactId': {
+      id: '/crm/contacts/$contactId'
+      path: '/$contactId'
+      fullPath: '/crm/contacts/$contactId'
+      preLoaderRoute: typeof CrmContactsContactIdRouteImport
+      parentRoute: typeof CrmContactsRoute
+    }
+    '/crm/companies/$companyId': {
+      id: '/crm/companies/$companyId'
+      path: '/$companyId'
+      fullPath: '/crm/companies/$companyId'
+      preLoaderRoute: typeof CrmCompaniesCompanyIdRouteImport
+      parentRoute: typeof CrmCompaniesRoute
+    }
     '/lab-operations/protocols/$protocolId/versions/new': {
       id: '/lab-operations/protocols/$protocolId/versions/new'
       path: '/protocols/$protocolId/versions/new'
@@ -784,6 +1014,75 @@ declare module '@tanstack/react-router' {
     }
   }
 }
+
+interface CrmCompaniesRouteChildren {
+  CrmCompaniesCompanyIdRoute: typeof CrmCompaniesCompanyIdRoute
+}
+
+const CrmCompaniesRouteChildren: CrmCompaniesRouteChildren = {
+  CrmCompaniesCompanyIdRoute: CrmCompaniesCompanyIdRoute,
+}
+
+const CrmCompaniesRouteWithChildren = CrmCompaniesRoute._addFileChildren(
+  CrmCompaniesRouteChildren,
+)
+
+interface CrmContactsRouteChildren {
+  CrmContactsContactIdRoute: typeof CrmContactsContactIdRoute
+}
+
+const CrmContactsRouteChildren: CrmContactsRouteChildren = {
+  CrmContactsContactIdRoute: CrmContactsContactIdRoute,
+}
+
+const CrmContactsRouteWithChildren = CrmContactsRoute._addFileChildren(
+  CrmContactsRouteChildren,
+)
+
+interface CrmLeadsRouteChildren {
+  CrmLeadsLeadIdRoute: typeof CrmLeadsLeadIdRoute
+}
+
+const CrmLeadsRouteChildren: CrmLeadsRouteChildren = {
+  CrmLeadsLeadIdRoute: CrmLeadsLeadIdRoute,
+}
+
+const CrmLeadsRouteWithChildren = CrmLeadsRoute._addFileChildren(
+  CrmLeadsRouteChildren,
+)
+
+interface CrmOpportunitiesRouteChildren {
+  CrmOpportunitiesOpportunityIdRoute: typeof CrmOpportunitiesOpportunityIdRoute
+}
+
+const CrmOpportunitiesRouteChildren: CrmOpportunitiesRouteChildren = {
+  CrmOpportunitiesOpportunityIdRoute: CrmOpportunitiesOpportunityIdRoute,
+}
+
+const CrmOpportunitiesRouteWithChildren =
+  CrmOpportunitiesRoute._addFileChildren(CrmOpportunitiesRouteChildren)
+
+interface CrmRouteChildren {
+  CrmAdministrationRoute: typeof CrmAdministrationRoute
+  CrmCompaniesRoute: typeof CrmCompaniesRouteWithChildren
+  CrmContactsRoute: typeof CrmContactsRouteWithChildren
+  CrmLeadsRoute: typeof CrmLeadsRouteWithChildren
+  CrmOpportunitiesRoute: typeof CrmOpportunitiesRouteWithChildren
+  CrmReportsRoute: typeof CrmReportsRoute
+  CrmTasksRoute: typeof CrmTasksRoute
+}
+
+const CrmRouteChildren: CrmRouteChildren = {
+  CrmAdministrationRoute: CrmAdministrationRoute,
+  CrmCompaniesRoute: CrmCompaniesRouteWithChildren,
+  CrmContactsRoute: CrmContactsRouteWithChildren,
+  CrmLeadsRoute: CrmLeadsRouteWithChildren,
+  CrmOpportunitiesRoute: CrmOpportunitiesRouteWithChildren,
+  CrmReportsRoute: CrmReportsRoute,
+  CrmTasksRoute: CrmTasksRoute,
+}
+
+const CrmRouteWithChildren = CrmRoute._addFileChildren(CrmRouteChildren)
 
 interface CustomersRouteChildren {
   CustomersCustomerIdRoute: typeof CustomersCustomerIdRoute
@@ -970,6 +1269,7 @@ const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   AboutRoute: AboutRoute,
   AcceptInviteRoute: AcceptInviteRoute,
+  CrmRoute: CrmRouteWithChildren,
   CustomersRoute: CustomersRouteWithChildren,
   DataAssemblyRoute: DataAssemblyRouteWithChildren,
   DataLibraryRoute: DataLibraryRouteWithChildren,

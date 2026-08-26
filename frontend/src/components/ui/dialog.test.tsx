@@ -1,5 +1,6 @@
 import { fireEvent, render, screen } from '@testing-library/react'
 import { useState } from 'react'
+import { vi } from 'vitest'
 
 import { Alert } from './alert'
 import {
@@ -37,6 +38,7 @@ describe('DialogContent', () => {
   })
 
   it('keeps direct headers and footers outside the scrolling body', () => {
+    const consoleError = vi.spyOn(console, 'error').mockImplementation(() => undefined)
     render(
       <Dialog open>
         <DialogContent>
@@ -60,6 +62,8 @@ describe('DialogContent', () => {
     expect(dialog.querySelector(':scope > [data-slot="dialog-body"]')).toBeTruthy()
     expect(footer).toBeTruthy()
     expect(footer?.classList.contains('bg-muted/40')).toBe(true)
+    expect(consoleError.mock.calls.flat().join(' ')).not.toContain('same key')
+    consoleError.mockRestore()
   })
 
   it('keeps form-wrapped headers and footers fixed without moving actions out of the form', () => {

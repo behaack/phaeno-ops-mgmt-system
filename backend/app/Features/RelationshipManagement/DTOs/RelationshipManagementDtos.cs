@@ -101,34 +101,6 @@ public sealed record CreatePortalIntegrationRequest
     public IReadOnlyList<PortalService> RequestedServices { get; init; } = [];
 }
 
-public enum HubSpotHandoffSimulationPath
-{
-    SalesAssistedOrder = 1,
-    TrialProject = 2
-}
-
-public sealed record SimulateHubSpotHandoffRequest
-{
-    public required HubSpotHandoffSimulationPath Path { get; init; }
-    public Guid? OrganizationId { get; init; }
-    public string? CandidateOrganizationName { get; init; }
-    public PortalService? RequestedService { get; init; }
-    public required string HubSpotDealId { get; init; }
-    public required string Summary { get; init; }
-    public string? InternalNotes { get; init; }
-}
-
-public sealed record SimulateHubSpotAccountIntakeRequest
-{
-    public required string CandidateOrganizationName { get; init; }
-    public required OrganizationKind RequestedOrganizationKind { get; init; }
-    public IReadOnlyList<PortalService> RequestedServices { get; init; } = [];
-    public required string HubSpotCompanyId { get; init; }
-    public required string HubSpotDealId { get; init; }
-    public required string Summary { get; init; }
-    public string? InternalNotes { get; init; }
-}
-
 public sealed record DecidePortalIntegrationRequest
 {
     public required bool Approved { get; init; }

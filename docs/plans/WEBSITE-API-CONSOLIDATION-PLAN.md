@@ -191,7 +191,7 @@ metadata and external-search design remains in
 - Migration `AddWebsiteApi` creates the schema, tables, and unique index.
 
 The Website records are public-intake records, not Portal users,
-organizations, memberships, orders, or HubSpot contacts. Any later promotion
+organizations, memberships, orders, or CRM Contacts. Any later promotion
 into CRM or Portal onboarding must be an explicit workflow.
 
 ## Internal Web Operations dashboard
@@ -219,7 +219,7 @@ production cleanup permanently removes retired Website intake records. Counts,
 pages, and summary data include only active records. All Web Operations routes
 require an authenticated active Phaeno platform administrator. The existing
 anonymous `/api/v1/web-ops/...` routes remain unchanged. This surface does not
-promote Website intake into an Account, Portal request, HubSpot contact, or
+promote Website intake into an Account, Portal request, CRM Contact, or
 operational order.
 
 The manual `Purge Retired Web Operations Records` GitHub Actions workflow owns

@@ -12,7 +12,6 @@ import {
   listOrganizations,
   listRelationshipRequests,
   setOrganizationActive,
-  simulateHubSpotAccountIntake,
   updateOrganization,
   type Organization,
   type RelationshipRequest,
@@ -25,7 +24,6 @@ import { Checkbox } from '#/components/ui/checkbox'
 import { Input } from '#/components/ui/input'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '#/components/ui/tabs'
 import { AccountCreationRecoveryDialog } from './AccountCreationRecoveryDialog'
-import { HubSpotAccountSimulationDialog, type HubSpotAccountSimulationValues } from './HubSpotAccountSimulationDialog'
 import { LifecycleActionDialog } from './LifecycleActionDialog'
 import { OrganizationFormDialog, readinessLabel, type OrganizationFormValues } from './OrganizationFormDialog'
 import { RequestActionDialog, type RequestAction } from './RequestActionDialog'
@@ -37,8 +35,6 @@ export function OrganizationListPage() {
   const [search, setSearch] = useState('')
   const [showInactive, setShowInactive] = useState(false)
   const [editing, setEditing] = useState<Organization | null>(null)
-  const [simulationOpen, setSimulationOpen] = useState(false)
-  const [simulatedRequest, setSimulatedRequest] = useState<RelationshipRequest | null>(null)
   const [accountRecoveryTarget, setAccountRecoveryTarget] = useState<RelationshipRequest | null>(null)
   const [deactivationTarget, setDeactivationTarget] = useState<Organization | null>(null)
   const [requestActionTarget, setRequestActionTarget] = useState<{
@@ -84,23 +80,6 @@ export function OrganizationListPage() {
       }
     },
   })
-  const accountSimulation = useMutation({
-    mutationFn: (values: HubSpotAccountSimulationValues) => simulateHubSpotAccountIntake({
-      candidateOrganizationName: values.candidateOrganizationName,
-      requestedOrganizationKind: values.requestedOrganizationKind,
-      requestedServices: values.requestedServices,
-      hubSpotCompanyId: values.hubSpotCompanyId,
-      hubSpotDealId: values.hubSpotDealId,
-      summary: values.summary,
-      internalNotes: values.internalNotes || null,
-    }),
-    onSuccess: async (request) => {
-      setSimulatedRequest(request)
-      setSimulationOpen(false)
-      setActiveTab('review')
-      await refresh()
-    },
-  })
   const accountRecovery = useMutation({
     mutationFn: (request: RelationshipRequest) =>
       completeRelationshipRequestAccountCreation(request.id, request.version),
@@ -130,7 +109,7 @@ export function OrganizationListPage() {
   return (
     <main className="page-wrap space-y-6 px-4 py-8">
       <section>
-        <div className="max-w-3xl"><Badge variant="secondary" className="mb-3">Phaeno operations</Badge><h1 className="text-3xl font-semibold leading-tight">Accounts</h1><p className="mt-3 text-sm leading-6 text-muted-foreground sm:text-base">Review Prospect, Customer, and Partner accounts, readiness, access, and HubSpot-originated lifecycle requests.</p></div>
+        <div className="max-w-3xl"><Badge variant="secondary" className="mb-3">Phaeno operations</Badge><h1 className="text-3xl font-semibold leading-tight">Accounts</h1><p className="mt-3 text-sm leading-6 text-muted-foreground sm:text-base">Review Prospect, Customer, and Partner accounts, readiness, access, and first-party CRM lifecycle requests.</p></div>
       </section>
 
       {error ? <Alert variant="destructive"><AlertTitle>Could not complete the account action</AlertTitle><AlertDescription>{apiErrorMessage(error)}</AlertDescription></Alert> : null}
@@ -164,30 +143,14 @@ export function OrganizationListPage() {
           <Card>
             <CardHeader>
               <div className="flex flex-wrap items-center justify-between gap-2">
-                <CardTitle><h2>HubSpot account intake</h2></CardTitle>
+                <CardTitle><h2>CRM account intake</h2></CardTitle>
                 <div className="flex flex-wrap items-center gap-2">
-                  <Badge variant="outline">Not connected</Badge>
-                  {import.meta.env.DEV ? (
-                    <Button type="button" onClick={() => {
-                      accountSimulation.reset()
-                      setSimulationOpen(true)
-                    }}>
-                      <Plus data-icon="inline-start" />
-                      Simulate HubSpot account
-                    </Button>
-                  ) : null}
+                  <Badge variant="outline">First-party</Badge>
+                  <Button asChild><Link to="/crm/companies"><Plus data-icon="inline-start" />Open CRM Companies</Link></Button>
                 </div>
               </div>
-              <CardDescription>Sales qualifies companies in HubSpot. When an approved evaluation or Closed Won status is ready for handoff, HubSpot will send a pending request to POMS for review. POMS will not activate access or services automatically.</CardDescription>
+              <CardDescription>Commercial staff create an explicit handoff from a CRM Company or Opportunity. The resulting request waits here for Phaeno review and never activates access or services automatically.</CardDescription>
             </CardHeader>
-            {simulatedRequest ? (
-              <CardContent>
-                <Alert>
-                  <AlertTitle>Simulated account intake received</AlertTitle>
-                  <AlertDescription>{simulatedRequest.requestNumber} is waiting for review.</AlertDescription>
-                </Alert>
-              </CardContent>
-            ) : null}
           </Card>
 
           <Card>
@@ -198,16 +161,6 @@ export function OrganizationListPage() {
       </Tabs>
 
       <OrganizationFormDialog open={Boolean(editing)} organization={editing} isPending={organizationMutation.isPending} error={organizationMutation.error ? apiErrorMessage(organizationMutation.error) : undefined} onOpenChange={(open) => { if (!open) setEditing(null) }} onSubmit={(values) => organizationMutation.mutate(values)} />
-      <HubSpotAccountSimulationDialog
-        open={simulationOpen}
-        isPending={accountSimulation.isPending}
-        error={accountSimulation.error ? apiErrorMessage(accountSimulation.error) : undefined}
-        onOpenChange={(open) => {
-          setSimulationOpen(open)
-          if (!open) accountSimulation.reset()
-        }}
-        onSubmit={(values) => accountSimulation.mutate(values)}
-      />
       <RequestActionDialog action={requestActionTarget?.action ?? null} request={requestActionTarget?.request ?? null} organizations={externalOrganizations} isPending={requestAction.isPending} error={requestAction.error ? apiErrorMessage(requestAction.error) : undefined} onOpenChange={(open) => { if (!open) setRequestActionTarget(null) }} onSubmit={({ explanation, organizationId }) => { if (requestActionTarget) requestAction.mutate({ ...requestActionTarget, organizationId, text: explanation }) }} />
       <AccountCreationRecoveryDialog
         request={accountRecoveryTarget}

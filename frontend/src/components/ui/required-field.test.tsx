@@ -13,7 +13,7 @@ describe('required field presentation', () => {
       </>,
     )
 
-    expect(screen.getByLabelText('First name')).toBeTruthy()
+    expect(screen.getByRole('textbox', { name: 'First name' })).toBeTruthy()
 
     const fieldName = container.querySelector('[data-slot="required-field-name"]')
     const marker = fieldName?.querySelector('[data-slot="required-mark"]')

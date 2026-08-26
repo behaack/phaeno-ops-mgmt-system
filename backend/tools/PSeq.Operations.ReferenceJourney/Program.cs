@@ -543,8 +543,7 @@ internal static class ReferenceJourney
 
         var controller = new RelationshipManagementController(
             dbContext,
-            new ReferenceIdentityContext(platformAdminSubject),
-            environment)
+            new ReferenceIdentityContext(platformAdminSubject))
         {
             ControllerContext = new ControllerContext
             {

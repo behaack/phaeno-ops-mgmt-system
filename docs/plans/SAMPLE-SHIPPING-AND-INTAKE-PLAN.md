@@ -134,8 +134,10 @@ procedure change.
   boundary for a Commercial order or approved Trial Project.
 - `LAB-OPERATIONS-BENCH-VALIDATION.md` owns physical printer, scanner, stock,
   label, degraded-mode, and operator acceptance evidence.
-- `HUBSPOT-PORTAL-LIFECYCLE-PLAN.md` owns the Trial Project request arriving
-  from HubSpot and relationship-safe commercial visibility.
+- `CRM-PLAN.md` and `STANDALONE-COMMERCIAL-LIFECYCLE-PLAN.md` own the
+  first-party CRM Trial Project request and relationship-safe commercial
+  visibility. `HUBSPOT-PORTAL-LIFECYCLE-PLAN.md` is a deferred historical
+  adapter reference.
 - `BACKEND-TEST-PLAN.md`, `FRONTEND-TEST-PLAN.md`, and `E2E-TEST-PLAN.md` track
   deferred verification coverage.
 
@@ -185,7 +187,7 @@ sample safely.
 
 ### Prospect Trial Project
 
-- Sales requests the Trial Project from HubSpot.
+- Sales requests the Trial Project from the first-party POMS CRM.
 - The required commercial and scientific/operations approvals freeze the trial
   package, sample-type allowances, per-type and total sample limits, submission
   window, eligible destination rules, analyses, deliverables, and access term.
@@ -759,7 +761,7 @@ client without validating the selected tenant and frozen authorization scope.
 
 ### Phaeno Intake
 
-- Order Intake distinguishes HubSpot handoffs, planned sample shipments, and
+- Order Intake distinguishes CRM handoffs, planned sample shipments, and
   already-authorized work awaiting specimens.
 - The scan result identifies **Trial Project** or **Customer promotional order**
   visibly so operators do not infer the wrong commercial workflow.
@@ -898,7 +900,7 @@ record.
 
 ### End To End
 
-- approved HubSpot-originated Trial Project through Prospect acceptance,
+- approved first-party CRM-originated Trial Project through Prospect acceptance,
   outbound tube registration, customer tube-to-sample assignment, retained
   crosswalk, shipment preparation, packet print, packet-and-tube scan, receipt,
   accession without relabeling the submitted tube, derived-container labeling,

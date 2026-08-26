@@ -21,6 +21,7 @@ import PartnerGettingStarted from '#/content/docs/en-US/partner/getting-started.
 import PartnerReagentOrders from '#/content/docs/en-US/partner/reagent-orders.mdx'
 import PartnerStatusesAndTroubleshooting from '#/content/docs/en-US/partner/statuses-and-troubleshooting.mdx'
 import PhaenoConfigurationAndRecovery from '#/content/docs/phaeno/configuration-and-recovery.mdx'
+import PhaenoCrm from '#/content/docs/phaeno/crm.mdx'
 import PhaenoDataCuratedPublishing from '#/content/docs/phaeno/data-curated-publishing.mdx'
 import PhaenoDataGovernanceRecovery from '#/content/docs/phaeno/data-governance-recovery.mdx'
 import PhaenoDataOrganizationGrants from '#/content/docs/phaeno/data-organization-grants.mdx'
@@ -312,8 +313,19 @@ export const documentationEntries: readonly DocumentationEntry[] = [
     summary: 'Select the Phaeno workspace, find operational tools, and support users safely.',
     section: 'Basics',
     order: 10,
-    reviewedAt: '2026-08-19',
+    reviewedAt: '2026-08-26',
     Content: PhaenoGettingStarted,
+  },
+  {
+    audience: 'phaeno',
+    locale: null,
+    slug: 'crm',
+    title: 'Customer relationship management',
+    summary: 'Manage Companies, Contacts, Leads, Opportunities, Activities, Tasks, reporting, data quality, and reviewed Portal handoffs.',
+    section: 'Platform operations',
+    order: 15,
+    reviewedAt: '2026-08-26',
+    Content: PhaenoCrm,
   },
   {
     audience: 'phaeno',
@@ -323,7 +335,7 @@ export const documentationEntries: readonly DocumentationEntry[] = [
     summary: 'Manage organizations, Portal requests, readiness, service entitlements, invitations, and access.',
     section: 'Platform operations',
     order: 20,
-    reviewedAt: '2026-08-20',
+    reviewedAt: '2026-08-26',
     Content: PhaenoOrganizationAndUserAdministration,
   },
   {

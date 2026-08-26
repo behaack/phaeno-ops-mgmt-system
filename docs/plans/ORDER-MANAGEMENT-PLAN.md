@@ -4,8 +4,10 @@ Keep this file updated as Customer and Partner ordering requirements are
 supplied and decisions are made.
 
 The initial-release discovery and implementation were completed on 2026-07-14.
-Product direction expanded on 2026-07-15 through the HubSpot lifecycle plan.
-Those new changes are not authorized for implementation by this plan alone.
+Product direction expanded on 2026-07-15 through the former HubSpot lifecycle
+plan, then changed on 2026-08-26 to a full first-party CRM and standalone
+commercial lifecycle. Those new changes are not authorized for implementation
+by this plan alone.
 
 On 2026-07-16, `LAB-OPERATIONS-PLAN.md` separated Commercial Operations from an
 internal, replaceable Lab Operations provider. That internal application scope
@@ -30,7 +32,8 @@ by `FILE-MANAGEMENT-PLAN.md`.
   not separately sellable because it has no value without the corresponding
   PSeq Lab Service or PSeq Kit inputs.
   Partners may submit specimens without identifying any downstream customer.
-  Bespoke work routes through HubSpot. These changes are not implemented.
+  Bespoke work routes through a first-party CRM Opportunity. These changes are
+  not implemented.
 - Required pre-production alignment: the implemented standalone Partner
   data-assembly commercial workflow is superseded. It must become the included,
   kit-linked assembly phase of PSeq Kit; the existing Customer laboratory flow
@@ -48,14 +51,16 @@ by `FILE-MANAGEMENT-PLAN.md`.
   authorization/projection/receipt records remain in `commercial_ops`. Existing
   customer order, quote, file, payment, and publication records remain
   authoritative for their Commercial responsibilities in `commercial_ops`.
-  Phaeno operators can use the **Order intake** section to review HubSpot-
-  originated sales-assisted and Trial Project handoffs separately from placed
-  lab orders, then reach an already-authorized Lab work order for receipt and
-  accession. A guarded local-development simulator creates durable
+  Phaeno operators can currently use the **Order intake** section to review
+  simulated HubSpot-originated sales-assisted and Trial Project handoffs
+  separately from placed lab orders, then reach an already-authorized Lab work
+  order for receipt and accession. This is superseded implementation debt under
+  `STANDALONE-COMMERCIAL-LIFECYCLE-PLAN.md`. A guarded local-development
+  simulator creates durable
   `HubSpot`-sourced `SalesAssistedOrder` or `Evaluation` requests without
   contacting HubSpot, creating executable work, or bypassing review. The
-  Trial Project domain and the sales-assisted handoff-to-order conversion remain
-  future implementation.
+  Trial Project domain, first-party CRM intake, and the sales-assisted handoff-
+  to-order conversion remain future implementation.
 - Verification state: the prior clean-baseline backend, frontend, and
   desktop/mobile suites passed. The complete Lab slice has a clean backend
   build, frontend lint/typecheck and client/SSR build, and applied local
@@ -125,9 +130,10 @@ by `FILE-MANAGEMENT-PLAN.md`.
 - A separately assignable purchaser/order-placer role is deferred. The initial
   release intentionally uses the existing organization-admin boundary rather
   than adding a new membership permission model.
-- QuickBooks Online is the only implemented external business system. HubSpot
-  is the selected relationship CRM and planned integration target, but it is
-  not connected today. There is no separate order-management, ERP, LIMS,
+- QuickBooks Online is the only implemented external business system. POMS will
+  include the first-party CRM defined in `CRM-PLAN.md`; HubSpot is a deferred
+  optional adapter and is not connected today. There is no separate
+  order-management, ERP, LIMS,
   laboratory workflow, fulfillment, invoicing, or contract-management system
   outside Phaeno Portal.
 - Specifically, Phaeno currently has no ERP and no third-party LIMS. QuickBooks
@@ -161,10 +167,10 @@ by `FILE-MANAGEMENT-PLAN.md`.
 
 ## Approved Next Commercial Entry Direction
 
-`HUBSPOT-PORTAL-LIFECYCLE-PLAN.md` owns the end-to-end commercial handoff. When
-implementation is explicitly requested, this plan must be expanded into exact
-transition, pricing, API, migration, UI, and rollout changes before modifying
-the current order aggregates.
+`STANDALONE-COMMERCIAL-LIFECYCLE-PLAN.md` owns the end-to-end first-party
+CRM-to-operations handoff. When implementation is explicitly requested, this
+plan must be expanded into exact transition, pricing, API, migration, UI, and
+rollout changes before modifying the current order aggregates.
 
 - A direct Portal order is standard, configured, entitlement-checked work. The
   complete price is shown before commitment and no Sales negotiation is needed.
@@ -181,7 +187,7 @@ the current order aggregates.
   without a customer-specific minimum batch charge. Phaeno may assign eligible
   specimens from multiple customer orders to one internal laboratory batch to
   economize operations. This never merges the customer orders, commercial
-  snapshots, HubSpot Orders, QuickBooks records, tenant ownership, files, or
+  snapshots, CRM sale summaries, QuickBooks records, tenant ownership, files, or
   results, and no external organization can discover another participant.
 - The published PSeq Lab Service turnaround window starts at Phaeno specimen
   acceptance. Cross-customer batching must occur within that window and cannot
@@ -208,12 +214,12 @@ the current order aggregates.
   interruption`, `Specimen or shipping issue`, `Customer action required`, and
   `Other operational delay`. The last reason requires a customer-safe note.
   Operations may record a separate internal note that is never copied to an
-  organization timeline, email, HubSpot, QuickBooks, or generated document.
+  organization timeline, email, CRM, QuickBooks, or generated document.
 - Later-date notifications go to the order contact and active organization
   administrators, with duplicate recipients suppressed. Notification failure
   is visible and retryable to Phaeno but does not undo the authoritative date
   revision.
-- HubSpot receives only the Order-level current expected completion date and
+- CRM receives only the Order-level current expected completion date and
   schedule health (`On track`, `At risk`, `Delayed`, or `Complete`). Delay
   reason text, internal notes, specimen facts, and laboratory batch details do
   not cross the CRM boundary.
@@ -227,7 +233,7 @@ the current order aggregates.
 - One PSeq Kit purchase creates one commercial order with two independently
   tracked operational phases: kit fulfillment, followed by data submission and
   assembly. The included assembly phase does not create another quote, order,
-  invoice, HubSpot Order, or commercial commitment.
+  invoice, CRM sale summary, or commercial commitment.
 - Each purchased PSeq Kit unit includes exactly one assembly case for data
   produced by that kit. Corrected or replacement files for the same case are
   versioned resubmissions and do not consume another entitlement or create a
@@ -258,7 +264,7 @@ the current order aggregates.
 - Replacing a defective or damaged PSeq Kit unit is an audited substitution
   beneath the original commercial order. Its existing assembly case transfers
   to the replacement kit; the original unit is marked replaced, and no extra
-  entitlement, sale, HubSpot Order, or invoice is created unless the Partner
+  entitlement, sale, CRM sale summary, or invoice is created unless the Partner
   purchases an additional unit.
 - The purchasing Partner organization remains the tenant owner of each PSeq Kit
   unit, assembly case, submitted data, and released result even when the Partner
@@ -267,17 +273,19 @@ the current order aggregates.
   not require or infer the downstream customer's identity.
 - The Portal may retain separate specimen, shipment, and assembly operational
   records, states, assignments, and validation. Quotes, accepted commercial
-  snapshots, QuickBooks mapping, and HubSpot summaries must preserve the
+  snapshots, QuickBooks mapping, and CRM summaries must preserve the
   approved PSeq Lab Service or PSeq Kit bundle instead of presenting its
   components as separately purchased standard lines.
 - Data assembly is never a separately sold standard path. It is an included
   operational phase of PSeq Lab Service or PSeq Kit.
 - Unsupported specimens, analyses, files, quantities, deliverables, discounts,
-  SLAs, or terms route to `Request custom work` and a HubSpot Deal.
-- Closed Won custom work creates a pending sales-assisted-order handoff for
+  SLAs, or terms route to `Request custom work` and a first-party CRM
+  Opportunity.
+- Won custom work creates a pending sales-assisted-order handoff for
   Phaeno operational validation; it does not silently create active work.
-- Every committed Portal sale publishes a relationship-safe HubSpot Order
-  summary. Routine direct orders do not create HubSpot Deals.
+- Every committed Portal sale publishes a relationship-safe summary to its
+  linked CRM Company and Opportunity when present. Routine direct orders do not
+  create CRM Opportunities automatically.
 - Partner specimen work belongs to the Partner. The Portal neither requires nor
   infers a downstream-customer identity; an optional PO or project reference is
   opaque Partner data.
@@ -325,7 +333,7 @@ manual per-job quote path until the configured path is complete and activated.
 
 - Add a frozen commercial-entry mode to `LabServiceOrder`: `ManualQuote` for
   the current Customer request/quote flow, `ConfiguredDirect` for the new
-  standard path, and `SalesAssisted` for an accepted HubSpot handoff. Existing
+  standard path, and `SalesAssisted` for an accepted CRM handoff. Existing
   rows backfill to `ManualQuote` without changing their status, quote, Lab work,
   QuickBooks document, or file history.
 - Configured orders retain the selected offering identity/version and an
@@ -370,11 +378,11 @@ manual per-job quote path until the configured path is complete and activated.
   specimen price, committed quantity, complete price, and published turnaround
   before commitment, and clearly separates `Place standard order` from
   `Request custom work`. Members retain view-only access.
-- HubSpot publication is an outbound relationship summary derived after the
-  authoritative Portal commitment. CRM delivery failure is visible and
+- First-party CRM publication is a relationship-safe summary derived after the
+  authoritative Portal commitment. A linked-summary failure is visible and
   retryable but does not mutate or roll back an otherwise committed Portal/Lab/
-  QuickBooks transaction. Live HubSpot publication remains gated by the owning
-  lifecycle plan and provider configuration.
+  QuickBooks transaction. Any later external CRM publication remains gated by
+  fresh adapter scope and provider configuration.
 
 #### Rollout and Compatibility Gates
 
@@ -1924,7 +1932,8 @@ Execution checkpoint:
    de-duplicated durable notification.
 8. Phaeno reporting distinguishes receipt-to-acceptance from
    acceptance-to-completion, measures against the original target after an
-   override, and exports only Order-level schedule health to HubSpot.
+   override, and exposes only Order-level schedule health to first-party CRM or
+   a future external CRM.
 
 ## Verification Plan
 

@@ -26,7 +26,8 @@ public enum PortalIntegrationRequestType
 public enum PortalIntegrationRequestSource
 {
     Manual = 1,
-    HubSpot = 2
+    HubSpot = 2,
+    FirstPartyCrm = 3
 }
 
 public enum PortalIntegrationRequestStatus

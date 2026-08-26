@@ -29,10 +29,6 @@ export type RelationshipRequestStatus =
   | 'Declined'
   | 'Applied'
   | 'Cancelled'
-export type HubSpotHandoffSimulationPath =
-  | 'SalesAssistedOrder'
-  | 'TrialProject'
-
 export type Organization = {
   id: string
   name: string
@@ -84,7 +80,7 @@ export type RelationshipRequest = {
   organizationId: string | null
   candidateOrganizationName: string
   requestType: RelationshipRequestType
-  source: 'Manual' | 'HubSpot'
+  source: 'Manual' | 'HubSpot' | 'FirstPartyCrm'
   status: RelationshipRequestStatus
   requestedOrganizationKind: OrganizationKind | null
   sourceReference: string | null
@@ -300,38 +296,6 @@ export async function createRelationshipRequest(input: {
 }) {
   const response = await api.post<ApiEnvelope<RelationshipRequest>>(
     '/platform/relationships/requests',
-    input,
-  )
-  return unwrap(response.data)
-}
-
-export async function simulateHubSpotHandoff(input: {
-  path: HubSpotHandoffSimulationPath
-  organizationId: string | null
-  candidateOrganizationName: string | null
-  requestedService: PortalService | null
-  hubSpotDealId: string
-  summary: string
-  internalNotes: string | null
-}) {
-  const response = await api.post<ApiEnvelope<RelationshipRequest>>(
-    '/platform/relationships/requests/simulate-hubspot',
-    input,
-  )
-  return unwrap(response.data)
-}
-
-export async function simulateHubSpotAccountIntake(input: {
-  candidateOrganizationName: string
-  requestedOrganizationKind: Exclude<OrganizationKind, 'Phaeno'>
-  requestedServices: PortalService[]
-  hubSpotCompanyId: string
-  hubSpotDealId: string
-  summary: string
-  internalNotes: string | null
-}) {
-  const response = await api.post<ApiEnvelope<RelationshipRequest>>(
-    '/platform/relationships/requests/simulate-hubspot-account',
     input,
   )
   return unwrap(response.data)

@@ -1,11 +1,30 @@
-# HubSpot to Phaeno Portal Lifecycle Plan
+# Deferred HubSpot Adapter Reference
 
-Keep this file updated as the HubSpot-to-Portal relationship, onboarding, sales,
-and account-lifecycle integration is designed and implemented.
+This file preserves the previously approved HubSpot-specific design and Phase
+0 proof history for possible reuse in a future adapter.
 
-Do not execute this plan unless explicitly requested.
+Do not execute this historical plan. Any future HubSpot implementation requires
+fresh explicit product scope and must follow `CRM-PLAN.md`,
+`STANDALONE-COMMERCIAL-LIFECYCLE-PLAN.md`, and
+`docs/crm-integration-strategy.md`.
 
-## Status
+## Current Direction
+
+- Product direction changed on 2026-08-26: POMS is being developed as a
+  standalone application with a full first-party CRM and no HubSpot runtime
+  dependency.
+- The first-party CRM owns Companies, Contacts, Leads, Opportunities,
+  pipelines, Activities, Tasks, relationship context, and commercial reporting
+  for the standalone product.
+- The standalone commercial lifecycle is completed inside POMS. HubSpot
+  Company or Deal identifiers are not required business fields.
+- HubSpot may be reconsidered later as an optional import, export, or
+  synchronization adapter. It may not be the foundation of CRM or operational
+  workflows.
+- All sections below this notice are superseded historical design unless a
+  future authorized adapter plan explicitly adopts them.
+
+## Historical Status
 
 - Product direction was approved on 2026-07-15 for planning purposes.
 - HubSpot is the selected relationship CRM and planned integration target.

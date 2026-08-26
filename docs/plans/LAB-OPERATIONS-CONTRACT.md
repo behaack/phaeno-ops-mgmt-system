@@ -93,7 +93,7 @@ Commercial customer communication and release
 ```
 
 Commercial Operations never writes `lab_ops` entities directly. Lab Operations
-never writes commercial orders, quotes, customer timelines, HubSpot facts,
+never writes commercial orders, quotes, customer timelines, CRM facts,
 QuickBooks facts, Portal permissions, or customer release records directly.
 
 Sharing one API, one database, and one EF context does not weaken this rule.
@@ -227,7 +227,7 @@ rules are fixed:
   biological specimen. Lab creates one specimen/accession and may attach
   multiple registered-supplier submitted containers to it, one per received
   tube, while preserving each container barcode and any missing-tube exception.
-- The payload contains no price, quote, invoice, credit, payment, HubSpot deal,
+- The payload contains no price, quote, invoice, credit, payment, CRM Opportunity,
   or Portal membership data.
 - The payload contains no Customer-versus-Partner branch.
 - The payload contains no downstream customer identity for Partner submissions.
@@ -377,7 +377,7 @@ operations.
 ## Stable Work Projection
 
 Commercial Operations stores or refreshes a projection sufficient for customer
-experience, communication, HubSpot summary, and reconciliation. It is not a
+experience, communication, CRM summary, and reconciliation. It is not a
 copy of the Lab execution ledger.
 
 ```csharp
@@ -482,7 +482,7 @@ Initial `ActionCode` families may include:
 Lab owns the full scientific issue and internal notes. Commercial receives the
 structured action projection and may provide an authorized Phaeno user a
 separate staff-only summary when required. No internal Lab note is automatically
-copied into Portal, email, HubSpot, QuickBooks, or a generated document.
+copied into Portal, email, CRM, QuickBooks, or a generated document.
 
 Commercial owns recipient selection, customer-safe wording, deadlines shown to
 the organization, reminders, and response capture. A Partner remains the
@@ -631,7 +631,7 @@ Commercial to Lab Operations must not send:
 
 - price, quote lines, discounts, taxes, invoice, payment, or credit state
 - QuickBooks IDs except an opaque procurement reference when separately needed
-- HubSpot Deal, Order, workflow, or activity detail
+- CRM Opportunity, sale, workflow, or activity detail
 - Portal membership and invitation records
 - Customer-versus-Partner branching instructions
 - a Partner's downstream customer identity

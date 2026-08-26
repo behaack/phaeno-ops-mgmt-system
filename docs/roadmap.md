@@ -13,11 +13,17 @@
 - `docs/plans/ORDER-MANAGEMENT-PLAN.md`: implemented Customer laboratory,
   Partner reagent, Partner data-assembly, and Phaeno operations/configuration
   workflows; approved next direction adds configured-price standard sales,
-  Partner specimen processing, and HubSpot committed-sale publication.
-- `docs/plans/HUBSPOT-PORTAL-LIFECYCLE-PLAN.md`: approved future end-to-end
-  HubSpot relationship, evaluation, onboarding, service-entitlement, direct and
-  Sales-assisted sale, relationship-change, and offboarding lifecycle. No CRM
-  integration is implemented.
+  Partner specimen processing, and first-party CRM committed-sale summaries.
+- `docs/plans/CRM-PLAN.md`: approved full first-party CRM for Companies,
+  Contacts, Leads, Opportunities, pipelines, Activities, Tasks, reporting, data
+  quality, and CRM-to-POMS commercial handoffs. The standalone version 1 is
+  implemented locally; connected communications, marketing automation, and any
+  external CRM adapter remain future work.
+- `docs/plans/STANDALONE-COMMERCIAL-LIFECYCLE-PLAN.md`: approved standalone
+  CRM-to-Portal account, evaluation, onboarding, service-entitlement, direct and
+  sales-assisted sale, relationship-change, and offboarding lifecycle.
+- `docs/plans/HUBSPOT-PORTAL-LIFECYCLE-PLAN.md`: superseded historical HubSpot
+  design retained only for a possible future adapter.
 - `docs/plans/LAB-OPERATIONS-PLAN.md`: feature-complete approved internal Lab
   Operations application, including Commercial authorization/cancellation
   handoff, additive Lab roles, receipt/accession and lineage, controlled
@@ -29,14 +35,14 @@
   implemented version 1 Commercial-to-Lab boundary; and
   `docs/plans/PSEQ-OPERATIONS-MIGRATION-PLAN.md` records the completed clean
   Development reset and restructure. The local database is `phaeno_ops`, with
-  63 tables in `commercial_ops`, 27 Laboratory tables in `lab_ops`, and EF
+  85 tables in `commercial_ops`, 27 Laboratory tables in `lab_ops`, and EF
   history in `public`. Validation and production activation remain incomplete:
   database-backed Lab suites, representative bench/label/scanner work,
   external NGS operating details, deployment, and production content are
   gates. The automated data-pipeline and scientific file-management boundary
   remains an explicit major TBD.
 - `docs/plans/PROSPECT-TRIAL-PROJECT-PLAN.md`: approved future no-charge,
-  closed-ended Prospect Trial Project requested from HubSpot and governed in
+  closed-ended Prospect Trial Project requested from first-party CRM and governed in
   the Portal. It is not implemented.
 - `docs/plans/SAMPLE-SHIPPING-AND-INTAKE-PLAN.md`: approved shared direction
   for shared Prospect Trial Project and Customer promotional freebie sample
@@ -62,9 +68,9 @@
 
 ## Durable product guidance
 
-- `docs/crm-integration-strategy.md`: approved HubSpot/Portal/QuickBooks system
-  ownership and data-boundary guidance; implementation state remains in the
-  owning lifecycle plan.
+- `docs/crm-integration-strategy.md`: first-party CRM and future optional
+  external-CRM system ownership and data-boundary guidance; implementation
+  state remains in the owning CRM and standalone lifecycle plans.
 - `docs/lims-integration-strategy.md`: durable provider-neutral boundary for the
   implemented internal Lab Operations provider and any future third-party LIMS
   replacement; implementation and activation state remains in the Lab
