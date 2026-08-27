@@ -1,45 +1,122 @@
-import { Link, useRouterState } from "@tanstack/react-router";
-import type { ReactNode } from "react";
+import { useNavigate, useRouterState } from '@tanstack/react-router'
+import {
+  Building2,
+  ChartColumn,
+  ContactRound,
+  House,
+  ListTodo,
+  Settings,
+  Target,
+  UserSearch,
+} from 'lucide-react'
+import type { ReactNode } from 'react'
 
-const sections = [
-  { label: "Home", to: "/crm" },
-  { label: "Companies", to: "/crm/companies" },
-  { label: "Contacts", to: "/crm/contacts" },
-  { label: "Leads", to: "/crm/leads" },
-  { label: "Opportunities", to: "/crm/opportunities" },
-  { label: "Tasks", to: "/crm/tasks" },
-  { label: "Reports", to: "/crm/reports" },
-  { label: "Administration", to: "/crm/administration" },
-] as const;
+import {
+  WorkspaceSidebar,
+  type WorkspaceSidebarItem,
+} from '#/components/WorkspaceSidebar'
+
+type CrmSection =
+  | 'home'
+  | 'companies'
+  | 'contacts'
+  | 'leads'
+  | 'opportunities'
+  | 'tasks'
+  | 'reports'
+  | 'administration'
+
+const crmSections = [
+  {
+    value: 'home',
+    label: 'Home',
+    description: 'Attention, search, and recent commercial activity',
+    icon: House,
+    to: '/crm',
+  },
+  {
+    value: 'companies',
+    label: 'Companies',
+    description: 'Organizations and relationship context',
+    icon: Building2,
+    to: '/crm/companies',
+  },
+  {
+    value: 'contacts',
+    label: 'Contacts',
+    description: 'People and Company associations',
+    icon: ContactRound,
+    to: '/crm/contacts',
+  },
+  {
+    value: 'leads',
+    label: 'Leads',
+    description: 'Qualification and conversion work',
+    icon: UserSearch,
+    to: '/crm/leads',
+  },
+  {
+    value: 'opportunities',
+    label: 'Opportunities',
+    description: 'Pipelines, stages, and commercial pursuits',
+    icon: Target,
+    to: '/crm/opportunities',
+  },
+  {
+    value: 'tasks',
+    label: 'Tasks',
+    description: 'Owned follow-up and reminders',
+    icon: ListTodo,
+    to: '/crm/tasks',
+  },
+  {
+    value: 'reports',
+    label: 'Reports',
+    description: 'Pipeline, conversion, and activity reporting',
+    icon: ChartColumn,
+    to: '/crm/reports',
+  },
+  {
+    value: 'administration',
+    label: 'Administration',
+    description: 'Pipelines, views, imports, and data quality',
+    icon: Settings,
+    to: '/crm/administration',
+  },
+] as const satisfies ReadonlyArray<
+  WorkspaceSidebarItem<CrmSection> & { to: string }
+>
 
 export function CrmShell({ children }: { children: ReactNode }) {
+  const navigate = useNavigate()
   const pathname = useRouterState({
     select: (state) => state.location.pathname,
-  });
+  })
+  const activeSection = getActiveSection(pathname)
+
   return (
-    <div>
-      <nav aria-label="CRM sections" className="border-b bg-card/60">
-        <div className="page-wrap flex gap-1 overflow-x-auto px-4 py-2">
-          {sections.map((section) => {
-            const current =
-              section.to === "/crm"
-                ? pathname === section.to
-                : pathname === section.to ||
-                  pathname.startsWith(`${section.to}/`);
-            return (
-              <Link
-                key={section.to}
-                to={section.to}
-                aria-current={current ? "page" : undefined}
-                className={`shrink-0 cursor-pointer rounded-md px-3 py-2 text-sm font-medium outline-none transition-colors focus-visible:ring-3 focus-visible:ring-ring/50 ${current ? "bg-primary text-primary-foreground" : "text-muted-foreground hover:bg-muted hover:text-foreground"}`}
-              >
-                {section.label}
-              </Link>
-            );
-          })}
-        </div>
-      </nav>
+    <WorkspaceSidebar
+      workspaceLabel="CRM"
+      items={crmSections}
+      value={activeSection}
+      onValueChange={(value) => {
+        const destination = crmSections.find(
+          (section) => section.value === value,
+        )
+        if (destination) void navigate({ to: destination.to })
+      }}
+    >
       {children}
-    </div>
-  );
+    </WorkspaceSidebar>
+  )
+}
+
+function getActiveSection(pathname: string): CrmSection {
+  const section = crmSections.find(
+    (candidate) =>
+      candidate.to !== '/crm' &&
+      (pathname === candidate.to || pathname.startsWith(`${candidate.to}/`)),
+  )
+
+  return section?.value ?? 'home'
 }

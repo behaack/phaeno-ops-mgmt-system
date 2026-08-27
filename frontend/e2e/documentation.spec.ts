@@ -51,6 +51,11 @@ test('shows only Phaeno guides in expandable topic groups', async ({ page }) => 
   const guideNavigation = page.getByRole('navigation', { name: 'Guides' })
   await expect(
     guideNavigation.getByRole('button', {
+      name: 'Expand Customer relationship management topics',
+    }),
+  ).toBeVisible()
+  await expect(
+    guideNavigation.getByRole('button', {
       name: 'Expand Data provisioning topics',
     }),
   ).toBeVisible()
@@ -62,6 +67,28 @@ test('shows only Phaeno guides in expandable topic groups', async ({ page }) => 
   await expect(
     guideNavigation.getByRole('button', {
       name: 'Expand Laboratory operations topics',
+    }),
+  ).toBeVisible()
+
+  await guideNavigation.getByRole('button', {
+    name: 'Expand Customer relationship management topics',
+  }).click()
+  const crmTopics = page.locator('#documentation-topics-crm')
+  await expect(crmTopics.getByRole('link')).toHaveCount(8)
+  await expect(crmTopics.locator('a > svg')).toHaveCount(8)
+  await crmTopics.getByRole('link', {
+    name: 'Reports and administration',
+  }).click()
+  await expect(
+    page.getByRole('heading', {
+      name: 'Reports and administration',
+      level: 1,
+    }),
+  ).toBeVisible()
+  await openSidebarIfCollapsed(page)
+  await expect(
+    page.getByRole('button', {
+      name: 'Collapse Customer relationship management topics',
     }),
   ).toBeVisible()
 

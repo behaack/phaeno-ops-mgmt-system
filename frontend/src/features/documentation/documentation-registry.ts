@@ -22,6 +22,13 @@ import PartnerReagentOrders from '#/content/docs/en-US/partner/reagent-orders.md
 import PartnerStatusesAndTroubleshooting from '#/content/docs/en-US/partner/statuses-and-troubleshooting.mdx'
 import PhaenoConfigurationAndRecovery from '#/content/docs/phaeno/configuration-and-recovery.mdx'
 import PhaenoCrm from '#/content/docs/phaeno/crm.mdx'
+import PhaenoCrmActivitiesTasks from '#/content/docs/phaeno/crm-activities-tasks.mdx'
+import PhaenoCrmCompaniesContacts from '#/content/docs/phaeno/crm-companies-contacts.mdx'
+import PhaenoCrmLeadsConversion from '#/content/docs/phaeno/crm-leads-conversion.mdx'
+import PhaenoCrmOpportunitiesPipelines from '#/content/docs/phaeno/crm-opportunities-pipelines.mdx'
+import PhaenoCrmPortalHandoffs from '#/content/docs/phaeno/crm-portal-handoffs.mdx'
+import PhaenoCrmReportsAdministration from '#/content/docs/phaeno/crm-reports-administration.mdx'
+import PhaenoCrmTroubleshooting from '#/content/docs/phaeno/crm-troubleshooting.mdx'
 import PhaenoDataCuratedPublishing from '#/content/docs/phaeno/data-curated-publishing.mdx'
 import PhaenoDataGovernanceRecovery from '#/content/docs/phaeno/data-governance-recovery.mdx'
 import PhaenoDataOrganizationGrants from '#/content/docs/phaeno/data-organization-grants.mdx'
@@ -320,12 +327,97 @@ export const documentationEntries: readonly DocumentationEntry[] = [
     audience: 'phaeno',
     locale: null,
     slug: 'crm',
+    overviewTitle: 'Overview and navigation',
     title: 'Customer relationship management',
     summary: 'Manage Companies, Contacts, Leads, Opportunities, Activities, Tasks, reporting, data quality, and reviewed Portal handoffs.',
-    section: 'Platform operations',
+    section: 'Customer relationship management',
     order: 15,
-    reviewedAt: '2026-08-26',
+    reviewedAt: '2026-08-27',
     Content: PhaenoCrm,
+  },
+  {
+    audience: 'phaeno',
+    locale: null,
+    slug: 'crm-companies-contacts',
+    parentSlug: 'crm',
+    title: 'Companies and Contacts',
+    summary: 'Create durable relationship records, manage effective-dated associations, and resolve duplicates safely.',
+    section: 'Customer relationship management',
+    order: 16,
+    reviewedAt: '2026-08-27',
+    Content: PhaenoCrmCompaniesContacts,
+  },
+  {
+    audience: 'phaeno',
+    locale: null,
+    slug: 'crm-leads-conversion',
+    parentSlug: 'crm',
+    title: 'Leads and conversion',
+    summary: 'Capture signals, record qualification decisions, and convert without granting Portal access.',
+    section: 'Customer relationship management',
+    order: 17,
+    reviewedAt: '2026-08-27',
+    Content: PhaenoCrmLeadsConversion,
+  },
+  {
+    audience: 'phaeno',
+    locale: null,
+    slug: 'crm-opportunities-pipelines',
+    parentSlug: 'crm',
+    title: 'Opportunities and pipelines',
+    summary: 'Run commercial pursuits through controlled stages, immutable history, and currency-safe reporting.',
+    section: 'Customer relationship management',
+    order: 18,
+    reviewedAt: '2026-08-27',
+    Content: PhaenoCrmOpportunitiesPipelines,
+  },
+  {
+    audience: 'phaeno',
+    locale: null,
+    slug: 'crm-activities-tasks',
+    parentSlug: 'crm',
+    title: 'Activities and Tasks',
+    summary: 'Record commercial interactions and manage owned, recurring follow-up in record context.',
+    section: 'Customer relationship management',
+    order: 19,
+    reviewedAt: '2026-08-27',
+    Content: PhaenoCrmActivitiesTasks,
+  },
+  {
+    audience: 'phaeno',
+    locale: null,
+    slug: 'crm-reports-administration',
+    parentSlug: 'crm',
+    title: 'Reports and administration',
+    summary: 'Interpret commercial reports and manage pipelines, fields, views, duplicates, imports, and exports.',
+    section: 'Customer relationship management',
+    order: 20,
+    reviewedAt: '2026-08-27',
+    Content: PhaenoCrmReportsAdministration,
+  },
+  {
+    audience: 'phaeno',
+    locale: null,
+    slug: 'crm-portal-handoffs',
+    parentSlug: 'crm',
+    title: 'Portal handoffs and account links',
+    summary: 'Send commercial context into reviewed Portal workflows without creating access or work.',
+    section: 'Customer relationship management',
+    order: 21,
+    reviewedAt: '2026-08-27',
+    Content: PhaenoCrmPortalHandoffs,
+  },
+  {
+    audience: 'phaeno',
+    locale: null,
+    slug: 'crm-troubleshooting',
+    parentSlug: 'crm',
+    title: 'Troubleshooting and recovery',
+    summary: 'Resolve access, duplicate, stale-update, conversion, stage, import, Task, and handoff problems safely.',
+    section: 'Customer relationship management',
+    order: 22,
+    reviewedAt: '2026-08-27',
+    Content: PhaenoCrmTroubleshooting,
   },
   {
     audience: 'phaeno',
@@ -334,7 +426,7 @@ export const documentationEntries: readonly DocumentationEntry[] = [
     title: 'Organization and user administration',
     summary: 'Manage organizations, Portal requests, readiness, service entitlements, invitations, and access.',
     section: 'Platform operations',
-    order: 20,
+    order: 25,
     reviewedAt: '2026-08-27',
     Content: PhaenoOrganizationAndUserAdministration,
   },

@@ -16,7 +16,7 @@ describe('documentation registry', () => {
       expect(entries.map((entry) => entry.order)).toEqual([
         ...(audience === 'phaeno'
           ? [
-              10, 15, 20,
+              10, 15, 16, 17, 18, 19, 20, 21, 22, 25,
               30, 31, 32, 33, 34,
               40, 41, 42, 43, 44, 45, 46,
               50, 51, 52, 53, 54, 55, 56,
@@ -89,6 +89,9 @@ describe('documentation registry', () => {
     expect(
       getDocumentationEntry('phaeno', 'lab-protocol-execution')?.parentSlug,
     ).toBe('lab-operations')
+    expect(
+      getDocumentationEntry('phaeno', 'crm-portal-handoffs')?.parentSlug,
+    ).toBe('crm')
     expect(
       getDocumentationEntry('phaeno', 'order-billing-payment-release')
         ?.parentSlug,

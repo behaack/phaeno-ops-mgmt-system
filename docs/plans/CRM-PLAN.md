@@ -20,6 +20,12 @@ deployment, and test execution retain their normal approval boundaries.
   saved views, typed custom fields, duplicate review, controlled merges,
   previewed/idempotent imports, audited exports, and explicit Portal handoffs
   and account links.
+- The CRM workspace now uses the shared far-left responsive sidebar for Home,
+  Companies, Contacts, Leads, Opportunities, Tasks, Reports, and
+  Administration. Phaeno CRM help is organized as one expandable subject with
+  independently routed workflow, administration, handoff, and recovery guides.
+  This navigation and documentation refinement has no persistence or API
+  contract change.
 - The CRM and Portal domains retain independent identifiers. CRM-to-Portal
   handoffs create pending, idempotent requests through the existing review
   boundary; intake does not grant membership, enable a service, create
@@ -34,8 +40,8 @@ deployment, and test execution retain their normal approval boundaries.
 - Additive migrations `20260826145224_AddCrmCompanyFoundation`,
   `20260826155438_CompleteCoreCrm`, and
   `20260826162600_AllowRepeatCrmCompanyContactHistory` define the first-party
-  model. They were applied only to the configured local development database;
-  no shared database or deployment was changed.
+  model. The current navigation and documentation refinement requires no EF
+  migration.
 - Connected communications, marketing automation, telephony, service cases,
   and any external CRM adapter remain separately scoped expansions. Deeper
   Trial Project, order, QuickBooks, and operational projections remain owned by
@@ -254,6 +260,10 @@ They do not replace or directly mutate their owning domains.
 
 - Add a first-class **CRM** area to Phaeno navigation rather than overloading
   **Accounts**.
+- Use the shared far-left responsive workspace sidebar for CRM Home, Companies,
+  Contacts, Leads, Opportunities, Tasks, Reports, and Administration. Preserve
+  the active section on list and detail routes and do not duplicate these items
+  in a horizontal section bar.
 - CRM landing answers: what needs attention, which opportunities changed, what
   is overdue, and how the pipeline is performing.
 - Companies, Contacts, Leads, Opportunities, and Tasks use the standard
@@ -298,7 +308,7 @@ They do not replace or directly mutate their owning domains.
 
 - implement Company and Contact records, associations, ownership, search,
   lists, details, notes, basic activities, audit, and duplicate warnings
-- add CRM navigation and home attention view
+- add CRM shared-sidebar navigation and home attention view
 - provide explicit CRM Company to Portal account proposal/link flow
 
 ### Phase 2: Leads, opportunities, and pipelines — completed

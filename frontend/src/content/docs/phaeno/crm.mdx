@@ -1,68 +1,28 @@
 # Customer relationship management
 
-The POMS CRM is Phaeno's first-party commercial relationship workspace. It runs without HubSpot or another external CRM. CRM records are internal Phaeno records: creating a Company, Contact, Lead, Opportunity, Activity, or Task never creates Portal access, activates a service, or starts scientific work.
+The POMS CRM is Phaeno's first-party commercial system of record. It runs without HubSpot or another external CRM and retains Companies, Contacts, Leads, Opportunities, Activities, Tasks, pipeline history, reporting, and reviewed handoffs in POMS.
 
-## Start from CRM home
+CRM records are internal Phaeno records. Creating or changing a CRM record never creates a Portal account, grants membership, activates a service, authorizes ordering, starts laboratory work, or exposes scientific data.
 
-Open **CRM** from the Phaeno toolbar. Home shows overdue and due-soon work, Leads that need a next action, data-quality warnings, your current tasks, recently changed Opportunities, and a pipeline summary. Use global search to find active Companies, Contacts, Leads, Opportunities, and Tasks. Select a result to open its owning workspace.
+## Access CRM
 
-Use the CRM section bar to move among **Companies**, **Contacts**, **Leads**, **Opportunities**, **Tasks**, **Reports**, and **Administration**.
+Open **CRM** from the Phaeno toolbar. CRM access requires an active Phaeno platform-administrator account. External organization users cannot see CRM navigation or CRM data.
 
-## Manage Companies and Contacts
+Use the far-left sidebar beneath the toolbar to move among **Home**, **Companies**, **Contacts**, **Leads**, **Opportunities**, **Tasks**, **Reports**, and **Administration**. The sidebar header identifies CRM and, on wider screens, provides the pin or unpin icon. Pointer users can preview an unpinned sidebar from the left edge; keyboard and touch users open it from the edge tab. Choosing a section closes an unpinned sidebar.
 
-Create a Company for a commercial relationship even when no Portal account is appropriate. Record its name, domain, website, phone, address, industry, employee count, lifecycle, source, tags, owner, and relationship summary. Open the Company name for its view-first workspace. Edit, change ownership, or deactivate the record through its explicit actions; reactivation preserves the same identity and history.
+## Start from Home
 
-Contacts are people, not Portal users. Record a name, email, phone, job title, communication preference, lawful-contact basis, communication notes, tags, and Phaeno owner. Associate one Contact with one or more Companies, including its role, primary Company, and effective dates. End a relationship by recording its effective-to date; the history remains visible. Deactivating or merging a Contact never changes Portal membership.
+Home answers what needs attention. It shows overdue and due-soon Tasks, Leads without a next action, stale Opportunities, required-data warnings, your next Tasks, and recently changed Opportunities.
 
-Use **Merge** only after confirming a true duplicate. Select the record to keep and record the reason. POMS moves supported associations and history, retains the source as an inactive alias, and writes a permanent merge record. The CRM interface does not undo merges.
+Use **Find anything** to search active Companies, Contacts, Leads, Opportunities, and Tasks. Enter at least two characters, then choose a result to open its owning workspace. Search does not cross into Portal Accounts, users, specimens, files, or laboratory records.
 
-## Qualify and convert Leads
+## Keep the domain boundaries clear
 
-Use a Lead for an unqualified company or individual signal. Record its source, owner, contact facts, next action, and tags. Select **Start working** when follow-up begins. Qualification and disqualification both require recorded reasoning.
+- **CRM** owns commercial relationship facts, qualification, pursuits, follow-up, and sales history.
+- **Accounts** owns Portal organizations, memberships, invitations, readiness, and service entitlements.
+- **Order operations** owns reviewed commercial orders, quotes, fulfillment, accounting source records, and release decisions.
+- **Lab operations** owns physical specimens, accession, controlled execution, materials, equipment, libraries, batches, sendouts, exceptions, and scientific approval.
 
-After qualification, select **Convert lead**. Choose an existing Company or create a new one, choose whether to create a Contact, and choose whether to create an Opportunity in the default or a selected pipeline. Likely duplicate Company or Contact matches stop unsafe creation. Conversion retains the original Lead as immutable history and grants no Portal access.
+Use a reviewed CRM handoff when relationship context should enter Accounts or Order operations. Never copy patient information, sample identifiers, scientific results, credentials, confidential file contents, or internal laboratory investigation notes into CRM.
 
-## Run Opportunities and pipelines
-
-The Opportunities board groups work by active pipeline stage; use **Table view** for a compact directory. Search or focus the view on one pipeline or stage, and save those filters when they are useful. Each Opportunity has one Company, pipeline, stage, owner, amount and currency, probability, expected-close date, product interest, next step, competitors, description, and tags.
-
-Open an Opportunity to edit its commercial facts, manage its associated buying-team Contacts, or move it to another stage. Required outcome context must be entered before moving to a configured terminal stage. POMS records the prior stage, new stage, actor, time, and reason in immutable stage history. Reopening through an open stage clears the closed outcome while preserving the earlier transition history.
-
-## Record Activities and Tasks
-
-Company, Contact, Lead, and Opportunity workspaces include one activity timeline and linked task list. Use **Log activity** for a note, call, meeting, manually logged email, or status change. Choose **Restricted** visibility for narrower internal material. System, Portal, and task events are written by POMS and cannot be changed as ordinary notes.
-
-Use **New task** for owned follow-up linked to the current record. Record priority, due date, reminder, and optional daily, weekly, or monthly recurrence. The Tasks workspace supports status and overdue filtering. A blocked task requires a reason; completing a recurring task creates its next occurrence.
-
-## Use Reports and administration
-
-Reports summarize open and weighted pipeline value, win rate, stage counts and age, owner workload, lead-source conversion, and recent activity. Counts include Opportunities in every currency. Aggregate amount and forecast figures are USD-only; POMS does not imply that another currency was converted. These are relationship and sales facts and do not expose scientific or specimen detail.
-
-CRM administrators can create, edit, activate, and retire pipelines, ordered stages, and internal or restricted custom fields. Save personal or shared views directly from a Company, Contact, Lead, Opportunity, or Task directory; **Export current view** honors the same filters. Administration shows the saved-view inventory, possible duplicates, previewed CSV imports, and audited full exports.
-
-Imports support Company, Contact, Lead, and Opportunity records, accept only the documented CRM columns, and retain no unsupported input columns. Duplicate rows are reported and skipped; invalid rows block the commit. Imports are limited to 5,000 rows at a time. Tasks are excluded because every Task requires an explicit CRM record link.
-
-Use these exact CSV headers:
-
-- Company: `name`, `domain`, `phone`, `industry`, `source`
-- Contact: `first_name`, `last_name`, `email`, `phone`, `job_title`
-- Lead: `display_name`, `company_name`, `first_name`, `last_name`, `email`, `phone`, `source`
-- Opportunity: `name`, `company_name`, `product_interest`, `amount`, `currency`, `next_step`
-
-An imported Opportunity's `company_name` must exactly match an active CRM Company. It starts in the first active stage of the default active pipeline and receives an initial stage-history entry.
-
-Custom-field values appear on the matching record workspace. Option fields accept only configured choices. Missing required values are called out on the record and included in CRM home data-quality warnings; type and required-value checks are enforced by the API as well as the form.
-
-## Hand work to Portal operations
-
-From a Company, use **Create handoff** for Portal onboarding, Portal evaluation, Trial Project, custom work, service change, relationship change, or offboarding review. Link an Opportunity when the request comes from a specific commercial pursuit. The handoff uses a POMS idempotency key, appears in Accounts and applicable Order Intake review queues, and cannot create a duplicate request when retried.
-
-A handoff is only a pending request. Approval, Portal account creation, invitations, readiness, service entitlements, Trial Project scope, orders, and laboratory work remain separate reviewed actions. When an approved account is created, POMS records an explicit CRM-to-Portal account link and a Portal timeline event. Never put sample, patient, scientific-result, file-content, credential, or other protected information in CRM records or handoff summaries.
-
-## Resolve common problems
-
-- If a create or conversion action reports a likely duplicate, open **Administration**, review the duplicate group, and merge only after confirming the records represent the same party.
-- If a stage move fails, confirm that the stage belongs to the Opportunity's pipeline and enter the required reason.
-- If a task cannot be completed, reopen a completed or cancelled task before changing its workflow state.
-- If an update is stale, reload the record, review the intervening change, and submit a deliberate new update.
-- If a Portal handoff is already present, open its existing request instead of changing the idempotency identity or creating a duplicate.
+Use the CRM subtopics in this guide for complete field, status, workflow, administration, handoff, and recovery instructions.

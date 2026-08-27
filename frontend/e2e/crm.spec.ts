@@ -52,6 +52,24 @@ test("creates a standalone CRM company without changing Portal access", async ({
 
   await page.goto("/crm/companies");
   await expect(page.getByRole("heading", { name: "Companies" })).toBeVisible();
+  const crmNavigation = await openCrmNavigation(page);
+  await expect(
+    crmNavigation.getByRole("button", { name: /^Companies/ }),
+  ).toHaveAttribute("aria-current", "page");
+  for (const label of [
+    "Home",
+    "Contacts",
+    "Leads",
+    "Opportunities",
+    "Tasks",
+    "Reports",
+    "Administration",
+  ]) {
+    await expect(
+      crmNavigation.getByRole("button", { name: new RegExp(`^${label}`) }),
+    ).toBeVisible();
+  }
+  await closeCrmNavigationIfOpen(page);
   await expect(page.getByRole("link", { name: "Atlas Research" })).toBeVisible();
   await expect(
     page.getByText("CRM records are separate from Portal accounts"),
@@ -139,4 +157,22 @@ async function notFound(route: Route) {
       error: { code: "not_mocked", message: "Not mocked." },
     }),
   });
+}
+
+async function openCrmNavigation(page: Page) {
+  const navigation = page.getByRole("navigation", { name: "CRM sections" });
+  if (!(await navigation.isVisible())) {
+    await page
+      .getByRole("button", { name: /Open CRM navigation/ })
+      .click();
+  }
+  await expect(navigation).toBeVisible();
+  return navigation;
+}
+
+async function closeCrmNavigationIfOpen(page: Page) {
+  const closeButton = page.getByRole("button", {
+    name: "Close CRM navigation",
+  });
+  if (await closeButton.isVisible()) await closeButton.click();
 }

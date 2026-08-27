@@ -1,0 +1,52 @@
+# Companies and Contacts
+
+Companies and Contacts are durable relationship records. They do not represent Portal Accounts or Portal users, and changing them does not change access.
+
+## Create and find a Company
+
+Open **Companies** from the CRM sidebar. Search by the known organization identity and review possible duplicates before selecting **New company**. **Company name** is required. You may also record:
+
+- website and normalized domain
+- lifecycle: Target, Engaged, Active customer, Partner, Former relationship, or Other
+- source, industry, employee count, phone, and postal address
+- tags and a relationship summary
+
+POMS assigns the creator as owner unless another supported owner is selected later. The Company name opens a stable, view-first workspace. Use **Edit** for commercial facts; use activities, tasks, associations, Opportunities, and Portal handoffs in their dedicated sections.
+
+Changing a CRM lifecycle to Active customer or Partner is descriptive only. It does not create or reclassify a Portal Account, grant membership, activate services, or authorize orders.
+
+## Create and manage a Contact
+
+Open **Contacts** and select **New contact**. First name and last name are required. Record email, phone, job title, Phaeno owner, tags, and the communication controls that apply:
+
+- **Unknown** means permission has not been established.
+- **Permitted** means the recorded commercial basis permits contact.
+- **Opted out** records a preference not to receive the applicable communication.
+- **Do not contact** is the strongest operational stop.
+
+Record the lawful-contact basis and communication notes when known. These fields are commercial compliance context, not legal advice and not a substitute for any required campaign-specific consent process.
+
+A Contact is not a Portal user. Email equality does not link identities, issue an invitation, or grant access.
+
+## Associate Contacts and Companies
+
+Open the Company workspace and use the Contacts area to associate an existing Contact. Record the relationship role, whether this is the Contact's primary Company, and the effective-from date. A Contact may be associated with more than one Company.
+
+When a relationship ends, edit the association and record an effective-to date. Do not delete the Contact or overwrite the former Company simply to hide historical employment. POMS retains the effective-dated relationship.
+
+## Deactivate, reactivate, and merge
+
+Deactivate a Company or Contact when it should leave active directories while its history remains available. Reactivation restores the same CRM identity. Neither action changes a linked Portal Account or user.
+
+Use **Merge** only for a confirmed duplicate:
+
+1. Open the duplicate record that should be retired.
+2. Choose the record that should remain authoritative.
+3. Record a required merge reason.
+4. Review the consequence and confirm.
+
+POMS retains the source as an inactive alias, moves supported relationships and history, and writes a permanent merge record. Ordinary CRM UI does not undo a merge. If the records describe different legal entities or people, do not merge them; correct their fields or effective-dated relationships instead.
+
+## Complete required custom data
+
+Active custom fields configured for Company or Contact appear in the record workspace. Option fields accept only configured choices. A missing required value is shown on the record and contributes to CRM Home data-quality warnings. Complete the value on the authoritative record rather than suppressing the warning with unrelated text.

@@ -113,7 +113,7 @@ the protected deployed-Preview acceptance above.
 - [x] `frontend/e2e/documentation.spec.ts` - Prospect, Customer, and Partner
   contexts are offered their own guide set, Phaeno is offered only Phaeno
   guides, the sidebar omits redundant audience controls and headings, every
-  topic has an icon, Data Provisioning, Order Ops, and Lab Ops expose one
+  topic has an icon, CRM, Data Provisioning, Order Ops, and Lab Ops expose one
   keyboard-operable accordion subtopic level that auto-opens for the active
   guide and keeps only one subject expanded, cross-audience routes are denied
   for every context, and substantive MDX content renders on guide routes.
@@ -170,7 +170,8 @@ the protected deployed-Preview acceptance above.
   the invitation, and continues with the invited identity. Confirm that the
   development shortcut control and endpoint are absent from Production.
 - [x] First-party CRM Company create boundary journey - on desktop and narrow
-  layouts, cover list rendering, the standalone CRM/Portal warning, accessible
+  layouts, cover the shared CRM sidebar and its eight route-backed subjects,
+  current-section identity, list rendering, the standalone CRM/Portal warning, accessible
   create dialog, normalized create payload, detail navigation, and proof that
   Company creation makes no Portal write. Maintained in
   `frontend/e2e/crm.spec.ts`.

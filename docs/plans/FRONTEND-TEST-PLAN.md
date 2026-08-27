@@ -55,7 +55,8 @@ remain incomplete production-activation gates.
 - [x] `frontend/src/features/documentation/documentation-registry.test.ts` - the
   maintained Prospect, Customer, Partner, and Phaeno registries expose unique,
   ordered, backend-indexable metadata, resolve slugs only within their audience,
-  and keep Phaeno operational subtopics in one valid parent level.
+  and keep Phaeno operational subtopics, including the complete CRM guide
+  family, in one valid parent level.
 - [x] `frontend/src/features/data-provisioning/DataProvisioningPage.test.tsx` -
   mock mode exposes the source surface without calling the secured API and the
   edge rail exposes all four Phaeno configuration sections with the active
@@ -164,12 +165,17 @@ remain incomplete production-activation gates.
   cover Customer, Prospect, and Partner card selection, connected summary and
   error states, organization switching, and complete absence of internal mock
   Accounts metrics from external dashboards.
+- [x] `frontend/src/features/crm/CrmShell.test.tsx` - CRM Home, Companies,
+  Contacts, Leads, Opportunities, Tasks, Reports, and Administration use the
+  shared responsive workspace sidebar, preserve the active section on a detail
+  route, and navigate to the existing section routes.
 - [x] CRM foundation components - cover the Company create/edit form's required
   fields and CRM/Portal warning, lifecycle confirmation consequences, CRM
   navigation placement, standalone Lead capture and conditional Company
-  requirement, and controlled merge target/reason behavior. The six focused
+  requirement, and controlled merge target/reason behavior. The seven focused
   CRM tests are maintained under `frontend/src/features/crm/`, with navigation
-  coverage in `frontend/src/components/navigation.test.ts`.
+  placement coverage also maintained in
+  `frontend/src/components/navigation.test.ts`.
 - [ ] Remaining first-party CRM components - cover the Company directory and
   detail query/mutation states, responsive table and pagination, authorization,
   then Contacts, Leads,

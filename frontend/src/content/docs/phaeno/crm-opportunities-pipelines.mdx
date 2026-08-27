@@ -1,0 +1,35 @@
+# Opportunities and pipelines
+
+An Opportunity represents one commercial pursuit for one CRM Company. It is not an order, quote, entitlement, or promise that Phaeno will perform work.
+
+## Create an Opportunity
+
+Open **Opportunities** and select **New opportunity**. Record the required Opportunity name, Company, and active pipeline. POMS starts the Opportunity in the selected initial stage and records the first stage-history entry. You may also record:
+
+- Phaeno owner and product or service interest
+- amount and three-letter currency
+- expected close date, next step, competitors, description, and tags
+
+Amount remains in its recorded currency. POMS does not silently convert it. Keep the next step current so Home and reporting can distinguish active work from stale work.
+
+## Work the pipeline
+
+The default board groups Opportunities by active stage. Use **Table view** when comparison across Company, stage, amount, close date, and owner is more useful. Search by identity and filter by pipeline or stage. Saved views retain the current filters and board/table choice; **Export current view** uses those same filters.
+
+Open the Opportunity name for its view-first workspace. Use **Edit** for commercial facts. Associate buying-team Contacts with an optional role and one primary Contact when that reflects the pursuit.
+
+## Move stages deliberately
+
+Use **Move stage** from the Opportunity workspace. Select another active stage from the same pipeline and record the required reason or useful context. Stages are categorized as Open, Won, Lost, or Abandoned and carry the configured probability.
+
+A configured stage may require a reason. Lost and Abandoned stages in the default pipeline require outcome context. POMS rejects a move to a stage from another pipeline or an invalid terminal transition.
+
+Every accepted transition writes immutable history containing the prior stage, new stage, actor, time, and reason. Moving a closed Opportunity back to an Open stage clears the current closed outcome while retaining earlier history.
+
+Do not edit pipeline configuration to falsify one Opportunity's outcome. Correct the Opportunity through a valid stage transition and leave the historical transition visible.
+
+## Interpret values and reports
+
+Counts include Opportunities in every currency. Aggregate amount and weighted-forecast figures are USD-only; a non-USD Opportunity is counted but its amount is not treated as converted USD. Probability is taken from the active stage for reporting.
+
+An Opportunity marked Won is still only commercial evidence. Use a reviewed CRM handoff for Portal onboarding, evaluation, Trial Project, custom work, service change, relationship change, or offboarding. Orders and Lab work retain their separate authorization gates.
