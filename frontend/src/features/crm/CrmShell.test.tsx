@@ -49,14 +49,14 @@ describe('CrmShell', () => {
         button.textContent?.replace(/\s+/g, ' ').trim(),
       ),
     ).toEqual([
-      'Home Attention, search, and recent commercial activity',
-      'Companies Organizations and relationship context',
-      'Contacts People and Company associations',
-      'Leads Qualification and conversion work',
-      'Opportunities Pipelines, stages, and commercial pursuits',
-      'Tasks Owned follow-up and reminders',
-      'Reports Pipeline, conversion, and activity reporting',
-      'Administration Pipelines, views, imports, and data quality',
+      'HomeAttention, search, and recent commercial activity',
+      'CompaniesOrganizations and relationship context',
+      'ContactsPeople and Company associations',
+      'LeadsQualification and conversion work',
+      'OpportunitiesPipelines, stages, and commercial pursuits',
+      'TasksOwned follow-up and reminders',
+      'ReportsPipeline, conversion, and activity reporting',
+      'AdministrationPipelines, views, imports, and data quality',
     ])
 
     fireEvent.click(

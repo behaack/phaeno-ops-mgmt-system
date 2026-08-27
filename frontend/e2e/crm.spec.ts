@@ -52,6 +52,7 @@ test("creates a standalone CRM company without changing Portal access", async ({
 
   await page.goto("/crm/companies");
   await expect(page.getByRole("heading", { name: "Companies" })).toBeVisible();
+  await expect(page.getByRole("link", { name: "Atlas Research" })).toBeVisible();
   const crmNavigation = await openCrmNavigation(page);
   await expect(
     crmNavigation.getByRole("button", { name: /^Companies/ }),
@@ -70,7 +71,6 @@ test("creates a standalone CRM company without changing Portal access", async ({
     ).toBeVisible();
   }
   await closeCrmNavigationIfOpen(page);
-  await expect(page.getByRole("link", { name: "Atlas Research" })).toBeVisible();
   await expect(
     page.getByText("CRM records are separate from Portal accounts"),
   ).toBeVisible();
