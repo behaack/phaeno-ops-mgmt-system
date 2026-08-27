@@ -104,7 +104,8 @@ Configure a protected GitHub environment named `production` with:
   `PORTAL_BOOTSTRAP_ADMIN_LAST_NAME`: non-secret profile values for that
   administrator;
 - `PORTAL_CLERK_AUTHORITY`: non-secret Clerk JWT issuer matching the Portal
-  frontend publishable key, such as `https://example.clerk.accounts.dev`;
+  frontend publishable key. Production uses the verified custom issuer
+  `https://clerk.phaenobiotech.com` and rejects Clerk Development issuers;
 - `DEPLOY_HOST`: Hetzner SSH host;
 - `DEPLOY_USER`: SSH user with Docker and `/opt/phaeno.portal-green` access;
 - `DEPLOY_SSH_KEY`: private deployment key;
