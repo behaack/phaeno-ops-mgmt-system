@@ -14,6 +14,7 @@ using PhaenoPortal.App.Infrastructure.Persistence;
 [ApiController]
 [Authorize]
 [Route("api/platform/data-assembly-requests")]
+[Route("api/platform/lab-operations/data-assembly-requests")]
 public sealed class PlatformDataAssemblyRequestsController(
     PSeqOperationsDbContext dbContext,
     OrderRequestContext requestContext,
@@ -303,9 +304,28 @@ public sealed class PlatformDataAssemblyRequestsController(
     {
         var actor = await requestContext.RequirePlatformAdminAsync(HttpContext, cancellationToken);
         var item = await ReadAsync(id, cancellationToken); EnsureVersion(item.Version, version); var before = item.Status.ToString();
+        if (HttpContext.Request.Path.StartsWithSegments("/api/platform/lab-operations"))
+            EnsureLabHoldOwnership(item, eventName);
         Execute(() => mutation(item)); Event(item, before, item.Status.ToString(), actor.Id, reason, internalNote);
         Notice(item, $"assembly-{eventName}", "Data assembly status changed", reason ?? $"{item.RequestNumber} is now {item.Status}.");
         await dbContext.SaveChangesAsync(cancellationToken); return await MapAsync(item, cancellationToken);
+    }
+
+    private static void EnsureLabHoldOwnership(DataAssemblyRequest item, string eventName)
+    {
+        var labStatuses = new[]
+        {
+            AssemblyRequestStatus.Submitted,
+            AssemblyRequestStatus.IntakeValidation,
+            AssemblyRequestStatus.PlacedQueued,
+            AssemblyRequestStatus.Processing,
+            AssemblyRequestStatus.OutputReview,
+            AssemblyRequestStatus.OutputAvailable,
+        };
+        if (eventName == "hold" && !labStatuses.Contains(item.Status))
+            throw Conflict("lab_manufacturing_action_not_allowed", "Commercial quote or Customer correction work must be handled in Order operations.");
+        if (eventName == "hold-released" && (!item.ResumeStatus.HasValue || !labStatuses.Contains(item.ResumeStatus.Value)))
+            throw Conflict("lab_manufacturing_action_not_allowed", "This hold belongs to the Commercial workflow and must be resolved in Order operations.");
     }
 
     private async Task<DataAssemblyRequest> ReadAsync(Guid id, CancellationToken cancellationToken)
@@ -341,7 +361,7 @@ public sealed class PlatformDataAssemblyRequestsController(
                 retentionByReleaseId.GetValueOrDefault(value.Id)?.ToDto(), value.Version)).ToList(),
             files.Where(file => file.Purpose == OperationalFilePurpose.AssemblyInput && file.ReleaseStatus != FileReleaseStatus.Withdrawn).Select(file => file.ToDto()).ToList(),
             docs.Select(value => value.ToDto(true)).ToList(), cancellations.Select(value => value.ToDto()).ToList(), timeline.Select(value => value.ToDto(true)).ToList(),
-            item.AssignedToUserId, item.DueAt);
+            item.AssignedToUserId, item.DueAt, item.ResumeStatus?.ToString());
     }
 
     private void Event(DataAssemblyRequest item, string from, string to, Guid actorId, string? reason = null, string? internalNote = null)

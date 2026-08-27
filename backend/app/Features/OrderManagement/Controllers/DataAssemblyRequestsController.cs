@@ -496,7 +496,8 @@ public sealed class DataAssemblyRequestsController(
                     retentionByReleaseId.GetValueOrDefault(value.Id),
                     downloadByReleaseId.GetValueOrDefault(value.Id))).ToList(),
             files.Where(file => file.Purpose == OperationalFilePurpose.AssemblyInput && file.ReleaseStatus != FileReleaseStatus.Withdrawn).Select(file => file.ToDto()).ToList(),
-            docs.Select(value => value.ToDto(platform)).ToList(), cancellations.Select(value => value.ToDto()).ToList(), timeline.Select(value => value.ToDto(platform)).ToList());
+            docs.Select(value => value.ToDto(platform)).ToList(), cancellations.Select(value => value.ToDto()).ToList(), timeline.Select(value => value.ToDto(platform)).ToList(),
+            ResumeStatus: item.ResumeStatus?.ToString());
     }
 
     private static AssemblyOutputReleaseDto MapRelease(

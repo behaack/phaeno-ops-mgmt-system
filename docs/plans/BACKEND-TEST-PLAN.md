@@ -315,8 +315,11 @@ and rollback-isolated PostgreSQL coverage.
   post-placement scientific validation, and cross-tenant denial.
 - [ ] Complete Lab Operations API negative paths - extend the passing
   controller/PostgreSQL operator journey with hosted-HTTP unknown-barcode,
-  platform lab-intake resolution before authorization and missing-authorization
-  consistency checks,
+  Lab-owned commercial-order-to-work resolution before authorization and
+  missing-authorization consistency checks, unified Commercial order-list type
+  filtering, Lab-role authorization for the explicit kit, assembly, and shipment
+  manufacturing API allowlist, denial of quote, cancellation, sample-shipping
+  configuration, and other Commercial actions through the Lab namespace,
   lineage rejection, stale-version conflict, parallel protocol-candidate
   rejection, invalid draft/approval transitions, expired material, overdue
   calibration, wrong-work-order batch/custody, unresolved blocking exception,

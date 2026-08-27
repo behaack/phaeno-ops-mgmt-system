@@ -303,7 +303,7 @@ export function LabJobDetailsDialog({
             {editing
               ? "Edit Job pricing details"
               : platformMode
-                ? "Initiate Customer order"
+                ? "New Customer order"
                 : "Job pricing details"}
           </DialogTitle>
           <DialogDescription>

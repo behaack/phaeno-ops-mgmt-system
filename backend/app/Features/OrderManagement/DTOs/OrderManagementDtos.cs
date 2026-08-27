@@ -21,6 +21,21 @@ public sealed record OrderListItemDto(
     DateTime? DueAt = null,
     bool IsOverdue = false);
 
+public sealed record CommercialOrderListItemDto(
+    Guid Id,
+    string OrderType,
+    string Number,
+    string Status,
+    string? Reference,
+    Guid OrganizationId,
+    DateTime CreatedAt,
+    DateTime UpdatedAt,
+    long Version,
+    string? TenantSafeReason,
+    Guid? AssignedToUserId = null,
+    DateTime? DueAt = null,
+    bool IsOverdue = false);
+
 public sealed record LabIntakeDto(
     Guid OrderId,
     string OrderNumber,
@@ -296,7 +311,8 @@ public sealed record PartnerReagentOrderDto(
     IReadOnlyList<OrderTimelineDto> Timeline,
     Guid? AssignedToUserId = null,
     DateTime? DueAt = null,
-    string? PlacementSnapshotJson = null);
+    string? PlacementSnapshotJson = null,
+    string? ResumeStatus = null);
 
 public sealed record ShippingAddressDto(
     Guid Id,
@@ -388,7 +404,8 @@ public sealed record DataAssemblyRequestDto(
     IReadOnlyList<CancellationRequestDto> CancellationRequests,
     IReadOnlyList<OrderTimelineDto> Timeline,
     Guid? AssignedToUserId = null,
-    DateTime? DueAt = null);
+    DateTime? DueAt = null,
+    string? ResumeStatus = null);
 
 public sealed record AnalysisDefinitionDto(
     Guid Id,

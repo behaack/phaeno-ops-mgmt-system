@@ -1,6 +1,6 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { Link } from '@tanstack/react-router'
-import { BookOpenCheck, ClipboardList, FlaskConical, Layers3, Microscope, Plus, RefreshCw } from 'lucide-react'
+import { BookOpenCheck, ClipboardList, FlaskConical, Layers3, Microscope, PackageCheck, Plus, RefreshCw, ScanLine, Workflow } from 'lucide-react'
 import { useState, type FormEvent } from 'react'
 
 import {
@@ -34,13 +34,18 @@ import { usePhaenoSession } from '#/features/auth/session-context'
 import { LabBarcodeLookup, LabBatchBarcodeScanner } from './LabBarcodeScanner'
 import { EquipmentCreateDialog } from './EquipmentCreateDialog'
 import { MaterialLotCreateDialog } from './MaterialLotCreateDialog'
+import { LabManufacturingQueue } from './LabManufacturingPage'
+import { LabReceiptAccessionPanel } from './LabReceiptAccessionPanel'
 
 type CreateKind = 'protocol' | 'material' | 'equipment' | 'batch' | null
 type SimpleCreateKind = Exclude<CreateKind, 'material' | 'equipment'>
-export type LabSection = 'work' | 'protocols' | 'materials' | 'equipment' | 'batches'
+export type LabSection = 'receipt' | 'work' | 'kits' | 'assembly' | 'protocols' | 'materials' | 'equipment' | 'batches'
 
 const labSections: ReadonlyArray<WorkspaceSidebarItem<LabSection>> = [
+  { value: 'receipt', label: 'Receipt & accession', description: 'Kits, shipment intake, and accession', icon: ScanLine },
   { value: 'work', label: 'Work', description: 'Authorized work and specimen progress', icon: ClipboardList },
+  { value: 'kits', label: 'PSeq kits', description: 'Preparation, shipping, and fulfillment', icon: PackageCheck },
+  { value: 'assembly', label: 'Data assembly', description: 'Input validation, processing, and release', icon: Workflow },
   { value: 'protocols', label: 'Protocols', description: 'Controlled methods and approved versions', icon: BookOpenCheck },
   { value: 'materials', label: 'Materials', description: 'Lots, prepared reagents, and QC', icon: FlaskConical },
   { value: 'equipment', label: 'Equipment', description: 'Assets, availability, and calibration', icon: Microscope },
@@ -71,8 +76,8 @@ export function LabOperationsPage({ section, onSectionChange }: { section: LabSe
             <div className="max-w-3xl">
               <h1 className="text-3xl font-semibold">Lab operations</h1>
               <p className="mt-2 text-sm leading-6 text-muted-foreground">
-                Internal accession, protocol execution, materials, equipment, cross-order batching,
-                outsourced sequencing, exceptions, and scientific release readiness.
+                Internal kit fulfillment, receipt and accession, protocol execution, data assembly,
+                materials, equipment, cross-order batching, exceptions, and release readiness.
               </p>
             </div>
             <Button type="button" variant="outline" disabled={!apiEnabled || dashboard.isFetching} onClick={() => refresh()}>
@@ -82,7 +87,10 @@ export function LabOperationsPage({ section, onSectionChange }: { section: LabSe
           {authProvider === 'mock' ? <Alert className="mb-5"><AlertTitle>Connected Lab operations are paused</AlertTitle><AlertDescription>Use a real Phaeno session to load or change laboratory records.</AlertDescription></Alert> : null}
           {dashboard.error ? <Alert className="mb-5" variant="destructive"><AlertTitle>Lab operations could not be loaded</AlertTitle><AlertDescription>{getLabOperationsError(dashboard.error, 'Try refreshing the workspace.')}</AlertDescription></Alert> : null}
           {dashboard.isLoading ? <p role="status">Loading laboratory workspace…</p> : null}
-          {dashboard.data && section === 'work' ? <div className="space-y-5"><LabBarcodeLookup /><WorkQueue items={dashboard.data.workOrders} /></div> : null}
+          {dashboard.data && section === 'receipt' ? <LabReceiptAccessionPanel apiEnabled={apiEnabled} workOrders={dashboard.data.workOrders} /> : null}
+          {dashboard.data && section === 'work' ? <div className="space-y-5"><LabBarcodeLookup /><WorkQueue items={dashboard.data.workOrders.filter((item) => item.status !== 'AwaitingSpecimens')} /></div> : null}
+          {section === 'kits' ? <LabManufacturingQueue workflow="reagent" apiEnabled={apiEnabled} /> : null}
+          {section === 'assembly' ? <LabManufacturingQueue workflow="assembly" apiEnabled={apiEnabled} /> : null}
           {dashboard.data && section === 'protocols' ? <ProtocolList protocols={dashboard.data.protocols} canManage={Boolean(session?.capabilities.canManageLabProtocols)} onCreate={() => setCreateKind('protocol')} refresh={refresh} /> : null}
           {dashboard.data && section === 'materials' ? <MaterialList items={dashboard.data.materialLots} canManage={Boolean(session?.capabilities.canOperateLabWork)} canApprove={Boolean(session?.capabilities.canSuperviseLabWork)} onCreate={() => setCreateKind('material')} refresh={refresh} /> : null}
           {dashboard.data && section === 'equipment' ? <EquipmentList items={dashboard.data.equipment} canManage={Boolean(session?.capabilities.canSuperviseLabWork)} onCreate={() => setCreateKind('equipment')} /> : null}

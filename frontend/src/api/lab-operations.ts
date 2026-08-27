@@ -1,6 +1,7 @@
 import axios from 'axios'
 
 import { api } from './client'
+import type { DataAssemblyRequest, OrderListItem, PagedResult, ReagentOrder } from './order-management'
 
 type ApiEnvelope<T> = {
   success: boolean
@@ -45,9 +46,37 @@ export type LabLibrary = { id: string; labSpecimenId: string; sourceContainerId:
 export type LabException = { id: string; labSpecimenId: string | null; labProtocolExecutionId: string | null; audience: string; categoryCode: string; title: string; internalDescription: string; customerSafeSummary: string | null; isBlocking: boolean; status: string; responseDueAtUtc: string | null; resolvedAtUtc: string | null; version: number }
 export type LabScientificApproval = { id: string; approvalVersion: number; releaseDefinitionKey: string; releaseDefinitionVersion: number; approvedByUserId: string; approvedAtUtc: string; projectionVersion: number }
 export type LabWorkOrderDetail = { workOrder: LabWorkOrderSummary; specimens: LabSpecimen[]; containers: LabContainer[]; executions: LabExecution[]; libraries: LabLibrary[]; exceptions: LabException[]; scientificApprovals: LabScientificApproval[] }
+export type LabPSeqKitOffering = { id: string; partnerOrganizationId: string; itemName: string }
 
 export const getLabOperationsDashboard = () => get<LabOperationsDashboard>('/platform/lab-operations')
 export const getLabWorkOrder = (id: string) => get<LabWorkOrderDetail>(`/platform/lab-operations/work-orders/${id}`)
+export const getLabWorkOrderByCommercialOrder = (commercialOrderId: string) => get<LabWorkOrderSummary>(`/platform/lab-operations/work-orders/by-commercial-order/${commercialOrderId}`)
+export const listLabPSeqKitOfferings = (partnerOrganizationId: string) => get<LabPSeqKitOffering[]>('/platform/lab-operations/pseq-kit-offerings', { partnerOrganizationId })
+export const listLabManufacturingOrders = (
+  workflow: 'reagent' | 'assembly',
+  params?: Record<string, string | number | boolean | undefined>,
+) => get<PagedResult<OrderListItem>>(
+  workflow === 'reagent'
+    ? '/platform/lab-operations/pseq-kit-orders'
+    : '/platform/lab-operations/data-assembly-requests',
+  params,
+)
+export const getLabManufacturingOrder = (workflow: 'reagent' | 'assembly', id: string) =>
+  workflow === 'reagent'
+    ? get<ReagentOrder>(`/platform/lab-operations/pseq-kit-orders/${id}`)
+    : get<DataAssemblyRequest>(`/platform/lab-operations/data-assembly-requests/${id}`)
+export const runLabManufacturingAction = <T>(workflow: 'reagent' | 'assembly', path: string, input: unknown, idempotent = false) =>
+  post<T>(`/platform/lab-operations/${workflow === 'reagent' ? 'pseq-kit-orders' : 'data-assembly-requests'}/${path}`, input, idempotent)
+export async function uploadLabAssemblyOutput(requestId: string, runId: string, file: File) {
+  const form = new FormData()
+  form.append('file', file)
+  const response = await api.post<ApiEnvelope<import('./order-management').OperationalFile>>(
+    `/platform/lab-operations/data-assembly-requests/${requestId}/processing-runs/${runId}/outputs`,
+    form,
+    { headers: { 'Content-Type': undefined } },
+  )
+  return unwrap(response.data)
+}
 export const setLabRole = (userId: string, role: string, input: { isActive: boolean; version?: number }) => put<LabRoleAssignment>(`/platform/lab-operations/roles/${userId}/${role}`, input)
 export const createLabProtocol = (input: { name: string; description?: string }) => post<LabProtocol>('/platform/lab-operations/protocols', input)
 export const createLabProtocolVersion = (id: string, input: { definitionJson: string; protocolVersion: number }) => post<LabProtocol>(`/platform/lab-operations/protocols/${id}/versions`, input)
@@ -92,8 +121,8 @@ export const createLabException = (workId: string, input: object) => post<LabExc
 export const resolveLabException = (id: string, input: object) => post<LabException>(`/platform/lab-operations/exceptions/${id}/resolve`, input)
 export const approveLabScientificReview = (workId: string, input: object) => post<LabWorkOrderDetail>(`/platform/lab-operations/work-orders/${workId}/scientific-approval`, input)
 
-async function get<T>(url: string) { return unwrap((await api.get<ApiEnvelope<T>>(url)).data) }
-async function post<T>(url: string, data: unknown) { return unwrap((await api.post<ApiEnvelope<T>>(url, data)).data) }
+async function get<T>(url: string, params?: Record<string, string | number | boolean | undefined>) { return unwrap((await api.get<ApiEnvelope<T>>(url, { params })).data) }
+async function post<T>(url: string, data: unknown, idempotent = false) { return unwrap((await api.post<ApiEnvelope<T>>(url, data, idempotent ? { headers: { 'Idempotency-Key': crypto.randomUUID() } } : undefined)).data) }
 async function put<T>(url: string, data: unknown) { return unwrap((await api.put<ApiEnvelope<T>>(url, data)).data) }
 function unwrap<T>(envelope: ApiEnvelope<T>) { if (!envelope.success) throw new Error(envelope.error?.message ?? 'The laboratory request failed.'); return envelope.data }
 export function getLabOperationsError(error: unknown, fallback: string) { if (axios.isAxiosError<ApiEnvelope<unknown>>(error)) return error.response?.data.error?.message ?? fallback; return error instanceof Error ? error.message : fallback }

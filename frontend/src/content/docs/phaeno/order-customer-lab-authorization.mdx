@@ -6,8 +6,8 @@ Customer laboratory work enters Order Ops as a Commercial request. Order Ops val
 
 An authorized Phaeno order-pricing user can begin the pricing profile when the Customer is already known and does not need to create the request first.
 
-1. Open **Order operations**, select **Lab**, and choose **Initiate Customer order**.
-2. Wait for the eligible Customer list to load, then select the Customer. **Initiate Customer order** remains unavailable while the list is loading or could not be loaded. A load failure shows a **Retry** action. The list contains only active Customers with a current **Ready** PSeq Lab Service entitlement, the active canonical specimen offering, and an active organization administrator who can make the commercial decision.
+1. Open **Order operations**, select **Order intake**, and choose **New Customer order**.
+2. Wait for the eligible Customer list to load, then select the Customer. **New Customer order** remains unavailable while the list is loading or could not be loaded. The list contains only active Customers with a current **Ready** PSeq Lab Service entitlement, the active canonical specimen offering, and an active organization administrator who can make the commercial decision.
 3. Enter a unique **Job name**, every biological source and sample count, the shared storage requirements and safety declaration, and any Customer-safe Job notes. Do not enter individual sample IDs, tube barcodes, patient identifiers, or PHI.
 4. Confirm that the pricing details contain no patient identifiers, PHI, or unnecessary personal data, then select **Start pricing**. POMS creates the Customer-owned Job with one immutable submitted request revision and opens it in **Quote in preparation**.
 5. Review the committed sample count, source composition, storage, and safety facts on the operational detail. Select **Issue quote**. The editor preselects the required **PSeq Lab Service** item with code `pseq-lab-service`, displays its `specimen` sales unit, and sets its quantity to the Job's committed sample count. The required line cannot be removed; additional active catalog lines may be added when needed.
@@ -37,6 +37,6 @@ Physical samples must not arrive before quote acceptance and exact roster finali
 
 ## Respect the Lab boundary
 
-After acceptance, Order Ops continues to own Customer communication, Commercial holds, cancellation review, billing, files, and publication. Lab Ops owns receipt, accession, physical lineage, controlled execution, exceptions, and scientific approval.
+After acceptance, Order Ops continues to own Customer communication, Commercial holds, cancellation review, billing, files, and publication. Open the linked work from the order or from **Lab operations** > **Receipt & accession**. Lab Ops owns return-kit preparation, shipment identification, receipt, accession, physical lineage, controlled execution, exceptions, and scientific approval.
 
 The Lab milestone **Ready for release** means the scientific gate passed. It does not upload, scan, attach, or publish a result. Order Ops must still apply the file, accounting-source, and credit release gates. Without approved credit, files remain held because manual payment confirmation is not implemented.

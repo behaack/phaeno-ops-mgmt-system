@@ -30,6 +30,10 @@ export type OrderListItem = {
   isOverdue?: boolean;
 };
 
+export type CommercialOrderListItem = OrderListItem & {
+  orderType: "PSeqLabService" | "PSeqKit" | "DataAssembly";
+};
+
 export type TimelineItem = {
   id: string;
   fromStatus: string;
@@ -326,6 +330,7 @@ export type ReagentOrder = {
   assignedToUserId?: string | null;
   dueAt?: string | null;
   placementSnapshotJson?: string | null;
+  resumeStatus?: string | null;
 };
 
 export type ShippingAddress = {
@@ -467,6 +472,7 @@ export type DataAssemblyRequest = {
   timeline: TimelineItem[];
   assignedToUserId?: string | null;
   dueAt?: string | null;
+  resumeStatus?: string | null;
 };
 
 export type NotificationMessage = {
@@ -1012,6 +1018,11 @@ export async function listPlatformOrders(
         ? "reagent-orders"
         : "data-assembly-requests";
   return get<PagedResult<OrderListItem>>(`/platform/${path}`, params);
+}
+export async function listCommercialOrders(
+  params?: Record<string, string | number | boolean | undefined>,
+) {
+  return get<PagedResult<CommercialOrderListItem>>("/platform/orders", params);
 }
 export async function initiateCustomerLabOrder(
   input: InitiateCustomerLabOrderInput,

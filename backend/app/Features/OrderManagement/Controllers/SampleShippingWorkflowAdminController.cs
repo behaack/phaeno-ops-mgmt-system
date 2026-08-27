@@ -11,6 +11,7 @@ using PhaenoPortal.App.Infrastructure.Persistence;
 [ApiController]
 [Authorize]
 [Route("api/platform/sample-shipping/workflow")]
+[Route("api/platform/lab-operations/sample-shipping/workflow")]
 public sealed class SampleShippingWorkflowAdminController(
     PSeqOperationsDbContext dbContext,
     OrderRequestContext requestContext,

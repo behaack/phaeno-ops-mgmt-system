@@ -105,8 +105,8 @@ test('shows only Phaeno guides in expandable topic groups', async ({ page }) => 
   }).click()
   await expect(dataTopics).toHaveCount(0)
   const orderTopics = page.locator('#documentation-topics-order-operations')
-  await expect(orderTopics.getByRole('link')).toHaveCount(7)
-  await expect(orderTopics.locator('a > svg')).toHaveCount(7)
+  await expect(orderTopics.getByRole('link')).toHaveCount(5)
+  await expect(orderTopics.locator('a > svg')).toHaveCount(5)
   await orderTopics.getByRole('link', {
     name: 'Billing, payment, and release gates',
   }).click()

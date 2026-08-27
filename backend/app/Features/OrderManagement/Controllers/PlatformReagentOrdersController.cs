@@ -13,6 +13,7 @@ using PhaenoPortal.App.Infrastructure.Persistence;
 [ApiController]
 [Authorize]
 [Route("api/platform/reagent-orders")]
+[Route("api/platform/lab-operations/pseq-kit-orders")]
 public sealed class PlatformReagentOrdersController(
     PSeqOperationsDbContext dbContext,
     OrderRequestContext requestContext,
@@ -96,6 +97,10 @@ public sealed class PlatformReagentOrdersController(
         var actor = await requestContext.RequirePlatformAdminAsync(HttpContext, cancellationToken);
         var order = await ReadAsync(orderId, cancellationToken);
         EnsureVersion(order.Version, request.Version);
+        if (HttpContext.Request.Path.StartsWithSegments("/api/platform/lab-operations")
+            && order.Status == ReagentOrderStatus.OnHold
+            && order.ResumeStatus is not (ReagentOrderStatus.Accepted or ReagentOrderStatus.Processing or ReagentOrderStatus.PartiallyShipped or ReagentOrderStatus.Shipped))
+            throw Conflict("lab_manufacturing_action_not_allowed", "This hold belongs to the Commercial workflow and must be resolved in Order operations.");
         if (order.Status is not (ReagentOrderStatus.Processing or ReagentOrderStatus.PartiallyShipped or ReagentOrderStatus.OnHold))
             throw Conflict("adjustment_not_allowed", "Reagent adjustments can be proposed only during fulfillment.");
         var line = order.Lines.SingleOrDefault(item => item.Id == request.OriginalLineId) ?? throw Missing();
@@ -229,9 +234,26 @@ public sealed class PlatformReagentOrdersController(
     {
         var actor = await requestContext.RequirePlatformAdminAsync(HttpContext, cancellationToken);
         var order = await ReadAsync(id, cancellationToken); EnsureVersion(order.Version, version); var before = order.Status.ToString();
+        if (HttpContext.Request.Path.StartsWithSegments("/api/platform/lab-operations"))
+            EnsureLabManufacturingStatus(order, eventName);
         Execute(() => mutation(order)); Event(order, before, order.Status.ToString(), actor.Id, reason, internalNote);
         Notice(order, $"reagent-{eventName}", "Reagent order status changed", reason ?? $"{order.OrderNumber} is now {order.Status}.");
         await dbContext.SaveChangesAsync(cancellationToken); return await MapAsync(order, cancellationToken);
+    }
+
+    private static void EnsureLabManufacturingStatus(PartnerReagentOrder order, string eventName)
+    {
+        var manufacturingStatuses = new[]
+        {
+            ReagentOrderStatus.Accepted,
+            ReagentOrderStatus.Processing,
+            ReagentOrderStatus.PartiallyShipped,
+            ReagentOrderStatus.Shipped,
+        };
+        if (eventName == "hold" && !manufacturingStatuses.Contains(order.Status))
+            throw Conflict("lab_manufacturing_action_not_allowed", "Commercial review must be completed in Order operations before Lab fulfillment can change this order.");
+        if (eventName == "hold-released" && (!order.ResumeStatus.HasValue || !manufacturingStatuses.Contains(order.ResumeStatus.Value)))
+            throw Conflict("lab_manufacturing_action_not_allowed", "This hold belongs to the Commercial workflow and must be resolved in Order operations.");
     }
 
     private async Task<PartnerReagentOrder> ReadAsync(Guid id, CancellationToken cancellationToken)
@@ -251,7 +273,7 @@ public sealed class PlatformReagentOrdersController(
             order.Shipments.OrderBy(item => item.ShippedAt).Select(item => item.ToDto()).ToList(), adjustments.Select(item => new ReagentAdjustmentDto(item.Id,
                 item.OriginalLineId, item.ProposedOfferingId, item.BeforeJson, item.AfterJson, item.Reason, item.TotalDifference, item.Status.ToString(), item.DecidedAt, item.Version)).ToList(),
             docs.Select(item => item.ToDto(true)).ToList(), cancellations.Select(item => item.ToDto()).ToList(), timeline.Select(item => item.ToDto(true)).ToList(),
-            order.AssignedToUserId, order.DueAt);
+            order.AssignedToUserId, order.DueAt, ResumeStatus: order.ResumeStatus?.ToString());
     }
 
     private void Event(PartnerReagentOrder order, string from, string to, Guid actorId, string? reason = null, string? internalNote = null)

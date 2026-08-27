@@ -12,6 +12,7 @@ using PhaenoPortal.App.Infrastructure.Persistence;
 [ApiController]
 [Authorize]
 [Route("api/platform/sample-shipping")]
+[Route("api/platform/lab-operations/sample-shipping")]
 public sealed class SampleShippingAdminController(
     PSeqOperationsDbContext dbContext,
     OrderRequestContext requestContext,

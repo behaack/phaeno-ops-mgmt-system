@@ -103,9 +103,10 @@ the protected deployed-Preview acceptance above.
 - [x] `frontend/e2e/order-management.spec.ts` - Partner mock context exposes
   reagent ordering and data assembly.
 - [x] `frontend/e2e/order-management.spec.ts` - Phaeno mock context exposes
-  Lab, PSeq kits, Assembly, and Accounting operational queues through the
-  pinned wide-screen rail or accessible edge tab on narrow screens; Order
-  Operations exposes the bounded `Initiate Customer order` modal with Customer
+  Commercial Order intake, one Orders list, and Accounting through the pinned
+  wide-screen rail or accessible edge tab on narrow screens; PSeq Lab Service,
+  PSeq Kit, and Data Assembly appear as order types rather than peer modules;
+  Order Operations exposes the bounded `New Customer order` modal with Customer
   selection, Job pricing-profile fields, and a disabled connected save in mock
   mode; Order
   Configuration uses the same rail for Defaults, Catalog, Analyses, PSeq kits,
@@ -376,7 +377,7 @@ the protected deployed-Preview acceptance above.
   notification claim that becomes recoverable after its lease without repeating
   the underlying order transition.
 - [ ] Database-backed Lab Operations journey - accept a Customer quote, prove
-  the visible Phaeno Order Operations **Order intake** section and Open intake
+  the visible Lab Operations **Receipt & accession** queue and commercial-order
   handoff to the already-linked
   work order, then prove the already-passing controller/PostgreSQL workflow
   through real Clerk
@@ -386,6 +387,8 @@ the protected deployed-Preview acceptance above.
   last-calibration/due-date validation. The controller/database
   portion already proves atomic Lab authorization, additive Lab roles,
   receipt/accession, barcode allocation/scan/print-outcome history,
+  PSeq kit fulfillment and Data Assembly manufacturing through the Lab API
+  aliases without exposing those mutations in the Order Ops UI,
   system-assigned protocol/library/batch identifiers, named batches with a
   system-owned External sequencing type, structured protocol
   authoring from protocol identity through ordered steps, typed captures,

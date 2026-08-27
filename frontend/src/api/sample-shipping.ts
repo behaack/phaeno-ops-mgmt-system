@@ -295,7 +295,7 @@ export async function previewSampleShipping(input: {
 }
 
 export async function scanSampleShippingPacket(barcode: string) {
-  const response = await api.get<ApiEnvelope<SampleShippingPacketScan>>('/platform/sample-shipping/packets/scan', {
+  const response = await api.get<ApiEnvelope<SampleShippingPacketScan>>('/platform/lab-operations/sample-shipping/packets/scan', {
     params: { barcode },
   })
   return unwrap(response.data)
@@ -356,7 +356,7 @@ export async function downloadSampleShippingCrosswalk(id: string) {
 }
 
 export async function getPlatformSampleShipments() {
-  const response = await api.get<ApiEnvelope<SampleShipmentWorkflow[]>>('/platform/sample-shipping/workflow/shipments')
+  const response = await api.get<ApiEnvelope<SampleShipmentWorkflow[]>>('/platform/lab-operations/sample-shipping/workflow/shipments')
   return unwrap(response.data)
 }
 
@@ -369,7 +369,7 @@ export async function createSampleReturnKit(shipmentId: string, input: {
   shipperProductNumber: string
 }) {
   const response = await api.post<ApiEnvelope<SampleShipmentWorkflow>>(
-    `/platform/sample-shipping/workflow/shipments/${shipmentId}/return-kit`, input,
+    `/platform/lab-operations/sample-shipping/workflow/shipments/${shipmentId}/return-kit`, input,
   )
   return unwrap(response.data)
 }
@@ -379,7 +379,7 @@ export async function registerSampleTubes(kitId: string, input: {
   version: number
 }) {
   const response = await api.post<ApiEnvelope<SampleShipmentWorkflow>>(
-    `/platform/sample-shipping/workflow/return-kits/${kitId}/tubes`, input,
+    `/platform/lab-operations/sample-shipping/workflow/return-kits/${kitId}/tubes`, input,
   )
   return unwrap(response.data)
 }
@@ -391,14 +391,14 @@ export async function fulfillSampleReturnKit(kitId: string, input: {
   version: number
 }) {
   const response = await api.post<ApiEnvelope<SampleShipmentWorkflow>>(
-    `/platform/sample-shipping/workflow/return-kits/${kitId}/fulfill`, input,
+    `/platform/lab-operations/sample-shipping/workflow/return-kits/${kitId}/fulfill`, input,
   )
   return unwrap(response.data)
 }
 
 export async function scanRegisteredSampleTube(packetBarcode: string, supplierTubeBarcode: string) {
   const response = await api.get<ApiEnvelope<RegisteredSampleTubeScan>>(
-    '/platform/sample-shipping/workflow/tubes/scan',
+    '/platform/lab-operations/sample-shipping/workflow/tubes/scan',
     { params: { packetBarcode, supplierTubeBarcode } },
   )
   return unwrap(response.data)

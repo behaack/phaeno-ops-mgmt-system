@@ -1,31 +1,18 @@
 # Order operations
 
-Order operations is the Commercial workspace for Customer laboratory orders, Partner PSeq kit fulfillment, and Partner data assembly. POMS owns operational state, assignments, tenant-safe communication, fulfillment, quote records, accounting source records, and release decisions. QuickBooks Online integration is deferred.
+Order operations is the Commercial workspace for taking in demand, preparing quotes, recording customer approval, managing orders, and producing accounting source records. PSeq Lab Service, PSeq Kit, and Data Assembly appear as order types in one Commercial order list. QuickBooks Online integration is deferred.
 
-Use the far-left sidebar beneath the toolbar to move among **Order intake**, **Lab**, **PSeq kits**, **Assembly**, and **Accounting**. **Order intake** separates shipment-packet lookup, first-party CRM handoffs awaiting review, and already-authorized laboratory work awaiting specimens. A custom-work handoff and a requested Trial Project still require Phaeno review; they are not executable work merely because the CRM request arrived. Create the handoff from its CRM Company or Opportunity, then review the resulting request in **Accounts**. An authorized order opens its linked Lab work order for receipt and accession.
+Use the far-left sidebar beneath the toolbar to move among **Order intake**, **Orders**, and **Accounting**. **Order intake** is where Commercial staff enter a new Customer order and review first-party sales handoffs. A custom-work handoff and a requested Trial Project still require Phaeno review; they are not an executable order or Lab work merely because the handoff arrived. Create the handoff from its CRM Company or Opportunity, then review the resulting request in **Accounts**.
 
 The sidebar header identifies Order operations and, on wider screens, provides the pin or unpin icon. Pointer users can preview an unpinned sidebar by approaching the left edge; keyboard and touch users open it from the edge tab. Choosing a section closes an unpinned sidebar.
 
-## Scan a shipment packet
+## Enter and find orders
 
-Before a shared sample shipment can be released, prepare its return kit in **Order intake**. Record the shipper and tube product/lot facts, register the exact permanent manufacturer barcode from every tube placed in the kit, and record the outbound carrier and tracking number when the kit is fulfilled. Do not fulfill a kit with missing, duplicate, or extra registered tubes. The Corning and Therapak values shown by the form are pilot candidates, not proof that a material lot or physical workflow is qualified.
+Choose **New Customer order** in **Order intake** when a salesperson is taking a PSeq Lab Service order for an eligible Customer. The order remains Commercial while scope, pricing, and Customer approval are being established. Approval and exact sample-roster finalization create the immutable authorization and linked Lab work; staff do not accession specimens in Order operations.
 
-The required kit size comes from the finalized sample list and its physical tube slots; do not override it. The external organization associates each registered tube with one expected non-PHI Customer sample tube slot. A specimen with multiple tubes appears as repeated `Tube N of N` rows under one sample identifier. POMS retains assignment corrections and freezes the final crosswalk when the packet is issued. Before the return shipment is recorded as shipped, a correction to a frozen tube assignment atomically voids the old packet and issues a corrected revision. The external organization must destroy unused copies of the voided packet and print the replacement. The CSV and printable packet are the customer-record handoff; Phaeno owns preserving the crosswalk, while the external organization owns what its sample identifier means in its own records.
+Use **Orders** to search all Commercial orders. Narrow the list by **Order type** to distinguish **PSeq Lab Service**, **PSeq Kit**, and **Data Assembly** without turning those products into separate Order Ops modules. Open the order to review its immutable Commercial facts, quote or approval state, assignment, cancellation requests, and linked Lab workflow.
 
-When the package returns, place the cursor in **Shipment-packet barcode** and scan the barcode from the full-page Phaeno packet. Then scan a registered tube in **Tube barcode**. A successful comparison shows the exact expected sample and linked Lab work. A mismatch, unknown tube, unassigned tube, voided packet, or barcode assigned to another packet must stop intake rather than be resolved by guessing.
-
-Packet and tube comparison is read-only. It does not record delivery, receipt, condition, or accession. Review the resolved context, then open the linked Lab work and follow the controlled receipt and accession procedure. The scan fields clear and regain focus after each outcome for repeated intake.
-
-Do not use a packet marked **Voided packet**. Scan the displayed replacement barcode when one exists; otherwise stop and escalate the package for review. An unknown or malformed packet must not be matched by guessing from the organization, sample label, or carrier paperwork.
-
-The shared return-kit, tube registration, crosswalk, packet, and intake workflow is implemented. Prospect Trial Project approval/acceptance and Customer promotional placement remain separate parent workflows and are not created by the fulfillment or scan screens.
-
-## Choose the correct queue
-
-- **Lab** covers Customer submission review, quote authorization, cancellation decisions, Commercial milestones, and result release.
-- **PSeq kits** covers Partner order review, substitutions, backorders, shipments, and fulfillment.
-- **Assembly** covers Partner intake validation, quoting, processing, quality review, and output release.
-- **Accounting** provides the date-filtered journal-entry source report and notification delivery recovery.
+**Accounting** provides the date-filtered journal-entry source report and notification delivery recovery.
 
 Use status, hold, overdue, organization, assignment, and due-date filters to narrow the queue. Assign an owner and due date when the workflow supports them. A queue assignment coordinates work; it does not grant authorization or change the workflow state.
 
@@ -33,7 +20,7 @@ Use status, hold, overdue, organization, assignment, and due-date filters to nar
 
 Operational status, quote status, accounting-source readiness, payment, scientific readiness, file scanning, and publication are separate facts. Do not mark one complete merely because another succeeded. Tenant users receive a curated timeline, so record a tenant-safe reason separately from internal notes whenever an action can be seen outside Phaeno.
 
-Order Ops ends at the Commercial boundary. Use **Lab Ops** for specimen receipt, accession, protocol execution, materials, equipment, libraries, batches, sequencing sendouts, exceptions, and scientific approval. Lab readiness never publishes a file by itself.
+Order Ops ends at the Commercial boundary. Use **Lab Ops** for return-kit preparation, shipment-packet and tube comparison, PSeq kit fulfillment, specimen receipt and accession, protocol execution, Data Assembly, materials, equipment, libraries, batches, sequencing sendouts, exceptions, and scientific approval. Lab readiness never publishes a file by itself.
 
 ## Triage safely
 

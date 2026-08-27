@@ -384,7 +384,8 @@ public sealed class ReagentOrdersController(
             adjustments.Select(item => new ReagentAdjustmentDto(item.Id, item.OriginalLineId, item.ProposedOfferingId, item.BeforeJson,
                 item.AfterJson, item.Reason, item.TotalDifference, item.Status.ToString(), item.DecidedAt, item.Version)).ToList(),
             docs.Select(item => item.ToDto(platform)).ToList(), cancellations.Select(item => item.ToDto()).ToList(), timeline.Select(item => item.ToDto(platform)).ToList(),
-            PlacementSnapshotJson: order.PlacementSnapshotJson);
+            PlacementSnapshotJson: order.PlacementSnapshotJson,
+            ResumeStatus: order.ResumeStatus?.ToString());
     }
 
     private void Event(PartnerReagentOrder order, string from, string to, Guid actorId, string? reason = null, string? internalNote = null)

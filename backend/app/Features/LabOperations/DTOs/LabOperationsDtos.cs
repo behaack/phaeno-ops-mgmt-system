@@ -3,6 +3,9 @@ namespace PhaenoPortal.App.Features.LabOperations.DTOs;
 public sealed record LabRoleAssignmentDto(
     Guid Id, Guid UserId, string UserName, string Email, string Role, bool IsActive, long Version);
 
+public sealed record LabPSeqKitOfferingDto(
+    Guid Id, Guid PartnerOrganizationId, string ItemName);
+
 public sealed record LabWorkOrderSummaryDto(
     Guid Id, Guid AuthorizationId, Guid? CommercialOrderId, string? CommercialOrderNumber,
     Guid SubmittingOrganizationId, string ServiceKey, string Status, int SpecimenCount,

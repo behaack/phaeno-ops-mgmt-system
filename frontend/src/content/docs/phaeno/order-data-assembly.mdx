@@ -1,12 +1,14 @@
 # Partner data assembly
 
-Order Ops manages the Commercial intake, validation, processing milestones, quality review, and immutable output release for Partner data assembly. Inputs and outputs are operational records; they are not source samples for Data Provisioning.
+Order Ops owns the Commercial Data Assembly order, quote, approval, cancellation, and accounting source record. Lab Ops owns input validation, processing milestones, quality review, and immutable output release. Inputs and outputs are manufacturing records; they are not source samples for Data Provisioning.
+
+Find the Commercial order in **Order operations** > **Orders** with order type **Data Assembly**. Open **Lab operations** > **Data assembly** to validate the submitted input and perform the manufacturing workflow. When Lab accepts the input, Commercial staff issue the quote from the linked order; manufacturing continues after Partner acceptance.
 
 ## Validate the submission
 
 Confirm the active Partner, project reference, purchase-order requirement, selected active assembly profile, required metadata, and uploaded input revision. Validate file type, size, completeness, malware-scan state, and every profile-specific requirement.
 
-Request a targeted correction when the submission can be repaired. Reject work that is unsafe, unsupported, or outside the offered profile. A correction creates a new input revision; it must not rewrite the revision that was reviewed previously.
+When the submission cannot pass input validation, Lab staff place the manufacturing record on hold and document the issue. Commercial staff use the linked order to request a targeted Customer correction or reject work that is unsafe, unsupported, or outside the offered profile. A correction creates a new input revision; it must not rewrite the revision that was reviewed previously.
 
 ## Quote and accept the job
 

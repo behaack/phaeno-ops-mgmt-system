@@ -4,15 +4,12 @@ import {
   useQueryClient,
   type UseQueryResult,
 } from "@tanstack/react-query";
-import { Link, useNavigate } from "@tanstack/react-router";
+import { Link } from "@tanstack/react-router";
 import {
-  Boxes,
   ClipboardCheck,
-  FlaskConical,
-  Plus,
   ReceiptText,
   RefreshCw,
-  Workflow as WorkflowIcon,
+  ShoppingCart,
 } from "lucide-react";
 import { useState } from "react";
 
@@ -20,20 +17,20 @@ import {
   getOrderConfiguration,
   getOrderErrorMessage,
   getPlatformOrder,
-  listEligibleCustomerOrganizations,
   listNotificationMessages,
-  listPlatformOrders,
+  listCommercialOrders,
   retryNotificationMessage,
   runPlatformAction,
   updateOperationalAssignment,
   type DataAssemblyRequest,
-  type EligibleCustomerOrganization,
+  type CommercialOrderListItem,
   type LabServiceOrder,
   type NotificationMessage,
   type PagedResult,
   type ReagentOrder,
 } from "#/api/order-management";
 import { listOrganizations } from "#/api/data-provisioning";
+import { getLabWorkOrderByCommercialOrder } from "#/api/lab-operations";
 import { Alert, AlertDescription, AlertTitle } from "#/components/ui/alert";
 import {
   WorkspaceSidebar,
@@ -64,16 +61,13 @@ import {
 } from "#/components/ui/required-field";
 import { usePhaenoSession } from "#/features/auth/session-context";
 import { humanizeStatus, OrderStatusBadge } from "./OrderStatusBadge";
-import { OrderIntakePanel } from "./OrderIntakePanel";
-import { AssemblyOperationsPanel } from "./operations/AssemblyOperationsPanel";
-import { LabOperationsPanel } from "./operations/LabOperationsPanel";
-import { ReagentOperationsPanel } from "./operations/ReagentOperationsPanel";
-import { resolveCustomerOrganizationState } from "./operations/customer-organization-state";
-import { LabJobDetailsDialog } from "./LabJobDetailsDialog";
+import { CommercialOrderIntakePanel } from "./CommercialOrderIntakePanel";
+import { CancellationDecisionPanel } from "./operations/CancellationDecisionPanel";
+import { PlatformQuoteDialog } from "./operations/PlatformQuoteDialog";
 import { ManualJournalEntryReport } from "./ManualJournalEntryReport";
 
 type Workflow = "lab" | "reagent" | "assembly";
-type OrderSection = Workflow | "intake" | "accounting";
+type OrderSection = "intake" | "orders" | "accounting";
 type OperationalOrganization = {
   id: string;
   name: string;
@@ -81,36 +75,19 @@ type OperationalOrganization = {
   isActive: boolean;
   portalReadiness: "NotReviewed" | "Pending" | "Ready" | "Blocked";
 };
-type OrganizationQuery = UseQueryResult<
-  Awaited<ReturnType<typeof listOrganizations>>,
-  Error
->;
-type EligibleCustomerQuery = UseQueryResult<EligibleCustomerOrganization[], Error>;
 
 const orderSections: ReadonlyArray<WorkspaceSidebarItem<OrderSection>> = [
   {
     value: "intake",
     label: "Order intake",
-    description: "Placed laboratory orders awaiting specimens",
+    description: "Enter and review commercial demand",
     icon: ClipboardCheck,
   },
   {
-    value: "lab",
-    label: "Lab",
-    description: "Pricing, samples, and laboratory execution",
-    icon: FlaskConical,
-  },
-  {
-    value: "reagent",
-    label: "PSeq kits",
-    description: "Review, processing, and fulfillment",
-    icon: Boxes,
-  },
-  {
-    value: "assembly",
-    label: "Assembly",
-    description: "Intake, processing, and output release",
-    icon: WorkflowIcon,
+    value: "orders",
+    label: "Orders",
+    description: "All commercial orders by order type",
+    icon: ShoppingCart,
   },
   {
     value: "accounting",
@@ -174,11 +151,6 @@ function OperationalQueues({
     queryFn: listOrganizations,
     enabled: apiEnabled,
   });
-  const eligibleCustomers = useQuery({
-    queryKey: ["order-operations", "eligible-customers"],
-    queryFn: listEligibleCustomerOrganizations,
-    enabled: apiEnabled && section === "lab",
-  });
   const notifications = useQuery({
     queryKey: ["order-notifications"],
     queryFn: () => listNotificationMessages(),
@@ -206,9 +178,8 @@ function OperationalQueues({
           <section className="mb-6 max-w-3xl">
             <h1 className="text-3xl font-semibold">Order operations</h1>
             <p className="mt-2 text-sm leading-6 text-muted-foreground">
-              Cross-organization queues for pricing, laboratory execution, PSeq
-              kit fulfillment, data assembly, holds, cancellations, manual
-              accounting, and notification recovery.
+              Commercial intake, quotes, customer approvals, orders, holds,
+              cancellations, accounting source records, and notification recovery.
             </p>
           </section>
           {mock ? (
@@ -222,45 +193,9 @@ function OperationalQueues({
             </Alert>
           ) : null}
           {section === "intake" ? (
-            <OrderIntakePanel
-              apiEnabled={apiEnabled}
-              organizations={organizationOptions}
-            />
+            <CommercialOrderIntakePanel apiEnabled={apiEnabled} mock={mock} />
           ) : null}
-          {section === "lab" ? (
-            <QueueCard
-              title="Laboratory queue"
-              workflow="lab"
-              apiEnabled={apiEnabled}
-              mock={mock}
-              userId={userId}
-              organizations={organizationOptions}
-              organizationQuery={organizations}
-              eligibleCustomerQuery={eligibleCustomers}
-            />
-          ) : null}
-          {section === "reagent" ? (
-            <QueueCard
-              title="PSeq kit queue"
-              workflow="reagent"
-              apiEnabled={apiEnabled}
-              mock={mock}
-              userId={userId}
-              organizations={organizationOptions}
-              organizationQuery={organizations}
-            />
-          ) : null}
-          {section === "assembly" ? (
-            <QueueCard
-              title="Assembly queue"
-              workflow="assembly"
-              apiEnabled={apiEnabled}
-              mock={mock}
-              userId={userId}
-              organizations={organizationOptions}
-              organizationQuery={organizations}
-            />
-          ) : null}
+          {section === "orders" ? <CommercialOrdersCard apiEnabled={apiEnabled} userId={userId} organizations={organizationOptions} /> : null}
           {section === "accounting" ? (
             <AccountingWorkspace
               notifications={notifications}
@@ -273,320 +208,75 @@ function OperationalQueues({
   );
 }
 
-function QueueCard({
-  title,
-  workflow,
+function CommercialOrdersCard({
   apiEnabled,
-  mock,
   userId,
   organizations,
-  organizationQuery,
-  eligibleCustomerQuery,
 }: {
-  title: string;
-  workflow: Workflow;
   apiEnabled: boolean;
-  mock: boolean;
   userId: string | null;
   organizations: OperationalOrganization[];
-  organizationQuery: OrganizationQuery;
-  eligibleCustomerQuery?: EligibleCustomerQuery;
 }) {
-  const client = useQueryClient();
-  const navigate = useNavigate();
   const [search, setSearch] = useState("");
+  const [orderType, setOrderType] = useState("");
   const [organizationId, setOrganizationId] = useState("");
   const [status, setStatus] = useState("");
-  const [view, setView] = useState<
-    "all" | "mine" | "unassigned" | "overdue" | "holds"
-  >("all");
-  const [updatedFrom, setUpdatedFrom] = useState("");
-  const [updatedTo, setUpdatedTo] = useState("");
-  const [initiateOpen, setInitiateOpen] = useState(false);
-  const customerOrganizations = workflow === "lab" && eligibleCustomerQuery
-    ? eligibleCustomerQuery.data ?? []
-    : organizations
-        .filter(
-          (organization) =>
-            organization.kind === "Customer" && organization.isActive,
-        )
-        .map((organization) => ({ id: organization.id, name: organization.name }));
-  const customerAvailabilityQuery = workflow === "lab" && eligibleCustomerQuery
-    ? eligibleCustomerQuery
-    : organizationQuery;
-  const customerOrganizationState = resolveCustomerOrganizationState({
-    mock,
-    isLoading: customerAvailabilityQuery.isLoading,
-    isError: customerAvailabilityQuery.isError,
-    eligibleCount: customerOrganizations.length,
-  });
-  const canInitiateCustomerOrder =
-    customerOrganizationState === "mock" ||
-    customerOrganizationState === "ready";
+  const [view, setView] = useState<"all" | "mine" | "unassigned" | "overdue" | "holds">("all");
   const query = useQuery({
-    queryKey: [
-      "platform-orders",
-      workflow,
-      search,
-      organizationId,
-      status,
-      view,
-      updatedFrom,
-      updatedTo,
-    ],
-    queryFn: () =>
-      listPlatformOrders(workflow, {
-        search: search || undefined,
-        organizationId: organizationId || undefined,
-        status: status || undefined,
-        assignedToUserId: view === "mine" ? (userId ?? undefined) : undefined,
-        unassigned: view === "unassigned" || undefined,
-        overdue: view === "overdue" || undefined,
-        holds: view === "holds" || undefined,
-        updatedFrom: updatedFrom ? `${updatedFrom}T00:00:00.000Z` : undefined,
-        updatedTo: updatedTo
-          ? `${nextDate(updatedTo)}T00:00:00.000Z`
-          : undefined,
-      }),
+    queryKey: ["commercial-orders", search, orderType, organizationId, status, view],
+    queryFn: () => listCommercialOrders({
+      search: search || undefined,
+      orderType: orderType || undefined,
+      organizationId: organizationId || undefined,
+      status: status || undefined,
+      assignedToUserId: view === "mine" ? userId ?? undefined : undefined,
+      unassigned: view === "unassigned" || undefined,
+      overdue: view === "overdue" || undefined,
+      holds: view === "holds" || undefined,
+    }),
     enabled: apiEnabled,
   });
+  const statuses = orderType
+    ? workflowStatuses[workflowForOrderType(orderType)]
+    : [];
   return (
-    <>
-      <Card>
-        <CardHeader>
-          <div className="flex flex-wrap items-start justify-between gap-3">
-            <div>
-              <CardTitle>{title}</CardTitle>
-              <CardDescription>
-                Newest activity first. Filter actionable work, then open a
-                record to assign and operate it.
-              </CardDescription>
-            </div>
-            {workflow === "lab" ? (
-              <Button
-                type="button"
-                disabled={!canInitiateCustomerOrder}
-                aria-describedby={
-                  !canInitiateCustomerOrder
-                    ? "customer-order-availability"
-                    : undefined
-                }
-                onClick={() => setInitiateOpen(true)}
-              >
-                <Plus data-icon="inline-start" />
-                Initiate Customer order
-              </Button>
-            ) : null}
-          </div>
-          {workflow === "lab" && customerOrganizationState === "loading" ? (
-            <p
-              id="customer-order-availability"
-              role="status"
-              className="mt-3 text-sm text-muted-foreground"
-            >
-              Loading eligible Customer organizations…
-            </p>
-          ) : null}
-          {workflow === "lab" && customerOrganizationState === "error" ? (
-            <Alert
-              id="customer-order-availability"
-              variant="destructive"
-              className="mt-3"
-            >
-              <AlertTitle>
-                Customer organizations could not be loaded
-              </AlertTitle>
-              <AlertDescription>
-                <span className="block">
-                  {getOrderErrorMessage(
-                    customerAvailabilityQuery.error,
-                    "Try loading the Customer list again.",
-                  )}
-                </span>
-                <Button
-                  type="button"
-                  variant="outline"
-                  size="sm"
-                  className="mt-3"
-                  disabled={customerAvailabilityQuery.isFetching}
-                  onClick={() => void customerAvailabilityQuery.refetch()}
-                >
-                  <RefreshCw data-icon="inline-start" />
-                  {customerAvailabilityQuery.isFetching ? "Retrying…" : "Retry"}
-                </Button>
-              </AlertDescription>
-            </Alert>
-          ) : null}
-          {workflow === "lab" && customerOrganizationState === "empty" ? (
-            <Alert id="customer-order-availability" className="mt-3">
-              <AlertTitle>No eligible Customers</AlertTitle>
-              <AlertDescription>
-                No Customer currently has ordering authorization, an active
-                PSeq Lab Service offering, and an active administrator. Complete
-                that account setup before initiating an order.
-              </AlertDescription>
-            </Alert>
-          ) : null}
-          <div className="mt-3 grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
-            <div>
-              <Label htmlFor={`${workflow}-queue-search`}>Search</Label>
-              <Input
-                id={`${workflow}-queue-search`}
-                className="mt-2"
-                value={search}
-                onChange={(event) => setSearch(event.target.value)}
-              />
-            </div>
-            <div>
-              <Label htmlFor={`${workflow}-queue-organization`}>
-                Organization
-              </Label>
-              <select
-                id={`${workflow}-queue-organization`}
-                className="mt-2 h-9 w-full rounded-lg border border-input bg-background px-3 text-sm"
-                value={organizationId}
-                onChange={(event) => setOrganizationId(event.target.value)}
-              >
-                <option value="">All organizations</option>
-                {organizations.map((item) => (
-                  <option key={item.id} value={item.id}>
-                    {item.name}
-                  </option>
-                ))}
-              </select>
-            </div>
-            <div>
-              <Label htmlFor={`${workflow}-queue-status`}>Status</Label>
-              <select
-                id={`${workflow}-queue-status`}
-                className="mt-2 h-9 w-full rounded-lg border border-input bg-background px-3 text-sm"
-                value={status}
-                onChange={(event) => setStatus(event.target.value)}
-              >
-                <option value="">All statuses</option>
-                {workflowStatuses[workflow].map((item) => (
-                  <option key={item} value={item}>
-                    {humanizeStatus(item)}
-                  </option>
-                ))}
-              </select>
-            </div>
-            <div>
-              <Label htmlFor={`${workflow}-queue-view`}>Queue view</Label>
-              <select
-                id={`${workflow}-queue-view`}
-                className="mt-2 h-9 w-full rounded-lg border border-input bg-background px-3 text-sm"
-                value={view}
-                onChange={(event) => setView(event.target.value as typeof view)}
-              >
-                <option value="all">All work</option>
-                <option value="mine">Assigned to me</option>
-                <option value="unassigned">Unassigned</option>
-                <option value="overdue">Overdue</option>
-                <option value="holds">On hold</option>
-              </select>
-            </div>
-            <div>
-              <Label htmlFor={`${workflow}-queue-from`}>Updated from</Label>
-              <Input
-                id={`${workflow}-queue-from`}
-                type="date"
-                className="mt-2"
-                value={updatedFrom}
-                onChange={(event) => setUpdatedFrom(event.target.value)}
-              />
-            </div>
-            <div>
-              <Label htmlFor={`${workflow}-queue-to`}>Updated through</Label>
-              <Input
-                id={`${workflow}-queue-to`}
-                type="date"
-                className="mt-2"
-                value={updatedTo}
-                onChange={(event) => setUpdatedTo(event.target.value)}
-              />
-            </div>
-          </div>
-        </CardHeader>
-        <CardContent>
-          {query.error ? (
-            <Alert variant="destructive">
-              <AlertTitle>Queue could not be loaded</AlertTitle>
-              <AlertDescription>
-                {getOrderErrorMessage(query.error, "Try refreshing.")}
-              </AlertDescription>
-            </Alert>
-          ) : null}
-          {query.isLoading ? <p role="status">Loading queue…</p> : null}
-          <div className="divide-y">
-            {query.data?.items.map((item) => (
-              <div
-                key={item.id}
-                className="flex flex-wrap items-center justify-between gap-3 py-3"
-              >
+    <Card>
+      <CardHeader>
+        <CardTitle>Commercial orders</CardTitle>
+        <CardDescription>
+          One list for every order type. Open an order for commercial terms, approval, and customer-facing status; perform physical work in Lab operations.
+        </CardDescription>
+        <div className="mt-3 grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+          <div><Label htmlFor="commercial-order-search">Search</Label><Input id="commercial-order-search" className="mt-2" value={search} onChange={(event) => setSearch(event.target.value)} /></div>
+          <div><Label htmlFor="commercial-order-type">Order type</Label><select id="commercial-order-type" className="mt-2 h-9 w-full rounded-lg border border-input bg-background px-3 text-sm" value={orderType} onChange={(event) => { setOrderType(event.target.value); setStatus(""); }}><option value="">All order types</option><option value="PSeqLabService">PSeq Lab Service</option><option value="PSeqKit">PSeq Kit</option><option value="DataAssembly">Data Assembly</option></select></div>
+          <div><Label htmlFor="commercial-order-organization">Organization</Label><select id="commercial-order-organization" className="mt-2 h-9 w-full rounded-lg border border-input bg-background px-3 text-sm" value={organizationId} onChange={(event) => setOrganizationId(event.target.value)}><option value="">All organizations</option>{organizations.map((item) => <option key={item.id} value={item.id}>{item.name}</option>)}</select></div>
+          <div><Label htmlFor="commercial-order-status">Status</Label><select id="commercial-order-status" className="mt-2 h-9 w-full rounded-lg border border-input bg-background px-3 text-sm" value={status} disabled={!orderType} onChange={(event) => setStatus(event.target.value)}><option value="">{orderType ? 'All statuses' : 'Choose an order type first'}</option>{statuses.map((item) => <option key={item} value={item}>{humanizeStatus(item)}</option>)}</select></div>
+          <div><Label htmlFor="commercial-order-view">View</Label><select id="commercial-order-view" className="mt-2 h-9 w-full rounded-lg border border-input bg-background px-3 text-sm" value={view} onChange={(event) => setView(event.target.value as typeof view)}><option value="all">All orders</option><option value="mine">Assigned to me</option><option value="unassigned">Unassigned</option><option value="overdue">Overdue</option><option value="holds">On hold</option></select></div>
+        </div>
+      </CardHeader>
+      <CardContent>
+        {query.error ? <Alert variant="destructive"><AlertTitle>Orders could not be loaded</AlertTitle><AlertDescription>{getOrderErrorMessage(query.error, "Try refreshing.")}</AlertDescription></Alert> : null}
+        {query.isLoading ? <p role="status">Loading orders…</p> : null}
+        <div className="divide-y">
+          {query.data?.items.map((item) => {
+            const workflow = workflowForOrderType(item.orderType);
+            return (
+              <div key={`${item.orderType}-${item.id}`} className="flex flex-wrap items-center justify-between gap-3 py-4">
                 <div>
-                  <Link
-                    to="/order-operations/$workflow/$orderId"
-                    params={{ workflow, orderId: item.id }}
-                    className="font-medium text-primary hover:underline"
-                  >
-                    {workflow === "lab"
-                      ? (item.reference ?? "Unnamed job")
-                      : item.number}
-                  </Link>
-                  <p className="mt-1 text-xs text-muted-foreground">
-                    {organizations.find((org) => org.id === item.organizationId)
-                      ?.name ?? item.organizationId}{" "}
-                    ·{" "}
-                    {workflow === "lab"
-                      ? `Job number ${item.number}`
-                      : (item.reference ?? "No reference")}
-                  </p>
-                  <p className="mt-1 text-xs text-muted-foreground">
-                    {item.assignedToUserId
-                      ? item.assignedToUserId === userId
-                        ? "Assigned to you"
-                        : "Assigned"
-                      : "Unassigned"}
-                    {item.dueAt ? ` · Due ${formatDateTime(item.dueAt)}` : ""}
-                  </p>
+                  <div className="flex flex-wrap items-center gap-2">
+                    <Link to="/order-operations/$workflow/$orderId" params={{ workflow, orderId: item.id }} className="font-medium text-primary hover:underline">{item.reference || item.number}</Link>
+                    <span className="rounded-full border bg-muted px-2.5 py-1 text-xs font-medium">{orderTypeLabel(item.orderType)}</span>
+                  </div>
+                  <p className="mt-1 text-xs text-muted-foreground">{item.number} · {organizations.find((organization) => organization.id === item.organizationId)?.name ?? item.organizationId} · updated {formatDateTime(item.updatedAt)}</p>
                 </div>
-                <div className="flex items-center gap-2">
-                  {item.isOverdue ? (
-                    <span className="text-xs font-medium text-destructive">
-                      Overdue
-                    </span>
-                  ) : null}
-                  <OrderStatusBadge status={item.status} />
-                </div>
+                <div className="flex items-center gap-2">{item.isOverdue ? <span className="text-xs font-medium text-destructive">Overdue</span> : null}<OrderStatusBadge status={item.status} /></div>
               </div>
-            ))}
-          </div>
-          {!query.isLoading && !query.data?.items.length ? (
-            <p className="py-8 text-center text-sm text-muted-foreground">
-              No records in this queue.
-            </p>
-          ) : null}
-        </CardContent>
-      </Card>
-      {workflow === "lab" ? (
-        <LabJobDetailsDialog
-          open={initiateOpen}
-          platformOrganizations={customerOrganizations}
-          onOpenChange={setInitiateOpen}
-          onSaved={async (order) => {
-            setInitiateOpen(false);
-            await client.invalidateQueries({
-              queryKey: ["platform-orders", "lab"],
-            });
-            await navigate({
-              to: "/order-operations/$workflow/$orderId",
-              params: { workflow: "lab", orderId: order.id },
-            });
-          }}
-        />
-      ) : null}
-    </>
+            );
+          })}
+        </div>
+        {!query.isLoading && !query.data?.items.length ? <p className="py-8 text-center text-sm text-muted-foreground">No orders match these filters.</p> : null}
+      </CardContent>
+    </Card>
   );
 }
 
@@ -717,6 +407,12 @@ function OperationalDetail({
     queryFn: getOrderConfiguration,
     enabled: apiEnabled,
   });
+  const labWork = useQuery({
+    queryKey: ["lab-work-by-commercial-order", orderId],
+    queryFn: () => getLabWorkOrderByCommercialOrder(orderId),
+    enabled: apiEnabled && workflow === "lab" && Boolean(order.data) && ["PlacedAwaitingSamples", "InProgress", "ResultsAvailable", "Completed"].includes(order.data?.status ?? ""),
+    retry: false,
+  });
   async function refresh() {
     await client.invalidateQueries({
       queryKey: ["platform-order", workflow, orderId],
@@ -800,7 +496,7 @@ function OperationalDetail({
     workflow === "lab" && "customerReference" in item
       ? item.customerReference
       : number;
-  const actions = primaryActions(workflow, item.status);
+  const actions = commercialActions(workflow, item.status, "resumeStatus" in item ? item.resumeStatus : null);
   return (
     <main className="page-wrap px-4 py-8">
       <section className="mb-6 flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
@@ -852,13 +548,10 @@ function OperationalDetail({
           >
             Assignment
           </Button>
-          {workflow === "lab" &&
-          "sampleRosterFinalizedAt" in item &&
-          item.status === "PlacedAwaitingSamples" &&
-          item.sampleRosterFinalizedAt ? (
+          {workflow === "lab" && labWork.data ? (
             <Button asChild variant="outline">
-              <Link to="/order-operations/intake/$orderId" params={{ orderId }}>
-                Open intake
+              <Link to="/lab-operations/$workOrderId" params={{ workOrderId: labWork.data.id }} search={{ section: undefined }}>
+                Open Lab work
               </Link>
             </Button>
           ) : null}
@@ -902,27 +595,13 @@ function OperationalDetail({
         </Alert>
       ) : null}
       <OperationalSummary workflow={workflow} item={item} />
-      {workflow === "lab" && "samples" in item ? (
-        <LabOperationsPanel
-          order={item}
-          catalogItems={configuration.data?.catalogItems ?? []}
-          onSaved={refresh}
-        />
-      ) : null}
-      {workflow === "reagent" && "lines" in item && configuration.data ? (
-        <ReagentOperationsPanel
-          order={item}
-          configuration={configuration.data}
-          onSaved={refresh}
-        />
-      ) : null}
-      {workflow === "assembly" && "inputFiles" in item ? (
-        <AssemblyOperationsPanel
-          request={item}
-          catalogItems={configuration.data?.catalogItems ?? []}
-          onSaved={refresh}
-        />
-      ) : null}
+      <CommercialOrderPanel
+        workflow={workflow}
+        item={item}
+        catalogItems={configuration.data?.catalogItems ?? []}
+        labWorkOrderId={labWork.data?.id ?? null}
+        onSaved={refresh}
+      />
       <Dialog
         open={reasonDialog !== null}
         onOpenChange={(open) => !open && setReasonDialog(null)}
@@ -1166,7 +845,75 @@ function OperationalSummary({
   );
 }
 
-function primaryActions(workflow: Workflow, status: string) {
+function CommercialOrderPanel({
+  workflow,
+  item,
+  catalogItems,
+  labWorkOrderId,
+  onSaved,
+}: {
+  workflow: Workflow;
+  item: LabServiceOrder | ReagentOrder | DataAssemblyRequest;
+  catalogItems: Awaited<ReturnType<typeof getOrderConfiguration>>["catalogItems"];
+  labWorkOrderId: string | null;
+  onSaved: () => Promise<void>;
+}) {
+  const [quoteOpen, setQuoteOpen] = useState(false);
+  const mayQuote = (workflow === "lab" || workflow === "assembly") && item.status === "QuoteInPreparation";
+  const number = "orderNumber" in item ? item.orderNumber : item.requestNumber;
+  const workflowPath = workflow === "lab" ? "lab-service-orders" : workflow === "reagent" ? "reagent-orders" : "data-assembly-requests";
+  return (
+    <div className="mt-5 space-y-5">
+      <Card>
+        <CardHeader>
+          <div className="flex flex-wrap items-start justify-between gap-3">
+            <div>
+              <CardTitle>Commercial control</CardTitle>
+              <CardDescription>
+                Quotes, approvals, cancellations, and the immutable order remain here. Physical fulfillment and scientific execution are performed in Lab operations.
+              </CardDescription>
+            </div>
+            <div className="flex flex-wrap gap-2">
+              {mayQuote ? <Button type="button" onClick={() => setQuoteOpen(true)}>Issue quote</Button> : null}
+              {workflow === "lab" && labWorkOrderId ? <Button asChild variant="outline"><Link to="/lab-operations/$workOrderId" params={{ workOrderId: labWorkOrderId }} search={{ section: undefined }}>Open Lab work</Link></Button> : null}
+              {workflow === "reagent" ? <Button asChild variant="outline"><Link to="/lab-operations/pseq-kit-orders/$orderId" params={{ orderId: item.id }} search={{ section: undefined }}>Open kit fulfillment</Link></Button> : null}
+              {workflow === "assembly" ? <Button asChild variant="outline"><Link to="/lab-operations/data-assembly/$orderId" params={{ orderId: item.id }} search={{ section: undefined }}>Open data assembly</Link></Button> : null}
+            </div>
+          </div>
+        </CardHeader>
+        <CardContent>
+          <p className="text-sm text-muted-foreground">
+            {workflow === "lab" && !labWorkOrderId
+              ? "Lab work will be created when the Customer approves the commercial order and the accepted scope is authorized."
+              : `Order ${number} is the commercial source record for the linked Lab workflow.`}
+          </p>
+        </CardContent>
+      </Card>
+      <CancellationDecisionPanel
+        workflowPath={workflowPath}
+        recordId={item.id}
+        version={item.version}
+        requests={item.cancellationRequests}
+        reagentLines={workflow === "reagent" && "lines" in item ? item.lines : undefined}
+        onSaved={onSaved}
+      />
+      {(workflow === "lab" || workflow === "assembly") ? (
+        <PlatformQuoteDialog
+          open={quoteOpen}
+          workflow={workflow}
+          recordId={item.id}
+          version={item.version}
+          defaultQuantity={workflow === "lab" && "requestedSpecimenCount" in item ? item.requestedSpecimenCount : undefined}
+          catalogItems={catalogItems}
+          onOpenChange={setQuoteOpen}
+          onSaved={onSaved}
+        />
+      ) : null}
+    </div>
+  );
+}
+
+function commercialActions(workflow: Workflow, status: string, resumeStatus?: string | null) {
   if (workflow === "lab") {
     if (status === "SubmittedForQuote")
       return [
@@ -1183,37 +930,26 @@ function primaryActions(workflow: Workflow, status: string) {
     if (!["Completed", "Cancelled", "Declined"].includes(status))
       return [{ label: "Place on hold", path: "hold", reason: true }];
   }
-  if (workflow === "reagent") {
-    if (status === "UnderReview")
-      return [
-        { label: "Accept order", path: "accept", reason: false },
-        { label: "Reject", path: "reject", reason: true },
-      ];
-    if (status === "Accepted")
-      return [
-        { label: "Start processing", path: "start-processing", reason: false },
-      ];
-    if (status === "Shipped")
-      return [{ label: "Close fulfilled", path: "fulfill", reason: false }];
-    if (status === "OnHold")
-      return [{ label: "Release hold", path: "release-hold", reason: true }];
-    if (!["Fulfilled", "Cancelled", "Rejected"].includes(status))
-      return [{ label: "Place on hold", path: "hold", reason: true }];
-  }
-  if (workflow === "assembly") {
-    if (status === "Submitted")
-      return [{ label: "Begin intake", path: "begin-intake", reason: false }];
-    if (status === "IntakeValidation")
-      return [
-        { label: "Accept intake", path: "accept-intake", reason: false },
-        { label: "Request changes", path: "request-changes", reason: true },
-        { label: "Reject", path: "reject", reason: true },
-      ];
-    if (status === "OnHold")
-      return [{ label: "Release hold", path: "release-hold", reason: true }];
-    if (!["Completed", "Cancelled", "Rejected"].includes(status))
-      return [{ label: "Place on hold", path: "hold", reason: true }];
-  }
+  if (workflow === "reagent" && status === "UnderReview")
+    return [
+      { label: "Accept order", path: "accept", reason: false },
+      { label: "Reject order", path: "reject", reason: true },
+    ];
+  if (workflow === "reagent" && status === "OnHold" && resumeStatus === "UnderReview")
+    return [
+      { label: "Release Commercial hold", path: "release-hold", reason: true },
+      { label: "Reject order", path: "reject", reason: true },
+    ];
+  if (workflow === "assembly" && status === "QuoteInPreparation")
+    return [
+      { label: "Request Customer changes", path: "request-changes", reason: true },
+      { label: "Reject request", path: "reject", reason: true },
+    ];
+  if (workflow === "assembly" && status === "OnHold" && resumeStatus === "QuoteInPreparation")
+    return [
+      { label: "Release Commercial hold", path: "release-hold", reason: true },
+      { label: "Reject request", path: "reject", reason: true },
+    ];
   return [];
 }
 
@@ -1223,10 +959,16 @@ function formatDateTime(value: string) {
     timeStyle: "short",
   }).format(new Date(value));
 }
-function nextDate(value: string) {
-  const date = new Date(`${value}T00:00:00.000Z`);
-  date.setUTCDate(date.getUTCDate() + 1);
-  return date.toISOString().slice(0, 10);
+function workflowForOrderType(orderType: string): Workflow {
+  if (orderType === "PSeqKit") return "reagent";
+  if (orderType === "DataAssembly") return "assembly";
+  return "lab";
+}
+
+function orderTypeLabel(orderType: CommercialOrderListItem["orderType"]) {
+  if (orderType === "PSeqKit") return "PSeq Kit";
+  if (orderType === "DataAssembly") return "Data Assembly";
+  return "PSeq Lab Service";
 }
 
 const workflowStatuses: Record<Workflow, string[]> = {

@@ -57,9 +57,10 @@ by `FILE-MANAGEMENT-PLAN.md`.
   `commercial_ops`. Existing customer order, quote, file, payment, and
   publication records remain authoritative for their Commercial
   responsibilities in `commercial_ops`.
-- Phaeno operators can use **Order intake** to review first-party CRM-originated
-  `SalesAssistedOrder` and `Evaluation` requests separately from placed lab
-  orders, then reach an authorized Lab work order for receipt and accession.
+- Phaeno Commercial staff use **Order intake** to enter Customer orders and
+  review first-party CRM-originated `SalesAssistedOrder` and `Evaluation`
+  requests. Placed work, return kits, shipment lookup, physical receipt, and
+  accession are intentionally absent; those begin in Lab Operations.
   The former local HubSpot simulator and its active UI have been removed;
   historical HubSpot-sourced requests remain readable. Trial Project execution
   and sales-assisted handoff-to-order conversion remain governed by their
@@ -1938,19 +1939,24 @@ Phaeno navigation:
   Accounts selector. Its initial Order Operations panel is an explicitly
   labelled mock snapshot for layout validation; it does not claim connected
   queue counts or replace the full operational workspace.
-- `Order operations` is a platform-only workspace with separate Lab, PSeq kits,
-  Assembly, and Accounting sections in the shared far-left sidebar. The
+- `Order operations` is a platform-only Commercial workspace with Order intake,
+  one Orders list, and Accounting in the shared far-left sidebar. PSeq Lab
+  Service, PSeq Kit, and Data Assembly are order types in that list, not peer
+  operational modules. The
   sidebar is a remembered pinned rail on wide screens and the same non-modal
   hover, keyboard, and click rail when narrow or unpinned.
-- Each queue supports assigned/unassigned, organization, status, date, overdue,
-  and hold filters. Detail pages expose only capability-authorized
-  workflow commands and separate tenant-safe reasons from internal notes.
-- The Lab queue exposes `Initiate Customer order` to Phaeno users with order-
-  pricing authority. Its bounded modal selects an active Customer and captures
+- The Orders list supports order type, assigned/unassigned, organization,
+  status, overdue, and hold filters. Detail pages expose only Commercial
+  commands and separate tenant-safe reasons from internal notes.
+- Order intake exposes `New Customer order` to Phaeno users with order-pricing
+  authority. Its bounded modal selects an active Customer and captures
   the same price-bearing Job profile as the Customer flow. Saving creates the
   immutable submitted revision, opens the operational detail in `Quote in
   preparation`, and leaves quote issuance as the only path that makes pricing
   available for Customer-admin approval.
+- Lab Operations owns the separate Receipt & accession, PSeq kit fulfillment,
+  Data Assembly, and scientific execution surfaces. Commercial order details
+  link to those Lab records without duplicating their mutations in Order Ops.
 - `Accounting` contains the date-filtered journal-entry source preview and CSV
   download plus notification recovery. It states that downloading does not post,
   record payment, or release held files.

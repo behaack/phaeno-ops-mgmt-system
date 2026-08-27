@@ -344,7 +344,7 @@ remain incomplete production-activation gates.
 - [ ] Order workflow components - cover resumable drafts, profile-driven
   metadata, the Customer Lab job's responsive `Samples & shipping`, `Quote &
   billing`, `Data & results`, and `Timeline` tabs, quote acceptance/expiry,
-  Phaeno `Initiate Customer order` selection and price-bearing profile entry,
+  Phaeno `New Customer order` selection and price-bearing profile entry,
   required no-PHI attestation,
   redirect to the new `Quote in preparation` operational detail, committed-
   quantity quote defaults, active-Customer and approver failures, effective
@@ -365,10 +365,11 @@ remain incomplete production-activation gates.
   pending-button state, completed query refresh, file/package completion
   labels, partial state, and tenant-safe failure feedback with mocked APIs.
 - [ ] Remaining Lab Operations workspace - cover role-specific controls,
-  the five-section operational sidebar with access administration omitted,
-  list/detail loading, receipt/accession, protocol lifecycle,
-  the Phaeno Order Operations **Order intake** section and Open intake handoff
-  for placed lab orders,
+  the eight-section operational sidebar with access administration omitted,
+  list/detail loading, return-kit and shipment lookup, receipt/accession,
+  PSeq kit fulfillment, Data Assembly, protocol lifecycle,
+  the Phaeno Order Operations Commercial intake and unified Orders list plus
+  the linked Lab **Receipt & accession** handoff for placed lab orders,
   including blocked pre-placement states and navigation to the existing work
   order,
   system-assigned protocol/library/batch identifiers, required batch names, and

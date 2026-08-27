@@ -29,10 +29,11 @@ or production activation.
   checksummed container identifiers, browser-rendered Code 39 labels,
   reasoned print/reprint/failure history, exact scan lookup, and scan-first
   QC-passed-library batch entry with duplicate and wrong-context rejection.
-  Phaeno operators can use the **Order intake** section in Order Operations to
-  reach a roster-finalized placed order's existing work order; this is a
-  discoverability handoff, not a second work-order creation path.
-  The five operational workspace sections now use the shared
+  Phaeno operators use **Receipt & accession** in Lab Operations to prepare
+  return kits, identify shipments, compare tubes, and reach a roster-finalized
+  placed order's existing work order. Order Operations retains only the
+  Commercial source order and links to the same work order.
+  The eight operational workspace sections now use the shared
   far-left sidebar beneath the toolbar, with a remembered pinned desktop rail
   and the same non-modal hover, keyboard, and click rail when narrow or
   unpinned. Laboratory role administration now lives in the durable Phaeno
@@ -217,6 +218,8 @@ directly.
 
 ### Lab Operations Owns
 
+- Physical PSeq kit preparation, substitution handling, shipping, and fulfillment
+- Data Assembly input validation, processing, QC review, and output approval
 - Laboratory work orders and laboratory execution state
 - Physical receipt, accessioning, and intake disposition
 - Specimen, container, aliquot, and derived-library lineage
@@ -301,9 +304,11 @@ being misrepresented as a commercial order.
   An optional Partner reference remains opaque Partner data.
 - Partner-specific pricing, contracts, and permissions remain Commercial
   Operations concerns.
-- Selling a Partner-manufactured kit is a Commercial Operations fulfillment
-  transaction. It creates no Lab Operations work order unless Phaeno is
-  separately contracted to process specimens.
+- Selling a PSeq Kit creates and preserves a Commercial order and pricing
+  snapshot. Physical kit review, preparation, substitution handling, shipping,
+  and fulfillment occur in the Lab Operations PSeq kits workflow. Kit
+  fulfillment does not create a specimen accession or scientific Lab work order
+  unless Phaeno is separately authorized to process specimens.
 - Customers and Partners never receive direct access to the Lab Operations
   workspace. They interact through Portal submissions, approved milestones,
   customer-safe exceptions, selected QC information, and released outputs.
@@ -380,7 +385,9 @@ assembly. Its operational phases do not become separate sales.
 ### PSeq Kit
 
 PSeq Kit is one commercial product combining the kit with its included data
-assembly entitlement. Kit fulfillment remains in Commercial Operations. If
+assembly entitlement. The order and pricing snapshot remain Commercial;
+physical kit fulfillment and the included Data Assembly execution are operated
+from Lab Operations. If
 Phaeno never receives a physical specimen, the workflow must not create a
 fictitious accession. The detailed path from customer data submission through
 the existing automated pipeline remains part of the major pipeline and file
