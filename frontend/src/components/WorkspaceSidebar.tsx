@@ -200,7 +200,7 @@ export function ResponsiveSidebar({
             </Button>
           ) : null}
         </header>
-        <div className="min-h-0 flex-1 overflow-y-auto pt-3">
+        <div className="-mx-1 min-h-0 flex-1 overflow-y-auto px-1 pt-3">
           {navigation(showPinnedSidebar ? () => undefined : () => closePreview())}
         </div>
       </aside>
