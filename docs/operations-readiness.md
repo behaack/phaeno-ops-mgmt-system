@@ -41,7 +41,7 @@ Keep environment-specific values outside source control. `appsettings.Developmen
 | --- | --- | --- |
 | `ConnectionStrings:DefaultConnection` | PostgreSQL connection | Managed as a secret; TLS, backup, restore, and connection limits approved. |
 | `Persistence` | Commercial, Laboratory, Website, and migration-history schemas plus the history table | Stable before migration execution; business schemas must be distinct from each other and from `public`. |
-| `Clerk` | JWT authority/audience, Clerk API access, authentication branding, MFA, and recovery | Production Clerk instance and secrets; HTTPS metadata validation enabled; Phaeno branding and paid-plan vendor-badge removal verified; required authenticator-app MFA and one-time backup codes enabled; SMS disabled; Phaeno-admin identity verification, MFA reset, active-session revocation, and re-enrollment recovery owned and tested. |
+| `Clerk` | JWT authority/audience, Clerk API access, authentication branding, MFA, and recovery | Production API accepts only a Clerk Production issuer and `sk_live_` secret. Local development remains on Clerk Development. HTTPS metadata validation, Phaeno branding, paid-plan vendor-badge removal, required authenticator-app MFA and one-time backup codes, disabled SMS, and the Phaeno-admin recovery procedure must be verified in the production instance. |
 | `Bootstrap` | One-time bootstrap link inputs | Disabled or cleared after the initial administrator is linked. |
 | `Invitations` | Token lifetime, resend cooldown, public URL | Public URL and expiry policy approved. |
 | `Postmark` | Transactional sender | Verified sender/domain, production token, stream, delivery and failure monitoring. |
@@ -53,11 +53,18 @@ Keep environment-specific values outside source control. `appsettings.Developmen
 | `OrderManagement` | Upload limit, scanner, allowed kinds | Trusted scanner and real Customer/Partner file policy approved. |
 | Manual accounting | POMS commercial catalog plus `/api/platform/order-accounting/journal-entries` and CSV export | Catalog ownership, date-range reconciliation, stable source-ID handling, general-ledger account mapping, tax treatment, posting procedure, duplicate prevention, and Finance ownership approved. |
 | Future external CRM adapter | Provider/account identifiers, credentials, API, webhook verifier, and field mapping | Not present or required today. Before any activation: fresh product scope, field ownership, least-privilege access, non-production proof, webhook validation, reconciliation, monitoring, and rotation approved. |
-| `VITE_CLERK_PUBLISHABLE_KEY` | Frontend Clerk instance | Matches the API's production Clerk configuration. |
+| `VITE_CLERK_PUBLISHABLE_KEY` | Frontend Clerk instance | Vercel Preview uses the development `pk_test_` value. Vercel Production uses the `pk_live_` value matching the API's production Clerk configuration. |
 | `VITE_API_BASE_URL` | Frontend API base URL | Points to the approved API origin or reverse proxy. |
 | `VITE_USE_MOCK_SESSION` | Development mock session | Must not enable mock access in production. |
 
 Never copy local passwords, Clerk secrets, Postmark tokens, webhook tokens, or connection strings into documentation, logs, audit events, support messages, or committed configuration. Rotate any credential that is accidentally shared.
+
+The one-time `--cutover-clerk-bootstrap-identity` maintenance command exists
+only for the initial production-instance transition. It runs before the API is
+replaced, requires the exact previous subject identifier, refuses to proceed
+unless exactly one Portal user is linked and that user is the configured
+bootstrap administrator, verifies the replacement Clerk user's primary email,
+and records the relink. It must not be used for routine user migration.
 
 ## Database migrations
 

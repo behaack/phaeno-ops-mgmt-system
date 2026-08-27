@@ -8,6 +8,16 @@ on:
         required: true
         default: false
         type: boolean
+      cutover_clerk_identity:
+        description: Relink the sole bootstrap administrator from the previous Clerk subject to Clerk Production
+        required: true
+        default: false
+        type: boolean
+      previous_clerk_subject_id:
+        description: Exact previous Clerk subject required when the one-time Clerk identity cutover is selected
+        required: false
+        default: ""
+        type: string
 
 permissions:
   contents: read
@@ -51,6 +61,7 @@ jobs:
       - name: Validate deployment secrets
         env:
           APPLY_MIGRATIONS: ${{ inputs.apply_migrations }}
+          CUTOVER_CLERK_IDENTITY: ${{ inputs.cutover_clerk_identity }}
           DEPLOY_HOST: ${{ secrets.DEPLOY_HOST }}
           DEPLOY_KNOWN_HOSTS: ${{ secrets.DEPLOY_KNOWN_HOSTS }}
           DEPLOY_SSH_KEY: ${{ secrets.DEPLOY_SSH_KEY }}
@@ -61,6 +72,7 @@ jobs:
           PORTAL_BOOTSTRAP_ORGANIZATION_NAME: ${{ vars.PORTAL_BOOTSTRAP_ORGANIZATION_NAME }}
           PORTAL_CLERK_AUTHORITY: ${{ vars.PORTAL_CLERK_AUTHORITY }}
           PORTAL_CLERK_SECRET_KEY: ${{ secrets.PORTAL_CLERK_SECRET_KEY }}
+          PREVIOUS_CLERK_SUBJECT_ID: ${{ inputs.previous_clerk_subject_id }}
           PORTAL_MIGRATION_BACKUP_PUBLIC_KEY: ${{ secrets.PORTAL_MIGRATION_BACKUP_PUBLIC_KEY }}
           WEBSITE_PREVIEW_SEARCH_URL: ${{ vars.WEBSITE_PREVIEW_SEARCH_URL }}
           WEBSITE_PREVIEW_SEARCH_VERCEL_BYPASS_SECRET: ${{ secrets.WEBSITE_PREVIEW_SEARCH_VERCEL_BYPASS_SECRET }}
@@ -97,9 +109,9 @@ jobs:
 
           if [ -n "$PORTAL_CLERK_SECRET_KEY" ]; then
             case "$PORTAL_CLERK_SECRET_KEY" in
-              sk_test_*|sk_live_*) ;;
+              sk_live_*) ;;
               *)
-                echo "::error::PORTAL_CLERK_SECRET_KEY is not a Clerk secret key."
+                echo "::error::PORTAL_CLERK_SECRET_KEY must be a Clerk Production secret key."
                 missing=1
                 ;;
             esac
@@ -107,12 +119,29 @@ jobs:
 
           if [ -n "$PORTAL_CLERK_AUTHORITY" ]; then
             case "$PORTAL_CLERK_AUTHORITY" in
-              https://*.clerk.accounts.dev|https://*.clerk.com) ;;
+              https://*.clerk.accounts.dev)
+                echo "::error::PORTAL_CLERK_AUTHORITY must not use a Clerk Development issuer."
+                missing=1
+                ;;
+              https://*) ;;
               *)
-                echo "::error::PORTAL_CLERK_AUTHORITY is not a supported Clerk issuer."
+                echo "::error::PORTAL_CLERK_AUTHORITY must be an HTTPS Clerk Production issuer."
                 missing=1
                 ;;
             esac
+          fi
+
+          if [ "$CUTOVER_CLERK_IDENTITY" = "true" ]; then
+            case "$PREVIOUS_CLERK_SUBJECT_ID" in
+              user_?*) ;;
+              *)
+                echo "::error::The one-time Clerk identity cutover requires the exact previous Clerk subject."
+                missing=1
+                ;;
+            esac
+          elif [ -n "$PREVIOUS_CLERK_SUBJECT_ID" ]; then
+            echo "::error::previous_clerk_subject_id is allowed only when cutover_clerk_identity is selected."
+            missing=1
           fi
 
           if [ "$APPLY_MIGRATIONS" = "true" ] \
@@ -325,9 +354,11 @@ jobs:
         env:
           APPLY_MIGRATIONS: ${{ inputs.apply_migrations }}
           BACKUP_KEY_PATH: ${{ steps.release.outputs.backup_key_path }}
+          CUTOVER_CLERK_IDENTITY: ${{ inputs.cutover_clerk_identity }}
           DEPLOY_HOST: ${{ secrets.DEPLOY_HOST }}
           DEPLOY_USER: ${{ secrets.DEPLOY_USER }}
           IMAGE_TAG: ${{ steps.release.outputs.image_tag }}
+          PREVIOUS_CLERK_SUBJECT_ID: ${{ inputs.previous_clerk_subject_id }}
           RELEASE_PATH: ${{ steps.release.outputs.release_path }}
         run: |
           if [ "$APPLY_MIGRATIONS" = "true" ]; then
@@ -343,7 +374,9 @@ jobs:
               "$IMAGE_TAG" \
               "$APPLY_MIGRATIONS" \
               "$migration_guard" \
-              "$BACKUP_KEY_PATH" <<'REMOTE'
+              "$BACKUP_KEY_PATH" \
+              "$CUTOVER_CLERK_IDENTITY" \
+              "$PREVIOUS_CLERK_SUBJECT_ID" <<'REMOTE'
           set -Eeuo pipefail
 
           release_path="$1"
@@ -352,14 +385,23 @@ jobs:
           apply_migrations="$4"
           migration_guard="$5"
           backup_key_path="$6"
+          cutover_clerk_identity="$7"
+          previous_clerk_subject_id="$8"
 
           export ALLOW_PORTAL_MIGRATIONS="$migration_guard"
+          if [ "$cutover_clerk_identity" = "true" ]; then
+            export ALLOW_PORTAL_CLERK_IDENTITY_CUTOVER=YES
+          else
+            export ALLOW_PORTAL_CLERK_IDENTITY_CUTOVER=NO
+          fi
           export PORTAL_MIGRATION_BACKUP_PUBLIC_KEY_PATH="$backup_key_path"
 
           "$release_path/deployment/hetzner/green/deploy-release.sh" \
             "$source_revision" \
             "$image_tag" \
-            "$apply_migrations"
+            "$apply_migrations" \
+            "$cutover_clerk_identity" \
+            "$previous_clerk_subject_id"
           REMOTE
 
       - name: Verify public dial tone remains available
@@ -382,6 +424,7 @@ jobs:
       - name: Record deployment summary
         env:
           APPLY_MIGRATIONS: ${{ inputs.apply_migrations }}
+          CUTOVER_CLERK_IDENTITY: ${{ inputs.cutover_clerk_identity }}
           IMAGE_TAG: ${{ steps.release.outputs.image_tag }}
           RELEASE_PATH: ${{ steps.release.outputs.release_path }}
         run: |
@@ -392,6 +435,7 @@ jobs:
             echo "- Image: \`phaeno-portal-green-api:$IMAGE_TAG\`"
             echo "- Release: \`$RELEASE_PATH\`"
             echo "- Migrations requested: \`$APPLY_MIGRATIONS\`"
+            echo "- Clerk identity cutover requested: \`$CUTOVER_CLERK_IDENTITY\`"
             echo "- Nginx/public routing changed: \`false\`"
           } >> "$GITHUB_STEP_SUMMARY"
 

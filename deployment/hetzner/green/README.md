@@ -84,6 +84,9 @@ workflow. It deploys the selected commit to a versioned directory under
 `/opt/phaeno.portal-green/releases`, builds a revision-labelled image, and
 recreates only the Portal API on `127.0.0.1:8084`.
 
+The protected production environment must use a Clerk Production issuer and
+`sk_live_` secret. The workflow rejects Clerk Development credentials.
+
 The workflow deliberately does not change Nginx or public DNS. It verifies the
 internal Portal health, database ping, search, technical brief, invalid
 reCAPTCHA rejection, unchanged Website row counts, deployed image
@@ -158,6 +161,17 @@ container, the server creates a root-only custom-format PostgreSQL dump,
 validates its catalog, encrypts it with a random passphrase, wraps that
 passphrase to `PORTAL_MIGRATION_BACKUP_PUBLIC_KEY`, verifies encrypted
 checksums, and removes the plaintext dump and passphrase.
+
+The first Clerk Production transition has a separate one-time gate:
+`cutover_clerk_identity=true` plus the exact
+`previous_clerk_subject_id`. After the new image is built and any authorized
+migrations finish, but before the running API is replaced, the release runs the
+guarded identity command against the production database and Clerk Production.
+It refuses the operation unless exactly one Portal user is linked, that user is
+the configured bootstrap administrator, the existing subject matches the input,
+and the replacement Clerk user has the same verified primary email. The command
+is idempotent and writes `ClerkProductionIdentityCutover` to the audit log. Leave
+the gate off for every ordinary deployment.
 
 ## Retired Web Operations record cleanup
 

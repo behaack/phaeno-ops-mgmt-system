@@ -274,6 +274,10 @@ Generated `dist`, `.astro`, and `node_modules` content is not canonical source.
   Mailgun secrets.
 - Frontend authentication and API routing: `VITE_CLERK_PUBLISHABLE_KEY`,
   `VITE_API_BASE_URL`, and the development-only `VITE_USE_MOCK_SESSION` switch.
+  Local and Preview builds use Clerk Development; the production frontend and
+  API use the same Clerk Production instance. The production deployment rejects
+  development Clerk credentials and exposes a guarded, one-time bootstrap-
+  identity cutover command rather than silently relinking users by email.
 - Portal frontend hosting output: the Vite build uses Nitro. Local production
   builds emit `.output`, while Vercel builds emit Build Output API assets,
   routing, and the SSR function under `.vercel/output`; `frontend/vercel.json`

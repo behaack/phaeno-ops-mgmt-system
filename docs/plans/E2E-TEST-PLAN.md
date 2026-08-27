@@ -158,6 +158,11 @@ the protected deployed-Preview acceptance above.
   option; incomplete MFA setup remaining outside Portal navigation and APIs;
   and Phaeno-admin reset, active-session revocation, and required re-enrollment
   when both authenticator and backup codes are lost.
+- [ ] Clerk Production cutover acceptance - verify the production frontend and
+  API use the same production instance, Preview remains on development, the
+  prior development session no longer grants production access, the relinked
+  bootstrap administrator reaches a ready POMS session, MFA and backup-code
+  policy are active, and the browser emits no development-key warning.
 - [ ] Local-development invitation shortcut - create a fresh sign-in link from
   an authorized external-account invitation, copy it into a private browser,
   create a first-time Clerk development identity with the exact invited email,

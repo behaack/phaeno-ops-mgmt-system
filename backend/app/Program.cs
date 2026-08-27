@@ -271,6 +271,12 @@ if (args.Contains("--migrate", StringComparer.Ordinal))
     return;
 }
 
+if (args.Contains("--cutover-clerk-bootstrap-identity", StringComparer.Ordinal))
+{
+    await ClerkBootstrapIdentityCutover.RunAsync(app.Services);
+    return;
+}
+
 await AccountsBootstrapSeeder.SeedAsync(app.Services);
 
 app.UseForwardedHeaders();

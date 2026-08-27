@@ -116,6 +116,9 @@ and rollback-isolated PostgreSQL coverage.
 - [x] `backend/test/ClerkVerifiedEmailResolverTests.cs` - `IsVerifiedReadsVerifiedEmailFromClerkWhenClaimsOmitEmail`.
 - [x] `backend/test/ClerkVerifiedEmailResolverTests.cs` - `IsVerifiedRejectsAClerkEmailThatIsNotVerified`.
 - [x] `backend/test/ClerkVerifiedEmailResolverTests.cs` - `IsVerifiedUsesMatchingVerifiedClaimsWithoutCallingClerk`.
+- [x] `backend/test/AccountDomainTests.cs` - guarded external-identity relinking
+  rejects an unexpected prior Clerk subject and accepts only the exact expected
+  development-to-production replacement.
 - [x] `backend/test/AccountAuthorizationTests.cs` - `PlatformAdminCanManageCustomerOrganizationMembers`.
 - [x] `backend/test/AccountAuthorizationTests.cs` - `CustomerOrgAdminCannotManagePhaenoOrganizationMembers`.
 - [x] `backend/test/AccountAuthorizationTests.cs` - `CustomerOrgAdminCanManageOwnCustomerOrganizationMembers`.
@@ -492,6 +495,10 @@ and rollback-isolated PostgreSQL coverage.
 - [ ] Account domain model - cover Phaeno platform admins managing customer organizations through platform admin flows.
 - [ ] Account lifecycle - cover users, organizations, and memberships marked inactive rather than hard-deleted.
 - [ ] Bootstrap seed - cover first Phaeno organization/admin creation and one-time Clerk identity linking with database-backed tests.
+- [ ] Clerk Production bootstrap cutover - database-backed coverage for the
+  production-only command, sole-linked-user guard, verified-email requirement,
+  idempotent replay, audit event, and refusal when any other Portal identity is
+  linked.
 - [ ] Data provisioning HTTP host - extend the passing controller/database
   journey through the real ASP.NET authentication middleware and API envelope.
 - [ ] Managed files - add endpoint coverage for configured file-kind rejection,

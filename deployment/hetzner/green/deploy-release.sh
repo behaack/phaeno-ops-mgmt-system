@@ -13,12 +13,14 @@ require_command() {
         || fail "Required command '$1' is not available."
 }
 
-[[ $# -eq 3 ]] \
-    || fail "Usage: deploy-release.sh SOURCE_REVISION IMAGE_TAG APPLY_MIGRATIONS"
+[[ $# -eq 5 ]] \
+    || fail "Usage: deploy-release.sh SOURCE_REVISION IMAGE_TAG APPLY_MIGRATIONS CUTOVER_CLERK_IDENTITY PREVIOUS_CLERK_SUBJECT_ID"
 
 readonly SOURCE_REVISION="$1"
 readonly IMAGE_TAG="$2"
 readonly APPLY_MIGRATIONS="$3"
+readonly CUTOVER_CLERK_IDENTITY="$4"
+readonly PREVIOUS_CLERK_SUBJECT_ID="$5"
 readonly SCRIPT_DIR="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)"
 readonly RELEASE_DIR="$(realpath "${SCRIPT_DIR}/../../..")"
 readonly DEPLOY_ROOT="${PORTAL_DEPLOY_ROOT:-/opt/phaeno.portal-green}"
@@ -37,6 +39,15 @@ readonly BACKUP_ROOT="/var/backups/phaeno-portal-deploy"
     || fail "IMAGE_TAG contains unsupported characters."
 [[ "${APPLY_MIGRATIONS}" == "true" || "${APPLY_MIGRATIONS}" == "false" ]] \
     || fail "APPLY_MIGRATIONS must be true or false."
+[[ "${CUTOVER_CLERK_IDENTITY}" == "true" || "${CUTOVER_CLERK_IDENTITY}" == "false" ]] \
+    || fail "CUTOVER_CLERK_IDENTITY must be true or false."
+if [[ "${CUTOVER_CLERK_IDENTITY}" == "true" ]]; then
+    [[ "${PREVIOUS_CLERK_SUBJECT_ID}" == user_?* ]] \
+        || fail "The Clerk identity cutover requires the exact previous Clerk subject."
+else
+    [[ -z "${PREVIOUS_CLERK_SUBJECT_ID}" ]] \
+        || fail "A previous Clerk subject is allowed only during the identity cutover."
+fi
 [[ "${RELEASE_DIR}" == "${DEPLOY_ROOT}/releases/"* ]] \
     || fail "The release must be under ${DEPLOY_ROOT}/releases."
 
@@ -242,6 +253,18 @@ if [[ "${APPLY_MIGRATIONS}" == "true" ]]; then
 
     compose run --rm migrate
     migrations_ran=true
+fi
+
+if [[ "${CUTOVER_CLERK_IDENTITY}" == "true" ]]; then
+    [[ "${ALLOW_PORTAL_CLERK_IDENTITY_CUTOVER:-}" == "YES" ]] \
+        || fail "Set ALLOW_PORTAL_CLERK_IDENTITY_CUTOVER=YES for the authorized one-time identity cutover."
+
+    compose run \
+        --rm \
+        --no-deps \
+        --env "Bootstrap__ClerkIdentityCutoverPreviousSubjectId=${PREVIOUS_CLERK_SUBJECT_ID}" \
+        api \
+        --cutover-clerk-bootstrap-identity
 fi
 
 api_replaced=true

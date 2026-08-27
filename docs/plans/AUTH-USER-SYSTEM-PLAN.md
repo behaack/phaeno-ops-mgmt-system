@@ -65,6 +65,13 @@ Do not execute this plan unless explicitly requested.
   themselves.
 - Organization create and edit actions use modal forms, and selecting an
   organization opens a dedicated, view-first detail route.
+- Production identity configuration is being separated from development. The
+  deployment path now rejects Clerk Development credentials for the production
+  API and provides an explicit one-time command that can relink only the sole
+  bootstrap administrator. The command requires the exact previous Clerk
+  subject, a matching verified primary email in Clerk Production, and no other
+  linked Portal users; it records an audit event and is not part of normal API
+  startup.
 
 ## Core Decisions
 
@@ -99,6 +106,10 @@ Do not execute this plan unless explicitly requested.
   sign-up from a captured invitation link so fake invitees can complete the real
   acceptance workflow without manual Clerk Dashboard provisioning.
 - Local development uses a real Clerk development instance. Automated tests may use auth fakes/test handlers.
+- Preview and local-development frontend builds use the Clerk development
+  instance. The production frontend and API use the same Clerk production
+  instance. Production deployment rejects `sk_test_` credentials and
+  `*.clerk.accounts.dev` issuers.
 
 ### MFA Policy Decision
 
@@ -504,6 +515,9 @@ Do not execute this plan unless explicitly requested.
 - [x] Add email sender behind an abstraction.
 - [x] Add Postmark email sender implementation.
 - [x] Add bootstrap seed and one-time bootstrap Clerk linking.
+- [x] Add the guarded one-time bootstrap-administrator identity cutover used
+      when moving an otherwise empty production Portal from Clerk Development
+      to Clerk Production.
 - [x] Replace hard-delete account actions with inactive/status transitions.
 - [x] Add explicit audit events for access-changing actions.
 - [x] Remove direct user creation from normal API workflows so membership access is invite-only.
