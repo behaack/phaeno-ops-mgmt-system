@@ -58,17 +58,21 @@ describe('approved account-request recovery', () => {
   })
 
   it('explains the bounded recovery before creating the account', () => {
+    const onConfirm = vi.fn()
     render(
       <AccountCreationRecoveryDialog
         request={strandedRequest}
         isPending={false}
-        onConfirm={vi.fn()}
+        onConfirm={onConfirm}
         onOpenChange={vi.fn()}
       />,
     )
 
     expect(screen.getByRole('dialog', { name: 'Complete account creation' })).toBeTruthy()
-    expect(screen.getByText(/does not invite users, activate requested services/)).toBeTruthy()
-    expect(screen.getByRole('button', { name: 'Create and open account' })).toBeTruthy()
+    const orderingAuthorization = screen.getByRole('checkbox', { name: 'Ordering authorized' })
+    expect(orderingAuthorization.getAttribute('data-state')).toBe('checked')
+    fireEvent.click(orderingAuthorization)
+    fireEvent.click(screen.getByRole('button', { name: 'Create and open account' }))
+    expect(onConfirm).toHaveBeenCalledWith(false)
   })
 })

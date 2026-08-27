@@ -22,7 +22,7 @@
 | Service entitlement | An approved organization-specific capability controlling which Customer or Partner sales and operational workflows are available. Organization kind alone does not grant every service. |
 | Direct Portal sale | Standard configured work whose complete price and terms can be accepted in the Portal without Sales negotiation. |
 | Sales-assisted work | Bespoke or exceptional work managed as a first-party CRM Opportunity before a pending operational handoff creates executable Portal work. |
-| CRM sale summary | The relationship-safe CRM projection for one committed Portal sale. It is not the Portal operational record or the QuickBooks financial authority. |
+| CRM sale summary | The relationship-safe CRM projection for one committed Portal sale. It is neither the Portal operational record nor an accounting posting record. |
 | Lab service order | A Customer request involving physical sample submission, Phaeno accessioning and laboratory analysis, data processing, and portal delivery of resulting data. |
 | Commercial Operations | The domain that owns customer-facing orders, authorization, quotes, safe status projections, files, payment gates, and publication. It does not own detailed laboratory execution. |
 | Lab Operations | The Phaeno-only execution domain and replaceable provider that owns authorized laboratory work, receipt/accession, physical lineage, controlled protocols, materials/equipment, libraries/batches, NGS sendouts, exceptions, and scientific approval. |
@@ -78,15 +78,15 @@
 | Data ownership class | The authorization boundary distinguishing Phaeno-owned curated Prospect data from Customer- or Partner-owned operational data. |
 | Operational-data access | Member access to Customer- or Partner-owned samples, results, assembly inputs, or assembly outputs, managed by organization administrators with audited Phaeno support. |
 | Provisioning run | The audited, retryable record of an exact-version curated-data grant or upgrade attempt for an organization. |
-| Analysis definition | Phaeno configuration describing Customer sample requirements, instructions, expected results, and linked QuickBooks billable items. |
-| Assembly profile | Versioned Phaeno configuration describing Partner metadata, accepted file kinds, validation, expected output, Partner availability, and linked QuickBooks items. |
-| Partner reagent offering | The Partner-specific availability, negotiated price, currency, effective period, quantity rules, and shipping restrictions for a QuickBooks-linked reagent item. |
+| Analysis definition | Phaeno configuration describing Customer sample requirements, instructions, expected results, and linked POMS catalog items. |
+| Assembly profile | Versioned Phaeno configuration describing Partner metadata, accepted file kinds, validation, expected output, Partner availability, and linked POMS catalog items. |
+| Partner reagent offering | The Partner-specific availability, negotiated price, currency, effective period, quantity rules, and shipping restrictions for a POMS catalog item. |
 | Immutable quote | A versioned per-job commercial offer whose scope, line items, price, currency, and expiration do not change after issuance. Later scope changes create a new quote or amendment. |
 | Quote validity | The period in which the current quote may be accepted. The initial configurable default is 30 days, and each quote snapshots its own expiration. |
-| Commercial document link | The durable association between a portal workflow and a QuickBooks estimate, invoice, adjustment, or payment link. |
-| Commercial synchronization | The durable, idempotent transfer or reconciliation of commercial facts between Phaeno Portal and QuickBooks Online. |
-| Credit-approved release | Net 30 release allowed by the applicable audited Customer-lab or Partner-assembly credit setting after required invoice synchronization. |
-| Payment release gate | A download block for an organization without applicable approved credit until QuickBooks confirms the completed invoice is paid. |
+| Commercial document link | The legacy-named durable POMS source record associating a workflow with an estimate, invoice, or adjustment amount for manual accounting and release decisions. It is not proof that Finance posted the entry. |
+| Commercial synchronization | A dormant compatibility term for a future approved external-accounting adapter. The active product uses stable POMS source records and a manual journal-entry report. |
+| Credit-approved release | Net 30 release allowed by the applicable audited Customer-lab or Partner-assembly credit setting. |
+| Payment release gate | A download block for an organization without applicable approved credit. The current product has no active payment-confirmation action; a separately approved workflow is required to clear the hold. |
 | Operational status | The workflow's scientific, laboratory, fulfillment, or processing progress; it remains separate from quote, sync, payment, and file-release state. |
 | Result release | An immutable Customer sample-result version containing scanned, checksummed artifacts and scientific provenance/QC facts. |
 | Assembly input revision | An immutable snapshot of the Partner metadata and files submitted for one data-assembly intake review. Corrections create another revision. |

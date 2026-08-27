@@ -98,9 +98,23 @@ remain incomplete production-activation gates.
   require structured component lots, and modal related-reference creation
   requires names.
 - [x] `frontend/src/features/orders/configuration/OrderConfigurationPage.test.tsx`
-  - the six Order Configuration subjects, including Sample shipping, use the shared viewport-edge
+  - the seven Order Configuration subjects, including Catalog and Sample shipping, use the shared viewport-edge
   sidebar, identify Defaults initially, and update the active subject when the
   user selects another panel.
+- [x] `frontend/src/features/orders/ManualJournalEntryReport.test.tsx` - a
+  Phaeno operator sees stable source rows, amounts and the non-posting warning,
+  and can request a CSV for the selected date range.
+- [x] `frontend/src/features/orders/operations/PlatformQuoteDialog.test.tsx` -
+  the canonical PSeq Lab Service item is preselected and bound to the committed
+  specimen count, a mismatched quantity is blocked, and missing canonical
+  configuration pauses issuance.
+- [x] `frontend/src/features/orders/operations/customer-organization-state.test.ts`
+  - mock, loading, failure, genuine-empty, and ready Customer-list states remain
+  distinct so a failed or pending query is not presented as an empty result.
+- [x] `frontend/src/features/organizations/RequestActionDialog.test.tsx` and
+  `OrganizationListPage.test.tsx` - Customer account approval and stranded-
+  request recovery show the default-on ordering authorization and preserve an
+  explicit off choice in the submitted command.
 - [x] `frontend/src/features/orders/configuration/SampleShippingConfigurationPanel.test.tsx`
   - current versioned destinations, sample types, and combination rules render;
   instruction preview submits exact revisions and presents resolved content;
@@ -324,6 +338,14 @@ remain incomplete production-activation gates.
 - [ ] Order workflow components - cover resumable drafts, profile-driven
   metadata, the Customer Lab job's responsive `Samples & shipping`, `Quote &
   billing`, `Data & results`, and `Timeline` tabs, quote acceptance/expiry,
+  Phaeno `Initiate Customer order` selection and price-bearing profile entry,
+  required no-PHI attestation,
+  redirect to the new `Quote in preparation` operational detail, committed-
+  quantity quote defaults, active-Customer and approver failures, effective
+  `Ready` entitlement and active-offering action states for Customer and Phaeno
+  paths, actionable eligibility errors without a manual bypass, no Customer
+  notice during Phaeno quote preparation, all-eligible-admin approval delivery,
+  accepting-administrator ownership of later ordinary notices,
   upload and scan feedback, payment holds,
   substitutions, backorders, immutable-document downloads, operational queue
   filters, notification recovery, and stale-version/error recovery with mocked
@@ -373,6 +395,14 @@ remain incomplete production-activation gates.
 
 ## Requested Execution Log
 
+- 2026-08-27: the complete frontend unit suite passed 38 files and 101 tests.
+  `pnpm run lint`, `pnpm run typecheck`, and the client/SSR production build
+  also passed. Focused account-creation coverage verifies the default-on
+  ordering choice and explicit opt-out in both approval and recovery dialogs.
+- 2026-08-27: focused quote and Customer-eligibility regression sources were
+  added. `pnpm run lint`, `pnpm run typecheck`, and the client/SSR production
+  build passed. The build retained the existing advisory plugin-timing and main-
+  chunk-size warnings. Frontend tests were not requested and were not run.
 - 2026-08-26: standalone CRM verification passed `pnpm run lint`, `pnpm run
   typecheck`, the complete frontend unit suite (35 files, 92 tests), and the
   client/SSR production build. The build retains only the existing advisory

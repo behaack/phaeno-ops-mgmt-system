@@ -44,8 +44,9 @@ authorize a reset of any shared environment.
 - The Laboratory project owns work authorization, specimen/accession, physical
   lineage, roles, protocols and execution, materials and equipment, libraries,
   batches, NGS sendouts/custody, exceptions, events, scientific approval, and
-  durable provider-command/outbox records. Customer quote acceptance invokes
-  the internal provider atomically; the Lab operator workspace uses the
+  durable provider-command/outbox records. Customer quote acceptance opens the
+  exact sample-roster workflow; roster finalization invokes the internal
+  provider atomically and creates the linked shipping records. The Lab operator workspace uses the
   Laboratory write paths; durable events update Commercial-owned projections.
 - The verified disposable Development database and seven historical migrations
   were replaced on 2026-07-16 by `InitialPSeqOperations`. The database was then

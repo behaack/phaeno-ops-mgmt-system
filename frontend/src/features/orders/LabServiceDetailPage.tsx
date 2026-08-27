@@ -532,12 +532,12 @@ export function LabServiceDetailPage({
                 <div key={document.id} className="mt-4 border-t pt-4">
                   <div className="flex items-center justify-between gap-2">
                     <span className="text-sm font-medium">{document.kind} {document.documentNumber ?? ''}</span>
-                    <OrderStatusBadge status={document.syncStatus} />
+                    <OrderStatusBadge status={document.syncStatus === 'Succeeded' ? 'Recorded' : document.syncStatus} />
                   </div>
                   <p className="mt-1 text-sm text-muted-foreground">Balance {formatMoney(document.balance, document.currency)}</p>
                   {document.documentUrl ? (
                     <a href={document.documentUrl} target="_blank" rel="noreferrer" className="mt-2 inline-block text-sm text-primary hover:underline">
-                      Open in QuickBooks
+                      Open external document
                     </a>
                   ) : null}
                 </div>

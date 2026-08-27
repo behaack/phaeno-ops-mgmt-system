@@ -1,5 +1,6 @@
 namespace PhaenoPortal.App.Features.OrderManagement.Services;
 
+using System.Data;
 using System.Net.Http.Headers;
 using System.Text;
 using System.Text.Json;
@@ -43,21 +44,29 @@ public sealed class PostmarkOrderNotificationSender(HttpClient httpClient, IOpti
     }
 }
 
-public sealed class OrderNotificationDispatcher(IServiceScopeFactory scopeFactory, ILogger<OrderNotificationDispatcher> logger) : BackgroundService
+public sealed class OrderNotificationDispatcher(
+    IServiceScopeFactory scopeFactory,
+    IOptions<PersistenceOptions> persistenceOptions,
+    ILogger<OrderNotificationDispatcher> logger) : BackgroundService
 {
+    private const int BatchSize = 20;
+    private const int MaximumAttempts = 5;
+    private static readonly TimeSpan ClaimLease = TimeSpan.FromMinutes(5);
+    private readonly string commercialSchema = persistenceOptions.Value.Validate().CommercialSchema;
+
     protected override async Task ExecuteAsync(CancellationToken stoppingToken)
     {
         while (!stoppingToken.IsCancellationRequested)
         {
             try
             {
-                using var scope = scopeFactory.CreateScope();
-                var dbContext = scope.ServiceProvider.GetRequiredService<PSeqOperationsDbContext>();
-                var ids = await dbContext.OrderNotifications.AsNoTracking()
-                    .Where(item => (item.Status == OrderNotificationStatus.Pending || item.Status == OrderNotificationStatus.Failed)
-                        && item.AttemptCount < 5 && item.NextAttemptAt <= DateTime.UtcNow)
-                    .OrderBy(item => item.CreatedAt).Select(item => item.Id).Take(20).ToListAsync(stoppingToken);
-                foreach (var id in ids) await SendAsync(scopeFactory, id, logger, stoppingToken);
+                for (var count = 0; count < BatchSize; count++)
+                {
+                    var claim = await ClaimNextAsync(stoppingToken);
+                    if (claim is null) break;
+                    if (claim.ShouldSend)
+                        await SendClaimedAsync(scopeFactory, claim, logger, stoppingToken);
+                }
             }
             catch (OperationCanceledException) when (stoppingToken.IsCancellationRequested) { }
             catch (Exception exception) { logger.LogError(exception, "Order notification polling failed."); }
@@ -65,30 +74,127 @@ public sealed class OrderNotificationDispatcher(IServiceScopeFactory scopeFactor
         }
     }
 
-    private static async Task SendAsync(IServiceScopeFactory scopeFactory, Guid id, ILogger logger, CancellationToken cancellationToken)
+    private async Task<NotificationClaim?> ClaimNextAsync(CancellationToken cancellationToken)
+    {
+        using var scope = scopeFactory.CreateScope();
+        var dbContext = scope.ServiceProvider.GetRequiredService<PSeqOperationsDbContext>();
+        await using var transaction = await dbContext.Database.BeginTransactionAsync(
+            IsolationLevel.ReadCommitted,
+            cancellationToken);
+        var now = DateTime.UtcNow;
+        var sql = $$"""
+            SELECT *
+            FROM "{{commercialSchema}}"."order_notifications"
+            WHERE "next_attempt_at" <= {0}
+              AND (("status" IN ({1}, {2}) AND "attempt_count" < {3})
+                   OR "status" = {4})
+            ORDER BY "created_at"
+            LIMIT 1
+            FOR UPDATE SKIP LOCKED
+            """;
+        var candidates = await dbContext.OrderNotifications
+            .FromSqlRaw(
+                sql,
+                now,
+                OrderNotificationStatus.Pending.ToString(),
+                OrderNotificationStatus.Failed.ToString(),
+                MaximumAttempts,
+                OrderNotificationStatus.Sending.ToString())
+            .AsTracking()
+            .ToListAsync(cancellationToken);
+        var item = candidates.SingleOrDefault();
+        if (item is null)
+        {
+            await transaction.CommitAsync(cancellationToken);
+            return null;
+        }
+
+        if (item.Status == OrderNotificationStatus.Sending
+            && item.AttemptCount >= MaximumAttempts)
+        {
+            item.MarkFailed(
+                "Notification delivery was interrupted during the final automatic attempt. Review delivery configuration, then retry it manually.",
+                now);
+            await dbContext.SaveChangesAsync(cancellationToken);
+            await transaction.CommitAsync(cancellationToken);
+            logger.LogWarning(
+                "Recovered expired notification claim {NotificationId} to manual-retry state.",
+                item.Id);
+            return new NotificationClaim(item.Id, item.Version, ShouldSend: false);
+        }
+
+        item.BeginAttempt(now.Add(ClaimLease));
+        await dbContext.SaveChangesAsync(cancellationToken);
+        await transaction.CommitAsync(cancellationToken);
+        return new NotificationClaim(item.Id, item.Version, ShouldSend: true);
+    }
+
+    private static async Task SendClaimedAsync(
+        IServiceScopeFactory scopeFactory,
+        NotificationClaim claim,
+        ILogger logger,
+        CancellationToken cancellationToken)
     {
         using var scope = scopeFactory.CreateScope();
         var dbContext = scope.ServiceProvider.GetRequiredService<PSeqOperationsDbContext>();
         var sender = scope.ServiceProvider.GetRequiredService<IOrderNotificationSender>();
-        var item = await dbContext.OrderNotifications.FirstOrDefaultAsync(value => value.Id == id, cancellationToken);
-        if (item == null || item.Status == OrderNotificationStatus.Sent || item.AttemptCount >= 5) return;
-        item.BeginAttempt(); await dbContext.SaveChangesAsync(cancellationToken);
+        var item = await dbContext.OrderNotifications.FirstOrDefaultAsync(
+            value => value.Id == claim.Id
+                && value.Version == claim.Version
+                && value.Status == OrderNotificationStatus.Sending,
+            cancellationToken);
+        if (item is null) return;
+
         try
         {
             var recipients = item.RecipientUserId.HasValue
-                ? await dbContext.Users.AsNoTracking().Where(user => user.Id == item.RecipientUserId && user.IsActive).Select(user => user.Email).ToListAsync(cancellationToken)
+                ? await (from membership in dbContext.OrganizationMemberships.AsNoTracking()
+                    join user in dbContext.Users.AsNoTracking() on membership.UserId equals user.Id
+                    where membership.OrganizationId == item.OrganizationId
+                        && membership.UserId == item.RecipientUserId.Value
+                        && membership.IsActive
+                        && membership.IsOrganizationAdmin
+                        && user.IsActive
+                        && user.Status == PSeq.Operations.Commercial.Accounts.Domain.UserAccountStatus.Active
+                    select user.Email).Distinct().ToListAsync(cancellationToken)
                 : await (from membership in dbContext.OrganizationMemberships.AsNoTracking()
                     join user in dbContext.Users.AsNoTracking() on membership.UserId equals user.Id
-                    where membership.OrganizationId == item.OrganizationId && membership.IsActive && membership.IsOrganizationAdmin && user.IsActive
+                    where membership.OrganizationId == item.OrganizationId
+                        && membership.IsActive
+                        && membership.IsOrganizationAdmin
+                        && user.IsActive
+                        && user.Status == PSeq.Operations.Commercial.Accounts.Domain.UserAccountStatus.Active
                     select user.Email).Distinct().ToListAsync(cancellationToken);
+            if (recipients.Count == 0)
+            {
+                throw new InvalidOperationException(
+                    "The notification has no active Customer administrator recipient.");
+            }
             await sender.SendAsync(recipients, item.Subject, item.Body, cancellationToken);
             item.MarkSent(DateTime.UtcNow);
         }
+        catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
+        {
+            return;
+        }
         catch (Exception exception)
         {
-            logger.LogWarning(exception, "Order notification {NotificationId} failed.", id);
+            logger.LogWarning(exception, "Order notification {NotificationId} failed.", claim.Id);
             item.MarkFailed("Notification delivery failed. Phaeno staff can review and retry it.", DateTime.UtcNow.AddMinutes(Math.Min(60, Math.Pow(2, item.AttemptCount))));
         }
-        await dbContext.SaveChangesAsync(cancellationToken);
+
+        try
+        {
+            await dbContext.SaveChangesAsync(cancellationToken);
+        }
+        catch (DbUpdateConcurrencyException exception)
+        {
+            logger.LogWarning(
+                exception,
+                "Notification claim {NotificationId} changed before its delivery result could be recorded.",
+                claim.Id);
+        }
     }
+
+    private sealed record NotificationClaim(Guid Id, long Version, bool ShouldSend);
 }

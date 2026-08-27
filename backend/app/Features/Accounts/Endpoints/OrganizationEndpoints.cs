@@ -6,6 +6,7 @@ using Microsoft.EntityFrameworkCore;
 using PSeq.Operations.Commercial.Accounts.Application;
 using PhaenoPortal.App.Common.Exceptions.Accounts;
 using PSeq.Operations.Commercial.Accounts.Domain;
+using PSeq.Operations.Commercial.Relationships.Domain;
 using PhaenoPortal.App.Features.Accounts.DTOs;
 using PhaenoPortal.App.Features.Accounts.Services;
 using PhaenoPortal.App.Infrastructure.Api;
@@ -60,6 +61,20 @@ public static class OrganizationEndpoints
         organization.UpdatePortalReadiness(request.PortalReadiness, request.PortalReadinessNote);
 
         dbContext.Organizations.Add(organization);
+        if (organization.Kind == OrganizationKind.Customer && request.OrderingAuthorized)
+        {
+            dbContext.OrganizationServiceEntitlements.Add(
+                new OrganizationServiceEntitlement(
+                    organization.Id,
+                    PortalService.PSeqLabService,
+                    DateTime.UtcNow,
+                    null,
+                    EntitlementConfigurationStatus.Ready,
+                    actor.Id,
+                    null,
+                    "Ordering authorized during direct account creation."));
+        }
+
         await dbContext.SaveChangesAsync(cancellationToken);
 
         var dto = new OrganizationDto

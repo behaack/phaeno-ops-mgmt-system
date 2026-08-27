@@ -20,6 +20,6 @@ Approval moves the Lab work order to **Ready for release** and publishes the con
 
 ## Respect the release boundary
 
-Ready for release does not create, attach, upload, scan, or publish a result artifact. Order Ops must still verify the result manifest, checksums, malware scan, invoice synchronization, payment or approved credit, and publication decision.
+Ready for release does not create, attach, upload, scan, or publish a result artifact. Order Ops must still verify the result manifest, checksums, malware scan, accounting source record, approved credit, and publication decision. Work without approved credit remains on payment hold because manual payment confirmation is not implemented.
 
 If the Lab-to-Commercial event fails, retry the existing durable projection. Do not duplicate the approval, recreate the work order, or manually mark the Customer file released.

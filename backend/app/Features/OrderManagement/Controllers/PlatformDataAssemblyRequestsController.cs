@@ -5,7 +5,6 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Options;
-using PSeq.Operations.Commercial.OrderManagement.Application;
 using PSeq.Operations.Commercial.OrderManagement.Domain;
 using PhaenoPortal.App.Features.OrderManagement.Domain;
 using PhaenoPortal.App.Features.OrderManagement.DTOs;
@@ -21,7 +20,8 @@ public sealed class PlatformDataAssemblyRequestsController(
     OrderIdempotencyService idempotency,
     IOperationalFileStorage fileStorage,
     IOperationalFileScanner fileScanner,
-    IOptions<OrderManagementOptions> options) : ControllerBase
+    IOptions<OrderManagementOptions> options,
+    ManualCommercialReleaseService commercialRelease) : ControllerBase
 {
     private static readonly JsonSerializerOptions JsonOptions = new(JsonSerializerDefaults.Web);
 
@@ -95,37 +95,47 @@ public sealed class PlatformDataAssemblyRequestsController(
     {
         var actor = await requestContext.RequirePlatformAdminAsync(HttpContext, cancellationToken);
         var key = idempotency.RequireKey(HttpContext); var scope = $"platform:assembly:{requestId}:quote";
-        var replay = await idempotency.ReadAsync<DataAssemblyRequestDto>(actor.Id, scope, key, request, cancellationToken);
-        if (replay != null) return replay;
-        var item = await ReadAsync(requestId, cancellationToken); EnsureVersion(item.Version, request.Version);
-        if (item.Status == AssemblyRequestStatus.IntakeValidation) Execute(item.BeginQuotePreparation);
-        if (item.Status is not (AssemblyRequestStatus.QuoteInPreparation or AssemblyRequestStatus.QuoteIssued))
-            throw Conflict("assembly_quote_not_allowed", "A quote can be issued only after intake validation.");
-        if (request.Lines.Count == 0 || request.Lines.Any(line => line.Quantity <= 0 || line.UnitPrice < 0))
-            throw Invalid("assembly_quote_lines_invalid", "At least one valid quote line is required.");
-        var ids = request.Lines.Select(line => line.CatalogItemId).Distinct().ToList();
-        var catalog = await dbContext.QboCatalogItems.AsNoTracking().Where(value => ids.Contains(value.Id) && value.IsActive).ToDictionaryAsync(value => value.Id, cancellationToken);
-        if (catalog.Count != ids.Count) throw Invalid("catalog_item_unavailable", "One or more QuickBooks items are unavailable.");
-        var profile = await dbContext.OrganizationCommercialProfiles.AsNoTracking().FirstOrDefaultAsync(value => value.OrganizationId == item.OrganizationId, cancellationToken);
-        if (string.IsNullOrWhiteSpace(profile?.QboCustomerId)) throw Conflict("qbo_customer_required", "Link this Partner to QuickBooks before issuing a quote.");
-        var now = DateTime.UtcNow; var config = await dbContext.OrderSystemConfigurations.AsNoTracking().OrderBy(value => value.CreatedAt).FirstOrDefaultAsync(cancellationToken);
-        var snapshots = request.Lines.Select(line => new QuoteLineSnapshot(line.CatalogItemId, catalog[line.CatalogItemId].ExternalItemId,
-            line.Description.Trim(), line.Quantity, line.UnitPrice)).ToList();
-        var subtotal = snapshots.Sum(line => decimal.Round(line.Quantity * line.UnitPrice, 2, MidpointRounding.AwayFromZero));
-        if (!Enum.TryParse<QuotePurpose>(request.Purpose, true, out var purpose)) throw Invalid("quote_purpose_invalid", "The quote purpose is invalid.");
-        var quote = new DataAssemblyQuote(item.Id, item.Quotes.Count == 0 ? 1 : item.Quotes.Max(value => value.Revision) + 1,
-            purpose, JsonSerializer.Serialize(snapshots, JsonOptions), subtotal, request.Tax, request.Currency, now,
-            request.ExpiresAt ?? now.AddDays(config?.QuoteValidityDays ?? 30));
-        item.Quotes.Where(value => value.Status is QuoteStatus.Issued or QuoteStatus.SyncPending).OrderByDescending(value => value.Revision).FirstOrDefault()?.Supersede(quote.Id);
-        item.Quotes.Add(quote);
-        var document = new CommercialDocumentLink(OrderWorkflowTypes.DataAssembly, item.Id, CommercialDocumentKind.Estimate, quote.Total, quote.Currency);
-        dbContext.CommercialDocumentLinks.Add(document);
-        var payload = new OrderDocumentOutboxPayload(document.Id, quote.Id, profile.QboCustomerId!, item.RequestNumber, null, quote.Currency,
-            snapshots.Select(line => new QuickBooksLineRequest(line.ExternalItemId, line.Description, line.Quantity, line.UnitPrice)).ToList());
-        dbContext.OrderOutboxMessages.Add(new OrderOutboxMessage(IntegrationOperation.CreateEstimate, OrderWorkflowTypes.DataAssembly, item.Id, key, JsonSerializer.Serialize(payload, JsonOptions)));
-        await dbContext.SaveChangesAsync(cancellationToken);
-        var response = await MapAsync(item, cancellationToken); idempotency.Store(actor.Id, scope, key, request, response, StatusCodes.Status202Accepted);
-        await dbContext.SaveChangesAsync(cancellationToken); Response.StatusCode = StatusCodes.Status202Accepted; return response;
+        var execution = await idempotency.ExecuteAsync(
+            actor.Id,
+            scope,
+            key,
+            request,
+            async operationCancellationToken =>
+            {
+                var item = await ReadAsync(requestId, operationCancellationToken);
+                EnsureVersion(item.Version, request.Version);
+                if (item.Status == AssemblyRequestStatus.IntakeValidation) Execute(item.BeginQuotePreparation);
+                if (item.Status is not (AssemblyRequestStatus.QuoteInPreparation or AssemblyRequestStatus.QuoteIssued))
+                    throw Conflict("assembly_quote_not_allowed", "A quote can be issued only after intake validation.");
+                if (request.Lines.Count == 0 || request.Lines.Any(line => line.Quantity <= 0 || line.UnitPrice < 0))
+                    throw Invalid("assembly_quote_lines_invalid", "At least one valid quote line is required.");
+                var ids = request.Lines.Select(line => line.CatalogItemId).Distinct().ToList();
+                var catalog = await dbContext.QboCatalogItems.AsNoTracking().Where(value => ids.Contains(value.Id) && value.IsActive).ToDictionaryAsync(value => value.Id, operationCancellationToken);
+                if (catalog.Count != ids.Count) throw Invalid("catalog_item_unavailable", "One or more commercial catalog items are unavailable.");
+                var now = DateTime.UtcNow;
+                var config = await dbContext.OrderSystemConfigurations.AsNoTracking().OrderBy(value => value.CreatedAt).FirstOrDefaultAsync(operationCancellationToken);
+                var snapshots = request.Lines.Select(line => new QuoteLineSnapshot(line.CatalogItemId, catalog[line.CatalogItemId].ExternalItemId,
+                    line.Description.Trim(), line.Quantity, line.UnitPrice)).ToList();
+                var subtotal = snapshots.Sum(line => decimal.Round(line.Quantity * line.UnitPrice, 2, MidpointRounding.AwayFromZero));
+                if (!Enum.TryParse<QuotePurpose>(request.Purpose, true, out var purpose)) throw Invalid("quote_purpose_invalid", "The quote purpose is invalid.");
+                var quote = new DataAssemblyQuote(item.Id, item.Quotes.Count == 0 ? 1 : item.Quotes.Max(value => value.Revision) + 1,
+                    purpose, JsonSerializer.Serialize(snapshots, JsonOptions), subtotal, request.Tax, request.Currency, now,
+                    request.ExpiresAt ?? now.AddDays(config?.QuoteValidityDays ?? 30));
+                item.Quotes.Where(value => value.Status is QuoteStatus.Issued or QuoteStatus.SyncPending).OrderByDescending(value => value.Revision).FirstOrDefault()?.Supersede(quote.Id);
+                item.Quotes.Add(quote);
+                var document = new CommercialDocumentLink(OrderWorkflowTypes.DataAssembly, item.Id, CommercialDocumentKind.Estimate, quote.Total, quote.Currency);
+                document.MarkReadyForManualAccounting(item.RequestNumber, now);
+                dbContext.CommercialDocumentLinks.Add(document);
+                Execute(quote.MarkIssued);
+                var quoteBefore = item.Status.ToString();
+                Execute(() => item.MarkQuoteIssued(quote.Id));
+                Event(item, quoteBefore, item.Status.ToString(), actor.Id);
+                Notice(item, "assembly-quote-issued", "Data assembly quote ready for approval", $"Pricing for {item.RequestNumber} is ready for Partner review.");
+                await dbContext.SaveChangesAsync(operationCancellationToken);
+                return await MapAsync(item, operationCancellationToken);
+            },
+            cancellationToken: cancellationToken);
+        return execution.Response;
     }
 
     [HttpPost("{requestId:guid}/processing-runs")]
@@ -133,18 +143,27 @@ public sealed class PlatformDataAssemblyRequestsController(
     {
         var actor = await requestContext.RequirePlatformAdminAsync(HttpContext, cancellationToken);
         var key = idempotency.RequireKey(HttpContext); var scope = $"platform:assembly:{requestId}:processing";
-        var replay = await idempotency.ReadAsync<DataAssemblyRequestDto>(actor.Id, scope, key, request, cancellationToken);
-        if (replay != null) return replay;
-        var item = await ReadAsync(requestId, cancellationToken); EnsureVersion(item.Version, request.Version);
-        if (!item.CurrentInputRevisionId.HasValue) throw Conflict("assembly_input_revision_missing", "The accepted input revision is unavailable.");
-        var before = item.Status.ToString(); Execute(item.StartProcessing);
-        item.ProcessingRuns.Add(new AssemblyProcessingRun(item.Id, item.CurrentInputRevisionId.Value,
-            item.ProcessingRuns.Count == 0 ? 1 : item.ProcessingRuns.Max(value => value.RunNumber) + 1,
-            request.ProfileVersion, request.PipelineVersion, request.Provenance, DateTime.UtcNow));
-        Event(item, before, item.Status.ToString(), actor.Id);
-        await dbContext.SaveChangesAsync(cancellationToken);
-        var response = await MapAsync(item, cancellationToken); idempotency.Store(actor.Id, scope, key, request, response);
-        await dbContext.SaveChangesAsync(cancellationToken); return response;
+        var execution = await idempotency.ExecuteAsync(
+            actor.Id,
+            scope,
+            key,
+            request,
+            async operationCancellationToken =>
+            {
+                var item = await ReadAsync(requestId, operationCancellationToken);
+                EnsureVersion(item.Version, request.Version);
+                if (!item.CurrentInputRevisionId.HasValue) throw Conflict("assembly_input_revision_missing", "The accepted input revision is unavailable.");
+                var before = item.Status.ToString();
+                Execute(item.StartProcessing);
+                item.ProcessingRuns.Add(new AssemblyProcessingRun(item.Id, item.CurrentInputRevisionId.Value,
+                    item.ProcessingRuns.Count == 0 ? 1 : item.ProcessingRuns.Max(value => value.RunNumber) + 1,
+                    request.ProfileVersion, request.PipelineVersion, request.Provenance, DateTime.UtcNow));
+                Event(item, before, item.Status.ToString(), actor.Id);
+                await dbContext.SaveChangesAsync(operationCancellationToken);
+                return await MapAsync(item, operationCancellationToken);
+            },
+            cancellationToken: cancellationToken);
+        return execution.Response;
     }
 
     [HttpPost("{requestId:guid}/processing-runs/{runId:guid}/decision")]
@@ -195,36 +214,40 @@ public sealed class PlatformDataAssemblyRequestsController(
     {
         var actor = await requestContext.RequirePlatformAdminAsync(HttpContext, cancellationToken);
         var key = idempotency.RequireKey(HttpContext); var scope = $"platform:assembly:{requestId}:output-release";
-        var replay = await idempotency.ReadAsync<DataAssemblyRequestDto>(actor.Id, scope, key, request, cancellationToken);
-        if (replay != null) return replay;
-        var item = await ReadAsync(requestId, cancellationToken); EnsureVersion(item.Version, request.Version);
-        if (item.Status != AssemblyRequestStatus.OutputReview || !item.CurrentInputRevisionId.HasValue) throw Conflict("assembly_output_not_allowed", "The request is not ready for output approval.");
-        var run = item.ProcessingRuns.SingleOrDefault(value => value.Id == request.RunId && value.CompletedAt.HasValue && value.FailureReason == null) ?? throw Missing();
-        var files = await dbContext.ManagedOperationalFiles.Where(file => file.WorkflowId == item.Id && file.ParentRecordId == run.Id
-            && file.Purpose == OperationalFilePurpose.AssemblyOutput && file.ReleaseStatus == FileReleaseStatus.Internal).ToListAsync(cancellationToken);
-        if (files.Count == 0 || files.Any(file => file.ScanStatus != OperationalFileScanStatus.Clean)) throw Conflict("assembly_output_files_not_clean", "Every output file must pass scanning before approval.");
-        var release = new AssemblyOutputRelease(item.OrganizationId, item.Id, item.CurrentInputRevisionId.Value, run.Id,
-            item.OutputReleases.Count == 0 ? 1 : item.OutputReleases.Max(value => value.ReleaseVersion) + 1, request.ManifestJson,
-            request.PipelineVersion, request.Provenance, request.QcStatus, DateTime.UtcNow);
-        release.MarkReady(holdForPayment: true);
-        foreach (var file in files) { file.AttachToParent(release.Id); file.HoldForPayment(); }
-        item.OutputReleases.Add(release); Execute(item.MarkOutputAvailable);
-        var profile = await dbContext.OrganizationCommercialProfiles.AsNoTracking().FirstOrDefaultAsync(value => value.OrganizationId == item.OrganizationId, cancellationToken);
-        if (string.IsNullOrWhiteSpace(profile?.QboCustomerId)) throw Conflict("qbo_customer_required", "Link this Partner to QuickBooks before approving output.");
-        var quote = item.Quotes.SingleOrDefault(value => value.Id == item.AcceptedQuoteId) ?? throw Conflict("accepted_quote_missing", "The accepted assembly quote is unavailable.");
-        var estimate = await dbContext.CommercialDocumentLinks.AsNoTracking().Where(value => value.WorkflowType == OrderWorkflowTypes.DataAssembly
-            && value.WorkflowId == item.Id && value.Kind == CommercialDocumentKind.Estimate && value.SyncStatus == IntegrationStatus.Succeeded)
-            .OrderByDescending(value => value.SynchronizedAt).FirstOrDefaultAsync(cancellationToken);
-        var quoteLines = JsonSerializer.Deserialize<List<QuoteLineSnapshot>>(quote.LinesJson, JsonOptions) ?? [];
-        var invoice = new CommercialDocumentLink(OrderWorkflowTypes.DataAssembly, item.Id, CommercialDocumentKind.Invoice, quote.Total, quote.Currency);
-        dbContext.CommercialDocumentLinks.Add(invoice);
-        var payload = new OrderDocumentOutboxPayload(invoice.Id, null, profile.QboCustomerId!, item.RequestNumber, item.PurchaseOrderNumber,
-            quote.Currency, quoteLines.Select(line => new QuickBooksLineRequest(line.ExternalItemId, line.Description, line.Quantity, line.UnitPrice)).ToList(), estimate?.ExternalDocumentId);
-        dbContext.OrderOutboxMessages.Add(new OrderOutboxMessage(IntegrationOperation.CreateInvoice, OrderWorkflowTypes.DataAssembly, item.Id, key, JsonSerializer.Serialize(payload, JsonOptions)));
-        Event(item, "OutputReview", item.Status.ToString(), actor.Id); Notice(item, "assembly-output-approved", "Data assembly output approved", $"Outputs for {item.RequestNumber} are approved and will be released after commercial synchronization.");
-        await dbContext.SaveChangesAsync(cancellationToken);
-        var response = await MapAsync(item, cancellationToken); idempotency.Store(actor.Id, scope, key, request, response, StatusCodes.Status202Accepted);
-        await dbContext.SaveChangesAsync(cancellationToken); Response.StatusCode = StatusCodes.Status202Accepted; return response;
+        var execution = await idempotency.ExecuteAsync(
+            actor.Id,
+            scope,
+            key,
+            request,
+            async operationCancellationToken =>
+            {
+                var item = await ReadAsync(requestId, operationCancellationToken);
+                EnsureVersion(item.Version, request.Version);
+                if (item.Status != AssemblyRequestStatus.OutputReview || !item.CurrentInputRevisionId.HasValue) throw Conflict("assembly_output_not_allowed", "The request is not ready for output approval.");
+                var run = item.ProcessingRuns.SingleOrDefault(value => value.Id == request.RunId && value.CompletedAt.HasValue && value.FailureReason == null) ?? throw Missing();
+                var files = await dbContext.ManagedOperationalFiles.Where(file => file.WorkflowId == item.Id && file.ParentRecordId == run.Id
+                    && file.Purpose == OperationalFilePurpose.AssemblyOutput && file.ReleaseStatus == FileReleaseStatus.Internal).ToListAsync(operationCancellationToken);
+                if (files.Count == 0 || files.Any(file => file.ScanStatus != OperationalFileScanStatus.Clean)) throw Conflict("assembly_output_files_not_clean", "Every output file must pass scanning before approval.");
+                var release = new AssemblyOutputRelease(item.OrganizationId, item.Id, item.CurrentInputRevisionId.Value, run.Id,
+                    item.OutputReleases.Count == 0 ? 1 : item.OutputReleases.Max(value => value.ReleaseVersion) + 1, request.ManifestJson,
+                    request.PipelineVersion, request.Provenance, request.QcStatus, DateTime.UtcNow);
+                release.MarkReady(holdForPayment: true);
+                foreach (var file in files) { file.AttachToParent(release.Id); file.HoldForPayment(); }
+                item.OutputReleases.Add(release);
+                Execute(item.MarkOutputAvailable);
+                var quote = item.Quotes.SingleOrDefault(value => value.Id == item.AcceptedQuoteId) ?? throw Conflict("accepted_quote_missing", "The accepted assembly quote is unavailable.");
+                var invoice = new CommercialDocumentLink(OrderWorkflowTypes.DataAssembly, item.Id, CommercialDocumentKind.Invoice, quote.Total, quote.Currency);
+                invoice.MarkReadyForManualAccounting(item.RequestNumber, DateTime.UtcNow);
+                dbContext.CommercialDocumentLinks.Add(invoice);
+                await dbContext.SaveChangesAsync(operationCancellationToken);
+                await commercialRelease.ApplyAssemblyReleaseGateAsync(item.Id, invoice.Balance, operationCancellationToken);
+                Event(item, "OutputReview", item.Status.ToString(), actor.Id);
+                Notice(item, "assembly-output-approved", "Data assembly output approved", $"Outputs for {item.RequestNumber} are approved. Payment-release rules have been applied.");
+                await dbContext.SaveChangesAsync(operationCancellationToken);
+                return await MapAsync(item, operationCancellationToken);
+            },
+            cancellationToken: cancellationToken);
+        return execution.Response;
     }
 
     [HttpPost("{requestId:guid}/complete")]
@@ -232,12 +255,24 @@ public sealed class PlatformDataAssemblyRequestsController(
     {
         var actor = await requestContext.RequirePlatformAdminAsync(HttpContext, cancellationToken);
         var key = idempotency.RequireKey(HttpContext); var scope = $"platform:assembly:{requestId}:complete";
-        var replay = await idempotency.ReadAsync<DataAssemblyRequestDto>(actor.Id, scope, key, request, cancellationToken); if (replay != null) return replay;
-        var item = await ReadAsync(requestId, cancellationToken); EnsureVersion(item.Version, request.Version);
-        if (!item.OutputReleases.Any(value => value.ReleaseStatus == FileReleaseStatus.Released)) throw Conflict("assembly_output_not_released", "Release an eligible assembly output before closing the request.");
-        var before = item.Status.ToString(); Execute(() => item.Complete(DateTime.UtcNow)); Event(item, before, item.Status.ToString(), actor.Id);
-        await dbContext.SaveChangesAsync(cancellationToken); var response = await MapAsync(item, cancellationToken);
-        idempotency.Store(actor.Id, scope, key, request, response); await dbContext.SaveChangesAsync(cancellationToken); return response;
+        var execution = await idempotency.ExecuteAsync(
+            actor.Id,
+            scope,
+            key,
+            request,
+            async operationCancellationToken =>
+            {
+                var item = await ReadAsync(requestId, operationCancellationToken);
+                EnsureVersion(item.Version, request.Version);
+                if (!item.OutputReleases.Any(value => value.ReleaseStatus == FileReleaseStatus.Released)) throw Conflict("assembly_output_not_released", "Release an eligible assembly output before closing the request.");
+                var before = item.Status.ToString();
+                Execute(() => item.Complete(DateTime.UtcNow));
+                Event(item, before, item.Status.ToString(), actor.Id);
+                await dbContext.SaveChangesAsync(operationCancellationToken);
+                return await MapAsync(item, operationCancellationToken);
+            },
+            cancellationToken: cancellationToken);
+        return execution.Response;
     }
 
     [HttpPost("{requestId:guid}/hold")]

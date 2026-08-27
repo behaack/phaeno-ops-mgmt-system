@@ -34,7 +34,6 @@ public sealed class LabServiceOrdersController(
     ILogger<CompletionTrackedArchiveResult> archiveDownloadLogger) : ControllerBase
 {
     private static readonly JsonSerializerOptions JsonSerializerOptions = new(JsonSerializerDefaults.Web);
-    private const string StandardLabServiceKey = "pseq-lab-service";
     private const string StandardMaterialType = "extracted_rna";
     private const string StandardQuantityUnit = "tube";
 
@@ -121,37 +120,73 @@ public sealed class LabServiceOrdersController(
         return await MapAsync(order, tenant.Membership.IsOrganizationAdmin, platform: false, cancellationToken);
     }
 
+    [HttpGet("eligibility")]
+    public async Task<LabServiceOrderingEligibilityDto> GetEligibility(CancellationToken cancellationToken)
+    {
+        var tenant = await requestContext.RequireTenantAsync(
+            HttpContext,
+            OrganizationKind.Customer,
+            false,
+            cancellationToken);
+        var eligibility = await LabServiceOrderingEligibility.ReadAsync(
+            dbContext,
+            tenant.Organization.Id,
+            DateTime.UtcNow,
+            cancellationToken);
+        var reason = !eligibility.OrderingAuthorized
+            ? "Phaeno must enable ordering authorization for this Customer."
+            : !eligibility.OfferingAvailable
+                ? "PSeq Lab Service is temporarily unavailable for new Jobs."
+                : null;
+        return new LabServiceOrderingEligibilityDto(
+            eligibility.OrderingAuthorized,
+            eligibility.OfferingAvailable,
+            eligibility.CanOrder,
+            reason);
+    }
+
     [HttpPost]
     public async Task<LabServiceOrderDto> Create([FromBody] LabOrderWriteRequest request, CancellationToken cancellationToken)
     {
         var tenant = await requestContext.RequireTenantAsync(HttpContext, OrganizationKind.Customer, true, cancellationToken);
         var key = idempotency.RequireKey(HttpContext);
-        var replay = await idempotency.ReadAsync<LabServiceOrderDto>(tenant.Actor.Id, "lab-order:create", key, request, cancellationToken);
-        if (replay != null) return replay;
-        var normalizedJobName = NormalizeJobName(request.CustomerReference);
-        await EnsureUniqueJobNameAsync(tenant.Organization.Id, normalizedJobName, null, cancellationToken);
-        if (request.Samples.Count != 0)
-            throw Invalid("samples_before_pricing", "Samples cannot be entered until the Job price is accepted.");
-        var sourceGroups = ValidatePricingProfile(request.RequestedSpecimenCount, request.SourceGroups);
-        var config = await dbContext.OrderSystemConfigurations.AsNoTracking().OrderBy(item => item.CreatedAt).FirstOrDefaultAsync(cancellationToken);
-        var order = new LabServiceOrder(tenant.Organization.Id, await GenerateUniqueJobNumberAsync(cancellationToken), request.CustomerReference,
-            request.Description,
-            request.RequestedSpecimenCount,
-            sourceGroups.Count > 1,
-            sourceGroups.Count == 1 ? sourceGroups[0].BiologicalSource : null,
-            request.StorageRequirements,
-            request.SafetyDeclaration,
-            config?.SampleSubmissionInstructions ?? string.Empty);
-        foreach (var group in sourceGroups)
-            order.SourceGroups.Add(new LabServiceSourceGroup(order.Id, group.BiologicalSource, group.SpecimenCount));
-        dbContext.LabServiceOrders.Add(order);
-        dbContext.OrderStatusEvents.Add(NewEvent(order, "Created", order.Status.ToString(), tenant.Actor.Id));
-        await dbContext.SaveChangesAsync(cancellationToken);
-        var response = await MapAsync(order, true, false, cancellationToken);
-        idempotency.Store(tenant.Actor.Id, "lab-order:create", key, request, response, StatusCodes.Status201Created);
-        await dbContext.SaveChangesAsync(cancellationToken);
-        Response.StatusCode = StatusCodes.Status201Created;
-        return response;
+        var execution = await idempotency.ExecuteAsync(
+            tenant.Actor.Id,
+            "lab-order:create",
+            key,
+            request,
+            async operationCancellationToken =>
+            {
+                await LabServiceOrderingEligibility.RequireAsync(
+                    dbContext,
+                    tenant.Organization.Id,
+                    DateTime.UtcNow,
+                    operationCancellationToken);
+                var normalizedJobName = NormalizeJobName(request.CustomerReference);
+                await EnsureUniqueJobNameAsync(tenant.Organization.Id, normalizedJobName, null, operationCancellationToken);
+                if (request.Samples.Count != 0)
+                    throw Invalid("samples_before_pricing", "Samples cannot be entered until the Job price is accepted.");
+                var sourceGroups = ValidatePricingProfile(request.RequestedSpecimenCount, request.SourceGroups);
+                var config = await dbContext.OrderSystemConfigurations.AsNoTracking().OrderBy(item => item.CreatedAt).FirstOrDefaultAsync(operationCancellationToken);
+                var order = new LabServiceOrder(tenant.Organization.Id, await GenerateUniqueJobNumberAsync(operationCancellationToken), request.CustomerReference,
+                    request.Description,
+                    request.RequestedSpecimenCount,
+                    sourceGroups.Count > 1,
+                    sourceGroups.Count == 1 ? sourceGroups[0].BiologicalSource : null,
+                    request.StorageRequirements,
+                    request.SafetyDeclaration,
+                    config?.SampleSubmissionInstructions ?? string.Empty);
+                foreach (var group in sourceGroups)
+                    order.SourceGroups.Add(new LabServiceSourceGroup(order.Id, group.BiologicalSource, group.SpecimenCount));
+                dbContext.LabServiceOrders.Add(order);
+                dbContext.OrderStatusEvents.Add(NewEvent(order, "Created", order.Status.ToString(), tenant.Actor.Id));
+                await dbContext.SaveChangesAsync(operationCancellationToken);
+                return await MapAsync(order, true, false, operationCancellationToken);
+            },
+            StatusCodes.Status201Created,
+            cancellationToken);
+        Response.StatusCode = execution.StatusCode;
+        return execution.Response;
     }
 
     [HttpPatch("{orderId:guid}")]
@@ -203,27 +238,42 @@ public sealed class LabServiceOrdersController(
         var tenant = await requestContext.RequireTenantAsync(HttpContext, OrganizationKind.Customer, true, cancellationToken);
         var key = idempotency.RequireKey(HttpContext);
         var scope = $"lab-order:{orderId}:submit";
-        var replay = await idempotency.ReadAsync<LabServiceOrderDto>(tenant.Actor.Id, scope, key, request, cancellationToken);
-        if (replay != null) return replay;
-        var order = await ReadOrderAsync(orderId, tenant.Organization.Id, cancellationToken);
-        EnsureVersion(order.Version, request.Version);
-        var before = order.Status.ToString();
-        var correctionReason = order.Status == LabServiceOrderStatus.ChangesRequested ? order.TenantSafeReason : null;
-        var snapshot = await BuildRequestSnapshotAsync(order, cancellationToken);
-        var previousRevisionId = order.Revisions.OrderByDescending(item => item.Revision).Select(item => (Guid?)item.Id).FirstOrDefault();
-        var submittedAt = DateTime.UtcNow;
-        Execute(() => order.Submit(tenant.Actor.Id, submittedAt));
-        var revision = new LabServiceRequestRevision(order.Id, order.RequestRevision, previousRevisionId, snapshot,
-            correctionReason, tenant.Actor.Id, submittedAt);
-        dbContext.LabServiceRequestRevisions.Add(revision);
-        order.Revisions.Add(revision);
-        dbContext.OrderStatusEvents.Add(NewEvent(order, before, order.Status.ToString(), tenant.Actor.Id));
-        QueueNotice(order, "lab-request-submitted", "Laboratory service request submitted", $"{order.OrderNumber} was submitted for pricing.");
-        await dbContext.SaveChangesAsync(cancellationToken);
-        var response = await MapAsync(order, true, false, cancellationToken);
-        idempotency.Store(tenant.Actor.Id, scope, key, request, response);
-        await dbContext.SaveChangesAsync(cancellationToken);
-        return response;
+        var execution = await idempotency.ExecuteAsync(
+            tenant.Actor.Id,
+            scope,
+            key,
+            request,
+            async operationCancellationToken =>
+            {
+                var order = await ReadOrderAsync(orderId, tenant.Organization.Id, operationCancellationToken);
+                EnsureVersion(order.Version, request.Version);
+                await LabServiceOrderingEligibility.RequireAsync(
+                    dbContext,
+                    tenant.Organization.Id,
+                    DateTime.UtcNow,
+                    operationCancellationToken);
+                var before = order.Status.ToString();
+                var correctionReason = order.Status == LabServiceOrderStatus.ChangesRequested ? order.TenantSafeReason : null;
+                var snapshot = await BuildRequestSnapshotAsync(order, operationCancellationToken);
+                var previousRevisionId = order.Revisions.OrderByDescending(item => item.Revision).Select(item => (Guid?)item.Id).FirstOrDefault();
+                var submittedAt = DateTime.UtcNow;
+                Execute(() => order.Submit(tenant.Actor.Id, submittedAt));
+                var revision = new LabServiceRequestRevision(order.Id, order.RequestRevision, previousRevisionId, snapshot,
+                    correctionReason, tenant.Actor.Id, submittedAt);
+                dbContext.LabServiceRequestRevisions.Add(revision);
+                order.Revisions.Add(revision);
+                dbContext.OrderStatusEvents.Add(NewEvent(order, before, order.Status.ToString(), tenant.Actor.Id));
+                QueueNotice(
+                    order,
+                    "lab-request-submitted",
+                    "Laboratory service request submitted",
+                    $"{order.OrderNumber} was submitted for pricing.",
+                    tenant.Actor.Id);
+                await dbContext.SaveChangesAsync(operationCancellationToken);
+                return await MapAsync(order, true, false, operationCancellationToken);
+            },
+            cancellationToken: cancellationToken);
+        return execution.Response;
     }
 
     [HttpPost("{orderId:guid}/withdraw")]
@@ -246,42 +296,59 @@ public sealed class LabServiceOrdersController(
         if (request.QuoteId != quoteId) throw Invalid("quote_mismatch", "The quote identifier does not match the route.");
         var key = idempotency.RequireKey(HttpContext);
         var scope = $"lab-order:{orderId}:quote:{quoteId}:accept";
-        var replay = await idempotency.ReadAsync<LabServiceOrderDto>(tenant.Actor.Id, scope, key, request, cancellationToken);
-        if (replay != null) return replay;
-        var order = await ReadOrderAsync(orderId, tenant.Organization.Id, cancellationToken);
-        EnsureVersion(order.Version, request.Version);
-        var quote = order.Quotes.SingleOrDefault(item => item.Id == quoteId) ?? throw Missing();
-        var before = order.Status.ToString();
-        var acceptedAt = DateTime.UtcNow;
-        var placementSnapshot = JsonSerializer.Serialize(new
-        {
-            order.RequestedSpecimenCount,
-            sourceGroups = order.SourceGroups.OrderBy(group => group.BiologicalSource).Select(group => new
+        var execution = await idempotency.ExecuteAsync(
+            tenant.Actor.Id,
+            scope,
+            key,
+            request,
+            async operationCancellationToken =>
             {
-                group.BiologicalSource,
-                group.SpecimenCount
-            }),
-            order.StorageRequirements,
-            order.SafetyDeclaration,
-            serviceKey = StandardLabServiceKey,
-            materialType = StandardMaterialType,
-            quantityUnit = StandardQuantityUnit,
-            quoteId = quote.Id,
-            quote.Revision,
-            quote.LinesJson,
-            quote.Total,
-            quote.Currency,
-            acceptedAt
-        }, JsonSerializerOptions);
-        Execute(() => quote.Accept(tenant.Actor.Id, acceptedAt));
-        Execute(() => order.AcceptQuote(quoteId, acceptedAt, placementSnapshot));
-        dbContext.OrderStatusEvents.Add(NewEvent(order, before, order.Status.ToString(), tenant.Actor.Id));
-        QueueNotice(order, "lab-quote-accepted", "Laboratory quote accepted", $"{order.OrderNumber} is now placed and awaiting samples.");
-        await dbContext.SaveChangesAsync(cancellationToken);
-        var response = await MapAsync(order, true, false, cancellationToken);
-        idempotency.Store(tenant.Actor.Id, scope, key, request, response);
-        await dbContext.SaveChangesAsync(cancellationToken);
-        return response;
+                var order = await ReadOrderAsync(orderId, tenant.Organization.Id, operationCancellationToken);
+                EnsureVersion(order.Version, request.Version);
+                var eligibility = await LabServiceOrderingEligibility.RequireAsync(
+                    dbContext,
+                    tenant.Organization.Id,
+                    DateTime.UtcNow,
+                    operationCancellationToken);
+                var quote = order.Quotes.SingleOrDefault(item => item.Id == quoteId) ?? throw Missing();
+                var before = order.Status.ToString();
+                var acceptedAt = DateTime.UtcNow;
+                var placementSnapshot = JsonSerializer.Serialize(new
+                {
+                    order.RequestedSpecimenCount,
+                    sourceGroups = order.SourceGroups.OrderBy(group => group.BiologicalSource).Select(group => new
+                    {
+                        group.BiologicalSource,
+                        group.SpecimenCount
+                    }),
+                    order.StorageRequirements,
+                    order.SafetyDeclaration,
+                    serviceKey = OrderServiceKeys.PSeqLabService,
+                    serviceEntitlementId = eligibility.EntitlementId,
+                    serviceCatalogItemId = eligibility.CatalogItemId,
+                    materialType = StandardMaterialType,
+                    quantityUnit = StandardQuantityUnit,
+                    quoteId = quote.Id,
+                    quote.Revision,
+                    quote.LinesJson,
+                    quote.Total,
+                    quote.Currency,
+                    acceptedAt
+                }, JsonSerializerOptions);
+                Execute(() => quote.Accept(tenant.Actor.Id, acceptedAt));
+                Execute(() => order.AcceptQuote(quoteId, acceptedAt, placementSnapshot));
+                dbContext.OrderStatusEvents.Add(NewEvent(order, before, order.Status.ToString(), tenant.Actor.Id));
+                QueueNotice(
+                    order,
+                    "lab-quote-accepted",
+                    "Laboratory quote accepted",
+                    $"{order.OrderNumber} is now placed and awaiting samples.",
+                    tenant.Actor.Id);
+                await dbContext.SaveChangesAsync(operationCancellationToken);
+                return await MapAsync(order, true, false, operationCancellationToken);
+            },
+            cancellationToken: cancellationToken);
+        return execution.Response;
     }
 
     [HttpGet("{orderId:guid}/samples/template.csv")]
@@ -420,55 +487,66 @@ public sealed class LabServiceOrdersController(
         CancellationToken cancellationToken)
     {
         var tenant = await requestContext.RequireTenantAsync(HttpContext, OrganizationKind.Customer, true, cancellationToken);
-        await using var transaction = await dbContext.Database.BeginTransactionAsync(IsolationLevel.Serializable, cancellationToken);
-        var order = await ReadOrderAsync(orderId, tenant.Organization.Id, cancellationToken);
-        EnsureVersion(order.Version, request.Version);
-        Execute(() => order.FinalizeSampleRoster(tenant.Actor.Id, DateTime.UtcNow));
-        if (await dbContext.CommercialLabAuthorizations.AnyAsync(item => item.CommercialOrderId == order.Id, cancellationToken))
-            throw Conflict("lab_authorization_exists", "Laboratory work has already been authorized for this Job.");
+        var key = idempotency.RequireKey(HttpContext);
+        var scope = $"lab-order:{orderId}:sample-roster:finalize";
+        var execution = await idempotency.ExecuteAsync(
+            tenant.Actor.Id,
+            scope,
+            key,
+            request,
+            async operationCancellationToken =>
+            {
+                var order = await ReadOrderAsync(orderId, tenant.Organization.Id, operationCancellationToken);
+                EnsureVersion(order.Version, request.Version);
+                Execute(() => order.FinalizeSampleRoster(tenant.Actor.Id, DateTime.UtcNow));
+                if (await dbContext.CommercialLabAuthorizations.AnyAsync(item => item.CommercialOrderId == order.Id, operationCancellationToken))
+                    throw Conflict("lab_authorization_exists", "Laboratory work has already been authorized for this Job.");
 
-        var shipping = await ResolveShippingConfigurationAsync(cancellationToken);
-        var authorizationId = Guid.NewGuid();
-        var commandId = Guid.NewGuid();
-        var now = DateTime.UtcNow;
-        var command = new AuthorizeLabWorkCommand(
-            new LabOperationsCommandMetadata(commandId, authorizationId, now),
-            authorizationId, 1, LabWorkAuthorizationSource.CommercialOrder, order.Id,
-            order.OrganizationId, StandardLabServiceKey, 1, "quoted-turnaround", order.OrderNumber,
-            order.Samples.Select(sample => new AuthorizedSpecimen(
-                sample.Id, sample.CustomerSampleId, sample.MaterialType, sample.BiologicalSource,
-                sample.Quantity, sample.QuantityUnit, sample.StorageRequirements, sample.SafetyDeclaration,
-                sample.CollectionDate, sample.Concentration, sample.Notes, [StandardLabServiceKey])).ToList());
-        var authorization = new CommercialLabAuthorization(authorizationId, order.Id, order.OrganizationId, 1,
-            commandId, JsonSerializer.Serialize(command, JsonSerializerOptions));
-        dbContext.CommercialLabAuthorizations.Add(authorization);
-        var acknowledgment = await labOperationsProvider.AuthorizeWorkAsync(command, cancellationToken);
-        authorization.RecordOutcome(acknowledgment.LabWorkOrderId, acknowledgment.Disposition.ToString(), acknowledgment.ReasonCode);
-        if (acknowledgment.Disposition is not (LabCommandDisposition.Accepted or LabCommandDisposition.AlreadyApplied))
-            throw Conflict("lab_authorization_failed", "The sample list could not be authorized for laboratory work. Nothing was finalized.");
-        if (!acknowledgment.LabWorkOrderId.HasValue)
-            throw Conflict("lab_authorization_failed", "Laboratory work authorization did not return a work-order reference. Nothing was finalized.");
+                var shipping = await ResolveShippingConfigurationAsync(operationCancellationToken);
+                var authorizationId = Guid.NewGuid();
+                var commandId = Guid.NewGuid();
+                var now = DateTime.UtcNow;
+                var command = new AuthorizeLabWorkCommand(
+                    new LabOperationsCommandMetadata(commandId, authorizationId, now),
+                    authorizationId, 1, LabWorkAuthorizationSource.CommercialOrder, order.Id,
+                    order.OrganizationId, OrderServiceKeys.PSeqLabService, 1, "quoted-turnaround", order.OrderNumber,
+                    order.Samples.Select(sample => new AuthorizedSpecimen(
+                        sample.Id, sample.CustomerSampleId, sample.MaterialType, sample.BiologicalSource,
+                        sample.Quantity, sample.QuantityUnit, sample.StorageRequirements, sample.SafetyDeclaration,
+                        sample.CollectionDate, sample.Concentration, sample.Notes, [OrderServiceKeys.PSeqLabService])).ToList());
+                var authorization = new CommercialLabAuthorization(authorizationId, order.Id, order.OrganizationId, 1,
+                    commandId, JsonSerializer.Serialize(command, JsonSerializerOptions));
+                dbContext.CommercialLabAuthorizations.Add(authorization);
+                var acknowledgment = await labOperationsProvider.AuthorizeWorkAsync(command, operationCancellationToken);
+                authorization.RecordOutcome(acknowledgment.LabWorkOrderId, acknowledgment.Disposition.ToString(), acknowledgment.ReasonCode);
+                if (acknowledgment.Disposition is not (LabCommandDisposition.Accepted or LabCommandDisposition.AlreadyApplied))
+                    throw Conflict("lab_authorization_failed", "The sample list could not be authorized for laboratory work. Nothing was finalized.");
+                if (!acknowledgment.LabWorkOrderId.HasValue)
+                    throw Conflict("lab_authorization_failed", "Laboratory work authorization did not return a work-order reference. Nothing was finalized.");
 
-        var shipment = new SampleShipment(
-            ($"SHP-{now:yyyyMMdd}-{Guid.NewGuid():N}")[..24].ToUpperInvariant(), order.OrganizationId,
-            SampleShipmentAuthorizationSource.CustomerLabServiceOrder, order.Id, order.OrderNumber,
-            order.CustomerReference, acknowledgment.LabWorkOrderId.Value, shipping.Destination.Id);
-        foreach (var sample in order.Samples.OrderBy(sample => sample.CreatedAt))
-        {
-            var item = new SampleShipmentItem(shipment.Id, sample.Id, shipping.SampleType.Id,
-                sample.CustomerSampleId, sample.CustomerSampleId, sample.Quantity, sample.QuantityUnit);
-            for (var ordinal = 1; ordinal <= decimal.ToInt32(sample.Quantity); ordinal++)
-                item.TubeSlots.Add(new SampleShipmentTubeSlot(item.Id, ordinal));
-            shipment.Items.Add(item);
-        }
-        dbContext.SampleShipments.Add(shipment);
-        dbContext.OrderStatusEvents.Add(NewEvent(order, order.Status.ToString(), order.Status.ToString(), tenant.Actor.Id,
-            "Sample list finalized"));
-        QueueNotice(order, "lab-sample-roster-finalized", "Sample list finalized",
-            $"{order.OrderNumber} is ready for Phaeno to prepare the return kit.");
-        await dbContext.SaveChangesAsync(cancellationToken);
-        await transaction.CommitAsync(cancellationToken);
-        return await MapAsync(order, true, false, cancellationToken);
+                var shipment = new SampleShipment(
+                    ($"SHP-{now:yyyyMMdd}-{Guid.NewGuid():N}")[..24].ToUpperInvariant(), order.OrganizationId,
+                    SampleShipmentAuthorizationSource.CustomerLabServiceOrder, order.Id, order.OrderNumber,
+                    order.CustomerReference, acknowledgment.LabWorkOrderId.Value, shipping.Destination.Id);
+                foreach (var sample in order.Samples.OrderBy(sample => sample.CreatedAt))
+                {
+                    var item = new SampleShipmentItem(shipment.Id, sample.Id, shipping.SampleType.Id,
+                        sample.CustomerSampleId, sample.CustomerSampleId, sample.Quantity, sample.QuantityUnit);
+                    for (var ordinal = 1; ordinal <= decimal.ToInt32(sample.Quantity); ordinal++)
+                        item.TubeSlots.Add(new SampleShipmentTubeSlot(item.Id, ordinal));
+                    shipment.Items.Add(item);
+                }
+                dbContext.SampleShipments.Add(shipment);
+                dbContext.OrderStatusEvents.Add(NewEvent(order, order.Status.ToString(), order.Status.ToString(), tenant.Actor.Id,
+                    "Sample list finalized"));
+                QueueNotice(order, "lab-sample-roster-finalized", "Sample list finalized",
+                    $"{order.OrderNumber} is ready for Phaeno to prepare the return kit.", tenant.Actor.Id);
+                await dbContext.SaveChangesAsync(operationCancellationToken);
+                return await MapAsync(order, true, false, operationCancellationToken);
+            },
+            cancellationToken: cancellationToken,
+            concurrencyScope: $"lab-order:{orderId}:sample-roster");
+        return execution.Response;
     }
 
     [HttpPost("{orderId:guid}/cancellation-requests")]
@@ -477,21 +555,26 @@ public sealed class LabServiceOrdersController(
         var tenant = await requestContext.RequireTenantAsync(HttpContext, OrganizationKind.Customer, true, cancellationToken);
         var key = idempotency.RequireKey(HttpContext);
         var scope = $"lab-order:{orderId}:cancellation";
-        var replay = await idempotency.ReadAsync<LabServiceOrderDto>(tenant.Actor.Id, scope, key, request, cancellationToken);
-        if (replay != null) return replay;
-        var order = await ReadOrderAsync(orderId, tenant.Organization.Id, cancellationToken);
-        EnsureVersion(order.Version, request.Version);
-        var before = order.Status.ToString();
-        Execute(order.RequestCancellation);
-        dbContext.OrderCancellationRequests.Add(new OrderCancellationRequest(order.OrganizationId, OrderWorkflowTypes.LabService,
-            order.Id, tenant.Actor.Id, request.Reason, request.ScopeJson));
-        dbContext.OrderStatusEvents.Add(NewEvent(order, before, order.Status.ToString(), tenant.Actor.Id, request.Reason));
-        QueueNotice(order, "lab-cancellation-requested", "Laboratory cancellation requested", $"A cancellation decision is required for {order.OrderNumber}.");
-        await dbContext.SaveChangesAsync(cancellationToken);
-        var response = await MapAsync(order, true, false, cancellationToken);
-        idempotency.Store(tenant.Actor.Id, scope, key, request, response);
-        await dbContext.SaveChangesAsync(cancellationToken);
-        return response;
+        var execution = await idempotency.ExecuteAsync(
+            tenant.Actor.Id,
+            scope,
+            key,
+            request,
+            async operationCancellationToken =>
+            {
+                var order = await ReadOrderAsync(orderId, tenant.Organization.Id, operationCancellationToken);
+                EnsureVersion(order.Version, request.Version);
+                var before = order.Status.ToString();
+                Execute(order.RequestCancellation);
+                dbContext.OrderCancellationRequests.Add(new OrderCancellationRequest(order.OrganizationId, OrderWorkflowTypes.LabService,
+                    order.Id, tenant.Actor.Id, request.Reason, request.ScopeJson));
+                dbContext.OrderStatusEvents.Add(NewEvent(order, before, order.Status.ToString(), tenant.Actor.Id, request.Reason));
+                QueueNotice(order, "lab-cancellation-requested", "Laboratory cancellation requested", $"A cancellation decision is required for {order.OrderNumber}.");
+                await dbContext.SaveChangesAsync(operationCancellationToken);
+                return await MapAsync(order, true, false, operationCancellationToken);
+            },
+            cancellationToken: cancellationToken);
+        return execution.Response;
     }
 
     [HttpPut("{orderId:guid}/samples/{sampleId:guid}/shipment")]
@@ -801,13 +884,22 @@ public sealed class LabServiceOrdersController(
         var projection = authorization is null ? null : await dbContext.CommercialLabWorkProjections.AsNoTracking()
             .SingleOrDefaultAsync(item => item.AuthorizationId == authorization.AuthorizationId, cancellationToken);
         var editable = order.Status is LabServiceOrderStatus.DraftRequest or LabServiceOrderStatus.ChangesRequested;
+        var orderingEligible = !canManage
+            || (!editable && order.Status != LabServiceOrderStatus.QuoteIssued)
+            || (await LabServiceOrderingEligibility.ReadAsync(
+                dbContext,
+                order.OrganizationId,
+                DateTime.UtcNow,
+                cancellationToken)).CanOrder;
         return new LabServiceOrderDto(order.Id, order.OrganizationId, order.OrderNumber, order.CustomerReference, order.Description,
             order.HasMixedBiologicalSources, order.SharedBiologicalSource,
             order.StorageRequirements, order.SafetyDeclaration,
             order.SubmissionInstructionsSnapshot, order.Status.ToString(), order.RequestRevision, order.SubmittedAt,
             order.PlacedAt, order.CompletedAt, order.TenantSafeReason, platform ? order.InternalNote : null,
             order.CreatedAt, order.UpdatedAt, order.Version,
-            canManage && editable, canManage && editable, canManage && order.Status == LabServiceOrderStatus.QuoteIssued,
+            canManage && orderingEligible && editable,
+            canManage && orderingEligible && editable,
+            canManage && orderingEligible && order.Status == LabServiceOrderStatus.QuoteIssued,
             canManage && order.Status is LabServiceOrderStatus.DraftRequest or LabServiceOrderStatus.SubmittedForQuote
                 or LabServiceOrderStatus.ChangesRequested or LabServiceOrderStatus.QuoteInPreparation or LabServiceOrderStatus.QuoteIssued,
             canManage && order.Status is LabServiceOrderStatus.PlacedAwaitingSamples or LabServiceOrderStatus.InProgress or LabServiceOrderStatus.ResultsAvailable,
@@ -855,7 +947,7 @@ public sealed class LabServiceOrdersController(
             }),
             order.StorageRequirements,
             order.SafetyDeclaration,
-            serviceKey = StandardLabServiceKey,
+            serviceKey = OrderServiceKeys.PSeqLabService,
             submissionInstructions = order.SubmissionInstructionsSnapshot,
             samples = order.Samples.OrderBy(item => item.CreatedAt).Select(item => new
             {
@@ -905,8 +997,20 @@ public sealed class LabServiceOrdersController(
         catch (JsonException) { return []; }
     }
 
-    private void QueueNotice(LabServiceOrder order, string eventType, string subject, string body)
-        => dbContext.OrderNotifications.Add(new OrderNotification(order.OrganizationId, null, OrderWorkflowTypes.LabService, order.Id, eventType, subject, body));
+    private void QueueNotice(
+        LabServiceOrder order,
+        string eventType,
+        string subject,
+        string body,
+        Guid? recipientUserId = null)
+        => dbContext.OrderNotifications.Add(new OrderNotification(
+            order.OrganizationId,
+            recipientUserId,
+            OrderWorkflowTypes.LabService,
+            order.Id,
+            eventType,
+            subject,
+            body));
 
     private static OrderStatusEvent NewEvent(LabServiceOrder order, string from, string to, Guid actorId, string? reason = null, string? internalNote = null)
         => new(order.OrganizationId, OrderWorkflowTypes.LabService, order.Id, null, from, to, reason, internalNote, actorId, DateTime.UtcNow);

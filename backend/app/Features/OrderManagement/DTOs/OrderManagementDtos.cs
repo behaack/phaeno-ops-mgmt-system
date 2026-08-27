@@ -26,6 +26,14 @@ public sealed record LabIntakeDto(
     string OrderNumber,
     Guid WorkOrderId);
 
+public sealed record LabServiceOrderingEligibilityDto(
+    bool OrderingAuthorized,
+    bool OfferingAvailable,
+    bool CanOrder,
+    string? BlockingReason);
+
+public sealed record EligibleCustomerOrganizationDto(Guid Id, string Name);
+
 public sealed record OrderTimelineDto(
     Guid Id,
     string FromStatus,
@@ -436,6 +444,7 @@ public sealed record CatalogItemDto(
     decimal BasePrice,
     string Currency,
     bool IsActive,
+    bool IsPSeqLabService,
     DateTime LastSyncedAt,
     long Version);
 
@@ -497,6 +506,15 @@ public sealed record LabOrderWriteRequest(
     long? Version = null,
     int RequestedSpecimenCount = 0,
     IReadOnlyList<LabServiceSourceGroupWriteRequest>? SourceGroups = null);
+public sealed record InitiateCustomerLabOrderRequest(
+    Guid OrganizationId,
+    string? CustomerReference,
+    string? Description,
+    int RequestedSpecimenCount,
+    string StorageRequirements,
+    string SafetyDeclaration,
+    bool ProhibitedDataConfirmed,
+    IReadOnlyList<LabServiceSourceGroupWriteRequest>? SourceGroups);
 public sealed record LabServiceSourceGroupWriteRequest(string BiologicalSource, int SpecimenCount);
 public sealed record LabSampleRosterWriteRequest(
     string CustomerSampleId,
@@ -550,10 +568,31 @@ public sealed record AnalysisDefinitionWriteRequest(Guid QboCatalogItemId, strin
 public sealed record ReagentOfferingWriteRequest(Guid PartnerOrganizationId, Guid QboCatalogItemId, decimal NegotiatedUnitPrice, string Currency, string SellingUnit, decimal OrderIncrement, decimal MinimumQuantity, decimal? MaximumQuantity, string ShippingRestrictionsJson, DateTime EffectiveFrom, DateTime? EffectiveUntil, bool IsActive, long? Version = null);
 public sealed record AssemblyProfileWriteRequest(Guid QboCatalogItemId, string Name, int ProfileVersion, string Description, string Instructions, string MetadataSchemaJson, string AllowedFileKindsJson, string OutputContractJson, long MaximumFileSizeBytes, long MaximumTotalSizeBytes, bool IsActive, bool IsSynthetic, long? Version = null);
 public sealed record CommercialProfileWriteRequest(Guid OrganizationId, bool LabCreditApproved, bool AssemblyCreditApproved, string? QboCustomerId, long? Version = null);
-public sealed record LocalCatalogItemRequest(string ExternalItemId, string Name, string Description, string SalesUnit, decimal BasePrice, string Currency, bool IsActive);
+public sealed record CatalogItemWriteRequest(string ExternalItemId, string Name, string Description, string SalesUnit, decimal BasePrice, string Currency, bool IsActive, long? Version = null);
 
 public sealed record IntegrationMessageDto(Guid Id, string Operation, string WorkflowType, Guid WorkflowId, string Status, int AttemptCount, DateTime NextAttemptAt, string? LastError, DateTime CreatedAt, long Version);
-public sealed record NotificationMessageDto(Guid Id, string WorkflowType, Guid WorkflowId, string EventType, string Subject, string Status, int AttemptCount, DateTime NextAttemptAt, string? LastError, DateTime CreatedAt, long Version);
+public sealed record NotificationMessageDto(Guid Id, string WorkflowType, Guid WorkflowId, string EventType, string Subject, string Status, int AttemptCount, DateTime NextAttemptAt, string? LastError, DateTime CreatedAt, bool CanRetry, long Version);
+
+public sealed record ManualJournalEntryRowDto(
+    Guid DocumentId,
+    string EntryId,
+    DateTime AccountingDateUtc,
+    Guid OrganizationId,
+    string OrganizationName,
+    string WorkflowType,
+    Guid WorkflowId,
+    string WorkflowNumber,
+    string? CustomerOrProjectReference,
+    string? PurchaseOrderNumber,
+    string SourceDocumentNumber,
+    string Currency,
+    decimal GrossAmount,
+    decimal OutstandingBalance,
+    string PaymentStatus,
+    string? PaymentReference,
+    DateTime? PaymentRecordedAtUtc,
+    string Memo,
+    long Version);
 
 public static class OrderManagementMappings
 {

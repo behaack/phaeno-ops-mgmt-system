@@ -2,7 +2,17 @@
 
 Customer organization administrators use Lab services to describe and price a Job before doing the detailed work of entering its sample list.
 
+## Review a Job initiated by Phaeno
+
+Phaeno may initiate a Customer-owned Job when your organization has already discussed the work with Phaeno. It appears in **Lab services** as **Quote in preparation** while Phaeno prices it. You do not need to submit that Job for pricing.
+
+Open the Job and review its committed sample count, biological-source composition, storage requirements, safety declaration, and notes. When Phaeno issues the quote and it becomes **Quote issued**, an organization administrator can review and accept it in **Quote & billing**. Phaeno cannot accept it for your organization. If the scope is incorrect, do not accept the quote; contact Phaeno so the Job can be returned for a corrected revision.
+
+Individual sample entry remains unavailable until your organization accepts the quote.
+
 ## Create a draft
+
+**Request lab service** is available only while your organization has current ordering authorization and PSeq Lab Service is offered. If new Jobs are unavailable, the page explains whether Phaeno must enable ordering authorization or the service is temporarily unavailable. Existing accepted Jobs remain available and follow their normal hold or cancellation workflow.
 
 1. Open **Lab services** and select **Request lab service**.
 2. In **Job pricing details**, enter a unique **Job name** and each **Biological source** with its sample count. The Portal calculates the Job's total sample count from those source groups. Enter the **Storage requirements** and **Safety declaration** shared by every sample, and any optional **Job notes**. Do not enter a patient name or identifier.
@@ -21,7 +31,7 @@ When corrections are requested, create and submit a new revision. The prior revi
 
 ## Review and accept a quote
 
-Laboratory services are priced per job. Open **Quote & billing** to review the job's commercial status. Phaeno issues an itemized, immutable quote for the accepted scope. The quote is available only after its QuickBooks Online estimate has synchronized successfully.
+Laboratory services are priced per job. Open **Quote & billing** to review the job's commercial status. Phaeno issues an itemized, immutable quote for the accepted scope. The quote becomes available immediately after Phaeno issues it in POMS.
 
 Before accepting, confirm the committed sample count, biological-source composition, standard service scope, price, currency, and expiration date. Only a Customer organization administrator can accept the current unexpired quote.
 
@@ -30,6 +40,8 @@ If the scope changes after acceptance, Phaeno issues a separate change quote. Ad
 ## Ship and track samples
 
 After accepting the quote, return to **Samples & shipping**. Add samples manually or download and complete the Job-specific CSV template. The CSV accepts exactly `customer_sample_id`, `biological_source`, and `tube_count`; it does not accept barcodes. Previewing a CSV does not change the Job. Confirming a valid preview atomically replaces the editable draft list.
+
+Do not ship physical samples before the quote is accepted and the exact roster is finalized. An early or unmatched package is quarantined and escalated by Phaeno; it is not accessioned or attached to active Job work.
 
 The final list must contain exactly the accepted number of unique non-PHI sample IDs, match every accepted source-group count, and give each sample a positive whole-number tube count. Finalize the list only after reviewing the no-PHI confirmation. Finalization authorizes the specimen-specific Lab work and lets Phaeno prepare the registered return kit.
 
@@ -47,4 +59,4 @@ Use **Open in Data Library** from **Data & results** to open the Data Library al
 
 ## Cancel work
 
-A draft can be discarded before submission. Before Phaeno accepts work, an administrator can cancel eligible scope. After acceptance, submit a cancellation request. Phaeno records whether the request is approved, partially approved, or declined, and any financial adjustment remains linked through QuickBooks Online.
+A draft can be discarded before submission. Before Phaeno accepts work, an administrator can cancel eligible scope. After acceptance, submit a cancellation request. Phaeno records whether the request is approved, partially approved, or declined, and any financial adjustment remains preserved in the commercial history.

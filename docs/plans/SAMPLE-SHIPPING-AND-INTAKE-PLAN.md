@@ -71,6 +71,13 @@ procedure change.
   authorization and shared shipment. One declared specimen may use multiple
   submitted tubes; each physical tube receives its own registered supplier
   barcode assignment while retaining one specimen identity and accession.
+- Product direction was confirmed on 2026-08-27 that physical receipt before
+  quote acceptance and exact roster finalization is not a supported Customer
+  order path. An unexpected package is quarantined and escalated under an
+  approved laboratory receiving and custody procedure without creating or
+  attaching to a Job receipt, accession, billable event, or executable work.
+  POMS reconciliation of unmatched material is deferred until a separately
+  approved unmatched-receipt workflow exists.
 - Trial Project work is RUO and accepts no PHI. Trial instructions, manifests,
   shipment confirmation, and retained crosswalks use only non-PHI identifiers
   and preserve the versioned RUO/no-PHI affirmation required by the owning

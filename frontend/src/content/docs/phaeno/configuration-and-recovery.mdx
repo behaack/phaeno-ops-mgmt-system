@@ -1,18 +1,20 @@
-# Configuration and integration recovery
+# Configuration and accounting recovery
 
 Order configuration controls the active scientific, Partner, commercial, release, and integration rules used by new work. Changes must be audited and should not rewrite immutable order snapshots.
 
 **File management** separately controls the retention policy used by future released result and output packages. Only a Phaeno platform administrator can change these settings.
 
-Use the far-left **Order configuration** sidebar to move among **Defaults**, **Analyses**, **Sample shipping**, **PSeq kits**, **Assembly**, and **Credit & QBO**. On wider screens the sidebar can remain pinned; when it is unpinned or the screen is narrow, open the same non-modal navigation from the edge tab. The selected subject appears in the main pane without duplicating the navigation above the configuration form.
+Use the far-left **Order configuration** sidebar to move among **Defaults**, **Catalog**, **Analyses**, **Sample shipping**, **PSeq kits**, **Assembly**, and **Credit**. On wider screens the sidebar can remain pinned; when it is unpinned or the screen is narrow, open the same non-modal navigation from the edge tab. The selected subject appears in the main pane without duplicating the navigation above the configuration form.
 
 ## Maintain commercial configuration
 
-Synchronize active QuickBooks Online billable items into the portal and link them to portal analyses, Partner reagent offerings, or assembly profiles. QuickBooks item names and base prices are read-only projections.
+Maintain active billable items under **Catalog**, including a permanent item code, name, description, sales unit, base price, currency, and availability. Link these Phaeno-owned items to portal analyses, Partner reagent offerings, or assembly profiles.
+
+The designated laboratory-service item must use the permanent code `pseq-lab-service`, the sales unit `specimen`, and an active state. The catalog identifies it as **PSeq Lab Service**. POMS blocks laboratory quote issuance when this exact item is missing, inactive, or uses another unit; an unrelated specimen fee cannot replace it.
 
 Configure Partner reagent availability, negotiated price, currency, effective period, quantity rules, and shipping restrictions for each eligible Partner. Overlapping active price periods for the same Partner and item are not allowed.
 
-Configure Customer laboratory and Partner assembly credit separately. Approval means Net 30 release under the applicable workflow; absence of approval means QuickBooks payment confirmation is required before download.
+Configure Customer laboratory and Partner assembly credit separately. Approval means Net 30 release under the applicable workflow. Without credit, ready files remain on payment hold. Manual payment confirmation and release are not part of the current workflow; do not bypass that hold with an order-status change.
 
 Set the default quote-validity period in configuration. The initial default is 30 days, and an issued quote snapshots its own expiration.
 
@@ -52,14 +54,14 @@ Released-file and full-package ZIP downloads now create a bounded, immutable tra
 
 Warning delivery, grace activation, download cutoff, and package-byte deletion remain unavailable until the released-package retention worker and production storage are activated. Completion-aware download evidence and package status are active foundations only; they do not run those later retention actions.
 
-## Monitor QuickBooks Online
+## Prepare manual journal entries
 
-QuickBooks is authoritative for estimates, invoices, adjustments, tax, freight, discounts, balances, paid status, and hosted payment links. The portal should never be used to edit those facts independently.
+Open **Order operations**, then **Accounting**, to review the **Journal-entry source report**. Choose an inclusive UTC accounting-date range and download the CSV for manual entry into the accounting system. POMS creates one stable source record when a laboratory job reaches its billing boundary, an assembly output is approved, or a reagent shipment is recorded.
 
-When a synchronization is pending or failed, inspect the authorized integration record, correct the configuration or connectivity problem, and retry the existing durable command. Idempotency prevents duplicate portal work and QuickBooks documents.
+The report provides the stable entry ID, organization, workflow and source references, purchase-order or project reference, currency, gross amount, outstanding balance, payment status, and memo. Finance assigns general-ledger accounts, tax treatment, and posting dates outside POMS. Repeated downloads do not mark a row as posted.
 
-Keep OAuth credentials and webhook secrets in approved runtime configuration. Never place them in source, documentation, logs, notes, or support messages.
+QuickBooks Online integration is deferred. Do not configure OAuth, retry historical QuickBooks messages, or treat a report download as payment confirmation.
 
 ## Activate production dependencies
 
-Before production use, confirm approved storage and malware scanning, QuickBooks credentials and webhook validation, notification delivery, active scientific profiles, Partner offerings and prices, credit decisions, quote validity, and operational ownership. Laboratory activation also requires approved bench workflows, label/printer/scanner and degraded-mode procedures, external NGS provider operating details, and the required database-backed verification. A successful application build alone does not prove these external production dependencies are ready.
+Before production use, confirm approved storage and malware scanning, notification delivery, active catalog and scientific profiles, Partner offerings and prices, credit decisions, quote validity, the manual accounting handoff, and operational ownership. Laboratory activation also requires approved bench workflows, label/printer/scanner and degraded-mode procedures, external NGS provider operating details, and the required database-backed verification. A successful application build alone does not prove these production dependencies are ready.

@@ -16,9 +16,9 @@ You can save and resume a draft or create a new draft from a prior order. The ne
 
 Placement revalidates the item, Partner eligibility, quantity, active negotiated price, shipping address, and purchase-order number. The portal then freezes the offering, price, currency, address, and PO snapshot.
 
-QuickBooks Online receives the actual negotiated price used for the order. Tax, freight, discounts, invoice totals, and billing-address facts remain authoritative in QuickBooks.
+POMS preserves the actual negotiated price used for the order. Each shipment creates a journal-entry source record for Phaeno Finance; tax, freight, discounts, invoice preparation, and billing-address facts are handled outside the Partner workspace.
 
-If QuickBooks is temporarily unavailable, the local order remains visible with a commercial-sync status. Phaeno can retry it without creating a duplicate order.
+Placement moves the local order directly into Phaeno review. It does not wait for an external accounting synchronization.
 
 ## Review substitutions and changes
 
@@ -32,4 +32,4 @@ Orders can be partially shipped. Each shipment can show carrier, service, tracki
 
 ## Cancel eligible work
 
-A draft or an unaccepted placed order can be cancelled. After Phaeno accepts the order, submit a cancellation request. Shipped quantities are never erased, and approved commercial changes remain in QuickBooks Online.
+A draft or an unaccepted placed order can be cancelled. After Phaeno accepts the order, submit a cancellation request. Shipped quantities are never erased, and approved commercial changes remain in the order history and manual accounting source records.

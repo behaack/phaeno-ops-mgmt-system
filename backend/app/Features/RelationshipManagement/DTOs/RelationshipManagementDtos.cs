@@ -106,11 +106,13 @@ public sealed record DecidePortalIntegrationRequest
     public required bool Approved { get; init; }
     public required string Reason { get; init; }
     public required long Version { get; init; }
+    public bool OrderingAuthorized { get; init; } = true;
 }
 
 public sealed record CreateAccountFromPortalIntegrationRequest
 {
     public required long Version { get; init; }
+    public bool OrderingAuthorized { get; init; } = true;
 }
 
 public sealed record ApplyPortalIntegrationRequest

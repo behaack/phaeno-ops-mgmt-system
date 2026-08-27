@@ -235,7 +235,11 @@ public sealed class RelationshipManagementController(
 
         if (request.Approved && IsNewAccountRequest(value))
         {
-            await CreateAndAssociateAccountAsync(value, cancellationToken);
+            await CreateAndAssociateAccountAsync(
+                value,
+                actor.Id,
+                request.OrderingAuthorized,
+                cancellationToken);
         }
 
         if (request.Approved)
@@ -256,7 +260,11 @@ public sealed class RelationshipManagementController(
         var actor = await RequirePlatformAdminAsync(cancellationToken);
         var value = await RequireRequestAsync(requestId, tracking: true, cancellationToken);
         EnsureVersion(value.Version, request.Version);
-        var organization = await CreateAndAssociateAccountAsync(value, cancellationToken);
+        var organization = await CreateAndAssociateAccountAsync(
+            value,
+            actor.Id,
+            request.OrderingAuthorized,
+            cancellationToken);
         await EnsureCrmPortalAccountLinkAsync(value, actor.Id, cancellationToken);
         await dbContext.SaveChangesAsync(cancellationToken);
 
@@ -348,6 +356,8 @@ public sealed class RelationshipManagementController(
 
     private async Task<Organization> CreateAndAssociateAccountAsync(
         PortalIntegrationRequest value,
+        Guid actorUserId,
+        bool orderingAuthorized,
         CancellationToken cancellationToken)
     {
         if (value.Status != PortalIntegrationRequestStatus.Approved)
@@ -395,16 +405,40 @@ public sealed class RelationshipManagementController(
         var description = value.Summary.Length <= 1000
             ? value.Summary
             : value.Summary[..1000];
+        var now = DateTime.UtcNow;
         var organization = new Organization(
             value.CandidateOrganizationName,
             value.RequestedOrganizationKind.Value,
             description);
+        var createsOrderingAuthorization = organization.Kind == OrganizationKind.Customer
+            && orderingAuthorized;
         organization.UpdatePortalReadiness(
             PortalReadinessStatus.Pending,
-            $"Created from approved request {value.RequestNumber}. Phaeno must still configure users and any requested services.");
+            createsOrderingAuthorization
+                ? $"Created from approved request {value.RequestNumber}. PSeq Lab Service ordering is authorized; Phaeno must still configure users and complete Portal readiness."
+                : $"Created from approved request {value.RequestNumber}. Phaeno must still configure users, Portal readiness, and any service authorization.");
 
         dbContext.Organizations.Add(organization);
         Execute(() => value.AssociateOrganization(organization.Id));
+
+        if (createsOrderingAuthorization)
+        {
+            var sourceRequestId = value.RequestedServices.Any(
+                requested => requested.Service == PortalService.PSeqLabService)
+                ? value.Id
+                : (Guid?)null;
+            dbContext.OrganizationServiceEntitlements.Add(
+                new OrganizationServiceEntitlement(
+                    organization.Id,
+                    PortalService.PSeqLabService,
+                    now,
+                    null,
+                    EntitlementConfigurationStatus.Ready,
+                    actorUserId,
+                    sourceRequestId,
+                    $"Ordering authorized during account creation from {value.RequestNumber}."));
+        }
+
         return organization;
     }
 

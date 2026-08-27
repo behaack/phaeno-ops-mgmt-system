@@ -1,3 +1,5 @@
+import { useEffect, useState } from 'react'
+
 import type { RelationshipRequest } from '#/api/organization-management'
 import { Alert, AlertDescription } from '#/components/ui/alert'
 import { Badge } from '#/components/ui/badge'
@@ -10,6 +12,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from '#/components/ui/dialog'
+import { OrderingAuthorizationField } from './OrderingAuthorizationField'
 
 export function AccountCreationRecoveryDialog({
   error,
@@ -20,10 +23,18 @@ export function AccountCreationRecoveryDialog({
 }: {
   error?: string
   isPending: boolean
-  onConfirm: () => void
+  onConfirm: (orderingAuthorized: boolean) => void
   onOpenChange: (open: boolean) => void
   request: RelationshipRequest | null
 }) {
+  const [orderingAuthorized, setOrderingAuthorized] = useState(true)
+
+  useEffect(() => {
+    if (request) setOrderingAuthorized(true)
+  }, [request])
+
+  const createsCustomerAccount = request?.requestedOrganizationKind === 'Customer'
+
   return (
     <Dialog open={Boolean(request)} onOpenChange={onOpenChange}>
       <DialogContent>
@@ -48,10 +59,17 @@ export function AccountCreationRecoveryDialog({
               </div>
               <p className="mt-2 text-sm text-muted-foreground">{request.summary}</p>
             </div>
+            {createsCustomerAccount ? (
+              <OrderingAuthorizationField
+                id="account-recovery-ordering-authorized"
+                checked={orderingAuthorized}
+                disabled={isPending}
+                onCheckedChange={setOrderingAuthorized}
+              />
+            ) : null}
             <p className="text-sm text-muted-foreground">
               The account starts with pending Portal readiness. This recovery does not
-              invite users, activate requested services, create an order, or mark the
-              request applied.
+              invite users, create an order, or mark the request applied.
             </p>
           </div>
         ) : null}
@@ -59,7 +77,7 @@ export function AccountCreationRecoveryDialog({
           <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
             Keep incomplete
           </Button>
-          <Button type="button" disabled={isPending} onClick={onConfirm}>
+          <Button type="button" disabled={isPending} onClick={() => onConfirm(orderingAuthorized)}>
             {isPending ? 'Creating…' : 'Create and open account'}
           </Button>
         </DialogFooter>

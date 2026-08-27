@@ -22,6 +22,7 @@ import {
   RequiredFieldName,
 } from '#/components/ui/required-field'
 import { selectClass, textareaClass } from './OrganizationFormDialog'
+import { OrderingAuthorizationField } from './OrderingAuthorizationField'
 
 export type RequestAction = 'approve' | 'decline' | 'apply' | 'cancel'
 
@@ -32,6 +33,7 @@ const schema = z.object({
     .min(1, 'Record the reason or completed work.')
     .max(2000),
   organizationId: z.string(),
+  orderingAuthorized: z.boolean(),
 })
 
 type Values = z.infer<typeof schema>
@@ -49,19 +51,19 @@ export function RequestActionDialog({
   error?: string
   isPending: boolean
   onOpenChange: (open: boolean) => void
-  onSubmit: (values: { explanation: string; organizationId?: string }) => void
+  onSubmit: (values: { explanation: string; organizationId?: string; orderingAuthorized: boolean }) => void
   organizations?: Organization[]
   request: RelationshipRequest | null
 }) {
   const open = Boolean(action && request)
   const form = useForm<Values>({
-    defaultValues: { explanation: '', organizationId: '' },
+    defaultValues: { explanation: '', organizationId: '', orderingAuthorized: true },
     mode: 'onBlur',
     resolver: zodResolver(schema),
   })
 
   useEffect(() => {
-    if (open) form.reset({ explanation: '', organizationId: request?.organizationId ?? '' })
+    if (open) form.reset({ explanation: '', organizationId: request?.organizationId ?? '', orderingAuthorized: true })
   }, [form, open, request?.organizationId])
 
   if (!action || !request) return null
@@ -70,6 +72,8 @@ export function RequestActionDialog({
     && !request.organizationId
     && (request.requestType === 'Onboarding' || request.requestType === 'Evaluation')
     && (request.requestedOrganizationKind === 'Prospect' || request.requestedOrganizationKind === 'Customer' || request.requestedOrganizationKind === 'Partner')
+  const createsCustomerAccount = createsAccountOnApproval
+    && request.requestedOrganizationKind === 'Customer'
   const content = actionContent(action, createsAccountOnApproval)
 
   return (
@@ -102,6 +106,7 @@ export function RequestActionDialog({
             onSubmit({
               explanation: values.explanation,
               organizationId: values.organizationId || undefined,
+              orderingAuthorized: values.orderingAuthorized,
             })
           })}
         >
@@ -130,6 +135,16 @@ export function RequestActionDialog({
                   {form.formState.errors.organizationId.message}
                 </p>
               ) : null}
+            </div>
+          ) : null}
+          {createsCustomerAccount ? (
+            <div className="mb-3">
+              <OrderingAuthorizationField
+                id="request-action-ordering-authorized"
+                checked={form.watch('orderingAuthorized')}
+                disabled={isPending}
+                onCheckedChange={(checked) => form.setValue('orderingAuthorized', checked, { shouldDirty: true })}
+              />
             </div>
           ) : null}
           <Label htmlFor="request-action-explanation">
@@ -176,7 +191,7 @@ function actionContent(action: RequestAction, createsAccountOnApproval: boolean)
       return createsAccountOnApproval
         ? {
             title: 'Approve and create Portal account',
-            description: 'Approval creates the account with pending Portal readiness. It does not invite users, activate requested services, or create an order.',
+            description: 'Approval creates the account with pending Portal readiness. Customer ordering authorization follows the selection below; users and orders are not created.',
             label: 'Approval reason',
             submitLabel: 'Approve and create account',
           }

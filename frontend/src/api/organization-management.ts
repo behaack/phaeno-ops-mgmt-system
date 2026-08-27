@@ -191,6 +191,7 @@ export async function createOrganization(input: {
   kind: Exclude<OrganizationKind, 'Phaeno'>
   portalReadiness: PortalReadinessStatus
   portalReadinessNote: string | null
+  orderingAuthorized?: boolean
 }) {
   const response = await api.post<Organization>('/organizations', input)
   return response.data
@@ -303,7 +304,7 @@ export async function createRelationshipRequest(input: {
 
 export async function decideRelationshipRequest(
   id: string,
-  input: { approved: boolean; reason: string; version: number },
+  input: { approved: boolean; reason: string; version: number; orderingAuthorized?: boolean },
 ) {
   const response = await api.post<ApiEnvelope<RelationshipRequest>>(
     `/platform/relationships/requests/${id}/decision`,
@@ -315,10 +316,11 @@ export async function decideRelationshipRequest(
 export async function completeRelationshipRequestAccountCreation(
   id: string,
   version: number,
+  orderingAuthorized = true,
 ) {
   const response = await api.post<ApiEnvelope<Organization>>(
     `/platform/relationships/requests/${id}/account`,
-    { version },
+    { version, orderingAuthorized },
   )
   return unwrap(response.data)
 }

@@ -64,10 +64,10 @@ export function OrganizationListPage() {
     onSuccess: () => { setDeactivationTarget(null); void refresh() },
   })
   const requestAction = useMutation({
-    mutationFn: async ({ action, organizationId, request, text }: { action: 'approve' | 'decline' | 'apply' | 'cancel'; organizationId?: string; request: RelationshipRequest; text: string }) => {
+    mutationFn: async ({ action, orderingAuthorized, organizationId, request, text }: { action: 'approve' | 'decline' | 'apply' | 'cancel'; orderingAuthorized?: boolean; organizationId?: string; request: RelationshipRequest; text: string }) => {
       if (action === 'apply') return applyRelationshipRequest(request.id, { notes: text, organizationId, version: request.version })
       if (action === 'cancel') return cancelRelationshipRequest(request.id, { reason: text, version: request.version })
-      return decideRelationshipRequest(request.id, { approved: action === 'approve', reason: text, version: request.version })
+      return decideRelationshipRequest(request.id, { approved: action === 'approve', reason: text, version: request.version, orderingAuthorized })
     },
     onSuccess: async (request, variables) => {
       setRequestActionTarget(null)
@@ -81,8 +81,8 @@ export function OrganizationListPage() {
     },
   })
   const accountRecovery = useMutation({
-    mutationFn: (request: RelationshipRequest) =>
-      completeRelationshipRequestAccountCreation(request.id, request.version),
+    mutationFn: ({ orderingAuthorized, request }: { orderingAuthorized: boolean; request: RelationshipRequest }) =>
+      completeRelationshipRequestAccountCreation(request.id, request.version, orderingAuthorized),
     onSuccess: async (organization) => {
       setAccountRecoveryTarget(null)
       await refresh()
@@ -161,7 +161,7 @@ export function OrganizationListPage() {
       </Tabs>
 
       <OrganizationFormDialog open={Boolean(editing)} organization={editing} isPending={organizationMutation.isPending} error={organizationMutation.error ? apiErrorMessage(organizationMutation.error) : undefined} onOpenChange={(open) => { if (!open) setEditing(null) }} onSubmit={(values) => organizationMutation.mutate(values)} />
-      <RequestActionDialog action={requestActionTarget?.action ?? null} request={requestActionTarget?.request ?? null} organizations={externalOrganizations} isPending={requestAction.isPending} error={requestAction.error ? apiErrorMessage(requestAction.error) : undefined} onOpenChange={(open) => { if (!open) setRequestActionTarget(null) }} onSubmit={({ explanation, organizationId }) => { if (requestActionTarget) requestAction.mutate({ ...requestActionTarget, organizationId, text: explanation }) }} />
+      <RequestActionDialog action={requestActionTarget?.action ?? null} request={requestActionTarget?.request ?? null} organizations={externalOrganizations} isPending={requestAction.isPending} error={requestAction.error ? apiErrorMessage(requestAction.error) : undefined} onOpenChange={(open) => { if (!open) setRequestActionTarget(null) }} onSubmit={({ explanation, orderingAuthorized, organizationId }) => { if (requestActionTarget) requestAction.mutate({ ...requestActionTarget, orderingAuthorized, organizationId, text: explanation }) }} />
       <AccountCreationRecoveryDialog
         request={accountRecoveryTarget}
         isPending={accountRecovery.isPending}
@@ -172,8 +172,8 @@ export function OrganizationListPage() {
             accountRecovery.reset()
           }
         }}
-        onConfirm={() => {
-          if (accountRecoveryTarget) accountRecovery.mutate(accountRecoveryTarget)
+        onConfirm={(orderingAuthorized) => {
+          if (accountRecoveryTarget) accountRecovery.mutate({ orderingAuthorized, request: accountRecoveryTarget })
         }}
       />
       <LifecycleActionDialog

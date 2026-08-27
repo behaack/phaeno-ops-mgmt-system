@@ -22,8 +22,11 @@ deployment, and test execution retain their normal approval boundaries.
   and account links.
 - The CRM and Portal domains retain independent identifiers. CRM-to-Portal
   handoffs create pending, idempotent requests through the existing review
-  boundary; they do not grant membership, enable a service, create executable
-  work, or expose scientific data.
+  boundary; intake does not grant membership, enable a service, create
+  executable work, or expose scientific data. When an authorized reviewer
+  creates a Customer account, a visible **Ordering authorized** choice defaults
+  on and may create the existing `Ready` PSeq Lab Service entitlement in the
+  same transaction.
 - Development-only HubSpot simulation endpoints and controls were removed.
   Historical `HubSpot` source values remain readable so existing audit meaning
   is not erased. The application requires no HubSpot credential, identifier,
@@ -153,6 +156,8 @@ They do not replace or directly mutate their owning domains.
 7. CRM tasks and reminders do not become operational work orders.
 8. A commercial handoff is explicit and idempotent. Retrying it cannot create a
    duplicate Portal account, Trial Project, order, invitation, or entitlement.
+   The later account-review action may explicitly create the default-on
+   Customer ordering entitlement atomically with the account.
 9. Scientific, patient, sample, file, and protected data are excluded from CRM
    records, search indexes, exports, notifications, and future integrations.
 10. A future external provider never becomes a prerequisite for first-party CRM

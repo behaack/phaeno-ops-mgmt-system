@@ -58,7 +58,11 @@
 - A CRM-to-Portal handoff creates a pending, reviewable relationship request.
   Intake alone never creates access, activates services, or starts scientific
   or operational work. Approved Portal account creation records a stable,
-  auditable CRM Company link.
+  auditable CRM Company link. When the reviewer creates a Customer account,
+  **Ordering authorized** defaults on and explicitly creates a current `Ready`
+  PSeq Lab Service entitlement in the same transaction; turning it off creates
+  the account without ordering access. Neither choice creates membership or an
+  order.
 - Scientific, patient, sample, file, QC, custody, and protected data are outside
   the CRM boundary.
 
@@ -83,7 +87,7 @@ incomplete.
 
 The general shared-folder/file-management model, production storage and malware
 scanning, real production scientific definitions and profiles, production
-QuickBooks/Postmark configuration, connected CRM communications or marketing
+Postmark configuration, a validated manual accounting handoff, connected CRM communications or marketing
 automation, external CRM adapters, third-party LIMS integration, and an
 established production deployment path are not implemented production
 capabilities.
@@ -276,6 +280,13 @@ Confirmed Prospect rules:
   sample-list preparation; finalizing the exact compliant roster atomically
   creates the corresponding Lab authorization, Lab work, shipment, specimen
   identities, and physical tube slots.
+- An authorized Phaeno order-pricing user may initiate the same Job pricing
+  profile for an active Customer that has an active organization administrator.
+  After the Phaeno user makes the no-PHI attestation, the Phaeno-initiated Job
+  enters quote preparation with an immutable submitted request revision. It does
+  not let Phaeno accept on the Customer's behalf and creates no Lab authorization
+  or executable work before Customer-admin quote acceptance and exact sample-
+  roster finalization.
 - Lab receipt, accession, physical lineage, protocol execution, materials,
   equipment, library/batch membership, NGS sendout/custody, internal exceptions,
   and scientific approval are Phaeno-only records. Customers see only the
@@ -336,20 +347,24 @@ Confirmed Prospect rules:
   immutable Phaeno-issued quotes. Partner reagents use active,
   organization-specific negotiated pricing. A Partner never sees or uses
   another Partner's offering or price.
-- Quote visibility and acceptance require a successfully synchronized
-  QuickBooks estimate. The default quote-validity period is 30 days and can be
-  changed in Phaeno configuration; each issued quote snapshots its expiration.
-- QuickBooks Online is the only implemented commercial system. There is no ERP
-  or LIMS. QuickBooks owns catalog base facts, estimates, invoices, adjustments,
-  tax, freight, discounts, balances, terms, paid status, and hosted payment
-  links. The portal owns operational workflow and immutable commercial links.
+- Quote visibility and acceptance begin immediately when an authorized Phaeno
+  user issues the immutable POMS quote. The default quote-validity period is 30
+  days and can be changed in Phaeno configuration; each issued quote snapshots
+  its expiration.
+- QuickBooks Online integration is deferred. POMS owns the manual commercial
+  catalog, quotes, workflow facts, and stable accounting source records. At the
+  implemented billing boundary for a completed laboratory job, approved
+  assembly output, or reagent shipment, POMS exposes a Phaeno-only date-filtered
+  CSV for manual journal-entry preparation. Finance selects general-ledger
+  accounts, tax treatment, posting dates, invoices, and adjustments outside
+  POMS; downloading a report never marks a source row as posted.
 - Customer laboratory credit and Partner assembly credit are separate audited
   organization settings. Approved credit uses Net 30 release. Without approved
-  credit, completed result/output downloads remain blocked until QuickBooks
-  confirms payment.
+  credit, completed result/output downloads remain on payment hold. Manual
+  payment confirmation and release are a separately approved future workflow.
 - Scientific completion and commercial release are separate. A ready file is
   downloadable only after its scan, checksum, provenance/QC, membership,
-  commercial-sync, credit/payment, and release rules pass.
+  accounting-source, credit/payment, and release rules pass.
 - Released result/output packages use a versioned Phaeno-managed retention
   policy. The global defaults are 30 exact 24-hour days from release, one
   undownloaded-package warning 5 days before the standard deadline, and a
@@ -366,8 +381,8 @@ Confirmed Prospect rules:
   external users.
 - Customer laboratory result availability is sample-specific. A
   credit-approved Customer may receive an eligible sample result while other
-  samples remain in progress; a non-credit Customer waits for the completed job
-  invoice to be paid before any job result is released.
+  samples remain in progress; a non-credit Customer remains on payment hold
+  because the current workflow does not record manual payment confirmation.
 - Partner reagent placement requires an active Partner offering, valid quantity,
   active negotiated price, selected active shipping address, and purchase-order
   number. Placement snapshots those facts and revalidates them on the server.
@@ -385,7 +400,7 @@ Confirmed Prospect rules:
   history remain preserved.
 - The initial order workflows are not a protected-health-information intake
   workflow. Direct identifiers must not be placed in fields, notes, filenames,
-  uploads, logs, notifications, audit diffs, or QuickBooks memo fields.
+  uploads, logs, notifications, audit diffs, or accounting memo fields.
 
 Continued workflow, activation, and ownership requirements are recorded in:
 

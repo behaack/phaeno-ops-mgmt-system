@@ -1,8 +1,8 @@
 # Order operations
 
-Order operations is the Commercial workspace for Customer laboratory orders, Partner PSeq kit fulfillment, and Partner data assembly. POMS owns operational state, assignments, tenant-safe communication, fulfillment, and release decisions. QuickBooks Online remains authoritative for estimates, invoices, credits, terms, balances, and payment facts.
+Order operations is the Commercial workspace for Customer laboratory orders, Partner PSeq kit fulfillment, and Partner data assembly. POMS owns operational state, assignments, tenant-safe communication, fulfillment, quote records, accounting source records, and release decisions. QuickBooks Online integration is deferred.
 
-Use the far-left sidebar beneath the toolbar to move among **Order intake**, **Lab**, **PSeq kits**, **Assembly**, and **Integrations**. **Order intake** separates shipment-packet lookup, first-party CRM handoffs awaiting review, and already-authorized laboratory work awaiting specimens. A custom-work handoff and a requested Trial Project still require Phaeno review; they are not executable work merely because the CRM request arrived. Create the handoff from its CRM Company or Opportunity, then review the resulting request in **Accounts**. An authorized order opens its linked Lab work order for receipt and accession.
+Use the far-left sidebar beneath the toolbar to move among **Order intake**, **Lab**, **PSeq kits**, **Assembly**, and **Accounting**. **Order intake** separates shipment-packet lookup, first-party CRM handoffs awaiting review, and already-authorized laboratory work awaiting specimens. A custom-work handoff and a requested Trial Project still require Phaeno review; they are not executable work merely because the CRM request arrived. Create the handoff from its CRM Company or Opportunity, then review the resulting request in **Accounts**. An authorized order opens its linked Lab work order for receipt and accession.
 
 The sidebar header identifies Order operations and, on wider screens, provides the pin or unpin icon. Pointer users can preview an unpinned sidebar by approaching the left edge; keyboard and touch users open it from the edge tab. Choosing a section closes an unpinned sidebar.
 
@@ -25,22 +25,22 @@ The shared return-kit, tube registration, crosswalk, packet, and intake workflow
 - **Lab** covers Customer submission review, quote authorization, cancellation decisions, Commercial milestones, and result release.
 - **PSeq kits** covers Partner order review, substitutions, backorders, shipments, and fulfillment.
 - **Assembly** covers Partner intake validation, quoting, processing, quality review, and output release.
-- **Integrations** covers failed or pending QuickBooks and notification deliveries.
+- **Accounting** provides the date-filtered journal-entry source report and notification delivery recovery.
 
 Use status, hold, overdue, organization, assignment, and due-date filters to narrow the queue. Assign an owner and due date when the workflow supports them. A queue assignment coordinates work; it does not grant authorization or change the workflow state.
 
 ## Keep state boundaries visible
 
-Operational status, quote status, Commercial synchronization, payment, scientific readiness, file scanning, and publication are separate facts. Do not mark one complete merely because another succeeded. Tenant users receive a curated timeline, so record a tenant-safe reason separately from internal notes whenever an action can be seen outside Phaeno.
+Operational status, quote status, accounting-source readiness, payment, scientific readiness, file scanning, and publication are separate facts. Do not mark one complete merely because another succeeded. Tenant users receive a curated timeline, so record a tenant-safe reason separately from internal notes whenever an action can be seen outside Phaeno.
 
 Order Ops ends at the Commercial boundary. Use **Lab Ops** for specimen receipt, accession, protocol execution, materials, equipment, libraries, batches, sequencing sendouts, exceptions, and scientific approval. Lab readiness never publishes a file by itself.
 
 ## Triage safely
 
 1. Confirm the active organization and workflow before opening a record.
-2. Review the current operational, Commercial, integration, payment, and release states independently.
+2. Review the current operational, Commercial, accounting, payment, and release states independently.
 3. Check open holds, cancellation requests, overdue actions, and failed deliveries.
 4. Assign the work and due date when ownership is unclear.
 5. Perform the smallest valid next action and preserve the existing record.
 
-If a record appears stale, refresh it before retrying. Never repair a failed workflow by creating a duplicate order, quote, invoice, Lab work order, shipment, or release.
+If a record appears stale, refresh it before retrying. Never repair a failed workflow by creating a duplicate order, quote, accounting source record, Lab work order, shipment, or release.

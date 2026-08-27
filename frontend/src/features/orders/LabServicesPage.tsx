@@ -3,7 +3,7 @@ import { Link } from '@tanstack/react-router'
 import { Download, FlaskConical, Plus, Search } from 'lucide-react'
 import { useDeferredValue, useState } from 'react'
 
-import { exportOrderList, getOrderErrorMessage, listLabOrders } from '#/api/order-management'
+import { exportOrderList, getLabServiceOrderingEligibility, getOrderErrorMessage, listLabOrders } from '#/api/order-management'
 import { Alert, AlertDescription, AlertTitle } from '#/components/ui/alert'
 import { Button } from '#/components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '#/components/ui/card'
@@ -18,7 +18,7 @@ export function LabServicesPage() {
   const [filter, setFilter] = useState<OrderListFilterState>({ status: '', createdFrom: '', createdTo: '', submittedByMe: false })
   const deferredSearch = useDeferredValue(search)
   const canView = Boolean(session?.capabilities.canViewLabServiceOrders)
-  const canCreate = Boolean(session?.capabilities.canCreateLabServiceRequests)
+  const canCreateByRole = Boolean(session?.capabilities.canCreateLabServiceRequests)
   const apiEnabled = canView && authProvider !== 'mock'
   const filters = orderFilterParams(filter, session?.user?.id)
   const orders = useQuery({
@@ -26,6 +26,13 @@ export function LabServicesPage() {
     queryFn: () => listLabOrders({ search: deferredSearch || undefined, ...filters }),
     enabled: apiEnabled,
   })
+  const eligibility = useQuery({
+    queryKey: ['lab-service-ordering-eligibility'],
+    queryFn: getLabServiceOrderingEligibility,
+    enabled: apiEnabled && canCreateByRole,
+  })
+  const canCreate = canCreateByRole
+    && (authProvider === 'mock' || eligibility.data?.canOrder === true)
   const exportCsv = useMutation({ mutationFn: () => exportOrderList('lab', { search: deferredSearch || undefined, ...filters }) })
 
   if (!canView) {
@@ -39,10 +46,13 @@ export function LabServicesPage() {
           <h1 className="text-3xl font-semibold leading-tight">Lab services</h1>
           <p className="mt-2 text-sm leading-6 text-muted-foreground sm:text-base">Request job-specific laboratory pricing, track each sample, and retrieve eligible results.</p>
         </div>
-        <div className="flex flex-wrap gap-2">{apiEnabled ? <Button type="button" variant="outline" disabled={exportCsv.isPending} onClick={() => exportCsv.mutate()}><Download data-icon="inline-start" />Export CSV</Button> : null}{canCreate ? <Button asChild><Link to="/lab-services/new"><Plus data-icon="inline-start" />Request lab service</Link></Button> : null}</div>
+        <div className="flex flex-wrap gap-2">{apiEnabled ? <Button type="button" variant="outline" disabled={exportCsv.isPending} onClick={() => exportCsv.mutate()}><Download data-icon="inline-start" />Export CSV</Button> : null}{canCreate ? <Button asChild><Link to="/lab-services/new"><Plus data-icon="inline-start" />Request lab service</Link></Button> : canCreateByRole ? <Button type="button" disabled aria-describedby="lab-ordering-availability"><Plus data-icon="inline-start" />Request lab service</Button> : null}</div>
       </section>
 
       {authProvider === 'mock' ? <Alert className="mb-5"><AlertTitle>Connected orders are paused in mock-session mode</AlertTitle><AlertDescription>Use a signed-in Customer session to create and track laboratory work.</AlertDescription></Alert> : null}
+      {apiEnabled && canCreateByRole && eligibility.isLoading ? <p id="lab-ordering-availability" role="status" className="mb-5 text-sm text-muted-foreground">Checking ordering authorization…</p> : null}
+      {apiEnabled && canCreateByRole && eligibility.error ? <Alert id="lab-ordering-availability" variant="destructive" className="mb-5"><AlertTitle>Ordering availability could not be checked</AlertTitle><AlertDescription>{getOrderErrorMessage(eligibility.error, 'Refresh the page before creating a Job.')}</AlertDescription></Alert> : null}
+      {apiEnabled && canCreateByRole && eligibility.data && !eligibility.data.canOrder ? <Alert id="lab-ordering-availability" className="mb-5"><AlertTitle>New Jobs are unavailable</AlertTitle><AlertDescription>{eligibility.data.blockingReason}</AlertDescription></Alert> : null}
       {exportCsv.error ? <Alert variant="destructive" className="mb-5"><AlertTitle>Export could not be created</AlertTitle><AlertDescription>{getOrderErrorMessage(exportCsv.error, 'Try the export again.')}</AlertDescription></Alert> : null}
 
       <Card>

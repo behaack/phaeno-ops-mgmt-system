@@ -61,6 +61,16 @@ public sealed class CommercialDocumentLink : IAudit, IConcurrency
         LastError = null;
     }
 
+    public void MarkReadyForManualAccounting(string documentNumber, DateTime recordedAt)
+    {
+        ExternalDocumentId = $"manual:{Id:N}";
+        DocumentNumber = OrderText.Required(documentNumber, nameof(documentNumber), 255);
+        DocumentUrl = null;
+        SyncStatus = IntegrationStatus.Succeeded;
+        SynchronizedAt = recordedAt;
+        LastError = null;
+    }
+
     public void MarkFailed(string error)
     {
         SyncStatus = IntegrationStatus.Failed;
@@ -214,12 +224,31 @@ public sealed class OrderNotification : IAudit, IConcurrency
         Body = OrderText.Required(body, nameof(body), 4000);
     }
 
-    public void BeginAttempt() { Status = OrderNotificationStatus.Sending; AttemptCount++; }
-    public void MarkSent(DateTime utcNow) { Status = OrderNotificationStatus.Sent; SentAt = utcNow; LastError = null; }
+    public void BeginAttempt(DateTime leaseExpiresAt)
+    {
+        Status = OrderNotificationStatus.Sending;
+        AttemptCount++;
+        NextAttemptAt = leaseExpiresAt;
+        LastError = null;
+    }
+
+    public void MarkSent(DateTime utcNow)
+    {
+        Status = OrderNotificationStatus.Sent;
+        SentAt = utcNow;
+        NextAttemptAt = utcNow;
+        LastError = null;
+    }
+
     public void MarkFailed(string error, DateTime nextAttemptAt) { Status = OrderNotificationStatus.Failed; LastError = OrderText.Required(error, nameof(error), 2000); NextAttemptAt = nextAttemptAt; }
+    public bool CanRetry(DateTime utcNow)
+        => Status == OrderNotificationStatus.Failed
+            || (Status == OrderNotificationStatus.Sending && NextAttemptAt <= utcNow);
+
     public void Retry(DateTime utcNow)
     {
-        if (Status != OrderNotificationStatus.Failed) throw new InvalidOperationException("Only a failed notification can be retried.");
+        if (!CanRetry(utcNow))
+            throw new InvalidOperationException("Only a failed or expired sending notification can be retried.");
         Status = OrderNotificationStatus.Pending;
         AttemptCount = 0;
         NextAttemptAt = utcNow;

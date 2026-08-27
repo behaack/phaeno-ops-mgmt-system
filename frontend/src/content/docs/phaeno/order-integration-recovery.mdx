@@ -1,25 +1,23 @@
-# Integration failures and recovery
+# Accounting and notification recovery
 
-Order Ops uses durable integration events for QuickBooks Online and notifications. A failed delivery remains attached to the original workflow with its idempotency key, attempt history, last error, and external identifier when one exists.
+Order Ops provides a manual journal-entry source report and durable notification delivery. QuickBooks Online integration is deferred, and historical QuickBooks messages cannot be retried.
 
 ## Triage the failure
 
-Open the **Integrations** section and identify the affected order, command type, current delivery state, last attempt, and tenant-visible consequence. Determine whether the local operation committed successfully before taking any recovery action.
+Open the **Accounting** section. For an accounting concern, select the relevant date range and compare the stable entry ID, organization, workflow number, source document, reference, currency, gross amount, and balance with the operational record. For a notification concern, identify the original workflow, delivery state, attempt count, last error, and tenant-visible consequence.
 
-Common states include:
-
-- **Commercial sync pending** while a durable command awaits delivery;
-- **Commercial sync failed** when QuickBooks rejected or could not receive it; and
-- failed notification delivery after the underlying portal action already succeeded.
+An accounting report download is read-only: it does not post, reconcile, record payment, or release a file. Notification delivery may fail after the underlying portal action already succeeded.
 
 ## Retry safely
 
-Refresh the workflow and retry the existing durable integration event. Reconciliation uses the stored idempotency and external references to avoid duplicates. Do not recreate the order, quote, invoice, credit, shipment, release, or notification merely because delivery failed.
+Refresh the workflow before investigating a missing accounting row. Do not recreate the order, quote, shipment, output approval, or result completion to force another row. Use the stable source ID when reconciling repeated report downloads.
 
-If QuickBooks received the command but the portal lacks confirmation, use the reconciliation path rather than sending a new Commercial command. If a notification failed, retry the notification without repeating the underlying business transition.
+Each outbound notification is claimed atomically with an expiring delivery lease. **Sending** means one worker owns the current attempt. If that worker stops before recording the result, the expired claim becomes eligible for automatic recovery instead of remaining stuck. Concurrent workers skip an active claim.
+
+If a notification is **Failed**, correct the delivery configuration or address and choose **Retry**. If an interrupted **Sending** claim has expired and is still visible, choose **Recover**. The action returns only that message to the queue; it does not repeat the quote, order, shipment, release, or other underlying business transition. Refresh the queue before retrying when another worker may already have recovered the message.
 
 ## Communicate the boundary
 
-Keep the workflow’s operational state distinct from delivery state. A failed estimate synchronization prevents quote visibility, but it does not delete the quote. A failed invoice synchronization can block release, but it does not undo scientific completion. A failed email does not reverse the order action recorded in the portal.
+Keep operational state, accounting-source readiness, credit, file release, and notification delivery separate. An accounting question does not undo an issued quote or scientific completion. A failed email does not reverse the order action recorded in the portal.
 
-Escalate only after the stored event, retry history, external reference, and current QuickBooks state have been reviewed. Include safe identifiers; never include credentials, payment data, or customer-confidential scientific detail in support notes.
+Escalate only after the operational record, report range, stable entry ID, and notification history have been reviewed. Include safe identifiers; never include credentials, payment data, or customer-confidential scientific detail in support notes.

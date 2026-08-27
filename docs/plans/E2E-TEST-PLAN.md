@@ -103,10 +103,13 @@ the protected deployed-Preview acceptance above.
 - [x] `frontend/e2e/order-management.spec.ts` - Partner mock context exposes
   reagent ordering and data assembly.
 - [x] `frontend/e2e/order-management.spec.ts` - Phaeno mock context exposes
-  Lab, PSeq kits, Assembly, and Integrations operational queues through the
+  Lab, PSeq kits, Assembly, and Accounting operational queues through the
   pinned wide-screen rail or accessible edge tab on narrow screens; Order
-  Configuration uses the same rail for Defaults, Analyses, PSeq kits,
-  Assembly, and Credit & QBO instead of an in-page tab row.
+  Operations exposes the bounded `Initiate Customer order` modal with Customer
+  selection, Job pricing-profile fields, and a disabled connected save in mock
+  mode; Order
+  Configuration uses the same rail for Defaults, Catalog, Analyses, PSeq kits,
+  Assembly, and Credit instead of an in-page tab row.
 - [x] `frontend/e2e/documentation.spec.ts` - Prospect, Customer, and Partner
   contexts are offered their own guide set, Phaeno is offered only Phaeno
   guides, the sidebar omits redundant audience controls and headings, every
@@ -316,6 +319,9 @@ the protected deployed-Preview acceptance above.
   approvals, Account directory/Review queue tab separation, removal of an
   associated approved request from the review queue, atomic first-party CRM
   approval, stranded approved-request account-creation recovery, account-
+  creation ordering authorization default-on and explicit opt-out with the
+  resulting entitlement state, Customer new-Job blocking when authorization
+  is absent, Phaeno eligible-Customer filtering, quote-recipient fanout, and
   workspace request completion, and details-page navigation,
   Phaeno-controlled designated-contact invitation and membership management,
   consolidated Phaeno profile, Platform administrator, and additive
@@ -345,14 +351,29 @@ the protected deployed-Preview acceptance above.
   administrator notice/activity, and tenant attestation.
 - [ ] Database-backed order-management journeys - execute the approved Customer
   admin/member, Partner admin/member, Prospect denial, Phaeno operations,
-  payment hold, QuickBooks failure, two-tenant isolation, keyboard, and narrow
+  payment hold, manual accounting report, two-tenant isolation, keyboard, and narrow
   viewport scenarios through real authentication and API persistence. Include
   required and duplicate Job-name validation, required storage and safety
   persistence, biological-source composition with derived sample total,
   duplicate-source validation, optional Job-notes persistence, generated
   eight-character Job-number, fixed modal save feedback, concurrency refresh
   with preserved entries, pricing submission with no sample records, and
-  post-acceptance manual and CSV sample-list preparation.
+  post-acceptance manual and CSV sample-list preparation. Include a Phaeno user
+  seeing distinct Customer-list loading, failure/retry, genuine-empty, and ready
+  states; initiating a Customer-owned Job; issuing the immediate POMS quote with
+  the visible canonical `pseq-lab-service`/`specimen` line and exact committed
+  quantity; switching to that Customer; accepting as an organization
+  administrator; and proving that neither Phaeno initiation nor quote issuance
+  creates samples or Lab work. Prove Customer and Phaeno order actions require
+  an effective, `Ready` PSeq Lab Service entitlement and active offering; an
+  ended entitlement blocks a new Job without cancelling an accepted one; quote
+  preparation sends no Customer notice; quote issue/revision reaches all active
+  eligible administrators and is blocked when none exists; the accepting
+  administrator receives later ordinary notices; and high-impact fan-out stays
+  organization-wide. Confirm an unexpected pre-acceptance package cannot enter
+  the Job receipt or Lab-authorization journey. Include an interrupted
+  notification claim that becomes recoverable after its lease without repeating
+  the underlying order transition.
 - [ ] Database-backed Lab Operations journey - accept a Customer quote, prove
   the visible Phaeno Order Operations **Order intake** section and Open intake
   handoff to the already-linked
@@ -386,6 +407,12 @@ the protected deployed-Preview acceptance above.
 
 ## Requested Execution Log
 
+- 2026-08-27: the complete Playwright mock-session suite passed on desktop and
+  mobile Chromium: 32 tests passed and none failed. Order-operations coverage
+  now exercises the Phaeno-initiated Customer Job dialog, its PHI confirmation,
+  the manual-accounting workspace, and the split Catalog and Credit
+  configuration destinations. The connected database-backed acceptance
+  scenario remains open above.
 - 2026-08-26: the complete Playwright mock-session suite passed on desktop and
   mobile Chromium: 32 tests passed and none failed. The new CRM journey proved
   standalone Company creation and no Portal mutation; the Accounts journey

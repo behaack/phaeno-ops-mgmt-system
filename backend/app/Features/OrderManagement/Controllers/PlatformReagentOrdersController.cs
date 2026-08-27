@@ -4,7 +4,6 @@ using System.Text.Json;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
-using PSeq.Operations.Commercial.OrderManagement.Application;
 using PSeq.Operations.Commercial.OrderManagement.Domain;
 using PhaenoPortal.App.Features.OrderManagement.Domain;
 using PhaenoPortal.App.Features.OrderManagement.DTOs;
@@ -128,47 +127,44 @@ public sealed class PlatformReagentOrdersController(
     {
         var actor = await requestContext.RequirePlatformAdminAsync(HttpContext, cancellationToken);
         var key = idempotency.RequireKey(HttpContext); var scope = $"platform:reagent-order:{orderId}:shipment";
-        var replay = await idempotency.ReadAsync<PartnerReagentOrderDto>(actor.Id, scope, key, request, cancellationToken);
-        if (replay != null) return replay;
-        var order = await ReadAsync(orderId, cancellationToken);
-        EnsureVersion(order.Version, request.Version);
-        if (order.Status == ReagentOrderStatus.Accepted) Execute(order.StartProcessing);
-        if (order.Status is not (ReagentOrderStatus.Processing or ReagentOrderStatus.PartiallyShipped))
-            throw Conflict("shipment_not_allowed", "A shipment can be recorded only during reagent fulfillment.");
-        if (request.Lines.Count == 0) throw Invalid("shipment_line_required", "A shipment must contain at least one allocation.");
-        if (request.Lines.Select(item => item.OrderLineId).Distinct().Count() != request.Lines.Count)
-            throw Invalid("duplicate_shipment_line", "Each order line may appear only once in a shipment.");
-        var shipment = new ReagentShipment(order.Id, OrderNumberGenerator.Shipment(), OrderNumberGenerator.PackingSlip(),
-            request.Carrier, request.Service, request.TrackingNumber, request.ShippedAt);
-        decimal invoiceTotal = 0;
-        var qboLines = new List<QuickBooksLineRequest>();
-        foreach (var allocation in request.Lines)
-        {
-            var line = order.Lines.SingleOrDefault(item => item.Id == allocation.OrderLineId) ?? throw Invalid("shipment_line_invalid", "A shipment line does not belong to this order.");
-            Execute(() => line.AllocateShipment(allocation.Quantity));
-            shipment.Lines.Add(new ReagentShipmentLine(shipment.Id, line.Id, allocation.Quantity, allocation.LotBatchNumber, allocation.ExpiresAt));
-            invoiceTotal += decimal.Round(allocation.Quantity * line.UnitPrice, 2, MidpointRounding.AwayFromZero);
-            qboLines.Add(new QuickBooksLineRequest(line.ExternalItemId, line.Description, allocation.Quantity, line.UnitPrice));
-        }
-        order.Shipments.Add(shipment);
-        Execute(order.RecordShipmentProgress);
-        var profile = await dbContext.OrganizationCommercialProfiles.AsNoTracking().FirstOrDefaultAsync(item => item.OrganizationId == order.OrganizationId, cancellationToken);
-        if (string.IsNullOrWhiteSpace(profile?.QboCustomerId)) throw Conflict("qbo_customer_required", "Link this Partner to QuickBooks before shipping.");
-        var currency = order.Lines.Select(item => item.Currency).Distinct(StringComparer.OrdinalIgnoreCase).Single();
-        var invoice = new CommercialDocumentLink(OrderWorkflowTypes.Reagent, order.Id, CommercialDocumentKind.Invoice, invoiceTotal, currency);
-        dbContext.CommercialDocumentLinks.Add(invoice);
-        var payload = new OrderDocumentOutboxPayload(invoice.Id, null, profile.QboCustomerId!, shipment.ShipmentNumber,
-            order.PurchaseOrderNumber, currency, qboLines);
-        dbContext.OrderOutboxMessages.Add(new OrderOutboxMessage(IntegrationOperation.CreateInvoice, OrderWorkflowTypes.Reagent,
-            order.Id, key, JsonSerializer.Serialize(payload, JsonOptions)));
-        Event(order, "Processing", order.Status.ToString(), actor.Id);
-        Notice(order, "reagent-shipped", "Reagent shipment recorded", $"Shipment {shipment.ShipmentNumber} for {order.OrderNumber} is on the way. Tracking: {shipment.TrackingNumber}.");
-        await dbContext.SaveChangesAsync(cancellationToken);
-        var response = await MapAsync(order, cancellationToken);
-        idempotency.Store(actor.Id, scope, key, request, response, StatusCodes.Status202Accepted);
-        await dbContext.SaveChangesAsync(cancellationToken);
-        Response.StatusCode = StatusCodes.Status202Accepted;
-        return response;
+        var execution = await idempotency.ExecuteAsync(
+            actor.Id,
+            scope,
+            key,
+            request,
+            async operationCancellationToken =>
+            {
+                var order = await ReadAsync(orderId, operationCancellationToken);
+                EnsureVersion(order.Version, request.Version);
+                if (order.Status == ReagentOrderStatus.Accepted) Execute(order.StartProcessing);
+                if (order.Status is not (ReagentOrderStatus.Processing or ReagentOrderStatus.PartiallyShipped))
+                    throw Conflict("shipment_not_allowed", "A shipment can be recorded only during reagent fulfillment.");
+                if (request.Lines.Count == 0) throw Invalid("shipment_line_required", "A shipment must contain at least one allocation.");
+                if (request.Lines.Select(item => item.OrderLineId).Distinct().Count() != request.Lines.Count)
+                    throw Invalid("duplicate_shipment_line", "Each order line may appear only once in a shipment.");
+                var shipment = new ReagentShipment(order.Id, OrderNumberGenerator.Shipment(), OrderNumberGenerator.PackingSlip(),
+                    request.Carrier, request.Service, request.TrackingNumber, request.ShippedAt);
+                decimal invoiceTotal = 0;
+                foreach (var allocation in request.Lines)
+                {
+                    var line = order.Lines.SingleOrDefault(item => item.Id == allocation.OrderLineId) ?? throw Invalid("shipment_line_invalid", "A shipment line does not belong to this order.");
+                    Execute(() => line.AllocateShipment(allocation.Quantity));
+                    shipment.Lines.Add(new ReagentShipmentLine(shipment.Id, line.Id, allocation.Quantity, allocation.LotBatchNumber, allocation.ExpiresAt));
+                    invoiceTotal += decimal.Round(allocation.Quantity * line.UnitPrice, 2, MidpointRounding.AwayFromZero);
+                }
+                order.Shipments.Add(shipment);
+                Execute(order.RecordShipmentProgress);
+                var currency = order.Lines.Select(item => item.Currency).Distinct(StringComparer.OrdinalIgnoreCase).Single();
+                var invoice = new CommercialDocumentLink(OrderWorkflowTypes.Reagent, order.Id, CommercialDocumentKind.Invoice, invoiceTotal, currency);
+                invoice.MarkReadyForManualAccounting(shipment.ShipmentNumber, DateTime.UtcNow);
+                dbContext.CommercialDocumentLinks.Add(invoice);
+                Event(order, "Processing", order.Status.ToString(), actor.Id);
+                Notice(order, "reagent-shipped", "Reagent shipment recorded", $"Shipment {shipment.ShipmentNumber} for {order.OrderNumber} is on the way. Tracking: {shipment.TrackingNumber}.");
+                await dbContext.SaveChangesAsync(operationCancellationToken);
+                return await MapAsync(order, operationCancellationToken);
+            },
+            cancellationToken: cancellationToken);
+        return execution.Response;
     }
 
     [HttpPost("{orderId:guid}/fulfill")]
@@ -176,16 +172,24 @@ public sealed class PlatformReagentOrdersController(
     {
         var actor = await requestContext.RequirePlatformAdminAsync(HttpContext, cancellationToken);
         var key = idempotency.RequireKey(HttpContext); var scope = $"platform:reagent-order:{orderId}:fulfill";
-        var replay = await idempotency.ReadAsync<PartnerReagentOrderDto>(actor.Id, scope, key, request, cancellationToken);
-        if (replay != null) return replay;
-        var order = await ReadAsync(orderId, cancellationToken);
-        EnsureVersion(order.Version, request.Version); var before = order.Status.ToString();
-        Execute(() => order.Fulfill(DateTime.UtcNow));
-        Event(order, before, order.Status.ToString(), actor.Id);
-        Notice(order, "reagent-order-fulfilled", "Reagent order fulfilled", $"All active quantities for {order.OrderNumber} have been fulfilled.");
-        await dbContext.SaveChangesAsync(cancellationToken);
-        var response = await MapAsync(order, cancellationToken); idempotency.Store(actor.Id, scope, key, request, response);
-        await dbContext.SaveChangesAsync(cancellationToken); return response;
+        var execution = await idempotency.ExecuteAsync(
+            actor.Id,
+            scope,
+            key,
+            request,
+            async operationCancellationToken =>
+            {
+                var order = await ReadAsync(orderId, operationCancellationToken);
+                EnsureVersion(order.Version, request.Version);
+                var before = order.Status.ToString();
+                Execute(() => order.Fulfill(DateTime.UtcNow));
+                Event(order, before, order.Status.ToString(), actor.Id);
+                Notice(order, "reagent-order-fulfilled", "Reagent order fulfilled", $"All active quantities for {order.OrderNumber} have been fulfilled.");
+                await dbContext.SaveChangesAsync(operationCancellationToken);
+                return await MapAsync(order, operationCancellationToken);
+            },
+            cancellationToken: cancellationToken);
+        return execution.Response;
     }
 
     [HttpPost("{orderId:guid}/cancellation-requests/{cancellationId:guid}/decision")]

@@ -14,19 +14,19 @@ This document records how the application operates in the current repository and
 | Curated-data files | `IManagedFileStorage` adapts to the shared `IFileStorage` contract. Development uses local filesystem storage. Production currently selects a non-persisting `Disabled` adapter, so the API starts but file operations return HTTP 503. The S3 adapter is implemented but not configured or live-validated. |
 | Order files | `IOperationalFileStorage` adapts to the shared `IFileStorage` contract. Development uses local filesystem storage. Production currently selects a non-persisting `Disabled` adapter, so the API starts but file operations return HTTP 503. The S3 adapter is implemented but not configured or live-validated. |
 | File scanning | Environment scanner abstractions. Development can trust configured fixture files; production defaults do not. |
-| Commercial integration | QuickBooks Online adapter. A logging gateway is used when the required QuickBooks configuration is absent. |
+| Commercial accounting | POMS-owned catalog, immediate quotes, stable billing source records, and a Phaeno-only date-filtered CSV for manual journal-entry preparation. QuickBooks integration is deferred. |
 | Relationship CRM | A standalone first-party POMS CRM is implemented for Companies, Contacts, Leads, Opportunities, pipelines, Activities, Tasks, reporting, administration, and controlled Portal handoffs. HubSpot is absent from the runtime and deferred as a possible optional adapter. |
 | Email and notices | Portal transactional flows use Postmark when configured. Public Website contact/order templates use Mailgun when configured; logging senders are the local fallback. |
 | Public Website API | Anonymous `/api/v1/web-ops` search, database ping, contact, and order endpoints plus `/public` document hosting are implemented in Portal. Historical data and public traffic have not been cut over. |
-| Background work | Hosted dispatchers retry order integrations, order notifications, data-provisioning notices, and Lab-to-Commercial projection delivery. A hosted Website crawler rebuilds the Lucene index on its configured interval. |
+| Background work | Hosted dispatchers retry order notifications, data-provisioning notices, and Lab-to-Commercial projection delivery. A hosted Website crawler rebuilds the Lucene index on its configured interval. The QuickBooks dispatcher is disabled. |
 | Help | Browser-bundled MDX with Customer/Partner locale metadata and Phaeno US-English content. Backend search is not implemented. |
 | Organization/user administration UI | Invitation acceptance and Phaeno organization list/detail, request, entitlement, invitation, membership, conversion, lifecycle, and User management workspaces use durable APIs. Invitations retain the person’s name and intended membership role. Phaeno invitations and user edits consolidate Platform administrator and additive Laboratory roles; pending Laboratory-role intent activates only on acceptance, while external administration remains organization-scoped. |
 
-Phaeno Portal is the operational source of truth. Its first-party CRM owns relationship and pipeline records, while QuickBooks Online is authoritative only for the commercial facts defined in `docs/business-rules.md`. No ERP, third-party LIMS, or external CRM is connected to the running application; Laboratory execution is owned by the internal Lab Operations provider.
+Phaeno Portal is the operational and commercial-source system of record. Its first-party CRM owns relationship and pipeline records, and its order workflows own the manual catalog, quotes, credit rules, and accounting source records. No ERP, accounting provider, third-party LIMS, or external CRM is connected to the running application; Laboratory execution is owned by the internal Lab Operations provider.
 
 ## Health and basic verification
 
-- API health: `GET /api/health` returns the standard API envelope with service name and `healthy` status. This is application dial tone, not proof that PostgreSQL, Clerk, QuickBooks, Postmark, Mailgun, reCAPTCHA, Website search/documents, storage, scanning, or background delivery is fully ready.
+- API health: `GET /api/health` returns the standard API envelope with service name and `healthy` status. This is application dial tone, not proof that PostgreSQL, Clerk, Postmark, Mailgun, reCAPTCHA, Website search/documents, storage, scanning, manual accounting operations, or background delivery is fully ready.
 - Backend build and tests: `dotnet build backend/PSeq.Operations.slnx` and `dotnet test backend/PSeq.Operations.slnx`.
 - Frontend checks from `frontend/`: `pnpm run lint`, `pnpm run typecheck`, `pnpm run test`, `pnpm run build`, and `pnpm run test:e2e` when full browser verification is requested.
 - PostgreSQL reference journey: `backend/tools/PSeq.Operations.ReferenceJourney` exercises the curated-data baseline with rollback and isolated temporary storage.
@@ -51,13 +51,13 @@ Keep environment-specific values outside source control. `appsettings.Developmen
 | `FileStorage` | Provider selection, local development root, and S3 bucket, region, key prefix, optional service URL, and path-style setting | Temporary state: `Provider=Disabled`, which permits startup but no file operations. Activation state: `Provider=S3`; bucket and prefix approved; SDK default credential chain uses a least-privilege identity or protected access keys; encryption, lifecycle, permissions, monitoring, and representative upload/download/delete behavior verified. Production refuses the Local provider. |
 | `DataProvisioning` | Upload limit, synthetic policy, scanner, allowed kinds | Synthetic fixtures rejected; real file policy and trusted scanner approved. |
 | `OrderManagement` | Upload limit, scanner, allowed kinds | Trusted scanner and real Customer/Partner file policy approved. |
-| `QuickBooks` | Environment, company/realm, OAuth, API, webhook verifier | Correct company, least-privilege credentials, webhook validation, sandbox journey, reconciliation, and rotation process approved. |
+| Manual accounting | POMS commercial catalog plus `/api/platform/order-accounting/journal-entries` and CSV export | Catalog ownership, date-range reconciliation, stable source-ID handling, general-ledger account mapping, tax treatment, posting procedure, duplicate prevention, and Finance ownership approved. |
 | Future external CRM adapter | Provider/account identifiers, credentials, API, webhook verifier, and field mapping | Not present or required today. Before any activation: fresh product scope, field ownership, least-privilege access, non-production proof, webhook validation, reconciliation, monitoring, and rotation approved. |
 | `VITE_CLERK_PUBLISHABLE_KEY` | Frontend Clerk instance | Matches the API's production Clerk configuration. |
 | `VITE_API_BASE_URL` | Frontend API base URL | Points to the approved API origin or reverse proxy. |
 | `VITE_USE_MOCK_SESSION` | Development mock session | Must not enable mock access in production. |
 
-Never copy local passwords, Clerk secrets, QuickBooks credentials, Postmark tokens, webhook tokens, or connection strings into documentation, logs, audit events, support messages, or committed configuration. Rotate any credential that is accidentally shared.
+Never copy local passwords, Clerk secrets, Postmark tokens, webhook tokens, or connection strings into documentation, logs, audit events, support messages, or committed configuration. Rotate any credential that is accidentally shared.
 
 ## Database migrations
 
@@ -79,9 +79,9 @@ Use the repository-local EF tool manifest and commands documented in `README.md`
 
 ## Durable delivery and recovery
 
-- QuickBooks commands, payment reconciliation, notifications, provisioning notices, and Lab projection events use durable records and hosted dispatchers.
-- A failed delivery remains visible with its error and retry state. Retry the existing record after correcting configuration or connectivity; do not recreate the order, grant, notification, estimate, or invoice to force delivery.
-- Repeated delivery must remain idempotent. Reconciliation should repair missed external events without rewriting immutable local commercial or scientific snapshots.
+- Notifications, provisioning notices, and Lab projection events use durable records and hosted dispatchers.
+- A failed delivery remains visible with its error and retry state. Retry the existing record after correcting configuration or connectivity; do not recreate the order, grant, or notification to force delivery.
+- Manual accounting source records are created transactionally with their billing boundary and keep stable IDs across repeated report downloads. Reconciliation must not rewrite immutable commercial or scientific snapshots.
 - Tenant-safe timelines and messages must remain separate from internal retry details and investigation notes.
 
 ## Production activation gates
@@ -105,7 +105,7 @@ Production is not ready until all applicable gates are evidenced:
 - approved external NGS provider services, identifiers, manifest/status
   exchange, custody expectations, returned-output handshake, and support
   ownership;
-- QuickBooks sandbox end-to-end validation, production company connection, webhook verification, payment reconciliation, duplicate prevention, and credential rotation;
+- Finance-approved manual journal-entry and invoice procedure, catalog ownership, date-range reconciliation, stable source-ID duplicate prevention, tax/account mapping, and operator acceptance;
 - production migration and authenticated validation of the first-party CRM for
   Companies, Contacts, Leads, Opportunities, pipelines, Activities, Tasks,
   reporting, CRM-to-Portal handoffs, duplicate prevention, authorization, and

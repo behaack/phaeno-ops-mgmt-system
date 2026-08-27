@@ -320,11 +320,32 @@ public class OrderManagementDomainTests
     }
 
     [Fact]
+    public void InvoiceBecomesAStableManualJournalEntrySourceWithoutChangingItsBalance()
+    {
+        var document = new CommercialDocumentLink(
+            OrderWorkflowTypes.LabService,
+            Guid.NewGuid(),
+            CommercialDocumentKind.Invoice,
+            125.50m,
+            "USD");
+
+        document.MarkReadyForManualAccounting("LAB-42", Now);
+
+        Assert.Equal(IntegrationStatus.Succeeded, document.SyncStatus);
+        Assert.Equal($"manual:{document.Id:N}", document.ExternalDocumentId);
+        Assert.Equal("LAB-42", document.DocumentNumber);
+        Assert.Null(document.DocumentUrl);
+        Assert.Equal(125.50m, document.Total);
+        Assert.Equal(125.50m, document.Balance);
+        Assert.Equal(Now, document.SynchronizedAt);
+    }
+
+    [Fact]
     public void FailedNotificationCanBeManuallyRequeued()
     {
         var notification = new OrderNotification(Guid.NewGuid(), null, OrderWorkflowTypes.LabService, Guid.NewGuid(),
             "lab-quote-issued", "Quote ready", "A quote is ready.");
-        notification.BeginAttempt();
+        notification.BeginAttempt(Now.AddMinutes(5));
         notification.MarkFailed("Delivery failed.", Now.AddMinutes(5));
 
         notification.Retry(Now);
@@ -333,6 +354,27 @@ public class OrderManagementDomainTests
         Assert.Equal(0, notification.AttemptCount);
         Assert.Null(notification.LastError);
         Assert.Throws<InvalidOperationException>(() => notification.Retry(Now));
+    }
+
+    [Fact]
+    public void ExpiredNotificationClaimCanBeRecoveredAfterItsLease()
+    {
+        var notification = new OrderNotification(Guid.NewGuid(), null, OrderWorkflowTypes.LabService, Guid.NewGuid(),
+            "lab-quote-issued", "Quote ready", "A quote is ready.");
+        var leaseExpiresAt = Now.AddMinutes(5);
+
+        notification.BeginAttempt(leaseExpiresAt);
+
+        Assert.Equal(OrderNotificationStatus.Sending, notification.Status);
+        Assert.Equal(leaseExpiresAt, notification.NextAttemptAt);
+        Assert.False(notification.CanRetry(leaseExpiresAt.AddTicks(-1)));
+        Assert.True(notification.CanRetry(leaseExpiresAt));
+
+        notification.Retry(leaseExpiresAt);
+
+        Assert.Equal(OrderNotificationStatus.Pending, notification.Status);
+        Assert.Equal(0, notification.AttemptCount);
+        Assert.Equal(leaseExpiresAt, notification.NextAttemptAt);
     }
 
     private static LabSample Sample(Guid orderId, string id, string biologicalSource = "Synthetic control") => new(orderId, id, "RNA", biologicalSource, 1,

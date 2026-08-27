@@ -1,10 +1,8 @@
 namespace PhaenoPortal.App.Features.OrderManagement.Controllers;
 
-using System.Text.Json;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
-using Microsoft.Extensions.Options;
 using PSeq.Operations.Commercial.Accounts.Domain;
 using PSeq.Operations.Commercial.OrderManagement.Domain;
 using PhaenoPortal.App.Features.OrderManagement.Domain;
@@ -17,10 +15,7 @@ using PhaenoPortal.App.Infrastructure.Persistence;
 [Route("api/platform/order-configuration")]
 public sealed class OrderConfigurationAdminController(
     PSeqOperationsDbContext dbContext,
-    OrderRequestContext requestContext,
-    OrderIdempotencyService idempotency,
-    IWebHostEnvironment environment,
-    IOptions<QuickBooksOptions> quickBooksOptions) : ControllerBase
+    OrderRequestContext requestContext) : ControllerBase
 {
     [HttpGet]
     public async Task<OrderConfigurationDto> Get(CancellationToken cancellationToken)
@@ -56,7 +51,7 @@ public sealed class OrderConfigurationAdminController(
     {
         await requestContext.RequirePlatformAdminAsync(HttpContext, cancellationToken);
         var item = await dbContext.AnalysisDefinitions.FirstOrDefaultAsync(value => value.Id == analysisId, cancellationToken) ?? throw Missing("analysis_not_found", "The analysis definition was not found.");
-        EnsureVersion(item.Version, request.Version); if (item.QboCatalogItemId != request.QboCatalogItemId) throw Conflict("analysis_catalog_link_frozen", "Create a new analysis to link a different QuickBooks item.");
+        EnsureVersion(item.Version, request.Version); if (item.QboCatalogItemId != request.QboCatalogItemId) throw Conflict("analysis_catalog_link_frozen", "Create a new analysis to link a different commercial catalog item.");
         Execute(() => item.Update(request.Name, request.Description, request.SubmissionInstructions, request.RequiredIntakeFieldsJson,
             request.ResultContractJson, request.IsActive, request.IsSynthetic));
         await dbContext.SaveChangesAsync(cancellationToken); return Analysis(item);
@@ -78,7 +73,7 @@ public sealed class OrderConfigurationAdminController(
         await requestContext.RequirePlatformAdminAsync(HttpContext, cancellationToken);
         var item = await dbContext.PartnerReagentOfferings.FirstOrDefaultAsync(value => value.Id == offeringId, cancellationToken) ?? throw Missing("offering_not_found", "The reagent offering was not found.");
         EnsureVersion(item.Version, request.Version); if (item.PartnerOrganizationId != request.PartnerOrganizationId || item.QboCatalogItemId != request.QboCatalogItemId)
-            throw Conflict("offering_identity_frozen", "Create a new offering to change its Partner or QuickBooks item.");
+            throw Conflict("offering_identity_frozen", "Create a new offering to change its Partner or commercial catalog item.");
         var catalog = await RequireCatalogItemAsync(request.QboCatalogItemId, cancellationToken);
         await EnsureNoOfferingOverlapAsync(request, offeringId, cancellationToken);
         Execute(() => item.Update(request.NegotiatedUnitPrice, request.Currency, request.SellingUnit, request.OrderIncrement,
@@ -102,7 +97,7 @@ public sealed class OrderConfigurationAdminController(
         var item = await dbContext.AssemblyProfiles.FirstOrDefaultAsync(value => value.Id == profileId, cancellationToken) ?? throw Missing("assembly_profile_not_found", "The assembly profile was not found.");
         EnsureVersion(item.Version, request.Version);
         if (item.QboCatalogItemId != request.QboCatalogItemId || item.Name != request.Name || item.ProfileVersion != request.ProfileVersion)
-            throw Conflict("assembly_profile_identity_frozen", "Create a new profile version to change its name, version, or QuickBooks item.");
+            throw Conflict("assembly_profile_identity_frozen", "Create a new profile version to change its name, version, or commercial catalog item.");
         Execute(() => item.Update(request.Description, request.Instructions, request.MetadataSchemaJson, request.AllowedFileKindsJson,
             request.OutputContractJson, request.MaximumFileSizeBytes, request.MaximumTotalSizeBytes, request.IsActive, request.IsSynthetic));
         await dbContext.SaveChangesAsync(cancellationToken); return Assembly(item);
@@ -123,30 +118,44 @@ public sealed class OrderConfigurationAdminController(
         await dbContext.SaveChangesAsync(cancellationToken); return Commercial(item, organization.Name);
     }
 
-    [HttpPost("catalog/sync")]
-    public async Task<IntegrationMessageDto> SyncCatalog(CancellationToken cancellationToken)
-    {
-        var actor = await requestContext.RequirePlatformAdminAsync(HttpContext, cancellationToken); var key = idempotency.RequireKey(HttpContext);
-        var payload = new { operation = "sync-catalog" }; var replay = await idempotency.ReadAsync<IntegrationMessageDto>(actor.Id, "qbo:catalog:sync", key, payload, cancellationToken);
-        if (replay != null) return replay;
-        var message = new OrderOutboxMessage(IntegrationOperation.SyncCatalog, "Configuration", Guid.Empty, key, "{}"); dbContext.OrderOutboxMessages.Add(message);
-        await dbContext.SaveChangesAsync(cancellationToken); var response = Integration(message);
-        idempotency.Store(actor.Id, "qbo:catalog:sync", key, payload, response, StatusCodes.Status202Accepted); await dbContext.SaveChangesAsync(cancellationToken);
-        Response.StatusCode = StatusCodes.Status202Accepted; return response;
-    }
-
-    [HttpPost("catalog/local")]
-    public async Task<CatalogItemDto> CreateLocalCatalogItem([FromBody] LocalCatalogItemRequest request, CancellationToken cancellationToken)
+    [HttpPost("catalog/items")]
+    public async Task<CatalogItemDto> CreateCatalogItem([FromBody] CatalogItemWriteRequest request, CancellationToken cancellationToken)
     {
         await requestContext.RequirePlatformAdminAsync(HttpContext, cancellationToken);
-        if (!environment.IsDevelopment() || quickBooksOptions.Value.IsConfigured)
-            throw new OrderManagementException("local_catalog_disabled", "Local catalog fixtures are available only in unconfigured development environments.", StatusCodes.Status404NotFound);
+        ValidateCatalogConvention(request);
+        await EnsureCatalogCodeAvailableAsync(request.ExternalItemId, null, cancellationToken);
         QboCatalogItem item;
-        try { item = new QboCatalogItem(request.ExternalItemId, request.Name, request.Description, request.SalesUnit,
-            request.BasePrice, request.Currency, request.IsActive, DateTime.UtcNow); }
+        try
+        {
+            item = new QboCatalogItem(request.ExternalItemId, request.Name, request.Description, request.SalesUnit,
+                request.BasePrice, request.Currency, request.IsActive, DateTime.UtcNow);
+        }
         catch (ArgumentException exception) { throw Invalid("catalog_item_invalid", exception.Message); }
-        dbContext.QboCatalogItems.Add(item); await dbContext.SaveChangesAsync(cancellationToken);
-        Response.StatusCode = StatusCodes.Status201Created; return Catalog(item);
+        dbContext.QboCatalogItems.Add(item);
+        await dbContext.SaveChangesAsync(cancellationToken);
+        Response.StatusCode = StatusCodes.Status201Created;
+        return Catalog(item);
+    }
+
+    [HttpPatch("catalog/items/{catalogItemId:guid}")]
+    public async Task<CatalogItemDto> UpdateCatalogItem(Guid catalogItemId, [FromBody] CatalogItemWriteRequest request, CancellationToken cancellationToken)
+    {
+        await requestContext.RequirePlatformAdminAsync(HttpContext, cancellationToken);
+        var item = await dbContext.QboCatalogItems.FirstOrDefaultAsync(value => value.Id == catalogItemId, cancellationToken)
+            ?? throw Missing("catalog_item_not_found", "The commercial catalog item was not found.");
+        EnsureVersion(item.Version, request.Version);
+        ValidateCatalogConvention(request);
+        if (!string.Equals(item.ExternalItemId, request.ExternalItemId.Trim(), StringComparison.Ordinal))
+            throw Conflict("catalog_item_code_frozen", "Create a new catalog item to use a different stable item code.");
+        await EnsureCatalogCodeAvailableAsync(request.ExternalItemId, catalogItemId, cancellationToken);
+        try
+        {
+            item.Sync(request.ExternalItemId, request.Name, request.Description, request.SalesUnit,
+                request.BasePrice, request.Currency, request.IsActive, DateTime.UtcNow);
+        }
+        catch (ArgumentException exception) { throw Invalid("catalog_item_invalid", exception.Message); }
+        await dbContext.SaveChangesAsync(cancellationToken);
+        return Catalog(item);
     }
 
     private async Task<OrderSystemConfiguration> EnsureSystemAsync(CancellationToken cancellationToken)
@@ -176,7 +185,15 @@ public sealed class OrderConfigurationAdminController(
 
     private async Task<QboCatalogItem> RequireCatalogItemAsync(Guid id, CancellationToken cancellationToken)
         => await dbContext.QboCatalogItems.AsNoTracking().FirstOrDefaultAsync(item => item.Id == id && item.IsActive, cancellationToken)
-            ?? throw Invalid("catalog_item_unavailable", "Select an active synchronized QuickBooks item.");
+            ?? throw Invalid("catalog_item_unavailable", "Select an active commercial catalog item.");
+
+    private async Task EnsureCatalogCodeAvailableAsync(string code, Guid? excludedId, CancellationToken cancellationToken)
+    {
+        var normalized = code.Trim();
+        if (await dbContext.QboCatalogItems.AsNoTracking().AnyAsync(item => item.ExternalItemId.ToLower() == normalized.ToLower()
+            && (!excludedId.HasValue || item.Id != excludedId.Value), cancellationToken))
+            throw Conflict("catalog_item_code_exists", "That stable item code is already in use.");
+    }
     private async Task RequirePartnerAsync(Guid id, CancellationToken cancellationToken)
     {
         if (!await dbContext.Organizations.AsNoTracking().AnyAsync(item => item.Id == id && item.IsActive && item.Kind == OrganizationKind.Partner, cancellationToken))
@@ -215,7 +232,8 @@ public sealed class OrderConfigurationAdminController(
         catch (ArgumentException exception) { throw Invalid("assembly_profile_invalid", exception.Message); }
     }
     private static CatalogItemDto Catalog(QboCatalogItem item) => new(item.Id, item.ExternalItemId, item.Name, item.Description,
-        item.SalesUnit, item.BasePrice, item.Currency, item.IsActive, item.LastSyncedAt, item.Version);
+        item.SalesUnit, item.BasePrice, item.Currency, item.IsActive, OrderServiceKeys.IsPSeqLabService(item.ExternalItemId),
+        item.LastSyncedAt, item.Version);
     private static AnalysisDefinitionDto Analysis(AnalysisDefinition item) => new(item.Id, item.QboCatalogItemId, item.Name,
         item.Description, item.SubmissionInstructions, item.RequiredIntakeFieldsJson, item.ResultContractJson, item.IsActive, item.IsSynthetic, item.Version);
     private static ReagentOfferingDto Offering(PartnerReagentOffering item, string name) => new(item.Id, item.PartnerOrganizationId,
@@ -227,8 +245,16 @@ public sealed class OrderConfigurationAdminController(
         item.MaximumFileSizeBytes, item.MaximumTotalSizeBytes, item.IsActive, item.IsSynthetic, item.Version);
     private static CommercialProfileDto Commercial(OrganizationCommercialProfile item, string name) => new(item.Id, item.OrganizationId,
         name, item.LabCreditApproved, item.AssemblyCreditApproved, item.QboCustomerId, item.Version);
-    private static IntegrationMessageDto Integration(OrderOutboxMessage item) => new(item.Id, item.Operation.ToString(), item.WorkflowType,
-        item.WorkflowId, item.Status.ToString(), item.AttemptCount, item.NextAttemptAt, item.LastError, item.CreatedAt, item.Version);
+    private static void ValidateCatalogConvention(CatalogItemWriteRequest request)
+    {
+        if (OrderServiceKeys.IsPSeqLabService(request.ExternalItemId)
+            && !OrderSalesUnits.IsSpecimen(request.SalesUnit))
+        {
+            throw Invalid(
+                "pseq_lab_service_unit_invalid",
+                $"The {OrderServiceKeys.PSeqLabService} catalog item must use the {OrderSalesUnits.Specimen} sales unit.");
+        }
+    }
     private static void EnsureVersion(long current, long? supplied) { if (!supplied.HasValue || supplied.Value != current) throw new DbUpdateConcurrencyException(); }
     private static void Execute(Action action)
     {

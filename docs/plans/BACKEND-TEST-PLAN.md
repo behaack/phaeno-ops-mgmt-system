@@ -158,6 +158,16 @@ and rollback-isolated PostgreSQL coverage.
   and CSV sample entry use the server-owned `extracted_rna` material type and
   `tube` quantity unit and cannot be finalized until identifiers and source
   counts exactly comply with the accepted Job profile.
+- [ ] Order-entitlement and Phaeno-recipient controller coverage - prove an
+  effective, `Ready` PSeq Lab Service entitlement and active offering are
+  required for Customer Job creation/submission/acceptance and Phaeno Job
+  initiation/quote issue; an ended entitlement blocks new Jobs without
+  silently invalidating an accepted snapshot. Prove Phaeno quote preparation
+  sends no Customer notice, quote issue/revision targets every active eligible
+  Customer administrator and fails when none exists, acceptance establishes
+  the acting administrator, ordinary and high-impact fan-out remains distinct,
+  and an early or unmatched package cannot enter the Customer order receipt or
+  Lab-authorization path.
 - [x] `backend/test/OrderManagementDomainTests.cs` - negotiated reagent price
   snapshots, effective quantity rules, destination restrictions, immutable
   placement confirmation, approved substitutions, partial shipment, and
@@ -166,7 +176,9 @@ and rollback-isolated PostgreSQL coverage.
   quote, placement, and processing continuity.
 - [x] `backend/test/OrderManagementDomainTests.cs` - operational-file scan and
   release gating, separate lab/assembly credit decisions, configurable quote
-  validity, and failed-notification manual recovery.
+  validity, stable manual journal-entry source creation without changing the
+  balance, failed-notification manual recovery, and recovery of an abandoned
+  `Sending` notification only after its claim lease expires.
 - [x] `backend/test/SampleShippingDomainTests.cs` - packet-barcode allocation,
   scanner framing and checksum rejection, deterministic compatibility and
   mandatory split rejection, effective revision boundaries, and immutable
@@ -192,11 +204,21 @@ and rollback-isolated PostgreSQL coverage.
   migrated database, and explicitly clean their run-specific Lab, Commercial
   projection, outbox, event-receipt, and audit fixtures.
 - [x] `backend/test/LabOperationsCommercialHandoffPostgresTests.cs` - opt-in
-  controller-path coverage proving quote acceptance atomically commits the
-  Commercial authorization and Lab work, provider rejection rolls both back
-  even after an intermediate save, accepted cancellation updates Commercial
-  and Lab together, and started Lab work vetoes the decision without partially
-  approving it. A fifth rollback-isolated journey assigns additive Lab roles
+  controller-path coverage proving an authorized Phaeno user can initiate an
+  active Customer's price-bearing Job as an immutable submitted revision in
+  `QuoteInPreparation`, the exact same initiation key/request replays one Job
+  and one idempotency record, missing no-PHI attestation is rejected without
+  creating a Job, an unrelated specimen-priced catalog item cannot satisfy the
+  designated laboratory-service quote line, the shared idempotency boundary
+  preserves replay status, rejects payload mismatch, and rolls back an
+  intermediate business save, quote acceptance opens sample-roster preparation
+  without creating Lab work, and roster finalization atomically creates and
+  idempotently replays the Commercial authorization, Lab work, specimen, and
+  shipping records. Provider
+  rejection rolls the finalization back even after an intermediate save,
+  accepted cancellation updates Commercial and Lab together, and started Lab
+  work vetoes the decision without partially approving it. The rollback-
+  isolated operator journey assigns additive Lab roles
   and exercises one-open-candidate protocol enforcement, active protocols,
   receipt/accession and barcode-print history,
   including automatic submitted/derived barcode allocation, readable protocol
@@ -209,8 +231,10 @@ and rollback-isolated PostgreSQL coverage.
   resolution, scientific approval, customer-safe projection delivery, and proof
   that Ready for release creates neither a managed file nor a Lab result release.
   The fixture uses unique
-  Customer/Phaeno identities and removes its Commercial, Laboratory, account,
-  idempotency, notification, and audit records.
+  Customer/Phaeno identities and removes its Commercial, Laboratory, shipping,
+  account, idempotency, notification, and audit records. All thirteen sources
+  compiled with zero warnings or errors on 2026-08-27; tests were not requested
+  and were not run.
 - [x] `backend/test/SampleShippingPostgresTests.cs` - opt-in authenticated
   controller/PostgreSQL coverage for destination, sample-type, and combination-
   rule revisions; active-rule overlap rejection; return-kit registration and
@@ -284,7 +308,7 @@ and rollback-isolated PostgreSQL coverage.
   committed specimen, reagent, or assembly sale; no routine Opportunity
   creation; Company and originating-Opportunity associations when present;
   amount/currency/status/payment summaries; cancellation/refund history; retry
-  without duplication; and QuickBooks/Portal authority over CRM projections.
+  without duplication; and POMS/accounting-system authority over CRM projections.
 - [ ] Direct configured-price work - cover entitled Customer and Partner
   specimen placement, Partner data-assembly placement, ineligible/custom-work
   routing, immutable pricing snapshots, Partner downstream-identity omission,
@@ -475,12 +499,17 @@ and rollback-isolated PostgreSQL coverage.
   idempotency, file ownership, download audit, and outbox atomicity through the
   real API host. Include adding and reconciling Job biological-source rows on an
   existing draft without treating new child records as stale updates.
-- [ ] QuickBooks adapter contract suite - cover catalog/payment synchronization,
-  estimates, invoices, credits, partial-shipment invoices, webhook replay and
-  signature rejection, bounded retry, and reconciliation mismatches against a
-  fake or sandbox company.
+- [ ] Manual accounting API/PostgreSQL journey - cover Phaeno-only authorization,
+  inclusive UTC date filtering, stable entry IDs, laboratory completion,
+  assembly output approval, per-shipment reagent rows, source references,
+  exclusion of historical provider-created documents, 366-day and 10,000-row
+  limits, repeat-download non-posting, CSV formula neutralization, and cross-
+  tenant non-discovery. QuickBooks adapter/webhook contract coverage is
+  deferred with the integration.
 - [ ] Notification dispatcher integration suite - cover acting-admin versus
-  all-admin recipient rules, Postmark failure, bounded retry, and manual retry.
+  all-admin recipient rules, Postmark failure, atomic `SKIP LOCKED` claims under
+  concurrent workers, active-lease exclusion, expired-claim recovery, bounded
+  retry, and manual retry.
 
 ## Remaining Coverage
 
@@ -499,9 +528,16 @@ and rollback-isolated PostgreSQL coverage.
   atomic approval plus
   account creation for unassociated onboarding/evaluation requests, including
   supported kind validation, duplicate-name and stale-version rejection,
-  durable request association, Pending readiness, and the guarantee that it
-  creates no invitation or entitlement and does not mark the request applied.
+  durable request association, Pending readiness, default-on Customer ordering
+  authorization, explicit opt-out, one atomic `Ready` PSeq Lab Service
+  entitlement, and the guarantee that it creates no invitation or order and
+  does not mark the request applied.
   Retain coverage of the separate endpoint as a legacy-request recovery path.
+- [x] Customer Lab ordering eligibility - focused PostgreSQL coverage verifies
+  that Phaeno initiation requires a current `Ready` entitlement, sends no
+  Customer notice during quote preparation, and queues quote issue for all
+  active Customer administrators. Canonical item identity/quantity and
+  idempotent initiation coverage remain in the same reference journey.
 - [ ] Remaining relationship management persistence - cover audit
   actor/time/version stamping, existing-organization readiness migration
   default, and request-number uniqueness.
@@ -530,6 +566,19 @@ and rollback-isolated PostgreSQL coverage.
 
 ## Requested Execution Log
 
+- 2026-08-27: the complete backend suite passed 213 tests with no failures; 23
+  opt-in PostgreSQL tests were skipped because
+  `PSEQ_OPERATIONS_REFERENCE_CONNECTION` is not configured. The solution build
+  completed with zero warnings and zero errors. The skipped set includes the
+  new ordering-entitlement and Phaeno quote-recipient reference journeys, so
+  their environment-backed acceptance remains pending.
+- 2026-08-27: order-workflow reliability source coverage was extended for an
+  expired notification claim, atomic Phaeno-initiation replay, and rejection of
+  an unrelated specimen fee during laboratory pricing. `dotnet build
+  backend/PSeq.Operations.slnx --no-restore` compiled the application and test
+  sources with zero warnings and zero errors. Backend tests were not requested
+  and were not run; the opt-in PostgreSQL and hosted dispatcher journeys remain
+  deferred above.
 - 2026-08-26: standalone CRM verification passed the complete Release backend
   suite: 210 tests passed, 13 opt-in PostgreSQL tests were skipped by their
   existing environment guards, and no tests failed. The Release solution build

@@ -1,28 +1,28 @@
-import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
+import { useQuery } from '@tanstack/react-query'
 import {
   Boxes,
   ChartSpline,
   Landmark,
   PackageCheck,
-  RefreshCw,
   Settings,
+  Tags,
   Workflow,
 } from 'lucide-react'
 import { useState } from 'react'
 
-import { getOrderConfiguration, getOrderErrorMessage, syncQuickBooksCatalog } from '#/api/order-management'
+import { getOrderConfiguration, getOrderErrorMessage } from '#/api/order-management'
 import { WorkspaceSidebar, type WorkspaceSidebarItem } from '#/components/WorkspaceSidebar'
 import { Alert, AlertDescription, AlertTitle } from '#/components/ui/alert'
-import { Button } from '#/components/ui/button'
 import { usePhaenoSession } from '#/features/auth/session-context'
 import { AnalysisConfigurationPanel } from './AnalysisConfigurationPanel'
 import { AssemblyConfigurationPanel } from './AssemblyConfigurationPanel'
+import { CatalogConfigurationPanel } from './CatalogConfigurationPanel'
 import { CommercialConfigurationPanel } from './CommercialConfigurationPanel'
 import { ReagentConfigurationPanel } from './ReagentConfigurationPanel'
 import { SampleShippingConfigurationPanel } from './SampleShippingConfigurationPanel'
 import { SystemConfigurationPanel } from './SystemConfigurationPanel'
 
-type ConfigurationSection = 'system' | 'analyses' | 'sample-shipping' | 'reagents' | 'assembly' | 'commercial'
+type ConfigurationSection = 'system' | 'catalog' | 'analyses' | 'sample-shipping' | 'reagents' | 'assembly' | 'commercial'
 
 const configurationSections: ReadonlyArray<WorkspaceSidebarItem<ConfigurationSection>> = [
   {
@@ -30,6 +30,12 @@ const configurationSections: ReadonlyArray<WorkspaceSidebarItem<ConfigurationSec
     label: 'Defaults',
     description: 'Quote validity, submission, and shipping rules',
     icon: Settings,
+  },
+  {
+    value: 'catalog',
+    label: 'Catalog',
+    description: 'Commercial item codes, sales units, and base prices',
+    icon: Tags,
   },
   {
     value: 'analyses',
@@ -57,20 +63,18 @@ const configurationSections: ReadonlyArray<WorkspaceSidebarItem<ConfigurationSec
   },
   {
     value: 'commercial',
-    label: 'Credit & QBO',
-    description: 'Credit decisions and QuickBooks mappings',
+    label: 'Credit',
+    description: 'Credit decisions and release policies',
     icon: Landmark,
   },
 ]
 
 export function OrderConfigurationPage() {
   const { authProvider, session } = usePhaenoSession()
-  const queryClient = useQueryClient()
   const [section, setSection] = useState<ConfigurationSection>('system')
   const canManage = Boolean(session?.capabilities.canManageOrderConfiguration)
   const apiEnabled = canManage && authProvider !== 'mock'
   const configuration = useQuery({ queryKey: ['order-configuration'], queryFn: getOrderConfiguration, enabled: apiEnabled })
-  const sync = useMutation({ mutationFn: syncQuickBooksCatalog, onSuccess: async () => queryClient.invalidateQueries({ queryKey: ['order-configuration'] }) })
 
   if (!canManage) return <main className="page-wrap px-4 py-8"><Alert variant="destructive"><AlertTitle>Order configuration unavailable</AlertTitle><AlertDescription>A Phaeno platform administrator is required.</AlertDescription></Alert></main>
   return (
@@ -82,24 +86,15 @@ export function OrderConfigurationPage() {
         onValueChange={setSection}
       >
         <div className="page-wrap px-4">
-          <section className="mb-6 flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
+          <section className="mb-6 max-w-3xl">
             <div>
               <h1 className="text-3xl font-semibold">Order configuration</h1>
               <p className="mt-2 max-w-3xl text-sm leading-6 text-muted-foreground">
-                Link QuickBooks items to scientific services, maintain Partner-negotiated
-                reagent prices, version assembly profiles, and control credit-dependent
-                release behavior and sample-shipping packets.
+                Maintain Phaeno’s commercial catalog, link items to scientific services,
+                set Partner-negotiated reagent prices, version assembly profiles, and
+                control credit-dependent release behavior and sample-shipping packets.
               </p>
             </div>
-            <Button
-              type="button"
-              variant="outline"
-              disabled={!apiEnabled || sync.isPending}
-              onClick={() => sync.mutate()}
-            >
-              <RefreshCw data-icon="inline-start" />
-              {sync.isPending ? 'Queueing sync…' : 'Sync QuickBooks catalog'}
-            </Button>
           </section>
           {authProvider === 'mock' ? (
             <Alert className="mb-5">
@@ -119,6 +114,7 @@ export function OrderConfigurationPage() {
           ) : null}
           {configuration.isLoading ? <p role="status">Loading order configuration…</p> : null}
           {configuration.data && section === 'system' ? <SystemConfigurationPanel configuration={configuration.data} /> : null}
+          {configuration.data && section === 'catalog' ? <CatalogConfigurationPanel configuration={configuration.data} /> : null}
           {configuration.data && section === 'analyses' ? <AnalysisConfigurationPanel configuration={configuration.data} /> : null}
           {section === 'sample-shipping' ? <SampleShippingConfigurationPanel apiEnabled={apiEnabled} /> : null}
           {configuration.data && section === 'reagents' ? <ReagentConfigurationPanel configuration={configuration.data} /> : null}

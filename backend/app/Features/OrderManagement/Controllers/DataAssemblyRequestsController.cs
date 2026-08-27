@@ -101,26 +101,32 @@ public sealed class DataAssemblyRequestsController(
     {
         var tenant = await requestContext.RequireTenantAsync(HttpContext, OrganizationKind.Partner, true, cancellationToken);
         var key = idempotency.RequireKey(HttpContext);
-        var replay = await idempotency.ReadAsync<DataAssemblyRequestDto>(tenant.Actor.Id, "assembly:create", key, request, cancellationToken);
-        if (replay != null) return replay;
-        var profile = await dbContext.AssemblyProfiles.AsNoTracking().FirstOrDefaultAsync(item => item.Id == request.AssemblyProfileId && item.IsActive && !item.IsSynthetic, cancellationToken)
-            ?? throw Invalid("assembly_profile_unavailable", "Select an active data-assembly profile.");
-        DataAssemblyRequest item;
-        try
-        {
-            item = new DataAssemblyRequest(tenant.Organization.Id, OrderNumberGenerator.Assembly(), request.ProjectReference,
-                profile.Id, profile.ProfileVersion, profile.Name, profile.Instructions, request.MetadataJson,
-                request.RequestedOutput, request.ProcessingNotes, request.ProhibitedDataConfirmed);
-        }
-        catch (ArgumentException exception) { throw Invalid("assembly_request_invalid", exception.Message); }
-        dbContext.DataAssemblyRequests.Add(item);
-        Event(item, "Created", item.Status.ToString(), tenant.Actor.Id);
-        await dbContext.SaveChangesAsync(cancellationToken);
-        var response = await MapAsync(item, true, false, cancellationToken);
-        idempotency.Store(tenant.Actor.Id, "assembly:create", key, request, response, StatusCodes.Status201Created);
-        await dbContext.SaveChangesAsync(cancellationToken);
-        Response.StatusCode = StatusCodes.Status201Created;
-        return response;
+        var execution = await idempotency.ExecuteAsync(
+            tenant.Actor.Id,
+            "assembly:create",
+            key,
+            request,
+            async operationCancellationToken =>
+            {
+                var profile = await dbContext.AssemblyProfiles.AsNoTracking().FirstOrDefaultAsync(item => item.Id == request.AssemblyProfileId && item.IsActive && !item.IsSynthetic, operationCancellationToken)
+                    ?? throw Invalid("assembly_profile_unavailable", "Select an active data-assembly profile.");
+                DataAssemblyRequest item;
+                try
+                {
+                    item = new DataAssemblyRequest(tenant.Organization.Id, OrderNumberGenerator.Assembly(), request.ProjectReference,
+                        profile.Id, profile.ProfileVersion, profile.Name, profile.Instructions, request.MetadataJson,
+                        request.RequestedOutput, request.ProcessingNotes, request.ProhibitedDataConfirmed);
+                }
+                catch (ArgumentException exception) { throw Invalid("assembly_request_invalid", exception.Message); }
+                dbContext.DataAssemblyRequests.Add(item);
+                Event(item, "Created", item.Status.ToString(), tenant.Actor.Id);
+                await dbContext.SaveChangesAsync(operationCancellationToken);
+                return await MapAsync(item, true, false, operationCancellationToken);
+            },
+            StatusCodes.Status201Created,
+            cancellationToken);
+        Response.StatusCode = execution.StatusCode;
+        return execution.Response;
     }
 
     [HttpPatch("{requestId:guid}")]
@@ -194,38 +200,47 @@ public sealed class DataAssemblyRequestsController(
     {
         var tenant = await requestContext.RequireTenantAsync(HttpContext, OrganizationKind.Partner, true, cancellationToken);
         var key = idempotency.RequireKey(HttpContext); var scope = $"assembly:{requestId}:submit";
-        var replay = await idempotency.ReadAsync<DataAssemblyRequestDto>(tenant.Actor.Id, scope, key, request, cancellationToken);
-        if (replay != null) return replay;
-        var item = await ReadAsync(requestId, tenant.Organization.Id, cancellationToken); EnsureVersion(item.Version, request.Version);
-        var profile = await dbContext.AssemblyProfiles.AsNoTracking().FirstOrDefaultAsync(value => value.Id == item.AssemblyProfileId, cancellationToken)
-            ?? throw Invalid("assembly_profile_unavailable", "The request profile is unavailable.");
-        if (profile.IsSynthetic || (item.InputRevision == 0 && !profile.IsActive))
-            throw Invalid("assembly_profile_unavailable", "The selected assembly profile is not active for Partner submissions.");
-        ValidateMetadata(profile.MetadataSchemaJson, item.MetadataJson);
-        var inputs = await dbContext.ManagedOperationalFiles.Where(file => file.WorkflowId == requestId
-            && file.Purpose == OperationalFilePurpose.AssemblyInput && file.ReleaseStatus != FileReleaseStatus.Withdrawn).OrderBy(file => file.CreatedAt).ToListAsync(cancellationToken);
-        if (inputs.Count == 0) throw Invalid("assembly_input_required", "Upload at least one assembly input file.");
-        if (inputs.Any(file => file.ScanStatus != OperationalFileScanStatus.Clean))
-            throw Conflict("assembly_input_not_clean", "Every input must pass scanning before submission.");
-        var manifestIds = ManifestFileIds(request.ManifestJson);
-        var inputIds = inputs.Select(file => file.Id).ToHashSet();
-        if (manifestIds.Count == 0 || !manifestIds.SetEquals(inputIds))
-            throw Invalid("assembly_manifest_invalid", "The input manifest must identify every active file in this request and no other files.");
-        var allowedKinds = AllowedFileKinds(profile.AllowedFileKindsJson);
-        if (inputs.Any(file => !allowedKinds.Contains(file.FileKind) || file.SizeBytes > profile.MaximumFileSizeBytes)
-            || inputs.Sum(file => file.SizeBytes) > profile.MaximumTotalSizeBytes)
-            throw Invalid("assembly_profile_file_rules_failed", "One or more inputs do not meet the selected assembly profile's file rules.");
-        var revision = new AssemblyInputRevision(item.Id, item.InputRevision + 1, item.CurrentInputRevisionId,
-            request.ManifestJson, item.Status == AssemblyRequestStatus.ChangesRequested ? item.TenantSafeReason : null,
-            request.ValidationSummaryJson, tenant.Actor.Id, DateTime.UtcNow);
-        foreach (var input in inputs.Where(file => !file.ParentRecordId.HasValue)) input.AttachToParent(revision.Id);
-        item.InputRevisions.Add(revision);
-        var before = item.Status.ToString(); Execute(() => item.Submit(revision.Id, DateTime.UtcNow));
-        Event(item, before, item.Status.ToString(), tenant.Actor.Id);
-        Notice(item, "assembly-submitted", "Data assembly request submitted", $"{item.RequestNumber} was submitted for intake validation.");
-        await dbContext.SaveChangesAsync(cancellationToken);
-        var response = await MapAsync(item, true, false, cancellationToken); idempotency.Store(tenant.Actor.Id, scope, key, request, response);
-        await dbContext.SaveChangesAsync(cancellationToken); return response;
+        var execution = await idempotency.ExecuteAsync(
+            tenant.Actor.Id,
+            scope,
+            key,
+            request,
+            async operationCancellationToken =>
+            {
+                var item = await ReadAsync(requestId, tenant.Organization.Id, operationCancellationToken);
+                EnsureVersion(item.Version, request.Version);
+                var profile = await dbContext.AssemblyProfiles.AsNoTracking().FirstOrDefaultAsync(value => value.Id == item.AssemblyProfileId, operationCancellationToken)
+                    ?? throw Invalid("assembly_profile_unavailable", "The request profile is unavailable.");
+                if (profile.IsSynthetic || (item.InputRevision == 0 && !profile.IsActive))
+                    throw Invalid("assembly_profile_unavailable", "The selected assembly profile is not active for Partner submissions.");
+                ValidateMetadata(profile.MetadataSchemaJson, item.MetadataJson);
+                var inputs = await dbContext.ManagedOperationalFiles.Where(file => file.WorkflowId == requestId
+                    && file.Purpose == OperationalFilePurpose.AssemblyInput && file.ReleaseStatus != FileReleaseStatus.Withdrawn).OrderBy(file => file.CreatedAt).ToListAsync(operationCancellationToken);
+                if (inputs.Count == 0) throw Invalid("assembly_input_required", "Upload at least one assembly input file.");
+                if (inputs.Any(file => file.ScanStatus != OperationalFileScanStatus.Clean))
+                    throw Conflict("assembly_input_not_clean", "Every input must pass scanning before submission.");
+                var manifestIds = ManifestFileIds(request.ManifestJson);
+                var inputIds = inputs.Select(file => file.Id).ToHashSet();
+                if (manifestIds.Count == 0 || !manifestIds.SetEquals(inputIds))
+                    throw Invalid("assembly_manifest_invalid", "The input manifest must identify every active file in this request and no other files.");
+                var allowedKinds = AllowedFileKinds(profile.AllowedFileKindsJson);
+                if (inputs.Any(file => !allowedKinds.Contains(file.FileKind) || file.SizeBytes > profile.MaximumFileSizeBytes)
+                    || inputs.Sum(file => file.SizeBytes) > profile.MaximumTotalSizeBytes)
+                    throw Invalid("assembly_profile_file_rules_failed", "One or more inputs do not meet the selected assembly profile's file rules.");
+                var revision = new AssemblyInputRevision(item.Id, item.InputRevision + 1, item.CurrentInputRevisionId,
+                    request.ManifestJson, item.Status == AssemblyRequestStatus.ChangesRequested ? item.TenantSafeReason : null,
+                    request.ValidationSummaryJson, tenant.Actor.Id, DateTime.UtcNow);
+                foreach (var input in inputs.Where(file => !file.ParentRecordId.HasValue)) input.AttachToParent(revision.Id);
+                item.InputRevisions.Add(revision);
+                var before = item.Status.ToString();
+                Execute(() => item.Submit(revision.Id, DateTime.UtcNow));
+                Event(item, before, item.Status.ToString(), tenant.Actor.Id);
+                Notice(item, "assembly-submitted", "Data assembly request submitted", $"{item.RequestNumber} was submitted for intake validation.");
+                await dbContext.SaveChangesAsync(operationCancellationToken);
+                return await MapAsync(item, true, false, operationCancellationToken);
+            },
+            cancellationToken: cancellationToken);
+        return execution.Response;
     }
 
     [HttpPost("{requestId:guid}/withdraw")]
@@ -243,15 +258,26 @@ public sealed class DataAssemblyRequestsController(
         var tenant = await requestContext.RequireTenantAsync(HttpContext, OrganizationKind.Partner, true, cancellationToken);
         if (request.QuoteId != quoteId || string.IsNullOrWhiteSpace(request.PurchaseOrderNumber)) throw Invalid("assembly_quote_acceptance_invalid", "A matching quote and purchase order number are required.");
         var key = idempotency.RequireKey(HttpContext); var scope = $"assembly:{requestId}:quote:{quoteId}:accept";
-        var replay = await idempotency.ReadAsync<DataAssemblyRequestDto>(tenant.Actor.Id, scope, key, request, cancellationToken);
-        if (replay != null) return replay;
-        var item = await ReadAsync(requestId, tenant.Organization.Id, cancellationToken); EnsureVersion(item.Version, request.Version);
-        var quote = item.Quotes.SingleOrDefault(value => value.Id == quoteId) ?? throw Missing(); var before = item.Status.ToString();
-        Execute(() => quote.Accept(tenant.Actor.Id, DateTime.UtcNow)); Execute(() => item.AcceptQuote(quoteId, request.PurchaseOrderNumber!, DateTime.UtcNow));
-        Event(item, before, item.Status.ToString(), tenant.Actor.Id); Notice(item, "assembly-quote-accepted", "Data assembly quote accepted", $"{item.RequestNumber} is queued for processing.");
-        await dbContext.SaveChangesAsync(cancellationToken);
-        var response = await MapAsync(item, true, false, cancellationToken); idempotency.Store(tenant.Actor.Id, scope, key, request, response);
-        await dbContext.SaveChangesAsync(cancellationToken); return response;
+        var execution = await idempotency.ExecuteAsync(
+            tenant.Actor.Id,
+            scope,
+            key,
+            request,
+            async operationCancellationToken =>
+            {
+                var item = await ReadAsync(requestId, tenant.Organization.Id, operationCancellationToken);
+                EnsureVersion(item.Version, request.Version);
+                var quote = item.Quotes.SingleOrDefault(value => value.Id == quoteId) ?? throw Missing();
+                var before = item.Status.ToString();
+                Execute(() => quote.Accept(tenant.Actor.Id, DateTime.UtcNow));
+                Execute(() => item.AcceptQuote(quoteId, request.PurchaseOrderNumber!, DateTime.UtcNow));
+                Event(item, before, item.Status.ToString(), tenant.Actor.Id);
+                Notice(item, "assembly-quote-accepted", "Data assembly quote accepted", $"{item.RequestNumber} is queued for processing.");
+                await dbContext.SaveChangesAsync(operationCancellationToken);
+                return await MapAsync(item, true, false, operationCancellationToken);
+            },
+            cancellationToken: cancellationToken);
+        return execution.Response;
     }
 
     [HttpPost("{requestId:guid}/cancellation-requests")]
@@ -259,16 +285,25 @@ public sealed class DataAssemblyRequestsController(
     {
         var tenant = await requestContext.RequireTenantAsync(HttpContext, OrganizationKind.Partner, true, cancellationToken);
         var key = idempotency.RequireKey(HttpContext); var scope = $"assembly:{requestId}:cancellation";
-        var replay = await idempotency.ReadAsync<DataAssemblyRequestDto>(tenant.Actor.Id, scope, key, request, cancellationToken);
-        if (replay != null) return replay;
-        var item = await ReadAsync(requestId, tenant.Organization.Id, cancellationToken); EnsureVersion(item.Version, request.Version);
-        var before = item.Status.ToString(); Execute(item.RequestCancellation);
-        dbContext.OrderCancellationRequests.Add(new OrderCancellationRequest(item.OrganizationId, OrderWorkflowTypes.DataAssembly,
-            item.Id, tenant.Actor.Id, request.Reason, request.ScopeJson));
-        Event(item, before, item.Status.ToString(), tenant.Actor.Id, request.Reason);
-        await dbContext.SaveChangesAsync(cancellationToken);
-        var response = await MapAsync(item, true, false, cancellationToken); idempotency.Store(tenant.Actor.Id, scope, key, request, response);
-        await dbContext.SaveChangesAsync(cancellationToken); return response;
+        var execution = await idempotency.ExecuteAsync(
+            tenant.Actor.Id,
+            scope,
+            key,
+            request,
+            async operationCancellationToken =>
+            {
+                var item = await ReadAsync(requestId, tenant.Organization.Id, operationCancellationToken);
+                EnsureVersion(item.Version, request.Version);
+                var before = item.Status.ToString();
+                Execute(item.RequestCancellation);
+                dbContext.OrderCancellationRequests.Add(new OrderCancellationRequest(item.OrganizationId, OrderWorkflowTypes.DataAssembly,
+                    item.Id, tenant.Actor.Id, request.Reason, request.ScopeJson));
+                Event(item, before, item.Status.ToString(), tenant.Actor.Id, request.Reason);
+                await dbContext.SaveChangesAsync(operationCancellationToken);
+                return await MapAsync(item, true, false, operationCancellationToken);
+            },
+            cancellationToken: cancellationToken);
+        return execution.Response;
     }
 
     [HttpGet("{requestId:guid}/outputs/{releaseId:guid}")]

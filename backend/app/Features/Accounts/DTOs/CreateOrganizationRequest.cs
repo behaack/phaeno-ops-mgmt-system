@@ -25,4 +25,6 @@ public sealed record CreateOrganizationRequest
     public PortalReadinessStatus PortalReadiness { get; init; } = PortalReadinessStatus.NotReviewed;
 
     public string? PortalReadinessNote { get; init; }
+
+    public bool OrderingAuthorized { get; init; } = true;
 }

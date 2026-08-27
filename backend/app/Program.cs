@@ -46,8 +46,6 @@ builder.Services.AddOptions<OrderManagementOptions>()
         options => options.HasValidDownloadSettings,
         "OrderManagement download leases must be 1-1440 minutes and reconciliation must run every 5-300 seconds.")
     .ValidateOnStart();
-builder.Services.Configure<QuickBooksOptions>(
-    builder.Configuration.GetSection(QuickBooksOptions.SectionName));
 if (builder.Environment.IsDevelopment())
 {
     var dataProvisioningSection = builder.Configuration.GetSection(
@@ -96,22 +94,12 @@ builder.Services.AddScoped<ReleasedDeliverableDownloadProjectionService>();
 builder.Services.AddHostedService<ReleasedDeliverableDownloadAttemptReconciler>();
 builder.Services.AddScoped<OrderRequestContext>();
 builder.Services.AddScoped<OrderIdempotencyService>();
+builder.Services.AddScoped<ManualCommercialReleaseService>();
 builder.Services.AddScoped<SampleShippingPacketService>();
 builder.Services.AddScoped<SampleShippingWorkflowReader>();
 builder.Services.AddScoped<ILabOperationsProvider, InternalLabOperationsProvider>();
 builder.Services.AddScoped<LabOperationsRequestContext>();
 builder.Services.AddHostedService<LabOperationsProjectionDispatcher>();
-builder.Services.AddHttpClient("QuickBooksOAuth");
-builder.Services.AddSingleton(services => new QuickBooksAccessTokenProvider(
-    services.GetRequiredService<IHttpClientFactory>().CreateClient("QuickBooksOAuth"),
-    services.GetRequiredService<IOptions<QuickBooksOptions>>()));
-builder.Services.AddHttpClient<HttpQuickBooksGateway>();
-builder.Services.AddScoped<LoggingQuickBooksGateway>();
-builder.Services.AddScoped<IQuickBooksGateway>(services =>
-    services.GetRequiredService<IOptions<QuickBooksOptions>>().Value.IsConfigured
-        ? services.GetRequiredService<HttpQuickBooksGateway>()
-        : services.GetRequiredService<LoggingQuickBooksGateway>());
-builder.Services.AddHostedService<OrderIntegrationDispatcher>();
 builder.Services.AddHttpClient<PostmarkOrderNotificationSender>((services, httpClient) =>
 {
     var postmarkOptions = services.GetRequiredService<IOptions<PostmarkOptions>>().Value;

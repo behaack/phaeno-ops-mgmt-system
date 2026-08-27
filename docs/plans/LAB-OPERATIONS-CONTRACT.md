@@ -37,12 +37,16 @@ or deployments.
   customer-safe fields, and no-file publication at `ReadyForRelease`. They
   require the explicitly configured migrated reference database and all five
   passed together on 2026-07-16.
-- Commercial handoff coverage: five additional opt-in PostgreSQL controller
-  tests prove atomic quote authorization, rollback after intermediate provider
-  persistence, accepted cancellation, a started-work cancellation veto, and
-  the complete rollback-isolated operator journey through the customer-safe
-  Ready-for-release projection. All five passed together on 2026-07-16.
-- Completed application integration: accepted customer quotes create the
+- Commercial handoff coverage: thirteen opt-in PostgreSQL controller test sources
+  now prove Phaeno initiation and shared command idempotency, quote acceptance
+  without premature Lab work, atomic roster-finalization authorization and
+  shipping, rollback after intermediate provider persistence, accepted
+  cancellation, a started-work cancellation veto, and the complete rollback-
+  isolated operator journey through the customer-safe Ready-for-release
+  projection. The original five-case handoff suite passed on 2026-07-16. The
+  expanded sources compiled on 2026-08-27; the current suite was not run.
+- Completed application integration: accepted customer quotes open exact
+  sample-roster preparation, and replay-safe finalization of a compliant roster creates the
   Commercial authorization and Lab work atomically; approved cancellations are
   checked by Lab before Commercial commits; durable events update idempotent,
   monotonic Commercial projections; Lab roles protect the operator workflows;
@@ -593,8 +597,8 @@ contract.
 - automatically amends or cancels only while affected specimens remain
   unreceived
 - returns a provider-neutral current work projection for reconciliation
-- participates in the caller's transaction so quote acceptance cannot leave
-  Commercial authorization and Lab work out of sync
+- participates in the caller's transaction so sample-roster finalization cannot
+  leave Commercial authorization, shipping, and Lab work out of sync
 - writes durable outbox events that the registered dispatcher applies to
   Commercial-owned projections with event-receipt and projection-version guards
 

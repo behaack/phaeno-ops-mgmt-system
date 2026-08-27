@@ -33,9 +33,12 @@ retain their normal approval boundaries.
 - POMS already owns durable organizations, requests, approvals, memberships,
   entitlements, operational work, results, and audit history. Preserve those
   boundaries and extend them instead of adding a parallel commercial system.
-- QuickBooks Online remains the separately approved and implemented financial
-  system. This decision does not change its existing item, estimate, invoice,
-  or payment boundaries.
+- QuickBooks Online integration is deferred. POMS owns the active commercial
+  catalog, immutable quote and billing-source facts, credit/release state, and
+  the Phaeno-only manual journal-entry source report. Finance prepares and
+  posts journal entries and invoices outside POMS under a separately approved
+  reconciliation procedure. Dormant QuickBooks adapter and compatibility types
+  are not active runtime dependencies and do not establish payment state.
 
 ## Product Need
 
@@ -67,8 +70,9 @@ changes, and offboarding.
 - reviews, approves, returns, declines, applies, or closes requests according
   to existing authorization and concurrency rules
 - invites the designated Portal administrator only after the account decision
-- configures readiness and service entitlements separately from account
-  creation
+- chooses the default-on Customer ordering authorization during account
+  creation, then configures readiness and any other service entitlements in
+  their owning account surfaces
 - records custom-work, Trial Project, relationship-change, and
   offboarding requests inside POMS
 - records commercial follow-up and final outcome when those facts are required
@@ -106,7 +110,7 @@ POMS owns all state required to operate the standalone product:
 - direct and sales-assisted order handoffs
 - readiness, entitlements, projects, samples, laboratory work, results, and
   audit history
-- committed-sale records and the approved QuickBooks boundary
+- committed-sale records and the approved manual-accounting boundary
 
 A CRM company or contact is not a Portal organization or Portal user. Only an
 explicit approved transition creates or links a Portal account, and only the
@@ -155,9 +159,14 @@ executable scientific work, or overwrite POMS-owned operational state.
 4. An authorized reviewer approves, returns, or declines the request using the
    existing review queue and optimistic-concurrency rules.
 5. Approval atomically creates and associates the pending organization when one
-   does not already exist. It does not grant access or entitlements.
-6. Staff complete readiness, enable approved services, and invite the
-   designated organization administrator through separate explicit actions.
+   does not already exist. For a Customer, the reviewer also sees an explicit
+   **Ordering authorized** choice that defaults on. On creates a current,
+   `Ready` PSeq Lab Service entitlement in the same transaction; off creates
+   the account without ordering access. Neither choice grants user access or
+   creates an order.
+6. Staff complete readiness, review or add any remaining approved services,
+   and invite the designated organization administrator through explicit
+   actions.
 7. Staff mark the request complete only after the owning setup checks pass.
 
 ### Trial Project request
@@ -180,8 +189,16 @@ executable scientific work, or overwrite POMS-owned operational state.
    the organization and Phaeno owner.
 3. Staff record scoping, commercial decision, and the accepted commercial
    snapshot in POMS using the owning order plan's boundaries.
-4. Acceptance creates a pending operational handoff. It never silently creates
-   active laboratory work.
+4. Pre-entitlement discovery, negotiation, and estimates remain CRM custom-work
+   facts rather than Customer Jobs. Before a sales-assisted request can become
+   an Order Management Job, the Customer must have an effective, `Ready` PSeq
+   Lab Service entitlement and active offering. An approved exception grants an
+   explicit, audited, and, when appropriate, time-bounded entitlement rather
+   than bypassing eligibility.
+5. Acceptance creates a pending operational handoff. It never silently creates
+   active laboratory work. Ending an entitlement later blocks new orders but
+   does not silently discard accepted work; that work follows its owning hold
+   or cancellation workflow.
 
 ### Relationship change and offboarding
 
@@ -276,9 +293,9 @@ integrate that CRM with existing Accounts and operational boundaries.
 - Remove required HubSpot Company and Deal identifiers from the user workflow.
 - Create a provider-neutral internal request through the existing durable
   review and approval boundary.
-- Preserve atomic approval-plus-account creation, pending readiness, separate
-  invitation and entitlement actions, recovery behavior, and request
-  completion.
+- Preserve atomic approval-plus-account creation, pending readiness, the
+  default-on but explicit Customer ordering-authorization choice, separate
+  invitation handling, recovery behavior, and request completion.
 - Update Accounts help and focused backend, frontend, and E2E coverage.
 
 ### Slice 2: CRM-owned commercial intake — completed
@@ -329,8 +346,9 @@ integrate that CRM with existing Accounts and operational boundaries.
   Portal account proposals from the first-party CRM entirely in POMS.
 - No standalone account or commercial-intake form requires a CRM record or
   external identifier.
-- Approval, account creation, invitation, readiness, entitlement, and
-  executable-work boundaries remain separate and auditable.
+- Approval and account creation remain atomic. Customer ordering authorization
+  is an explicit, audited choice on that operation and defaults on; invitation,
+  readiness completion, and executable work remain separate and auditable.
 - Authorized staff can create Trial Project and custom-work requests entirely
   in POMS without creating active work prematurely.
 - External users receive only the capabilities granted by organization kind,

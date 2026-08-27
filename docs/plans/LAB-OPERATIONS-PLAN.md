@@ -15,9 +15,11 @@ or production activation.
   application scope. Database-backed controller/provider verification is
   complete; physical bench validation and production activation are
   incomplete.
-  Customer quote acceptance atomically creates the
-  Commercial authorization and Laboratory work order; approved cancellation
-  reaches Lab before Commercial commits it. Additive Lab roles, the operator
+  Customer quote acceptance atomically records commercial placement and opens
+  exact sample-roster preparation. Finalizing the compliant roster atomically
+  creates the Commercial authorization, Laboratory work order, specimens, and
+  shipment records; approved cancellation reaches Lab before Commercial
+  commits it. Additive Lab roles, the operator
   workspace, durable Lab-to-Commercial projections, receipt/accession and
   physical lineage, controlled protocols and execution, including the
   dedicated structured version builder, materials and equipment, libraries and
@@ -28,8 +30,8 @@ or production activation.
   reasoned print/reprint/failure history, exact scan lookup, and scan-first
   QC-passed-library batch entry with duplicate and wrong-context rejection.
   Phaeno operators can use the **Order intake** section in Order Operations to
-  reach a placed order's existing work order; this is a discoverability handoff,
-  not a second work-order creation path.
+  reach a roster-finalized placed order's existing work order; this is a
+  discoverability handoff, not a second work-order creation path.
   The five operational workspace sections now use the shared
   far-left sidebar beneath the toolbar, with a remembered pinned desktop rail
   and the same non-modal hover, keyboard, and click rail when narrow or
@@ -75,12 +77,16 @@ or production activation.
   projection, and isolation behavior plus replay-safe, monotonic, customer-safe
   projection delivery. All five passed against the migrated local `phaeno_ops`
   database on 2026-07-16.
-- Five additional opt-in PostgreSQL controller tests cover atomic
-  Commercial-to-Lab quote authorization, rollback after intermediate provider
-  persistence, accepted cancellation, started-work veto without a partial
-  Commercial decision, and the rollback-isolated operator journey from assigned
-  roles and accession through Ready for release. All five passed against the
-  migrated local `phaeno_ops` database on 2026-07-16.
+- Thirteen opt-in PostgreSQL controller test sources now cover Phaeno initiation,
+  shared command idempotency, canonical Lab-service pricing, quote acceptance
+  without premature Lab work, atomic roster-finalization authorization and
+  shipping, rollback after intermediate provider persistence, accepted
+  cancellation, started-work veto without a partial Commercial decision, and
+  the rollback-isolated operator journey from assigned roles and accession
+  through Ready for release, including replay-safe roster finalization. The original five-case handoff suite passed
+  against the migrated local `phaeno_ops` database on 2026-07-16. The expanded
+  sources compiled with zero warnings or errors on 2026-08-27; tests were not
+  requested and the current thirteen-case suite was not run.
 - Software-side bench preflight and the remaining physical acceptance protocol
   are recorded in `LAB-OPERATIONS-BENCH-VALIDATION.md`. Barcode allocation,
   Code 39 rendering, reasoned print outcomes, scan lookup, scan-first batching,
@@ -201,8 +207,8 @@ directly.
 - Customer, Partner, and Prospect relationship state
 - Organizations, users, memberships, invitations, and entitlements
 - Quotes, pricing, commercial orders, order snapshots, and amendments
-- first-party CRM and QuickBooks commercial integrations, plus any future
-  external CRM adapter
+- first-party CRM, manual-accounting source and reconciliation workflows, plus
+  any future external CRM or accounting adapter
 - Customer and Partner submission experiences
 - Authorization to begin paid or approved no-charge work
 - Customer-facing milestones, expected timing, and exception communication

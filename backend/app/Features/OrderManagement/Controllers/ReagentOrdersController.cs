@@ -5,7 +5,6 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using PSeq.Operations.Commercial.Accounts.Domain;
-using PSeq.Operations.Commercial.OrderManagement.Application;
 using PSeq.Operations.Commercial.OrderManagement.Domain;
 using PhaenoPortal.App.Features.OrderManagement.Domain;
 using PhaenoPortal.App.Features.OrderManagement.DTOs;
@@ -92,19 +91,29 @@ public sealed class ReagentOrdersController(
     {
         var tenant = await requestContext.RequireTenantAsync(HttpContext, OrganizationKind.Partner, true, cancellationToken);
         var key = idempotency.RequireKey(HttpContext);
-        var replay = await idempotency.ReadAsync<PartnerReagentOrderDto>(tenant.Actor.Id, "reagent-order:create", key, request, cancellationToken);
-        if (replay != null) return replay;
-        var offerings = await ValidateLinesAsync(tenant.Organization.Id, request.Lines, DateTime.UtcNow, cancellationToken);
-        var order = new PartnerReagentOrder(tenant.Organization.Id, OrderNumberGenerator.Reagent());
-        AddLines(order, request.Lines, offerings);
-        dbContext.PartnerReagentOrders.Add(order);
-        Event(order, "Created", order.Status.ToString(), tenant.Actor.Id);
-        await dbContext.SaveChangesAsync(cancellationToken);
-        var response = await MapAsync(order, true, false, cancellationToken);
-        idempotency.Store(tenant.Actor.Id, "reagent-order:create", key, request, response, StatusCodes.Status201Created);
-        await dbContext.SaveChangesAsync(cancellationToken);
-        Response.StatusCode = StatusCodes.Status201Created;
-        return response;
+        var execution = await idempotency.ExecuteAsync(
+            tenant.Actor.Id,
+            "reagent-order:create",
+            key,
+            request,
+            async operationCancellationToken =>
+            {
+                var offerings = await ValidateLinesAsync(
+                    tenant.Organization.Id,
+                    request.Lines,
+                    DateTime.UtcNow,
+                    operationCancellationToken);
+                var order = new PartnerReagentOrder(tenant.Organization.Id, OrderNumberGenerator.Reagent());
+                AddLines(order, request.Lines, offerings);
+                dbContext.PartnerReagentOrders.Add(order);
+                Event(order, "Created", order.Status.ToString(), tenant.Actor.Id);
+                await dbContext.SaveChangesAsync(operationCancellationToken);
+                return await MapAsync(order, true, false, operationCancellationToken);
+            },
+            StatusCodes.Status201Created,
+            cancellationToken);
+        Response.StatusCode = execution.StatusCode;
+        return execution.Response;
     }
 
     [HttpPost("{orderId:guid}/create-draft")]
@@ -114,37 +123,42 @@ public sealed class ReagentOrdersController(
         var key = idempotency.RequireKey(HttpContext);
         var scope = $"reagent-order:{orderId}:create-draft";
         var request = new { SourceOrderId = orderId };
-        var replay = await idempotency.ReadAsync<PartnerReagentOrderDto>(tenant.Actor.Id, scope, key, request, cancellationToken);
-        if (replay != null) return replay;
+        var execution = await idempotency.ExecuteAsync(
+            tenant.Actor.Id,
+            scope,
+            key,
+            request,
+            async operationCancellationToken =>
+            {
+                var source = await ReadAsync(orderId, tenant.Organization.Id, operationCancellationToken);
+                var offeringIds = source.Lines.Select(line => line.OfferingId).Distinct().ToList();
+                var now = DateTime.UtcNow;
+                var offerings = await dbContext.PartnerReagentOfferings.AsNoTracking()
+                    .Where(item => offeringIds.Contains(item.Id) && item.PartnerOrganizationId == tenant.Organization.Id && item.IsActive)
+                    .ToListAsync(operationCancellationToken);
+                var catalogIds = offerings.Select(offering => offering.QboCatalogItemId).Distinct().ToList();
+                var activeCatalogIds = await dbContext.QboCatalogItems.AsNoTracking()
+                    .Where(item => item.IsActive && catalogIds.Contains(item.Id))
+                    .Select(item => item.Id).ToListAsync(operationCancellationToken);
+                var eligible = offerings.Where(item => activeCatalogIds.Contains(item.QboCatalogItemId) && item.IsEffectiveAt(now))
+                    .ToDictionary(item => item.Id);
+                var writes = source.Lines.Where(line => eligible.TryGetValue(line.OfferingId, out var offering) && offering.IsQuantityAllowed(line.Quantity))
+                    .Select(line => new ReagentLineWriteRequest(line.OfferingId, line.Quantity, line.Note)).ToList();
+                if (writes.Count == 0)
+                    throw Invalid("reagent_prior_order_has_no_eligible_lines", "No lines from the prior order are currently eligible for a new draft.");
 
-        var source = await ReadAsync(orderId, tenant.Organization.Id, cancellationToken);
-        var offeringIds = source.Lines.Select(line => line.OfferingId).Distinct().ToList();
-        var now = DateTime.UtcNow;
-        var offerings = await dbContext.PartnerReagentOfferings.AsNoTracking()
-            .Where(item => offeringIds.Contains(item.Id) && item.PartnerOrganizationId == tenant.Organization.Id && item.IsActive)
-            .ToListAsync(cancellationToken);
-        var catalogIds = offerings.Select(offering => offering.QboCatalogItemId).Distinct().ToList();
-        var activeCatalogIds = await dbContext.QboCatalogItems.AsNoTracking()
-            .Where(item => item.IsActive && catalogIds.Contains(item.Id))
-            .Select(item => item.Id).ToListAsync(cancellationToken);
-        var eligible = offerings.Where(item => activeCatalogIds.Contains(item.QboCatalogItemId) && item.IsEffectiveAt(now))
-            .ToDictionary(item => item.Id);
-        var writes = source.Lines.Where(line => eligible.TryGetValue(line.OfferingId, out var offering) && offering.IsQuantityAllowed(line.Quantity))
-            .Select(line => new ReagentLineWriteRequest(line.OfferingId, line.Quantity, line.Note)).ToList();
-        if (writes.Count == 0)
-            throw Invalid("reagent_prior_order_has_no_eligible_lines", "No lines from the prior order are currently eligible for a new draft.");
-
-        var snapshots = await ValidateLinesAsync(tenant.Organization.Id, writes, now, cancellationToken);
-        var draft = new PartnerReagentOrder(tenant.Organization.Id, OrderNumberGenerator.Reagent());
-        AddLines(draft, writes, snapshots);
-        dbContext.PartnerReagentOrders.Add(draft);
-        Event(draft, "CreatedFromPrior", draft.Status.ToString(), tenant.Actor.Id, $"Created from {source.OrderNumber}.");
-        await dbContext.SaveChangesAsync(cancellationToken);
-        var response = await MapAsync(draft, true, false, cancellationToken);
-        idempotency.Store(tenant.Actor.Id, scope, key, request, response, StatusCodes.Status201Created);
-        await dbContext.SaveChangesAsync(cancellationToken);
-        Response.StatusCode = StatusCodes.Status201Created;
-        return response;
+                var snapshots = await ValidateLinesAsync(tenant.Organization.Id, writes, now, operationCancellationToken);
+                var draft = new PartnerReagentOrder(tenant.Organization.Id, OrderNumberGenerator.Reagent());
+                AddLines(draft, writes, snapshots);
+                dbContext.PartnerReagentOrders.Add(draft);
+                Event(draft, "CreatedFromPrior", draft.Status.ToString(), tenant.Actor.Id, $"Created from {source.OrderNumber}.");
+                await dbContext.SaveChangesAsync(operationCancellationToken);
+                return await MapAsync(draft, true, false, operationCancellationToken);
+            },
+            StatusCodes.Status201Created,
+            cancellationToken);
+        Response.StatusCode = execution.StatusCode;
+        return execution.Response;
     }
 
     [HttpPatch("{orderId:guid}")]
@@ -167,59 +181,60 @@ public sealed class ReagentOrdersController(
         var tenant = await requestContext.RequireTenantAsync(HttpContext, OrganizationKind.Partner, true, cancellationToken);
         var key = idempotency.RequireKey(HttpContext);
         var scope = $"reagent-order:{orderId}:place";
-        var replay = await idempotency.ReadAsync<PartnerReagentOrderDto>(tenant.Actor.Id, scope, key, request, cancellationToken);
-        if (replay != null) return replay;
-        var order = await ReadAsync(orderId, tenant.Organization.Id, cancellationToken);
-        EnsureVersion(order.Version, request.Version);
-        var address = await dbContext.PartnerShippingAddresses.AsNoTracking().FirstOrDefaultAsync(item => item.Id == request.ShippingAddressId
-            && item.OrganizationId == tenant.Organization.Id && item.IsActive, cancellationToken)
-            ?? throw Invalid("shipping_address_unavailable", "Select an active Partner shipping address.");
-        var writes = order.Lines.Select(line => new ReagentLineWriteRequest(line.OfferingId, line.Quantity, line.Note)).ToList();
-        var offerings = await ValidateLinesAsync(tenant.Organization.Id, writes, DateTime.UtcNow, cancellationToken);
-        foreach (var line in order.Lines)
-        {
-            var offering = offerings[line.OfferingId];
-            if (!SnapshotMatches(line, offering))
-                throw Conflict("reagent_price_changed", $"The negotiated price or item details for {line.Description} changed. Review the refreshed draft before placing it.");
-            if (!ReagentShippingRules.Parse(offering.ShippingRestrictionsJson).Allows(address.CountryCode, address.Region))
-                throw Invalid("reagent_destination_restricted", $"{line.Description} cannot be shipped to the selected destination.");
-        }
-        var before = order.Status.ToString();
-        Execute(() => order.Place(request.PurchaseOrderNumber, address.Id, JsonSerializer.Serialize(address.ToDto(), JsonOptions),
-            request.RequestedDeliveryDate, request.ShippingInstructions, DateTime.UtcNow));
-        Execute(() => order.RecordPlacementSnapshot(JsonSerializer.Serialize(new
-        {
-            order.OrderNumber,
-            order.PurchaseOrderNumber,
-            shippingAddress = address.ToDto(),
-            order.RequestedDeliveryDate,
-            order.ShippingInstructions,
-            placedAt = order.PlacedAt,
-            lines = order.Lines.OrderBy(line => line.CreatedAt).Select(line => new
+        var execution = await idempotency.ExecuteAsync(
+            tenant.Actor.Id,
+            scope,
+            key,
+            request,
+            async operationCancellationToken =>
             {
-                line.Id, line.OfferingId, line.QboCatalogItemId, line.ExternalItemId, line.Description,
-                line.Quantity, line.Unit, line.UnitPrice, line.Currency, line.LineTotal, line.Note
-            })
-        }, JsonOptions)));
-        var commercial = await dbContext.OrganizationCommercialProfiles.AsNoTracking().FirstOrDefaultAsync(item => item.OrganizationId == order.OrganizationId, cancellationToken);
-        if (string.IsNullOrWhiteSpace(commercial?.QboCustomerId)) throw Conflict("qbo_customer_required", "Link this Partner to QuickBooks before placing an order.");
-        var total = order.Lines.Sum(line => line.LineTotal);
-        var currency = RequireSingleCurrency(order.Lines.Select(line => line.Currency));
-        var document = new CommercialDocumentLink(OrderWorkflowTypes.Reagent, order.Id, CommercialDocumentKind.Estimate, total, currency);
-        dbContext.CommercialDocumentLinks.Add(document);
-        var payload = new OrderDocumentOutboxPayload(document.Id, null, commercial.QboCustomerId!, order.OrderNumber,
-            order.PurchaseOrderNumber, currency, order.Lines.Select(line => new QuickBooksLineRequest(line.ExternalItemId,
-                line.Description, line.Quantity, line.UnitPrice)).ToList());
-        dbContext.OrderOutboxMessages.Add(new OrderOutboxMessage(IntegrationOperation.CreateEstimate, OrderWorkflowTypes.Reagent,
-            order.Id, key, JsonSerializer.Serialize(payload, JsonOptions)));
-        Event(order, before, order.Status.ToString(), tenant.Actor.Id);
-        Notice(order, "reagent-order-placed", "Reagent order placed", $"{order.OrderNumber} was placed and is being synchronized for Phaeno review.");
-        await dbContext.SaveChangesAsync(cancellationToken);
-        var response = await MapAsync(order, true, false, cancellationToken);
-        idempotency.Store(tenant.Actor.Id, scope, key, request, response, StatusCodes.Status202Accepted);
-        await dbContext.SaveChangesAsync(cancellationToken);
-        Response.StatusCode = StatusCodes.Status202Accepted;
-        return response;
+                var order = await ReadAsync(orderId, tenant.Organization.Id, operationCancellationToken);
+                EnsureVersion(order.Version, request.Version);
+                var address = await dbContext.PartnerShippingAddresses.AsNoTracking().FirstOrDefaultAsync(item => item.Id == request.ShippingAddressId
+                    && item.OrganizationId == tenant.Organization.Id && item.IsActive, operationCancellationToken)
+                    ?? throw Invalid("shipping_address_unavailable", "Select an active Partner shipping address.");
+                var writes = order.Lines.Select(line => new ReagentLineWriteRequest(line.OfferingId, line.Quantity, line.Note)).ToList();
+                var offerings = await ValidateLinesAsync(tenant.Organization.Id, writes, DateTime.UtcNow, operationCancellationToken);
+                foreach (var line in order.Lines)
+                {
+                    var offering = offerings[line.OfferingId];
+                    if (!SnapshotMatches(line, offering))
+                        throw Conflict("reagent_price_changed", $"The negotiated price or item details for {line.Description} changed. Review the refreshed draft before placing it.");
+                    if (!ReagentShippingRules.Parse(offering.ShippingRestrictionsJson).Allows(address.CountryCode, address.Region))
+                        throw Invalid("reagent_destination_restricted", $"{line.Description} cannot be shipped to the selected destination.");
+                }
+                var before = order.Status.ToString();
+                Execute(() => order.Place(request.PurchaseOrderNumber, address.Id, JsonSerializer.Serialize(address.ToDto(), JsonOptions),
+                    request.RequestedDeliveryDate, request.ShippingInstructions, DateTime.UtcNow));
+                Execute(() => order.RecordPlacementSnapshot(JsonSerializer.Serialize(new
+                {
+                    order.OrderNumber,
+                    order.PurchaseOrderNumber,
+                    shippingAddress = address.ToDto(),
+                    order.RequestedDeliveryDate,
+                    order.ShippingInstructions,
+                    placedAt = order.PlacedAt,
+                    lines = order.Lines.OrderBy(line => line.CreatedAt).Select(line => new
+                    {
+                        line.Id, line.OfferingId, line.QboCatalogItemId, line.ExternalItemId, line.Description,
+                        line.Quantity, line.Unit, line.UnitPrice, line.Currency, line.LineTotal, line.Note
+                    })
+                }, JsonOptions)));
+                var total = order.Lines.Sum(line => line.LineTotal);
+                var currency = RequireSingleCurrency(order.Lines.Select(line => line.Currency));
+                var document = new CommercialDocumentLink(OrderWorkflowTypes.Reagent, order.Id, CommercialDocumentKind.Estimate, total, currency);
+                document.MarkReadyForManualAccounting(order.OrderNumber, DateTime.UtcNow);
+                dbContext.CommercialDocumentLinks.Add(document);
+                var placed = order.Status.ToString();
+                Event(order, before, placed, tenant.Actor.Id);
+                Execute(order.MarkCommerciallySynchronized);
+                Event(order, placed, order.Status.ToString(), tenant.Actor.Id);
+                Notice(order, "reagent-order-placed", "Reagent order placed", $"{order.OrderNumber} was placed for Phaeno review.");
+                await dbContext.SaveChangesAsync(operationCancellationToken);
+                return await MapAsync(order, true, false, operationCancellationToken);
+            },
+            cancellationToken: cancellationToken);
+        return execution.Response;
     }
 
     [HttpPost("{orderId:guid}/cancel")]
@@ -240,20 +255,26 @@ public sealed class ReagentOrdersController(
     {
         var tenant = await requestContext.RequireTenantAsync(HttpContext, OrganizationKind.Partner, true, cancellationToken);
         var key = idempotency.RequireKey(HttpContext); var scope = $"reagent-order:{orderId}:cancellation";
-        var replay = await idempotency.ReadAsync<PartnerReagentOrderDto>(tenant.Actor.Id, scope, key, request, cancellationToken);
-        if (replay != null) return replay;
-        var order = await ReadAsync(orderId, tenant.Organization.Id, cancellationToken);
-        EnsureVersion(order.Version, request.Version);
-        var before = order.Status.ToString(); Execute(order.RequestCancellation);
-        dbContext.OrderCancellationRequests.Add(new OrderCancellationRequest(order.OrganizationId, OrderWorkflowTypes.Reagent,
-            order.Id, tenant.Actor.Id, request.Reason, request.ScopeJson));
-        Event(order, before, order.Status.ToString(), tenant.Actor.Id, request.Reason);
-        Notice(order, "reagent-cancellation-requested", "Reagent cancellation requested", $"A cancellation decision is required for {order.OrderNumber}.");
-        await dbContext.SaveChangesAsync(cancellationToken);
-        var response = await MapAsync(order, true, false, cancellationToken);
-        idempotency.Store(tenant.Actor.Id, scope, key, request, response);
-        await dbContext.SaveChangesAsync(cancellationToken);
-        return response;
+        var execution = await idempotency.ExecuteAsync(
+            tenant.Actor.Id,
+            scope,
+            key,
+            request,
+            async operationCancellationToken =>
+            {
+                var order = await ReadAsync(orderId, tenant.Organization.Id, operationCancellationToken);
+                EnsureVersion(order.Version, request.Version);
+                var before = order.Status.ToString();
+                Execute(order.RequestCancellation);
+                dbContext.OrderCancellationRequests.Add(new OrderCancellationRequest(order.OrganizationId, OrderWorkflowTypes.Reagent,
+                    order.Id, tenant.Actor.Id, request.Reason, request.ScopeJson));
+                Event(order, before, order.Status.ToString(), tenant.Actor.Id, request.Reason);
+                Notice(order, "reagent-cancellation-requested", "Reagent cancellation requested", $"A cancellation decision is required for {order.OrderNumber}.");
+                await dbContext.SaveChangesAsync(operationCancellationToken);
+                return await MapAsync(order, true, false, operationCancellationToken);
+            },
+            cancellationToken: cancellationToken);
+        return execution.Response;
     }
 
     [HttpPost("{orderId:guid}/adjustments/{adjustmentId:guid}/decision")]

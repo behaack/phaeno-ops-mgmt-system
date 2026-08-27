@@ -357,7 +357,8 @@ production smoke checks have been cut over and reconciled.
 
 ## 2026-08-26: POMS is standalone-first with a full first-party CRM
 
-Status: confirmed by the Product Owner for planning; not implemented.
+Status: confirmed by the Product Owner and implemented locally; authenticated
+production acceptance remains incomplete.
 
 POMS will include a full first-party CRM for Companies, Contacts, Leads,
 Opportunities, pipelines, Activities, Tasks, ownership, follow-up, and
@@ -377,12 +378,37 @@ operational domains. The 2026-07-15 HubSpot-first decision is superseded except
 for its still-valid safety boundaries around explicit Portal access,
 idempotency, data minimization, and operational authority.
 
+## 2026-08-27: QuickBooks is deferred in favor of a manual accounting report
+
+Status: confirmed by the Product Owner and implemented locally; Finance
+procedure acceptance and production activation remain incomplete.
+
+POMS owns the active commercial catalog, immutable quotes, stable estimate and
+invoice source records, credit/release state, and a Phaeno-only date-filtered
+CSV report for preparing manual journal entries. Finance selects the approved
+general-ledger accounts, prevents duplicate posting with the stable POMS source
+identifier, and prepares and posts journal entries and Customer invoices
+outside POMS.
+
+Downloading the report does not post, pay, reconcile, or change an order. POMS
+does not infer payment from a report download or from an undocumented external
+action. Manual payment confirmation, correction, and held-file release require
+a separately approved workflow. Dormant QuickBooks adapter and compatibility
+types are not composed at runtime and do not make QuickBooks a current product
+dependency.
+
+This decision supersedes the active-integration and QuickBooks-owned runtime
+boundaries in the 2026-07-14 decisions. Those older sections remain historical
+context for immutable commercial facts, credit separation, release safety, and
+the rule that financial integration must not own scientific operations.
+
 ## Open decisions
 
 - Any exceptional curated-package purge process.
 - Production storage, malware scanning, scientific file policies, analysis and
-  assembly profiles, Partner shipping restrictions, QuickBooks/Postmark
-  credentials, and sandbox validation.
+  assembly profiles, Partner shipping restrictions, Postmark credentials, and
+  sandbox validation. Any future QuickBooks activation requires a new approved
+  integration plan and financial reconciliation contract.
 - Production hosting, deployment, monitoring, backup/restore, and rollback
   workflow.
 - Backend help-search implementation, ranking, locale fallback, and reindexing.
