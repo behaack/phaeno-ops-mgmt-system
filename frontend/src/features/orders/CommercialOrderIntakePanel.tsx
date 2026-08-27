@@ -103,7 +103,7 @@ export function CommercialOrderIntakePanel({ apiEnabled, mock }: { apiEnabled: b
                     {formatSourceReference(item.sourceReference)} · received {formatDateTime(item.createdAt)}
                   </p>
                 </div>
-                <Button asChild variant="outline"><Link to="/customers">Review in Accounts</Link></Button>
+                <Button asChild variant="outline"><Link to="/customers">Review in Portal accounts</Link></Button>
               </div>
             ))}
           </div>

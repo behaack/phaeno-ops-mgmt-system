@@ -1,7 +1,10 @@
 import AxeBuilder from "@axe-core/playwright";
 import { expect, test, type Page, type Route } from "@playwright/test";
 
-import type { ServiceEntitlement } from "../src/api/organization-management";
+import type {
+  RelationshipRequest,
+  ServiceEntitlement,
+} from "../src/api/organization-management";
 
 const organizationId = "00000000-0000-0000-0000-000000000101";
 const membershipId = "00000000-0000-0000-0000-000000000201";
@@ -12,6 +15,7 @@ test("confirms organization deactivation in an accessible dialog", async ({
   page,
 }) => {
   let organization = customerOrganization();
+  let requests: RelationshipRequest[] = [];
   await page.addInitScript(() => window.localStorage.setItem("theme", "dark"));
   await page.route(apiRequestPattern, async (route) => {
     const url = new URL(route.request().url());
@@ -24,7 +28,50 @@ test("confirms organization deactivation in an accessible dialog", async ({
       method === "GET" &&
       url.pathname === "/api/platform/relationships/requests"
     ) {
-      return envelope(route, []);
+      return envelope(route, requests);
+    }
+    if (
+      method === "POST" &&
+      url.pathname === "/api/platform/relationships/requests"
+    ) {
+      const body = route.request().postDataJSON();
+      expect(body).toEqual({
+        organizationId: null,
+        candidateOrganizationName: "Example Biotech",
+        requestType: "Onboarding",
+        requestedOrganizationKind: "Customer",
+        sourceReference: "Migration record 42",
+        summary: "Restore this approved customer onboarding request.",
+        internalNotes: null,
+        requestedServices: ["PSeqLabService"],
+      });
+      const createdAt = "2026-08-27T12:00:00Z";
+      const created: RelationshipRequest = {
+        id: "00000000-0000-0000-0000-000000000901",
+        requestNumber: "PRQ-RECOVERY",
+        organizationId: null,
+        candidateOrganizationName: body.candidateOrganizationName,
+        requestType: body.requestType,
+        source: "Manual",
+        status: "PendingReview",
+        requestedOrganizationKind: body.requestedOrganizationKind,
+        sourceReference: body.sourceReference,
+        summary: body.summary,
+        internalNotes: body.internalNotes,
+        requestedByUserId: "00000000-0000-0000-0000-000000000902",
+        reviewedByUserId: null,
+        reviewedAt: null,
+        decisionReason: null,
+        appliedByUserId: null,
+        appliedAt: null,
+        applicationNotes: null,
+        requestedServices: body.requestedServices,
+        createdAt,
+        updatedAt: createdAt,
+        version: 1,
+      };
+      requests = [created];
+      return envelope(route, created);
     }
     if (
       method === "POST" &&
@@ -42,7 +89,9 @@ test("confirms organization deactivation in an accessible dialog", async ({
   });
 
   await page.goto("/customers");
-  await expect(page.getByRole("heading", { name: "Accounts" })).toBeVisible();
+  await expect(
+    page.getByRole("heading", { name: "Portal accounts" }),
+  ).toBeVisible();
   await expect(
     page.getByRole("heading", { name: "Account directory" }),
   ).toBeVisible();
@@ -51,7 +100,7 @@ test("confirms organization deactivation in an accessible dialog", async ({
   ).toBeVisible();
   await page.getByRole("tab", { name: "Review queue" }).click();
   await expect(
-    page.getByRole("heading", { name: "CRM account intake" }),
+    page.getByRole("heading", { name: "Portal account intake" }),
   ).toBeVisible();
   await expect(page.getByText("First-party", { exact: true })).toBeVisible();
   await expect(
@@ -60,10 +109,32 @@ test("confirms organization deactivation in an accessible dialog", async ({
   await expect(
     page.getByRole("button", { name: "New organization" }),
   ).toHaveCount(0);
-  await expect(page.getByRole("button", { name: "New request" })).toHaveCount(
-    0,
-  );
-  await expect(page.getByRole("button", { name: "Request" })).toHaveCount(0);
+  await page
+    .getByRole("button", { name: "New Portal account request" })
+    .click();
+  const requestDialog = page.getByRole("dialog", {
+    name: "New Portal account request",
+  });
+  await expect(
+    requestDialog.getByRole("option", { name: "Service change" }),
+  ).toHaveCount(0);
+  await requestDialog.getByLabel(/Organization name/).fill("Example Biotech");
+  await requestDialog
+    .getByLabel(/Requested relationship/)
+    .selectOption("Customer");
+  await requestDialog
+    .getByRole("checkbox", { name: "PSeq Lab Service" })
+    .click();
+  await requestDialog
+    .getByLabel(/Requested outcome/)
+    .fill("Restore this approved customer onboarding request.");
+  await requestDialog
+    .getByLabel("Source reference")
+    .fill("Migration record 42");
+  await requestDialog.getByRole("button", { name: "Submit for review" }).click();
+  await expect(requestDialog).toHaveCount(0);
+  await expect(page.getByText("PRQ-RECOVERY")).toBeVisible();
+  await expect(page.getByText("Example Biotech")).toBeVisible();
   await page.getByRole("tab", { name: "Account directory" }).click();
   await expect(
     page.getByRole("textbox", { name: "Search accounts" }),
@@ -180,7 +251,7 @@ test("selects an eligible source request and uses lifecycle dialogs in the organ
     page.getByRole("heading", { name: "Atlas Research" }),
   ).toBeVisible();
   await expect(
-    page.getByRole("link", { name: "Back to accounts" }),
+    page.getByRole("link", { name: "Back to Portal accounts" }),
   ).toBeVisible();
   await expect(page.getByRole("button", { name: "New request" })).toHaveCount(
     0,

@@ -320,7 +320,7 @@ export const documentationEntries: readonly DocumentationEntry[] = [
     summary: 'Select the Phaeno workspace, find operational tools, and support users safely.',
     section: 'Basics',
     order: 10,
-    reviewedAt: '2026-08-26',
+    reviewedAt: '2026-08-27',
     Content: PhaenoGettingStarted,
   },
   {
@@ -499,7 +499,7 @@ export const documentationEntries: readonly DocumentationEntry[] = [
     summary: 'Take in commercial demand, manage all order types, and recover accounting and notification work.',
     section: 'Order operations',
     order: 40,
-    reviewedAt: '2026-08-26',
+    reviewedAt: '2026-08-27',
     Content: PhaenoOrderOperations,
   },
   {

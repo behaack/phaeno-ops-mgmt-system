@@ -213,8 +213,11 @@ executable scientific work, or overwrite POMS-owned operational state.
 
 - CRM is a first-class POMS workspace for companies, contacts, opportunities,
   pipelines, activities, tasks, and relationship reporting.
-- Accounts is a separate POMS-owned Portal account directory and review
+- Portal accounts is a separate POMS-owned Portal account directory and review
   workspace, not a disconnected-integration status page.
+- The Administration menu, dashboard selector, workspace heading, and return
+  links consistently label this destination **Portal accounts** so it cannot be
+  mistaken for the CRM Companies directory.
 - The list remains a form-free discovery surface. A bounded create action opens
   a modal and submits a request; selecting the organization opens its dedicated
   detail workspace.
@@ -222,7 +225,10 @@ executable scientific work, or overwrite POMS-owned operational state.
   The CRM company workspace exposes an explicit, authorized action to propose
   or link a Portal account when the relationship reaches the right point.
 - Production-authorized manual entry replaces development-only HubSpot
-  simulation. Users do not enter HubSpot Company or Deal identifiers.
+  simulation. The Portal accounts review queue exposes **New Portal account
+  request** only as a restricted migration or recovery path; it submits into
+  the same audited review boundary and does not directly activate users or
+  services. Users do not enter HubSpot Company or Deal identifiers.
 - Order Operations presents POMS intake and review queues. It does not describe
   pending work as HubSpot handoffs.
 - Internal screens may show Phaeno owner, primary contact, business purpose,

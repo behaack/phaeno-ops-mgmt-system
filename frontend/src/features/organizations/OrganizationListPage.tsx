@@ -8,6 +8,7 @@ import {
   applyRelationshipRequest,
   cancelRelationshipRequest,
   completeRelationshipRequestAccountCreation,
+  createRelationshipRequest,
   decideRelationshipRequest,
   listOrganizations,
   listRelationshipRequests,
@@ -23,18 +24,22 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '#/com
 import { Checkbox } from '#/components/ui/checkbox'
 import { Input } from '#/components/ui/input'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '#/components/ui/tabs'
+import { usePhaenoSession } from '#/features/auth/session-context'
 import { AccountCreationRecoveryDialog } from './AccountCreationRecoveryDialog'
 import { LifecycleActionDialog } from './LifecycleActionDialog'
 import { OrganizationFormDialog, readinessLabel, type OrganizationFormValues } from './OrganizationFormDialog'
+import { RelationshipRequestDialog, requestedServices, type RelationshipRequestFormValues } from './RelationshipRequestDialog'
 import { RequestActionDialog, type RequestAction } from './RequestActionDialog'
 
 export function OrganizationListPage() {
+  const { session } = usePhaenoSession()
   const queryClient = useQueryClient()
   const navigate = useNavigate()
   const [activeTab, setActiveTab] = useState<'directory' | 'review'>('directory')
   const [search, setSearch] = useState('')
   const [showInactive, setShowInactive] = useState(false)
   const [editing, setEditing] = useState<Organization | null>(null)
+  const [requestOpen, setRequestOpen] = useState(false)
   const [accountRecoveryTarget, setAccountRecoveryTarget] = useState<RelationshipRequest | null>(null)
   const [deactivationTarget, setDeactivationTarget] = useState<Organization | null>(null)
   const [requestActionTarget, setRequestActionTarget] = useState<{
@@ -58,6 +63,24 @@ export function OrganizationListPage() {
       return updateOrganization(editing.id, { name: values.name, description: values.description || null, portalReadiness: values.portalReadiness, portalReadinessNote: values.portalReadinessNote || null, version: editing.version })
     },
     onSuccess: async () => { await refresh(); setEditing(null) },
+  })
+  const createRequest = useMutation({
+    mutationFn: (values: RelationshipRequestFormValues) =>
+      createRelationshipRequest({
+        organizationId: null,
+        candidateOrganizationName: values.candidateOrganizationName,
+        requestType: values.requestType,
+        requestedOrganizationKind: values.requestedOrganizationKind,
+        sourceReference: values.sourceReference || null,
+        summary: values.summary,
+        internalNotes: values.internalNotes || null,
+        requestedServices: requestedServices(values),
+      }),
+    onSuccess: async () => {
+      setRequestOpen(false)
+      setActiveTab('review')
+      await refresh()
+    },
   })
   const activeMutation = useMutation({
     mutationFn: ({ organization, active }: { organization: Organization; active: boolean }) => setOrganizationActive(organization.id, active),
@@ -104,12 +127,12 @@ export function OrganizationListPage() {
     return matchesSearch && (showInactive || value.isActive)
   }), [externalOrganizations, search, showInactive])
   const reviewQueue = (requestsQuery.data ?? []).filter(isAccountReviewQueueRequest)
-  const error = organizationsQuery.error ?? requestsQuery.error ?? organizationMutation.error ?? activeMutation.error ?? requestAction.error
+  const error = organizationsQuery.error ?? requestsQuery.error ?? organizationMutation.error ?? createRequest.error ?? activeMutation.error ?? requestAction.error
 
   return (
     <main className="page-wrap space-y-6 px-4 py-8">
       <section>
-        <div className="max-w-3xl"><Badge variant="secondary" className="mb-3">Phaeno operations</Badge><h1 className="text-3xl font-semibold leading-tight">Accounts</h1><p className="mt-3 text-sm leading-6 text-muted-foreground sm:text-base">Review Prospect, Customer, and Partner accounts, readiness, access, and first-party CRM lifecycle requests.</p></div>
+        <div className="max-w-3xl"><Badge variant="secondary" className="mb-3">Phaeno operations</Badge><h1 className="text-3xl font-semibold leading-tight">Portal accounts</h1><p className="mt-3 text-sm leading-6 text-muted-foreground sm:text-base">Review Prospect, Customer, and Partner accounts, readiness, access, and first-party CRM lifecycle requests.</p></div>
       </section>
 
       {error ? <Alert variant="destructive"><AlertTitle>Could not complete the account action</AlertTitle><AlertDescription>{apiErrorMessage(error)}</AlertDescription></Alert> : null}
@@ -143,13 +166,14 @@ export function OrganizationListPage() {
           <Card>
             <CardHeader>
               <div className="flex flex-wrap items-center justify-between gap-2">
-                <CardTitle><h2>CRM account intake</h2></CardTitle>
+                <CardTitle><h2>Portal account intake</h2></CardTitle>
                 <div className="flex flex-wrap items-center gap-2">
                   <Badge variant="outline">First-party</Badge>
+                  {session?.capabilities.canManageOrganizations ? <Button variant="outline" onClick={() => { createRequest.reset(); setRequestOpen(true) }}><Plus data-icon="inline-start" />New Portal account request</Button> : null}
                   <Button asChild><Link to="/crm/companies"><Plus data-icon="inline-start" />Open CRM Companies</Link></Button>
                 </div>
               </div>
-              <CardDescription>Commercial staff create an explicit handoff from a CRM Company or Opportunity. The resulting request waits here for Phaeno review and never activates access or services automatically.</CardDescription>
+              <CardDescription>Use a CRM Company or Opportunity handoff for standard commercial onboarding. Platform administrators may submit a direct request here only for migration or recovery. Submission activates nothing; review explicitly controls account creation and Customer ordering authorization.</CardDescription>
             </CardHeader>
           </Card>
 
@@ -161,6 +185,17 @@ export function OrganizationListPage() {
       </Tabs>
 
       <OrganizationFormDialog open={Boolean(editing)} organization={editing} isPending={organizationMutation.isPending} error={organizationMutation.error ? apiErrorMessage(organizationMutation.error) : undefined} onOpenChange={(open) => { if (!open) setEditing(null) }} onSubmit={(values) => organizationMutation.mutate(values)} />
+      <RelationshipRequestDialog
+        open={requestOpen}
+        organization={null}
+        isPending={createRequest.isPending}
+        error={createRequest.error ? apiErrorMessage(createRequest.error) : undefined}
+        onOpenChange={(open) => {
+          setRequestOpen(open)
+          if (!open) createRequest.reset()
+        }}
+        onSubmit={(values) => createRequest.mutate(values)}
+      />
       <RequestActionDialog action={requestActionTarget?.action ?? null} request={requestActionTarget?.request ?? null} organizations={externalOrganizations} isPending={requestAction.isPending} error={requestAction.error ? apiErrorMessage(requestAction.error) : undefined} onOpenChange={(open) => { if (!open) setRequestActionTarget(null) }} onSubmit={({ explanation, orderingAuthorized, organizationId }) => { if (requestActionTarget) requestAction.mutate({ ...requestActionTarget, orderingAuthorized, organizationId, text: explanation }) }} />
       <AccountCreationRecoveryDialog
         request={accountRecoveryTarget}

@@ -32,12 +32,12 @@ test('uses POMS branding in the internal Phaeno context', async ({ page }) => {
 
   dashboardSelector = await openDashboardNavigation(page)
   const accountsButton = dashboardSelector.getByRole('button', {
-    name: /Accounts/,
+    name: /Portal accounts/,
   })
   await accountsButton.click()
   await expect(
     page.getByRole('heading', {
-      name: 'Customer, Partner & Prospect Accounts',
+      name: 'Portal accounts',
       level: 2,
     }),
   ).toBeVisible()
@@ -133,7 +133,7 @@ test('keeps workspace navigation concise and groups the user menu', async ({
     ).toBeVisible()
     await expect(header.getByRole('link', { name: 'Docs' })).toBeVisible()
     await expect(
-      header.getByRole('link', { name: 'Accounts' }),
+      header.getByRole('link', { name: 'Portal accounts' }),
     ).toHaveCount(0)
     await expect(
       header.getByRole('link', { name: 'Order configuration' }),
@@ -151,7 +151,7 @@ test('keeps workspace navigation concise and groups the user menu', async ({
 
   await expect(page.getByText('Administration', { exact: true })).toBeVisible()
   await expect(
-    page.getByRole('menuitem', { name: 'Accounts' }),
+    page.getByRole('menuitem', { name: 'Portal accounts' }),
   ).toBeVisible()
   await expect(
     page.getByRole('menuitem', { name: 'Order configuration' }),
@@ -179,7 +179,7 @@ test('keeps workspace navigation concise and groups the user menu', async ({
     '[role="menuitemradio"][data-state="checked"]',
   )
   await expect(selectedDisplayChoice).toHaveCount(1)
-  await page.getByRole('menuitem', { name: 'Accounts' }).focus()
+  await page.getByRole('menuitem', { name: 'Portal accounts' }).focus()
   const selectedDisplayBackground = await selectedDisplayChoice.evaluate(
     (choice) => getComputedStyle(choice).backgroundColor,
   )
@@ -226,7 +226,7 @@ test('keeps workspace navigation concise and groups the user menu', async ({
   })
   await darkThemeChoice.focus()
   await darkThemeChoice.press('ArrowDown')
-  const nextMenuItemName = isMobile ? 'Dashboard' : 'Accounts'
+  const nextMenuItemName = isMobile ? 'Dashboard' : 'Portal accounts'
   await expect(
     page.getByRole('menuitem', { name: nextMenuItemName }),
   ).toBeFocused()

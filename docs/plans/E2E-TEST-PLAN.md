@@ -67,19 +67,19 @@ the protected deployed-Preview acceptance above.
   browser title, header, and dashboard while external organization context uses
   Portal; both contexts retain the Phaeno Inc. legal footer and omit framework
   vendor promotion; the POMS dashboard exposes a keyboard-operable
-  viewport-edge sidebar for Order Operations, Lab Operations, Accounts, and
+  viewport-edge sidebar for Order Operations, Lab Operations, Portal accounts, and
   Web Operations mock intake with a two-button selector showing one
   mailing-list or demo-request panel at a time, independent page-size-10 footer
   pagination, no persistence controls on mock records, and one dashboard
   section visible at a time while external contexts omit it. External context
   instead shows its role-appropriate organization workflow cards, labels
   connected summaries as paused in mock-session mode, and never renders the
-  internal Accounts metrics. Customer context keeps Data Library and Lab
+  internal Portal accounts metrics. Customer context keeps Data Library and Lab
   services as separate starting points while omitting a peer sample-shipping
   card because shipping is part of each lab job.
 - [x] `frontend/e2e/home.spec.ts` - desktop keeps frequent workspace routes in
   the toolbar, including Docs, while Data provisioning appears under Resources;
-  desktop and mobile expose Accounts and the remaining grouped
+  desktop and mobile expose Portal accounts and the remaining grouped
   administration/resources in the user menu,
   and the three display choices share one compact row directly
   after user identification with a brand-accent selected treatment distinct
@@ -119,10 +119,10 @@ the protected deployed-Preview acceptance above.
   guide and keeps only one subject expanded, cross-audience routes are denied
   for every context, and substantive MDX content renders on guide routes.
 - [x] `frontend/e2e/customers.spec.ts` - desktop and mobile organization
-  administration is titled Accounts, excludes the internal Phaeno organization,
-  identifies first-party CRM account intake, links to CRM Companies, omits
-  standard direct-account and manual-request actions from list/detail surfaces,
-  and uses accessible
+  administration is titled Portal accounts, excludes the internal Phaeno
+  organization, identifies standard first-party CRM intake, links to CRM
+  Companies, and submits a restricted migration or recovery request through
+  the audited review queue without exposing direct account creation; it uses accessible
   consequence dialogs for organization,
   membership, and entitlement lifecycle actions; focus returns to the invoking
   control, ended entitlements retain their reason, and the entitlement source
@@ -607,3 +607,11 @@ the protected deployed-Preview acceptance above.
 - 2026-06-01: User ran `pnpm test:e2e`; mobile menu still did not open through the emulated tap path. Restored Radix native menu state and changed the e2e test to use keyboard activation before asserting mobile menu items.
 - 2026-06-01: User requested environment setup only. Reduced e2e coverage to one smoke test and moved the accessibility and mobile navigation checks to deferred tests.
 - 2026-06-01: User requested no Playwright HTML report server. Set Playwright reporter to terminal `list` only.
+- 2026-08-27: Portal accounts and Home verification ran the focused
+  `home.spec.ts` and `customers.spec.ts` suite with
+  `VITE_USE_MOCK_SESSION=true` on isolated port 3101; all 12 desktop/mobile
+  Chromium scenarios passed, including the restricted request submission and
+  consistent Portal accounts labels. An initial run reused the developer's
+  real-Clerk port-3000 server and did not reach the application shell; the
+  isolated mock-session rerun resolved that harness condition. The existing
+  `AcceptInvitePage` route-export warning remains unchanged.

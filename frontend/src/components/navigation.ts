@@ -61,7 +61,7 @@ export const mainMenuItems: readonly MainMenuItem[] = [
       Boolean(session?.capabilities.canManageOrganizations),
   },
   {
-    label: 'Accounts',
+    label: 'Portal accounts',
     to: '/customers',
     icon: Building2,
     group: 'administration',

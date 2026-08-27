@@ -174,7 +174,7 @@ describe('navigation placement', () => {
       getVisibleMainMenuItems(session, context, 'administration').map(
         (item) => item.label,
       ),
-    ).toEqual(['Accounts', 'Order configuration', 'File management'])
+    ).toEqual(['Portal accounts', 'Order configuration', 'File management'])
     expect(
       getVisibleMainMenuItems(session, context, 'resources').map(
         (item) => item.label,

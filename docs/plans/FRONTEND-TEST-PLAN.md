@@ -47,8 +47,12 @@ remain incomplete production-activation gates.
   and Phaeno organization contexts.
 - [x] `frontend/src/components/navigation.test.ts` - frequent workspace routes,
   including Docs, remain in the desktop toolbar while Data provisioning and
-  Accounts and other administration or resource routes move to the user
-  dropdown without changing permission filtering.
+  Portal accounts and other administration or resource routes move to the
+  user dropdown without changing permission filtering.
+- [x] `frontend/src/features/organizations/RelationshipRequestDialog.test.tsx`
+  - the restricted accountless request is labeled as a Portal account request,
+  validates organization identity, and permits only onboarding or evaluation
+  before submission to review.
 - [x] `frontend/src/components/application-branding.test.ts` - the selected
   Phaeno organization resolves to POMS, external organization kinds resolve to
   Portal, and the pre-selection fallback is Portal.
@@ -555,3 +559,8 @@ remain incomplete production-activation gates.
   in 7 files passed.
 - 2026-07-14: implementation verification ran `pnpm run test`; all 9 tests in 5
   files passed.
+- 2026-08-27: Portal accounts terminology and restricted account-request
+  verification ran `pnpm run lint:ci`, `pnpm run typecheck`, `pnpm run test`,
+  and `pnpm run build`; lint and typecheck passed, all 103 tests in 40 files
+  passed, and the client and SSR production builds completed. The existing
+  advisory client-chunk warning remains.

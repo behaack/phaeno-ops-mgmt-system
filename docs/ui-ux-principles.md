@@ -48,7 +48,7 @@ Use task-oriented entry points with record-centered workspaces.
 
 - The home experience should answer, "What needs my attention?"
 - The POMS home uses the shared far-left sidebar as one **Order Operations / Lab
-  Operations / Accounts / Web Operations** panel selector so internal users can
+  Operations / Portal accounts / Web Operations** panel selector so internal users can
   move among the two primary operational queues, Customer, Partner, and Prospect
   account administration, and public Website intake without stacking the
   dashboards. Show one panel at a time, emphasize attention or intake counts
@@ -66,10 +66,10 @@ Use task-oriented entry points with record-centered workspaces.
 - Present CRM as a first-class POMS workspace for Companies, Contacts, Leads,
   Opportunities, Activities, Tasks, and relationship reporting. Keep CRM
   records distinct from Portal Accounts and users.
-- Present Accounts as the POMS-owned Portal account directory and review
+- Present **Portal accounts** as the POMS-owned Portal account directory and review
   surface. A CRM Company may propose or link a Portal Account through an
-  explicit authorized action; the Accounts list may also expose a restricted
-  direct proposal action for migration and recovery. Neither path grants
+  explicit authorized action; the Portal accounts review queue also exposes a
+  restricted direct proposal action for migration and recovery. Neither path grants
   access, readiness, services, or executable work by itself.
 - Multi-section workspaces use one shared sidebar anchored to the far-left viewport edge beneath the primary toolbar. On wide screens it may remain pinned; when unpinned, a fine pointer may preview the same rail from the viewport edge. The persistent edge tab provides keyboard, click, and touch access. On narrow or coarse-pointer layouts, the rail stays open until the user selects a section, toggles the tab, or presses Escape.
 - The unpinned rail is non-modal: it does not add a backdrop, trap focus, blur the page, or move content. A pinned rail preserves the normal centered page position when it fits in the available left margin and reflows the page only when the rail would otherwise overlap it.
