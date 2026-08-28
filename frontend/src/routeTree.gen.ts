@@ -58,7 +58,7 @@ import { Route as DataAssemblyRequestIdEditRouteImport } from './routes/data-ass
 import { Route as CrmOpportunitiesOpportunityIdRouteImport } from './routes/crm.opportunities.$opportunityId'
 import { Route as CrmLeadsLeadIdRouteImport } from './routes/crm.leads.$leadId'
 import { Route as CrmContactsContactIdRouteImport } from './routes/crm.contacts.$contactId'
-import { Route as CrmCompaniesCompanyIdRouteImport } from './routes/crm.companies.$companyId'
+import { Route as CrmCompaniesCompanyIdRouteImport } from './routes/crm.companies_.$companyId'
 import { Route as LabOperationsProtocolsProtocolIdVersionsNewRouteImport } from './routes/lab-operations.protocols.$protocolId.versions.new'
 import { Route as LabOperationsProtocolsProtocolIdVersionsVersionIdEditRouteImport } from './routes/lab-operations.protocols.$protocolId.versions.$versionId.edit'
 
@@ -319,9 +319,9 @@ const CrmContactsContactIdRoute = CrmContactsContactIdRouteImport.update({
   getParentRoute: () => CrmContactsRoute,
 } as any)
 const CrmCompaniesCompanyIdRoute = CrmCompaniesCompanyIdRouteImport.update({
-  id: '/$companyId',
-  path: '/$companyId',
-  getParentRoute: () => CrmCompaniesRoute,
+  id: '/companies_/$companyId',
+  path: '/companies/$companyId',
+  getParentRoute: () => CrmRoute,
 } as any)
 const LabOperationsProtocolsProtocolIdVersionsNewRoute =
   LabOperationsProtocolsProtocolIdVersionsNewRouteImport.update({
@@ -355,7 +355,7 @@ export interface FileRoutesByFullPath {
   '/reagent-orders': typeof ReagentOrdersRouteWithChildren
   '/sample-shipping': typeof SampleShippingRouteWithChildren
   '/crm/administration': typeof CrmAdministrationRoute
-  '/crm/companies': typeof CrmCompaniesRouteWithChildren
+  '/crm/companies': typeof CrmCompaniesRoute
   '/crm/contacts': typeof CrmContactsRouteWithChildren
   '/crm/leads': typeof CrmLeadsRouteWithChildren
   '/crm/opportunities': typeof CrmOpportunitiesRouteWithChildren
@@ -409,7 +409,7 @@ export interface FileRoutesByTo {
   '/reagent-orders': typeof ReagentOrdersRouteWithChildren
   '/sample-shipping': typeof SampleShippingRouteWithChildren
   '/crm/administration': typeof CrmAdministrationRoute
-  '/crm/companies': typeof CrmCompaniesRouteWithChildren
+  '/crm/companies': typeof CrmCompaniesRoute
   '/crm/contacts': typeof CrmContactsRouteWithChildren
   '/crm/leads': typeof CrmLeadsRouteWithChildren
   '/crm/opportunities': typeof CrmOpportunitiesRouteWithChildren
@@ -464,7 +464,7 @@ export interface FileRoutesById {
   '/reagent-orders': typeof ReagentOrdersRouteWithChildren
   '/sample-shipping': typeof SampleShippingRouteWithChildren
   '/crm/administration': typeof CrmAdministrationRoute
-  '/crm/companies': typeof CrmCompaniesRouteWithChildren
+  '/crm/companies': typeof CrmCompaniesRoute
   '/crm/contacts': typeof CrmContactsRouteWithChildren
   '/crm/leads': typeof CrmLeadsRouteWithChildren
   '/crm/opportunities': typeof CrmOpportunitiesRouteWithChildren
@@ -482,7 +482,7 @@ export interface FileRoutesById {
   '/reagent-orders/new': typeof ReagentOrdersNewRoute
   '/sample-shipping/$shipmentId': typeof SampleShippingShipmentIdRouteWithChildren
   '/session-tasks/setup-mfa': typeof SessionTasksSetupMfaRoute
-  '/crm/companies/$companyId': typeof CrmCompaniesCompanyIdRoute
+  '/crm/companies_/$companyId': typeof CrmCompaniesCompanyIdRoute
   '/crm/contacts/$contactId': typeof CrmContactsContactIdRoute
   '/crm/leads/$leadId': typeof CrmLeadsLeadIdRoute
   '/crm/opportunities/$opportunityId': typeof CrmOpportunitiesOpportunityIdRoute
@@ -646,7 +646,7 @@ export interface FileRouteTypes {
     | '/reagent-orders/new'
     | '/sample-shipping/$shipmentId'
     | '/session-tasks/setup-mfa'
-    | '/crm/companies/$companyId'
+    | '/crm/companies_/$companyId'
     | '/crm/contacts/$contactId'
     | '/crm/leads/$leadId'
     | '/crm/opportunities/$opportunityId'
@@ -1031,12 +1031,12 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof CrmContactsContactIdRouteImport
       parentRoute: typeof CrmContactsRoute
     }
-    '/crm/companies/$companyId': {
-      id: '/crm/companies/$companyId'
-      path: '/$companyId'
+    '/crm/companies_/$companyId': {
+      id: '/crm/companies_/$companyId'
+      path: '/companies/$companyId'
       fullPath: '/crm/companies/$companyId'
       preLoaderRoute: typeof CrmCompaniesCompanyIdRouteImport
-      parentRoute: typeof CrmCompaniesRoute
+      parentRoute: typeof CrmRoute
     }
     '/lab-operations/protocols/$protocolId/versions/new': {
       id: '/lab-operations/protocols/$protocolId/versions/new'
@@ -1054,18 +1054,6 @@ declare module '@tanstack/react-router' {
     }
   }
 }
-
-interface CrmCompaniesRouteChildren {
-  CrmCompaniesCompanyIdRoute: typeof CrmCompaniesCompanyIdRoute
-}
-
-const CrmCompaniesRouteChildren: CrmCompaniesRouteChildren = {
-  CrmCompaniesCompanyIdRoute: CrmCompaniesCompanyIdRoute,
-}
-
-const CrmCompaniesRouteWithChildren = CrmCompaniesRoute._addFileChildren(
-  CrmCompaniesRouteChildren,
-)
 
 interface CrmContactsRouteChildren {
   CrmContactsContactIdRoute: typeof CrmContactsContactIdRoute
@@ -1104,22 +1092,24 @@ const CrmOpportunitiesRouteWithChildren =
 
 interface CrmRouteChildren {
   CrmAdministrationRoute: typeof CrmAdministrationRoute
-  CrmCompaniesRoute: typeof CrmCompaniesRouteWithChildren
+  CrmCompaniesRoute: typeof CrmCompaniesRoute
   CrmContactsRoute: typeof CrmContactsRouteWithChildren
   CrmLeadsRoute: typeof CrmLeadsRouteWithChildren
   CrmOpportunitiesRoute: typeof CrmOpportunitiesRouteWithChildren
   CrmReportsRoute: typeof CrmReportsRoute
   CrmTasksRoute: typeof CrmTasksRoute
+  CrmCompaniesCompanyIdRoute: typeof CrmCompaniesCompanyIdRoute
 }
 
 const CrmRouteChildren: CrmRouteChildren = {
   CrmAdministrationRoute: CrmAdministrationRoute,
-  CrmCompaniesRoute: CrmCompaniesRouteWithChildren,
+  CrmCompaniesRoute: CrmCompaniesRoute,
   CrmContactsRoute: CrmContactsRouteWithChildren,
   CrmLeadsRoute: CrmLeadsRouteWithChildren,
   CrmOpportunitiesRoute: CrmOpportunitiesRouteWithChildren,
   CrmReportsRoute: CrmReportsRoute,
   CrmTasksRoute: CrmTasksRoute,
+  CrmCompaniesCompanyIdRoute: CrmCompaniesCompanyIdRoute,
 }
 
 const CrmRouteWithChildren = CrmRoute._addFileChildren(CrmRouteChildren)

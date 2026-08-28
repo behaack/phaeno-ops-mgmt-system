@@ -180,8 +180,10 @@ remain incomplete production-activation gates.
   CRM tests are maintained under `frontend/src/features/crm/`, with navigation
   placement coverage also maintained in
   `frontend/src/components/navigation.test.ts`.
-- [ ] Remaining first-party CRM components - cover the Company directory and
-  detail query/mutation states, responsive table and pagination, authorization,
+- [ ] Remaining first-party CRM components - Company primary-name navigation
+  from the directory to its dedicated detail workspace is covered; add the
+  remaining directory and detail query/mutation states, responsive table and
+  pagination, authorization,
   then Contacts, Leads,
   Opportunities, pipeline table/board views, stage transitions, Activities,
   Notes, Tasks, reminders, ownership, CRM home attention states, saved views,

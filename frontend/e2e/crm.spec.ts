@@ -38,6 +38,12 @@ test("creates a standalone CRM company without changing Portal access", async ({
     }
     if (
       method === "GET" &&
+      url.pathname === `/api/platform/crm/companies/${companyId}`
+    ) {
+      return envelope(route, company("Atlas Research"));
+    }
+    if (
+      method === "GET" &&
       url.pathname === "/api/platform/crm/administration/saved-views"
     ) {
       return envelope(route, []);
@@ -74,6 +80,15 @@ test("creates a standalone CRM company without changing Portal access", async ({
   await expect(
     page.getByText("CRM records are separate from Portal accounts"),
   ).toBeVisible();
+
+  await page.getByRole("link", { name: "Atlas Research" }).click();
+  await expect(page).toHaveURL(`/crm/companies/${companyId}`);
+  await expect(page.getByText("CRM company", { exact: true })).toBeVisible();
+  await expect(
+    page.getByRole("heading", { name: "Atlas Research" }),
+  ).toBeVisible();
+  await page.getByRole("link", { name: "Back to companies" }).click();
+  await expect(page.getByRole("heading", { name: "Companies" })).toBeVisible();
 
   await page.getByRole("button", { name: "New company" }).click();
   const dialog = page.getByRole("dialog", { name: "New company" });
