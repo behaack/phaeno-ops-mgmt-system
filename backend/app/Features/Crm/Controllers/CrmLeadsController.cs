@@ -125,7 +125,7 @@ public sealed class CrmLeadsController(PSeqOperationsDbContext dbContext, IExter
             dbContext.CrmContacts.Add(contact);
             if (company is not null)
             {
-                dbContext.CrmCompanyContacts.Add(new CrmCompanyContact(company.Id, contact.Id, "Lead contact", true, DateOnly.FromDateTime(DateTime.UtcNow)));
+                dbContext.CrmCompanyContacts.Add(new CrmCompanyContact(company.Id, contact.Id, null, "Lead contact", true, DateOnly.FromDateTime(DateTime.UtcNow)));
             }
         }
 

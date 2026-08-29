@@ -17,6 +17,7 @@ import { Badge } from "#/components/ui/badge";
 import { Button } from "#/components/ui/button";
 import {
   Card,
+  CardAction,
   CardContent,
   CardDescription,
   CardHeader,
@@ -85,22 +86,21 @@ export function CrmRecordWork({ links }: { links: RecordLinks }) {
   return (
     <div className="grid gap-6 lg:grid-cols-2">
       <Card>
-        <CardHeader className="flex-row items-start justify-between gap-3">
-          <div>
-            <CardTitle>Activity timeline</CardTitle>
-            <CardDescription>
-              Notes, calls, meetings, email, status changes, and Portal
-              handoffs.
-            </CardDescription>
-          </div>
-          <Button
-            size="sm"
-            variant="outline"
-            onClick={() => setActivityOpen(true)}
-          >
-            <MessageSquarePlus data-icon="inline-start" />
-            Log activity
-          </Button>
+        <CardHeader>
+          <CardTitle>Activity timeline</CardTitle>
+          <CardDescription>
+            Notes, calls, meetings, email, status changes, and Portal handoffs.
+          </CardDescription>
+          <CardAction>
+            <Button
+              size="sm"
+              variant="outline"
+              onClick={() => setActivityOpen(true)}
+            >
+              <MessageSquarePlus data-icon="inline-start" />
+              Log activity
+            </Button>
+          </CardAction>
         </CardHeader>
         <CardContent className="space-y-3">
           {(activities.data?.items ?? []).map((activity) => (
@@ -127,17 +127,17 @@ export function CrmRecordWork({ links }: { links: RecordLinks }) {
         </CardContent>
       </Card>
       <Card>
-        <CardHeader className="flex-row items-start justify-between gap-3">
-          <div>
-            <CardTitle>Tasks</CardTitle>
-            <CardDescription>
-              Durable follow-up, reminders, and recurring work.
-            </CardDescription>
-          </div>
-          <Button size="sm" variant="outline" onClick={() => setTaskOpen(true)}>
-            <CalendarPlus data-icon="inline-start" />
-            New task
-          </Button>
+        <CardHeader>
+          <CardTitle>Tasks</CardTitle>
+          <CardDescription>
+            Durable follow-up, reminders, and recurring work.
+          </CardDescription>
+          <CardAction>
+            <Button size="sm" variant="outline" onClick={() => setTaskOpen(true)}>
+              <CalendarPlus data-icon="inline-start" />
+              New task
+            </Button>
+          </CardAction>
         </CardHeader>
         <CardContent className="space-y-3">
           {(tasks.data?.items ?? []).map((task) => (

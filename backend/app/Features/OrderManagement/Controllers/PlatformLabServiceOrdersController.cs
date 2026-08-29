@@ -7,6 +7,7 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Options;
 using PSeq.Operations.Commercial.Accounts.Domain;
+using PSeq.Operations.Commercial.Crm.Domain;
 using PSeq.Operations.Commercial.LabOperations.Application;
 using PSeq.Operations.Commercial.LabOperations.Domain;
 using PSeq.Operations.Commercial.OrderManagement.Domain;
@@ -145,6 +146,39 @@ public sealed class PlatformLabServiceOrdersController(
                         "prohibited_data_confirmation_required",
                         "Confirm that the Job pricing details contain no patient identifiers, PHI, or unnecessary personal data.");
 
+                CrmHandoff? sourceHandoff = null;
+                if (request.SourceRequestId.HasValue)
+                {
+                    sourceHandoff = await dbContext.CrmHandoffs
+                        .Include(value => value.Company)
+                        .Include(value => value.Opportunity).ThenInclude(value => value!.Stage)
+                        .Include(value => value.RelationshipRequest).ThenInclude(value => value.RequestedServices)
+                        .SingleOrDefaultAsync(
+                            value => value.RelationshipRequestId == request.SourceRequestId.Value,
+                            operationCancellationToken)
+                        ?? throw Conflict(
+                            "crm_handoff_not_found",
+                            "The selected CRM handoff was not found.");
+                    var sourceRequest = sourceHandoff.RelationshipRequest;
+                    if (sourceRequest.Source != PortalIntegrationRequestSource.FirstPartyCrm
+                        || sourceRequest.RequestType != PortalIntegrationRequestType.SalesAssistedOrder)
+                        throw Conflict("crm_handoff_not_orderable", "Only a first-party CRM Customer order handoff can start an order.");
+                    if (await dbContext.LabServiceOrders.AsNoTracking().AnyAsync(
+                        value => value.SourceRequestId == sourceRequest.Id,
+                        operationCancellationToken))
+                        throw Conflict("crm_handoff_order_exists", "This CRM handoff has already started an order.");
+                    if (sourceRequest.Status != PortalIntegrationRequestStatus.Approved)
+                        throw Conflict("crm_handoff_not_approved", "The CRM handoff must be approved before it can start an order.");
+                    if (sourceRequest.OrganizationId != request.OrganizationId
+                        || sourceRequest.RequestedOrganizationKind != OrganizationKind.Customer)
+                        throw Conflict("crm_handoff_customer_mismatch", "The CRM handoff is not approved for the selected Customer organization.");
+                    if (!sourceRequest.RequestedServices.Any(value => value.Service == PortalService.PSeqLabService))
+                        throw Conflict("crm_handoff_service_mismatch", "The CRM handoff does not request PSeq Lab Service.");
+                    if (sourceHandoff.Opportunity is not null
+                        && sourceHandoff.Opportunity.Stage.Category != CrmPipelineStageCategory.Won)
+                        throw Conflict("crm_handoff_opportunity_not_won", "The linked Opportunity must be Won before its handoff can start an order.");
+                }
+
                 var customer = await dbContext.Organizations.AsNoTracking()
                     .SingleOrDefaultAsync(
                         organization => organization.Id == request.OrganizationId
@@ -192,7 +226,8 @@ public sealed class PlatformLabServiceOrdersController(
                     sourceGroups.Count == 1 ? sourceGroups[0].BiologicalSource : null,
                     request.StorageRequirements,
                     request.SafetyDeclaration,
-                    configuration?.SampleSubmissionInstructions ?? string.Empty);
+                    configuration?.SampleSubmissionInstructions ?? string.Empty,
+                    request.SourceRequestId);
                 foreach (var group in sourceGroups)
                 {
                     order.SourceGroups.Add(new LabServiceSourceGroup(
@@ -215,17 +250,36 @@ public sealed class PlatformLabServiceOrdersController(
                     actor.Id,
                     initiatedAt);
                 dbContext.LabServiceRequestRevisions.Add(revision);
-                order.Revisions.Add(revision);
                 Event(order, draftStatus, order.Status.ToString(), actor.Id);
                 var submittedStatus = order.Status.ToString();
                 Execute(order.BeginQuotePreparation);
                 Event(order, submittedStatus, order.Status.ToString(), actor.Id);
 
+                if (sourceHandoff is not null)
+                {
+                    Execute(() => sourceHandoff.RelationshipRequest.MarkApplied(
+                        $"Started Customer order {order.OrderNumber}.",
+                        actor.Id,
+                        initiatedAt));
+                    dbContext.CrmActivities.Add(new CrmActivity(
+                        CrmActivityType.PortalEvent,
+                        "Customer order started",
+                        $"CRM handoff {sourceHandoff.RelationshipRequest.RequestNumber} started order {order.OrderNumber}.",
+                        initiatedAt,
+                        CrmActivityVisibility.Internal,
+                        actor.Id,
+                        sourceHandoff.CompanyId,
+                        opportunityId: sourceHandoff.OpportunityId));
+                }
+
                 await dbContext.SaveChangesAsync(operationCancellationToken);
                 return await MapAsync(order, operationCancellationToken);
             },
-            StatusCodes.Status201Created,
-            cancellationToken);
+            statusCode: StatusCodes.Status201Created,
+            cancellationToken: cancellationToken,
+            concurrencyScope: request.SourceRequestId.HasValue
+                ? $"crm-handoff-order:{request.SourceRequestId.Value:N}"
+                : null);
         Response.StatusCode = execution.StatusCode;
         return execution.Response;
     }
@@ -370,7 +424,7 @@ public sealed class PlatformLabServiceOrdersController(
                     request.Tax, request.Currency, now, expiresAt);
                 var previous = order.Quotes.Where(item => item.Status is QuoteStatus.Issued or QuoteStatus.SyncPending).OrderByDescending(item => item.Revision).FirstOrDefault();
                 previous?.Supersede(quote.Id);
-                order.Quotes.Add(quote);
+                dbContext.LabServiceQuotes.Add(quote);
                 var document = new CommercialDocumentLink(OrderWorkflowTypes.LabService, order.Id, CommercialDocumentKind.Estimate, quote.Total, quote.Currency);
                 document.MarkReadyForManualAccounting(order.OrderNumber, now);
                 dbContext.CommercialDocumentLinks.Add(document);
@@ -705,6 +759,21 @@ public sealed class PlatformLabServiceOrdersController(
             .SingleOrDefaultAsync(item => item.CommercialOrderId == order.Id, cancellationToken);
         var projection = authorization is null ? null : await dbContext.CommercialLabWorkProjections.AsNoTracking()
             .SingleOrDefaultAsync(item => item.AuthorizationId == authorization.AuthorizationId, cancellationToken);
+        CommercialOrderSourceDto? commercialSource = null;
+        if (order.SourceRequestId.HasValue)
+        {
+            commercialSource = await dbContext.CrmHandoffs.AsNoTracking()
+                .Where(item => item.RelationshipRequestId == order.SourceRequestId.Value)
+                .Select(item => new CommercialOrderSourceDto(
+                    item.RelationshipRequestId,
+                    item.RelationshipRequest.RequestNumber,
+                    item.Id,
+                    item.CompanyId,
+                    item.Company.Name,
+                    item.OpportunityId,
+                    item.Opportunity == null ? null : item.Opportunity.Name))
+                .SingleOrDefaultAsync(cancellationToken);
+        }
         return new LabServiceOrderDto(order.Id, order.OrganizationId, order.OrderNumber, order.CustomerReference, order.Description,
             order.HasMixedBiologicalSources, order.SharedBiologicalSource,
             order.StorageRequirements, order.SafetyDeclaration, order.SubmissionInstructionsSnapshot,
@@ -727,7 +796,8 @@ public sealed class PlatformLabServiceOrdersController(
                 .Select(group => new LabServiceSourceGroupDto(group.Id, group.BiologicalSource, group.SpecimenCount, group.Version)).ToList(),
             SampleRosterFinalizedAt: order.SampleRosterFinalizedAt,
             CanEditSamples: false,
-            CanFinalizeSamples: false);
+            CanFinalizeSamples: false,
+            CommercialSource: commercialSource);
     }
 
     private static IReadOnlyList<LabServiceSourceGroupWriteRequest> ValidatePricingProfile(

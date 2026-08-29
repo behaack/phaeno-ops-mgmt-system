@@ -72,9 +72,8 @@ function DialogContent({
           event.preventDefault()
         }}
         className={cn(
-          "fixed top-1/2 left-1/2 z-50 flex max-h-[calc(100dvh-2rem)] w-[calc(100%-2rem)] max-w-lg -translate-x-1/2 -translate-y-1/2 flex-col gap-4 rounded-lg border bg-popover p-4 text-popover-foreground shadow-lg outline-none [--dialog-inset:1rem] data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=closed]:zoom-out-95 data-[state=open]:animate-in data-[state=open]:fade-in-0 data-[state=open]:zoom-in-95",
+          "fixed top-1/2 left-1/2 z-50 flex max-h-[calc(100dvh-2rem)] w-[calc(100%-2rem)] max-w-lg -translate-x-1/2 -translate-y-1/2 flex-col overflow-hidden rounded-lg border bg-popover p-0 text-popover-foreground shadow-lg outline-none [--dialog-inset:1rem] data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=closed]:zoom-out-95 data-[state=open]:animate-in data-[state=open]:fade-in-0 data-[state=open]:zoom-in-95",
           className,
-          "overflow-hidden",
         )}
         {...props}
       >
@@ -96,6 +95,7 @@ function DialogContent({
 type DialogRegion = "header" | "feedback" | "footer"
 type DialogRegionComponent = React.ElementType & {
   dialogRegion?: DialogRegion
+  dialogRegionContainer?: DialogRegion
 }
 
 function dialogRegion(child: React.ReactNode): DialogRegion | undefined {
@@ -131,7 +131,7 @@ function scrollableDialogBody(children: React.ReactNode, key: string) {
     <div
       key={key}
       data-slot="dialog-body"
-      className="grid min-h-0 flex-1 gap-4 overflow-y-auto overscroll-contain pb-2"
+      className="grid min-h-0 flex-1 gap-4 overflow-y-auto overscroll-contain p-[var(--dialog-inset)]"
     >
       {children}
     </div>
@@ -152,7 +152,10 @@ function fixedDialogHeader(
   if (
     children.length === 1
     && React.isValidElement(children[0])
-    && children[0].type === DialogHeader
+    && (
+      children[0].type === DialogHeader
+      || (children[0].type as DialogRegionComponent).dialogRegionContainer === "header"
+    )
   ) {
     const header = children[0] as React.ReactElement<React.ComponentProps<typeof DialogHeader>>
     return [React.cloneElement(
@@ -199,7 +202,7 @@ function arrangeDialogChildren(children: React.ReactNode) {
       {
         className: cn(
           form.props.className,
-          "flex min-h-0 flex-1 flex-col gap-4 overflow-hidden",
+          "flex min-h-0 flex-1 flex-col overflow-hidden",
         ),
       },
       ...formHeader,
@@ -226,7 +229,7 @@ function DialogHeader({ className, ...props }: React.ComponentProps<"div">) {
     <div
       data-slot="dialog-header"
       className={cn(
-        "-mx-[var(--dialog-inset)] -mt-[var(--dialog-inset)] flex shrink-0 flex-col gap-1.5 border-b bg-muted/40 px-[var(--dialog-inset)] py-4 pr-12",
+        "flex shrink-0 flex-col gap-1.5 border-b bg-muted/40 px-[var(--dialog-inset)] py-4 pr-12",
         className,
       )}
       {...props}
@@ -239,7 +242,7 @@ function DialogFooter({ className, ...props }: React.ComponentProps<"div">) {
     <div
       data-slot="dialog-footer"
       className={cn(
-        "-mx-[var(--dialog-inset)] -mb-[var(--dialog-inset)] flex shrink-0 flex-col-reverse gap-2 border-t bg-muted/40 px-[var(--dialog-inset)] py-4 sm:flex-row sm:justify-end",
+        "flex shrink-0 flex-col-reverse gap-2 border-t bg-muted/40 px-[var(--dialog-inset)] py-4 sm:flex-row sm:justify-end",
         className,
       )}
       {...props}
@@ -258,6 +261,7 @@ function DialogFeedback({ className, ...props }: React.ComponentProps<"div">) {
 }
 
 DialogHeader.dialogRegion = "header" as const
+DialogHeader.dialogRegionContainer = "header" as const
 DialogFeedback.dialogRegion = "feedback" as const
 DialogFooter.dialogRegion = "footer" as const
 

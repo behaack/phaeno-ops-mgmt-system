@@ -92,7 +92,7 @@ export function CrmHomePage() {
                 id="crm-global-search"
                 value={draftSearch}
                 onChange={(event) => setDraftSearch(event.target.value)}
-                placeholder="Name, email, company, opportunity, or task"
+                placeholder="Name, number, email, company, opportunity, or task"
               />
             </div>
             <Button type="submit" variant="outline" className="mt-auto">
@@ -223,7 +223,8 @@ export function CrmHomePage() {
                     <Badge variant="outline">{opportunity.stageName}</Badge>
                   </div>
                   <p className="mt-1 text-xs text-muted-foreground">
-                    {opportunity.companyName} ·{" "}
+                    <span className="font-mono">{opportunity.opportunityNumber}</span>{" "}
+                    · {opportunity.companyName} ·{" "}
                     {formatMoney(opportunity.amount, opportunity.currency)}
                   </p>
                 </Link>

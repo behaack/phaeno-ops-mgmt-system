@@ -11,7 +11,8 @@ public sealed record CrmContactDto(
     string DisplayName,
     string? Email,
     string? Phone,
-    string? JobTitle,
+    string? PrimaryCompanyName,
+    string? PrimaryCompanyTitle,
     Guid OwnerUserId,
     string OwnerName,
     CrmCommunicationPreference CommunicationPreference,
@@ -31,6 +32,7 @@ public sealed record CrmCompanyContactDto(
     string CompanyName,
     Guid ContactId,
     string ContactName,
+    string? JobTitle,
     string? RelationshipRole,
     bool IsPrimaryCompany,
     DateOnly EffectiveFrom,
@@ -43,7 +45,6 @@ public sealed record UpsertCrmContactRequest(
     string LastName,
     string? Email,
     string? Phone,
-    string? JobTitle,
     Guid? OwnerUserId,
     CrmCommunicationPreference CommunicationPreference,
     string? LawfulContactBasis,
@@ -53,11 +54,13 @@ public sealed record UpsertCrmContactRequest(
 
 public sealed record AssociateCrmContactRequest(
     Guid ContactId,
+    string? JobTitle,
     string? RelationshipRole,
     bool IsPrimaryCompany,
     DateOnly EffectiveFrom);
 
 public sealed record UpdateCrmCompanyContactRequest(
+    string? JobTitle,
     string? RelationshipRole,
     bool IsPrimaryCompany,
     DateOnly EffectiveFrom,
@@ -147,6 +150,7 @@ public sealed record UpsertCrmPipelineStageRequest(string Name, int Position, Cr
 
 public sealed record CrmOpportunityDto(
     Guid Id,
+    string OpportunityNumber,
     string Name,
     Guid CompanyId,
     string CompanyName,
@@ -310,7 +314,18 @@ public sealed record CrmHandoffDto(
     OrganizationKind? RequestedOrganizationKind,
     Guid? OrganizationId,
     string IdempotencyKey,
-    DateTime CreatedAt);
+    DateTime CreatedAt,
+    Guid? OrderId = null,
+    string? OrderNumber = null,
+    string? OrderStatus = null,
+    bool CanStartCustomerOrder = false,
+    string? OrderBlockingReason = null);
+public sealed record CrmOrderHandoffDto(
+    CrmHandoffDto Handoff,
+    string CompanyName,
+    string? OpportunityName,
+    string? OrganizationName,
+    string Summary);
 
 public sealed record CrmPortalAccountLinkDto(Guid Id, Guid CompanyId, Guid OrganizationId, string OrganizationName, OrganizationKind OrganizationKind, string Reason, string LinkedByName, DateTime LinkedAt, bool IsActive, long Version);
 public sealed record CreateCrmPortalAccountLinkRequest(Guid OrganizationId, string Reason);

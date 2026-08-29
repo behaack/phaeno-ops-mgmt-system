@@ -11,7 +11,9 @@ public sealed class CrmContact : IAudit, IConcurrency
     public string? Email { get; private set; }
     public string? NormalizedEmail { get; private set; }
     public string? Phone { get; private set; }
-    public string? JobTitle { get; private set; }
+    // Retained only so pre-relationship title data is not discarded by the
+    // migration. Current job titles belong to CrmCompanyContact.
+    public string? LegacyJobTitle { get; private set; }
     public Guid OwnerUserId { get; private set; }
     public User Owner { get; private set; } = null!;
     public CrmCommunicationPreference CommunicationPreference { get; private set; }
@@ -38,7 +40,6 @@ public sealed class CrmContact : IAudit, IConcurrency
         Guid ownerUserId,
         string? email = null,
         string? phone = null,
-        string? jobTitle = null,
         CrmCommunicationPreference communicationPreference = CrmCommunicationPreference.Unknown,
         string? lawfulContactBasis = null,
         string? communicationNotes = null,
@@ -50,7 +51,6 @@ public sealed class CrmContact : IAudit, IConcurrency
             lastName,
             email,
             phone,
-            jobTitle,
             communicationPreference,
             lawfulContactBasis,
             communicationNotes,
@@ -64,7 +64,6 @@ public sealed class CrmContact : IAudit, IConcurrency
         string lastName,
         string? email,
         string? phone,
-        string? jobTitle,
         CrmCommunicationPreference communicationPreference,
         string? lawfulContactBasis,
         string? communicationNotes,
@@ -75,7 +74,6 @@ public sealed class CrmContact : IAudit, IConcurrency
         Email = NormalizeEmail(email);
         NormalizedEmail = Email?.ToUpperInvariant();
         Phone = Optional(phone, 50);
-        JobTitle = Optional(jobTitle, 150);
         CommunicationPreference = communicationPreference;
         LawfulContactBasis = Optional(lawfulContactBasis, 255);
         CommunicationNotes = Optional(communicationNotes, 1000);

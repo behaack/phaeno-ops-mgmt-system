@@ -287,8 +287,9 @@ and rollback-isolated PostgreSQL coverage.
   record-preserving lifecycle; Contact normalization and merge identity; Lead
   qualification/conversion identity; Pipeline terminal rules; Opportunity
   close/reopen behavior; Task state; immutable Portal activities; typed custom
-  fields; and effective-dated Company/Contact history. The 11 focused tests are
-  maintained in `backend/test/CrmCompanyDomainTests.cs`.
+  fields; and effective-dated Company/Contact history, including the
+  Company-specific job title. The 11 focused tests are maintained in
+  `backend/test/CrmCompanyDomainTests.cs`.
 - [x] Controller route materialization - build the complete MVC controller
   endpoint collection so reserved route-token conflicts and other startup-time
   route-construction failures are caught before runtime. Coverage is maintained
@@ -297,6 +298,7 @@ and rollback-isolated PostgreSQL coverage.
   list/search/pagination, duplicate-name handling, concurrency, audit and
   scientific-data exclusion; then Contact, multi-company contact
   association, Lead, Opportunity, configurable Pipeline/Stage, ownership,
+  relationship-title projection and legacy-title migration,
   Activity, Note, Task, reminder, saved-view, custom-field, import/export,
   duplicate detection, controlled merge, search/report projection, optimistic
   concurrency, soft deactivation, authorization, field visibility, audit, and
@@ -728,3 +730,18 @@ and rollback-isolated PostgreSQL coverage.
 - 2026-07-14: implementation verification ran `dotnet test
   backend/PhaenoPortal.slnx`; all 43 tests passed. The existing lowercase
   `initial` migration-name compiler warning remains unchanged.
+- 2026-08-28: Customer PSeq Lab Service CRM handoff-to-order verification ran
+  the complete backend suite through isolated artifacts against the migrated
+  local PostgreSQL database; all 240 tests passed with no failures or skips.
+  Coverage includes atomic Order creation/request application, immutable source
+  linkage, duplicate prevention, rejection while a linked Opportunity is not
+  Won, idempotent initiation, quote creation, and cleanup-preserving Commercial,
+  Lab, and shipping reference journeys.
+- 2026-08-28: Opportunity identity verification built the API through isolated
+  artifacts and ran the focused CRM domain suite; all 13 tests passed with no
+  failures or skips. Coverage confirms the readable Opportunity Number format,
+  1,000 generated values without duplication, and the controlled PSeq Lab
+  Service/PSeq Kit product-interest domain. Migration
+  `20260828234907_AddCrmOpportunityNumber` was applied successfully to the local
+  development PostgreSQL database, including deterministic legacy backfill and
+  the database unique index.

@@ -180,11 +180,19 @@ remain incomplete production-activation gates.
   CRM tests are maintained under `frontend/src/features/crm/`, with navigation
   placement coverage also maintained in
   `frontend/src/components/navigation.test.ts`.
+- [x] `frontend/src/features/crm/CrmAssociationRecordCombobox.test.tsx` - cover
+  incremental server-backed Company and Contact searches and selection of the
+  stable record identifier used by the association request.
+- [x] `frontend/src/features/crm/CrmCompanyContactEditDialog.test.tsx` - cover
+  the shared relationship editor used from both Company and Contact detail
+  workspaces, including title, controlled role, primary designation, and
+  effective dates.
 - [ ] Remaining first-party CRM components - Company primary-name navigation
   from the directory to its dedicated detail workspace is covered; add the
   remaining directory and detail query/mutation states, responsive table and
   pagination, authorization,
-  then Contacts, Leads,
+  then Contact identity editing, both entry points into Company-specific
+  title/role association editing, relationship history display, Leads,
   Opportunities, pipeline table/board views, stage transitions, Activities,
   Notes, Tasks, reminders, ownership, CRM home attention states, saved views,
   reports, imports/exports, duplicate review, merge consequences, loading/empty/
@@ -566,3 +574,17 @@ remain incomplete production-activation gates.
   and `pnpm run build`; lint and typecheck passed, all 103 tests in 40 files
   passed, and the client and SSR production builds completed. The existing
   advisory client-chunk warning remains.
+- 2026-08-28: CRM relationship and Opportunity-to-Order verification ran
+  `pnpm run lint`, `pnpm run typecheck`, `pnpm run test`, and `pnpm run build`;
+  lint and typecheck passed, all 108 tests in 44 files passed, and both client
+  and SSR production builds completed. Focused coverage confirms incremental
+  relationship search and that Order intake preserves the approved handoff as
+  the locked Customer-order source. It also confirms the controlled Opportunity
+  product selector and that the Owner control is width-constrained within its
+  modal column. The existing advisory client-chunk warning remains.
+- 2026-08-28: CRM card-header alignment verification passed `pnpm run lint`,
+  `pnpm run typecheck`, and the 6 focused desktop/mobile `crm.spec.ts`
+  scenarios. Geometry assertions confirm Company, Lead, and Opportunity card
+  actions remain compact at the far right of the title row rather than
+  stretching beneath the description. The existing `AcceptInvitePage`
+  route-export warning remains.

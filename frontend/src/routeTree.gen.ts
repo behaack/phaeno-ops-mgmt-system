@@ -55,9 +55,9 @@ import { Route as LabOperationsDataAssemblyOrderIdRouteImport } from './routes/l
 import { Route as DocsAudienceSlugRouteImport } from './routes/docs.$audience.$slug'
 import { Route as DataProvisioningSourcesSourceSampleIdRouteImport } from './routes/data-provisioning.sources.$sourceSampleId'
 import { Route as DataAssemblyRequestIdEditRouteImport } from './routes/data-assembly.$requestId.edit'
-import { Route as CrmOpportunitiesOpportunityIdRouteImport } from './routes/crm.opportunities.$opportunityId'
-import { Route as CrmLeadsLeadIdRouteImport } from './routes/crm.leads.$leadId'
-import { Route as CrmContactsContactIdRouteImport } from './routes/crm.contacts.$contactId'
+import { Route as CrmOpportunitiesOpportunityIdRouteImport } from './routes/crm.opportunities_.$opportunityId'
+import { Route as CrmLeadsLeadIdRouteImport } from './routes/crm.leads_.$leadId'
+import { Route as CrmContactsContactIdRouteImport } from './routes/crm.contacts_.$contactId'
 import { Route as CrmCompaniesCompanyIdRouteImport } from './routes/crm.companies_.$companyId'
 import { Route as LabOperationsProtocolsProtocolIdVersionsNewRouteImport } from './routes/lab-operations.protocols.$protocolId.versions.new'
 import { Route as LabOperationsProtocolsProtocolIdVersionsVersionIdEditRouteImport } from './routes/lab-operations.protocols.$protocolId.versions.$versionId.edit'
@@ -304,19 +304,19 @@ const DataAssemblyRequestIdEditRoute =
   } as any)
 const CrmOpportunitiesOpportunityIdRoute =
   CrmOpportunitiesOpportunityIdRouteImport.update({
-    id: '/$opportunityId',
-    path: '/$opportunityId',
-    getParentRoute: () => CrmOpportunitiesRoute,
+    id: '/opportunities_/$opportunityId',
+    path: '/opportunities/$opportunityId',
+    getParentRoute: () => CrmRoute,
   } as any)
 const CrmLeadsLeadIdRoute = CrmLeadsLeadIdRouteImport.update({
-  id: '/$leadId',
-  path: '/$leadId',
-  getParentRoute: () => CrmLeadsRoute,
+  id: '/leads_/$leadId',
+  path: '/leads/$leadId',
+  getParentRoute: () => CrmRoute,
 } as any)
 const CrmContactsContactIdRoute = CrmContactsContactIdRouteImport.update({
-  id: '/$contactId',
-  path: '/$contactId',
-  getParentRoute: () => CrmContactsRoute,
+  id: '/contacts_/$contactId',
+  path: '/contacts/$contactId',
+  getParentRoute: () => CrmRoute,
 } as any)
 const CrmCompaniesCompanyIdRoute = CrmCompaniesCompanyIdRouteImport.update({
   id: '/companies_/$companyId',
@@ -356,9 +356,9 @@ export interface FileRoutesByFullPath {
   '/sample-shipping': typeof SampleShippingRouteWithChildren
   '/crm/administration': typeof CrmAdministrationRoute
   '/crm/companies': typeof CrmCompaniesRoute
-  '/crm/contacts': typeof CrmContactsRouteWithChildren
-  '/crm/leads': typeof CrmLeadsRouteWithChildren
-  '/crm/opportunities': typeof CrmOpportunitiesRouteWithChildren
+  '/crm/contacts': typeof CrmContactsRoute
+  '/crm/leads': typeof CrmLeadsRoute
+  '/crm/opportunities': typeof CrmOpportunitiesRoute
   '/crm/reports': typeof CrmReportsRoute
   '/crm/tasks': typeof CrmTasksRoute
   '/customers/$customerId': typeof CustomersCustomerIdRoute
@@ -410,9 +410,9 @@ export interface FileRoutesByTo {
   '/sample-shipping': typeof SampleShippingRouteWithChildren
   '/crm/administration': typeof CrmAdministrationRoute
   '/crm/companies': typeof CrmCompaniesRoute
-  '/crm/contacts': typeof CrmContactsRouteWithChildren
-  '/crm/leads': typeof CrmLeadsRouteWithChildren
-  '/crm/opportunities': typeof CrmOpportunitiesRouteWithChildren
+  '/crm/contacts': typeof CrmContactsRoute
+  '/crm/leads': typeof CrmLeadsRoute
+  '/crm/opportunities': typeof CrmOpportunitiesRoute
   '/crm/reports': typeof CrmReportsRoute
   '/crm/tasks': typeof CrmTasksRoute
   '/customers/$customerId': typeof CustomersCustomerIdRoute
@@ -465,9 +465,9 @@ export interface FileRoutesById {
   '/sample-shipping': typeof SampleShippingRouteWithChildren
   '/crm/administration': typeof CrmAdministrationRoute
   '/crm/companies': typeof CrmCompaniesRoute
-  '/crm/contacts': typeof CrmContactsRouteWithChildren
-  '/crm/leads': typeof CrmLeadsRouteWithChildren
-  '/crm/opportunities': typeof CrmOpportunitiesRouteWithChildren
+  '/crm/contacts': typeof CrmContactsRoute
+  '/crm/leads': typeof CrmLeadsRoute
+  '/crm/opportunities': typeof CrmOpportunitiesRoute
   '/crm/reports': typeof CrmReportsRoute
   '/crm/tasks': typeof CrmTasksRoute
   '/customers/$customerId': typeof CustomersCustomerIdRoute
@@ -483,9 +483,9 @@ export interface FileRoutesById {
   '/sample-shipping/$shipmentId': typeof SampleShippingShipmentIdRouteWithChildren
   '/session-tasks/setup-mfa': typeof SessionTasksSetupMfaRoute
   '/crm/companies_/$companyId': typeof CrmCompaniesCompanyIdRoute
-  '/crm/contacts/$contactId': typeof CrmContactsContactIdRoute
-  '/crm/leads/$leadId': typeof CrmLeadsLeadIdRoute
-  '/crm/opportunities/$opportunityId': typeof CrmOpportunitiesOpportunityIdRoute
+  '/crm/contacts_/$contactId': typeof CrmContactsContactIdRoute
+  '/crm/leads_/$leadId': typeof CrmLeadsLeadIdRoute
+  '/crm/opportunities_/$opportunityId': typeof CrmOpportunitiesOpportunityIdRoute
   '/data-assembly/$requestId/edit': typeof DataAssemblyRequestIdEditRoute
   '/data-provisioning/sources/$sourceSampleId': typeof DataProvisioningSourcesSourceSampleIdRoute
   '/docs/$audience/$slug': typeof DocsAudienceSlugRoute
@@ -647,9 +647,9 @@ export interface FileRouteTypes {
     | '/sample-shipping/$shipmentId'
     | '/session-tasks/setup-mfa'
     | '/crm/companies_/$companyId'
-    | '/crm/contacts/$contactId'
-    | '/crm/leads/$leadId'
-    | '/crm/opportunities/$opportunityId'
+    | '/crm/contacts_/$contactId'
+    | '/crm/leads_/$leadId'
+    | '/crm/opportunities_/$opportunityId'
     | '/data-assembly/$requestId/edit'
     | '/data-provisioning/sources/$sourceSampleId'
     | '/docs/$audience/$slug'
@@ -1010,26 +1010,26 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof DataAssemblyRequestIdEditRouteImport
       parentRoute: typeof DataAssemblyRequestIdRoute
     }
-    '/crm/opportunities/$opportunityId': {
-      id: '/crm/opportunities/$opportunityId'
-      path: '/$opportunityId'
+    '/crm/opportunities_/$opportunityId': {
+      id: '/crm/opportunities_/$opportunityId'
+      path: '/opportunities/$opportunityId'
       fullPath: '/crm/opportunities/$opportunityId'
       preLoaderRoute: typeof CrmOpportunitiesOpportunityIdRouteImport
-      parentRoute: typeof CrmOpportunitiesRoute
+      parentRoute: typeof CrmRoute
     }
-    '/crm/leads/$leadId': {
-      id: '/crm/leads/$leadId'
-      path: '/$leadId'
+    '/crm/leads_/$leadId': {
+      id: '/crm/leads_/$leadId'
+      path: '/leads/$leadId'
       fullPath: '/crm/leads/$leadId'
       preLoaderRoute: typeof CrmLeadsLeadIdRouteImport
-      parentRoute: typeof CrmLeadsRoute
+      parentRoute: typeof CrmRoute
     }
-    '/crm/contacts/$contactId': {
-      id: '/crm/contacts/$contactId'
-      path: '/$contactId'
+    '/crm/contacts_/$contactId': {
+      id: '/crm/contacts_/$contactId'
+      path: '/contacts/$contactId'
       fullPath: '/crm/contacts/$contactId'
       preLoaderRoute: typeof CrmContactsContactIdRouteImport
-      parentRoute: typeof CrmContactsRoute
+      parentRoute: typeof CrmRoute
     }
     '/crm/companies_/$companyId': {
       id: '/crm/companies_/$companyId'
@@ -1055,61 +1055,32 @@ declare module '@tanstack/react-router' {
   }
 }
 
-interface CrmContactsRouteChildren {
-  CrmContactsContactIdRoute: typeof CrmContactsContactIdRoute
-}
-
-const CrmContactsRouteChildren: CrmContactsRouteChildren = {
-  CrmContactsContactIdRoute: CrmContactsContactIdRoute,
-}
-
-const CrmContactsRouteWithChildren = CrmContactsRoute._addFileChildren(
-  CrmContactsRouteChildren,
-)
-
-interface CrmLeadsRouteChildren {
-  CrmLeadsLeadIdRoute: typeof CrmLeadsLeadIdRoute
-}
-
-const CrmLeadsRouteChildren: CrmLeadsRouteChildren = {
-  CrmLeadsLeadIdRoute: CrmLeadsLeadIdRoute,
-}
-
-const CrmLeadsRouteWithChildren = CrmLeadsRoute._addFileChildren(
-  CrmLeadsRouteChildren,
-)
-
-interface CrmOpportunitiesRouteChildren {
-  CrmOpportunitiesOpportunityIdRoute: typeof CrmOpportunitiesOpportunityIdRoute
-}
-
-const CrmOpportunitiesRouteChildren: CrmOpportunitiesRouteChildren = {
-  CrmOpportunitiesOpportunityIdRoute: CrmOpportunitiesOpportunityIdRoute,
-}
-
-const CrmOpportunitiesRouteWithChildren =
-  CrmOpportunitiesRoute._addFileChildren(CrmOpportunitiesRouteChildren)
-
 interface CrmRouteChildren {
   CrmAdministrationRoute: typeof CrmAdministrationRoute
   CrmCompaniesRoute: typeof CrmCompaniesRoute
-  CrmContactsRoute: typeof CrmContactsRouteWithChildren
-  CrmLeadsRoute: typeof CrmLeadsRouteWithChildren
-  CrmOpportunitiesRoute: typeof CrmOpportunitiesRouteWithChildren
+  CrmContactsRoute: typeof CrmContactsRoute
+  CrmLeadsRoute: typeof CrmLeadsRoute
+  CrmOpportunitiesRoute: typeof CrmOpportunitiesRoute
   CrmReportsRoute: typeof CrmReportsRoute
   CrmTasksRoute: typeof CrmTasksRoute
   CrmCompaniesCompanyIdRoute: typeof CrmCompaniesCompanyIdRoute
+  CrmContactsContactIdRoute: typeof CrmContactsContactIdRoute
+  CrmLeadsLeadIdRoute: typeof CrmLeadsLeadIdRoute
+  CrmOpportunitiesOpportunityIdRoute: typeof CrmOpportunitiesOpportunityIdRoute
 }
 
 const CrmRouteChildren: CrmRouteChildren = {
   CrmAdministrationRoute: CrmAdministrationRoute,
   CrmCompaniesRoute: CrmCompaniesRoute,
-  CrmContactsRoute: CrmContactsRouteWithChildren,
-  CrmLeadsRoute: CrmLeadsRouteWithChildren,
-  CrmOpportunitiesRoute: CrmOpportunitiesRouteWithChildren,
+  CrmContactsRoute: CrmContactsRoute,
+  CrmLeadsRoute: CrmLeadsRoute,
+  CrmOpportunitiesRoute: CrmOpportunitiesRoute,
   CrmReportsRoute: CrmReportsRoute,
   CrmTasksRoute: CrmTasksRoute,
   CrmCompaniesCompanyIdRoute: CrmCompaniesCompanyIdRoute,
+  CrmContactsContactIdRoute: CrmContactsContactIdRoute,
+  CrmLeadsLeadIdRoute: CrmLeadsLeadIdRoute,
+  CrmOpportunitiesOpportunityIdRoute: CrmOpportunitiesOpportunityIdRoute,
 }
 
 const CrmRouteWithChildren = CrmRoute._addFileChildren(CrmRouteChildren)

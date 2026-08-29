@@ -61,7 +61,7 @@ public static class CrmModelConfiguration
             entity.Property(value => value.Email).HasMaxLength(255);
             entity.Property(value => value.NormalizedEmail).HasMaxLength(255);
             entity.Property(value => value.Phone).HasMaxLength(50);
-            entity.Property(value => value.JobTitle).HasMaxLength(150);
+            entity.Property(value => value.LegacyJobTitle).HasMaxLength(150);
             ConfigureEnum(entity.Property(value => value.CommunicationPreference), 50);
             entity.Property(value => value.LawfulContactBasis).HasMaxLength(255);
             entity.Property(value => value.CommunicationNotes).HasMaxLength(1000);
@@ -79,6 +79,7 @@ public static class CrmModelConfiguration
         modelBuilder.Entity<CrmCompanyContact>(entity =>
         {
             entity.HasKey(value => value.Id);
+            entity.Property(value => value.JobTitle).HasMaxLength(150);
             entity.Property(value => value.RelationshipRole).HasMaxLength(150);
             ConfigureAudit(entity);
             entity.HasIndex(value => new { value.CompanyId, value.ContactId })
@@ -168,6 +169,7 @@ public static class CrmModelConfiguration
         modelBuilder.Entity<CrmOpportunity>(entity =>
         {
             entity.HasKey(value => value.Id);
+            entity.Property(value => value.OpportunityNumber).HasMaxLength(50).IsRequired();
             entity.Property(value => value.Name).HasMaxLength(255).IsRequired();
             entity.Property(value => value.ProductInterest).HasMaxLength(255);
             entity.Property(value => value.Amount).HasPrecision(18, 2);
@@ -178,6 +180,7 @@ public static class CrmModelConfiguration
             entity.Property(value => value.OutcomeReason).HasMaxLength(1000);
             ConfigureTags(entity.Property(value => value.Tags));
             ConfigureAudit(entity);
+            entity.HasIndex(value => value.OpportunityNumber).IsUnique();
             entity.HasIndex(value => new { value.PipelineId, value.StageId });
             entity.HasIndex(value => new { value.CompanyId, value.IsActive });
             entity.HasIndex(value => value.ExpectedCloseDate);

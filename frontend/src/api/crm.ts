@@ -82,6 +82,7 @@ export type CrmLeadStatus =
   | "Disqualified"
   | "Converted";
 export type CrmPipelineStageCategory = "Open" | "Won" | "Lost" | "Abandoned";
+export type CrmProductInterest = "PSeqLabService" | "PSeqKit";
 export type CrmActivityType =
   | "Note"
   | "Call"
@@ -135,7 +136,8 @@ export type CrmContact = {
   displayName: string;
   email: string | null;
   phone: string | null;
-  jobTitle: string | null;
+  primaryCompanyName: string | null;
+  primaryCompanyTitle: string | null;
   ownerUserId: string;
   ownerName: string;
   communicationPreference: CrmCommunicationPreference;
@@ -155,7 +157,6 @@ export type CrmContactInput = {
   lastName: string;
   email: string | null;
   phone: string | null;
-  jobTitle: string | null;
   ownerUserId?: string | null;
   communicationPreference: CrmCommunicationPreference;
   lawfulContactBasis: string | null;
@@ -170,6 +171,7 @@ export type CrmCompanyContact = {
   companyName: string;
   contactId: string;
   contactName: string;
+  jobTitle: string | null;
   relationshipRole: string | null;
   isPrimaryCompany: boolean;
   effectiveFrom: string;
@@ -243,6 +245,7 @@ export type CrmPipeline = {
 
 export type CrmOpportunity = {
   id: string;
+  opportunityNumber: string;
   name: string;
   companyId: string;
   companyName: string;
@@ -253,7 +256,7 @@ export type CrmOpportunity = {
   stageCategory: CrmPipelineStageCategory;
   ownerUserId: string;
   ownerName: string;
-  productInterest: string | null;
+  productInterest: CrmProductInterest | string | null;
   amount: number | null;
   currency: string;
   probability: number;
@@ -276,7 +279,7 @@ export type CrmOpportunityInput = {
   pipelineId: string;
   stageId?: string | null;
   ownerUserId?: string | null;
-  productInterest: string | null;
+  productInterest: CrmProductInterest | null;
   amount: number | null;
   currency: string;
   expectedCloseDate: string | null;
@@ -444,6 +447,18 @@ export type CrmHandoff = {
   organizationId: string | null;
   idempotencyKey: string;
   createdAt: string;
+  orderId: string | null;
+  orderNumber: string | null;
+  orderStatus: string | null;
+  canStartCustomerOrder: boolean;
+  orderBlockingReason: string | null;
+};
+export type CrmOrderHandoff = {
+  handoff: CrmHandoff;
+  companyName: string;
+  opportunityName: string | null;
+  organizationName: string | null;
+  summary: string;
 };
 export type CrmPortalAccountLink = {
   id: string;
@@ -608,6 +623,7 @@ export async function associateCompanyContact(
   companyId: string,
   input: {
     contactId: string;
+    jobTitle: string | null;
     relationshipRole: string | null;
     isPrimaryCompany: boolean;
     effectiveFrom: string;
@@ -623,6 +639,7 @@ export async function updateCompanyContact(
   companyId: string,
   associationId: string,
   input: {
+    jobTitle: string | null;
     relationshipRole: string | null;
     isPrimaryCompany: boolean;
     effectiveFrom: string;
@@ -1157,6 +1174,12 @@ export async function exportCrm(
 export async function listCrmHandoffs(companyId: string) {
   const response = await api.get<ApiEnvelope<CrmHandoff[]>>(
     `/platform/crm/companies/${companyId}/handoffs`,
+  );
+  return unwrap(response.data);
+}
+export async function listCrmOrderHandoffs() {
+  const response = await api.get<ApiEnvelope<CrmOrderHandoff[]>>(
+    "/platform/crm/order-handoffs",
   );
   return unwrap(response.data);
 }

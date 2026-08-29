@@ -33,6 +33,7 @@ import { Badge } from "#/components/ui/badge";
 import { Button } from "#/components/ui/button";
 import {
   Card,
+  CardAction,
   CardContent,
   CardDescription,
   CardHeader,
@@ -228,18 +229,18 @@ export function CrmAdministrationPage() {
         </Alert>
       ) : null}
       <Card>
-        <CardHeader className="flex-row items-start justify-between">
-          <div>
-            <CardTitle>Pipelines and stages</CardTitle>
-            <CardDescription>
-              Stage order, probability, close category, and required reasons are
-              configurable.
-            </CardDescription>
-          </div>
-          <Button size="sm" onClick={() => setPipelineOpen(true)}>
-            <Plus data-icon="inline-start" />
-            New pipeline
-          </Button>
+        <CardHeader>
+          <CardTitle>Pipelines and stages</CardTitle>
+          <CardDescription>
+            Stage order, probability, close category, and required reasons are
+            configurable.
+          </CardDescription>
+          <CardAction>
+            <Button size="sm" onClick={() => setPipelineOpen(true)}>
+              <Plus data-icon="inline-start" />
+              New pipeline
+            </Button>
+          </CardAction>
         </CardHeader>
         <CardContent className="space-y-4">
           {(pipelines.data ?? []).map((pipeline) => (
@@ -359,21 +360,21 @@ export function CrmAdministrationPage() {
       </Card>
       <div className="grid gap-6 lg:grid-cols-2">
         <Card>
-          <CardHeader className="flex-row items-start justify-between">
-            <div>
-              <CardTitle>Custom fields</CardTitle>
-              <CardDescription>
-                Additive metadata with explicit record type and sensitivity.
-              </CardDescription>
-            </div>
-            <Button
-              size="sm"
-              variant="outline"
-              onClick={() => setFieldOpen(true)}
-            >
-              <Plus data-icon="inline-start" />
-              New field
-            </Button>
+          <CardHeader>
+            <CardTitle>Custom fields</CardTitle>
+            <CardDescription>
+              Additive metadata with explicit record type and sensitivity.
+            </CardDescription>
+            <CardAction>
+              <Button
+                size="sm"
+                variant="outline"
+                onClick={() => setFieldOpen(true)}
+              >
+                <Plus data-icon="inline-start" />
+                New field
+              </Button>
+            </CardAction>
           </CardHeader>
           <CardContent className="space-y-2">
             {(fields.data ?? []).map((field) => (

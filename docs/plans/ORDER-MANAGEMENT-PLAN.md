@@ -37,8 +37,10 @@ by `FILE-MANAGEMENT-PLAN.md`.
   not separately sellable because it has no value without the corresponding
   PSeq Lab Service or PSeq Kit inputs.
   Partners may submit specimens without identifying any downstream customer.
-  Bespoke work routes through a first-party CRM Opportunity. These changes are
-  not implemented.
+  Bespoke work routes through a first-party CRM Opportunity. The first Customer
+  PSeq Lab Service Opportunity-to-Order conversion slice is implemented; the
+  broader configured-price and bundled-service direction is not yet
+  implemented.
 - Required pre-production alignment: the implemented standalone Partner
   data-assembly commercial workflow is superseded. It must become the included,
   kit-linked assembly phase of PSeq Kit; the existing Customer laboratory flow
@@ -63,20 +65,19 @@ by `FILE-MANAGEMENT-PLAN.md`.
   accession are intentionally absent; those begin in Lab Operations.
   The former local HubSpot simulator and its active UI have been removed;
   historical HubSpot-sourced requests remain readable. Trial Project execution
-  and sales-assisted handoff-to-order conversion remain governed by their
-  owning plans.
-- Verification state: the completed pre-release local checkpoint on 2026-08-27 has a clean
-  backend solution build and suite (213 passed, 23 environment-guarded
-  PostgreSQL tests skipped), plus frontend lint, typecheck, full unit suite (38
-  files, 101 tests), client/SSR production build, and complete Playwright
-  mock-session suite (32 desktop/mobile tests). The new default-on account
-  authorization and entitlement/recipient sources compile and their focused UI
-  tests pass. The configured authenticated PostgreSQL reference connection is
-  absent, so the new reference journeys did not execute. At this local
-  checkpoint there was not yet deployment, signed-in browser acceptance,
-  Finance reconciliation, or Product Owner acceptance evidence. Remaining
-  authenticated API, accessibility, and database-backed browser coverage stays
-  in the living test plans.
+  remains governed by its owning plan. The first sales-assisted conversion
+  slice is implemented for Customer PSeq Lab Service: an approved first-party
+  CRM handoff can start one order, atomically becomes Applied, and remains
+  visible as that order's internal commercial source.
+- Verification state: the completed local checkpoint on 2026-08-28 has a clean
+  backend solution build and suite against the migrated development PostgreSQL
+  database (240 passed with no failures or skips), plus frontend lint,
+  typecheck, full unit suite (43 files, 107 tests), client/SSR production build,
+  and focused CRM Playwright coverage (4 desktop/mobile scenarios). The browser
+  run used the local mock session; there is not yet deployment, signed-in
+  browser acceptance, Finance reconciliation, or Product Owner acceptance
+  evidence. Remaining authenticated API, accessibility, and database-backed
+  browser coverage stays in the living test plans.
 - Production activation is not complete or implied. It still requires approved
   real scientific definitions/profiles and shipping rules, production storage
   and malware scanning, Postmark configuration, manual-accounting workflow
@@ -509,6 +510,11 @@ rollout changes before modifying the current order aggregates.
   Opportunity.
 - Won custom work creates a pending sales-assisted-order handoff for
   Phaeno operational validation; it does not silently create active work.
+- An approved Customer PSeq Lab Service handoff can start exactly one order.
+  A handoff linked to an Opportunity is orderable only while that Opportunity
+  is Won. The order stores the reviewed Portal request as its immutable source;
+  Order operations and CRM both expose the Company, optional Opportunity,
+  request, and resulting order linkage to authorized Phaeno users.
 - Every committed Portal sale publishes a relationship-safe summary to its
   linked CRM Company and Opportunity when present. Routine direct orders do not
   create CRM Opportunities automatically.

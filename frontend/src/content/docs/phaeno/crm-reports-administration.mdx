@@ -41,9 +41,11 @@ Administration groups likely duplicate Companies and Contacts by the detected ma
 Select **Preview CSV import**, choose Company, Contact, Lead, or Opportunity, and select a CSV file. Imports support at most 5,000 rows and only these columns:
 
 - Company: `name`, `domain`, `phone`, `industry`, `source`
-- Contact: `first_name`, `last_name`, `email`, `phone`, `job_title`
+- Contact: `first_name`, `last_name`, `email`, `phone`
+
+Job titles belong to Company relationships and are not accepted as standalone Contact import fields. Associate the imported Contact with a Company, then record the title on that relationship. Contact exports include `primary_company` and `primary_company_title` as derived reference columns.
 - Lead: `display_name`, `company_name`, `first_name`, `last_name`, `email`, `phone`, `source`
-- Opportunity: `name`, `company_name`, `product_interest`, `amount`, `currency`, `next_step`
+- Opportunity: `name`, `company_name`, `product_interest`, `amount`, `currency`, `next_step`. When supplied, `product_interest` must be `PSeqLabService` or `PSeqKit`.
 
 Preview shows valid, duplicate, and invalid counts. Duplicate rows are skipped. Any invalid row blocks the commit so the source can be corrected as one controlled batch. An imported Opportunity's `company_name` must exactly match an active CRM Company; it starts in the first active stage of the default active pipeline.
 

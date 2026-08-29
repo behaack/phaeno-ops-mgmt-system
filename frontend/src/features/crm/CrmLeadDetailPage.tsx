@@ -185,7 +185,7 @@ export function CrmLeadDetailPage({ leadId }: { leadId: string }) {
           </AlertDescription>
         </Alert>
       ) : null}
-      <div className="grid gap-6 lg:grid-cols-2">
+      <div className="grid gap-6">
         <Card>
           <CardHeader>
             <CardTitle>Lead details</CardTitle>
@@ -211,41 +211,50 @@ export function CrmLeadDetailPage({ leadId }: { leadId: string }) {
               The reasoning remains visible after conversion.
             </CardDescription>
           </CardHeader>
-          <CardContent>
-            <dl className="space-y-4">
-              <Info
-                label="Qualification notes"
-                value={lead.qualificationNotes ?? "Not qualified"}
-                wide
-              />
-              <Info
-                label="Disqualification reason"
-                value={lead.disqualificationReason ?? "Not disqualified"}
-                wide
-              />
-              {lead.convertedCompanyId ? (
-                <div className="flex flex-wrap gap-2">
+          <CardContent className="space-y-4">
+            {lead.status === "Qualified" || lead.status === "Converted" ? (
+              <dl>
+                <Info
+                  label="Qualification notes"
+                  value={lead.qualificationNotes ?? "No notes recorded"}
+                  wide
+                />
+              </dl>
+            ) : lead.status === "Disqualified" ? (
+              <dl>
+                <Info
+                  label="Disqualification reason"
+                  value={lead.disqualificationReason ?? "No reason recorded"}
+                  wide
+                />
+              </dl>
+            ) : (
+              <p className="text-sm text-muted-foreground">
+                No qualification decision has been recorded.
+              </p>
+            )}
+            {lead.convertedCompanyId ? (
+              <div className="flex flex-wrap gap-2">
+                <Button asChild size="sm" variant="outline">
+                  <Link
+                    to="/crm/companies/$companyId"
+                    params={{ companyId: lead.convertedCompanyId }}
+                  >
+                    Open Company
+                  </Link>
+                </Button>
+                {lead.convertedOpportunityId ? (
                   <Button asChild size="sm" variant="outline">
                     <Link
-                      to="/crm/companies/$companyId"
-                      params={{ companyId: lead.convertedCompanyId }}
+                      to="/crm/opportunities/$opportunityId"
+                      params={{ opportunityId: lead.convertedOpportunityId }}
                     >
-                      Open Company
+                      Open Opportunity
                     </Link>
                   </Button>
-                  {lead.convertedOpportunityId ? (
-                    <Button asChild size="sm" variant="outline">
-                      <Link
-                        to="/crm/opportunities/$opportunityId"
-                        params={{ opportunityId: lead.convertedOpportunityId }}
-                      >
-                        Open Opportunity
-                      </Link>
-                    </Button>
-                  ) : null}
-                </div>
-              ) : null}
-            </dl>
+                ) : null}
+              </div>
+            ) : null}
           </CardContent>
         </Card>
       </div>

@@ -205,6 +205,11 @@ Validation is progressive:
 Each page, modal, or workflow has one visually dominant primary action.
 
 - Use specific labels such as `Create project`, `Save changes`, or `Archive sample`, not `Submit` or `OK`.
+- Put a card-scoped action in the card header at the far right of the title row.
+  Keep it compact to its label; do not stretch it beneath the title or
+  description. Reserve a full-width card action for a deliberately prominent
+  call to action whose width communicates hierarchy rather than compensating
+  for layout.
 - Use quieter styling for secondary actions and move infrequent actions into an `Actions` menu.
 - Hide actions the user is never authorized to perform.
 - Disable a temporarily unavailable action only when knowing it exists is useful, and explain the blocking condition.

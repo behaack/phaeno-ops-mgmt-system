@@ -199,6 +199,22 @@ executable scientific work, or overwrite POMS-owned operational state.
    active laboratory work. Ending an entitlement later blocks new orders but
    does not silently discard accepted work; that work follows its owning hold
    or cancellation workflow.
+6. For the implemented Customer PSeq Lab Service slice, a Won Opportunity or
+   Company-level custom-work decision creates a pending `SalesAssistedOrder`
+   request. After Portal account review approves the Customer, service, and
+   ordering prerequisites, authorized staff can start one Order Management Job
+   from that request. Order creation and the request's Applied transition are
+   atomic. The immutable source request links the order back to its CRM Company
+   and optional Opportunity; reopening the Opportunity does not mutate the
+   accepted order.
+6. For the implemented Customer PSeq Lab Service slice, a Won Opportunity or
+   Company-level custom-work decision creates a pending `SalesAssistedOrder`
+   request. After Portal account review approves the Customer, service, and
+   ordering prerequisites, authorized staff can start one Order Management Job
+   from that request. Order creation and the request's Applied transition are
+   atomic. The immutable source request links the order back to its CRM Company
+   and optional Opportunity; reopening the Opportunity does not mutate the
+   accepted order.
 
 ### Relationship change and offboarding
 

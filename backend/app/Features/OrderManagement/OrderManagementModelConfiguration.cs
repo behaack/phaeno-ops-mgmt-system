@@ -478,11 +478,13 @@ public static class OrderManagementModelConfiguration
             Text(entity.Property(e => e.TenantSafeReason), 2000, false);
             Text(entity.Property(e => e.InternalNote), 4000, false);
             entity.HasIndex(e => e.OrderNumber).IsUnique();
+            entity.HasIndex(e => e.SourceRequestId).IsUnique();
             entity.HasIndex(e => new { e.OrganizationId, e.NormalizedJobName }).IsUnique();
             entity.HasIndex(e => new { e.OrganizationId, e.Status, e.CreatedAt });
             entity.HasIndex(e => new { e.AssignedToUserId, e.DueAt });
             entity.HasIndex(e => e.CurrentQuoteId);
             entity.HasOne<Organization>().WithMany().HasForeignKey(e => e.OrganizationId).OnDelete(DeleteBehavior.Restrict);
+            entity.HasOne(e => e.SourceRequest).WithMany().HasForeignKey(e => e.SourceRequestId).OnDelete(DeleteBehavior.Restrict);
             entity.HasOne<User>().WithMany().HasForeignKey(e => e.AssignedToUserId).OnDelete(DeleteBehavior.Restrict);
             entity.HasOne<User>().WithMany().HasForeignKey(e => e.SampleRosterFinalizedByUserId).OnDelete(DeleteBehavior.Restrict);
             Audit(entity);

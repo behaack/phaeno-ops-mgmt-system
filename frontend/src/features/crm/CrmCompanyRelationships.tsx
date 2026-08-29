@@ -7,7 +7,6 @@ import {
   associateCompanyContact,
   createCrmHandoff,
   listCompanyContacts,
-  listCrmContacts,
   listCrmHandoffs,
   listCrmOpportunities,
   listCrmPortalLinks,
@@ -20,6 +19,7 @@ import { Badge } from "#/components/ui/badge";
 import { Button } from "#/components/ui/button";
 import {
   Card,
+  CardAction,
   CardContent,
   CardDescription,
   CardHeader,
@@ -37,6 +37,9 @@ import {
 import { Input } from "#/components/ui/input";
 import { Label } from "#/components/ui/label";
 import { Textarea } from "#/components/ui/textarea";
+import { CrmAssociationRecordCombobox } from "./CrmAssociationRecordCombobox";
+import { CrmCompanyContactEditDialog } from "./CrmCompanyContactEditDialog";
+import { CrmRelationshipRoleSelect } from "./CrmRelationshipRoleSelect";
 
 export function CrmCompanyRelationships({ companyId }: { companyId: string }) {
   const client = useQueryClient();
@@ -47,10 +50,6 @@ export function CrmCompanyRelationships({ companyId }: { companyId: string }) {
   const contacts = useQuery({
     queryKey: ["crm-company-contacts", companyId],
     queryFn: () => listCompanyContacts(companyId),
-  });
-  const choices = useQuery({
-    queryKey: ["crm-contacts", "choices"],
-    queryFn: () => listCrmContacts({ pageSize: 100 }),
   });
   const opportunities = useQuery({
     queryKey: ["crm-company-opportunities", companyId],
@@ -67,15 +66,22 @@ export function CrmCompanyRelationships({ companyId }: { companyId: string }) {
   const associate = useMutation({
     mutationFn: (input: {
       contactId: string;
+      jobTitle: string | null;
       relationshipRole: string | null;
       isPrimaryCompany: boolean;
       effectiveFrom: string;
     }) => associateCompanyContact(companyId, input),
-    onSuccess: async () => {
+    onSuccess: async (_, input) => {
       setAssociateOpen(false);
-      await client.invalidateQueries({
-        queryKey: ["crm-company-contacts", companyId],
-      });
+      await Promise.all([
+        client.invalidateQueries({
+          queryKey: ["crm-company-contacts", companyId],
+        }),
+        client.invalidateQueries({
+          queryKey: ["crm-contact", input.contactId],
+        }),
+        client.invalidateQueries({ queryKey: ["crm-contacts"] }),
+      ]);
     },
   });
   const updateAssociation = useMutation({
@@ -87,10 +93,17 @@ export function CrmCompanyRelationships({ companyId }: { companyId: string }) {
       input: Parameters<typeof updateCompanyContact>[2];
     }) => updateCompanyContact(companyId, associationId, input),
     onSuccess: async () => {
+      const contactId = managingAssociation?.contactId;
       setManagingAssociation(null);
-      await client.invalidateQueries({
-        queryKey: ["crm-company-contacts", companyId],
-      });
+      await Promise.all([
+        client.invalidateQueries({
+          queryKey: ["crm-company-contacts", companyId],
+        }),
+        contactId
+          ? client.invalidateQueries({ queryKey: ["crm-contact", contactId] })
+          : Promise.resolve(),
+        client.invalidateQueries({ queryKey: ["crm-contacts"] }),
+      ]);
     },
   });
   const handoff = useMutation({
@@ -106,23 +119,23 @@ export function CrmCompanyRelationships({ companyId }: { companyId: string }) {
   });
   return (
     <>
-      <div className="grid gap-6 lg:grid-cols-2">
+      <div className="grid gap-6">
         <Card>
-          <CardHeader className="flex-row items-start justify-between">
-            <div>
-              <CardTitle>Contacts</CardTitle>
-              <CardDescription>
-                People connected to this Company.
-              </CardDescription>
-            </div>
-            <Button
-              size="sm"
-              variant="outline"
-              onClick={() => setAssociateOpen(true)}
-            >
-              <Plus data-icon="inline-start" />
-              Associate
-            </Button>
+          <CardHeader>
+            <CardTitle>Contacts</CardTitle>
+            <CardDescription>
+              People connected to this Company.
+            </CardDescription>
+            <CardAction>
+              <Button
+                size="sm"
+                variant="outline"
+                onClick={() => setAssociateOpen(true)}
+              >
+                <Plus data-icon="inline-start" />
+                Associate
+              </Button>
+            </CardAction>
           </CardHeader>
           <CardContent className="space-y-2">
             {(contacts.data ?? []).map((contact) => (
@@ -135,8 +148,9 @@ export function CrmCompanyRelationships({ companyId }: { companyId: string }) {
                   params={{ contactId: contact.contactId }}
                   className="min-w-0 hover:underline"
                 >
-                  <span className="font-medium">{contact.contactName}</span>
-                  <span className="ml-2 text-xs text-muted-foreground">
+                  <span className="block font-medium">{contact.contactName}</span>
+                  <span className="block text-xs text-muted-foreground">
+                    {contact.jobTitle ?? "Job title not recorded"} ·{" "}
                     {contact.relationshipRole ?? "Role not recorded"}
                   </span>
                 </Link>
@@ -148,7 +162,7 @@ export function CrmCompanyRelationships({ companyId }: { companyId: string }) {
                   <Button
                     size="icon"
                     variant="ghost"
-                    aria-label={`Manage ${contact.contactName} association`}
+                    aria-label={`Edit ${contact.contactName} relationship`}
                     onClick={() => setManagingAssociation(contact)}
                   >
                     <Pencil aria-hidden="true" />
@@ -192,18 +206,18 @@ export function CrmCompanyRelationships({ companyId }: { companyId: string }) {
         </Card>
       </div>
       <Card>
-        <CardHeader className="flex-row items-start justify-between">
-          <div>
-            <CardTitle>Portal handoffs and account links</CardTitle>
-            <CardDescription>
-              A reviewed handoff is the only path from CRM context into Portal
-              account, access, service, or work workflows.
-            </CardDescription>
-          </div>
-          <Button size="sm" onClick={() => setHandoffOpen(true)}>
-            <ArrowRight data-icon="inline-start" />
-            Create handoff
-          </Button>
+        <CardHeader>
+          <CardTitle>Portal handoffs and account links</CardTitle>
+          <CardDescription>
+            A reviewed handoff is the only path from CRM context into Portal
+            account, access, service, or work workflows.
+          </CardDescription>
+          <CardAction>
+            <Button size="sm" onClick={() => setHandoffOpen(true)}>
+              <ArrowRight data-icon="inline-start" />
+              Create handoff
+            </Button>
+          </CardAction>
         </CardHeader>
         <CardContent className="space-y-4">
           {(links.data ?? [])
@@ -250,14 +264,16 @@ export function CrmCompanyRelationships({ companyId }: { companyId: string }) {
       </Card>
       <AssociateDialog
         open={associateOpen}
-        contacts={choices.data?.items ?? []}
+        excludedContactIds={(contacts.data ?? [])
+          .filter((contact) => contact.isActive)
+          .map((contact) => contact.contactId)}
         pending={associate.isPending}
         error={associate.error}
         onOpenChange={setAssociateOpen}
         onSubmit={(input) => associate.mutate(input)}
       />
       {managingAssociation ? (
-        <AssociationEditDialog
+        <CrmCompanyContactEditDialog
           value={managingAssociation}
           pending={updateAssociation.isPending}
           error={updateAssociation.error}
@@ -286,128 +302,22 @@ export function CrmCompanyRelationships({ companyId }: { companyId: string }) {
     </>
   );
 }
-function AssociationEditDialog({
-  value,
-  pending,
-  error,
-  onOpenChange,
-  onSubmit,
-}: {
-  value: CrmCompanyContact;
-  pending: boolean;
-  error: unknown;
-  onOpenChange: (open: boolean) => void;
-  onSubmit: (value: {
-    relationshipRole: string | null;
-    isPrimaryCompany: boolean;
-    effectiveFrom: string;
-    effectiveTo: string | null;
-  }) => void;
-}) {
-  const [primary, setPrimary] = useState(value.isPrimaryCompany);
-  return (
-    <Dialog open onOpenChange={onOpenChange}>
-      <DialogContent>
-        <form
-          onSubmit={(event) => {
-            event.preventDefault();
-            const data = new FormData(event.currentTarget);
-            onSubmit({
-              relationshipRole: nullable(data, "role"),
-              isPrimaryCompany: primary && !nullable(data, "effectiveTo"),
-              effectiveFrom: String(data.get("effectiveFrom")),
-              effectiveTo: nullable(data, "effectiveTo"),
-            });
-          }}
-        >
-          <DialogHeader>
-            <DialogTitle>Manage Company relationship</DialogTitle>
-            <DialogDescription>
-              Correct the role or effective dates. Setting an end date preserves
-              this relationship as history.
-            </DialogDescription>
-          </DialogHeader>
-          {error ? (
-            <Alert variant="destructive">
-              <AlertDescription>{apiErrorMessage(error)}</AlertDescription>
-            </Alert>
-          ) : null}
-          <div className="grid gap-4">
-            <Field label="Relationship role" id="association-edit-role">
-              <Input
-                id="association-edit-role"
-                name="role"
-                defaultValue={value.relationshipRole ?? ""}
-              />
-            </Field>
-            <div className="grid gap-4 sm:grid-cols-2">
-              <Field label="Effective from *" id="association-edit-start">
-                <Input
-                  id="association-edit-start"
-                  name="effectiveFrom"
-                  type="date"
-                  required
-                  defaultValue={value.effectiveFrom}
-                />
-              </Field>
-              <Field label="Effective to" id="association-edit-end">
-                <Input
-                  id="association-edit-end"
-                  name="effectiveTo"
-                  type="date"
-                  defaultValue={value.effectiveTo ?? ""}
-                />
-              </Field>
-            </div>
-            <div className="flex items-center gap-2">
-              <Checkbox
-                id="association-edit-primary"
-                checked={primary}
-                onCheckedChange={(checked) => setPrimary(checked === true)}
-              />
-              <Label
-                htmlFor="association-edit-primary"
-                className="cursor-pointer"
-              >
-                Primary Company for this Contact
-              </Label>
-            </div>
-          </div>
-          <DialogFooter>
-            <span className="mr-auto text-xs text-muted-foreground">
-              * Required
-            </span>
-            <Button
-              type="button"
-              variant="outline"
-              onClick={() => onOpenChange(false)}
-            >
-              Cancel
-            </Button>
-            <Button type="submit" disabled={pending}>
-              {pending ? "Saving…" : "Save relationship"}
-            </Button>
-          </DialogFooter>
-        </form>
-      </DialogContent>
-    </Dialog>
-  );
-}
 function AssociateDialog({
   open,
-  contacts,
+  excludedContactIds,
   pending,
   error,
   onOpenChange,
   onSubmit,
 }: {
   open: boolean;
-  contacts: Array<{ id: string; displayName: string; email: string | null }>;
+  excludedContactIds: string[];
   pending: boolean;
   error: unknown;
   onOpenChange: (open: boolean) => void;
   onSubmit: (value: {
     contactId: string;
+    jobTitle: string | null;
     relationshipRole: string | null;
     isPrimaryCompany: boolean;
     effectiveFrom: string;
@@ -423,6 +333,7 @@ function AssociateDialog({
             const data = new FormData(event.currentTarget);
             onSubmit({
               contactId: String(data.get("contactId")),
+              jobTitle: nullable(data, "jobTitle"),
               relationshipRole: nullable(data, "role"),
               isPrimaryCompany: primary,
               effectiveFrom: String(data.get("effectiveFrom")),
@@ -443,23 +354,23 @@ function AssociateDialog({
           ) : null}
           <div className="grid gap-4">
             <Field label="Contact *" id="association-contact">
-              <select
+              <CrmAssociationRecordCombobox
                 id="association-contact"
                 name="contactId"
+                kind="contact"
+                excludedIds={excludedContactIds}
                 required
-                className="h-9 rounded-md border bg-background px-3 text-sm"
-              >
-                <option value="">Select contact</option>
-                {contacts.map((contact) => (
-                  <option key={contact.id} value={contact.id}>
-                    {contact.displayName}
-                    {contact.email ? ` · ${contact.email}` : ""}
-                  </option>
-                ))}
-              </select>
+              />
+            </Field>
+            <Field label="Job title" id="association-title">
+              <Input
+                id="association-title"
+                name="jobTitle"
+                maxLength={150}
+              />
             </Field>
             <Field label="Relationship role" id="association-role">
-              <Input id="association-role" name="role" />
+              <CrmRelationshipRoleSelect id="association-role" />
             </Field>
             <Field label="Effective from *" id="association-date">
               <Input

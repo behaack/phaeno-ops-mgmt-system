@@ -74,7 +74,7 @@ export function CrmContactsPage() {
         <CardHeader>
           <CardTitle>Contact directory</CardTitle>
           <CardDescription>
-            Search names, email addresses, and job titles.
+            Search names, email addresses, and Company-specific job titles.
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
@@ -129,7 +129,7 @@ export function CrmContactsPage() {
                 <tr>
                   <th className="px-4 py-3">Contact</th>
                   <th className="px-4 py-3">Email</th>
-                  <th className="px-4 py-3">Title</th>
+                  <th className="px-4 py-3">Primary position</th>
                   <th className="px-4 py-3">Preference</th>
                   <th className="px-4 py-3">Owner</th>
                 </tr>
@@ -150,7 +150,12 @@ export function CrmContactsPage() {
                       {contact.email ?? "—"}
                     </td>
                     <td className="px-4 py-3 text-muted-foreground">
-                      {contact.jobTitle ?? "—"}
+                      {contact.primaryCompanyTitle ?? "—"}
+                      {contact.primaryCompanyName ? (
+                        <span className="block text-xs">
+                          {contact.primaryCompanyName}
+                        </span>
+                      ) : null}
                     </td>
                     <td className="px-4 py-3">
                       <Badge

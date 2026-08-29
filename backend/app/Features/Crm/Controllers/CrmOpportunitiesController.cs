@@ -30,7 +30,8 @@ public sealed class CrmOpportunitiesController(PSeqOperationsDbContext dbContext
         if (!string.IsNullOrWhiteSpace(search))
         {
             var pattern = $"%{EscapeLike(search.Trim())}%";
-            query = query.Where(value => EF.Functions.ILike(value.Name, pattern, "\\")
+            query = query.Where(value => EF.Functions.ILike(value.OpportunityNumber, pattern, "\\")
+                || EF.Functions.ILike(value.Name, pattern, "\\")
                 || EF.Functions.ILike(value.Company.Name, pattern, "\\")
                 || (value.ProductInterest != null && EF.Functions.ILike(value.ProductInterest, pattern, "\\")));
         }
@@ -206,7 +207,7 @@ public sealed class CrmOpportunitiesController(PSeqOperationsDbContext dbContext
     internal static CrmOpportunityDto ToDto(CrmOpportunity value, User? owner = null)
     {
         var resolvedOwner = owner ?? value.Owner;
-        return new(value.Id, value.Name, value.CompanyId, value.Company.Name, value.PipelineId, value.Pipeline.Name, value.StageId, value.Stage.Name, value.Stage.Category,
+        return new(value.Id, value.OpportunityNumber, value.Name, value.CompanyId, value.Company.Name, value.PipelineId, value.Pipeline.Name, value.StageId, value.Stage.Name, value.Stage.Category,
             value.OwnerUserId, $"{resolvedOwner.FirstName} {resolvedOwner.LastName}".Trim(), value.ProductInterest, value.Amount, value.Currency, value.Probability,
             value.ExpectedCloseDate, value.NextStep, value.Competitors, value.Description, value.Tags, value.ClosedAt, value.OutcomeReason, value.IsActive, value.CreatedAt, value.UpdatedAt, value.Version);
     }

@@ -50,7 +50,7 @@ public sealed class CrmContactRelationshipsController(PSeqOperationsDbContext db
         }
 
         if (request.IsPrimaryCompany) await ClearPrimary(request.ContactId, null, cancellationToken);
-        var value = Execute(() => new CrmCompanyContact(companyId, request.ContactId, request.RelationshipRole, request.IsPrimaryCompany, request.EffectiveFrom));
+        var value = Execute(() => new CrmCompanyContact(companyId, request.ContactId, request.JobTitle, request.RelationshipRole, request.IsPrimaryCompany, request.EffectiveFrom));
         dbContext.CrmCompanyContacts.Add(value);
         await dbContext.SaveChangesAsync(cancellationToken);
         return Created($"/api/platform/crm/companies/{companyId}/contacts/{value.Id}", ToDto(value, company.Name, contact.DisplayName));
@@ -65,7 +65,7 @@ public sealed class CrmContactRelationshipsController(PSeqOperationsDbContext db
             ?? throw NotFound("crm_company_contact_not_found", "The company-contact relationship was not found.");
         EnsureVersion(value.Version, request.Version);
         if (request.IsPrimaryCompany) await ClearPrimary(value.ContactId, value.Id, cancellationToken);
-        Execute(() => value.Update(request.RelationshipRole, request.IsPrimaryCompany, request.EffectiveFrom, request.EffectiveTo));
+        Execute(() => value.Update(request.JobTitle, request.RelationshipRole, request.IsPrimaryCompany, request.EffectiveFrom, request.EffectiveTo));
         await dbContext.SaveChangesAsync(cancellationToken);
         return ToDto(value);
     }
@@ -83,5 +83,5 @@ public sealed class CrmContactRelationshipsController(PSeqOperationsDbContext db
 
     private static CrmCompanyContactDto ToDto(CrmCompanyContact value) => ToDto(value, value.Company.Name, value.Contact.DisplayName);
     private static CrmCompanyContactDto ToDto(CrmCompanyContact value, string companyName, string contactName) =>
-        new(value.Id, value.CompanyId, companyName, value.ContactId, contactName, value.RelationshipRole, value.IsPrimaryCompany, value.EffectiveFrom, value.EffectiveTo, value.IsActive, value.Version);
+        new(value.Id, value.CompanyId, companyName, value.ContactId, contactName, value.JobTitle, value.RelationshipRole, value.IsPrimaryCompany, value.EffectiveFrom, value.EffectiveTo, value.IsActive, value.Version);
 }

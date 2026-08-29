@@ -37,6 +37,10 @@ An authorized reviewer owns those consequences in the destination workflow. If a
 
 Open **Portal accounts** to review onboarding, evaluation, service, relationship, or offboarding requests. Open **Order operations** for custom-work or order-intake review when the request is applicable there. Keep CRM Activities and Tasks focused on commercial follow-up; record Portal decisions in their owning workflow.
 
+For Customer PSeq Lab Service, a Won Opportunity can create a dedicated **Customer order handoff** from its detail page. After Portal accounts approves the request and confirms the linked active Customer, Ready ordering entitlement, active Customer administrator, and available service offering, **Start Customer order** appears in both the Opportunity and Order intake. Starting it creates one order, marks the request Applied in the same transaction, and links both records. Open the resulting order from either surface. Create a separate reviewed handoff when the same Opportunity legitimately produces another order; never retry by creating a duplicate handoff.
+
+Trial Project and Portal Evaluation handoffs do not start Customer orders. Company-level Customer order handoffs may start an order without an Opportunity, but they follow the same approval and eligibility checks.
+
 If the Company already has an active account link, choose the appropriate change or offboarding request instead of creating a second onboarding request. If the same handoff submission is retried, POMS returns the existing request through its idempotency boundary rather than creating duplicate work.
 
 CRM lifecycle labels and Opportunity Won status never substitute for this reviewed boundary.

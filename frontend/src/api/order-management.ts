@@ -247,6 +247,15 @@ export type LabServiceOrder = {
   sampleRosterFinalizedAt: string | null;
   canEditSamples: boolean;
   canFinalizeSamples: boolean;
+  commercialSource?: {
+    requestId: string;
+    requestNumber: string;
+    handoffId: string;
+    companyId: string;
+    companyName: string;
+    opportunityId: string | null;
+    opportunityName: string | null;
+  } | null;
 };
 
 export type ReagentOrderLine = {
@@ -588,6 +597,7 @@ export type InitiateCustomerLabOrderInput = {
   storageRequirements: string;
   safetyDeclaration: string;
   prohibitedDataConfirmed: boolean;
+  sourceRequestId?: string;
 } & LabPricingProfileWrite;
 export async function createLabOrder(
   input: {

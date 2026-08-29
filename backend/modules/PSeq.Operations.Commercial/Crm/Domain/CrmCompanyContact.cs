@@ -9,6 +9,7 @@ public sealed class CrmCompanyContact : IAudit, IConcurrency
     public CrmCompany Company { get; private set; } = null!;
     public Guid ContactId { get; private set; }
     public CrmContact Contact { get; private set; } = null!;
+    public string? JobTitle { get; private set; }
     public string? RelationshipRole { get; private set; }
     public bool IsPrimaryCompany { get; private set; }
     public DateOnly EffectiveFrom { get; private set; }
@@ -27,6 +28,7 @@ public sealed class CrmCompanyContact : IAudit, IConcurrency
     public CrmCompanyContact(
         Guid companyId,
         Guid contactId,
+        string? jobTitle,
         string? relationshipRole,
         bool isPrimaryCompany,
         DateOnly effectiveFrom)
@@ -38,10 +40,11 @@ public sealed class CrmCompanyContact : IAudit, IConcurrency
 
         CompanyId = companyId;
         ContactId = contactId;
-        Update(relationshipRole, isPrimaryCompany, effectiveFrom, null);
+        Update(jobTitle, relationshipRole, isPrimaryCompany, effectiveFrom, null);
     }
 
     public void Update(
+        string? jobTitle,
         string? relationshipRole,
         bool isPrimaryCompany,
         DateOnly effectiveFrom,
@@ -52,12 +55,19 @@ public sealed class CrmCompanyContact : IAudit, IConcurrency
             throw new ArgumentException("The relationship end date cannot precede its start date.");
         }
 
+        var normalizedTitle = jobTitle?.Trim();
+        if (normalizedTitle?.Length > 150)
+        {
+            throw new ArgumentException("The job title cannot exceed 150 characters.");
+        }
+
         var normalizedRole = relationshipRole?.Trim();
         if (normalizedRole?.Length > 150)
         {
             throw new ArgumentException("The relationship role cannot exceed 150 characters.");
         }
 
+        JobTitle = string.IsNullOrWhiteSpace(normalizedTitle) ? null : normalizedTitle;
         RelationshipRole = string.IsNullOrWhiteSpace(normalizedRole) ? null : normalizedRole;
         IsPrimaryCompany = isPrimaryCompany;
         EffectiveFrom = effectiveFrom;

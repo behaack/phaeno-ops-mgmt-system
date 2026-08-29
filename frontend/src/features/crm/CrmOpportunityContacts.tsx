@@ -16,6 +16,7 @@ import { Badge } from "#/components/ui/badge";
 import { Button } from "#/components/ui/button";
 import {
   Card,
+  CardAction,
   CardContent,
   CardDescription,
   CardHeader,
@@ -103,17 +104,17 @@ export function CrmOpportunityContacts({
   return (
     <>
       <Card>
-        <CardHeader className="flex-row items-start justify-between">
-          <div>
-            <CardTitle>Opportunity contacts</CardTitle>
-            <CardDescription>
-              Buying-team members and their role in this Opportunity.
-            </CardDescription>
-          </div>
-          <Button size="sm" variant="outline" onClick={() => setAddOpen(true)}>
-            <Plus data-icon="inline-start" />
-            Associate
-          </Button>
+        <CardHeader>
+          <CardTitle>Opportunity contacts</CardTitle>
+          <CardDescription>
+            Buying-team members and their role in this Opportunity.
+          </CardDescription>
+          <CardAction>
+            <Button size="sm" variant="outline" onClick={() => setAddOpen(true)}>
+              <Plus data-icon="inline-start" />
+              Associate
+            </Button>
+          </CardAction>
         </CardHeader>
         <CardContent className="space-y-2">
           {records.map((association) => (

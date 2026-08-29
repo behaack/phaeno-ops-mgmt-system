@@ -3,8 +3,8 @@ import { Link, useNavigate } from '@tanstack/react-router'
 import { Plus } from 'lucide-react'
 import { useState } from 'react'
 
+import { listCrmOrderHandoffs, type CrmOrderHandoff } from '#/api/crm'
 import { getOrderErrorMessage, listEligibleCustomerOrganizations } from '#/api/order-management'
-import { listRelationshipRequests } from '#/api/organization-management'
 import { Alert, AlertDescription, AlertTitle } from '#/components/ui/alert'
 import { Badge } from '#/components/ui/badge'
 import { Button } from '#/components/ui/button'
@@ -15,6 +15,7 @@ export function CommercialOrderIntakePanel({ apiEnabled, mock }: { apiEnabled: b
   const navigate = useNavigate()
   const queryClient = useQueryClient()
   const [createOpen, setCreateOpen] = useState(false)
+  const [selectedHandoff, setSelectedHandoff] = useState<CrmOrderHandoff | null>(null)
   const customers = useQuery({
     queryKey: ['order-operations', 'eligible-customers'],
     queryFn: listEligibleCustomerOrganizations,
@@ -22,13 +23,10 @@ export function CommercialOrderIntakePanel({ apiEnabled, mock }: { apiEnabled: b
   })
   const handoffs = useQuery({
     queryKey: ['order-intake-handoffs'],
-    queryFn: () => listRelationshipRequests(),
+    queryFn: listCrmOrderHandoffs,
     enabled: apiEnabled,
   })
-  const relevantHandoffs = (handoffs.data ?? []).filter((item) =>
-    item.source === 'FirstPartyCrm'
-    && (item.requestType === 'SalesAssistedOrder' || item.requestType === 'Evaluation')
-    && (item.status === 'PendingReview' || item.status === 'Approved'))
+  const relevantHandoffs = handoffs.data ?? []
   const eligibleCustomers = customers.data ?? []
 
   return (
@@ -88,22 +86,33 @@ export function CommercialOrderIntakePanel({ apiEnabled, mock }: { apiEnabled: b
           {handoffs.isLoading ? <p role="status">Loading sales handoffs…</p> : null}
           <div className="divide-y">
             {relevantHandoffs.map((item) => (
-              <div key={item.id} className="flex flex-wrap items-center justify-between gap-3 py-4">
+              <div key={item.handoff.id} className="flex flex-wrap items-center justify-between gap-3 py-4">
                 <div>
                   <div className="flex flex-wrap items-center gap-2">
-                    <span className="font-medium">{item.requestNumber}</span>
-                    <Badge variant={item.requestType === 'Evaluation' ? 'secondary' : 'outline'}>
-                      {item.requestType === 'Evaluation' ? 'Trial Project · No charge' : 'Sales-assisted'}
+                    <span className="font-medium">{item.handoff.requestNumber}</span>
+                    <Badge variant={item.handoff.type === 'PortalEvaluation' || item.handoff.type === 'TrialProject' ? 'secondary' : 'outline'}>
+                      {item.handoff.type === 'PortalEvaluation' || item.handoff.type === 'TrialProject' ? 'Trial Project · No charge' : 'Sales-assisted'}
                     </Badge>
-                    <Badge variant="outline">{item.status === 'PendingReview' ? 'Pending review' : 'Approved'}</Badge>
+                    <Badge variant="outline">{formatHandoffStatus(item.handoff.status)}</Badge>
                   </div>
-                  <p className="mt-2 text-sm">{item.candidateOrganizationName}</p>
+                  <p className="mt-2 text-sm">{item.companyName}{item.opportunityName ? ` · ${item.opportunityName}` : ''}</p>
                   <p className="mt-1 text-sm text-muted-foreground">{item.summary}</p>
                   <p className="mt-1 text-xs text-muted-foreground">
-                    {formatSourceReference(item.sourceReference)} · received {formatDateTime(item.createdAt)}
+                    POMS CRM handoff · received {formatDateTime(item.handoff.createdAt)}
                   </p>
+                  {item.handoff.orderBlockingReason ? <p className="mt-2 text-sm text-amber-700 dark:text-amber-300">{item.handoff.orderBlockingReason}</p> : null}
                 </div>
-                <Button asChild variant="outline"><Link to="/customers">Review in Portal accounts</Link></Button>
+                {item.handoff.orderId ? (
+                  <Button asChild variant="outline">
+                    <Link to="/order-operations/$workflow/$orderId" params={{ workflow: 'lab', orderId: item.handoff.orderId }}>
+                      Open {item.handoff.orderNumber ?? 'order'}
+                    </Link>
+                  </Button>
+                ) : item.handoff.canStartCustomerOrder && item.handoff.organizationId ? (
+                  <Button type="button" onClick={() => setSelectedHandoff(item)}>Start Customer order</Button>
+                ) : (
+                  <Button asChild variant="outline"><Link to="/customers">Review in Portal accounts</Link></Button>
+                )}
               </div>
             ))}
           </div>
@@ -126,6 +135,30 @@ export function CommercialOrderIntakePanel({ apiEnabled, mock }: { apiEnabled: b
           })
         }}
       />
+      <LabJobDetailsDialog
+        open={Boolean(selectedHandoff)}
+        platformOrganizations={eligibleCustomers}
+        sourceHandoff={selectedHandoff?.handoff.organizationId ? {
+          requestId: selectedHandoff.handoff.relationshipRequestId,
+          requestNumber: selectedHandoff.handoff.requestNumber,
+          organizationId: selectedHandoff.handoff.organizationId,
+          organizationName: selectedHandoff.organizationName ?? selectedHandoff.companyName,
+          companyName: selectedHandoff.companyName,
+          opportunityName: selectedHandoff.opportunityName,
+        } : null}
+        onOpenChange={(open) => { if (!open) setSelectedHandoff(null) }}
+        onSaved={async (order) => {
+          setSelectedHandoff(null)
+          await Promise.all([
+            queryClient.invalidateQueries({ queryKey: ['commercial-orders'] }),
+            queryClient.invalidateQueries({ queryKey: ['order-intake-handoffs'] }),
+          ])
+          await navigate({
+            to: '/order-operations/$workflow/$orderId',
+            params: { workflow: 'lab', orderId: order.id },
+          })
+        }}
+      />
     </div>
   )
 }
@@ -134,6 +167,7 @@ function formatDateTime(value: string) {
   return new Intl.DateTimeFormat('en-US', { dateStyle: 'medium', timeStyle: 'short' }).format(new Date(value))
 }
 
-function formatSourceReference(value: string | null) {
-  return value?.startsWith('first-party-crm:') ? 'POMS CRM handoff' : value ?? 'CRM source reference unavailable'
+function formatHandoffStatus(value: string) {
+  if (value === 'PendingReview') return 'Pending review'
+  return value
 }

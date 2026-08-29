@@ -4,6 +4,7 @@ import type {
   CrmOpportunity,
   CrmOpportunityInput,
   CrmPipeline,
+  CrmProductInterest,
 } from "#/api/crm";
 import { Alert, AlertDescription } from "#/components/ui/alert";
 import { Button } from "#/components/ui/button";
@@ -63,7 +64,10 @@ export function CrmOpportunityDialog({
               pipelineId,
               stageId: opportunity?.stageId ?? null,
               ownerUserId: nullable(data, "ownerUserId"),
-              productInterest: nullable(data, "productInterest"),
+              productInterest: nullable(
+                data,
+                "productInterest",
+              ) as CrmProductInterest | null,
               amount: amount ? Number(amount) : null,
               currency: String(data.get("currency") ?? "USD").toUpperCase(),
               expectedCloseDate: nullable(data, "expectedCloseDate"),
@@ -80,7 +84,8 @@ export function CrmOpportunityDialog({
             </DialogTitle>
             <DialogDescription>
               Track commercial value, timing, ownership, next steps, and an
-              explicit pipeline stage.
+              explicit pipeline stage. The Opportunity Number is assigned
+              automatically when the record is created.
             </DialogDescription>
           </DialogHeader>
           {error ? (
@@ -88,7 +93,7 @@ export function CrmOpportunityDialog({
               <AlertDescription>{error}</AlertDescription>
             </Alert>
           ) : null}
-          <div className="grid gap-4">
+          <div className="grid min-w-0 gap-4">
             <Field label="Opportunity name *" id="opportunity-name">
               <Input
                 id="opportunity-name"
@@ -97,7 +102,7 @@ export function CrmOpportunityDialog({
                 defaultValue={opportunity?.name}
               />
             </Field>
-            <div className="grid gap-4 sm:grid-cols-2">
+            <div className="grid min-w-0 gap-4 sm:grid-cols-2">
               <Field label="Company *" id="opportunity-company">
                 <select
                   id="opportunity-company"
@@ -135,7 +140,7 @@ export function CrmOpportunityDialog({
                 </select>
               </Field>
             </div>
-            <div className="grid gap-4 sm:grid-cols-3">
+            <div className="grid min-w-0 gap-4 sm:grid-cols-3">
               <Field label="Amount" id="opportunity-amount">
                 <Input
                   id="opportunity-amount"
@@ -165,13 +170,25 @@ export function CrmOpportunityDialog({
                 />
               </Field>
             </div>
-            <div className="grid gap-4 sm:grid-cols-2">
+            <div className="grid min-w-0 gap-4 sm:grid-cols-2">
               <Field label="Product interest" id="opportunity-product">
-                <Input
+                <select
                   id="opportunity-product"
                   name="productInterest"
                   defaultValue={opportunity?.productInterest ?? ""}
-                />
+                  className="h-9 w-full min-w-0 rounded-md border bg-background px-3 text-sm"
+                >
+                  <option value="">Not specified</option>
+                  <option value="PSeqLabService">PSeq Lab Service</option>
+                  <option value="PSeqKit">PSeq Kit</option>
+                  {opportunity?.productInterest &&
+                  opportunity.productInterest !== "PSeqLabService" &&
+                  opportunity.productInterest !== "PSeqKit" ? (
+                    <option value={opportunity.productInterest}>
+                      {opportunity.productInterest} · legacy value
+                    </option>
+                  ) : null}
+                </select>
               </Field>
               <Field label="Owner" id="opportunity-owner">
                 <CrmOwnerSelect
@@ -250,7 +267,7 @@ function Field({
   children: React.ReactNode;
 }) {
   return (
-    <div className="grid gap-1.5">
+    <div className="grid min-w-0 gap-1.5">
       <Label htmlFor={id}>{label}</Label>
       {children}
     </div>

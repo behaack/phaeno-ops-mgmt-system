@@ -33,7 +33,7 @@ export function CrmOwnerSelect({
       name="ownerUserId"
       value={value}
       onChange={(event) => setValue(event.target.value)}
-      className="h-9 rounded-md border bg-background px-3 text-sm"
+      className="h-9 w-full min-w-0 max-w-full rounded-md border bg-background px-3 text-sm"
     >
       <option value="">{defaultLabel}</option>
       {currentIsMissing ? (

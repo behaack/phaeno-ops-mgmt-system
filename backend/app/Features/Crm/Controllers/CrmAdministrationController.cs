@@ -24,7 +24,7 @@ public sealed class CrmAdministrationController(PSeqOperationsDbContext dbContex
         new Dictionary<CrmRecordType, HashSet<string>>
         {
             [CrmRecordType.Company] = new(["name", "domain", "phone", "industry", "source"], StringComparer.OrdinalIgnoreCase),
-            [CrmRecordType.Contact] = new(["first_name", "last_name", "email", "phone", "job_title"], StringComparer.OrdinalIgnoreCase),
+            [CrmRecordType.Contact] = new(["first_name", "last_name", "email", "phone"], StringComparer.OrdinalIgnoreCase),
             [CrmRecordType.Lead] = new(["display_name", "company_name", "first_name", "last_name", "email", "phone", "source"], StringComparer.OrdinalIgnoreCase),
             [CrmRecordType.Opportunity] = new(["name", "company_name", "product_interest", "amount", "currency", "next_step"], StringComparer.OrdinalIgnoreCase)
         };
@@ -254,7 +254,7 @@ public sealed class CrmAdministrationController(PSeqOperationsDbContext dbContex
                 dbContext.CrmCompanies.Add(Execute(() => new CrmCompany(Get(row, "name")!, actor.Id, domainName: Get(row, "domain"), phone: Get(row, "phone"), industry: Get(row, "industry"), source: Get(row, "source"))));
                 break;
             case CrmRecordType.Contact:
-                dbContext.CrmContacts.Add(Execute(() => new CrmContact(Get(row, "first_name")!, Get(row, "last_name")!, actor.Id, Get(row, "email"), Get(row, "phone"), Get(row, "job_title"))));
+                dbContext.CrmContacts.Add(Execute(() => new CrmContact(Get(row, "first_name")!, Get(row, "last_name")!, actor.Id, Get(row, "email"), Get(row, "phone"))));
                 break;
             case CrmRecordType.Lead:
                 var companyName = Get(row, "company_name");
@@ -285,7 +285,7 @@ public sealed class CrmAdministrationController(PSeqOperationsDbContext dbContex
                     _ = new CrmCompany(Get(row, "name")!, ownerId, domainName: Get(row, "domain"), phone: Get(row, "phone"), industry: Get(row, "industry"), source: Get(row, "source"));
                     break;
                 case CrmRecordType.Contact:
-                    _ = new CrmContact(Get(row, "first_name")!, Get(row, "last_name")!, ownerId, Get(row, "email"), Get(row, "phone"), Get(row, "job_title"));
+                    _ = new CrmContact(Get(row, "first_name")!, Get(row, "last_name")!, ownerId, Get(row, "email"), Get(row, "phone"));
                     break;
                 case CrmRecordType.Lead:
                     var companyName = Get(row, "company_name");
@@ -376,16 +376,26 @@ public sealed class CrmAdministrationController(PSeqOperationsDbContext dbContex
                 rows.AddRange((await companyQuery.OrderBy(value => value.Name).ToListAsync(cancellationToken)).Select(value => new[] { value.Id.ToString(), value.Name, value.DomainName ?? "", value.Phone ?? "", value.Industry ?? "", value.LifecycleState.ToString(), value.Source ?? "", value.IsActive.ToString() }));
                 break;
             case CrmRecordType.Contact:
-                rows.Add(["id", "first_name", "last_name", "email", "phone", "job_title", "preference", "active"]);
+                rows.Add(["id", "first_name", "last_name", "email", "phone", "primary_company", "primary_company_title", "preference", "active"]);
                 var contactQuery = dbContext.CrmContacts.AsNoTracking().AsQueryable();
                 if (!FilterBool(filters, "includeInactive")) contactQuery = contactQuery.Where(value => value.IsActive);
                 var contactSearch = FilterText(filters, "search");
                 if (contactSearch is not null)
                 {
                     var contactPattern = $"%{EscapeLike(contactSearch)}%";
-                    contactQuery = contactQuery.Where(value => EF.Functions.ILike(value.FirstName, contactPattern, "\\") || EF.Functions.ILike(value.LastName, contactPattern, "\\") || (value.Email != null && EF.Functions.ILike(value.Email, contactPattern, "\\")) || (value.JobTitle != null && EF.Functions.ILike(value.JobTitle, contactPattern, "\\")));
+                    contactQuery = contactQuery.Where(value => EF.Functions.ILike(value.FirstName, contactPattern, "\\") || EF.Functions.ILike(value.LastName, contactPattern, "\\") || (value.Email != null && EF.Functions.ILike(value.Email, contactPattern, "\\")) || dbContext.CrmCompanyContacts.Any(association => association.ContactId == value.Id && association.IsActive && association.JobTitle != null && EF.Functions.ILike(association.JobTitle, contactPattern, "\\")));
                 }
-                rows.AddRange((await contactQuery.OrderBy(value => value.LastName).ThenBy(value => value.FirstName).ToListAsync(cancellationToken)).Select(value => new[] { value.Id.ToString(), value.FirstName, value.LastName, value.Email ?? "", value.Phone ?? "", value.JobTitle ?? "", value.CommunicationPreference.ToString(), value.IsActive.ToString() }));
+                var contactValues = await contactQuery.OrderBy(value => value.LastName).ThenBy(value => value.FirstName).ToListAsync(cancellationToken);
+                var contactIds = contactValues.Select(value => value.Id).ToList();
+                var primaryPositions = await dbContext.CrmCompanyContacts.AsNoTracking()
+                    .Where(value => contactIds.Contains(value.ContactId) && value.IsActive && value.IsPrimaryCompany)
+                    .Select(value => new { value.ContactId, CompanyName = value.Company.Name, value.JobTitle })
+                    .ToDictionaryAsync(value => value.ContactId, cancellationToken);
+                rows.AddRange(contactValues.Select(value =>
+                {
+                    var primary = primaryPositions.GetValueOrDefault(value.Id);
+                    return new[] { value.Id.ToString(), value.FirstName, value.LastName, value.Email ?? "", value.Phone ?? "", primary?.CompanyName ?? "", primary?.JobTitle ?? "", value.CommunicationPreference.ToString(), value.IsActive.ToString() };
+                }));
                 break;
             case CrmRecordType.Lead:
                 rows.Add(["id", "display_name", "company_name", "email", "phone", "source", "status", "active"]);
@@ -402,7 +412,7 @@ public sealed class CrmAdministrationController(PSeqOperationsDbContext dbContex
                 rows.AddRange((await leadQuery.OrderBy(value => value.DisplayName).ToListAsync(cancellationToken)).Select(value => new[] { value.Id.ToString(), value.DisplayName, value.CompanyName ?? "", value.Email ?? "", value.Phone ?? "", value.Source ?? "", value.Status.ToString(), value.IsActive.ToString() }));
                 break;
             case CrmRecordType.Opportunity:
-                rows.Add(["id", "name", "company", "pipeline", "stage", "amount", "currency", "probability", "expected_close", "active"]);
+                rows.Add(["id", "opportunity_number", "name", "company", "pipeline", "stage", "amount", "currency", "probability", "expected_close", "active"]);
                 var opportunityQuery = dbContext.CrmOpportunities.AsNoTracking().Include(value => value.Company).Include(value => value.Pipeline).Include(value => value.Stage).AsQueryable();
                 if (!FilterBool(filters, "includeInactive")) opportunityQuery = opportunityQuery.Where(value => value.IsActive);
                 var pipelineId = FilterGuid(filters, "pipelineId");
@@ -413,9 +423,9 @@ public sealed class CrmAdministrationController(PSeqOperationsDbContext dbContex
                 if (opportunitySearch is not null)
                 {
                     var opportunityPattern = $"%{EscapeLike(opportunitySearch)}%";
-                    opportunityQuery = opportunityQuery.Where(value => EF.Functions.ILike(value.Name, opportunityPattern, "\\") || EF.Functions.ILike(value.Company.Name, opportunityPattern, "\\") || (value.ProductInterest != null && EF.Functions.ILike(value.ProductInterest, opportunityPattern, "\\")));
+                    opportunityQuery = opportunityQuery.Where(value => EF.Functions.ILike(value.OpportunityNumber, opportunityPattern, "\\") || EF.Functions.ILike(value.Name, opportunityPattern, "\\") || EF.Functions.ILike(value.Company.Name, opportunityPattern, "\\") || (value.ProductInterest != null && EF.Functions.ILike(value.ProductInterest, opportunityPattern, "\\")));
                 }
-                rows.AddRange((await opportunityQuery.OrderBy(value => value.Name).ToListAsync(cancellationToken)).Select(value => new[] { value.Id.ToString(), value.Name, value.Company.Name, value.Pipeline.Name, value.Stage.Name, value.Amount?.ToString(CultureInfo.InvariantCulture) ?? "", value.Currency, value.Probability.ToString(CultureInfo.InvariantCulture), value.ExpectedCloseDate?.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture) ?? "", value.IsActive.ToString() }));
+                rows.AddRange((await opportunityQuery.OrderBy(value => value.Name).ToListAsync(cancellationToken)).Select(value => new[] { value.Id.ToString(), value.OpportunityNumber, value.Name, value.Company.Name, value.Pipeline.Name, value.Stage.Name, value.Amount?.ToString(CultureInfo.InvariantCulture) ?? "", value.Currency, value.Probability.ToString(CultureInfo.InvariantCulture), value.ExpectedCloseDate?.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture) ?? "", value.IsActive.ToString() }));
                 break;
             case CrmRecordType.Task:
                 rows.Add(["id", "title", "owner_id", "priority", "status", "due_at", "active"]);

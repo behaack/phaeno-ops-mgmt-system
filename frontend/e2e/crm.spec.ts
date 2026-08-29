@@ -3,6 +3,8 @@ import { expect, test, type Page, type Route } from "@playwright/test";
 
 const companyId = "00000000-0000-0000-0000-000000000901";
 const ownerId = "00000000-0000-0000-0000-000000000902";
+const opportunityId = "00000000-0000-0000-0000-000000000903";
+const leadId = "00000000-0000-0000-0000-000000000904";
 const apiRequestPattern = /^https:\/\/127\.0\.0\.1:\d+\/api\//;
 
 test("creates a standalone CRM company without changing Portal access", async ({
@@ -52,6 +54,10 @@ test("creates a standalone CRM company without changing Portal access", async ({
       submitted = request.postDataJSON() as Record<string, unknown>;
       return envelope(route, company(String(submitted.name)));
     }
+    if (["/api/platform/crm/opportunities", "/api/platform/crm/activities", "/api/platform/crm/tasks"].includes(url.pathname)) {
+      return envelope(route, emptyPage());
+    }
+    if (method === "GET") return envelope(route, []);
 
     return notFound(route);
   });
@@ -87,6 +93,11 @@ test("creates a standalone CRM company without changing Portal access", async ({
   await expect(
     page.getByRole("heading", { name: "Atlas Research" }),
   ).toBeVisible();
+  await expectCompactCardHeaderAction(
+    page,
+    "Portal handoffs and account links",
+    "Create handoff",
+  );
   await page.getByRole("link", { name: "Back to companies" }).click();
   await expect(page.getByRole("heading", { name: "Companies" })).toBeVisible();
 
@@ -108,6 +119,176 @@ test("creates a standalone CRM company without changing Portal access", async ({
   expect(browserErrors).toEqual([]);
   await expect(page.locator("vite-error-overlay")).toHaveCount(0);
 });
+
+test("opens a Lead detail workspace from the Lead queue", async ({ page }) => {
+  await page.route(apiRequestPattern, async (route) => {
+    const url = new URL(route.request().url());
+    if (url.pathname === `/api/platform/crm/leads/${leadId}`) {
+      return envelope(route, lead());
+    }
+    if (url.pathname === "/api/platform/crm/leads") {
+      return envelope(route, {
+        items: [lead()],
+        page: 1,
+        pageSize: 100,
+        totalCount: 1,
+      });
+    }
+    if (url.pathname === "/api/platform/crm/administration/saved-views") {
+      return envelope(route, []);
+    }
+    if (
+      url.pathname === "/api/platform/crm/activities" ||
+      url.pathname === "/api/platform/crm/tasks"
+    ) {
+      return envelope(route, emptyPage());
+    }
+    if (route.request().method() === "GET") return envelope(route, []);
+    return notFound(route);
+  });
+
+  await page.goto("/crm/leads");
+  await page.getByRole("link", { name: "Lead A" }).click();
+
+  await expect(page).toHaveURL(`/crm/leads/${leadId}`);
+  await expect(page.getByRole("heading", { name: "Lead A" })).toBeVisible();
+  await expect(page.getByRole("link", { name: "Back to leads" })).toBeVisible();
+  await expect(
+    page.getByText("No qualification decision has been recorded."),
+  ).toBeVisible();
+  await expect(page.getByText("Qualification notes", { exact: true })).toHaveCount(0);
+  await expect(page.getByText("Disqualification reason", { exact: true })).toHaveCount(0);
+  await expectCompactCardHeaderAction(page, "Activity timeline", "Log activity");
+  await expectCompactCardHeaderAction(page, "Tasks", "New task");
+  const leadDetailsBounds = await page
+    .getByText("Lead details", { exact: true })
+    .locator("xpath=ancestor::*[@data-slot='card']")
+    .boundingBox();
+  const qualificationBounds = await page
+    .getByText("Qualification record", { exact: true })
+    .locator("xpath=ancestor::*[@data-slot='card']")
+    .boundingBox();
+  expect(leadDetailsBounds).not.toBeNull();
+  expect(qualificationBounds).not.toBeNull();
+  expect(Math.abs(leadDetailsBounds!.width - qualificationBounds!.width)).toBeLessThanOrEqual(1);
+});
+
+test("opens an approved Won Opportunity handoff as a locked Customer order", async ({ page }) => {
+  await page.route(apiRequestPattern, async (route) => {
+    const url = new URL(route.request().url());
+    if (url.pathname === `/api/platform/crm/opportunities/${opportunityId}`) {
+      return envelope(route, opportunity());
+    }
+    if (url.pathname === "/api/platform/crm/pipelines") {
+      return envelope(route, [{
+        id: "pipeline-1",
+        name: "Commercial",
+        description: null,
+        isDefault: true,
+        isActive: true,
+        version: 1,
+        stages: [{ id: "won-stage", pipelineId: "pipeline-1", name: "Won", position: 1, category: "Won", probability: 100, requiresReason: false, isActive: true, version: 1 }],
+      }]);
+    }
+    if (url.pathname === "/api/platform/crm/companies") {
+      return envelope(route, { items: [company("Atlas Research")], page: 1, pageSize: 100, totalCount: 1 });
+    }
+    if (url.pathname === `/api/platform/crm/companies/${companyId}/handoffs`) {
+      return envelope(route, [{
+        id: "handoff-1",
+        companyId,
+        opportunityId,
+        type: "CustomWork",
+        relationshipRequestId: "request-1",
+        requestNumber: "PRQ-ORDER-1",
+        status: "Approved",
+        requestedOrganizationKind: "Customer",
+        organizationId: "customer-1",
+        idempotencyKey: "handoff-key",
+        createdAt: "2026-08-28T18:00:00Z",
+        orderId: null,
+        orderNumber: null,
+        orderStatus: null,
+        canStartCustomerOrder: true,
+        orderBlockingReason: null,
+      }]);
+    }
+    if (url.pathname === "/api/platform/lab-service-orders/eligible-customers") {
+      return envelope(route, [{ id: "customer-1", name: "Atlas Research Customer" }]);
+    }
+    if (url.pathname === "/api/users/phaeno") {
+      return raw(route, []);
+    }
+    if (["/api/platform/crm/opportunities", "/api/platform/crm/activities", "/api/platform/crm/tasks"].includes(url.pathname)) {
+      return envelope(route, emptyPage());
+    }
+    if (route.request().method() === "GET") return envelope(route, []);
+    return notFound(route);
+  });
+
+  await page.goto(`/crm/opportunities/${opportunityId}`);
+  await expect(page.getByRole("heading", { name: "PSeq program" })).toBeVisible();
+  await expect(page.getByText("OPP-20260828-A1B2C3D4E5")).toBeVisible();
+  await expect(page.getByText("PRQ-ORDER-1")).toBeVisible();
+  await expectCompactCardHeaderAction(
+    page,
+    "Customer order handoffs",
+    "Create order handoff",
+  );
+  await page.getByRole("button", { name: "Edit" }).click();
+  const editDialog = page.getByRole("dialog", { name: "Edit opportunity" });
+  await expect(editDialog.getByLabel("Product interest")).toHaveValue(
+    "PSeqLabService",
+  );
+  await expect(
+    editDialog.getByRole("option", { name: "PSeq Kit" }),
+  ).toBeAttached();
+  const ownerBounds = await editDialog.getByLabel("Owner").boundingBox();
+  const dialogBounds = await editDialog.boundingBox();
+  expect(ownerBounds).not.toBeNull();
+  expect(dialogBounds).not.toBeNull();
+  expect(ownerBounds!.x + ownerBounds!.width).toBeLessThanOrEqual(
+    dialogBounds!.x + dialogBounds!.width,
+  );
+  await editDialog.getByRole("button", { name: "Cancel" }).click();
+  await page.getByRole("button", { name: "Start Customer order" }).click();
+
+  const dialog = page.getByRole("dialog", { name: "Start order from PRQ-ORDER-1" });
+  await expect(dialog).toBeVisible();
+  await expect(dialog.getByText(/Atlas Research · PSeq program · PRQ-ORDER-1/)).toBeVisible();
+  await expect(dialog.getByLabel("Customer")).toBeDisabled();
+  await expect(dialog.getByLabel("Customer")).toHaveValue("customer-1");
+});
+
+async function expectCompactCardHeaderAction(
+  page: Page,
+  title: string,
+  actionName: string,
+) {
+  const header = page
+    .getByText(title, { exact: true })
+    .locator("xpath=ancestor::*[@data-slot='card-header']");
+  const titleBounds = await header
+    .locator("[data-slot='card-title']")
+    .boundingBox();
+  const headerBounds = await header.boundingBox();
+  const actionBounds = await header
+    .getByRole("button", { name: actionName })
+    .boundingBox();
+
+  expect(titleBounds).not.toBeNull();
+  expect(headerBounds).not.toBeNull();
+  expect(actionBounds).not.toBeNull();
+  expect(Math.abs(actionBounds!.y - titleBounds!.y)).toBeLessThanOrEqual(2);
+  expect(actionBounds!.x).toBeGreaterThanOrEqual(
+    titleBounds!.x + titleBounds!.width,
+  );
+  expect(actionBounds!.width).toBeLessThan(headerBounds!.width * 0.75);
+  expect(
+    headerBounds!.x + headerBounds!.width -
+      (actionBounds!.x + actionBounds!.width),
+  ).toBeLessThanOrEqual(20);
+}
 
 function company(name: string) {
   return {
@@ -139,6 +320,71 @@ function company(name: string) {
   };
 }
 
+function opportunity() {
+  return {
+    id: opportunityId,
+    opportunityNumber: "OPP-20260828-A1B2C3D4E5",
+    name: "PSeq program",
+    companyId,
+    companyName: "Atlas Research",
+    pipelineId: "pipeline-1",
+    pipelineName: "Commercial",
+    stageId: "won-stage",
+    stageName: "Won",
+    stageCategory: "Won",
+    ownerUserId: ownerId,
+    ownerName: "Phaeno Admin",
+    productInterest: "PSeqLabService",
+    amount: 25000,
+    currency: "USD",
+    probability: 100,
+    expectedCloseDate: "2026-08-28",
+    nextStep: null,
+    competitors: null,
+    description: null,
+    tags: [],
+    closedAt: "2026-08-28T18:00:00Z",
+    outcomeReason: "Approved scope",
+    isActive: true,
+    createdAt: "2026-08-20T18:00:00Z",
+    updatedAt: "2026-08-28T18:00:00Z",
+    version: 3,
+  };
+}
+
+function lead() {
+  return {
+    id: leadId,
+    kind: "Company",
+    displayName: "Lead A",
+    companyName: "Company A",
+    firstName: null,
+    lastName: null,
+    email: null,
+    phone: null,
+    source: null,
+    status: "New",
+    qualificationNotes: null,
+    disqualificationReason: null,
+    nextAction: null,
+    ownerUserId: ownerId,
+    ownerName: "Bill Haack",
+    tags: [],
+    convertedAt: null,
+    convertedCompanyId: null,
+    convertedContactId: null,
+    convertedOpportunityId: null,
+    isActive: true,
+    createdAt: "2026-08-28T18:00:00Z",
+    updatedAt: "2026-08-28T18:00:00Z",
+    version: 1,
+  };
+}
+
+function emptyPage() {
+  return { items: [], page: 1, pageSize: 100, totalCount: 0 };
+}
+
 async function expectNoSeriousAccessibilityViolations(
   page: Page,
   locator: ReturnType<Page["getByRole"]>,
@@ -159,6 +405,14 @@ async function envelope(route: Route, data: unknown) {
     status: 200,
     contentType: "application/json",
     body: JSON.stringify({ success: true, data, error: null }),
+  });
+}
+
+async function raw(route: Route, data: unknown) {
+  await route.fulfill({
+    status: 200,
+    contentType: "application/json",
+    body: JSON.stringify(data),
   });
 }
 

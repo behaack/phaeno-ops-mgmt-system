@@ -2,11 +2,14 @@ namespace PhaenoPortal.App.Features.OrderManagement.Domain;
 
 using PSeq.Operations.Commercial.Common.Persistence;
 using PSeq.Operations.Commercial.OrderManagement.Domain;
+using PSeq.Operations.Commercial.Relationships.Domain;
 
 public sealed class LabServiceOrder : IAudit, IConcurrency
 {
     public Guid Id { get; private set; } = Guid.NewGuid();
     public Guid OrganizationId { get; private set; }
+    public Guid? SourceRequestId { get; private set; }
+    public PortalIntegrationRequest? SourceRequest { get; private set; }
     public string OrderNumber { get; private set; } = null!;
     public string CustomerReference { get; private set; } = null!;
     public string NormalizedJobName { get; private set; } = null!;
@@ -56,9 +59,11 @@ public sealed class LabServiceOrder : IAudit, IConcurrency
         string? sharedBiologicalSource,
         string storageRequirements,
         string safetyDeclaration,
-        string submissionInstructionsSnapshot)
+        string submissionInstructionsSnapshot,
+        Guid? sourceRequestId = null)
     {
         OrganizationId = organizationId;
+        SourceRequestId = sourceRequestId;
         OrderNumber = OrderText.Required(orderNumber, nameof(orderNumber), 50);
         CustomerReference = OrderText.Required(customerReference, "Job name", 255);
         NormalizedJobName = NormalizeJobName(CustomerReference);

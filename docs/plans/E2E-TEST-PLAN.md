@@ -179,12 +179,17 @@ the protected deployed-Preview acceptance above.
   layouts, cover the shared CRM sidebar and its eight route-backed subjects,
   current-section identity, list rendering, the standalone CRM/Portal warning, accessible
   create dialog, normalized create payload, detail navigation, and proof that
-  Company creation makes no Portal write. Maintained in
+  Company creation makes no Portal write. Confirm card-scoped actions remain
+  compact and right-aligned with their title row on Company, Lead, and
+  Opportunity detail workspaces. Maintained in
   `frontend/e2e/crm.spec.ts`.
 - [ ] Remaining first-party CRM Company journey - cover search, view, edit,
   deactivate, reactivate, and proof that each action leaves Portal accounts,
   access, entitlements, and work unchanged.
-- [ ] Remaining first-party CRM journey - cover Contact, Lead, qualification,
+- [ ] Remaining first-party CRM journey - cover Contact, incremental Company
+  and Contact association search, Company-specific title/role and effective
+  dates, equivalent relationship editing from both record workspaces, Lead,
+  qualification,
   Opportunity, configurable Pipeline/Stage, Activity, Note, Task, reminder,
   ownership, search, table/board views, reporting, duplicate review/merge,
   import/export boundaries, authorization, field visibility, and scientific/
@@ -614,4 +619,18 @@ the protected deployed-Preview acceptance above.
   consistent Portal accounts labels. An initial run reused the developer's
   real-Clerk port-3000 server and did not reach the application shell; the
   isolated mock-session rerun resolved that harness condition. The existing
+  `AcceptInvitePage` route-export warning remains unchanged.
+- 2026-08-28: focused CRM browser verification ran `crm.spec.ts` with the mock
+  session on isolated port 3104; all 6 desktop/mobile Chromium scenarios
+  passed. The new journey opens a Won Opportunity detail route, shows its
+  approved Customer order handoff, opens the source-aware pricing dialog, and
+  verifies that the approved Customer is locked. The Opportunity journey also
+  confirms the generated number is visible, the product-interest field uses
+  the PSeq Lab Service/PSeq Kit domain, and the Owner control stays within the
+  modal bounds on desktop and mobile. The run also repaired stale detail-route
+  mocks, confirms a Lead identifier opens its dedicated detail workspace,
+  confirms its Lead details and simplified Qualification record use equal
+  full-container widths on desktop and mobile, confirms compact right-aligned
+  card-header actions on Company, Lead, and Opportunity detail workspaces, and
+  confirms the standalone Company journey without browser errors. The existing
   `AcceptInvitePage` route-export warning remains unchanged.

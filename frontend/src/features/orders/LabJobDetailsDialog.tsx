@@ -107,14 +107,25 @@ type LabJobDetailsDialogProps = {
   open: boolean;
   order?: LabServiceOrder | null;
   platformOrganizations?: Array<{ id: string; name: string }>;
+  sourceHandoff?: CommercialOrderHandoffSource | null;
   onOpenChange: (open: boolean) => void;
   onSaved: (order: LabServiceOrder) => void | Promise<void>;
+};
+
+export type CommercialOrderHandoffSource = {
+  requestId: string;
+  requestNumber: string;
+  organizationId: string;
+  organizationName: string;
+  companyName?: string;
+  opportunityName?: string | null;
 };
 
 export function LabJobDetailsDialog({
   open,
   order,
   platformOrganizations,
+  sourceHandoff,
   onOpenChange,
   onSaved,
 }: LabJobDetailsDialogProps) {
@@ -174,6 +185,7 @@ export function LabJobDetailsDialog({
             prohibitedDataConfirmed,
             requestedSpecimenCount,
             sourceGroups: values.sourceGroups,
+            sourceRequestId: sourceHandoff?.requestId,
           });
         }
         return createLabOrder({
@@ -255,16 +267,16 @@ export function LabJobDetailsDialog({
       return;
     }
 
-    const resetKey =
-      order?.id ?? (platformMode ? "new-platform-job" : "new-job");
+    const resetKey = order?.id
+      ?? (sourceHandoff ? `handoff-${sourceHandoff.requestId}` : platformMode ? "new-platform-job" : "new-job");
     if (resetKeyRef.current === resetKey) return;
     resetKeyRef.current = resetKey;
     baseOrderRef.current = order ?? null;
     saveVersionRef.current = order?.version ?? null;
-    setOrganizationId("");
+    setOrganizationId(sourceHandoff?.organizationId ?? "");
     setProhibitedDataConfirmed(false);
     form.reset(jobDetailsFormValues(order));
-  }, [form, open, order, platformMode]);
+  }, [form, open, order, platformMode, sourceHandoff]);
 
   const formId = order ? `job-details-${order.id}` : "create-lab-job";
   const editing = Boolean(order);
@@ -303,7 +315,9 @@ export function LabJobDetailsDialog({
             {editing
               ? "Edit Job pricing details"
               : platformMode
-                ? "New Customer order"
+                ? sourceHandoff
+                  ? `Start order from ${sourceHandoff.requestNumber}`
+                  : "New Customer order"
                 : "Job pricing details"}
           </DialogTitle>
           <DialogDescription>
@@ -353,6 +367,16 @@ export function LabJobDetailsDialog({
           <form id={formId} noValidate onSubmit={form.handleSubmit(submit)}>
             {platformMode ? (
               <>
+                {sourceHandoff ? (
+                  <Alert className="mb-4">
+                    <AlertTitle>Approved CRM handoff</AlertTitle>
+                    <AlertDescription>
+                      {sourceHandoff.companyName ?? sourceHandoff.organizationName}
+                      {sourceHandoff.opportunityName ? ` · ${sourceHandoff.opportunityName}` : ""}
+                      {" · "}{sourceHandoff.requestNumber}
+                    </AlertDescription>
+                  </Alert>
+                ) : null}
                 <Label htmlFor={`${formId}-organization`}>
                   <RequiredFieldName>Customer</RequiredFieldName>
                 </Label>
@@ -365,10 +389,14 @@ export function LabJobDetailsDialog({
                   required
                   className="mt-2 h-9 w-full rounded-lg border border-input bg-background px-3 text-sm"
                   value={organizationId}
+                  disabled={Boolean(sourceHandoff)}
                   aria-describedby={`${formId}-organization-help`}
                   onChange={(event) => setOrganizationId(event.target.value)}
                 >
                   <option value="">Select Customer</option>
+                  {sourceHandoff && !eligiblePlatformOrganizations.some((organization) => organization.id === sourceHandoff.organizationId) ? (
+                    <option value={sourceHandoff.organizationId}>{sourceHandoff.organizationName}</option>
+                  ) : null}
                   {eligiblePlatformOrganizations.map((organization) => (
                     <option key={organization.id} value={organization.id}>
                       {organization.name}

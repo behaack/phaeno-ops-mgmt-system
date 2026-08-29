@@ -11,6 +11,7 @@ using PSeq.Operations.Commercial.Relationships.Domain;
 using PhaenoPortal.App.Features.Accounts.Services;
 using PhaenoPortal.App.Features.Crm.DTOs;
 using PhaenoPortal.App.Features.Crm.Services;
+using PhaenoPortal.App.Features.OrderManagement.Services;
 using PhaenoPortal.App.Infrastructure.Persistence;
 using static PhaenoPortal.App.Features.Crm.Services.CrmAccess;
 
@@ -19,13 +20,54 @@ using static PhaenoPortal.App.Features.Crm.Services.CrmAccess;
 [Route("api/platform/crm/companies/{companyId:guid}")]
 public sealed class CrmHandoffsController(PSeqOperationsDbContext dbContext, IExternalIdentityContext externalIdentityContext) : ControllerBase
 {
+    [HttpGet("~/api/platform/crm/order-handoffs")]
+    public async Task<IReadOnlyList<CrmOrderHandoffDto>> OrderHandoffs(CancellationToken cancellationToken)
+    {
+        await RequireActor(cancellationToken);
+        var values = await dbContext.CrmHandoffs.AsNoTracking()
+            .Include(value => value.Company)
+            .Include(value => value.Opportunity).ThenInclude(value => value!.Stage)
+            .Include(value => value.RelationshipRequest).ThenInclude(value => value.RequestedServices)
+            .Where(value => value.RelationshipRequest.Source == PortalIntegrationRequestSource.FirstPartyCrm
+                && (value.RelationshipRequest.RequestType == PortalIntegrationRequestType.SalesAssistedOrder
+                    || value.RelationshipRequest.RequestType == PortalIntegrationRequestType.Evaluation)
+                && (value.RelationshipRequest.Status == PortalIntegrationRequestStatus.PendingReview
+                    || value.RelationshipRequest.Status == PortalIntegrationRequestStatus.Approved
+                    || value.RelationshipRequest.Status == PortalIntegrationRequestStatus.Applied))
+            .OrderByDescending(value => value.CreatedAt)
+            .Take(100)
+            .ToListAsync(cancellationToken);
+        var organizationIds = values.Select(value => value.RelationshipRequest.OrganizationId)
+            .Where(value => value.HasValue).Select(value => value!.Value).Distinct().ToList();
+        var organizationNames = await dbContext.Organizations.AsNoTracking()
+            .Where(value => organizationIds.Contains(value.Id))
+            .ToDictionaryAsync(value => value.Id, value => value.Name, cancellationToken);
+        var result = new List<CrmOrderHandoffDto>(values.Count);
+        foreach (var value in values)
+        {
+            result.Add(new(
+                await ToDtoAsync(value, cancellationToken),
+                value.Company.Name,
+                value.Opportunity?.Name,
+                value.RelationshipRequest.OrganizationId.HasValue
+                    ? organizationNames.GetValueOrDefault(value.RelationshipRequest.OrganizationId.Value)
+                    : null,
+                value.RelationshipRequest.Summary));
+        }
+        return result;
+    }
+
     [HttpGet("handoffs")]
     public async Task<IReadOnlyList<CrmHandoffDto>> Handoffs(Guid companyId, CancellationToken cancellationToken)
     {
         await RequireActor(cancellationToken);
-        var values = await dbContext.CrmHandoffs.AsNoTracking().Include(value => value.RelationshipRequest)
+        var values = await dbContext.CrmHandoffs.AsNoTracking()
+            .Include(value => value.Opportunity).ThenInclude(value => value!.Stage)
+            .Include(value => value.RelationshipRequest).ThenInclude(value => value.RequestedServices)
             .Where(value => value.CompanyId == companyId).OrderByDescending(value => value.CreatedAt).ToListAsync(cancellationToken);
-        return values.Select(value => ToDto(value)).ToList();
+        var result = new List<CrmHandoffDto>(values.Count);
+        foreach (var value in values) result.Add(await ToDtoAsync(value, cancellationToken));
+        return result;
     }
 
     [HttpPost("handoffs")]
@@ -74,7 +116,7 @@ public sealed class CrmHandoffsController(PSeqOperationsDbContext dbContext, IEx
         dbContext.CrmHandoffs.Add(value);
         dbContext.CrmActivities.Add(new CrmActivity(CrmActivityType.PortalEvent, "Portal handoff created", request.Summary, DateTime.UtcNow, CrmActivityVisibility.Internal, actor.Id, company.Id, opportunityId: opportunity?.Id));
         await dbContext.SaveChangesAsync(cancellationToken);
-        return Created($"/api/platform/crm/companies/{companyId}/handoffs/{value.Id}", ToDto(value, relationshipRequest));
+        return Created($"/api/platform/crm/companies/{companyId}/handoffs/{value.Id}", await ToDtoAsync(value, cancellationToken, relationshipRequest));
     }
 
     [HttpGet("portal-links")]
@@ -126,10 +168,57 @@ public sealed class CrmHandoffsController(PSeqOperationsDbContext dbContext, IEx
     };
 
     private async Task<User> RequireActor(CancellationToken cancellationToken) => await RequirePlatformAdminAsync(HttpContext, dbContext, externalIdentityContext, cancellationToken);
-    private static CrmHandoffDto ToDto(CrmHandoff value, PortalIntegrationRequest? request = null)
+    private async Task<CrmHandoffDto> ToDtoAsync(CrmHandoff value, CancellationToken cancellationToken, PortalIntegrationRequest? request = null)
     {
         var relationshipRequest = request ?? value.RelationshipRequest;
-        return new(value.Id, value.CompanyId, value.OpportunityId, value.Type, value.RelationshipRequestId, relationshipRequest.RequestNumber, relationshipRequest.Status, relationshipRequest.RequestedOrganizationKind, relationshipRequest.OrganizationId, value.IdempotencyKey, value.CreatedAt);
+        var order = await dbContext.LabServiceOrders.AsNoTracking()
+            .Where(item => item.SourceRequestId == relationshipRequest.Id)
+            .Select(item => new { item.Id, item.OrderNumber, item.Status })
+            .SingleOrDefaultAsync(cancellationToken);
+        var (canStartOrder, blocker) = await EvaluateOrderStartAsync(value, relationshipRequest, order is not null, cancellationToken);
+        return new(value.Id, value.CompanyId, value.OpportunityId, value.Type, value.RelationshipRequestId, relationshipRequest.RequestNumber, relationshipRequest.Status, relationshipRequest.RequestedOrganizationKind, relationshipRequest.OrganizationId, value.IdempotencyKey, value.CreatedAt,
+            order?.Id, order?.OrderNumber, order?.Status.ToString(), canStartOrder, blocker);
+    }
+
+    private async Task<(bool CanStart, string? Blocker)> EvaluateOrderStartAsync(
+        CrmHandoff handoff,
+        PortalIntegrationRequest request,
+        bool orderExists,
+        CancellationToken cancellationToken)
+    {
+        if (orderExists) return (false, null);
+        if (request.Source != PortalIntegrationRequestSource.FirstPartyCrm
+            || request.RequestType != PortalIntegrationRequestType.SalesAssistedOrder)
+            return (false, "This handoff is not a Customer order handoff.");
+        if (request.Status != PortalIntegrationRequestStatus.Approved)
+            return (false, request.Status == PortalIntegrationRequestStatus.PendingReview
+                ? "Approve this handoff in Portal accounts before starting an order."
+                : "Only an approved handoff can start an order.");
+        if (!request.OrganizationId.HasValue || request.RequestedOrganizationKind != OrganizationKind.Customer)
+            return (false, "Link and approve this handoff for a Customer organization before starting an order.");
+        if (!request.RequestedServices.Any(value => value.Service == PortalService.PSeqLabService))
+            return (false, "This handoff does not request PSeq Lab Service.");
+        if (handoff.Opportunity is not null && handoff.Opportunity.Stage.Category != CrmPipelineStageCategory.Won)
+            return (false, "Move the linked Opportunity to Won before starting an order.");
+        var organization = await dbContext.Organizations.AsNoTracking()
+            .SingleOrDefaultAsync(value => value.Id == request.OrganizationId.Value, cancellationToken);
+        if (organization is null || !organization.IsActive || organization.Kind != OrganizationKind.Customer)
+            return (false, "The linked Customer organization is not active.");
+        var hasApprover = await dbContext.OrganizationMemberships.AsNoTracking().AnyAsync(
+            membership => membership.OrganizationId == organization.Id
+                && membership.IsActive
+                && membership.IsOrganizationAdmin
+                && membership.User != null
+                && membership.User.IsActive
+                && membership.User.Status == UserAccountStatus.Active,
+            cancellationToken);
+        if (!hasApprover) return (false, "The Customer needs an active organization administrator before an order can start.");
+        var eligibility = await LabServiceOrderingEligibility.ReadAsync(dbContext, organization.Id, DateTime.UtcNow, cancellationToken);
+        if (!eligibility.OrderingAuthorized)
+            return (false, "Enable a current Ready PSeq Lab Service entitlement for this Customer.");
+        if (!eligibility.OfferingAvailable)
+            return (false, "Activate the canonical PSeq Lab Service specimen catalog item.");
+        return (true, null);
     }
     private static CrmException Missing(string code, string message) => CrmAccess.NotFound(code, message);
 }

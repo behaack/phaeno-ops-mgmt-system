@@ -189,6 +189,15 @@ public sealed record LabRequestRevisionDto(
     Guid SubmittedByUserId,
     DateTime SubmittedAt);
 
+public sealed record CommercialOrderSourceDto(
+    Guid RequestId,
+    string RequestNumber,
+    Guid HandoffId,
+    Guid CompanyId,
+    string CompanyName,
+    Guid? OpportunityId,
+    string? OpportunityName);
+
 public sealed record LabServiceOrderDto(
     Guid Id,
     Guid OrganizationId,
@@ -236,7 +245,8 @@ public sealed record LabServiceOrderDto(
     IReadOnlyList<LabServiceSourceGroupDto>? SourceGroups = null,
     DateTime? SampleRosterFinalizedAt = null,
     bool CanEditSamples = false,
-    bool CanFinalizeSamples = false);
+    bool CanFinalizeSamples = false,
+    CommercialOrderSourceDto? CommercialSource = null);
 
 public sealed record ReagentOrderLineDto(
     Guid Id,
@@ -531,7 +541,8 @@ public sealed record InitiateCustomerLabOrderRequest(
     string StorageRequirements,
     string SafetyDeclaration,
     bool ProhibitedDataConfirmed,
-    IReadOnlyList<LabServiceSourceGroupWriteRequest>? SourceGroups);
+    IReadOnlyList<LabServiceSourceGroupWriteRequest>? SourceGroups,
+    Guid? SourceRequestId = null);
 public sealed record LabServiceSourceGroupWriteRequest(string BiologicalSource, int SpecimenCount);
 public sealed record LabSampleRosterWriteRequest(
     string CustomerSampleId,

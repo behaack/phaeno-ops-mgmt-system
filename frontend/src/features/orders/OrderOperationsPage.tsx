@@ -720,6 +720,20 @@ function OperationalSummary({
         <CardContent>
           {workflow === "lab" && "samples" in item ? (
             <div className="space-y-5">
+              {item.commercialSource ? (
+                <Alert>
+                  <AlertTitle>CRM commercial source</AlertTitle>
+                  <AlertDescription>
+                    <Link to="/crm/companies/$companyId" params={{ companyId: item.commercialSource.companyId }} className="font-medium hover:underline">
+                      {item.commercialSource.companyName}
+                    </Link>
+                    {item.commercialSource.opportunityId && item.commercialSource.opportunityName ? (
+                      <> · <Link to="/crm/opportunities/$opportunityId" params={{ opportunityId: item.commercialSource.opportunityId }} className="font-medium hover:underline">{item.commercialSource.opportunityName}</Link></>
+                    ) : null}
+                    {` · ${item.commercialSource.requestNumber}`}
+                  </AlertDescription>
+                </Alert>
+              ) : null}
               <dl className="grid gap-4 text-sm sm:grid-cols-2">
                 <div>
                   <dt className="font-medium">Committed sample count</dt>

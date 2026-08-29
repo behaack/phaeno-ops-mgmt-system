@@ -52,7 +52,6 @@ export function CrmContactDialog({
               lastName: String(data.get("lastName") ?? "").trim(),
               email: nullable(data, "email"),
               phone: nullable(data, "phone"),
-              jobTitle: nullable(data, "jobTitle"),
               ownerUserId: nullable(data, "ownerUserId"),
               communicationPreference: preference,
               lawfulContactBasis: nullable(data, "lawfulContactBasis"),
@@ -66,8 +65,8 @@ export function CrmContactDialog({
               {contact ? "Edit contact" : "New contact"}
             </DialogTitle>
             <DialogDescription>
-              Keep identity, communication preference, and relationship context
-              in one durable record.
+              Keep identity and communication preferences in one durable
+              record. Add Company-specific titles through relationships.
             </DialogDescription>
           </DialogHeader>
           {error ? (
@@ -113,32 +112,23 @@ export function CrmContactDialog({
                 />
               </Field>
             </div>
-            <div className="grid gap-4 sm:grid-cols-2">
-              <Field label="Job title" id="contact-title">
-                <Input
-                  id="contact-title"
-                  name="jobTitle"
-                  defaultValue={contact?.jobTitle ?? ""}
-                />
-              </Field>
-              <Field label="Communication preference" id="contact-preference">
-                <select
-                  id="contact-preference"
-                  value={preference}
-                  onChange={(event) =>
-                    setPreference(
-                      event.target.value as CrmCommunicationPreference,
-                    )
-                  }
-                  className="h-9 rounded-md border bg-background px-3 text-sm"
-                >
-                  <option value="Unknown">Unknown</option>
-                  <option value="Permitted">Permitted</option>
-                  <option value="OptedOut">Opted out</option>
-                  <option value="DoNotContact">Do not contact</option>
-                </select>
-              </Field>
-            </div>
+            <Field label="Communication preference" id="contact-preference">
+              <select
+                id="contact-preference"
+                value={preference}
+                onChange={(event) =>
+                  setPreference(
+                    event.target.value as CrmCommunicationPreference,
+                  )
+                }
+                className="h-9 rounded-md border bg-background px-3 text-sm"
+              >
+                <option value="Unknown">Unknown</option>
+                <option value="Permitted">Permitted</option>
+                <option value="OptedOut">Opted out</option>
+                <option value="DoNotContact">Do not contact</option>
+              </select>
+            </Field>
             <Field label="Owner" id="contact-owner">
               <CrmOwnerSelect
                 id="contact-owner"

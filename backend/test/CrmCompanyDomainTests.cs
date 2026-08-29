@@ -179,6 +179,27 @@ public class CrmCompanyDomainTests
     }
 
     [Fact]
+    public void OpportunityNumbersAreReadableAndUnique()
+    {
+        var values = Enumerable.Range(0, 1_000)
+            .Select(_ => CrmOpportunityNumberGenerator.Create())
+            .ToList();
+
+        Assert.Equal(values.Count, values.Distinct(StringComparer.Ordinal).Count());
+        Assert.All(values, value => Assert.Matches("^OPP-[0-9]{8}-[A-F0-9]{10}$", value));
+    }
+
+    [Fact]
+    public void OpportunityProductInterestUsesTheCommercialProductDomain()
+    {
+        Assert.Equal("PSeqLabService", CrmProductInterests.Normalize("pseqlabservice"));
+        Assert.Equal("PSeqKit", CrmProductInterests.Normalize("PSeqKit"));
+        Assert.Null(CrmProductInterests.Normalize(null));
+        Assert.Throws<ArgumentException>(() => CrmProductInterests.Normalize("Consulting"));
+        Assert.Equal("Legacy offering", CrmProductInterests.Normalize("Legacy offering", "Legacy offering"));
+    }
+
+    [Fact]
     public void TaskRequiresARecordAndPreservesBlockedAndCompletionState()
     {
         var ownerId = Guid.NewGuid();
@@ -262,6 +283,7 @@ public class CrmCompanyDomainTests
         var association = new CrmCompanyContact(
             Guid.NewGuid(),
             Guid.NewGuid(),
+            " Director of Genomics ",
             "Scientific sponsor",
             true,
             new DateOnly(2026, 1, 15));
@@ -270,6 +292,7 @@ public class CrmCompanyDomainTests
 
         Assert.False(association.IsActive);
         Assert.False(association.IsPrimaryCompany);
+        Assert.Equal("Director of Genomics", association.JobTitle);
         Assert.Equal(new DateOnly(2026, 1, 15), association.EffectiveFrom);
         Assert.Equal(new DateOnly(2026, 8, 26), association.EffectiveTo);
     }

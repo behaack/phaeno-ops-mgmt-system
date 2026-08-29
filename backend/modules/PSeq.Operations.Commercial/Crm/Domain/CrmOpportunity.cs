@@ -6,6 +6,7 @@ using PSeq.Operations.Commercial.Common.Persistence;
 public sealed class CrmOpportunity : IAudit, IConcurrency
 {
     public Guid Id { get; private set; } = Guid.NewGuid();
+    public string OpportunityNumber { get; private set; } = null!;
     public string Name { get; private set; } = null!;
     public Guid CompanyId { get; private set; }
     public CrmCompany Company { get; private set; } = null!;
@@ -49,7 +50,8 @@ public sealed class CrmOpportunity : IAudit, IConcurrency
         string? nextStep,
         string? competitors,
         string? description,
-        IEnumerable<string>? tags)
+        IEnumerable<string>? tags,
+        string? opportunityNumber = null)
     {
         if (companyId == Guid.Empty || ownerUserId == Guid.Empty)
         {
@@ -57,6 +59,9 @@ public sealed class CrmOpportunity : IAudit, IConcurrency
         }
 
         CompanyId = companyId;
+        OpportunityNumber = CrmPipeline.Required(
+            opportunityNumber ?? CrmOpportunityNumberGenerator.Create(),
+            50).ToUpperInvariant();
         OwnerUserId = ownerUserId;
         PipelineId = stage.PipelineId;
         StageId = stage.Id;
@@ -92,7 +97,7 @@ public sealed class CrmOpportunity : IAudit, IConcurrency
         }
 
         Name = CrmPipeline.Required(name, 255);
-        ProductInterest = CrmPipeline.Optional(productInterest, 255);
+        ProductInterest = CrmProductInterests.Normalize(productInterest, ProductInterest);
         Amount = amount;
         Currency = normalizedCurrency;
         ExpectedCloseDate = expectedCloseDate;
@@ -164,6 +169,41 @@ public sealed class CrmOpportunity : IAudit, IConcurrency
             .Distinct(StringComparer.OrdinalIgnoreCase)
             .OrderBy(value => value, StringComparer.OrdinalIgnoreCase)
             .ToArray();
+}
+
+public static class CrmOpportunityNumberGenerator
+{
+    public static string Create() =>
+        $"OPP-{DateTime.UtcNow:yyyyMMdd}-{Guid.NewGuid():N}"[..23]
+            .ToUpperInvariant();
+}
+
+public static class CrmProductInterests
+{
+    public const string PSeqLabService = "PSeqLabService";
+    public const string PSeqKit = "PSeqKit";
+
+    private static readonly string[] Values = [PSeqLabService, PSeqKit];
+
+    public static string? Normalize(string? value, string? existingValue = null)
+    {
+        var normalized = CrmPipeline.Optional(value, 255);
+        if (normalized is null) return null;
+
+        var canonical = Values.FirstOrDefault(candidate =>
+            string.Equals(candidate, normalized, StringComparison.OrdinalIgnoreCase));
+        if (canonical is not null) return canonical;
+
+        if (existingValue is not null
+            && string.Equals(existingValue, normalized, StringComparison.OrdinalIgnoreCase))
+        {
+            return existingValue;
+        }
+
+        throw new ArgumentException(
+            "Product interest must be PSeq Lab Service or PSeq Kit.",
+            nameof(value));
+    }
 }
 
 public sealed class CrmOpportunityContact : IAudit, IConcurrency

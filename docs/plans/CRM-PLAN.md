@@ -33,6 +33,13 @@ deployment, and test execution retain their normal approval boundaries.
   creates a Customer account, a visible **Ordering authorized** choice defaults
   on and may create the existing `Ready` PSeq Lab Service entitlement in the
   same transaction.
+- The first Customer PSeq Lab Service Opportunity-to-Order slice is implemented
+  locally. A Won Opportunity can create a Customer order handoff; Portal
+  account review must approve it before Order operations can start pricing.
+  One reviewed handoff can source exactly one order, while an Opportunity may
+  retain multiple separately reviewed handoffs and orders. Starting the order
+  atomically marks the request Applied and records the linked order on the CRM
+  timeline. Trial and Evaluation handoffs remain review-only.
 - Development-only HubSpot simulation endpoints and controls were removed.
   Historical `HubSpot` source values remain readable so existing audit meaning
   is not erased. The application requires no HubSpot credential, identifier,
@@ -40,8 +47,26 @@ deployment, and test execution retain their normal approval boundaries.
 - Additive migrations `20260826145224_AddCrmCompanyFoundation`,
   `20260826155438_CompleteCoreCrm`, and
   `20260826162600_AllowRepeatCrmCompanyContactHistory` define the first-party
-  model. The current navigation and documentation refinement requires no EF
-  migration.
+  model. Migration `20260828213351_MoveContactTitleToCompanyRelationship`
+  corrects the initial implementation drift by making job title an
+  effective-dated Company/Contact relationship fact. It preserves the former
+  Contact value as read-only legacy data and backfills it only when the target
+  relationship is unambiguous. Migration
+  `20260828230801_LinkCrmHandoffsToLabServiceOrders` adds the immutable,
+  one-order-per-handoff commercial source link. Opportunities have an
+  immutable, system-generated `OPP-YYYYMMDD-XXXXXXXXXX` number protected by a
+  database uniqueness constraint; names remain editable commercial labels.
+  Migration `20260828234907_AddCrmOpportunityNumber` adds that number and
+  deterministically backfills legacy Opportunities. Product interest uses the
+  controlled PSeq Lab Service or PSeq Kit domain; retained legacy values remain
+  visible but cannot be newly entered.
+- Company and Contact relationship dialogs capture a free-form job title and a
+  controlled relationship role. Their Company and Contact selectors query
+  incrementally so association is not limited to an initial page of records.
+- Company and Contact detail workspaces render associations with the same
+  relationship summary, primary/ended status, and edit action. Both directions
+  use one shared editor for title, role, primary designation, and effective
+  dates.
 - Connected communications, marketing automation, telephony, service cases,
   and any external CRM adapter remain separately scoped expansions. Deeper
   Trial Project, order, QuickBooks, and operational projections remain owned by
@@ -268,6 +293,9 @@ They do not replace or directly mutate their owning domains.
   is overdue, and how the pipeline is performing.
 - Companies, Contacts, Leads, Opportunities, and Tasks use the standard
   list-to-detail record-management pattern.
+- Card-scoped create and work actions stay compact at the far right of the card
+  title row; descriptions remain beneath the title instead of determining the
+  action width.
 - Opportunity pipeline boards complement, but do not replace, accessible tables.
 - Company detail is the relationship workspace: summary, Contacts,
   Opportunities, Activity, Tasks, Portal links, and reporting context.

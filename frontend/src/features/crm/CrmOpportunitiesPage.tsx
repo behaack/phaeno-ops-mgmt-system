@@ -141,6 +141,7 @@ export function CrmOpportunitiesPage() {
                 id="opportunity-search"
                 value={draftSearch}
                 onChange={(event) => setDraftSearch(event.target.value)}
+                placeholder="Opportunity number, name, Company, or product"
               />
             </div>
             <div className="grid gap-1.5">
@@ -203,7 +204,7 @@ export function CrmOpportunitiesPage() {
         </CardContent>
       </Card>
       {board ? (
-        <div className="grid auto-cols-[minmax(17rem,1fr)] grid-flow-col gap-4 overflow-x-auto pb-3">
+        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
           {stages.map((stage) => (
             <section key={stage.id} className="rounded-lg border bg-muted/20">
               <header className="flex justify-between border-b p-3">
@@ -259,6 +260,9 @@ export function CrmOpportunitiesPage() {
                         >
                           {value.name}
                         </Link>
+                        <p className="mt-1 font-mono text-xs font-normal text-muted-foreground">
+                          {value.opportunityNumber}
+                        </p>
                       </td>
                       <td className="p-3">{value.companyName}</td>
                       <td className="p-3">{value.stageName}</td>
@@ -300,6 +304,9 @@ function OpportunityCard({
       className="block rounded-lg border bg-card p-3 shadow-sm hover:bg-muted/40 focus-visible:ring-3 focus-visible:ring-ring/50 focus-visible:outline-none"
     >
       <p className="font-medium">{value.name}</p>
+      <p className="mt-1 font-mono text-xs text-muted-foreground">
+        {value.opportunityNumber}
+      </p>
       <p className="mt-1 text-xs text-muted-foreground">{value.companyName}</p>
       <div className="mt-3 flex justify-between text-xs">
         <span>{money(value)}</span>

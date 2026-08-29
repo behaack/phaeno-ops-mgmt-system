@@ -2,6 +2,7 @@
 using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 using PhaenoPortal.App.Infrastructure.Persistence;
@@ -11,9 +12,11 @@ using PhaenoPortal.App.Infrastructure.Persistence;
 namespace PSeq.Operations.Api.Migrations
 {
     [DbContext(typeof(PSeqOperationsDbContext))]
-    partial class PSeqOperationsDbContextModelSnapshot : ModelSnapshot
+    [Migration("20260828230801_LinkCrmHandoffsToLabServiceOrders")]
+    partial class LinkCrmHandoffsToLabServiceOrders
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -1373,12 +1376,6 @@ namespace PSeq.Operations.Api.Migrations
                         .HasColumnType("character varying(1000)")
                         .HasColumnName("next_step");
 
-                    b.Property<string>("OpportunityNumber")
-                        .IsRequired()
-                        .HasMaxLength(50)
-                        .HasColumnType("character varying(50)")
-                        .HasColumnName("opportunity_number");
-
                     b.Property<string>("OutcomeReason")
                         .HasMaxLength(1000)
                         .HasColumnType("character varying(1000)")
@@ -1428,9 +1425,6 @@ namespace PSeq.Operations.Api.Migrations
                     b.HasKey("Id");
 
                     b.HasIndex("ExpectedCloseDate");
-
-                    b.HasIndex("OpportunityNumber")
-                        .IsUnique();
 
                     b.HasIndex("OwnerUserId");
 

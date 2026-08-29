@@ -27,6 +27,7 @@ import { Textarea } from "#/components/ui/textarea";
 import { CrmCustomFields } from "./CrmCustomFields";
 import { CrmOpportunityDialog } from "./CrmOpportunityDialog";
 import { CrmOpportunityContacts } from "./CrmOpportunityContacts";
+import { CrmOpportunityOrderHandoffCard } from "./CrmOpportunityOrderHandoffCard";
 import { CrmRecordWork } from "./CrmRecordWork";
 
 export function CrmOpportunityDetailPage({
@@ -121,6 +122,9 @@ export function CrmOpportunityDetailPage({
             <Badge variant="outline">{opportunity.stageName}</Badge>
           </div>
           <h1 className="text-3xl font-semibold">{opportunity.name}</h1>
+          <p className="mt-1 font-mono text-sm text-muted-foreground">
+            {opportunity.opportunityNumber}
+          </p>
           <p className="mt-2 text-sm text-muted-foreground">
             <Link
               to="/crm/companies/$companyId"
@@ -154,7 +158,7 @@ export function CrmOpportunityDetailPage({
             <dl className="grid gap-4 sm:grid-cols-2">
               <Info
                 label="Product interest"
-                value={opportunity.productInterest ?? "Not recorded"}
+                value={productInterestLabel(opportunity.productInterest)}
               />
               <Info
                 label="Expected close"
@@ -241,6 +245,7 @@ export function CrmOpportunityDetailPage({
         </CardContent>
       </Card>
       <CrmOpportunityContacts opportunityId={opportunityId} />
+      <CrmOpportunityOrderHandoffCard opportunity={opportunity} />
       <CrmCustomFields recordType="Opportunity" recordId={opportunityId} />
       <CrmRecordWork links={{ opportunityId }} />
       <CrmOpportunityDialog
@@ -280,6 +285,11 @@ function money(value: number | null, currency: string) {
         currency,
         maximumFractionDigits: 0,
       }).format(value);
+}
+function productInterestLabel(value: string | null) {
+  if (value === "PSeqLabService") return "PSeq Lab Service";
+  if (value === "PSeqKit") return "PSeq Kit";
+  return value ?? "Not recorded";
 }
 function formatDate(value: string) {
   return new Intl.DateTimeFormat(undefined, {

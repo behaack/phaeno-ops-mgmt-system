@@ -7,6 +7,7 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging.Abstractions;
 using Microsoft.Extensions.Options;
 using PSeq.Operations.Commercial.Accounts.Domain;
+using PSeq.Operations.Commercial.Crm.Domain;
 using PSeq.Operations.Commercial.LabOperations.Application;
 using PSeq.Operations.Commercial.LabOperations.Domain;
 using PSeq.Operations.Commercial.OrderManagement.Domain;
@@ -53,6 +54,63 @@ public class LabOperationsCommercialHandoffPostgresTests
         Assert.Single(persisted.Revisions);
         Assert.Equal(3, await scope.DbContext.OrderStatusEvents
             .CountAsync(item => item.WorkflowId == persisted.Id));
+    }
+
+    [PostgreSqlReferenceFact]
+    public async Task ApprovedCrmHandoffStartsOneOrderAndBecomesAppliedAtomically()
+    {
+        await using var scope = await HandoffTestScope.CreateAsync();
+        var sourceRequest = await scope.CreateApprovedCrmOrderHandoffAsync();
+
+        var response = await scope.InitiateCustomerOrderAsync(sourceRequestId: sourceRequest.Id);
+
+        Assert.Equal(sourceRequest.Id, response.CommercialSource?.RequestId);
+        Assert.NotNull(response.CommercialSource?.HandoffId);
+        scope.DbContext.ChangeTracker.Clear();
+        var persistedOrder = await scope.DbContext.LabServiceOrders.AsNoTracking()
+            .SingleAsync(value => value.Id == response.Id);
+        Assert.Equal(sourceRequest.Id, persistedOrder.SourceRequestId);
+        var persistedRequest = await scope.DbContext.PortalIntegrationRequests.AsNoTracking()
+            .SingleAsync(value => value.Id == sourceRequest.Id);
+        Assert.Equal(PortalIntegrationRequestStatus.Applied, persistedRequest.Status);
+        Assert.Contains(response.OrderNumber, persistedRequest.ApplicationNotes);
+        Assert.Single(await scope.DbContext.CrmActivities.AsNoTracking()
+            .Where(value => value.Subject == "Customer order started" && value.Body!.Contains(response.OrderNumber))
+            .ToListAsync());
+    }
+
+    [PostgreSqlReferenceFact]
+    public async Task CrmHandoffCannotStartASecondOrder()
+    {
+        await using var scope = await HandoffTestScope.CreateAsync();
+        var sourceRequest = await scope.CreateApprovedCrmOrderHandoffAsync();
+        await scope.InitiateCustomerOrderAsync(sourceRequestId: sourceRequest.Id);
+        scope.DbContext.ChangeTracker.Clear();
+
+        var exception = await Assert.ThrowsAsync<OrderManagementException>(() =>
+            scope.InitiateCustomerOrderAsync(sourceRequestId: sourceRequest.Id));
+
+        Assert.Equal("crm_handoff_order_exists", exception.ErrorCode);
+        Assert.Equal(1, await scope.DbContext.LabServiceOrders.AsNoTracking()
+            .CountAsync(value => value.SourceRequestId == sourceRequest.Id));
+    }
+
+    [PostgreSqlReferenceFact]
+    public async Task ApprovedHandoffLinkedToOpenOpportunityCannotStartOrder()
+    {
+        await using var scope = await HandoffTestScope.CreateAsync();
+        var sourceRequest = await scope.CreateApprovedCrmOrderHandoffAsync(CrmPipelineStageCategory.Open);
+
+        var exception = await Assert.ThrowsAsync<OrderManagementException>(() =>
+            scope.InitiateCustomerOrderAsync(sourceRequestId: sourceRequest.Id));
+
+        Assert.Equal("crm_handoff_opportunity_not_won", exception.ErrorCode);
+        Assert.False(await scope.DbContext.LabServiceOrders.AsNoTracking()
+            .AnyAsync(value => value.SourceRequestId == sourceRequest.Id));
+        Assert.Equal(PortalIntegrationRequestStatus.Approved, await scope.DbContext.PortalIntegrationRequests.AsNoTracking()
+            .Where(value => value.Id == sourceRequest.Id)
+            .Select(value => value.Status)
+            .SingleAsync());
     }
 
     [PostgreSqlReferenceFact]
@@ -955,6 +1013,9 @@ public class LabOperationsCommercialHandoffPostgresTests
         private readonly ExternalIdentity customerIdentity;
         private readonly ExternalIdentity platformIdentity;
         private readonly List<Guid> catalogItemIds = [];
+        private readonly List<Guid> createdCrmCompanyIds = [];
+        private readonly List<Guid> createdCrmOpportunityIds = [];
+        private readonly List<Guid> createdRelationshipRequestIds = [];
         private readonly ShippingConfigurationFixture shippingConfiguration;
 
         private HandoffTestScope(
@@ -1257,7 +1318,8 @@ public class LabOperationsCommercialHandoffPostgresTests
         public async Task<LabServiceOrderDto> InitiateCustomerOrderAsync(
             bool prohibitedDataConfirmed = true,
             string? idempotencyKey = null,
-            string? customerReference = null)
+            string? customerReference = null,
+            Guid? sourceRequestId = null)
         {
             var controller = CreatePlatformController(
                 new InternalLabOperationsProvider(DbContext),
@@ -1274,8 +1336,62 @@ public class LabOperationsCommercialHandoffPostgresTests
                     [
                         new LabServiceSourceGroupWriteRequest("Human PBMC", 2),
                         new LabServiceSourceGroupWriteRequest("Mouse liver", 1)
-                    ]),
+                    ],
+                    sourceRequestId),
                 CancellationToken.None);
+        }
+
+        public async Task<PortalIntegrationRequest> CreateApprovedCrmOrderHandoffAsync(
+            CrmPipelineStageCategory? opportunityStageCategory = null)
+        {
+            var company = new CrmCompany(
+                $"CRM handoff company {Guid.NewGuid():N}",
+                PlatformUser.Id,
+                lifecycleState: CrmCompanyLifecycleState.ActiveCustomer);
+            var request = new PortalIntegrationRequest(
+                CustomerOrganization.Id,
+                CustomerOrganization.Name,
+                PortalIntegrationRequestType.SalesAssistedOrder,
+                PortalIntegrationRequestSource.FirstPartyCrm,
+                OrganizationKind.Customer,
+                $"reference-crm:{Guid.NewGuid():N}",
+                "Approved PSeq Lab Service order handoff.",
+                null,
+                PlatformUser.Id,
+                [PortalService.PSeqLabService]);
+            request.Decide(true, "Approved for reference verification.", PlatformUser.Id, DateTime.UtcNow);
+            CrmOpportunity? opportunity = null;
+            if (opportunityStageCategory.HasValue)
+            {
+                var stage = await DbContext.CrmPipelineStages
+                    .FirstAsync(value => value.IsActive && value.Category == opportunityStageCategory.Value);
+                opportunity = new CrmOpportunity(
+                    $"CRM handoff opportunity {Guid.NewGuid():N}",
+                    company.Id,
+                    stage,
+                    PlatformUser.Id,
+                    "PSeq Lab Service",
+                    1000m,
+                    "USD",
+                    DateOnly.FromDateTime(DateTime.UtcNow),
+                    null,
+                    null,
+                    null,
+                    []);
+            }
+            var handoff = new CrmHandoff(
+                company.Id,
+                opportunity?.Id,
+                CrmHandoffType.CustomWork,
+                request.Id,
+                Guid.NewGuid().ToString("N"));
+            DbContext.AddRange(company, request, handoff);
+            if (opportunity is not null) DbContext.CrmOpportunities.Add(opportunity);
+            await DbContext.SaveChangesAsync();
+            createdCrmCompanyIds.Add(company.Id);
+            if (opportunity is not null) createdCrmOpportunityIds.Add(opportunity.Id);
+            createdRelationshipRequestIds.Add(request.Id);
+            return request;
         }
 
         public async Task<QboCatalogItem> CreateCatalogItemAsync(
@@ -1302,6 +1418,7 @@ public class LabOperationsCommercialHandoffPostgresTests
             LabServiceOrderDto order,
             QboCatalogItem item)
         {
+            DbContext.ChangeTracker.Clear();
             var controller = CreatePlatformController(
                 new InternalLabOperationsProvider(DbContext),
                 Guid.NewGuid().ToString("N"));
@@ -1318,6 +1435,7 @@ public class LabOperationsCommercialHandoffPostgresTests
 
         public async Task<LabServiceOrderDto> AcceptQuoteAsync(QuotedOrderFixture fixture)
         {
+            DbContext.ChangeTracker.Clear();
             var controller = CreateCustomerController(
                 new InternalLabOperationsProvider(DbContext),
                 Guid.NewGuid().ToString("N"));
@@ -1332,6 +1450,7 @@ public class LabOperationsCommercialHandoffPostgresTests
             Guid orderId,
             long orderVersion)
         {
+            DbContext.ChangeTracker.Clear();
             var controller = CreateCustomerController(
                 new InternalLabOperationsProvider(DbContext),
                 Guid.NewGuid().ToString("N"));
@@ -1351,6 +1470,7 @@ public class LabOperationsCommercialHandoffPostgresTests
             ILabOperationsProvider provider,
             string? idempotencyKey = null)
         {
+            DbContext.ChangeTracker.Clear();
             var controller = CreateCustomerController(
                 provider,
                 idempotencyKey ?? Guid.NewGuid().ToString("N"));
@@ -1376,6 +1496,7 @@ public class LabOperationsCommercialHandoffPostgresTests
             Guid orderId,
             long orderVersion)
         {
+            DbContext.ChangeTracker.Clear();
             var controller = CreateCustomerController(
                 new InternalLabOperationsProvider(DbContext),
                 Guid.NewGuid().ToString("N"));
@@ -1396,6 +1517,7 @@ public class LabOperationsCommercialHandoffPostgresTests
             long orderVersion,
             ILabOperationsProvider provider)
         {
+            DbContext.ChangeTracker.Clear();
             var controller = CreatePlatformController(provider);
             await controller.DecideCancellation(
                 orderId,
@@ -1554,7 +1676,14 @@ public class LabOperationsCommercialHandoffPostgresTests
                 await DbContext.LabServiceRequestRevisions.Where(item => orderIds.Contains(item.LabServiceOrderId)).ExecuteDeleteAsync();
                 await DbContext.LabServiceQuotes.Where(item => orderIds.Contains(item.LabServiceOrderId)).ExecuteDeleteAsync();
                 await DbContext.LabSamples.Where(item => orderIds.Contains(item.LabServiceOrderId)).ExecuteDeleteAsync();
+                await DbContext.LabServiceSourceGroups.Where(item => orderIds.Contains(item.LabServiceOrderId)).ExecuteDeleteAsync();
                 await DbContext.LabServiceOrders.Where(item => orderIds.Contains(item.Id)).ExecuteDeleteAsync();
+                await DbContext.CrmActivities.Where(item => item.CompanyId.HasValue && createdCrmCompanyIds.Contains(item.CompanyId.Value)).ExecuteDeleteAsync();
+                await DbContext.CrmHandoffs.Where(item => createdCrmCompanyIds.Contains(item.CompanyId)).ExecuteDeleteAsync();
+                await DbContext.CrmOpportunities.Where(item => createdCrmOpportunityIds.Contains(item.Id)).ExecuteDeleteAsync();
+                await DbContext.PortalIntegrationRequestServices.Where(item => createdRelationshipRequestIds.Contains(item.PortalIntegrationRequestId)).ExecuteDeleteAsync();
+                await DbContext.PortalIntegrationRequests.Where(item => createdRelationshipRequestIds.Contains(item.Id)).ExecuteDeleteAsync();
+                await DbContext.CrmCompanies.Where(item => createdCrmCompanyIds.Contains(item.Id)).ExecuteDeleteAsync();
                 await DbContext.OrganizationServiceEntitlements.Where(item => organizationIds.Contains(item.OrganizationId)).ExecuteDeleteAsync();
                 await DbContext.QboCatalogItems.Where(item => catalogItemIds.Contains(item.Id)).ExecuteDeleteAsync();
                 await DbContext.OrganizationMemberships.Where(item => organizationIds.Contains(item.OrganizationId)).ExecuteDeleteAsync();

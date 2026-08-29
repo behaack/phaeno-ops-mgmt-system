@@ -48,15 +48,20 @@ public sealed class CrmContactsController(
                 EF.Functions.ILike(value.FirstName, pattern, "\\")
                 || EF.Functions.ILike(value.LastName, pattern, "\\")
                 || (value.Email != null && EF.Functions.ILike(value.Email, pattern, "\\"))
-                || (value.JobTitle != null && EF.Functions.ILike(value.JobTitle, pattern, "\\")));
+                || dbContext.CrmCompanyContacts.Any(association =>
+                    association.ContactId == value.Id
+                    && association.IsActive
+                    && association.JobTitle != null
+                    && EF.Functions.ILike(association.JobTitle, pattern, "\\")));
         }
 
         var totalCount = await query.CountAsync(cancellationToken);
         var values = await query.OrderBy(value => value.LastName).ThenBy(value => value.FirstName)
             .Skip((page - 1) * pageSize).Take(pageSize).ToListAsync(cancellationToken);
+        var primaryPositions = await PrimaryPositions(values.Select(value => value.Id).ToList(), cancellationToken);
         return new CrmPageDto<CrmContactDto>
         {
-            Items = values.Select(value => ToDto(value)).ToList(),
+            Items = values.Select(value => ToDto(value, primaryPosition: primaryPositions.GetValueOrDefault(value.Id))).ToList(),
             Page = page,
             PageSize = pageSize,
             TotalCount = totalCount
@@ -67,7 +72,9 @@ public sealed class CrmContactsController(
     public async Task<CrmContactDto> Get(Guid contactId, CancellationToken cancellationToken)
     {
         await RequireActor(cancellationToken);
-        return ToDto(await Require(contactId, tracking: false, cancellationToken));
+        var contact = await Require(contactId, tracking: false, cancellationToken);
+        var primaryPositions = await PrimaryPositions([contactId], cancellationToken);
+        return ToDto(contact, primaryPosition: primaryPositions.GetValueOrDefault(contactId));
     }
 
     [HttpPost]
@@ -84,7 +91,6 @@ public sealed class CrmContactsController(
             owner.Id,
             request.Email,
             request.Phone,
-            request.JobTitle,
             request.CommunicationPreference,
             request.LawfulContactBasis,
             request.CommunicationNotes,
@@ -106,7 +112,6 @@ public sealed class CrmContactsController(
             request.LastName,
             request.Email,
             request.Phone,
-            request.JobTitle,
             request.CommunicationPreference,
             request.LawfulContactBasis,
             request.CommunicationNotes,
@@ -119,7 +124,8 @@ public sealed class CrmContactsController(
         }
 
         await dbContext.SaveChangesAsync(cancellationToken);
-        return ToDto(value, updatedOwner);
+        var primaryPositions = await PrimaryPositions([contactId], cancellationToken);
+        return ToDto(value, updatedOwner, primaryPositions.GetValueOrDefault(contactId));
     }
 
     [HttpPost("{contactId:guid}/{lifecycleAction:regex(^(deactivate|reactivate)$)}")]
@@ -130,7 +136,8 @@ public sealed class CrmContactsController(
         EnsureVersion(value.Version, request.Version);
         Execute(lifecycleAction == "reactivate" ? value.Reactivate : value.Deactivate);
         await dbContext.SaveChangesAsync(cancellationToken);
-        return ToDto(value);
+        var primaryPositions = await PrimaryPositions([contactId], cancellationToken);
+        return ToDto(value, primaryPosition: primaryPositions.GetValueOrDefault(contactId));
     }
 
     [HttpPost("{contactId:guid}/merge")]
@@ -171,7 +178,8 @@ public sealed class CrmContactsController(
         source.MergeInto(target.Id);
         dbContext.CrmMergeRecords.Add(new CrmMergeRecord(CrmRecordType.Contact, source.Id, target.Id, request.Reason, actor.Id, DateTime.UtcNow));
         await dbContext.SaveChangesAsync(cancellationToken);
-        return ToDto(target);
+        var primaryPositions = await PrimaryPositions([target.Id], cancellationToken);
+        return ToDto(target, primaryPosition: primaryPositions.GetValueOrDefault(target.Id));
     }
 
     private async Task<PSeq.Operations.Commercial.Accounts.Domain.User> RequireActor(CancellationToken cancellationToken) =>
@@ -199,14 +207,35 @@ public sealed class CrmContactsController(
             && value.NormalizedEmail == email.Trim().ToUpper(), cancellationToken);
     }
 
-    private static CrmContactDto ToDto(CrmContact value, PSeq.Operations.Commercial.Accounts.Domain.User? owner = null)
+    private async Task<IReadOnlyDictionary<Guid, PrimaryCompanyPosition>> PrimaryPositions(
+        IReadOnlyCollection<Guid> contactIds,
+        CancellationToken cancellationToken)
+    {
+        if (contactIds.Count == 0)
+        {
+            return new Dictionary<Guid, PrimaryCompanyPosition>();
+        }
+
+        return await dbContext.CrmCompanyContacts.AsNoTracking()
+            .Where(value => contactIds.Contains(value.ContactId) && value.IsActive && value.IsPrimaryCompany)
+            .Select(value => new PrimaryCompanyPosition(value.ContactId, value.Company.Name, value.JobTitle))
+            .ToDictionaryAsync(value => value.ContactId, cancellationToken);
+    }
+
+    private static CrmContactDto ToDto(
+        CrmContact value,
+        PSeq.Operations.Commercial.Accounts.Domain.User? owner = null,
+        PrimaryCompanyPosition? primaryPosition = null)
     {
         var resolvedOwner = owner ?? value.Owner;
-        return new CrmContactDto(value.Id, value.FirstName, value.LastName, value.DisplayName, value.Email, value.Phone, value.JobTitle,
+        return new CrmContactDto(value.Id, value.FirstName, value.LastName, value.DisplayName, value.Email, value.Phone,
+            primaryPosition?.CompanyName, primaryPosition?.JobTitle,
             value.OwnerUserId, $"{resolvedOwner.FirstName} {resolvedOwner.LastName}".Trim(), value.CommunicationPreference,
             value.LawfulContactBasis, value.CommunicationNotes, value.Tags, value.Aliases, value.MergedIntoContactId,
             value.IsActive, value.CreatedAt, value.UpdatedAt, value.Version);
     }
+
+    private sealed record PrimaryCompanyPosition(Guid ContactId, string CompanyName, string? JobTitle);
 
     private static string EscapeLike(string value) => value.Replace("\\", "\\\\", StringComparison.Ordinal).Replace("%", "\\%", StringComparison.Ordinal).Replace("_", "\\_", StringComparison.Ordinal);
     private static CrmException NotFound(string code, string message) => CrmAccess.NotFound(code, message);

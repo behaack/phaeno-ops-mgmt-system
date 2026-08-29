@@ -166,7 +166,7 @@ erDiagram
         varchar_255 email "nullable"
         varchar_100 first_name "not null"
         boolean is_active "not null"
-        varchar_150 job_title "nullable"
+        varchar_150 legacy_job_title "nullable, read-only preservation"
         varchar_100 last_name "not null"
         varchar_255 lawful_contact_basis "nullable"
         uuid merged_into_contact_id FK "nullable"
@@ -188,6 +188,7 @@ erDiagram
         date effective_to "nullable"
         boolean is_active "not null"
         boolean is_primary_company "not null"
+        varchar_150 job_title "nullable"
         varchar_150 relationship_role "nullable"
         timestamptz updated_at "not null"
         uuid updated_by_user_id "nullable"
@@ -250,6 +251,7 @@ erDiagram
     }
     crm_opportunities {
         uuid id PK "not null"
+        varchar_50 opportunity_number UK "not null"
         numeric_18_2 amount "nullable"
         timestamptz closed_at "nullable"
         uuid company_id FK "not null"
@@ -1412,6 +1414,7 @@ erDiagram
         varchar_500 shared_biological_source "nullable"
         timestamptz sample_roster_finalized_at "nullable"
         uuid sample_roster_finalized_by_user_id FK "nullable"
+        uuid source_request_id FK,UK "nullable"
         varchar_100 status "not null"
         varchar_2000 storage_requirements "not null"
         varchar_8000 submission_instructions_snapshot "not null"
@@ -1507,6 +1510,7 @@ erDiagram
     lab_service_orders ||--o{ lab_service_quotes : "lab_service_order_id"
     lab_service_quotes o|--o{ lab_service_quotes : "superseded_by_quote_id"
     lab_service_orders ||--o{ lab_service_request_revisions : "lab_service_order_id"
+    portal_integration_requests o|--o| lab_service_orders : "source_request_id"
     lab_service_request_revisions o|--o{ lab_service_request_revisions : "previous_revision_id"
 ```
 
