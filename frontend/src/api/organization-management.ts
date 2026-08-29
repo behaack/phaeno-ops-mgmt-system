@@ -479,10 +479,10 @@ export type OperationalReadiness = {
 }
 
 export async function getOperationalReadiness(organizationId: string) {
-  const response = await api.get<OperationalReadiness>(
+  const response = await api.get<ApiEnvelope<OperationalReadiness>>(
     `/platform/relationships/organizations/${organizationId}/operational-readiness`,
   )
-  return response.data
+  return unwrap(response.data)
 }
 
 export async function revokeInvitation(id: string) {

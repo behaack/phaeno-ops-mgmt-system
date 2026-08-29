@@ -15,6 +15,9 @@ remain incomplete production-activation gates.
 - [x] `frontend/src/api/pseq-order-to-cash.test.ts` - successful collection and
   command responses are unwrapped from the standard API envelope, while
   provider errors remain actionable request failures.
+- [x] `frontend/src/api/organization-management.test.ts` - the derived
+  operational-readiness response is unwrapped before the account checklist
+  consumes its blocker collection.
 - [x] `frontend/src/features/orders/PSeqOrderToCashPanels.test.tsx` - staged
   Customer blockers, attention-queue empty state, payment-independent result
   release, Billing Operator configuration controls, and Cash Reconciler
@@ -223,7 +226,9 @@ remain incomplete production-activation gates.
   The PSeq order-to-cash client now unwraps every JSON read and command while
   leaving file downloads unchanged. The focused API-client and panel run
   passed 8 tests; lint, TypeScript validation, and the complete client/SSR/
-  Nitro production build passed.
+  Nitro production build passed. The same smoke found and corrected the
+  equivalent envelope mismatch in the Customer operational-readiness
+  checklist, with focused API regression coverage.
 - 2026-08-29: the focused invitation/schema/order-to-cash component run passed
   8 tests. `pnpm run lint`, `pnpm run typecheck`, and the complete client/SSR/
   Nitro production build passed. The full unit suite passed 54 tests and failed

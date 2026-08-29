@@ -295,11 +295,13 @@ work unless their owning plan is separately changed.
   `portal.phaenobiotech.com`.
 - The first signed-in production walkthrough then found a frontend response-
   shape regression when opening Order staging: the PSeq client treated the
-  standard API envelope as the returned collection. The forward fix unwraps
-  every order-to-cash JSON read and command, adds focused regression coverage,
-  and must retain exact frontend/API source alignment when released. The
-  unrelated legacy HubSpot handoff panel still reports its existing provider
-  load failure and is not part of the standalone PSeq activation evidence.
+  standard API envelope as the returned collection; the Customer readiness
+  checklist had the same mismatch. The forward fix unwraps every order-to-cash
+  JSON read and command plus the derived-readiness response, adds focused
+  regression coverage, and must retain exact frontend/API source alignment
+  when released. The unrelated legacy HubSpot handoff panel still reports its
+  existing provider load failure and is not part of the standalone PSeq
+  activation evidence.
 
 ## Verification and Acceptance Matrix
 
