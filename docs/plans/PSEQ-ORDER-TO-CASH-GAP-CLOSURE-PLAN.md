@@ -286,6 +286,20 @@ work unless their owning plan is separately changed.
   key endpoint. Production remained unchanged; the workflow was corrected to
   preserve that least-privilege boundary instead of broadening the runtime
   credential.
+- Mailgun domain webhook delivery and permanent-failure events are now routed
+  to the signed Portal endpoint, and the protected account signing key is held
+  in the production environment secret. API deployment run `33280548621`
+  released commit `22ac1b311d16fad5797828db1228ffaef1a6be59`, applied the
+  additive migration, and passed its health and public database probes. The
+  matching Vercel artifact was promoted and confirmed current for
+  `portal.phaenobiotech.com`.
+- The first signed-in production walkthrough then found a frontend response-
+  shape regression when opening Order staging: the PSeq client treated the
+  standard API envelope as the returned collection. The forward fix unwraps
+  every order-to-cash JSON read and command, adds focused regression coverage,
+  and must retain exact frontend/API source alignment when released. The
+  unrelated legacy HubSpot handoff panel still reports its existing provider
+  load failure and is not part of the standalone PSeq activation evidence.
 
 ## Verification and Acceptance Matrix
 

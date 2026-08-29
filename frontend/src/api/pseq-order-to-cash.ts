@@ -1,5 +1,13 @@
+import type { AxiosRequestConfig } from 'axios'
+
 import { api } from './client'
 import type { LabSampleWrite, LabServiceOrder } from './order-management'
+
+type ApiEnvelope<T> = {
+  success: boolean
+  data: T
+  error?: { message?: string } | null
+}
 
 export type ReadinessBlocker = {
   code: string
@@ -185,9 +193,7 @@ export type ReconciliationBatch = {
 }
 
 export async function listStageEligibleCustomers() {
-  return (
-    await api.get<StageEligibleCustomer[]>('/platform/pseq-staging/customers')
-  ).data
+  return getJson<StageEligibleCustomer[]>('/platform/pseq-staging/customers')
 }
 
 export async function createStagedPSeqOrder(input: {
@@ -195,16 +201,13 @@ export async function createStagedPSeqOrder(input: {
   customerReference?: string | null
   samples: LabSampleWrite[]
 }) {
-  return (await api.post<LabServiceOrder>('/platform/pseq-staging/orders', input))
-    .data
+  return postJson<LabServiceOrder>('/platform/pseq-staging/orders', input)
 }
 
 export async function listOperationalAttention(category?: string) {
-  return (
-    await api.get<OperationalAttention[]>('/platform/operational-attention', {
-      params: { category: category || undefined },
-    })
-  ).data
+  return getJson<OperationalAttention[]>('/platform/operational-attention', {
+    params: { category: category || undefined },
+  })
 }
 
 export async function assignOperationalAttention(
@@ -212,12 +215,10 @@ export async function assignOperationalAttention(
   ownerUserId: string | null,
   version: number,
 ) {
-  return (
-    await api.post<OperationalAttention>(
-      `/platform/operational-attention/${id}/assign`,
-      { ownerUserId, version },
-    )
-  ).data
+  return postJson<OperationalAttention>(
+    `/platform/operational-attention/${id}/assign`,
+    { ownerUserId, version },
+  )
 }
 
 export async function resolveOperationalAttention(
@@ -225,28 +226,22 @@ export async function resolveOperationalAttention(
   resolution: string,
   version: number,
 ) {
-  return (
-    await api.post<OperationalAttention>(
-      `/platform/operational-attention/${id}/resolve`,
-      { resolution, version },
-    )
-  ).data
+  return postJson<OperationalAttention>(
+    `/platform/operational-attention/${id}/resolve`,
+    { resolution, version },
+  )
 }
 
 export async function listResultPackages(state?: string) {
-  return (
-    await api.get<ResultPackage[]>('/platform/pseq-result-packages', {
-      params: { state: state || undefined },
-    })
-  ).data
+  return getJson<ResultPackage[]>('/platform/pseq-result-packages', {
+    params: { state: state || undefined },
+  })
 }
 
 export async function releaseResultPackage(id: string, version: number) {
-  return (
-    await api.post<ResultPackage>(`/platform/pseq-result-packages/${id}/release`, {
-      version,
-    })
-  ).data
+  return postJson<ResultPackage>(`/platform/pseq-result-packages/${id}/release`, {
+    version,
+  })
 }
 
 export async function withdrawResultPackage(
@@ -254,12 +249,10 @@ export async function withdrawResultPackage(
   version: number,
   reason: string,
 ) {
-  return (
-    await api.post<ResultPackage>(
-      `/platform/pseq-result-packages/${id}/withdraw`,
-      { version, reason },
-    )
-  ).data
+  return postJson<ResultPackage>(
+    `/platform/pseq-result-packages/${id}/withdraw`,
+    { version, reason },
+  )
 }
 
 export async function authorizeResultReissue(
@@ -267,20 +260,16 @@ export async function authorizeResultReissue(
   version: number,
   reason: string,
 ) {
-  return (
-    await api.post<ResultPackage>(
-      `/platform/pseq-result-packages/${id}/authorize-reissue`,
-      { version, reason },
-    )
-  ).data
+  return postJson<ResultPackage>(
+    `/platform/pseq-result-packages/${id}/authorize-reissue`,
+    { version, reason },
+  )
 }
 
 export async function listCustomerResultPackages(orderId: string) {
-  return (
-    await api.get<CustomerResultPackage[]>(
-      `/lab-service-orders/${orderId}/result-packages`,
-    )
-  ).data
+  return getJson<CustomerResultPackage[]>(
+    `/lab-service-orders/${orderId}/result-packages`,
+  )
 }
 
 export async function downloadCustomerResultArtifact(
@@ -301,19 +290,15 @@ export async function downloadCustomerResultArtifact(
 }
 
 export async function listInvoices(openOnly = false) {
-  return (
-    await api.get<InvoiceReceivable[]>('/platform/accounts-receivable/invoices', {
-      params: { openOnly },
-    })
-  ).data
+  return getJson<InvoiceReceivable[]>('/platform/accounts-receivable/invoices', {
+    params: { openOnly },
+  })
 }
 
 export async function listAccountsReceivableCustomers() {
-  return (
-    await api.get<AccountsReceivableCustomer[]>(
-      '/platform/accounts-receivable/customers',
-    )
-  ).data
+  return getJson<AccountsReceivableCustomer[]>(
+    '/platform/accounts-receivable/customers',
+  )
 }
 
 export async function updateBillingProfile(
@@ -329,12 +314,10 @@ export async function updateBillingProfile(
     taxExemptionEvidence: string | null
   },
 ) {
-  return (
-    await api.put(
-      `/platform/order-configuration/commercial-profiles/${organizationId}/billing`,
-      input,
-    )
-  ).data
+  return putJson<unknown>(
+    `/platform/order-configuration/commercial-profiles/${organizationId}/billing`,
+    input,
+  )
 }
 
 export async function approveTaxDecision(
@@ -342,16 +325,14 @@ export async function approveTaxDecision(
   version: number,
   notes: string,
 ) {
-  return (
-    await api.post(
-      `/platform/order-configuration/commercial-profiles/${organizationId}/tax-approval`,
-      { version, notes },
-    )
-  ).data
+  return postJson<unknown>(
+    `/platform/order-configuration/commercial-profiles/${organizationId}/tax-approval`,
+    { version, notes },
+  )
 }
 
 export async function listCustomerInvoices() {
-  return (await api.get<InvoiceReceivable[]>('/accounts-receivable/invoices')).data
+  return getJson<InvoiceReceivable[]>('/accounts-receivable/invoices')
 }
 
 export async function downloadCustomerInvoicePdf(invoice: InvoiceReceivable) {
@@ -368,17 +349,13 @@ export async function downloadCustomerInvoicePdf(invoice: InvoiceReceivable) {
 }
 
 export async function getAgingSummary() {
-  return (
-    await api.get<AgingSummary>('/platform/accounts-receivable/aging')
-  ).data
+  return getJson<AgingSummary>('/platform/accounts-receivable/aging')
 }
 
 export async function listPaymentReceipts(unappliedOnly = false) {
-  return (
-    await api.get<PaymentReceipt[]>('/platform/accounts-receivable/receipts', {
-      params: { unappliedOnly },
-    })
-  ).data
+  return getJson<PaymentReceipt[]>('/platform/accounts-receivable/receipts', {
+    params: { unappliedOnly },
+  })
 }
 
 export async function recordPaymentReceipt(input: {
@@ -393,17 +370,13 @@ export async function recordPaymentReceipt(input: {
   evidenceStorageKey: string
   memo?: string | null
 }) {
-  return (
-    await api.post<PaymentReceipt>('/platform/accounts-receivable/receipts', input)
-  ).data
+  return postJson<PaymentReceipt>('/platform/accounts-receivable/receipts', input)
 }
 
 export async function listMatchingInvoices(receiptId: string) {
-  return (
-    await api.get<InvoiceReceivable[]>(
-      `/platform/accounts-receivable/receipts/${receiptId}/matching-suggestions`,
-    )
-  ).data
+  return getJson<InvoiceReceivable[]>(
+    `/platform/accounts-receivable/receipts/${receiptId}/matching-suggestions`,
+  )
 }
 
 export async function allocatePayment(
@@ -415,24 +388,20 @@ export async function allocatePayment(
     invoiceVersion: number
   },
 ) {
-  return (
-    await api.post(
-      `/platform/accounts-receivable/receipts/${receiptId}/allocations`,
-      input,
-    )
-  ).data
+  return postJson<unknown>(
+    `/platform/accounts-receivable/receipts/${receiptId}/allocations`,
+    input,
+  )
 }
 
 export async function adjustInvoice(
   invoiceId: string,
   input: { kind: 'Credit' | 'Debit' | 'WriteOff'; amount: number; reason: string; invoiceVersion: number },
 ) {
-  return (
-    await api.post<InvoiceReceivable>(
-      `/platform/accounts-receivable/invoices/${invoiceId}/adjustments`,
-      input,
-    )
-  ).data
+  return postJson<InvoiceReceivable>(
+    `/platform/accounts-receivable/invoices/${invoiceId}/adjustments`,
+    input,
+  )
 }
 
 export async function reversePaymentReceipt(
@@ -440,12 +409,10 @@ export async function reversePaymentReceipt(
   version: number,
   reason: string,
 ) {
-  return (
-    await api.post<PaymentReceipt>(
-      `/platform/accounts-receivable/receipts/${receiptId}/reverse`,
-      { version, reason },
-    )
-  ).data
+  return postJson<PaymentReceipt>(
+    `/platform/accounts-receivable/receipts/${receiptId}/reverse`,
+    { version, reason },
+  )
 }
 
 export async function exportAccountsReceivableReport(
@@ -468,29 +435,23 @@ export async function previewPaymentImport(input: {
   source: string
   csvText: string
 }) {
-  return (
-    await api.post<PaymentImportBatch>(
-      '/platform/accounts-receivable/imports/preview',
-      input,
-    )
-  ).data
+  return postJson<PaymentImportBatch>(
+    '/platform/accounts-receivable/imports/preview',
+    input,
+  )
 }
 
 export async function confirmPaymentImport(id: string, version: number) {
-  return (
-    await api.post<PaymentImportBatch>(
-      `/platform/accounts-receivable/imports/${id}/confirm`,
-      { version },
-    )
-  ).data
+  return postJson<PaymentImportBatch>(
+    `/platform/accounts-receivable/imports/${id}/confirm`,
+    { version },
+  )
 }
 
 export async function listReconciliations() {
-  return (
-    await api.get<ReconciliationBatch[]>(
-      '/platform/accounts-receivable/reconciliations',
-    )
-  ).data
+  return getJson<ReconciliationBatch[]>(
+    '/platform/accounts-receivable/reconciliations',
+  )
 }
 
 export async function createReconciliation(input: {
@@ -500,28 +461,42 @@ export async function createReconciliation(input: {
   paymentAllocationIds: string[]
   invoiceAdjustmentIds: string[]
 }) {
-  return (
-    await api.post<ReconciliationBatch>(
-      '/platform/accounts-receivable/reconciliations',
-      input,
-    )
-  ).data
+  return postJson<ReconciliationBatch>(
+    '/platform/accounts-receivable/reconciliations',
+    input,
+  )
 }
 
 export async function submitReconciliation(id: string, version: number) {
-  return (
-    await api.post<ReconciliationBatch>(
-      `/platform/accounts-receivable/reconciliations/${id}/submit`,
-      { version },
-    )
-  ).data
+  return postJson<ReconciliationBatch>(
+    `/platform/accounts-receivable/reconciliations/${id}/submit`,
+    { version },
+  )
 }
 
 export async function approveReconciliation(id: string, version: number) {
-  return (
-    await api.post<ReconciliationBatch>(
-      `/platform/accounts-receivable/reconciliations/${id}/approve`,
-      { version },
-    )
-  ).data
+  return postJson<ReconciliationBatch>(
+    `/platform/accounts-receivable/reconciliations/${id}/approve`,
+    { version },
+  )
+}
+
+async function getJson<T>(url: string, config?: AxiosRequestConfig) {
+  return unwrap((await api.get<ApiEnvelope<T>>(url, config)).data)
+}
+
+async function postJson<T>(url: string, data: unknown) {
+  return unwrap((await api.post<ApiEnvelope<T>>(url, data)).data)
+}
+
+async function putJson<T>(url: string, data: unknown) {
+  return unwrap((await api.put<ApiEnvelope<T>>(url, data)).data)
+}
+
+function unwrap<T>(envelope: ApiEnvelope<T>) {
+  if (!envelope.success) {
+    throw new Error(envelope.error?.message ?? 'The PSeq order-to-cash request failed.')
+  }
+
+  return envelope.data
 }
