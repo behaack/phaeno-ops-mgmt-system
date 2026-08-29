@@ -47,7 +47,7 @@ authorize a reset of any shared environment.
 - The first three Stage 2 feature slices are implemented: Accounts,
   Relationships, and Data Provisioning domain entities and pure application
   code live in Commercial, along with their environment-neutral ports. HTTP,
-  EF mapping/orchestration, Clerk/Postmark, bootstrap, environment configuration,
+  EF mapping/orchestration, Clerk/Mailgun, bootstrap, environment configuration,
   provider-neutral file storage/scanner adapters, notification dispatch, and
   API error translation remain in the API.
 - Commercial Order Management extraction is complete at the approved safe
@@ -380,7 +380,7 @@ this stage.
 Status: completed on 2026-07-16. The context/schema checkpoint, architecture
 guard, Accounts, Relationships, Data Provisioning, and all currently separable
 Commercial Order Management code are implemented. The API retains HTTP,
-EF mapping/orchestration, Clerk/Postmark/QuickBooks adapters,
+EF mapping/orchestration, Clerk/Mailgun/QuickBooks adapters,
 environment/configuration, provider-neutral file storage/scanner adapters,
 notification dispatch, and API error translation as intended. Mixed
 order/sample/processing/file/release models

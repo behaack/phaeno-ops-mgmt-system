@@ -85,7 +85,7 @@ separate major TBD.
   plans.
 - Production activation is not complete or implied. It still requires approved
   real scientific definitions/profiles and shipping rules, production storage
-  and malware scanning, QuickBooks/Postmark credentials and sandbox validation,
+  and malware scanning, QuickBooks/Mailgun credentials and sandbox validation,
   deployment configuration, runbooks, and the deferred authenticated database-
   backed/contract test suites recorded in the owning test plans.
 - Requested outcomes:

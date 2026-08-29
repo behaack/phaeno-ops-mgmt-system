@@ -102,18 +102,12 @@ Configure a protected GitHub environment named `production` with:
   administrator;
 - `PORTAL_CLERK_AUTHORITY`: non-secret Clerk JWT issuer matching the Portal
   frontend publishable key, such as `https://example.clerk.accounts.dev`;
-- `PORTAL_POSTMARK_FROM_EMAIL`: non-secret Postmark-verified sender address for
-  Portal invitations;
 - `DEPLOY_HOST`: Hetzner SSH host;
 - `DEPLOY_USER`: SSH user with Docker and `/opt/phaeno.portal-green` access;
 - `DEPLOY_SSH_KEY`: private deployment key;
 - `DEPLOY_KNOWN_HOSTS`: pinned OpenSSH `known_hosts` entry for the server; and
 - `PORTAL_CLERK_SECRET_KEY`: Clerk backend secret for the same instance used by
-  the Portal frontend;
-- `PORTAL_POSTMARK_SERVER_TOKEN`: production Postmark server token;
-- `PORTAL_POSTMARK_WEBHOOK_SECRET`: random credential of at least 32 characters
-  configured as the `X-Phaeno-Postmark-Secret` header on Postmark delivery and
-  bounce webhooks; and
+  the Portal frontend; and
 - `PORTAL_MIGRATION_BACKUP_PUBLIC_KEY`: PEM public key used only when an
   authorized migration is requested.
 
@@ -132,12 +126,16 @@ their contents and enables the separately mounted
 Function must receive the proxy key as `WEBSITE_PREVIEW_SEARCH_API_KEY`; never
 place either secret in a `PUBLIC_` variable.
 
-On every deployment, the workflow validates the bootstrap configuration,
-Clerk authority and secret, the Postmark token and verified sender, the fixed
-production invitation URL, and a strong custom-header webhook secret, plus the
-Preview-search settings when a Preview URL is configured. It streams configured
-values over the pinned SSH connection without placing them in the release
-archive and atomically updates only their corresponding entries in the
+On every deployment, the workflow validates the bootstrap configuration and
+Clerk authority and secret, plus the Preview-search settings when a Preview URL
+is configured. On the server it reuses the existing protected
+`EmailServiceSettings` Mailgun URL, `messages` resource, API key, and verified
+sender. The Mailgun installer retrieves the account webhook-signing key,
+configures delivered and permanent-failure events for only the Portal
+invitation webhook URL, and atomically installs that key and the fixed
+production invitation URL without printing credentials. Other configured
+values are streamed over the pinned SSH connection without placing them in the
+release archive and update only their corresponding entries in the
 root-protected `runtime/portal.env`. The workflow also installs
 `FileStorage__Provider=Disabled` and removes stale S3/AWS entries. The API
 recreation then loads the updated values. The workflow never prints secret

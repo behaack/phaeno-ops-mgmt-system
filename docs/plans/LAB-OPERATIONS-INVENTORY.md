@@ -43,7 +43,7 @@ environment-neutral QuickBooks/notification ports followed as the first two
 Order Management sub-slices. Immutable lab-service request revisions and
 lab-service/data-assembly quotes are the third; external download audit is the
 fourth. The API retains HTTP, EF mapping/orchestration,
-Clerk/Postmark/QuickBooks adapters, environment configuration, local
+Clerk/Mailgun/QuickBooks adapters, environment configuration, local
   file/scanner, hosted dispatch, mixed/deferred Order Management records, and
   error translation. The old database and seven-migration lineage were replaced
   on 2026-07-16 by `InitialPSeqOperations`. The database was then renamed to
@@ -112,9 +112,9 @@ no business records. See `PSEQ-OPERATIONS-MIGRATION-PLAN.md`.
 | Current area | Current location | Target owner/project | Disposition |
 | --- | --- | --- | --- |
 | HTTP host, authentication wiring, API envelope, error mapping | `backend/app/Program.cs`, `Infrastructure/Api` | `PSeq.Operations.Api` | Retain as thin host/shared HTTP infrastructure. |
-| Accounts and Clerk identity mapping | Commercial `Accounts` plus API `Features/Accounts` adapters | Commercial | Domain entities and pure policy are in Commercial; the API retains HTTP, actor lookup, EF orchestration, Clerk/Postmark, and bootstrap adapters. Lab roles reuse internal users but remain Lab-owned authorization concepts. |
+| Accounts and Clerk identity mapping | Commercial `Accounts` plus API `Features/Accounts` adapters | Commercial | Domain entities and pure policy are in Commercial; the API retains HTTP, actor lookup, EF orchestration, Clerk/Mailgun, and bootstrap adapters. Lab roles reuse internal users but remain Lab-owned authorization concepts. |
 | Relationship state and service entitlements | Commercial `Relationships` plus API `Features/RelationshipManagement` adapters | Commercial | Domain entities and service-eligibility policy are in Commercial; the API retains HTTP, EF mapping/orchestration, actor enforcement, and error translation. Entitlements authorize work; they do not become Lab records. |
-| Curated data provisioning | Commercial `DataProvisioning` plus API `Features/DataProvisioning` adapters | Commercial | Domain entities, pure policy, manifest construction, and file/scanner/notification ports are in Commercial; the API retains HTTP, EF, authorization, environment configuration, local storage/scanner, Postmark, and dispatch adapters. Its `SourceSample` is curated reference-data provenance, not a received customer laboratory specimen. |
+| Curated data provisioning | Commercial `DataProvisioning` plus API `Features/DataProvisioning` adapters | Commercial | Domain entities, pure policy, manifest construction, and file/scanner/notification ports are in Commercial; the API retains HTTP, EF, authorization, environment configuration, local storage/scanner, Mailgun, and dispatch adapters. Its `SourceSample` is curated reference-data provenance, not a received customer laboratory specimen. |
 | Health endpoints | `Features/Health` | API host | Retain as deployment/runtime infrastructure. |
 | Order Management | Commercial `OrderManagement` plus API `Features/OrderManagement` | Split | Commercial configuration/catalog, Partner kit domain rules, request revisions, quotes, external download audit, commercial workflow/outbox/notification records, and environment-neutral vendor ports are in Commercial. API adapters, mixed lab execution, and deferred pipeline/file records remain pending their approved splits. |
 | Commercial-to-Lab application contract | Commercial `LabOperations/Application` | Commercial | Core v1 command, acknowledgment, cancellation outcome, projection, event-envelope, reason-code, and provider-port types are implemented. The API registers the internal adapter; no current Commercial workflow invokes it yet. |
@@ -227,7 +227,7 @@ idempotency without reclassifying or routing the mixed current-flow tables.
 | `OrderManagementDtos` | Split | Customer/order/release DTOs remain Commercial. Lab commands, work records, batches, QC, and roles receive Laboratory-owned contracts. Do not share the current mixed DTO wholesale. |
 | `QuickBooksGateway` | Commercial port plus API adapters | Request/result contracts and `IQuickBooksGateway` are in Commercial; OAuth, HTTP, and logging implementations remain in the API. |
 | `OrderIntegrationDispatcher` | API adapter for Commercial outbox | Commercial owns the outbox record and vendor port. EF polling, hosted execution, and vendor translation remain in the API; do not reuse vendor-specific operations as the Lab provider contract. |
-| `OrderNotificationDispatcher` | Commercial port plus API adapters | `IOrderNotificationSender` is in Commercial; Postmark/logging senders and hosted EF dispatch remain in the API. |
+| `OrderNotificationDispatcher` | Commercial port plus API adapters | `IOrderNotificationSender` is in Commercial; Mailgun/logging senders and hosted EF dispatch remain in the API. |
 | `OrderIdempotencyService` | Commercial record plus API persistence adapter | The idempotency record is in Commercial; the current HTTP/EF service remains in the API. A generic host-level abstraction may be extracted later only if both modules prove the need. |
 | `OrderRequestContext` | Commercial | Retain organization/tenant commercial request context. Internal Lab authorization must use Phaeno-user roles rather than pretending to be a Customer or Partner tenant. |
 | `OperationalFileServices` | Major pipeline/file TBD | Preserve current behavior and location until scientific file ownership is approved. |

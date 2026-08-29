@@ -35,8 +35,6 @@ builder.Services.Configure<BootstrapOptions>(
     builder.Configuration.GetSection(BootstrapOptions.SectionName));
 builder.Services.Configure<InvitationOptions>(
     builder.Configuration.GetSection(InvitationOptions.SectionName));
-builder.Services.Configure<PostmarkOptions>(
-    builder.Configuration.GetSection(PostmarkOptions.SectionName));
 builder.Services.Configure<PSeqOrderToCashOptions>(
     builder.Configuration.GetSection(PSeqOrderToCashOptions.SectionName));
 builder.Services.Configure<DataProvisioningOptions>(
@@ -104,29 +102,21 @@ builder.Services.AddScoped<IQuickBooksGateway>(services =>
         ? services.GetRequiredService<HttpQuickBooksGateway>()
         : services.GetRequiredService<LoggingQuickBooksGateway>());
 builder.Services.AddHostedService<OrderIntegrationDispatcher>();
-builder.Services.AddHttpClient<PostmarkOrderNotificationSender>((services, httpClient) =>
-{
-    var postmarkOptions = services.GetRequiredService<IOptions<PostmarkOptions>>().Value;
-    httpClient.BaseAddress = new Uri(postmarkOptions.ApiBaseUrl.TrimEnd('/') + "/");
-});
+builder.Services.AddHttpClient<MailgunOrderNotificationSender>();
 builder.Services.AddScoped<LoggingOrderNotificationSender>();
 builder.Services.AddScoped<IOrderNotificationSender>(services =>
-    services.GetRequiredService<IOptions<PostmarkOptions>>().Value.IsConfigured
-        ? services.GetRequiredService<PostmarkOrderNotificationSender>()
+    services.GetRequiredService<IOptions<WebsiteEmailOptions>>().Value.CanSendTransactional
+        ? services.GetRequiredService<MailgunOrderNotificationSender>()
         : services.GetRequiredService<LoggingOrderNotificationSender>());
 builder.Services.AddHostedService<OrderNotificationDispatcher>();
 builder.Services.AddHostedService<ResultRetentionWorker>();
-builder.Services.AddHttpClient<PostmarkDataProvisioningNoticeSender>((services, httpClient) =>
-{
-    var postmarkOptions = services.GetRequiredService<IOptions<PostmarkOptions>>().Value;
-    httpClient.BaseAddress = new Uri(postmarkOptions.ApiBaseUrl.TrimEnd('/') + "/");
-});
+builder.Services.AddHttpClient<MailgunDataProvisioningNoticeSender>();
 builder.Services.AddScoped<LoggingDataProvisioningNoticeSender>();
 builder.Services.AddScoped<IDataProvisioningNoticeSender>(services =>
 {
-    var postmarkOptions = services.GetRequiredService<IOptions<PostmarkOptions>>().Value;
-    return postmarkOptions.IsConfigured
-        ? services.GetRequiredService<PostmarkDataProvisioningNoticeSender>()
+    var mailgunOptions = services.GetRequiredService<IOptions<WebsiteEmailOptions>>().Value;
+    return mailgunOptions.CanSendTransactional
+        ? services.GetRequiredService<MailgunDataProvisioningNoticeSender>()
         : services.GetRequiredService<LoggingDataProvisioningNoticeSender>();
 });
 builder.Services.AddHostedService<DataProvisioningNoticeDispatcher>();
@@ -141,23 +131,21 @@ builder.Services.AddScoped<IClerkBootstrapUserProvisioner>(
 builder.Services.AddScoped<LoggingInvitationEmailSender>();
 builder.Services.AddDataProtection();
 builder.Services.AddSingleton<IInvitationDeliveryPayloadProtector, InvitationDeliveryPayloadProtector>();
-builder.Services.AddHttpClient<PostmarkInvitationEmailSender>((services, httpClient) =>
-{
-    var postmarkOptions = services.GetRequiredService<IOptions<PostmarkOptions>>().Value;
-    httpClient.BaseAddress = new Uri(postmarkOptions.ApiBaseUrl.TrimEnd('/') + "/");
-});
+builder.Services.AddSingleton<InvitationEmailTemplateRenderer>();
+builder.Services.AddHttpClient<MailgunInvitationEmailSender>();
+builder.Services.AddSingleton<MailgunWebhookSignatureVerifier>();
 builder.Services.AddScoped<IInvitationEmailSender>(services =>
 {
-    var postmarkOptions = services.GetRequiredService<IOptions<PostmarkOptions>>().Value;
-    if (postmarkOptions.IsConfigured)
-        return services.GetRequiredService<PostmarkInvitationEmailSender>();
+    var mailgunOptions = services.GetRequiredService<IOptions<WebsiteEmailOptions>>().Value;
+    if (mailgunOptions.CanSendTransactional)
+        return services.GetRequiredService<MailgunInvitationEmailSender>();
 
     var environment = services.GetRequiredService<IHostEnvironment>();
     if (environment.IsDevelopment() || environment.IsEnvironment("Test"))
         return services.GetRequiredService<LoggingInvitationEmailSender>();
 
     throw new InvalidOperationException(
-        "Invitation delivery requires configured Postmark credentials outside Development/Test.");
+        "Invitation delivery requires configured Mailgun credentials outside Development/Test.");
 });
 builder.Services.AddHostedService<InvitationDeliveryDispatcher>();
 builder.Services.AddScoped<IExternalIdentityContext, ClaimsExternalIdentityContext>();
@@ -269,17 +257,18 @@ builder.Services.Configure<ForwardedHeadersOptions>(options =>
 
 if (!builder.Environment.IsDevelopment() && !builder.Environment.IsEnvironment("Test"))
 {
-    var productionPostmark = builder.Configuration
-        .GetSection(PostmarkOptions.SectionName)
-        .Get<PostmarkOptions>() ?? new PostmarkOptions();
+    var productionMailgun = builder.Configuration
+        .GetSection(WebsiteEmailOptions.SectionName)
+        .Get<WebsiteEmailOptions>() ?? new WebsiteEmailOptions();
     var productionInvitations = builder.Configuration
         .GetSection(InvitationOptions.SectionName)
         .Get<InvitationOptions>() ?? new InvitationOptions();
-    var postmarkErrors = productionPostmark.ValidateProduction(productionInvitations.PublicBaseUrl);
-    if (postmarkErrors.Count > 0)
+    var mailgunErrors = productionMailgun.ValidateInvitationProduction(
+        productionInvitations.PublicBaseUrl);
+    if (mailgunErrors.Count > 0)
     {
         throw new InvalidOperationException(
-            "Invitation delivery configuration is invalid: " + string.Join(" ", postmarkErrors));
+            "Invitation delivery configuration is invalid: " + string.Join(" ", mailgunErrors));
     }
     var orderToCash = builder.Configuration.GetSection(PSeqOrderToCashOptions.SectionName)
         .Get<PSeqOrderToCashOptions>() ?? new PSeqOrderToCashOptions();

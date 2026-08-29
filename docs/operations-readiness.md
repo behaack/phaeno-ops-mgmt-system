@@ -13,7 +13,7 @@ pending the activation gates below.
 
 Production activation requires a dedicated-staging acceptance run with
 Commercial, Lab Operations, Scientific, Finance, security, and accessibility
-signoff. It also requires Postmark sender and webhook-secret validation, final
+signoff. It also requires Mailgun sender and webhook-signature validation, final
 object-storage/scanner/retention configuration, adequate dual-control staffing,
 restored-production-like migration plus forward-fix proof, backup/restore proof,
 exact frontend/API source-SHA alignment, authenticated smoke testing, and an
@@ -36,7 +36,7 @@ This document records how the application operates in the current repository and
 | File scanning | Environment scanner abstractions. Development can trust configured fixture files; production defaults do not. |
 | PSeq accounts receivable | POMS-owned Customer billing/tax/terms snapshots, immutable invoice/PDF issue at job completion, receipt/import/allocation, aging, adjustments, and independently approved reconciliation behind `NativePSeqAccountsReceivable`. QuickBooks remains legacy/non-PSeq context only. |
 | Relationship CRM | Not implemented. HubSpot is selected for the approved future lifecycle in `docs/plans/HUBSPOT-PORTAL-LIFECYCLE-PLAN.md`. |
-| Email and notices | Portal invitations use durable Postmark attempts plus authenticated, idempotent delivery/bounce webhooks behind `InvitationDelivery`. Production rejects incomplete Postmark, sender, public URL, or webhook credentials; logging invitation delivery is Development/Test only. Public Website contact/order templates use Mailgun when configured. |
+| Email and notices | Portal invitations use durable Mailgun attempts plus signed, idempotent delivery/permanent-failure webhooks behind `InvitationDelivery`. Production rejects incomplete Mailgun API/sender, public URL, or webhook-signing configuration; logging invitation delivery is Development/Test only. Invitation HTML and text are embedded, locale-named templates. Public Website contact/order templates use the same configured Mailgun account. |
 | Public Website API | Anonymous `/api/v1/web-ops` search, database ping, contact, and order endpoints plus `/public` document hosting are implemented in Portal. Historical data and public traffic have not been cut over. |
 | Background work | Hosted dispatchers retry invitation delivery, order integrations, order notifications, data-provisioning notices, and Lab-to-Commercial projection delivery. Result retention automatically records warning, cutoff, grace, and deletion evidence. A hosted Website crawler rebuilds the Lucene index on its configured interval. |
 | Help | Browser-bundled MDX with Customer/Partner locale metadata and Phaeno US-English content. Backend search is not implemented. |
@@ -46,7 +46,7 @@ Phaeno Portal is the operational source of truth. QuickBooks Online is authorita
 
 ## Health and basic verification
 
-- API health: `GET /api/health` returns the standard API envelope with service name and `healthy` status. This is application dial tone, not proof that PostgreSQL, Clerk, QuickBooks, Postmark, Mailgun, reCAPTCHA, Website search/documents, storage, scanning, or background delivery is fully ready.
+- API health: `GET /api/health` returns the standard API envelope with service name and `healthy` status. This is application dial tone, not proof that PostgreSQL, Clerk, QuickBooks, Mailgun, reCAPTCHA, Website search/documents, storage, scanning, or background delivery is fully ready.
 - Backend build and tests: `dotnet build backend/PSeq.Operations.slnx` and `dotnet test backend/PSeq.Operations.slnx`.
 - Frontend checks from `frontend/`: `pnpm run lint`, `pnpm run typecheck`, `pnpm run test`, `pnpm run build`, and `pnpm run test:e2e` when full browser verification is requested.
 - PostgreSQL reference journey: `backend/tools/PSeq.Operations.ReferenceJourney` exercises the curated-data baseline with rollback and isolated temporary storage.
@@ -74,7 +74,7 @@ Keep environment-specific values outside source control. `appsettings.Developmen
 | `Clerk` | JWT authority/audience, Clerk API access, authentication branding, MFA, and recovery | Production Clerk instance and secrets; HTTPS metadata validation enabled; Phaeno branding and paid-plan vendor-badge removal verified; required authenticator-app MFA and one-time backup codes enabled; SMS disabled; Phaeno-admin identity verification, MFA reset, active-session revocation, and re-enrollment recovery owned and tested. |
 | `Bootstrap` | One-time bootstrap link inputs | Disabled or cleared after the initial administrator is linked. |
 | `Invitations` | Token lifetime, resend cooldown, public URL | Production deployment pins the public URL to `https://portal.phaenobiotech.com`; expiry and resend policy approved. |
-| `Postmark` | Transactional sender and invitation delivery/bounce webhooks | Protected `PORTAL_POSTMARK_SERVER_TOKEN` and `PORTAL_POSTMARK_WEBHOOK_SECRET`, non-secret Postmark-verified `PORTAL_POSTMARK_FROM_EMAIL`, `outbound` stream, `X-Phaeno-Postmark-Secret` webhook header, delivery and failure monitoring. Deployment preflight and API startup both fail closed when these values are absent or malformed. |
+| `EmailServiceSettings` | Mailgun transactional sender and signed invitation delivery/permanent-failure webhooks | Existing protected Mailgun API key and verified sender/domain, official US or EU Mailgun API URL, `messages` resource, account webhook signing key, delivery and failure monitoring. The deployment validates the existing runtime settings through Mailgun, configures only the exact Portal invitation webhook URL, and atomically installs the signing key. API startup fails closed when these values are absent or malformed. |
 | `PSeqOrderToCash` | Independent rollout flags, service-authenticated result pipeline, object-storage transfer targets, retention offsets, and dual-control audit/enforcement | Enable additive slices independently. Keep dual control audit-only until staffing evidence; require a rotated service secret, approved storage/scanner endpoint, explicit retention schedule, and no production default or placeholder values. |
 | `WebsiteApi`, `GoogleAuthSettings`, and `EmailServiceSettings` | Public origins/documents, technical brief, Google reCAPTCHA Enterprise, and Mailgun templates | Existing production credentials and document volume transferred through the secret/storage platform; CORS, rejection, templates, and PDF delivery verified. |
 | `WebCrawlerSettings`, `WebSearchSettings`, and `ChronJobs:IndexWebsite` | Public-site crawl target, Lucene index path, and rebuild schedule | Durable writable index storage, successful initial crawl, monitoring, and representative search verified. |
@@ -88,7 +88,7 @@ Keep environment-specific values outside source control. `appsettings.Developmen
 | `VITE_API_BASE_URL` | Frontend API base URL | Points to the approved API origin or reverse proxy. |
 | `VITE_USE_MOCK_SESSION` | Development mock session | Must not enable mock access in production. |
 
-Never copy local passwords, Clerk secrets, QuickBooks credentials, Postmark tokens, webhook tokens, or connection strings into documentation, logs, audit events, support messages, or committed configuration. Rotate any credential that is accidentally shared.
+Never copy local passwords, Clerk secrets, QuickBooks credentials, Mailgun API or webhook-signing keys, webhook tokens, or connection strings into documentation, logs, audit events, support messages, or committed configuration. Rotate any credential that is accidentally shared.
 
 ## Database migrations
 
@@ -142,7 +142,8 @@ Production is not ready until all applicable gates are evidenced:
   Company/Contact/Deal/Order mapping, webhook verification, duplicate
   prevention, reconciliation, least-privilege credentials, Sales layouts, and
   operational ownership;
-- Postmark sender/domain verification, template review, delivery/bounce monitoring, and retry ownership;
+- Mailgun sender/domain and HMAC signature verification, locale-template review,
+  delivery/permanent-failure monitoring, and retry ownership;
 - Website historical-row copy with count/hash comparison, reCAPTCHA and
   Mailgun secret transfer, public-document/index mounts, CORS, search,
   technical-brief delivery, API-base/DNS or reverse-proxy switch, rollback

@@ -16,7 +16,7 @@ Common states include:
 
 Refresh the workflow and retry the existing durable integration event. Reconciliation uses the stored idempotency and external references to avoid duplicates. Do not recreate the order, quote, invoice, credit, shipment, release, or notification merely because delivery failed.
 
-If an invitation hard-bounced, revoke and reissue to a corrected address rather than retrying it. If a pipeline submission or Postmark webhook is replayed, use the stored idempotency/provider event identity rather than creating another package or delivery. If a notification failed, retry it without repeating the underlying business transition.
+If an invitation hard-bounced, revoke and reissue to a corrected address rather than retrying it. If a pipeline submission or signed Mailgun webhook is replayed, use the stored idempotency/provider event identity rather than creating another package or delivery. If a notification failed, retry it without repeating the underlying business transition.
 
 ## Communicate the boundary
 

@@ -17,7 +17,7 @@ Public Phaeno Website (`website`)
   -> anonymous `/api/v1/web-ops` endpoints in the same ASP.NET Core API
   -> PostgreSQL through EF Core
   -> provider-neutral managed-file storage: local development, disabled production stub, future Amazon S3
-  -> QuickBooks Online, Postmark, Mailgun, and Google reCAPTCHA through configured adapters
+  -> QuickBooks Online, Mailgun, and Google reCAPTCHA through configured adapters
 ```
 
 The Portal frontend, API, and public Website are separate build units. The root
@@ -43,13 +43,13 @@ The backend targets .NET 10 as a modular monolith:
   workflow/outbox/notification records, and environment-neutral QuickBooks and
   notification ports.
 - `app/Features/Accounts`: HTTP endpoints/contracts, authenticated-actor lookup,
-  EF-backed orchestration, Clerk/Postmark adapters, and bootstrap composition.
+  EF-backed orchestration, Clerk/Mailgun adapters, and bootstrap composition.
 - `app/Features/RelationshipManagement`: HTTP contracts, EF mapping and
   orchestration, authenticated-actor enforcement, and API error translation.
 - `app/Features/DataProvisioning`: HTTP contracts, EF mapping/orchestration,
   tenant authorization, environment configuration, shared storage adapter,
-  scanner implementation, Postmark adapter, and notification dispatch.
-- `app/Features/OrderManagement`: HTTP/EF orchestration, QuickBooks/Postmark and
+  scanner implementation, Mailgun adapter, and notification dispatch.
+- `app/Features/OrderManagement`: HTTP/EF orchestration, QuickBooks/Mailgun and
   hosted-dispatch adapters, plus the Commercial-owned customer lab-service,
   data-assembly, operational-file, and release records.
 - `modules/PSeq.Operations.Commercial/LabOperations`: the Commercial-owned v1
@@ -84,7 +84,7 @@ The API references Commercial, while Commercial does not reference the API or
 Laboratory. Extracted account, relationship, data-provisioning, commercial
 configuration, Partner kit, request-revision, quote, workflow, integration, and
 notification rules, ports, and external download audit therefore remain usable
-independently of the current HTTP, EF, Clerk, QuickBooks, and Postmark adapters.
+independently of the current HTTP, EF, Clerk, QuickBooks, and Mailgun adapters.
 The Lab Operations provider port follows the same dependency direction. Quote
 acceptance creates the Commercial authorization and invokes the internal
 provider in one serializable database transaction. Approved cancellation also
@@ -244,7 +244,10 @@ Generated `dist`, `.astro`, and `node_modules` content is not canonical source.
   has not been applied as part of the code-consolidation work. The model
   contains no `portal` schema.
 - External identity: `Clerk` configuration.
-- Invitation delivery: Postmark when configured; logging sender otherwise.
+- Invitation delivery: Mailgun when configured; logging sender only in
+  Development/Test. Locale-named HTML/text templates are embedded under
+  `backend/app/EmailTemplates`; signed webhooks are verified before durable
+  delivery-state updates.
 - Data provisioning: `DataProvisioning` storage root, size limit, environment
   approved-file-kind map, synthetic-fixture policy, and scanner mode. Production
   defaults block synthetic content and configure no approved scientific kinds

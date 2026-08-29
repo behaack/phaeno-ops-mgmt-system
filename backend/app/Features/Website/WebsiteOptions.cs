@@ -1,5 +1,7 @@
 namespace PhaenoPortal.App.Features.Website;
 
+using System.Net.Mail;
+
 public sealed class WebsiteApiOptions
 {
     public const string SectionName = "WebsiteApi";
@@ -48,12 +50,43 @@ public sealed class WebsiteEmailOptions
 
     public string PhaenoAccountName { get; init; } = "Phaeno";
 
+    public string WebhookSigningKey { get; init; } = string.Empty;
+
     public bool IsConfigured =>
+        CanSendTransactional
+        && !string.IsNullOrWhiteSpace(AccountTo);
+
+    public bool CanSendTransactional =>
         Uri.TryCreate(Url, UriKind.Absolute, out _)
         && !string.IsNullOrWhiteSpace(Resource)
         && !string.IsNullOrWhiteSpace(ApiKey)
-        && !string.IsNullOrWhiteSpace(AccountFrom)
-        && !string.IsNullOrWhiteSpace(AccountTo);
+        && !string.IsNullOrWhiteSpace(AccountFrom);
+
+    public IReadOnlyList<string> ValidateInvitationProduction(string invitationPublicBaseUrl)
+    {
+        var errors = new List<string>();
+        if (!Uri.TryCreate(Url, UriKind.Absolute, out var apiUri)
+            || apiUri.Scheme != Uri.UriSchemeHttps
+            || (!string.Equals(apiUri.Host, "api.mailgun.net", StringComparison.OrdinalIgnoreCase)
+                && !string.Equals(apiUri.Host, "api.eu.mailgun.net", StringComparison.OrdinalIgnoreCase))
+            || !apiUri.AbsolutePath.StartsWith("/v3/", StringComparison.Ordinal)
+            || apiUri.AbsolutePath[4..].Trim('/').Length == 0
+            || !string.IsNullOrEmpty(apiUri.Query)
+            || !string.IsNullOrEmpty(apiUri.Fragment))
+            errors.Add("EmailServiceSettings:Url must be an official Mailgun HTTPS API URL.");
+        if (!string.Equals(Resource, "messages", StringComparison.Ordinal))
+            errors.Add("EmailServiceSettings:Resource must select the Mailgun messages endpoint.");
+        if (string.IsNullOrWhiteSpace(ApiKey))
+            errors.Add("EmailServiceSettings:ApiKey is required.");
+        if (!MailAddress.TryCreate(AccountFrom, out _))
+            errors.Add("EmailServiceSettings:AccountFrom must be a valid Mailgun sender address.");
+        if (string.IsNullOrWhiteSpace(WebhookSigningKey))
+            errors.Add("EmailServiceSettings:WebhookSigningKey is required for signed Mailgun webhooks.");
+        if (!Uri.TryCreate(invitationPublicBaseUrl, UriKind.Absolute, out var portalUri)
+            || portalUri.Scheme != Uri.UriSchemeHttps)
+            errors.Add("Invitations:PublicBaseUrl must be an absolute HTTPS URL.");
+        return errors;
+    }
 }
 
 public sealed class WebsiteCrawlerOptions

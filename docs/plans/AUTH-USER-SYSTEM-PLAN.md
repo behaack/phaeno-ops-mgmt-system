@@ -4,8 +4,8 @@
 
 `PSEQ-ORDER-TO-CASH-GAP-CLOSURE-PLAN.md` is now authoritative for PSeq
 invitation delivery and internal business roles. Invitations retain access
-state separately from durable Postmark delivery attempts; delivery and bounce
-webhooks are authenticated and deduplicated, and a hard bounce requires
+state separately from durable Mailgun delivery attempts; delivery and
+permanent-failure webhooks are HMAC-verified and deduplicated, and a hard bounce requires
 revoke/reissue to a corrected address. Production must reject missing sender,
 Portal URL, provider, or webhook-secret configuration. Logging-only invitation
 delivery remains Development/Test only.
@@ -30,7 +30,7 @@ Do not execute this plan unless explicitly requested.
 - Account domain entities, pure authorization policy, invitation-token logic,
   and the invitation-delivery port now live in `PSeq.Operations.Commercial`.
   The API retains HTTP contracts/endpoints, authenticated-actor lookup,
-  persistence orchestration, Clerk/Postmark adapters, and bootstrap composition.
+  persistence orchestration, Clerk/Mailgun adapters, and bootstrap composition.
 - The frontend session shell and invitation acceptance/decline route are
   connected to the API.
 - The signed-out shell applies the Phaeno logo, Portal name, invitation-only
@@ -228,9 +228,10 @@ Do not execute this plan unless explicitly requested.
 ## Invitation Email
 
 - Phaeno backend sends invitation emails.
-- Target Postmark first for production transactional email.
+- Reuse the existing production Mailgun account for transactional email.
 - Implement email sending behind an abstraction, with a development/test no-op or logging sender.
-- Invite creation and resend return success only after Postmark accepts the email.
+- Invite creation and resend enqueue durable delivery; the attempt becomes
+  `Accepted` only after Mailgun returns its message identifier.
 - Structure email sending so an outbox can replace direct sending later.
 - Store basic send metadata:
   - `LastSentAt`
@@ -441,7 +442,8 @@ Do not execute this plan unless explicitly requested.
 - [x] Add invitation create, resend, accept, and decline workflows.
 - [x] Add invitation revoke workflow.
 - [x] Add email sender behind an abstraction.
-- [x] Add Postmark email sender implementation.
+- [x] Add Mailgun email sender implementation with locale-named embedded HTML
+  and plain-text templates.
 - [x] Add bootstrap seed and one-time bootstrap Clerk linking.
 - [x] Replace hard-delete account actions with inactive/status transitions.
 - [x] Add explicit audit events for access-changing actions.
@@ -494,7 +496,7 @@ Do not execute this plan unless explicitly requested.
 - Public self-signup.
 - Domain-based auto-provisioning or approved-domain invite restrictions.
 - Clerk authorization-critical webhooks.
-- Postmark delivery/bounce webhooks.
+- Additional Mailgun event types beyond delivery and permanent failure.
 - Full RBAC or permission taxonomy.
 - Full audit timeline UI.
 - Direct membership assignment without invite.

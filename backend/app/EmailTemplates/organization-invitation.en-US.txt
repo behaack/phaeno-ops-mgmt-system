@@ -1,0 +1,8 @@
+You’re invited to Phaeno Portal
+
+You have been invited to join {{organization_name}}.
+
+Review, accept, or decline your invitation:
+{{invite_url}}
+
+This invitation is intended only for {{recipient_email}}. If you were not expecting it, you can ignore this email.

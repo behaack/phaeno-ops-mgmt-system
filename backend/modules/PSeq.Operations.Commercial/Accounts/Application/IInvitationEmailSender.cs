@@ -11,6 +11,7 @@ public sealed record InvitationEmailMessage(
     Guid InvitationId,
     string Email,
     string OrganizationName,
-    string InviteUrl);
+    string InviteUrl,
+    string Locale = "en-US");
 
 public sealed record InvitationEmailSendResult(string? ProviderMessageId);

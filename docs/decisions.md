@@ -355,7 +355,7 @@ production smoke checks have been cut over and reconciled.
 
 - Any exceptional curated-package purge process.
 - Production storage, malware scanning, scientific file policies, analysis and
-  assembly profiles, Partner shipping restrictions, QuickBooks/Postmark
+  assembly profiles, Partner shipping restrictions, QuickBooks/Mailgun
   credentials, and sandbox validation.
 - Production hosting, deployment, monitoring, backup/restore, and rollback
   workflow.

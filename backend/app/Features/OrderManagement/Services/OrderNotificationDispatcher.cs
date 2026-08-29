@@ -2,12 +2,11 @@ namespace PhaenoPortal.App.Features.OrderManagement.Services;
 
 using System.Net.Http.Headers;
 using System.Text;
-using System.Text.Json;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Options;
 using PSeq.Operations.Commercial.OrderManagement.Application;
 using PSeq.Operations.Commercial.OrderManagement.Domain;
-using PhaenoPortal.App.Features.Accounts.Services;
+using PhaenoPortal.App.Features.Website;
 using PhaenoPortal.App.Infrastructure.Persistence;
 
 public sealed class LoggingOrderNotificationSender(ILogger<LoggingOrderNotificationSender> logger) : IOrderNotificationSender
@@ -20,24 +19,38 @@ public sealed class LoggingOrderNotificationSender(ILogger<LoggingOrderNotificat
     }
 }
 
-public sealed class PostmarkOrderNotificationSender(HttpClient httpClient, IOptions<PostmarkOptions> options) : IOrderNotificationSender
+public sealed class MailgunOrderNotificationSender(
+    HttpClient httpClient,
+    IOptions<WebsiteEmailOptions> options) : IOrderNotificationSender
 {
-    private readonly PostmarkOptions configuration = options.Value;
+    private readonly WebsiteEmailOptions configuration = options.Value;
 
     public async Task SendAsync(IReadOnlyList<string> recipients, string subject, string body, CancellationToken cancellationToken)
     {
         if (recipients.Count == 0) return;
-        using var request = new HttpRequestMessage(HttpMethod.Post, "email");
-        request.Headers.Accept.Add(new MediaTypeWithQualityHeaderValue("application/json"));
-        request.Headers.Add("X-Postmark-Server-Token", configuration.ServerToken);
-        request.Content = new StringContent(JsonSerializer.Serialize(new
+        if (!configuration.CanSendTransactional)
+            throw new InvalidOperationException("Mailgun order sender is not configured.");
+
+        using var request = new HttpRequestMessage(
+            HttpMethod.Post,
+            $"{configuration.Url.TrimEnd('/')}/{configuration.Resource.TrimStart('/')}");
+        request.Headers.Authorization = new AuthenticationHeaderValue(
+            "Basic",
+            Convert.ToBase64String(Encoding.ASCII.GetBytes($"api:{configuration.ApiKey}")));
+        request.Content = new FormUrlEncodedContent(new Dictionary<string, string>
         {
-            From = string.IsNullOrWhiteSpace(configuration.FromName) ? configuration.FromEmail : $"{configuration.FromName} <{configuration.FromEmail}>",
-            To = string.Join(',', recipients),
-            Subject = subject,
-            TextBody = body,
-            MessageStream = configuration.MessageStream
-        }), Encoding.UTF8, "application/json");
+            ["from"] = configuration.AccountFrom,
+            ["to"] = string.Join(',', recipients),
+            ["subject"] = subject,
+            ["text"] = body,
+            ["o:tracking"] = "false",
+            ["o:tracking-clicks"] = "no",
+            ["o:tracking-opens"] = "no",
+            ["o:require-tls"] = "true",
+            ["o:skip-verification"] = "false",
+            ["o:dkim"] = "yes",
+            ["o:tag"] = "portal-order-notification"
+        });
         using var response = await httpClient.SendAsync(request, cancellationToken);
         response.EnsureSuccessStatusCode();
     }

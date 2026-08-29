@@ -19,9 +19,6 @@ concurrency:
 env:
   DEPLOY_ROOT: /opt/phaeno.portal-green
   PORTAL_INVITATION_PUBLIC_BASE_URL: https://portal.phaenobiotech.com
-  PORTAL_POSTMARK_FROM_NAME: Phaeno Portal
-  PORTAL_POSTMARK_MESSAGE_STREAM: outbound
-  PORTAL_POSTMARK_WEBHOOK_SECRET_HEADER_NAME: X-Phaeno-Postmark-Secret
   PUBLIC_WEBSITE_URL: https://www.phaenobiotech.com
   PUBLIC_WEBSITE_API_URL: https://api.phaenobiotech.com
 
@@ -66,9 +63,6 @@ jobs:
           PORTAL_CLERK_AUTHORITY: ${{ vars.PORTAL_CLERK_AUTHORITY }}
           PORTAL_CLERK_SECRET_KEY: ${{ secrets.PORTAL_CLERK_SECRET_KEY }}
           PORTAL_MIGRATION_BACKUP_PUBLIC_KEY: ${{ secrets.PORTAL_MIGRATION_BACKUP_PUBLIC_KEY }}
-          PORTAL_POSTMARK_FROM_EMAIL: ${{ vars.PORTAL_POSTMARK_FROM_EMAIL }}
-          PORTAL_POSTMARK_SERVER_TOKEN: ${{ secrets.PORTAL_POSTMARK_SERVER_TOKEN }}
-          PORTAL_POSTMARK_WEBHOOK_SECRET: ${{ secrets.PORTAL_POSTMARK_WEBHOOK_SECRET }}
           WEBSITE_PREVIEW_SEARCH_URL: ${{ vars.WEBSITE_PREVIEW_SEARCH_URL }}
           WEBSITE_PREVIEW_SEARCH_VERCEL_BYPASS_SECRET: ${{ secrets.WEBSITE_PREVIEW_SEARCH_VERCEL_BYPASS_SECRET }}
           WEBSITE_PREVIEW_SEARCH_PROXY_API_KEY: ${{ secrets.WEBSITE_PREVIEW_SEARCH_PROXY_API_KEY }}
@@ -85,10 +79,7 @@ jobs:
             PORTAL_BOOTSTRAP_ADMIN_LAST_NAME \
             PORTAL_BOOTSTRAP_ORGANIZATION_NAME \
             PORTAL_CLERK_AUTHORITY \
-            PORTAL_CLERK_SECRET_KEY \
-            PORTAL_POSTMARK_FROM_EMAIL \
-            PORTAL_POSTMARK_SERVER_TOKEN \
-            PORTAL_POSTMARK_WEBHOOK_SECRET; do
+            PORTAL_CLERK_SECRET_KEY; do
             if [ -z "${!name}" ]; then
               echo "::error::Missing production configuration ${name}."
               missing=1
@@ -127,27 +118,6 @@ jobs:
 
           if [ "$PORTAL_INVITATION_PUBLIC_BASE_URL" != "https://portal.phaenobiotech.com" ]; then
             echo "::error::PORTAL_INVITATION_PUBLIC_BASE_URL must be the production Portal URL."
-            missing=1
-          fi
-
-          if [ -n "$PORTAL_POSTMARK_FROM_EMAIL" ]; then
-            case "$PORTAL_POSTMARK_FROM_EMAIL" in
-              *@*.*) ;;
-              *)
-                echo "::error::PORTAL_POSTMARK_FROM_EMAIL is not a valid email address."
-                missing=1
-                ;;
-            esac
-          fi
-
-          if [ -n "$PORTAL_POSTMARK_SERVER_TOKEN" ] \
-            && [ "${#PORTAL_POSTMARK_SERVER_TOKEN}" -lt 20 ]; then
-            echo "::error::PORTAL_POSTMARK_SERVER_TOKEN is too short to be a Postmark server token."
-            missing=1
-          fi
-
-          if [ "${#PORTAL_POSTMARK_WEBHOOK_SECRET}" -lt 32 ]; then
-            echo "::error::PORTAL_POSTMARK_WEBHOOK_SECRET must contain at least 32 characters."
             missing=1
           fi
 
@@ -282,7 +252,7 @@ jobs:
             "$release_path/deployment/hetzner/green/install-bootstrap-runtime-config.sh" \
             "$release_path/deployment/hetzner/green/install-clerk-runtime-secret.sh" \
             "$release_path/deployment/hetzner/green/install-disabled-file-storage-runtime-config.sh" \
-            "$release_path/deployment/hetzner/green/install-postmark-runtime-config.sh" \
+            "$release_path/deployment/hetzner/green/install-mailgun-invitation-runtime-config.sh" \
             "$release_path/deployment/hetzner/green/install-s3-runtime-config.sh" \
             "$release_path/deployment/hetzner/green/install-website-preview-search-runtime-config.sh"
           REMOTE
@@ -319,25 +289,14 @@ jobs:
             | ssh -i ~/.ssh/deploy_key "$DEPLOY_USER@$DEPLOY_HOST" \
                 "$RELEASE_PATH/deployment/hetzner/green/install-bootstrap-runtime-config.sh '$DEPLOY_ROOT'"
 
-      - name: Install Postmark invitation runtime configuration
+      - name: Install Mailgun invitation runtime configuration
         env:
           DEPLOY_HOST: ${{ secrets.DEPLOY_HOST }}
           DEPLOY_USER: ${{ secrets.DEPLOY_USER }}
-          PORTAL_POSTMARK_FROM_EMAIL: ${{ vars.PORTAL_POSTMARK_FROM_EMAIL }}
-          PORTAL_POSTMARK_SERVER_TOKEN: ${{ secrets.PORTAL_POSTMARK_SERVER_TOKEN }}
-          PORTAL_POSTMARK_WEBHOOK_SECRET: ${{ secrets.PORTAL_POSTMARK_WEBHOOK_SECRET }}
           RELEASE_PATH: ${{ steps.release.outputs.release_path }}
         run: |
-          printf 'Invitations__PublicBaseUrl=%s\nPostmark__ServerToken=%s\nPostmark__FromEmail=%s\nPostmark__FromName=%s\nPostmark__MessageStream=%s\nPostmark__WebhookSecretHeaderName=%s\nPostmark__WebhookSecret=%s\n' \
-            "$PORTAL_INVITATION_PUBLIC_BASE_URL" \
-            "$PORTAL_POSTMARK_SERVER_TOKEN" \
-            "$PORTAL_POSTMARK_FROM_EMAIL" \
-            "$PORTAL_POSTMARK_FROM_NAME" \
-            "$PORTAL_POSTMARK_MESSAGE_STREAM" \
-            "$PORTAL_POSTMARK_WEBHOOK_SECRET_HEADER_NAME" \
-            "$PORTAL_POSTMARK_WEBHOOK_SECRET" \
-            | ssh -i ~/.ssh/deploy_key "$DEPLOY_USER@$DEPLOY_HOST" \
-                "$RELEASE_PATH/deployment/hetzner/green/install-postmark-runtime-config.sh '$DEPLOY_ROOT'"
+          ssh -i ~/.ssh/deploy_key "$DEPLOY_USER@$DEPLOY_HOST" \
+            "$RELEASE_PATH/deployment/hetzner/green/install-mailgun-invitation-runtime-config.sh '$DEPLOY_ROOT'"
 
       - name: Install disabled file-storage runtime configuration
         env:

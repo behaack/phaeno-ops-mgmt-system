@@ -57,14 +57,18 @@ work unless their owning plan is separately changed.
   send/resend. States are `Queued`, `Sending`, `Accepted`, `Delivered`,
   `Bounced`, `Failed`, and `NeedsAttention`.
 - Invitation creation and resend enqueue delivery transactionally. A hosted
-  dispatcher claims and sends queued attempts, correlates Postmark message
+  dispatcher claims and sends queued attempts, correlates Mailgun message
   metadata, applies bounded retry, and surfaces terminal attention.
-- Accept idempotent Postmark delivery and bounce events. Postmark webhook events
-  may retry and are not signed, so the endpoint requires configured Basic Auth
-  or configured custom secret headers and deduplicates provider event identity.
-- Production readiness rejects missing or invalid Postmark token, sender,
-  Portal base URL, or webhook credentials. Logging delivery is limited to
-  Development and Test.
+- Accept idempotent Mailgun delivery and permanent-failure events. Verify every
+  event using Mailgun's HMAC-SHA256 timestamp/token signature and deduplicate
+  provider event identity because webhook delivery may retry.
+- Production readiness rejects missing or invalid Mailgun API configuration,
+  sender, Portal base URL, or webhook signing key. Logging delivery is limited
+  to Development and Test. Existing production Mailgun delivery is reused.
+- Store invitation email content in locale-named embedded templates under
+  `backend/app/EmailTemplates`, using the
+  `organization-invitation.en-US.{html,txt}` convention and an `en-US`
+  fallback for future localized variants.
 - The UI keeps access lifecycle separate from delivery lifecycle and shows the
   delivery state, error, attempts, expiry, and allowed resend/revoke actions.
   A hard bounce requires revocation and a new invitation to the corrected
@@ -198,7 +202,8 @@ work unless their owning plan is separately changed.
 ## Implementation Progress
 
 - [x] Add feature-flag/options foundation and production readiness validation.
-- [x] Implement durable invitation delivery and secured Postmark webhooks.
+- [x] Implement durable invitation delivery and signed, deduplicated Mailgun
+  webhooks.
 - [x] Implement derived readiness, structured blockers, and staged-order rules.
 - [x] Add business roles, session capabilities, authorization, audit, and dual
       control in audit-only/enforced modes.
@@ -222,8 +227,10 @@ work unless their owning plan is separately changed.
 ### Local verification evidence (2026-08-29)
 
 - Focused backend order-to-cash tests: 13 passed.
-- Full backend solution: 169 passed, 10 opt-in PostgreSQL tests skipped, no
+- Full backend solution after the Mailgun correction: 172 passed, 10 opt-in
+  PostgreSQL tests skipped, no
   failures.
+- Focused Mailgun sender/template/signature/configuration tests: 4 passed.
 - Backend Release solution build: passed with zero warnings and zero errors.
 - Focused frontend invitation and order-to-cash components: 8 passed.
 - Frontend lint, TypeScript validation, and client/SSR/Nitro production build:
@@ -238,7 +245,7 @@ work unless their owning plan is separately changed.
   test plan.
 - Not executed here: opt-in PostgreSQL suites, migration/backfill against a
   restored production-like database, authenticated browser/accessibility
-  acceptance, provider-backed Postmark/object-storage/scanner checks, or the
+  acceptance, provider-backed Mailgun/object-storage/scanner checks, or the
   dedicated-staging operator script and cross-functional signoffs.
 
 ### Production release attempt evidence (2026-08-29)
@@ -255,11 +262,21 @@ work unless their owning plan is separately changed.
   restoring frontend/API source alignment while the external Postmark
   dependency remains unresolved. Vercel automatic promotion is paused by the
   rollback.
-- Deployment preflight and the server-side atomic runtime installer now require
+- At that point, deployment preflight and the server-side atomic runtime
+  installer required
   `PORTAL_POSTMARK_SERVER_TOKEN`, a Postmark-verified
   `PORTAL_POSTMARK_FROM_EMAIL`, and a 32-or-more-character
   `PORTAL_POSTMARK_WEBHOOK_SECRET` before another production attempt can reach
   migration or API startup.
+- The Product Owner then confirmed that production Mailgun was already the
+  approved transactional provider. The implementation was corrected to reuse
+  `EmailServiceSettings`; Postmark code and deployment inputs were removed.
+  Deployment now validates the existing Mailgun API/sender settings, retrieves
+  the account webhook-signing key without logging it, configures the exact
+  Portal invitation webhook for delivered and permanent-failure events, and
+  atomically installs the signing key and production Portal URL before startup.
+  The preceding Postmark release evidence is retained as historical evidence
+  of the safely stopped attempt, not as current configuration guidance.
 
 ## Verification and Acceptance Matrix
 

@@ -14,7 +14,10 @@
 - Onboarding is invite-only; public self-registration is not the product model.
 - Invitations are organization-scoped and have explicit lifecycle states: `Pending`, `Accepted`, `Revoked`, and `Declined`.
 - Invitation tokens must be protected and expire according to configuration.
-- Email delivery uses Postmark when configured and a logging implementation for local/unconfigured environments.
+- Email delivery uses Mailgun when configured and a logging implementation only
+  in Development/Test. Invitation delivery status is tracked durably and
+  independently from invitation access state; signed webhook events record
+  delivery or permanent failure without granting or revoking access.
 - Invite acceptance must connect the external Clerk identity to the intended internal user and membership without bypassing tenant checks.
 
 ## Lifecycle, audit, and concurrency
@@ -37,7 +40,7 @@ incomplete.
 
 The general shared-folder/file-management model, production storage and malware
 scanning, real production scientific definitions and profiles, production
-QuickBooks/Postmark configuration, CRM or third-party LIMS integration, and an
+QuickBooks/Mailgun production validation, CRM or third-party LIMS integration, and an
 established production deployment path are not implemented production
 capabilities.
 

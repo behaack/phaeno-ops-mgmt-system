@@ -25,6 +25,10 @@ and rollback-isolated PostgreSQL coverage.
   overpayment/unapplied behavior; reconciliation balance and independent-actor
   approval in enforced and audit-only modes; retention warning/cutoff/grace/
   deletion/reissue; and production governed-result configuration validation.
+- [x] `backend/test/MailgunInvitationEmailSenderTests.cs` - Mailgun form/API
+  request and message-id correlation, locale-named embedded template rendering
+  with HTML escaping, webhook HMAC verification, and production invitation
+  configuration validation.
 - [ ] PSeq order-to-cash PostgreSQL/API coverage - invitation webhook
   deduplication and out-of-order retry, durable dispatch concurrency, tenant
   isolation, pipeline idempotency, invoice-number uniqueness, serializable
@@ -272,7 +276,7 @@ and rollback-isolated PostgreSQL coverage.
   signature rejection, bounded retry, and reconciliation mismatches against a
   fake or sandbox company.
 - [ ] Notification dispatcher integration suite - cover acting-admin versus
-  all-admin recipient rules, Postmark failure, bounded retry, and manual retry.
+  all-admin recipient rules, Mailgun failure, bounded retry, and manual retry.
 
 ## Remaining Coverage
 
