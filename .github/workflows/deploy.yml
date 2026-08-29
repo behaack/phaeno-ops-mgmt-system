@@ -386,7 +386,7 @@ jobs:
           migration_guard="$5"
           backup_key_path="$6"
           cutover_clerk_identity="$7"
-          previous_clerk_subject_id="$8"
+          previous_clerk_subject_id="${8-}"
 
           export ALLOW_PORTAL_MIGRATIONS="$migration_guard"
           if [ "$cutover_clerk_identity" = "true" ]; then
