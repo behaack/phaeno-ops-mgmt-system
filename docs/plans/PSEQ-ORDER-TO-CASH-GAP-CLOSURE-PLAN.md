@@ -271,12 +271,21 @@ work unless their owning plan is separately changed.
 - The Product Owner then confirmed that production Mailgun was already the
   approved transactional provider. The implementation was corrected to reuse
   `EmailServiceSettings`; Postmark code and deployment inputs were removed.
-  Deployment now validates the existing Mailgun API/sender settings, retrieves
-  the account webhook-signing key without logging it, configures the exact
-  Portal invitation webhook for delivered and permanent-failure events, and
-  atomically installs the signing key and production Portal URL before startup.
+  Deployment now validates the existing Mailgun API/sender settings and
+  atomically installs the protected signing key and production Portal URL
+  before startup. The existing least-privilege domain sending key cannot read
+  account settings or administer webhooks, so an authenticated Mailgun operator
+  must configure and verify the exact Portal invitation webhook for delivered
+  and permanent-failure events and store the account signing key as the
+  protected `PORTAL_MAILGUN_WEBHOOK_SIGNING_KEY` environment secret.
   The preceding Postmark release evidence is retained as historical evidence
   of the safely stopped attempt, not as current configuration guidance.
+- API deployment run `33279633667` for commit `324280a0c41c3573e9475a5e035af6e3c744e982`
+  stopped before backup, migration, or API replacement when the least-privilege
+  Mailgun domain sending key correctly returned `404` for the account signing-
+  key endpoint. Production remained unchanged; the workflow was corrected to
+  preserve that least-privilege boundary instead of broadening the runtime
+  credential.
 
 ## Verification and Acceptance Matrix
 

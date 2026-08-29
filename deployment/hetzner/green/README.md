@@ -107,7 +107,9 @@ Configure a protected GitHub environment named `production` with:
 - `DEPLOY_SSH_KEY`: private deployment key;
 - `DEPLOY_KNOWN_HOSTS`: pinned OpenSSH `known_hosts` entry for the server; and
 - `PORTAL_CLERK_SECRET_KEY`: Clerk backend secret for the same instance used by
-  the Portal frontend; and
+  the Portal frontend;
+- `PORTAL_MAILGUN_WEBHOOK_SIGNING_KEY`: the Mailgun account HTTP webhook
+  signing key used only to verify delivery and permanent-failure events; and
 - `PORTAL_MIGRATION_BACKUP_PUBLIC_KEY`: PEM public key used only when an
   authorized migration is requested.
 
@@ -126,14 +128,20 @@ their contents and enables the separately mounted
 Function must receive the proxy key as `WEBSITE_PREVIEW_SEARCH_API_KEY`; never
 place either secret in a `PUBLIC_` variable.
 
-On every deployment, the workflow validates the bootstrap configuration and
-Clerk authority and secret, plus the Preview-search settings when a Preview URL
-is configured. On the server it reuses the existing protected
-`EmailServiceSettings` Mailgun URL, `messages` resource, API key, and verified
-sender. The Mailgun installer retrieves the account webhook-signing key,
-configures delivered and permanent-failure events for only the Portal
-invitation webhook URL, and atomically installs that key and the fixed
-production invitation URL without printing credentials. Other configured
+Before deployment, configure the Mailgun domain's `delivered` and
+`permanent_fail` webhooks to
+`https://api.phaenobiotech.com/api/integrations/mailgun/invitations` and verify
+the exact URL in the Mailgun dashboard. Domain sending keys are intentionally
+retained for message delivery and cannot administer webhooks or retrieve the
+account signing key.
+
+On every deployment, the workflow validates the bootstrap configuration,
+Clerk authority and secret, and protected Mailgun webhook-signing key, plus the
+Preview-search settings when a Preview URL is configured. On the server it
+reuses the existing protected `EmailServiceSettings` Mailgun URL, `messages`
+resource, domain sending key, and verified sender. The Mailgun installer
+atomically installs the signing key and fixed production invitation URL without
+printing credentials. Other configured
 values are streamed over the pinned SSH connection without placing them in the
 release archive and update only their corresponding entries in the
 root-protected `runtime/portal.env`. The workflow also installs

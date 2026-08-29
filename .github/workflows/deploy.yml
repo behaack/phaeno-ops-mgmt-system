@@ -62,6 +62,7 @@ jobs:
           PORTAL_BOOTSTRAP_ORGANIZATION_NAME: ${{ vars.PORTAL_BOOTSTRAP_ORGANIZATION_NAME }}
           PORTAL_CLERK_AUTHORITY: ${{ vars.PORTAL_CLERK_AUTHORITY }}
           PORTAL_CLERK_SECRET_KEY: ${{ secrets.PORTAL_CLERK_SECRET_KEY }}
+          PORTAL_MAILGUN_WEBHOOK_SIGNING_KEY: ${{ secrets.PORTAL_MAILGUN_WEBHOOK_SIGNING_KEY }}
           PORTAL_MIGRATION_BACKUP_PUBLIC_KEY: ${{ secrets.PORTAL_MIGRATION_BACKUP_PUBLIC_KEY }}
           WEBSITE_PREVIEW_SEARCH_URL: ${{ vars.WEBSITE_PREVIEW_SEARCH_URL }}
           WEBSITE_PREVIEW_SEARCH_VERCEL_BYPASS_SECRET: ${{ secrets.WEBSITE_PREVIEW_SEARCH_VERCEL_BYPASS_SECRET }}
@@ -79,7 +80,8 @@ jobs:
             PORTAL_BOOTSTRAP_ADMIN_LAST_NAME \
             PORTAL_BOOTSTRAP_ORGANIZATION_NAME \
             PORTAL_CLERK_AUTHORITY \
-            PORTAL_CLERK_SECRET_KEY; do
+            PORTAL_CLERK_SECRET_KEY \
+            PORTAL_MAILGUN_WEBHOOK_SIGNING_KEY; do
             if [ -z "${!name}" ]; then
               echo "::error::Missing production configuration ${name}."
               missing=1
@@ -118,6 +120,12 @@ jobs:
 
           if [ "$PORTAL_INVITATION_PUBLIC_BASE_URL" != "https://portal.phaenobiotech.com" ]; then
             echo "::error::PORTAL_INVITATION_PUBLIC_BASE_URL must be the production Portal URL."
+            missing=1
+          fi
+
+          if [ -n "$PORTAL_MAILGUN_WEBHOOK_SIGNING_KEY" ] \
+            && [ "${#PORTAL_MAILGUN_WEBHOOK_SIGNING_KEY}" -lt 20 ]; then
+            echo "::error::PORTAL_MAILGUN_WEBHOOK_SIGNING_KEY is too short."
             missing=1
           fi
 
@@ -293,10 +301,13 @@ jobs:
         env:
           DEPLOY_HOST: ${{ secrets.DEPLOY_HOST }}
           DEPLOY_USER: ${{ secrets.DEPLOY_USER }}
+          PORTAL_MAILGUN_WEBHOOK_SIGNING_KEY: ${{ secrets.PORTAL_MAILGUN_WEBHOOK_SIGNING_KEY }}
           RELEASE_PATH: ${{ steps.release.outputs.release_path }}
         run: |
-          ssh -i ~/.ssh/deploy_key "$DEPLOY_USER@$DEPLOY_HOST" \
-            "$RELEASE_PATH/deployment/hetzner/green/install-mailgun-invitation-runtime-config.sh '$DEPLOY_ROOT'"
+          printf 'EmailServiceSettings__WebhookSigningKey=%s\n' \
+            "$PORTAL_MAILGUN_WEBHOOK_SIGNING_KEY" \
+            | ssh -i ~/.ssh/deploy_key "$DEPLOY_USER@$DEPLOY_HOST" \
+                "$RELEASE_PATH/deployment/hetzner/green/install-mailgun-invitation-runtime-config.sh '$DEPLOY_ROOT'"
 
       - name: Install disabled file-storage runtime configuration
         env:
