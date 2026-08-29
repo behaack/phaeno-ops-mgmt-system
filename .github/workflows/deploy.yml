@@ -107,7 +107,7 @@ jobs:
 
           if [ -n "$PORTAL_CLERK_AUTHORITY" ]; then
             case "$PORTAL_CLERK_AUTHORITY" in
-              https://*.clerk.accounts.dev|https://*.clerk.com) ;;
+              https://*.clerk.accounts.dev|https://*.clerk.com|https://clerk.phaenobiotech.com) ;;
               *)
                 echo "::error::PORTAL_CLERK_AUTHORITY is not a supported Clerk issuer."
                 missing=1
