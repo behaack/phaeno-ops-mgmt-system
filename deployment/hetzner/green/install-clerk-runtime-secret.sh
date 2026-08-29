@@ -29,7 +29,7 @@ IFS= read -r authority_line
 IFS= read -r secret_line
 
 case "${authority_line}" in
-    Clerk__Authority=https://*.clerk.accounts.dev|Clerk__Authority=https://*.clerk.com) ;;
+    Clerk__Authority=https://*.clerk.accounts.dev|Clerk__Authority=https://*.clerk.com|Clerk__Authority=https://clerk.phaenobiotech.com) ;;
     *)
         printf 'Invalid Clerk authority input.\n' >&2
         exit 1
