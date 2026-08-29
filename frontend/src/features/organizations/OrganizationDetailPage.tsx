@@ -93,7 +93,16 @@ export function OrganizationDetailPage({ organizationId }: { organizationId: str
   const endMutation = useMutation({ mutationFn: ({ entitlement, reason }: { entitlement: ServiceEntitlement; reason: string }) => endEntitlement(organizationId, entitlement.id, { effectiveTo: new Date().toISOString(), reason, version: entitlement.version }), onSuccess: () => { setLifecycleTarget(null); void refresh() } })
   const requestAction = useMutation({ mutationFn: ({ request, action, text }: { request: RelationshipRequest; action: RequestAction; text: string }) => action === 'apply' ? applyRelationshipRequest(request.id, { notes: text, version: request.version }) : decideRelationshipRequest(request.id, { approved: action === 'approve', reason: text, version: request.version }), onSuccess: () => { setRequestActionTarget(null); void refresh() } })
 
-  const error = organizationQuery.error ?? summaryQuery.error ?? readinessQuery.error ?? usersQuery.error ?? invitationsQuery.error ?? entitlementsQuery.error ?? requestsQuery.error ?? editMutation.error ?? conversionMutation.error ?? inviteMutation.error ?? memberMutation.error ?? inviteAction.error ?? entitlementMutation.error ?? endMutation.error ?? requestAction.error
+  const errorState = [
+    { label: 'Account details', error: organizationQuery.error },
+    { label: 'Account summary', error: summaryQuery.error },
+    { label: 'Operational readiness', error: readinessQuery.error },
+    { label: 'Account users', error: usersQuery.error },
+    { label: 'Invitations', error: invitationsQuery.error },
+    { label: 'Service entitlements', error: entitlementsQuery.error },
+    { label: 'Account requests', error: requestsQuery.error },
+    { label: 'Account action', error: editMutation.error ?? conversionMutation.error ?? inviteMutation.error ?? memberMutation.error ?? inviteAction.error ?? entitlementMutation.error ?? endMutation.error ?? requestAction.error },
+  ].find((item) => item.error)
   if (organizationQuery.isLoading) return <main className="page-wrap px-4 py-8"><p className="text-sm text-muted-foreground">Loading organization…</p></main>
   if (!organization) return <NotFound />
 
@@ -109,7 +118,7 @@ export function OrganizationDetailPage({ organizationId }: { organizationId: str
   return (
     <main className="page-wrap space-y-6 px-4 py-8">
       <section className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between"><div><Badge variant="secondary" className="mb-3">{organization.kind}</Badge><h1 className="text-3xl font-semibold leading-tight">{organization.name}</h1><p className="mt-3 max-w-3xl text-sm leading-6 text-muted-foreground sm:text-base">{organization.description || 'No account description has been recorded.'}</p></div><div className="flex flex-wrap gap-2"><Button asChild variant="outline"><Link to="/customers"><ArrowLeft data-icon="inline-start" />Back to accounts</Link></Button><Button variant="outline" onClick={() => setActiveTab('members')}><Users data-icon="inline-start" />Manage users</Button><Button onClick={() => setEditOpen(true)}><Pencil data-icon="inline-start" />Edit</Button></div></section>
-      {error ? <Alert variant="destructive"><AlertTitle>Could not complete the account action</AlertTitle><AlertDescription>{apiErrorMessage(error)}</AlertDescription></Alert> : null}
+      {errorState ? <Alert variant="destructive"><AlertTitle>{errorState.label} could not be loaded</AlertTitle><AlertDescription>{apiErrorMessage(errorState.error)}</AlertDescription></Alert> : null}
       <section className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4"><Summary label="Operational readiness" value={readinessQuery.isLoading ? 'Checking…' : readinessQuery.data?.state ?? 'Not applicable'} /><Summary label="Administrator" value={summary?.administratorStatus ?? 'Loading'} /><Summary label="Active users" value={`${summary?.activeMemberCount ?? 0}`} /><Summary label="Usable services" value={`${summary?.effectiveServices.length ?? 0}`} /></section>
 
       <Card><CardContent className="pt-6"><Tabs value={activeTab} onValueChange={setActiveTab}><TabsList className="flex h-auto flex-wrap"><TabsTrigger value="overview">Overview</TabsTrigger><TabsTrigger value="members">Users</TabsTrigger><TabsTrigger value="services">Services</TabsTrigger><TabsTrigger value="requests">Requests</TabsTrigger></TabsList>
