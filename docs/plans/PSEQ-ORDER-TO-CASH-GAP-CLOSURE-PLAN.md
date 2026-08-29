@@ -14,12 +14,12 @@ be deactivated after evidence is preserved; this release does not alter them.
 
 ## Status
 
-- Local implementation is complete behind additive feature flags. Local
-  verification is complete to the boundary described below; restored-database
-  and dedicated-staging acceptance remain open activation gates.
-- Commit, push, migration, and production deployment are authorized for this
-  additive, disabled-by-default release. Feature activation remains a separate
-  controlled rollout decision.
+- The additive implementation, migration, and disabled-by-default production
+  release are complete. Restored-database and dedicated-staging acceptance
+  remain open activation gates.
+- Feature activation remains a separate controlled rollout decision; this
+  release does not enable governed-result, attention-operations, or dual-
+  control enforcement flags.
 - Target: PSeq Lab Service in POMS/Phaeno Portal.
 - Currency: USD only; no foreign-exchange behavior.
 - Financial boundary: POMS owns operational accounts receivable. A future
@@ -302,6 +302,22 @@ work unless their owning plan is separately changed.
   when released. The unrelated legacy HubSpot handoff panel still reports its
   existing provider load failure and is not part of the standalone PSeq
   activation evidence.
+- Forward-fix deployment run `33281487167` released product commit
+  `808b1f5a12f945b2251abffbe66c5438ae11a61e`; Vercel independently confirmed
+  the same commit as the current `portal.phaenobiotech.com` source. Final probes
+  returned API health `200`, database ping `204`, Portal `200`, and `401` for an
+  unsigned Mailgun webhook. The signed-in read-only smoke confirmed the
+  readiness checklist and blockers, distinct invitation access/delivery state,
+  stage-eligible Customer selection, native AR empty states, and explicit
+  disabled-state errors for governed results and attention operations. It did
+  not create, resend, revoke, release, invoice, receive, allocate, reconcile,
+  deactivate, or otherwise mutate production records.
+- The Account requests read still returns the pre-existing unexpected-error
+  response associated with the disconnected legacy HubSpot workflow. Its
+  source is now named explicitly in the account workspace instead of appearing
+  as a generic account-action failure. This does not block the new standalone
+  PSeq readiness, invitation, staging, result, or AR contracts, but it remains
+  a separate legacy-integration operations defect.
 
 ## Verification and Acceptance Matrix
 

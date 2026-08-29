@@ -228,7 +228,9 @@ remain incomplete production-activation gates.
   passed 8 tests; lint, TypeScript validation, and the complete client/SSR/
   Nitro production build passed. The same smoke found and corrected the
   equivalent envelope mismatch in the Customer operational-readiness
-  checklist, with focused API regression coverage.
+  checklist, with focused API regression coverage. The final signed-in
+  production smoke confirmed both views render from the live API; account-
+  workspace failures now identify their owning data source.
 - 2026-08-29: the focused invitation/schema/order-to-cash component run passed
   8 tests. `pnpm run lint`, `pnpm run typecheck`, and the complete client/SSR/
   Nitro production build passed. The full unit suite passed 54 tests and failed
