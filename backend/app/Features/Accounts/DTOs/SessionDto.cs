@@ -139,4 +139,14 @@ public sealed record SessionCapabilitiesDto
     public required bool CanManageOrderIntegrations { get; init; }
 
     public required bool CanViewOrderAudit { get; init; }
+
+    public required bool CanOperateCommercialWork { get; init; }
+
+    public required bool CanReleasePSeqResults { get; init; }
+
+    public required bool CanManagePSeqBilling { get; init; }
+
+    public required bool CanManagePSeqCash { get; init; }
+
+    public required bool CanReconcilePSeqCash { get; init; }
 }

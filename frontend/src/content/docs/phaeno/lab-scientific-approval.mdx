@@ -4,15 +4,15 @@ Scientific approval is the final Lab Ops decision. It confirms that the authoriz
 
 ## Enter scientific review
 
-Move work into **Scientific review** only after required receipt, accession, executions, QC, libraries, batches, and sendout facts are complete for the approved release scope. Confirm that every assigned execution is completed or explicitly abandoned and that every blocking exception is resolved.
+Move work into **Scientific review** only after required receipt, accession, executions, QC, libraries, batches, and sendout facts are complete for the approved release scope. Confirm that every assigned execution is completed or explicitly abandoned, every blocking exception is resolved, and the registered final-result package has every expected checksummed, malware-clean artifact.
 
 The Scientific Reviewer should be able to trace the submitted specimen through containers, material lots, equipment, protocol versions, captured results, library preparation, batches, and provider custody as applicable.
 
 ## Record the approval
 
-Record the release-definition key and version, reviewer identity, approval time, and the permitted QC projection. The release definition establishes what Commercial may expect; it does not attach or generate files.
+Record the release-definition key and version, reviewer identity, approval time, permitted QC projection, and exact output-package identifier/version. Approval pins that immutable package; it does not upload or alter artifacts.
 
-If the gate is not satisfied, leave the work in review and create the appropriate exception or rework action. Do not approve merely to move the Commercial order forward.
+The reviewer must be different from every actor who recorded receipt, accessioning, execution, QC, library, batch, or sendout work in scope. A protocol author cannot approve or activate that protocol version. If either actor-separation or scientific gates fail, leave the work in review and create the appropriate exception or rework action.
 
 ## Publish readiness
 
@@ -20,6 +20,6 @@ Approval moves the Lab work order to **Ready for release** and publishes the con
 
 ## Respect the release boundary
 
-Ready for release does not create, attach, upload, scan, or publish a result artifact. Order Ops must still verify the result manifest, checksums, malware scan, invoice synchronization, payment or approved credit, and publication decision.
+Ready for release automatically creates the Commercial release candidate for the approved package. It does not publish the result. A Result Release Manager still controls Customer visibility, and payment/credit facts never gate PSeq release.
 
 If the Lab-to-Commercial event fails, retry the existing durable projection. Do not duplicate the approval, recreate the work order, or manually mark the Customer file released.

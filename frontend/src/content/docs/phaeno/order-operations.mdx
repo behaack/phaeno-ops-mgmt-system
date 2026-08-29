@@ -1,8 +1,8 @@
 # Order operations
 
-Order operations is the Commercial workspace for Customer laboratory orders, Partner PSeq kit fulfillment, and Partner data assembly. POMS owns operational state, assignments, tenant-safe communication, fulfillment, and release decisions. QuickBooks Online remains authoritative for estimates, invoices, credits, terms, balances, and payment facts.
+Order operations is the Commercial workspace for Customer laboratory orders, Partner PSeq kit fulfillment, and Partner data assembly. POMS owns operational state, assignments, tenant-safe communication, PSeq result release, and PSeq accounts receivable.
 
-Use the far-left sidebar beneath the toolbar to move among **Order intake**, **Lab**, **PSeq kits**, **Assembly**, and **Integrations**. **Order intake** separates HubSpot-originated handoffs awaiting review from already-authorized laboratory work awaiting specimens. A Closed Won sales-assisted handoff and a requested Trial Project still require Phaeno review; they are not executable work merely because the request arrived. An authorized order opens its linked Lab work order for receipt and accession.
+Use the far-left sidebar beneath the toolbar to move among **Order intake**, **Order staging**, **Lab**, **PSeq kits**, **Assembly**, **Attention**, **Result release**, **Finance**, and **Legacy integrations**, subject to your explicit roles. **Order staging** shows every Customer and its readiness blockers; a Commercial Operator may prepare internal PSeq work before the Customer administrator is active when the stage-eligibility minimum is met. Quote issue and Customer commitment remain blocked until full readiness.
 
 When the Portal API and frontend are both running in their local development environments, **Simulate HubSpot handoff** can create a durable pending request for either a sales-assisted order or a no-charge Trial Project. The simulator requires a unique HubSpot Deal identifier and clearly identifies the resulting request as simulated. It does not contact HubSpot, bypass review, create an executable sales-assisted order, or implement the Trial Project lifecycle. Review the resulting request in **Accounts**.
 
@@ -13,7 +13,10 @@ The sidebar header identifies Order operations and, on wider screens, provides t
 - **Lab** covers Customer submission review, quote authorization, cancellation decisions, Commercial milestones, and result release.
 - **PSeq kits** covers Partner order review, substitutions, backorders, shipments, and fulfillment.
 - **Assembly** covers Partner intake validation, quoting, processing, quality review, and output release.
-- **Integrations** covers failed or pending QuickBooks and notification deliveries.
+- **Attention** owns invitation, readiness, staged-order, projection/scan, unreleased-result, overdue-invoice, unapplied-cash, and reconciliation-difference exceptions.
+- **Result release** publishes a scientifically approved, complete PSeq package per sample without a payment gate.
+- **Finance** owns PSeq invoices, receipts/import, explicit allocation, aging, and reconciliation.
+- **Legacy integrations** covers retained accounting-connector and notification recovery outside the active native PSeq AR workflow.
 
 Use status, hold, overdue, organization, assignment, and due-date filters to narrow the queue. Assign an owner and due date when the workflow supports them. A queue assignment coordinates work; it does not grant authorization or change the workflow state.
 
@@ -26,9 +29,9 @@ Order Ops ends at the Commercial boundary. Use **Lab Ops** for specimen receipt,
 ## Triage safely
 
 1. Confirm the active organization and workflow before opening a record.
-2. Review the current operational, Commercial, integration, payment, and release states independently.
+2. Review operational readiness, invitation delivery, scientific package, release, invoice, receipt, allocation, reconciliation, and notification states independently.
 3. Check open holds, cancellation requests, overdue actions, and failed deliveries.
 4. Assign the work and due date when ownership is unclear.
 5. Perform the smallest valid next action and preserve the existing record.
 
-If a record appears stale, refresh it before retrying. Never repair a failed workflow by creating a duplicate order, quote, invoice, Lab work order, shipment, or release.
+If a record appears stale, refresh it before retrying. Never repair a failed workflow by creating a duplicate order, quote, invoice, receipt, result package, Lab work order, shipment, or release. Assign an attention item, preserve attempts, and record its resolution.

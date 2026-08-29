@@ -35,7 +35,7 @@ describe('OrderConfigurationPage', () => {
     expect(screen.getByRole('button', { name: /^Analyses/ })).toBeTruthy()
     expect(screen.getByRole('button', { name: /^PSeq kits/ })).toBeTruthy()
     expect(screen.getByRole('button', { name: /^Assembly/ })).toBeTruthy()
-    expect(screen.getByRole('button', { name: /^Credit & QBO/ })).toBeTruthy()
+    expect(screen.getByRole('button', { name: /^Legacy links/ })).toBeTruthy()
 
     fireEvent.click(screen.getByRole('button', { name: /^PSeq kits/ }))
     expect(screen.getByRole('button', {

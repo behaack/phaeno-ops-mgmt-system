@@ -1,20 +1,27 @@
-# Billing, payment, and release gates
+# PSeq billing, cash, and result release
 
-QuickBooks Online is authoritative for estimates, invoices, credits, terms, balances, paid status, and hosted payment links. POMS consumes those facts and combines them with scientific, file, and approval state to decide whether a result or output can be released.
+POMS owns operational accounts receivable for PSeq Lab Service. Result release is scientifically governed and never gated by payment balance or credit. Partner PSeq Kit and Partner data-assembly payment/release rules remain unchanged.
 
-## Understand document timing
+## Configure and issue PSeq documents
 
-- Customer lab and Partner assembly quotes create or synchronize a QuickBooks estimate before acceptance.
-- Customer lab completion and Partner assembly completion create or synchronize the final invoice.
-- Partner reagent shipments use invoice-on-shipment; partial shipments may produce separate invoices.
+- Record billing contact/address and Net 30 terms by default.
+- Record `Taxable`, `Exempt`, or `NonTaxable`, including the approved rate or exemption evidence, then obtain Finance approval before quoting.
+- Issue the POMS quote only after full operational readiness. Its billing, tax, terms, currency, and configuration version are immutable snapshots.
+- Job completion idempotently creates one numbered invoice and immutable PDF from the accepted quote. Due date is completion plus the snapshotted terms.
 
-The portal links to authoritative QuickBooks documents. It does not recalculate tax, freight, discounts, balance, or payment state.
+POMS calculates the approved tax rate without a tax engine. Never edit an issued invoice; use an append-only credit, debit, or write-off adjustment.
 
-## Apply Customer release gates
+## Release PSeq results
 
-A Customer result may be published only when the specific sample is scientifically ready, the release definition is approved, every file is present and checksummed, malware scanning passed, and required Commercial synchronization completed.
+A Customer result may be published only when the specific sample package is complete, checksummed, malware-clean, and scientifically approved. The Result Release Manager releases or withdraws a version. Other samples may remain in progress. Do not consult invoice balance or credit status for this decision.
 
-For a Customer with approved credit, Phaeno may release a ready sample result under the configured Net 30 terms without waiting for payment. Without approved credit, no job result is downloadable until QuickBooks confirms that the completed job invoice is paid.
+Corrections create a new package, scientific approval, and release version. Preserve notification, Customer download, retention warning/cutoff/grace/deletion, withdrawal, and authorized reissue evidence.
+
+## Record and reconcile cash
+
+Manual receipt entry requires payer, amount, USD currency, received date, method, bank reference, evidence, and external ID. CSV intake is preview-only until explicit confirmation and must include source, external ID, date, amount, currency, payer, reference, and memo.
+
+Matching suggestions never apply cash. Allocate explicitly so partial, one-receipt/many-invoice, many-receipt/one-invoice, overpayment, and unapplied cash remain visible. Reversals retain actor and reason. A Cash Operator submits a balanced reconciliation; a different Cash Reconciler who contributed none of its activity approves the immutable closeout report.
 
 ## Apply Partner assembly release gates
 
@@ -22,4 +29,4 @@ An approved output release must reference the accepted input revision and active
 
 ## Diagnose a blocked release
 
-Review scientific readiness, output approval, file scan and checksum state, invoice synchronization, credit approval, paid status, and publication independently. Show the tenant that work is ready but held when appropriate, without exposing the files. Never bypass a failed gate by attaching a file manually or changing an unrelated workflow status.
+Review package completeness, checksum/scan state, scientific approval, release decision, notification, and retention independently from invoice/receipt/allocation/reconciliation. Never bypass a failed package gate by attaching a file manually or changing an unrelated workflow status. Use the owned attention queues for overdue invoices, unapplied cash, and reconciliation differences.

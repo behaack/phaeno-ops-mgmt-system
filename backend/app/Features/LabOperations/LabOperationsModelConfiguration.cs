@@ -83,6 +83,8 @@ public static class LabOperationsModelConfiguration
             entity.Property(e => e.PermittedQcProjectionJson).HasColumnType("jsonb");
             entity.HasIndex(e => new { e.LabWorkOrderId, e.ApprovalVersion }).IsUnique();
             entity.HasIndex(e => new { e.LabWorkOrderId, e.ProjectionVersion }).IsUnique();
+            entity.HasIndex(e => e.ResultOutputPackageId).IsUnique()
+                .HasFilter("\"result_output_package_id\" IS NOT NULL");
             entity.HasOne<LabWorkOrder>()
                 .WithMany(e => e.ScientificApprovals)
                 .HasForeignKey(e => e.LabWorkOrderId)

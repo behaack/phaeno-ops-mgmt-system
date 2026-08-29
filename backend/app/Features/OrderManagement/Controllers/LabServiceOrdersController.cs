@@ -5,6 +5,7 @@ using System.Text.Json;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Options;
 using PSeq.Operations.Commercial.LabOperations.Application;
 using PSeq.Operations.Commercial.LabOperations.Domain;
 using PSeq.Operations.Commercial.Accounts.Domain;
@@ -12,6 +13,7 @@ using PSeq.Operations.Commercial.OrderManagement.Domain;
 using PhaenoPortal.App.Features.OrderManagement.Domain;
 using PhaenoPortal.App.Features.OrderManagement.DTOs;
 using PhaenoPortal.App.Features.OrderManagement.Services;
+using PhaenoPortal.App.Features.Accounts.Services;
 using PhaenoPortal.App.Infrastructure.Api;
 using PhaenoPortal.App.Infrastructure.Persistence;
 
@@ -23,6 +25,7 @@ public sealed class LabServiceOrdersController(
     OrderRequestContext requestContext,
     OrderIdempotencyService idempotency,
     IOperationalFileStorage fileStorage,
+    IOptions<PSeqOrderToCashOptions> orderToCashOptions,
     ILabOperationsProvider labOperationsProvider) : ControllerBase
 {
     private static readonly JsonSerializerOptions JsonSerializerOptions = new(JsonSerializerDefaults.Web);
@@ -138,6 +141,15 @@ public sealed class LabServiceOrdersController(
         var tenant = await requestContext.RequireTenantAsync(HttpContext, OrganizationKind.Customer, true, cancellationToken);
         var order = await ReadOrderAsync(orderId, tenant.Organization.Id, cancellationToken);
         EnsureVersion(order.Version, request.Version);
+        if (orderToCashOptions.Value.DerivedReadiness)
+        {
+            var readiness = await new OperationalReadinessService(dbContext)
+                .EvaluateAsync(order.OrganizationId, cancellationToken);
+            if (!readiness.Evaluation.CanIssueQuote)
+                throw new OrderManagementException("operational_readiness_incomplete",
+                    "Resolve every PSeq readiness blocker before accepting the quote.",
+                    StatusCodes.Status409Conflict, readiness.Evaluation.Blockers);
+        }
         await ValidateSamplesAsync(request.Samples, cancellationToken);
         Execute(() => order.UpdateDraft(request.CustomerReference));
         var existingById = order.Samples.ToDictionary(item => item.Id);

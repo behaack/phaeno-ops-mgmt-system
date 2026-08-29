@@ -45,6 +45,7 @@ export function InviteUserForm({ organizationId }: { organizationId: string }) {
       email: values.email,
       isOrganizationAdmin: values.role === 'Organization Admin',
       labRoles: [],
+      businessRoles: [],
     })
   }
 
@@ -154,11 +155,13 @@ export function InviteUserForm({ organizationId }: { organizationId: string }) {
 
       {submittedInvite ? (
         <Alert role="status" aria-live="polite">
-          <AlertTitle>Invite sent</AlertTitle>
+          <AlertTitle>Invitation queued</AlertTitle>
           <AlertDescription>
             {submittedInvite.firstName} {submittedInvite.lastName} (
             {submittedInvite.email}) was invited as{' '}
             {submittedInvite.isOrganizationAdmin ? 'Organization Admin' : 'Member'}.
+            Email delivery is {submittedInvite.deliveryStatus ?? 'being queued'};
+            invitation access remains {submittedInvite.status} until acceptance.
           </AlertDescription>
         </Alert>
       ) : null}

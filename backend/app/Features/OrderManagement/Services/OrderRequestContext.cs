@@ -1,5 +1,6 @@
 namespace PhaenoPortal.App.Features.OrderManagement.Services;
 
+using Microsoft.EntityFrameworkCore;
 using PSeq.Operations.Commercial.Accounts.Application;
 using PSeq.Operations.Commercial.Accounts.Domain;
 using PhaenoPortal.App.Features.Accounts.Services;
@@ -87,6 +88,61 @@ public sealed class OrderRequestContext(
                 StatusCodes.Status403Forbidden);
         }
 
+        return actor;
+    }
+
+    public async Task<User> RequireBusinessRoleAsync(
+        HttpContext httpContext,
+        BusinessRole role,
+        bool enforceBusinessRoles,
+        CancellationToken cancellationToken)
+    {
+        var actor = await AccountAccess.ReadActiveActorAsync(
+            httpContext,
+            dbContext,
+            externalIdentityContext,
+            cancellationToken)
+            ?? throw new OrderManagementException(
+                "active_actor_required",
+                "An active portal user is required.",
+                StatusCodes.Status401Unauthorized);
+
+        if (!enforceBusinessRoles && AccountAuthorization.IsPlatformAdmin(actor)) return actor;
+
+        var hasRole = await dbContext.BusinessRoleAssignments.AsNoTracking().AnyAsync(
+            assignment => assignment.UserId == actor.Id
+                && assignment.Role == role
+                && assignment.IsActive,
+            cancellationToken);
+        if (!hasRole)
+        {
+            throw new OrderManagementException(
+                "business_role_required",
+                $"The {role} role is required for this action.",
+                StatusCodes.Status403Forbidden);
+        }
+
+        return actor;
+    }
+
+    public async Task<User> RequireAnyBusinessRoleAsync(
+        HttpContext httpContext,
+        IReadOnlyCollection<BusinessRole> roles,
+        bool enforceBusinessRoles,
+        CancellationToken cancellationToken)
+    {
+        var actor = await AccountAccess.ReadActiveActorAsync(
+            httpContext, dbContext, externalIdentityContext, cancellationToken)
+            ?? throw new OrderManagementException("active_actor_required",
+                "An active portal user is required.", StatusCodes.Status401Unauthorized);
+        if (!enforceBusinessRoles && AccountAuthorization.IsPlatformAdmin(actor)) return actor;
+        var hasRole = await dbContext.BusinessRoleAssignments.AsNoTracking().AnyAsync(assignment =>
+            assignment.UserId == actor.Id && assignment.IsActive && roles.Contains(assignment.Role),
+            cancellationToken);
+        if (!hasRole)
+            throw new OrderManagementException("business_role_required",
+                "An assigned commercial, release, billing, cash, or reconciliation role is required.",
+                StatusCodes.Status403Forbidden);
         return actor;
     }
 }

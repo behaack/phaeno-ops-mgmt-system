@@ -1,5 +1,24 @@
 # Auth and User System Plan
 
+## 2026-08-29 PSeq order-to-cash implementation update
+
+`PSEQ-ORDER-TO-CASH-GAP-CLOSURE-PLAN.md` is now authoritative for PSeq
+invitation delivery and internal business roles. Invitations retain access
+state separately from durable Postmark delivery attempts; delivery and bounce
+webhooks are authenticated and deduplicated, and a hard bounce requires
+revoke/reissue to a corrected address. Production must reject missing sender,
+Portal URL, provider, or webhook-secret configuration. Logging-only invitation
+delivery remains Development/Test only.
+
+Internal Phaeno access now includes additive `CommercialOperator`,
+`ResultReleaseManager`, `BillingOperator`, `CashOperator`, and
+`CashReconciler` roles. The invitation intent, accepted assignment, user
+administration update, session capability, and backend authorization use the
+same role set. Platform administrator is configuration and role-management
+authority, not an automatic business-action role after enforcement. Dual
+control begins audit-only and becomes authoritative only after adequate
+staffing is evidenced.
+
 Keep this file updated as authentication, authorization, user lifecycle, and invitation decisions change.
 
 Do not execute this plan unless explicitly requested.

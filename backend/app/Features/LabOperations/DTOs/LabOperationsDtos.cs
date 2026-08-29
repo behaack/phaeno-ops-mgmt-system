@@ -108,7 +108,7 @@ public sealed record LabWorkOrderDetailDto(
 public sealed record LabScientificApprovalDto(
     Guid Id, int ApprovalVersion, string ReleaseDefinitionKey,
     int ReleaseDefinitionVersion, Guid ApprovedByUserId, DateTime ApprovedAtUtc,
-    long ProjectionVersion);
+    long ProjectionVersion, Guid? ResultOutputPackageId);
 
 public sealed record SetLabRoleRequest(bool IsActive, long? Version);
 public sealed record CreateProtocolRequest(string Name, string? Description);
@@ -157,4 +157,5 @@ public sealed record CreateExceptionRequest(Guid? LabSpecimenId, Guid? LabProtoc
     string? CustomerSafeSummary, bool IsBlocking, DateTime? ResponseDueAtUtc);
 public sealed record ResolveExceptionRequest(string ResolutionNote, long Version);
 public sealed record ScientificApprovalRequest(string ReleaseDefinitionKey,
-    int ReleaseDefinitionVersion, string? PermittedQcProjectionJson, long WorkOrderVersion);
+    int ReleaseDefinitionVersion, string? PermittedQcProjectionJson, long WorkOrderVersion,
+    Guid? ResultOutputPackageId = null);

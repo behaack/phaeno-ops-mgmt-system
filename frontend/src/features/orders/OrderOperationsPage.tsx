@@ -1,9 +1,10 @@
 import { useMutation, useQuery, useQueryClient, type UseQueryResult } from '@tanstack/react-query'
 import { Link } from '@tanstack/react-router'
-import { Boxes, ClipboardCheck, FlaskConical, PlugZap, RefreshCw, Workflow as WorkflowIcon } from 'lucide-react'
+import { Boxes, CircleDollarSign, ClipboardCheck, FileCheck2, FlaskConical, ListChecks, PlugZap, RefreshCw, ShoppingCart, Workflow as WorkflowIcon } from 'lucide-react'
 import { useState } from 'react'
 
 import { getOrderConfiguration, getOrderErrorMessage, getPlatformOrder, listIntegrationMessages, listNotificationMessages, listPlatformOrders, retryIntegrationMessage, retryNotificationMessage, runPlatformAction, updateOperationalAssignment, type DataAssemblyRequest, type IntegrationMessage, type LabServiceOrder, type NotificationMessage, type PagedResult, type ReagentOrder } from '#/api/order-management'
+import type { SessionCapabilities } from '#/api/session'
 import { listOrganizations } from '#/api/data-provisioning'
 import { Alert, AlertDescription, AlertTitle } from '#/components/ui/alert'
 import { WorkspaceSidebar, type WorkspaceSidebarItem } from '#/components/WorkspaceSidebar'
@@ -18,38 +19,58 @@ import { OrderIntakePanel } from './OrderIntakePanel'
 import { AssemblyOperationsPanel } from './operations/AssemblyOperationsPanel'
 import { LabOperationsPanel } from './operations/LabOperationsPanel'
 import { ReagentOperationsPanel } from './operations/ReagentOperationsPanel'
+import { FinanceOperationsPanel, OperationalAttentionPanel, PSeqStagingPanel, ResultReleasePanel } from './PSeqOrderToCashPanels'
 
 type Workflow = 'lab' | 'reagent' | 'assembly'
-type OrderSection = Workflow | 'intake' | 'integrations'
+type OrderSection = Workflow | 'intake' | 'staging' | 'attention' | 'results' | 'finance' | 'integrations'
 
 const orderSections: ReadonlyArray<WorkspaceSidebarItem<OrderSection>> = [
   { value: 'intake', label: 'Order intake', description: 'Placed laboratory orders awaiting specimens', icon: ClipboardCheck },
+  { value: 'staging', label: 'Order staging', description: 'Prepare PSeq work before Customer access is complete', icon: ShoppingCart },
   { value: 'lab', label: 'Lab', description: 'Pricing, samples, and laboratory execution', icon: FlaskConical },
   { value: 'reagent', label: 'PSeq kits', description: 'Review, processing, and fulfillment', icon: Boxes },
   { value: 'assembly', label: 'Assembly', description: 'Intake, processing, and output release', icon: WorkflowIcon },
-  { value: 'integrations', label: 'Integrations', description: 'Delivery failures and recovery queues', icon: PlugZap },
+  { value: 'attention', label: 'Attention', description: 'Owned cross-workflow blockers and failures', icon: ListChecks },
+  { value: 'results', label: 'Result release', description: 'Governed, sample-level PSeq delivery', icon: FileCheck2 },
+  { value: 'finance', label: 'Finance', description: 'Invoices, receipts, allocations, and reconciliation', icon: CircleDollarSign },
+  { value: 'integrations', label: 'Legacy integrations', description: 'Legacy connector and notification recovery', icon: PlugZap },
 ]
 
 export function OrderOperationsPage({ workflow, orderId }: { workflow?: Workflow; orderId?: string }) {
   const { authProvider, session } = usePhaenoSession()
-  const canView = Boolean(session?.capabilities.canViewAllOperationalOrders)
+  const capabilities = session?.capabilities
+  const canView = Boolean(
+    capabilities?.canViewAllOperationalOrders ||
+      capabilities?.canOperateCommercialWork ||
+      capabilities?.canReleasePSeqResults ||
+      capabilities?.canManagePSeqBilling ||
+      capabilities?.canManagePSeqCash ||
+      capabilities?.canReconcilePSeqCash,
+  )
   const apiEnabled = canView && authProvider !== 'mock'
   if (!canView) return <main className="page-wrap px-4 py-8"><Alert variant="destructive"><AlertTitle>Order operations unavailable</AlertTitle><AlertDescription>A Phaeno platform administrator is required.</AlertDescription></Alert></main>
-  if (workflow && orderId) return <OperationalDetail workflow={workflow} orderId={orderId} apiEnabled={apiEnabled} userId={session?.user?.id ?? null} />
-  return <OperationalQueues apiEnabled={apiEnabled} mock={authProvider === 'mock'} userId={session?.user?.id ?? null} />
+  if (workflow && orderId) return <OperationalDetail workflow={workflow} orderId={orderId} apiEnabled={apiEnabled && Boolean(capabilities?.canViewAllOperationalOrders)} userId={session?.user?.id ?? null} />
+  return <OperationalQueues apiEnabled={apiEnabled} mock={authProvider === 'mock'} userId={session?.user?.id ?? null} capabilities={capabilities!} />
 }
 
-function OperationalQueues({ apiEnabled, mock, userId }: { apiEnabled: boolean; mock: boolean; userId: string | null }) {
-  const [section, setSection] = useState<OrderSection>('intake')
-  const organizations = useQuery({ queryKey: ['order-operations', 'organizations'], queryFn: listOrganizations, enabled: apiEnabled })
-  const integrations = useQuery({ queryKey: ['order-integrations'], queryFn: () => listIntegrationMessages(), enabled: apiEnabled })
-  const notifications = useQuery({ queryKey: ['order-notifications'], queryFn: () => listNotificationMessages(), enabled: apiEnabled })
+function OperationalQueues({ apiEnabled, mock, userId, capabilities }: { apiEnabled: boolean; mock: boolean; userId: string | null; capabilities: SessionCapabilities }) {
+  const availableSections = orderSections.filter((item) => {
+    if (item.value === 'staging') return capabilities.canOperateCommercialWork
+    if (item.value === 'results') return capabilities.canReleasePSeqResults
+    if (item.value === 'finance') return capabilities.canManagePSeqBilling || capabilities.canManagePSeqCash || capabilities.canReconcilePSeqCash
+    if (item.value === 'attention') return capabilities.canOperateCommercialWork || capabilities.canReleasePSeqResults || capabilities.canManagePSeqBilling || capabilities.canManagePSeqCash || capabilities.canReconcilePSeqCash
+    return capabilities.canViewAllOperationalOrders
+  })
+  const [section, setSection] = useState<OrderSection>(availableSections[0]?.value ?? 'attention')
+  const organizations = useQuery({ queryKey: ['order-operations', 'organizations'], queryFn: listOrganizations, enabled: apiEnabled && capabilities.canViewAllOperationalOrders })
+  const integrations = useQuery({ queryKey: ['order-integrations'], queryFn: () => listIntegrationMessages(), enabled: apiEnabled && capabilities.canViewAllOperationalOrders })
+  const notifications = useQuery({ queryKey: ['order-notifications'], queryFn: () => listNotificationMessages(), enabled: apiEnabled && capabilities.canViewAllOperationalOrders })
   const organizationOptions = organizations.data?.map((item) => ({ id: item.id, name: item.name, kind: item.kind })) ?? []
   return (
     <main className="py-8">
       <WorkspaceSidebar
         workspaceLabel="Order operations"
-        items={orderSections}
+        items={availableSections}
         value={section}
         onValueChange={setSection}
       >
@@ -57,8 +78,8 @@ function OperationalQueues({ apiEnabled, mock, userId }: { apiEnabled: boolean; 
           <section className="mb-6 max-w-3xl">
             <h1 className="text-3xl font-semibold">Order operations</h1>
             <p className="mt-2 text-sm leading-6 text-muted-foreground">
-              Cross-organization queues for pricing, laboratory execution, PSeq kit fulfillment,
-              data assembly, holds, cancellations, and integration recovery.
+              Cross-organization queues for commercial staging, laboratory execution,
+              governed result release, accounts receivable, holds, and exception recovery.
             </p>
           </section>
           {mock ? (
@@ -68,9 +89,13 @@ function OperationalQueues({ apiEnabled, mock, userId }: { apiEnabled: boolean; 
             </Alert>
           ) : null}
           {section === 'intake' ? <OrderIntakePanel apiEnabled={apiEnabled} organizations={organizationOptions} /> : null}
+          {section === 'staging' ? <PSeqStagingPanel apiEnabled={apiEnabled} /> : null}
           {section === 'lab' ? <QueueCard title="Laboratory queue" workflow="lab" apiEnabled={apiEnabled} userId={userId} organizations={organizationOptions} /> : null}
           {section === 'reagent' ? <QueueCard title="PSeq kit queue" workflow="reagent" apiEnabled={apiEnabled} userId={userId} organizations={organizationOptions} /> : null}
           {section === 'assembly' ? <QueueCard title="Assembly queue" workflow="assembly" apiEnabled={apiEnabled} userId={userId} organizations={organizationOptions} /> : null}
+          {section === 'attention' ? <OperationalAttentionPanel apiEnabled={apiEnabled} userId={userId} /> : null}
+          {section === 'results' ? <ResultReleasePanel apiEnabled={apiEnabled} /> : null}
+          {section === 'finance' ? <FinanceOperationsPanel apiEnabled={apiEnabled} canBill={capabilities.canManagePSeqBilling} canManageCash={capabilities.canManagePSeqCash} canReconcile={capabilities.canReconcilePSeqCash} /> : null}
           {section === 'integrations' ? <IntegrationQueue query={integrations} notifications={notifications} apiEnabled={apiEnabled} /> : null}
         </div>
       </WorkspaceSidebar>
@@ -98,7 +123,7 @@ function IntegrationQueue({ query, notifications, apiEnabled }: { query: UseQuer
   const client = useQueryClient()
   const retry = useMutation({ mutationFn: ({ id, version }: { id: string; version: number }) => retryIntegrationMessage(id, version), onSuccess: () => client.invalidateQueries({ queryKey: ['order-integrations'] }) })
   const retryNotification = useMutation({ mutationFn: ({ id, version }: { id: string; version: number }) => retryNotificationMessage(id, version), onSuccess: () => client.invalidateQueries({ queryKey: ['order-notifications'] }) })
-  return <div className="space-y-5"><Card><CardHeader><CardTitle>QuickBooks integration queue</CardTitle><CardDescription>Retry bounded failures after resolving configuration or external-service issues.</CardDescription></CardHeader><CardContent>{query.error ? <Alert variant="destructive"><AlertTitle>Integration queue unavailable</AlertTitle><AlertDescription>{getOrderErrorMessage(query.error, 'Try refreshing.')}</AlertDescription></Alert> : null}{query.isLoading ? <p role="status">Loading integration messages…</p> : null}<div className="divide-y">{query.data?.items.map((item) => <div key={item.id} className="flex flex-wrap items-center justify-between gap-3 py-3"><div><p className="font-medium">{humanizeStatus(item.operation)} · {item.workflowType}</p><p className="mt-1 text-xs text-muted-foreground">Attempts {item.attemptCount} · Next {formatDateTime(item.nextAttemptAt)}</p>{item.lastError ? <p className="mt-1 text-sm text-destructive">{item.lastError}</p> : null}</div><div className="flex items-center gap-2"><OrderStatusBadge status={item.status} />{item.status === 'Failed' || item.status === 'NeedsAttention' ? <Button type="button" variant="outline" disabled={!apiEnabled || retry.isPending} onClick={() => retry.mutate({ id: item.id, version: item.version })}><RefreshCw data-icon="inline-start" />Retry</Button> : null}</div></div>)}</div></CardContent></Card><Card><CardHeader><CardTitle>Notification delivery queue</CardTitle><CardDescription>Failed transactional email remains visible and can be retried after delivery configuration is corrected.</CardDescription></CardHeader><CardContent>{notifications.error ? <Alert variant="destructive"><AlertTitle>Notification queue unavailable</AlertTitle><AlertDescription>{getOrderErrorMessage(notifications.error, 'Try refreshing.')}</AlertDescription></Alert> : null}{notifications.isLoading ? <p role="status">Loading notification messages…</p> : null}<div className="divide-y">{notifications.data?.items.map((item) => <div key={item.id} className="flex flex-wrap items-center justify-between gap-3 py-3"><div><p className="font-medium">{item.subject}</p><p className="mt-1 text-xs text-muted-foreground">{item.workflowType} · {humanizeStatus(item.eventType)} · Attempts {item.attemptCount}</p>{item.lastError ? <p className="mt-1 text-sm text-destructive">{item.lastError}</p> : null}</div><div className="flex items-center gap-2"><OrderStatusBadge status={item.status} />{item.status === 'Failed' ? <Button type="button" variant="outline" disabled={!apiEnabled || retryNotification.isPending} onClick={() => retryNotification.mutate({ id: item.id, version: item.version })}><RefreshCw data-icon="inline-start" />Retry</Button> : null}</div></div>)}</div></CardContent></Card></div>
+  return <div className="space-y-5"><Card><CardHeader><CardTitle>Legacy accounting connector queue</CardTitle><CardDescription>POMS accounts receivable is the active PSeq workflow. This queue remains only for historical connector recovery and non-PSeq records.</CardDescription></CardHeader><CardContent>{query.error ? <Alert variant="destructive"><AlertTitle>Integration queue unavailable</AlertTitle><AlertDescription>{getOrderErrorMessage(query.error, 'Try refreshing.')}</AlertDescription></Alert> : null}{query.isLoading ? <p role="status">Loading integration messages…</p> : null}<div className="divide-y">{query.data?.items.map((item) => <div key={item.id} className="flex flex-wrap items-center justify-between gap-3 py-3"><div><p className="font-medium">{humanizeStatus(item.operation)} · {item.workflowType}</p><p className="mt-1 text-xs text-muted-foreground">Attempts {item.attemptCount} · Next {formatDateTime(item.nextAttemptAt)}</p>{item.lastError ? <p className="mt-1 text-sm text-destructive">{item.lastError}</p> : null}</div><div className="flex items-center gap-2"><OrderStatusBadge status={item.status} />{item.status === 'Failed' || item.status === 'NeedsAttention' ? <Button type="button" variant="outline" disabled={!apiEnabled || retry.isPending} onClick={() => retry.mutate({ id: item.id, version: item.version })}><RefreshCw data-icon="inline-start" />Retry</Button> : null}</div></div>)}</div></CardContent></Card><Card><CardHeader><CardTitle>Notification delivery queue</CardTitle><CardDescription>Failed transactional email remains visible and can be retried after delivery configuration is corrected.</CardDescription></CardHeader><CardContent>{notifications.error ? <Alert variant="destructive"><AlertTitle>Notification queue unavailable</AlertTitle><AlertDescription>{getOrderErrorMessage(notifications.error, 'Try refreshing.')}</AlertDescription></Alert> : null}{notifications.isLoading ? <p role="status">Loading notification messages…</p> : null}<div className="divide-y">{notifications.data?.items.map((item) => <div key={item.id} className="flex flex-wrap items-center justify-between gap-3 py-3"><div><p className="font-medium">{item.subject}</p><p className="mt-1 text-xs text-muted-foreground">{item.workflowType} · {humanizeStatus(item.eventType)} · Attempts {item.attemptCount}</p>{item.lastError ? <p className="mt-1 text-sm text-destructive">{item.lastError}</p> : null}</div><div className="flex items-center gap-2"><OrderStatusBadge status={item.status} />{item.status === 'Failed' ? <Button type="button" variant="outline" disabled={!apiEnabled || retryNotification.isPending} onClick={() => retryNotification.mutate({ id: item.id, version: item.version })}><RefreshCw data-icon="inline-start" />Retry</Button> : null}</div></div>)}</div></CardContent></Card></div>
 }
 
 function OperationalDetail({ workflow, orderId, apiEnabled, userId }: { workflow: Workflow; orderId: string; apiEnabled: boolean; userId: string | null }) {

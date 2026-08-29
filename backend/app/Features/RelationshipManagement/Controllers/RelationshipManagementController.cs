@@ -7,6 +7,7 @@ using PSeq.Operations.Commercial.Accounts.Application;
 using PSeq.Operations.Commercial.Accounts.Domain;
 using PSeq.Operations.Commercial.Relationships.Application;
 using PSeq.Operations.Commercial.Relationships.Domain;
+using PSeq.Operations.Commercial.OrderManagement.Domain;
 using PhaenoPortal.App.Features.Accounts.DTOs;
 using PhaenoPortal.App.Features.Accounts.Services;
 using PhaenoPortal.App.Features.RelationshipManagement.DTOs;
@@ -95,6 +96,36 @@ public sealed class RelationshipManagementController(
             .ThenBy(value => value.Service)
             .ToListAsync(cancellationToken);
         return values.Select(ToDto).ToList();
+    }
+
+    [HttpGet("organizations/{organizationId:guid}/operational-readiness")]
+    public async Task<OrganizationOperationalReadinessDto> GetOperationalReadiness(
+        Guid organizationId,
+        CancellationToken cancellationToken)
+    {
+        await RequirePlatformAdminAsync(cancellationToken);
+        var organization = await RequireOrganizationAsync(organizationId, cancellationToken);
+        return await EvaluateOperationalReadinessAsync(organization, cancellationToken);
+    }
+
+    [HttpPost("organizations/{organizationId:guid}/operational-block")]
+    public async Task<OrganizationOperationalReadinessDto> UpdateOperationalBlock(
+        Guid organizationId,
+        [FromBody] UpdateOperationalReadinessBlockRequest request,
+        CancellationToken cancellationToken)
+    {
+        await RequirePlatformAdminAsync(cancellationToken);
+        var organization = await RequireOrganizationAsync(organizationId, cancellationToken);
+        EnsureVersion(organization.Version, request.Version);
+        Execute(() =>
+        {
+            if (request.IsBlocked)
+                organization.SetOperationalReadinessBlock(request.Reason ?? string.Empty);
+            else
+                organization.ClearOperationalReadinessBlock();
+        });
+        await dbContext.SaveChangesAsync(cancellationToken);
+        return await EvaluateOperationalReadinessAsync(organization, cancellationToken);
     }
 
     [HttpPost("organizations/{organizationId:guid}/entitlements")]
@@ -541,6 +572,28 @@ public sealed class RelationshipManagementController(
             Execute(() => value.AssociateOrganization(request.OrganizationId.Value));
         }
 
+        var appliedOrganization = await RequireOrganizationAsync(
+            value.OrganizationId ?? request.OrganizationId!.Value,
+            cancellationToken);
+        if (appliedOrganization.Kind == OrganizationKind.Customer
+            && value.RequestedServices.Any(service => service.Service == PortalService.PSeqLabService))
+        {
+            var readiness = await EvaluateOperationalReadinessAsync(appliedOrganization, cancellationToken);
+            if (readiness.State != OperationalReadiness.Ready)
+            {
+                throw new RelationshipManagementException(
+                    "operational_readiness_incomplete",
+                    "Complete the PSeq operational-readiness checklist before marking this account request applied.",
+                    StatusCodes.Status409Conflict,
+                    readiness.Blockers.Select(blocker => new
+                    {
+                        code = blocker.Code.ToString(),
+                        blocker.Label,
+                        blocker.NextAction
+                    }).ToList());
+            }
+        }
+
         Execute(() => value.MarkApplied(request.Notes, actor.Id, DateTime.UtcNow));
         await dbContext.SaveChangesAsync(cancellationToken);
         return ToDto(value);
@@ -611,6 +664,69 @@ public sealed class RelationshipManagementController(
         {
             throw Conflict("source_request_not_eligible", "The source request must belong to this organization, be approved or applied, and include the selected service.");
         }
+    }
+
+    private async Task<OrganizationOperationalReadinessDto> EvaluateOperationalReadinessAsync(
+        Organization organization,
+        CancellationToken cancellationToken)
+    {
+        var utcNow = DateTime.UtcNow;
+        var hasActiveAdministrator = await dbContext.OrganizationMemberships.AsNoTracking()
+            .AnyAsync(value => value.OrganizationId == organization.Id
+                && value.IsActive
+                && value.IsOrganizationAdmin
+                && value.User != null
+                && value.User.IsActive
+                && value.User.Status == UserAccountStatus.Active,
+                cancellationToken);
+        var hasReadyEntitlement = await dbContext.OrganizationServiceEntitlements.AsNoTracking()
+            .AnyAsync(value => value.OrganizationId == organization.Id
+                && value.Service == PortalService.PSeqLabService
+                && value.ConfigurationStatus == EntitlementConfigurationStatus.Ready
+                && value.EffectiveFrom <= utcNow
+                && (!value.EffectiveTo.HasValue || value.EffectiveTo > utcNow),
+                cancellationToken);
+        var hasActiveOffering = await (
+            from analysis in dbContext.AnalysisDefinitions.AsNoTracking()
+            join catalog in dbContext.QboCatalogItems.AsNoTracking()
+                on analysis.QboCatalogItemId equals catalog.Id
+            where analysis.IsActive && !analysis.IsSynthetic && catalog.IsActive
+            select analysis.Id).AnyAsync(cancellationToken);
+        var system = await dbContext.OrderSystemConfigurations.AsNoTracking()
+            .OrderBy(value => value.CreatedAt)
+            .FirstOrDefaultAsync(cancellationToken);
+        var profile = await dbContext.OrganizationCommercialProfiles.AsNoTracking()
+            .FirstOrDefaultAsync(value => value.OrganizationId == organization.Id, cancellationToken);
+
+        var input = new OperationalReadinessInput(
+            HasActiveCustomerRelationship: organization is
+                { IsActive: true, Kind: OrganizationKind.Customer },
+            HasManualBlock: organization.IsOperationalReadinessBlocked,
+            ManualBlockReason: organization.OperationalReadinessBlockReason,
+            HasActiveCustomerAdministrator: hasActiveAdministrator,
+            HasReadyPSeqEntitlement: hasReadyEntitlement,
+            HasActivePSeqOffering: hasActiveOffering,
+            HasCompleteOrderConfiguration: system != null && system.QuoteValidityDays > 0,
+            HasCompleteSampleConfiguration: system?.SampleConfigurationJson != "{}",
+            HasCompleteShippingConfiguration: system?.ShippingConfigurationJson != "{}",
+            HasCompleteResultDestination: system?.ResultDestinationConfigurationJson != "{}",
+            HasCompleteSubmissionInstructions: !string.IsNullOrWhiteSpace(system?.SampleSubmissionInstructions),
+            HasCompleteBillingContact: profile?.HasCompleteBillingContact == true,
+            HasCompleteBillingAddress: profile?.HasCompleteBillingAddress == true,
+            HasValidPaymentTerms: profile is { PaymentTermsDays: >= 0 and <= 365 },
+            HasEffectiveTaxDecision: profile?.HasEffectiveTaxDecision == true,
+            HasFinanceApprovedTaxDecision: profile?.HasFinanceApprovedTaxDecision == true);
+        var evaluation = OperationalReadinessPolicy.Evaluate(input);
+        return new OrganizationOperationalReadinessDto
+        {
+            OrganizationId = organization.Id,
+            State = evaluation.State,
+            CanStageOrder = evaluation.CanStageOrder,
+            CanIssueQuote = evaluation.CanIssueQuote,
+            HasManualBlock = organization.IsOperationalReadinessBlocked,
+            ManualBlockReason = organization.OperationalReadinessBlockReason,
+            Blockers = evaluation.Blockers
+        };
     }
 
     private async Task EnsureNoOverlapAsync(

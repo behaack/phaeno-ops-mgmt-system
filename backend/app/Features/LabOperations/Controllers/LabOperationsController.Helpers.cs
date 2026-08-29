@@ -105,7 +105,8 @@ public sealed partial class LabOperationsController
 
     private async Task EmitProjectionAsync(LabWorkOrder work, Guid actorUserId,
         string eventType, CancellationToken cancellationToken, DateTime? expectedCompletionAtUtc = null,
-        string? permittedQcProjectionJson = null)
+        string? permittedQcProjectionJson = null, Guid? scientificApprovalId = null,
+        Guid? resultOutputPackageId = null)
     {
         var persisted = await dbContext.LabExceptions.AsNoTracking()
             .Where(item => item.LabWorkOrderId == work.Id)
@@ -135,7 +136,9 @@ public sealed partial class LabOperationsController
             currentExpectedCompletionAtUtc = expectedCompletionAtUtc,
             activeCustomerActionCount = customerActions.Count,
             customerSafeSummary = customerSummary,
-            permittedQcProjectionJson
+            permittedQcProjectionJson,
+            scientificApprovalId,
+            resultOutputPackageId
         }, JsonOptions);
         dbContext.LabOperationsOutboxEvents.Add(new LabOperationsOutboxEvent(
             Guid.NewGuid(), work.AuthorizationId, work.Id, work.ProjectionVersion,

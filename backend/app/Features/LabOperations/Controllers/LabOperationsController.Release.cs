@@ -3,6 +3,7 @@ namespace PhaenoPortal.App.Features.LabOperations.Controllers;
 using System.Text.Json;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using PSeq.Operations.Commercial.OrderManagement.Domain;
 using PSeq.Operations.Laboratory.Domain;
 using PhaenoPortal.App.Features.LabOperations.DTOs;
 
@@ -13,7 +14,7 @@ public sealed partial class LabOperationsController
         [FromBody] CreateSendoutRequest request, CancellationToken cancellationToken)
     {
         await requestContext.RequireAsync(HttpContext, cancellationToken,
-            LabRole.Operator, LabRole.Supervisor, LabRole.OperationsAdministrator);
+            LabRole.Operator, LabRole.Supervisor);
         var batch = await dbContext.LabOperationalBatches.SingleOrDefaultAsync(item => item.Id == batchId, cancellationToken)
             ?? throw Missing();
         if (batch.Status != LabBatchStatus.InProgress)
@@ -32,7 +33,7 @@ public sealed partial class LabOperationsController
         [FromBody] SendoutTransitionRequest request, CancellationToken cancellationToken)
     {
         var actor = await requestContext.RequireAsync(HttpContext, cancellationToken,
-            LabRole.Operator, LabRole.Supervisor, LabRole.OperationsAdministrator);
+            LabRole.Operator, LabRole.Supervisor);
         if (!Enum.TryParse<LabNgsSendoutStatus>(request.Status, true, out var status))
             throw Invalid("sendout_status_invalid", "The sequencing sendout status is invalid.");
         var sendout = await dbContext.LabNgsSendouts.SingleOrDefaultAsync(item => item.Id == sendoutId, cancellationToken)
@@ -69,7 +70,7 @@ public sealed partial class LabOperationsController
         [FromBody] CustodyEventRequest request, CancellationToken cancellationToken)
     {
         var actor = await requestContext.RequireAsync(HttpContext, cancellationToken,
-            LabRole.Operator, LabRole.Supervisor, LabRole.OperationsAdministrator);
+            LabRole.Operator, LabRole.Supervisor);
         var sendout = await dbContext.LabNgsSendouts.AsNoTracking()
             .SingleOrDefaultAsync(item => item.Id == sendoutId, cancellationToken) ?? throw Missing();
         if (request.LabContainerId.HasValue)
@@ -93,7 +94,7 @@ public sealed partial class LabOperationsController
         [FromBody] CreateExceptionRequest request, CancellationToken cancellationToken)
     {
         var actor = await requestContext.RequireAsync(HttpContext, cancellationToken,
-            LabRole.Operator, LabRole.Supervisor, LabRole.OperationsAdministrator);
+            LabRole.Operator, LabRole.Supervisor);
         if (!Enum.TryParse<LabExceptionAudience>(request.Audience, true, out var audience))
             throw Invalid("lab_exception_audience_invalid", "The exception audience is invalid.");
         var work = await RequireWorkOrderAsync(workOrderId, cancellationToken);
@@ -118,7 +119,7 @@ public sealed partial class LabOperationsController
         [FromBody] ResolveExceptionRequest request, CancellationToken cancellationToken)
     {
         var actor = await requestContext.RequireAsync(HttpContext, cancellationToken,
-            LabRole.Supervisor, LabRole.OperationsAdministrator);
+            LabRole.Supervisor);
         var exception = await dbContext.LabExceptions.SingleOrDefaultAsync(item => item.Id == exceptionId, cancellationToken)
             ?? throw Missing();
         EnsureVersion(exception.Version, request.Version);
@@ -135,7 +136,7 @@ public sealed partial class LabOperationsController
         [FromBody] ScientificApprovalRequest request, CancellationToken cancellationToken)
     {
         var actor = await requestContext.RequireAsync(HttpContext, cancellationToken,
-            LabRole.ScientificReviewer, LabRole.OperationsAdministrator);
+            LabRole.ScientificReviewer);
         var work = await RequireWorkOrderAsync(workOrderId, cancellationToken);
         EnsureVersion(work.Version, request.WorkOrderVersion);
         if (work.Status != LabWorkOrderStatus.ScientificReview)
@@ -146,25 +147,57 @@ public sealed partial class LabOperationsController
         if (await dbContext.LabProtocolExecutions.AnyAsync(item => item.LabWorkOrderId == work.Id
             && item.Status != LabExecutionStatus.Completed && item.Status != LabExecutionStatus.Abandoned, cancellationToken))
             throw Conflict("execution_incomplete", "Every assigned protocol execution must be completed or abandoned before approval.");
+        var actorContributed = await dbContext.LabWorkEvents.AsNoTracking().AnyAsync(item =>
+            item.LabWorkOrderId == work.Id && item.ActorUserId == actor.User.Id
+            && item.EventCode != "ScientificApprovalRecorded"
+            && item.EventCode != "ReadyForRelease", cancellationToken);
+        if (actorContributed)
+        {
+            requestContext.EnforceOrAuditActorConflict(actor.User.Id,
+                "scientific_approval_contributor_conflict",
+                "Scientific approval requires a reviewer who did not perform receipt, accessioning, execution, QC, library, batch, or sendout work for this work order.",
+                new { workOrderId = work.Id });
+        }
+        ResultOutputPackage? outputPackage = null;
+        if (requestContext.GovernedPSeqResultsEnabled)
+        {
+            if (!request.ResultOutputPackageId.HasValue)
+                throw Invalid("result_output_package_required", "Select a complete output package before scientific approval.");
+            outputPackage = await dbContext.ResultOutputPackages.SingleOrDefaultAsync(item =>
+                item.Id == request.ResultOutputPackageId.Value
+                && item.LabWorkOrderId == work.Id, cancellationToken) ?? throw Missing();
+            if (outputPackage.State != ResultOutputPackageState.ReadyForReview)
+                throw Conflict("result_output_package_not_ready", "The output package must be complete, checksummed, and malware-clean before scientific approval.");
+        }
         var approvalVersion = await dbContext.LabScientificApprovals
             .CountAsync(item => item.LabWorkOrderId == work.Id, cancellationToken) + 1;
         work.RecordMilestone(LabWorkOrderStatus.ReadyForRelease);
         var permittedQcProjectionJson = NormalizeOptionalJson(
             request.PermittedQcProjectionJson, "qc_projection_invalid");
-        dbContext.LabScientificApprovals.Add(new LabScientificApproval(work.Id, approvalVersion,
+        var approval = new LabScientificApproval(work.Id, approvalVersion,
             request.ReleaseDefinitionKey, request.ReleaseDefinitionVersion,
             permittedQcProjectionJson,
-            actor.User.Id, DateTime.UtcNow, work.ProjectionVersion));
+            actor.User.Id, DateTime.UtcNow, work.ProjectionVersion, outputPackage?.Id);
+        dbContext.LabScientificApprovals.Add(approval);
+        if (outputPackage is not null)
+        {
+            outputPackage.RecordScientificApproval(approval.Id, actor.User.Id, DateTime.UtcNow);
+            outputPackage.MarkReadyForRelease(approval.Id);
+        }
         dbContext.LabWorkEvents.Add(new LabWorkEvent(work.Id, null, "ScientificApprovalRecorded",
             DateTime.UtcNow, actor.User.Id, JsonSerializer.Serialize(new
             {
                 request.ReleaseDefinitionKey,
                 request.ReleaseDefinitionVersion,
+                scientificApprovalId = approval.Id,
+                resultOutputPackageId = outputPackage?.Id,
                 readyForRelease = true,
                 filePublicationTriggered = false
             }, JsonOptions)));
         await EmitProjectionAsync(work, actor.User.Id, "ReadyForRelease", cancellationToken,
-            permittedQcProjectionJson: permittedQcProjectionJson);
+            permittedQcProjectionJson: permittedQcProjectionJson,
+            scientificApprovalId: approval.Id,
+            resultOutputPackageId: outputPackage?.Id);
         await dbContext.SaveChangesAsync(cancellationToken);
         return await WorkOrder(work.Id, cancellationToken);
     }

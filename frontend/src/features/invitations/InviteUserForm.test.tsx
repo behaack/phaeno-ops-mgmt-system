@@ -25,6 +25,7 @@ describe('InviteUserForm', () => {
       lastName: 'User',
       isOrganizationAdmin: true,
       labRoles: [],
+      businessRoles: [],
       status: 'Pending',
       isExpired: false,
       expiresAt: '2026-06-08T00:00:00Z',
@@ -68,8 +69,9 @@ describe('InviteUserForm', () => {
       email: 'new.user@example.com',
       isOrganizationAdmin: true,
       labRoles: [],
+      businessRoles: [],
     })
-    expect(await screen.findByText(/invite sent/i)).toBeTruthy()
+    expect(await screen.findByText(/invitation queued/i)).toBeTruthy()
   })
 })
 

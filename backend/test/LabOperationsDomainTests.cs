@@ -137,9 +137,9 @@ public class LabOperationsDomainTests
         var version = new LabProtocolVersion(protocol.Id, 1, "{\"steps\":[]}",
             Guid.NewGuid(), DateTime.UtcNow);
 
-        Assert.Throws<InvalidOperationException>(version.Activate);
+        Assert.Throws<InvalidOperationException>(() => version.Activate(Guid.NewGuid()));
         version.Approve(Guid.NewGuid(), DateTime.UtcNow);
-        version.Activate();
+        version.Activate(Guid.NewGuid());
 
         Assert.Equal(LabProtocolStatus.Active, version.Status);
     }

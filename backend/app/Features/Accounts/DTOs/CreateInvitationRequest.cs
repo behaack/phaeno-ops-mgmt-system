@@ -1,5 +1,6 @@
 namespace PhaenoPortal.App.Features.Accounts.DTOs;
 
+using PSeq.Operations.Commercial.Accounts.Domain;
 using PSeq.Operations.Laboratory.Domain;
 
 public sealed record CreateInvitationRequest
@@ -15,4 +16,6 @@ public sealed record CreateInvitationRequest
     public bool IsOrganizationAdmin { get; init; }
 
     public IReadOnlyList<LabRole> LabRoles { get; init; } = [];
+
+    public IReadOnlyList<BusinessRole> BusinessRoles { get; init; } = [];
 }

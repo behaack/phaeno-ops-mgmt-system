@@ -37,6 +37,11 @@ public sealed class Organization : IAudit, IConcurrency
     /// </summary>
     public string? PortalReadinessNote { get; private set; }
 
+    /// <summary>Deliberate human override. All other readiness is derived.</summary>
+    public bool IsOperationalReadinessBlocked { get; private set; }
+
+    public string? OperationalReadinessBlockReason { get; private set; }
+
     /// <summary>
     /// Date and time when the organization was created.
     /// </summary>
@@ -112,6 +117,28 @@ public sealed class Organization : IAudit, IConcurrency
     {
         PortalReadiness = status;
         PortalReadinessNote = string.IsNullOrWhiteSpace(note) ? null : note.Trim();
+        if (status == PortalReadinessStatus.Blocked)
+        {
+            IsOperationalReadinessBlocked = true;
+            OperationalReadinessBlockReason = PortalReadinessNote
+                ?? "Historical readiness block retained during derived-readiness rollout.";
+        }
+    }
+
+    public void SetOperationalReadinessBlock(string reason)
+    {
+        IsOperationalReadinessBlocked = true;
+        OperationalReadinessBlockReason = string.IsNullOrWhiteSpace(reason)
+            ? throw new ArgumentException("A block reason is required.", nameof(reason))
+            : reason.Trim();
+        if (OperationalReadinessBlockReason.Length > 2000)
+            throw new ArgumentException("The block reason cannot exceed 2000 characters.", nameof(reason));
+    }
+
+    public void ClearOperationalReadinessBlock()
+    {
+        IsOperationalReadinessBlocked = false;
+        OperationalReadinessBlockReason = null;
     }
 
     public bool IsPhaeno()

@@ -1,5 +1,25 @@
 # Operations and production-readiness boundary
 
+## PSeq order-to-cash rollout boundary (2026-08-29)
+
+The repository now contains additive, feature-flagged foundations for durable
+invitation delivery, derived readiness, internal order staging, business roles,
+audit-only/enforced dual control, governed PSeq final-result packages, POMS
+accounts receivable, and owned attention queues. This is local implementation
+state until the authorized 2026-08-29 additive release completes. The Product
+Owner authorized commit, push, encrypted-backup migration, and production
+deployment; the new feature flags and dual-control enforcement remain disabled
+pending the activation gates below.
+
+Production activation requires a dedicated-staging acceptance run with
+Commercial, Lab Operations, Scientific, Finance, security, and accessibility
+signoff. It also requires Postmark sender and webhook-secret validation, final
+object-storage/scanner/retention configuration, adequate dual-control staffing,
+restored-production-like migration plus forward-fix proof, backup/restore proof,
+exact frontend/API source-SHA alignment, authenticated smoke testing, and an
+approved rollback or forward-fix procedure. Result release is never
+payment-gated.
+
 This document records how the application operates in the current repository and what remains required before production activation. It is not a deployment runbook and does not select a hosting provider or production topology.
 
 ## Current runtime
@@ -8,17 +28,17 @@ This document records how the application operates in the current repository and
 | --- | --- |
 | Frontend | React 19 and TanStack Start, served by Vite in development and built as client plus SSR assets. |
 | API | .NET 10 ASP.NET Core application. |
-| Database | PostgreSQL through one EF Core `PSeqOperationsDbContext`. The current model maps 54 Commercial/current-flow and Lab-projection tables to `commercial_ops`, 22 Laboratory execution tables to `lab_ops`, two public Website intake tables to `website`, and migration history to `public`; `AddWebsiteApi` has not been applied to a shared environment. |
+| Database | PostgreSQL through one EF Core `PSeqOperationsDbContext`. The current model maps 72 Commercial/current-flow and Lab-projection tables to `commercial_ops`, 27 Laboratory execution tables to `lab_ops`, two public Website intake tables to `website`, and migration history to `public`; the new order-to-cash migration has not been applied to a shared environment. |
 | Authentication | Clerk-issued bearer JWTs; application authorization comes from internal users, active memberships, and capabilities. |
 | Lab Operations | Feature-complete internal provider with additive Phaeno roles, operator APIs/workspace, receipt and accession, controlled execution, traceability, outsourced NGS sendouts, exceptions, scientific approval, and customer-safe Commercial projections. Production validation and activation remain incomplete. |
 | Curated-data files | `IManagedFileStorage` adapts to the shared `IFileStorage` contract. Development uses local filesystem storage. Production currently selects a non-persisting `Disabled` adapter, so the API starts but file operations return HTTP 503. The S3 adapter is implemented but not configured or live-validated. |
 | Order files | `IOperationalFileStorage` adapts to the shared `IFileStorage` contract. Development uses local filesystem storage. Production currently selects a non-persisting `Disabled` adapter, so the API starts but file operations return HTTP 503. The S3 adapter is implemented but not configured or live-validated. |
 | File scanning | Environment scanner abstractions. Development can trust configured fixture files; production defaults do not. |
-| Commercial integration | QuickBooks Online adapter. A logging gateway is used when the required QuickBooks configuration is absent. |
+| PSeq accounts receivable | POMS-owned Customer billing/tax/terms snapshots, immutable invoice/PDF issue at job completion, receipt/import/allocation, aging, adjustments, and independently approved reconciliation behind `NativePSeqAccountsReceivable`. QuickBooks remains legacy/non-PSeq context only. |
 | Relationship CRM | Not implemented. HubSpot is selected for the approved future lifecycle in `docs/plans/HUBSPOT-PORTAL-LIFECYCLE-PLAN.md`. |
-| Email and notices | Portal transactional flows use Postmark when configured. Public Website contact/order templates use Mailgun when configured; logging senders are the local fallback. |
+| Email and notices | Portal invitations use durable Postmark attempts plus authenticated, idempotent delivery/bounce webhooks behind `InvitationDelivery`. Production rejects incomplete Postmark, sender, public URL, or webhook credentials; logging invitation delivery is Development/Test only. Public Website contact/order templates use Mailgun when configured. |
 | Public Website API | Anonymous `/api/v1/web-ops` search, database ping, contact, and order endpoints plus `/public` document hosting are implemented in Portal. Historical data and public traffic have not been cut over. |
-| Background work | Hosted dispatchers retry order integrations, order notifications, data-provisioning notices, and Lab-to-Commercial projection delivery. A hosted Website crawler rebuilds the Lucene index on its configured interval. |
+| Background work | Hosted dispatchers retry invitation delivery, order integrations, order notifications, data-provisioning notices, and Lab-to-Commercial projection delivery. Result retention automatically records warning, cutoff, grace, and deletion evidence. A hosted Website crawler rebuilds the Lucene index on its configured interval. |
 | Help | Browser-bundled MDX with Customer/Partner locale metadata and Phaeno US-English content. Backend search is not implemented. |
 | Organization/user administration UI | Invitation acceptance and Phaeno organization list/detail, request, entitlement, invitation, membership, conversion, lifecycle, and User management workspaces use durable APIs. Invitations retain the person’s name and intended membership role. Phaeno invitations and user edits consolidate Platform administrator and additive Laboratory roles; pending Laboratory-role intent activates only on acceptance, while external administration remains organization-scoped. |
 
@@ -33,6 +53,16 @@ Phaeno Portal is the operational source of truth. QuickBooks Online is authorita
 
 The living backend, frontend, and E2E coverage boundaries are maintained in `docs/plans/BACKEND-TEST-PLAN.md`, `docs/plans/FRONTEND-TEST-PLAN.md`, and `docs/plans/E2E-TEST-PLAN.md`.
 
+Local 2026-08-29 evidence: 13 focused order-to-cash backend tests and the full
+backend suite (169 passed, 10 opt-in PostgreSQL tests skipped) passed; 8 focused
+frontend tests, the zero-warning Release backend build, lint, type validation,
+and the client/SSR/Nitro build passed; EF reported no model drift after the new
+migration; and the staging operator script parsed successfully. The full
+frontend suite has 54 passes plus four reproducible failures in the unchanged
+Web Operations Radix-tab test. These local results do not satisfy restored-
+database, provider, authenticated browser, dedicated-staging, or cross-
+functional production-activation gates.
+
 ## Configuration ownership
 
 Keep environment-specific values outside source control. `appsettings.Development.json`, `.env`, and `.env.*` are ignored local configuration files. Prefer environment variables, ASP.NET Core user secrets for local work, and the selected deployment platform's secret store for shared environments.
@@ -45,6 +75,7 @@ Keep environment-specific values outside source control. `appsettings.Developmen
 | `Bootstrap` | One-time bootstrap link inputs | Disabled or cleared after the initial administrator is linked. |
 | `Invitations` | Token lifetime, resend cooldown, public URL | Public URL and expiry policy approved. |
 | `Postmark` | Transactional sender | Verified sender/domain, production token, stream, delivery and failure monitoring. |
+| `PSeqOrderToCash` | Independent rollout flags, service-authenticated result pipeline, object-storage transfer targets, retention offsets, and dual-control audit/enforcement | Enable additive slices independently. Keep dual control audit-only until staffing evidence; require a rotated service secret, approved storage/scanner endpoint, explicit retention schedule, and no production default or placeholder values. |
 | `WebsiteApi`, `GoogleAuthSettings`, and `EmailServiceSettings` | Public origins/documents, technical brief, Google reCAPTCHA Enterprise, and Mailgun templates | Existing production credentials and document volume transferred through the secret/storage platform; CORS, rejection, templates, and PDF delivery verified. |
 | `WebCrawlerSettings`, `WebSearchSettings`, and `ChronJobs:IndexWebsite` | Public-site crawl target, Lucene index path, and rebuild schedule | Durable writable index storage, successful initial crawl, monitoring, and representative search verified. |
 | `WebsitePreviewSearch` | Protected branch crawl target, dedicated Preview Lucene path, Vercel automation bypass, proxy key, and rebuild schedule | Disabled by default; when activated, secrets remain server-side, the index uses its dedicated volume, direct unauthenticated access is denied, and production search remains unchanged. |
@@ -71,6 +102,10 @@ Committed migrations currently cover:
 6. `EnforceLabLibraryLineage`.
 7. `AddWebsiteApi`, generated for the `website` schema and not applied to a
    shared environment by the consolidation work.
+8. `AddPSeqOrderToCashGapClosure`, additive invitation, readiness, roles,
+   governed-result, native-AR, reconciliation, retention, and attention
+   structures with historical-state backfills; not applied to a shared
+   environment.
 
 Use the repository-local EF tool manifest and commands documented in `README.md`. A migration committed or applied to one developer database is not proof that it ran in another environment. Before a shared-environment migration, record the target, backup/restore point, expected duration, application compatibility, verification query or smoke test, and rollback/forward-fix decision. Never apply a migration to shared, staging, or production data without explicit authorization.
 

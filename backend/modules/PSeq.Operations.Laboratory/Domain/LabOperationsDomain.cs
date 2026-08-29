@@ -222,9 +222,12 @@ public sealed class LabProtocolVersion
         AuthoredAtUtc = authoredAtUtc;
     }
 
-    public void Approve(Guid actorUserId, DateTime utcNow)
+    public void Approve(Guid actorUserId, DateTime utcNow, bool enforceActorSeparation = true)
     {
         if (Status != LabProtocolStatus.Draft) throw new InvalidOperationException("Only a draft protocol can be approved.");
+        if (actorUserId == Guid.Empty) throw new ArgumentException("An approval actor is required.");
+        if (enforceActorSeparation && actorUserId == AuthoredByUserId)
+            throw new InvalidOperationException("A protocol author cannot approve the same protocol version.");
         Status = LabProtocolStatus.Approved;
         ApprovedByUserId = actorUserId;
         ApprovedAtUtc = utcNow;
@@ -250,9 +253,12 @@ public sealed class LabProtocolVersion
         Status = LabProtocolStatus.Discarded;
     }
 
-    public void Activate()
+    public void Activate(Guid actorUserId, bool enforceActorSeparation = true)
     {
         if (Status != LabProtocolStatus.Approved) throw new InvalidOperationException("Only an approved protocol can be activated.");
+        if (actorUserId == Guid.Empty) throw new ArgumentException("An activation actor is required.");
+        if (enforceActorSeparation && actorUserId == AuthoredByUserId)
+            throw new InvalidOperationException("A protocol author cannot activate the same protocol version.");
         Status = LabProtocolStatus.Active;
     }
 

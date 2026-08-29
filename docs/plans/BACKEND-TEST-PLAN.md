@@ -16,6 +16,22 @@ and rollback-isolated PostgreSQL coverage.
 
 ## Created Tests
 
+- [x] `backend/test/PSeqOrderToCashDomainTests.cs` - invitation retry and hard
+  bounce transitions; derived full readiness versus permitted internal staging;
+  manual Blocked override; enforced and audit-only protocol author separation;
+  result-package
+  completeness, approval, release, correction, and withdrawal; invoice decimal
+  arithmetic and append-only adjustment effects; partial allocation and
+  overpayment/unapplied behavior; reconciliation balance and independent-actor
+  approval in enforced and audit-only modes; retention warning/cutoff/grace/
+  deletion/reissue; and production governed-result configuration validation.
+- [ ] PSeq order-to-cash PostgreSQL/API coverage - invitation webhook
+  deduplication and out-of-order retry, durable dispatch concurrency, tenant
+  isolation, pipeline idempotency, invoice-number uniqueness, serializable
+  allocation/reconciliation conflicts, CSV duplicate import, exact decimal
+  persistence, migration backfills, and forward-fix behavior remain required
+  against a restored production-like database before shared activation.
+
 - [x] `backend/test/FileStorageTests.cs` - local provider round-trip, checksum,
   deletion, oversize cleanup, feature-area separation, dependency-injection
   provider selection, and rejection of local storage in Production.
@@ -304,6 +320,13 @@ and rollback-isolated PostgreSQL coverage.
 
 ## Requested Execution Log
 
+- 2026-08-29: PSeq order-to-cash verification passed all 13 focused domain and
+  persistence tests. The full solution passed 169 tests with 10 opt-in
+  PostgreSQL tests skipped and no failures. The Release solution build passed
+  with zero warnings and zero errors. EF Core reported no model changes after
+  `AddPSeqOrderToCashGapClosure`. No database was migrated in this task;
+  restored-production-like migration/backfill, webhook concurrency, and live
+  PostgreSQL/API acceptance remain activation gates.
 - 2026-08-07: added source coverage for the credential-free production
   `DisabledFileStorage` DI selection and its fail-closed storage behavior.
   `dotnet build backend/PSeq.Operations.slnx --configuration Release

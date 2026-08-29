@@ -22,6 +22,7 @@ import {
   setUserActive,
   updatePhaenoUser,
   type Invitation,
+  type BusinessRole,
   type LabRole,
   type PhaenoUser,
 } from '#/api/organization-management'
@@ -64,8 +65,16 @@ const labRoleOptions = [
   },
 ] as const satisfies ReadonlyArray<{ value: LabRole; label: string }>
 
+const businessRoleOptions = [
+  { value: 'CommercialOperator', label: 'Commercial operator' },
+  { value: 'ResultReleaseManager', label: 'Result release manager' },
+  { value: 'BillingOperator', label: 'Billing operator' },
+  { value: 'CashOperator', label: 'Cash operator' },
+  { value: 'CashReconciler', label: 'Cash reconciler' },
+] as const satisfies ReadonlyArray<{ value: BusinessRole; label: string }>
+
 const platformRoleValue = 'PlatformAdministrator'
-type RoleValue = typeof platformRoleValue | LabRole
+type RoleValue = typeof platformRoleValue | LabRole | BusinessRole
 
 const editSchema = z.object({
   firstName: z
@@ -149,6 +158,10 @@ export function PhaenoUserManagementPanel({
           ...role,
           isActive: values.roles.includes(role.role),
         })),
+        businessRoles: user.businessRoles.map((role) => ({
+          ...role,
+          isActive: values.roles.includes(role.role),
+        })),
       }),
     onSuccess: async () => {
       setEditingUser(null)
@@ -164,6 +177,7 @@ export function PhaenoUserManagementPanel({
         email: values.email,
         isOrganizationAdmin: values.roles.includes(platformRoleValue),
         labRoles: values.roles.filter(isLabRole),
+        businessRoles: values.roles.filter(isBusinessRole),
       }),
     onSuccess: async () => {
       setInviteOpen(false)
@@ -319,11 +333,30 @@ export function PhaenoUserManagementPanel({
                     </p>
                     <p className="m-0 mt-2 text-sm text-muted-foreground">
                       {formatInvitationRoles(invitation)}
-                      {invitation.isExpired ? ' · Invitation expired' : ''}
                     </p>
+                    <p className="m-0 mt-1 text-xs text-muted-foreground">
+                      Access: {invitation.isExpired ? 'Expired' : invitation.status}
+                      {' · '}Email: {formatDeliveryStatus(invitation)}
+                      {' · '}Sends: {invitation.sendCount}
+                      {' · '}Expires {formatInvitationDate(invitation.expiresAt)}
+                    </p>
+                    {invitation.lastSendError ? (
+                      <p className="m-0 mt-1 text-sm text-destructive" role="status">
+                        {invitation.lastSendError}
+                      </p>
+                    ) : null}
+                    {invitation.hasHardBounce ? (
+                      <p className="m-0 mt-1 text-sm text-destructive">
+                        Hard bounce: revoke this invitation and issue a new one
+                        to the corrected address.
+                      </p>
+                    ) : null}
                   </div>
                   <div className="flex shrink-0 flex-wrap items-center gap-2">
                     <Badge variant="outline">Pending invitation</Badge>
+                    <Badge variant={deliveryBadgeVariant(invitation)}>
+                      Email {formatDeliveryStatus(invitation)}
+                    </Badge>
                     <DropdownMenu modal={false}>
                       <DropdownMenuTrigger asChild>
                         <Button
@@ -337,7 +370,10 @@ export function PhaenoUserManagementPanel({
                       </DropdownMenuTrigger>
                       <DropdownMenuContent align="end">
                         <DropdownMenuItem
-                          disabled={invitationMutation.isPending}
+                          disabled={
+                            invitationMutation.isPending ||
+                            invitation.hasHardBounce
+                          }
                           onSelect={() =>
                             invitationMutation.mutate({
                               id: invitation.id,
@@ -570,9 +606,19 @@ function PhaenoUserEditDialog({
                 onCheckedChange={(checked) => toggleRole(role.value, checked)}
               />
             ))}
+            {businessRoleOptions.map((role) => (
+              <RoleCheckbox
+                key={role.value}
+                checked={selectedRoles.includes(role.value)}
+                id={`role-${role.value}`}
+                label={role.label}
+                onCheckedChange={(checked) => toggleRole(role.value, checked)}
+              />
+            ))}
             <p className="text-xs text-muted-foreground">
-              Platform administrators retain bootstrap access to every
-              laboratory capability even without explicit laboratory roles.
+              Platform administration manages configuration and role
+              assignments. Business and laboratory actions require their
+              explicit roles once enforcement is enabled.
             </p>
           </fieldset>
         </form>
@@ -720,6 +766,15 @@ function PhaenoUserInviteDialog({
                 onCheckedChange={(checked) => toggleRole(role.value, checked)}
               />
             ))}
+            {businessRoleOptions.map((role) => (
+              <RoleCheckbox
+                key={role.value}
+                checked={selectedRoles.includes(role.value)}
+                id={`invite-role-${role.value}`}
+                label={role.label}
+                onCheckedChange={(checked) => toggleRole(role.value, checked)}
+              />
+            ))}
             <p className="text-xs text-muted-foreground">
               These roles become active only after the invitation is accepted.
             </p>
@@ -831,6 +886,11 @@ function roleValuesFor(user: PhaenoUser): RoleValue[] {
       .filter((role) => role.isActive)
       .map((role) => role.role),
   )
+  roles.push(
+    ...user.businessRoles
+      .filter((role) => role.isActive)
+      .map((role) => role.role),
+  )
   return roles
 }
 
@@ -844,12 +904,23 @@ function formatUserRoles(user: PhaenoUser) {
           labRoleOptions.find((option) => option.value === role.role)?.label ??
           role.role,
       ),
+    ...user.businessRoles
+      .filter((role) => role.isActive)
+      .map(
+        (role) =>
+          businessRoleOptions.find((option) => option.value === role.role)
+            ?.label ?? role.role,
+      ),
   ]
   return roles.length > 0 ? roles.join(', ') : 'No assigned roles'
 }
 
 function isLabRole(value: string): value is LabRole {
   return labRoleOptions.some((option) => option.value === value)
+}
+
+function isBusinessRole(value: string): value is BusinessRole {
+  return businessRoleOptions.some((option) => option.value === value)
 }
 
 function formatInvitationRoles(invitation: Invitation) {
@@ -859,6 +930,28 @@ function formatInvitationRoles(invitation: Invitation) {
       (role) =>
         labRoleOptions.find((option) => option.value === role)?.label ?? role,
     ),
+    ...invitation.businessRoles.map(
+      (role) =>
+        businessRoleOptions.find((option) => option.value === role)?.label ??
+        role,
+    ),
   ]
   return roles.length > 0 ? roles.join(', ') : 'No assigned roles'
+}
+
+function formatDeliveryStatus(invitation: Invitation) {
+  return invitation.deliveryStatus ?? 'Not queued'
+}
+
+function deliveryBadgeVariant(invitation: Invitation) {
+  return invitation.deliveryStatus === 'Delivered' ||
+    invitation.deliveryStatus === 'Accepted'
+    ? 'secondary'
+    : 'outline'
+}
+
+function formatInvitationDate(value: string) {
+  return new Intl.DateTimeFormat('en-US', { dateStyle: 'medium' }).format(
+    new Date(value),
+  )
 }

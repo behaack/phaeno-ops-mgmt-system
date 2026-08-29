@@ -46,6 +46,14 @@ public sealed class PSeqOperationsDbContext(
     /// </summary>
     public DbSet<OrganizationInvitation> OrganizationInvitations { get; set; }
 
+    public DbSet<InvitationDeliveryAttempt> InvitationDeliveryAttempts { get; set; }
+
+    public DbSet<InvitationDeliveryWebhookEvent> InvitationDeliveryWebhookEvents { get; set; }
+
+    public DbSet<BusinessRoleAssignment> BusinessRoleAssignments { get; set; }
+
+    public DbSet<BusinessRoleInvitationIntent> BusinessRoleInvitationIntents { get; set; }
+
     /// <summary>
     /// Append-only audit events for persisted entity changes.
     /// </summary>
@@ -96,6 +104,20 @@ public sealed class PSeqOperationsDbContext(
     public DbSet<LabSample> LabSamples { get; set; }
     public DbSet<LabServiceQuote> LabServiceQuotes { get; set; }
     public DbSet<LabResultRelease> LabResultReleases { get; set; }
+    public DbSet<ResultOutputPackage> ResultOutputPackages { get; set; }
+    public DbSet<ResultArtifact> ResultArtifacts { get; set; }
+    public DbSet<ResultDeliveryEvidence> ResultDeliveryEvidence { get; set; }
+    public DbSet<ResultRetentionSchedule> ResultRetentionSchedules { get; set; }
+    public DbSet<Invoice> Invoices { get; set; }
+    public DbSet<InvoiceLine> InvoiceLines { get; set; }
+    public DbSet<InvoiceAdjustment> InvoiceAdjustments { get; set; }
+    public DbSet<PaymentReceipt> PaymentReceipts { get; set; }
+    public DbSet<PaymentAllocation> PaymentAllocations { get; set; }
+    public DbSet<PaymentImportBatch> PaymentImportBatches { get; set; }
+    public DbSet<ReconciliationBatch> ReconciliationBatches { get; set; }
+    public DbSet<ReconciliationBatchItem> ReconciliationBatchItems { get; set; }
+    public DbSet<PaymentProcessorExternalLink> PaymentProcessorExternalLinks { get; set; }
+    public DbSet<OperationalAttentionItem> OperationalAttentionItems { get; set; }
     public DbSet<PartnerShippingAddress> PartnerShippingAddresses { get; set; }
     public DbSet<PartnerReagentOrder> PartnerReagentOrders { get; set; }
     public DbSet<PartnerReagentOrderLine> PartnerReagentOrderLines { get; set; }
@@ -160,6 +182,8 @@ public sealed class PSeqOperationsDbContext(
                 .HasConversion<string>()
                 .HasMaxLength(50);
             entity.Property(e => e.PortalReadinessNote).HasMaxLength(2000);
+            entity.Property(e => e.IsOperationalReadinessBlocked).IsRequired();
+            entity.Property(e => e.OperationalReadinessBlockReason).HasMaxLength(2000);
             entity.Property(e => e.IsActive).IsRequired();
             entity.Property(e => e.CreatedAt).IsRequired();
             entity.Property(e => e.CreatedByUserId);
@@ -271,6 +295,69 @@ public sealed class PSeqOperationsDbContext(
             entity.HasOne(e => e.Organization)
                 .WithMany()
                 .HasForeignKey(e => e.OrganizationId)
+                .OnDelete(DeleteBehavior.Restrict);
+        });
+
+        modelBuilder.Entity<InvitationDeliveryAttempt>(entity =>
+        {
+            entity.HasKey(e => e.Id);
+            entity.Property(e => e.State).IsRequired().HasConversion<string>().HasMaxLength(50);
+            entity.Property(e => e.ProtectedPayload).IsRequired().HasMaxLength(16000);
+            entity.Property(e => e.ProviderMessageId).HasMaxLength(255);
+            entity.Property(e => e.LastError).HasMaxLength(2000);
+            entity.Property(e => e.CreatedAt).IsRequired();
+            entity.Property(e => e.UpdatedAt).IsRequired();
+            entity.Property(e => e.Version).IsRequired().IsConcurrencyToken();
+            entity.HasIndex(e => e.OrganizationInvitationId);
+            entity.HasIndex(e => e.ProviderMessageId);
+            entity.HasIndex(e => new { e.State, e.NextAttemptAtUtc });
+            entity.HasOne<OrganizationInvitation>()
+                .WithMany()
+                .HasForeignKey(e => e.OrganizationInvitationId)
+                .OnDelete(DeleteBehavior.Restrict);
+        });
+
+        modelBuilder.Entity<InvitationDeliveryWebhookEvent>(entity =>
+        {
+            entity.HasKey(e => e.Id);
+            entity.Property(e => e.ProviderEventId).IsRequired().HasMaxLength(512);
+            entity.Property(e => e.EventType).IsRequired().HasMaxLength(100);
+            entity.Property(e => e.ProviderOccurredAtUtc).IsRequired();
+            entity.Property(e => e.ReceivedAtUtc).IsRequired();
+            entity.HasIndex(e => e.ProviderEventId).IsUnique();
+            entity.HasIndex(e => e.InvitationDeliveryAttemptId);
+            entity.HasOne<InvitationDeliveryAttempt>()
+                .WithMany()
+                .HasForeignKey(e => e.InvitationDeliveryAttemptId)
+                .OnDelete(DeleteBehavior.Restrict);
+        });
+
+        modelBuilder.Entity<BusinessRoleAssignment>(entity =>
+        {
+            entity.HasKey(e => e.Id);
+            entity.Property(e => e.Role).IsRequired().HasConversion<string>().HasMaxLength(100);
+            entity.Property(e => e.IsActive).IsRequired();
+            entity.Property(e => e.CreatedAt).IsRequired();
+            entity.Property(e => e.UpdatedAt).IsRequired();
+            entity.Property(e => e.Version).IsRequired().IsConcurrencyToken();
+            entity.HasIndex(e => new { e.UserId, e.Role }).IsUnique();
+            entity.HasOne<User>()
+                .WithMany()
+                .HasForeignKey(e => e.UserId)
+                .OnDelete(DeleteBehavior.Restrict);
+        });
+
+        modelBuilder.Entity<BusinessRoleInvitationIntent>(entity =>
+        {
+            entity.HasKey(e => e.Id);
+            entity.Property(e => e.Role).IsRequired().HasConversion<string>().HasMaxLength(100);
+            entity.Property(e => e.CreatedAt).IsRequired();
+            entity.Property(e => e.UpdatedAt).IsRequired();
+            entity.Property(e => e.Version).IsRequired().IsConcurrencyToken();
+            entity.HasIndex(e => new { e.OrganizationInvitationId, e.Role }).IsUnique();
+            entity.HasOne<OrganizationInvitation>()
+                .WithMany()
+                .HasForeignKey(e => e.OrganizationInvitationId)
                 .OnDelete(DeleteBehavior.Restrict);
         });
 

@@ -1,5 +1,24 @@
 # Lab Operations Plan
 
+## 2026-08-29 governed-result and dual-control update
+
+`PSEQ-ORDER-TO-CASH-GAP-CLOSURE-PLAN.md` closes the previously unresolved
+PSeq final-output boundary. The provider-neutral pipeline integration now
+registers an idempotent manifest and object-storage transfer targets for final
+deliverables only. `ResultOutputPackage` and immutable artifacts carry
+checksum and malware-scan evidence. Scientific approval requires a complete
+clean package, pins its package identifier/version, and projects that identity
+with `LabWorkReadyForRelease`. Corrections create a new package/approval/release
+version; withdrawal and delivery/retention evidence remain historical.
+
+Protocol authors cannot approve or activate their own version. A scientific
+reviewer cannot approve work to which that actor contributed through receipt,
+accessioning, execution, QC, library, batch, or sendout events. Lab Operations
+Administrator is an access/resource role; bench, supervisory, protocol, and
+scientific work require their explicit additive roles after enforcement.
+These checks launch in audit-only mode and become blocking only after staffing
+and staging acceptance.
+
 Keep this file updated as Phaeno's internal laboratory workflows are designed
 and implemented.
 

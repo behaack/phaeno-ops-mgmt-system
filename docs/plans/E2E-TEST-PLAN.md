@@ -27,6 +27,25 @@ production search results.
 
 ## Created Tests
 
+- [ ] `frontend/e2e/pseq-order-to-cash.spec.ts` - dedicated-staging-only
+  acceptance for CRM/account handoff, internal staging before administrator,
+  invitation delivery/acceptance, derived readiness, quote/acceptance, sample
+  intake and Lab execution, governed package/scientific approval/release and
+  Customer download, job completion/invoice, receipt/import/allocation,
+  independent reconciliation, and Paid. The same journey must cover bounce,
+  failed QC, rejected specimen, correction/withdrawal, notification outage,
+  duplicate commands, partial payment, overpayment, reversal, and
+  reconciliation mismatch on desktop and narrow layouts with Axe, keyboard,
+  focus, zoom/reflow, and explicit loading/empty/blocked/stale/failure states.
+  The executable operator checklist is
+  `scripts/acceptance/pseq-order-to-cash-staging.ps1`; no dedicated staging
+  environment or cross-functional signoff is available in this local task.
+- [x] `scripts/acceptance/pseq-order-to-cash-staging.ps1` - executable
+  operator checklist for the approved happy path, exception matrix, evidence
+  capture, and Commercial/Lab Operations/Scientific/Finance/security/
+  accessibility signoffs. Local parsing passed; execution remains
+  dedicated-staging-only.
+
 - [x] `frontend/e2e/home.spec.ts` - internal Phaeno context uses POMS in the
   browser title, header, and dashboard while external organization context uses
   Portal; both contexts retain the Phaeno Inc. legal footer and omit framework
@@ -194,6 +213,11 @@ production search results.
 
 ## Requested Execution Log
 
+- 2026-08-29: the PSeq order-to-cash dedicated-staging operator script parsed
+  without errors. It was not executed because this task had no authorized
+  dedicated-staging environment, configured providers, authenticated roles, or
+  cross-functional signoff participants. No production browser or data was
+  touched.
 - 2026-07-18: a live authenticated browser review verified the material-lot QC
   workflow without recording a decision. Pending rows show `QC: Pending` and
   one `Record QC` action. The modal identifies the lot, defaults the required QC

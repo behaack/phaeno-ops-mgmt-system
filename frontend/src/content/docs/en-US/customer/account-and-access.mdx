@@ -9,7 +9,7 @@ Your Portal access is created through an organization invitation. The current or
 3. Review the organization, your name, and the offered role.
 4. Accept or decline the invitation.
 
-An invitation link is private and can expire, be revoked, or be replaced by a newer link. Do not forward it. If a link is unavailable, ask your organization administrator or Phaeno to send a new invitation.
+An invitation link is private and can expire, be revoked, or be replaced by a newer link. Do not forward it. Phaeno tracks whether the invitation email was queued, delivered, bounced, or needs attention separately from whether the invitation is still pending or accepted. If an address hard-bounces, Phaeno must revoke the invitation and issue a new one to the corrected address.
 
 The portal does not collect or reset your sign-in password. Complete sign-in and account recovery through the identity service shown on the sign-in page.
 
@@ -42,7 +42,7 @@ Enter the person’s first name, last name, and exact sign-in email, but never c
 
 | What you see | What to do |
 | --- | --- |
-| Invitation link unavailable | Ask an administrator to confirm the invitation is still pending and resend it. Use only the newest link. |
+| Invitation link unavailable | Ask an administrator to confirm the invitation access state and email-delivery state. Resend only a still-valid address; after a hard bounce, request revoke/reissue to the corrected address. Use only the newest link. |
 | Email does not match | Sign out and use the email address that received the invitation, or request a corrected invitation. |
 | No active memberships | Ask your Customer administrator to coordinate a fresh invitation with Phaeno. |
 | Wrong organization shown | Stop before opening records and contact Phaeno to verify the active membership. |

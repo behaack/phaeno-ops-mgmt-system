@@ -37,6 +37,8 @@ builder.Services.Configure<InvitationOptions>(
     builder.Configuration.GetSection(InvitationOptions.SectionName));
 builder.Services.Configure<PostmarkOptions>(
     builder.Configuration.GetSection(PostmarkOptions.SectionName));
+builder.Services.Configure<PSeqOrderToCashOptions>(
+    builder.Configuration.GetSection(PSeqOrderToCashOptions.SectionName));
 builder.Services.Configure<DataProvisioningOptions>(
     builder.Configuration.GetSection(DataProvisioningOptions.SectionName));
 builder.Services.Configure<OrderManagementOptions>(
@@ -86,6 +88,7 @@ builder.Services.AddSingleton<DataProvisioningProfile>();
 builder.Services.AddSingleton<IManagedFileScanner, EnvironmentManagedFileScanner>();
 builder.Services.AddSingleton<IOperationalFileScanner, EnvironmentOperationalFileScanner>();
 builder.Services.AddScoped<OrderRequestContext>();
+builder.Services.AddScoped<IPSeqResultPipelineAdapter, ConfiguredPSeqResultPipelineAdapter>();
 builder.Services.AddScoped<OrderIdempotencyService>();
 builder.Services.AddScoped<ILabOperationsProvider, InternalLabOperationsProvider>();
 builder.Services.AddScoped<LabOperationsRequestContext>();
@@ -112,6 +115,7 @@ builder.Services.AddScoped<IOrderNotificationSender>(services =>
         ? services.GetRequiredService<PostmarkOrderNotificationSender>()
         : services.GetRequiredService<LoggingOrderNotificationSender>());
 builder.Services.AddHostedService<OrderNotificationDispatcher>();
+builder.Services.AddHostedService<ResultRetentionWorker>();
 builder.Services.AddHttpClient<PostmarkDataProvisioningNoticeSender>((services, httpClient) =>
 {
     var postmarkOptions = services.GetRequiredService<IOptions<PostmarkOptions>>().Value;
@@ -135,6 +139,8 @@ builder.Services.AddHttpClient<ClerkBootstrapUserProvisioner>((services, httpCli
 builder.Services.AddScoped<IClerkBootstrapUserProvisioner>(
     services => services.GetRequiredService<ClerkBootstrapUserProvisioner>());
 builder.Services.AddScoped<LoggingInvitationEmailSender>();
+builder.Services.AddDataProtection();
+builder.Services.AddSingleton<IInvitationDeliveryPayloadProtector, InvitationDeliveryPayloadProtector>();
 builder.Services.AddHttpClient<PostmarkInvitationEmailSender>((services, httpClient) =>
 {
     var postmarkOptions = services.GetRequiredService<IOptions<PostmarkOptions>>().Value;
@@ -143,10 +149,17 @@ builder.Services.AddHttpClient<PostmarkInvitationEmailSender>((services, httpCli
 builder.Services.AddScoped<IInvitationEmailSender>(services =>
 {
     var postmarkOptions = services.GetRequiredService<IOptions<PostmarkOptions>>().Value;
-    return postmarkOptions.IsConfigured
-        ? services.GetRequiredService<PostmarkInvitationEmailSender>()
-        : services.GetRequiredService<LoggingInvitationEmailSender>();
+    if (postmarkOptions.IsConfigured)
+        return services.GetRequiredService<PostmarkInvitationEmailSender>();
+
+    var environment = services.GetRequiredService<IHostEnvironment>();
+    if (environment.IsDevelopment() || environment.IsEnvironment("Test"))
+        return services.GetRequiredService<LoggingInvitationEmailSender>();
+
+    throw new InvalidOperationException(
+        "Invitation delivery requires configured Postmark credentials outside Development/Test.");
 });
+builder.Services.AddHostedService<InvitationDeliveryDispatcher>();
 builder.Services.AddScoped<IExternalIdentityContext, ClaimsExternalIdentityContext>();
 
 var clerkOptions = builder.Configuration
@@ -253,6 +266,31 @@ builder.Services.Configure<ForwardedHeadersOptions>(options =>
     options.KnownIPNetworks.Clear();
     options.KnownProxies.Clear();
 });
+
+if (!builder.Environment.IsDevelopment() && !builder.Environment.IsEnvironment("Test"))
+{
+    var productionPostmark = builder.Configuration
+        .GetSection(PostmarkOptions.SectionName)
+        .Get<PostmarkOptions>() ?? new PostmarkOptions();
+    var productionInvitations = builder.Configuration
+        .GetSection(InvitationOptions.SectionName)
+        .Get<InvitationOptions>() ?? new InvitationOptions();
+    var postmarkErrors = productionPostmark.ValidateProduction(productionInvitations.PublicBaseUrl);
+    if (postmarkErrors.Count > 0)
+    {
+        throw new InvalidOperationException(
+            "Invitation delivery configuration is invalid: " + string.Join(" ", postmarkErrors));
+    }
+    var orderToCash = builder.Configuration.GetSection(PSeqOrderToCashOptions.SectionName)
+        .Get<PSeqOrderToCashOptions>() ?? new PSeqOrderToCashOptions();
+    if (orderToCash.GovernedPSeqResults)
+    {
+        var resultErrors = orderToCash.ValidateGovernedResults();
+        if (resultErrors.Count > 0)
+            throw new InvalidOperationException(
+                "Governed PSeq result delivery configuration is invalid: " + string.Join(" ", resultErrors));
+    }
+}
 
 var app = builder.Build();
 

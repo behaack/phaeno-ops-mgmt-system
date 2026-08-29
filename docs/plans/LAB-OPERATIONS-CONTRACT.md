@@ -50,11 +50,13 @@ or deployments.
   reviewer-permitted QC fields.
 - Future provider: a third-party LIMS adapter implementing the same
   application-facing semantics.
-- Automated data-pipeline and scientific file-management ownership remains a
-  major TBD. This contract does not resolve or silently absorb it.
-- Existing Commercial result scanning and release remain authoritative for file
-  publication. `ReadyForRelease` is scientific readiness only and never makes a
-  file customer-visible.
+- Raw and intermediate pipeline data remain outside POMS. For PSeq final
+  deliverables, the provider-neutral pipeline adapter registers an immutable
+  manifest and transfers artifacts directly through object storage; large file
+  bytes never pass through the API.
+- POMS-governed output-package scanning and Result Release Manager publication
+  are authoritative for PSeq. `ReadyForRelease` is scientific readiness only
+  and never makes a file customer-visible or consults invoice balance.
 
 ## Purpose
 
@@ -113,6 +115,7 @@ Version 1 covers only:
 - publishing stable milestones and schedule health
 - raising and resolving internal or customer-action-required exceptions
 - announcing that scientific work is approved and ready for Commercial release
+  with the pinned output-package and approval identifiers
 
 Version 1 is not the Lab operator API. Protocol authoring, accession actions,
 container movements, material use, equipment use, batch construction, NGS
@@ -138,6 +141,7 @@ keys.
 | `AccessionId` | Laboratory | Stable identity assigned to a received biological specimen. |
 | `LabExceptionId` | Laboratory | Stable identity for one Lab issue and its resolution. |
 | `ScientificApprovalId` | Laboratory | Stable identity of the approved release candidate. |
+| `ResultOutputPackageId` | Pipeline/POMS | Stable identity of the complete final-deliverable package pinned by scientific approval. |
 
 Identifiers are UUIDs in the Phaeno implementation. Human-readable order
 numbers, accession numbers, specimen references, and barcodes are attributes,
@@ -504,6 +508,7 @@ Lab Operations ends at `ReadyForRelease` and publishes:
 - `AuthorizationId`
 - `LabWorkOrderId`
 - `ScientificApprovalId`
+- `ResultOutputPackageId`
 - approval timestamp
 - approved release-definition key/version
 - permitted customer-visible QC projection, when defined
@@ -513,20 +518,22 @@ Commercial Operations decides when and to whom the result is released. A
 released result is immutable; a correction creates a new approved version and
 a new Commercial release.
 
-Version 1 deliberately does not define:
+Version 1 deliberately does not define or store:
 
 - raw NGS file references
 - pipeline submission or job identifiers
 - intermediate artifacts
-- output manifests
-- scientific storage locations
-- checksums or provenance
+- raw or intermediate output manifests
+- raw or intermediate scientific storage locations
+- raw or intermediate checksums or provenance
 - download URLs
 - retention policy
 
-The future pipeline/file decision will add only the minimum opaque output
-reference needed by Commercial release. It must not broaden this contract into
-a general file-management or pipeline API.
+PSeq final deliverables use the separate governed `ResultOutputPackage` and
+`ResultArtifact` contract. Scientific approval pins that package/version and
+the Commercial projection creates its release candidate automatically. This
+does not broaden the Lab provider contract into general file management or
+pipeline orchestration.
 
 ## Event Envelope
 

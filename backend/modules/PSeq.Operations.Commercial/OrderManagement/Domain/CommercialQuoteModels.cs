@@ -46,6 +46,11 @@ public sealed class LabServiceQuote : IAudit, IConcurrency
     public DateTime? AcceptedAt { get; private set; }
     public Guid? AcceptedByUserId { get; private set; }
     public Guid? SupersededByQuoteId { get; private set; }
+    public string? BillingContactSnapshotJson { get; private set; }
+    public string? BillingAddressSnapshotJson { get; private set; }
+    public int? PaymentTermsDaysSnapshot { get; private set; }
+    public string? TaxDecisionSnapshotJson { get; private set; }
+    public int? CommercialConfigurationVersion { get; private set; }
     public DateTime CreatedAt { get; private set; } = DateTime.UtcNow;
     public Guid? CreatedByUserId { get; private set; }
     public DateTime UpdatedAt { get; private set; } = DateTime.UtcNow;
@@ -81,6 +86,24 @@ public sealed class LabServiceQuote : IAudit, IConcurrency
     }
 
     public void MarkIssued() { if (Status != QuoteStatus.SyncPending) throw new InvalidOperationException(); Status = QuoteStatus.Issued; }
+
+    public void FreezeCommercialTerms(
+        string billingContactSnapshotJson,
+        string billingAddressSnapshotJson,
+        int paymentTermsDays,
+        string taxDecisionSnapshotJson,
+        int commercialConfigurationVersion)
+    {
+        if (Status != QuoteStatus.SyncPending)
+            throw new InvalidOperationException("Commercial terms must be frozen before quote issuance.");
+        if (paymentTermsDays is < 0 or > 365 || commercialConfigurationVersion < 1)
+            throw new ArgumentOutOfRangeException(nameof(paymentTermsDays));
+        BillingContactSnapshotJson = OrderText.Json(billingContactSnapshotJson);
+        BillingAddressSnapshotJson = OrderText.Json(billingAddressSnapshotJson);
+        PaymentTermsDaysSnapshot = paymentTermsDays;
+        TaxDecisionSnapshotJson = OrderText.Json(taxDecisionSnapshotJson);
+        CommercialConfigurationVersion = commercialConfigurationVersion;
+    }
     public void Supersede(Guid nextQuoteId) { if (Status is QuoteStatus.Accepted or QuoteStatus.Superseded) throw new InvalidOperationException(); Status = QuoteStatus.Superseded; SupersededByQuoteId = nextQuoteId; }
 
     public void Accept(Guid actorUserId, DateTime utcNow)

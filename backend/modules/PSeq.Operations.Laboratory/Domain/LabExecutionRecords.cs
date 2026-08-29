@@ -49,6 +49,7 @@ public sealed class LabScientificApproval
     public Guid ApprovedByUserId { get; private set; }
     public DateTime ApprovedAtUtc { get; private set; }
     public long ProjectionVersion { get; private set; }
+    public Guid? ResultOutputPackageId { get; private set; }
 
     private LabScientificApproval()
     {
@@ -62,7 +63,8 @@ public sealed class LabScientificApproval
         string? permittedQcProjectionJson,
         Guid approvedByUserId,
         DateTime approvedAtUtc,
-        long projectionVersion)
+        long projectionVersion,
+        Guid? resultOutputPackageId = null)
     {
         if (labWorkOrderId == Guid.Empty || approvedByUserId == Guid.Empty)
         {
@@ -88,5 +90,6 @@ public sealed class LabScientificApproval
         ApprovedByUserId = approvedByUserId;
         ApprovedAtUtc = approvedAtUtc;
         ProjectionVersion = projectionVersion;
+        ResultOutputPackageId = resultOutputPackageId;
     }
 }

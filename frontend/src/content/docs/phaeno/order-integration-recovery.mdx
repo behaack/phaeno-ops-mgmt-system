@@ -1,22 +1,22 @@
 # Integration failures and recovery
 
-Order Ops uses durable integration events for QuickBooks Online and notifications. A failed delivery remains attached to the original workflow with its idempotency key, attempt history, last error, and external identifier when one exists.
+Order Ops uses durable invitation, notification, Lab projection, and provider-neutral result-pipeline records. A failed delivery remains attached to the original workflow with its idempotency key, attempt history, last error, and provider identifier when one exists. The retained accounting-connector queue is legacy/non-PSeq context; native PSeq AR remains local to POMS.
 
 ## Triage the failure
 
-Open the **Integrations** section and identify the affected order, command type, current delivery state, last attempt, and tenant-visible consequence. Determine whether the local operation committed successfully before taking any recovery action.
+Open **Attention** for the owned cross-workflow exception or **Legacy integrations** for a retained connector/notification event. Identify the affected record, current delivery state, owner, age, attempts, next action, and tenant-visible consequence. Determine whether the local operation committed successfully before taking recovery action.
 
 Common states include:
 
-- **Commercial sync pending** while a durable command awaits delivery;
-- **Commercial sync failed** when QuickBooks rejected or could not receive it; and
+- **Invitation queued/failed/bounced/needs attention** while access remains separately pending, accepted, expired, or revoked;
+- **Projection or scan failed** while the immutable result package remains unreleased;
 - failed notification delivery after the underlying portal action already succeeded.
 
 ## Retry safely
 
 Refresh the workflow and retry the existing durable integration event. Reconciliation uses the stored idempotency and external references to avoid duplicates. Do not recreate the order, quote, invoice, credit, shipment, release, or notification merely because delivery failed.
 
-If QuickBooks received the command but the portal lacks confirmation, use the reconciliation path rather than sending a new Commercial command. If a notification failed, retry the notification without repeating the underlying business transition.
+If an invitation hard-bounced, revoke and reissue to a corrected address rather than retrying it. If a pipeline submission or Postmark webhook is replayed, use the stored idempotency/provider event identity rather than creating another package or delivery. If a notification failed, retry it without repeating the underlying business transition.
 
 ## Communicate the boundary
 

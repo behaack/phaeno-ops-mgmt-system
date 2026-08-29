@@ -249,9 +249,11 @@ Confirmed Prospect rules:
 - A Customer-action-required Lab exception has a separate Customer-safe
   summary. Internal descriptions never project to Commercial. Open blocking
   exceptions prevent scientific approval.
-- Scientific approval moves Lab work to Ready for release and may project only
-  reviewer-permitted QC. It does not upload, attach, release, or publish a file;
-  existing Commercial scan, credit/payment, and publication gates still apply.
+- PSeq scientific approval requires a complete, checksummed, malware-clean
+  final-output package, pins its package/version, and moves that package to
+  Ready for release. A Result Release Manager controls Customer publication;
+  invoice balance and credit status never gate PSeq result release. Partner
+  data-assembly release retains its separately documented commercial gates.
 - An approved Commercial cancellation reaches Lab before the Commercial order
   commits cancellation. Received or started work requires manual review rather
   than forced history rewriting.
@@ -269,24 +271,30 @@ Confirmed Prospect rules:
   immutable Phaeno-issued quotes. Partner reagents use active,
   organization-specific negotiated pricing. A Partner never sees or uses
   another Partner's offering or price.
-- Quote visibility and acceptance require a successfully synchronized
-  QuickBooks estimate. The default quote-validity period is 30 days and can be
-  changed in Phaeno configuration; each issued quote snapshots its expiration.
-- QuickBooks Online is the only implemented commercial system. There is no ERP
-  or LIMS. QuickBooks owns catalog base facts, estimates, invoices, adjustments,
-  tax, freight, discounts, balances, terms, paid status, and hosted payment
-  links. The portal owns operational workflow and immutable commercial links.
-- Customer laboratory credit and Partner assembly credit are separate audited
-  organization settings. Approved credit uses Net 30 release. Without approved
-  credit, completed result/output downloads remain blocked until QuickBooks
-  confirms payment.
-- Scientific completion and commercial release are separate. A ready file is
-  downloadable only after its scan, checksum, provenance/QC, membership,
-  commercial-sync, credit/payment, and release rules pass.
-- Customer laboratory result availability is sample-specific. A
-  credit-approved Customer may receive an eligible sample result while other
-  samples remain in progress; a non-credit Customer waits for the completed job
-  invoice to be paid before any job result is released.
+- PSeq Lab Service quotes require complete derived operational readiness and a
+  Finance-approved tax decision. POMS snapshots billing contact/address,
+  payment terms, tax decision, tax rate or exemption evidence, quote lines,
+  totals, currency, and expiration. Partner kit and data-assembly quoting retain
+  their existing QuickBooks-linked rules.
+- POMS owns operational accounts receivable for PSeq Lab Service: automatic
+  invoice issuance at job completion, immutable invoice PDFs, append-only
+  adjustments, receipts, explicit allocations, reconciliation, and aging.
+  POMS is not a general ledger or online payment processor; future accounting
+  and payment adapters remain provider-neutral seams.
+- PSeq Customer billing defaults to Net 30 and USD only. Finance owns the
+  billing contact/address, effective tax decision, approved rate or exemption
+  evidence, and approval record. Historical manual billing remains visible as
+  a legacy source requiring Finance review and is not converted into an issued
+  invoice.
+- Scientific completion and Customer publication are separate. A PSeq result
+  is downloadable only after its immutable package is complete, checksummed,
+  malware-clean, scientifically approved, and explicitly released by a Result
+  Release Manager. Customer membership still scopes access; balance and credit
+  do not participate in the release decision.
+- PSeq laboratory result availability is sample-specific. An eligible sample
+  may be released while other samples remain in progress regardless of invoice
+  status. A correction creates a new package, approval, and release version;
+  withdrawal preserves the complete history.
 - Partner reagent placement requires an active Partner offering, valid quantity,
   active negotiated price, selected active shipping address, and purchase-order
   number. Placement snapshots those facts and revalidates them on the server.

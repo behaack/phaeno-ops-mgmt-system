@@ -2,6 +2,20 @@ import { api } from './client'
 import type { OrganizationKind } from './session'
 
 export type InvitationStatus = 'Pending' | 'Accepted' | 'Revoked' | 'Declined'
+export type BusinessRole =
+  | 'CommercialOperator'
+  | 'ResultReleaseManager'
+  | 'BillingOperator'
+  | 'CashOperator'
+  | 'CashReconciler'
+export type InvitationDeliveryStatus =
+  | 'Queued'
+  | 'Sending'
+  | 'Accepted'
+  | 'Delivered'
+  | 'Bounced'
+  | 'Failed'
+  | 'NeedsAttention'
 
 export type Invitation = {
   id: string
@@ -19,6 +33,7 @@ export type Invitation = {
     | 'ScientificReviewer'
     | 'OperationsAdministrator'
   >
+  businessRoles: BusinessRole[]
   status: InvitationStatus
   isExpired: boolean
   expiresAt: string
@@ -33,6 +48,13 @@ export type Invitation = {
   sendCount: number
   lastEmailProviderMessageId: string | null
   lastSendError: string | null
+  deliveryStatus: InvitationDeliveryStatus | null
+  deliveryAttemptCount: number
+  deliveryQueuedAt: string | null
+  deliveryUpdatedAt: string | null
+  deliveredAt: string | null
+  bouncedAt: string | null
+  hasHardBounce: boolean
   createdAt: string
   updatedAt: string
   version: number
@@ -49,6 +71,7 @@ export async function createInvitation(input: {
   email: string
   isOrganizationAdmin: boolean
   labRoles: Invitation['labRoles']
+  businessRoles?: Invitation['businessRoles']
 }) {
   const response = await api.post<Invitation>('/invitations', input)
   return response.data

@@ -268,11 +268,21 @@ export function OrganizationUserManagementPanel({
                   {invitation.isOrganizationAdmin
                     ? 'Organization administrator'
                     : 'Member'}
-                  {invitation.isExpired ? ' · Invitation expired' : ''}
                 </p>
+                <p className="m-0 mt-1 text-xs text-muted-foreground">
+                  Access: {invitation.isExpired ? 'Expired' : invitation.status}
+                  {' · '}Email: {invitation.deliveryStatus ?? 'Not queued'}
+                  {' · '}Sends: {invitation.sendCount}
+                  {' · '}Expires {new Intl.DateTimeFormat('en-US', { dateStyle: 'medium' }).format(new Date(invitation.expiresAt))}
+                </p>
+                {invitation.lastSendError ? <p className="m-0 mt-1 text-sm text-destructive" role="status">{invitation.lastSendError}</p> : null}
+                {invitation.hasHardBounce ? <p className="m-0 mt-1 text-sm text-destructive">Hard bounce: revoke and issue a new invitation to the corrected address.</p> : null}
               </div>
               <div className="flex shrink-0 flex-wrap items-center gap-2">
                 <Badge variant="outline">Pending invitation</Badge>
+                <Badge variant={invitation.deliveryStatus === 'Delivered' || invitation.deliveryStatus === 'Accepted' ? 'secondary' : 'outline'}>
+                  Email {invitation.deliveryStatus ?? 'Not queued'}
+                </Badge>
                 <DropdownMenu modal={false}>
                   <DropdownMenuTrigger asChild>
                     <Button
@@ -286,7 +296,7 @@ export function OrganizationUserManagementPanel({
                   </DropdownMenuTrigger>
                   <DropdownMenuContent align="end">
                     <DropdownMenuItem
-                      disabled={invitationMutation.isPending}
+                      disabled={invitationMutation.isPending || invitation.hasHardBounce}
                       onSelect={() =>
                         invitationMutation.mutate({
                           id: invitation.id,

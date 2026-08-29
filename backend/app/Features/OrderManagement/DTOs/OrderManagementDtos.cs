@@ -83,7 +83,12 @@ public sealed record QuoteDto(
     DateTime IssuedAt,
     DateTime ExpiresAt,
     DateTime? AcceptedAt,
-    long Version);
+    long Version,
+    string? BillingContactSnapshotJson = null,
+    string? BillingAddressSnapshotJson = null,
+    int? PaymentTermsDaysSnapshot = null,
+    string? TaxDecisionSnapshotJson = null,
+    int? CommercialConfigurationVersion = null);
 
 public sealed record LabSampleDto(
     Guid Id,
@@ -402,6 +407,17 @@ public sealed record CommercialProfileDto(
     bool LabCreditApproved,
     bool AssemblyCreditApproved,
     string? QboCustomerId,
+    string? BillingContactName,
+    string? BillingContactEmail,
+    string? BillingAddressJson,
+    int PaymentTermsDays,
+    EffectiveTaxDecision? TaxDecision,
+    decimal? ApprovedTaxRate,
+    string? TaxExemptionEvidence,
+    Guid? FinanceApprovedByUserId,
+    DateTime? FinanceApprovedAtUtc,
+    string? FinanceApprovalNotes,
+    int ConfigurationVersion,
     long Version);
 
 public sealed record OrderSystemConfigurationDto(
@@ -409,6 +425,8 @@ public sealed record OrderSystemConfigurationDto(
     int QuoteValidityDays,
     string SampleSubmissionInstructions,
     string ShippingConfigurationJson,
+    string SampleConfigurationJson,
+    string ResultDestinationConfigurationJson,
     long Version);
 
 public sealed record OrderConfigurationDto(
@@ -467,10 +485,24 @@ public sealed record AssemblyProcessingDecisionRequest(long Version, Guid RunId,
 public sealed record AssemblyOutputReviewRequest(long Version, Guid RunId, string ManifestJson, string PipelineVersion, string Provenance, string QcStatus);
 
 public sealed record UpdateSystemConfigurationRequest(long Version, int QuoteValidityDays, string SampleSubmissionInstructions, string ShippingConfigurationJson);
+public sealed record UpdatePSeqReadinessConfigurationRequest(
+    long Version,
+    string SampleConfigurationJson,
+    string ResultDestinationConfigurationJson);
 public sealed record AnalysisDefinitionWriteRequest(Guid QboCatalogItemId, string Name, string Description, string SubmissionInstructions, string RequiredIntakeFieldsJson, string ResultContractJson, bool IsActive, bool IsSynthetic, long? Version = null);
 public sealed record ReagentOfferingWriteRequest(Guid PartnerOrganizationId, Guid QboCatalogItemId, decimal NegotiatedUnitPrice, string Currency, string SellingUnit, decimal OrderIncrement, decimal MinimumQuantity, decimal? MaximumQuantity, string ShippingRestrictionsJson, DateTime EffectiveFrom, DateTime? EffectiveUntil, bool IsActive, long? Version = null);
 public sealed record AssemblyProfileWriteRequest(Guid QboCatalogItemId, string Name, int ProfileVersion, string Description, string Instructions, string MetadataSchemaJson, string AllowedFileKindsJson, string OutputContractJson, long MaximumFileSizeBytes, long MaximumTotalSizeBytes, bool IsActive, bool IsSynthetic, long? Version = null);
 public sealed record CommercialProfileWriteRequest(Guid OrganizationId, bool LabCreditApproved, bool AssemblyCreditApproved, string? QboCustomerId, long? Version = null);
+public sealed record BillingProfileWriteRequest(
+    long Version,
+    string BillingContactName,
+    string BillingContactEmail,
+    string BillingAddressJson,
+    int PaymentTermsDays,
+    EffectiveTaxDecision TaxDecision,
+    decimal? ApprovedTaxRate,
+    string? TaxExemptionEvidence);
+public sealed record ApproveTaxDecisionRequest(long Version, string Notes);
 public sealed record LocalCatalogItemRequest(string ExternalItemId, string Name, string Description, string SalesUnit, decimal BasePrice, string Currency, bool IsActive);
 
 public sealed record IntegrationMessageDto(Guid Id, string Operation, string WorkflowType, Guid WorkflowId, string Status, int AttemptCount, DateTime NextAttemptAt, string? LastError, DateTime CreatedAt, long Version);
@@ -499,7 +531,9 @@ public static class OrderManagementMappings
     public static QuoteDto ToDto(this LabServiceQuote quote) => new(
         quote.Id, quote.Revision, quote.Purpose.ToString(), quote.Status.ToString(), quote.LinesJson,
         quote.Subtotal, quote.Tax, quote.Total, quote.Currency, quote.IssuedAt, quote.ExpiresAt,
-        quote.AcceptedAt, quote.Version);
+        quote.AcceptedAt, quote.Version, quote.BillingContactSnapshotJson,
+        quote.BillingAddressSnapshotJson, quote.PaymentTermsDaysSnapshot,
+        quote.TaxDecisionSnapshotJson, quote.CommercialConfigurationVersion);
 
     public static QuoteDto ToDto(this DataAssemblyQuote quote) => new(
         quote.Id, quote.Revision, quote.Purpose.ToString(), quote.Status.ToString(), quote.LinesJson,

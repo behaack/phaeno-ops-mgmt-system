@@ -13,7 +13,9 @@ public static class OrderManagementModelConfiguration
     {
         ConfigureCatalog(modelBuilder);
         ConfigureCommercial(modelBuilder);
+        ConfigureAccountsReceivable(modelBuilder, commercialSchema);
         ConfigureCommercialLabServiceRecords(modelBuilder, commercialSchema);
+        ConfigurePSeqResultDelivery(modelBuilder, commercialSchema);
         ConfigureReagents(modelBuilder);
         ConfigureAssembly(modelBuilder);
         ConfigureWorkflowSupport(modelBuilder);
@@ -85,6 +87,13 @@ public static class OrderManagementModelConfiguration
         {
             entity.HasKey(e => e.Id);
             Text(entity.Property(e => e.QboCustomerId), 255, required: false);
+            Text(entity.Property(e => e.BillingContactName), 255, required: false);
+            Text(entity.Property(e => e.BillingContactEmail), 255, required: false);
+            Json(entity.Property(e => e.BillingAddressJson), required: false);
+            EnumText(entity.Property(e => e.TaxDecision), required: false);
+            entity.Property(e => e.ApprovedTaxRate).HasPrecision(12, 6);
+            Text(entity.Property(e => e.TaxExemptionEvidence), 4000, required: false);
+            Text(entity.Property(e => e.FinanceApprovalNotes), 4000, required: false);
             entity.HasIndex(e => e.OrganizationId).IsUnique();
             entity.HasIndex(e => e.QboCustomerId).IsUnique().HasFilter("\"qbo_customer_id\" IS NOT NULL");
             entity.HasOne<Organization>().WithMany().HasForeignKey(e => e.OrganizationId).OnDelete(DeleteBehavior.Restrict);
@@ -96,6 +105,8 @@ public static class OrderManagementModelConfiguration
             entity.HasKey(e => e.Id);
             Text(entity.Property(e => e.SampleSubmissionInstructions), 8000);
             Json(entity.Property(e => e.ShippingConfigurationJson));
+            Json(entity.Property(e => e.SampleConfigurationJson));
+            Json(entity.Property(e => e.ResultDestinationConfigurationJson));
             Audit(entity);
         });
     }
@@ -196,6 +207,237 @@ public static class OrderManagementModelConfiguration
         });
     }
 
+    private static void ConfigureAccountsReceivable(ModelBuilder modelBuilder, string commercialSchema)
+    {
+        modelBuilder.Entity<Invoice>(entity =>
+        {
+            entity.ToTable("invoices", commercialSchema);
+            entity.HasKey(e => e.Id);
+            Text(entity.Property(e => e.InvoiceNumber), 100);
+            EnumText(entity.Property(e => e.Status));
+            Text(entity.Property(e => e.Currency), 3);
+            Json(entity.Property(e => e.BillingContactSnapshotJson));
+            Json(entity.Property(e => e.BillingAddressSnapshotJson));
+            Json(entity.Property(e => e.TaxDecisionSnapshotJson));
+            Money(entity.Property(e => e.Subtotal));
+            Money(entity.Property(e => e.TaxTotal));
+            Money(entity.Property(e => e.AdjustmentTotal));
+            Money(entity.Property(e => e.Total));
+            Money(entity.Property(e => e.AppliedTotal));
+            Money(entity.Property(e => e.Balance));
+            Text(entity.Property(e => e.PdfStorageKey), 1000);
+            Text(entity.Property(e => e.PdfSha256), 64);
+            Text(entity.Property(e => e.VoidReason), 2000, false);
+            entity.HasIndex(e => e.InvoiceNumber).IsUnique();
+            entity.HasIndex(e => e.LabServiceOrderId).IsUnique();
+            entity.HasIndex(e => e.AcceptedQuoteId).IsUnique();
+            entity.HasIndex(e => new { e.OrganizationId, e.Status, e.DueOn });
+            entity.HasOne<Organization>().WithMany().HasForeignKey(e => e.OrganizationId).OnDelete(DeleteBehavior.Restrict);
+            entity.HasOne<LabServiceOrder>().WithMany().HasForeignKey(e => e.LabServiceOrderId).OnDelete(DeleteBehavior.Restrict);
+            entity.HasOne<LabServiceQuote>().WithMany().HasForeignKey(e => e.AcceptedQuoteId).OnDelete(DeleteBehavior.Restrict);
+            Audit(entity);
+        });
+
+        modelBuilder.Entity<InvoiceLine>(entity =>
+        {
+            entity.ToTable("invoice_lines", commercialSchema);
+            entity.HasKey(e => e.Id);
+            Text(entity.Property(e => e.Description), 1000);
+            Quantity(entity.Property(e => e.Quantity));
+            Money(entity.Property(e => e.UnitPrice));
+            entity.Property(e => e.TaxRate).HasPrecision(12, 6);
+            Money(entity.Property(e => e.Subtotal));
+            Money(entity.Property(e => e.TaxAmount));
+            Money(entity.Property(e => e.Total));
+            entity.HasIndex(e => new { e.InvoiceId, e.LineNumber }).IsUnique();
+            entity.HasOne<Invoice>().WithMany().HasForeignKey(e => e.InvoiceId).OnDelete(DeleteBehavior.Restrict);
+        });
+
+        modelBuilder.Entity<InvoiceAdjustment>(entity =>
+        {
+            entity.ToTable("invoice_adjustments", commercialSchema);
+            entity.HasKey(e => e.Id);
+            EnumText(entity.Property(e => e.Kind));
+            Money(entity.Property(e => e.Amount));
+            Text(entity.Property(e => e.Reason), 2000);
+            entity.HasIndex(e => new { e.InvoiceId, e.RecordedAtUtc });
+            entity.HasOne<Invoice>().WithMany().HasForeignKey(e => e.InvoiceId).OnDelete(DeleteBehavior.Restrict);
+            Audit(entity);
+        });
+
+        modelBuilder.Entity<PaymentReceipt>(entity =>
+        {
+            entity.ToTable("payment_receipts", commercialSchema);
+            entity.HasKey(e => e.Id);
+            Text(entity.Property(e => e.ReceiptNumber), 100);
+            Text(entity.Property(e => e.Source), 100);
+            Text(entity.Property(e => e.ExternalId), 255);
+            Text(entity.Property(e => e.Payer), 500);
+            Money(entity.Property(e => e.Amount));
+            Text(entity.Property(e => e.Currency), 3);
+            Text(entity.Property(e => e.Method), 100);
+            Text(entity.Property(e => e.BankReference), 255);
+            Text(entity.Property(e => e.EvidenceStorageKey), 1000, false);
+            Text(entity.Property(e => e.Memo), 2000, false);
+            Money(entity.Property(e => e.AppliedAmount));
+            Money(entity.Property(e => e.UnappliedAmount));
+            EnumText(entity.Property(e => e.Status));
+            Text(entity.Property(e => e.ReversalReason), 2000, false);
+            entity.HasIndex(e => e.ReceiptNumber).IsUnique();
+            entity.HasIndex(e => new { e.Source, e.ExternalId }).IsUnique();
+            entity.HasIndex(e => new { e.OrganizationId, e.Status, e.ReceivedOn });
+            entity.HasOne<Organization>().WithMany().HasForeignKey(e => e.OrganizationId).OnDelete(DeleteBehavior.Restrict);
+            Audit(entity);
+        });
+
+        modelBuilder.Entity<PaymentAllocation>(entity =>
+        {
+            entity.ToTable("payment_allocations", commercialSchema);
+            entity.HasKey(e => e.Id);
+            Money(entity.Property(e => e.Amount));
+            Text(entity.Property(e => e.ReversalReason), 2000, false);
+            entity.HasIndex(e => new { e.PaymentReceiptId, e.InvoiceId, e.AllocatedAtUtc });
+            entity.HasOne<PaymentReceipt>().WithMany().HasForeignKey(e => e.PaymentReceiptId).OnDelete(DeleteBehavior.Restrict);
+            entity.HasOne<Invoice>().WithMany().HasForeignKey(e => e.InvoiceId).OnDelete(DeleteBehavior.Restrict);
+            Audit(entity);
+        });
+
+        modelBuilder.Entity<PaymentImportBatch>(entity =>
+        {
+            entity.ToTable("payment_import_batches", commercialSchema);
+            entity.HasKey(e => e.Id);
+            Text(entity.Property(e => e.Source), 100);
+            Text(entity.Property(e => e.PayloadSha256), 64);
+            Json(entity.Property(e => e.PreviewJson));
+            Money(entity.Property(e => e.TotalAmount));
+            EnumText(entity.Property(e => e.Status));
+            entity.HasIndex(e => new { e.Source, e.PayloadSha256 }).IsUnique();
+            entity.HasIndex(e => new { e.Status, e.PreviewedAtUtc });
+            Audit(entity);
+        });
+
+        modelBuilder.Entity<ReconciliationBatch>(entity =>
+        {
+            entity.ToTable("reconciliation_batches", commercialSchema);
+            entity.HasKey(e => e.Id);
+            Text(entity.Property(e => e.BatchNumber), 100);
+            Money(entity.Property(e => e.LedgerReceiptTotal));
+            Money(entity.Property(e => e.BankTotal));
+            Money(entity.Property(e => e.Difference));
+            EnumText(entity.Property(e => e.Status));
+            Json(entity.Property(e => e.CloseoutReportJson), false);
+            entity.HasIndex(e => e.BatchNumber).IsUnique();
+            entity.HasIndex(e => new { e.Status, e.PeriodEnd });
+            Audit(entity);
+        });
+
+        modelBuilder.Entity<ReconciliationBatchItem>(entity =>
+        {
+            entity.ToTable("reconciliation_batch_items", commercialSchema);
+            entity.HasKey(e => e.Id);
+            Text(entity.Property(e => e.SourceType), 100);
+            Money(entity.Property(e => e.Amount));
+            entity.HasIndex(e => new { e.ReconciliationBatchId, e.SourceType, e.SourceId }).IsUnique();
+            entity.HasOne<ReconciliationBatch>().WithMany().HasForeignKey(e => e.ReconciliationBatchId).OnDelete(DeleteBehavior.Restrict);
+        });
+
+        modelBuilder.Entity<PaymentProcessorExternalLink>(entity =>
+        {
+            entity.ToTable("payment_processor_external_links", commercialSchema);
+            entity.HasKey(e => e.Id);
+            Text(entity.Property(e => e.ProviderKey), 100);
+            Text(entity.Property(e => e.LocalEntityType), 100);
+            Text(entity.Property(e => e.ExternalId), 255);
+            Json(entity.Property(e => e.MetadataJson));
+            entity.HasIndex(e => new { e.ProviderKey, e.LocalEntityType, e.LocalEntityId }).IsUnique();
+            entity.HasIndex(e => new { e.ProviderKey, e.ExternalId }).IsUnique();
+            Audit(entity);
+        });
+
+        modelBuilder.Entity<OperationalAttentionItem>(entity =>
+        {
+            entity.ToTable("operational_attention_items", commercialSchema);
+            entity.HasKey(e => e.Id);
+            EnumText(entity.Property(e => e.Category));
+            Text(entity.Property(e => e.SourceType), 100);
+            EnumText(entity.Property(e => e.Status));
+            Text(entity.Property(e => e.Summary), 1000);
+            Text(entity.Property(e => e.NextAction), 2000);
+            Text(entity.Property(e => e.Resolution), 2000, false);
+            entity.HasIndex(e => new { e.Category, e.SourceType, e.SourceId }).IsUnique();
+            entity.HasIndex(e => new { e.Status, e.OwnerUserId, e.CreatedAt });
+            entity.HasIndex(e => e.OrganizationId);
+            entity.HasOne<Organization>().WithMany().HasForeignKey(e => e.OrganizationId).OnDelete(DeleteBehavior.Restrict);
+            Audit(entity);
+        });
+    }
+
+    private static void ConfigurePSeqResultDelivery(ModelBuilder modelBuilder, string commercialSchema)
+    {
+        modelBuilder.Entity<ResultOutputPackage>(entity =>
+        {
+            entity.ToTable("result_output_packages", commercialSchema);
+            entity.HasKey(e => e.Id);
+            Text(entity.Property(e => e.PipelineProviderKey), 100);
+            Text(entity.Property(e => e.PipelineSubmissionId), 255);
+            Text(entity.Property(e => e.IdempotencyKey), 255);
+            Json(entity.Property(e => e.ManifestJson));
+            Text(entity.Property(e => e.ManifestSha256), 64);
+            EnumText(entity.Property(e => e.State));
+            Text(entity.Property(e => e.FailureCode), 100, false);
+            Text(entity.Property(e => e.FailureDetail), 2000, false);
+            Text(entity.Property(e => e.WithdrawalReason), 2000, false);
+            entity.HasIndex(e => e.IdempotencyKey).IsUnique();
+            entity.HasIndex(e => new { e.PipelineProviderKey, e.PipelineSubmissionId }).IsUnique();
+            entity.HasIndex(e => new { e.LabSampleId, e.PackageVersion }).IsUnique();
+            entity.HasIndex(e => new { e.OrganizationId, e.State, e.CreatedAt });
+            entity.HasOne<Organization>().WithMany().HasForeignKey(e => e.OrganizationId).OnDelete(DeleteBehavior.Restrict);
+            entity.HasOne<LabServiceOrder>().WithMany().HasForeignKey(e => e.LabServiceOrderId).OnDelete(DeleteBehavior.Restrict);
+            entity.HasOne<LabSample>().WithMany().HasForeignKey(e => e.LabSampleId).OnDelete(DeleteBehavior.Restrict);
+            entity.HasOne<ResultOutputPackage>().WithMany().HasForeignKey(e => e.CorrectsPackageId).OnDelete(DeleteBehavior.Restrict);
+            Audit(entity);
+        });
+
+        modelBuilder.Entity<ResultArtifact>(entity =>
+        {
+            entity.ToTable("result_artifacts", commercialSchema);
+            entity.HasKey(e => e.Id);
+            Text(entity.Property(e => e.LogicalRole), 100);
+            Text(entity.Property(e => e.FileName), 255);
+            Text(entity.Property(e => e.ContentType), 255);
+            Text(entity.Property(e => e.Sha256), 64);
+            Text(entity.Property(e => e.ObjectStorageKey), 1000);
+            EnumText(entity.Property(e => e.ScanState));
+            Text(entity.Property(e => e.ScanDetail), 2000, false);
+            entity.HasIndex(e => e.ObjectStorageKey).IsUnique();
+            entity.HasIndex(e => new { e.ResultOutputPackageId, e.LogicalRole, e.FileName }).IsUnique();
+            entity.HasOne<ResultOutputPackage>().WithMany().HasForeignKey(e => e.ResultOutputPackageId).OnDelete(DeleteBehavior.Restrict);
+            Audit(entity);
+        });
+
+        modelBuilder.Entity<ResultDeliveryEvidence>(entity =>
+        {
+            entity.ToTable("result_delivery_evidence", commercialSchema);
+            entity.HasKey(e => e.Id);
+            EnumText(entity.Property(e => e.Kind));
+            Json(entity.Property(e => e.DetailsJson));
+            entity.HasIndex(e => new { e.ResultOutputPackageId, e.OccurredAtUtc });
+            entity.HasOne<ResultOutputPackage>().WithMany().HasForeignKey(e => e.ResultOutputPackageId).OnDelete(DeleteBehavior.Restrict);
+            entity.HasOne<ResultArtifact>().WithMany().HasForeignKey(e => e.ResultArtifactId).OnDelete(DeleteBehavior.Restrict);
+        });
+
+        modelBuilder.Entity<ResultRetentionSchedule>(entity =>
+        {
+            entity.ToTable("result_retention_schedules", commercialSchema);
+            entity.HasKey(e => e.Id);
+            EnumText(entity.Property(e => e.State));
+            entity.HasIndex(e => e.ResultOutputPackageId).IsUnique();
+            entity.HasIndex(e => new { e.State, e.WarningAtUtc, e.DeleteAtUtc });
+            entity.HasOne<ResultOutputPackage>().WithMany().HasForeignKey(e => e.ResultOutputPackageId).OnDelete(DeleteBehavior.Restrict);
+            Audit(entity);
+        });
+    }
+
     private static void ConfigureCommercialLabServiceRecords(
         ModelBuilder modelBuilder,
         string commercialSchema)
@@ -271,6 +513,9 @@ public static class OrderManagementModelConfiguration
             Json(entity.Property(e => e.LinesJson));
             Money(entity.Property(e => e.Subtotal)); Money(entity.Property(e => e.Tax)); Money(entity.Property(e => e.Total));
             Text(entity.Property(e => e.Currency), 3);
+            Json(entity.Property(e => e.BillingContactSnapshotJson), false);
+            Json(entity.Property(e => e.BillingAddressSnapshotJson), false);
+            Json(entity.Property(e => e.TaxDecisionSnapshotJson), false);
             entity.HasIndex(e => new { e.LabServiceOrderId, e.Revision }).IsUnique();
             entity.HasOne<LabServiceOrder>().WithMany(e => e.Quotes).HasForeignKey(e => e.LabServiceOrderId).OnDelete(DeleteBehavior.Restrict);
             entity.HasOne<LabServiceQuote>().WithMany().HasForeignKey(e => e.SupersededByQuoteId).OnDelete(DeleteBehavior.Restrict);

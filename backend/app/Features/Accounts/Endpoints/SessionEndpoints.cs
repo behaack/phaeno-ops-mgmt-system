@@ -21,6 +21,7 @@ public static class SessionEndpoints
         PSeqOperationsDbContext dbContext,
         IExternalIdentityContext externalIdentityContext,
         IOptions<BootstrapOptions> bootstrapOptions,
+        IOptions<PSeqOrderToCashOptions> orderToCashOptions,
         CancellationToken cancellationToken)
     {
         var identity = externalIdentityContext.Read(httpContext);
@@ -55,16 +56,35 @@ public static class SessionEndpoints
                 dbContext.LabRoleAssignments.AsNoTracking(), user.Id)
             .Select(assignment => assignment.Role)
             .ToListAsync(cancellationToken);
+        var businessRoles = await dbContext.BusinessRoleAssignments
+            .AsNoTracking()
+            .Where(assignment => assignment.UserId == user.Id && assignment.IsActive)
+            .Select(assignment => assignment.Role)
+            .ToListAsync(cancellationToken);
 
         if (!user.IsActive || user.Status != UserAccountStatus.Active)
         {
-            return TypedResults.Ok(ToSession(user, labRoles, state: "disabled", selectedMembership: null));
+            return TypedResults.Ok(ToSession(
+                user,
+                labRoles,
+                state: "disabled",
+                selectedMembership: null,
+                businessRoles,
+                orderToCashOptions.Value.BusinessRoles,
+                orderToCashOptions.Value.DualControlEnforced));
         }
 
         var activeMemberships = GetActiveMemberships(user).ToList();
         if (activeMemberships.Count == 0)
         {
-            return TypedResults.Ok(ToSession(user, labRoles, state: "no_active_memberships", selectedMembership: null));
+            return TypedResults.Ok(ToSession(
+                user,
+                labRoles,
+                state: "no_active_memberships",
+                selectedMembership: null,
+                businessRoles,
+                orderToCashOptions.Value.BusinessRoles,
+                orderToCashOptions.Value.DualControlEnforced));
         }
 
         var selectedOrganizationId = ReadSelectedOrganizationId(httpContext);
@@ -77,11 +97,25 @@ public static class SessionEndpoints
 
             if (selectedMembership == null)
             {
-                return TypedResults.Ok(ToSession(user, labRoles, state: "organization_unavailable", selectedMembership: null));
+                return TypedResults.Ok(ToSession(
+                    user,
+                    labRoles,
+                    state: "organization_unavailable",
+                    selectedMembership: null,
+                    businessRoles,
+                    orderToCashOptions.Value.BusinessRoles,
+                    orderToCashOptions.Value.DualControlEnforced));
             }
         }
 
-        return TypedResults.Ok(ToSession(user, labRoles, state: "ready", selectedMembership));
+        return TypedResults.Ok(ToSession(
+            user,
+            labRoles,
+            state: "ready",
+            selectedMembership,
+            businessRoles,
+            orderToCashOptions.Value.BusinessRoles,
+            orderToCashOptions.Value.DualControlEnforced));
     }
 
     public static void MapSessionEndpoints(this WebApplication app)
@@ -129,7 +163,10 @@ public static class SessionEndpoints
         User user,
         IReadOnlyCollection<LabRole> labRoles,
         string state,
-        OrganizationMembership? selectedMembership)
+        OrganizationMembership? selectedMembership,
+        IReadOnlyCollection<BusinessRole>? businessRoles = null,
+        bool businessRolesEnabled = false,
+        bool labRolesEnforced = false)
     {
         var memberships = GetActiveMemberships(user);
         var isPlatformAdmin = IsPlatformAdmin(user);
@@ -144,7 +181,29 @@ public static class SessionEndpoints
         var canManageLabOrders = canViewLabOrders && isSelectedOrganizationAdmin;
         var canViewPartnerOrders = selectedKind == OrganizationKind.Partner;
         var canManagePartnerOrders = canViewPartnerOrders && isSelectedOrganizationAdmin;
-        var labCapabilities = LabOperationsAuthorization.Evaluate(user, labRoles);
+        var labCapabilities = LabOperationsAuthorization.Evaluate(
+            user, labRoles, labRolesEnforced);
+        var effectiveBusinessRoles = businessRoles ?? [];
+        var canOperateCommercialWork = businessRolesEnabled
+            ? effectiveBusinessRoles.Contains(BusinessRole.CommercialOperator)
+            : isPlatformAdmin;
+        var canReleasePSeqResults = businessRolesEnabled
+            ? effectiveBusinessRoles.Contains(BusinessRole.ResultReleaseManager)
+            : isPlatformAdmin;
+        var canManagePSeqBilling = businessRolesEnabled
+            ? effectiveBusinessRoles.Contains(BusinessRole.BillingOperator)
+            : isPlatformAdmin;
+        var canManagePSeqCash = businessRolesEnabled
+            ? effectiveBusinessRoles.Contains(BusinessRole.CashOperator)
+            : isPlatformAdmin;
+        var canReconcilePSeqCash = businessRolesEnabled
+            ? effectiveBusinessRoles.Contains(BusinessRole.CashReconciler)
+            : isPlatformAdmin;
+        var canPerformCommercialOperations = canOperateCommercialWork
+            || canReleasePSeqResults
+            || canManagePSeqBilling
+            || canManagePSeqCash
+            || canReconcilePSeqCash;
 
         return new SessionDto
         {
@@ -206,19 +265,24 @@ public static class SessionEndpoints
                 CanAcceptDataAssemblyQuotes = canManagePartnerOrders,
                 CanRequestDataAssemblyCancellation = canManagePartnerOrders,
                 CanDownloadDataAssemblyOutputs = canViewPartnerOrders,
-                CanViewAllOperationalOrders = isPlatformAdmin,
+                CanViewAllOperationalOrders = isPlatformAdmin || canPerformCommercialOperations,
                 CanManageOrderConfiguration = isPlatformAdmin,
-                CanQuoteLabServiceWork = isPlatformAdmin,
+                CanQuoteLabServiceWork = canOperateCommercialWork,
                 CanManageLabOperations = labCapabilities.CanManageLabOperations,
                 CanOperateLabWork = labCapabilities.CanOperateLabWork,
                 CanSuperviseLabWork = labCapabilities.CanSuperviseLabWork,
                 CanManageLabProtocols = labCapabilities.CanManageLabProtocols,
                 CanReviewLabWork = labCapabilities.CanReviewLabWork,
                 CanManageLabAccess = labCapabilities.CanManageLabAccess,
-                CanManageReagentFulfillment = isPlatformAdmin,
-                CanManageDataAssembly = isPlatformAdmin,
-                CanManageOrderIntegrations = isPlatformAdmin,
-                CanViewOrderAudit = isPlatformAdmin
+                CanManageReagentFulfillment = canOperateCommercialWork,
+                CanManageDataAssembly = canOperateCommercialWork,
+                CanManageOrderIntegrations = canOperateCommercialWork || canManagePSeqBilling,
+                CanViewOrderAudit = isPlatformAdmin || canPerformCommercialOperations,
+                CanOperateCommercialWork = canOperateCommercialWork,
+                CanReleasePSeqResults = canReleasePSeqResults,
+                CanManagePSeqBilling = canManagePSeqBilling,
+                CanManagePSeqCash = canManagePSeqCash,
+                CanReconcilePSeqCash = canReconcilePSeqCash
             }
         };
     }
@@ -269,7 +333,12 @@ public static class SessionEndpoints
             CanManageReagentFulfillment = false,
             CanManageDataAssembly = false,
             CanManageOrderIntegrations = false,
-            CanViewOrderAudit = false
+            CanViewOrderAudit = false,
+            CanOperateCommercialWork = false,
+            CanReleasePSeqResults = false,
+            CanManagePSeqBilling = false,
+            CanManagePSeqCash = false,
+            CanReconcilePSeqCash = false
         };
     }
 

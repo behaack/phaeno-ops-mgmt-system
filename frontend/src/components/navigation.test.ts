@@ -231,6 +231,11 @@ function createSession(
       canManageDataAssembly: false,
       canManageOrderIntegrations: false,
       canViewOrderAudit: false,
+      canOperateCommercialWork: false,
+      canReleasePSeqResults: false,
+      canManagePSeqBilling: false,
+      canManagePSeqCash: false,
+      canReconcilePSeqCash: false,
       ...capabilityOverrides,
     },
   }

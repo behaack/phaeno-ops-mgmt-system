@@ -1,5 +1,23 @@
 # PSeq Operations Restructuring and Database Reset Plan
 
+## 2026-08-29 additive order-to-cash migration
+
+Migration `20260829204102_AddPSeqOrderToCashGapClosure` adds the invitation,
+business-role, readiness, governed-result, native-AR, reconciliation, and
+attention-operation structures without removing the current paths. It maps
+historical Blocked readiness to the deliberate manual override, seeds
+non-dispatchable historical invitation-attempt evidence, defaults Customer
+payment terms to Net 30, and maps existing PSeq `PaymentHold` records to
+`CommercialReviewRequired` without changing Customer visibility or creating
+financial meaning.
+
+This migration is generated and its idempotent SQL can be inspected locally,
+but no shared database application is authorized. Before any activation it
+must be tested against a restored production-like database with recorded
+duration, data validation, backup/restore evidence, and an executable
+forward-fix decision. The independent rollout flags and audit-only dual-control
+phase are defined in `PSEQ-ORDER-TO-CASH-GAP-CLOSURE-PLAN.md`.
+
 This document records the completed implementation sequence for restructuring
 the backend as PSeq Operations and replacing the development database and EF
 migration history with a clean baseline.

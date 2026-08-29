@@ -116,7 +116,8 @@ public sealed partial class LabOperationsController(
         var approvals = await dbContext.LabScientificApprovals.AsNoTracking().Where(item => item.LabWorkOrderId == work.Id)
             .OrderBy(item => item.ApprovalVersion).Select(item => new LabScientificApprovalDto(item.Id,
                 item.ApprovalVersion, item.ReleaseDefinitionKey, item.ReleaseDefinitionVersion,
-                item.ApprovedByUserId, item.ApprovedAtUtc, item.ProjectionVersion)).ToListAsync(cancellationToken);
+                item.ApprovedByUserId, item.ApprovedAtUtc, item.ProjectionVersion,
+                item.ResultOutputPackageId)).ToListAsync(cancellationToken);
 
         var authorizationMap = authorization is null
             ? new Dictionary<Guid, CommercialLabAuthorization>()
@@ -173,7 +174,7 @@ public sealed partial class LabOperationsController(
         CancellationToken cancellationToken)
     {
         await requestContext.RequireAsync(HttpContext, cancellationToken,
-            LabRole.ProtocolAdministrator, LabRole.OperationsAdministrator);
+            LabRole.ProtocolAdministrator);
         var key = await LabIdentifierService.AllocateProtocolKeyAsync(
             dbContext, request.Name, cancellationToken);
         var protocol = new LabProtocol(key, request.Name, request.Description);
@@ -187,7 +188,7 @@ public sealed partial class LabOperationsController(
         [FromBody] CreateProtocolVersionRequest request, CancellationToken cancellationToken)
     {
         var actor = await requestContext.RequireAsync(HttpContext, cancellationToken,
-            LabRole.ProtocolAdministrator, LabRole.OperationsAdministrator);
+            LabRole.ProtocolAdministrator);
         var protocol = await dbContext.LabProtocols.SingleOrDefaultAsync(item => item.Id == protocolId, cancellationToken)
             ?? throw Missing();
         EnsureVersion(protocol.Version, request.ProtocolVersion);
@@ -214,7 +215,7 @@ public sealed partial class LabOperationsController(
         [FromBody] UpdateProtocolVersionRequest request, CancellationToken cancellationToken)
     {
         await requestContext.RequireAsync(HttpContext, cancellationToken,
-            LabRole.ProtocolAdministrator, LabRole.OperationsAdministrator);
+            LabRole.ProtocolAdministrator);
         var version = await dbContext.LabProtocolVersions
             .SingleOrDefaultAsync(item => item.Id == versionId, cancellationToken)
             ?? throw Missing();
@@ -234,7 +235,7 @@ public sealed partial class LabOperationsController(
         [FromBody] ProtocolTransitionRequest request, CancellationToken cancellationToken)
     {
         var actor = await requestContext.RequireAsync(HttpContext, cancellationToken,
-            LabRole.ProtocolAdministrator, LabRole.OperationsAdministrator);
+            LabRole.ProtocolAdministrator);
         var version = await dbContext.LabProtocolVersions.SingleOrDefaultAsync(item => item.Id == versionId, cancellationToken)
             ?? throw Missing();
         var protocol = await dbContext.LabProtocols
@@ -243,7 +244,15 @@ public sealed partial class LabOperationsController(
         EnsureVersion(protocol.Version, request.ProtocolVersion);
         switch (request.Action.Trim().ToLowerInvariant())
         {
-            case "approve": Execute(() => version.Approve(actor.User.Id, DateTime.UtcNow)); break;
+            case "approve":
+                if (version.AuthoredByUserId == actor.User.Id)
+                    requestContext.EnforceOrAuditActorConflict(actor.User.Id,
+                        "protocol_author_approval_conflict",
+                        "A protocol author cannot approve the same protocol version.",
+                        new { protocolId = protocol.Id, protocolVersionId = version.Id });
+                Execute(() => version.Approve(actor.User.Id, DateTime.UtcNow,
+                    requestContext.DualControlEnforced));
+                break;
             case "withdraw": Execute(version.WithdrawApproval); break;
             case "discard": Execute(version.Discard); break;
             case "activate":
@@ -251,7 +260,13 @@ public sealed partial class LabOperationsController(
                     .Where(item => item.LabProtocolId == version.LabProtocolId && item.Status == LabProtocolStatus.Active)
                     .ToListAsync(cancellationToken);
                 foreach (var previous in active) Execute(previous.Retire);
-                Execute(version.Activate);
+                if (version.AuthoredByUserId == actor.User.Id)
+                    requestContext.EnforceOrAuditActorConflict(actor.User.Id,
+                        "protocol_author_activation_conflict",
+                        "A protocol author cannot activate the same protocol version.",
+                        new { protocolId = protocol.Id, protocolVersionId = version.Id });
+                Execute(() => version.Activate(actor.User.Id,
+                    requestContext.DualControlEnforced));
                 break;
             case "retire": Execute(version.Retire); break;
             default: throw Invalid("protocol_transition_invalid", "The protocol transition is invalid.");

@@ -1,6 +1,7 @@
 namespace PhaenoPortal.App.Features.RelationshipManagement.DTOs;
 
 using PSeq.Operations.Commercial.Accounts.Domain;
+using PSeq.Operations.Commercial.Relationships.Application;
 using PSeq.Operations.Commercial.Relationships.Domain;
 
 public sealed record OrganizationRelationshipSummaryDto
@@ -17,6 +18,22 @@ public sealed record OrganizationRelationshipSummaryDto
     public required IReadOnlyList<PortalService> EffectiveServices { get; init; }
     public required int PendingRequestCount { get; init; }
 }
+
+public sealed record OrganizationOperationalReadinessDto
+{
+    public required Guid OrganizationId { get; init; }
+    public required OperationalReadiness State { get; init; }
+    public required bool CanStageOrder { get; init; }
+    public required bool CanIssueQuote { get; init; }
+    public required bool HasManualBlock { get; init; }
+    public string? ManualBlockReason { get; init; }
+    public required IReadOnlyList<OperationalReadinessBlocker> Blockers { get; init; }
+}
+
+public sealed record UpdateOperationalReadinessBlockRequest(
+    long Version,
+    bool IsBlocked,
+    string? Reason);
 
 public sealed record OrganizationServiceEntitlementDto
 {

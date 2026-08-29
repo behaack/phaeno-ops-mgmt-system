@@ -10,6 +10,7 @@ using PSeq.Operations.Commercial.OrderManagement.Domain;
 using PhaenoPortal.App.Features.OrderManagement.Domain;
 using PhaenoPortal.App.Features.OrderManagement.DTOs;
 using PhaenoPortal.App.Features.OrderManagement.Services;
+using PhaenoPortal.App.Features.Accounts.Services;
 using PhaenoPortal.App.Infrastructure.Persistence;
 
 [ApiController]
@@ -20,7 +21,8 @@ public sealed class OrderConfigurationAdminController(
     OrderRequestContext requestContext,
     OrderIdempotencyService idempotency,
     IWebHostEnvironment environment,
-    IOptions<QuickBooksOptions> quickBooksOptions) : ControllerBase
+    IOptions<QuickBooksOptions> quickBooksOptions,
+    IOptions<PSeqOrderToCashOptions> orderToCashOptions) : ControllerBase
 {
     [HttpGet]
     public async Task<OrderConfigurationDto> Get(CancellationToken cancellationToken)
@@ -37,6 +39,21 @@ public sealed class OrderConfigurationAdminController(
         var system = await EnsureSystemAsync(cancellationToken);
         EnsureVersion(system.Version, request.Version);
         Execute(() => system.Update(request.QuoteValidityDays, request.SampleSubmissionInstructions, request.ShippingConfigurationJson));
+        await dbContext.SaveChangesAsync(cancellationToken);
+        return await MapAsync(system, cancellationToken);
+    }
+
+    [HttpPatch("pseq-readiness")]
+    public async Task<OrderConfigurationDto> UpdatePSeqReadinessConfiguration(
+        [FromBody] UpdatePSeqReadinessConfigurationRequest request,
+        CancellationToken cancellationToken)
+    {
+        await requestContext.RequirePlatformAdminAsync(HttpContext, cancellationToken);
+        var system = await EnsureSystemAsync(cancellationToken);
+        EnsureVersion(system.Version, request.Version);
+        Execute(() => system.UpdatePSeqReadinessConfiguration(
+            request.SampleConfigurationJson,
+            request.ResultDestinationConfigurationJson));
         await dbContext.SaveChangesAsync(cancellationToken);
         return await MapAsync(system, cancellationToken);
     }
@@ -123,6 +140,71 @@ public sealed class OrderConfigurationAdminController(
         await dbContext.SaveChangesAsync(cancellationToken); return Commercial(item, organization.Name);
     }
 
+    [HttpPut("commercial-profiles/{organizationId:guid}/billing")]
+    public async Task<CommercialProfileDto> UpdateBillingProfile(
+        Guid organizationId,
+        [FromBody] BillingProfileWriteRequest request,
+        CancellationToken cancellationToken)
+    {
+        await requestContext.RequireBusinessRoleAsync(
+            HttpContext,
+            BusinessRole.BillingOperator,
+            orderToCashOptions.Value.BusinessRoles,
+            cancellationToken);
+        var organization = await dbContext.Organizations.AsNoTracking()
+            .FirstOrDefaultAsync(value => value.Id == organizationId
+                && value.IsActive
+                && value.Kind == OrganizationKind.Customer, cancellationToken)
+            ?? throw Missing("customer_not_found", "The active Customer was not found.");
+        var profile = await dbContext.OrganizationCommercialProfiles
+            .FirstOrDefaultAsync(value => value.OrganizationId == organizationId, cancellationToken);
+        if (profile == null)
+        {
+            profile = new OrganizationCommercialProfile(organizationId);
+            dbContext.OrganizationCommercialProfiles.Add(profile);
+        }
+        else
+        {
+            EnsureVersion(profile.Version, request.Version);
+        }
+
+        Execute(() => profile.UpdateBillingConfiguration(
+            request.BillingContactName,
+            request.BillingContactEmail,
+            request.BillingAddressJson,
+            request.PaymentTermsDays,
+            request.TaxDecision,
+            request.ApprovedTaxRate,
+            request.TaxExemptionEvidence));
+        await dbContext.SaveChangesAsync(cancellationToken);
+        return Commercial(profile, organization.Name);
+    }
+
+    [HttpPost("commercial-profiles/{organizationId:guid}/tax-approval")]
+    public async Task<CommercialProfileDto> ApproveTaxDecision(
+        Guid organizationId,
+        [FromBody] ApproveTaxDecisionRequest request,
+        CancellationToken cancellationToken)
+    {
+        var actor = await requestContext.RequireBusinessRoleAsync(
+            HttpContext,
+            BusinessRole.BillingOperator,
+            orderToCashOptions.Value.BusinessRoles,
+            cancellationToken);
+        var organization = await dbContext.Organizations.AsNoTracking()
+            .FirstOrDefaultAsync(value => value.Id == organizationId
+                && value.IsActive
+                && value.Kind == OrganizationKind.Customer, cancellationToken)
+            ?? throw Missing("customer_not_found", "The active Customer was not found.");
+        var profile = await dbContext.OrganizationCommercialProfiles
+            .FirstOrDefaultAsync(value => value.OrganizationId == organizationId, cancellationToken)
+            ?? throw Missing("billing_profile_not_found", "Complete billing configuration before Finance approval.");
+        EnsureVersion(profile.Version, request.Version);
+        Execute(() => profile.ApproveTaxDecision(actor.Id, DateTime.UtcNow, request.Notes));
+        await dbContext.SaveChangesAsync(cancellationToken);
+        return Commercial(profile, organization.Name);
+    }
+
     [HttpPost("catalog/sync")]
     public async Task<IntegrationMessageDto> SyncCatalog(CancellationToken cancellationToken)
     {
@@ -169,7 +251,8 @@ public sealed class OrderConfigurationAdminController(
             join organization in dbContext.Organizations.AsNoTracking() on profile.OrganizationId equals organization.Id orderby organization.Name
             select new { Profile = profile, OrganizationName = organization.Name }).ToListAsync(cancellationToken);
         return new OrderConfigurationDto(new OrderSystemConfigurationDto(system.Id, system.QuoteValidityDays, system.SampleSubmissionInstructions,
-            system.ShippingConfigurationJson, system.Version), catalog.Select(Catalog).ToList(), analyses.Select(Analysis).ToList(),
+            system.ShippingConfigurationJson, system.SampleConfigurationJson,
+            system.ResultDestinationConfigurationJson, system.Version), catalog.Select(Catalog).ToList(), analyses.Select(Analysis).ToList(),
             offerings.Select(value => Offering(value.Offering, value.ItemName)).ToList(), assemblies.Select(Assembly).ToList(),
             commercial.Select(value => Commercial(value.Profile, value.OrganizationName)).ToList());
     }
@@ -226,7 +309,11 @@ public sealed class OrderConfigurationAdminController(
         item.Description, item.Instructions, item.MetadataSchemaJson, item.AllowedFileKindsJson, item.OutputContractJson,
         item.MaximumFileSizeBytes, item.MaximumTotalSizeBytes, item.IsActive, item.IsSynthetic, item.Version);
     private static CommercialProfileDto Commercial(OrganizationCommercialProfile item, string name) => new(item.Id, item.OrganizationId,
-        name, item.LabCreditApproved, item.AssemblyCreditApproved, item.QboCustomerId, item.Version);
+        name, item.LabCreditApproved, item.AssemblyCreditApproved, item.QboCustomerId,
+        item.BillingContactName, item.BillingContactEmail, item.BillingAddressJson,
+        item.PaymentTermsDays, item.TaxDecision, item.ApprovedTaxRate,
+        item.TaxExemptionEvidence, item.FinanceApprovedByUserId, item.FinanceApprovedAtUtc,
+        item.FinanceApprovalNotes, item.ConfigurationVersion, item.Version);
     private static IntegrationMessageDto Integration(OrderOutboxMessage item) => new(item.Id, item.Operation.ToString(), item.WorkflowType,
         item.WorkflowId, item.Status.ToString(), item.AttemptCount, item.NextAttemptAt, item.LastError, item.CreatedAt, item.Version);
     private static void EnsureVersion(long current, long? supplied) { if (!supplied.HasValue || supplied.Value != current) throw new DbUpdateConcurrencyException(); }

@@ -8,11 +8,13 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Options;
 using PSeq.Operations.Commercial.LabOperations.Application;
 using PSeq.Operations.Commercial.LabOperations.Domain;
+using PSeq.Operations.Commercial.Accounts.Domain;
 using PSeq.Operations.Commercial.OrderManagement.Application;
 using PSeq.Operations.Commercial.OrderManagement.Domain;
 using PhaenoPortal.App.Features.OrderManagement.Domain;
 using PhaenoPortal.App.Features.OrderManagement.DTOs;
 using PhaenoPortal.App.Features.OrderManagement.Services;
+using PhaenoPortal.App.Features.Accounts.Services;
 using PhaenoPortal.App.Infrastructure.Persistence;
 
 [ApiController]
@@ -25,6 +27,7 @@ public sealed class PlatformLabServiceOrdersController(
     IOperationalFileStorage fileStorage,
     IOperationalFileScanner fileScanner,
     IOptions<OrderManagementOptions> options,
+    IOptions<PSeqOrderToCashOptions> orderToCashOptions,
     ILabOperationsProvider labOperationsProvider) : ControllerBase
 {
     private static readonly JsonSerializerOptions JsonOptions = new(JsonSerializerDefaults.Web);
@@ -158,13 +161,27 @@ public sealed class PlatformLabServiceOrdersController(
     [HttpPost("{orderId:guid}/quotes")]
     public async Task<LabServiceOrderDto> IssueQuote(Guid orderId, [FromBody] IssueQuoteRequest request, CancellationToken cancellationToken)
     {
-        var actor = await requestContext.RequirePlatformAdminAsync(HttpContext, cancellationToken);
+        var nativeReceivables = orderToCashOptions.Value.NativePSeqAccountsReceivable;
+        var actor = nativeReceivables
+            ? await requestContext.RequireBusinessRoleAsync(HttpContext, BusinessRole.CommercialOperator,
+                orderToCashOptions.Value.BusinessRoles || orderToCashOptions.Value.DualControlEnforced,
+                cancellationToken)
+            : await requestContext.RequirePlatformAdminAsync(HttpContext, cancellationToken);
         var key = idempotency.RequireKey(HttpContext);
         var scope = $"platform:lab-order:{orderId}:quote";
         var replay = await idempotency.ReadAsync<LabServiceOrderDto>(actor.Id, scope, key, request, cancellationToken);
         if (replay != null) return replay;
         var order = await ReadAsync(orderId, cancellationToken);
         EnsureVersion(order.Version, request.Version);
+        if (orderToCashOptions.Value.DerivedReadiness)
+        {
+            var readiness = await new OperationalReadinessService(dbContext)
+                .EvaluateAsync(order.OrganizationId, cancellationToken);
+            if (!readiness.Evaluation.CanIssueQuote)
+                throw new OrderManagementException("operational_readiness_incomplete",
+                    "Resolve every PSeq readiness blocker before issuing a Customer quote.",
+                    StatusCodes.Status409Conflict, readiness.Evaluation.Blockers);
+        }
         if (order.Status == LabServiceOrderStatus.SubmittedForQuote) Execute(order.BeginQuotePreparation);
         if (order.Status != LabServiceOrderStatus.QuoteInPreparation && order.Status != LabServiceOrderStatus.QuoteIssued)
             throw Conflict("quote_not_allowed", "A quote can be issued only while pricing this request.");
@@ -175,7 +192,13 @@ public sealed class PlatformLabServiceOrdersController(
             .ToDictionaryAsync(item => item.Id, cancellationToken);
         if (catalog.Count != itemIds.Count) throw Invalid("catalog_item_unavailable", "One or more QuickBooks items are unavailable.");
         var commercial = await dbContext.OrganizationCommercialProfiles.AsNoTracking().FirstOrDefaultAsync(item => item.OrganizationId == order.OrganizationId, cancellationToken);
-        if (string.IsNullOrWhiteSpace(commercial?.QboCustomerId)) throw Conflict("qbo_customer_required", "Link this customer to QuickBooks before issuing a quote.");
+        if (commercial is null) throw Conflict("billing_profile_required", "Complete the Customer billing profile before issuing a quote.");
+        if (!nativeReceivables && string.IsNullOrWhiteSpace(commercial.QboCustomerId))
+            throw Conflict("qbo_customer_required", "Link this customer to QuickBooks before issuing a quote.");
+        if (nativeReceivables && !commercial.HasFinanceApprovedTaxDecision)
+            throw Conflict("finance_tax_approval_required", "Finance must approve the effective tax decision before quote issuance.");
+        if (nativeReceivables && !string.Equals(request.Currency, "USD", StringComparison.OrdinalIgnoreCase))
+            throw Invalid("currency_not_supported", "PSeq accounts receivable supports USD only.");
         var now = DateTime.UtcNow;
         var config = await dbContext.OrderSystemConfigurations.AsNoTracking().OrderBy(item => item.CreatedAt).FirstOrDefaultAsync(cancellationToken);
         var expiresAt = request.ExpiresAt ?? now.AddDays(config?.QuoteValidityDays ?? 30);
@@ -184,23 +207,55 @@ public sealed class PlatformLabServiceOrdersController(
             line.Description.Trim(), line.Quantity, line.UnitPrice)).ToList();
         var subtotal = snapshots.Sum(line => decimal.Round(line.Quantity * line.UnitPrice, 2, MidpointRounding.AwayFromZero));
         var revision = order.Quotes.Count == 0 ? 1 : order.Quotes.Max(item => item.Revision) + 1;
+        var computedTax = nativeReceivables && commercial.TaxDecision == EffectiveTaxDecision.Taxable
+            ? decimal.Round(subtotal * commercial.ApprovedTaxRate!.Value, 2, MidpointRounding.AwayFromZero)
+            : nativeReceivables ? 0 : request.Tax;
         var quote = new LabServiceQuote(order.Id, revision, purpose, JsonSerializer.Serialize(snapshots, JsonOptions), subtotal,
-            request.Tax, request.Currency, now, expiresAt);
+            computedTax, nativeReceivables ? "USD" : request.Currency, now, expiresAt);
+        if (nativeReceivables)
+        {
+            quote.FreezeCommercialTerms(
+                JsonSerializer.Serialize(new
+                {
+                    name = commercial.BillingContactName,
+                    email = commercial.BillingContactEmail
+                }, JsonOptions),
+                commercial.BillingAddressJson!,
+                commercial.PaymentTermsDays,
+                JsonSerializer.Serialize(new
+                {
+                    decision = commercial.TaxDecision!.Value.ToString(),
+                    rate = commercial.ApprovedTaxRate,
+                    exemptionEvidence = commercial.TaxExemptionEvidence,
+                    approvedByUserId = commercial.FinanceApprovedByUserId,
+                    approvedAtUtc = commercial.FinanceApprovedAtUtc
+                }, JsonOptions),
+                commercial.ConfigurationVersion);
+        }
         var previous = order.Quotes.Where(item => item.Status is QuoteStatus.Issued or QuoteStatus.SyncPending).OrderByDescending(item => item.Revision).FirstOrDefault();
         previous?.Supersede(quote.Id);
         order.Quotes.Add(quote);
-        var document = new CommercialDocumentLink(OrderWorkflowTypes.LabService, order.Id, CommercialDocumentKind.Estimate, quote.Total, quote.Currency);
-        dbContext.CommercialDocumentLinks.Add(document);
-        var payload = new OrderDocumentOutboxPayload(document.Id, quote.Id, commercial.QboCustomerId!, order.OrderNumber, null,
-            quote.Currency, snapshots.Select(line => new QuickBooksLineRequest(line.ExternalItemId, line.Description, line.Quantity, line.UnitPrice)).ToList());
-        dbContext.OrderOutboxMessages.Add(new OrderOutboxMessage(IntegrationOperation.CreateEstimate, OrderWorkflowTypes.LabService,
-            order.Id, key, JsonSerializer.Serialize(payload, JsonOptions)));
-        Notice(order, "lab-quote-sync-pending", "Laboratory quote is being prepared", $"Pricing for {order.OrderNumber} is being synchronized.");
+        if (nativeReceivables)
+        {
+            quote.MarkIssued();
+            order.MarkQuoteIssued(quote.Id);
+            Notice(order, "lab-quote-issued", "Laboratory quote available", $"Pricing for {order.OrderNumber} is available for review.");
+        }
+        else
+        {
+            var document = new CommercialDocumentLink(OrderWorkflowTypes.LabService, order.Id, CommercialDocumentKind.Estimate, quote.Total, quote.Currency);
+            dbContext.CommercialDocumentLinks.Add(document);
+            var payload = new OrderDocumentOutboxPayload(document.Id, quote.Id, commercial.QboCustomerId!, order.OrderNumber, null,
+                quote.Currency, snapshots.Select(line => new QuickBooksLineRequest(line.ExternalItemId, line.Description, line.Quantity, line.UnitPrice)).ToList());
+            dbContext.OrderOutboxMessages.Add(new OrderOutboxMessage(IntegrationOperation.CreateEstimate, OrderWorkflowTypes.LabService,
+                order.Id, key, JsonSerializer.Serialize(payload, JsonOptions)));
+            Notice(order, "lab-quote-sync-pending", "Laboratory quote is being prepared", $"Pricing for {order.OrderNumber} is being synchronized.");
+        }
         await dbContext.SaveChangesAsync(cancellationToken);
         var response = await MapAsync(order, cancellationToken);
         idempotency.Store(actor.Id, scope, key, request, response, StatusCodes.Status202Accepted);
         await dbContext.SaveChangesAsync(cancellationToken);
-        Response.StatusCode = StatusCodes.Status202Accepted;
+        Response.StatusCode = nativeReceivables ? StatusCodes.Status201Created : StatusCodes.Status202Accepted;
         return response;
     }
 
@@ -254,6 +309,10 @@ public sealed class PlatformLabServiceOrdersController(
         [FromForm] string analysisProfile, [FromForm] string pipelineVersion, [FromForm] string provenance,
         [FromForm] string qcStatus, CancellationToken cancellationToken)
     {
+        if (orderToCashOptions.Value.GovernedPSeqResults)
+            throw new OrderManagementException("manual_result_upload_retired",
+                "PSeq results must be registered by the governed pipeline output-package workflow.",
+                StatusCodes.Status410Gone);
         var actor = await requestContext.RequirePlatformAdminAsync(HttpContext, cancellationToken);
         var order = await ReadAsync(orderId, cancellationToken);
         var sample = order.Samples.SingleOrDefault(item => item.Id == sampleId) ?? throw Missing();
@@ -290,6 +349,10 @@ public sealed class PlatformLabServiceOrdersController(
     [HttpPost("{orderId:guid}/samples/{sampleId:guid}/results/{releaseId:guid}/release")]
     public async Task<LabServiceOrderDto> ReleaseResult(Guid orderId, Guid sampleId, Guid releaseId, [FromBody] VersionRequest request, CancellationToken cancellationToken)
     {
+        if (orderToCashOptions.Value.GovernedPSeqResults)
+            throw new OrderManagementException("manual_result_release_retired",
+                "Release the scientifically approved output package from the governed result-release queue.",
+                StatusCodes.Status410Gone);
         var actor = await requestContext.RequirePlatformAdminAsync(HttpContext, cancellationToken);
         var key = idempotency.RequireKey(HttpContext);
         var order = await ReadAsync(orderId, cancellationToken);
@@ -376,7 +439,12 @@ public sealed class PlatformLabServiceOrdersController(
     [HttpPost("{orderId:guid}/complete")]
     public async Task<LabServiceOrderDto> Complete(Guid orderId, [FromBody] VersionRequest request, CancellationToken cancellationToken)
     {
-        var actor = await requestContext.RequirePlatformAdminAsync(HttpContext, cancellationToken);
+        var nativeReceivables = orderToCashOptions.Value.NativePSeqAccountsReceivable;
+        var actor = nativeReceivables
+            ? await requestContext.RequireBusinessRoleAsync(HttpContext, BusinessRole.CommercialOperator,
+                orderToCashOptions.Value.BusinessRoles || orderToCashOptions.Value.DualControlEnforced,
+                cancellationToken)
+            : await requestContext.RequirePlatformAdminAsync(HttpContext, cancellationToken);
         var key = idempotency.RequireKey(HttpContext);
         var scope = $"platform:lab-order:{orderId}:complete";
         var replay = await idempotency.ReadAsync<LabServiceOrderDto>(actor.Id, scope, key, request, cancellationToken);
@@ -387,24 +455,72 @@ public sealed class PlatformLabServiceOrdersController(
         Execute(() => order.Complete(DateTime.UtcNow));
         var acceptedQuote = order.Quotes.SingleOrDefault(item => item.Id == order.AcceptedQuoteId) ?? throw Conflict("accepted_quote_missing", "The accepted quote snapshot is unavailable.");
         var profile = await dbContext.OrganizationCommercialProfiles.AsNoTracking().FirstOrDefaultAsync(item => item.OrganizationId == order.OrganizationId, cancellationToken);
-        if (string.IsNullOrWhiteSpace(profile?.QboCustomerId)) throw Conflict("qbo_customer_required", "Link this customer to QuickBooks before completing the order.");
-        var estimate = await dbContext.CommercialDocumentLinks.AsNoTracking().Where(item => item.WorkflowType == OrderWorkflowTypes.LabService
-            && item.WorkflowId == orderId && item.Kind == CommercialDocumentKind.Estimate && item.SyncStatus == IntegrationStatus.Succeeded)
-            .OrderByDescending(item => item.SynchronizedAt).FirstOrDefaultAsync(cancellationToken);
         var lines = JsonSerializer.Deserialize<List<QuoteLineSnapshot>>(acceptedQuote.LinesJson, JsonOptions) ?? [];
-        var invoice = new CommercialDocumentLink(OrderWorkflowTypes.LabService, order.Id, CommercialDocumentKind.Invoice, acceptedQuote.Total, acceptedQuote.Currency);
-        dbContext.CommercialDocumentLinks.Add(invoice);
-        var payload = new OrderDocumentOutboxPayload(invoice.Id, null, profile.QboCustomerId!, order.OrderNumber, null,
-            acceptedQuote.Currency, lines.Select(line => new QuickBooksLineRequest(line.ExternalItemId, line.Description, line.Quantity, line.UnitPrice)).ToList(), estimate?.ExternalDocumentId);
-        dbContext.OrderOutboxMessages.Add(new OrderOutboxMessage(IntegrationOperation.CreateInvoice, OrderWorkflowTypes.LabService,
-            order.Id, key, JsonSerializer.Serialize(payload, JsonOptions)));
+        if (nativeReceivables)
+        {
+            if (acceptedQuote.BillingContactSnapshotJson is null
+                || acceptedQuote.BillingAddressSnapshotJson is null
+                || acceptedQuote.TaxDecisionSnapshotJson is null
+                || !acceptedQuote.PaymentTermsDaysSnapshot.HasValue)
+                throw Conflict("quote_billing_snapshot_missing", "The accepted quote does not contain an approved billing, tax, and payment-terms snapshot.");
+            if (!string.Equals(acceptedQuote.Currency, "USD", StringComparison.Ordinal))
+                throw Conflict("currency_not_supported", "PSeq accounts receivable supports USD only.");
+            if (await dbContext.Invoices.AnyAsync(item => item.LabServiceOrderId == order.Id, cancellationToken))
+                throw Conflict("invoice_already_issued", "An invoice has already been issued for this completed order.");
+            var issuedOn = DateOnly.FromDateTime(order.CompletedAt ?? DateTime.UtcNow);
+            var dueOn = issuedOn.AddDays(acceptedQuote.PaymentTermsDaysSnapshot.Value);
+            var invoiceNumber = $"INV-{issuedOn:yyyyMMdd}-{Guid.NewGuid():N}"[..21].ToUpperInvariant();
+            var customerName = await dbContext.Organizations.AsNoTracking()
+                .Where(item => item.Id == order.OrganizationId).Select(item => item.Name)
+                .SingleAsync(cancellationToken);
+            var pdf = InvoicePdfRenderer.Render(invoiceNumber, customerName, issuedOn, dueOn,
+                lines.Select(line => new InvoicePdfLine(line.Description, line.Quantity, line.UnitPrice,
+                    decimal.Round(line.Quantity * line.UnitPrice, 2, MidpointRounding.AwayFromZero))).ToList(),
+                acceptedQuote.Subtotal, acceptedQuote.Tax, acceptedQuote.Total, "USD");
+            await using var pdfStream = new MemoryStream(pdf, writable: false);
+            var stored = await fileStorage.SaveAsync(pdfStream, ".pdf", 5_000_000, cancellationToken);
+            try
+            {
+                var nativeInvoice = new Invoice(order.OrganizationId, order.Id, acceptedQuote.Id,
+                    invoiceNumber, issuedOn, acceptedQuote.PaymentTermsDaysSnapshot.Value,
+                    acceptedQuote.BillingContactSnapshotJson, acceptedQuote.BillingAddressSnapshotJson,
+                    acceptedQuote.TaxDecisionSnapshotJson, acceptedQuote.Subtotal, acceptedQuote.Tax,
+                    stored.StorageKey, stored.Sha256, actor.Id, DateTime.UtcNow);
+                dbContext.Invoices.Add(nativeInvoice);
+                var taxRate = acceptedQuote.Subtotal == 0 ? 0
+                    : decimal.Round(acceptedQuote.Tax / acceptedQuote.Subtotal, 6, MidpointRounding.AwayFromZero);
+                dbContext.InvoiceLines.AddRange(lines.Select((line, index) => new InvoiceLine(
+                    nativeInvoice.Id, index + 1, null, line.Description, line.Quantity, line.UnitPrice, taxRate)));
+                Notice(order, "lab-invoice-issued", "Invoice available",
+                    $"Invoice {invoiceNumber} is available for {order.OrderNumber} and is due {dueOn:yyyy-MM-dd}.");
+            }
+            catch
+            {
+                await fileStorage.DeleteIfExistsAsync(stored.StorageKey, cancellationToken);
+                throw;
+            }
+        }
+        else
+        {
+            if (string.IsNullOrWhiteSpace(profile?.QboCustomerId)) throw Conflict("qbo_customer_required", "Link this customer to QuickBooks before completing the order.");
+            var estimate = await dbContext.CommercialDocumentLinks.AsNoTracking().Where(item => item.WorkflowType == OrderWorkflowTypes.LabService
+                && item.WorkflowId == orderId && item.Kind == CommercialDocumentKind.Estimate && item.SyncStatus == IntegrationStatus.Succeeded)
+                .OrderByDescending(item => item.SynchronizedAt).FirstOrDefaultAsync(cancellationToken);
+            var invoice = new CommercialDocumentLink(OrderWorkflowTypes.LabService, order.Id, CommercialDocumentKind.Invoice, acceptedQuote.Total, acceptedQuote.Currency);
+            dbContext.CommercialDocumentLinks.Add(invoice);
+            var payload = new OrderDocumentOutboxPayload(invoice.Id, null, profile.QboCustomerId!, order.OrderNumber, null,
+                acceptedQuote.Currency, lines.Select(line => new QuickBooksLineRequest(line.ExternalItemId, line.Description, line.Quantity, line.UnitPrice)).ToList(), estimate?.ExternalDocumentId);
+            dbContext.OrderOutboxMessages.Add(new OrderOutboxMessage(IntegrationOperation.CreateInvoice, OrderWorkflowTypes.LabService,
+                order.Id, key, JsonSerializer.Serialize(payload, JsonOptions)));
+        }
         Event(order, before, order.Status.ToString(), actor.Id);
         Notice(order, "lab-order-completed", "Laboratory service completed", $"Laboratory work for {order.OrderNumber} is complete.");
         await dbContext.SaveChangesAsync(cancellationToken);
         var response = await MapAsync(order, cancellationToken);
-        idempotency.Store(actor.Id, scope, key, request, response, StatusCodes.Status202Accepted);
+        idempotency.Store(actor.Id, scope, key, request, response,
+            nativeReceivables ? StatusCodes.Status201Created : StatusCodes.Status202Accepted);
         await dbContext.SaveChangesAsync(cancellationToken);
-        Response.StatusCode = StatusCodes.Status202Accepted;
+        Response.StatusCode = nativeReceivables ? StatusCodes.Status201Created : StatusCodes.Status202Accepted;
         return response;
     }
 

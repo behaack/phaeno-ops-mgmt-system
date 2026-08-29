@@ -139,6 +139,19 @@ export type PhaenoLabRoleState = {
   version: number | null
 }
 
+export type BusinessRole =
+  | 'CommercialOperator'
+  | 'ResultReleaseManager'
+  | 'BillingOperator'
+  | 'CashOperator'
+  | 'CashReconciler'
+
+export type PhaenoBusinessRoleState = {
+  role: BusinessRole
+  isActive: boolean
+  version: number | null
+}
+
 export type PhaenoUser = {
   id: string
   email: string
@@ -151,7 +164,17 @@ export type PhaenoUser = {
   userVersion: number
   membershipVersion: number
   labRoles: PhaenoLabRoleState[]
+  businessRoles: PhaenoBusinessRoleState[]
 }
+
+export type InvitationDeliveryStatus =
+  | 'Queued'
+  | 'Sending'
+  | 'Accepted'
+  | 'Delivered'
+  | 'Bounced'
+  | 'Failed'
+  | 'NeedsAttention'
 
 export type Invitation = {
   id: string
@@ -162,12 +185,20 @@ export type Invitation = {
   lastName: string
   isOrganizationAdmin: boolean
   labRoles: LabRole[]
+  businessRoles: BusinessRole[]
   status: 'Pending' | 'Accepted' | 'Revoked' | 'Declined'
   isExpired: boolean
   expiresAt: string
   sendCount: number
   lastSentAt: string | null
   lastSendError: string | null
+  deliveryStatus: InvitationDeliveryStatus | null
+  deliveryAttemptCount: number
+  deliveryQueuedAt: string | null
+  deliveryUpdatedAt: string | null
+  deliveredAt: string | null
+  bouncedAt: string | null
+  hasHardBounce: boolean
   version: number
 }
 
@@ -397,6 +428,7 @@ export async function updatePhaenoUser(
     userVersion: number
     membershipVersion: number
     labRoles: PhaenoLabRoleState[]
+    businessRoles: PhaenoBusinessRoleState[]
   },
 ) {
   const response = await api.put<PhaenoUser>(`/users/${id}/phaeno`, input)
@@ -424,8 +456,32 @@ export async function createInvitation(input: {
   email: string
   isOrganizationAdmin: boolean
   labRoles: LabRole[]
+  businessRoles?: BusinessRole[]
 }) {
   const response = await api.post<Invitation>('/invitations', input)
+  return response.data
+}
+
+export type OperationalReadinessBlocker = {
+  code: string
+  label: string
+  nextAction: string
+}
+
+export type OperationalReadiness = {
+  organizationId: string
+  state: 'NeedsSetup' | 'Ready' | 'Blocked'
+  canStageOrder: boolean
+  canIssueQuote: boolean
+  hasManualBlock: boolean
+  manualBlockReason: string | null
+  blockers: OperationalReadinessBlocker[]
+}
+
+export async function getOperationalReadiness(organizationId: string) {
+  const response = await api.get<OperationalReadiness>(
+    `/platform/relationships/organizations/${organizationId}/operational-readiness`,
+  )
   return response.data
 }
 

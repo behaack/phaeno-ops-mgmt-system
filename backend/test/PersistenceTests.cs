@@ -5,6 +5,7 @@ using Microsoft.Extensions.Options;
 using PSeq.Operations.Commercial;
 using PSeq.Operations.Commercial.Accounts.Domain;
 using PSeq.Operations.Commercial.DataProvisioning.Domain;
+using PSeq.Operations.Commercial.OrderManagement.Domain;
 using PSeq.Operations.Laboratory;
 using PSeq.Operations.Laboratory.Domain;
 using PhaenoPortal.App.Infrastructure.Persistence.Auditing;
@@ -91,7 +92,7 @@ public class PersistenceTests
             .Where(entityType => entityType.ClrType.Assembly == laboratoryAssembly)
             .ToList();
 
-        Assert.Equal(26, laboratoryEntities.Count);
+        Assert.Equal(27, laboratoryEntities.Count);
         Assert.Equal(
             "lab_work_orders",
             dbContext.Model.FindEntityType(typeof(LabWorkOrder))?.GetTableName());
@@ -325,6 +326,104 @@ public class PersistenceTests
         Assert.Equal(
             "data_provisioning_notices",
             dbContext.Model.FindEntityType(typeof(DataProvisioningNotice))?.GetTableName());
+    }
+
+    [Fact]
+    public void PSeqOrderToCashModelEnforcesIdempotencyUniquenessAndDecimalPrecision()
+    {
+        using var dbContext = CreateDbContext();
+
+        AssertUniqueIndex<InvitationDeliveryWebhookEvent>(
+            dbContext, nameof(InvitationDeliveryWebhookEvent.ProviderEventId));
+        AssertUniqueIndex<ResultOutputPackage>(
+            dbContext, nameof(ResultOutputPackage.IdempotencyKey));
+        AssertUniqueIndex<ResultOutputPackage>(
+            dbContext,
+            nameof(ResultOutputPackage.LabSampleId),
+            nameof(ResultOutputPackage.PackageVersion));
+        AssertUniqueIndex<Invoice>(dbContext, nameof(Invoice.InvoiceNumber));
+        AssertUniqueIndex<Invoice>(dbContext, nameof(Invoice.LabServiceOrderId));
+        AssertUniqueIndex<PaymentReceipt>(
+            dbContext,
+            nameof(PaymentReceipt.Source),
+            nameof(PaymentReceipt.ExternalId));
+
+        var invoice = dbContext.Model.FindEntityType(typeof(Invoice));
+        Assert.NotNull(invoice);
+        foreach (var propertyName in new[]
+        {
+            nameof(Invoice.Subtotal), nameof(Invoice.TaxTotal),
+            nameof(Invoice.AdjustmentTotal), nameof(Invoice.Total),
+            nameof(Invoice.AppliedTotal), nameof(Invoice.Balance)
+        })
+        {
+            var property = invoice.FindProperty(propertyName);
+            Assert.NotNull(property);
+            Assert.Equal(18, property.GetPrecision());
+            Assert.Equal(2, property.GetScale());
+        }
+
+        Assert.True(invoice.FindProperty(nameof(Invoice.Version))?.IsConcurrencyToken);
+        Assert.True(dbContext.Model.FindEntityType(typeof(PaymentReceipt))?
+            .FindProperty(nameof(PaymentReceipt.Version))?.IsConcurrencyToken);
+        Assert.True(dbContext.Model.FindEntityType(typeof(ResultOutputPackage))?
+            .FindProperty(nameof(ResultOutputPackage.Version))?.IsConcurrencyToken);
+    }
+
+    [Fact]
+    public void PSeqOrderToCashModelKeepsTenantAndImmutableHistoryRelationships()
+    {
+        using var dbContext = CreateDbContext();
+        var organization = dbContext.Model.FindEntityType(typeof(Organization));
+        Assert.NotNull(organization);
+
+        foreach (var entityType in new[]
+        {
+            typeof(Invoice), typeof(PaymentReceipt),
+            typeof(ResultOutputPackage), typeof(OperationalAttentionItem)
+        })
+        {
+            var mapped = dbContext.Model.FindEntityType(entityType);
+            Assert.NotNull(mapped);
+            Assert.Contains(mapped.GetForeignKeys(), foreignKey =>
+                foreignKey.PrincipalEntityType == organization
+                && foreignKey.Properties.Any(property =>
+                    property.Name == "OrganizationId"));
+        }
+
+        var allocation = dbContext.Model.FindEntityType(typeof(PaymentAllocation));
+        Assert.NotNull(allocation);
+        Assert.Contains(allocation.GetForeignKeys(), foreignKey =>
+            foreignKey.PrincipalEntityType.ClrType == typeof(Invoice));
+        Assert.Contains(allocation.GetForeignKeys(), foreignKey =>
+            foreignKey.PrincipalEntityType.ClrType == typeof(PaymentReceipt));
+
+        var correction = dbContext.Model.FindEntityType(typeof(ResultOutputPackage));
+        Assert.NotNull(correction);
+        Assert.Contains(correction.GetForeignKeys(), foreignKey =>
+            foreignKey.PrincipalEntityType == correction
+            && foreignKey.Properties.Single().Name ==
+                nameof(ResultOutputPackage.CorrectsPackageId));
+    }
+
+    [Fact]
+    public void PSeqOrderToCashMigrationIsDiscoveredWithoutConnectingToPostgres()
+    {
+        using var dbContext = CreateDbContext();
+        Assert.Contains(
+            dbContext.Database.GetMigrations(),
+            migration => migration == "20260829204102_AddPSeqOrderToCashGapClosure");
+    }
+
+    private static void AssertUniqueIndex<TEntity>(
+        PSeqOperationsDbContext dbContext,
+        params string[] propertyNames)
+    {
+        var entity = dbContext.Model.FindEntityType(typeof(TEntity));
+        Assert.NotNull(entity);
+        Assert.Contains(entity.GetIndexes(), index => index.IsUnique
+            && index.Properties.Select(property => property.Name)
+                .SequenceEqual(propertyNames));
     }
 
     private static PSeqOperationsDbContext CreateDbContext()

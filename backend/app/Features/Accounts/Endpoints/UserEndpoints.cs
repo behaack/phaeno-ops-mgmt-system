@@ -231,13 +231,18 @@ public static class UserEndpoints
             .AsNoTracking()
             .Where(assignment => userIds.Contains(assignment.UserId))
             .ToListAsync(cancellationToken);
+        var businessAssignments = await dbContext.BusinessRoleAssignments
+            .AsNoTracking()
+            .Where(assignment => userIds.Contains(assignment.UserId))
+            .ToListAsync(cancellationToken);
 
         return TypedResults.Ok(memberships
             .Where(membership => membership.User != null)
             .Select(membership => ToPhaenoUserDto(
                 membership.User!,
                 membership,
-                assignments.Where(assignment => assignment.UserId == membership.UserId)))
+                assignments.Where(assignment => assignment.UserId == membership.UserId),
+                businessAssignments.Where(assignment => assignment.UserId == membership.UserId)))
             .ToList());
     }
 
@@ -286,6 +291,21 @@ public static class UserEndpoints
             || allRoles.Any(role => !requestedRoles.ContainsKey(role)))
         {
             throw new BadRequestException("Every laboratory role must be included in the update.");
+        }
+
+        if (request.BusinessRoles.Select(value => value.Role).Distinct().Count()
+            != request.BusinessRoles.Count)
+        {
+            throw new BadRequestException("A business role cannot appear more than once.");
+        }
+
+        var requestedBusinessRoles = request.BusinessRoles.ToDictionary(value => value.Role);
+        var allBusinessRoles = Enum.GetValues<BusinessRole>();
+        if (requestedBusinessRoles.Count > 0
+            && (requestedBusinessRoles.Count != allBusinessRoles.Length
+                || allBusinessRoles.Any(role => !requestedBusinessRoles.ContainsKey(role))))
+        {
+            throw new BadRequestException("Every business role must be included in the update.");
         }
 
         var isPlatformAdministrator = AccountAuthorization.IsPlatformAdmin(actor);
@@ -387,9 +407,37 @@ public static class UserEndpoints
             assignment.SetActive(requestedRole.IsActive);
         }
 
+        var businessAssignments = await dbContext.BusinessRoleAssignments
+            .Where(assignment => assignment.UserId == user.Id)
+            .ToListAsync(cancellationToken);
+        if (requestedBusinessRoles.Count > 0)
+        {
+            foreach (var role in allBusinessRoles)
+            {
+                var requestedRole = requestedBusinessRoles[role];
+                var assignment = businessAssignments.SingleOrDefault(value => value.Role == role);
+                if (assignment?.Version != requestedRole.Version)
+                    throw new DbUpdateConcurrencyException();
+                if (requestedRole.IsActive
+                    && user is not { IsActive: true, Status: UserAccountStatus.Active })
+                    throw new BadRequestException(
+                        "Business roles can be assigned only to active Phaeno users.");
+                if (assignment == null)
+                {
+                    if (!requestedRole.IsActive) continue;
+                    assignment = new BusinessRoleAssignment(user.Id, role);
+                    dbContext.BusinessRoleAssignments.Add(assignment);
+                    businessAssignments.Add(assignment);
+                    continue;
+                }
+
+                assignment.SetActive(requestedRole.IsActive);
+            }
+        }
+
         await dbContext.SaveChangesAsync(cancellationToken);
 
-        return TypedResults.Ok(ToPhaenoUserDto(user, membership, assignments));
+        return TypedResults.Ok(ToPhaenoUserDto(user, membership, assignments, businessAssignments));
     }
 
     private static UserDto ToDto(User user, Guid? membershipOrganizationScope = null)
@@ -545,9 +593,11 @@ public static class UserEndpoints
     private static PhaenoUserAdministrationDto ToPhaenoUserDto(
         User user,
         OrganizationMembership membership,
-        IEnumerable<LabRoleAssignment> assignments)
+        IEnumerable<LabRoleAssignment> assignments,
+        IEnumerable<BusinessRoleAssignment> businessAssignments)
     {
         var assignmentsByRole = assignments.ToDictionary(value => value.Role);
+        var businessAssignmentsByRole = businessAssignments.ToDictionary(value => value.Role);
         return new PhaenoUserAdministrationDto
         {
             Id = user.Id,
@@ -565,6 +615,18 @@ public static class UserEndpoints
                 {
                     assignmentsByRole.TryGetValue(role, out var assignment);
                     return new PhaenoLabRoleStateDto
+                    {
+                        Role = role,
+                        IsActive = assignment?.IsActive == true,
+                        Version = assignment?.Version
+                    };
+                })
+                .ToList(),
+            BusinessRoles = Enum.GetValues<BusinessRole>()
+                .Select(role =>
+                {
+                    businessAssignmentsByRole.TryGetValue(role, out var assignment);
+                    return new PhaenoBusinessRoleStateDto
                     {
                         Role = role,
                         IsActive = assignment?.IsActive == true,

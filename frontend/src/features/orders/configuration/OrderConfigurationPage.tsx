@@ -49,8 +49,8 @@ const configurationSections: ReadonlyArray<WorkspaceSidebarItem<ConfigurationSec
   },
   {
     value: 'commercial',
-    label: 'Credit & QBO',
-    description: 'Credit decisions and QuickBooks mappings',
+    label: 'Legacy links',
+    description: 'Historical credit and QuickBooks mappings',
     icon: Landmark,
   },
 ]
@@ -78,9 +78,9 @@ export function OrderConfigurationPage() {
             <div>
               <h1 className="text-3xl font-semibold">Order configuration</h1>
               <p className="mt-2 max-w-3xl text-sm leading-6 text-muted-foreground">
-                Link QuickBooks items to scientific services, maintain Partner-negotiated
-                reagent prices, version assembly profiles, and control credit-dependent
-                release behavior.
+                Maintain PSeq readiness defaults, scientific service definitions,
+                Partner-negotiated reagent prices, assembly profiles, and legacy
+                accounting links. Customer billing and tax approval live in Finance.
               </p>
             </div>
             <Button

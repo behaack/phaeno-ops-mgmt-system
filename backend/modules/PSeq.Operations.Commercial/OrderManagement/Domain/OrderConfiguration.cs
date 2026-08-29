@@ -280,6 +280,13 @@ public sealed class AssemblyProfile : IAudit, IConcurrency
     public void IncrementVersion() => Version++;
 }
 
+public enum EffectiveTaxDecision
+{
+    Taxable,
+    Exempt,
+    NonTaxable
+}
+
 public sealed class OrganizationCommercialProfile : IAudit, IConcurrency
 {
     public Guid Id { get; private set; } = Guid.NewGuid();
@@ -289,6 +296,17 @@ public sealed class OrganizationCommercialProfile : IAudit, IConcurrency
     public bool AssemblyCreditApproved { get; private set; }
     public DateTime? CreditReviewedAt { get; private set; }
     public Guid? CreditReviewedByUserId { get; private set; }
+    public string? BillingContactName { get; private set; }
+    public string? BillingContactEmail { get; private set; }
+    public string? BillingAddressJson { get; private set; }
+    public int PaymentTermsDays { get; private set; } = 30;
+    public EffectiveTaxDecision? TaxDecision { get; private set; }
+    public decimal? ApprovedTaxRate { get; private set; }
+    public string? TaxExemptionEvidence { get; private set; }
+    public Guid? FinanceApprovedByUserId { get; private set; }
+    public DateTime? FinanceApprovedAtUtc { get; private set; }
+    public string? FinanceApprovalNotes { get; private set; }
+    public int ConfigurationVersion { get; private set; } = 1;
     public DateTime CreatedAt { get; private set; } = DateTime.UtcNow;
     public Guid? CreatedByUserId { get; private set; }
     public DateTime UpdatedAt { get; private set; } = DateTime.UtcNow;
@@ -313,6 +331,71 @@ public sealed class OrganizationCommercialProfile : IAudit, IConcurrency
         CreditReviewedAt = reviewedAt;
     }
 
+    public void UpdateBillingConfiguration(
+        string billingContactName,
+        string billingContactEmail,
+        string billingAddressJson,
+        int paymentTermsDays,
+        EffectiveTaxDecision taxDecision,
+        decimal? approvedTaxRate,
+        string? taxExemptionEvidence)
+    {
+        if (paymentTermsDays is < 0 or > 365)
+            throw new ArgumentOutOfRangeException(nameof(paymentTermsDays));
+        if (!System.Net.Mail.MailAddress.TryCreate(billingContactEmail, out _))
+            throw new ArgumentException("A valid billing-contact email is required.", nameof(billingContactEmail));
+
+        switch (taxDecision)
+        {
+            case EffectiveTaxDecision.Taxable when approvedTaxRate is null or < 0 or > 1:
+                throw new ArgumentException("A taxable decision requires an approved tax rate from 0 through 1.", nameof(approvedTaxRate));
+            case EffectiveTaxDecision.Exempt when string.IsNullOrWhiteSpace(taxExemptionEvidence):
+                throw new ArgumentException("An exempt decision requires exemption evidence.", nameof(taxExemptionEvidence));
+            case EffectiveTaxDecision.NonTaxable when approvedTaxRate.HasValue:
+                throw new ArgumentException("A non-taxable decision cannot carry a tax rate.", nameof(approvedTaxRate));
+        }
+
+        BillingContactName = OrderText.Required(billingContactName, nameof(billingContactName), 255);
+        BillingContactEmail = billingContactEmail.Trim();
+        BillingAddressJson = OrderText.Json(billingAddressJson);
+        if (BillingAddressJson == "{}")
+            throw new ArgumentException("A billing address is required.", nameof(billingAddressJson));
+        PaymentTermsDays = paymentTermsDays;
+        TaxDecision = taxDecision;
+        ApprovedTaxRate = taxDecision == EffectiveTaxDecision.Taxable
+            ? decimal.Round(approvedTaxRate!.Value, 6, MidpointRounding.AwayFromZero)
+            : null;
+        TaxExemptionEvidence = taxDecision == EffectiveTaxDecision.Exempt
+            ? OrderText.Required(taxExemptionEvidence, nameof(taxExemptionEvidence), 4000)
+            : null;
+        FinanceApprovedByUserId = null;
+        FinanceApprovedAtUtc = null;
+        FinanceApprovalNotes = null;
+        ConfigurationVersion++;
+    }
+
+    public void ApproveTaxDecision(Guid financeActorUserId, DateTime approvedAtUtc, string notes)
+    {
+        if (financeActorUserId == Guid.Empty) throw new ArgumentException("A Finance approver is required.", nameof(financeActorUserId));
+        if (!TaxDecision.HasValue) throw new InvalidOperationException("Complete the tax decision before Finance approval.");
+        FinanceApprovedByUserId = financeActorUserId;
+        FinanceApprovedAtUtc = approvedAtUtc;
+        FinanceApprovalNotes = OrderText.Required(notes, nameof(notes), 4000);
+    }
+
+    public bool HasCompleteBillingContact =>
+        !string.IsNullOrWhiteSpace(BillingContactName)
+        && System.Net.Mail.MailAddress.TryCreate(BillingContactEmail, out _);
+
+    public bool HasCompleteBillingAddress =>
+        !string.IsNullOrWhiteSpace(BillingAddressJson) && BillingAddressJson != "{}";
+
+    public bool HasEffectiveTaxDecision => TaxDecision.HasValue
+        && (TaxDecision != EffectiveTaxDecision.Taxable || ApprovedTaxRate.HasValue)
+        && (TaxDecision != EffectiveTaxDecision.Exempt || !string.IsNullOrWhiteSpace(TaxExemptionEvidence));
+
+    public bool HasFinanceApprovedTaxDecision => FinanceApprovedByUserId.HasValue && FinanceApprovedAtUtc.HasValue;
+
     public void MarkCreated(DateTime utcNow, Guid? actorUserId) { CreatedAt = utcNow; CreatedByUserId = actorUserId; }
     public void MarkUpdated(DateTime utcNow, Guid? actorUserId) { UpdatedAt = utcNow; UpdatedByUserId = actorUserId; }
     public void IncrementVersion() => Version++;
@@ -324,6 +407,8 @@ public sealed class OrderSystemConfiguration : IAudit, IConcurrency
     public int QuoteValidityDays { get; private set; } = 30;
     public string SampleSubmissionInstructions { get; private set; } = string.Empty;
     public string ShippingConfigurationJson { get; private set; } = "{}";
+    public string SampleConfigurationJson { get; private set; } = "{}";
+    public string ResultDestinationConfigurationJson { get; private set; } = "{}";
     public DateTime CreatedAt { get; private set; } = DateTime.UtcNow;
     public Guid? CreatedByUserId { get; private set; }
     public DateTime UpdatedAt { get; private set; } = DateTime.UtcNow;
@@ -341,6 +426,18 @@ public sealed class OrderSystemConfiguration : IAudit, IConcurrency
         QuoteValidityDays = quoteValidityDays;
         SampleSubmissionInstructions = OrderText.Optional(sampleSubmissionInstructions, 8000) ?? string.Empty;
         ShippingConfigurationJson = OrderText.Json(shippingConfigurationJson);
+    }
+
+    public void UpdatePSeqReadinessConfiguration(
+        string sampleConfigurationJson,
+        string resultDestinationConfigurationJson)
+    {
+        SampleConfigurationJson = OrderText.Json(sampleConfigurationJson);
+        ResultDestinationConfigurationJson = OrderText.Json(resultDestinationConfigurationJson);
+        if (SampleConfigurationJson == "{}")
+            throw new ArgumentException("Complete sample configuration is required.", nameof(sampleConfigurationJson));
+        if (ResultDestinationConfigurationJson == "{}")
+            throw new ArgumentException("A result destination is required.", nameof(resultDestinationConfigurationJson));
     }
 
     public void MarkCreated(DateTime utcNow, Guid? actorUserId) { CreatedAt = utcNow; CreatedByUserId = actorUserId; }

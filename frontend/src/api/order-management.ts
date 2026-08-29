@@ -412,12 +412,12 @@ export type NotificationMessage = {
 }
 
 export type OrderConfiguration = {
-  system: { id: string; quoteValidityDays: number; sampleSubmissionInstructions: string; shippingConfigurationJson: string; version: number }
+  system: { id: string; quoteValidityDays: number; sampleSubmissionInstructions: string; shippingConfigurationJson: string; sampleConfigurationJson: string; resultDestinationConfigurationJson: string; version: number }
   catalogItems: Array<{ id: string; externalItemId: string; name: string; description: string; salesUnit: string; basePrice: number; currency: string; isActive: boolean; lastSyncedAt: string; version: number }>
   analyses: AnalysisDefinition[]
   reagentOfferings: ReagentOffering[]
   assemblyProfiles: AssemblyProfile[]
-  commercialProfiles: Array<{ id: string; organizationId: string; organizationName: string; labCreditApproved: boolean; assemblyCreditApproved: boolean; qboCustomerId: string | null; version: number }>
+  commercialProfiles: Array<{ id: string; organizationId: string; organizationName: string; labCreditApproved: boolean; assemblyCreditApproved: boolean; qboCustomerId: string | null; billingContactName: string | null; billingContactEmail: string | null; billingAddressJson: string | null; paymentTermsDays: number; taxDecision: 'Taxable' | 'Exempt' | 'NonTaxable' | null; approvedTaxRate: number | null; taxExemptionEvidence: string | null; financeApprovedByUserId: string | null; financeApprovedAtUtc: string | null; financeApprovalNotes: string | null; configurationVersion: number; version: number }>
 }
 
 export type LabSampleWrite = {
@@ -572,6 +572,7 @@ export async function uploadPlatformAssemblyOutput(requestId: string, runId: str
 }
 export async function getOrderConfiguration() { return get<OrderConfiguration>('/platform/order-configuration') }
 export async function updateOrderSystemConfiguration(input: OrderConfiguration['system']) { return patch<OrderConfiguration>('/platform/order-configuration/system', input) }
+export async function updatePSeqReadinessConfiguration(input: { version: number; sampleConfigurationJson: string; resultDestinationConfigurationJson: string }) { return patch<OrderConfiguration>('/platform/order-configuration/pseq-readiness', input) }
 export async function syncQuickBooksCatalog() { return post<IntegrationMessage>('/platform/order-configuration/catalog/sync', {}, true) }
 export async function saveAnalysisDefinition(id: string | null, input: Omit<AnalysisDefinition, 'id'>) {
   return id ? patch<AnalysisDefinition>(`/platform/order-configuration/analyses/${id}`, input) : post<AnalysisDefinition>('/platform/order-configuration/analyses', input)

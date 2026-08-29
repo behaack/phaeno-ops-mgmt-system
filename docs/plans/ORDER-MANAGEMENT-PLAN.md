@@ -1,5 +1,26 @@
 # Order Management Plan
 
+## 2026-08-29 PSeq order-to-cash implementation update
+
+For PSeq Lab Service, `PSEQ-ORDER-TO-CASH-GAP-CLOSURE-PLAN.md` supersedes the
+older QuickBooks-authoritative billing and payment-gated result-release
+statements in this plan. POMS now derives operational readiness, permits an
+internal staged order before Customer administrator activation when the active
+Customer/entitlement/offering minimum is met, requires full readiness for quote
+issuance and commitment, and snapshots POMS-owned billing, tax, and payment
+terms in the quote.
+
+On governed feature activation, scientifically approved output packages create
+the Commercial release candidate without the duplicate manual-upload bridge.
+The Result Release Manager releases per sample without a balance or credit
+gate. Job completion idempotently issues a POMS invoice and immutable PDF from
+the accepted quote. Native AR manages invoices, append-only adjustments,
+receipts, explicit many-to-many allocations, preview/confirm CSV imports,
+reversals, aging, and independently approved reconciliation. Historical manual
+billing remains visible as a legacy Finance-review source and is not converted
+to an issued invoice. Partner PSeq Kit and data-assembly payment behavior is
+unchanged.
+
 Keep this file updated as Customer and Partner ordering requirements are
 supplied and decisions are made.
 

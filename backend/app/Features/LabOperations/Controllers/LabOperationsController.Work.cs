@@ -16,7 +16,7 @@ public sealed partial class LabOperationsController
         [FromBody] WorkMilestoneRequest request, CancellationToken cancellationToken)
     {
         var actor = await requestContext.RequireAsync(HttpContext, cancellationToken,
-            LabRole.Operator, LabRole.Supervisor, LabRole.OperationsAdministrator);
+            LabRole.Operator, LabRole.Supervisor);
         if (!Enum.TryParse<LabWorkOrderStatus>(request.Status, true, out var status)
             || status is LabWorkOrderStatus.ReadyForRelease or LabWorkOrderStatus.Cancelled)
             throw Invalid("lab_milestone_invalid", "The requested laboratory milestone is invalid for this action.");
@@ -33,7 +33,7 @@ public sealed partial class LabOperationsController
         [FromBody] SpecimenReceiptRequest request, CancellationToken cancellationToken)
     {
         var actor = await requestContext.RequireAsync(HttpContext, cancellationToken,
-            LabRole.Operator, LabRole.Supervisor, LabRole.OperationsAdministrator);
+            LabRole.Operator, LabRole.Supervisor);
         var work = await RequireWorkOrderAsync(workOrderId, cancellationToken);
         var specimen = await RequireSpecimenAsync(work.Id, specimenId, cancellationToken);
         EnsureVersion(specimen.Version, request.Version);
@@ -49,7 +49,7 @@ public sealed partial class LabOperationsController
         [FromBody] SpecimenAccessionRequest request, CancellationToken cancellationToken)
     {
         var actor = await requestContext.RequireAsync(HttpContext, cancellationToken,
-            LabRole.Operator, LabRole.Supervisor, LabRole.OperationsAdministrator);
+            LabRole.Operator, LabRole.Supervisor);
         var work = await RequireWorkOrderAsync(workOrderId, cancellationToken);
         var specimen = await RequireSpecimenAsync(work.Id, specimenId, cancellationToken);
         EnsureVersion(specimen.Version, request.Version);
@@ -71,7 +71,7 @@ public sealed partial class LabOperationsController
         [FromBody] SpecimenDispositionRequest request, CancellationToken cancellationToken)
     {
         var actor = await requestContext.RequireAsync(HttpContext, cancellationToken,
-            LabRole.Operator, LabRole.Supervisor, LabRole.OperationsAdministrator);
+            LabRole.Operator, LabRole.Supervisor);
         if (!Enum.TryParse<LabSpecimenIntakeDisposition>(request.Disposition, true, out var disposition))
             throw Invalid("specimen_disposition_invalid", "The intake disposition is invalid.");
         var work = await RequireWorkOrderAsync(workOrderId, cancellationToken);
@@ -98,7 +98,7 @@ public sealed partial class LabOperationsController
         [FromBody] CreateContainerRequest request, CancellationToken cancellationToken)
     {
         await requestContext.RequireAsync(HttpContext, cancellationToken,
-            LabRole.Operator, LabRole.Supervisor, LabRole.OperationsAdministrator);
+            LabRole.Operator, LabRole.Supervisor);
         await RequireWorkOrderAsync(workOrderId, cancellationToken);
         if (!Enum.TryParse<LabContainerKind>(request.Kind, true, out var kind))
             throw Invalid("container_kind_invalid", "The container kind is invalid.");
@@ -164,7 +164,7 @@ public sealed partial class LabOperationsController
         CancellationToken cancellationToken)
     {
         var actor = await requestContext.RequireAsync(HttpContext, cancellationToken,
-            LabRole.Operator, LabRole.Supervisor, LabRole.OperationsAdministrator);
+            LabRole.Operator, LabRole.Supervisor);
         var container = await dbContext.LabContainers.SingleOrDefaultAsync(item => item.Id == containerId, cancellationToken)
             ?? throw Missing();
         var reason = request.Reason?.Trim();
@@ -214,7 +214,7 @@ public sealed partial class LabOperationsController
         [FromBody] CreateExecutionRequest request, CancellationToken cancellationToken)
     {
         await requestContext.RequireAsync(HttpContext, cancellationToken,
-            LabRole.Operator, LabRole.Supervisor, LabRole.OperationsAdministrator);
+            LabRole.Operator, LabRole.Supervisor);
         await RequireWorkOrderAsync(workOrderId, cancellationToken);
         if (request.LabSpecimenId.HasValue)
             await RequireSpecimenAsync(workOrderId, request.LabSpecimenId.Value, cancellationToken);
@@ -234,7 +234,7 @@ public sealed partial class LabOperationsController
         [FromBody] ExecutionTransitionRequest request, CancellationToken cancellationToken)
     {
         var actor = await requestContext.RequireAsync(HttpContext, cancellationToken,
-            LabRole.Operator, LabRole.Supervisor, LabRole.OperationsAdministrator);
+            LabRole.Operator, LabRole.Supervisor);
         var execution = await dbContext.LabProtocolExecutions
             .SingleOrDefaultAsync(item => item.Id == executionId, cancellationToken) ?? throw Missing();
         EnsureVersion(execution.Version, request.Version);

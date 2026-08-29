@@ -566,6 +566,11 @@ const mockSession: SessionResponse = {
     canManageDataAssembly: true,
     canManageOrderIntegrations: true,
     canViewOrderAudit: true,
+    canOperateCommercialWork: true,
+    canReleasePSeqResults: true,
+    canManagePSeqBilling: true,
+    canManagePSeqCash: true,
+    canReconcilePSeqCash: true,
   },
 }
 

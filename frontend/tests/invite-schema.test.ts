@@ -6,6 +6,8 @@ describe('inviteSchema', () => {
   it('accepts a valid invite payload', () => {
     const result = inviteSchema.safeParse({
       ...inviteDefaults,
+      firstName: 'Ada',
+      lastName: 'Lovelace',
       email: 'admin@example.com',
       organization: 'Example Health',
       role: 'Organization Admin',

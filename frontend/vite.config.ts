@@ -9,12 +9,12 @@ import { nitro } from 'nitro/vite'
 import viteReact from '@vitejs/plugin-react'
 import tailwindcss from '@tailwindcss/vite'
 
-const config = defineConfig(({ command }) => ({
+const config = defineConfig(({ command, mode }) => ({
   server: {
     host: '127.0.0.1',
     port: 3000,
     https:
-      command === 'serve'
+      command === 'serve' && mode !== 'test'
         ? {
             key: readFileSync(new URL('./certs/localhost-key.pem', import.meta.url)),
             cert: readFileSync(new URL('./certs/localhost-cert.pem', import.meta.url)),

@@ -885,6 +885,7 @@ public class LabOperationsCommercialHandoffPostgresTests
                 new OrderRequestContext(DbContext, new FixedIdentityContext(customerIdentity)),
                 new OrderIdempotencyService(DbContext),
                 NullOperationalFileStorage.Instance,
+                Options.Create(new PSeqOrderToCashOptions()),
                 provider)
             {
                 ControllerContext = new ControllerContext { HttpContext = httpContext }
@@ -900,6 +901,7 @@ public class LabOperationsCommercialHandoffPostgresTests
                 NullOperationalFileStorage.Instance,
                 NullOperationalFileScanner.Instance,
                 Options.Create(new OrderManagementOptions()),
+                Options.Create(new PSeqOrderToCashOptions()),
                 provider)
             {
                 ControllerContext = new ControllerContext

@@ -12,6 +12,20 @@ remain incomplete production-activation gates.
 
 ## Created Tests
 
+- [x] `frontend/src/features/orders/PSeqOrderToCashPanels.test.tsx` - staged
+  Customer blockers, attention-queue empty state, payment-independent result
+  release, Billing Operator configuration controls, and Cash Reconciler
+  controls.
+- [x] `frontend/src/features/invitations/InviteUserForm.test.tsx` - invitation
+  intent includes the selected access role and an explicit empty business-role
+  set, then reports durable queuing.
+- [ ] Remaining PSeq order-to-cash connected coverage - invitation delivery
+  lifecycle and hard-bounce revoke/reissue; readiness loading/ready/blocked/
+  stale/failure states; result correction/withdrawal/reissue; AR loading/
+  failure, partial allocation and import preview/confirm; attention ownership/
+  resolution; keyboard/focus/zoom/reflow; and automated accessibility checks
+  remain dedicated-staging activation gates.
+
 - [x] `frontend/tests/invite-schema.test.ts` - `inviteSchema` accepts a valid invite payload.
 - [x] `frontend/tests/invite-schema.test.ts` - `inviteSchema` rejects invalid email addresses.
 - [x] `frontend/src/components/navigation.test.ts` - Phaeno context shows Data
@@ -201,6 +215,14 @@ remain incomplete production-activation gates.
 
 ## Requested Execution Log
 
+- 2026-08-29: the focused invitation/schema/order-to-cash component run passed
+  8 tests. `pnpm run lint`, `pnpm run typecheck`, and the complete client/SSR/
+  Nitro production build passed. The full unit suite passed 54 tests and failed
+  four assertions only in unchanged
+  `src/features/dashboard/WebOpsDashboardContent.test.tsx`; all four reproduce
+  when that file runs alone because the current Radix tab does not switch from
+  a synthetic click in this test harness. This unrelated failure is not counted
+  as passing evidence and its source was not changed by the order-to-cash work.
 - 2026-07-18: one-open-protocol-candidate workflow verification passed focused
   ESLint, `pnpm run typecheck`, and the client/SSR production build. A live
   authenticated browser review confirmed that Draft v1 replaces Add version
