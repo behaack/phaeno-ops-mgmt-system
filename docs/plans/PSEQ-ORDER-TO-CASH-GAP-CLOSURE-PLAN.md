@@ -241,6 +241,26 @@ work unless their owning plan is separately changed.
   acceptance, provider-backed Postmark/object-storage/scanner checks, or the
   dedicated-staging operator script and cross-functional signoffs.
 
+### Production release attempt evidence (2026-08-29)
+
+- The implementation and two deployment preflight fixes were committed and
+  pushed through `0bbc1e87396cfd1ee093c7350aa05d699bdec87f`.
+- The authorized deployment built that exact API image and created and verified
+  the encrypted pre-migration backup before application startup. The migration
+  and API switch did not run because production had no Postmark server token,
+  verified sender, or webhook credential; the fail-closed startup validation
+  stopped the release as designed.
+- The frontend auto-promotion to `0bbc1e8` was rolled back to the prior
+  production deployment at `6d1baf1fba10b8f780c047c3e6859cdaba2cd236`,
+  restoring frontend/API source alignment while the external Postmark
+  dependency remains unresolved. Vercel automatic promotion is paused by the
+  rollback.
+- Deployment preflight and the server-side atomic runtime installer now require
+  `PORTAL_POSTMARK_SERVER_TOKEN`, a Postmark-verified
+  `PORTAL_POSTMARK_FROM_EMAIL`, and a 32-or-more-character
+  `PORTAL_POSTMARK_WEBHOOK_SECRET` before another production attempt can reach
+  migration or API startup.
+
 ## Verification and Acceptance Matrix
 
 Required domain coverage includes transitions, immutable snapshots/packages/
