@@ -403,23 +403,100 @@ public static class InvitationEndpoints
             intendedBusinessRoles));
     }
 
+    public static async Task<IResult> CreateDevelopmentInvitationLink(
+        Guid id,
+        HttpContext httpContext,
+        PSeqOperationsDbContext dbContext,
+        InvitationTokenService tokenService,
+        IExternalIdentityContext externalIdentityContext,
+        IOptions<InvitationOptions> invitationOptions,
+        IHostEnvironment environment,
+        CancellationToken cancellationToken)
+    {
+        if (!environment.IsDevelopment())
+        {
+            return TypedResults.NotFound();
+        }
+
+        var utcNow = DateTime.UtcNow;
+        var options = invitationOptions.Value;
+        var invitation = await dbContext.OrganizationInvitations
+            .Include(value => value.Organization)
+            .FirstOrDefaultAsync(value => value.Id == id, cancellationToken);
+
+        if (invitation == null)
+        {
+            throw new BadRequestException("Invitation not found.");
+        }
+
+        var actor = await AccountAccess.ReadActiveActorAsync(
+            httpContext,
+            dbContext,
+            externalIdentityContext,
+            cancellationToken);
+        if (actor == null)
+        {
+            return TypedResults.Forbid();
+        }
+
+        if (invitation.Organization == null
+            || !AccountAuthorization.CanInviteToOrganization(
+                actor,
+                invitation.OrganizationId,
+                invitation.Organization.Kind))
+        {
+            return TypedResults.Forbid();
+        }
+
+        if (invitation.Status != InvitationStatus.Pending)
+        {
+            throw new BadRequestException("Only pending invitations can create a development sign-in link.");
+        }
+
+        if (!invitation.Organization.IsActive)
+        {
+            throw new BadRequestException("Cannot create a sign-in link for an inactive organization.");
+        }
+
+        var token = tokenService.CreateToken();
+        invitation.RotateToken(token.TokenHash, utcNow.AddDays(options.TokenLifetimeDays));
+        AccountAudit.Add(
+            dbContext,
+            httpContext,
+            nameof(OrganizationInvitation),
+            invitation.Id,
+            AccountAudit.DevelopmentInviteLinkCreated,
+            invitation.OrganizationId,
+            actor.Id,
+            new
+            {
+                invitation.Email,
+                invitation.NormalizedEmail,
+                invitation.ExpiresAt
+            });
+        await dbContext.SaveChangesAsync(cancellationToken);
+
+        return TypedResults.Ok(new DevelopmentInvitationLinkDto
+        {
+            InvitationId = invitation.Id,
+            InviteUrl = BuildInviteUrl(options.PublicBaseUrl, token.RawToken),
+            ExpiresAt = invitation.ExpiresAt
+        });
+    }
+
     public static async Task<IResult> AcceptInvitation(
         [FromBody] AcceptInvitationRequest request,
         HttpContext httpContext,
         PSeqOperationsDbContext dbContext,
         InvitationTokenService tokenService,
         IExternalIdentityContext externalIdentityContext,
+        IVerifiedExternalEmailResolver verifiedEmailResolver,
         CancellationToken cancellationToken)
     {
         var identity = externalIdentityContext.Read(httpContext);
         if (identity == null)
         {
             return TypedResults.Unauthorized();
-        }
-
-        if (!identity.IsEmailVerified)
-        {
-            throw new BadRequestException("Invitation email must match a verified authenticated email.");
         }
 
         var utcNow = DateTime.UtcNow;
@@ -433,6 +510,15 @@ public static class InvitationEndpoints
             throw new BadRequestException("Invitation cannot be accepted.");
         }
 
+        if (!await verifiedEmailResolver.IsVerifiedAsync(
+                identity,
+                invitation.Email,
+                cancellationToken))
+        {
+            throw new BadRequestException("Invitation email must match a verified authenticated email.");
+        }
+
+        identity = identity with { Email = invitation.Email, IsEmailVerified = true };
         ValidateInvitationForAuthenticatedEmail(invitation, identity, utcNow);
         var intendedLabRoles = await ReadIntendedLabRolesAsync(
             dbContext,
@@ -593,17 +679,13 @@ public static class InvitationEndpoints
         PSeqOperationsDbContext dbContext,
         InvitationTokenService tokenService,
         IExternalIdentityContext externalIdentityContext,
+        IVerifiedExternalEmailResolver verifiedEmailResolver,
         CancellationToken cancellationToken)
     {
         var identity = externalIdentityContext.Read(httpContext);
         if (identity == null)
         {
             return TypedResults.Unauthorized();
-        }
-
-        if (!identity.IsEmailVerified)
-        {
-            throw new BadRequestException("Invitation email must match a verified authenticated email.");
         }
 
         var utcNow = DateTime.UtcNow;
@@ -617,6 +699,15 @@ public static class InvitationEndpoints
             throw new BadRequestException("Invitation cannot be declined.");
         }
 
+        if (!await verifiedEmailResolver.IsVerifiedAsync(
+                identity,
+                invitation.Email,
+                cancellationToken))
+        {
+            throw new BadRequestException("Invitation email must match a verified authenticated email.");
+        }
+
+        identity = identity with { Email = invitation.Email, IsEmailVerified = true };
         ValidateInvitationForAuthenticatedEmail(invitation, identity, utcNow);
 
         var declinedByUserId = await dbContext.Users
@@ -854,6 +945,18 @@ public static class InvitationEndpoints
             .Produces(StatusCodes.Status401Unauthorized)
             .Produces(StatusCodes.Status403Forbidden)
             .Produces<ApiResponse<object>>(StatusCodes.Status409Conflict);
+
+        if (app.Environment.IsDevelopment())
+        {
+            group.MapPost("/{id}/development-link", CreateDevelopmentInvitationLink)
+                .WithName("CreateDevelopmentInvitationLink")
+                .WithSummary("Create a local-development sign-in link for a pending invitation")
+                .Produces<DevelopmentInvitationLinkDto>(StatusCodes.Status200OK)
+                .Produces(StatusCodes.Status401Unauthorized)
+                .Produces(StatusCodes.Status403Forbidden)
+                .Produces(StatusCodes.Status404NotFound)
+                .Produces<ApiResponse<object>>(StatusCodes.Status409Conflict);
+        }
 
         group.MapPost("/{id}/revoke", RevokeInvitation)
             .WithName("RevokeInvitation")

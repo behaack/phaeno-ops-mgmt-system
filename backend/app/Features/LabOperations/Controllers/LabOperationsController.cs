@@ -95,6 +95,7 @@ public sealed partial class LabOperationsController(
         var containers = await dbContext.LabContainers.AsNoTracking().Where(item => item.LabWorkOrderId == work.Id)
             .OrderBy(item => item.Barcode).Select(item => new LabContainerDto(item.Id,
                 item.LabSpecimenId, item.ParentContainerId, item.Kind.ToString(), item.Barcode,
+                item.BarcodeSource.ToString(), item.ExternalBarcodeReferenceId,
                 item.Label, item.LabelPrintCount, item.Location, item.Quantity, item.QuantityUnit,
                 item.Status.ToString(), item.RetainUntilUtc, item.Version)).ToListAsync(cancellationToken);
         var executions = await dbContext.LabProtocolExecutions.AsNoTracking().Where(item => item.LabWorkOrderId == work.Id)
@@ -129,6 +130,59 @@ public sealed partial class LabOperationsController(
             MapWorkOrder(work, authorizationMap, commercialMap, specimens.Count,
                 exceptions.Count(item => item.Status == LabExceptionStatus.Open.ToString())),
             specimens, containers, executions, libraries, exceptions, approvals);
+    }
+
+    [HttpGet("work-orders/by-commercial-order/{commercialOrderId:guid}")]
+    public async Task<LabWorkOrderSummaryDto> WorkOrderByCommercialOrder(
+        Guid commercialOrderId,
+        CancellationToken cancellationToken)
+    {
+        await requestContext.RequireAsync(HttpContext, cancellationToken,
+            LabRole.Operator, LabRole.Supervisor, LabRole.ProtocolAdministrator,
+            LabRole.ScientificReviewer, LabRole.OperationsAdministrator);
+        var authorization = await dbContext.CommercialLabAuthorizations.AsNoTracking()
+            .SingleOrDefaultAsync(item => item.CommercialOrderId == commercialOrderId, cancellationToken)
+            ?? throw Missing();
+        if (authorization.LabWorkOrderId is null)
+            throw Missing();
+        var work = await dbContext.LabWorkOrders.AsNoTracking()
+            .SingleOrDefaultAsync(item => item.Id == authorization.LabWorkOrderId.Value, cancellationToken)
+            ?? throw Missing();
+        var commercialOrder = await dbContext.LabServiceOrders.AsNoTracking()
+            .SingleOrDefaultAsync(item => item.Id == commercialOrderId, cancellationToken)
+            ?? throw Missing();
+        var specimenCount = await dbContext.LabSpecimens.AsNoTracking()
+            .CountAsync(item => item.LabWorkOrderId == work.Id, cancellationToken);
+        var openExceptionCount = await dbContext.LabExceptions.AsNoTracking()
+            .CountAsync(item => item.LabWorkOrderId == work.Id && item.Status == LabExceptionStatus.Open, cancellationToken);
+        return MapWorkOrder(
+            work,
+            new Dictionary<Guid, CommercialLabAuthorization> { [authorization.AuthorizationId] = authorization },
+            new Dictionary<Guid, LabServiceOrder> { [commercialOrder.Id] = commercialOrder },
+            specimenCount,
+            openExceptionCount);
+    }
+
+    [HttpGet("pseq-kit-offerings")]
+    public async Task<IReadOnlyList<LabPSeqKitOfferingDto>> PSeqKitOfferings(
+        [FromQuery] Guid partnerOrganizationId,
+        CancellationToken cancellationToken)
+    {
+        await requestContext.RequireAsync(HttpContext, cancellationToken,
+            LabRole.Operator, LabRole.Supervisor, LabRole.OperationsAdministrator);
+        var now = DateTime.UtcNow;
+        return await (
+            from offering in dbContext.PartnerReagentOfferings.AsNoTracking()
+            join item in dbContext.QboCatalogItems.AsNoTracking()
+                on offering.QboCatalogItemId equals item.Id
+            where offering.PartnerOrganizationId == partnerOrganizationId
+                && offering.IsActive
+                && item.IsActive
+                && offering.EffectiveFrom <= now
+                && (!offering.EffectiveTo.HasValue || offering.EffectiveTo.Value > now)
+            orderby item.Name
+            select new LabPSeqKitOfferingDto(offering.Id, offering.PartnerOrganizationId, item.Name))
+            .ToListAsync(cancellationToken);
     }
 
     [HttpPut("roles/{userId:guid}/{role}")]

@@ -5,15 +5,115 @@ using Microsoft.Extensions.Options;
 using PSeq.Operations.Commercial;
 using PSeq.Operations.Commercial.Accounts.Domain;
 using PSeq.Operations.Commercial.DataProvisioning.Domain;
+using PSeq.Operations.Commercial.FileManagement.Domain;
 using PSeq.Operations.Commercial.OrderManagement.Domain;
 using PSeq.Operations.Laboratory;
 using PSeq.Operations.Laboratory.Domain;
+using PhaenoPortal.App.Features.OrderManagement.Domain;
 using PhaenoPortal.App.Infrastructure.Persistence.Auditing;
 using PhaenoPortal.App.Infrastructure.Persistence;
 using PhaenoPortal.App.Features.Website.Entities;
 
 public class PersistenceTests
 {
+    [Fact]
+    public void PSeqOperationsDbContextMapsCompletionAwareOperationalDownloads()
+    {
+        using var dbContext = CreateDbContext();
+
+        var download = dbContext.Model.FindEntityType(typeof(OperationalFileDownload));
+
+        Assert.NotNull(download);
+        Assert.Equal("commercial_ops", download.GetSchema());
+        Assert.Equal("operational_file_downloads", download.GetTableName());
+        Assert.True(download.FindProperty(nameof(OperationalFileDownload.Version))?.IsConcurrencyToken);
+        Assert.False(download.FindProperty(nameof(OperationalFileDownload.LeaseExpiresAtUtc))?.IsNullable);
+        Assert.False(download.FindProperty(nameof(OperationalFileDownload.Outcome))?.IsNullable);
+        Assert.Contains(
+            download.GetIndexes(),
+            index => index.Properties.Select(property => property.Name).SequenceEqual([
+                nameof(OperationalFileDownload.OrganizationId),
+                nameof(OperationalFileDownload.ReleasedPackageType),
+                nameof(OperationalFileDownload.ReleasedPackageId)
+            ]));
+        Assert.Contains(
+            download.GetIndexes(),
+            index => index.Properties.Select(property => property.Name).SequenceEqual([
+                nameof(OperationalFileDownload.Outcome),
+                nameof(OperationalFileDownload.LeaseExpiresAtUtc)
+            ]));
+    }
+
+    [Fact]
+    public void PSeqOperationsDbContextMapsReleasedDeliverablePolicyHistory()
+    {
+        using var dbContext = CreateDbContext();
+
+        var global = dbContext.Model.FindEntityType(typeof(ReleasedDeliverablePolicyDefault));
+        Assert.NotNull(global);
+        Assert.Equal("commercial_ops", global.GetSchema());
+        Assert.Equal("released_deliverable_policy_defaults", global.GetTableName());
+        Assert.True(global.FindProperty(nameof(ReleasedDeliverablePolicyDefault.Version))?.IsConcurrencyToken);
+        Assert.Contains(
+            global.GetIndexes(),
+            index => index.IsUnique
+                && index.GetFilter() == "\"is_active\""
+                && index.Properties.Select(property => property.Name)
+                    .SequenceEqual([nameof(ReleasedDeliverablePolicyDefault.IsActive)]));
+
+        var organizationOverride = dbContext.Model.FindEntityType(
+            typeof(OrganizationReleasedDeliverablePolicyOverride));
+        Assert.NotNull(organizationOverride);
+        Assert.Equal("commercial_ops", organizationOverride.GetSchema());
+        Assert.Equal(
+            "organization_released_deliverable_policy_overrides",
+            organizationOverride.GetTableName());
+        Assert.True(organizationOverride
+            .FindProperty(nameof(OrganizationReleasedDeliverablePolicyOverride.Version))
+            ?.IsConcurrencyToken);
+        Assert.Contains(
+            organizationOverride.GetIndexes(),
+            index => index.IsUnique
+                && index.GetFilter() == "\"is_active\""
+                && index.Properties.Select(property => property.Name).SequenceEqual([
+                    nameof(OrganizationReleasedDeliverablePolicyOverride.OrganizationId),
+                    nameof(OrganizationReleasedDeliverablePolicyOverride.IsActive)
+                ]));
+        Assert.Contains(
+            organizationOverride.GetForeignKeys(),
+            foreignKey => foreignKey.PrincipalEntityType.ClrType == typeof(Organization)
+                && foreignKey.DeleteBehavior == DeleteBehavior.Restrict);
+
+        var snapshot = dbContext.Model.FindEntityType(
+            typeof(ReleasedDeliverableRetentionSnapshot));
+        Assert.NotNull(snapshot);
+        Assert.Equal("commercial_ops", snapshot.GetSchema());
+        Assert.Equal("released_deliverable_retention_snapshots", snapshot.GetTableName());
+        Assert.True(snapshot
+            .FindProperty(nameof(ReleasedDeliverableRetentionSnapshot.Version))
+            ?.IsConcurrencyToken);
+        Assert.Contains(
+            snapshot.GetIndexes(),
+            index => index.IsUnique
+                && index.GetFilter() == "\"lab_result_release_id\" IS NOT NULL"
+                && index.Properties.Select(property => property.Name).SequenceEqual([
+                    nameof(ReleasedDeliverableRetentionSnapshot.LabResultReleaseId)
+                ]));
+        Assert.Contains(
+            snapshot.GetIndexes(),
+            index => index.IsUnique
+                && index.GetFilter() == "\"assembly_output_release_id\" IS NOT NULL"
+                && index.Properties.Select(property => property.Name).SequenceEqual([
+                    nameof(ReleasedDeliverableRetentionSnapshot.AssemblyOutputReleaseId)
+                ]));
+        Assert.Contains(
+            snapshot.GetForeignKeys(),
+            foreignKey => foreignKey.PrincipalEntityType.ClrType == typeof(LabResultRelease));
+        Assert.Contains(
+            snapshot.GetForeignKeys(),
+            foreignKey => foreignKey.PrincipalEntityType.ClrType == typeof(AssemblyOutputRelease));
+    }
+
     [Fact]
     public void PSeqOperationsDbContextMapsEveryEntityToItsOwningSchema()
     {

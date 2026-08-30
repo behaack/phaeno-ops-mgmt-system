@@ -1,7 +1,7 @@
-import axios from 'axios'
-
 import { api } from './client'
 import type { OrganizationKind } from './session'
+
+export { apiErrorMessage } from './api-error'
 
 type ApiEnvelope<T> = {
   success: boolean
@@ -29,10 +29,6 @@ export type RelationshipRequestStatus =
   | 'Declined'
   | 'Applied'
   | 'Cancelled'
-export type HubSpotHandoffSimulationPath =
-  | 'SalesAssistedOrder'
-  | 'TrialProject'
-
 export type Organization = {
   id: string
   name: string
@@ -84,7 +80,7 @@ export type RelationshipRequest = {
   organizationId: string | null
   candidateOrganizationName: string
   requestType: RelationshipRequestType
-  source: 'Manual' | 'HubSpot'
+  source: 'Manual' | 'HubSpot' | 'FirstPartyCrm'
   status: RelationshipRequestStatus
   requestedOrganizationKind: OrganizationKind | null
   sourceReference: string | null
@@ -202,6 +198,12 @@ export type Invitation = {
   version: number
 }
 
+export type DevelopmentInvitationLink = {
+  invitationId: string
+  inviteUrl: string
+  expiresAt: string
+}
+
 export async function listOrganizations(includeInactive = true) {
   const response = await api.get<Organization[]>('/organizations', {
     params: { includeInactive },
@@ -220,6 +222,7 @@ export async function createOrganization(input: {
   kind: Exclude<OrganizationKind, 'Phaeno'>
   portalReadiness: PortalReadinessStatus
   portalReadinessNote: string | null
+  orderingAuthorized?: boolean
 }) {
   const response = await api.post<Organization>('/organizations', input)
   return response.data
@@ -330,41 +333,9 @@ export async function createRelationshipRequest(input: {
   return unwrap(response.data)
 }
 
-export async function simulateHubSpotHandoff(input: {
-  path: HubSpotHandoffSimulationPath
-  organizationId: string | null
-  candidateOrganizationName: string | null
-  requestedService: PortalService | null
-  hubSpotDealId: string
-  summary: string
-  internalNotes: string | null
-}) {
-  const response = await api.post<ApiEnvelope<RelationshipRequest>>(
-    '/platform/relationships/requests/simulate-hubspot',
-    input,
-  )
-  return unwrap(response.data)
-}
-
-export async function simulateHubSpotAccountIntake(input: {
-  candidateOrganizationName: string
-  requestedOrganizationKind: Exclude<OrganizationKind, 'Phaeno'>
-  requestedServices: PortalService[]
-  hubSpotCompanyId: string
-  hubSpotDealId: string
-  summary: string
-  internalNotes: string | null
-}) {
-  const response = await api.post<ApiEnvelope<RelationshipRequest>>(
-    '/platform/relationships/requests/simulate-hubspot-account',
-    input,
-  )
-  return unwrap(response.data)
-}
-
 export async function decideRelationshipRequest(
   id: string,
-  input: { approved: boolean; reason: string; version: number },
+  input: { approved: boolean; reason: string; version: number; orderingAuthorized?: boolean },
 ) {
   const response = await api.post<ApiEnvelope<RelationshipRequest>>(
     `/platform/relationships/requests/${id}/decision`,
@@ -373,13 +344,14 @@ export async function decideRelationshipRequest(
   return unwrap(response.data)
 }
 
-export async function createAccountFromRelationshipRequest(
+export async function completeRelationshipRequestAccountCreation(
   id: string,
   version: number,
+  orderingAuthorized = true,
 ) {
   const response = await api.post<ApiEnvelope<Organization>>(
     `/platform/relationships/requests/${id}/account`,
-    { version },
+    { version, orderingAuthorized },
   )
   return unwrap(response.data)
 }
@@ -495,6 +467,13 @@ export async function resendInvitation(id: string) {
   return response.data
 }
 
+export async function createDevelopmentInvitationLink(id: string) {
+  const response = await api.post<DevelopmentInvitationLink>(
+    `/invitations/${id}/development-link`,
+  )
+  return response.data
+}
+
 export async function updateMembershipRole(
   membershipId: string,
   isOrganizationAdmin: boolean,
@@ -508,15 +487,6 @@ export async function updateMembershipRole(
 export async function deactivateMembership(membershipId: string) {
   const response = await api.post(`/memberships/${membershipId}/deactivate`)
   return response.data
-}
-
-export function apiErrorMessage(error: unknown) {
-  if (axios.isAxiosError(error)) {
-    const envelope = error.response?.data as ApiEnvelope<unknown> | undefined
-    return envelope?.error?.message ?? error.message
-  }
-
-  return error instanceof Error ? error.message : 'The request could not be completed.'
 }
 
 function unwrap<T>(envelope: ApiEnvelope<T>) {

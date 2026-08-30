@@ -29,8 +29,9 @@
 
 ## Current implementation boundary
 
-The current code implements `Phaeno`, `Prospect`, `Customer`, and `Partner`
-organizations; invite-only multi-organization membership; Phaeno-owned curated
+The current code implements the first-party CRM described above; `Phaeno`,
+`Prospect`, `Customer`, and `Partner` organizations; invite-only
+multi-organization membership; Phaeno-owned curated
 data provisioning; Customer laboratory services; Partner reagent ordering;
 Partner data assembly; a Phaeno-only internal Lab Operations workflow; and
 Phaeno operational/configuration workspaces. The approved Lab application scope
@@ -225,8 +226,20 @@ Confirmed Prospect rules:
   laboratory analysis, data processing, and release of resulting data through
   the portal.
 - Customers can track the progress of their samples through the portal.
-- Customer quote acceptance atomically authorizes the corresponding Lab work;
-  a failed Lab authorization records no accepted quote.
+- A Customer Lab Service Job must contain its committed specimen count,
+  biological-source groups and counts, shared storage requirements, and safety
+  declaration before pricing. Individual samples cannot be entered before the
+  price is accepted. Quote acceptance freezes the commercial profile and opens
+  sample-list preparation; finalizing the exact compliant roster atomically
+  creates the corresponding Lab authorization, Lab work, shipment, specimen
+  identities, and physical tube slots.
+- An authorized Phaeno order-pricing user may initiate the same Job pricing
+  profile for an active Customer that has an active organization administrator.
+  After the Phaeno user makes the no-PHI attestation, the Phaeno-initiated Job
+  enters quote preparation with an immutable submitted request revision. It does
+  not let Phaeno accept on the Customer's behalf and creates no Lab authorization
+  or executable work before Customer-admin quote acceptance and exact sample-
+  roster finalization.
 - Lab receipt, accession, physical lineage, protocol execution, materials,
   equipment, library/batch membership, NGS sendout/custody, internal exceptions,
   and scientific approval are Phaeno-only records. Customers see only the
@@ -260,6 +273,21 @@ Confirmed Prospect rules:
 - An approved Commercial cancellation reaches Lab before the Commercial order
   commits cancellation. Received or started work requires manual review rather
   than forced history rewriting.
+- Shared sample shipping uses a Phaeno-fulfilled return kit with an exact
+  inventory of globally unique permanent supplier-tube barcodes. An external
+  Prospect or Customer administrator associates each tube with one non-PHI
+  Customer sample tube slot. One specimen can own multiple physical tube slots;
+  Phaeno retains the current crosswalk and every
+  correction, while the external organization owns the meaning of its
+  identifier in its own records.
+- Packet issuance freezes the destination, instructions, manifest, and tube-
+  to-sample crosswalk. Intake compares both packet and tube before receipt.
+  Accession adopts the validated supplier barcode as the submitted container's
+  authoritative identity without printing a second label; derived containers
+  continue to receive POMS-generated barcodes.
+- Shared shipping capability does not itself approve a Prospect Trial Project
+  or grant/place a Customer promotional no-charge order. Those parent
+  authorizations remain distinct business workflows.
 - A Partner can place reagent orders.
 - A Partner can submit data to Phaeno for data assembly and later download the
   assembled data/results for availability to the Partner's customers.
@@ -315,12 +343,13 @@ Confirmed Prospect rules:
   history remain preserved.
 - The initial order workflows are not a protected-health-information intake
   workflow. Direct identifiers must not be placed in fields, notes, filenames,
-  uploads, logs, notifications, audit diffs, or QuickBooks memo fields.
+  uploads, logs, notifications, audit diffs, or accounting memo fields.
 
 Continued workflow, activation, and ownership requirements are recorded in:
 
 - `docs/plans/ORGANIZATION-DATA-PROVISIONING-PLAN.md`
 - `docs/plans/FILE-MANAGEMENT-PLAN.md`
 - `docs/plans/ORDER-MANAGEMENT-PLAN.md`
+- `docs/plans/SAMPLE-SHIPPING-AND-INTAKE-PLAN.md`
 
 Treat any remaining proposed entities or statuses in those plans as unimplemented until code and tests establish them.

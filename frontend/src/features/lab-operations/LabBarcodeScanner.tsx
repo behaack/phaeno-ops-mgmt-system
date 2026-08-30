@@ -15,6 +15,7 @@ import { Button } from '#/components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '#/components/ui/card'
 import { Input } from '#/components/ui/input'
 import { Label } from '#/components/ui/label'
+import { RequiredFieldName, RequiredLegend } from '#/components/ui/required-field'
 
 export function LabBarcodeLookup() {
   const [barcode, setBarcode] = useState('')
@@ -48,8 +49,11 @@ export function LabBarcodeLookup() {
       </CardHeader>
       <CardContent>
         <form className="flex flex-wrap items-end gap-3" onSubmit={submit}>
+          <RequiredLegend className="basis-full" />
           <div className="min-w-64 flex-1">
-            <Label htmlFor="lab-container-scan">Phaeno barcode</Label>
+            <Label htmlFor="lab-container-scan">
+              <RequiredFieldName>Phaeno barcode</RequiredFieldName>
+            </Label>
             <Input
               autoCapitalize="characters"
               autoComplete="off"
@@ -158,8 +162,11 @@ export function LabBatchBarcodeScanner({
       </CardHeader>
       <CardContent>
         <form className="grid gap-3 sm:grid-cols-[minmax(12rem,1fr)_minmax(14rem,2fr)_auto]" onSubmit={submit}>
+          <RequiredLegend className="sm:col-span-3" />
           <div>
-            <Label htmlFor="lab-batch-scan-target">Draft batch</Label>
+            <Label htmlFor="lab-batch-scan-target">
+              <RequiredFieldName>Draft batch</RequiredFieldName>
+            </Label>
             <select
               className="mt-2 h-9 w-full rounded-lg border bg-background px-3 text-sm"
               id="lab-batch-scan-target"
@@ -172,7 +179,9 @@ export function LabBatchBarcodeScanner({
             </select>
           </div>
           <div>
-            <Label htmlFor="lab-batch-container-scan">Library barcode</Label>
+            <Label htmlFor="lab-batch-container-scan">
+              <RequiredFieldName>Library barcode</RequiredFieldName>
+            </Label>
             <Input
               autoCapitalize="characters"
               autoComplete="off"

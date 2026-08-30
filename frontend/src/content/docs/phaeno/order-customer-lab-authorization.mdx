@@ -1,27 +1,42 @@
 # Customer lab authorization
 
-Customer laboratory work enters Order Ops as a Commercial request. Order Ops validates the submitted service, samples, metadata, and files; prepares the quote; and records the Customer’s authorization. Laboratory execution begins only after that authorization succeeds.
+Customer laboratory work enters Order Ops as a Commercial request. Order Ops validates the Job-level specimen count, biological-source composition, storage, safety, and service profile before pricing. Individual samples do not exist yet.
+
+## Initiate an order for a Customer
+
+An authorized Phaeno order-pricing user can begin the pricing profile when the Customer is already known and does not need to create the request first.
+
+1. Open **Order operations**, select **Order intake**, and choose **New Customer order**.
+2. Wait for the eligible Customer list to load, then select the Customer. **New Customer order** remains unavailable while the list is loading or could not be loaded. The list contains only active Customers with a current **Ready** PSeq Lab Service entitlement, the active canonical specimen offering, and an active organization administrator who can make the commercial decision.
+3. Enter a unique **Job name**, every biological source and sample count, the shared storage requirements and safety declaration, and any Customer-safe Job notes. Do not enter individual sample IDs, tube barcodes, patient identifiers, or PHI.
+4. Confirm that the pricing details contain no patient identifiers, PHI, or unnecessary personal data, then select **Start pricing**. POMS creates the Customer-owned Job with one immutable submitted request revision and opens it in **Quote in preparation**.
+5. Review the committed sample count, source composition, storage, and safety facts on the operational detail. Select **Issue quote**. The editor preselects the required **PSeq Lab Service** item with code `pseq-lab-service`, displays its `specimen` sales unit, and sets its quantity to the Job's committed sample count. The required line cannot be removed; additional active catalog lines may be added when needed.
+
+If the designated item is missing, inactive, or not priced per specimen, quote issuance is paused until **Order configuration** is corrected. POMS validates the item identity, unit, and committed quantity again on the server.
+
+POMS sends no Customer notice while a Phaeno-initiated Job remains **Quote in preparation**. Issuing or revising the quote rechecks ordering eligibility and the approver list, makes the quote available immediately, moves the Job to **Quote issued**, and notifies every active Customer administrator. The Customer can approve it; Phaeno cannot approve on the Customer's behalf. The accepting administrator becomes the Job's acting Customer contact for ordinary later notices. High-impact events, including cancellation by Phaeno and result release or payment hold, continue to notify all active Customer administrators.
 
 ## Review the request
 
-Confirm that the Customer has an active laboratory-service entitlement and that the selected service is currently offered. Review every submitted sample, required service metadata, files, and Customer notes. Request a targeted correction when information is incomplete or unsafe rather than rewriting Customer data internally.
+Confirm that the Customer has an active laboratory-service entitlement and that the selected service is currently offered. Review the requested specimen count, each source group and count, shared handling and safety declarations, and Customer notes. Request a targeted correction when information is incomplete or unsafe rather than rewriting Customer data internally.
 
 Keep internal review notes separate from the tenant-safe reason shown to the Customer. The initial workflow is not a PHI intake path; do not ask for or store patient-identifying information.
 
 ## Issue and accept the quote
 
-The quote is a versioned, immutable Commercial proposal for one job. Confirm the configured service, quantities, prices, currency, expected turnaround information, and expiration before issuance. The corresponding QuickBooks estimate must synchronize successfully before the quote becomes available for Customer acceptance.
+The quote is a versioned, immutable Commercial proposal for one job. Confirm the configured service, quantities, prices, currency, expected turnaround information, and expiration before issuance. Saving the issued POMS quote makes it available for Customer acceptance.
 
 Customer acceptance performs one Commercial operation that:
 
-- records the accepted quote revision and purchase-order snapshot when required;
-- creates the immutable laboratory work authorization; and
-- creates the linked Lab work order through the provider-neutral boundary.
+- records the accepted quote revision and frozen pricing profile; and
+- opens post-acceptance sample-list preparation.
 
-Do not create a Lab work order manually if this operation fails. Refresh the order and retry the durable authorization command.
+After the Customer enters or imports the exact compliant sample list, finalization atomically creates the immutable laboratory work authorization, linked Lab work order, shipment, and physical tube slots. Do not create a Lab work order manually if finalization fails. Resolve the reported roster or shipping-configuration issue and retry the durable operation.
+
+Physical samples must not arrive before quote acceptance and exact roster finalization create the authorized shipment. Quarantine and escalate an unexpected package under the approved receiving and custody exception. Do not accession, process, bill, or attach it to executable Job work.
 
 ## Respect the Lab boundary
 
-After acceptance, Order Ops continues to own Customer communication, Commercial holds, cancellation review, billing, files, and publication. Lab Ops owns receipt, accession, physical lineage, controlled execution, exceptions, and scientific approval.
+After acceptance, Order Ops continues to own Customer communication, Commercial holds, cancellation review, billing, files, and publication. Open the linked work from the order or from **Lab operations** > **Receipt & accession**. Lab Ops owns return-kit preparation, shipment identification, receipt, accession, physical lineage, controlled execution, exceptions, and scientific approval.
 
-The Lab milestone **Ready for release** means the scientific gate passed. It does not upload, scan, attach, or publish a result. Order Ops must still apply the file, Commercial synchronization, and payment-or-credit release gates.
+The Lab milestone **Ready for release** means the scientific gate passed. It does not upload, scan, attach, or publish a result. Order Ops must still apply the file, accounting-source, and credit release gates. Without approved credit, files remain held because manual payment confirmation is not implemented.

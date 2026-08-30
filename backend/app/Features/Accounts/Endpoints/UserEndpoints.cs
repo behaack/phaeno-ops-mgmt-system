@@ -123,7 +123,8 @@ public static class UserEndpoints
             externalIdentityContext,
             cancellationToken);
 
-        if (actor == null || !AccountAuthorization.IsPlatformAdmin(actor))
+        if (actor == null
+            || !AccountAuthorization.CanAdministrativelyDisableUser(actor, user))
         {
             return TypedResults.Forbid();
         }

@@ -4,6 +4,7 @@ using System.Text.Json;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using PSeq.Operations.Commercial.LabOperations.Application;
+using PSeq.Operations.Commercial.OrderManagement.Domain;
 using PSeq.Operations.Laboratory.Domain;
 using PhaenoPortal.App.Features.LabOperations.DTOs;
 using PhaenoPortal.App.Features.LabOperations.Services;
@@ -53,15 +54,75 @@ public sealed partial class LabOperationsController
         var work = await RequireWorkOrderAsync(workOrderId, cancellationToken);
         var specimen = await RequireSpecimenAsync(work.Id, specimenId, cancellationToken);
         EnsureVersion(specimen.Version, request.Version);
-        Execute(() => specimen.AssignAccession(request.AccessionNumber));
-        var barcode = await LabBarcodeService.AllocateAsync(
-            dbContext, LabContainerKind.SubmittedSpecimen, cancellationToken);
+        if (string.IsNullOrWhiteSpace(specimen.AccessionNumber))
+            Execute(() => specimen.AssignAccession(request.AccessionNumber));
+        else if (!string.Equals(specimen.AccessionNumber, request.AccessionNumber?.Trim(), StringComparison.Ordinal))
+            throw Conflict("specimen_accession_mismatch", "Additional tubes for this specimen must use its existing accession number.");
+        var hasPacketBarcode = !string.IsNullOrWhiteSpace(request.SampleShippingPacketBarcode);
+        var hasSupplierTubeBarcode = !string.IsNullOrWhiteSpace(request.SupplierTubeBarcode);
+        if (hasPacketBarcode != hasSupplierTubeBarcode)
+            throw Invalid("registered_tube_pair_required", "Scan both the shipment packet and supplier tube barcode, or leave both blank for the legacy Phaeno-label workflow.");
+
+        string barcode;
+        var barcodeSource = LabContainerBarcodeSource.PhaenoGenerated;
+        Guid? externalBarcodeReferenceId = null;
+        RegisteredSampleTube? registeredTube = null;
+        if (hasPacketBarcode)
+        {
+            if (!SampleShippingBarcode.TryNormalize(request.SampleShippingPacketBarcode, out var packetBarcode))
+                throw Invalid("sample_shipping_barcode_invalid", "Scan or enter a complete Phaeno shipment-packet barcode.");
+            if (!SupplierTubeBarcode.TryNormalize(request.SupplierTubeBarcode, out var supplierBarcode))
+                throw Invalid("supplier_tube_barcode_invalid", "Scan or enter a complete supplier tube barcode.");
+            var packet = await dbContext.SampleShippingPacketRevisions.AsNoTracking()
+                .SingleOrDefaultAsync(item => item.Barcode == packetBarcode, cancellationToken)
+                ?? throw Missing();
+            if (packet.IsVoided)
+                throw Conflict("sample_shipping_packet_voided", "This shipment packet was voided and cannot be used for accession.");
+            var shipment = await dbContext.SampleShipments.AsNoTracking()
+                .SingleOrDefaultAsync(item => item.Id == packet.SampleShipmentId
+                    && item.LabWorkOrderId == work.Id, cancellationToken)
+                ?? throw Conflict("sample_shipping_work_mismatch", "The shipment packet does not belong to this Lab work order.");
+            if (shipment.Status is SampleShipmentStatus.Cancelled or SampleShipmentStatus.Preparing)
+                throw Conflict("sample_shipping_state_invalid", "The shipment packet is not ready for accession.");
+            var shipmentItem = await dbContext.SampleShipmentItems.AsNoTracking()
+                .SingleOrDefaultAsync(item => item.SampleShipmentId == shipment.Id
+                    && item.SubmittedSpecimenId == specimen.SubmittedSpecimenId, cancellationToken)
+                ?? throw Conflict("sample_shipping_specimen_mismatch", "The submitted specimen is not listed on this shipment packet.");
+            registeredTube = await dbContext.RegisteredSampleTubes
+                .SingleOrDefaultAsync(item => item.SupplierBarcode == supplierBarcode, cancellationToken)
+                ?? throw Conflict("supplier_tube_not_registered", "The supplier tube barcode is not registered in POMS.");
+            var slotMatches = await dbContext.SampleShipmentTubeSlots.AsNoTracking()
+                .AnyAsync(slot => slot.SampleShipmentItemId == shipmentItem.Id
+                    && slot.RegisteredSampleTubeId == registeredTube.Id, cancellationToken);
+            if (shipmentItem.RegisteredSampleTubeId != registeredTube.Id && !slotMatches)
+                throw Conflict("supplier_tube_sample_mismatch", "The scanned tube is not matched to this Customer sample on the frozen crosswalk.");
+            if (registeredTube.Status != RegisteredSampleTubeStatus.Assigned)
+                throw Conflict("supplier_tube_state_invalid", "The registered supplier tube is not available for accession.");
+            if (await dbContext.LabContainers.AsNoTracking().AnyAsync(item => item.Barcode == supplierBarcode, cancellationToken))
+                throw Conflict("supplier_tube_already_accessioned", "A laboratory container already uses this supplier tube barcode.");
+            barcode = supplierBarcode;
+            barcodeSource = LabContainerBarcodeSource.RegisteredSupplier;
+            externalBarcodeReferenceId = registeredTube.Id;
+        }
+        else
+        {
+            barcode = await LabBarcodeService.AllocateAsync(
+                dbContext, LabContainerKind.SubmittedSpecimen, cancellationToken);
+        }
         var container = new LabContainer(work.Id, specimen.Id, null,
             LabContainerKind.SubmittedSpecimen, barcode, request.Label,
-            request.Location, request.Quantity, request.QuantityUnit, request.RetainUntilUtc);
+            request.Location, request.Quantity, request.QuantityUnit, request.RetainUntilUtc,
+            barcodeSource, externalBarcodeReferenceId);
+        registeredTube?.MarkAccessioned(DateTime.UtcNow);
         dbContext.LabContainers.Add(container);
         dbContext.LabWorkEvents.Add(new LabWorkEvent(work.Id, specimen.Id, "SpecimenAccessioned",
-            DateTime.UtcNow, actor.User.Id, JsonSerializer.Serialize(new { request.AccessionNumber, barcode }, JsonOptions)));
+            DateTime.UtcNow, actor.User.Id, JsonSerializer.Serialize(new
+            {
+                request.AccessionNumber,
+                barcode,
+                barcodeSource,
+                registeredSampleTubeId = externalBarcodeReferenceId
+            }, JsonOptions)));
         await dbContext.SaveChangesAsync(cancellationToken);
         return await WorkOrder(work.Id, cancellationToken);
     }
@@ -124,8 +185,9 @@ public sealed partial class LabOperationsController
         await requestContext.RequireAsync(HttpContext, cancellationToken,
             LabRole.Operator, LabRole.Supervisor, LabRole.ProtocolAdministrator,
             LabRole.ScientificReviewer, LabRole.OperationsAdministrator);
-        if (!LabBarcodeService.TryNormalize(barcode, out var normalized))
-            throw Invalid("barcode_invalid", "Scan or enter a complete Phaeno barcode.");
+        if (!LabBarcodeService.TryNormalize(barcode, out var normalized)
+            && !SupplierTubeBarcode.TryNormalize(barcode, out normalized))
+            throw Invalid("barcode_invalid", "Scan or enter a complete Phaeno or registered supplier barcode.");
         var container = await dbContext.LabContainers.AsNoTracking()
             .SingleOrDefaultAsync(item => item.Barcode == normalized, cancellationToken)
             ?? throw new OrderManagementException(
@@ -167,6 +229,10 @@ public sealed partial class LabOperationsController
             LabRole.Operator, LabRole.Supervisor);
         var container = await dbContext.LabContainers.SingleOrDefaultAsync(item => item.Id == containerId, cancellationToken)
             ?? throw Missing();
+        if (container.BarcodeSource == LabContainerBarcodeSource.RegisteredSupplier)
+            throw Conflict(
+                "registered_supplier_label_not_allowed",
+                "This submitted tube keeps its qualified permanent supplier barcode and must not receive a second POMS label.");
         var reason = request.Reason?.Trim();
         if (string.IsNullOrWhiteSpace(reason) || reason.Length > 500)
             throw Invalid("label_print_reason_required", "Enter a label-print reason of 500 characters or fewer.");

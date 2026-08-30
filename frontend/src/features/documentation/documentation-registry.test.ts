@@ -16,13 +16,17 @@ describe('documentation registry', () => {
       expect(entries.map((entry) => entry.order)).toEqual([
         ...(audience === 'phaeno'
           ? [
-              10, 20,
+              10, 15, 16, 17, 18, 19, 20, 21, 22, 25,
               30, 31, 32, 33, 34,
-              40, 41, 42, 43, 44, 45, 46,
-              50, 51, 52, 53, 54, 55, 56,
+              40, 41, 44, 45, 46,
+              50, 51, 52, 53, 54, 55, 56, 57, 58,
               60, 70,
             ]
-          : [10, 20, 30, 40, 50, 60]),
+          : audience === 'prospect'
+            ? [10, 20, 25, 30, 40, 50, 60]
+            : audience === 'customer'
+              ? [10, 20, 30, 35, 40, 50, 60]
+              : [10, 20, 30, 40, 50, 60]),
       ])
       expect(entries.every((entry) => entry.audience === audience)).toBe(true)
     }
@@ -73,12 +77,21 @@ describe('documentation registry', () => {
     expect(getDocumentationEntry('customer', 'lab-services')?.title).toBe(
       'Request laboratory services',
     )
+    expect(getDocumentationEntry('prospect', 'sample-shipping')?.title).toBe(
+      'Prepare and ship samples',
+    )
+    expect(getDocumentationEntry('customer', 'sample-shipping')?.title).toBe(
+      'Prepare and ship samples',
+    )
     expect(getDocumentationEntry('phaeno', 'lab-operations')?.title).toBe(
       'Laboratory operations',
     )
     expect(
       getDocumentationEntry('phaeno', 'lab-protocol-execution')?.parentSlug,
     ).toBe('lab-operations')
+    expect(
+      getDocumentationEntry('phaeno', 'crm-portal-handoffs')?.parentSlug,
+    ).toBe('crm')
     expect(
       getDocumentationEntry('phaeno', 'order-billing-payment-release')
         ?.parentSlug,

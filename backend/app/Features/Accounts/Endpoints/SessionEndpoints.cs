@@ -179,6 +179,8 @@ public static class SessionEndpoints
         var isSelectedOrganizationAdmin = selectedMembership?.IsOrganizationAdmin == true;
         var canViewLabOrders = selectedKind == OrganizationKind.Customer;
         var canManageLabOrders = canViewLabOrders && isSelectedOrganizationAdmin;
+        var canViewSampleShipping = selectedKind is OrganizationKind.Prospect or OrganizationKind.Customer;
+        var canManageSampleShipping = canViewSampleShipping && isSelectedOrganizationAdmin;
         var canViewPartnerOrders = selectedKind == OrganizationKind.Partner;
         var canManagePartnerOrders = canViewPartnerOrders && isSelectedOrganizationAdmin;
         var labCapabilities = LabOperationsAuthorization.Evaluate(
@@ -253,6 +255,8 @@ public static class SessionEndpoints
                 CanAcceptLabServiceQuotes = canManageLabOrders,
                 CanRequestLabServiceCancellation = canManageLabOrders,
                 CanViewSampleProgress = canViewLabOrders,
+                CanViewSampleShipping = canViewSampleShipping,
+                CanManageSampleShipping = canManageSampleShipping,
                 CanDownloadLabResults = canViewLabOrders,
                 CanViewReagentOrders = canViewPartnerOrders,
                 CanCreateReagentOrders = canManagePartnerOrders,
@@ -267,7 +271,8 @@ public static class SessionEndpoints
                 CanDownloadDataAssemblyOutputs = canViewPartnerOrders,
                 CanViewAllOperationalOrders = isPlatformAdmin || canPerformCommercialOperations,
                 CanManageOrderConfiguration = isPlatformAdmin,
-                CanQuoteLabServiceWork = canOperateCommercialWork,
+            CanQuoteLabServiceWork = canOperateCommercialWork,
+            CanManageFileManagementConfiguration = isPlatformAdmin,
                 CanManageLabOperations = labCapabilities.CanManageLabOperations,
                 CanOperateLabWork = labCapabilities.CanOperateLabWork,
                 CanSuperviseLabWork = labCapabilities.CanSuperviseLabWork,
@@ -309,6 +314,8 @@ public static class SessionEndpoints
             CanAcceptLabServiceQuotes = false,
             CanRequestLabServiceCancellation = false,
             CanViewSampleProgress = false,
+            CanViewSampleShipping = false,
+            CanManageSampleShipping = false,
             CanDownloadLabResults = false,
             CanViewReagentOrders = false,
             CanCreateReagentOrders = false,
@@ -323,6 +330,7 @@ public static class SessionEndpoints
             CanDownloadDataAssemblyOutputs = false,
             CanViewAllOperationalOrders = false,
             CanManageOrderConfiguration = false,
+            CanManageFileManagementConfiguration = false,
             CanQuoteLabServiceWork = false,
             CanManageLabOperations = false,
             CanOperateLabWork = false,

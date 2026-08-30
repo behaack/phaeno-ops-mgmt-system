@@ -76,6 +76,28 @@ public class AccountDomainTests
     }
 
     [Fact]
+    public void GuardedExternalIdentityRelinkRequiresTheExactPreviousIdentity()
+    {
+        var user = new User("admin@phaeno.com", "Phaeno", "Admin");
+        user.LinkExternalIdentity("clerk", "user_development");
+
+        Assert.Throws<InvalidOperationException>(() =>
+            user.RelinkExternalIdentity(
+                "clerk",
+                "user_unexpected",
+                "clerk",
+                "user_production"));
+
+        user.RelinkExternalIdentity(
+            "clerk",
+            "user_development",
+            "clerk",
+            "user_production");
+
+        Assert.True(user.IsLinkedTo("clerk", "user_production"));
+    }
+
+    [Fact]
     public void PlatformAdminRequiresActiveAdminMembershipInActivePhaenoOrganization()
     {
         var organization = new Organization("Phaeno", OrganizationKind.Phaeno);

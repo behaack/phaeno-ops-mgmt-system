@@ -42,7 +42,8 @@ describe('WorkspaceSidebar', () => {
     const edgeTab = screen.getByRole('button', {
       name: 'Open Example navigation; current selection: First',
     })
-    fireEvent.mouseEnter(edgeTab)
+    expect(edgeTab).toBeTruthy()
+    fireEvent.mouseEnter(document.querySelector('[data-sidebar-edge]')!)
 
     expect(screen.queryByRole('dialog')).toBe(null)
     expect(screen.getByRole('navigation', { name: 'Example sections' })).toBeTruthy()
@@ -62,7 +63,7 @@ describe('WorkspaceSidebar', () => {
     expect(screen.getByRole('navigation', { name: 'Example sections' })).toBeTruthy()
   })
 
-  it('omits pin controls on narrow layouts', () => {
+  it('omits pin controls and keeps the drawer open until dismissal on narrow layouts', () => {
     vi.stubGlobal('matchMedia', () => ({
       matches: false,
       media: '(min-width: 64rem)',
@@ -84,6 +85,9 @@ describe('WorkspaceSidebar', () => {
     expect(screen.queryByRole('button', { name: 'Pin sidebar' })).toBe(null)
 
     fireEvent.mouseMove(document, { clientX: 500, clientY: 300 })
+    expect(screen.getByRole('navigation', { name: 'Example sections' })).toBeTruthy()
+
+    fireEvent.keyDown(document, { key: 'Escape' })
     expect(
       screen.queryByRole('navigation', { name: 'Example sections' }),
     ).toBe(null)

@@ -80,6 +80,7 @@ describe('order navigation permissions', () => {
     const session = createSession('Phaeno', {
       canViewAllOperationalOrders: true,
       canManageOrderConfiguration: true,
+      canManageFileManagementConfiguration: true,
       canManageLabOperations: true,
     })
 
@@ -91,6 +92,7 @@ describe('order navigation permissions', () => {
     expect(labels).toContain('Order ops')
     expect(labels).toContain('Lab ops')
     expect(labels).toContain('Order configuration')
+    expect(labels).toContain('File management')
     expect(labels).not.toContain('Lab services')
     expect(labels).not.toContain('Reagent orders')
   })
@@ -113,6 +115,41 @@ describe('documentation navigation permissions', () => {
   )
 })
 
+describe('sample-shipping navigation permissions', () => {
+  it('shows Samples & shipping for an authorized Prospect context', () => {
+    const session = createSession('Prospect', { canViewSampleShipping: true })
+
+    expect(getVisibleMainMenuItems(session, {
+      selectedOrganizationKind: 'Prospect',
+      selectedMembership: session.memberships.at(-1),
+    }).map((item) => item.label)).toContain('Samples & shipping')
+  })
+
+  it('keeps Customer sample shipping inside Lab services', () => {
+    const session = createSession('Customer', {
+      canViewLabServiceOrders: true,
+      canViewSampleShipping: true,
+    })
+
+    const labels = getVisibleMainMenuItems(session, {
+      selectedOrganizationKind: 'Customer',
+      selectedMembership: session.memberships.at(-1),
+    }).map((item) => item.label)
+
+    expect(labels).toContain('Lab services')
+    expect(labels).not.toContain('Samples & shipping')
+  })
+
+  it('does not show Samples & shipping for a Partner context', () => {
+    const session = createSession('Partner', { canViewSampleShipping: true })
+
+    expect(getVisibleMainMenuItems(session, {
+      selectedOrganizationKind: 'Partner',
+      selectedMembership: session.memberships.at(-1),
+    }).map((item) => item.label)).not.toContain('Samples & shipping')
+  })
+})
+
 describe('navigation placement', () => {
   it('keeps frequent Phaeno work in the toolbar and moves secondary destinations to the menu', () => {
     const session = createSession('Phaeno', {
@@ -121,6 +158,7 @@ describe('navigation placement', () => {
       canViewAllOperationalOrders: true,
       canManageLabOperations: true,
       canManageOrderConfiguration: true,
+      canManageFileManagementConfiguration: true,
     })
     const context = {
       selectedOrganizationKind: 'Phaeno' as const,
@@ -131,12 +169,12 @@ describe('navigation placement', () => {
       getVisibleMainMenuItems(session, context, 'workspace').map(
         (item) => item.label,
       ),
-    ).toEqual(['Dashboard', 'Order ops', 'Lab ops', 'Docs'])
+    ).toEqual(['Dashboard', 'CRM', 'Order ops', 'Lab ops', 'Docs'])
     expect(
       getVisibleMainMenuItems(session, context, 'administration').map(
         (item) => item.label,
       ),
-    ).toEqual(['Accounts', 'Order configuration'])
+    ).toEqual(['Portal accounts', 'Order configuration', 'File management'])
     expect(
       getVisibleMainMenuItems(session, context, 'resources').map(
         (item) => item.label,
@@ -206,6 +244,8 @@ function createSession(
       canAcceptLabServiceQuotes: false,
       canRequestLabServiceCancellation: false,
       canViewSampleProgress: false,
+      canViewSampleShipping: false,
+      canManageSampleShipping: false,
       canDownloadLabResults: false,
       canViewReagentOrders: false,
       canCreateReagentOrders: false,
@@ -220,6 +260,7 @@ function createSession(
       canDownloadDataAssemblyOutputs: false,
       canViewAllOperationalOrders: false,
       canManageOrderConfiguration: false,
+      canManageFileManagementConfiguration: false,
       canQuoteLabServiceWork: false,
       canManageLabOperations: false,
       canOperateLabWork: false,

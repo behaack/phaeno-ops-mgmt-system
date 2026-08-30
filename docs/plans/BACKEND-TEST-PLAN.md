@@ -39,6 +39,20 @@ and rollback-isolated PostgreSQL coverage.
 - [x] `backend/test/FileStorageTests.cs` - local provider round-trip, checksum,
   deletion, oversize cleanup, feature-area separation, dependency-injection
   provider selection, and rejection of local storage in Production.
+- [x] `backend/test/ReleasedDeliverablePolicyDomainTests.cs` - approved 30/5/5
+  defaults, positive whole-day validation, warning-before-retention validation,
+  partial organization inheritance, invalid resolved-policy rejection,
+  monotonically versioned revisions, reasoned deactivation history, immutable
+  effective-value/source snapshots, exact UTC deadline calculations, and
+  cross-organization override rejection. The tenant-safe package projection is
+  also checked to expose dates without policy configuration history.
+- [x] `backend/test/PersistenceTests.cs` - released-deliverable global-policy and
+  organization-override schema ownership, filtered active-version uniqueness,
+  immutable release-target snapshot uniqueness, optimistic-concurrency tokens,
+  and restricted organization, policy, lab-result, and assembly-output
+  relationships.
+- [x] `backend/test/OrderManagementDomainTests.cs` - repeated file and package
+  release attempts preserve the first release timestamp used by retention.
 - [x] `backend/test/PersistenceTests.cs` -
   `PSeqOperationsDbContextMapsWebsiteEntitiesToWebsiteSchema` and the
   all-entity schema assertion cover the Website-owned tables in the shared
@@ -52,7 +66,11 @@ and rollback-isolated PostgreSQL coverage.
   visible-before-PDF snippet selection, source-aware ranking, and exclusion of
   index-only text from the public Website response; Preview/production Lucene
   index isolation, rejection of a shared index path, and preview-proxy key
-  comparison.
+  comparison; locale-isolated English, Arabic, French, Spanish, Simplified
+  Chinese, Japanese, German, and Italian indexing; Arabic diacritic
+  normalization; French, Spanish, German, and Italian stemming; dependency-free
+  CJK n-gram matching; regional locale normalization; and unchanged English-default queries. The locale-focused
+  additions are created but have not yet been executed.
 - [x] `backend/test/WebsiteDocumentTextExtractorTests.cs` - deterministic
   two-page PDF reading order, extracted-character limits, and malformed-PDF
   failure classification for the PdfPig implementation.
@@ -66,7 +84,9 @@ and rollback-isolated PostgreSQL coverage.
   biomarker names and evidence attributions without leaking into the next
   section; unanchored nested headings remain part of their indexed parent
   section; section records retain the page's published document type for result
-  labeling and icons.
+  labeling and icons. Added locale coverage verifies `<html lang="ar">`
+  propagation and prevents an Arabic landing record from indexing its linked
+  English PDF; these additions have not yet been executed.
 - [x] `backend/test/PhaenoPortalMetadataTests.cs` - `HealthMetadataIdentifiesTheApi`.
 - [x] `backend/test/PersistenceTests.cs` -
   `PSeqOperationsDbContextMapsEveryEntityToItsOwningSchema`.
@@ -113,6 +133,12 @@ and rollback-isolated PostgreSQL coverage.
 - [x] `backend/test/AccountDomainTests.cs` - `UserDeactivateDoesNotDeactivateMemberships`.
 - [x] `backend/test/ExternalIdentityContextTests.cs` - `ClaimsExternalIdentityContextReadsClerkSubjectAndVerifiedEmail`.
 - [x] `backend/test/ExternalIdentityContextTests.cs` - `ClaimsExternalIdentityContextReturnsNullForUnauthenticatedUser`.
+- [x] `backend/test/ClerkVerifiedEmailResolverTests.cs` - `IsVerifiedReadsVerifiedEmailFromClerkWhenClaimsOmitEmail`.
+- [x] `backend/test/ClerkVerifiedEmailResolverTests.cs` - `IsVerifiedRejectsAClerkEmailThatIsNotVerified`.
+- [x] `backend/test/ClerkVerifiedEmailResolverTests.cs` - `IsVerifiedUsesMatchingVerifiedClaimsWithoutCallingClerk`.
+- [x] `backend/test/AccountDomainTests.cs` - guarded external-identity relinking
+  rejects an unexpected prior Clerk subject and accepts only the exact expected
+  development-to-production replacement.
 - [x] `backend/test/AccountAuthorizationTests.cs` - `PlatformAdminCanManageCustomerOrganizationMembers`.
 - [x] `backend/test/AccountAuthorizationTests.cs` - `CustomerOrgAdminCannotManagePhaenoOrganizationMembers`.
 - [x] `backend/test/AccountAuthorizationTests.cs` - `CustomerOrgAdminCanManageOwnCustomerOrganizationMembers`.
@@ -138,8 +164,33 @@ and rollback-isolated PostgreSQL coverage.
   files without a scanner integration.
 - [x] `backend/test/DataProvisioningProfileTests.cs` - unconfigured scientific
   file kinds are rejected.
-- [x] `backend/test/OrderManagementDomainTests.cs` - laboratory request/quote
+- [x] `backend/test/OrderManagementDomainTests.cs` - required and normalized Lab
+  Job names, required and normalized job-level storage and safety values,
+  shared-versus-mixed biological-source validation and normalization, trimmed
+  optional Job notes, eight-character mixed Job numbers with ambiguous-
+  character and offensive-fragment rejection, laboratory request/quote
   transitions, immutable request revisions, sample stages, and quote expiry.
+- [ ] Laboratory pricing-profile controller coverage - prove an authorized
+  Customer administrator may create a draft with no sample records, receives a
+  unique generated Job number, must supply a case-insensitively unique Job name
+  plus a complete source-count composition, storage, and safety profile, and
+  may save optional Job notes. Prove submission requires zero sample records,
+  inserts the first immutable request revision rather than treating it as a
+  stale update, and retains tenant, role, duplicate-name, limit, idempotency,
+  and genuine stale-version enforcement. After quote acceptance, prove manual
+  and CSV sample entry use the server-owned `extracted_rna` material type and
+  `tube` quantity unit and cannot be finalized until identifiers and source
+  counts exactly comply with the accepted Job profile.
+- [ ] Order-entitlement and Phaeno-recipient controller coverage - prove an
+  effective, `Ready` PSeq Lab Service entitlement and active offering are
+  required for Customer Job creation/submission/acceptance and Phaeno Job
+  initiation/quote issue; an ended entitlement blocks new Jobs without
+  silently invalidating an accepted snapshot. Prove Phaeno quote preparation
+  sends no Customer notice, quote issue/revision targets every active eligible
+  Customer administrator and fails when none exists, acceptance establishes
+  the acting administrator, ordinary and high-impact fan-out remains distinct,
+  and an early or unmatched package cannot enter the Customer order receipt or
+  Lab-authorization path.
 - [x] `backend/test/OrderManagementDomainTests.cs` - negotiated reagent price
   snapshots, effective quantity rules, destination restrictions, immutable
   placement confirmation, approved substitutions, partial shipment, and
@@ -148,7 +199,15 @@ and rollback-isolated PostgreSQL coverage.
   quote, placement, and processing continuity.
 - [x] `backend/test/OrderManagementDomainTests.cs` - operational-file scan and
   release gating, separate lab/assembly credit decisions, configurable quote
-  validity, and failed-notification manual recovery.
+  validity, stable manual journal-entry source creation without changing the
+  balance, failed-notification manual recovery, and recovery of an abandoned
+  `Sending` notification only after its claim lease expires.
+- [x] `backend/test/SampleShippingDomainTests.cs` - packet-barcode allocation,
+  scanner framing and checksum rejection, deterministic compatibility and
+  mandatory split rejection, effective revision boundaries, and immutable
+  packet snapshots with void/replacement identity; supplier-tube barcode
+  normalization, exact return-kit tube-count enforcement, tube-to-sample
+  assignment, and supplier-barcode adoption by a submitted Lab container.
 - [x] `backend/test/RelationshipManagementDomainTests.cs` - an approved request
   authorizes only its associated organization and requested service,
   onboarding-only requests cannot source service entitlements, and entitlement
@@ -168,11 +227,21 @@ and rollback-isolated PostgreSQL coverage.
   migrated database, and explicitly clean their run-specific Lab, Commercial
   projection, outbox, event-receipt, and audit fixtures.
 - [x] `backend/test/LabOperationsCommercialHandoffPostgresTests.cs` - opt-in
-  controller-path coverage proving quote acceptance atomically commits the
-  Commercial authorization and Lab work, provider rejection rolls both back
-  even after an intermediate save, accepted cancellation updates Commercial
-  and Lab together, and started Lab work vetoes the decision without partially
-  approving it. A fifth rollback-isolated journey assigns additive Lab roles
+  controller-path coverage proving an authorized Phaeno user can initiate an
+  active Customer's price-bearing Job as an immutable submitted revision in
+  `QuoteInPreparation`, the exact same initiation key/request replays one Job
+  and one idempotency record, missing no-PHI attestation is rejected without
+  creating a Job, an unrelated specimen-priced catalog item cannot satisfy the
+  designated laboratory-service quote line, the shared idempotency boundary
+  preserves replay status, rejects payload mismatch, and rolls back an
+  intermediate business save, quote acceptance opens sample-roster preparation
+  without creating Lab work, and roster finalization atomically creates and
+  idempotently replays the Commercial authorization, Lab work, specimen, and
+  shipping records. Provider
+  rejection rolls the finalization back even after an intermediate save,
+  accepted cancellation updates Commercial and Lab together, and started Lab
+  work vetoes the decision without partially approving it. The rollback-
+  isolated operator journey assigns additive Lab roles
   and exercises one-open-candidate protocol enforcement, active protocols,
   receipt/accession and barcode-print history,
   including automatic submitted/derived barcode allocation, readable protocol
@@ -185,8 +254,23 @@ and rollback-isolated PostgreSQL coverage.
   resolution, scientific approval, customer-safe projection delivery, and proof
   that Ready for release creates neither a managed file nor a Lab result release.
   The fixture uses unique
-  Customer/Phaeno identities and removes its Commercial, Laboratory, account,
-  idempotency, notification, and audit records.
+  Customer/Phaeno identities and removes its Commercial, Laboratory, shipping,
+  account, idempotency, notification, and audit records. All thirteen sources
+  compiled with zero warnings or errors on 2026-08-27; tests were not requested
+  and were not run.
+- [x] `backend/test/SampleShippingPostgresTests.cs` - opt-in authenticated
+  controller/PostgreSQL coverage for destination, sample-type, and combination-
+  rule revisions; active-rule overlap rejection; return-kit registration and
+  fulfillment; global supplier-barcode uniqueness; tenant-scoped assignment,
+  correction history, and non-discovery; frozen destination, instruction,
+  manifest, and tube-crosswalk snapshots; CSV crosswalk output; concurrent
+  first-packet uniqueness; malformed, unknown, voided, mismatched, expected,
+  and repeated packet-plus-tube scan outcomes; exact registered supplier-
+  barcode adoption at Lab accession; and repeated-accession denial. The fixture
+  uses `PSEQ_OPERATIONS_REFERENCE_CONNECTION`, verifies a fully migrated
+  database, and removes its run-specific shipping, Lab, account, configuration,
+  and audit records. The suite passed against the local `phaeno_ops`
+  development database on 2026-08-18.
 - [x] `backend/tools/PSeq.Operations.ReferenceJourney` - controller-level
   authenticated PostgreSQL journey covering approved service-request source
   enforcement, rejection of an onboarding-only source, usable entitlement
@@ -198,6 +282,11 @@ and rollback-isolated PostgreSQL coverage.
 
 ## Deferred Tests
 
+- [ ] Development invitation sign-in link - cover Development-only endpoint
+  registration, authorized pending-invitation token rotation and audit without
+  raw-link persistence, inactive/non-pending rejection, tenant denial, and the
+  production not-found boundary.
+
 - [ ] Internal Web Operations dashboard endpoint - cover authenticated Phaeno
   platform-administrator access, external and non-admin denial, total counts,
   five-item bounds, newest-first mailing-list ordering, deterministic
@@ -208,39 +297,198 @@ and rollback-isolated PostgreSQL coverage.
   endpoints, missing-record responses, idempotent retries, actor/time capture,
   audit events, immediate active-count/list filtering, and page normalization
   after the final item on a page leaves its queue.
-- [ ] HubSpot/Portal lifecycle - cover signed webhook intake, exact Company and
-  Deal correlation, duplicate/out-of-order delivery, pending onboarding with no
-  access, direct Customer/Partner creation, narrow Portal Prospect creation,
-  designated-admin invitation, service entitlements, Customer/Partner
-  reclassification, offboarding review, durable publication, reconciliation,
-  outage tolerance, and scientific-data exclusion.
-- [ ] HubSpot committed-sale publication - cover one HubSpot Order per committed
-  specimen, reagent, or assembly sale; no routine Deal creation; Company and
-  originating-Deal associations; amount/currency/status/payment summaries;
-  cancellation/refund history; retry without duplication; and QuickBooks/Portal
-  authority over inbound HubSpot edits.
+- [ ] Public Website intake language metadata - cover contact and demo-request
+  submissions with canonical locales, supported regional variants, omitted
+  values, and unsupported values; verify canonical persistence for both tables
+  and the backward-compatible `en-US` fallback. Cover technical-brief Mailgun
+  template selection and localized `technicalBriefPath` resolution for every
+  supported locale, including the legacy single-URL fallback.
+- [x] CRM domain foundation - cover Company normalization, validation, and
+  record-preserving lifecycle; Contact normalization and merge identity; Lead
+  qualification/conversion identity; Pipeline terminal rules; Opportunity
+  close/reopen behavior; Task state; immutable Portal activities; typed custom
+  fields; and effective-dated Company/Contact history, including the
+  Company-specific job title. The 11 focused tests are maintained in
+  `backend/test/CrmCompanyDomainTests.cs`.
+- [x] Controller route materialization - build the complete MVC controller
+  endpoint collection so reserved route-token conflicts and other startup-time
+  route-construction failures are caught before runtime. Coverage is maintained
+  in `backend/test/ControllerRouteTests.cs`.
+- [ ] Remaining first-party CRM foundation - cover Company API authorization,
+  list/search/pagination, duplicate-name handling, concurrency, audit and
+  scientific-data exclusion; then Contact, multi-company contact
+  association, Lead, Opportunity, configurable Pipeline/Stage, ownership,
+  relationship-title projection and legacy-title migration,
+  Activity, Note, Task, reminder, saved-view, custom-field, import/export,
+  duplicate detection, controlled merge, search/report projection, optimistic
+  concurrency, soft deactivation, authorization, field visibility, audit, and
+  scientific/protected-data exclusion.
+- [ ] CRM/Portal lifecycle - cover explicit Company-to-Portal proposal/link,
+  pending onboarding with no access, direct Customer/Partner creation, narrow
+  Portal Prospect creation, designated-admin invitation, service entitlements,
+  Trial Project and custom-work handoffs, Customer/Partner reclassification,
+  offboarding review, idempotent retries, relationship-safe summary
+  publication, reconciliation, and domain authority.
+- [ ] CRM committed-sale publication - cover one relationship-safe summary per
+  committed specimen, reagent, or assembly sale; no routine Opportunity
+  creation; Company and originating-Opportunity associations when present;
+  amount/currency/status/payment summaries; cancellation/refund history; retry
+  without duplication; and POMS/accounting-system authority over CRM projections.
 - [ ] Direct configured-price work - cover entitled Customer and Partner
   specimen placement, Partner data-assembly placement, ineligible/custom-work
   routing, immutable pricing snapshots, Partner downstream-identity omission,
   post-placement scientific validation, and cross-tenant denial.
 - [ ] Complete Lab Operations API negative paths - extend the passing
   controller/PostgreSQL operator journey with hosted-HTTP unknown-barcode,
-  platform lab-intake resolution before authorization and missing-authorization
-  consistency checks,
+  Lab-owned commercial-order-to-work resolution before authorization and
+  missing-authorization consistency checks, unified Commercial order-list type
+  filtering, Lab-role authorization for the explicit kit, assembly, and shipment
+  manufacturing API allowlist, denial of quote, cancellation, sample-shipping
+  configuration, and other Commercial actions through the Lab namespace,
   lineage rejection, stale-version conflict, parallel protocol-candidate
   rejection, invalid draft/approval transitions, expired material, overdue
   calibration, wrong-work-order batch/custody, unresolved blocking exception,
   and cross-tenant HTTP/authentication scenarios.
-- [ ] Prospect Trial Projects - cover idempotent HubSpot request intake, dual
-  approval, frozen scope/amendments, Prospect acceptance, project-specific
-  submit authorization, extracted-RNA-only validation, the five-sample cap,
-  deadlines/analyses, schedule updates without a fixed turnaround SLA, member
-  view-versus-submit behavior, the three-month default and approval-time access
-  override snapshot, default changes not rewriting approved projects, the
-  approved access clock starting only when the complete standard result package
-  is released, result release without payment, replacement lineage, terminal
-  states, HubSpot retry, conversion preservation, normal-order denial, and
-  cross-tenant metadata/file/result isolation.
+- [x] Completion-aware released-download foundation - create domain coverage for
+  immutable `Started` to terminal transitions, successful retention counting,
+  rejection of non-success counting, partial range success remaining
+  non-counting, whole-package completion across every file, active versus
+  expired lease projection, manifest file identity, concurrency-token mapping,
+  and package-query indexes. The focused tests were created on 2026-08-19 but
+  were not executed because test execution was not requested.
+- [ ] Hosted completion-aware download API - prove Customer and Partner tenant
+  authorization, transfer creation before storage open, normal individual and
+  ZIP response completion, partial range and disconnected response behavior,
+  bounded timeout reconciliation, first-terminal-writer concurrency, external
+  projection privacy, and cross-tenant non-discovery through the real HTTP and
+  PostgreSQL path.
+- [ ] Global released-deliverable retention - cover validated global 30-day
+  retention, 5-day warning-lead, and 5-day grace defaults; optional Customer-,
+  Partner-, and Prospect-organization overrides with partial inheritance,
+  required reasons and audit history; authorization denial for external users;
+  resolution and source/version snapshot at package release; global or
+  organization changes affecting only later releases; exact UTC calculations
+  using 24-hour configured-day intervals across daylight-saving transitions
+  with no midnight/end-of-day rounding; successful individual
+  versus complete-archive download accounting; one authorized member download
+  satisfying the organization without per-user completion; later membership
+  change preserving that event; failed, cancelled, unauthorized, and internal
+  Phaeno downloads not counting; no warning and standard-deadline access close
+  plus atomic package-byte deletion queueing when all files were downloaded;
+  download denial at the exact applicable deadline even while byte deletion is
+  pending or retrying; a pre-cutoff file or archive lease finishing successfully
+  after the cutoff and counting only on stream completion; strict denial when
+  lease creation would commit exactly at the cutoff; partial file and archive
+  streams counting nothing; failed, cancelled, disconnected, and timed-out
+  leases not counting; denial of new, retry, range-resume, and archive requests
+  at or after cutoff; an incomplete lease at the standard deadline activating
+  grace despite later completion; simultaneous eligible leases delaying physical
+  deletion only until every lease terminates or reaches its original expiry,
+  without renewal, reopened access, changed grace/final dates, or a premature
+  cleanup failure; an operational lease-duration change affecting only new
+  leases; restart reconciliation to a non-counting terminal outcome with no
+  resume right; emergency
+  quarantine, withdrawal/correction, membership deactivation, and organization
+  deactivation each revoking a matching active lease, stopping further stream
+  delivery, recording a non-counting `Revoked` outcome, and not depending on the
+  retention-worker interval; durable completion/revocation ordering where the
+  first committed terminal transition wins, client time is ignored, and restored
+  access permits only a fresh pre-deadline request; one de-
+  duplicated warning to all active organization administrators, grace
+  activation and notice, full grace despite a later download, and final-deadline
+  access close plus atomic package-byte deletion queueing when any file was
+  undownloaded; idempotent retries, notification failure without deadline
+  extension, no-active-administrator urgent Operations work without deadline
+  extension, authenticated package-detail links with no bearer secret,
+  attachment, or direct download URL, authorization recheck on arrival,
+  exactly one warning plus one grace email and no recurring reminders; delayed
+  warning suppression when all files succeed before outbox creation, with no
+  recall after outbox creation; warning-state clearance when all files are
+  downloaded before grace; activated grace persisting despite later download;
+  preservation holds protecting bytes without extending access, resetting the
+  clock/notices, or delaying deletion after an overdue hold is released;
+  correction immediately
+  withdrawing the superseded package, independent old-package retention/
+  deletion, a fresh effective-policy snapshot/clock/download state/notices for
+  the corrected package, old downloads not satisfying the correction, retained
+  metadata/audit, no customer restore operation, authorized regeneration only
+  when source material exists, a new linked immutable reissue with Phaeno actor/
+  reason and fresh effective policy, the deleted release remaining unchanged,
+  permanent receipt generation before and after byte deletion, tenant admin
+  access to downloader names plus attempt start/completion timestamps and
+  outcomes, including a post-cutoff success's pre-cutoff authorization;
+  ordinary-member status without member-level audit, exclusion of file contents/
+  scientific values/internal notes/network telemetry/storage identifiers,
+  distinct access-closed and actual byte-
+  deletion timestamps, overdue cleanup escalation without renewed access,
+  equivalent Portal/PDF data with PDF generation timestamp and represented
+  state, no initial CSV route, and Trial/
+  Customer/Partner frozen file-lineage snapshots. Cover sample-scoped mapping to
+  non-PHI Customer sample ID, original submitted-tube supplier barcode, and
+  Phaeno accession; complete included-sample membership for combined/project-
+  level files; no false single-sample mapping; exclusion of derived-container
+  barcodes; and tenant isolation.
+- [ ] Prospect Trial Projects - cover idempotent commercial-only CRM request
+  intake, rejection or exclusion of scientific fields from that boundary,
+  POMS-owned scientific scoping, relationship-safe outbound milestones and deep
+  links, dual approval with default CBO/COO authority, domain-specific delegate
+  designation and revocation, primary-versus-delegate attribution, denial outside the
+  authorized domain, retained actor/authority/reason/timestamps, both decisions
+  still required under delegated coverage, rejection when one dual-authorized
+  user attempts both affirmative decisions, two different acting users required
+  for initial and amended scope versions, later delegate revocation preserving
+  valid historical approvals, frozen scope/amendments, Prospect acceptance,
+  versioned RUO/no-PHI affirmation at project acceptance and shipment
+  confirmation, structured PHI/direct-identifier rejection, restricted hold
+  without sensitive propagation into logs, audits, notifications, or CRM,
+  blocked receipt progression/processing/release until authorized disposition,
+  project-specific
+  submit authorization, extracted-RNA-only validation, enforcement of each
+  project's frozen approved sample allowance,
+  deadlines/analyses, eligible shipping destinations, versioned detailed
+  instructions, immutable packet allocation/void/replacement, scan-first
+  read-only Lab-work resolution, partial receipt, schedule updates without a
+  fixed turnaround SLA, member
+  view-versus-submit behavior, configurable deliverable catalog with
+  FASTQ/FASTA/BAM as
+  the current default selection, exact deliverable/version snapshots at
+  approval, catalog/default changes affecting only future projects,
+  deliverable changes after approval requiring amendment/reapproval, default
+  changes not rewriting approved projects, the package-retention clock starting
+  only when the project's complete frozen result package is released, effective
+  global-plus-Prospect-organization policy snapshot with no project-level
+  override, result
+  release without payment, replacement approval and
+  original-sample lineage, exactly one restored slot after a Phaeno-caused
+  processing failure, no automatic restoration for a Prospect-supplied sample
+  problem, an explicit recorded Phaeno exception, no silent allowance rewrite,
+  configurable 30-day residual-material default, immutable project-specific
+  retention/disposition snapshot, future-only configuration changes, retain-
+  until calculation at terminal closure, no automatic disposition, authorized
+  exhaustion/destruction recording, pre-first-shipment return approval with
+  destination/handling/payer, separate return tracking, post-shipment return
+  denial, controlled-hold suspension, and rejection of material reuse without a
+  separate written-authorization workflow,
+  complete-package enforcement before `Completed`, a required reason for the
+  `Closed incomplete` outcome, separate final CRM outcomes, required
+  owner/date for nonterminal follow-up, denial of automatic conversion from any
+  CRM outcome, explicit authorized POMS conversion, terminal states, CRM
+  summary retry,
+  conversion preservation without resetting or extending the frozen standard
+  or final package-deletion deadline, byte deletion with retained project/
+  result/audit history, no automatic organization deactivation on package
+  deletion, rejection of deactivation while another active
+  Trial Project, grant, or commercial relationship exists, explicit audited
+  Phaeno closeout deactivation, retained internal estimated retail value and
+  anticipated cost, no QuickBooks records or outbox work through the complete
+  journey, continuity during QuickBooks unavailability, normal-order denial,
+  and cross-tenant metadata/file/result isolation.
+- [ ] Remaining sample-shipping hosted HTTP and Customer freebies - exercise the
+  shared journey through the real ASP.NET authentication middleware and API
+  envelope after an owning authorization can create the shipment; then cover
+  one-time named-Customer promotional grant consumption, no-charge placement
+  and Lab authorization atomicity, and absence of a payment gate or
+  manufactured QuickBooks invoice by default.
 - [ ] Clerk JWT authentication - validate issuer, audience, signature, and expiry with integration-level test coverage.
 - [ ] Session/bootstrap endpoint - cover unauthorized, disabled, no active memberships, organization unavailable, and ready states with database-backed endpoint tests.
 - [ ] Invitation endpoints - cover required invited first/last name, intended
@@ -248,8 +496,15 @@ and rollback-isolated PostgreSQL coverage.
   roleless-Phaeno-invitation rejection, create, resend cooldown, pending
   replacement, inactive organization rejection, disabled user rejection, and
   active membership rejection.
-- [ ] Membership endpoints - cover deactivate, leave, promote, demote, cross-org denial, Phaeno-org denial for customer admins, and last-admin protection.
-- [ ] Platform lifecycle endpoints - cover organization deactivate/reactivate, user disable/reactivate, platform-admin-only access, and last-platform-admin protection.
+- [ ] Membership endpoints - cover deactivate, leave, promote, demote,
+  administrative self-deactivation denial, cross-org denial, Phaeno-org denial
+  for customer admins, and last-admin protection. Pure authorization coverage
+  confirms that an administrator may deactivate another membership but not
+  their own.
+- [ ] Platform lifecycle endpoints - cover organization deactivate/reactivate,
+  user disable/reactivate, self-disable denial, platform-admin-only access, and
+  last-platform-admin protection. Pure authorization coverage confirms that a
+  platform administrator may disable another account but not their own.
 - [ ] User read/list endpoints - cover self read, platform read, org-admin organization list, active-default filtering, inactive include filter, and forbidden cross-org access. Cover the consolidated Phaeno user projection/update endpoint for platform-administrator and Lab Operations Administrator access, profile edits, Platform administrator promotion/demotion with last-admin protection, exact additive Lab-role replacement, inactive-user rejection, optimistic versions, and forbidden non-role/profile changes by a Lab-only access administrator.
 - [ ] Invitation acceptance/decline endpoints - cover verified email match,
   token hash lookup, single-use behavior, expired/revoked/declined rejection,
@@ -262,6 +517,10 @@ and rollback-isolated PostgreSQL coverage.
 - [ ] Account domain model - cover Phaeno platform admins managing customer organizations through platform admin flows.
 - [ ] Account lifecycle - cover users, organizations, and memberships marked inactive rather than hard-deleted.
 - [ ] Bootstrap seed - cover first Phaeno organization/admin creation and one-time Clerk identity linking with database-backed tests.
+- [ ] Clerk Production bootstrap cutover - database-backed coverage for the
+  production-only command, sole-linked-user guard, verified-email requirement,
+  idempotent replay, audit event, and refusal when any other Portal identity is
+  linked.
 - [ ] Data provisioning HTTP host - extend the passing controller/database
   journey through the real ASP.NET authentication middleware and API envelope.
 - [ ] Managed files - add endpoint coverage for configured file-kind rejection,
@@ -270,32 +529,45 @@ and rollback-isolated PostgreSQL coverage.
 - [ ] Order-management authenticated HTTP/PostgreSQL journey - cover Customer,
   Partner, Prospect, Phaeno, cross-tenant non-discovery, optimistic concurrency,
   idempotency, file ownership, download audit, and outbox atomicity through the
-  real API host.
-- [ ] QuickBooks adapter contract suite - cover catalog/payment synchronization,
-  estimates, invoices, credits, partial-shipment invoices, webhook replay and
-  signature rejection, bounded retry, and reconciliation mismatches against a
-  fake or sandbox company.
+  real API host. Include adding and reconciling Job biological-source rows on an
+  existing draft without treating new child records as stale updates.
+- [ ] Manual accounting API/PostgreSQL journey - cover Phaeno-only authorization,
+  inclusive UTC date filtering, stable entry IDs, laboratory completion,
+  assembly output approval, per-shipment reagent rows, source references,
+  exclusion of historical provider-created documents, 366-day and 10,000-row
+  limits, repeat-download non-posting, CSV formula neutralization, and cross-
+  tenant non-discovery. QuickBooks adapter/webhook contract coverage is
+  deferred with the integration.
 - [ ] Notification dispatcher integration suite - cover acting-admin versus
   all-admin recipient rules, Mailgun failure, bounded retry, and manual retry.
 
 ## Remaining Coverage
 
-- [ ] Remaining relationship management - cover platform-admin authorization,
+- [ ] Remaining relationship management - cover authorized CRM and
+  platform-admin boundaries,
   organization creation with persisted readiness, organization summary
   derivation, readiness concurrency, service eligibility by organization kind,
   entitlement overlap and all effective boundaries, required
   completed-organization association for a
   pre-organization request, request state transitions, controller routing under
-  one `/api` prefix, the development-only HubSpot simulator's production 404,
-  platform-admin gate, path-specific organization/service validation, unique
-  Deal replay rejection, the account simulator's Prospect/Customer/Partner and
-  service validation, Company-plus-Deal replay rejection, `HubSpot` source
-  mapping, and the guarantee that simulation or approval alone creates no
-  organization, invitation, entitlement, order, or Trial Project. Cover the
-  separate approved-request account-creation endpoint, including supported
-  request type/kind validation, duplicate-name and stale-version rejection,
-  durable request association, Pending readiness, and the guarantee that it
-  creates no invitation or entitlement and does not mark the request applied.
+  one `/api` prefix, first-party CRM Company/Opportunity correlation,
+  path-specific organization/service validation, request idempotency, the
+  standalone proposal's Prospect/Customer/Partner and service validation,
+  provider-neutral source mapping, and the guarantee that intake alone creates
+  no organization, invitation, entitlement, order, or Trial Project. Cover
+  atomic approval plus
+  account creation for unassociated onboarding/evaluation requests, including
+  supported kind validation, duplicate-name and stale-version rejection,
+  durable request association, Pending readiness, default-on Customer ordering
+  authorization, explicit opt-out, one atomic `Ready` PSeq Lab Service
+  entitlement, and the guarantee that it creates no invitation or order and
+  does not mark the request applied.
+  Retain coverage of the separate endpoint as a legacy-request recovery path.
+- [x] Customer Lab ordering eligibility - focused PostgreSQL coverage verifies
+  that Phaeno initiation requires a current `Ready` entitlement, sends no
+  Customer notice during quote preparation, and queues quote issue for all
+  active Customer administrators. Canonical item identity/quantity and
+  idempotent initiation coverage remain in the same reference journey.
 - [ ] Remaining relationship management persistence - cover audit
   actor/time/version stamping, existing-organization readiness migration
   default, and request-number uniqueness.
@@ -356,6 +628,14 @@ and rollback-isolated PostgreSQL coverage.
   errors. The Debug build could not replace assemblies held by the active
   Visual Studio/IIS Express session. Backend tests were not requested and were
   not run.
+- 2026-08-22: Job-profile-first pricing and post-acceptance sample-roster
+  coverage was added for domain sequencing and strict CSV parsing, including
+  text-preserved identifiers, quoted commas, single-source inheritance, and
+  committed count/source mismatches. Follow-on hosted PostgreSQL coverage must
+  exercise atomic CSV replacement, finalization rollback, authorization plus
+  shipment creation, multi-tube accession, and legacy one-tube compatibility.
+  The API and module projects compiled with zero warnings and errors; tests
+  were not requested and were not run.
 - 2026-07-18: Web Operations unsubscribe and demo-completion lifecycle changes
   passed the full solution build with zero warnings and zero errors. The
   additive migration was generated and applied to the local `phaeno_ops`
@@ -420,3 +700,18 @@ and rollback-isolated PostgreSQL coverage.
 - 2026-07-14: implementation verification ran `dotnet test
   backend/PhaenoPortal.slnx`; all 43 tests passed. The existing lowercase
   `initial` migration-name compiler warning remains unchanged.
+- 2026-08-28: Customer PSeq Lab Service CRM handoff-to-order verification ran
+  the complete backend suite through isolated artifacts against the migrated
+  local PostgreSQL database; all 240 tests passed with no failures or skips.
+  Coverage includes atomic Order creation/request application, immutable source
+  linkage, duplicate prevention, rejection while a linked Opportunity is not
+  Won, idempotent initiation, quote creation, and cleanup-preserving Commercial,
+  Lab, and shipping reference journeys.
+- 2026-08-28: Opportunity identity verification built the API through isolated
+  artifacts and ran the focused CRM domain suite; all 13 tests passed with no
+  failures or skips. Coverage confirms the readable Opportunity Number format,
+  1,000 generated values without duplication, and the controlled PSeq Lab
+  Service/PSeq Kit product-interest domain. Migration
+  `20260828234907_AddCrmOpportunityNumber` was applied successfully to the local
+  development PostgreSQL database, including deterministic legacy backfill and
+  the database unique index.

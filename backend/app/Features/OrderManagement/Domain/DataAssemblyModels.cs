@@ -290,8 +290,22 @@ public sealed class AssemblyOutputRelease : IAudit, IConcurrency
         QcStatus = OrderText.Required(qcStatus, nameof(qcStatus), 500);
         GeneratedAt = generatedAt;
     }
-    public void MarkReady(bool holdForPayment) => ReleaseStatus = holdForPayment ? FileReleaseStatus.PaymentHold : FileReleaseStatus.Ready;
-    public void Release(DateTime utcNow) { ReleaseStatus = FileReleaseStatus.Released; ReleasedAt = utcNow; }
+    public void MarkReady(bool holdForPayment)
+    {
+        if (ReleaseStatus is FileReleaseStatus.Released or FileReleaseStatus.Withdrawn) return;
+        ReleaseStatus = holdForPayment ? FileReleaseStatus.PaymentHold : FileReleaseStatus.Ready;
+    }
+    public bool Release(DateTime utcNow)
+    {
+        if (ReleaseStatus == FileReleaseStatus.Released) return false;
+        if (ReleaseStatus == FileReleaseStatus.Withdrawn)
+            throw new InvalidOperationException("A withdrawn output release cannot be released again.");
+        if (utcNow.Kind != DateTimeKind.Utc)
+            throw new ArgumentException("Release timestamps must use UTC.", nameof(utcNow));
+        ReleaseStatus = FileReleaseStatus.Released;
+        ReleasedAt = utcNow;
+        return true;
+    }
     public void Withdraw() => ReleaseStatus = FileReleaseStatus.Withdrawn;
     public void MarkCreated(DateTime utcNow, Guid? actorUserId) { CreatedAt = utcNow; CreatedByUserId = actorUserId; }
     public void MarkUpdated(DateTime utcNow, Guid? actorUserId) { UpdatedAt = utcNow; UpdatedByUserId = actorUserId; }

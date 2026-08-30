@@ -1,9 +1,11 @@
 import * as React from "react"
 import { Label as LabelPrimitive } from "radix-ui"
 
+import { RequiredFieldName, RequiredMark } from "#/components/ui/required-indicator"
 import { cn } from "#/lib/utils"
 
 function Label({
+  children,
   className,
   ...props
 }: React.ComponentProps<typeof LabelPrimitive.Root>) {
@@ -15,8 +17,34 @@ function Label({
         className
       )}
       {...props}
-    />
+    >
+      {normalizeRequiredMarker(children)}
+    </LabelPrimitive.Root>
   )
+}
+
+function normalizeRequiredMarker(children: React.ReactNode): React.ReactNode {
+  return React.Children.toArray(children).flatMap((child, index) => {
+    if (typeof child === "string") {
+      const match = child.match(/^(.*?)(?:\s*)\*$/)
+      if (!match) return child
+
+      const label = match[1].trimEnd()
+      return label
+        ? <RequiredFieldName key={`required-${index}`}>{label}</RequiredFieldName>
+        : <RequiredMark key={`required-${index}`} />
+    }
+
+    if (
+      React.isValidElement<{ children?: React.ReactNode }>(child)
+      && child.type === "span"
+      && React.Children.toArray(child.props.children).join("").trim() === "*"
+    ) {
+      return <RequiredMark key={child.key ?? `required-${index}`} />
+    }
+
+    return child
+  })
 }
 
 export { Label }

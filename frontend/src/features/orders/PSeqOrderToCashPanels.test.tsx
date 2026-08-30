@@ -175,7 +175,7 @@ describe('PSeq order-to-cash panels', () => {
     renderPanel(<FinanceOperationsPanel apiEnabled canBill canManageCash={false} canReconcile={false} />)
 
     await screen.findByRole('option', { name: 'Atlas Research' })
-    fireEvent.change(screen.getByLabelText('Customer *'), { target: { value: 'customer-id' } })
+    fireEvent.change(screen.getByRole('combobox', { name: /Customer/ }), { target: { value: 'customer-id' } })
     expect(screen.getByDisplayValue('Ari Finance')).toBeTruthy()
     expect(screen.getByText('Finance approval required')).toBeTruthy()
     expect(screen.getByRole('button', { name: 'Save billing configuration' })).toBeTruthy()

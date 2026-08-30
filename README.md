@@ -5,8 +5,8 @@
 Phaeno Portal is a multi-tenant application for invite-only organization access,
 Phaeno-owned curated-data provisioning, Customer laboratory services, Partner
 reagent orders, Partner data assembly, Phaeno operational/configuration work,
-an internal Lab Operations application, and QuickBooks Online commercial
-synchronization. The API also serves the anonymous Phaeno Website search,
+  an internal Lab Operations application, and a manual journal-entry source
+  report for Phaeno Finance. QuickBooks Online integration is deferred. The API also serves the anonymous Phaeno Website search,
 contact, and inquiry contract. The repository contains a .NET API, a responsive
 React/TanStack Portal frontend, and the independently built Astro company
 website under `website/`.
@@ -60,9 +60,10 @@ backend/app/
   Provisioning, Health, Order Management, Lab Operations, and the public
   Website API.
 - `modules/PSeq.Operations.Commercial/Accounts`: account domain entities, pure authorization policy, invitation-token logic, and the invitation-delivery port.
+- `modules/PSeq.Operations.Commercial/Crm`: first-party CRM relationship records, beginning with durable Companies that remain separate from Portal accounts and access.
 - `modules/PSeq.Operations.Commercial/Relationships`: relationship requests, service entitlements, and service-eligibility policy.
 - `modules/PSeq.Operations.Commercial/DataProvisioning`: curated-data domain entities, environment-neutral policy, deterministic manifest construction, and file/notification ports.
-- `modules/PSeq.Operations.Commercial/OrderManagement`: commercial configuration/catalog, Partner kit ordering and fulfillment, request-revision and quote records, external download audit, commercial workflow and integration records, and environment-neutral QuickBooks/notification ports.
+- `modules/PSeq.Operations.Commercial/OrderManagement`: commercial configuration/catalog, Partner kit ordering and fulfillment, shared sample-shipping configuration, return-kit and registered supplier-tube inventory, frozen packet/crosswalk records, request-revision and quote records, accounting source records, external download audit, commercial workflow and notification records, and a dormant provider-neutral accounting adapter seam.
 - `modules/PSeq.Operations.Commercial/LabOperations`: the provider-neutral v1
   Commercial-to-Lab command, acknowledgment, projection, event-envelope, and
   provider-port types. Commercial owns this boundary; Laboratory execution and
@@ -117,18 +118,17 @@ The backend uses Entity Framework Core with PostgreSQL through the Npgsql provid
 - Current business-model target: Commercial/current-flow and Lab projection
   entities map to `commercial_ops`; Laboratory execution entities map to
   `lab_ops`; Website intake entities map to `website`; no default schema is used
-- Laboratory schema: `lab_ops`, with 22 explicitly mapped Laboratory tables
+- Laboratory schema: `lab_ops`, with 27 explicitly mapped Laboratory tables
 - EF migrations history table: `public.__ef_migrations_history`
 - Connection string key: `ConnectionStrings:DefaultConnection`
 
-The verified pre-Website disposable Development database is named `phaeno_ops`.
-It was rebuilt on 2026-07-16 from `InitialPSeqOperations`, then extended by
-`AddLabOperationsFoundation`, `AddLabProviderCommandReceipts`,
-`CompleteLabOperations`, `AddLabQcProjection`,
-and `EnforceLabLibraryLineage`. The generated `AddWebsiteApi` migration has not
-been applied by this work. The current model contains 54 tables in
-`commercial_ops`, 26 Laboratory tables in `lab_ops`, two Website tables in
-`website`, and migration history in `public`; it has no `portal` schema.
+The verified disposable Development database is named `phaeno_ops`. It was
+rebuilt on 2026-07-16 from `InitialPSeqOperations` and extended through the
+current feature migrations. The latest sample-shipping migrations are
+`AddSampleShippingFoundation` and `AddRegisteredSampleTubeWorkflow`; both were
+applied to the confirmed local database. The current model contains 63 tables
+in `commercial_ops`, 27 Laboratory tables in `lab_ops`, two Website tables
+in `website`, and migration history in `public`; it has no `portal` schema.
 
 Use environment configuration for non-development database credentials. In ASP.NET Core configuration, the connection string can be supplied with `ConnectionStrings__DefaultConnection`.
 
@@ -247,10 +247,11 @@ boundary.
 - **Authentication**: Clerk-issued bearer JWTs validated by the ASP.NET Core API.
 - **Multi-factor authentication**: Owned by the configured Clerk authentication policy; the portal does not implement or claim a separate 2FA system.
 - **Tenant enforcement**: Every tenant read, write, file download, and commercial action is scoped by the authenticated internal user and active selected membership.
-- **Commercial boundary**: QuickBooks Online is the only implemented external
-  commercial system. There is no ERP or third-party LIMS integration in the
-  running application; internal laboratory execution is provided by the
-  replaceable Lab Operations module.
+- **Commercial boundary**: POMS owns the commercial catalog, immutable quotes,
+  credit rules, and stable manual-accounting source records. No ERP, accounting
+  provider, or third-party LIMS integration runs in the application; QuickBooks
+  is deferred, and internal laboratory execution is provided by the replaceable
+  Lab Operations module.
 - **Help boundary**: Prospect, Customer, and Partner help is locale-ready and audience-filtered in the UI. Because current MDX is browser-bundled, it contains no confidential procedures; future search must enforce audience and locale in the backend.
 - **Testing**: Vitest for unit tests, Playwright for end-to-end (e2e) tests
 - **Styling**: Token-based CSS system with light/dark mode support for easy reskinning

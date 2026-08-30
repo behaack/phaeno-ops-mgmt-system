@@ -18,10 +18,14 @@ import {
   Dialog,
   DialogContent,
   DialogDescription,
-  DialogFooter,
   DialogHeader,
   DialogTitle,
 } from '#/components/ui/dialog'
+import {
+  RequiredDialogFooter,
+  RequiredFieldName,
+  RequiredMark,
+} from '#/components/ui/required-field'
 import { Input } from '#/components/ui/input'
 import { Label } from '#/components/ui/label'
 
@@ -381,7 +385,7 @@ export function MaterialLotCreateDialog({
               {kind === 'PreparedReagent' ? (
                 <fieldset className="grid gap-3 sm:col-span-2">
                   <div className="flex flex-wrap items-center justify-between gap-2">
-                    <legend className="text-sm font-medium">Component lots <RequiredMark /></legend>
+                    <legend className="text-sm font-medium"><RequiredFieldName>Component lots</RequiredFieldName></legend>
                     <Button type="button" size="sm" variant="outline" onClick={() => components.append({ componentMaterialLotId: '', quantity: '', quantityUnit: '' })}>
                       <Plus data-icon="inline-start" /> Add component
                     </Button>
@@ -436,12 +440,12 @@ export function MaterialLotCreateDialog({
               </Alert>
             ) : null}
 
-            <DialogFooter>
+            <RequiredDialogFooter>
               <Button type="button" variant="outline" onClick={close}>Cancel</Button>
               <Button type="submit" disabled={form.formState.isSubmitting}>
                 {form.formState.isSubmitting ? 'Creating…' : 'Create material lot'}
               </Button>
-            </DialogFooter>
+            </RequiredDialogFooter>
           </form>
         </DialogContent>
       </Dialog>
@@ -524,10 +528,10 @@ function ReferenceCreateDialog({
               />
             </FormField>
           </div>
-          <DialogFooter>
+          <RequiredDialogFooter>
             <Button type="button" variant="outline" onClick={onCancel}>Cancel</Button>
             <Button type="submit">{copy.action}</Button>
-          </DialogFooter>
+          </RequiredDialogFooter>
         </form>
       </DialogContent>
     </Dialog>
@@ -554,10 +558,6 @@ function FormField({
       <FieldError message={error} />
     </div>
   )
-}
-
-function RequiredMark() {
-  return <span className="text-destructive" aria-hidden="true">*</span>
 }
 
 function FieldError({ message }: { message?: string }) {

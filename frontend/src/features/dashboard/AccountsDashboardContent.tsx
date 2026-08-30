@@ -16,7 +16,7 @@ export function AccountsDashboardContent({
         <div className="flex flex-wrap items-start justify-between gap-3">
           <div>
             <h2 className="text-lg font-semibold">
-              Customer, Partner &amp; Prospect Accounts
+              Portal accounts
             </h2>
             <p className="mt-1 text-sm text-muted-foreground">
               Review organization readiness, access, invitations, and account

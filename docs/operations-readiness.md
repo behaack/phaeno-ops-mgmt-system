@@ -42,7 +42,7 @@ This document records how the application operates in the current repository and
 | Help | Browser-bundled MDX with Customer/Partner locale metadata and Phaeno US-English content. Backend search is not implemented. |
 | Organization/user administration UI | Invitation acceptance and Phaeno organization list/detail, request, entitlement, invitation, membership, conversion, lifecycle, and User management workspaces use durable APIs. Invitations retain the person’s name and intended membership role. Phaeno invitations and user edits consolidate Platform administrator and additive Laboratory roles; pending Laboratory-role intent activates only on acceptance, while external administration remains organization-scoped. |
 
-Phaeno Portal is the operational source of truth. QuickBooks Online is authoritative only for the commercial facts defined in `docs/business-rules.md`. No ERP, third-party LIMS, or CRM is connected to the running application; Laboratory execution is owned by the internal Lab Operations provider.
+Phaeno Portal is the operational and commercial-source system of record. Its first-party CRM owns relationship and pipeline records, and its order workflows own the manual catalog, quotes, credit rules, and accounting source records. No ERP, accounting provider, third-party LIMS, or external CRM is connected to the running application; Laboratory execution is owned by the internal Lab Operations provider.
 
 ## Health and basic verification
 
@@ -71,7 +71,7 @@ Keep environment-specific values outside source control. `appsettings.Developmen
 | --- | --- | --- |
 | `ConnectionStrings:DefaultConnection` | PostgreSQL connection | Managed as a secret; TLS, backup, restore, and connection limits approved. |
 | `Persistence` | Commercial, Laboratory, Website, and migration-history schemas plus the history table | Stable before migration execution; business schemas must be distinct from each other and from `public`. |
-| `Clerk` | JWT authority/audience, Clerk API access, authentication branding, MFA, and recovery | Production Clerk instance and secrets; HTTPS metadata validation enabled; Phaeno branding and paid-plan vendor-badge removal verified; required authenticator-app MFA and one-time backup codes enabled; SMS disabled; Phaeno-admin identity verification, MFA reset, active-session revocation, and re-enrollment recovery owned and tested. |
+| `Clerk` | JWT authority/audience, Clerk API access, authentication branding, MFA, and recovery | Production API accepts only a Clerk Production issuer and `sk_live_` secret. Local development remains on Clerk Development. HTTPS metadata validation, Phaeno branding, paid-plan vendor-badge removal, required authenticator-app MFA and one-time backup codes, disabled SMS, and the Phaeno-admin recovery procedure must be verified in the production instance. |
 | `Bootstrap` | One-time bootstrap link inputs | Disabled or cleared after the initial administrator is linked. |
 | `Invitations` | Token lifetime, resend cooldown, public URL | Production deployment pins the public URL to `https://portal.phaenobiotech.com`; expiry and resend policy approved. |
 | `EmailServiceSettings` | Mailgun transactional sender and signed invitation delivery/permanent-failure webhooks | Existing protected Mailgun domain sending key and verified sender/domain, official US or EU Mailgun API URL, `messages` resource, protected `PORTAL_MAILGUN_WEBHOOK_SIGNING_KEY`, delivery and failure monitoring. Before deployment, verify in the authenticated Mailgun dashboard that `delivered` and `permanent_fail` target the exact Portal invitation webhook URL. Deployment validates the existing runtime sending settings and atomically installs the signing key. API startup fails closed when these values are absent or malformed. |
@@ -82,9 +82,9 @@ Keep environment-specific values outside source control. `appsettings.Developmen
 | `FileStorage` | Provider selection, local development root, and S3 bucket, region, key prefix, optional service URL, and path-style setting | Temporary state: `Provider=Disabled`, which permits startup but no file operations. Activation state: `Provider=S3`; bucket and prefix approved; SDK default credential chain uses a least-privilege identity or protected access keys; encryption, lifecycle, permissions, monitoring, and representative upload/download/delete behavior verified. Production refuses the Local provider. |
 | `DataProvisioning` | Upload limit, synthetic policy, scanner, allowed kinds | Synthetic fixtures rejected; real file policy and trusted scanner approved. |
 | `OrderManagement` | Upload limit, scanner, allowed kinds | Trusted scanner and real Customer/Partner file policy approved. |
-| `QuickBooks` | Environment, company/realm, OAuth, API, webhook verifier | Correct company, least-privilege credentials, webhook validation, sandbox journey, reconciliation, and rotation process approved. |
-| Planned `HubSpot` | Account/app identifiers, OAuth or private-app credentials, API, webhook verifier, and property mapping | Not present today. Before activation: least-privilege scopes, non-production proof, webhook validation, reconciliation, monitoring, and rotation approved. |
-| `VITE_CLERK_PUBLISHABLE_KEY` | Frontend Clerk instance | Matches the API's production Clerk configuration. |
+| Manual accounting | POMS commercial catalog plus `/api/platform/order-accounting/journal-entries` and CSV export | Catalog ownership, date-range reconciliation, stable source-ID handling, general-ledger account mapping, tax treatment, posting procedure, duplicate prevention, and Finance ownership approved. |
+| Future external CRM adapter | Provider/account identifiers, credentials, API, webhook verifier, and field mapping | Not present or required today. Before any activation: fresh product scope, field ownership, least-privilege access, non-production proof, webhook validation, reconciliation, monitoring, and rotation approved. |
+| `VITE_CLERK_PUBLISHABLE_KEY` | Frontend Clerk instance | Vercel Preview uses the development `pk_test_` value. Vercel Production uses the `pk_live_` value matching the API's production Clerk configuration. |
 | `VITE_API_BASE_URL` | Frontend API base URL | Points to the approved API origin or reverse proxy. |
 | `VITE_USE_MOCK_SESSION` | Development mock session | Must not enable mock access in production. |
 
@@ -111,9 +111,9 @@ Use the repository-local EF tool manifest and commands documented in `README.md`
 
 ## Durable delivery and recovery
 
-- QuickBooks commands, payment reconciliation, notifications, provisioning notices, and Lab projection events use durable records and hosted dispatchers.
-- A failed delivery remains visible with its error and retry state. Retry the existing record after correcting configuration or connectivity; do not recreate the order, grant, notification, estimate, or invoice to force delivery.
-- Repeated delivery must remain idempotent. Reconciliation should repair missed external events without rewriting immutable local commercial or scientific snapshots.
+- Notifications, provisioning notices, and Lab projection events use durable records and hosted dispatchers.
+- A failed delivery remains visible with its error and retry state. Retry the existing record after correcting configuration or connectivity; do not recreate the order, grant, or notification to force delivery.
+- Manual accounting source records are created transactionally with their billing boundary and keep stable IDs across repeated report downloads. Reconciliation must not rewrite immutable commercial or scientific snapshots.
 - Tenant-safe timelines and messages must remain separate from internal retry details and investigation notes.
 
 ## Production activation gates
@@ -137,10 +137,10 @@ Production is not ready until all applicable gates are evidenced:
 - approved external NGS provider services, identifiers, manifest/status
   exchange, custody expectations, returned-output handshake, and support
   ownership;
-- QuickBooks sandbox end-to-end validation, production company connection, webhook verification, payment reconciliation, duplicate prevention, and credential rotation;
-- when the approved CRM plan enters scope, HubSpot non-production validation,
-  Company/Contact/Deal/Order mapping, webhook verification, duplicate
-  prevention, reconciliation, least-privilege credentials, Sales layouts, and
+- Finance-approved manual journal-entry and invoice procedure, catalog ownership, date-range reconciliation, stable source-ID duplicate prevention, tax/account mapping, and operator acceptance;
+- production migration and authenticated validation of the first-party CRM for
+  Companies, Contacts, Leads, Opportunities, pipelines, Activities, Tasks,
+  reporting, CRM-to-Portal handoffs, duplicate prevention, authorization, and
   operational ownership;
 - Mailgun sender/domain and HMAC signature verification, locale-template review,
   delivery/permanent-failure monitoring, and retry ownership;
@@ -163,8 +163,8 @@ Until these gates are complete, a passing local build or test suite demonstrates
 - A general shared-folder and file-version product outside the feature-owned file boundaries.
 - A confidential Phaeno runbook delivery system; browser-bundled help must remain distributable.
 - Backend-indexed help search and additional Customer/Partner locales.
-- HubSpot integration until the approved lifecycle plan is explicitly
-  implemented and production-validated.
+- Any external CRM integration until a fresh adapter plan is explicitly
+  approved, implemented, and production-validated.
 - A third-party LIMS adapter and ownership cutover unless an approved future
   workflow establishes the need.
 - Exceptional curated-package purge and any automated retention deletion workflow.

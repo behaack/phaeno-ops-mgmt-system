@@ -83,9 +83,7 @@ describe('WebOpsDashboardContent', () => {
       screen.getByText('Showing 1–10 of 12 signups. Page 1 of 2.'),
     ).toBeTruthy()
 
-    fireEvent.click(
-      screen.getByRole('tab', { name: /Demo Requests/ }),
-    )
+    selectTab(/Demo Requests/)
 
     expect(
       screen.queryByRole('region', { name: 'Mailing List' }),
@@ -138,9 +136,7 @@ describe('WebOpsDashboardContent', () => {
     expect(changeMailingListPage).toHaveBeenCalledWith(2)
     expect(changeDemoRequestPage).not.toHaveBeenCalled()
 
-    fireEvent.click(
-      screen.getByRole('tab', { name: /Demo Requests/ }),
-    )
+    selectTab(/Demo Requests/)
     const demoRequestPagination = screen.getByRole('navigation', {
       name: 'Demo Requests pagination',
     })
@@ -213,9 +209,7 @@ describe('WebOpsDashboardContent', () => {
     )
     expect(retryMailingList).toHaveBeenCalledOnce()
 
-    fireEvent.click(
-      screen.getByRole('tab', { name: /Demo Requests/ }),
-    )
+    selectTab(/Demo Requests/)
     expect(screen.getByText('Compiler Labs')).toBeTruthy()
   })
 
@@ -274,7 +268,7 @@ describe('WebOpsDashboardContent', () => {
       ),
     ).toBeTruthy()
 
-    fireEvent.click(screen.getByRole('tab', { name: /Demo Requests/ }))
+    selectTab(/Demo Requests/)
     fireEvent.click(
       screen.getAllByRole('button', { name: 'Mark complete' })[0],
     )
@@ -296,3 +290,9 @@ describe('WebOpsDashboardContent', () => {
     ).toBeTruthy()
   })
 })
+
+function selectTab(name: RegExp) {
+  const tab = screen.getByRole('tab', { name })
+  fireEvent.mouseDown(tab, { button: 0, ctrlKey: false })
+  fireEvent.click(tab)
+}

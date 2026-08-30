@@ -1,5 +1,21 @@
 namespace PSeq.Operations.Commercial.OrderManagement.Domain;
 
+public static class OrderServiceKeys
+{
+    public const string PSeqLabService = "pseq-lab-service";
+
+    public static bool IsPSeqLabService(string? value)
+        => string.Equals(value?.Trim(), PSeqLabService, StringComparison.OrdinalIgnoreCase);
+}
+
+public static class OrderSalesUnits
+{
+    public const string Specimen = "specimen";
+
+    public static bool IsSpecimen(string? value)
+        => string.Equals(value?.Trim(), Specimen, StringComparison.OrdinalIgnoreCase);
+}
+
 public enum ReagentOrderStatus
 {
     Draft,

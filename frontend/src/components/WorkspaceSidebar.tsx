@@ -15,6 +15,7 @@ import { cn } from '#/lib/utils'
 
 const PINNED_PREFERENCE_KEY = 'phaeno:workspace-sidebar-pinned'
 const WIDE_LAYOUT_QUERY = '(min-width: 64rem)'
+const HOVER_POINTER_QUERY = '(hover: hover) and (pointer: fine)'
 const SIDEBAR_TOP_PX = 84
 const SIDEBAR_WITH_TAB_PX = 292
 
@@ -79,6 +80,7 @@ export function ResponsiveSidebar({
   children,
 }: ResponsiveSidebarProps) {
   const isWideLayout = useMediaQuery(WIDE_LAYOUT_QUERY)
+  const hasHoverPointer = useMediaQuery(HOVER_POINTER_QUERY)
   const [isPinned, setIsPinned] = useState(readPinnedPreference)
   const [isPreviewOpen, setIsPreviewOpen] = useState(false)
   const sidebarId = useId()
@@ -87,6 +89,7 @@ export function ResponsiveSidebar({
 
   const showPinnedSidebar = isWideLayout && isPinned
   const showSidebar = showPinnedSidebar || isPreviewOpen
+  const hoverPreviewEnabled = isWideLayout && hasHoverPointer
 
   useEffect(() => {
     if (!isPreviewOpen || showPinnedSidebar) return
@@ -103,7 +106,7 @@ export function ResponsiveSidebar({
   }, [isPreviewOpen, showPinnedSidebar])
 
   useEffect(() => {
-    if (!isPreviewOpen || showPinnedSidebar) return
+    if (!isPreviewOpen || showPinnedSidebar || !hoverPreviewEnabled) return
 
     function closeAfterPointerLeavesRail(event: MouseEvent) {
       const pointerIsWithinRail = event.clientY >= SIDEBAR_TOP_PX
@@ -114,7 +117,7 @@ export function ResponsiveSidebar({
 
     document.addEventListener('mousemove', closeAfterPointerLeavesRail)
     return () => document.removeEventListener('mousemove', closeAfterPointerLeavesRail)
-  }, [isPreviewOpen, showPinnedSidebar])
+  }, [hoverPreviewEnabled, isPreviewOpen, showPinnedSidebar])
 
   function openPreview() {
     if (!showPinnedSidebar) setIsPreviewOpen(true)
@@ -145,8 +148,8 @@ export function ResponsiveSidebar({
             data-sidebar-edge
             aria-hidden="true"
             className="fixed top-[5.25rem] bottom-0 left-0 z-30 w-2"
-            onMouseEnter={openPreview}
-            onMouseMove={openPreview}
+            onMouseEnter={hoverPreviewEnabled ? openPreview : undefined}
+            onMouseMove={hoverPreviewEnabled ? openPreview : undefined}
           />
           <Button
             ref={triggerRef}
@@ -166,7 +169,6 @@ export function ResponsiveSidebar({
               ? `Close ${workspaceLabel} navigation`
               : `Open ${workspaceLabel} navigation: ${activeLabel}`}
             onClick={() => isPreviewOpen ? closePreview() : openPreview()}
-            onMouseEnter={openPreview}
           >
             {isPreviewOpen ? <PanelLeftClose /> : <PanelLeftOpen />}
           </Button>
@@ -198,7 +200,7 @@ export function ResponsiveSidebar({
             </Button>
           ) : null}
         </header>
-        <div className="min-h-0 flex-1 overflow-y-auto pt-3">
+        <div className="-mx-1 min-h-0 flex-1 overflow-y-auto px-1 pt-3">
           {navigation(showPinnedSidebar ? () => undefined : () => closePreview())}
         </div>
       </aside>

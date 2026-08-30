@@ -6,11 +6,14 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Options;
+using PSeq.Operations.Commercial.Accounts.Domain;
+using PSeq.Operations.Commercial.Crm.Domain;
 using PSeq.Operations.Commercial.LabOperations.Application;
 using PSeq.Operations.Commercial.LabOperations.Domain;
-using PSeq.Operations.Commercial.Accounts.Domain;
 using PSeq.Operations.Commercial.OrderManagement.Application;
 using PSeq.Operations.Commercial.OrderManagement.Domain;
+using PSeq.Operations.Commercial.Relationships.Domain;
+using PhaenoPortal.App.Features.FileManagement.Services;
 using PhaenoPortal.App.Features.OrderManagement.Domain;
 using PhaenoPortal.App.Features.OrderManagement.DTOs;
 using PhaenoPortal.App.Features.OrderManagement.Services;
@@ -28,9 +31,49 @@ public sealed class PlatformLabServiceOrdersController(
     IOperationalFileScanner fileScanner,
     IOptions<OrderManagementOptions> options,
     IOptions<PSeqOrderToCashOptions> orderToCashOptions,
-    ILabOperationsProvider labOperationsProvider) : ControllerBase
+    ILabOperationsProvider labOperationsProvider,
+    ReleasedDeliverableRetentionSnapshotService retentionSnapshots) : ControllerBase
 {
     private static readonly JsonSerializerOptions JsonOptions = new(JsonSerializerDefaults.Web);
+
+    [HttpGet("eligible-customers")]
+    public async Task<IReadOnlyList<EligibleCustomerOrganizationDto>> ListEligibleCustomers(
+        CancellationToken cancellationToken)
+    {
+        await requestContext.RequirePlatformAdminAsync(HttpContext, cancellationToken);
+        var now = DateTime.UtcNow;
+        var offeringAvailable = await dbContext.QboCatalogItems.AsNoTracking()
+            .AnyAsync(item => item.IsActive
+                && item.ExternalItemId.ToLower() == OrderServiceKeys.PSeqLabService
+                && item.SalesUnit.ToLower() == OrderSalesUnits.Specimen,
+                cancellationToken);
+        if (!offeringAvailable)
+        {
+            return [];
+        }
+
+        return await dbContext.Organizations.AsNoTracking()
+            .Where(organization => organization.Kind == OrganizationKind.Customer
+                && organization.IsActive
+                && dbContext.OrganizationServiceEntitlements.Any(entitlement =>
+                    entitlement.OrganizationId == organization.Id
+                    && entitlement.Service == PortalService.PSeqLabService
+                    && entitlement.ConfigurationStatus == EntitlementConfigurationStatus.Ready
+                    && entitlement.EffectiveFrom <= now
+                    && (!entitlement.EffectiveTo.HasValue || entitlement.EffectiveTo.Value > now))
+                && dbContext.OrganizationMemberships.Any(membership =>
+                    membership.OrganizationId == organization.Id
+                    && membership.IsActive
+                    && membership.IsOrganizationAdmin
+                    && membership.User != null
+                    && membership.User.IsActive
+                    && membership.User.Status == UserAccountStatus.Active))
+            .OrderBy(organization => organization.Name)
+            .Select(organization => new EligibleCustomerOrganizationDto(
+                organization.Id,
+                organization.Name))
+            .ToListAsync(cancellationToken);
+    }
 
     [HttpGet]
     public async Task<PagedResult<OrderListItemDto>> List(
@@ -41,6 +84,7 @@ public sealed class PlatformLabServiceOrdersController(
         [FromQuery] bool unassigned = false,
         [FromQuery] bool overdue = false,
         [FromQuery] bool holds = false,
+        [FromQuery] bool readyForIntake = false,
         [FromQuery] DateTime? updatedFrom = null,
         [FromQuery] DateTime? updatedTo = null,
         [FromQuery] int page = 1,
@@ -67,6 +111,7 @@ public sealed class PlatformLabServiceOrdersController(
         if (assignedToUserId.HasValue) query = query.Where(order => order.AssignedToUserId == assignedToUserId.Value);
         if (unassigned) query = query.Where(order => order.AssignedToUserId == null);
         if (holds) query = query.Where(order => order.Status == LabServiceOrderStatus.OnHold);
+        if (readyForIntake) query = query.Where(order => order.SampleRosterFinalizedAt != null);
         if (overdue)
         {
             var now = DateTime.UtcNow;
@@ -82,6 +127,164 @@ public sealed class PlatformLabServiceOrdersController(
                 order.AssignedToUserId, order.DueAt, order.DueAt != null && order.DueAt < DateTime.UtcNow
                     && order.Status != LabServiceOrderStatus.Completed && order.Status != LabServiceOrderStatus.Cancelled && order.Status != LabServiceOrderStatus.Declined)).ToListAsync(cancellationToken);
         return new PagedResult<OrderListItemDto>(items, page, pageSize, total);
+    }
+
+    [HttpPost]
+    public async Task<LabServiceOrderDto> Initiate(
+        [FromBody] InitiateCustomerLabOrderRequest request,
+        CancellationToken cancellationToken)
+    {
+        var actor = await requestContext.RequirePlatformAdminAsync(HttpContext, cancellationToken);
+        var key = idempotency.RequireKey(HttpContext);
+        const string scope = "platform:lab-order:initiate";
+        var execution = await idempotency.ExecuteAsync(
+            actor.Id,
+            scope,
+            key,
+            request,
+            async operationCancellationToken =>
+            {
+                if (!request.ProhibitedDataConfirmed)
+                    throw Invalid(
+                        "prohibited_data_confirmation_required",
+                        "Confirm that the Job pricing details contain no patient identifiers, PHI, or unnecessary personal data.");
+
+                CrmHandoff? sourceHandoff = null;
+                if (request.SourceRequestId.HasValue)
+                {
+                    sourceHandoff = await dbContext.CrmHandoffs
+                        .Include(value => value.Company)
+                        .Include(value => value.Opportunity).ThenInclude(value => value!.Stage)
+                        .Include(value => value.RelationshipRequest).ThenInclude(value => value.RequestedServices)
+                        .SingleOrDefaultAsync(
+                            value => value.RelationshipRequestId == request.SourceRequestId.Value,
+                            operationCancellationToken)
+                        ?? throw Conflict(
+                            "crm_handoff_not_found",
+                            "The selected CRM handoff was not found.");
+                    var sourceRequest = sourceHandoff.RelationshipRequest;
+                    if (sourceRequest.Source != PortalIntegrationRequestSource.FirstPartyCrm
+                        || sourceRequest.RequestType != PortalIntegrationRequestType.SalesAssistedOrder)
+                        throw Conflict("crm_handoff_not_orderable", "Only a first-party CRM Customer order handoff can start an order.");
+                    if (await dbContext.LabServiceOrders.AsNoTracking().AnyAsync(
+                        value => value.SourceRequestId == sourceRequest.Id,
+                        operationCancellationToken))
+                        throw Conflict("crm_handoff_order_exists", "This CRM handoff has already started an order.");
+                    if (sourceRequest.Status != PortalIntegrationRequestStatus.Approved)
+                        throw Conflict("crm_handoff_not_approved", "The CRM handoff must be approved before it can start an order.");
+                    if (sourceRequest.OrganizationId != request.OrganizationId
+                        || sourceRequest.RequestedOrganizationKind != OrganizationKind.Customer)
+                        throw Conflict("crm_handoff_customer_mismatch", "The CRM handoff is not approved for the selected Customer organization.");
+                    if (!sourceRequest.RequestedServices.Any(value => value.Service == PortalService.PSeqLabService))
+                        throw Conflict("crm_handoff_service_mismatch", "The CRM handoff does not request PSeq Lab Service.");
+                    if (sourceHandoff.Opportunity is not null
+                        && sourceHandoff.Opportunity.Stage.Category != CrmPipelineStageCategory.Won)
+                        throw Conflict("crm_handoff_opportunity_not_won", "The linked Opportunity must be Won before its handoff can start an order.");
+                }
+
+                var customer = await dbContext.Organizations.AsNoTracking()
+                    .SingleOrDefaultAsync(
+                        organization => organization.Id == request.OrganizationId
+                            && organization.Kind == OrganizationKind.Customer
+                            && organization.IsActive,
+                        operationCancellationToken)
+                    ?? throw Conflict(
+                        "customer_not_available",
+                        "Select an active Customer organization before initiating the order.");
+                var hasActiveAdministrator = await dbContext.OrganizationMemberships.AsNoTracking()
+                    .AnyAsync(
+                        membership => membership.OrganizationId == customer.Id
+                            && membership.IsActive
+                            && membership.IsOrganizationAdmin
+                            && membership.User != null
+                            && membership.User.IsActive
+                            && membership.User.Status == UserAccountStatus.Active,
+                        operationCancellationToken);
+                if (!hasActiveAdministrator)
+                {
+                    throw Conflict(
+                        "customer_approver_required",
+                        "This Customer needs an active organization administrator before an order can be sent for approval.");
+                }
+
+                await LabServiceOrderingEligibility.RequireAsync(
+                    dbContext,
+                    customer.Id,
+                    DateTime.UtcNow,
+                    operationCancellationToken);
+
+                var normalizedJobName = NormalizeJobName(request.CustomerReference);
+                await EnsureUniqueJobNameAsync(customer.Id, normalizedJobName, operationCancellationToken);
+                var sourceGroups = ValidatePricingProfile(request.RequestedSpecimenCount, request.SourceGroups);
+                var configuration = await dbContext.OrderSystemConfigurations.AsNoTracking()
+                    .OrderBy(item => item.CreatedAt)
+                    .FirstOrDefaultAsync(operationCancellationToken);
+                var order = new LabServiceOrder(
+                    customer.Id,
+                    await GenerateUniqueJobNumberAsync(operationCancellationToken),
+                    request.CustomerReference,
+                    request.Description,
+                    request.RequestedSpecimenCount,
+                    sourceGroups.Count > 1,
+                    sourceGroups.Count == 1 ? sourceGroups[0].BiologicalSource : null,
+                    request.StorageRequirements,
+                    request.SafetyDeclaration,
+                    configuration?.SampleSubmissionInstructions ?? string.Empty,
+                    request.SourceRequestId);
+                foreach (var group in sourceGroups)
+                {
+                    order.SourceGroups.Add(new LabServiceSourceGroup(
+                        order.Id,
+                        group.BiologicalSource,
+                        group.SpecimenCount));
+                }
+
+                var initiatedAt = DateTime.UtcNow;
+                dbContext.LabServiceOrders.Add(order);
+                Event(order, "Created", order.Status.ToString(), actor.Id);
+                var draftStatus = order.Status.ToString();
+                Execute(() => order.Submit(actor.Id, initiatedAt));
+                var revision = new LabServiceRequestRevision(
+                    order.Id,
+                    order.RequestRevision,
+                    null,
+                    BuildRequestSnapshot(order),
+                    null,
+                    actor.Id,
+                    initiatedAt);
+                dbContext.LabServiceRequestRevisions.Add(revision);
+                Event(order, draftStatus, order.Status.ToString(), actor.Id);
+                var submittedStatus = order.Status.ToString();
+                Execute(order.BeginQuotePreparation);
+                Event(order, submittedStatus, order.Status.ToString(), actor.Id);
+
+                if (sourceHandoff is not null)
+                {
+                    Execute(() => sourceHandoff.RelationshipRequest.MarkApplied(
+                        $"Started Customer order {order.OrderNumber}.",
+                        actor.Id,
+                        initiatedAt));
+                    dbContext.CrmActivities.Add(new CrmActivity(
+                        CrmActivityType.PortalEvent,
+                        "Customer order started",
+                        $"CRM handoff {sourceHandoff.RelationshipRequest.RequestNumber} started order {order.OrderNumber}.",
+                        initiatedAt,
+                        CrmActivityVisibility.Internal,
+                        actor.Id,
+                        sourceHandoff.CompanyId,
+                        opportunityId: sourceHandoff.OpportunityId));
+                }
+
+                await dbContext.SaveChangesAsync(operationCancellationToken);
+                return await MapAsync(order, operationCancellationToken);
+            },
+            statusCode: StatusCodes.Status201Created,
+            cancellationToken: cancellationToken,
+            concurrencyScope: request.SourceRequestId.HasValue
+                ? $"crm-handoff-order:{request.SourceRequestId.Value:N}"
+                : null);
+        Response.StatusCode = execution.StatusCode;
+        return execution.Response;
     }
 
     [HttpGet("{orderId:guid}")]
@@ -139,7 +342,11 @@ public sealed class PlatformLabServiceOrdersController(
         var before = order.Status.ToString();
         Execute(() => order.RequestChanges(request.Reason, request.InternalNote));
         Event(order, before, order.Status.ToString(), actor.Id, request.Reason, request.InternalNote);
-        Notice(order, "lab-changes-requested", "Changes requested for laboratory service", $"Phaeno requested changes to {order.OrderNumber}: {request.Reason}");
+        var actingAdministratorId = await ResolveActingAdministratorAsync(order, cancellationToken);
+        if (actingAdministratorId.HasValue)
+        {
+            Notice(order, "lab-changes-requested", "Changes requested for laboratory service", $"Phaeno requested changes to {order.OrderNumber}: {request.Reason}", actingAdministratorId);
+        }
         await dbContext.SaveChangesAsync(cancellationToken);
         return await MapAsync(order, cancellationToken);
     }
@@ -153,7 +360,11 @@ public sealed class PlatformLabServiceOrdersController(
         var before = order.Status.ToString();
         Execute(() => order.Decline(request.Reason, request.InternalNote));
         Event(order, before, order.Status.ToString(), actor.Id, request.Reason, request.InternalNote);
-        Notice(order, "lab-request-declined", "Laboratory request declined", $"{order.OrderNumber} was declined: {request.Reason}");
+        var actingAdministratorId = await ResolveActingAdministratorAsync(order, cancellationToken);
+        if (actingAdministratorId.HasValue)
+        {
+            Notice(order, "lab-request-declined", "Laboratory request declined", $"{order.OrderNumber} was declined: {request.Reason}", actingAdministratorId);
+        }
         await dbContext.SaveChangesAsync(cancellationToken);
         return await MapAsync(order, cancellationToken);
     }
@@ -355,33 +566,46 @@ public sealed class PlatformLabServiceOrdersController(
                 StatusCodes.Status410Gone);
         var actor = await requestContext.RequirePlatformAdminAsync(HttpContext, cancellationToken);
         var key = idempotency.RequireKey(HttpContext);
-        var order = await ReadAsync(orderId, cancellationToken);
-        EnsureVersion(order.Version, request.Version);
-        var sample = order.Samples.SingleOrDefault(item => item.Id == sampleId) ?? throw Missing();
-        var release = await dbContext.LabResultReleases.FirstOrDefaultAsync(item => item.Id == releaseId && item.LabServiceOrderId == orderId && item.LabSampleId == sampleId, cancellationToken) ?? throw Missing();
-        var releaseFileIds = ResultFileIds(release.ManifestJson);
-        var files = await dbContext.ManagedOperationalFiles.Where(item => releaseFileIds.Contains(item.Id) && item.WorkflowId == orderId && item.ParentRecordId == sampleId
-            && item.Purpose == OperationalFilePurpose.LabResult && item.ReleaseStatus == FileReleaseStatus.Internal).ToListAsync(cancellationToken);
-        if (releaseFileIds.Count == 0 || files.Count != releaseFileIds.Count || files.Any(item => item.ScanStatus != OperationalFileScanStatus.Clean))
-            throw Conflict("result_files_not_clean", "Every result file must pass scanning before release.");
-        var profile = await dbContext.OrganizationCommercialProfiles.AsNoTracking().FirstOrDefaultAsync(item => item.OrganizationId == order.OrganizationId, cancellationToken);
-        var invoicePaid = await dbContext.CommercialDocumentLinks.AsNoTracking().AnyAsync(item => item.WorkflowType == OrderWorkflowTypes.LabService
-            && item.WorkflowId == order.Id && item.Kind == CommercialDocumentKind.Invoice && item.SyncStatus == IntegrationStatus.Succeeded && item.Balance == 0, cancellationToken);
-        var mayRelease = profile?.LabCreditApproved == true || invoicePaid;
-        release.MarkReady(!mayRelease);
-        foreach (var item in files)
-        {
-            if (mayRelease) item.Release(DateTime.UtcNow); else item.HoldForPayment();
-        }
-        if (mayRelease) release.Release(DateTime.UtcNow);
-        Execute(order.MarkResultsAvailable);
-        if (sample.Status == LabSampleStatus.DataProcessing) Execute(() => sample.TransitionTo(LabSampleStatus.DataAvailable, null, null));
-        Event(order, "ResultReview", mayRelease ? "ResultReleased" : "PaymentHold", actor.Id, childId: sample.Id);
-        Notice(order, mayRelease ? "lab-result-released" : "lab-result-payment-hold",
-            mayRelease ? "Laboratory result available" : "Laboratory result awaiting payment",
-            mayRelease ? $"A result is available for {order.OrderNumber}." : $"A result for {order.OrderNumber} is ready and will be released after payment.");
-        await dbContext.SaveChangesAsync(cancellationToken);
-        return await MapAsync(order, cancellationToken);
+        var scope = $"platform:lab-order:{orderId}:sample:{sampleId}:result:{releaseId}:release";
+        var execution = await idempotency.ExecuteAsync(
+            actor.Id,
+            scope,
+            key,
+            request,
+            async operationCancellationToken =>
+            {
+                var order = await ReadAsync(orderId, operationCancellationToken);
+                EnsureVersion(order.Version, request.Version);
+                var sample = order.Samples.SingleOrDefault(item => item.Id == sampleId) ?? throw Missing();
+                var release = await dbContext.LabResultReleases.FirstOrDefaultAsync(item => item.Id == releaseId && item.LabServiceOrderId == orderId && item.LabSampleId == sampleId, operationCancellationToken) ?? throw Missing();
+                var releaseFileIds = ResultFileIds(release.ManifestJson);
+                var files = await dbContext.ManagedOperationalFiles.Where(item => releaseFileIds.Contains(item.Id) && item.WorkflowId == orderId && item.ParentRecordId == sampleId
+                    && item.Purpose == OperationalFilePurpose.LabResult && item.ReleaseStatus == FileReleaseStatus.Internal).ToListAsync(operationCancellationToken);
+                if (releaseFileIds.Count == 0 || files.Count != releaseFileIds.Count || files.Any(item => item.ScanStatus != OperationalFileScanStatus.Clean))
+                    throw Conflict("result_files_not_clean", "Every result file must pass scanning before release.");
+                var profile = await dbContext.OrganizationCommercialProfiles.AsNoTracking().FirstOrDefaultAsync(item => item.OrganizationId == order.OrganizationId, operationCancellationToken);
+                var invoicePaid = await dbContext.CommercialDocumentLinks.AsNoTracking().AnyAsync(item => item.WorkflowType == OrderWorkflowTypes.LabService
+                    && item.WorkflowId == order.Id && item.Kind == CommercialDocumentKind.Invoice && item.SyncStatus == IntegrationStatus.Succeeded && item.Balance == 0, operationCancellationToken);
+                var mayRelease = profile?.LabCreditApproved == true || invoicePaid;
+                release.MarkReady(!mayRelease);
+                var releasedAtUtc = DateTime.UtcNow;
+                foreach (var item in files)
+                {
+                    if (mayRelease) item.Release(releasedAtUtc); else item.HoldForPayment();
+                }
+                if (mayRelease && release.Release(releasedAtUtc))
+                    await retentionSnapshots.CaptureLabResultAsync(release, releasedAtUtc, operationCancellationToken);
+                Execute(order.MarkResultsAvailable);
+                if (sample.Status == LabSampleStatus.DataProcessing) Execute(() => sample.TransitionTo(LabSampleStatus.DataAvailable, null, null));
+                Event(order, "ResultReview", mayRelease ? "ResultReleased" : "PaymentHold", actor.Id, childId: sample.Id);
+                Notice(order, mayRelease ? "lab-result-released" : "lab-result-payment-hold",
+                    mayRelease ? "Laboratory result available" : "Laboratory result awaiting payment",
+                    mayRelease ? $"A result is available for {order.OrderNumber}." : $"A result for {order.OrderNumber} is ready but remains on payment hold. Contact Phaeno about release.");
+                await dbContext.SaveChangesAsync(operationCancellationToken);
+                return await MapAsync(order, operationCancellationToken);
+            },
+            cancellationToken: cancellationToken);
+        return execution.Response;
     }
 
     [HttpPost("{orderId:guid}/hold")]
@@ -431,6 +655,27 @@ public sealed class PlatformLabServiceOrdersController(
         cancellation.Decide(decision, request.Reason, actor.Id, DateTime.UtcNow);
         Execute(() => order.ResolveCancellation(decision is CancellationRequestStatus.Approved, request.Reason, null));
         Event(order, before, order.Status.ToString(), actor.Id, request.Reason);
+        if (decision == CancellationRequestStatus.Approved)
+        {
+            Notice(
+                order,
+                "lab-cancellation-approved",
+                "Laboratory service cancelled",
+                $"Phaeno approved cancellation of {order.OrderNumber}: {request.Reason}");
+        }
+        else
+        {
+            var actingAdministratorId = await ResolveActingAdministratorAsync(order, cancellationToken);
+            if (actingAdministratorId.HasValue)
+            {
+                Notice(
+                    order,
+                    "lab-cancellation-declined",
+                    "Laboratory cancellation declined",
+                    $"Phaeno declined cancellation of {order.OrderNumber}: {request.Reason}",
+                    actingAdministratorId);
+            }
+        }
         await dbContext.SaveChangesAsync(cancellationToken);
         await transaction.CommitAsync(cancellationToken);
         return await MapAsync(order, cancellationToken);
@@ -538,13 +783,67 @@ public sealed class PlatformLabServiceOrdersController(
     }
 
     private async Task<LabServiceOrder> ReadAsync(Guid orderId, CancellationToken cancellationToken)
-        => await dbContext.LabServiceOrders.Include(order => order.Samples).Include(order => order.Quotes).Include(order => order.Revisions)
+        => await dbContext.LabServiceOrders.Include(order => order.Samples).Include(order => order.SourceGroups)
+            .Include(order => order.Quotes).Include(order => order.Revisions)
             .FirstOrDefaultAsync(order => order.Id == orderId && !order.IsDiscarded, cancellationToken) ?? throw Missing();
+
+    private async Task RequireCustomerApproverAsync(
+        Guid organizationId,
+        CancellationToken cancellationToken)
+    {
+        var hasActiveAdministrator = await dbContext.OrganizationMemberships.AsNoTracking()
+            .AnyAsync(membership => membership.OrganizationId == organizationId
+                && membership.IsActive
+                && membership.IsOrganizationAdmin
+                && membership.User != null
+                && membership.User.IsActive
+                && membership.User.Status == UserAccountStatus.Active,
+                cancellationToken);
+        if (!hasActiveAdministrator)
+        {
+            throw Conflict(
+                "customer_approver_required",
+                "This Customer needs an active organization administrator before the quote can be issued.");
+        }
+    }
+
+    private async Task<Guid?> ResolveActingAdministratorAsync(
+        LabServiceOrder order,
+        CancellationToken cancellationToken)
+    {
+        var candidateId = order.Quotes
+            .Where(quote => quote.Id == order.AcceptedQuoteId)
+            .Select(quote => quote.AcceptedByUserId)
+            .SingleOrDefault()
+            ?? order.SubmittedByUserId;
+        if (!candidateId.HasValue)
+        {
+            return null;
+        }
+
+        return await dbContext.OrganizationMemberships.AsNoTracking()
+            .Where(membership => membership.OrganizationId == order.OrganizationId
+                && membership.UserId == candidateId.Value
+                && membership.IsActive
+                && membership.IsOrganizationAdmin
+                && membership.User != null
+                && membership.User.IsActive
+                && membership.User.Status == UserAccountStatus.Active)
+            .Select(membership => (Guid?)membership.UserId)
+            .FirstOrDefaultAsync(cancellationToken);
+    }
 
     private async Task<LabServiceOrderDto> MapAsync(LabServiceOrder order, CancellationToken cancellationToken)
     {
         var files = await dbContext.ManagedOperationalFiles.AsNoTracking().Where(item => item.WorkflowType == OrderWorkflowTypes.LabService && item.WorkflowId == order.Id).OrderBy(item => item.CreatedAt).ToListAsync(cancellationToken);
         var releases = await dbContext.LabResultReleases.AsNoTracking().Where(item => item.LabServiceOrderId == order.Id).OrderBy(item => item.GeneratedAt).ToListAsync(cancellationToken);
+        var releaseIds = releases.Select(release => release.Id).ToList();
+        var retentionByReleaseId = await dbContext.ReleasedDeliverableRetentionSnapshots
+            .AsNoTracking()
+            .Where(item => item.OrganizationId == order.OrganizationId
+                && item.LabResultReleaseId.HasValue
+                && releaseIds.Contains(item.LabResultReleaseId.Value))
+            .ToDictionaryAsync(item => item.LabResultReleaseId!.Value, cancellationToken);
         var docs = await dbContext.CommercialDocumentLinks.AsNoTracking().Where(item => item.WorkflowType == OrderWorkflowTypes.LabService && item.WorkflowId == order.Id).OrderBy(item => item.CreatedAt).ToListAsync(cancellationToken);
         var cancellations = await dbContext.OrderCancellationRequests.AsNoTracking().Where(item => item.WorkflowType == OrderWorkflowTypes.LabService && item.WorkflowId == order.Id).OrderBy(item => item.CreatedAt).ToListAsync(cancellationToken);
         var timeline = await dbContext.OrderStatusEvents.AsNoTracking().Where(item => item.WorkflowType == OrderWorkflowTypes.LabService && item.WorkflowId == order.Id).OrderBy(item => item.OccurredAt).ToListAsync(cancellationToken);
@@ -552,11 +851,28 @@ public sealed class PlatformLabServiceOrdersController(
             .SingleOrDefaultAsync(item => item.CommercialOrderId == order.Id, cancellationToken);
         var projection = authorization is null ? null : await dbContext.CommercialLabWorkProjections.AsNoTracking()
             .SingleOrDefaultAsync(item => item.AuthorizationId == authorization.AuthorizationId, cancellationToken);
-        return new LabServiceOrderDto(order.Id, order.OrganizationId, order.OrderNumber, order.CustomerReference, order.SubmissionInstructionsSnapshot,
+        CommercialOrderSourceDto? commercialSource = null;
+        if (order.SourceRequestId.HasValue)
+        {
+            commercialSource = await dbContext.CrmHandoffs.AsNoTracking()
+                .Where(item => item.RelationshipRequestId == order.SourceRequestId.Value)
+                .Select(item => new CommercialOrderSourceDto(
+                    item.RelationshipRequestId,
+                    item.RelationshipRequest.RequestNumber,
+                    item.Id,
+                    item.CompanyId,
+                    item.Company.Name,
+                    item.OpportunityId,
+                    item.Opportunity == null ? null : item.Opportunity.Name))
+                .SingleOrDefaultAsync(cancellationToken);
+        }
+        return new LabServiceOrderDto(order.Id, order.OrganizationId, order.OrderNumber, order.CustomerReference, order.Description,
+            order.HasMixedBiologicalSources, order.SharedBiologicalSource,
+            order.StorageRequirements, order.SafetyDeclaration, order.SubmissionInstructionsSnapshot,
             order.Status.ToString(), order.RequestRevision, order.SubmittedAt, order.PlacedAt, order.CompletedAt, order.TenantSafeReason,
             order.InternalNote, order.CreatedAt, order.UpdatedAt, order.Version, false, false, false, false, false,
             order.Samples.OrderBy(item => item.CreatedAt).Select(item => item.ToDto(true)).ToList(), order.Quotes.OrderByDescending(item => item.Revision).Select(item => item.ToDto()).ToList(),
-            releases.Select(item => item.ToDto()).ToList(), files.Select(item => item.ToDto()).ToList(), docs.Select(item => item.ToDto(true)).ToList(), cancellations.Select(item => item.ToDto()).ToList(), timeline.Select(item => item.ToDto(true)).ToList(),
+            releases.Select(item => item.ToDto(retentionByReleaseId.GetValueOrDefault(item.Id))).ToList(), files.Select(item => item.ToDto()).ToList(), docs.Select(item => item.ToDto(true)).ToList(), cancellations.Select(item => item.ToDto()).ToList(), timeline.Select(item => item.ToDto(true)).ToList(),
             order.AssignedToUserId, order.DueAt,
             RequestRevisions: order.Revisions.OrderByDescending(item => item.Revision).Select(item => new LabRequestRevisionDto(item.Id,
                 item.Revision, item.PreviousRevisionId, item.SnapshotJson, item.CorrectionReason, item.SubmittedByUserId, item.SubmittedAt)).ToList(),
@@ -566,15 +882,107 @@ public sealed class PlatformLabServiceOrdersController(
             LabCustomerActionCount: projection?.ActiveCustomerActionCount ?? 0,
             LabCustomerActionSummary: projection?.CustomerSafeSummary,
             LabPermittedQcProjectionJson: projection?.PermittedQcProjectionJson,
-            LabReadyForRelease: projection?.Milestone == "ReadyForRelease");
+            LabReadyForRelease: projection?.Milestone == "ReadyForRelease",
+            RequestedSpecimenCount: order.RequestedSpecimenCount,
+            SourceGroups: order.SourceGroups.OrderBy(group => group.BiologicalSource)
+                .Select(group => new LabServiceSourceGroupDto(group.Id, group.BiologicalSource, group.SpecimenCount, group.Version)).ToList(),
+            SampleRosterFinalizedAt: order.SampleRosterFinalizedAt,
+            CanEditSamples: false,
+            CanFinalizeSamples: false,
+            CommercialSource: commercialSource);
     }
+
+    private static IReadOnlyList<LabServiceSourceGroupWriteRequest> ValidatePricingProfile(
+        int requestedSpecimenCount,
+        IReadOnlyList<LabServiceSourceGroupWriteRequest>? requestedGroups)
+    {
+        if (requestedSpecimenCount is < 1 or > 100)
+            throw Invalid("requested_specimen_count_invalid", "Requested specimen count must be between 1 and 100.");
+        var groups = requestedGroups?.ToList() ?? [];
+        if (groups.Count == 0)
+            throw Invalid("biological_source_required", "Add at least one biological-source group.");
+        if (groups.Any(group => group.SpecimenCount < 1 || string.IsNullOrWhiteSpace(group.BiologicalSource)))
+            throw Invalid("biological_source_invalid", "Every biological-source group needs a source and a positive sample count.");
+        if (groups.Sum(group => group.SpecimenCount) != requestedSpecimenCount)
+            throw Invalid("biological_source_count_mismatch", "Biological-source counts must equal the requested specimen count.");
+        if (groups.Select(group => LabServiceSourceGroup.Normalize(group.BiologicalSource))
+            .Distinct(StringComparer.Ordinal).Count() != groups.Count)
+            throw Invalid("biological_source_duplicate", "Duplicate biological sources are not permitted.");
+        return groups;
+    }
+
+    private async Task EnsureUniqueJobNameAsync(
+        Guid organizationId,
+        string normalizedJobName,
+        CancellationToken cancellationToken)
+    {
+        var exists = await dbContext.LabServiceOrders.AsNoTracking().AnyAsync(
+            order => order.OrganizationId == organizationId
+                && order.NormalizedJobName == normalizedJobName,
+            cancellationToken);
+        if (exists)
+            throw Conflict("duplicate_job_name", "A Job with this name already exists for this Customer.");
+    }
+
+    private async Task<string> GenerateUniqueJobNumberAsync(CancellationToken cancellationToken)
+    {
+        for (var attempt = 0; attempt < 10; attempt++)
+        {
+            var candidate = OrderNumberGenerator.Lab();
+            if (!await dbContext.LabServiceOrders.AsNoTracking()
+                .AnyAsync(order => order.OrderNumber == candidate, cancellationToken))
+                return candidate;
+        }
+
+        throw Conflict("job_number_unavailable", "A unique Job number could not be generated. Try creating the Job again.");
+    }
+
+    private static string NormalizeJobName(string? jobName)
+    {
+        try { return LabServiceOrder.NormalizeJobName(jobName); }
+        catch (ArgumentException exception) { throw Invalid("invalid_job_name", exception.Message); }
+    }
+
+    private static string BuildRequestSnapshot(LabServiceOrder order)
+        => JsonSerializer.Serialize(new
+        {
+            order.CustomerReference,
+            jobNotes = order.Description,
+            order.HasMixedBiologicalSources,
+            order.SharedBiologicalSource,
+            order.RequestedSpecimenCount,
+            sourceGroups = order.SourceGroups.OrderBy(group => group.BiologicalSource).Select(group => new
+            {
+                group.BiologicalSource,
+                group.SpecimenCount
+            }),
+            order.StorageRequirements,
+            order.SafetyDeclaration,
+            serviceKey = OrderServiceKeys.PSeqLabService,
+            submissionInstructions = order.SubmissionInstructionsSnapshot,
+            prohibitedDataConfirmed = true,
+            samples = Array.Empty<object>(),
+            analyses = Array.Empty<object>()
+        }, JsonOptions);
 
     private void Event(LabServiceOrder order, string from, string to, Guid actorId, string? reason = null, string? internalNote = null, Guid? childId = null)
         => dbContext.OrderStatusEvents.Add(new OrderStatusEvent(order.OrganizationId, OrderWorkflowTypes.LabService, order.Id, childId,
             from, to, reason, internalNote, actorId, DateTime.UtcNow));
 
-    private void Notice(LabServiceOrder order, string eventType, string subject, string body)
-        => dbContext.OrderNotifications.Add(new OrderNotification(order.OrganizationId, null, OrderWorkflowTypes.LabService, order.Id, eventType, subject, body));
+    private void Notice(
+        LabServiceOrder order,
+        string eventType,
+        string subject,
+        string body,
+        Guid? recipientUserId = null)
+        => dbContext.OrderNotifications.Add(new OrderNotification(
+            order.OrganizationId,
+            recipientUserId,
+            OrderWorkflowTypes.LabService,
+            order.Id,
+            eventType,
+            subject,
+            body));
 
     private static void EnsureVersion(long current, long supplied) { if (current != supplied) throw new DbUpdateConcurrencyException(); }
     private static void Execute(Action action)

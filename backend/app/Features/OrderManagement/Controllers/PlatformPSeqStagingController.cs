@@ -70,13 +70,23 @@ public sealed class PlatformPSeqStagingController(
             throw new OrderManagementException("analysis_definition_unavailable", "Every staged sample requires an active PSeq analysis offering.");
         var config = await dbContext.OrderSystemConfigurations.AsNoTracking().OrderBy(item => item.CreatedAt)
             .FirstOrDefaultAsync(cancellationToken);
-        var order = new LabServiceOrder(request.OrganizationId, OrderNumberGenerator.Lab(),
-            request.CustomerReference, config?.SampleSubmissionInstructions ?? string.Empty);
-        foreach (var item in request.Samples)
-            order.Samples.Add(new LabSample(order.Id, item.CustomerSampleId, item.MaterialType,
-                item.BiologicalSource, item.Quantity, item.QuantityUnit, item.StorageRequirements,
-                item.SafetyDeclaration, item.CollectionDate, item.Concentration, item.Notes,
-                JsonSerializer.Serialize(item.AnalysisDefinitionIds), item.ReplacementForSampleId));
+        var sourceGroups = request.Samples
+            .GroupBy(item => item.BiologicalSource.Trim(), StringComparer.OrdinalIgnoreCase)
+            .Select(group => new { BiologicalSource = group.First().BiologicalSource.Trim(), Count = group.Count() })
+            .ToList();
+        var order = new LabServiceOrder(
+            request.OrganizationId,
+            OrderNumberGenerator.Lab(),
+            request.CustomerReference ?? $"Staged PSeq order {DateTime.UtcNow:yyyy-MM-dd HH:mm}",
+            description: "Internally staged before Customer administrator activation.",
+            requestedSpecimenCount: request.Samples.Count,
+            hasMixedBiologicalSources: sourceGroups.Count > 1,
+            sharedBiologicalSource: sourceGroups.Count == 1 ? sourceGroups[0].BiologicalSource : null,
+            storageRequirements: request.Samples[0].StorageRequirements,
+            safetyDeclaration: request.Samples[0].SafetyDeclaration,
+            submissionInstructionsSnapshot: config?.SampleSubmissionInstructions ?? string.Empty);
+        foreach (var sourceGroup in sourceGroups)
+            order.SourceGroups.Add(new LabServiceSourceGroup(order.Id, sourceGroup.BiologicalSource, sourceGroup.Count));
         order.Submit(actor.Id, DateTime.UtcNow);
         order.BeginQuotePreparation();
         dbContext.LabServiceOrders.Add(order);
@@ -85,12 +95,42 @@ public sealed class PlatformPSeqStagingController(
             "Internally staged before Customer administrator activation.", null, actor.Id, DateTime.UtcNow));
         await dbContext.SaveChangesAsync(cancellationToken);
         Response.StatusCode = StatusCodes.Status201Created;
-        return new LabServiceOrderDto(order.Id, order.OrganizationId, order.OrderNumber,
-            order.CustomerReference, order.SubmissionInstructionsSnapshot, order.Status.ToString(),
-            order.RequestRevision, order.SubmittedAt, order.PlacedAt, order.CompletedAt,
-            order.TenantSafeReason, order.InternalNote, order.CreatedAt, order.UpdatedAt, order.Version,
-            false, false, false, false, false, order.Samples.Select(item => item.ToDto(true)).ToList(),
-            [], [], [], [], [], []);
+        return new LabServiceOrderDto(
+            Id: order.Id,
+            OrganizationId: order.OrganizationId,
+            OrderNumber: order.OrderNumber,
+            CustomerReference: order.CustomerReference,
+            Description: order.Description,
+            HasMixedBiologicalSources: order.HasMixedBiologicalSources,
+            SharedBiologicalSource: order.SharedBiologicalSource,
+            StorageRequirements: order.StorageRequirements,
+            SafetyDeclaration: order.SafetyDeclaration,
+            SubmissionInstructions: order.SubmissionInstructionsSnapshot,
+            Status: order.Status.ToString(),
+            RequestRevision: order.RequestRevision,
+            SubmittedAt: order.SubmittedAt,
+            PlacedAt: order.PlacedAt,
+            CompletedAt: order.CompletedAt,
+            TenantSafeReason: order.TenantSafeReason,
+            InternalNote: order.InternalNote,
+            CreatedAt: order.CreatedAt,
+            UpdatedAt: order.UpdatedAt,
+            Version: order.Version,
+            CanEdit: false,
+            CanSubmit: false,
+            CanAcceptQuote: false,
+            CanWithdraw: false,
+            CanRequestCancellation: false,
+            Samples: [],
+            Quotes: [],
+            ResultReleases: [],
+            ResultFiles: [],
+            Documents: [],
+            CancellationRequests: [],
+            Timeline: [],
+            RequestedSpecimenCount: order.RequestedSpecimenCount,
+            SourceGroups: order.SourceGroups.Select(group => new LabServiceSourceGroupDto(
+                group.Id, group.BiologicalSource, group.SpecimenCount, group.Version)).ToList());
     }
 
     private Task<User> RequireOperatorAsync(CancellationToken cancellationToken) =>

@@ -53,6 +53,10 @@ import {
 } from '#/components/ui/dropdown-menu'
 import { Input } from '#/components/ui/input'
 import { Label } from '#/components/ui/label'
+import {
+  RequiredDialogFooter,
+  RequiredFieldName,
+} from '#/components/ui/required-field'
 
 const labRoleOptions = [
   { value: 'Operator', label: 'Lab operator' },
@@ -110,10 +114,12 @@ type InviteValues = z.infer<typeof inviteSchema>
 export function PhaenoUserManagementPanel({
   canManageAccounts,
   canManageLabRoles,
+  currentUserId,
   organizationId,
 }: {
   canManageAccounts: boolean
   canManageLabRoles: boolean
+  currentUserId: string
   organizationId: string
 }) {
   const queryClient = useQueryClient()
@@ -289,7 +295,9 @@ export function PhaenoUserManagementPanel({
                           Edit
                         </DropdownMenuItem>
                       ) : null}
-                      {canManageAccounts && user.status === 'Active' ? (
+                      {canManageAccounts &&
+                      user.status === 'Active' &&
+                      user.id !== currentUserId ? (
                         <DropdownMenuItem
                           variant="destructive"
                           onSelect={() => setDeactivateTarget(user)}
@@ -622,7 +630,7 @@ function PhaenoUserEditDialog({
             </p>
           </fieldset>
         </form>
-        <DialogFooter>
+        <RequiredDialogFooter>
           <Button
             type="button"
             variant="outline"
@@ -637,7 +645,7 @@ function PhaenoUserEditDialog({
           >
             {isPending ? 'Saving…' : 'Save changes'}
           </Button>
-        </DialogFooter>
+        </RequiredDialogFooter>
       </DialogContent>
     </Dialog>
   )
@@ -748,7 +756,9 @@ function PhaenoUserInviteDialog({
               form.formState.errors.roles ? 'invite-roles-error' : undefined
             }
           >
-            <legend className="px-1 text-sm font-medium">Roles</legend>
+            <legend className="px-1 text-sm font-medium">
+              <RequiredFieldName>Roles</RequiredFieldName>
+            </legend>
             <RoleCheckbox
               checked={selectedRoles.includes(platformRoleValue)}
               id="invite-platform-administrator"
@@ -789,7 +799,7 @@ function PhaenoUserInviteDialog({
             ) : null}
           </fieldset>
         </form>
-        <DialogFooter>
+        <RequiredDialogFooter>
           <Button
             type="button"
             variant="outline"
@@ -804,7 +814,7 @@ function PhaenoUserInviteDialog({
           >
             {isPending ? 'Sending…' : 'Send invitation'}
           </Button>
-        </DialogFooter>
+        </RequiredDialogFooter>
       </DialogContent>
     </Dialog>
   )
@@ -852,15 +862,9 @@ function FormField({
   return (
     <div className="grid gap-1.5">
       <Label htmlFor={id}>
-        {label}{' '}
         {label !== 'Email' || id === 'invite-phaeno-email' ? (
-          <span
-            className="text-[var(--ruby-red,#b4233c)]"
-            aria-hidden="true"
-          >
-            *
-          </span>
-        ) : null}
+          <RequiredFieldName>{label}</RequiredFieldName>
+        ) : label}
       </Label>
       {children}
       {error ? (

@@ -1,0 +1,52 @@
+# Reports and administration
+
+Reports explain current commercial state. Administration controls pipelines, stages, custom fields, saved views, duplicate review, imports, and audited exports.
+
+## Read Reports
+
+Open **Reports** to review:
+
+- open Opportunity count, USD open amount, USD weighted forecast, and win rate
+- stage-level counts, USD values, weighted values, and average age
+- owner workload across open Tasks, overdue Tasks, Leads, and Opportunities
+- Lead-source qualification and conversion performance
+- Activities recorded in the last 30 days
+
+Opportunity counts include every currency. Amount and weighted-forecast totals include USD records only and never imply conversion from another currency. Reports contain commercial relationship facts and must not be interpreted as scientific throughput, recognized accounting revenue, or laboratory capacity.
+
+## Configure pipelines and stages
+
+Open **Administration**. Create a pipeline for a distinct commercial process, then add ordered stages. Each stage has a name, position, category, probability, and a choice requiring transition reason.
+
+Only one active default pipeline supplies default conversion behavior. Deactivating a pipeline or stage removes it from new selections without erasing Opportunity or stage history. Before deactivation, review active Opportunities that still depend on it and move them through valid business transitions.
+
+## Configure custom fields
+
+Custom fields are additive CRM metadata for Company, Contact, Lead, Opportunity, or Task. Choose Text, Number, Date, Boolean, or Option; choose Internal or Restricted sensitivity; and decide whether the field is required.
+
+Option fields accept only configured choices. Required active fields appear as incomplete-data warnings until the matching record has a valid value. Deactivation stops active collection but preserves stored history. Do not create custom fields for samples, patient data, scientific results, credentials, or file contents.
+
+## Save and export views
+
+Company, Contact, Lead, Opportunity, and Task directories can save the current filters as a personal or shared view. Applying a saved view replaces the current supported filters. **Export current view** uses the same filters and creates an audited export record.
+
+Administration lists saved views and supports full audited exports for Company, Contact, Lead, Opportunity, and Task. Treat every downloaded CSV according to Phaeno's commercial-data handling rules.
+
+## Review possible duplicates
+
+Administration groups likely duplicate Companies and Contacts by the detected matching value. A warning never merges records automatically. Open every candidate, confirm that it represents the same legal entity or person, choose the authoritative record, and use the controlled merge action with a reason.
+
+## Import CSV data
+
+Select **Preview CSV import**, choose Company, Contact, Lead, or Opportunity, and select a CSV file. Imports support at most 5,000 rows and only these columns:
+
+- Company: `name`, `domain`, `phone`, `industry`, `source`
+- Contact: `first_name`, `last_name`, `email`, `phone`
+
+Job titles belong to Company relationships and are not accepted as standalone Contact import fields. Associate the imported Contact with a Company, then record the title on that relationship. Contact exports include `primary_company` and `primary_company_title` as derived reference columns.
+- Lead: `display_name`, `company_name`, `first_name`, `last_name`, `email`, `phone`, `source`
+- Opportunity: `name`, `company_name`, `product_interest`, `amount`, `currency`, `next_step`. When supplied, `product_interest` must be `PSeqLabService` or `PSeqKit`.
+
+Preview shows valid, duplicate, and invalid counts. Duplicate rows are skipped. Any invalid row blocks the commit so the source can be corrected as one controlled batch. An imported Opportunity's `company_name` must exactly match an active CRM Company; it starts in the first active stage of the default active pipeline.
+
+The batch identity is derived from record type and file facts so an unchanged retry is idempotent. Do not rename or alter a file merely to force a second commit. Tasks are excluded from import because every Task requires an explicit owning CRM record.

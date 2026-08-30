@@ -29,7 +29,9 @@ public sealed partial class LabOperationsController
         if (componentRequests.Select(item => item.ComponentMaterialLotId).Distinct().Count() != componentRequests.Count)
             throw Invalid("material_component_duplicate", "Each component lot may be selected only once.");
 
-        await using var transaction = await dbContext.Database.BeginTransactionAsync(cancellationToken);
+        await using var transaction = dbContext.Database.CurrentTransaction is null
+            ? await dbContext.Database.BeginTransactionAsync(cancellationToken)
+            : null;
         var definition = await ResolveMaterialDefinitionAsync(
             kind, request.MaterialDefinitionId, request.NewMaterialName, cancellationToken);
         var supplier = kind == LabMaterialLotKind.SupplierLot
@@ -80,7 +82,8 @@ public sealed partial class LabOperationsController
                 componentRequest.Quantity, componentRequest.QuantityUnit));
         }
         await dbContext.SaveChangesAsync(cancellationToken);
-        await transaction.CommitAsync(cancellationToken);
+        if (transaction is not null)
+            await transaction.CommitAsync(cancellationToken);
         return (await ReadMaterialLotsAsync(cancellationToken)).Single(item => item.Id == lot.Id);
     }
 

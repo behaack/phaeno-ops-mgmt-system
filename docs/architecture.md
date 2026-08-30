@@ -31,17 +31,22 @@ The backend targets .NET 10 as a modular monolith:
 - `modules/PSeq.Operations.Commercial/Accounts`: users, organizations,
   memberships, invitations, pure authorization policy, invitation-token logic,
   and the invitation-delivery port.
+- `modules/PSeq.Operations.Commercial/Crm`: provider-neutral first-party CRM
+  Companies, Contacts and effective-dated relationships, Leads, Opportunities,
+  pipelines/stages, Activities, Tasks, administration records, and controlled
+  Portal handoff/link records. CRM aggregates never grant Portal access or
+  create executable work.
 - `modules/PSeq.Operations.Commercial/Relationships`: Portal integration
   requests, organization service entitlements, and service-eligibility policy.
 - `modules/PSeq.Operations.Commercial/DataProvisioning`: Phaeno source samples,
   managed-file metadata, immutable curated versions, exact-version grants,
   governance records, environment-neutral policy, deterministic manifest
   construction, and file/scanner/notification ports.
-- `modules/PSeq.Operations.Commercial/OrderManagement`: QuickBooks catalog and
-  commercial configuration records, Partner kit ordering and fulfillment,
+- `modules/PSeq.Operations.Commercial/OrderManagement`: POMS commercial catalog
+  and configuration records, Partner kit ordering and fulfillment,
   immutable request revisions and quotes, external download audit, commercial
-  workflow/outbox/notification records, and environment-neutral QuickBooks and
-  notification ports.
+  workflow/accounting-source/notification records, plus a dormant provider-neutral
+  accounting adapter seam retained for future scope.
 - `app/Features/Accounts`: HTTP endpoints/contracts, authenticated-actor lookup,
   EF-backed orchestration, Clerk/Mailgun adapters, and bootstrap composition.
 - `app/Features/RelationshipManagement`: HTTP contracts, EF mapping and
@@ -81,13 +86,14 @@ The backend targets .NET 10 as a modular monolith:
 All `/api` failures should use the existing error envelope. Persistence applies auditing and optimistic concurrency centrally rather than in individual endpoints.
 
 The API references Commercial, while Commercial does not reference the API or
-Laboratory. Extracted account, relationship, data-provisioning, commercial
-configuration, Partner kit, request-revision, quote, workflow, integration, and
+Laboratory. Extracted account, CRM, relationship, data-provisioning, commercial
+configuration, Partner kit, request-revision, quote, workflow, accounting-source, and
 notification rules, ports, and external download audit therefore remain usable
 independently of the current HTTP, EF, Clerk, QuickBooks, and Mailgun adapters.
 The Lab Operations provider port follows the same dependency direction. Quote
-acceptance creates the Commercial authorization and invokes the internal
-provider in one serializable database transaction. Approved cancellation also
+acceptance freezes the priced scope and opens sample-roster entry. Finalizing
+the exact compliant roster creates the Commercial authorization and invokes
+the internal provider in one serializable database transaction. Approved cancellation also
 reaches Lab before Commercial commits the decision. Lab writes produce durable,
 versioned events; the hosted dispatcher applies idempotent Commercial
 projections and receipts. Ready for release and reviewer-permitted QC cross this
@@ -141,20 +147,21 @@ resets, transaction rollback, and isolated temporary managed storage. Curated
 manifests are stored as `jsonb`; publication therefore compares manifest JSON
 semantically and separately verifies the deterministic SHA-256 checksum.
 
-## Order management and commercial integration
+## Order management and manual accounting
 
 Phaeno Portal is the operational source of truth for Customer laboratory work,
-Partner reagent fulfillment, and Partner data assembly. There is no external
-ERP or LIMS in the implemented architecture. QuickBooks Online is the only
-commercial system and remains authoritative for billable items, estimates,
-invoices, adjustments, tax, freight, discounts, balances, payment status, and
-hosted payment links.
+Partner reagent fulfillment, and Partner data assembly. There is no connected
+ERP, accounting provider, or third-party LIMS in the implemented architecture.
+QuickBooks Online is deferred. POMS owns its manual commercial catalog, quotes,
+credit rules, and stable invoice-source records; Finance uses a Phaeno-only CSV
+to prepare manual journal entries and invoices outside POMS.
 
 Order aggregates retain immutable input, quote, price, profile, result/output,
-shipment, and commercial snapshots. Operational state, QuickBooks sync state,
-payment state, and file-release state remain separate. Durable integration and
-notification records are dispatched by hosted services and retried without
-recreating the local order or duplicating the intended external document.
+shipment, and commercial snapshots. Operational state, accounting-source state,
+payment state, and file-release state remain separate. Notification records are
+dispatched by a hosted service and retried without recreating the local order.
+The dormant QuickBooks types and persisted compatibility names do not activate
+the provider, worker, webhook, or retry path.
 
 Curated-data and order-management file ports now adapt to the shared
 `IFileStorage` contract. Development uses local storage, and the production
@@ -163,8 +170,8 @@ does not block API startup. File operations return service unavailable while it
 is selected. The S3 adapter is implemented, but the production bucket,
 credential path, permissions, encryption, monitoring, and runtime download proof
 are not configured or validated. Production malware scanning, scientific
-analysis definitions, assembly profiles, Partner shipping rules, QuickBooks
-credentials/webhooks, and notification configuration remain explicit
+analysis definitions, assembly profiles, Partner shipping rules, manual
+accounting ownership, and notification configuration remain explicit
 production-activation inputs rather than source-controlled defaults.
 
 ## Frontend
@@ -254,10 +261,10 @@ Generated `dist`, `.astro`, and `node_modules` content is not canonical source.
   or trusted scanner.
 - Order management: `OrderManagement` storage root, file-size limit,
   approved-file-kind map, and scanner mode.
-- Commercial integration: `QuickBooks` environment, company/realm, OAuth, API,
-  and webhook-verification settings. The HTTP adapter is used only when the
-  required company and OAuth settings are present; otherwise local development
-  uses the logging adapter.
+- Commercial accounting: no runtime provider configuration is active. Phaeno
+  administrators maintain the POMS catalog and Finance downloads the manual
+  journal-entry source report. QuickBooks settings and adapter types are dormant
+  compatibility seams only.
 - Public Website API: `WebsiteApi`, `GoogleAuthSettings`,
   `EmailServiceSettings`, `WebCrawlerSettings`, `WebSearchSettings`, and
   `ChronJobs:IndexWebsite`; production cutover also requires the public
@@ -265,6 +272,10 @@ Generated `dist`, `.astro`, and `node_modules` content is not canonical source.
   Mailgun secrets.
 - Frontend authentication and API routing: `VITE_CLERK_PUBLISHABLE_KEY`,
   `VITE_API_BASE_URL`, and the development-only `VITE_USE_MOCK_SESSION` switch.
+  Local and Preview builds use Clerk Development; the production frontend and
+  API use the same Clerk Production instance. The production deployment rejects
+  development Clerk credentials and exposes a guarded, one-time bootstrap-
+  identity cutover command rather than silently relinking users by email.
 - Portal frontend hosting output: the Vite build uses Nitro. Local production
   builds emit `.output`, while Vercel builds emit Build Output API assets,
   routing, and the SSR function under `.vercel/output`; `frontend/vercel.json`

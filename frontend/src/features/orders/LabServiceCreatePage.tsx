@@ -83,8 +83,25 @@ export function LabServiceCreatePage({ orderId }: { orderId?: string }) {
   }, [existingOrder.data, form])
   const createMutation = useMutation({
     mutationFn: async ({ values, submit }: { values: Values; submit: boolean }) => {
+      const sourceCounts = new Map<string, { biologicalSource: string; specimenCount: number }>()
+      for (const sample of values.samples) {
+        const key = sample.biologicalSource.trim().toLocaleLowerCase()
+        const current = sourceCounts.get(key)
+        sourceCounts.set(key, {
+          biologicalSource: current?.biologicalSource ?? sample.biologicalSource.trim(),
+          specimenCount: (current?.specimenCount ?? 0) + 1,
+        })
+      }
+      const sourceGroups = [...sourceCounts.values()]
       const input = {
-        customerReference: values.customerReference,
+        customerReference: values.customerReference ?? '',
+        description: undefined,
+        hasMixedBiologicalSources: sourceGroups.length > 1,
+        sharedBiologicalSource: sourceGroups.length === 1 ? sourceGroups[0].biologicalSource : undefined,
+        storageRequirements: values.samples[0]?.storageRequirements ?? '',
+        safetyDeclaration: values.samples[0]?.safetyDeclaration ?? '',
+        requestedSpecimenCount: values.samples.length,
+        sourceGroups,
         samples: values.samples.map((sample) => ({ ...sample, concentration: sample.concentration === '' ? null : sample.concentration })),
       }
       const order = orderId

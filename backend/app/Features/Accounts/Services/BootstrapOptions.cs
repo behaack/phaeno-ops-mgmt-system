@@ -13,4 +13,6 @@ public sealed class BootstrapOptions
     public string AdminLastName { get; init; } = "Admin";
 
     public string AdminPassword { get; init; } = "";
+
+    public string ClerkIdentityCutoverPreviousSubjectId { get; init; } = "";
 }

@@ -1,16 +1,16 @@
 # Phaeno operations guide
 
-The Phaeno organization workspace is the operating surface for organization administration, data provisioning, Customer and Partner order work, laboratory execution, public Website intake, commercial configuration, and integration recovery.
+The Phaeno organization workspace is the operating surface for first-party customer relationship management, organization administration, data provisioning, Customer and Partner order work, laboratory execution, public Website intake, commercial configuration, and integration recovery.
 
 ## Navigate workspaces and guides
 
-The POMS dashboard, Lab operations, Order operations, Data provisioning, and Documentation use a shared sidebar anchored beneath the toolbar at the far-left edge of the screen. Its header identifies the current workspace and, on wider screens, provides the pin or unpin icon. The sidebar is pinned by default, leaves a centered page in place when the left margin has room, and reflows the page only to prevent overlap. Pointer users can preview an unpinned sidebar by approaching the edge; keyboard and touch users open the same non-modal rail from the tab.
+The POMS dashboard, CRM, Lab operations, Order operations, Data provisioning, and Documentation use a shared sidebar anchored beneath the toolbar at the far-left edge of the screen. Its header identifies the current workspace and, on wider screens, provides the pin or unpin icon. The sidebar is pinned by default, leaves a centered page in place when the left margin has room, and reflows the page only to prevent overlap. Pointer users can preview an unpinned sidebar by approaching the edge; keyboard and touch users open the same non-modal rail from the tab.
 
 Documentation automatically lists only the guides for the current organization, with an icon identifying each topic. Data provisioning, Order operations, and Laboratory operations expand to show an overview and detailed workflow guides. The group containing the current guide opens automatically; use its disclosure button to expand or collapse it.
 
 ## Work in the Phaeno context
 
-Phaeno users enter the Phaeno organization context through their authenticated session. The user menu does not provide an act-as control for switching into Prospect, Customer, or Partner organizations. Manage those organizations and their access through the **Organizations** workspace.
+Phaeno users enter the Phaeno organization context through their authenticated session. The user menu does not provide an act-as control for switching into Prospect, Customer, or Partner organizations. Manage those organizations and their access through the **Portal accounts** workspace.
 
 Platform capabilities come from an active administrator membership in the active Phaeno organization. Authentication-provider roles are not used for portal authorization.
 
@@ -23,11 +23,12 @@ If both the authenticator and all backup codes are lost, contact an authorized P
 ## Find platform work
 
 - **Dashboard** uses the sidebar to show one Order Operations, Lab Operations, Accounts, or Web Operations panel at a time. Counts summarize the work or intake represented by each panel.
-- **Accounts** opens the durable external-account directory and workspace. The internal Phaeno organization is not listed. Normal onboarding begins in HubSpot, so the standard Accounts screen does not directly create an account or manually submit a production request. In local development, **Simulate HubSpot account** creates a durable pending onboarding or Prospect-evaluation request from account-entry fields without contacting HubSpot. After review and approval, **Create account** creates and associates the pending-readiness account and opens its details page. Use **Manage users** there to invite the HubSpot-designated contact through Phaeno-controlled Portal access; account creation itself activates no user or service.
+- **CRM** opens the complete first-party relationship and sales workspace. Its sidebar moves among Home, Companies, Contacts, Leads, Opportunities, Tasks, Reports, and Administration. Manage records, pipelines, Activities, search, reporting, duplicate review, custom fields, imports, exports, and controlled Portal handoffs entirely in POMS. Creating a CRM record never creates a Portal account, grants access, activates services, or starts laboratory work. The CRM documentation subject expands into workflow-specific guides like Order operations and Laboratory operations.
+- **Portal accounts** opens the durable external-account directory and review workspace. The internal Phaeno organization is not listed. Create an onboarding, evaluation, service, relationship, custom-work, or offboarding proposal from its CRM Company or Opportunity. For an exceptional migration or recovery case, a platform administrator may instead use **New Portal account request** in the review queue. Both paths require review. **Approve and create Portal account** records the approval, atomically creates and associates the account with pending readiness, writes the CRM-to-Portal link when applicable, and opens the account. The request submission activates nothing; approval never creates a user and creates Customer ordering authorization only when the reviewer explicitly leaves **Ordering authorized** on. Use **Manage users** to invite the designated contact separately.
 - **Web Operations** is a Phaeno-administrator view of active public Website intake. Use the **Mailing List** and **Demo Requests** buttons to select one list panel at a time. Mailing List shows the newest active signups and identifies technical-brief requests; use **Unsubscribe** and confirm to remove a contact from that active list. Demo Requests shows the inquiry contact, organization, email, and submitted description; use **Mark complete** and confirm after the inquiry has been handled. Completed or unsubscribed items leave their active list immediately, but the original Website intake and action audit remain in POMS. Each panel paginates independently in groups of 10; its footer paginator appears only when the list has more than one page. These actions do not create an Account, Portal request, HubSpot contact, or operational order.
 - **User management** is the durable employee-access workspace. Invite a named Phaeno user with their intended Platform administrator and additive laboratory roles, edit accepted users and their roles, deactivate or reactivate accounts, and manage pending invitations there.
 - **Data provisioning** manages source samples, curated packages, grants, and governance.
-- **Order operations** contains HubSpot-originated order and Trial Project handoffs awaiting review, authorized laboratory work awaiting specimen intake, Customer lab, Partner PSeq kit, Partner assembly, and integration-recovery queues. Local development also provides a guarded HubSpot handoff simulator; it creates pending requests only and does not contact HubSpot or bypass review.
+- **Order operations** contains first-party CRM custom-work and Trial Project handoffs awaiting review, authorized laboratory work awaiting specimen intake, Customer lab, Partner PSeq kit, Partner assembly, and integration-recovery queues.
 - **Lab operations** contains Phaeno-only work orders for receipt, accession, protocol execution, materials and equipment, libraries and batches, outsourced sequencing, exceptions, and scientific approval. Its sidebar contains operational work rather than role administration. Access requires an effective Lab role or platform-administrator bootstrap access.
 - **Order configuration** contains commercial, scientific, Partner-offering, credit, and integration settings.
 - **Docs** opens the guide set for the current organization.
@@ -36,7 +37,7 @@ If both the authenticator and all backup codes are lost, contact an authorized P
 
 Tenant timelines and messages must contain only tenant-safe reasons and actions. Internal notes, scientific investigation evidence, credentials, retry details, and other restricted facts stay in authorized Phaeno surfaces.
 
-Never place passwords, OAuth credentials, webhook secrets, connection strings, protected health information, or customer file contents in notes, audit descriptions, notification messages, or QuickBooks memo fields.
+Never place passwords, OAuth credentials, webhook secrets, connection strings, protected health information, or customer file contents in notes, audit descriptions, notification messages, or accounting memo fields.
 
 ## Support users safely
 

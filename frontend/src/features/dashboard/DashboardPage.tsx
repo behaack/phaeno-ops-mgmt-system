@@ -1,6 +1,6 @@
-import { AccountsDashboardContent } from './AccountsDashboardContent'
 import { DashboardPanelSelector } from './DashboardPanelSelector'
 import { DashboardHero } from './DashboardHero'
+import { ExternalDashboardContent } from './ExternalDashboardContent'
 import {
   getSelectedMembership,
   usePhaenoSession,
@@ -23,7 +23,7 @@ export function DashboardPage() {
         <DashboardHero />
       </div>
       <div className="soft-enter soft-enter-delay-1">
-        <AccountsDashboardContent />
+        <ExternalDashboardContent membership={selectedMembership} />
       </div>
     </main>
   )

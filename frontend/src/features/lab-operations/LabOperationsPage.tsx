@@ -1,6 +1,6 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { Link } from '@tanstack/react-router'
-import { BookOpenCheck, ClipboardList, FlaskConical, Layers3, Microscope, Plus, RefreshCw } from 'lucide-react'
+import { BookOpenCheck, ClipboardList, FlaskConical, Layers3, Microscope, PackageCheck, Plus, RefreshCw, ScanLine, Workflow } from 'lucide-react'
 import { useState, type FormEvent } from 'react'
 
 import {
@@ -25,18 +25,27 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '#/com
 import { Dialog, DialogClose, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '#/components/ui/dialog'
 import { Input } from '#/components/ui/input'
 import { Label } from '#/components/ui/label'
+import {
+  RequiredDialogFooter,
+  RequiredFieldName,
+} from '#/components/ui/required-field'
 import { usePhaenoSession } from '#/features/auth/session-context'
 
 import { LabBarcodeLookup, LabBatchBarcodeScanner } from './LabBarcodeScanner'
 import { EquipmentCreateDialog } from './EquipmentCreateDialog'
 import { MaterialLotCreateDialog } from './MaterialLotCreateDialog'
+import { LabManufacturingQueue } from './LabManufacturingPage'
+import { LabReceiptAccessionPanel } from './LabReceiptAccessionPanel'
 
 type CreateKind = 'protocol' | 'material' | 'equipment' | 'batch' | null
 type SimpleCreateKind = Exclude<CreateKind, 'material' | 'equipment'>
-export type LabSection = 'work' | 'protocols' | 'materials' | 'equipment' | 'batches'
+export type LabSection = 'receipt' | 'work' | 'kits' | 'assembly' | 'protocols' | 'materials' | 'equipment' | 'batches'
 
 const labSections: ReadonlyArray<WorkspaceSidebarItem<LabSection>> = [
+  { value: 'receipt', label: 'Receipt & accession', description: 'Kits, shipment intake, and accession', icon: ScanLine },
   { value: 'work', label: 'Work', description: 'Authorized work and specimen progress', icon: ClipboardList },
+  { value: 'kits', label: 'PSeq kits', description: 'Preparation, shipping, and fulfillment', icon: PackageCheck },
+  { value: 'assembly', label: 'Data assembly', description: 'Input validation, processing, and release', icon: Workflow },
   { value: 'protocols', label: 'Protocols', description: 'Controlled methods and approved versions', icon: BookOpenCheck },
   { value: 'materials', label: 'Materials', description: 'Lots, prepared reagents, and QC', icon: FlaskConical },
   { value: 'equipment', label: 'Equipment', description: 'Assets, availability, and calibration', icon: Microscope },
@@ -67,8 +76,8 @@ export function LabOperationsPage({ section, onSectionChange }: { section: LabSe
             <div className="max-w-3xl">
               <h1 className="text-3xl font-semibold">Lab operations</h1>
               <p className="mt-2 text-sm leading-6 text-muted-foreground">
-                Internal accession, protocol execution, materials, equipment, cross-order batching,
-                outsourced sequencing, exceptions, and scientific release readiness.
+                Internal kit fulfillment, receipt and accession, protocol execution, data assembly,
+                materials, equipment, cross-order batching, exceptions, and release readiness.
               </p>
             </div>
             <Button type="button" variant="outline" disabled={!apiEnabled || dashboard.isFetching} onClick={() => refresh()}>
@@ -78,7 +87,10 @@ export function LabOperationsPage({ section, onSectionChange }: { section: LabSe
           {authProvider === 'mock' ? <Alert className="mb-5"><AlertTitle>Connected Lab operations are paused</AlertTitle><AlertDescription>Use a real Phaeno session to load or change laboratory records.</AlertDescription></Alert> : null}
           {dashboard.error ? <Alert className="mb-5" variant="destructive"><AlertTitle>Lab operations could not be loaded</AlertTitle><AlertDescription>{getLabOperationsError(dashboard.error, 'Try refreshing the workspace.')}</AlertDescription></Alert> : null}
           {dashboard.isLoading ? <p role="status">Loading laboratory workspace…</p> : null}
-          {dashboard.data && section === 'work' ? <div className="space-y-5"><LabBarcodeLookup /><WorkQueue items={dashboard.data.workOrders} /></div> : null}
+          {dashboard.data && section === 'receipt' ? <LabReceiptAccessionPanel apiEnabled={apiEnabled} workOrders={dashboard.data.workOrders} /> : null}
+          {dashboard.data && section === 'work' ? <div className="space-y-5"><LabBarcodeLookup /><WorkQueue items={dashboard.data.workOrders.filter((item) => item.status !== 'AwaitingSpecimens')} /></div> : null}
+          {section === 'kits' ? <LabManufacturingQueue workflow="reagent" apiEnabled={apiEnabled} /> : null}
+          {section === 'assembly' ? <LabManufacturingQueue workflow="assembly" apiEnabled={apiEnabled} /> : null}
           {dashboard.data && section === 'protocols' ? <ProtocolList protocols={dashboard.data.protocols} canManage={Boolean(session?.capabilities.canManageLabProtocols)} onCreate={() => setCreateKind('protocol')} refresh={refresh} /> : null}
           {dashboard.data && section === 'materials' ? <MaterialList items={dashboard.data.materialLots} canManage={Boolean(session?.capabilities.canOperateLabWork)} canApprove={Boolean(session?.capabilities.canSuperviseLabWork)} onCreate={() => setCreateKind('material')} refresh={refresh} /> : null}
           {dashboard.data && section === 'equipment' ? <EquipmentList items={dashboard.data.equipment} canManage={Boolean(session?.capabilities.canSuperviseLabWork)} onCreate={() => setCreateKind('equipment')} /> : null}
@@ -506,7 +518,7 @@ function MaterialList({ items, canManage, canApprove, onCreate, refresh }: { ite
             <div className="my-5 grid gap-4">
               <div className="grid gap-1.5">
                 <Label htmlFor="material-qc-date">
-                  QC date <span className="text-destructive" aria-hidden="true">*</span>
+                  <RequiredFieldName>QC date</RequiredFieldName>
                 </Label>
                 <Input
                   id="material-qc-date"
@@ -523,7 +535,7 @@ function MaterialList({ items, canManage, canApprove, onCreate, refresh }: { ite
 
               <fieldset className="grid gap-3" aria-invalid={qcAttempted && !qcOutcome}>
                 <legend className="mb-1 text-sm font-medium">
-                  QC outcome <span className="text-destructive" aria-hidden="true">*</span>
+                  <RequiredFieldName>QC outcome</RequiredFieldName>
                 </legend>
                 <Label htmlFor="material-qc-passed" className={`flex cursor-pointer items-start gap-3 rounded-lg border p-4 font-normal transition-colors ${
                   qcOutcome === 'Passed' ? 'border-primary bg-primary/5 ring-1 ring-primary' : 'hover:bg-muted/40'
@@ -574,7 +586,7 @@ function MaterialList({ items, canManage, canApprove, onCreate, refresh }: { ite
               {qcOutcome === 'Failed' ? (
                 <div className="grid gap-1.5">
                   <Label htmlFor="material-qc-failure-reason">
-                    Failure reason <span className="text-destructive" aria-hidden="true">*</span>
+                    <RequiredFieldName>Failure reason</RequiredFieldName>
                   </Label>
                   <textarea
                     id="material-qc-failure-reason"
@@ -601,12 +613,12 @@ function MaterialList({ items, canManage, canApprove, onCreate, refresh }: { ite
               </Alert>
             ) : null}
 
-            <DialogFooter>
+            <RequiredDialogFooter>
               <Button type="button" variant="outline" disabled={qc.isPending} onClick={closeQcDialog}>Cancel</Button>
               <Button type="submit" disabled={qc.isPending}>
                 {qc.isPending ? 'Recording…' : 'Record QC outcome'}
               </Button>
-            </DialogFooter>
+            </RequiredDialogFooter>
           </form>
         </DialogContent>
       </Dialog>
@@ -714,15 +726,15 @@ function BatchList({ items, canManage, onCreate, refresh }: { items: Awaited<Ret
           </DialogHeader>
           <div className="my-5 grid gap-4">
             <div>
-              <Label htmlFor="batch-transition-at">{transitionDialog?.action === 'start' ? 'Started at' : 'Completed at'} <span aria-hidden="true">*</span></Label>
+              <Label htmlFor="batch-transition-at"><RequiredFieldName>{transitionDialog?.action === 'start' ? 'Started at' : 'Completed at'}</RequiredFieldName></Label>
               <Input id="batch-transition-at" className="mt-2" type="datetime-local" value={transitionAt} onChange={(event) => setTransitionAt(event.target.value)} required />
             </div>
           </div>
           {transition.error ? <Alert variant="destructive" className="mb-4"><AlertTitle>Batch transition failed</AlertTitle><AlertDescription>{getLabOperationsError(transition.error, 'Check the entered time and try again.')}</AlertDescription></Alert> : null}
-          <DialogFooter>
+          <RequiredDialogFooter>
             <DialogClose asChild><Button type="button" variant="outline">Cancel</Button></DialogClose>
             <Button type="button" disabled={transition.isPending || !transitionAt} onClick={saveTransition}>{transitionDialog?.action === 'start' ? 'Start batch' : 'Complete batch'}</Button>
-          </DialogFooter>
+          </RequiredDialogFooter>
         </DialogContent>
       </Dialog>
       <Dialog open={dialog !== null} onOpenChange={(open) => !open && setDialog(null)}>
@@ -748,10 +760,10 @@ function BatchList({ items, canManage, onCreate, refresh }: { items: Awaited<Ret
             )}
           </div>
           {save.error ? <Alert variant="destructive" className="mb-4"><AlertTitle>Batch action failed</AlertTitle><AlertDescription>{getLabOperationsError(save.error, 'Check the entered values.')}</AlertDescription></Alert> : null}
-          <DialogFooter>
+          <RequiredDialogFooter>
             <DialogClose asChild><Button type="button" variant="outline">Cancel</Button></DialogClose>
             <Button type="button" disabled={save.isPending} onClick={() => save.mutate()}>Save</Button>
-          </DialogFooter>
+          </RequiredDialogFooter>
         </DialogContent>
       </Dialog>
     </>
@@ -766,10 +778,10 @@ function CreateRecordDialog({ kind, onClose, onSaved }: { kind: SimpleCreateKind
   }, onSuccess: async () => { setForm({}); await onSaved() } })
   const set = (key: string) => (event: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => setForm((current) => ({ ...current, [key]: event.target.value }))
   function submit(event: FormEvent) { event.preventDefault(); mutation.mutate() }
-  return <Dialog open={kind !== null} onOpenChange={(open) => !open && onClose()}><DialogContent><form onSubmit={submit}><DialogHeader><DialogTitle>{kind ? `Create ${humanize(kind)}` : 'Create record'}</DialogTitle><DialogDescription>{kind === 'protocol' ? 'Enter the controlled protocol details. POMS assigns its immutable key.' : kind === 'batch' ? 'Name the batch. POMS assigns its batch number and external sequencing type.' : 'Required fields are marked. Laboratory records remain internal to Phaeno.'}</DialogDescription></DialogHeader><div className="my-5 grid gap-4 sm:grid-cols-2">{kind === 'protocol' ? <><div className="sm:col-span-2"><Field label="Name" value={form.name} onChange={set('name')} required /></div><TextField label="Description" value={form.description} onChange={set('description')} /></> : null}{kind === 'batch' ? <><div className="sm:col-span-2"><Field label="Batch name" value={form.name} onChange={set('name')} required /></div><TextField label="Notes" value={form.notes} onChange={set('notes')} /></> : null}</div>{mutation.error ? <Alert variant="destructive" className="mb-4"><AlertTitle>Record was not created</AlertTitle><AlertDescription>{getLabOperationsError(mutation.error, 'Check the entered values.')}</AlertDescription></Alert> : null}<DialogFooter><DialogClose asChild><Button type="button" variant="outline">Cancel</Button></DialogClose><Button type="submit" disabled={mutation.isPending}>{kind ? createActionLabel(kind) : 'Create'}</Button></DialogFooter></form></DialogContent></Dialog>
+  return <Dialog open={kind !== null} onOpenChange={(open) => !open && onClose()}><DialogContent><form onSubmit={submit}><DialogHeader><DialogTitle>{kind ? `Create ${humanize(kind)}` : 'Create record'}</DialogTitle><DialogDescription>{kind === 'protocol' ? 'Enter the controlled protocol details. POMS assigns its immutable key.' : kind === 'batch' ? 'Name the batch. POMS assigns its batch number and external sequencing type.' : 'Laboratory records remain internal to Phaeno.'}</DialogDescription></DialogHeader><div className="my-5 grid gap-4 sm:grid-cols-2">{kind === 'protocol' ? <><div className="sm:col-span-2"><Field label="Name" value={form.name} onChange={set('name')} required /></div><TextField label="Description" value={form.description} onChange={set('description')} /></> : null}{kind === 'batch' ? <><div className="sm:col-span-2"><Field label="Batch name" value={form.name} onChange={set('name')} required /></div><TextField label="Notes" value={form.notes} onChange={set('notes')} /></> : null}</div>{mutation.error ? <Alert variant="destructive" className="mb-4"><AlertTitle>Record was not created</AlertTitle><AlertDescription>{getLabOperationsError(mutation.error, 'Check the entered values.')}</AlertDescription></Alert> : null}<RequiredDialogFooter><DialogClose asChild><Button type="button" variant="outline">Cancel</Button></DialogClose><Button type="submit" disabled={mutation.isPending}>{kind ? createActionLabel(kind) : 'Create'}</Button></RequiredDialogFooter></form></DialogContent></Dialog>
 }
 
-function Field({ label, value = '', onChange, required, type = 'text' }: { label: string; value?: string; onChange: React.ChangeEventHandler<HTMLInputElement>; required?: boolean; type?: string }) { const id = `lab-${label.toLowerCase().replaceAll(' ', '-')}`; return <div><Label htmlFor={id}>{label}{required ? <span aria-hidden="true"> *</span> : null}</Label><Input id={id} className="mt-2" type={type} value={value ?? ''} onChange={onChange} required={required} /></div> }
+function Field({ label, value = '', onChange, required, type = 'text' }: { label: string; value?: string; onChange: React.ChangeEventHandler<HTMLInputElement>; required?: boolean; type?: string }) { const id = `lab-${label.toLowerCase().replaceAll(' ', '-')}`; return <div><Label htmlFor={id}>{required ? <RequiredFieldName>{label}</RequiredFieldName> : label}</Label><Input id={id} className="mt-2" type={type} value={value ?? ''} onChange={onChange} required={required} /></div> }
 function TextField({ label, value = '', onChange }: { label: string; value?: string; onChange: React.ChangeEventHandler<HTMLTextAreaElement> }) { const id = `lab-${label.toLowerCase().replaceAll(' ', '-')}`; return <div className="sm:col-span-2"><Label htmlFor={id}>{label}</Label><textarea id={id} className="mt-2 min-h-20 w-full rounded-lg border bg-background px-3 py-2 text-sm" value={value ?? ''} onChange={onChange} /></div> }
 function Status({ value, prefix }: { value: string; prefix?: string }) { return <span className="rounded-full border bg-muted px-2.5 py-1 text-xs font-medium">{prefix ? `${prefix}: ` : ''}{humanize(value)}</span> }
 function Empty({ children }: { children: React.ReactNode }) { return <p className="py-8 text-center text-sm text-muted-foreground">{children}</p> }

@@ -33,6 +33,19 @@ Do not execute this plan unless explicitly requested.
   persistence orchestration, Clerk/Mailgun adapters, and bootstrap composition.
 - The frontend session shell and invitation acceptance/decline route are
   connected to the API.
+- The invitation review page identifies the current Clerk email, displays the
+  API's actionable failure reason, and preserves the captured token while a user
+  signs out to switch to the invited email. Clerk sign-in and development
+  account creation return to `/accept-invite` so the authenticated user can
+  complete the explicit Portal acceptance step before entering the application.
+  If authentication nevertheless reaches the access gate first, a saved pending
+  invitation provides a direct **Continue invitation** recovery action. A
+  successful acceptance refreshes the Portal session before the user continues,
+  making the new organization membership available immediately.
+- Local development can rotate a pending invitation token through an audited,
+  authorized API action and show the resulting sign-in link to the administrator.
+  The development invitation page permits first-time Clerk account creation;
+  neither capability is exposed by a production build or production API.
 - The signed-out shell applies the Phaeno logo, Portal name, invitation-only
   access language, and Portal design tokens around Clerk's prebuilt sign-in
   flow. It omits authenticated application navigation and Clerk's embedded
@@ -41,12 +54,18 @@ Do not execute this plan unless explicitly requested.
   verify in each Clerk instance.
 - The user menu no longer exposes an organization-context search or act-as
   switcher. Phaeno administrators manage external organizations through the
-  Accounts workspace; the authenticated session still supplies the
+  Portal accounts workspace; the authenticated session still supplies the
   organization context required for tenant authorization.
 - The POMS dashboard groups the existing mock organization, user, invitation,
-  readiness, and activity summaries under a Phaeno-only **Accounts** panel
+  readiness, and activity summaries under a Phaeno-only **Portal accounts** panel
   alongside Order Operations and Lab Operations. This is a layout mock-up, not
   a connected account queue or authorization change.
+- Prospect, Customer, and Partner dashboards do not reuse that internal mock
+  Portal accounts panel. They show only capability-eligible, organization-scoped
+  workflow cards backed by the existing tenant APIs: Customer laboratory work
+  and sample shipping, Prospect sample shipping, Partner reagent and data-
+  assembly work, assigned Data Library packages, and durable User management
+  for organization administrators.
 - The Phaeno Accounts list/detail, request, entitlement, invitation,
   membership, conversion, readiness, lifecycle, and User management workspaces
   are connected to durable APIs. Phaeno User management lists active and
@@ -58,12 +77,20 @@ Do not execute this plan unless explicitly requested.
   creates or reactivates an eligible Phaeno membership. The unsupported
   mock-only Operations admin and Customer manager labels were removed rather
   than represented as effective authorization.
-- The standard Accounts workspace is an external-account review and operations
-  surface. It does not expose direct account creation or manual request intake;
-  ordinary onboarding will arrive from HubSpot, while any future manual
-  migration or recovery path must be separately restricted and audited.
+- The standard Portal accounts workspace is a Portal-account review and operations
+  surface. Ordinary onboarding begins from an explicit first-party CRM Company
+  action. A restricted direct proposal path supports migration and recovery;
+  both routes use the same audited review boundary and grant no access by
+  themselves.
 - Organization create and edit actions use modal forms, and selecting an
   organization opens a dedicated, view-first detail route.
+- Production identity configuration is being separated from development. The
+  deployment path now rejects Clerk Development credentials for the production
+  API and provides an explicit one-time command that can relink only the sole
+  bootstrap administrator. The command requires the exact previous Clerk
+  subject, a matching verified primary email in Clerk Production, and no other
+  linked Portal users; it records an audit event and is not part of normal API
+  startup.
 
 ## Core Decisions
 
@@ -93,8 +120,15 @@ Do not execute this plan unless explicitly requested.
 - Show the application header only after authentication. The signed-out and
   pending-authentication states place the centered Phaeno authentication
   lockup inside the sign-in container without duplicate global navigation.
-- Disable or hide public Clerk sign-up. Account creation is reached through Phaeno invitation flow only.
+- Disable or hide public Clerk sign-up in production. Account creation is reached
+  through the Phaeno invitation flow only. Local development may expose Clerk
+  sign-up from a captured invitation link so fake invitees can complete the real
+  acceptance workflow without manual Clerk Dashboard provisioning.
 - Local development uses a real Clerk development instance. Automated tests may use auth fakes/test handlers.
+- Preview and local-development frontend builds use the Clerk development
+  instance. The production frontend and API use the same Clerk production
+  instance. Production deployment rejects `sk_test_` credentials and
+  `*.clerk.accounts.dev` issuers.
 
 ### MFA Policy Decision
 
@@ -121,11 +155,11 @@ Do not execute this plan unless explicitly requested.
 - Replace single-organization user assumptions with an organization membership model.
 - A user has identity, profile, and global lifecycle fields.
 - An organization has tenant metadata, kind, and active/inactive status.
-- Portal Prospect is an approved evaluation tenant, not every commercially
-  interesting HubSpot company. A Portal Prospect can later convert in place to
-  Customer or Partner while preserving organization identity and history.
+- Portal Prospect is an approved evaluation tenant, not every CRM Company,
+  Contact, Lead, or Opportunity. A Portal Prospect can later convert in place
+  to Customer or Partner while preserving organization identity and history.
 - A company already approved to buy may be onboarded directly as a Customer or
-  Partner after the pending HubSpot-to-Portal review; it does not need to pass
+  Partner after the pending CRM-to-Portal review; it does not need to pass
   through Portal Prospect.
 - A membership links a user to an organization and stores per-organization capability, initially org-admin or member.
 - Selected organization context is required for tenant-scoped requests.
@@ -187,7 +221,8 @@ Do not execute this plan unless explicitly requested.
 
 - Invitation tokens expire after 7 days.
 - Store only a cryptographic hash of invite tokens.
-- Send the raw token only in the invitation email link.
+- Send the raw token only in the invitation email link, except for the
+  authenticated and authorized local-development sign-in-link action.
 - Resend rotates the raw token, stored hash, and expiry.
 - Invite tokens are strictly single-use after successful acceptance.
 - Accept and decline requests submit tokens in the POST request body, not URL path or query.
@@ -211,7 +246,7 @@ Do not execute this plan unless explicitly requested.
 
 - Invitation emails link to a Phaeno `/accept-invite` page first.
 - Before Clerk authentication, the invite page shows only generic Phaeno invitation information.
-- After Clerk authentication, backend validates token and email match before returning organization or role details.
+- After Clerk authentication, backend validates token and email match before returning organization or role details. Clerk's default session token does not include email-verification claims, so the API uses a matching verified claim when configured and otherwise resolves the authenticated subject's verified primary email through Clerk's Backend API before acceptance or decline.
 - Acceptance requires explicit user action after authentication.
 - Decline requires Clerk authentication with the invited verified email.
 - Clerk primary email must be verified.
@@ -241,6 +276,10 @@ Do not execute this plan unless explicitly requested.
   - optional `LastSendError`
 - Enforce a 5-minute resend cooldown per pending invite.
 - Pending and effectively expired invites can be resent, subject to cooldown.
+- Local development also provides **Create sign-in link** for pending invitations.
+  It rotates the token and expiry without recording an email send or applying the
+  resend cooldown, returns the raw link only in that response, and records an
+  audit event without the token or URL.
 
 ## Backend Authentication
 
@@ -318,17 +357,26 @@ Do not execute this plan unless explicitly requested.
   organization.
 - Organization admins cannot invite users into Phaeno/internal organizations.
 - Organization admins cannot grant Phaeno-level access.
-- Organization admins can mark memberships inactive for their own organization.
+- Organization admins can mark another user's membership inactive for their
+  own organization. Administrative membership deactivation cannot target the
+  acting user's own membership.
 - Organization admins cannot globally disable or reactivate users.
-- Phaeno admins can globally disable and reactivate users.
+- Phaeno admins can globally disable and reactivate other users. An
+  administrator cannot globally disable their own account.
 - Organization admins can promote or demote users within their own organization with last-admin protection.
 - Users can leave an organization themselves unless they are the last active org admin.
 - Reactivating an inactive membership requires fresh invite acceptance.
 - Phaeno admins can mark an organization inactive even if it has active users or memberships.
 - Only an authorized Phaeno user can convert a Prospect organization to Customer
   or Partner or reclassify an existing Customer as Partner or Partner as
-  Customer. HubSpot supplies the approved commercial request; the Portal applies
-  it only after operational and access review.
+  Customer. The first-party CRM supplies the approved commercial context; the
+  Portal applies the change only after operational and access review.
+- A Trial Project's CRM commercial outcome never converts the Prospect
+  automatically.
+  `Converted to Customer` or `Converted to Partner` supports a separate audited
+  POMS action; `Closed without conversion` leaves the organization a Prospect,
+  and `Follow-up scheduled` remains nonterminal until Sales records a final
+  outcome.
 - Prospect conversion preserves the organization, users, memberships, and audit
   history rather than creating a new tenant.
 - Prospect conversion also preserves every curated-package grant and pinned
@@ -348,9 +396,9 @@ Do not execute this plan unless explicitly requested.
   entitled specimen processing, and download of completed assembly or specimen
   outputs. Partner services are enabled independently; Partner kind alone does
   not grant every Partner service.
-- HubSpot relationship contacts and Portal memberships are separate. Only the
-  designated initial Portal administrator is linked during onboarding; users
-  invited later in the Portal do not automatically become HubSpot contacts.
+- CRM Contacts and Portal memberships are separate. Only the designated initial
+  Portal administrator is explicitly linked during onboarding; users invited
+  later in the Portal do not automatically become CRM Contacts.
 - Prospect organization administrators manage their users but cannot assign
   sample-data access. Only an authorized Phaeno user can manage the eligible
   Prospect sample-data catalog or grant sample data to a Prospect organization.
@@ -375,6 +423,49 @@ Do not execute this plan unless explicitly requested.
   organization-scoped operational data. They do not inherit the
   organization-wide curated Prospect-package rule and remain scoped to the same
   organization after conversion.
+- For released-deliverable retention, one successful download by any member
+  currently authorized for the owning external organization satisfies the file
+  for that organization. It is not a per-user completion requirement, internal
+  Phaeno access does not count, and later membership changes do not erase a
+  valid historical organization download event.
+- Released-package download authorization closes at the exact snapshotted
+  standard or final deadline independently of asynchronous storage cleanup.
+  Remaining storage bytes never grant access after that instant.
+- A request that passed current membership, tenant, and package authorization
+  and started streaming before that cutoff may finish only under its bounded,
+  server-bound lease. The lease cannot authorize a new request, retry, range
+  resume, user, organization, file, or archive scope at or after the cutoff;
+  only successful completion of the original stream counts as a download.
+- The retention-cutoff allowance does not survive a higher-priority access
+  change. Emergency quarantine, withdrawal/correction, membership deactivation,
+  or organization deactivation immediately revokes matching active leases,
+  stops their response streams, and records a non-counting `Revoked` outcome.
+  Bytes already delivered before enforcement cannot be recalled.
+- Durable server order resolves a concurrent terminal transition: a successful
+  completion committed before revocation remains successful, while revocation
+  committed first wins. Client timestamps do not decide the race. Reactivation
+  never resumes the old stream; it permits a fresh request only if current
+  authorization succeeds and the package cutoff is still in the future.
+- An active external organization administrator may view and export the
+  permanent tenant-safe receipt for its organization's released package,
+  including downloader member names and timestamps. Ordinary active members see
+  package availability/deletion status but not member-level download audit.
+  External receipt views reduce a revoked outcome to `Access ended`; authorized
+  Phaeno users retain the full reason and operational audit. No role can use a
+  receipt to recover deleted bytes.
+- Converting a Prospect organization to Customer or Partner does not reset or
+  extend a released Trial package's snapshotted standard or final deletion
+  deadline. The package continues under the released-deliverable policy values
+  resolved from the global defaults and the Prospect organization's active
+  override at release, including its conditional grace period. A later
+  organization-kind or override change does not rewrite that snapshot, and
+  there is no project-amendment extension path. Package metadata, result records,
+  and audit history remain preserved after file bytes are deleted.
+- Trial package-byte deletion does not automatically deactivate a non-
+  converting Prospect organization. After commercial closeout, an authorized
+  Phaeno user may deactivate it only after confirming there is no other active
+  Trial Project, curated-data grant, or commercial relationship. The action and
+  reason are audited and do not delete retained operational history.
 - Backend authorization derives the access policy from the data's ownership and
   classification, not merely the organization's current phase.
 - Customer and Partner organization administrators manage member access to
@@ -445,6 +536,9 @@ Do not execute this plan unless explicitly requested.
 - [x] Add Mailgun email sender implementation with locale-named embedded HTML
   and plain-text templates.
 - [x] Add bootstrap seed and one-time bootstrap Clerk linking.
+- [x] Add the guarded one-time bootstrap-administrator identity cutover used
+      when moving an otherwise empty production Portal from Clerk Development
+      to Clerk Production.
 - [x] Replace hard-delete account actions with inactive/status transitions.
 - [x] Add explicit audit events for access-changing actions.
 - [x] Remove direct user creation from normal API workflows so membership access is invite-only.
@@ -493,7 +587,7 @@ Do not execute this plan unless explicitly requested.
 
 - Clerk Organizations as primary tenant model.
 - Clerk roles or metadata as app authorization source.
-- Public self-signup.
+- Production public self-signup.
 - Domain-based auto-provisioning or approved-domain invite restrictions.
 - Clerk authorization-critical webhooks.
 - Additional Mailgun event types beyond delivery and permanent failure.

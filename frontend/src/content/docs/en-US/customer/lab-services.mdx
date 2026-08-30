@@ -1,20 +1,31 @@
 # Request laboratory services
 
-Customer organization administrators use Lab services to prepare a job, describe its samples, receive a job-specific quote, and authorize work.
+Customer organization administrators use Lab services to describe and price a Job before doing the detailed work of entering its sample list.
+
+## Review a Job initiated by Phaeno
+
+Phaeno may initiate a Customer-owned Job when your organization has already discussed the work with Phaeno. It appears in **Lab services** as **Quote in preparation** while Phaeno prices it. You do not need to submit that Job for pricing.
+
+Open the Job and review its committed sample count, biological-source composition, storage requirements, safety declaration, and notes. When Phaeno issues the quote and it becomes **Quote issued**, an organization administrator can review and accept it in **Quote & billing**. Phaeno cannot accept it for your organization. If the scope is incorrect, do not accept the quote; contact Phaeno so the Job can be returned for a corrected revision.
+
+Individual sample entry remains unavailable until your organization accepts the quote.
 
 ## Create a draft
 
-1. Open **Lab services** and start a request.
-2. Choose an available analysis.
-3. Enter the job reference and the required information for every sample.
-4. Review the analysis instructions and expected outputs.
-5. Save the draft and return later if more information is needed.
+**Request lab service** is available only while your organization has current ordering authorization and PSeq Lab Service is offered. If new Jobs are unavailable, the page explains whether Phaeno must enable ordering authorization or the service is temporarily unavailable. Existing accepted Jobs remain available and follow their normal hold or cancellation workflow.
 
-Drafts remain editable. Other members can see organization work but cannot submit or commercially approve it unless they are an organization administrator.
+1. Open **Lab services** and select **Request lab service**.
+2. In **Job pricing details**, enter a unique **Job name** and each **Biological source** with its sample count. The Portal calculates the Job's total sample count from those source groups. Enter the **Storage requirements** and **Safety declaration** shared by every sample, and any optional **Job notes**. Do not enter a patient name or identifier.
+3. Select **Create job**. The portal assigns an immutable eight-character **Job number** using unambiguous uppercase letters and numbers.
+4. The new Job opens on its detail page. Individual sample entry remains unavailable until the price is issued and accepted.
+
+Other members can see organization work but cannot create, edit, submit, or commercially approve it unless they are an organization administrator.
+
+If an older draft still contains sample rows from the former workflow, the Job identifies them as legacy rows. Remove each row before submitting for pricing; enter the current sample roster again only after accepting the price.
 
 ## Submit for review
 
-Submission validates the current request and freezes an input revision. Phaeno can accept the information for quoting, request specific corrections, or reject work that cannot be performed.
+Complete the Job pricing details, then select **Submit for pricing**. Confirm that those details contain no patient identifiers, PHI, or unnecessary personal data. No individual sample list is required or permitted at this stage. Submission freezes the pricing profile revision. Phaeno can prepare pricing, request specific corrections, or reject work that cannot be performed.
 
 When corrections are requested, create and submit a new revision. The prior revision remains in the job history; it is not silently overwritten.
 
@@ -22,13 +33,21 @@ When corrections are requested, create and submit a new revision. The prior revi
 
 Laboratory services are priced per job. Phaeno issues an itemized, immutable POMS quote for the accepted scope. The quote freezes the approved billing contact/address, payment terms, tax decision, currency, and calculated tax. It is available only after the account’s operational-readiness checklist is complete and a Customer administrator is active.
 
-Before accepting, confirm the sample list, analysis, price, currency, and expiration date. Only a Customer organization administrator can accept the current unexpired quote.
+Before accepting, confirm the committed sample count, biological-source composition, standard service scope, price, currency, and expiration date. Only a Customer organization administrator can accept the current unexpired quote.
 
 If the scope changes after acceptance, Phaeno issues a separate change quote. Added work does not begin until the applicable change is accepted.
 
 ## Ship and track samples
 
-Follow the shipping instructions shown for the job. The portal tracks receipt, accessioning, processing, external sequencing, data processing, scientific review, holds, and readiness for release. A job can remain in progress while different samples move through laboratory work.
+After accepting the quote, return to **Samples & shipping**. Add samples manually or download and complete the Job-specific CSV template. The CSV accepts exactly `customer_sample_id`, `biological_source`, and `tube_count`; it does not accept barcodes. Previewing a CSV does not change the Job. Confirming a valid preview atomically replaces the editable draft list.
+
+Do not ship physical samples before the quote is accepted and the exact roster is finalized. An early or unmatched package is quarantined and escalated by Phaeno; it is not accessioned or attached to active Job work.
+
+The final list must contain exactly the accepted number of unique non-PHI sample IDs, match every accepted source-group count, and give each sample a positive whole-number tube count. Finalize the list only after reviewing the no-PHI confirmation. Finalization authorizes the specimen-specific Lab work and lets Phaeno prepare the registered return kit.
+
+When the kit is fulfilled, match every physical Phaeno-supplied tube to the displayed tube slot. A sample with multiple tubes appears once per tube as **Tube 1 of N**, **Tube 2 of N**, and so on. Review the packet and record carrier details after the package leaves your organization. Shipping remains part of the Job.
+
+The Portal tracks receipt, accessioning, processing, external sequencing, data processing, scientific review, holds, and readiness for release. A job can remain in progress while different samples move through laboratory work.
 
 If Phaeno needs replacement material or clarification, the job shows a Customer-safe action and the current schedule health. Internal scientific investigation details are not shown.
 

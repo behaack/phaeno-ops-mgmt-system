@@ -2,14 +2,25 @@ namespace PhaenoPortal.App.Features.OrderManagement.Domain;
 
 using PSeq.Operations.Commercial.Common.Persistence;
 using PSeq.Operations.Commercial.OrderManagement.Domain;
+using PSeq.Operations.Commercial.Relationships.Domain;
 
 public sealed class LabServiceOrder : IAudit, IConcurrency
 {
     public Guid Id { get; private set; } = Guid.NewGuid();
     public Guid OrganizationId { get; private set; }
+    public Guid? SourceRequestId { get; private set; }
+    public PortalIntegrationRequest? SourceRequest { get; private set; }
     public string OrderNumber { get; private set; } = null!;
-    public string? CustomerReference { get; private set; }
+    public string CustomerReference { get; private set; } = null!;
+    public string NormalizedJobName { get; private set; } = null!;
+    public string? Description { get; private set; }
+    public bool HasMixedBiologicalSources { get; private set; }
+    public string? SharedBiologicalSource { get; private set; }
+    public int RequestedSpecimenCount { get; private set; }
+    public string StorageRequirements { get; private set; } = null!;
+    public string SafetyDeclaration { get; private set; } = null!;
     public string SubmissionInstructionsSnapshot { get; private set; } = string.Empty;
+    public string? PlacementSnapshotJson { get; private set; }
     public LabServiceOrderStatus Status { get; private set; } = LabServiceOrderStatus.DraftRequest;
     public LabServiceOrderStatus? ResumeStatus { get; private set; }
     public int RequestRevision { get; private set; }
@@ -18,6 +29,8 @@ public sealed class LabServiceOrder : IAudit, IConcurrency
     public Guid? CurrentQuoteId { get; private set; }
     public Guid? AcceptedQuoteId { get; private set; }
     public DateTime? PlacedAt { get; private set; }
+    public DateTime? SampleRosterFinalizedAt { get; private set; }
+    public Guid? SampleRosterFinalizedByUserId { get; private set; }
     public DateTime? CompletedAt { get; private set; }
     public bool IsDiscarded { get; private set; }
     public string? TenantSafeReason { get; private set; }
@@ -30,6 +43,7 @@ public sealed class LabServiceOrder : IAudit, IConcurrency
     public Guid? UpdatedByUserId { get; private set; }
     public long Version { get; private set; } = 1;
     public ICollection<LabSample> Samples { get; } = [];
+    public ICollection<LabServiceSourceGroup> SourceGroups { get; } = [];
     public ICollection<LabServiceQuote> Quotes { get; } = [];
     public ICollection<LabServiceRequestRevision> Revisions { get; } = [];
 
@@ -39,24 +53,81 @@ public sealed class LabServiceOrder : IAudit, IConcurrency
         Guid organizationId,
         string orderNumber,
         string? customerReference,
-        string submissionInstructionsSnapshot)
+        string? description,
+        int requestedSpecimenCount,
+        bool hasMixedBiologicalSources,
+        string? sharedBiologicalSource,
+        string storageRequirements,
+        string safetyDeclaration,
+        string submissionInstructionsSnapshot,
+        Guid? sourceRequestId = null)
     {
         OrganizationId = organizationId;
+        SourceRequestId = sourceRequestId;
         OrderNumber = OrderText.Required(orderNumber, nameof(orderNumber), 50);
-        CustomerReference = OrderText.Optional(customerReference, 255);
+        CustomerReference = OrderText.Required(customerReference, "Job name", 255);
+        NormalizedJobName = NormalizeJobName(CustomerReference);
+        Description = OrderText.Optional(description, 2000);
+        SetRequestedSpecimenCount(requestedSpecimenCount);
+        SetBiologicalSourceProfile(hasMixedBiologicalSources, sharedBiologicalSource);
+        StorageRequirements = OrderText.Required(storageRequirements, "Storage requirements", 2000);
+        SafetyDeclaration = OrderText.Required(safetyDeclaration, "Safety declaration", 2000);
         SubmissionInstructionsSnapshot = OrderText.Optional(submissionInstructionsSnapshot, 8000) ?? string.Empty;
     }
 
-    public void UpdateDraft(string? customerReference)
+    public LabServiceOrder(
+        Guid organizationId,
+        string orderNumber,
+        string? customerReference,
+        string? description,
+        bool hasMixedBiologicalSources,
+        string? sharedBiologicalSource,
+        string storageRequirements,
+        string safetyDeclaration,
+        string submissionInstructionsSnapshot)
+        : this(organizationId, orderNumber, customerReference, description, 1,
+            hasMixedBiologicalSources, sharedBiologicalSource, storageRequirements,
+            safetyDeclaration, submissionInstructionsSnapshot) { }
+
+    public static string NormalizeJobName(string? jobName)
+        => OrderText.Required(jobName, "Job name", 255).ToUpperInvariant();
+
+    public void UpdateDraft(
+        string? customerReference,
+        string? description,
+        int requestedSpecimenCount,
+        bool hasMixedBiologicalSources,
+        string? sharedBiologicalSource,
+        string storageRequirements,
+        string safetyDeclaration)
     {
         EnsureStatus(LabServiceOrderStatus.DraftRequest, LabServiceOrderStatus.ChangesRequested);
-        CustomerReference = OrderText.Optional(customerReference, 255);
+        CustomerReference = OrderText.Required(customerReference, "Job name", 255);
+        NormalizedJobName = NormalizeJobName(CustomerReference);
+        Description = OrderText.Optional(description, 2000);
+        SetRequestedSpecimenCount(requestedSpecimenCount);
+        SetBiologicalSourceProfile(hasMixedBiologicalSources, sharedBiologicalSource);
+        StorageRequirements = OrderText.Required(storageRequirements, "Storage requirements", 2000);
+        SafetyDeclaration = OrderText.Required(safetyDeclaration, "Safety declaration", 2000);
     }
+
+    public void UpdateDraft(
+        string? customerReference,
+        string? description,
+        bool hasMixedBiologicalSources,
+        string? sharedBiologicalSource,
+        string storageRequirements,
+        string safetyDeclaration)
+        => UpdateDraft(customerReference, description, RequestedSpecimenCount == 0 ? 1 : RequestedSpecimenCount,
+            hasMixedBiologicalSources, sharedBiologicalSource, storageRequirements, safetyDeclaration);
 
     public void Submit(Guid actorUserId, DateTime utcNow)
     {
         EnsureStatus(LabServiceOrderStatus.DraftRequest, LabServiceOrderStatus.ChangesRequested);
-        if (Samples.Count == 0) throw new InvalidOperationException("At least one sample is required.");
+        if (RequestedSpecimenCount < 1) throw new InvalidOperationException("A requested specimen count is required.");
+        if (SourceGroups.Count == 0 || SourceGroups.Sum(group => group.SpecimenCount) != RequestedSpecimenCount)
+            throw new InvalidOperationException("Biological-source counts must equal the requested specimen count.");
+        if (Samples.Count != 0) throw new InvalidOperationException("Samples cannot be entered before pricing is accepted.");
         RequestRevision++;
         SubmittedByUserId = actorUserId;
         SubmittedAt = utcNow;
@@ -84,14 +155,18 @@ public sealed class LabServiceOrder : IAudit, IConcurrency
         SetStatus(LabServiceOrderStatus.QuoteIssued, null, null);
     }
 
-    public void AcceptQuote(Guid quoteId, DateTime utcNow)
+    public void AcceptQuote(Guid quoteId, DateTime utcNow, string placementSnapshotJson)
     {
         EnsureStatus(LabServiceOrderStatus.QuoteIssued);
         if (CurrentQuoteId != quoteId) throw new InvalidOperationException("Only the current quote can be accepted.");
         AcceptedQuoteId = quoteId;
+        PlacementSnapshotJson = OrderText.Json(placementSnapshotJson);
         PlacedAt = utcNow;
         SetStatus(LabServiceOrderStatus.PlacedAwaitingSamples, null, null);
     }
+
+    public void AcceptQuote(Guid quoteId, DateTime utcNow)
+        => AcceptQuote(quoteId, utcNow, "{}");
 
     public void MarkWorkStarted()
     {
@@ -170,6 +245,54 @@ public sealed class LabServiceOrder : IAudit, IConcurrency
 
     public bool IsTerminal() => Status is LabServiceOrderStatus.Completed or LabServiceOrderStatus.Cancelled or LabServiceOrderStatus.Declined;
 
+    public bool CanEditSampleRoster => Status == LabServiceOrderStatus.PlacedAwaitingSamples && !SampleRosterFinalizedAt.HasValue;
+
+    public void EnsureSampleRosterEditable()
+    {
+        if (!CanEditSampleRoster)
+            throw new InvalidOperationException("Samples can be changed only after price acceptance and before the sample list is finalized.");
+    }
+
+    public void FinalizeSampleRoster(Guid actorUserId, DateTime utcNow)
+    {
+        EnsureSampleRosterEditable();
+        if (Samples.Count != RequestedSpecimenCount)
+            throw new InvalidOperationException($"Enter exactly {RequestedSpecimenCount} samples before finalizing the sample list.");
+        var duplicate = Samples.GroupBy(sample => sample.CustomerSampleId.Trim(), StringComparer.OrdinalIgnoreCase)
+            .FirstOrDefault(group => group.Count() > 1);
+        if (duplicate is not null)
+            throw new InvalidOperationException($"Customer sample ID '{duplicate.Key}' is used more than once.");
+        if (Samples.Any(sample => sample.Quantity <= 0 || decimal.Truncate(sample.Quantity) != sample.Quantity))
+            throw new InvalidOperationException("Every sample must declare a positive whole-number tube count.");
+        foreach (var group in SourceGroups)
+        {
+            var actual = Samples.Count(sample => string.Equals(
+                LabServiceSourceGroup.Normalize(sample.BiologicalSource),
+                group.NormalizedBiologicalSource,
+                StringComparison.Ordinal));
+            if (actual != group.SpecimenCount)
+                throw new InvalidOperationException(
+                    $"Biological source '{group.BiologicalSource}' requires {group.SpecimenCount} samples; {actual} are entered.");
+        }
+        SampleRosterFinalizedByUserId = actorUserId;
+        SampleRosterFinalizedAt = utcNow;
+    }
+
+    private void SetBiologicalSourceProfile(bool hasMixedBiologicalSources, string? sharedBiologicalSource)
+    {
+        HasMixedBiologicalSources = hasMixedBiologicalSources;
+        SharedBiologicalSource = hasMixedBiologicalSources
+            ? null
+            : OrderText.Required(sharedBiologicalSource, "Biological source", 500);
+    }
+
+    private void SetRequestedSpecimenCount(int requestedSpecimenCount)
+    {
+        if (requestedSpecimenCount is < 1 or > 100)
+            throw new ArgumentOutOfRangeException(nameof(requestedSpecimenCount), "Requested specimen count must be between 1 and 100.");
+        RequestedSpecimenCount = requestedSpecimenCount;
+    }
+
     private void Transition(LabServiceOrderStatus from, LabServiceOrderStatus to)
     {
         EnsureStatus(from);
@@ -186,6 +309,91 @@ public sealed class LabServiceOrder : IAudit, IConcurrency
     private void EnsureStatus(params LabServiceOrderStatus[] allowed)
     {
         if (!allowed.Contains(Status)) throw new InvalidOperationException($"Lab order cannot transition from {Status}.");
+    }
+
+    public void MarkCreated(DateTime utcNow, Guid? actorUserId) { CreatedAt = utcNow; CreatedByUserId = actorUserId; }
+    public void MarkUpdated(DateTime utcNow, Guid? actorUserId) { UpdatedAt = utcNow; UpdatedByUserId = actorUserId; }
+    public void IncrementVersion() => Version++;
+}
+
+public sealed class LabServiceSourceGroup : IAudit, IConcurrency
+{
+    public Guid Id { get; private set; } = Guid.NewGuid();
+    public Guid LabServiceOrderId { get; private set; }
+    public string BiologicalSource { get; private set; } = null!;
+    public string NormalizedBiologicalSource { get; private set; } = null!;
+    public int SpecimenCount { get; private set; }
+    public DateTime CreatedAt { get; private set; } = DateTime.UtcNow;
+    public Guid? CreatedByUserId { get; private set; }
+    public DateTime UpdatedAt { get; private set; } = DateTime.UtcNow;
+    public Guid? UpdatedByUserId { get; private set; }
+    public long Version { get; private set; } = 1;
+
+    private LabServiceSourceGroup() { }
+
+    public LabServiceSourceGroup(Guid labServiceOrderId, string biologicalSource, int specimenCount)
+    {
+        if (labServiceOrderId == Guid.Empty) throw new ArgumentException("A lab-service order is required.", nameof(labServiceOrderId));
+        LabServiceOrderId = labServiceOrderId;
+        Update(biologicalSource, specimenCount);
+    }
+
+    public void Update(string biologicalSource, int specimenCount)
+    {
+        BiologicalSource = OrderText.Required(biologicalSource, "Biological source", 500);
+        NormalizedBiologicalSource = Normalize(BiologicalSource);
+        if (specimenCount < 1) throw new ArgumentOutOfRangeException(nameof(specimenCount));
+        SpecimenCount = specimenCount;
+    }
+
+    public static string Normalize(string value) => OrderText.Required(value, "Biological source", 500).ToUpperInvariant();
+    public void MarkCreated(DateTime utcNow, Guid? actorUserId) { CreatedAt = utcNow; CreatedByUserId = actorUserId; }
+    public void MarkUpdated(DateTime utcNow, Guid? actorUserId) { UpdatedAt = utcNow; UpdatedByUserId = actorUserId; }
+    public void IncrementVersion() => Version++;
+}
+
+public sealed class LabSampleImportPreview : IAudit, IConcurrency
+{
+    public Guid Id { get; private set; } = Guid.NewGuid();
+    public Guid LabServiceOrderId { get; private set; }
+    public Guid OrganizationId { get; private set; }
+    public Guid ActorUserId { get; private set; }
+    public string FileSha256 { get; private set; } = null!;
+    public string RowsJson { get; private set; } = "[]";
+    public string ErrorsJson { get; private set; } = "[]";
+    public int ValidRowCount { get; private set; }
+    public int BlankRowCount { get; private set; }
+    public DateTime ExpiresAt { get; private set; }
+    public DateTime? ConfirmedAt { get; private set; }
+    public DateTime CreatedAt { get; private set; } = DateTime.UtcNow;
+    public Guid? CreatedByUserId { get; private set; }
+    public DateTime UpdatedAt { get; private set; } = DateTime.UtcNow;
+    public Guid? UpdatedByUserId { get; private set; }
+    public long Version { get; private set; } = 1;
+
+    private LabSampleImportPreview() { }
+
+    public LabSampleImportPreview(Guid labServiceOrderId, Guid organizationId, Guid actorUserId,
+        string fileSha256, string rowsJson, string errorsJson, int validRowCount, int blankRowCount, DateTime expiresAt)
+    {
+        if (labServiceOrderId == Guid.Empty || organizationId == Guid.Empty || actorUserId == Guid.Empty)
+            throw new ArgumentException("Order, organization, and actor are required.");
+        LabServiceOrderId = labServiceOrderId;
+        OrganizationId = organizationId;
+        ActorUserId = actorUserId;
+        FileSha256 = OrderText.Required(fileSha256, nameof(fileSha256), 64);
+        RowsJson = OrderText.Json(rowsJson);
+        ErrorsJson = OrderText.Json(errorsJson);
+        ValidRowCount = validRowCount;
+        BlankRowCount = blankRowCount;
+        ExpiresAt = expiresAt;
+    }
+
+    public void Confirm(DateTime utcNow)
+    {
+        if (ConfirmedAt.HasValue) throw new InvalidOperationException("This sample import has already been confirmed.");
+        if (ExpiresAt <= utcNow) throw new InvalidOperationException("This sample import preview has expired.");
+        ConfirmedAt = utcNow;
     }
 
     public void MarkCreated(DateTime utcNow, Guid? actorUserId) { CreatedAt = utcNow; CreatedByUserId = actorUserId; }
@@ -406,9 +614,22 @@ public sealed class LabResultRelease : IAudit, IConcurrency
     }
 
     public void MarkReady(bool holdForPayment)
-        => ReleaseStatus = holdForPayment ? FileReleaseStatus.PaymentHold : FileReleaseStatus.Ready;
+    {
+        if (ReleaseStatus is FileReleaseStatus.Released or FileReleaseStatus.Withdrawn) return;
+        ReleaseStatus = holdForPayment ? FileReleaseStatus.PaymentHold : FileReleaseStatus.Ready;
+    }
 
-    public void Release(DateTime utcNow) { ReleaseStatus = FileReleaseStatus.Released; ReleasedAt = utcNow; }
+    public bool Release(DateTime utcNow)
+    {
+        if (ReleaseStatus == FileReleaseStatus.Released) return false;
+        if (ReleaseStatus == FileReleaseStatus.Withdrawn)
+            throw new InvalidOperationException("A withdrawn result release cannot be released again.");
+        if (utcNow.Kind != DateTimeKind.Utc)
+            throw new ArgumentException("Release timestamps must use UTC.", nameof(utcNow));
+        ReleaseStatus = FileReleaseStatus.Released;
+        ReleasedAt = utcNow;
+        return true;
+    }
     public void Withdraw() => ReleaseStatus = FileReleaseStatus.Withdrawn;
     public void MarkCreated(DateTime utcNow, Guid? actorUserId) { CreatedAt = utcNow; CreatedByUserId = actorUserId; }
     public void MarkUpdated(DateTime utcNow, Guid? actorUserId) { UpdatedAt = utcNow; UpdatedByUserId = actorUserId; }

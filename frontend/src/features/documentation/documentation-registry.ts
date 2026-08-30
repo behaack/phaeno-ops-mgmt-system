@@ -5,12 +5,14 @@ import CustomerDataAndOrganization from '#/content/docs/en-US/customer/data-and-
 import CustomerGettingStarted from '#/content/docs/en-US/customer/getting-started.mdx'
 import CustomerLabServices from '#/content/docs/en-US/customer/lab-services.mdx'
 import CustomerResultsAndBilling from '#/content/docs/en-US/customer/results-and-billing.mdx'
+import CustomerSampleShipping from '#/content/docs/en-US/customer/sample-shipping.mdx'
 import CustomerStatusesAndTroubleshooting from '#/content/docs/en-US/customer/statuses-and-troubleshooting.mdx'
 import ProspectAccountAndAccess from '#/content/docs/en-US/prospect/account-and-access.mdx'
 import ProspectDataGovernanceAndDownloads from '#/content/docs/en-US/prospect/data-governance-and-downloads.mdx'
 import ProspectDataLibrary from '#/content/docs/en-US/prospect/data-library.mdx'
 import ProspectGettingStarted from '#/content/docs/en-US/prospect/getting-started.mdx'
 import ProspectOrganizationAndTransition from '#/content/docs/en-US/prospect/organization-and-transition.mdx'
+import ProspectSampleShipping from '#/content/docs/en-US/prospect/sample-shipping.mdx'
 import ProspectStatusesAndTroubleshooting from '#/content/docs/en-US/prospect/statuses-and-troubleshooting.mdx'
 import PartnerAccountAndAccess from '#/content/docs/en-US/partner/account-and-access.mdx'
 import PartnerDataAndOrganization from '#/content/docs/en-US/partner/data-and-organization.mdx'
@@ -19,6 +21,14 @@ import PartnerGettingStarted from '#/content/docs/en-US/partner/getting-started.
 import PartnerReagentOrders from '#/content/docs/en-US/partner/reagent-orders.mdx'
 import PartnerStatusesAndTroubleshooting from '#/content/docs/en-US/partner/statuses-and-troubleshooting.mdx'
 import PhaenoConfigurationAndRecovery from '#/content/docs/phaeno/configuration-and-recovery.mdx'
+import PhaenoCrm from '#/content/docs/phaeno/crm.mdx'
+import PhaenoCrmActivitiesTasks from '#/content/docs/phaeno/crm-activities-tasks.mdx'
+import PhaenoCrmCompaniesContacts from '#/content/docs/phaeno/crm-companies-contacts.mdx'
+import PhaenoCrmLeadsConversion from '#/content/docs/phaeno/crm-leads-conversion.mdx'
+import PhaenoCrmOpportunitiesPipelines from '#/content/docs/phaeno/crm-opportunities-pipelines.mdx'
+import PhaenoCrmPortalHandoffs from '#/content/docs/phaeno/crm-portal-handoffs.mdx'
+import PhaenoCrmReportsAdministration from '#/content/docs/phaeno/crm-reports-administration.mdx'
+import PhaenoCrmTroubleshooting from '#/content/docs/phaeno/crm-troubleshooting.mdx'
 import PhaenoDataCuratedPublishing from '#/content/docs/phaeno/data-curated-publishing.mdx'
 import PhaenoDataGovernanceRecovery from '#/content/docs/phaeno/data-governance-recovery.mdx'
 import PhaenoDataOrganizationGrants from '#/content/docs/phaeno/data-organization-grants.mdx'
@@ -83,7 +93,7 @@ export const documentationEntries: readonly DocumentationEntry[] = [
       'Confirm the current organization, understand Prospect access, and find granted data.',
     section: 'Basics',
     order: 10,
-    reviewedAt: '2026-07-20',
+    reviewedAt: '2026-08-19',
     Content: ProspectGettingStarted,
   },
   {
@@ -97,6 +107,18 @@ export const documentationEntries: readonly DocumentationEntry[] = [
     order: 20,
     reviewedAt: '2026-08-29',
     Content: ProspectAccountAndAccess,
+  },
+  {
+    audience: 'prospect',
+    locale: 'en-US',
+    slug: 'sample-shipping',
+    title: 'Prepare and ship samples',
+    summary:
+      'Associate Phaeno-supplied tube barcodes with your sample identifiers, retain the crosswalk, and ship an authorized Trial Project package.',
+    section: 'Trial Project',
+    order: 25,
+    reviewedAt: '2026-08-18',
+    Content: ProspectSampleShipping,
   },
   {
     audience: 'prospect',
@@ -131,7 +153,7 @@ export const documentationEntries: readonly DocumentationEntry[] = [
       'Understand membership boundaries and what changes when Phaeno converts a Prospect relationship.',
     section: 'Organization',
     order: 50,
-    reviewedAt: '2026-07-20',
+    reviewedAt: '2026-08-20',
     Content: ProspectOrganizationAndTransition,
   },
   {
@@ -154,7 +176,7 @@ export const documentationEntries: readonly DocumentationEntry[] = [
     summary: 'Confirm the current organization, understand access, and find Customer work.',
     section: 'Basics',
     order: 10,
-    reviewedAt: '2026-07-20',
+    reviewedAt: '2026-08-20',
     Content: CustomerGettingStarted,
   },
   {
@@ -173,11 +195,23 @@ export const documentationEntries: readonly DocumentationEntry[] = [
     locale: 'en-US',
     slug: 'lab-services',
     title: 'Request laboratory services',
-    summary: 'Create a request, submit samples, accept a quote, and track laboratory work.',
+    summary: 'Price a Job from its sample profile, then enter or import, finalize, and ship its sample list.',
     section: 'Laboratory work',
     order: 30,
     reviewedAt: '2026-08-29',
     Content: CustomerLabServices,
+  },
+  {
+    audience: 'customer',
+    locale: 'en-US',
+    slug: 'sample-shipping',
+    title: 'Prepare and ship samples',
+    summary:
+      'Match each Phaeno-supplied tube to a finalized sample tube slot, retain the crosswalk, and ship the package.',
+    section: 'Laboratory work',
+    order: 35,
+    reviewedAt: '2026-08-22',
+    Content: CustomerSampleShipping,
   },
   {
     audience: 'customer',
@@ -195,10 +229,10 @@ export const documentationEntries: readonly DocumentationEntry[] = [
     locale: 'en-US',
     slug: 'data-and-organization',
     title: 'Data Library and organization access',
-    summary: 'Use assigned data packages and understand Customer organization membership and its current interface boundary.',
+    summary: 'Use released lab-job data, assigned curated packages, and Customer organization access.',
     section: 'Data and access',
     order: 50,
-    reviewedAt: '2026-07-16',
+    reviewedAt: '2026-08-20',
     Content: CustomerDataAndOrganization,
   },
   {
@@ -209,7 +243,7 @@ export const documentationEntries: readonly DocumentationEntry[] = [
     summary: 'Interpret job, sample, quote, payment, scan, and release states and resolve common problems.',
     section: 'Support',
     order: 60,
-    reviewedAt: '2026-07-16',
+    reviewedAt: '2026-08-26',
     Content: CustomerStatusesAndTroubleshooting,
   },
   {
@@ -220,7 +254,7 @@ export const documentationEntries: readonly DocumentationEntry[] = [
     summary: 'Confirm the current Partner, understand access, and find Partner work.',
     section: 'Basics',
     order: 10,
-    reviewedAt: '2026-07-16',
+    reviewedAt: '2026-08-19',
     Content: PartnerGettingStarted,
   },
   {
@@ -231,7 +265,7 @@ export const documentationEntries: readonly DocumentationEntry[] = [
     summary: 'Accept invitations, complete MFA, confirm the current Partner, understand roles, and resolve access problems.',
     section: 'Basics',
     order: 20,
-    reviewedAt: '2026-08-06',
+    reviewedAt: '2026-08-20',
     Content: PartnerAccountAndAccess,
   },
   {
@@ -242,7 +276,7 @@ export const documentationEntries: readonly DocumentationEntry[] = [
     summary: 'Use negotiated offerings, place orders, approve changes, and track shipments.',
     section: 'Partner work',
     order: 30,
-    reviewedAt: '2026-07-16',
+    reviewedAt: '2026-08-26',
     Content: PartnerReagentOrders,
   },
   {
@@ -253,7 +287,7 @@ export const documentationEntries: readonly DocumentationEntry[] = [
     summary: 'Submit inputs, accept a job quote, follow processing, and download outputs.',
     section: 'Partner work',
     order: 40,
-    reviewedAt: '2026-07-16',
+    reviewedAt: '2026-08-26',
     Content: PartnerDataAssembly,
   },
   {
@@ -261,10 +295,10 @@ export const documentationEntries: readonly DocumentationEntry[] = [
     locale: 'en-US',
     slug: 'data-and-organization',
     title: 'Data Library, billing, and organization access',
-    summary: 'Use curated data, understand commercial documents, and understand Partner membership and its current interface boundary.',
+    summary: 'Use curated data, understand commercial records, and manage Partner membership.',
     section: 'Data and access',
     order: 50,
-    reviewedAt: '2026-07-16',
+    reviewedAt: '2026-08-26',
     Content: PartnerDataAndOrganization,
   },
   {
@@ -275,7 +309,7 @@ export const documentationEntries: readonly DocumentationEntry[] = [
     summary: 'Interpret reagent, assembly, commercial, scan, shipment, and release states.',
     section: 'Support',
     order: 60,
-    reviewedAt: '2026-07-16',
+    reviewedAt: '2026-08-26',
     Content: PartnerStatusesAndTroubleshooting,
   },
   {
@@ -286,8 +320,104 @@ export const documentationEntries: readonly DocumentationEntry[] = [
     summary: 'Select the Phaeno workspace, find operational tools, and support users safely.',
     section: 'Basics',
     order: 10,
-    reviewedAt: '2026-08-06',
+    reviewedAt: '2026-08-27',
     Content: PhaenoGettingStarted,
+  },
+  {
+    audience: 'phaeno',
+    locale: null,
+    slug: 'crm',
+    overviewTitle: 'Overview and navigation',
+    title: 'Customer relationship management',
+    summary: 'Manage Companies, Contacts, Leads, Opportunities, Activities, Tasks, reporting, data quality, and reviewed Portal handoffs.',
+    section: 'Customer relationship management',
+    order: 15,
+    reviewedAt: '2026-08-27',
+    Content: PhaenoCrm,
+  },
+  {
+    audience: 'phaeno',
+    locale: null,
+    slug: 'crm-companies-contacts',
+    parentSlug: 'crm',
+    title: 'Companies and Contacts',
+    summary: 'Create durable relationship records, manage effective-dated associations, and resolve duplicates safely.',
+    section: 'Customer relationship management',
+    order: 16,
+    reviewedAt: '2026-08-27',
+    Content: PhaenoCrmCompaniesContacts,
+  },
+  {
+    audience: 'phaeno',
+    locale: null,
+    slug: 'crm-leads-conversion',
+    parentSlug: 'crm',
+    title: 'Leads and conversion',
+    summary: 'Capture signals, record qualification decisions, and convert without granting Portal access.',
+    section: 'Customer relationship management',
+    order: 17,
+    reviewedAt: '2026-08-27',
+    Content: PhaenoCrmLeadsConversion,
+  },
+  {
+    audience: 'phaeno',
+    locale: null,
+    slug: 'crm-opportunities-pipelines',
+    parentSlug: 'crm',
+    title: 'Opportunities and pipelines',
+    summary: 'Run commercial pursuits through controlled stages, immutable history, and currency-safe reporting.',
+    section: 'Customer relationship management',
+    order: 18,
+    reviewedAt: '2026-08-27',
+    Content: PhaenoCrmOpportunitiesPipelines,
+  },
+  {
+    audience: 'phaeno',
+    locale: null,
+    slug: 'crm-activities-tasks',
+    parentSlug: 'crm',
+    title: 'Activities and Tasks',
+    summary: 'Record commercial interactions and manage owned, recurring follow-up in record context.',
+    section: 'Customer relationship management',
+    order: 19,
+    reviewedAt: '2026-08-27',
+    Content: PhaenoCrmActivitiesTasks,
+  },
+  {
+    audience: 'phaeno',
+    locale: null,
+    slug: 'crm-reports-administration',
+    parentSlug: 'crm',
+    title: 'Reports and administration',
+    summary: 'Interpret commercial reports and manage pipelines, fields, views, duplicates, imports, and exports.',
+    section: 'Customer relationship management',
+    order: 20,
+    reviewedAt: '2026-08-27',
+    Content: PhaenoCrmReportsAdministration,
+  },
+  {
+    audience: 'phaeno',
+    locale: null,
+    slug: 'crm-portal-handoffs',
+    parentSlug: 'crm',
+    title: 'Portal handoffs and account links',
+    summary: 'Send commercial context into reviewed Portal workflows without creating access or work.',
+    section: 'Customer relationship management',
+    order: 21,
+    reviewedAt: '2026-08-27',
+    Content: PhaenoCrmPortalHandoffs,
+  },
+  {
+    audience: 'phaeno',
+    locale: null,
+    slug: 'crm-troubleshooting',
+    parentSlug: 'crm',
+    title: 'Troubleshooting and recovery',
+    summary: 'Resolve access, duplicate, stale-update, conversion, stage, import, Task, and handoff problems safely.',
+    section: 'Customer relationship management',
+    order: 22,
+    reviewedAt: '2026-08-27',
+    Content: PhaenoCrmTroubleshooting,
   },
   {
     audience: 'phaeno',
@@ -296,8 +426,8 @@ export const documentationEntries: readonly DocumentationEntry[] = [
     title: 'Organization and user administration',
     summary: 'Manage organizations, Portal requests, readiness, service entitlements, invitations, and access.',
     section: 'Platform operations',
-    order: 20,
-    reviewedAt: '2026-08-06',
+    order: 25,
+    reviewedAt: '2026-08-27',
     Content: PhaenoOrganizationAndUserAdministration,
   },
   {
@@ -378,34 +508,34 @@ export const documentationEntries: readonly DocumentationEntry[] = [
     slug: 'order-customer-lab-authorization',
     parentSlug: 'order-operations',
     title: 'Customer lab authorization',
-    summary: 'Review Customer submissions, issue synchronized quotes, and create the Lab authorization safely.',
+    summary: 'Review Job pricing profiles, issue POMS quotes, and authorize Lab work after roster finalization.',
     section: 'Order operations',
     order: 41,
-    reviewedAt: '2026-07-16',
+    reviewedAt: '2026-08-27',
     Content: PhaenoOrderCustomerLabAuthorization,
   },
   {
     audience: 'phaeno',
     locale: null,
     slug: 'order-reagent-fulfillment',
-    parentSlug: 'order-operations',
-    title: 'Partner reagent fulfillment',
-    summary: 'Review negotiated order snapshots, manage substitutions and backorders, and ship immutably.',
-    section: 'Order operations',
-    order: 42,
-    reviewedAt: '2026-07-16',
+    parentSlug: 'lab-operations',
+    title: 'PSeq kit fulfillment',
+    summary: 'Consume the Commercial order snapshot, manage substitutions and backorders, and ship immutably.',
+    section: 'Laboratory operations',
+    order: 52,
+    reviewedAt: '2026-08-27',
     Content: PhaenoOrderReagentFulfillment,
   },
   {
     audience: 'phaeno',
     locale: null,
     slug: 'order-data-assembly',
-    parentSlug: 'order-operations',
-    title: 'Partner data assembly',
-    summary: 'Validate inputs, quote work, record processing, and approve immutable output releases.',
-    section: 'Order operations',
-    order: 43,
-    reviewedAt: '2026-07-16',
+    parentSlug: 'lab-operations',
+    title: 'Data assembly',
+    summary: 'Validate accepted inputs, record processing, and approve immutable output releases.',
+    section: 'Laboratory operations',
+    order: 53,
+    reviewedAt: '2026-08-27',
     Content: PhaenoOrderDataAssembly,
   },
   {
@@ -414,10 +544,10 @@ export const documentationEntries: readonly DocumentationEntry[] = [
     slug: 'order-holds-cancellations-adjustments',
     parentSlug: 'order-operations',
     title: 'Holds, cancellations, and adjustments',
-    summary: 'Pause work safely, decide cancellation requests, preserve completed work, and synchronize adjustments.',
+    summary: 'Pause work safely, decide cancellation requests, preserve completed work, and account for adjustments.',
     section: 'Order operations',
     order: 44,
-    reviewedAt: '2026-07-16',
+    reviewedAt: '2026-08-26',
     Content: PhaenoOrderHoldsCancellationsAdjustments,
   },
   {
@@ -450,10 +580,10 @@ export const documentationEntries: readonly DocumentationEntry[] = [
     slug: 'lab-operations',
     overviewTitle: 'Overview',
     title: 'Laboratory operations',
-    summary: 'Accession specimens, execute controlled protocols, manage batches and sendouts, and record scientific release readiness.',
+    summary: 'Fulfill kits, receive and accession specimens, execute controlled work, assemble data, and record release readiness.',
     section: 'Laboratory operations',
     order: 50,
-    reviewedAt: '2026-07-20',
+    reviewedAt: '2026-08-27',
     Content: PhaenoLabOperations,
   },
   {
@@ -462,10 +592,10 @@ export const documentationEntries: readonly DocumentationEntry[] = [
     slug: 'lab-receipt-accession',
     parentSlug: 'lab-operations',
     title: 'Receipt and accession',
-    summary: 'Record physical receipt, accession, labels, intake decisions, and container lineage.',
+    summary: 'Record physical receipt, supplier or POMS barcode accession, intake decisions, and container lineage.',
     section: 'Laboratory operations',
     order: 51,
-    reviewedAt: '2026-07-16',
+    reviewedAt: '2026-08-27',
     Content: PhaenoLabReceiptAccession,
   },
   {
@@ -476,7 +606,7 @@ export const documentationEntries: readonly DocumentationEntry[] = [
     title: 'Protocol control and execution',
     summary: 'Approve versioned protocols, pin assignments, capture controlled execution, and recover safely.',
     section: 'Laboratory operations',
-    order: 52,
+    order: 54,
     reviewedAt: '2026-07-18',
     Content: PhaenoLabProtocolExecution,
   },
@@ -488,8 +618,8 @@ export const documentationEntries: readonly DocumentationEntry[] = [
     title: 'Materials and equipment',
     summary: 'Qualify lots and equipment, record consumption and use, and preserve traceability.',
     section: 'Laboratory operations',
-    order: 53,
-    reviewedAt: '2026-07-18',
+    order: 55,
+    reviewedAt: '2026-08-26',
     Content: PhaenoLabMaterialsEquipment,
   },
   {
@@ -500,7 +630,7 @@ export const documentationEntries: readonly DocumentationEntry[] = [
     title: 'Libraries, batches, and sequencing',
     summary: 'Prepare QC-approved libraries, build cross-order batches, and track sendout custody.',
     section: 'Laboratory operations',
-    order: 54,
+    order: 56,
     reviewedAt: '2026-07-18',
     Content: PhaenoLabLibrariesBatchesSequencing,
   },
@@ -512,8 +642,8 @@ export const documentationEntries: readonly DocumentationEntry[] = [
     title: 'Exceptions, rework, and cancellation',
     summary: 'Classify exceptions, preserve rework history, and respond safely to cancellation requests.',
     section: 'Laboratory operations',
-    order: 55,
-    reviewedAt: '2026-07-16',
+    order: 57,
+    reviewedAt: '2026-08-26',
     Content: PhaenoLabExceptionsRework,
   },
   {
@@ -524,7 +654,7 @@ export const documentationEntries: readonly DocumentationEntry[] = [
     title: 'Scientific approval and release readiness',
     summary: 'Review complete lineage and clean final artifacts, enforce actor separation, and pin the approved package.',
     section: 'Laboratory operations',
-    order: 56,
+    order: 58,
     reviewedAt: '2026-08-29',
     Content: PhaenoLabScientificApproval,
   },
@@ -532,11 +662,11 @@ export const documentationEntries: readonly DocumentationEntry[] = [
     audience: 'phaeno',
     locale: null,
     slug: 'configuration-and-recovery',
-    title: 'Configuration and integration recovery',
-    summary: 'Maintain scientific and commercial rules and recover durable integrations.',
+    title: 'Configuration and accounting recovery',
+    summary: 'Maintain scientific, commercial, accounting, credit, and sample-shipping rules.',
     section: 'Platform operations',
     order: 60,
-    reviewedAt: '2026-07-17',
+    reviewedAt: '2026-08-27',
     Content: PhaenoConfigurationAndRecovery,
   },
   {
@@ -544,10 +674,10 @@ export const documentationEntries: readonly DocumentationEntry[] = [
     locale: null,
     slug: 'statuses-and-recovery',
     title: 'Statuses and recovery',
-    summary: 'Triage operational states and safely recover integrations, files, releases, and notifications.',
+    summary: 'Triage operational states and safely recover accounting records, files, releases, and notifications.',
     section: 'Support',
     order: 70,
-    reviewedAt: '2026-07-16',
+    reviewedAt: '2026-08-26',
     Content: PhaenoStatusesAndRecovery,
   },
 ] as const

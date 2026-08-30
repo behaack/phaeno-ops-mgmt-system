@@ -20,7 +20,7 @@ If changes are requested, create a corrected revision and resubmit. Earlier revi
 
 ## Accept the job quote
 
-Assembly work is priced per job. Phaeno issues an itemized quote that becomes visible after its QuickBooks Online estimate synchronizes successfully. A Partner administrator accepts the current, unexpired quote and supplies the required purchase-order number.
+Assembly work is priced per job. Phaeno issues an itemized POMS quote that becomes visible immediately after issuance. A Partner administrator accepts the current, unexpired quote and supplies the required purchase-order number.
 
 An accepted quote freezes the validated input, profile, and commercial snapshot. Later scope changes use a separate immutable change quote.
 
@@ -28,7 +28,11 @@ An accepted quote freezes the validated input, profile, and commercial snapshot.
 
 The request shows intake review, queued work, processing, output review, output availability, holds, and completion. An approved output release contains an immutable manifest and one or more checksummed files tied to the source input revision and assembly profile.
 
-Credit-approved Partners use Net 30 and may download scientifically ready outputs after the completion invoice synchronizes. Partners without approved assembly credit can see that outputs are ready but cannot download them until QuickBooks confirms payment.
+Credit-approved Partners use Net 30 and may download scientifically ready outputs after the commercial source record is created. Partners without approved assembly credit can see that outputs are ready but cannot download them; the current portal has no payment-confirmation action, so contact Phaeno about the request.
+
+Use **Download package** to retrieve every file in a release as one ZIP, or download a file individually. Only a complete server response counts. Partial, cancelled, failed, and timed-out transfers remain undownloaded, and an active transfer is shown as in progress until it reaches a terminal outcome. One completed download by any currently authorized Partner member satisfies that file for the organization; the Partner view does not expose the member's identity.
+
+Each newly released output shows the retention schedule frozen when that release became available. **Standard deletion** is the normal deletion time. **Conditional grace through** applies only when at least one file in the release remains undownloaded at the standard deadline; when that happens, the whole release receives the displayed grace period. Dates and times include the browser's local time-zone label. An earlier output created before retention snapshots were introduced does not show a schedule; contact Phaeno before relying on a deletion date for that release.
 
 A corrected output is a new release. Partner users download the release and deliver it through their own customer process; Portal does not collect the Partner’s end-customer identity or deliver directly to that customer.
 

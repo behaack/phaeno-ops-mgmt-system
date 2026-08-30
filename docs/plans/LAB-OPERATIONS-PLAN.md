@@ -34,9 +34,11 @@ or production activation.
   application scope. Database-backed controller/provider verification is
   complete; physical bench validation and production activation are
   incomplete.
-  Customer quote acceptance atomically creates the
-  Commercial authorization and Laboratory work order; approved cancellation
-  reaches Lab before Commercial commits it. Additive Lab roles, the operator
+  Customer quote acceptance atomically records commercial placement and opens
+  exact sample-roster preparation. Finalizing the compliant roster atomically
+  creates the Commercial authorization, Laboratory work order, specimens, and
+  shipment records; approved cancellation reaches Lab before Commercial
+  commits it. Additive Lab roles, the operator
   workspace, durable Lab-to-Commercial projections, receipt/accession and
   physical lineage, controlled protocols and execution, including the
   dedicated structured version builder, materials and equipment, libraries and
@@ -46,10 +48,11 @@ or production activation.
   checksummed container identifiers, browser-rendered Code 39 labels,
   reasoned print/reprint/failure history, exact scan lookup, and scan-first
   QC-passed-library batch entry with duplicate and wrong-context rejection.
-  Phaeno operators can use the **Order intake** section in Order Operations to
-  reach a placed order's existing work order; this is a discoverability handoff,
-  not a second work-order creation path.
-  The five operational workspace sections now use the shared
+  Phaeno operators use **Receipt & accession** in Lab Operations to prepare
+  return kits, identify shipments, compare tubes, and reach a roster-finalized
+  placed order's existing work order. Order Operations retains only the
+  Commercial source order and links to the same work order.
+  The eight operational workspace sections now use the shared
   far-left sidebar beneath the toolbar, with a remembered pinned desktop rail
   and the same non-modal hover, keyboard, and click rail when narrow or
   unpinned. Laboratory role administration now lives in the durable Phaeno
@@ -70,9 +73,12 @@ or production activation.
   separately owned handoff to Phaeno's existing automated data pipeline.
 - Phaeno will not initially run NGS in-house.
 - The boundary from generated NGS files through Phaeno's automated pipeline,
-  file management, retention, provenance, and output storage is a major TBD.
-  This plan assumes only that approved customer output files eventually become
-  available for release through the Portal.
+  including raw/intermediate storage, retention, provenance, and output
+  generation, is a major TBD. This plan assumes only that approved customer
+  output files eventually become available for release through the Portal.
+  `FILE-MANAGEMENT-PLAN.md` owns the settled post-release lifecycle: global
+  30/5/5 defaults, Customer/Partner/Prospect organization overrides, release-
+  time snapshot, undownloaded warnings, grace, and package-byte deletion.
 - This plan supersedes the laboratory-execution direction in
   `ORDER-MANAGEMENT-PLAN.md`. That plan remains authoritative for commercial
   ordering, pricing, fulfillment, files, payment, and publication.
@@ -91,17 +97,31 @@ or production activation.
   projection, and isolation behavior plus replay-safe, monotonic, customer-safe
   projection delivery. All five passed against the migrated local `phaeno_ops`
   database on 2026-07-16.
-- Five additional opt-in PostgreSQL controller tests cover atomic
-  Commercial-to-Lab quote authorization, rollback after intermediate provider
-  persistence, accepted cancellation, started-work veto without a partial
-  Commercial decision, and the rollback-isolated operator journey from assigned
-  roles and accession through Ready for release. All five passed against the
-  migrated local `phaeno_ops` database on 2026-07-16.
+- Thirteen opt-in PostgreSQL controller test sources now cover Phaeno initiation,
+  shared command idempotency, canonical Lab-service pricing, quote acceptance
+  without premature Lab work, atomic roster-finalization authorization and
+  shipping, rollback after intermediate provider persistence, accepted
+  cancellation, started-work veto without a partial Commercial decision, and
+  the rollback-isolated operator journey from assigned roles and accession
+  through Ready for release, including replay-safe roster finalization. The original five-case handoff suite passed
+  against the migrated local `phaeno_ops` database on 2026-07-16. The expanded
+  sources compiled with zero warnings or errors on 2026-08-27; tests were not
+  requested and the current thirteen-case suite was not run.
 - Software-side bench preflight and the remaining physical acceptance protocol
   are recorded in `LAB-OPERATIONS-BENCH-VALIDATION.md`. Barcode allocation,
   Code 39 rendering, reasoned print outcomes, scan lookup, scan-first batching,
   lineage, and workflow evidence passed; real printer, scanner, label-stock,
   degraded-mode, and operator observations remain pending.
+- `SAMPLE-SHIPPING-AND-INTAKE-PLAN.md` owns the separate pre-receipt
+  shipment-packet barcode and scan handoff for accepted Prospect Trial Projects
+  and future Customer promotional no-charge orders. Its shared configuration,
+  return-kit and registered supplier-tube inventory, external crosswalk,
+  immutable printable packet, and read-only packet-plus-tube comparison scan
+  are implemented; the owning Trial/freebie issuance workflows remain later
+  phases. A comparison scan does not record custody. At accession, a validated
+  registered supplier barcode is adopted as the submitted container's
+  authoritative identity without a second label; POMS continues to allocate
+  its own authoritative barcodes for derived containers.
 - Phase 0 Step 4 is complete in design and local execution. The approved clean
   development database and migration reset, solution/project restructure, and
   schema baseline sequence are recorded in
@@ -207,7 +227,8 @@ directly.
 - Customer, Partner, and Prospect relationship state
 - Organizations, users, memberships, invitations, and entitlements
 - Quotes, pricing, commercial orders, order snapshots, and amendments
-- HubSpot and QuickBooks commercial integrations
+- first-party CRM, manual-accounting source and reconciliation workflows, plus
+  any future external CRM or accounting adapter
 - Customer and Partner submission experiences
 - Authorization to begin paid or approved no-charge work
 - Customer-facing milestones, expected timing, and exception communication
@@ -216,6 +237,8 @@ directly.
 
 ### Lab Operations Owns
 
+- Physical PSeq kit preparation, substitution handling, shipping, and fulfillment
+- Data Assembly input validation, processing, QC review, and output approval
 - Laboratory work orders and laboratory execution state
 - Physical receipt, accessioning, and intake disposition
 - Specimen, container, aliquot, and derived-library lineage
@@ -237,9 +260,9 @@ Ownership and implementation remain TBD for:
 - intermediate pipeline artifacts
 - file provenance, checksums, and lineage across the pipeline
 - scientific file storage and lifecycle
-- raw, intermediate, and customer-output retention policy
+- raw and intermediate pipeline retention policy
 - the final technical handoff by which customer output files become available
-  to Commercial Operations
+  to Commercial Operations as an immutable released package
 
 No initial Lab Operations design may silently claim this area or create a
 competing scientific file-management system.
@@ -300,9 +323,11 @@ being misrepresented as a commercial order.
   An optional Partner reference remains opaque Partner data.
 - Partner-specific pricing, contracts, and permissions remain Commercial
   Operations concerns.
-- Selling a Partner-manufactured kit is a Commercial Operations fulfillment
-  transaction. It creates no Lab Operations work order unless Phaeno is
-  separately contracted to process specimens.
+- Selling a PSeq Kit creates and preserves a Commercial order and pricing
+  snapshot. Physical kit review, preparation, substitution handling, shipping,
+  and fulfillment occur in the Lab Operations PSeq kits workflow. Kit
+  fulfillment does not create a specimen accession or scientific Lab work order
+  unless Phaeno is separately authorized to process specimens.
 - Customers and Partners never receive direct access to the Lab Operations
   workspace. They interact through Portal submissions, approved milestones,
   customer-safe exceptions, selected QC information, and released outputs.
@@ -379,7 +404,9 @@ assembly. Its operational phases do not become separate sales.
 ### PSeq Kit
 
 PSeq Kit is one commercial product combining the kit with its included data
-assembly entitlement. Kit fulfillment remains in Commercial Operations. If
+assembly entitlement. The order and pricing snapshot remain Commercial;
+physical kit fulfillment and the included Data Assembly execution are operated
+from Lab Operations. If
 Phaeno never receives a physical specimen, the workflow must not create a
 fictitious accession. The detailed path from customer data submission through
 the existing automated pipeline remains part of the major pipeline and file
@@ -627,9 +654,29 @@ The system should be capable of recording:
 - exhausted, returned, transferred, or disposed status
 - final disposition date, operator, method, and reason
 
-Actual retention periods are a policy TBD. The system must not automatically
-record physical material as disposed merely because a date has passed; an
-authorized operator confirms the disposition.
+Except for the confirmed Trial Project rule below, actual retention periods are
+a policy TBD. The system must not automatically record physical material as
+disposed merely because a date has passed; an authorized operator confirms the
+disposition.
+
+The Trial Project policy is the first service-specific exception to that TBD:
+
+- remaining extracted RNA is retained for 30 calendar days after `Completed` or
+  `Closed incomplete` by default;
+- the exact duration and `Destroy` or pre-approved `Return` disposition are
+  frozen on the Trial Project, and later configuration changes do not rewrite
+  it;
+- return is allowed only when approved before the first sample shipment, with
+  destination, handling, and shipping payer frozen in the terms;
+- a retain-until date creates due work but never an automatic disposition;
+- an authorized operator records exhaustion, return, or destruction with date,
+  method, reason, actor, and return tracking when applicable; and
+- Trial material cannot be reused for research, training, validation, another
+  project, or another organization without separate written authorization.
+
+This Trial-specific rule does not settle retention periods for paid Customer or
+Partner work. A controlled hold or incident-preservation requirement supersedes
+the normal due date until authorized disposition.
 
 ## Initial Release Scope
 
@@ -660,7 +707,10 @@ Explicitly excluded or deferred:
 - pharmaceutical-submission-oriented GxP or Part 11 controls
 - raw NGS and intermediate file management
 - automated data-pipeline orchestration
-- scientific file provenance, lifecycle, and retention policy
+- raw/intermediate scientific file provenance, lifecycle, and retention policy
+- the technical output-generation and handoff contract into an immutable
+  customer-facing release; post-release retention is already assigned to File
+  Management
 
 ## Future Extension Paths
 
@@ -821,9 +871,16 @@ targets are imposed.
 
 ## Open Decisions and Major TBDs
 
-1. **Pipeline and scientific file management:** ownership, storage, orchestration,
-   provenance, retention, security, and output-availability contract.
-2. **Physical retention policy:** actual periods and service-specific rules.
+1. **Pipeline and scientific file management:** ownership, storage,
+   orchestration, raw/intermediate provenance and retention, security, output
+   generation, and the technical handoff into the immutable released package.
+   The post-release customer deliverable policy is settled under File
+   Management with global 30/5/5 defaults and Customer/Partner/Prospect
+   organization overrides.
+2. **Physical retention policy:** paid Customer and Partner periods and other
+   service-specific rules. The configurable Trial Project default is settled at
+   30 calendar days after terminal operational closure, with operator-confirmed
+   destruction or a return frozen before first shipment.
 3. **Operator workflow validation:** software preflight is complete; minimum
    required fields, batch-entry behavior, labels, scanners, degraded mode, and
    exception paths still require the physical acceptance session in

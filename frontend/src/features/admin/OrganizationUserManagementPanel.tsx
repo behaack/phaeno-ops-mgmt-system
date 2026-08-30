@@ -43,6 +43,10 @@ import {
 } from '#/components/ui/dropdown-menu'
 import { Input } from '#/components/ui/input'
 import { Label } from '#/components/ui/label'
+import {
+  RequiredDialogFooter,
+  RequiredFieldName,
+} from '#/components/ui/required-field'
 
 const roleSchema = z.object({
   role: z.enum(['Member', 'Administrator']),
@@ -71,9 +75,11 @@ type EditTarget = {
 }
 
 export function OrganizationUserManagementPanel({
+  currentUserId,
   organizationId,
   organizationName,
 }: {
+  currentUserId: string
   organizationId: string
   organizationName: string
 }) {
@@ -161,7 +167,7 @@ export function OrganizationUserManagementPanel({
         <CardHeader>
           <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
             <div>
-              <CardTitle>{organizationName} users</CardTitle>
+              <CardTitle>Users</CardTitle>
               <CardDescription>
                 Active members and pending invitations for this organization.
               </CardDescription>
@@ -238,13 +244,15 @@ export function OrganizationUserManagementPanel({
                           <Pencil aria-hidden="true" />
                           Edit
                         </DropdownMenuItem>
-                        <DropdownMenuItem
-                          variant="destructive"
-                          onSelect={() => setDeactivateTarget(target)}
-                        >
-                          <Trash2 aria-hidden="true" />
-                          Deactivate
-                        </DropdownMenuItem>
+                        {user.id !== currentUserId ? (
+                          <DropdownMenuItem
+                            variant="destructive"
+                            onSelect={() => setDeactivateTarget(target)}
+                          >
+                            <Trash2 aria-hidden="true" />
+                            Deactivate
+                          </DropdownMenuItem>
+                        ) : null}
                       </DropdownMenuContent>
                     </DropdownMenu>
                   ) : null}
@@ -484,7 +492,9 @@ function MembershipRoleDialog({
             />
           </div>
           <div className="grid gap-1.5">
-            <Label htmlFor="organization-user-role">Role</Label>
+            <Label htmlFor="organization-user-role">
+              <RequiredFieldName>Role</RequiredFieldName>
+            </Label>
             <select
               id="organization-user-role"
               className="h-9 cursor-pointer rounded-lg border border-input bg-background px-3 text-sm"
@@ -497,7 +507,7 @@ function MembershipRoleDialog({
             </select>
           </div>
         </form>
-        <DialogFooter>
+        <RequiredDialogFooter>
           <Button
             type="button"
             variant="outline"
@@ -512,7 +522,7 @@ function MembershipRoleDialog({
           >
             {isPending ? 'Saving…' : 'Save changes'}
           </Button>
-        </DialogFooter>
+        </RequiredDialogFooter>
       </DialogContent>
     </Dialog>
   )
@@ -573,13 +583,7 @@ function OrganizationInviteDialog({
           <div className="grid gap-4 sm:grid-cols-2">
             <div className="grid gap-1.5">
               <Label htmlFor="organization-invite-first-name">
-                First name{' '}
-                <span
-                  className="text-[var(--ruby-red,#b4233c)]"
-                  aria-hidden="true"
-                >
-                  *
-                </span>
+                <RequiredFieldName>First name</RequiredFieldName>
               </Label>
               <Input
                 id="organization-invite-first-name"
@@ -596,13 +600,7 @@ function OrganizationInviteDialog({
             </div>
             <div className="grid gap-1.5">
               <Label htmlFor="organization-invite-last-name">
-                Last name{' '}
-                <span
-                  className="text-[var(--ruby-red,#b4233c)]"
-                  aria-hidden="true"
-                >
-                  *
-                </span>
+                <RequiredFieldName>Last name</RequiredFieldName>
               </Label>
               <Input
                 id="organization-invite-last-name"
@@ -620,13 +618,7 @@ function OrganizationInviteDialog({
           </div>
           <div className="grid gap-1.5">
             <Label htmlFor="organization-invite-email">
-              Email{' '}
-              <span
-                className="text-[var(--ruby-red,#b4233c)]"
-                aria-hidden="true"
-              >
-                *
-              </span>
+              <RequiredFieldName>Email</RequiredFieldName>
             </Label>
             <Input
               id="organization-invite-email"
@@ -642,7 +634,9 @@ function OrganizationInviteDialog({
             ) : null}
           </div>
           <div className="grid gap-1.5">
-            <Label htmlFor="organization-invite-role">Role</Label>
+            <Label htmlFor="organization-invite-role">
+              <RequiredFieldName>Role</RequiredFieldName>
+            </Label>
             <select
               id="organization-invite-role"
               className="h-9 cursor-pointer rounded-lg border border-input bg-background px-3 text-sm"
@@ -655,7 +649,7 @@ function OrganizationInviteDialog({
             </select>
           </div>
         </form>
-        <DialogFooter>
+        <RequiredDialogFooter>
           <Button
             type="button"
             variant="outline"
@@ -670,7 +664,7 @@ function OrganizationInviteDialog({
           >
             {isPending ? 'Sending…' : 'Send invitation'}
           </Button>
-        </DialogFooter>
+        </RequiredDialogFooter>
       </DialogContent>
     </Dialog>
   )

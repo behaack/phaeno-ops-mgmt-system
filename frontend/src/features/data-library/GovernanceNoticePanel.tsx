@@ -27,10 +27,13 @@ import {
   DialogClose,
   DialogContent,
   DialogDescription,
-  DialogFooter,
   DialogHeader,
   DialogTitle,
 } from '#/components/ui/dialog'
+import {
+  RequiredDialogFooter,
+  RequiredFieldName,
+} from '#/components/ui/required-field'
 
 const attestationSchema = z.object({
   notes: z.string().trim().min(1, 'Remediation details are required.').max(4000),
@@ -176,7 +179,7 @@ export function GovernanceNoticePanel({
             >
               <label className="grid gap-1.5">
                 <span className="text-sm font-medium">
-                  Remediation details <span className="text-destructive">*</span>
+                  <RequiredFieldName>Remediation details</RequiredFieldName>
                 </span>
                 <textarea className={textareaClass} rows={5} {...form.register('notes')} />
                 {form.formState.errors.notes?.message ? (
@@ -189,12 +192,12 @@ export function GovernanceNoticePanel({
                   <AlertDescription>{getApiErrorMessage(mutation.error, 'Try again or contact Phaeno support.')}</AlertDescription>
                 </Alert>
               ) : null}
-              <DialogFooter>
+              <RequiredDialogFooter>
                 <DialogClose asChild><Button type="button" variant="outline">Cancel</Button></DialogClose>
                 <Button type="submit" disabled={mutation.isPending}>
                   {mutation.isPending ? 'Submitting' : 'Submit attestation'}
                 </Button>
-              </DialogFooter>
+              </RequiredDialogFooter>
             </form>
           ) : null}
         </DialogContent>

@@ -1,3 +1,5 @@
+import { useEffect, useState } from 'react'
+
 import type { RelationshipRequest } from '#/api/organization-management'
 import { Alert, AlertDescription } from '#/components/ui/alert'
 import { Badge } from '#/components/ui/badge'
@@ -10,8 +12,9 @@ import {
   DialogHeader,
   DialogTitle,
 } from '#/components/ui/dialog'
+import { OrderingAuthorizationField } from './OrderingAuthorizationField'
 
-export function AccountProvisionDialog({
+export function AccountCreationRecoveryDialog({
   error,
   isPending,
   onConfirm,
@@ -20,18 +23,25 @@ export function AccountProvisionDialog({
 }: {
   error?: string
   isPending: boolean
-  onConfirm: () => void
+  onConfirm: (orderingAuthorized: boolean) => void
   onOpenChange: (open: boolean) => void
   request: RelationshipRequest | null
 }) {
+  const [orderingAuthorized, setOrderingAuthorized] = useState(true)
+
+  useEffect(() => {
+    if (request) setOrderingAuthorized(true)
+  }, [request])
+
+  const createsCustomerAccount = request?.requestedOrganizationKind === 'Customer'
+
   return (
     <Dialog open={Boolean(request)} onOpenChange={onOpenChange}>
       <DialogContent>
         <DialogHeader>
-          <DialogTitle>Create account from approved request</DialogTitle>
+          <DialogTitle>Complete account creation</DialogTitle>
           <DialogDescription>
-            Create the durable Portal account, then continue its setup on the
-            account details page.
+            Recover this approved request by creating and associating its Portal account.
           </DialogDescription>
         </DialogHeader>
         {error ? (
@@ -47,22 +57,27 @@ export function AccountProvisionDialog({
                 <Badge variant="outline">{request.requestedOrganizationKind}</Badge>
                 <Badge variant="outline">{request.requestNumber}</Badge>
               </div>
-              <p className="mt-2 text-sm text-muted-foreground">
-                {request.summary}
-              </p>
+              <p className="mt-2 text-sm text-muted-foreground">{request.summary}</p>
             </div>
+            {createsCustomerAccount ? (
+              <OrderingAuthorizationField
+                id="account-recovery-ordering-authorized"
+                checked={orderingAuthorized}
+                disabled={isPending}
+                onCheckedChange={setOrderingAuthorized}
+              />
+            ) : null}
             <p className="text-sm text-muted-foreground">
-              The account starts with pending Portal readiness. This action
-              does not invite users or activate requested services; Phaeno
-              completes those controls from the account details page.
+              The account starts with pending Portal readiness. This recovery does not
+              invite users, create an order, or mark the request applied.
             </p>
           </div>
         ) : null}
         <DialogFooter>
           <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
-            Cancel
+            Keep incomplete
           </Button>
-          <Button type="button" disabled={isPending} onClick={onConfirm}>
+          <Button type="button" disabled={isPending} onClick={() => onConfirm(orderingAuthorized)}>
             {isPending ? 'Creating…' : 'Create and open account'}
           </Button>
         </DialogFooter>

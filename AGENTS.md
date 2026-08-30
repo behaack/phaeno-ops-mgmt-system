@@ -79,7 +79,10 @@ Keep the owner focused on scientific meaning, sequencing and laboratory workflow
   existing tokens and patterns under `website/src/styles/`. Portal
   record-management conventions do not automatically apply to marketing pages.
 - Use pointer cursors for mouse-clickable actions and accessible labels for icon-only controls.
-- Keep required-field presentation consistent: label, required marker, control, and error.
+- Keep required-field presentation consistent: label, tightly spaced required
+  marker, control, and error. Every form with required fields must include a
+  visible `* Required` legend. Place the legend in the footer of modal forms,
+  before the modal action group in reading order.
 - Keep primary navigation in the desktop toolbar and move it into the user menu on narrow layouts; do not render duplicate navigation for one viewport.
 
 ## Planning and tests

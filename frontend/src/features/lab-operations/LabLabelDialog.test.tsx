@@ -24,6 +24,8 @@ const container: LabContainer = {
   parentContainerId: null,
   kind: 'SubmittedSpecimen',
   barcode: 'PH-S-23456789AB-C',
+  barcodeSource: 'PhaenoGenerated',
+  externalBarcodeReferenceId: null,
   label: 'Submitted specimen ACC-1',
   labelPrintCount: 0,
   location: 'Intake rack A',

@@ -2,13 +2,17 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Options;
 using PSeq.Operations.Commercial;
 using PSeq.Operations.Commercial.Accounts.Domain;
+using PSeq.Operations.Commercial.Crm.Domain;
 using PSeq.Operations.Commercial.DataProvisioning.Domain;
+using PSeq.Operations.Commercial.FileManagement.Domain;
 using PSeq.Operations.Commercial.LabOperations.Domain;
 using PSeq.Operations.Commercial.OrderManagement.Domain;
 using PSeq.Operations.Commercial.Relationships.Domain;
 using PSeq.Operations.Laboratory;
 using PSeq.Operations.Laboratory.Domain;
 using PhaenoPortal.App.Features.DataProvisioning;
+using PhaenoPortal.App.Features.Crm;
+using PhaenoPortal.App.Features.FileManagement;
 using PhaenoPortal.App.Features.LabOperations;
 using PhaenoPortal.App.Features.OrderManagement;
 using PhaenoPortal.App.Features.OrderManagement.Domain;
@@ -85,12 +89,28 @@ public sealed class PSeqOperationsDbContext(
 
     public DbSet<DataProvisioningNotice> DataProvisioningNotices { get; set; }
 
+    public DbSet<ReleasedDeliverablePolicyDefault> ReleasedDeliverablePolicyDefaults { get; set; }
+
+    public DbSet<OrganizationReleasedDeliverablePolicyOverride> OrganizationReleasedDeliverablePolicyOverrides { get; set; }
+
+    public DbSet<ReleasedDeliverableRetentionSnapshot> ReleasedDeliverableRetentionSnapshots { get; set; }
+
     public DbSet<QboCatalogItem> QboCatalogItems { get; set; }
     public DbSet<AnalysisDefinition> AnalysisDefinitions { get; set; }
     public DbSet<PartnerReagentOffering> PartnerReagentOfferings { get; set; }
     public DbSet<AssemblyProfile> AssemblyProfiles { get; set; }
     public DbSet<OrganizationCommercialProfile> OrganizationCommercialProfiles { get; set; }
     public DbSet<OrderSystemConfiguration> OrderSystemConfigurations { get; set; }
+    public DbSet<SampleShippingDestination> SampleShippingDestinations { get; set; }
+    public DbSet<SampleTypeDefinition> SampleTypeDefinitions { get; set; }
+    public DbSet<SampleShippingInstructionRule> SampleShippingInstructionRules { get; set; }
+    public DbSet<SampleShipment> SampleShipments { get; set; }
+    public DbSet<SampleShipmentItem> SampleShipmentItems { get; set; }
+    public DbSet<SampleShipmentTubeSlot> SampleShipmentTubeSlots { get; set; }
+    public DbSet<SampleReturnKit> SampleReturnKits { get; set; }
+    public DbSet<RegisteredSampleTube> RegisteredSampleTubes { get; set; }
+    public DbSet<SampleTubeAssignmentEvent> SampleTubeAssignmentEvents { get; set; }
+    public DbSet<SampleShippingPacketRevision> SampleShippingPacketRevisions { get; set; }
     public DbSet<CommercialDocumentLink> CommercialDocumentLinks { get; set; }
     public DbSet<OrderOutboxMessage> OrderOutboxMessages { get; set; }
     public DbSet<OrderIdempotencyRecord> OrderIdempotencyRecords { get; set; }
@@ -100,6 +120,8 @@ public sealed class PSeqOperationsDbContext(
     public DbSet<OrderStatusEvent> OrderStatusEvents { get; set; }
     public DbSet<OrderCancellationRequest> OrderCancellationRequests { get; set; }
     public DbSet<LabServiceOrder> LabServiceOrders { get; set; }
+    public DbSet<LabServiceSourceGroup> LabServiceSourceGroups { get; set; }
+    public DbSet<LabSampleImportPreview> LabSampleImportPreviews { get; set; }
     public DbSet<LabServiceRequestRevision> LabServiceRequestRevisions { get; set; }
     public DbSet<LabSample> LabSamples { get; set; }
     public DbSet<LabServiceQuote> LabServiceQuotes { get; set; }
@@ -132,6 +154,25 @@ public sealed class PSeqOperationsDbContext(
     public DbSet<OrganizationServiceEntitlement> OrganizationServiceEntitlements { get; set; }
     public DbSet<PortalIntegrationRequest> PortalIntegrationRequests { get; set; }
     public DbSet<PortalIntegrationRequestService> PortalIntegrationRequestServices { get; set; }
+    public DbSet<CrmCompany> CrmCompanies { get; set; }
+    public DbSet<CrmContact> CrmContacts { get; set; }
+    public DbSet<CrmCompanyContact> CrmCompanyContacts { get; set; }
+    public DbSet<CrmLead> CrmLeads { get; set; }
+    public DbSet<CrmPipeline> CrmPipelines { get; set; }
+    public DbSet<CrmPipelineStage> CrmPipelineStages { get; set; }
+    public DbSet<CrmOpportunity> CrmOpportunities { get; set; }
+    public DbSet<CrmOpportunityContact> CrmOpportunityContacts { get; set; }
+    public DbSet<CrmOpportunityStageHistory> CrmOpportunityStageHistory { get; set; }
+    public DbSet<CrmActivity> CrmActivities { get; set; }
+    public DbSet<CrmTask> CrmTasks { get; set; }
+    public DbSet<CrmSavedView> CrmSavedViews { get; set; }
+    public DbSet<CrmCustomFieldDefinition> CrmCustomFieldDefinitions { get; set; }
+    public DbSet<CrmCustomFieldValue> CrmCustomFieldValues { get; set; }
+    public DbSet<CrmMergeRecord> CrmMergeRecords { get; set; }
+    public DbSet<CrmImportBatch> CrmImportBatches { get; set; }
+    public DbSet<CrmExportRecord> CrmExportRecords { get; set; }
+    public DbSet<CrmHandoff> CrmHandoffs { get; set; }
+    public DbSet<CrmPortalAccountLink> CrmPortalAccountLinks { get; set; }
     public DbSet<LabWorkOrder> LabWorkOrders { get; set; }
     public DbSet<LabWorkAuthorizationVersion> LabWorkAuthorizationVersions { get; set; }
     public DbSet<LabSpecimen> LabSpecimens { get; set; }
@@ -378,8 +419,10 @@ public sealed class PSeqOperationsDbContext(
         });
 
         DataProvisioningModelConfiguration.Configure(modelBuilder);
+        FileManagementModelConfiguration.Configure(modelBuilder);
         OrderManagementModelConfiguration.Configure(modelBuilder, this.persistenceOptions.CommercialSchema);
         CommercialLabOperationsModelConfiguration.Configure(modelBuilder, this.persistenceOptions.CommercialSchema);
+        CrmModelConfiguration.Configure(modelBuilder);
         RelationshipManagementModelConfiguration.Configure(modelBuilder);
         LabOperationsModelConfiguration.Configure(modelBuilder, this.persistenceOptions.LaboratorySchema);
         WebsiteModelConfiguration.Configure(modelBuilder, this.persistenceOptions.WebsiteSchema);

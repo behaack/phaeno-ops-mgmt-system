@@ -134,12 +134,14 @@ public static class LabOperationsModelConfiguration
             ConfigureAudited(entity);
             entity.Property(e => e.Kind).HasConversion<string>().HasMaxLength(50).IsRequired();
             entity.Property(e => e.Barcode).HasMaxLength(100).IsRequired();
+            entity.Property(e => e.BarcodeSource).HasConversion<string>().HasMaxLength(50).IsRequired();
             entity.Property(e => e.Label).HasMaxLength(255).IsRequired();
             entity.Property(e => e.Location).HasMaxLength(255).IsRequired();
             entity.Property(e => e.QuantityUnit).HasMaxLength(50);
             entity.Property(e => e.Status).HasConversion<string>().HasMaxLength(50).IsRequired();
             entity.Property(e => e.DispositionReason).HasMaxLength(1000);
             entity.HasIndex(e => e.Barcode).IsUnique();
+            entity.HasIndex(e => e.ExternalBarcodeReferenceId).IsUnique();
             entity.HasIndex(e => new { e.LabWorkOrderId, e.LabSpecimenId });
             entity.HasOne<LabWorkOrder>().WithMany().HasForeignKey(e => e.LabWorkOrderId).OnDelete(DeleteBehavior.Restrict);
             entity.HasOne<LabSpecimen>().WithMany().HasForeignKey(e => e.LabSpecimenId).OnDelete(DeleteBehavior.Restrict);

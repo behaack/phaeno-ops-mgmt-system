@@ -13,12 +13,16 @@ import {
   Dialog,
   DialogContent,
   DialogDescription,
-  DialogFooter,
   DialogHeader,
   DialogTitle,
 } from '#/components/ui/dialog'
 import { Label } from '#/components/ui/label'
+import {
+  RequiredDialogFooter,
+  RequiredFieldName,
+} from '#/components/ui/required-field'
 import { selectClass, textareaClass } from './OrganizationFormDialog'
+import { OrderingAuthorizationField } from './OrderingAuthorizationField'
 
 export type RequestAction = 'approve' | 'decline' | 'apply' | 'cancel'
 
@@ -29,6 +33,7 @@ const schema = z.object({
     .min(1, 'Record the reason or completed work.')
     .max(2000),
   organizationId: z.string(),
+  orderingAuthorized: z.boolean(),
 })
 
 type Values = z.infer<typeof schema>
@@ -46,24 +51,30 @@ export function RequestActionDialog({
   error?: string
   isPending: boolean
   onOpenChange: (open: boolean) => void
-  onSubmit: (values: { explanation: string; organizationId?: string }) => void
+  onSubmit: (values: { explanation: string; organizationId?: string; orderingAuthorized: boolean }) => void
   organizations?: Organization[]
   request: RelationshipRequest | null
 }) {
   const open = Boolean(action && request)
   const form = useForm<Values>({
-    defaultValues: { explanation: '', organizationId: '' },
+    defaultValues: { explanation: '', organizationId: '', orderingAuthorized: true },
     mode: 'onBlur',
     resolver: zodResolver(schema),
   })
 
   useEffect(() => {
-    if (open) form.reset({ explanation: '', organizationId: request?.organizationId ?? '' })
+    if (open) form.reset({ explanation: '', organizationId: request?.organizationId ?? '', orderingAuthorized: true })
   }, [form, open, request?.organizationId])
 
   if (!action || !request) return null
 
-  const content = actionContent(action)
+  const createsAccountOnApproval = action === 'approve'
+    && !request.organizationId
+    && (request.requestType === 'Onboarding' || request.requestType === 'Evaluation')
+    && (request.requestedOrganizationKind === 'Prospect' || request.requestedOrganizationKind === 'Customer' || request.requestedOrganizationKind === 'Partner')
+  const createsCustomerAccount = createsAccountOnApproval
+    && request.requestedOrganizationKind === 'Customer'
+  const content = actionContent(action, createsAccountOnApproval)
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -95,19 +106,14 @@ export function RequestActionDialog({
             onSubmit({
               explanation: values.explanation,
               organizationId: values.organizationId || undefined,
+              orderingAuthorized: values.orderingAuthorized,
             })
           })}
         >
           {action === 'apply' && !request.organizationId ? (
             <div className="mb-3 grid gap-1.5">
               <Label htmlFor="request-action-organization">
-                Completed organization
-                <span
-                  className="ml-1 text-[var(--ruby-red,#b4233c)]"
-                  aria-hidden="true"
-                >
-                  *
-                </span>
+                <RequiredFieldName>Completed organization</RequiredFieldName>
               </Label>
               <select
                 id="request-action-organization"
@@ -131,14 +137,18 @@ export function RequestActionDialog({
               ) : null}
             </div>
           ) : null}
+          {createsCustomerAccount ? (
+            <div className="mb-3">
+              <OrderingAuthorizationField
+                id="request-action-ordering-authorized"
+                checked={form.watch('orderingAuthorized')}
+                disabled={isPending}
+                onCheckedChange={(checked) => form.setValue('orderingAuthorized', checked, { shouldDirty: true })}
+              />
+            </div>
+          ) : null}
           <Label htmlFor="request-action-explanation">
-            {content.label}
-            <span
-              className="ml-1 text-[var(--ruby-red,#b4233c)]"
-              aria-hidden="true"
-            >
-              *
-            </span>
+            <RequiredFieldName>{content.label}</RequiredFieldName>
           </Label>
           <textarea
             id="request-action-explanation"
@@ -153,7 +163,7 @@ export function RequestActionDialog({
             </p>
           ) : null}
         </form>
-        <DialogFooter>
+        <RequiredDialogFooter>
           <Button
             type="button"
             variant="outline"
@@ -169,21 +179,28 @@ export function RequestActionDialog({
           >
             {isPending ? 'Saving…' : content.submitLabel}
           </Button>
-        </DialogFooter>
+        </RequiredDialogFooter>
       </DialogContent>
     </Dialog>
   )
 }
 
-function actionContent(action: RequestAction) {
+function actionContent(action: RequestAction, createsAccountOnApproval: boolean) {
   switch (action) {
     case 'approve':
-      return {
-        title: 'Approve Portal request',
-        description: 'Approval records the decision but does not provision access, services, or an order.',
-        label: 'Approval reason',
-        submitLabel: 'Approve request',
-      }
+      return createsAccountOnApproval
+        ? {
+            title: 'Approve and create Portal account',
+            description: 'Approval creates the account with pending Portal readiness. Customer ordering authorization follows the selection below; users and orders are not created.',
+            label: 'Approval reason',
+            submitLabel: 'Approve and create account',
+          }
+        : {
+            title: 'Approve Portal request',
+            description: 'Approval records the decision but does not provision access, services, or an order.',
+            label: 'Approval reason',
+            submitLabel: 'Approve request',
+          }
     case 'decline':
       return {
         title: 'Decline Portal request',
@@ -193,10 +210,10 @@ function actionContent(action: RequestAction) {
       }
     case 'apply':
       return {
-        title: 'Mark request applied',
+        title: 'Complete account request',
         description: 'Confirm the owning organization, invitation, entitlement, or order work was completed first.',
         label: 'Completed work',
-        submitLabel: 'Mark applied',
+        submitLabel: 'Complete request',
       }
     case 'cancel':
       return {

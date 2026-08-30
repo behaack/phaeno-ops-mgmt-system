@@ -8,7 +8,10 @@ import {
   ClipboardList,
   Microscope,
   FlaskConical,
+  FolderClock,
+  Handshake,
   Package,
+  PackageCheck,
   Settings,
   Workflow,
   type LucideIcon,
@@ -48,7 +51,17 @@ export const mainMenuItems: readonly MainMenuItem[] = [
     exact: true,
   },
   {
-    label: 'Accounts',
+    label: 'CRM',
+    to: '/crm',
+    icon: Handshake,
+    group: 'workspace',
+    visibleWhen: (session, context) =>
+      isPhaenoEmployee(session) &&
+      context.selectedOrganizationKind === 'Phaeno' &&
+      Boolean(session?.capabilities.canManageOrganizations),
+  },
+  {
+    label: 'Portal accounts',
     to: '/customers',
     icon: Building2,
     group: 'administration',
@@ -84,6 +97,15 @@ export const mainMenuItems: readonly MainMenuItem[] = [
     visibleWhen: (session, context) =>
       context.selectedOrganizationKind === 'Customer' &&
       Boolean(session?.capabilities.canViewLabServiceOrders),
+  },
+  {
+    label: 'Samples & shipping',
+    to: '/sample-shipping',
+    icon: PackageCheck,
+    group: 'workspace',
+    visibleWhen: (session, context) =>
+      context.selectedOrganizationKind === 'Prospect' &&
+      Boolean(session?.capabilities.canViewSampleShipping),
   },
   {
     label: 'Reagent orders',
@@ -129,6 +151,15 @@ export const mainMenuItems: readonly MainMenuItem[] = [
     visibleWhen: (session, context) =>
       context.selectedOrganizationKind === 'Phaeno' &&
       Boolean(session?.capabilities.canManageOrderConfiguration),
+  },
+  {
+    label: 'File management',
+    to: '/file-management',
+    icon: FolderClock,
+    group: 'administration',
+    visibleWhen: (session, context) =>
+      context.selectedOrganizationKind === 'Phaeno' &&
+      Boolean(session?.capabilities.canManageFileManagementConfiguration),
   },
   {
     label: 'Docs',

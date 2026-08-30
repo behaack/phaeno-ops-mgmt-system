@@ -1,4 +1,4 @@
-# Integration failures and recovery
+# Accounting and notification recovery
 
 Order Ops uses durable invitation, notification, Lab projection, and provider-neutral result-pipeline records. A failed delivery remains attached to the original workflow with its idempotency key, attempt history, last error, and provider identifier when one exists. The retained accounting-connector queue is legacy/non-PSeq context; native PSeq AR remains local to POMS.
 
@@ -14,12 +14,12 @@ Common states include:
 
 ## Retry safely
 
-Refresh the workflow and retry the existing durable integration event. Reconciliation uses the stored idempotency and external references to avoid duplicates. Do not recreate the order, quote, invoice, credit, shipment, release, or notification merely because delivery failed.
+Refresh the workflow before investigating a missing accounting row. Do not recreate the order, quote, shipment, output approval, or result completion to force another row. Use the stable source ID when reconciling repeated report downloads.
 
 If an invitation hard-bounced, revoke and reissue to a corrected address rather than retrying it. If a pipeline submission or signed Mailgun webhook is replayed, use the stored idempotency/provider event identity rather than creating another package or delivery. If a notification failed, retry it without repeating the underlying business transition.
 
 ## Communicate the boundary
 
-Keep the workflow’s operational state distinct from delivery state. A failed estimate synchronization prevents quote visibility, but it does not delete the quote. A failed invoice synchronization can block release, but it does not undo scientific completion. A failed email does not reverse the order action recorded in the portal.
+Keep operational state, accounting-source readiness, credit, file release, and notification delivery separate. An accounting question does not undo an issued quote or scientific completion. A failed email does not reverse the order action recorded in the portal.
 
-Escalate only after the stored event, retry history, external reference, and current QuickBooks state have been reviewed. Include safe identifiers; never include credentials, payment data, or customer-confidential scientific detail in support notes.
+Escalate only after the operational record, report range, stable entry ID, and notification history have been reviewed. Include safe identifiers; never include credentials, payment data, or customer-confidential scientific detail in support notes.

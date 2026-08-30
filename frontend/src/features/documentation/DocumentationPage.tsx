@@ -1,17 +1,21 @@
 import { Link } from '@tanstack/react-router'
 import {
+  ArrowRightLeft,
   BadgeCheck,
   BookOpenText,
   Boxes,
   Building2,
+  ChartColumn,
   ChevronLeft,
   ChevronRight,
   CircleHelp,
   ClipboardList,
   Database,
   FlaskConical,
+  Handshake,
   KeyRound,
   Library,
+  ListTodo,
   PackageCheck,
   Microscope,
   Package,
@@ -23,7 +27,9 @@ import {
   ScrollText,
   Settings,
   ShieldCheck,
+  Target,
   TriangleAlert,
+  UserSearch,
   UsersRound,
   Workflow,
   type LucideIcon,
@@ -508,6 +514,22 @@ function getGuideIcon(slug: string): LucideIcon {
       return Workflow
     case 'organization-and-user-administration':
       return UsersRound
+    case 'crm':
+      return Handshake
+    case 'crm-companies-contacts':
+      return Building2
+    case 'crm-leads-conversion':
+      return UserSearch
+    case 'crm-opportunities-pipelines':
+      return Target
+    case 'crm-activities-tasks':
+      return ListTodo
+    case 'crm-reports-administration':
+      return ChartColumn
+    case 'crm-portal-handoffs':
+      return ArrowRightLeft
+    case 'crm-troubleshooting':
+      return CircleHelp
     case 'data-provisioning-and-accounts':
       return Database
     case 'data-source-registry':

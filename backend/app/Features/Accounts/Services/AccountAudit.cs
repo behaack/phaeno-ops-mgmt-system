@@ -7,6 +7,7 @@ using PhaenoPortal.App.Infrastructure.Persistence.Auditing;
 public static class AccountAudit
 {
     public const string InviteCreated = nameof(InviteCreated);
+    public const string DevelopmentInviteLinkCreated = nameof(DevelopmentInviteLinkCreated);
     public const string InviteResent = nameof(InviteResent);
     public const string InviteRevoked = nameof(InviteRevoked);
     public const string InviteDeclined = nameof(InviteDeclined);

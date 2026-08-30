@@ -617,6 +617,1675 @@ namespace PSeq.Operations.Api.Migrations
                     b.ToTable("users", "commercial_ops");
                 });
 
+            modelBuilder.Entity("PSeq.Operations.Commercial.Crm.Domain.CrmActivity", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid")
+                        .HasColumnName("id");
+
+                    b.Property<Guid>("ActorUserId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("actor_user_id");
+
+                    b.Property<string>("Body")
+                        .HasMaxLength(4000)
+                        .HasColumnType("character varying(4000)")
+                        .HasColumnName("body");
+
+                    b.Property<Guid?>("CompanyId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("company_id");
+
+                    b.Property<Guid?>("ContactId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("contact_id");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("created_at");
+
+                    b.Property<Guid?>("CreatedByUserId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("created_by_user_id");
+
+                    b.Property<bool>("IsActive")
+                        .HasColumnType("boolean")
+                        .HasColumnName("is_active");
+
+                    b.Property<Guid?>("LeadId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("lead_id");
+
+                    b.Property<DateTime>("OccurredAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("occurred_at");
+
+                    b.Property<Guid?>("OpportunityId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("opportunity_id");
+
+                    b.Property<string>("Subject")
+                        .IsRequired()
+                        .HasMaxLength(255)
+                        .HasColumnType("character varying(255)")
+                        .HasColumnName("subject");
+
+                    b.Property<string>("Type")
+                        .IsRequired()
+                        .HasMaxLength(50)
+                        .HasColumnType("character varying(50)")
+                        .HasColumnName("type");
+
+                    b.Property<DateTime>("UpdatedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("updated_at");
+
+                    b.Property<Guid?>("UpdatedByUserId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("updated_by_user_id");
+
+                    b.Property<long>("Version")
+                        .IsConcurrencyToken()
+                        .HasColumnType("bigint")
+                        .HasColumnName("version");
+
+                    b.Property<string>("Visibility")
+                        .IsRequired()
+                        .HasMaxLength(50)
+                        .HasColumnType("character varying(50)")
+                        .HasColumnName("visibility");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("ActorUserId");
+
+                    b.HasIndex("OccurredAt");
+
+                    b.HasIndex("CompanyId", "OccurredAt");
+
+                    b.HasIndex("ContactId", "OccurredAt");
+
+                    b.HasIndex("LeadId", "OccurredAt");
+
+                    b.HasIndex("OpportunityId", "OccurredAt");
+
+                    b.ToTable("crm_activities", "commercial_ops");
+                });
+
+            modelBuilder.Entity("PSeq.Operations.Commercial.Crm.Domain.CrmCompany", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid")
+                        .HasColumnName("id");
+
+                    b.Property<string>("AddressLine1")
+                        .HasMaxLength(255)
+                        .HasColumnType("character varying(255)")
+                        .HasColumnName("address_line1");
+
+                    b.Property<string>("AddressLine2")
+                        .HasMaxLength(255)
+                        .HasColumnType("character varying(255)")
+                        .HasColumnName("address_line2");
+
+                    b.PrimitiveCollection<string[]>("Aliases")
+                        .IsRequired()
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("text[]")
+                        .HasColumnName("aliases")
+                        .HasDefaultValueSql("ARRAY[]::text[]");
+
+                    b.Property<string>("City")
+                        .HasMaxLength(150)
+                        .HasColumnType("character varying(150)")
+                        .HasColumnName("city");
+
+                    b.Property<string>("CountryCode")
+                        .HasMaxLength(2)
+                        .HasColumnType("character varying(2)")
+                        .HasColumnName("country_code");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("created_at");
+
+                    b.Property<Guid?>("CreatedByUserId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("created_by_user_id");
+
+                    b.Property<string>("Description")
+                        .HasMaxLength(2000)
+                        .HasColumnType("character varying(2000)")
+                        .HasColumnName("description");
+
+                    b.Property<string>("DomainName")
+                        .HasMaxLength(253)
+                        .HasColumnType("character varying(253)")
+                        .HasColumnName("domain_name");
+
+                    b.Property<int?>("EmployeeCount")
+                        .HasColumnType("integer")
+                        .HasColumnName("employee_count");
+
+                    b.Property<string>("Industry")
+                        .HasMaxLength(150)
+                        .HasColumnType("character varying(150)")
+                        .HasColumnName("industry");
+
+                    b.Property<bool>("IsActive")
+                        .HasColumnType("boolean")
+                        .HasColumnName("is_active");
+
+                    b.Property<string>("LifecycleState")
+                        .IsRequired()
+                        .HasMaxLength(50)
+                        .HasColumnType("character varying(50)")
+                        .HasColumnName("lifecycle_state");
+
+                    b.Property<Guid?>("MergedIntoCompanyId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("merged_into_company_id");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasMaxLength(255)
+                        .HasColumnType("character varying(255)")
+                        .HasColumnName("name");
+
+                    b.Property<Guid>("OwnerUserId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("owner_user_id");
+
+                    b.Property<string>("Phone")
+                        .HasMaxLength(50)
+                        .HasColumnType("character varying(50)")
+                        .HasColumnName("phone");
+
+                    b.Property<string>("PostalCode")
+                        .HasMaxLength(30)
+                        .HasColumnType("character varying(30)")
+                        .HasColumnName("postal_code");
+
+                    b.Property<string>("Region")
+                        .HasMaxLength(150)
+                        .HasColumnType("character varying(150)")
+                        .HasColumnName("region");
+
+                    b.Property<string>("Source")
+                        .HasMaxLength(150)
+                        .HasColumnType("character varying(150)")
+                        .HasColumnName("source");
+
+                    b.PrimitiveCollection<string[]>("Tags")
+                        .IsRequired()
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("text[]")
+                        .HasColumnName("tags")
+                        .HasDefaultValueSql("ARRAY[]::text[]");
+
+                    b.Property<DateTime>("UpdatedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("updated_at");
+
+                    b.Property<Guid?>("UpdatedByUserId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("updated_by_user_id");
+
+                    b.Property<long>("Version")
+                        .IsConcurrencyToken()
+                        .HasColumnType("bigint")
+                        .HasColumnName("version");
+
+                    b.Property<string>("WebsiteUrl")
+                        .HasMaxLength(2048)
+                        .HasColumnType("character varying(2048)")
+                        .HasColumnName("website_url");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("DomainName");
+
+                    b.HasIndex("LifecycleState");
+
+                    b.HasIndex("MergedIntoCompanyId");
+
+                    b.HasIndex("Name");
+
+                    b.HasIndex("OwnerUserId");
+
+                    b.HasIndex("IsActive", "Name");
+
+                    b.ToTable("crm_companies", "commercial_ops");
+                });
+
+            modelBuilder.Entity("PSeq.Operations.Commercial.Crm.Domain.CrmCompanyContact", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid")
+                        .HasColumnName("id");
+
+                    b.Property<Guid>("CompanyId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("company_id");
+
+                    b.Property<Guid>("ContactId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("contact_id");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("created_at");
+
+                    b.Property<Guid?>("CreatedByUserId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("created_by_user_id");
+
+                    b.Property<DateOnly>("EffectiveFrom")
+                        .HasColumnType("date")
+                        .HasColumnName("effective_from");
+
+                    b.Property<DateOnly?>("EffectiveTo")
+                        .HasColumnType("date")
+                        .HasColumnName("effective_to");
+
+                    b.Property<bool>("IsActive")
+                        .HasColumnType("boolean")
+                        .HasColumnName("is_active");
+
+                    b.Property<bool>("IsPrimaryCompany")
+                        .HasColumnType("boolean")
+                        .HasColumnName("is_primary_company");
+
+                    b.Property<string>("JobTitle")
+                        .HasMaxLength(150)
+                        .HasColumnType("character varying(150)")
+                        .HasColumnName("job_title");
+
+                    b.Property<string>("RelationshipRole")
+                        .HasMaxLength(150)
+                        .HasColumnType("character varying(150)")
+                        .HasColumnName("relationship_role");
+
+                    b.Property<DateTime>("UpdatedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("updated_at");
+
+                    b.Property<Guid?>("UpdatedByUserId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("updated_by_user_id");
+
+                    b.Property<long>("Version")
+                        .IsConcurrencyToken()
+                        .HasColumnType("bigint")
+                        .HasColumnName("version");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("CompanyId", "ContactId")
+                        .IsUnique()
+                        .HasFilter("is_active = TRUE");
+
+                    b.HasIndex("ContactId", "IsPrimaryCompany")
+                        .IsUnique()
+                        .HasFilter("is_active = TRUE AND is_primary_company = TRUE");
+
+                    b.ToTable("crm_company_contacts", "commercial_ops");
+                });
+
+            modelBuilder.Entity("PSeq.Operations.Commercial.Crm.Domain.CrmContact", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid")
+                        .HasColumnName("id");
+
+                    b.PrimitiveCollection<string[]>("Aliases")
+                        .IsRequired()
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("text[]")
+                        .HasColumnName("aliases")
+                        .HasDefaultValueSql("ARRAY[]::text[]");
+
+                    b.Property<string>("CommunicationNotes")
+                        .HasMaxLength(1000)
+                        .HasColumnType("character varying(1000)")
+                        .HasColumnName("communication_notes");
+
+                    b.Property<string>("CommunicationPreference")
+                        .IsRequired()
+                        .HasMaxLength(50)
+                        .HasColumnType("character varying(50)")
+                        .HasColumnName("communication_preference");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("created_at");
+
+                    b.Property<Guid?>("CreatedByUserId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("created_by_user_id");
+
+                    b.Property<string>("Email")
+                        .HasMaxLength(255)
+                        .HasColumnType("character varying(255)")
+                        .HasColumnName("email");
+
+                    b.Property<string>("FirstName")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)")
+                        .HasColumnName("first_name");
+
+                    b.Property<bool>("IsActive")
+                        .HasColumnType("boolean")
+                        .HasColumnName("is_active");
+
+                    b.Property<string>("LastName")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)")
+                        .HasColumnName("last_name");
+
+                    b.Property<string>("LawfulContactBasis")
+                        .HasMaxLength(255)
+                        .HasColumnType("character varying(255)")
+                        .HasColumnName("lawful_contact_basis");
+
+                    b.Property<string>("LegacyJobTitle")
+                        .HasMaxLength(150)
+                        .HasColumnType("character varying(150)")
+                        .HasColumnName("legacy_job_title");
+
+                    b.Property<Guid?>("MergedIntoContactId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("merged_into_contact_id");
+
+                    b.Property<string>("NormalizedEmail")
+                        .HasMaxLength(255)
+                        .HasColumnType("character varying(255)")
+                        .HasColumnName("normalized_email");
+
+                    b.Property<Guid>("OwnerUserId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("owner_user_id");
+
+                    b.Property<string>("Phone")
+                        .HasMaxLength(50)
+                        .HasColumnType("character varying(50)")
+                        .HasColumnName("phone");
+
+                    b.PrimitiveCollection<string[]>("Tags")
+                        .IsRequired()
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("text[]")
+                        .HasColumnName("tags")
+                        .HasDefaultValueSql("ARRAY[]::text[]");
+
+                    b.Property<DateTime>("UpdatedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("updated_at");
+
+                    b.Property<Guid?>("UpdatedByUserId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("updated_by_user_id");
+
+                    b.Property<long>("Version")
+                        .IsConcurrencyToken()
+                        .HasColumnType("bigint")
+                        .HasColumnName("version");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("MergedIntoContactId");
+
+                    b.HasIndex("NormalizedEmail");
+
+                    b.HasIndex("OwnerUserId");
+
+                    b.HasIndex("IsActive", "LastName");
+
+                    b.HasIndex("LastName", "FirstName");
+
+                    b.ToTable("crm_contacts", "commercial_ops");
+                });
+
+            modelBuilder.Entity("PSeq.Operations.Commercial.Crm.Domain.CrmCustomFieldDefinition", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid")
+                        .HasColumnName("id");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("created_at");
+
+                    b.Property<Guid?>("CreatedByUserId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("created_by_user_id");
+
+                    b.Property<string>("DataType")
+                        .IsRequired()
+                        .HasMaxLength(50)
+                        .HasColumnType("character varying(50)")
+                        .HasColumnName("data_type");
+
+                    b.Property<bool>("IsActive")
+                        .HasColumnType("boolean")
+                        .HasColumnName("is_active");
+
+                    b.Property<bool>("IsRequired")
+                        .HasColumnType("boolean")
+                        .HasColumnName("is_required");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasMaxLength(150)
+                        .HasColumnType("character varying(150)")
+                        .HasColumnName("name");
+
+                    b.Property<string>("OptionsJson")
+                        .HasColumnType("jsonb")
+                        .HasColumnName("options_json");
+
+                    b.Property<string>("RecordType")
+                        .IsRequired()
+                        .HasMaxLength(50)
+                        .HasColumnType("character varying(50)")
+                        .HasColumnName("record_type");
+
+                    b.Property<string>("Sensitivity")
+                        .IsRequired()
+                        .HasMaxLength(50)
+                        .HasColumnType("character varying(50)")
+                        .HasColumnName("sensitivity");
+
+                    b.Property<DateTime>("UpdatedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("updated_at");
+
+                    b.Property<Guid?>("UpdatedByUserId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("updated_by_user_id");
+
+                    b.Property<long>("Version")
+                        .IsConcurrencyToken()
+                        .HasColumnType("bigint")
+                        .HasColumnName("version");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("RecordType", "Name")
+                        .IsUnique();
+
+                    b.ToTable("crm_custom_field_definitions", "commercial_ops");
+                });
+
+            modelBuilder.Entity("PSeq.Operations.Commercial.Crm.Domain.CrmCustomFieldValue", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid")
+                        .HasColumnName("id");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("created_at");
+
+                    b.Property<Guid?>("CreatedByUserId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("created_by_user_id");
+
+                    b.Property<Guid>("DefinitionId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("definition_id");
+
+                    b.Property<Guid>("RecordId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("record_id");
+
+                    b.Property<DateTime>("UpdatedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("updated_at");
+
+                    b.Property<Guid?>("UpdatedByUserId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("updated_by_user_id");
+
+                    b.Property<string>("ValueJson")
+                        .IsRequired()
+                        .HasColumnType("jsonb")
+                        .HasColumnName("value_json");
+
+                    b.Property<long>("Version")
+                        .IsConcurrencyToken()
+                        .HasColumnType("bigint")
+                        .HasColumnName("version");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("DefinitionId", "RecordId")
+                        .IsUnique();
+
+                    b.ToTable("crm_custom_field_values", "commercial_ops");
+                });
+
+            modelBuilder.Entity("PSeq.Operations.Commercial.Crm.Domain.CrmExportRecord", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid")
+                        .HasColumnName("id");
+
+                    b.Property<string>("FilterJson")
+                        .IsRequired()
+                        .HasColumnType("jsonb")
+                        .HasColumnName("filter_json");
+
+                    b.Property<string>("RecordType")
+                        .IsRequired()
+                        .HasMaxLength(50)
+                        .HasColumnType("character varying(50)")
+                        .HasColumnName("record_type");
+
+                    b.Property<DateTime>("RequestedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("requested_at");
+
+                    b.Property<Guid>("RequestedByUserId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("requested_by_user_id");
+
+                    b.Property<int>("RowCount")
+                        .HasColumnType("integer")
+                        .HasColumnName("row_count");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("RequestedAt");
+
+                    b.HasIndex("RequestedByUserId");
+
+                    b.ToTable("crm_export_records", "commercial_ops");
+                });
+
+            modelBuilder.Entity("PSeq.Operations.Commercial.Crm.Domain.CrmHandoff", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid")
+                        .HasColumnName("id");
+
+                    b.Property<Guid>("CompanyId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("company_id");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("created_at");
+
+                    b.Property<Guid?>("CreatedByUserId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("created_by_user_id");
+
+                    b.Property<string>("IdempotencyKey")
+                        .IsRequired()
+                        .HasMaxLength(255)
+                        .HasColumnType("character varying(255)")
+                        .HasColumnName("idempotency_key");
+
+                    b.Property<Guid?>("OpportunityId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("opportunity_id");
+
+                    b.Property<Guid>("RelationshipRequestId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("relationship_request_id");
+
+                    b.Property<string>("Type")
+                        .IsRequired()
+                        .HasMaxLength(50)
+                        .HasColumnType("character varying(50)")
+                        .HasColumnName("type");
+
+                    b.Property<DateTime>("UpdatedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("updated_at");
+
+                    b.Property<Guid?>("UpdatedByUserId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("updated_by_user_id");
+
+                    b.Property<long>("Version")
+                        .IsConcurrencyToken()
+                        .HasColumnType("bigint")
+                        .HasColumnName("version");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("CompanyId");
+
+                    b.HasIndex("IdempotencyKey")
+                        .IsUnique();
+
+                    b.HasIndex("OpportunityId");
+
+                    b.HasIndex("RelationshipRequestId")
+                        .IsUnique();
+
+                    b.ToTable("crm_handoffs", "commercial_ops");
+                });
+
+            modelBuilder.Entity("PSeq.Operations.Commercial.Crm.Domain.CrmImportBatch", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid")
+                        .HasColumnName("id");
+
+                    b.Property<DateTime?>("CommittedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("committed_at");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("created_at");
+
+                    b.Property<Guid?>("CreatedByUserId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("created_by_user_id");
+
+                    b.Property<int>("DuplicateRows")
+                        .HasColumnType("integer")
+                        .HasColumnName("duplicate_rows");
+
+                    b.Property<string>("ErrorReportJson")
+                        .HasColumnType("jsonb")
+                        .HasColumnName("error_report_json");
+
+                    b.Property<string>("FileName")
+                        .IsRequired()
+                        .HasMaxLength(255)
+                        .HasColumnType("character varying(255)")
+                        .HasColumnName("file_name");
+
+                    b.Property<string>("IdempotencyKey")
+                        .IsRequired()
+                        .HasMaxLength(255)
+                        .HasColumnType("character varying(255)")
+                        .HasColumnName("idempotency_key");
+
+                    b.Property<int>("InvalidRows")
+                        .HasColumnType("integer")
+                        .HasColumnName("invalid_rows");
+
+                    b.Property<string>("RecordType")
+                        .IsRequired()
+                        .HasMaxLength(50)
+                        .HasColumnType("character varying(50)")
+                        .HasColumnName("record_type");
+
+                    b.Property<string>("RowsJson")
+                        .IsRequired()
+                        .HasColumnType("jsonb")
+                        .HasColumnName("rows_json");
+
+                    b.Property<string>("Status")
+                        .IsRequired()
+                        .HasMaxLength(50)
+                        .HasColumnType("character varying(50)")
+                        .HasColumnName("status");
+
+                    b.Property<int>("TotalRows")
+                        .HasColumnType("integer")
+                        .HasColumnName("total_rows");
+
+                    b.Property<DateTime>("UpdatedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("updated_at");
+
+                    b.Property<Guid?>("UpdatedByUserId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("updated_by_user_id");
+
+                    b.Property<int>("ValidRows")
+                        .HasColumnType("integer")
+                        .HasColumnName("valid_rows");
+
+                    b.Property<long>("Version")
+                        .IsConcurrencyToken()
+                        .HasColumnType("bigint")
+                        .HasColumnName("version");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("IdempotencyKey")
+                        .IsUnique();
+
+                    b.ToTable("crm_import_batches", "commercial_ops");
+                });
+
+            modelBuilder.Entity("PSeq.Operations.Commercial.Crm.Domain.CrmLead", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid")
+                        .HasColumnName("id");
+
+                    b.Property<string>("CompanyName")
+                        .HasMaxLength(255)
+                        .HasColumnType("character varying(255)")
+                        .HasColumnName("company_name");
+
+                    b.Property<DateTime?>("ConvertedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("converted_at");
+
+                    b.Property<Guid?>("ConvertedCompanyId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("converted_company_id");
+
+                    b.Property<Guid?>("ConvertedContactId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("converted_contact_id");
+
+                    b.Property<Guid?>("ConvertedOpportunityId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("converted_opportunity_id");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("created_at");
+
+                    b.Property<Guid?>("CreatedByUserId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("created_by_user_id");
+
+                    b.Property<string>("DisplayName")
+                        .IsRequired()
+                        .HasMaxLength(255)
+                        .HasColumnType("character varying(255)")
+                        .HasColumnName("display_name");
+
+                    b.Property<string>("DisqualificationReason")
+                        .HasMaxLength(1000)
+                        .HasColumnType("character varying(1000)")
+                        .HasColumnName("disqualification_reason");
+
+                    b.Property<string>("Email")
+                        .HasMaxLength(255)
+                        .HasColumnType("character varying(255)")
+                        .HasColumnName("email");
+
+                    b.Property<string>("FirstName")
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)")
+                        .HasColumnName("first_name");
+
+                    b.Property<bool>("IsActive")
+                        .HasColumnType("boolean")
+                        .HasColumnName("is_active");
+
+                    b.Property<string>("Kind")
+                        .IsRequired()
+                        .HasMaxLength(50)
+                        .HasColumnType("character varying(50)")
+                        .HasColumnName("kind");
+
+                    b.Property<string>("LastName")
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)")
+                        .HasColumnName("last_name");
+
+                    b.Property<string>("NextAction")
+                        .HasMaxLength(1000)
+                        .HasColumnType("character varying(1000)")
+                        .HasColumnName("next_action");
+
+                    b.Property<string>("NormalizedEmail")
+                        .HasMaxLength(255)
+                        .HasColumnType("character varying(255)")
+                        .HasColumnName("normalized_email");
+
+                    b.Property<Guid>("OwnerUserId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("owner_user_id");
+
+                    b.Property<string>("Phone")
+                        .HasMaxLength(50)
+                        .HasColumnType("character varying(50)")
+                        .HasColumnName("phone");
+
+                    b.Property<string>("QualificationNotes")
+                        .HasMaxLength(2000)
+                        .HasColumnType("character varying(2000)")
+                        .HasColumnName("qualification_notes");
+
+                    b.Property<string>("Source")
+                        .HasMaxLength(150)
+                        .HasColumnType("character varying(150)")
+                        .HasColumnName("source");
+
+                    b.Property<string>("Status")
+                        .IsRequired()
+                        .HasMaxLength(50)
+                        .HasColumnType("character varying(50)")
+                        .HasColumnName("status");
+
+                    b.PrimitiveCollection<string[]>("Tags")
+                        .IsRequired()
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("text[]")
+                        .HasColumnName("tags")
+                        .HasDefaultValueSql("ARRAY[]::text[]");
+
+                    b.Property<DateTime>("UpdatedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("updated_at");
+
+                    b.Property<Guid?>("UpdatedByUserId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("updated_by_user_id");
+
+                    b.Property<long>("Version")
+                        .IsConcurrencyToken()
+                        .HasColumnType("bigint")
+                        .HasColumnName("version");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("CompanyName");
+
+                    b.HasIndex("NormalizedEmail");
+
+                    b.HasIndex("OwnerUserId");
+
+                    b.HasIndex("IsActive", "Status");
+
+                    b.ToTable("crm_leads", "commercial_ops");
+                });
+
+            modelBuilder.Entity("PSeq.Operations.Commercial.Crm.Domain.CrmMergeRecord", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid")
+                        .HasColumnName("id");
+
+                    b.Property<DateTime>("MergedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("merged_at");
+
+                    b.Property<Guid>("MergedByUserId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("merged_by_user_id");
+
+                    b.Property<string>("Reason")
+                        .IsRequired()
+                        .HasMaxLength(1000)
+                        .HasColumnType("character varying(1000)")
+                        .HasColumnName("reason");
+
+                    b.Property<string>("RecordType")
+                        .IsRequired()
+                        .HasMaxLength(50)
+                        .HasColumnType("character varying(50)")
+                        .HasColumnName("record_type");
+
+                    b.Property<Guid>("SourceRecordId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("source_record_id");
+
+                    b.Property<Guid>("TargetRecordId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("target_record_id");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("MergedByUserId");
+
+                    b.HasIndex("RecordType", "SourceRecordId")
+                        .IsUnique();
+
+                    b.ToTable("crm_merge_records", "commercial_ops");
+                });
+
+            modelBuilder.Entity("PSeq.Operations.Commercial.Crm.Domain.CrmOpportunity", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid")
+                        .HasColumnName("id");
+
+                    b.Property<decimal?>("Amount")
+                        .HasPrecision(18, 2)
+                        .HasColumnType("numeric(18,2)")
+                        .HasColumnName("amount");
+
+                    b.Property<DateTime?>("ClosedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("closed_at");
+
+                    b.Property<Guid>("CompanyId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("company_id");
+
+                    b.Property<string>("Competitors")
+                        .HasMaxLength(1000)
+                        .HasColumnType("character varying(1000)")
+                        .HasColumnName("competitors");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("created_at");
+
+                    b.Property<Guid?>("CreatedByUserId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("created_by_user_id");
+
+                    b.Property<string>("Currency")
+                        .IsRequired()
+                        .HasMaxLength(3)
+                        .HasColumnType("character varying(3)")
+                        .HasColumnName("currency");
+
+                    b.Property<string>("Description")
+                        .HasMaxLength(2000)
+                        .HasColumnType("character varying(2000)")
+                        .HasColumnName("description");
+
+                    b.Property<DateOnly?>("ExpectedCloseDate")
+                        .HasColumnType("date")
+                        .HasColumnName("expected_close_date");
+
+                    b.Property<bool>("IsActive")
+                        .HasColumnType("boolean")
+                        .HasColumnName("is_active");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasMaxLength(255)
+                        .HasColumnType("character varying(255)")
+                        .HasColumnName("name");
+
+                    b.Property<string>("NextStep")
+                        .HasMaxLength(1000)
+                        .HasColumnType("character varying(1000)")
+                        .HasColumnName("next_step");
+
+                    b.Property<string>("OpportunityNumber")
+                        .IsRequired()
+                        .HasMaxLength(50)
+                        .HasColumnType("character varying(50)")
+                        .HasColumnName("opportunity_number");
+
+                    b.Property<string>("OutcomeReason")
+                        .HasMaxLength(1000)
+                        .HasColumnType("character varying(1000)")
+                        .HasColumnName("outcome_reason");
+
+                    b.Property<Guid>("OwnerUserId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("owner_user_id");
+
+                    b.Property<Guid>("PipelineId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("pipeline_id");
+
+                    b.Property<int>("Probability")
+                        .HasColumnType("integer")
+                        .HasColumnName("probability");
+
+                    b.Property<string>("ProductInterest")
+                        .HasMaxLength(255)
+                        .HasColumnType("character varying(255)")
+                        .HasColumnName("product_interest");
+
+                    b.Property<Guid>("StageId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("stage_id");
+
+                    b.PrimitiveCollection<string[]>("Tags")
+                        .IsRequired()
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("text[]")
+                        .HasColumnName("tags")
+                        .HasDefaultValueSql("ARRAY[]::text[]");
+
+                    b.Property<DateTime>("UpdatedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("updated_at");
+
+                    b.Property<Guid?>("UpdatedByUserId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("updated_by_user_id");
+
+                    b.Property<long>("Version")
+                        .IsConcurrencyToken()
+                        .HasColumnType("bigint")
+                        .HasColumnName("version");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("ExpectedCloseDate");
+
+                    b.HasIndex("OpportunityNumber")
+                        .IsUnique();
+
+                    b.HasIndex("OwnerUserId");
+
+                    b.HasIndex("StageId");
+
+                    b.HasIndex("CompanyId", "IsActive");
+
+                    b.HasIndex("PipelineId", "StageId");
+
+                    b.ToTable("crm_opportunities", "commercial_ops");
+                });
+
+            modelBuilder.Entity("PSeq.Operations.Commercial.Crm.Domain.CrmOpportunityContact", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid")
+                        .HasColumnName("id");
+
+                    b.Property<Guid>("ContactId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("contact_id");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("created_at");
+
+                    b.Property<Guid?>("CreatedByUserId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("created_by_user_id");
+
+                    b.Property<bool>("IsActive")
+                        .HasColumnType("boolean")
+                        .HasColumnName("is_active");
+
+                    b.Property<bool>("IsPrimary")
+                        .HasColumnType("boolean")
+                        .HasColumnName("is_primary");
+
+                    b.Property<Guid>("OpportunityId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("opportunity_id");
+
+                    b.Property<string>("Role")
+                        .HasMaxLength(150)
+                        .HasColumnType("character varying(150)")
+                        .HasColumnName("role");
+
+                    b.Property<DateTime>("UpdatedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("updated_at");
+
+                    b.Property<Guid?>("UpdatedByUserId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("updated_by_user_id");
+
+                    b.Property<long>("Version")
+                        .IsConcurrencyToken()
+                        .HasColumnType("bigint")
+                        .HasColumnName("version");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("ContactId");
+
+                    b.HasIndex("OpportunityId", "ContactId")
+                        .IsUnique();
+
+                    b.HasIndex("OpportunityId", "IsPrimary")
+                        .IsUnique()
+                        .HasFilter("is_primary = TRUE AND is_active = TRUE");
+
+                    b.ToTable("crm_opportunity_contacts", "commercial_ops");
+                });
+
+            modelBuilder.Entity("PSeq.Operations.Commercial.Crm.Domain.CrmOpportunityStageHistory", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid")
+                        .HasColumnName("id");
+
+                    b.Property<DateTime>("ChangedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("changed_at");
+
+                    b.Property<Guid>("ChangedByUserId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("changed_by_user_id");
+
+                    b.Property<Guid?>("FromStageId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("from_stage_id");
+
+                    b.Property<Guid>("OpportunityId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("opportunity_id");
+
+                    b.Property<string>("Reason")
+                        .HasMaxLength(1000)
+                        .HasColumnType("character varying(1000)")
+                        .HasColumnName("reason");
+
+                    b.Property<Guid>("ToStageId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("to_stage_id");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("ChangedByUserId");
+
+                    b.HasIndex("FromStageId");
+
+                    b.HasIndex("ToStageId");
+
+                    b.HasIndex("OpportunityId", "ChangedAt");
+
+                    b.ToTable("crm_opportunity_stage_history", "commercial_ops");
+                });
+
+            modelBuilder.Entity("PSeq.Operations.Commercial.Crm.Domain.CrmPipeline", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid")
+                        .HasColumnName("id");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("created_at");
+
+                    b.Property<Guid?>("CreatedByUserId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("created_by_user_id");
+
+                    b.Property<string>("Description")
+                        .HasMaxLength(1000)
+                        .HasColumnType("character varying(1000)")
+                        .HasColumnName("description");
+
+                    b.Property<bool>("IsActive")
+                        .HasColumnType("boolean")
+                        .HasColumnName("is_active");
+
+                    b.Property<bool>("IsDefault")
+                        .HasColumnType("boolean")
+                        .HasColumnName("is_default");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasMaxLength(150)
+                        .HasColumnType("character varying(150)")
+                        .HasColumnName("name");
+
+                    b.Property<DateTime>("UpdatedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("updated_at");
+
+                    b.Property<Guid?>("UpdatedByUserId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("updated_by_user_id");
+
+                    b.Property<long>("Version")
+                        .IsConcurrencyToken()
+                        .HasColumnType("bigint")
+                        .HasColumnName("version");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("IsDefault")
+                        .IsUnique()
+                        .HasFilter("is_default = TRUE");
+
+                    b.HasIndex("Name")
+                        .IsUnique();
+
+                    b.ToTable("crm_pipelines", "commercial_ops");
+
+                    b.HasData(
+                        new
+                        {
+                            Id = new Guid("20000000-0000-0000-0000-000000000001"),
+                            CreatedAt = new DateTime(2026, 8, 26, 0, 0, 0, 0, DateTimeKind.Utc),
+                            Description = "Default standalone commercial opportunity pipeline.",
+                            IsActive = true,
+                            IsDefault = true,
+                            Name = "General Sales",
+                            UpdatedAt = new DateTime(2026, 8, 26, 0, 0, 0, 0, DateTimeKind.Utc),
+                            Version = 1L
+                        });
+                });
+
+            modelBuilder.Entity("PSeq.Operations.Commercial.Crm.Domain.CrmPipelineStage", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid")
+                        .HasColumnName("id");
+
+                    b.Property<string>("Category")
+                        .IsRequired()
+                        .HasMaxLength(50)
+                        .HasColumnType("character varying(50)")
+                        .HasColumnName("category");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("created_at");
+
+                    b.Property<Guid?>("CreatedByUserId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("created_by_user_id");
+
+                    b.Property<bool>("IsActive")
+                        .HasColumnType("boolean")
+                        .HasColumnName("is_active");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasMaxLength(150)
+                        .HasColumnType("character varying(150)")
+                        .HasColumnName("name");
+
+                    b.Property<Guid>("PipelineId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("pipeline_id");
+
+                    b.Property<int>("Position")
+                        .HasColumnType("integer")
+                        .HasColumnName("position");
+
+                    b.Property<int>("Probability")
+                        .HasColumnType("integer")
+                        .HasColumnName("probability");
+
+                    b.Property<bool>("RequiresReason")
+                        .HasColumnType("boolean")
+                        .HasColumnName("requires_reason");
+
+                    b.Property<DateTime>("UpdatedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("updated_at");
+
+                    b.Property<Guid?>("UpdatedByUserId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("updated_by_user_id");
+
+                    b.Property<long>("Version")
+                        .IsConcurrencyToken()
+                        .HasColumnType("bigint")
+                        .HasColumnName("version");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("PipelineId", "Name")
+                        .IsUnique();
+
+                    b.HasIndex("PipelineId", "Position")
+                        .IsUnique();
+
+                    b.ToTable("crm_pipeline_stages", "commercial_ops");
+
+                    b.HasData(
+                        new
+                        {
+                            Id = new Guid("20000000-0000-0000-0000-000000000011"),
+                            Category = "Open",
+                            CreatedAt = new DateTime(2026, 8, 26, 0, 0, 0, 0, DateTimeKind.Utc),
+                            IsActive = true,
+                            Name = "Discovery",
+                            PipelineId = new Guid("20000000-0000-0000-0000-000000000001"),
+                            Position = 10,
+                            Probability = 10,
+                            RequiresReason = false,
+                            UpdatedAt = new DateTime(2026, 8, 26, 0, 0, 0, 0, DateTimeKind.Utc),
+                            Version = 1L
+                        },
+                        new
+                        {
+                            Id = new Guid("20000000-0000-0000-0000-000000000012"),
+                            Category = "Open",
+                            CreatedAt = new DateTime(2026, 8, 26, 0, 0, 0, 0, DateTimeKind.Utc),
+                            IsActive = true,
+                            Name = "Qualified",
+                            PipelineId = new Guid("20000000-0000-0000-0000-000000000001"),
+                            Position = 20,
+                            Probability = 25,
+                            RequiresReason = false,
+                            UpdatedAt = new DateTime(2026, 8, 26, 0, 0, 0, 0, DateTimeKind.Utc),
+                            Version = 1L
+                        },
+                        new
+                        {
+                            Id = new Guid("20000000-0000-0000-0000-000000000013"),
+                            Category = "Open",
+                            CreatedAt = new DateTime(2026, 8, 26, 0, 0, 0, 0, DateTimeKind.Utc),
+                            IsActive = true,
+                            Name = "Proposal",
+                            PipelineId = new Guid("20000000-0000-0000-0000-000000000001"),
+                            Position = 30,
+                            Probability = 50,
+                            RequiresReason = false,
+                            UpdatedAt = new DateTime(2026, 8, 26, 0, 0, 0, 0, DateTimeKind.Utc),
+                            Version = 1L
+                        },
+                        new
+                        {
+                            Id = new Guid("20000000-0000-0000-0000-000000000014"),
+                            Category = "Open",
+                            CreatedAt = new DateTime(2026, 8, 26, 0, 0, 0, 0, DateTimeKind.Utc),
+                            IsActive = true,
+                            Name = "Negotiation",
+                            PipelineId = new Guid("20000000-0000-0000-0000-000000000001"),
+                            Position = 40,
+                            Probability = 75,
+                            RequiresReason = false,
+                            UpdatedAt = new DateTime(2026, 8, 26, 0, 0, 0, 0, DateTimeKind.Utc),
+                            Version = 1L
+                        },
+                        new
+                        {
+                            Id = new Guid("20000000-0000-0000-0000-000000000015"),
+                            Category = "Won",
+                            CreatedAt = new DateTime(2026, 8, 26, 0, 0, 0, 0, DateTimeKind.Utc),
+                            IsActive = true,
+                            Name = "Won",
+                            PipelineId = new Guid("20000000-0000-0000-0000-000000000001"),
+                            Position = 50,
+                            Probability = 100,
+                            RequiresReason = false,
+                            UpdatedAt = new DateTime(2026, 8, 26, 0, 0, 0, 0, DateTimeKind.Utc),
+                            Version = 1L
+                        },
+                        new
+                        {
+                            Id = new Guid("20000000-0000-0000-0000-000000000016"),
+                            Category = "Lost",
+                            CreatedAt = new DateTime(2026, 8, 26, 0, 0, 0, 0, DateTimeKind.Utc),
+                            IsActive = true,
+                            Name = "Lost",
+                            PipelineId = new Guid("20000000-0000-0000-0000-000000000001"),
+                            Position = 60,
+                            Probability = 0,
+                            RequiresReason = true,
+                            UpdatedAt = new DateTime(2026, 8, 26, 0, 0, 0, 0, DateTimeKind.Utc),
+                            Version = 1L
+                        },
+                        new
+                        {
+                            Id = new Guid("20000000-0000-0000-0000-000000000017"),
+                            Category = "Abandoned",
+                            CreatedAt = new DateTime(2026, 8, 26, 0, 0, 0, 0, DateTimeKind.Utc),
+                            IsActive = true,
+                            Name = "Abandoned",
+                            PipelineId = new Guid("20000000-0000-0000-0000-000000000001"),
+                            Position = 70,
+                            Probability = 0,
+                            RequiresReason = true,
+                            UpdatedAt = new DateTime(2026, 8, 26, 0, 0, 0, 0, DateTimeKind.Utc),
+                            Version = 1L
+                        });
+                });
+
+            modelBuilder.Entity("PSeq.Operations.Commercial.Crm.Domain.CrmPortalAccountLink", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid")
+                        .HasColumnName("id");
+
+                    b.Property<Guid>("CompanyId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("company_id");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("created_at");
+
+                    b.Property<Guid?>("CreatedByUserId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("created_by_user_id");
+
+                    b.Property<bool>("IsActive")
+                        .HasColumnType("boolean")
+                        .HasColumnName("is_active");
+
+                    b.Property<DateTime>("LinkedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("linked_at");
+
+                    b.Property<Guid>("LinkedByUserId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("linked_by_user_id");
+
+                    b.Property<Guid>("OrganizationId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("organization_id");
+
+                    b.Property<string>("Reason")
+                        .IsRequired()
+                        .HasMaxLength(1000)
+                        .HasColumnType("character varying(1000)")
+                        .HasColumnName("reason");
+
+                    b.Property<DateTime>("UpdatedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("updated_at");
+
+                    b.Property<Guid?>("UpdatedByUserId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("updated_by_user_id");
+
+                    b.Property<long>("Version")
+                        .IsConcurrencyToken()
+                        .HasColumnType("bigint")
+                        .HasColumnName("version");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("LinkedByUserId");
+
+                    b.HasIndex("OrganizationId");
+
+                    b.HasIndex("CompanyId", "OrganizationId")
+                        .IsUnique();
+
+                    b.ToTable("crm_portal_account_links", "commercial_ops");
+                });
+
+            modelBuilder.Entity("PSeq.Operations.Commercial.Crm.Domain.CrmSavedView", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid")
+                        .HasColumnName("id");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("created_at");
+
+                    b.Property<Guid?>("CreatedByUserId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("created_by_user_id");
+
+                    b.Property<string>("FilterJson")
+                        .IsRequired()
+                        .HasColumnType("jsonb")
+                        .HasColumnName("filter_json");
+
+                    b.Property<bool>("IsActive")
+                        .HasColumnType("boolean")
+                        .HasColumnName("is_active");
+
+                    b.Property<bool>("IsShared")
+                        .HasColumnType("boolean")
+                        .HasColumnName("is_shared");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasMaxLength(150)
+                        .HasColumnType("character varying(150)")
+                        .HasColumnName("name");
+
+                    b.Property<Guid>("OwnerUserId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("owner_user_id");
+
+                    b.Property<string>("RecordType")
+                        .IsRequired()
+                        .HasMaxLength(50)
+                        .HasColumnType("character varying(50)")
+                        .HasColumnName("record_type");
+
+                    b.Property<DateTime>("UpdatedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("updated_at");
+
+                    b.Property<Guid?>("UpdatedByUserId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("updated_by_user_id");
+
+                    b.Property<long>("Version")
+                        .IsConcurrencyToken()
+                        .HasColumnType("bigint")
+                        .HasColumnName("version");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("OwnerUserId", "RecordType", "Name")
+                        .IsUnique();
+
+                    b.ToTable("crm_saved_views", "commercial_ops");
+                });
+
+            modelBuilder.Entity("PSeq.Operations.Commercial.Crm.Domain.CrmTask", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid")
+                        .HasColumnName("id");
+
+                    b.Property<string>("BlockedReason")
+                        .HasMaxLength(1000)
+                        .HasColumnType("character varying(1000)")
+                        .HasColumnName("blocked_reason");
+
+                    b.Property<Guid?>("CompanyId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("company_id");
+
+                    b.Property<DateTime?>("CompletedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("completed_at");
+
+                    b.Property<Guid?>("CompletedByUserId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("completed_by_user_id");
+
+                    b.Property<Guid?>("ContactId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("contact_id");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("created_at");
+
+                    b.Property<Guid?>("CreatedByUserId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("created_by_user_id");
+
+                    b.Property<string>("Description")
+                        .HasMaxLength(2000)
+                        .HasColumnType("character varying(2000)")
+                        .HasColumnName("description");
+
+                    b.Property<DateTime?>("DueAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("due_at");
+
+                    b.Property<bool>("IsActive")
+                        .HasColumnType("boolean")
+                        .HasColumnName("is_active");
+
+                    b.Property<Guid?>("LeadId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("lead_id");
+
+                    b.Property<Guid?>("OpportunityId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("opportunity_id");
+
+                    b.Property<Guid>("OwnerUserId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("owner_user_id");
+
+                    b.Property<string>("Priority")
+                        .IsRequired()
+                        .HasMaxLength(50)
+                        .HasColumnType("character varying(50)")
+                        .HasColumnName("priority");
+
+                    b.Property<string>("RecurrenceRule")
+                        .HasMaxLength(255)
+                        .HasColumnType("character varying(255)")
+                        .HasColumnName("recurrence_rule");
+
+                    b.Property<DateTime?>("ReminderAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("reminder_at");
+
+                    b.Property<string>("Status")
+                        .IsRequired()
+                        .HasMaxLength(50)
+                        .HasColumnType("character varying(50)")
+                        .HasColumnName("status");
+
+                    b.Property<string>("Title")
+                        .IsRequired()
+                        .HasMaxLength(255)
+                        .HasColumnType("character varying(255)")
+                        .HasColumnName("title");
+
+                    b.Property<DateTime>("UpdatedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("updated_at");
+
+                    b.Property<Guid?>("UpdatedByUserId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("updated_by_user_id");
+
+                    b.Property<long>("Version")
+                        .IsConcurrencyToken()
+                        .HasColumnType("bigint")
+                        .HasColumnName("version");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("CompanyId");
+
+                    b.HasIndex("ContactId");
+
+                    b.HasIndex("LeadId");
+
+                    b.HasIndex("OpportunityId");
+
+                    b.HasIndex("ReminderAt");
+
+                    b.HasIndex("OwnerUserId", "Status", "DueAt");
+
+                    b.ToTable("crm_tasks", "commercial_ops");
+                });
+
             modelBuilder.Entity("PSeq.Operations.Commercial.DataProvisioning.Domain.CuratedDataset", b =>
                 {
                     b.Property<Guid>("Id")
@@ -1722,6 +3391,324 @@ namespace PSeq.Operations.Api.Migrations
                     b.HasIndex("Status");
 
                     b.ToTable("source_samples", "commercial_ops");
+                });
+
+            modelBuilder.Entity("PSeq.Operations.Commercial.FileManagement.Domain.OrganizationReleasedDeliverablePolicyOverride", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid")
+                        .HasColumnName("id");
+
+                    b.Property<string>("ChangeReason")
+                        .IsRequired()
+                        .HasMaxLength(2000)
+                        .HasColumnType("character varying(2000)")
+                        .HasColumnName("change_reason");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("created_at");
+
+                    b.Property<Guid?>("CreatedByUserId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("created_by_user_id");
+
+                    b.Property<DateTime?>("DeactivatedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("deactivated_at");
+
+                    b.Property<Guid?>("DeactivatedByUserId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("deactivated_by_user_id");
+
+                    b.Property<string>("DeactivationReason")
+                        .HasMaxLength(2000)
+                        .HasColumnType("character varying(2000)")
+                        .HasColumnName("deactivation_reason");
+
+                    b.Property<bool>("IsActive")
+                        .HasColumnType("boolean")
+                        .HasColumnName("is_active");
+
+                    b.Property<Guid>("OrganizationId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("organization_id");
+
+                    b.Property<int>("Revision")
+                        .HasColumnType("integer")
+                        .HasColumnName("revision");
+
+                    b.Property<int?>("StandardRetentionDays")
+                        .HasColumnType("integer")
+                        .HasColumnName("standard_retention_days");
+
+                    b.Property<Guid?>("SupersedesOverrideId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("supersedes_override_id");
+
+                    b.Property<int?>("UndownloadedGraceDays")
+                        .HasColumnType("integer")
+                        .HasColumnName("undownloaded_grace_days");
+
+                    b.Property<int?>("UndownloadedWarningLeadDays")
+                        .HasColumnType("integer")
+                        .HasColumnName("undownloaded_warning_lead_days");
+
+                    b.Property<DateTime>("UpdatedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("updated_at");
+
+                    b.Property<Guid?>("UpdatedByUserId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("updated_by_user_id");
+
+                    b.Property<long>("Version")
+                        .IsConcurrencyToken()
+                        .HasColumnType("bigint")
+                        .HasColumnName("version");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("SupersedesOverrideId");
+
+                    b.HasIndex("OrganizationId", "IsActive")
+                        .IsUnique()
+                        .HasFilter("\"is_active\"");
+
+                    b.HasIndex("OrganizationId", "Revision")
+                        .IsUnique()
+                        .HasDatabaseName("IX_organization_released_deliverable_policy_overrides_organiz~1");
+
+                    b.ToTable("organization_released_deliverable_policy_overrides", "commercial_ops");
+                });
+
+            modelBuilder.Entity("PSeq.Operations.Commercial.FileManagement.Domain.ReleasedDeliverablePolicyDefault", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid")
+                        .HasColumnName("id");
+
+                    b.Property<string>("ChangeReason")
+                        .IsRequired()
+                        .HasMaxLength(2000)
+                        .HasColumnType("character varying(2000)")
+                        .HasColumnName("change_reason");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("created_at");
+
+                    b.Property<Guid?>("CreatedByUserId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("created_by_user_id");
+
+                    b.Property<DateTime?>("DeactivatedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("deactivated_at");
+
+                    b.Property<Guid?>("DeactivatedByUserId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("deactivated_by_user_id");
+
+                    b.Property<string>("DeactivationReason")
+                        .HasMaxLength(2000)
+                        .HasColumnType("character varying(2000)")
+                        .HasColumnName("deactivation_reason");
+
+                    b.Property<bool>("IsActive")
+                        .HasColumnType("boolean")
+                        .HasColumnName("is_active");
+
+                    b.Property<int>("Revision")
+                        .HasColumnType("integer")
+                        .HasColumnName("revision");
+
+                    b.Property<int>("StandardRetentionDays")
+                        .HasColumnType("integer")
+                        .HasColumnName("standard_retention_days");
+
+                    b.Property<Guid?>("SupersedesPolicyId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("supersedes_policy_id");
+
+                    b.Property<int>("UndownloadedGraceDays")
+                        .HasColumnType("integer")
+                        .HasColumnName("undownloaded_grace_days");
+
+                    b.Property<int>("UndownloadedWarningLeadDays")
+                        .HasColumnType("integer")
+                        .HasColumnName("undownloaded_warning_lead_days");
+
+                    b.Property<DateTime>("UpdatedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("updated_at");
+
+                    b.Property<Guid?>("UpdatedByUserId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("updated_by_user_id");
+
+                    b.Property<long>("Version")
+                        .IsConcurrencyToken()
+                        .HasColumnType("bigint")
+                        .HasColumnName("version");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("IsActive")
+                        .IsUnique()
+                        .HasFilter("\"is_active\"");
+
+                    b.HasIndex("Revision")
+                        .IsUnique();
+
+                    b.HasIndex("SupersedesPolicyId");
+
+                    b.ToTable("released_deliverable_policy_defaults", "commercial_ops");
+                });
+
+            modelBuilder.Entity("PSeq.Operations.Commercial.FileManagement.Domain.ReleasedDeliverableRetentionSnapshot", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid")
+                        .HasColumnName("id");
+
+                    b.Property<Guid?>("AssemblyOutputReleaseId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("assembly_output_release_id");
+
+                    b.Property<DateTime?>("ByteDeletedAtUtc")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("byte_deleted_at_utc");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("created_at");
+
+                    b.Property<Guid?>("CreatedByUserId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("created_by_user_id");
+
+                    b.Property<string>("DeletionOutcome")
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)")
+                        .HasColumnName("deletion_outcome");
+
+                    b.Property<DateTime?>("DownloadAccessClosedAtUtc")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("download_access_closed_at_utc");
+
+                    b.Property<Guid>("GlobalPolicyId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("global_policy_id");
+
+                    b.Property<int>("GlobalPolicyRevision")
+                        .HasColumnType("integer")
+                        .HasColumnName("global_policy_revision");
+
+                    b.Property<DateTime?>("GraceActivatedAtUtc")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("grace_activated_at_utc");
+
+                    b.Property<Guid?>("LabResultReleaseId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("lab_result_release_id");
+
+                    b.Property<Guid>("OrganizationId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("organization_id");
+
+                    b.Property<Guid?>("OrganizationPolicyOverrideId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("organization_policy_override_id");
+
+                    b.Property<int?>("OrganizationPolicyOverrideRevision")
+                        .HasColumnType("integer")
+                        .HasColumnName("organization_policy_override_revision");
+
+                    b.Property<DateTime>("PotentialFinalDeletionAtUtc")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("potential_final_deletion_at_utc");
+
+                    b.Property<DateTime>("ReleasedAtUtc")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("released_at_utc");
+
+                    b.Property<DateTime>("StandardDeletionAtUtc")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("standard_deletion_at_utc");
+
+                    b.Property<int>("StandardRetentionDays")
+                        .HasColumnType("integer")
+                        .HasColumnName("standard_retention_days");
+
+                    b.Property<string>("StandardRetentionSource")
+                        .IsRequired()
+                        .HasMaxLength(50)
+                        .HasColumnType("character varying(50)")
+                        .HasColumnName("standard_retention_source");
+
+                    b.Property<int>("UndownloadedGraceDays")
+                        .HasColumnType("integer")
+                        .HasColumnName("undownloaded_grace_days");
+
+                    b.Property<string>("UndownloadedGraceSource")
+                        .IsRequired()
+                        .HasMaxLength(50)
+                        .HasColumnType("character varying(50)")
+                        .HasColumnName("undownloaded_grace_source");
+
+                    b.Property<int>("UndownloadedWarningLeadDays")
+                        .HasColumnType("integer")
+                        .HasColumnName("undownloaded_warning_lead_days");
+
+                    b.Property<string>("UndownloadedWarningLeadSource")
+                        .IsRequired()
+                        .HasMaxLength(50)
+                        .HasColumnType("character varying(50)")
+                        .HasColumnName("undownloaded_warning_lead_source");
+
+                    b.Property<DateTime>("UpdatedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("updated_at");
+
+                    b.Property<Guid?>("UpdatedByUserId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("updated_by_user_id");
+
+                    b.Property<long>("Version")
+                        .IsConcurrencyToken()
+                        .HasColumnType("bigint")
+                        .HasColumnName("version");
+
+                    b.Property<DateTime>("WarningAtUtc")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("warning_at_utc");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("AssemblyOutputReleaseId")
+                        .IsUnique()
+                        .HasFilter("\"assembly_output_release_id\" IS NOT NULL");
+
+                    b.HasIndex("GlobalPolicyId");
+
+                    b.HasIndex("LabResultReleaseId")
+                        .IsUnique()
+                        .HasFilter("\"lab_result_release_id\" IS NOT NULL");
+
+                    b.HasIndex("OrganizationPolicyOverrideId");
+
+                    b.HasIndex("PotentialFinalDeletionAtUtc");
+
+                    b.HasIndex("OrganizationId", "StandardDeletionAtUtc");
+
+                    b.ToTable("released_deliverable_retention_snapshots", "commercial_ops", t =>
+                        {
+                            t.HasCheckConstraint("ck_released_retention_snapshot_one_package", "(lab_result_release_id IS NOT NULL AND assembly_output_release_id IS NULL) OR (lab_result_release_id IS NULL AND assembly_output_release_id IS NOT NULL)");
+                        });
                 });
 
             modelBuilder.Entity("PSeq.Operations.Commercial.LabOperations.Domain.CommercialLabAuthorization", b =>
@@ -2857,9 +4844,17 @@ namespace PSeq.Operations.Api.Migrations
                         .HasColumnType("uuid")
                         .HasColumnName("id");
 
-                    b.Property<DateTime>("DownloadedAt")
+                    b.Property<DateTime?>("CompletedAtUtc")
                         .HasColumnType("timestamp with time zone")
-                        .HasColumnName("downloaded_at");
+                        .HasColumnName("completed_at_utc");
+
+                    b.Property<bool>("CountsForReleasedPackageRetention")
+                        .HasColumnType("boolean")
+                        .HasColumnName("counts_for_released_package_retention");
+
+                    b.Property<DateTime>("LeaseExpiresAtUtc")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("lease_expires_at_utc");
 
                     b.Property<Guid>("ManagedOperationalFileId")
                         .HasColumnType("uuid")
@@ -2869,10 +4864,49 @@ namespace PSeq.Operations.Api.Migrations
                         .HasColumnType("uuid")
                         .HasColumnName("organization_id");
 
+                    b.Property<string>("Outcome")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)")
+                        .HasColumnName("outcome");
+
+                    b.Property<Guid>("ReleasedPackageId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("released_package_id");
+
+                    b.Property<string>("ReleasedPackageType")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)")
+                        .HasColumnName("released_package_type");
+
                     b.Property<string>("RemoteAddress")
                         .HasMaxLength(100)
                         .HasColumnType("character varying(100)")
                         .HasColumnName("remote_address");
+
+                    b.Property<string>("Scope")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)")
+                        .HasColumnName("scope");
+
+                    b.Property<DateTime>("StartedAtUtc")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("started_at_utc");
+
+                    b.Property<DateTime?>("TerminalAtUtc")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("terminal_at_utc");
+
+                    b.Property<string>("TerminalReasonCode")
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)")
+                        .HasColumnName("terminal_reason_code");
+
+                    b.Property<Guid>("TransferId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("transfer_id");
 
                     b.Property<string>("UserAgent")
                         .HasMaxLength(1000)
@@ -2883,13 +4917,24 @@ namespace PSeq.Operations.Api.Migrations
                         .HasColumnType("uuid")
                         .HasColumnName("user_id");
 
+                    b.Property<long>("Version")
+                        .IsConcurrencyToken()
+                        .HasColumnType("bigint")
+                        .HasColumnName("version");
+
                     b.HasKey("Id");
 
                     b.HasIndex("ManagedOperationalFileId");
 
+                    b.HasIndex("TransferId");
+
                     b.HasIndex("UserId");
 
-                    b.HasIndex("OrganizationId", "DownloadedAt");
+                    b.HasIndex("OrganizationId", "StartedAtUtc");
+
+                    b.HasIndex("Outcome", "LeaseExpiresAtUtc");
+
+                    b.HasIndex("OrganizationId", "ReleasedPackageType", "ReleasedPackageId");
 
                     b.ToTable("operational_file_downloads", "commercial_ops");
                 });
@@ -4665,6 +6710,68 @@ namespace PSeq.Operations.Api.Migrations
                     b.ToTable("reconciliation_batch_items", "commercial_ops");
                 });
 
+            modelBuilder.Entity("PSeq.Operations.Commercial.OrderManagement.Domain.RegisteredSampleTube", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid")
+                        .HasColumnName("id");
+
+                    b.Property<DateTime?>("AccessionedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("accessioned_at");
+
+                    b.Property<DateTime?>("AssignedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("assigned_at");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("created_at");
+
+                    b.Property<Guid?>("CreatedByUserId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("created_by_user_id");
+
+                    b.Property<Guid>("SampleReturnKitId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("sample_return_kit_id");
+
+                    b.Property<string>("Status")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)")
+                        .HasColumnName("status");
+
+                    b.Property<string>("SupplierBarcode")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)")
+                        .HasColumnName("supplier_barcode");
+
+                    b.Property<DateTime>("UpdatedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("updated_at");
+
+                    b.Property<Guid?>("UpdatedByUserId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("updated_by_user_id");
+
+                    b.Property<long>("Version")
+                        .IsConcurrencyToken()
+                        .HasColumnType("bigint")
+                        .HasColumnName("version");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("SupplierBarcode")
+                        .IsUnique();
+
+                    b.HasIndex("SampleReturnKitId", "Status");
+
+                    b.ToTable("registered_sample_tubes", "commercial_ops");
+                });
+
             modelBuilder.Entity("PSeq.Operations.Commercial.OrderManagement.Domain.ResultArtifact", b =>
                 {
                     b.Property<Guid>("Id")
@@ -5026,6 +7133,1001 @@ namespace PSeq.Operations.Api.Migrations
                     b.ToTable("result_retention_schedules", "commercial_ops");
                 });
 
+            modelBuilder.Entity("PSeq.Operations.Commercial.OrderManagement.Domain.SampleReturnKit", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid")
+                        .HasColumnName("id");
+
+                    b.Property<string>("AuthorizationSource")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)")
+                        .HasColumnName("authorization_source");
+
+                    b.Property<Guid>("AuthorizationSourceId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("authorization_source_id");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("created_at");
+
+                    b.Property<Guid?>("CreatedByUserId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("created_by_user_id");
+
+                    b.Property<DateTime?>("FulfilledAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("fulfilled_at");
+
+                    b.Property<string>("KitNumber")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)")
+                        .HasColumnName("kit_number");
+
+                    b.Property<Guid>("OrganizationId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("organization_id");
+
+                    b.Property<string>("OutboundCarrier")
+                        .HasMaxLength(255)
+                        .HasColumnType("character varying(255)")
+                        .HasColumnName("outbound_carrier");
+
+                    b.Property<string>("OutboundTrackingNumber")
+                        .HasMaxLength(255)
+                        .HasColumnType("character varying(255)")
+                        .HasColumnName("outbound_tracking_number");
+
+                    b.Property<int>("RequiredTubeCount")
+                        .HasColumnType("integer")
+                        .HasColumnName("required_tube_count");
+
+                    b.Property<Guid>("SampleShipmentId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("sample_shipment_id");
+
+                    b.Property<string>("ShipperProductNumber")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)")
+                        .HasColumnName("shipper_product_number");
+
+                    b.Property<string>("ShipperSupplierName")
+                        .IsRequired()
+                        .HasMaxLength(255)
+                        .HasColumnType("character varying(255)")
+                        .HasColumnName("shipper_supplier_name");
+
+                    b.Property<string>("Status")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)")
+                        .HasColumnName("status");
+
+                    b.Property<string>("TubeLotNumber")
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)")
+                        .HasColumnName("tube_lot_number");
+
+                    b.Property<string>("TubeProductNumber")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)")
+                        .HasColumnName("tube_product_number");
+
+                    b.Property<string>("TubeSupplierName")
+                        .IsRequired()
+                        .HasMaxLength(255)
+                        .HasColumnType("character varying(255)")
+                        .HasColumnName("tube_supplier_name");
+
+                    b.Property<DateTime>("UpdatedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("updated_at");
+
+                    b.Property<Guid?>("UpdatedByUserId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("updated_by_user_id");
+
+                    b.Property<long>("Version")
+                        .IsConcurrencyToken()
+                        .HasColumnType("bigint")
+                        .HasColumnName("version");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("KitNumber")
+                        .IsUnique();
+
+                    b.HasIndex("SampleShipmentId")
+                        .IsUnique();
+
+                    b.HasIndex("AuthorizationSource", "AuthorizationSourceId");
+
+                    b.HasIndex("OrganizationId", "Status");
+
+                    b.ToTable("sample_return_kits", "commercial_ops");
+                });
+
+            modelBuilder.Entity("PSeq.Operations.Commercial.OrderManagement.Domain.SampleShipment", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid")
+                        .HasColumnName("id");
+
+                    b.Property<string>("AuthorizationName")
+                        .IsRequired()
+                        .HasMaxLength(255)
+                        .HasColumnType("character varying(255)")
+                        .HasColumnName("authorization_name");
+
+                    b.Property<string>("AuthorizationReference")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)")
+                        .HasColumnName("authorization_reference");
+
+                    b.Property<string>("AuthorizationSource")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)")
+                        .HasColumnName("authorization_source");
+
+                    b.Property<Guid>("AuthorizationSourceId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("authorization_source_id");
+
+                    b.Property<string>("Carrier")
+                        .HasMaxLength(255)
+                        .HasColumnType("character varying(255)")
+                        .HasColumnName("carrier");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("created_at");
+
+                    b.Property<Guid?>("CreatedByUserId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("created_by_user_id");
+
+                    b.Property<DateTime?>("DeliveredAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("delivered_at");
+
+                    b.Property<Guid>("DestinationId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("destination_id");
+
+                    b.Property<Guid>("LabWorkOrderId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("lab_work_order_id");
+
+                    b.Property<Guid>("OrganizationId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("organization_id");
+
+                    b.Property<DateTime?>("ReceivedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("received_at");
+
+                    b.Property<string>("ShipmentNumber")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)")
+                        .HasColumnName("shipment_number");
+
+                    b.Property<DateTime?>("ShippedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("shipped_at");
+
+                    b.Property<string>("Status")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)")
+                        .HasColumnName("status");
+
+                    b.Property<string>("TrackingNumber")
+                        .HasMaxLength(255)
+                        .HasColumnType("character varying(255)")
+                        .HasColumnName("tracking_number");
+
+                    b.Property<DateTime>("UpdatedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("updated_at");
+
+                    b.Property<Guid?>("UpdatedByUserId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("updated_by_user_id");
+
+                    b.Property<long>("Version")
+                        .IsConcurrencyToken()
+                        .HasColumnType("bigint")
+                        .HasColumnName("version");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("DestinationId");
+
+                    b.HasIndex("LabWorkOrderId");
+
+                    b.HasIndex("ShipmentNumber")
+                        .IsUnique();
+
+                    b.HasIndex("AuthorizationSource", "AuthorizationSourceId");
+
+                    b.HasIndex("OrganizationId", "Status");
+
+                    b.ToTable("sample_shipments", "commercial_ops");
+                });
+
+            modelBuilder.Entity("PSeq.Operations.Commercial.OrderManagement.Domain.SampleShipmentItem", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid")
+                        .HasColumnName("id");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("created_at");
+
+                    b.Property<Guid?>("CreatedByUserId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("created_by_user_id");
+
+                    b.Property<string>("CustomerSampleId")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)")
+                        .HasColumnName("customer_sample_id");
+
+                    b.Property<decimal>("Quantity")
+                        .HasPrecision(18, 6)
+                        .HasColumnType("numeric(18,6)")
+                        .HasColumnName("quantity");
+
+                    b.Property<string>("QuantityUnit")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)")
+                        .HasColumnName("quantity_unit");
+
+                    b.Property<Guid?>("RegisteredSampleTubeId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("registered_sample_tube_id");
+
+                    b.Property<string>("SampleName")
+                        .IsRequired()
+                        .HasMaxLength(255)
+                        .HasColumnType("character varying(255)")
+                        .HasColumnName("sample_name");
+
+                    b.Property<Guid>("SampleShipmentId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("sample_shipment_id");
+
+                    b.Property<Guid>("SampleTypeDefinitionId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("sample_type_definition_id");
+
+                    b.Property<Guid>("SubmittedSpecimenId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("submitted_specimen_id");
+
+                    b.Property<DateTime?>("TubeAssignedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("tube_assigned_at");
+
+                    b.Property<DateTime>("UpdatedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("updated_at");
+
+                    b.Property<Guid?>("UpdatedByUserId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("updated_by_user_id");
+
+                    b.Property<long>("Version")
+                        .IsConcurrencyToken()
+                        .HasColumnType("bigint")
+                        .HasColumnName("version");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("RegisteredSampleTubeId")
+                        .IsUnique();
+
+                    b.HasIndex("SampleTypeDefinitionId");
+
+                    b.HasIndex("SampleShipmentId", "CustomerSampleId")
+                        .IsUnique();
+
+                    b.HasIndex("SampleShipmentId", "SubmittedSpecimenId")
+                        .IsUnique();
+
+                    b.ToTable("sample_shipment_items", "commercial_ops");
+                });
+
+            modelBuilder.Entity("PSeq.Operations.Commercial.OrderManagement.Domain.SampleShipmentTubeSlot", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid")
+                        .HasColumnName("id");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("created_at");
+
+                    b.Property<Guid?>("CreatedByUserId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("created_by_user_id");
+
+                    b.Property<int>("Ordinal")
+                        .HasColumnType("integer")
+                        .HasColumnName("ordinal");
+
+                    b.Property<Guid?>("RegisteredSampleTubeId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("registered_sample_tube_id");
+
+                    b.Property<Guid>("SampleShipmentItemId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("sample_shipment_item_id");
+
+                    b.Property<DateTime?>("TubeAssignedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("tube_assigned_at");
+
+                    b.Property<DateTime>("UpdatedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("updated_at");
+
+                    b.Property<Guid?>("UpdatedByUserId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("updated_by_user_id");
+
+                    b.Property<long>("Version")
+                        .IsConcurrencyToken()
+                        .HasColumnType("bigint")
+                        .HasColumnName("version");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("RegisteredSampleTubeId")
+                        .IsUnique();
+
+                    b.HasIndex("SampleShipmentItemId", "Ordinal")
+                        .IsUnique();
+
+                    b.ToTable("sample_shipment_tube_slots", "commercial_ops");
+                });
+
+            modelBuilder.Entity("PSeq.Operations.Commercial.OrderManagement.Domain.SampleShippingDestination", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid")
+                        .HasColumnName("id");
+
+                    b.Property<string>("AddressLine1")
+                        .IsRequired()
+                        .HasMaxLength(255)
+                        .HasColumnType("character varying(255)")
+                        .HasColumnName("address_line1");
+
+                    b.Property<string>("AddressLine2")
+                        .HasMaxLength(255)
+                        .HasColumnType("character varying(255)")
+                        .HasColumnName("address_line2");
+
+                    b.Property<string>("CarrierRestrictions")
+                        .HasMaxLength(2000)
+                        .HasColumnType("character varying(2000)")
+                        .HasColumnName("carrier_restrictions");
+
+                    b.Property<string>("City")
+                        .IsRequired()
+                        .HasMaxLength(150)
+                        .HasColumnType("character varying(150)")
+                        .HasColumnName("city");
+
+                    b.Property<string>("ClosureInstructions")
+                        .HasMaxLength(2000)
+                        .HasColumnType("character varying(2000)")
+                        .HasColumnName("closure_instructions");
+
+                    b.Property<string>("Code")
+                        .IsRequired()
+                        .HasMaxLength(50)
+                        .HasColumnType("character varying(50)")
+                        .HasColumnName("code");
+
+                    b.Property<string>("CountryCode")
+                        .IsRequired()
+                        .HasMaxLength(2)
+                        .HasColumnType("character varying(2)")
+                        .HasColumnName("country_code");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("created_at");
+
+                    b.Property<Guid?>("CreatedByUserId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("created_by_user_id");
+
+                    b.Property<Guid>("DefinitionKey")
+                        .HasColumnType("uuid")
+                        .HasColumnName("definition_key");
+
+                    b.Property<string>("DeliveryInstructions")
+                        .IsRequired()
+                        .HasMaxLength(4000)
+                        .HasColumnType("character varying(4000)")
+                        .HasColumnName("delivery_instructions");
+
+                    b.Property<DateTime>("EffectiveFrom")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("effective_from");
+
+                    b.Property<DateTime?>("EffectiveTo")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("effective_to");
+
+                    b.Property<bool>("InternationalShippingAllowed")
+                        .HasColumnType("boolean")
+                        .HasColumnName("international_shipping_allowed");
+
+                    b.Property<bool>("IsActive")
+                        .HasColumnType("boolean")
+                        .HasColumnName("is_active");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasMaxLength(255)
+                        .HasColumnType("character varying(255)")
+                        .HasColumnName("name");
+
+                    b.Property<string>("OrganizationName")
+                        .IsRequired()
+                        .HasMaxLength(255)
+                        .HasColumnType("character varying(255)")
+                        .HasColumnName("organization_name");
+
+                    b.Property<string>("PostalCode")
+                        .IsRequired()
+                        .HasMaxLength(50)
+                        .HasColumnType("character varying(50)")
+                        .HasColumnName("postal_code");
+
+                    b.Property<string>("ReceivingEmail")
+                        .HasMaxLength(255)
+                        .HasColumnType("character varying(255)")
+                        .HasColumnName("receiving_email");
+
+                    b.Property<string>("ReceivingHours")
+                        .IsRequired()
+                        .HasMaxLength(1000)
+                        .HasColumnType("character varying(1000)")
+                        .HasColumnName("receiving_hours");
+
+                    b.Property<string>("ReceivingPhone")
+                        .HasMaxLength(50)
+                        .HasColumnType("character varying(50)")
+                        .HasColumnName("receiving_phone");
+
+                    b.Property<string>("RecipientName")
+                        .IsRequired()
+                        .HasMaxLength(255)
+                        .HasColumnType("character varying(255)")
+                        .HasColumnName("recipient_name");
+
+                    b.Property<int>("Revision")
+                        .HasColumnType("integer")
+                        .HasColumnName("revision");
+
+                    b.Property<string>("StateOrProvince")
+                        .IsRequired()
+                        .HasMaxLength(150)
+                        .HasColumnType("character varying(150)")
+                        .HasColumnName("state_or_province");
+
+                    b.Property<Guid?>("SupersedesDestinationId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("supersedes_destination_id");
+
+                    b.Property<string>("TimeZoneId")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)")
+                        .HasColumnName("time_zone_id");
+
+                    b.Property<DateTime>("UpdatedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("updated_at");
+
+                    b.Property<Guid?>("UpdatedByUserId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("updated_by_user_id");
+
+                    b.Property<long>("Version")
+                        .IsConcurrencyToken()
+                        .HasColumnType("bigint")
+                        .HasColumnName("version");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("SupersedesDestinationId");
+
+                    b.HasIndex("Code", "Revision")
+                        .IsUnique();
+
+                    b.HasIndex("DefinitionKey", "Revision")
+                        .IsUnique();
+
+                    b.HasIndex("IsActive", "EffectiveFrom", "EffectiveTo");
+
+                    b.ToTable("sample_shipping_destinations", "commercial_ops");
+                });
+
+            modelBuilder.Entity("PSeq.Operations.Commercial.OrderManagement.Domain.SampleShippingInstructionRule", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid")
+                        .HasColumnName("id");
+
+                    b.Property<string>("CarrierInstructions")
+                        .IsRequired()
+                        .HasMaxLength(4000)
+                        .HasColumnType("character varying(4000)")
+                        .HasColumnName("carrier_instructions");
+
+                    b.Property<string>("CompatibilityGroup")
+                        .IsRequired()
+                        .HasMaxLength(50)
+                        .HasColumnType("character varying(50)")
+                        .HasColumnName("compatibility_group");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("created_at");
+
+                    b.Property<Guid?>("CreatedByUserId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("created_by_user_id");
+
+                    b.Property<Guid>("DefinitionKey")
+                        .HasColumnType("uuid")
+                        .HasColumnName("definition_key");
+
+                    b.Property<string>("DeliveryInstructions")
+                        .IsRequired()
+                        .HasMaxLength(4000)
+                        .HasColumnType("character varying(4000)")
+                        .HasColumnName("delivery_instructions");
+
+                    b.Property<Guid>("DestinationId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("destination_id");
+
+                    b.Property<string>("DispatchInstructions")
+                        .IsRequired()
+                        .HasMaxLength(4000)
+                        .HasColumnType("character varying(4000)")
+                        .HasColumnName("dispatch_instructions");
+
+                    b.Property<DateTime>("EffectiveFrom")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("effective_from");
+
+                    b.Property<DateTime?>("EffectiveTo")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("effective_to");
+
+                    b.Property<string>("ExceptionInstructions")
+                        .IsRequired()
+                        .HasMaxLength(4000)
+                        .HasColumnType("character varying(4000)")
+                        .HasColumnName("exception_instructions");
+
+                    b.Property<string>("InternationalCustomsInstructions")
+                        .HasMaxLength(4000)
+                        .HasColumnType("character varying(4000)")
+                        .HasColumnName("international_customs_instructions");
+
+                    b.Property<bool>("IsActive")
+                        .HasColumnType("boolean")
+                        .HasColumnName("is_active");
+
+                    b.Property<string>("PackingInstructions")
+                        .IsRequired()
+                        .HasMaxLength(4000)
+                        .HasColumnType("character varying(4000)")
+                        .HasColumnName("packing_instructions");
+
+                    b.Property<string>("RequiredDocuments")
+                        .IsRequired()
+                        .HasMaxLength(4000)
+                        .HasColumnType("character varying(4000)")
+                        .HasColumnName("required_documents");
+
+                    b.Property<bool>("RequiresSeparateShipment")
+                        .HasColumnType("boolean")
+                        .HasColumnName("requires_separate_shipment");
+
+                    b.Property<int>("Revision")
+                        .HasColumnType("integer")
+                        .HasColumnName("revision");
+
+                    b.Property<Guid>("SampleTypeDefinitionId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("sample_type_definition_id");
+
+                    b.Property<Guid?>("SupersedesInstructionRuleId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("supersedes_instruction_rule_id");
+
+                    b.Property<string>("TemperatureInstructions")
+                        .IsRequired()
+                        .HasMaxLength(4000)
+                        .HasColumnType("character varying(4000)")
+                        .HasColumnName("temperature_instructions");
+
+                    b.Property<DateTime>("UpdatedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("updated_at");
+
+                    b.Property<Guid?>("UpdatedByUserId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("updated_by_user_id");
+
+                    b.Property<long>("Version")
+                        .IsConcurrencyToken()
+                        .HasColumnType("bigint")
+                        .HasColumnName("version");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("SampleTypeDefinitionId");
+
+                    b.HasIndex("SupersedesInstructionRuleId");
+
+                    b.HasIndex("DefinitionKey", "Revision")
+                        .IsUnique();
+
+                    b.HasIndex("DestinationId", "SampleTypeDefinitionId", "EffectiveFrom");
+
+                    b.HasIndex("IsActive", "EffectiveFrom", "EffectiveTo");
+
+                    b.ToTable("sample_shipping_instruction_rules", "commercial_ops");
+                });
+
+            modelBuilder.Entity("PSeq.Operations.Commercial.OrderManagement.Domain.SampleShippingPacketRevision", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid")
+                        .HasColumnName("id");
+
+                    b.Property<string>("Barcode")
+                        .IsRequired()
+                        .HasMaxLength(20)
+                        .HasColumnType("character varying(20)")
+                        .HasColumnName("barcode");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("created_at");
+
+                    b.Property<Guid?>("CreatedByUserId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("created_by_user_id");
+
+                    b.Property<string>("DestinationSnapshotJson")
+                        .IsRequired()
+                        .HasColumnType("jsonb")
+                        .HasColumnName("destination_snapshot_json");
+
+                    b.Property<string>("InstructionSnapshotJson")
+                        .IsRequired()
+                        .HasColumnType("jsonb")
+                        .HasColumnName("instruction_snapshot_json");
+
+                    b.Property<DateTime>("IssuedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("issued_at");
+
+                    b.Property<string>("ManifestSnapshotJson")
+                        .IsRequired()
+                        .HasColumnType("jsonb")
+                        .HasColumnName("manifest_snapshot_json");
+
+                    b.Property<string>("PacketNumber")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)")
+                        .HasColumnName("packet_number");
+
+                    b.Property<Guid?>("ReplacedByPacketRevisionId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("replaced_by_packet_revision_id");
+
+                    b.Property<int>("Revision")
+                        .HasColumnType("integer")
+                        .HasColumnName("revision");
+
+                    b.Property<Guid>("SampleShipmentId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("sample_shipment_id");
+
+                    b.Property<DateTime>("UpdatedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("updated_at");
+
+                    b.Property<Guid?>("UpdatedByUserId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("updated_by_user_id");
+
+                    b.Property<long>("Version")
+                        .IsConcurrencyToken()
+                        .HasColumnType("bigint")
+                        .HasColumnName("version");
+
+                    b.Property<string>("VoidReason")
+                        .HasMaxLength(2000)
+                        .HasColumnType("character varying(2000)")
+                        .HasColumnName("void_reason");
+
+                    b.Property<DateTime?>("VoidedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("voided_at");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("Barcode")
+                        .IsUnique();
+
+                    b.HasIndex("PacketNumber")
+                        .IsUnique();
+
+                    b.HasIndex("ReplacedByPacketRevisionId");
+
+                    b.HasIndex("SampleShipmentId", "Revision")
+                        .IsUnique();
+
+                    b.ToTable("sample_shipping_packet_revisions", "commercial_ops");
+                });
+
+            modelBuilder.Entity("PSeq.Operations.Commercial.OrderManagement.Domain.SampleTubeAssignmentEvent", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid")
+                        .HasColumnName("id");
+
+                    b.Property<string>("Action")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)")
+                        .HasColumnName("action");
+
+                    b.Property<Guid>("ActorUserId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("actor_user_id");
+
+                    b.Property<string>("CustomerSampleId")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)")
+                        .HasColumnName("customer_sample_id");
+
+                    b.Property<DateTime>("OccurredAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("occurred_at");
+
+                    b.Property<string>("Reason")
+                        .HasMaxLength(1000)
+                        .HasColumnType("character varying(1000)")
+                        .HasColumnName("reason");
+
+                    b.Property<Guid>("RegisteredSampleTubeId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("registered_sample_tube_id");
+
+                    b.Property<Guid>("SampleShipmentId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("sample_shipment_id");
+
+                    b.Property<Guid>("SampleShipmentItemId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("sample_shipment_item_id");
+
+                    b.Property<Guid?>("SampleShipmentTubeSlotId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("sample_shipment_tube_slot_id");
+
+                    b.Property<string>("SupplierBarcode")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)")
+                        .HasColumnName("supplier_barcode");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("SampleShipmentItemId");
+
+                    b.HasIndex("SampleShipmentTubeSlotId");
+
+                    b.HasIndex("RegisteredSampleTubeId", "OccurredAt");
+
+                    b.HasIndex("SampleShipmentId", "OccurredAt");
+
+                    b.ToTable("sample_tube_assignment_events", "commercial_ops");
+                });
+
+            modelBuilder.Entity("PSeq.Operations.Commercial.OrderManagement.Domain.SampleTypeDefinition", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid")
+                        .HasColumnName("id");
+
+                    b.Property<string>("CarrierRestrictions")
+                        .HasMaxLength(2000)
+                        .HasColumnType("character varying(2000)")
+                        .HasColumnName("carrier_restrictions");
+
+                    b.Property<string>("Code")
+                        .IsRequired()
+                        .HasMaxLength(50)
+                        .HasColumnType("character varying(50)")
+                        .HasColumnName("code");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("created_at");
+
+                    b.Property<Guid?>("CreatedByUserId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("created_by_user_id");
+
+                    b.Property<Guid>("DefinitionKey")
+                        .HasColumnType("uuid")
+                        .HasColumnName("definition_key");
+
+                    b.Property<string>("Description")
+                        .IsRequired()
+                        .HasMaxLength(2000)
+                        .HasColumnType("character varying(2000)")
+                        .HasColumnName("description");
+
+                    b.Property<DateTime>("EffectiveFrom")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("effective_from");
+
+                    b.Property<DateTime?>("EffectiveTo")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("effective_to");
+
+                    b.Property<bool>("IsActive")
+                        .HasColumnType("boolean")
+                        .HasColumnName("is_active");
+
+                    b.Property<string>("LabelingInstructions")
+                        .IsRequired()
+                        .HasMaxLength(4000)
+                        .HasColumnType("character varying(4000)")
+                        .HasColumnName("labeling_instructions");
+
+                    b.Property<string>("MaterialClass")
+                        .IsRequired()
+                        .HasMaxLength(255)
+                        .HasColumnType("character varying(255)")
+                        .HasColumnName("material_class");
+
+                    b.Property<decimal?>("MaximumQuantity")
+                        .HasPrecision(18, 6)
+                        .HasColumnType("numeric(18,6)")
+                        .HasColumnName("maximum_quantity");
+
+                    b.Property<int?>("MaximumTransitHours")
+                        .HasColumnType("integer")
+                        .HasColumnName("maximum_transit_hours");
+
+                    b.Property<decimal?>("MinimumQuantity")
+                        .HasPrecision(18, 6)
+                        .HasColumnType("numeric(18,6)")
+                        .HasColumnName("minimum_quantity");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasMaxLength(255)
+                        .HasColumnType("character varying(255)")
+                        .HasColumnName("name");
+
+                    b.Property<string>("PackagingInstructions")
+                        .IsRequired()
+                        .HasMaxLength(4000)
+                        .HasColumnType("character varying(4000)")
+                        .HasColumnName("packaging_instructions");
+
+                    b.Property<string>("PrimaryContainerRequirements")
+                        .IsRequired()
+                        .HasMaxLength(2000)
+                        .HasColumnType("character varying(2000)")
+                        .HasColumnName("primary_container_requirements");
+
+                    b.Property<string>("ProhibitedIdentifiers")
+                        .IsRequired()
+                        .HasMaxLength(2000)
+                        .HasColumnType("character varying(2000)")
+                        .HasColumnName("prohibited_identifiers");
+
+                    b.Property<string>("QuantityUnit")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)")
+                        .HasColumnName("quantity_unit");
+
+                    b.Property<int>("Revision")
+                        .HasColumnType("integer")
+                        .HasColumnName("revision");
+
+                    b.Property<string>("SafetyRequirements")
+                        .IsRequired()
+                        .HasMaxLength(2000)
+                        .HasColumnType("character varying(2000)")
+                        .HasColumnName("safety_requirements");
+
+                    b.Property<string>("StabilizerRequirements")
+                        .HasMaxLength(2000)
+                        .HasColumnType("character varying(2000)")
+                        .HasColumnName("stabilizer_requirements");
+
+                    b.Property<Guid?>("SupersedesSampleTypeId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("supersedes_sample_type_id");
+
+                    b.Property<string>("TemperatureRequirements")
+                        .IsRequired()
+                        .HasMaxLength(2000)
+                        .HasColumnType("character varying(2000)")
+                        .HasColumnName("temperature_requirements");
+
+                    b.Property<DateTime>("UpdatedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("updated_at");
+
+                    b.Property<Guid?>("UpdatedByUserId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("updated_by_user_id");
+
+                    b.Property<long>("Version")
+                        .IsConcurrencyToken()
+                        .HasColumnType("bigint")
+                        .HasColumnName("version");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("SupersedesSampleTypeId");
+
+                    b.HasIndex("Code", "Revision")
+                        .IsUnique();
+
+                    b.HasIndex("DefinitionKey", "Revision")
+                        .IsUnique();
+
+                    b.HasIndex("IsActive", "EffectiveFrom", "EffectiveTo");
+
+                    b.ToTable("sample_type_definitions", "commercial_ops");
+                });
+
             modelBuilder.Entity("PSeq.Operations.Commercial.Relationships.Domain.OrganizationServiceEntitlement", b =>
                 {
                     b.Property<Guid>("Id")
@@ -5303,6 +8405,12 @@ namespace PSeq.Operations.Api.Migrations
                         .HasColumnType("character varying(100)")
                         .HasColumnName("barcode");
 
+                    b.Property<string>("BarcodeSource")
+                        .IsRequired()
+                        .HasMaxLength(50)
+                        .HasColumnType("character varying(50)")
+                        .HasColumnName("barcode_source");
+
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("timestamp with time zone")
                         .HasColumnName("created_at");
@@ -5315,6 +8423,10 @@ namespace PSeq.Operations.Api.Migrations
                         .HasMaxLength(1000)
                         .HasColumnType("character varying(1000)")
                         .HasColumnName("disposition_reason");
+
+                    b.Property<Guid?>("ExternalBarcodeReferenceId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("external_barcode_reference_id");
 
                     b.Property<string>("Kind")
                         .IsRequired()
@@ -5393,6 +8505,9 @@ namespace PSeq.Operations.Api.Migrations
                     b.HasKey("Id");
 
                     b.HasIndex("Barcode")
+                        .IsUnique();
+
+                    b.HasIndex("ExternalBarcodeReferenceId")
                         .IsUnique();
 
                     b.HasIndex("LabSpecimenId");
@@ -7676,6 +10791,91 @@ namespace PSeq.Operations.Api.Migrations
                     b.ToTable("lab_samples", "commercial_ops");
                 });
 
+            modelBuilder.Entity("PhaenoPortal.App.Features.OrderManagement.Domain.LabSampleImportPreview", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid")
+                        .HasColumnName("id");
+
+                    b.Property<Guid>("ActorUserId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("actor_user_id");
+
+                    b.Property<int>("BlankRowCount")
+                        .HasColumnType("integer")
+                        .HasColumnName("blank_row_count");
+
+                    b.Property<DateTime?>("ConfirmedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("confirmed_at");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("created_at");
+
+                    b.Property<Guid?>("CreatedByUserId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("created_by_user_id");
+
+                    b.Property<string>("ErrorsJson")
+                        .IsRequired()
+                        .HasColumnType("jsonb")
+                        .HasColumnName("errors_json");
+
+                    b.Property<DateTime>("ExpiresAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("expires_at");
+
+                    b.Property<string>("FileSha256")
+                        .IsRequired()
+                        .HasMaxLength(64)
+                        .HasColumnType("character varying(64)")
+                        .HasColumnName("file_sha256");
+
+                    b.Property<Guid>("LabServiceOrderId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("lab_service_order_id");
+
+                    b.Property<Guid>("OrganizationId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("organization_id");
+
+                    b.Property<string>("RowsJson")
+                        .IsRequired()
+                        .HasColumnType("jsonb")
+                        .HasColumnName("rows_json");
+
+                    b.Property<DateTime>("UpdatedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("updated_at");
+
+                    b.Property<Guid?>("UpdatedByUserId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("updated_by_user_id");
+
+                    b.Property<int>("ValidRowCount")
+                        .HasColumnType("integer")
+                        .HasColumnName("valid_row_count");
+
+                    b.Property<long>("Version")
+                        .IsConcurrencyToken()
+                        .HasColumnType("bigint")
+                        .HasColumnName("version");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("ActorUserId");
+
+                    b.HasIndex("ExpiresAt");
+
+                    b.HasIndex("OrganizationId");
+
+                    b.HasIndex("LabServiceOrderId", "CreatedAt");
+
+                    b.ToTable("lab_sample_import_previews", "commercial_ops");
+                });
+
             modelBuilder.Entity("PhaenoPortal.App.Features.OrderManagement.Domain.LabServiceOrder", b =>
                 {
                     b.Property<Guid>("Id")
@@ -7708,13 +10908,23 @@ namespace PSeq.Operations.Api.Migrations
                         .HasColumnName("current_quote_id");
 
                     b.Property<string>("CustomerReference")
+                        .IsRequired()
                         .HasMaxLength(255)
                         .HasColumnType("character varying(255)")
                         .HasColumnName("customer_reference");
 
+                    b.Property<string>("Description")
+                        .HasMaxLength(2000)
+                        .HasColumnType("character varying(2000)")
+                        .HasColumnName("description");
+
                     b.Property<DateTime?>("DueAt")
                         .HasColumnType("timestamp with time zone")
                         .HasColumnName("due_at");
+
+                    b.Property<bool>("HasMixedBiologicalSources")
+                        .HasColumnType("boolean")
+                        .HasColumnName("has_mixed_biological_sources");
 
                     b.Property<string>("InternalNote")
                         .HasMaxLength(4000)
@@ -7724,6 +10934,12 @@ namespace PSeq.Operations.Api.Migrations
                     b.Property<bool>("IsDiscarded")
                         .HasColumnType("boolean")
                         .HasColumnName("is_discarded");
+
+                    b.Property<string>("NormalizedJobName")
+                        .IsRequired()
+                        .HasMaxLength(255)
+                        .HasColumnType("character varying(255)")
+                        .HasColumnName("normalized_job_name");
 
                     b.Property<string>("OrderNumber")
                         .IsRequired()
@@ -7739,20 +10955,57 @@ namespace PSeq.Operations.Api.Migrations
                         .HasColumnType("timestamp with time zone")
                         .HasColumnName("placed_at");
 
+                    b.Property<string>("PlacementSnapshotJson")
+                        .HasColumnType("jsonb")
+                        .HasColumnName("placement_snapshot_json");
+
                     b.Property<int>("RequestRevision")
                         .HasColumnType("integer")
                         .HasColumnName("request_revision");
+
+                    b.Property<int>("RequestedSpecimenCount")
+                        .HasColumnType("integer")
+                        .HasColumnName("requested_specimen_count");
 
                     b.Property<string>("ResumeStatus")
                         .HasMaxLength(100)
                         .HasColumnType("character varying(100)")
                         .HasColumnName("resume_status");
 
+                    b.Property<string>("SafetyDeclaration")
+                        .IsRequired()
+                        .HasMaxLength(2000)
+                        .HasColumnType("character varying(2000)")
+                        .HasColumnName("safety_declaration");
+
+                    b.Property<DateTime?>("SampleRosterFinalizedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("sample_roster_finalized_at");
+
+                    b.Property<Guid?>("SampleRosterFinalizedByUserId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("sample_roster_finalized_by_user_id");
+
+                    b.Property<string>("SharedBiologicalSource")
+                        .HasMaxLength(500)
+                        .HasColumnType("character varying(500)")
+                        .HasColumnName("shared_biological_source");
+
+                    b.Property<Guid?>("SourceRequestId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("source_request_id");
+
                     b.Property<string>("Status")
                         .IsRequired()
                         .HasMaxLength(100)
                         .HasColumnType("character varying(100)")
                         .HasColumnName("status");
+
+                    b.Property<string>("StorageRequirements")
+                        .IsRequired()
+                        .HasMaxLength(2000)
+                        .HasColumnType("character varying(2000)")
+                        .HasColumnName("storage_requirements");
 
                     b.Property<string>("SubmissionInstructionsSnapshot")
                         .IsRequired()
@@ -7793,11 +11046,75 @@ namespace PSeq.Operations.Api.Migrations
                     b.HasIndex("OrderNumber")
                         .IsUnique();
 
+                    b.HasIndex("SampleRosterFinalizedByUserId");
+
+                    b.HasIndex("SourceRequestId")
+                        .IsUnique();
+
                     b.HasIndex("AssignedToUserId", "DueAt");
+
+                    b.HasIndex("OrganizationId", "NormalizedJobName")
+                        .IsUnique();
 
                     b.HasIndex("OrganizationId", "Status", "CreatedAt");
 
                     b.ToTable("lab_service_orders", "commercial_ops");
+                });
+
+            modelBuilder.Entity("PhaenoPortal.App.Features.OrderManagement.Domain.LabServiceSourceGroup", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid")
+                        .HasColumnName("id");
+
+                    b.Property<string>("BiologicalSource")
+                        .IsRequired()
+                        .HasMaxLength(500)
+                        .HasColumnType("character varying(500)")
+                        .HasColumnName("biological_source");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("created_at");
+
+                    b.Property<Guid?>("CreatedByUserId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("created_by_user_id");
+
+                    b.Property<Guid>("LabServiceOrderId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("lab_service_order_id");
+
+                    b.Property<string>("NormalizedBiologicalSource")
+                        .IsRequired()
+                        .HasMaxLength(500)
+                        .HasColumnType("character varying(500)")
+                        .HasColumnName("normalized_biological_source");
+
+                    b.Property<int>("SpecimenCount")
+                        .HasColumnType("integer")
+                        .HasColumnName("specimen_count");
+
+                    b.Property<DateTime>("UpdatedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("updated_at");
+
+                    b.Property<Guid?>("UpdatedByUserId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("updated_by_user_id");
+
+                    b.Property<long>("Version")
+                        .IsConcurrencyToken()
+                        .HasColumnType("bigint")
+                        .HasColumnName("version");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("LabServiceOrderId", "NormalizedBiologicalSource")
+                        .IsUnique();
+
+                    b.ToTable("lab_service_source_groups", "commercial_ops");
                 });
 
             modelBuilder.Entity("PhaenoPortal.App.Features.OrderManagement.Domain.ManagedOperationalFile", b =>
@@ -8157,6 +11474,346 @@ namespace PSeq.Operations.Api.Migrations
                     b.Navigation("User");
                 });
 
+            modelBuilder.Entity("PSeq.Operations.Commercial.Crm.Domain.CrmActivity", b =>
+                {
+                    b.HasOne("PSeq.Operations.Commercial.Accounts.Domain.User", "ActorUser")
+                        .WithMany()
+                        .HasForeignKey("ActorUserId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("PSeq.Operations.Commercial.Crm.Domain.CrmCompany", "Company")
+                        .WithMany()
+                        .HasForeignKey("CompanyId")
+                        .OnDelete(DeleteBehavior.Restrict);
+
+                    b.HasOne("PSeq.Operations.Commercial.Crm.Domain.CrmContact", "Contact")
+                        .WithMany()
+                        .HasForeignKey("ContactId")
+                        .OnDelete(DeleteBehavior.Restrict);
+
+                    b.HasOne("PSeq.Operations.Commercial.Crm.Domain.CrmLead", "Lead")
+                        .WithMany()
+                        .HasForeignKey("LeadId")
+                        .OnDelete(DeleteBehavior.Restrict);
+
+                    b.HasOne("PSeq.Operations.Commercial.Crm.Domain.CrmOpportunity", "Opportunity")
+                        .WithMany()
+                        .HasForeignKey("OpportunityId")
+                        .OnDelete(DeleteBehavior.Restrict);
+
+                    b.Navigation("ActorUser");
+
+                    b.Navigation("Company");
+
+                    b.Navigation("Contact");
+
+                    b.Navigation("Lead");
+
+                    b.Navigation("Opportunity");
+                });
+
+            modelBuilder.Entity("PSeq.Operations.Commercial.Crm.Domain.CrmCompany", b =>
+                {
+                    b.HasOne("PSeq.Operations.Commercial.Crm.Domain.CrmCompany", "MergedIntoCompany")
+                        .WithMany()
+                        .HasForeignKey("MergedIntoCompanyId")
+                        .OnDelete(DeleteBehavior.Restrict);
+
+                    b.HasOne("PSeq.Operations.Commercial.Accounts.Domain.User", "Owner")
+                        .WithMany()
+                        .HasForeignKey("OwnerUserId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.Navigation("MergedIntoCompany");
+
+                    b.Navigation("Owner");
+                });
+
+            modelBuilder.Entity("PSeq.Operations.Commercial.Crm.Domain.CrmCompanyContact", b =>
+                {
+                    b.HasOne("PSeq.Operations.Commercial.Crm.Domain.CrmCompany", "Company")
+                        .WithMany()
+                        .HasForeignKey("CompanyId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("PSeq.Operations.Commercial.Crm.Domain.CrmContact", "Contact")
+                        .WithMany()
+                        .HasForeignKey("ContactId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.Navigation("Company");
+
+                    b.Navigation("Contact");
+                });
+
+            modelBuilder.Entity("PSeq.Operations.Commercial.Crm.Domain.CrmContact", b =>
+                {
+                    b.HasOne("PSeq.Operations.Commercial.Crm.Domain.CrmContact", "MergedIntoContact")
+                        .WithMany()
+                        .HasForeignKey("MergedIntoContactId")
+                        .OnDelete(DeleteBehavior.Restrict);
+
+                    b.HasOne("PSeq.Operations.Commercial.Accounts.Domain.User", "Owner")
+                        .WithMany()
+                        .HasForeignKey("OwnerUserId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.Navigation("MergedIntoContact");
+
+                    b.Navigation("Owner");
+                });
+
+            modelBuilder.Entity("PSeq.Operations.Commercial.Crm.Domain.CrmCustomFieldValue", b =>
+                {
+                    b.HasOne("PSeq.Operations.Commercial.Crm.Domain.CrmCustomFieldDefinition", "Definition")
+                        .WithMany()
+                        .HasForeignKey("DefinitionId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.Navigation("Definition");
+                });
+
+            modelBuilder.Entity("PSeq.Operations.Commercial.Crm.Domain.CrmExportRecord", b =>
+                {
+                    b.HasOne("PSeq.Operations.Commercial.Accounts.Domain.User", "RequestedByUser")
+                        .WithMany()
+                        .HasForeignKey("RequestedByUserId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.Navigation("RequestedByUser");
+                });
+
+            modelBuilder.Entity("PSeq.Operations.Commercial.Crm.Domain.CrmHandoff", b =>
+                {
+                    b.HasOne("PSeq.Operations.Commercial.Crm.Domain.CrmCompany", "Company")
+                        .WithMany()
+                        .HasForeignKey("CompanyId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("PSeq.Operations.Commercial.Crm.Domain.CrmOpportunity", "Opportunity")
+                        .WithMany()
+                        .HasForeignKey("OpportunityId")
+                        .OnDelete(DeleteBehavior.Restrict);
+
+                    b.HasOne("PSeq.Operations.Commercial.Relationships.Domain.PortalIntegrationRequest", "RelationshipRequest")
+                        .WithMany()
+                        .HasForeignKey("RelationshipRequestId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.Navigation("Company");
+
+                    b.Navigation("Opportunity");
+
+                    b.Navigation("RelationshipRequest");
+                });
+
+            modelBuilder.Entity("PSeq.Operations.Commercial.Crm.Domain.CrmLead", b =>
+                {
+                    b.HasOne("PSeq.Operations.Commercial.Accounts.Domain.User", "Owner")
+                        .WithMany()
+                        .HasForeignKey("OwnerUserId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.Navigation("Owner");
+                });
+
+            modelBuilder.Entity("PSeq.Operations.Commercial.Crm.Domain.CrmMergeRecord", b =>
+                {
+                    b.HasOne("PSeq.Operations.Commercial.Accounts.Domain.User", "MergedByUser")
+                        .WithMany()
+                        .HasForeignKey("MergedByUserId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.Navigation("MergedByUser");
+                });
+
+            modelBuilder.Entity("PSeq.Operations.Commercial.Crm.Domain.CrmOpportunity", b =>
+                {
+                    b.HasOne("PSeq.Operations.Commercial.Crm.Domain.CrmCompany", "Company")
+                        .WithMany()
+                        .HasForeignKey("CompanyId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("PSeq.Operations.Commercial.Accounts.Domain.User", "Owner")
+                        .WithMany()
+                        .HasForeignKey("OwnerUserId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("PSeq.Operations.Commercial.Crm.Domain.CrmPipeline", "Pipeline")
+                        .WithMany()
+                        .HasForeignKey("PipelineId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("PSeq.Operations.Commercial.Crm.Domain.CrmPipelineStage", "Stage")
+                        .WithMany()
+                        .HasForeignKey("StageId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.Navigation("Company");
+
+                    b.Navigation("Owner");
+
+                    b.Navigation("Pipeline");
+
+                    b.Navigation("Stage");
+                });
+
+            modelBuilder.Entity("PSeq.Operations.Commercial.Crm.Domain.CrmOpportunityContact", b =>
+                {
+                    b.HasOne("PSeq.Operations.Commercial.Crm.Domain.CrmContact", "Contact")
+                        .WithMany()
+                        .HasForeignKey("ContactId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("PSeq.Operations.Commercial.Crm.Domain.CrmOpportunity", "Opportunity")
+                        .WithMany()
+                        .HasForeignKey("OpportunityId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.Navigation("Contact");
+
+                    b.Navigation("Opportunity");
+                });
+
+            modelBuilder.Entity("PSeq.Operations.Commercial.Crm.Domain.CrmOpportunityStageHistory", b =>
+                {
+                    b.HasOne("PSeq.Operations.Commercial.Accounts.Domain.User", "ChangedByUser")
+                        .WithMany()
+                        .HasForeignKey("ChangedByUserId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("PSeq.Operations.Commercial.Crm.Domain.CrmPipelineStage", "FromStage")
+                        .WithMany()
+                        .HasForeignKey("FromStageId")
+                        .OnDelete(DeleteBehavior.Restrict);
+
+                    b.HasOne("PSeq.Operations.Commercial.Crm.Domain.CrmOpportunity", "Opportunity")
+                        .WithMany()
+                        .HasForeignKey("OpportunityId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("PSeq.Operations.Commercial.Crm.Domain.CrmPipelineStage", "ToStage")
+                        .WithMany()
+                        .HasForeignKey("ToStageId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.Navigation("ChangedByUser");
+
+                    b.Navigation("FromStage");
+
+                    b.Navigation("Opportunity");
+
+                    b.Navigation("ToStage");
+                });
+
+            modelBuilder.Entity("PSeq.Operations.Commercial.Crm.Domain.CrmPipelineStage", b =>
+                {
+                    b.HasOne("PSeq.Operations.Commercial.Crm.Domain.CrmPipeline", "Pipeline")
+                        .WithMany("Stages")
+                        .HasForeignKey("PipelineId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.Navigation("Pipeline");
+                });
+
+            modelBuilder.Entity("PSeq.Operations.Commercial.Crm.Domain.CrmPortalAccountLink", b =>
+                {
+                    b.HasOne("PSeq.Operations.Commercial.Crm.Domain.CrmCompany", "Company")
+                        .WithMany()
+                        .HasForeignKey("CompanyId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("PSeq.Operations.Commercial.Accounts.Domain.User", "LinkedByUser")
+                        .WithMany()
+                        .HasForeignKey("LinkedByUserId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("PSeq.Operations.Commercial.Accounts.Domain.Organization", "Organization")
+                        .WithMany()
+                        .HasForeignKey("OrganizationId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.Navigation("Company");
+
+                    b.Navigation("LinkedByUser");
+
+                    b.Navigation("Organization");
+                });
+
+            modelBuilder.Entity("PSeq.Operations.Commercial.Crm.Domain.CrmSavedView", b =>
+                {
+                    b.HasOne("PSeq.Operations.Commercial.Accounts.Domain.User", "Owner")
+                        .WithMany()
+                        .HasForeignKey("OwnerUserId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.Navigation("Owner");
+                });
+
+            modelBuilder.Entity("PSeq.Operations.Commercial.Crm.Domain.CrmTask", b =>
+                {
+                    b.HasOne("PSeq.Operations.Commercial.Crm.Domain.CrmCompany", "Company")
+                        .WithMany()
+                        .HasForeignKey("CompanyId")
+                        .OnDelete(DeleteBehavior.Restrict);
+
+                    b.HasOne("PSeq.Operations.Commercial.Crm.Domain.CrmContact", "Contact")
+                        .WithMany()
+                        .HasForeignKey("ContactId")
+                        .OnDelete(DeleteBehavior.Restrict);
+
+                    b.HasOne("PSeq.Operations.Commercial.Crm.Domain.CrmLead", "Lead")
+                        .WithMany()
+                        .HasForeignKey("LeadId")
+                        .OnDelete(DeleteBehavior.Restrict);
+
+                    b.HasOne("PSeq.Operations.Commercial.Crm.Domain.CrmOpportunity", "Opportunity")
+                        .WithMany()
+                        .HasForeignKey("OpportunityId")
+                        .OnDelete(DeleteBehavior.Restrict);
+
+                    b.HasOne("PSeq.Operations.Commercial.Accounts.Domain.User", "Owner")
+                        .WithMany()
+                        .HasForeignKey("OwnerUserId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.Navigation("Company");
+
+                    b.Navigation("Contact");
+
+                    b.Navigation("Lead");
+
+                    b.Navigation("Opportunity");
+
+                    b.Navigation("Owner");
+                });
+
             modelBuilder.Entity("PSeq.Operations.Commercial.DataProvisioning.Domain.CuratedDatasetVersion", b =>
                 {
                     b.HasOne("PSeq.Operations.Commercial.DataProvisioning.Domain.CuratedDataset", "CuratedDataset")
@@ -8386,6 +12043,66 @@ namespace PSeq.Operations.Api.Migrations
                     b.Navigation("Organization");
 
                     b.Navigation("OrganizationDatasetGrant");
+                });
+
+            modelBuilder.Entity("PSeq.Operations.Commercial.FileManagement.Domain.OrganizationReleasedDeliverablePolicyOverride", b =>
+                {
+                    b.HasOne("PSeq.Operations.Commercial.Accounts.Domain.Organization", null)
+                        .WithMany()
+                        .HasForeignKey("OrganizationId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired()
+                        .HasConstraintName("fk_org_released_policy_override_organization");
+
+                    b.HasOne("PSeq.Operations.Commercial.FileManagement.Domain.OrganizationReleasedDeliverablePolicyOverride", null)
+                        .WithMany()
+                        .HasForeignKey("SupersedesOverrideId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .HasConstraintName("fk_org_released_policy_override_supersedes");
+                });
+
+            modelBuilder.Entity("PSeq.Operations.Commercial.FileManagement.Domain.ReleasedDeliverablePolicyDefault", b =>
+                {
+                    b.HasOne("PSeq.Operations.Commercial.FileManagement.Domain.ReleasedDeliverablePolicyDefault", null)
+                        .WithMany()
+                        .HasForeignKey("SupersedesPolicyId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .HasConstraintName("fk_released_policy_default_supersedes");
+                });
+
+            modelBuilder.Entity("PSeq.Operations.Commercial.FileManagement.Domain.ReleasedDeliverableRetentionSnapshot", b =>
+                {
+                    b.HasOne("PhaenoPortal.App.Features.OrderManagement.Domain.AssemblyOutputRelease", null)
+                        .WithMany()
+                        .HasForeignKey("AssemblyOutputReleaseId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .HasConstraintName("fk_released_retention_snapshot_assembly_output");
+
+                    b.HasOne("PSeq.Operations.Commercial.FileManagement.Domain.ReleasedDeliverablePolicyDefault", null)
+                        .WithMany()
+                        .HasForeignKey("GlobalPolicyId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired()
+                        .HasConstraintName("fk_released_retention_snapshot_global_policy");
+
+                    b.HasOne("PhaenoPortal.App.Features.OrderManagement.Domain.LabResultRelease", null)
+                        .WithMany()
+                        .HasForeignKey("LabResultReleaseId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .HasConstraintName("fk_released_retention_snapshot_lab_result");
+
+                    b.HasOne("PSeq.Operations.Commercial.Accounts.Domain.Organization", null)
+                        .WithMany()
+                        .HasForeignKey("OrganizationId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired()
+                        .HasConstraintName("fk_released_retention_snapshot_organization");
+
+                    b.HasOne("PSeq.Operations.Commercial.FileManagement.Domain.OrganizationReleasedDeliverablePolicyOverride", null)
+                        .WithMany()
+                        .HasForeignKey("OrganizationPolicyOverrideId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .HasConstraintName("fk_released_retention_snapshot_org_override");
                 });
 
             modelBuilder.Entity("PSeq.Operations.Commercial.OrderManagement.Domain.AnalysisDefinition", b =>
@@ -8731,6 +12448,15 @@ namespace PSeq.Operations.Api.Migrations
                         .IsRequired();
                 });
 
+            modelBuilder.Entity("PSeq.Operations.Commercial.OrderManagement.Domain.RegisteredSampleTube", b =>
+                {
+                    b.HasOne("PSeq.Operations.Commercial.OrderManagement.Domain.SampleReturnKit", null)
+                        .WithMany("Tubes")
+                        .HasForeignKey("SampleReturnKitId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+                });
+
             modelBuilder.Entity("PSeq.Operations.Commercial.OrderManagement.Domain.ResultArtifact", b =>
                 {
                     b.HasOne("PSeq.Operations.Commercial.OrderManagement.Domain.ResultOutputPackage", null)
@@ -8787,6 +12513,146 @@ namespace PSeq.Operations.Api.Migrations
                         .HasForeignKey("ResultOutputPackageId")
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
+                });
+
+            modelBuilder.Entity("PSeq.Operations.Commercial.OrderManagement.Domain.SampleReturnKit", b =>
+                {
+                    b.HasOne("PSeq.Operations.Commercial.Accounts.Domain.Organization", null)
+                        .WithMany()
+                        .HasForeignKey("OrganizationId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("PSeq.Operations.Commercial.OrderManagement.Domain.SampleShipment", null)
+                        .WithOne("ReturnKit")
+                        .HasForeignKey("PSeq.Operations.Commercial.OrderManagement.Domain.SampleReturnKit", "SampleShipmentId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+                });
+
+            modelBuilder.Entity("PSeq.Operations.Commercial.OrderManagement.Domain.SampleShipment", b =>
+                {
+                    b.HasOne("PSeq.Operations.Commercial.OrderManagement.Domain.SampleShippingDestination", null)
+                        .WithMany()
+                        .HasForeignKey("DestinationId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("PSeq.Operations.Commercial.Accounts.Domain.Organization", null)
+                        .WithMany()
+                        .HasForeignKey("OrganizationId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+                });
+
+            modelBuilder.Entity("PSeq.Operations.Commercial.OrderManagement.Domain.SampleShipmentItem", b =>
+                {
+                    b.HasOne("PSeq.Operations.Commercial.OrderManagement.Domain.RegisteredSampleTube", null)
+                        .WithMany()
+                        .HasForeignKey("RegisteredSampleTubeId")
+                        .OnDelete(DeleteBehavior.Restrict);
+
+                    b.HasOne("PSeq.Operations.Commercial.OrderManagement.Domain.SampleShipment", null)
+                        .WithMany("Items")
+                        .HasForeignKey("SampleShipmentId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("PSeq.Operations.Commercial.OrderManagement.Domain.SampleTypeDefinition", null)
+                        .WithMany()
+                        .HasForeignKey("SampleTypeDefinitionId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+                });
+
+            modelBuilder.Entity("PSeq.Operations.Commercial.OrderManagement.Domain.SampleShipmentTubeSlot", b =>
+                {
+                    b.HasOne("PSeq.Operations.Commercial.OrderManagement.Domain.RegisteredSampleTube", null)
+                        .WithMany()
+                        .HasForeignKey("RegisteredSampleTubeId")
+                        .OnDelete(DeleteBehavior.Restrict);
+
+                    b.HasOne("PSeq.Operations.Commercial.OrderManagement.Domain.SampleShipmentItem", null)
+                        .WithMany("TubeSlots")
+                        .HasForeignKey("SampleShipmentItemId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+                });
+
+            modelBuilder.Entity("PSeq.Operations.Commercial.OrderManagement.Domain.SampleShippingDestination", b =>
+                {
+                    b.HasOne("PSeq.Operations.Commercial.OrderManagement.Domain.SampleShippingDestination", null)
+                        .WithMany()
+                        .HasForeignKey("SupersedesDestinationId")
+                        .OnDelete(DeleteBehavior.Restrict);
+                });
+
+            modelBuilder.Entity("PSeq.Operations.Commercial.OrderManagement.Domain.SampleShippingInstructionRule", b =>
+                {
+                    b.HasOne("PSeq.Operations.Commercial.OrderManagement.Domain.SampleShippingDestination", null)
+                        .WithMany()
+                        .HasForeignKey("DestinationId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("PSeq.Operations.Commercial.OrderManagement.Domain.SampleTypeDefinition", null)
+                        .WithMany()
+                        .HasForeignKey("SampleTypeDefinitionId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("PSeq.Operations.Commercial.OrderManagement.Domain.SampleShippingInstructionRule", null)
+                        .WithMany()
+                        .HasForeignKey("SupersedesInstructionRuleId")
+                        .OnDelete(DeleteBehavior.Restrict);
+                });
+
+            modelBuilder.Entity("PSeq.Operations.Commercial.OrderManagement.Domain.SampleShippingPacketRevision", b =>
+                {
+                    b.HasOne("PSeq.Operations.Commercial.OrderManagement.Domain.SampleShippingPacketRevision", null)
+                        .WithMany()
+                        .HasForeignKey("ReplacedByPacketRevisionId")
+                        .OnDelete(DeleteBehavior.Restrict);
+
+                    b.HasOne("PSeq.Operations.Commercial.OrderManagement.Domain.SampleShipment", null)
+                        .WithMany("PacketRevisions")
+                        .HasForeignKey("SampleShipmentId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+                });
+
+            modelBuilder.Entity("PSeq.Operations.Commercial.OrderManagement.Domain.SampleTubeAssignmentEvent", b =>
+                {
+                    b.HasOne("PSeq.Operations.Commercial.OrderManagement.Domain.RegisteredSampleTube", null)
+                        .WithMany()
+                        .HasForeignKey("RegisteredSampleTubeId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("PSeq.Operations.Commercial.OrderManagement.Domain.SampleShipment", null)
+                        .WithMany()
+                        .HasForeignKey("SampleShipmentId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("PSeq.Operations.Commercial.OrderManagement.Domain.SampleShipmentItem", null)
+                        .WithMany()
+                        .HasForeignKey("SampleShipmentItemId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("PSeq.Operations.Commercial.OrderManagement.Domain.SampleShipmentTubeSlot", null)
+                        .WithMany()
+                        .HasForeignKey("SampleShipmentTubeSlotId")
+                        .OnDelete(DeleteBehavior.Restrict);
+                });
+
+            modelBuilder.Entity("PSeq.Operations.Commercial.OrderManagement.Domain.SampleTypeDefinition", b =>
+                {
+                    b.HasOne("PSeq.Operations.Commercial.OrderManagement.Domain.SampleTypeDefinition", null)
+                        .WithMany()
+                        .HasForeignKey("SupersedesSampleTypeId")
+                        .OnDelete(DeleteBehavior.Restrict);
                 });
 
             modelBuilder.Entity("PSeq.Operations.Commercial.Relationships.Domain.OrganizationServiceEntitlement", b =>
@@ -9209,6 +13075,27 @@ namespace PSeq.Operations.Api.Migrations
                         .OnDelete(DeleteBehavior.Restrict);
                 });
 
+            modelBuilder.Entity("PhaenoPortal.App.Features.OrderManagement.Domain.LabSampleImportPreview", b =>
+                {
+                    b.HasOne("PSeq.Operations.Commercial.Accounts.Domain.User", null)
+                        .WithMany()
+                        .HasForeignKey("ActorUserId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("PhaenoPortal.App.Features.OrderManagement.Domain.LabServiceOrder", null)
+                        .WithMany()
+                        .HasForeignKey("LabServiceOrderId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("PSeq.Operations.Commercial.Accounts.Domain.Organization", null)
+                        .WithMany()
+                        .HasForeignKey("OrganizationId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+                });
+
             modelBuilder.Entity("PhaenoPortal.App.Features.OrderManagement.Domain.LabServiceOrder", b =>
                 {
                     b.HasOne("PSeq.Operations.Commercial.Accounts.Domain.User", null)
@@ -9219,6 +13106,27 @@ namespace PSeq.Operations.Api.Migrations
                     b.HasOne("PSeq.Operations.Commercial.Accounts.Domain.Organization", null)
                         .WithMany()
                         .HasForeignKey("OrganizationId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("PSeq.Operations.Commercial.Accounts.Domain.User", null)
+                        .WithMany()
+                        .HasForeignKey("SampleRosterFinalizedByUserId")
+                        .OnDelete(DeleteBehavior.Restrict);
+
+                    b.HasOne("PSeq.Operations.Commercial.Relationships.Domain.PortalIntegrationRequest", "SourceRequest")
+                        .WithMany()
+                        .HasForeignKey("SourceRequestId")
+                        .OnDelete(DeleteBehavior.Restrict);
+
+                    b.Navigation("SourceRequest");
+                });
+
+            modelBuilder.Entity("PhaenoPortal.App.Features.OrderManagement.Domain.LabServiceSourceGroup", b =>
+                {
+                    b.HasOne("PhaenoPortal.App.Features.OrderManagement.Domain.LabServiceOrder", null)
+                        .WithMany("SourceGroups")
+                        .HasForeignKey("LabServiceOrderId")
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
                 });
@@ -9240,6 +13148,11 @@ namespace PSeq.Operations.Api.Migrations
             modelBuilder.Entity("PSeq.Operations.Commercial.Accounts.Domain.User", b =>
                 {
                     b.Navigation("Memberships");
+                });
+
+            modelBuilder.Entity("PSeq.Operations.Commercial.Crm.Domain.CrmPipeline", b =>
+                {
+                    b.Navigation("Stages");
                 });
 
             modelBuilder.Entity("PSeq.Operations.Commercial.DataProvisioning.Domain.CuratedDataset", b =>
@@ -9278,6 +13191,25 @@ namespace PSeq.Operations.Api.Migrations
                     b.Navigation("Lines");
                 });
 
+            modelBuilder.Entity("PSeq.Operations.Commercial.OrderManagement.Domain.SampleReturnKit", b =>
+                {
+                    b.Navigation("Tubes");
+                });
+
+            modelBuilder.Entity("PSeq.Operations.Commercial.OrderManagement.Domain.SampleShipment", b =>
+                {
+                    b.Navigation("Items");
+
+                    b.Navigation("PacketRevisions");
+
+                    b.Navigation("ReturnKit");
+                });
+
+            modelBuilder.Entity("PSeq.Operations.Commercial.OrderManagement.Domain.SampleShipmentItem", b =>
+                {
+                    b.Navigation("TubeSlots");
+                });
+
             modelBuilder.Entity("PSeq.Operations.Commercial.Relationships.Domain.PortalIntegrationRequest", b =>
                 {
                     b.Navigation("RequestedServices");
@@ -9312,6 +13244,8 @@ namespace PSeq.Operations.Api.Migrations
                     b.Navigation("Revisions");
 
                     b.Navigation("Samples");
+
+                    b.Navigation("SourceGroups");
                 });
 #pragma warning restore 612, 618
         }

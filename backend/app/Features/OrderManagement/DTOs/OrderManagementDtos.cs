@@ -1,6 +1,8 @@
 namespace PhaenoPortal.App.Features.OrderManagement.DTOs;
 
+using PSeq.Operations.Commercial.FileManagement.Domain;
 using PSeq.Operations.Commercial.OrderManagement.Domain;
+using PhaenoPortal.App.Features.FileManagement.Services;
 using PhaenoPortal.App.Features.OrderManagement.Domain;
 
 public sealed record PagedResult<T>(IReadOnlyList<T> Items, int Page, int PageSize, int TotalCount);
@@ -19,10 +21,33 @@ public sealed record OrderListItemDto(
     DateTime? DueAt = null,
     bool IsOverdue = false);
 
+public sealed record CommercialOrderListItemDto(
+    Guid Id,
+    string OrderType,
+    string Number,
+    string Status,
+    string? Reference,
+    Guid OrganizationId,
+    DateTime CreatedAt,
+    DateTime UpdatedAt,
+    long Version,
+    string? TenantSafeReason,
+    Guid? AssignedToUserId = null,
+    DateTime? DueAt = null,
+    bool IsOverdue = false);
+
 public sealed record LabIntakeDto(
     Guid OrderId,
     string OrderNumber,
     Guid WorkOrderId);
+
+public sealed record LabServiceOrderingEligibilityDto(
+    bool OrderingAuthorized,
+    bool OfferingAvailable,
+    bool CanOrder,
+    string? BlockingReason);
+
+public sealed record EligibleCustomerOrganizationDto(Guid Id, string Name);
 
 public sealed record OrderTimelineDto(
     Guid Id,
@@ -58,7 +83,13 @@ public sealed record OperationalFileDto(
     string ReleaseStatus,
     DateTime? ReleasedAt,
     DateTime CreatedAt,
-    long Version);
+    long Version,
+    OperationalFileDownloadStateDto? Download = null);
+
+public sealed record OperationalFileDownloadStateDto(
+    bool IsDownloaded,
+    int ActiveAttemptCount,
+    DateTime? DownloadedAtUtc);
 
 public sealed record CancellationRequestDto(
     Guid Id,
@@ -115,6 +146,30 @@ public sealed record LabSampleDto(
     string? InternalNote,
     long Version);
 
+public sealed record LabServiceSourceGroupDto(
+    Guid Id,
+    string BiologicalSource,
+    int SpecimenCount,
+    long Version);
+
+public sealed record ReleasedDeliverableRetentionDto(
+    DateTime ReleasedAtUtc,
+    DateTime WarningAtUtc,
+    DateTime StandardDeletionAtUtc,
+    DateTime PotentialFinalDeletionAtUtc,
+    DateTime? GraceActivatedAtUtc,
+    DateTime? DownloadAccessClosedAtUtc,
+    DateTime? ByteDeletedAtUtc,
+    string? DeletionOutcome,
+    ReleasedDeliverableDownloadStateDto? Download);
+
+public sealed record ReleasedDeliverableDownloadStateDto(
+    int TotalFileCount,
+    int DownloadedFileCount,
+    int ActiveAttemptCount,
+    string Status,
+    DateTime? CompletedAtUtc);
+
 public sealed record LabResultReleaseDto(
     Guid Id,
     Guid LabSampleId,
@@ -127,6 +182,7 @@ public sealed record LabResultReleaseDto(
     string ReleaseStatus,
     DateTime GeneratedAt,
     DateTime? ReleasedAt,
+    ReleasedDeliverableRetentionDto? Retention,
     long Version);
 
 public sealed record LabRequestRevisionDto(
@@ -138,11 +194,25 @@ public sealed record LabRequestRevisionDto(
     Guid SubmittedByUserId,
     DateTime SubmittedAt);
 
+public sealed record CommercialOrderSourceDto(
+    Guid RequestId,
+    string RequestNumber,
+    Guid HandoffId,
+    Guid CompanyId,
+    string CompanyName,
+    Guid? OpportunityId,
+    string? OpportunityName);
+
 public sealed record LabServiceOrderDto(
     Guid Id,
     Guid OrganizationId,
     string OrderNumber,
-    string? CustomerReference,
+    string CustomerReference,
+    string? Description,
+    bool HasMixedBiologicalSources,
+    string? SharedBiologicalSource,
+    string StorageRequirements,
+    string SafetyDeclaration,
     string SubmissionInstructions,
     string Status,
     int RequestRevision,
@@ -175,7 +245,13 @@ public sealed record LabServiceOrderDto(
     int LabCustomerActionCount = 0,
     string? LabCustomerActionSummary = null,
     string? LabPermittedQcProjectionJson = null,
-    bool LabReadyForRelease = false);
+    bool LabReadyForRelease = false,
+    int RequestedSpecimenCount = 0,
+    IReadOnlyList<LabServiceSourceGroupDto>? SourceGroups = null,
+    DateTime? SampleRosterFinalizedAt = null,
+    bool CanEditSamples = false,
+    bool CanFinalizeSamples = false,
+    CommercialOrderSourceDto? CommercialSource = null);
 
 public sealed record ReagentOrderLineDto(
     Guid Id,
@@ -250,7 +326,8 @@ public sealed record PartnerReagentOrderDto(
     IReadOnlyList<OrderTimelineDto> Timeline,
     Guid? AssignedToUserId = null,
     DateTime? DueAt = null,
-    string? PlacementSnapshotJson = null);
+    string? PlacementSnapshotJson = null,
+    string? ResumeStatus = null);
 
 public sealed record ShippingAddressDto(
     Guid Id,
@@ -301,6 +378,7 @@ public sealed record AssemblyOutputReleaseDto(
     DateTime GeneratedAt,
     DateTime? ReleasedAt,
     IReadOnlyList<OperationalFileDto> Files,
+    ReleasedDeliverableRetentionDto? Retention,
     long Version);
 
 public sealed record DataAssemblyRequestDto(
@@ -341,7 +419,8 @@ public sealed record DataAssemblyRequestDto(
     IReadOnlyList<CancellationRequestDto> CancellationRequests,
     IReadOnlyList<OrderTimelineDto> Timeline,
     Guid? AssignedToUserId = null,
-    DateTime? DueAt = null);
+    DateTime? DueAt = null,
+    string? ResumeStatus = null);
 
 public sealed record AnalysisDefinitionDto(
     Guid Id,
@@ -397,6 +476,7 @@ public sealed record CatalogItemDto(
     decimal BasePrice,
     string Currency,
     bool IsActive,
+    bool IsPSeqLabService,
     DateTime LastSyncedAt,
     long Version);
 
@@ -460,7 +540,52 @@ public sealed record LabSampleWriteRequest(
     IReadOnlyList<Guid> AnalysisDefinitionIds,
     Guid? ReplacementForSampleId = null);
 
-public sealed record LabOrderWriteRequest(string? CustomerReference, IReadOnlyList<LabSampleWriteRequest> Samples, long? Version = null);
+public sealed record LabOrderWriteRequest(
+    string? CustomerReference,
+    string? Description,
+    bool HasMixedBiologicalSources,
+    string? SharedBiologicalSource,
+    string StorageRequirements,
+    string SafetyDeclaration,
+    IReadOnlyList<LabSampleWriteRequest> Samples,
+    long? Version = null,
+    int RequestedSpecimenCount = 0,
+    IReadOnlyList<LabServiceSourceGroupWriteRequest>? SourceGroups = null);
+public sealed record InitiateCustomerLabOrderRequest(
+    Guid OrganizationId,
+    string? CustomerReference,
+    string? Description,
+    int RequestedSpecimenCount,
+    string StorageRequirements,
+    string SafetyDeclaration,
+    bool ProhibitedDataConfirmed,
+    IReadOnlyList<LabServiceSourceGroupWriteRequest>? SourceGroups,
+    Guid? SourceRequestId = null);
+public sealed record LabServiceSourceGroupWriteRequest(string BiologicalSource, int SpecimenCount);
+public sealed record LabSampleRosterWriteRequest(
+    string CustomerSampleId,
+    string BiologicalSource,
+    int TubeCount,
+    DateTime? CollectionDate = null,
+    decimal? Concentration = null,
+    string? Notes = null,
+    long? Version = null,
+    long? OrderVersion = null);
+public sealed record LabSampleImportRowDto(
+    int RowNumber,
+    string CustomerSampleId,
+    string BiologicalSource,
+    int TubeCount);
+public sealed record LabSampleImportErrorDto(int RowNumber, string Column, string Message);
+public sealed record LabSampleImportPreviewDto(
+    Guid PreviewId,
+    int ValidRowCount,
+    int BlankRowCount,
+    IReadOnlyList<LabSampleImportRowDto> Rows,
+    IReadOnlyList<LabSampleImportErrorDto> Errors,
+    IReadOnlyDictionary<string, int> SourceCounts,
+    DateTime ExpiresAt);
+public sealed record ConfirmLabSampleImportRequest(long Version);
 public sealed record SampleShipmentRequest(long Version, string? Carrier, string? TrackingNumber, DateTime? ShippedAt);
 public sealed record LabSampleReceiptRequest(long Version, DateTime ReceivedAt, string ReceiptCondition);
 public sealed record LabSampleAccessionRequest(long Version, string AccessionId);
@@ -504,16 +629,46 @@ public sealed record BillingProfileWriteRequest(
     string? TaxExemptionEvidence);
 public sealed record ApproveTaxDecisionRequest(long Version, string Notes);
 public sealed record LocalCatalogItemRequest(string ExternalItemId, string Name, string Description, string SalesUnit, decimal BasePrice, string Currency, bool IsActive);
+public sealed record CatalogItemWriteRequest(string ExternalItemId, string Name, string Description, string SalesUnit, decimal BasePrice, string Currency, bool IsActive, long? Version = null);
 
 public sealed record IntegrationMessageDto(Guid Id, string Operation, string WorkflowType, Guid WorkflowId, string Status, int AttemptCount, DateTime NextAttemptAt, string? LastError, DateTime CreatedAt, long Version);
-public sealed record NotificationMessageDto(Guid Id, string WorkflowType, Guid WorkflowId, string EventType, string Subject, string Status, int AttemptCount, DateTime NextAttemptAt, string? LastError, DateTime CreatedAt, long Version);
+public sealed record NotificationMessageDto(Guid Id, string WorkflowType, Guid WorkflowId, string EventType, string Subject, string Status, int AttemptCount, DateTime NextAttemptAt, string? LastError, DateTime CreatedAt, bool CanRetry, long Version);
+
+public sealed record ManualJournalEntryRowDto(
+    Guid DocumentId,
+    string EntryId,
+    DateTime AccountingDateUtc,
+    Guid OrganizationId,
+    string OrganizationName,
+    string WorkflowType,
+    Guid WorkflowId,
+    string WorkflowNumber,
+    string? CustomerOrProjectReference,
+    string? PurchaseOrderNumber,
+    string SourceDocumentNumber,
+    string Currency,
+    decimal GrossAmount,
+    decimal OutstandingBalance,
+    string PaymentStatus,
+    string? PaymentReference,
+    DateTime? PaymentRecordedAtUtc,
+    string Memo,
+    long Version);
 
 public static class OrderManagementMappings
 {
-    public static OperationalFileDto ToDto(this ManagedOperationalFile file) => new(
+    public static OperationalFileDto ToDto(
+        this ManagedOperationalFile file,
+        ReleasedDeliverableFileDownloadProjection? download = null) => new(
         file.Id, file.ParentRecordId, file.Purpose.ToString(), file.FileName, file.FileKind,
         file.ContentType, file.SizeBytes, file.ScanStatus.ToString(), file.ReleaseStatus.ToString(),
-        file.ReleasedAt, file.CreatedAt, file.Version);
+        file.ReleasedAt, file.CreatedAt, file.Version,
+        download is null
+            ? null
+            : new OperationalFileDownloadStateDto(
+                download.IsDownloaded,
+                download.ActiveAttemptCount,
+                download.DownloadedAtUtc));
 
     public static CommercialDocumentDto ToDto(this CommercialDocumentLink document, bool platform) => new(
         document.Id, document.Kind.ToString(), document.SyncStatus.ToString(), document.DocumentNumber,
@@ -548,10 +703,34 @@ public static class OrderManagementMappings
         sample.Carrier, sample.TrackingNumber, sample.CustomerShippedAt, sample.TenantSafeReason,
         platform ? sample.InternalNote : null, sample.Version);
 
-    public static LabResultReleaseDto ToDto(this LabResultRelease release) => new(
+    public static LabResultReleaseDto ToDto(
+        this LabResultRelease release,
+        ReleasedDeliverableRetentionSnapshot? retention = null,
+        ReleasedDeliverableDownloadProjection? download = null) => new(
         release.Id, release.LabSampleId, release.ReleaseVersion, release.AnalysisProfile,
         release.PipelineVersion, release.Provenance, release.QcStatus, release.ManifestJson,
-        release.ReleaseStatus.ToString(), release.GeneratedAt, release.ReleasedAt, release.Version);
+        release.ReleaseStatus.ToString(), release.GeneratedAt, release.ReleasedAt,
+        retention?.ToDto(download), release.Version);
+
+    public static ReleasedDeliverableRetentionDto ToDto(
+        this ReleasedDeliverableRetentionSnapshot retention,
+        ReleasedDeliverableDownloadProjection? download = null) => new(
+        retention.ReleasedAtUtc,
+        retention.WarningAtUtc,
+        retention.StandardDeletionAtUtc,
+        retention.PotentialFinalDeletionAtUtc,
+        retention.GraceActivatedAtUtc,
+        retention.DownloadAccessClosedAtUtc,
+        retention.ByteDeletedAtUtc,
+        retention.DeletionOutcome,
+        download is null
+            ? null
+            : new ReleasedDeliverableDownloadStateDto(
+                download.TotalFileCount,
+                download.DownloadedFileCount,
+                download.ActiveAttemptCount,
+                download.Status.ToString(),
+                download.CompletedAtUtc));
 
     public static ReagentOrderLineDto ToDto(this PartnerReagentOrderLine line) => new(
         line.Id, line.OfferingId, line.QboCatalogItemId, line.ExternalItemId, line.Description, line.Quantity,

@@ -1,0 +1,45 @@
+# CRM troubleshooting and recovery
+
+CRM preserves optimistic concurrency and consequential history. Recover by refreshing and using the owning workflow; do not repair failures with duplicate records or rewritten history.
+
+## CRM is unavailable
+
+CRM requires an active Phaeno platform-administrator account in the Phaeno organization context. If the toolbar item is absent, confirm the selected organization and your account role. If the page reports that CRM access is required, ask a platform administrator to review your authorization rather than sharing credentials or using another person's session.
+
+## A list is empty or will not load
+
+Clear search and saved-view filters, confirm active/inactive filtering, and refresh once. An empty result differs from a failed request; retain the displayed error when escalating. Do not create a replacement record until search and duplicate review confirm that the record does not exist.
+
+## A record may be duplicated
+
+Open **Administration** and review the possible-duplicate group. Compare identity, domains, email, associations, activity, Tasks, Opportunities, and any Portal account link. Merge only a confirmed duplicate and record the reason. A merge is not the repair for a changed employer, renamed organization, or distinct legal entity.
+
+## An update is stale
+
+Another user changed the record after your page loaded. Reload, review the newer version and history, and re-enter only the change that is still correct. Do not repeatedly submit the stale form or ask for concurrency protection to be bypassed.
+
+## A Lead will not convert
+
+Confirm the Lead is Qualified, required Company choices are complete, the selected pipeline is active, and duplicate warnings have been resolved. If conversion may already have completed, refresh the Lead and open its recorded Company, Contact, or Opportunity results before retrying.
+
+## An Opportunity will not move
+
+Confirm the destination stage belongs to the Opportunity's pipeline and remains active. Enter a reason when the stage requires one, especially Lost or Abandoned outcomes. Reload stale Opportunities before retrying. Do not edit pipeline configuration to force one transition.
+
+## A Task status will not change
+
+Blocked requires a reason. Completed or Cancelled work may require reopening before another active transition. For a recurring Task, verify whether completing it already created the next occurrence.
+
+## An import cannot commit
+
+Preview must contain no invalid rows. Correct unsupported headers, missing required values, malformed currency or amount values, unmatched Opportunity company names, and row-count limits in the source CSV, then preview again. Duplicate rows are skipped; do not modify identifying data merely to force them through.
+
+If the same file may already have committed, review the batch result and affected records. The idempotency boundary is designed to make an unchanged retry safe.
+
+## A Portal handoff appears missing or repeated
+
+Refresh the Company workspace and search Portal accounts by the displayed request number. An unchanged retry should resolve to the existing idempotent request. Never create a second CRM Company or change the handoff identity merely to make another request appear.
+
+## Protected or scientific information was entered
+
+Stop adding or copying the information. Preserve the record and contact the appropriate Phaeno privacy or security owner for controlled remediation. Do not duplicate the content in a support message, Activity, Task, export, or replacement CRM record.

@@ -13,10 +13,10 @@ import {
   Dialog,
   DialogContent,
   DialogDescription,
-  DialogFooter,
   DialogHeader,
   DialogTitle,
 } from '#/components/ui/dialog'
+import { RequiredDialogFooter, RequiredFieldName } from '#/components/ui/required-field'
 import { Input } from '#/components/ui/input'
 import { Label } from '#/components/ui/label'
 
@@ -96,10 +96,10 @@ export function OrganizationFormDialog({
             <textarea id={`${formId}-readiness-note`} className={textareaClass} rows={3} {...form.register('portalReadinessNote')} />
           </Field>
         </form>
-        <DialogFooter>
+        <RequiredDialogFooter>
           <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>Cancel</Button>
           <Button type="submit" form={formId} disabled={isPending}>{isPending ? 'Saving…' : editing ? 'Save changes' : 'Create organization'}</Button>
-        </DialogFooter>
+        </RequiredDialogFooter>
       </DialogContent>
     </Dialog>
   )
@@ -108,7 +108,7 @@ export function OrganizationFormDialog({
 function Field({ children, error, id, label, required }: { children: ReactNode; error?: string; id: string; label: string; required?: boolean }) {
   return (
     <div className="grid gap-1.5">
-      <Label htmlFor={id}>{label}{required ? <span className="ml-1 text-[var(--ruby-red,#b4233c)]" aria-hidden="true">*</span> : null}</Label>
+      <Label htmlFor={id}>{required ? <RequiredFieldName>{label}</RequiredFieldName> : label}</Label>
       {children}
       {error ? <p className="text-sm text-destructive" role="alert">{error}</p> : null}
     </div>

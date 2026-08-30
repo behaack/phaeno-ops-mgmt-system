@@ -48,7 +48,7 @@ Use task-oriented entry points with record-centered workspaces.
 
 - The home experience should answer, "What needs my attention?"
 - The POMS home uses the shared far-left sidebar as one **Order Operations / Lab
-  Operations / Accounts / Web Operations** panel selector so internal users can
+  Operations / Portal accounts / Web Operations** panel selector so internal users can
   move among the two primary operational queues, Customer, Partner, and Prospect
   account administration, and public Website intake without stacking the
   dashboards. Show one panel at a time, emphasize attention or intake counts
@@ -63,11 +63,15 @@ Use task-oriented entry points with record-centered workspaces.
   menu. Phaeno users manage external organizations through the Accounts
   workspace, while external users remain in the organization context
   established by their authenticated session.
-- Present Accounts as a HubSpot-originated intake and POMS review surface. Do
-  not place direct account creation or manual intake actions on the standard
-  Accounts list or detail page; show the disconnected integration state
-  honestly until automated intake is operational.
-- Multi-section workspaces use one shared sidebar anchored to the far-left viewport edge beneath the primary toolbar. On wide screens it may remain pinned; when unpinned or narrow, hovering at the pointer edge previews the same rail and the persistent edge tab provides keyboard and click access.
+- Present CRM as a first-class POMS workspace for Companies, Contacts, Leads,
+  Opportunities, Activities, Tasks, and relationship reporting. Keep CRM
+  records distinct from Portal Accounts and users.
+- Present **Portal accounts** as the POMS-owned Portal account directory and review
+  surface. A CRM Company may propose or link a Portal Account through an
+  explicit authorized action; the Portal accounts review queue also exposes a
+  restricted direct proposal action for migration and recovery. Neither path grants
+  access, readiness, services, or executable work by itself.
+- Multi-section workspaces use one shared sidebar anchored to the far-left viewport edge beneath the primary toolbar. On wide screens it may remain pinned; when unpinned, a fine pointer may preview the same rail from the viewport edge. The persistent edge tab provides keyboard, click, and touch access. On narrow or coarse-pointer layouts, the rail stays open until the user selects a section, toggles the tab, or presses Escape.
 - The unpinned rail is non-modal: it does not add a backdrop, trap focus, blur the page, or move content. A pinned rail preserves the normal centered page position when it fits in the available left margin and reflows the page only when the rail would otherwise overlap it.
 - Remember the sidebar pin preference as a low-risk presentation setting, and show pin controls only on wide layouts. Keep section selection, keyboard focus, Escape behavior, and accessible names intact across pinned and unpinned states, and do not render duplicate navigation for one viewport.
 - Searchable lists provide access to core records.
@@ -127,7 +131,18 @@ Use a dedicated page when a task has several meaningful sections or steps, needs
 - Do not use a modal or drawer as the primary detail workspace for a major record.
 - Use drawers for supplemental viewing and quick context, not primary data entry.
 - Avoid nested modals. One controlled exception is allowed when a user must create a missing related record without abandoning the parent workflow.
-- Modal headers, close controls, and action footers remain visible while long bodies scroll.
+- Modal headers, close controls, and action footers remain fixed. Only the body
+  between the header and footer scrolls when content exceeds the available height.
+  The shared modal header and footer use a subtle muted surface with bottom and
+  top dividers respectively, distinguishing fixed context and actions from
+  scrolling content in both themes.
+  The shared scroll body retains a bottom inset so the final control and its
+  focus ring remain fully visible above the fixed footer.
+- General save, permission, network, and server feedback in a modal uses the
+  shared feedback region inside the shaded fixed header. Direct destructive
+  alerts inherit this placement automatically. Field-level validation remains
+  beside the affected control.
+- Modals require an explicit dismissal. Clicking the backdrop or elsewhere outside the modal never closes it; users close with the visible close control, a named cancel action, or the Escape key.
 - When a modal dialog or application menu is open, lock the underlying page at
   its current position. Only the active overlay may scroll, and closing it
   restores the page without a position jump.
@@ -142,7 +157,16 @@ Prioritize clarity and error prevention over maximum visual compactness.
 - Place persistent labels above controls; placeholders never replace labels.
 - Group fields by the user's mental model and workflow, not the data model.
 - Use concise helper text only when it prevents a likely mistake.
-- Mark genuinely required controls with actual required validation, the established ruby-red `*`, and a required-field legend.
+- Place helper text immediately below its field label and before the control.
+  Place validation text tightly below the control, use the same compact type
+  size as helper text, and retain the destructive color and alert semantics.
+  Use the shared field-description, field-error, and control primitives so this
+  structure and spacing do not drift between forms.
+- Mark genuinely required controls with actual required validation and the
+  established ruby-red `*`. Keep the marker visually adjacent to its label,
+  without the standard label-to-control gap. Every form with required controls
+  includes a visible `* Required` legend. In modal forms, place that legend in
+  the modal footer before the action group in reading order.
 - Prepopulate safe defaults from known context, but never assume consequential scientific or business values silently.
 - Use radio buttons for a small exclusive set, checkboxes for independent choices, and searchable selectors for large record sets.
 - Use switches only for settings that take effect immediately; use checkboxes for values saved with a form.
@@ -170,13 +194,22 @@ Validation is progressive:
 - On submit, validate the complete form, including cross-field rules.
 - Treat server validation as authoritative and map failures to fields whenever possible.
 - Long forms show an error summary with a count and links or focus movement to affected fields.
-- Concurrency conflicts preserve the user's work and provide a safe review or reload path.
+- Concurrency conflicts automatically load the latest record while preserving
+  the user's entered values. A save may retry once only when the editable server
+  state is unchanged; otherwise the fixed modal feedback region explains that
+  the refreshed values must be reviewed before saving again. Never silently
+  discard entered values or overwrite another user's editable changes.
 
 ## Actions and safeguards
 
 Each page, modal, or workflow has one visually dominant primary action.
 
 - Use specific labels such as `Create project`, `Save changes`, or `Archive sample`, not `Submit` or `OK`.
+- Put a card-scoped action in the card header at the far right of the title row.
+  Keep it compact to its label; do not stretch it beneath the title or
+  description. Reserve a full-width card action for a deliberately prominent
+  call to action whose width communicates hierarchy rather than compensating
+  for layout.
 - Use quieter styling for secondary actions and move infrequent actions into an `Actions` menu.
 - Hide actions the user is never authorized to perform.
 - Disable a temporarily unavailable action only when knowing it exists is useful, and explain the blocking condition.

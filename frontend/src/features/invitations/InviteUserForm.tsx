@@ -14,6 +14,7 @@ import { Alert, AlertDescription, AlertTitle } from '#/components/ui/alert'
 import { Button } from '#/components/ui/button'
 import { Input } from '#/components/ui/input'
 import { Label } from '#/components/ui/label'
+import { RequiredLegend } from '#/components/ui/required-field'
 
 const roles = ['Member', 'Organization Admin'] as const
 
@@ -53,6 +54,7 @@ export function InviteUserForm({ organizationId }: { organizationId: string }) {
 
   return (
     <form className="space-y-4" onSubmit={handleSubmit(onSubmit)}>
+      <RequiredLegend />
       <div className="grid gap-4 sm:grid-cols-2">
         <div className="grid gap-2">
           <Label htmlFor="first-name">First name *</Label>

@@ -4,13 +4,17 @@ using System.Text.Json;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Logging.Abstractions;
 using Microsoft.Extensions.Options;
 using PSeq.Operations.Commercial.Accounts.Domain;
+using PSeq.Operations.Commercial.Crm.Domain;
 using PSeq.Operations.Commercial.LabOperations.Application;
 using PSeq.Operations.Commercial.LabOperations.Domain;
 using PSeq.Operations.Commercial.OrderManagement.Domain;
+using PSeq.Operations.Commercial.Relationships.Domain;
 using PSeq.Operations.Laboratory.Domain;
 using PhaenoPortal.App.Features.Accounts.Services;
+using PhaenoPortal.App.Features.FileManagement.Services;
 using PhaenoPortal.App.Features.LabOperations.Controllers;
 using PhaenoPortal.App.Features.LabOperations.DTOs;
 using PhaenoPortal.App.Features.LabOperations.Services;
@@ -25,12 +29,321 @@ using PhaenoPortal.App.Infrastructure.Persistence.Auditing;
 public class LabOperationsCommercialHandoffPostgresTests
 {
     [PostgreSqlReferenceFact]
-    public async Task QuoteAcceptanceAtomicallyCreatesCommercialAuthorizationAndLabWork()
+    public async Task AuthorizedPhaenoUserInitiatesCustomerOrderForQuoteApproval()
+    {
+        await using var scope = await HandoffTestScope.CreateAsync();
+
+        var response = await scope.InitiateCustomerOrderAsync();
+
+        Assert.Equal(scope.CustomerOrganization.Id, response.OrganizationId);
+        Assert.Equal(LabServiceOrderStatus.QuoteInPreparation.ToString(), response.Status);
+        Assert.Equal(3, response.RequestedSpecimenCount);
+        var sourceGroups = Assert.IsAssignableFrom<IReadOnlyList<LabServiceSourceGroupDto>>(response.SourceGroups);
+        Assert.Equal(2, sourceGroups.Count);
+        Assert.Empty(response.Samples);
+        var requestRevision = Assert.Single(response.RequestRevisions ?? []);
+        Assert.Equal(scope.PlatformUser.Id, requestRevision.SubmittedByUserId);
+
+        scope.DbContext.ChangeTracker.Clear();
+        var persisted = await scope.DbContext.LabServiceOrders.AsNoTracking()
+            .Include(order => order.SourceGroups)
+            .Include(order => order.Revisions)
+            .SingleAsync(order => order.Id == response.Id);
+        Assert.Equal(LabServiceOrderStatus.QuoteInPreparation, persisted.Status);
+        Assert.Equal(3, persisted.SourceGroups.Sum(group => group.SpecimenCount));
+        Assert.Single(persisted.Revisions);
+        Assert.Equal(3, await scope.DbContext.OrderStatusEvents
+            .CountAsync(item => item.WorkflowId == persisted.Id));
+    }
+
+    [PostgreSqlReferenceFact]
+    public async Task ApprovedCrmHandoffStartsOneOrderAndBecomesAppliedAtomically()
+    {
+        await using var scope = await HandoffTestScope.CreateAsync();
+        var sourceRequest = await scope.CreateApprovedCrmOrderHandoffAsync();
+
+        var response = await scope.InitiateCustomerOrderAsync(sourceRequestId: sourceRequest.Id);
+
+        Assert.Equal(sourceRequest.Id, response.CommercialSource?.RequestId);
+        Assert.NotNull(response.CommercialSource?.HandoffId);
+        scope.DbContext.ChangeTracker.Clear();
+        var persistedOrder = await scope.DbContext.LabServiceOrders.AsNoTracking()
+            .SingleAsync(value => value.Id == response.Id);
+        Assert.Equal(sourceRequest.Id, persistedOrder.SourceRequestId);
+        var persistedRequest = await scope.DbContext.PortalIntegrationRequests.AsNoTracking()
+            .SingleAsync(value => value.Id == sourceRequest.Id);
+        Assert.Equal(PortalIntegrationRequestStatus.Applied, persistedRequest.Status);
+        Assert.Contains(response.OrderNumber, persistedRequest.ApplicationNotes);
+        Assert.Single(await scope.DbContext.CrmActivities.AsNoTracking()
+            .Where(value => value.Subject == "Customer order started" && value.Body!.Contains(response.OrderNumber))
+            .ToListAsync());
+    }
+
+    [PostgreSqlReferenceFact]
+    public async Task CrmHandoffCannotStartASecondOrder()
+    {
+        await using var scope = await HandoffTestScope.CreateAsync();
+        var sourceRequest = await scope.CreateApprovedCrmOrderHandoffAsync();
+        await scope.InitiateCustomerOrderAsync(sourceRequestId: sourceRequest.Id);
+        scope.DbContext.ChangeTracker.Clear();
+
+        var exception = await Assert.ThrowsAsync<OrderManagementException>(() =>
+            scope.InitiateCustomerOrderAsync(sourceRequestId: sourceRequest.Id));
+
+        Assert.Equal("crm_handoff_order_exists", exception.ErrorCode);
+        Assert.Equal(1, await scope.DbContext.LabServiceOrders.AsNoTracking()
+            .CountAsync(value => value.SourceRequestId == sourceRequest.Id));
+    }
+
+    [PostgreSqlReferenceFact]
+    public async Task ApprovedHandoffLinkedToOpenOpportunityCannotStartOrder()
+    {
+        await using var scope = await HandoffTestScope.CreateAsync();
+        var sourceRequest = await scope.CreateApprovedCrmOrderHandoffAsync(CrmPipelineStageCategory.Open);
+
+        var exception = await Assert.ThrowsAsync<OrderManagementException>(() =>
+            scope.InitiateCustomerOrderAsync(sourceRequestId: sourceRequest.Id));
+
+        Assert.Equal("crm_handoff_opportunity_not_won", exception.ErrorCode);
+        Assert.False(await scope.DbContext.LabServiceOrders.AsNoTracking()
+            .AnyAsync(value => value.SourceRequestId == sourceRequest.Id));
+        Assert.Equal(PortalIntegrationRequestStatus.Approved, await scope.DbContext.PortalIntegrationRequests.AsNoTracking()
+            .Where(value => value.Id == sourceRequest.Id)
+            .Select(value => value.Status)
+            .SingleAsync());
+    }
+
+    [PostgreSqlReferenceFact]
+    public async Task PhaenoInitiationRequiresNoPhiConfirmation()
+    {
+        await using var scope = await HandoffTestScope.CreateAsync();
+
+        var exception = await Assert.ThrowsAsync<OrderManagementException>(() =>
+            scope.InitiateCustomerOrderAsync(prohibitedDataConfirmed: false));
+
+        Assert.Equal("prohibited_data_confirmation_required", exception.ErrorCode);
+        Assert.Empty(await scope.DbContext.LabServiceOrders
+            .Where(order => order.OrganizationId == scope.CustomerOrganization.Id)
+            .ToListAsync());
+    }
+
+    [PostgreSqlReferenceFact]
+    public async Task PhaenoInitiationRequiresCurrentOrderingAuthorization()
+    {
+        await using var scope = await HandoffTestScope.CreateAsync();
+        await scope.DbContext.OrganizationServiceEntitlements
+            .Where(item => item.OrganizationId == scope.CustomerOrganization.Id
+                && item.Service == PortalService.PSeqLabService)
+            .ExecuteDeleteAsync();
+
+        var exception = await Assert.ThrowsAsync<OrderManagementException>(
+            () => scope.InitiateCustomerOrderAsync());
+
+        Assert.Equal("lab_service_ordering_not_authorized", exception.ErrorCode);
+        Assert.Empty(await scope.DbContext.LabServiceOrders
+            .Where(order => order.OrganizationId == scope.CustomerOrganization.Id)
+            .ToListAsync());
+    }
+
+    [PostgreSqlReferenceFact]
+    public async Task PhaenoInitiationIsSilentUntilQuoteIssueThenFansOutToAdministrators()
+    {
+        await using var scope = await HandoffTestScope.CreateAsync();
+        var order = await scope.InitiateCustomerOrderAsync();
+
+        Assert.Empty(await scope.DbContext.OrderNotifications
+            .Where(item => item.WorkflowId == order.Id)
+            .ToListAsync());
+
+        var catalogItem = await scope.DbContext.QboCatalogItems.AsNoTracking()
+            .SingleAsync(item => item.IsActive
+                && item.ExternalItemId == OrderServiceKeys.PSeqLabService
+                && item.SalesUnit == OrderSalesUnits.Specimen);
+        await scope.IssueQuoteAsync(order, catalogItem);
+
+        var notice = await scope.DbContext.OrderNotifications.AsNoTracking()
+            .SingleAsync(item => item.WorkflowId == order.Id);
+        Assert.Equal("lab-quote-issued", notice.EventType);
+        Assert.Null(notice.RecipientUserId);
+    }
+
+    [PostgreSqlReferenceFact]
+    public async Task PhaenoInitiationReplaysOneAtomicIdempotentResult()
+    {
+        await using var scope = await HandoffTestScope.CreateAsync();
+        var idempotencyKey = Guid.NewGuid().ToString("N");
+        var customerReference = $"Phaeno initiated {Guid.NewGuid():N}";
+
+        var first = await scope.InitiateCustomerOrderAsync(
+            idempotencyKey: idempotencyKey,
+            customerReference: customerReference);
+        scope.DbContext.ChangeTracker.Clear();
+        var replay = await scope.InitiateCustomerOrderAsync(
+            idempotencyKey: idempotencyKey,
+            customerReference: customerReference);
+
+        Assert.Equal(first.Id, replay.Id);
+        Assert.Equal(first.Version, replay.Version);
+        Assert.Equal(1, await scope.DbContext.LabServiceOrders
+            .CountAsync(item => item.OrganizationId == scope.CustomerOrganization.Id
+                && item.CustomerReference == customerReference));
+        Assert.Equal(1, await scope.DbContext.OrderIdempotencyRecords
+            .CountAsync(item => item.ActorUserId == scope.PlatformUser.Id
+                && item.IdempotencyKey == idempotencyKey));
+    }
+
+    [PostgreSqlReferenceFact]
+    public async Task SharedIdempotencyBoundaryReplaysStoredStatusAndRejectsMismatchedPayload()
+    {
+        await using var scope = await HandoffTestScope.CreateAsync();
+        var service = new OrderIdempotencyService(scope.DbContext);
+        var key = Guid.NewGuid().ToString("N");
+        var calls = 0;
+        var payload = new { Value = "same-request" };
+
+        var first = await service.ExecuteAsync(
+            scope.PlatformUser.Id,
+            "reference:idempotency",
+            key,
+            payload,
+            _ =>
+            {
+                calls++;
+                return Task.FromResult(new IdempotencyProbeResponse(Guid.NewGuid()));
+            },
+            StatusCodes.Status201Created,
+            CancellationToken.None);
+        scope.DbContext.ChangeTracker.Clear();
+        var replay = await service.ExecuteAsync(
+            scope.PlatformUser.Id,
+            "reference:idempotency",
+            key,
+            payload,
+            _ =>
+            {
+                calls++;
+                return Task.FromResult(new IdempotencyProbeResponse(Guid.NewGuid()));
+            },
+            cancellationToken: CancellationToken.None);
+
+        Assert.Equal(1, calls);
+        Assert.False(first.IsReplay);
+        Assert.True(replay.IsReplay);
+        Assert.Equal(StatusCodes.Status201Created, replay.StatusCode);
+        Assert.Equal(first.Response, replay.Response);
+        var exception = await Assert.ThrowsAsync<OrderManagementException>(() =>
+            service.ExecuteAsync(
+                scope.PlatformUser.Id,
+                "reference:idempotency",
+                key,
+                new { Value = "different-request" },
+                _ => Task.FromResult(new IdempotencyProbeResponse(Guid.NewGuid())),
+                cancellationToken: CancellationToken.None));
+        Assert.Equal("idempotency_key_reused", exception.ErrorCode);
+    }
+
+    [PostgreSqlReferenceFact]
+    public async Task SharedIdempotencyBoundaryRollsBackMutationSavedBeforeFailure()
+    {
+        await using var scope = await HandoffTestScope.CreateAsync();
+        var service = new OrderIdempotencyService(scope.DbContext);
+        var key = Guid.NewGuid().ToString("N");
+        var externalItemId = $"rollback-{Guid.NewGuid():N}";
+
+        await Assert.ThrowsAsync<InvalidOperationException>(() =>
+            service.ExecuteAsync<IdempotencyProbeResponse>(
+                scope.PlatformUser.Id,
+                "reference:idempotency-rollback",
+                key,
+                new { externalItemId },
+                async cancellationToken =>
+                {
+                    scope.DbContext.QboCatalogItems.Add(new QboCatalogItem(
+                        externalItemId,
+                        "Rollback probe",
+                        "Must not survive the failed command.",
+                        "item",
+                        1m,
+                        "USD",
+                        isActive: true,
+                        DateTime.UtcNow));
+                    await scope.DbContext.SaveChangesAsync(cancellationToken);
+                    throw new InvalidOperationException("Reference interruption after the business save.");
+                },
+                cancellationToken: CancellationToken.None));
+
+        scope.DbContext.ChangeTracker.Clear();
+        Assert.False(await scope.DbContext.QboCatalogItems
+            .AnyAsync(item => item.ExternalItemId == externalItemId));
+        Assert.False(await scope.DbContext.OrderIdempotencyRecords
+            .AnyAsync(item => item.ActorUserId == scope.PlatformUser.Id
+                && item.Scope == "reference:idempotency-rollback"
+                && item.IdempotencyKey == key));
+    }
+
+    [PostgreSqlReferenceFact]
+    public async Task UnrelatedSpecimenCatalogItemCannotSatisfyLabServicePricing()
+    {
+        await using var scope = await HandoffTestScope.CreateAsync();
+        var order = await scope.InitiateCustomerOrderAsync();
+        var unrelatedItem = await scope.CreateCatalogItemAsync(
+            $"handling-fee-{Guid.NewGuid():N}",
+            "Specimen handling fee",
+            OrderSalesUnits.Specimen);
+
+        var exception = await Assert.ThrowsAsync<OrderManagementException>(() =>
+            scope.IssueQuoteAsync(order, unrelatedItem));
+
+        Assert.Equal("quote_lab_service_line_required", exception.ErrorCode);
+        scope.DbContext.ChangeTracker.Clear();
+        Assert.Empty(await scope.DbContext.LabServiceQuotes
+            .Where(item => item.LabServiceOrderId == order.Id)
+            .ToListAsync());
+        Assert.Empty(await scope.DbContext.CommercialDocumentLinks
+            .Where(item => item.WorkflowId == order.Id)
+            .ToListAsync());
+    }
+
+    [PostgreSqlReferenceFact]
+    public async Task QuoteAcceptanceOpensSampleRosterWithoutCreatingLabWork()
     {
         await using var scope = await HandoffTestScope.CreateAsync();
         var fixture = await scope.CreateQuotedOrderAsync();
 
-        var response = await scope.AcceptQuoteAsync(
+        var response = await scope.AcceptQuoteAsync(fixture);
+
+        scope.DbContext.ChangeTracker.Clear();
+        Assert.Equal(LabServiceOrderStatus.PlacedAwaitingSamples.ToString(), response.Status);
+        Assert.True(response.CanEditSamples);
+        Assert.Empty(response.Samples);
+        Assert.Null(response.SampleRosterFinalizedAt);
+        Assert.Empty(await scope.DbContext.CommercialLabAuthorizations
+            .Where(item => item.CommercialOrderId == fixture.OrderId)
+            .ToListAsync());
+        Assert.Empty(await scope.DbContext.LabWorkOrders
+            .Where(item => item.AuthorizationSourceId == fixture.OrderId)
+            .ToListAsync());
+        Assert.Empty(await scope.DbContext.SampleShipments
+            .Where(item => item.AuthorizationSourceId == fixture.OrderId)
+            .ToListAsync());
+        var persistedOrder = await scope.DbContext.LabServiceOrders.AsNoTracking()
+            .SingleAsync(item => item.Id == fixture.OrderId);
+        using var placement = JsonDocument.Parse(persistedOrder.PlacementSnapshotJson!);
+        Assert.True(placement.RootElement.GetProperty("serviceEntitlementId").TryGetGuid(out _));
+        Assert.True(placement.RootElement.GetProperty("serviceCatalogItemId").TryGetGuid(out _));
+        var acceptedNotice = await scope.DbContext.OrderNotifications.AsNoTracking()
+            .SingleAsync(item => item.WorkflowId == fixture.OrderId
+                && item.EventType == "lab-quote-accepted");
+        Assert.Equal(scope.CustomerUser.Id, acceptedNotice.RecipientUserId);
+    }
+
+    [PostgreSqlReferenceFact]
+    public async Task SampleRosterFinalizationAtomicallyCreatesCommercialAuthorizationLabWorkAndShipping()
+    {
+        await using var scope = await HandoffTestScope.CreateAsync();
+        var fixture = await scope.CreateQuotedOrderAsync();
+
+        var response = await scope.AuthorizeSampleRosterAsync(
             fixture,
             new InternalLabOperationsProvider(scope.DbContext));
 
@@ -41,12 +354,20 @@ public class LabOperationsCommercialHandoffPostgresTests
         var work = await scope.DbContext.LabWorkOrders
             .AsNoTracking()
             .SingleAsync(item => item.AuthorizationId == authorization.AuthorizationId);
+        var shipment = await scope.DbContext.SampleShipments
+            .AsNoTracking()
+            .SingleAsync(item => item.AuthorizationSourceId == fixture.OrderId);
         Assert.Equal(LabServiceOrderStatus.PlacedAwaitingSamples.ToString(), response.Status);
+        Assert.NotNull(response.SampleRosterFinalizedAt);
+        Assert.False(response.CanEditSamples);
         Assert.Equal(CommercialLabAuthorizationStatus.Accepted, authorization.Status);
         Assert.Equal(work.Id, authorization.LabWorkOrderId);
         Assert.Equal(scope.CustomerOrganization.Id, work.SubmittingOrganizationId);
         Assert.Equal(1, await scope.DbContext.LabSpecimens
             .CountAsync(item => item.LabWorkOrderId == work.Id));
+        Assert.Equal(work.Id, shipment.LabWorkOrderId);
+        Assert.Equal(1, await scope.DbContext.SampleShipmentItems
+            .CountAsync(item => item.SampleShipmentId == shipment.Id));
         Assert.Equal(1, await scope.DbContext.LabOperationsOutboxEvents
             .CountAsync(item => item.AuthorizationId == authorization.AuthorizationId));
         Assert.Equal(1, await scope.DbContext.LabProviderCommandReceipts
@@ -54,14 +375,53 @@ public class LabOperationsCommercialHandoffPostgresTests
     }
 
     [PostgreSqlReferenceFact]
+    public async Task SampleRosterFinalizationReplaysWithoutDuplicatingAuthorizationOrShipping()
+    {
+        await using var scope = await HandoffTestScope.CreateAsync();
+        var fixture = await scope.CreateQuotedOrderAsync();
+        var accepted = await scope.AcceptQuoteAsync(fixture);
+        var roster = await scope.AddReferenceSampleAsync(fixture.OrderId, accepted.Version);
+        var idempotencyKey = Guid.NewGuid().ToString("N");
+
+        var first = await scope.FinalizeSampleRosterAsync(
+            fixture.OrderId,
+            roster.Version,
+            new InternalLabOperationsProvider(scope.DbContext),
+            idempotencyKey);
+        scope.DbContext.ChangeTracker.Clear();
+        var replay = await scope.FinalizeSampleRosterAsync(
+            fixture.OrderId,
+            roster.Version,
+            new InternalLabOperationsProvider(scope.DbContext),
+            idempotencyKey);
+
+        Assert.Equal(first.Id, replay.Id);
+        Assert.Equal(first.Version, replay.Version);
+        Assert.Equal(first.SampleRosterFinalizedAt, replay.SampleRosterFinalizedAt);
+        Assert.Equal(1, await scope.DbContext.CommercialLabAuthorizations
+            .CountAsync(item => item.CommercialOrderId == fixture.OrderId));
+        Assert.Equal(1, await scope.DbContext.LabWorkOrders
+            .CountAsync(item => item.AuthorizationSourceId == fixture.OrderId));
+        Assert.Equal(1, await scope.DbContext.SampleShipments
+            .CountAsync(item => item.AuthorizationSourceId == fixture.OrderId));
+        Assert.Equal(1, await scope.DbContext.OrderIdempotencyRecords
+            .CountAsync(item => item.ActorUserId == scope.CustomerUser.Id
+                && item.Scope == $"lab-order:{fixture.OrderId}:sample-roster:finalize"
+                && item.IdempotencyKey == idempotencyKey));
+    }
+
+    [PostgreSqlReferenceFact]
     public async Task ProviderRejectionRollsBackAlreadyPersistedCommercialAndLabChanges()
     {
         await using var scope = await HandoffTestScope.CreateAsync();
         var fixture = await scope.CreateQuotedOrderAsync();
+        var accepted = await scope.AcceptQuoteAsync(fixture);
+        var roster = await scope.AddReferenceSampleAsync(fixture.OrderId, accepted.Version);
 
         var exception = await Assert.ThrowsAsync<OrderManagementException>(() =>
-            scope.AcceptQuoteAsync(
-                fixture,
+            scope.FinalizeSampleRosterAsync(
+                fixture.OrderId,
+                roster.Version,
                 new PersistingRejectingProvider(scope.DbContext)));
 
         Assert.Equal("lab_authorization_failed", exception.ErrorCode);
@@ -72,16 +432,20 @@ public class LabOperationsCommercialHandoffPostgresTests
         var quote = await scope.DbContext.LabServiceQuotes
             .AsNoTracking()
             .SingleAsync(item => item.Id == fixture.QuoteId);
-        Assert.Equal(LabServiceOrderStatus.QuoteIssued, order.Status);
-        Assert.Equal(QuoteStatus.Issued, quote.Status);
+        Assert.Equal(LabServiceOrderStatus.PlacedAwaitingSamples, order.Status);
+        Assert.Null(order.SampleRosterFinalizedAt);
+        Assert.Equal(QuoteStatus.Accepted, quote.Status);
+        Assert.Single(await scope.DbContext.LabSamples
+            .Where(item => item.LabServiceOrderId == fixture.OrderId)
+            .ToListAsync());
         Assert.Empty(await scope.DbContext.CommercialLabAuthorizations
             .Where(item => item.CommercialOrderId == fixture.OrderId)
             .ToListAsync());
         Assert.Empty(await scope.DbContext.LabWorkOrders
             .Where(item => item.AuthorizationSourceId == fixture.OrderId)
             .ToListAsync());
-        Assert.Empty(await scope.DbContext.OrderIdempotencyRecords
-            .Where(item => item.ActorUserId == scope.CustomerUser.Id)
+        Assert.Empty(await scope.DbContext.SampleShipments
+            .Where(item => item.AuthorizationSourceId == fixture.OrderId)
             .ToListAsync());
     }
 
@@ -90,12 +454,12 @@ public class LabOperationsCommercialHandoffPostgresTests
     {
         await using var scope = await HandoffTestScope.CreateAsync();
         var fixture = await scope.CreateQuotedOrderAsync();
-        var accepted = await scope.AcceptQuoteAsync(
+        var authorized = await scope.AuthorizeSampleRosterAsync(
             fixture,
             new InternalLabOperationsProvider(scope.DbContext));
         var cancellation = await scope.RequestCancellationAsync(
             fixture.OrderId,
-            accepted.Version);
+            authorized.Version);
 
         await scope.DecideCancellationAsync(
             fixture.OrderId,
@@ -133,7 +497,7 @@ public class LabOperationsCommercialHandoffPostgresTests
     {
         await using var scope = await HandoffTestScope.CreateAsync();
         var fixture = await scope.CreateQuotedOrderAsync();
-        var accepted = await scope.AcceptQuoteAsync(
+        var authorized = await scope.AuthorizeSampleRosterAsync(
             fixture,
             new InternalLabOperationsProvider(scope.DbContext));
         scope.DbContext.ChangeTracker.Clear();
@@ -147,7 +511,7 @@ public class LabOperationsCommercialHandoffPostgresTests
             .CountAsync(item => item.AuthorizationId == authorization.AuthorizationId);
         var cancellation = await scope.RequestCancellationAsync(
             fixture.OrderId,
-            accepted.Version);
+            authorized.Version);
 
         var exception = await Assert.ThrowsAsync<OrderManagementException>(() =>
             scope.DecideCancellationAsync(
@@ -183,7 +547,7 @@ public class LabOperationsCommercialHandoffPostgresTests
     {
         await using var scope = await HandoffTestScope.CreateAsync();
         var fixture = await scope.CreateQuotedOrderAsync();
-        await scope.AcceptQuoteAsync(
+        await scope.AuthorizeSampleRosterAsync(
             fixture,
             new InternalLabOperationsProvider(scope.DbContext));
 
@@ -648,6 +1012,11 @@ public class LabOperationsCommercialHandoffPostgresTests
         private readonly string requestId;
         private readonly ExternalIdentity customerIdentity;
         private readonly ExternalIdentity platformIdentity;
+        private readonly List<Guid> catalogItemIds = [];
+        private readonly List<Guid> createdCrmCompanyIds = [];
+        private readonly List<Guid> createdCrmOpportunityIds = [];
+        private readonly List<Guid> createdRelationshipRequestIds = [];
+        private readonly ShippingConfigurationFixture shippingConfiguration;
 
         private HandoffTestScope(
             PSeqOperationsDbContext dbContext,
@@ -656,7 +1025,8 @@ public class LabOperationsCommercialHandoffPostgresTests
             User platformUser,
             ExternalIdentity customerIdentity,
             ExternalIdentity platformIdentity,
-            string requestId)
+            string requestId,
+            ShippingConfigurationFixture shippingConfiguration)
         {
             DbContext = dbContext;
             CustomerOrganization = customerOrganization;
@@ -665,6 +1035,7 @@ public class LabOperationsCommercialHandoffPostgresTests
             this.customerIdentity = customerIdentity;
             this.platformIdentity = platformIdentity;
             this.requestId = requestId;
+            this.shippingConfiguration = shippingConfiguration;
         }
 
         public PSeqOperationsDbContext DbContext { get; }
@@ -731,20 +1102,179 @@ public class LabOperationsCommercialHandoffPostgresTests
                     platformUser,
                     platformMembership);
                 await dbContext.SaveChangesAsync();
-                return new HandoffTestScope(
+                var catalogItem = await dbContext.QboCatalogItems
+                    .FirstOrDefaultAsync(item => item.IsActive
+                        && item.ExternalItemId == OrderServiceKeys.PSeqLabService
+                        && item.SalesUnit == OrderSalesUnits.Specimen);
+                var createdCatalogItem = false;
+                if (catalogItem is null)
+                {
+                    catalogItem = new QboCatalogItem(
+                        OrderServiceKeys.PSeqLabService,
+                        "PSeq Lab Service",
+                        "Reference-test PSeq Lab Service offering.",
+                        OrderSalesUnits.Specimen,
+                        100m,
+                        "USD",
+                        isActive: true,
+                        DateTime.UtcNow);
+                    dbContext.QboCatalogItems.Add(catalogItem);
+                    createdCatalogItem = true;
+                }
+                dbContext.OrganizationServiceEntitlements.Add(
+                    new OrganizationServiceEntitlement(
+                        customerOrganization.Id,
+                        PortalService.PSeqLabService,
+                        DateTime.UtcNow,
+                        null,
+                        EntitlementConfigurationStatus.Ready,
+                        platformUser.Id,
+                        null,
+                        "Reference-test ordering authorization."));
+                await dbContext.SaveChangesAsync();
+                var shippingConfiguration = await EnsureShippingConfigurationAsync(
+                    dbContext,
+                    suffix);
+                var scope = new HandoffTestScope(
                     dbContext,
                     customerOrganization,
                     customerUser,
                     platformUser,
                     customerIdentity,
                     platformIdentity,
-                    requestId);
+                    requestId,
+                    shippingConfiguration);
+                if (createdCatalogItem)
+                {
+                    scope.catalogItemIds.Add(catalogItem.Id);
+                }
+                return scope;
             }
             catch
             {
                 await dbContext.DisposeAsync();
                 throw;
             }
+        }
+
+        private static async Task<ShippingConfigurationFixture> EnsureShippingConfigurationAsync(
+            PSeqOperationsDbContext dbContext,
+            string suffix)
+        {
+            var now = DateTime.UtcNow;
+            var sampleTypes = await dbContext.SampleTypeDefinitions
+                .Where(item => item.IsActive
+                    && item.MaterialClass == "extracted_rna"
+                    && item.QuantityUnit == "tube"
+                    && item.EffectiveFrom <= now
+                    && (!item.EffectiveTo.HasValue || item.EffectiveTo > now))
+                .ToListAsync();
+            if (sampleTypes.Count > 1)
+                throw new InvalidOperationException("The reference database has more than one active extracted-RNA tube sample type.");
+
+            SampleTypeDefinition sampleType;
+            Guid? createdSampleTypeId = null;
+            if (sampleTypes.Count == 0)
+            {
+                sampleType = new SampleTypeDefinition(
+                    Guid.NewGuid(),
+                    1,
+                    null,
+                    $"rna-{suffix[..8]}",
+                    "Reference extracted RNA",
+                    "Reference configuration for the Commercial-to-Lab handoff journey.",
+                    "extracted_rna",
+                    1,
+                    100,
+                    "tube",
+                    "Leak-proof labeled tube.",
+                    "Ship frozen.",
+                    null,
+                    "Use a secondary sealed container.",
+                    "Use the Customer sample ID only.",
+                    "Do not include patient identifiers.",
+                    "Follow the declared safety requirements.",
+                    null,
+                    48,
+                    now.AddMinutes(-5),
+                    true);
+                dbContext.SampleTypeDefinitions.Add(sampleType);
+                createdSampleTypeId = sampleType.Id;
+            }
+            else
+            {
+                sampleType = sampleTypes[0];
+            }
+
+            var destinationIds = await dbContext.SampleShippingDestinations
+                .Where(item => item.IsActive
+                    && item.EffectiveFrom <= now
+                    && (!item.EffectiveTo.HasValue || item.EffectiveTo > now))
+                .Select(item => item.Id)
+                .ToListAsync();
+            var activeRules = await dbContext.SampleShippingInstructionRules
+                .Where(item => item.IsActive
+                    && item.SampleTypeDefinitionId == sampleType.Id
+                    && destinationIds.Contains(item.DestinationId)
+                    && item.EffectiveFrom <= now
+                    && (!item.EffectiveTo.HasValue || item.EffectiveTo > now))
+                .ToListAsync();
+            if (activeRules.Count > 1)
+                throw new InvalidOperationException("The reference database has more than one active shipping rule for extracted-RNA tubes.");
+            if (activeRules.Count == 1)
+            {
+                await dbContext.SaveChangesAsync();
+                return new ShippingConfigurationFixture(createdSampleTypeId, null, null);
+            }
+
+            var destination = new SampleShippingDestination(
+                Guid.NewGuid(),
+                1,
+                null,
+                $"ref-{suffix[..8]}",
+                "Reference receiving",
+                "Phaeno receiving",
+                "Phaeno",
+                "1 Reference Way",
+                null,
+                "Seattle",
+                "WA",
+                "98101",
+                "US",
+                null,
+                $"receiving-{suffix[..8]}@example.com",
+                "Monday through Friday",
+                "America/Los_Angeles",
+                null,
+                "Deliver to receiving.",
+                null,
+                false,
+                now.AddMinutes(-5),
+                true);
+            var rule = new SampleShippingInstructionRule(
+                Guid.NewGuid(),
+                1,
+                null,
+                destination.Id,
+                sampleType.Id,
+                $"ref-{suffix[..8]}",
+                "Pack in a sealed secondary container.",
+                "Maintain frozen temperature.",
+                "Use an approved tracked carrier.",
+                "Record dispatch before shipment.",
+                "Deliver during receiving hours.",
+                "Include the POMS packing list.",
+                "Contact Phaeno if the shipment is delayed.",
+                null,
+                false,
+                now.AddMinutes(-5),
+                true);
+            dbContext.AddRange(destination, rule);
+            await dbContext.SaveChangesAsync();
+            return new ShippingConfigurationFixture(
+                createdSampleTypeId,
+                destination.Id,
+                rule.Id);
         }
 
         public async Task<QuotedOrderFixture> CreateQuotedOrderAsync()
@@ -754,20 +1284,17 @@ public class LabOperationsCommercialHandoffPostgresTests
                 CustomerOrganization.Id,
                 OrderNumberGenerator.Lab(),
                 "reference-handoff",
-                "Ship frozen");
-            order.Samples.Add(new LabSample(
-                order.Id,
-                $"sample-{Guid.NewGuid():N}",
-                "extracted_rna",
-                "synthetic_reference",
+                null,
                 1,
-                "tube",
+                false,
+                "synthetic_reference",
                 "frozen",
                 "No special hazards declared.",
-                null,
-                null,
-                null,
-                JsonSerializer.Serialize(new[] { Guid.NewGuid() })));
+                "Ship frozen");
+            order.SourceGroups.Add(new LabServiceSourceGroup(
+                order.Id,
+                "synthetic_reference",
+                1));
             order.Submit(CustomerUser.Id, now);
             order.BeginQuotePreparation();
             var quote = new LabServiceQuote(
@@ -788,11 +1315,130 @@ public class LabOperationsCommercialHandoffPostgresTests
             return new QuotedOrderFixture(order.Id, quote.Id, order.Version);
         }
 
-        public async Task<LabServiceOrderDto> AcceptQuoteAsync(
-            QuotedOrderFixture fixture,
-            ILabOperationsProvider provider)
+        public async Task<LabServiceOrderDto> InitiateCustomerOrderAsync(
+            bool prohibitedDataConfirmed = true,
+            string? idempotencyKey = null,
+            string? customerReference = null,
+            Guid? sourceRequestId = null)
         {
-            var controller = CreateCustomerController(provider, Guid.NewGuid().ToString("N"));
+            var controller = CreatePlatformController(
+                new InternalLabOperationsProvider(DbContext),
+                idempotencyKey ?? Guid.NewGuid().ToString("N"));
+            return await controller.Initiate(
+                new InitiateCustomerLabOrderRequest(
+                    CustomerOrganization.Id,
+                    customerReference ?? $"Phaeno initiated {Guid.NewGuid():N}",
+                    "Customer-safe Job notes.",
+                    3,
+                    "Ship frozen on dry ice.",
+                    "No known hazards.",
+                    prohibitedDataConfirmed,
+                    [
+                        new LabServiceSourceGroupWriteRequest("Human PBMC", 2),
+                        new LabServiceSourceGroupWriteRequest("Mouse liver", 1)
+                    ],
+                    sourceRequestId),
+                CancellationToken.None);
+        }
+
+        public async Task<PortalIntegrationRequest> CreateApprovedCrmOrderHandoffAsync(
+            CrmPipelineStageCategory? opportunityStageCategory = null)
+        {
+            var company = new CrmCompany(
+                $"CRM handoff company {Guid.NewGuid():N}",
+                PlatformUser.Id,
+                lifecycleState: CrmCompanyLifecycleState.ActiveCustomer);
+            var request = new PortalIntegrationRequest(
+                CustomerOrganization.Id,
+                CustomerOrganization.Name,
+                PortalIntegrationRequestType.SalesAssistedOrder,
+                PortalIntegrationRequestSource.FirstPartyCrm,
+                OrganizationKind.Customer,
+                $"reference-crm:{Guid.NewGuid():N}",
+                "Approved PSeq Lab Service order handoff.",
+                null,
+                PlatformUser.Id,
+                [PortalService.PSeqLabService]);
+            request.Decide(true, "Approved for reference verification.", PlatformUser.Id, DateTime.UtcNow);
+            CrmOpportunity? opportunity = null;
+            if (opportunityStageCategory.HasValue)
+            {
+                var stage = await DbContext.CrmPipelineStages
+                    .FirstAsync(value => value.IsActive && value.Category == opportunityStageCategory.Value);
+                opportunity = new CrmOpportunity(
+                    $"CRM handoff opportunity {Guid.NewGuid():N}",
+                    company.Id,
+                    stage,
+                    PlatformUser.Id,
+                    "PSeq Lab Service",
+                    1000m,
+                    "USD",
+                    DateOnly.FromDateTime(DateTime.UtcNow),
+                    null,
+                    null,
+                    null,
+                    []);
+            }
+            var handoff = new CrmHandoff(
+                company.Id,
+                opportunity?.Id,
+                CrmHandoffType.CustomWork,
+                request.Id,
+                Guid.NewGuid().ToString("N"));
+            DbContext.AddRange(company, request, handoff);
+            if (opportunity is not null) DbContext.CrmOpportunities.Add(opportunity);
+            await DbContext.SaveChangesAsync();
+            createdCrmCompanyIds.Add(company.Id);
+            if (opportunity is not null) createdCrmOpportunityIds.Add(opportunity.Id);
+            createdRelationshipRequestIds.Add(request.Id);
+            return request;
+        }
+
+        public async Task<QboCatalogItem> CreateCatalogItemAsync(
+            string externalItemId,
+            string name,
+            string salesUnit)
+        {
+            var item = new QboCatalogItem(
+                externalItemId,
+                name,
+                "Reference-test catalog item.",
+                salesUnit,
+                25m,
+                "USD",
+                isActive: true,
+                DateTime.UtcNow);
+            DbContext.QboCatalogItems.Add(item);
+            await DbContext.SaveChangesAsync();
+            catalogItemIds.Add(item.Id);
+            return item;
+        }
+
+        public async Task<LabServiceOrderDto> IssueQuoteAsync(
+            LabServiceOrderDto order,
+            QboCatalogItem item)
+        {
+            DbContext.ChangeTracker.Clear();
+            var controller = CreatePlatformController(
+                new InternalLabOperationsProvider(DbContext),
+                Guid.NewGuid().ToString("N"));
+            return await controller.IssueQuote(
+                order.Id,
+                new IssueQuoteRequest(
+                    order.Version,
+                    [new QuoteLineRequest(item.Id, item.Name, order.RequestedSpecimenCount, item.BasePrice)],
+                    0m,
+                    "USD",
+                    null),
+                CancellationToken.None);
+        }
+
+        public async Task<LabServiceOrderDto> AcceptQuoteAsync(QuotedOrderFixture fixture)
+        {
+            DbContext.ChangeTracker.Clear();
+            var controller = CreateCustomerController(
+                new InternalLabOperationsProvider(DbContext),
+                Guid.NewGuid().ToString("N"));
             return await controller.AcceptQuote(
                 fixture.OrderId,
                 fixture.QuoteId,
@@ -800,10 +1446,57 @@ public class LabOperationsCommercialHandoffPostgresTests
                 CancellationToken.None);
         }
 
+        public async Task<LabServiceOrderDto> AddReferenceSampleAsync(
+            Guid orderId,
+            long orderVersion)
+        {
+            DbContext.ChangeTracker.Clear();
+            var controller = CreateCustomerController(
+                new InternalLabOperationsProvider(DbContext),
+                Guid.NewGuid().ToString("N"));
+            return await controller.AddSample(
+                orderId,
+                new LabSampleRosterWriteRequest(
+                    $"sample-{Guid.NewGuid():N}",
+                    "synthetic_reference",
+                    1,
+                    OrderVersion: orderVersion),
+                CancellationToken.None);
+        }
+
+        public async Task<LabServiceOrderDto> FinalizeSampleRosterAsync(
+            Guid orderId,
+            long orderVersion,
+            ILabOperationsProvider provider,
+            string? idempotencyKey = null)
+        {
+            DbContext.ChangeTracker.Clear();
+            var controller = CreateCustomerController(
+                provider,
+                idempotencyKey ?? Guid.NewGuid().ToString("N"));
+            return await controller.FinalizeSampleRoster(
+                orderId,
+                new VersionRequest(orderVersion),
+                CancellationToken.None);
+        }
+
+        public async Task<LabServiceOrderDto> AuthorizeSampleRosterAsync(
+            QuotedOrderFixture fixture,
+            ILabOperationsProvider provider)
+        {
+            var accepted = await AcceptQuoteAsync(fixture);
+            var roster = await AddReferenceSampleAsync(fixture.OrderId, accepted.Version);
+            return await FinalizeSampleRosterAsync(
+                fixture.OrderId,
+                roster.Version,
+                provider);
+        }
+
         public async Task<CancellationFixture> RequestCancellationAsync(
             Guid orderId,
             long orderVersion)
         {
+            DbContext.ChangeTracker.Clear();
             var controller = CreateCustomerController(
                 new InternalLabOperationsProvider(DbContext),
                 Guid.NewGuid().ToString("N"));
@@ -824,6 +1517,7 @@ public class LabOperationsCommercialHandoffPostgresTests
             long orderVersion,
             ILabOperationsProvider provider)
         {
+            DbContext.ChangeTracker.Clear();
             var controller = CreatePlatformController(provider);
             await controller.DecideCancellation(
                 orderId,
@@ -880,21 +1574,34 @@ public class LabOperationsCommercialHandoffPostgresTests
             var httpContext = new DefaultHttpContext();
             httpContext.Request.Headers["X-Organization-Id"] = CustomerOrganization.Id.ToString();
             httpContext.Request.Headers["Idempotency-Key"] = idempotencyKey;
+            var orderOptions = Options.Create(new OrderManagementOptions());
             return new LabServiceOrdersController(
                 DbContext,
                 new OrderRequestContext(DbContext, new FixedIdentityContext(customerIdentity)),
                 new OrderIdempotencyService(DbContext),
                 NullOperationalFileStorage.Instance,
                 Options.Create(new PSeqOrderToCashOptions()),
-                provider)
+                provider,
+                new ReleasedDeliverableDownloadAttemptService(
+                    DbContext,
+                    orderOptions,
+                    NullLogger<ReleasedDeliverableDownloadAttemptService>.Instance),
+                 new ReleasedDeliverableDownloadProjectionService(DbContext),
+                 NullLogger<CompletionTrackedFileStreamResult>.Instance,
+                 NullLogger<CompletionTrackedArchiveResult>.Instance)
             {
                 ControllerContext = new ControllerContext { HttpContext = httpContext }
             };
         }
 
         private PlatformLabServiceOrdersController CreatePlatformController(
-            ILabOperationsProvider provider) =>
-            new(
+            ILabOperationsProvider provider,
+            string? idempotencyKey = null)
+        {
+            var httpContext = new DefaultHttpContext();
+            if (idempotencyKey != null)
+                httpContext.Request.Headers["Idempotency-Key"] = idempotencyKey;
+            return new(
                 DbContext,
                 new OrderRequestContext(DbContext, new FixedIdentityContext(platformIdentity)),
                 new OrderIdempotencyService(DbContext),
@@ -902,13 +1609,15 @@ public class LabOperationsCommercialHandoffPostgresTests
                 NullOperationalFileScanner.Instance,
                 Options.Create(new OrderManagementOptions()),
                 Options.Create(new PSeqOrderToCashOptions()),
-                provider)
+                provider,
+                 new ReleasedDeliverableRetentionSnapshotService(DbContext))
             {
                 ControllerContext = new ControllerContext
                 {
-                    HttpContext = new DefaultHttpContext()
+                    HttpContext = httpContext
                 }
             };
+        }
 
         public async ValueTask DisposeAsync()
         {
@@ -936,6 +1645,14 @@ public class LabOperationsCommercialHandoffPostgresTests
                         || orderIds.Contains(item.AuthorizationSourceId))
                     .Select(item => item.Id)
                     .ToArrayAsync();
+                var shipmentIds = await DbContext.SampleShipments
+                    .Where(item => orderIds.Contains(item.AuthorizationSourceId))
+                    .Select(item => item.Id)
+                    .ToArrayAsync();
+                var shipmentItemIds = await DbContext.SampleShipmentItems
+                    .Where(item => shipmentIds.Contains(item.SampleShipmentId))
+                    .Select(item => item.Id)
+                    .ToArrayAsync();
 
                 await DbContext.AuditEvents.Where(item => item.RequestId == requestId).ExecuteDeleteAsync();
                 await DbContext.LabOperationsEventReceipts.Where(item => authorizationIds.Contains(item.AuthorizationId)).ExecuteDeleteAsync();
@@ -946,6 +1663,9 @@ public class LabOperationsCommercialHandoffPostgresTests
                 await DbContext.LabScientificApprovals.Where(item => workOrderIds.Contains(item.LabWorkOrderId)).ExecuteDeleteAsync();
                 await DbContext.LabWorkAuthorizationVersions.Where(item => workOrderIds.Contains(item.LabWorkOrderId)).ExecuteDeleteAsync();
                 await DbContext.LabSpecimens.Where(item => workOrderIds.Contains(item.LabWorkOrderId)).ExecuteDeleteAsync();
+                await DbContext.SampleShipmentTubeSlots.Where(item => shipmentItemIds.Contains(item.SampleShipmentItemId)).ExecuteDeleteAsync();
+                await DbContext.SampleShipmentItems.Where(item => shipmentIds.Contains(item.SampleShipmentId)).ExecuteDeleteAsync();
+                await DbContext.SampleShipments.Where(item => shipmentIds.Contains(item.Id)).ExecuteDeleteAsync();
                 await DbContext.LabWorkOrders.Where(item => workOrderIds.Contains(item.Id)).ExecuteDeleteAsync();
                 await DbContext.CommercialLabAuthorizations.Where(item => orderIds.Contains(item.CommercialOrderId)).ExecuteDeleteAsync();
                 await DbContext.OrderIdempotencyRecords.Where(item => item.ActorUserId == CustomerUser.Id || item.ActorUserId == PlatformUser.Id).ExecuteDeleteAsync();
@@ -958,10 +1678,25 @@ public class LabOperationsCommercialHandoffPostgresTests
                 await DbContext.LabServiceRequestRevisions.Where(item => orderIds.Contains(item.LabServiceOrderId)).ExecuteDeleteAsync();
                 await DbContext.LabServiceQuotes.Where(item => orderIds.Contains(item.LabServiceOrderId)).ExecuteDeleteAsync();
                 await DbContext.LabSamples.Where(item => orderIds.Contains(item.LabServiceOrderId)).ExecuteDeleteAsync();
+                await DbContext.LabServiceSourceGroups.Where(item => orderIds.Contains(item.LabServiceOrderId)).ExecuteDeleteAsync();
                 await DbContext.LabServiceOrders.Where(item => orderIds.Contains(item.Id)).ExecuteDeleteAsync();
+                await DbContext.CrmActivities.Where(item => item.CompanyId.HasValue && createdCrmCompanyIds.Contains(item.CompanyId.Value)).ExecuteDeleteAsync();
+                await DbContext.CrmHandoffs.Where(item => createdCrmCompanyIds.Contains(item.CompanyId)).ExecuteDeleteAsync();
+                await DbContext.CrmOpportunities.Where(item => createdCrmOpportunityIds.Contains(item.Id)).ExecuteDeleteAsync();
+                await DbContext.PortalIntegrationRequestServices.Where(item => createdRelationshipRequestIds.Contains(item.PortalIntegrationRequestId)).ExecuteDeleteAsync();
+                await DbContext.PortalIntegrationRequests.Where(item => createdRelationshipRequestIds.Contains(item.Id)).ExecuteDeleteAsync();
+                await DbContext.CrmCompanies.Where(item => createdCrmCompanyIds.Contains(item.Id)).ExecuteDeleteAsync();
+                await DbContext.OrganizationServiceEntitlements.Where(item => organizationIds.Contains(item.OrganizationId)).ExecuteDeleteAsync();
+                await DbContext.QboCatalogItems.Where(item => catalogItemIds.Contains(item.Id)).ExecuteDeleteAsync();
                 await DbContext.OrganizationMemberships.Where(item => organizationIds.Contains(item.OrganizationId)).ExecuteDeleteAsync();
                 await DbContext.Users.Where(item => item.Id == CustomerUser.Id || item.Id == PlatformUser.Id).ExecuteDeleteAsync();
                 await DbContext.Organizations.Where(item => organizationIds.Contains(item.Id)).ExecuteDeleteAsync();
+                if (shippingConfiguration.RuleId.HasValue)
+                    await DbContext.SampleShippingInstructionRules.Where(item => item.Id == shippingConfiguration.RuleId.Value).ExecuteDeleteAsync();
+                if (shippingConfiguration.DestinationId.HasValue)
+                    await DbContext.SampleShippingDestinations.Where(item => item.Id == shippingConfiguration.DestinationId.Value).ExecuteDeleteAsync();
+                if (shippingConfiguration.SampleTypeId.HasValue)
+                    await DbContext.SampleTypeDefinitions.Where(item => item.Id == shippingConfiguration.SampleTypeId.Value).ExecuteDeleteAsync();
             }
             finally
             {
@@ -987,6 +1722,11 @@ public class LabOperationsCommercialHandoffPostgresTests
     private sealed record QuotedOrderFixture(Guid OrderId, Guid QuoteId, long OrderVersion);
     private sealed record CancellationFixture(Guid Id, long OrderVersion);
     private sealed record LabStaffFixture(User User, ExternalIdentity Identity);
+    private sealed record ShippingConfigurationFixture(
+        Guid? SampleTypeId,
+        Guid? DestinationId,
+        Guid? RuleId);
+    private sealed record IdempotencyProbeResponse(Guid Id);
 
     private sealed class FixedIdentityContext(ExternalIdentity identity)
         : IExternalIdentityContext

@@ -9,7 +9,6 @@ describe('inviteSchema', () => {
       firstName: 'Ada',
       lastName: 'Lovelace',
       email: 'admin@example.com',
-      organization: 'Example Health',
       role: 'Organization Admin',
     })
 
@@ -19,8 +18,9 @@ describe('inviteSchema', () => {
   it('rejects invalid email addresses', () => {
     const result = inviteSchema.safeParse({
       ...inviteDefaults,
+      firstName: 'Sample',
+      lastName: 'Administrator',
       email: 'not-an-email',
-      organization: 'Example Health',
     })
 
     expect(result.success).toBe(false)

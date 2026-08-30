@@ -9,13 +9,15 @@ public class OrderManagementDomainTests
     private static readonly DateTime Now = new(2026, 7, 14, 12, 0, 0, DateTimeKind.Utc);
 
     [Fact]
-    public void LabRequestRequiresSamplesAndFreezesAcceptedQuote()
+    public void LabRequestPricesFromJobProfileAndOpensSamplesAfterQuoteAcceptance()
     {
         var actor = Guid.NewGuid();
-        var order = new LabServiceOrder(Guid.NewGuid(), OrderNumberGenerator.Lab(), "customer-job", "Ship cold");
+        var order = new LabServiceOrder(Guid.NewGuid(), OrderNumberGenerator.Lab(), "customer-job", null,
+            1, false, "Human PBMCs", "Keep frozen.", "No known hazards.", "Ship cold");
         Assert.Throws<InvalidOperationException>(() => order.Submit(actor, Now));
-        order.Samples.Add(Sample(order.Id, "S-1"));
+        order.SourceGroups.Add(new LabServiceSourceGroup(order.Id, "Human PBMCs", 1));
         order.Submit(actor, Now);
+        Assert.Empty(order.Samples);
         order.BeginQuotePreparation();
         var quote = new LabServiceQuote(order.Id, 1, QuotePurpose.Initial, "[]", 100, 5, "USD", Now, Now.AddDays(30));
         quote.MarkIssued();
@@ -26,7 +28,64 @@ public class OrderManagementDomainTests
 
         Assert.Equal(LabServiceOrderStatus.PlacedAwaitingSamples, order.Status);
         Assert.Equal(QuoteStatus.Accepted, quote.Status);
-        Assert.Throws<InvalidOperationException>(() => order.UpdateDraft("changed"));
+        Assert.True(order.CanEditSampleRoster);
+        order.Samples.Add(Sample(order.Id, "S-1", "Human PBMCs"));
+        order.FinalizeSampleRoster(actor, Now.AddMinutes(2));
+        Assert.False(order.CanEditSampleRoster);
+        Assert.Throws<InvalidOperationException>(() => order.UpdateDraft(
+            "changed", null, false, "Human PBMCs", "Keep frozen.", "No known hazards."));
+    }
+
+    [Fact]
+    public void LabJobRequiresNameAndNormalizesEditableDetails()
+    {
+        Assert.Throws<ArgumentException>(() => new LabServiceOrder(
+            Guid.NewGuid(), OrderNumberGenerator.Lab(), " ", null,
+            false, "Human PBMCs", "Keep frozen.", "No known hazards.", "Ship cold"));
+        Assert.Throws<ArgumentException>(() => new LabServiceOrder(
+            Guid.NewGuid(), OrderNumberGenerator.Lab(), "Study", null,
+            false, null, "Keep frozen.", "No known hazards.", "Ship cold"));
+
+        var order = new LabServiceOrder(
+            Guid.NewGuid(), OrderNumberGenerator.Lab(), "  Study Alpha  ", "  Initial scope  ",
+            false, "  Human PBMCs  ", "  Keep frozen.  ", "  No known hazards.  ", "Ship cold");
+
+        Assert.Equal("Study Alpha", order.CustomerReference);
+        Assert.Equal("STUDY ALPHA", order.NormalizedJobName);
+        Assert.Equal("Initial scope", order.Description);
+        Assert.False(order.HasMixedBiologicalSources);
+        Assert.Equal("Human PBMCs", order.SharedBiologicalSource);
+        Assert.Equal("Keep frozen.", order.StorageRequirements);
+        Assert.Equal("No known hazards.", order.SafetyDeclaration);
+
+        order.UpdateDraft("  Study Beta  ", "  Revised scope  ",
+            true, null, "  Store at -80 C.  ", "  BSL-2 handling.  ");
+
+        Assert.Equal("Study Beta", order.CustomerReference);
+        Assert.Equal("STUDY BETA", order.NormalizedJobName);
+        Assert.Equal("Revised scope", order.Description);
+        Assert.True(order.HasMixedBiologicalSources);
+        Assert.Null(order.SharedBiologicalSource);
+        Assert.Equal("Store at -80 C.", order.StorageRequirements);
+        Assert.Equal("BSL-2 handling.", order.SafetyDeclaration);
+    }
+
+    [Fact]
+    public void LabJobNumbersAreEightUnambiguousMixedCharactersWithoutBlockedTerms()
+    {
+        const string allowed = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
+        Assert.False(OrderNumberGenerator.IsAcceptableLabJobNumber("SHIT2345"));
+        Assert.False(OrderNumberGenerator.IsAcceptableLabJobNumber("A55D2345"));
+        var generated = Enumerable.Range(0, 1_000).Select(_ => OrderNumberGenerator.Lab()).ToList();
+
+        Assert.All(generated, value =>
+        {
+            Assert.Equal(8, value.Length);
+            Assert.All(value, character => Assert.Contains(character, allowed));
+            Assert.Contains(value, char.IsLetter);
+            Assert.Contains(value, char.IsDigit);
+            Assert.True(OrderNumberGenerator.IsAcceptableLabJobNumber(value));
+        });
     }
 
     [Fact]
@@ -195,10 +254,47 @@ public class OrderManagementDomainTests
 
         Assert.Throws<InvalidOperationException>(() => file.Release(Now));
         file.RecordScan(OperationalFileScanStatus.Clean, null);
-        file.Release(Now);
+        Assert.True(file.Release(Now));
+        Assert.False(file.Release(Now.AddMinutes(1)));
 
         Assert.Equal(FileReleaseStatus.Released, file.ReleaseStatus);
         Assert.Equal(Now, file.ReleasedAt);
+    }
+
+    [Fact]
+    public void ReleasedPackagesPreserveTheirFirstReleaseTimestamp()
+    {
+        var organizationId = Guid.NewGuid();
+        var labRelease = new LabResultRelease(
+            organizationId,
+            Guid.NewGuid(),
+            Guid.NewGuid(),
+            1,
+            "profile",
+            "pipeline-1",
+            "provenance",
+            "passed",
+            "{}",
+            Now.AddHours(-1));
+        var assemblyRelease = new AssemblyOutputRelease(
+            organizationId,
+            Guid.NewGuid(),
+            Guid.NewGuid(),
+            Guid.NewGuid(),
+            1,
+            "{}",
+            "pipeline-1",
+            "provenance",
+            "passed",
+            Now.AddHours(-1));
+
+        Assert.True(labRelease.Release(Now));
+        Assert.True(assemblyRelease.Release(Now));
+        Assert.False(labRelease.Release(Now.AddMinutes(1)));
+        Assert.False(assemblyRelease.Release(Now.AddMinutes(1)));
+
+        Assert.Equal(Now, labRelease.ReleasedAt);
+        Assert.Equal(Now, assemblyRelease.ReleasedAt);
     }
 
     [Fact]
@@ -224,11 +320,32 @@ public class OrderManagementDomainTests
     }
 
     [Fact]
+    public void InvoiceBecomesAStableManualJournalEntrySourceWithoutChangingItsBalance()
+    {
+        var document = new CommercialDocumentLink(
+            OrderWorkflowTypes.LabService,
+            Guid.NewGuid(),
+            CommercialDocumentKind.Invoice,
+            125.50m,
+            "USD");
+
+        document.MarkReadyForManualAccounting("LAB-42", Now);
+
+        Assert.Equal(IntegrationStatus.Succeeded, document.SyncStatus);
+        Assert.Equal($"manual:{document.Id:N}", document.ExternalDocumentId);
+        Assert.Equal("LAB-42", document.DocumentNumber);
+        Assert.Null(document.DocumentUrl);
+        Assert.Equal(125.50m, document.Total);
+        Assert.Equal(125.50m, document.Balance);
+        Assert.Equal(Now, document.SynchronizedAt);
+    }
+
+    [Fact]
     public void FailedNotificationCanBeManuallyRequeued()
     {
         var notification = new OrderNotification(Guid.NewGuid(), null, OrderWorkflowTypes.LabService, Guid.NewGuid(),
             "lab-quote-issued", "Quote ready", "A quote is ready.");
-        notification.BeginAttempt();
+        notification.BeginAttempt(Now.AddMinutes(5));
         notification.MarkFailed("Delivery failed.", Now.AddMinutes(5));
 
         notification.Retry(Now);
@@ -239,6 +356,27 @@ public class OrderManagementDomainTests
         Assert.Throws<InvalidOperationException>(() => notification.Retry(Now));
     }
 
-    private static LabSample Sample(Guid orderId, string id) => new(orderId, id, "RNA", "Synthetic control", 1,
+    [Fact]
+    public void ExpiredNotificationClaimCanBeRecoveredAfterItsLease()
+    {
+        var notification = new OrderNotification(Guid.NewGuid(), null, OrderWorkflowTypes.LabService, Guid.NewGuid(),
+            "lab-quote-issued", "Quote ready", "A quote is ready.");
+        var leaseExpiresAt = Now.AddMinutes(5);
+
+        notification.BeginAttempt(leaseExpiresAt);
+
+        Assert.Equal(OrderNotificationStatus.Sending, notification.Status);
+        Assert.Equal(leaseExpiresAt, notification.NextAttemptAt);
+        Assert.False(notification.CanRetry(leaseExpiresAt.AddTicks(-1)));
+        Assert.True(notification.CanRetry(leaseExpiresAt));
+
+        notification.Retry(leaseExpiresAt);
+
+        Assert.Equal(OrderNotificationStatus.Pending, notification.Status);
+        Assert.Equal(0, notification.AttemptCount);
+        Assert.Equal(leaseExpiresAt, notification.NextAttemptAt);
+    }
+
+    private static LabSample Sample(Guid orderId, string id, string biologicalSource = "Synthetic control") => new(orderId, id, "RNA", biologicalSource, 1,
         "tube", "Frozen", "No PHI; non-hazardous synthetic material", Now.AddDays(-1), 10, null, "[]");
 }

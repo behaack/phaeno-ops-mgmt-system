@@ -9,11 +9,14 @@ import {
   Dialog,
   DialogContent,
   DialogDescription,
-  DialogFooter,
   DialogHeader,
   DialogTitle,
 } from '#/components/ui/dialog'
 import { Label } from '#/components/ui/label'
+import {
+  RequiredDialogFooter,
+  RequiredFieldName,
+} from '#/components/ui/required-field'
 import { textareaClass } from './OrganizationFormDialog'
 
 export type LifecycleAction =
@@ -111,13 +114,7 @@ export function LifecycleActionDialog({
           {requiresReason ? (
             <div className="grid gap-1.5">
               <Label htmlFor="lifecycle-action-reason">
-                End reason
-                <span
-                  className="ml-1 text-[var(--ruby-red,#b4233c)]"
-                  aria-hidden="true"
-                >
-                  *
-                </span>
+                <RequiredFieldName>End reason</RequiredFieldName>
               </Label>
               <textarea
                 id="lifecycle-action-reason"
@@ -134,7 +131,7 @@ export function LifecycleActionDialog({
             </div>
           ) : null}
         </form>
-        <DialogFooter>
+        <RequiredDialogFooter showLegend={requiresReason}>
           <Button
             type="button"
             variant="outline"
@@ -150,7 +147,7 @@ export function LifecycleActionDialog({
           >
             {isPending ? 'Saving…' : content.submitLabel}
           </Button>
-        </DialogFooter>
+        </RequiredDialogFooter>
       </DialogContent>
     </Dialog>
   )

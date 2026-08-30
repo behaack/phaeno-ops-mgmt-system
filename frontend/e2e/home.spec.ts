@@ -32,12 +32,12 @@ test('uses POMS branding in the internal Phaeno context', async ({ page }) => {
 
   dashboardSelector = await openDashboardNavigation(page)
   const accountsButton = dashboardSelector.getByRole('button', {
-    name: /Accounts/,
+    name: /Portal accounts/,
   })
   await accountsButton.click()
   await expect(
     page.getByRole('heading', {
-      name: 'Customer, Partner & Prospect Accounts',
+      name: 'Portal accounts',
       level: 2,
     }),
   ).toBeVisible()
@@ -91,6 +91,25 @@ test('uses Portal branding in an external organization context', async ({ page }
   await expect(page.getByRole('button', {
     name: /Open POMS dashboard navigation/,
   })).toHaveCount(0)
+  await expect(
+    page.getByRole('heading', { name: 'Your work', level: 2 }),
+  ).toBeVisible()
+  await expect(
+    page.getByText('Connected summaries are paused in mock-session mode'),
+  ).toBeVisible()
+  await expect(page.getByText('Organizations', { exact: true })).toHaveCount(0)
+  await expect(page.getByText('Active users', { exact: true })).toHaveCount(0)
+  await expect(page.getByText('Pending invites', { exact: true })).toHaveCount(0)
+  await expect(page.getByText('Partner links', { exact: true })).toHaveCount(0)
+  await expect(
+    page.getByRole('link', { name: 'Open Data Library' }),
+  ).toBeVisible()
+  await expect(
+    page.getByRole('link', { name: 'Open lab services' }),
+  ).toBeVisible()
+  await expect(
+    page.getByRole('link', { name: 'Open sample shipping' }),
+  ).toHaveCount(0)
 })
 
 test('keeps workspace navigation concise and groups the user menu', async ({
@@ -114,7 +133,7 @@ test('keeps workspace navigation concise and groups the user menu', async ({
     ).toBeVisible()
     await expect(header.getByRole('link', { name: 'Docs' })).toBeVisible()
     await expect(
-      header.getByRole('link', { name: 'Accounts' }),
+      header.getByRole('link', { name: 'Portal accounts' }),
     ).toHaveCount(0)
     await expect(
       header.getByRole('link', { name: 'Order configuration' }),
@@ -132,7 +151,7 @@ test('keeps workspace navigation concise and groups the user menu', async ({
 
   await expect(page.getByText('Administration', { exact: true })).toBeVisible()
   await expect(
-    page.getByRole('menuitem', { name: 'Accounts' }),
+    page.getByRole('menuitem', { name: 'Portal accounts' }),
   ).toBeVisible()
   await expect(
     page.getByRole('menuitem', { name: 'Order configuration' }),
@@ -160,7 +179,7 @@ test('keeps workspace navigation concise and groups the user menu', async ({
     '[role="menuitemradio"][data-state="checked"]',
   )
   await expect(selectedDisplayChoice).toHaveCount(1)
-  await page.getByRole('menuitem', { name: 'Accounts' }).focus()
+  await page.getByRole('menuitem', { name: 'Portal accounts' }).focus()
   const selectedDisplayBackground = await selectedDisplayChoice.evaluate(
     (choice) => getComputedStyle(choice).backgroundColor,
   )
@@ -207,7 +226,7 @@ test('keeps workspace navigation concise and groups the user menu', async ({
   })
   await darkThemeChoice.focus()
   await darkThemeChoice.press('ArrowDown')
-  const nextMenuItemName = isMobile ? 'Dashboard' : 'Accounts'
+  const nextMenuItemName = isMobile ? 'Dashboard' : 'Portal accounts'
   await expect(
     page.getByRole('menuitem', { name: nextMenuItemName }),
   ).toBeFocused()
@@ -251,12 +270,42 @@ test('keeps workspace navigation concise and groups the user menu', async ({
 })
 
 test('locks background scrolling while a modal is open', async ({ page }) => {
-  await page.goto('/phaeno-users')
-  await page.waitForLoadState('networkidle')
+  await page.route(/^https:\/\/127\.0\.0\.1:\d+\/api\//, async (route) => {
+    const url = new URL(route.request().url())
+    if (url.pathname === '/api/organizations') {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify([{
+          id: '00000000-0000-0000-0000-000000000101',
+          name: 'Atlas Research',
+          description: 'Synthetic customer for modal coverage.',
+          kind: 'Customer',
+          portalReadiness: 'Ready',
+          portalReadinessNote: 'Configured for test coverage.',
+          isActive: true,
+          createdAt: '2026-07-15T10:00:00Z',
+          updatedAt: '2026-07-15T10:00:00Z',
+          version: 1,
+        }]),
+      })
+      return
+    }
+    if (url.pathname === '/api/platform/relationships/requests') {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({ success: true, data: [], error: null }),
+      })
+      return
+    }
+    await route.fulfill({ status: 404, body: '{}' })
+  })
+  await page.goto('/customers')
 
-  await page.getByRole('button', { name: 'Add Phaeno user' }).click()
+  await page.getByRole('button', { name: 'Deactivate' }).click()
   await expect(
-    page.getByRole('dialog', { name: 'Add Phaeno user' }),
+    page.getByRole('dialog', { name: 'Deactivate organization' }),
   ).toBeVisible()
   await expect
     .poll(() =>
@@ -277,10 +326,17 @@ async function openDashboardNavigation(page: Page) {
   const navigation = page.getByRole('navigation', {
     name: 'POMS dashboard sections',
   })
-  if (!(await navigation.isVisible())) {
-    await page.getByRole('button', {
-      name: /Open POMS dashboard navigation/,
-    }).click()
+  if ((page.viewportSize()?.width ?? 1280) < 1024) {
+    const trigger = page.getByRole('button', {
+      name: /(?:Open|Close) POMS dashboard navigation/,
+    })
+    await expect(trigger).toBeVisible()
+    await expect(async () => {
+      if (await trigger.getAttribute('aria-expanded') !== 'true') {
+        await trigger.click()
+      }
+      await expect(trigger).toHaveAttribute('aria-expanded', 'true')
+    }).toPass()
   }
   await expect(navigation).toBeVisible()
   return navigation

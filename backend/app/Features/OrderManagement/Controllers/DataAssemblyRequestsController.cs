@@ -5,11 +5,14 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Options;
+using Microsoft.Net.Http.Headers;
 using PSeq.Operations.Commercial.Accounts.Domain;
+using PSeq.Operations.Commercial.FileManagement.Domain;
 using PSeq.Operations.Commercial.OrderManagement.Domain;
 using PhaenoPortal.App.Features.OrderManagement.Domain;
 using PhaenoPortal.App.Features.OrderManagement.DTOs;
 using PhaenoPortal.App.Features.OrderManagement.Services;
+using PhaenoPortal.App.Features.FileManagement.Services;
 using PhaenoPortal.App.Infrastructure.Api;
 using PhaenoPortal.App.Infrastructure.Persistence;
 
@@ -22,7 +25,11 @@ public sealed class DataAssemblyRequestsController(
     OrderIdempotencyService idempotency,
     IOperationalFileStorage fileStorage,
     IOperationalFileScanner fileScanner,
-    IOptions<OrderManagementOptions> options) : ControllerBase
+    IOptions<OrderManagementOptions> options,
+    ReleasedDeliverableDownloadAttemptService downloadAttempts,
+    ReleasedDeliverableDownloadProjectionService downloadProjections,
+    ILogger<CompletionTrackedFileStreamResult> fileDownloadLogger,
+    ILogger<CompletionTrackedArchiveResult> archiveDownloadLogger) : ControllerBase
 {
     private static readonly JsonSerializerOptions JsonOptions = new(JsonSerializerDefaults.Web);
 
@@ -94,26 +101,32 @@ public sealed class DataAssemblyRequestsController(
     {
         var tenant = await requestContext.RequireTenantAsync(HttpContext, OrganizationKind.Partner, true, cancellationToken);
         var key = idempotency.RequireKey(HttpContext);
-        var replay = await idempotency.ReadAsync<DataAssemblyRequestDto>(tenant.Actor.Id, "assembly:create", key, request, cancellationToken);
-        if (replay != null) return replay;
-        var profile = await dbContext.AssemblyProfiles.AsNoTracking().FirstOrDefaultAsync(item => item.Id == request.AssemblyProfileId && item.IsActive && !item.IsSynthetic, cancellationToken)
-            ?? throw Invalid("assembly_profile_unavailable", "Select an active data-assembly profile.");
-        DataAssemblyRequest item;
-        try
-        {
-            item = new DataAssemblyRequest(tenant.Organization.Id, OrderNumberGenerator.Assembly(), request.ProjectReference,
-                profile.Id, profile.ProfileVersion, profile.Name, profile.Instructions, request.MetadataJson,
-                request.RequestedOutput, request.ProcessingNotes, request.ProhibitedDataConfirmed);
-        }
-        catch (ArgumentException exception) { throw Invalid("assembly_request_invalid", exception.Message); }
-        dbContext.DataAssemblyRequests.Add(item);
-        Event(item, "Created", item.Status.ToString(), tenant.Actor.Id);
-        await dbContext.SaveChangesAsync(cancellationToken);
-        var response = await MapAsync(item, true, false, cancellationToken);
-        idempotency.Store(tenant.Actor.Id, "assembly:create", key, request, response, StatusCodes.Status201Created);
-        await dbContext.SaveChangesAsync(cancellationToken);
-        Response.StatusCode = StatusCodes.Status201Created;
-        return response;
+        var execution = await idempotency.ExecuteAsync(
+            tenant.Actor.Id,
+            "assembly:create",
+            key,
+            request,
+            async operationCancellationToken =>
+            {
+                var profile = await dbContext.AssemblyProfiles.AsNoTracking().FirstOrDefaultAsync(item => item.Id == request.AssemblyProfileId && item.IsActive && !item.IsSynthetic, operationCancellationToken)
+                    ?? throw Invalid("assembly_profile_unavailable", "Select an active data-assembly profile.");
+                DataAssemblyRequest item;
+                try
+                {
+                    item = new DataAssemblyRequest(tenant.Organization.Id, OrderNumberGenerator.Assembly(), request.ProjectReference,
+                        profile.Id, profile.ProfileVersion, profile.Name, profile.Instructions, request.MetadataJson,
+                        request.RequestedOutput, request.ProcessingNotes, request.ProhibitedDataConfirmed);
+                }
+                catch (ArgumentException exception) { throw Invalid("assembly_request_invalid", exception.Message); }
+                dbContext.DataAssemblyRequests.Add(item);
+                Event(item, "Created", item.Status.ToString(), tenant.Actor.Id);
+                await dbContext.SaveChangesAsync(operationCancellationToken);
+                return await MapAsync(item, true, false, operationCancellationToken);
+            },
+            StatusCodes.Status201Created,
+            cancellationToken);
+        Response.StatusCode = execution.StatusCode;
+        return execution.Response;
     }
 
     [HttpPatch("{requestId:guid}")]
@@ -187,38 +200,47 @@ public sealed class DataAssemblyRequestsController(
     {
         var tenant = await requestContext.RequireTenantAsync(HttpContext, OrganizationKind.Partner, true, cancellationToken);
         var key = idempotency.RequireKey(HttpContext); var scope = $"assembly:{requestId}:submit";
-        var replay = await idempotency.ReadAsync<DataAssemblyRequestDto>(tenant.Actor.Id, scope, key, request, cancellationToken);
-        if (replay != null) return replay;
-        var item = await ReadAsync(requestId, tenant.Organization.Id, cancellationToken); EnsureVersion(item.Version, request.Version);
-        var profile = await dbContext.AssemblyProfiles.AsNoTracking().FirstOrDefaultAsync(value => value.Id == item.AssemblyProfileId, cancellationToken)
-            ?? throw Invalid("assembly_profile_unavailable", "The request profile is unavailable.");
-        if (profile.IsSynthetic || (item.InputRevision == 0 && !profile.IsActive))
-            throw Invalid("assembly_profile_unavailable", "The selected assembly profile is not active for Partner submissions.");
-        ValidateMetadata(profile.MetadataSchemaJson, item.MetadataJson);
-        var inputs = await dbContext.ManagedOperationalFiles.Where(file => file.WorkflowId == requestId
-            && file.Purpose == OperationalFilePurpose.AssemblyInput && file.ReleaseStatus != FileReleaseStatus.Withdrawn).OrderBy(file => file.CreatedAt).ToListAsync(cancellationToken);
-        if (inputs.Count == 0) throw Invalid("assembly_input_required", "Upload at least one assembly input file.");
-        if (inputs.Any(file => file.ScanStatus != OperationalFileScanStatus.Clean))
-            throw Conflict("assembly_input_not_clean", "Every input must pass scanning before submission.");
-        var manifestIds = ManifestFileIds(request.ManifestJson);
-        var inputIds = inputs.Select(file => file.Id).ToHashSet();
-        if (manifestIds.Count == 0 || !manifestIds.SetEquals(inputIds))
-            throw Invalid("assembly_manifest_invalid", "The input manifest must identify every active file in this request and no other files.");
-        var allowedKinds = AllowedFileKinds(profile.AllowedFileKindsJson);
-        if (inputs.Any(file => !allowedKinds.Contains(file.FileKind) || file.SizeBytes > profile.MaximumFileSizeBytes)
-            || inputs.Sum(file => file.SizeBytes) > profile.MaximumTotalSizeBytes)
-            throw Invalid("assembly_profile_file_rules_failed", "One or more inputs do not meet the selected assembly profile's file rules.");
-        var revision = new AssemblyInputRevision(item.Id, item.InputRevision + 1, item.CurrentInputRevisionId,
-            request.ManifestJson, item.Status == AssemblyRequestStatus.ChangesRequested ? item.TenantSafeReason : null,
-            request.ValidationSummaryJson, tenant.Actor.Id, DateTime.UtcNow);
-        foreach (var input in inputs.Where(file => !file.ParentRecordId.HasValue)) input.AttachToParent(revision.Id);
-        item.InputRevisions.Add(revision);
-        var before = item.Status.ToString(); Execute(() => item.Submit(revision.Id, DateTime.UtcNow));
-        Event(item, before, item.Status.ToString(), tenant.Actor.Id);
-        Notice(item, "assembly-submitted", "Data assembly request submitted", $"{item.RequestNumber} was submitted for intake validation.");
-        await dbContext.SaveChangesAsync(cancellationToken);
-        var response = await MapAsync(item, true, false, cancellationToken); idempotency.Store(tenant.Actor.Id, scope, key, request, response);
-        await dbContext.SaveChangesAsync(cancellationToken); return response;
+        var execution = await idempotency.ExecuteAsync(
+            tenant.Actor.Id,
+            scope,
+            key,
+            request,
+            async operationCancellationToken =>
+            {
+                var item = await ReadAsync(requestId, tenant.Organization.Id, operationCancellationToken);
+                EnsureVersion(item.Version, request.Version);
+                var profile = await dbContext.AssemblyProfiles.AsNoTracking().FirstOrDefaultAsync(value => value.Id == item.AssemblyProfileId, operationCancellationToken)
+                    ?? throw Invalid("assembly_profile_unavailable", "The request profile is unavailable.");
+                if (profile.IsSynthetic || (item.InputRevision == 0 && !profile.IsActive))
+                    throw Invalid("assembly_profile_unavailable", "The selected assembly profile is not active for Partner submissions.");
+                ValidateMetadata(profile.MetadataSchemaJson, item.MetadataJson);
+                var inputs = await dbContext.ManagedOperationalFiles.Where(file => file.WorkflowId == requestId
+                    && file.Purpose == OperationalFilePurpose.AssemblyInput && file.ReleaseStatus != FileReleaseStatus.Withdrawn).OrderBy(file => file.CreatedAt).ToListAsync(operationCancellationToken);
+                if (inputs.Count == 0) throw Invalid("assembly_input_required", "Upload at least one assembly input file.");
+                if (inputs.Any(file => file.ScanStatus != OperationalFileScanStatus.Clean))
+                    throw Conflict("assembly_input_not_clean", "Every input must pass scanning before submission.");
+                var manifestIds = ManifestFileIds(request.ManifestJson);
+                var inputIds = inputs.Select(file => file.Id).ToHashSet();
+                if (manifestIds.Count == 0 || !manifestIds.SetEquals(inputIds))
+                    throw Invalid("assembly_manifest_invalid", "The input manifest must identify every active file in this request and no other files.");
+                var allowedKinds = AllowedFileKinds(profile.AllowedFileKindsJson);
+                if (inputs.Any(file => !allowedKinds.Contains(file.FileKind) || file.SizeBytes > profile.MaximumFileSizeBytes)
+                    || inputs.Sum(file => file.SizeBytes) > profile.MaximumTotalSizeBytes)
+                    throw Invalid("assembly_profile_file_rules_failed", "One or more inputs do not meet the selected assembly profile's file rules.");
+                var revision = new AssemblyInputRevision(item.Id, item.InputRevision + 1, item.CurrentInputRevisionId,
+                    request.ManifestJson, item.Status == AssemblyRequestStatus.ChangesRequested ? item.TenantSafeReason : null,
+                    request.ValidationSummaryJson, tenant.Actor.Id, DateTime.UtcNow);
+                foreach (var input in inputs.Where(file => !file.ParentRecordId.HasValue)) input.AttachToParent(revision.Id);
+                item.InputRevisions.Add(revision);
+                var before = item.Status.ToString();
+                Execute(() => item.Submit(revision.Id, DateTime.UtcNow));
+                Event(item, before, item.Status.ToString(), tenant.Actor.Id);
+                Notice(item, "assembly-submitted", "Data assembly request submitted", $"{item.RequestNumber} was submitted for intake validation.");
+                await dbContext.SaveChangesAsync(operationCancellationToken);
+                return await MapAsync(item, true, false, operationCancellationToken);
+            },
+            cancellationToken: cancellationToken);
+        return execution.Response;
     }
 
     [HttpPost("{requestId:guid}/withdraw")]
@@ -236,15 +258,26 @@ public sealed class DataAssemblyRequestsController(
         var tenant = await requestContext.RequireTenantAsync(HttpContext, OrganizationKind.Partner, true, cancellationToken);
         if (request.QuoteId != quoteId || string.IsNullOrWhiteSpace(request.PurchaseOrderNumber)) throw Invalid("assembly_quote_acceptance_invalid", "A matching quote and purchase order number are required.");
         var key = idempotency.RequireKey(HttpContext); var scope = $"assembly:{requestId}:quote:{quoteId}:accept";
-        var replay = await idempotency.ReadAsync<DataAssemblyRequestDto>(tenant.Actor.Id, scope, key, request, cancellationToken);
-        if (replay != null) return replay;
-        var item = await ReadAsync(requestId, tenant.Organization.Id, cancellationToken); EnsureVersion(item.Version, request.Version);
-        var quote = item.Quotes.SingleOrDefault(value => value.Id == quoteId) ?? throw Missing(); var before = item.Status.ToString();
-        Execute(() => quote.Accept(tenant.Actor.Id, DateTime.UtcNow)); Execute(() => item.AcceptQuote(quoteId, request.PurchaseOrderNumber!, DateTime.UtcNow));
-        Event(item, before, item.Status.ToString(), tenant.Actor.Id); Notice(item, "assembly-quote-accepted", "Data assembly quote accepted", $"{item.RequestNumber} is queued for processing.");
-        await dbContext.SaveChangesAsync(cancellationToken);
-        var response = await MapAsync(item, true, false, cancellationToken); idempotency.Store(tenant.Actor.Id, scope, key, request, response);
-        await dbContext.SaveChangesAsync(cancellationToken); return response;
+        var execution = await idempotency.ExecuteAsync(
+            tenant.Actor.Id,
+            scope,
+            key,
+            request,
+            async operationCancellationToken =>
+            {
+                var item = await ReadAsync(requestId, tenant.Organization.Id, operationCancellationToken);
+                EnsureVersion(item.Version, request.Version);
+                var quote = item.Quotes.SingleOrDefault(value => value.Id == quoteId) ?? throw Missing();
+                var before = item.Status.ToString();
+                Execute(() => quote.Accept(tenant.Actor.Id, DateTime.UtcNow));
+                Execute(() => item.AcceptQuote(quoteId, request.PurchaseOrderNumber!, DateTime.UtcNow));
+                Event(item, before, item.Status.ToString(), tenant.Actor.Id);
+                Notice(item, "assembly-quote-accepted", "Data assembly quote accepted", $"{item.RequestNumber} is queued for processing.");
+                await dbContext.SaveChangesAsync(operationCancellationToken);
+                return await MapAsync(item, true, false, operationCancellationToken);
+            },
+            cancellationToken: cancellationToken);
+        return execution.Response;
     }
 
     [HttpPost("{requestId:guid}/cancellation-requests")]
@@ -252,16 +285,25 @@ public sealed class DataAssemblyRequestsController(
     {
         var tenant = await requestContext.RequireTenantAsync(HttpContext, OrganizationKind.Partner, true, cancellationToken);
         var key = idempotency.RequireKey(HttpContext); var scope = $"assembly:{requestId}:cancellation";
-        var replay = await idempotency.ReadAsync<DataAssemblyRequestDto>(tenant.Actor.Id, scope, key, request, cancellationToken);
-        if (replay != null) return replay;
-        var item = await ReadAsync(requestId, tenant.Organization.Id, cancellationToken); EnsureVersion(item.Version, request.Version);
-        var before = item.Status.ToString(); Execute(item.RequestCancellation);
-        dbContext.OrderCancellationRequests.Add(new OrderCancellationRequest(item.OrganizationId, OrderWorkflowTypes.DataAssembly,
-            item.Id, tenant.Actor.Id, request.Reason, request.ScopeJson));
-        Event(item, before, item.Status.ToString(), tenant.Actor.Id, request.Reason);
-        await dbContext.SaveChangesAsync(cancellationToken);
-        var response = await MapAsync(item, true, false, cancellationToken); idempotency.Store(tenant.Actor.Id, scope, key, request, response);
-        await dbContext.SaveChangesAsync(cancellationToken); return response;
+        var execution = await idempotency.ExecuteAsync(
+            tenant.Actor.Id,
+            scope,
+            key,
+            request,
+            async operationCancellationToken =>
+            {
+                var item = await ReadAsync(requestId, tenant.Organization.Id, operationCancellationToken);
+                EnsureVersion(item.Version, request.Version);
+                var before = item.Status.ToString();
+                Execute(item.RequestCancellation);
+                dbContext.OrderCancellationRequests.Add(new OrderCancellationRequest(item.OrganizationId, OrderWorkflowTypes.DataAssembly,
+                    item.Id, tenant.Actor.Id, request.Reason, request.ScopeJson));
+                Event(item, before, item.Status.ToString(), tenant.Actor.Id, request.Reason);
+                await dbContext.SaveChangesAsync(operationCancellationToken);
+                return await MapAsync(item, true, false, operationCancellationToken);
+            },
+            cancellationToken: cancellationToken);
+        return execution.Response;
     }
 
     [HttpGet("{requestId:guid}/outputs/{releaseId:guid}")]
@@ -273,7 +315,22 @@ public sealed class DataAssemblyRequestsController(
         var files = await dbContext.ManagedOperationalFiles.AsNoTracking().Where(file => file.WorkflowId == requestId
             && file.ParentRecordId == releaseId && file.Purpose == OperationalFilePurpose.AssemblyOutput
             && file.ReleaseStatus == FileReleaseStatus.Released && file.ScanStatus == OperationalFileScanStatus.Clean).ToListAsync(cancellationToken);
-        return MapRelease(release, files);
+        var retention = await dbContext.ReleasedDeliverableRetentionSnapshots
+            .AsNoTracking()
+            .SingleOrDefaultAsync(
+                item => item.OrganizationId == tenant.Organization.Id
+                    && item.AssemblyOutputReleaseId == release.Id,
+                cancellationToken);
+        var downloads = await downloadProjections.ReadAsync(
+            tenant.Organization.Id,
+            ReleasedDeliverablePackageType.AssemblyOutput,
+            new Dictionary<Guid, IReadOnlyCollection<Guid>>
+            {
+                [release.Id] = files.Select(file => file.Id).ToList()
+            },
+            DateTime.UtcNow,
+            cancellationToken);
+        return MapRelease(release, files, retention, downloads.GetValueOrDefault(release.Id));
     }
 
     [HttpGet("{requestId:guid}/outputs/{releaseId:guid}/files/{fileId:guid}/download")]
@@ -281,19 +338,109 @@ public sealed class DataAssemblyRequestsController(
     public async Task<IActionResult> DownloadOutput(Guid requestId, Guid releaseId, Guid fileId, CancellationToken cancellationToken)
     {
         var tenant = await requestContext.RequireTenantAsync(HttpContext, OrganizationKind.Partner, false, cancellationToken);
-        _ = await ReadAsync(requestId, tenant.Organization.Id, cancellationToken);
+        var item = await ReadAsync(requestId, tenant.Organization.Id, cancellationToken);
+        _ = item.OutputReleases.SingleOrDefault(value => value.Id == releaseId
+            && value.ReleaseStatus == FileReleaseStatus.Released) ?? throw Missing();
         var file = await dbContext.ManagedOperationalFiles.FirstOrDefaultAsync(item => item.Id == fileId && item.WorkflowId == requestId
             && item.ParentRecordId == releaseId && item.OrganizationId == tenant.Organization.Id && item.Purpose == OperationalFilePurpose.AssemblyOutput
             && item.ReleaseStatus == FileReleaseStatus.Released && item.ScanStatus == OperationalFileScanStatus.Clean, cancellationToken) ?? throw Missing();
-        var stream = await fileStorage.OpenReadAsync(file.StorageKey, cancellationToken);
+        var utcNow = DateTime.UtcNow;
+        var transfer = await downloadAttempts.StartAsync(
+            [file],
+            tenant.Organization.Id,
+            tenant.Actor.Id,
+            ReleasedDeliverablePackageType.AssemblyOutput,
+            releaseId,
+            OperationalFileDownloadScope.IndividualFile,
+            utcNow,
+            HttpContext.Connection.RemoteIpAddress?.ToString(),
+            Request.Headers.UserAgent.ToString(),
+            cancellationToken);
+        Stream stream;
         try
         {
-            dbContext.OperationalFileDownloads.Add(new OperationalFileDownload(file.Id, tenant.Organization.Id, tenant.Actor.Id,
-                DateTime.UtcNow, HttpContext.Connection.RemoteIpAddress?.ToString(), Request.Headers.UserAgent.ToString()));
-            await dbContext.SaveChangesAsync(cancellationToken);
+            stream = await fileStorage.OpenReadAsync(file.StorageKey, cancellationToken);
         }
-        catch { await stream.DisposeAsync(); throw; }
-        return File(stream, file.ContentType, file.FileName, enableRangeProcessing: true);
+        catch (OperationCanceledException) when (HttpContext.RequestAborted.IsCancellationRequested)
+        {
+            await downloadAttempts.CompleteAsync(
+                transfer.AttemptIds,
+                OperationalFileDownloadOutcome.Cancelled,
+                DateTime.UtcNow,
+                "request_cancelled_before_stream",
+                false,
+                CancellationToken.None);
+            throw;
+        }
+        catch
+        {
+            await downloadAttempts.CompleteAsync(
+                transfer.AttemptIds,
+                OperationalFileDownloadOutcome.Failed,
+                DateTime.UtcNow,
+                "storage_open_failed",
+                false,
+                CancellationToken.None);
+            throw;
+        }
+        return new CompletionTrackedFileStreamResult(
+            stream,
+            file.ContentType,
+            file.FileName,
+            Request.Headers.ContainsKey(HeaderNames.Range),
+            transfer,
+            downloadAttempts,
+            fileDownloadLogger);
+    }
+
+    [HttpGet("{requestId:guid}/outputs/{releaseId:guid}/download")]
+    [SkipApiEnvelope]
+    public async Task<IActionResult> DownloadOutputRelease(
+        Guid requestId,
+        Guid releaseId,
+        CancellationToken cancellationToken)
+    {
+        var tenant = await requestContext.RequireTenantAsync(
+            HttpContext,
+            OrganizationKind.Partner,
+            false,
+            cancellationToken);
+        var item = await ReadAsync(requestId, tenant.Organization.Id, cancellationToken);
+        var release = item.OutputReleases.SingleOrDefault(value => value.Id == releaseId
+            && value.ReleaseStatus == FileReleaseStatus.Released) ?? throw Missing();
+        var files = await dbContext.ManagedOperationalFiles
+            .Where(file => file.WorkflowId == requestId
+                && file.ParentRecordId == releaseId
+                && file.OrganizationId == tenant.Organization.Id
+                && file.Purpose == OperationalFilePurpose.AssemblyOutput
+                && file.ReleaseStatus == FileReleaseStatus.Released
+                && file.ScanStatus == OperationalFileScanStatus.Clean)
+            .ToListAsync(cancellationToken);
+        if (files.Count == 0) throw Missing();
+
+        var utcNow = DateTime.UtcNow;
+        var transfer = await downloadAttempts.StartAsync(
+            files,
+            tenant.Organization.Id,
+            tenant.Actor.Id,
+            ReleasedDeliverablePackageType.AssemblyOutput,
+            release.Id,
+            OperationalFileDownloadScope.PackageArchive,
+            utcNow,
+            HttpContext.Connection.RemoteIpAddress?.ToString(),
+            Request.Headers.UserAgent.ToString(),
+            cancellationToken);
+        return new CompletionTrackedArchiveResult(
+            files.Select(file => new ReleasedDeliverableArchiveFile(
+                file.Id,
+                file.StorageKey,
+                file.FileName,
+                file.ReleasedAt)).ToList(),
+            $"{item.RequestNumber}-output-r{release.ReleaseVersion}.zip",
+            transfer,
+            fileStorage,
+            downloadAttempts,
+            archiveDownloadLogger);
     }
 
     private async Task<DataAssemblyRequest> ReadAsync(Guid id, Guid organizationId, CancellationToken cancellationToken)
@@ -304,6 +451,26 @@ public sealed class DataAssemblyRequestsController(
     private async Task<DataAssemblyRequestDto> MapAsync(DataAssemblyRequest item, bool canManage, bool platform, CancellationToken cancellationToken)
     {
         var files = await dbContext.ManagedOperationalFiles.AsNoTracking().Where(file => file.WorkflowType == OrderWorkflowTypes.DataAssembly && file.WorkflowId == item.Id).OrderBy(file => file.CreatedAt).ToListAsync(cancellationToken);
+        var releaseIds = item.OutputReleases.Select(release => release.Id).ToList();
+        var fileIdsByReleaseId = item.OutputReleases.ToDictionary(
+            release => release.Id,
+            release => (IReadOnlyCollection<Guid>)files
+                .Where(file => file.ParentRecordId == release.Id
+                    && file.Purpose == OperationalFilePurpose.AssemblyOutput)
+                .Select(file => file.Id)
+                .ToList());
+        var downloadByReleaseId = await downloadProjections.ReadAsync(
+            item.OrganizationId,
+            ReleasedDeliverablePackageType.AssemblyOutput,
+            fileIdsByReleaseId,
+            DateTime.UtcNow,
+            cancellationToken);
+        var retentionByReleaseId = await dbContext.ReleasedDeliverableRetentionSnapshots
+            .AsNoTracking()
+            .Where(snapshot => snapshot.OrganizationId == item.OrganizationId
+                && snapshot.AssemblyOutputReleaseId.HasValue
+                && releaseIds.Contains(snapshot.AssemblyOutputReleaseId.Value))
+            .ToDictionaryAsync(snapshot => snapshot.AssemblyOutputReleaseId!.Value, cancellationToken);
         var docs = await dbContext.CommercialDocumentLinks.AsNoTracking().Where(value => value.WorkflowType == OrderWorkflowTypes.DataAssembly && value.WorkflowId == item.Id).OrderBy(value => value.CreatedAt).ToListAsync(cancellationToken);
         var cancellations = await dbContext.OrderCancellationRequests.AsNoTracking().Where(value => value.WorkflowType == OrderWorkflowTypes.DataAssembly && value.WorkflowId == item.Id).OrderBy(value => value.CreatedAt).ToListAsync(cancellationToken);
         var timeline = await dbContext.OrderStatusEvents.AsNoTracking().Where(value => value.WorkflowType == OrderWorkflowTypes.DataAssembly && value.WorkflowId == item.Id).OrderBy(value => value.OccurredAt).ToListAsync(cancellationToken);
@@ -323,15 +490,27 @@ public sealed class DataAssemblyRequestsController(
                 value.InputRevisionId, value.RunNumber, value.ProfileVersion, value.PipelineVersion, value.Provenance, value.QcStatus,
                 value.StartedAt, value.CompletedAt, value.FailureReason, value.Version)).ToList() : [],
             item.OutputReleases.Where(value => platform || value.ReleaseStatus == FileReleaseStatus.Released).OrderByDescending(value => value.ReleaseVersion)
-                .Select(value => MapRelease(value, files.Where(file => file.ParentRecordId == value.Id))).ToList(),
+                .Select(value => MapRelease(
+                    value,
+                    files.Where(file => file.ParentRecordId == value.Id),
+                    retentionByReleaseId.GetValueOrDefault(value.Id),
+                    downloadByReleaseId.GetValueOrDefault(value.Id))).ToList(),
             files.Where(file => file.Purpose == OperationalFilePurpose.AssemblyInput && file.ReleaseStatus != FileReleaseStatus.Withdrawn).Select(file => file.ToDto()).ToList(),
-            docs.Select(value => value.ToDto(platform)).ToList(), cancellations.Select(value => value.ToDto()).ToList(), timeline.Select(value => value.ToDto(platform)).ToList());
+            docs.Select(value => value.ToDto(platform)).ToList(), cancellations.Select(value => value.ToDto()).ToList(), timeline.Select(value => value.ToDto(platform)).ToList(),
+            ResumeStatus: item.ResumeStatus?.ToString());
     }
 
-    private static AssemblyOutputReleaseDto MapRelease(AssemblyOutputRelease release, IEnumerable<ManagedOperationalFile> files)
+    private static AssemblyOutputReleaseDto MapRelease(
+        AssemblyOutputRelease release,
+        IEnumerable<ManagedOperationalFile> files,
+        ReleasedDeliverableRetentionSnapshot? retention,
+        ReleasedDeliverableDownloadProjection? download)
         => new(release.Id, release.InputRevisionId, release.ProcessingRunId, release.ReleaseVersion, release.ManifestJson,
             release.PipelineVersion, release.Provenance, release.QcStatus, release.ReleaseStatus.ToString(), release.GeneratedAt,
-            release.ReleasedAt, files.Select(file => file.ToDto()).ToList(), release.Version);
+            release.ReleasedAt,
+            files.Select(file => file.ToDto(download?.Files.GetValueOrDefault(file.Id))).ToList(),
+            retention?.ToDto(download),
+            release.Version);
     private void Event(DataAssemblyRequest item, string from, string to, Guid actorId, string? reason = null, string? internalNote = null)
         => dbContext.OrderStatusEvents.Add(new OrderStatusEvent(item.OrganizationId, OrderWorkflowTypes.DataAssembly, item.Id, null, from, to, reason, internalNote, actorId, DateTime.UtcNow));
     private void Notice(DataAssemblyRequest item, string eventType, string subject, string body)

@@ -108,6 +108,12 @@ public enum LabContainerStatus
     Disposed
 }
 
+public enum LabContainerBarcodeSource
+{
+    PhaenoGenerated,
+    RegisteredSupplier
+}
+
 public sealed class LabContainer : LabAuditedEntity
 {
     public Guid Id { get; private set; } = Guid.NewGuid();
@@ -116,6 +122,8 @@ public sealed class LabContainer : LabAuditedEntity
     public Guid? ParentContainerId { get; private set; }
     public LabContainerKind Kind { get; private set; }
     public string Barcode { get; private set; } = null!;
+    public LabContainerBarcodeSource BarcodeSource { get; private set; } = LabContainerBarcodeSource.PhaenoGenerated;
+    public Guid? ExternalBarcodeReferenceId { get; private set; }
     public string Label { get; private set; } = null!;
     public int LabelPrintCount { get; private set; }
     public DateTime? LastLabelPrintedAtUtc { get; private set; }
@@ -131,7 +139,9 @@ public sealed class LabContainer : LabAuditedEntity
 
     public LabContainer(Guid labWorkOrderId, Guid? labSpecimenId, Guid? parentContainerId,
         LabContainerKind kind, string barcode, string label, string location,
-        decimal? quantity, string? quantityUnit, DateTime? retainUntilUtc)
+        decimal? quantity, string? quantityUnit, DateTime? retainUntilUtc,
+        LabContainerBarcodeSource barcodeSource = LabContainerBarcodeSource.PhaenoGenerated,
+        Guid? externalBarcodeReferenceId = null)
     {
         LabWorkOrderId = labWorkOrderId != Guid.Empty
             ? labWorkOrderId
@@ -140,6 +150,13 @@ public sealed class LabContainer : LabAuditedEntity
         ParentContainerId = parentContainerId;
         Kind = kind;
         Barcode = Required(barcode, nameof(barcode), 100);
+        if (barcodeSource == LabContainerBarcodeSource.RegisteredSupplier
+            && (kind != LabContainerKind.SubmittedSpecimen || !externalBarcodeReferenceId.HasValue))
+            throw new ArgumentException("A registered supplier barcode may be adopted only for a submitted specimen with its external tube reference.");
+        if (barcodeSource == LabContainerBarcodeSource.PhaenoGenerated && externalBarcodeReferenceId.HasValue)
+            throw new ArgumentException("A Phaeno-generated barcode cannot carry an external tube reference.", nameof(externalBarcodeReferenceId));
+        BarcodeSource = barcodeSource;
+        ExternalBarcodeReferenceId = externalBarcodeReferenceId;
         Label = Required(label, nameof(label), 255);
         Location = Required(location, nameof(location), 255);
         if (quantity is <= 0) throw new ArgumentOutOfRangeException(nameof(quantity));

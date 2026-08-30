@@ -50,6 +50,8 @@ export type SessionCapabilities = {
   canAcceptLabServiceQuotes: boolean
   canRequestLabServiceCancellation: boolean
   canViewSampleProgress: boolean
+  canViewSampleShipping: boolean
+  canManageSampleShipping: boolean
   canDownloadLabResults: boolean
   canViewReagentOrders: boolean
   canCreateReagentOrders: boolean
@@ -64,6 +66,7 @@ export type SessionCapabilities = {
   canDownloadDataAssemblyOutputs: boolean
   canViewAllOperationalOrders: boolean
   canManageOrderConfiguration: boolean
+  canManageFileManagementConfiguration: boolean
   canQuoteLabServiceWork: boolean
   canManageLabOperations: boolean
   canOperateLabWork: boolean

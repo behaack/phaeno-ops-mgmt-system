@@ -3,10 +3,32 @@ namespace PhaenoPortal.Test;
 using PSeq.Operations.Commercial.Accounts.Domain;
 using PSeq.Operations.Commercial.Relationships.Application;
 using PSeq.Operations.Commercial.Relationships.Domain;
+using PhaenoPortal.App.Features.Accounts.DTOs;
+using PhaenoPortal.App.Features.RelationshipManagement.DTOs;
 
 public class RelationshipManagementDomainTests
 {
     private static readonly DateTime Now = new(2026, 7, 15, 12, 0, 0, DateTimeKind.Utc);
+
+    [Fact]
+    public void AccountCreationOrderingAuthorizationDefaultsOnForCompatibleClients()
+    {
+        Assert.True(new DecidePortalIntegrationRequest
+        {
+            Approved = true,
+            Reason = "Approved.",
+            Version = 1
+        }.OrderingAuthorized);
+        Assert.True(new CreateAccountFromPortalIntegrationRequest
+        {
+            Version = 1
+        }.OrderingAuthorized);
+        Assert.True(new CreateOrganizationRequest
+        {
+            Name = "Customer",
+            Kind = OrganizationKind.Customer
+        }.OrderingAuthorized);
+    }
 
     [Fact]
     public void ServiceEligibilityFollowsOrganizationKind()

@@ -51,6 +51,11 @@ test('shows only Phaeno guides in expandable topic groups', async ({ page }) => 
   const guideNavigation = page.getByRole('navigation', { name: 'Guides' })
   await expect(
     guideNavigation.getByRole('button', {
+      name: 'Expand Customer relationship management topics',
+    }),
+  ).toBeVisible()
+  await expect(
+    guideNavigation.getByRole('button', {
       name: 'Expand Data provisioning topics',
     }),
   ).toBeVisible()
@@ -62,6 +67,28 @@ test('shows only Phaeno guides in expandable topic groups', async ({ page }) => 
   await expect(
     guideNavigation.getByRole('button', {
       name: 'Expand Laboratory operations topics',
+    }),
+  ).toBeVisible()
+
+  await guideNavigation.getByRole('button', {
+    name: 'Expand Customer relationship management topics',
+  }).click()
+  const crmTopics = page.locator('#documentation-topics-crm')
+  await expect(crmTopics.getByRole('link')).toHaveCount(8)
+  await expect(crmTopics.locator('a > svg')).toHaveCount(8)
+  await crmTopics.getByRole('link', {
+    name: 'Reports and administration',
+  }).click()
+  await expect(
+    page.getByRole('heading', {
+      name: 'Reports and administration',
+      level: 1,
+    }),
+  ).toBeVisible()
+  await openSidebarIfCollapsed(page)
+  await expect(
+    page.getByRole('button', {
+      name: 'Collapse Customer relationship management topics',
     }),
   ).toBeVisible()
 
@@ -78,8 +105,8 @@ test('shows only Phaeno guides in expandable topic groups', async ({ page }) => 
   }).click()
   await expect(dataTopics).toHaveCount(0)
   const orderTopics = page.locator('#documentation-topics-order-operations')
-  await expect(orderTopics.getByRole('link')).toHaveCount(7)
-  await expect(orderTopics.locator('a > svg')).toHaveCount(7)
+  await expect(orderTopics.getByRole('link')).toHaveCount(5)
+  await expect(orderTopics.locator('a > svg')).toHaveCount(5)
   await orderTopics.getByRole('link', {
     name: 'Billing, payment, and release gates',
   }).click()
@@ -136,7 +163,15 @@ async function selectOrganization(
 
 async function openSidebarIfCollapsed(page: import('@playwright/test').Page) {
   const trigger = page.getByRole('button', {
-    name: /^Open Documentation navigation/,
+    name: /^(?:Open|Close) Documentation navigation/,
   })
-  if (await trigger.isVisible()) await trigger.click()
+  if ((page.viewportSize()?.width ?? 1280) < 1024) {
+    await expect(trigger).toBeVisible()
+    await expect(async () => {
+      if (await trigger.getAttribute('aria-expanded') !== 'true') {
+        await trigger.click()
+      }
+      await expect(trigger).toHaveAttribute('aria-expanded', 'true')
+    }).toPass()
+  }
 }

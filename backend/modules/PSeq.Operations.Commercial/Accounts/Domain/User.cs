@@ -133,6 +133,28 @@ public sealed class User : IAudit, IConcurrency
         ExternalSubjectId = subjectId.Trim();
     }
 
+    public void RelinkExternalIdentity(
+        string expectedProvider,
+        string expectedSubjectId,
+        string newProvider,
+        string newSubjectId)
+    {
+        if (!IsLinkedTo(expectedProvider, expectedSubjectId))
+        {
+            throw new InvalidOperationException(
+                "User is not linked to the expected external identity.");
+        }
+
+        if (string.IsNullOrWhiteSpace(newProvider)
+            || string.IsNullOrWhiteSpace(newSubjectId))
+        {
+            throw new ArgumentException("A complete replacement external identity is required.");
+        }
+
+        ExternalIdentityProvider = newProvider.Trim().ToLowerInvariant();
+        ExternalSubjectId = newSubjectId.Trim();
+    }
+
     public void AcceptInvitation(string firstName, string lastName, string provider, string subjectId, DateTime utcNow)
     {
         FirstName = firstName;

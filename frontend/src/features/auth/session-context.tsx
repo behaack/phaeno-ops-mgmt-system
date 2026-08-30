@@ -24,6 +24,7 @@ import {
   type SessionResponse,
 } from '#/api/session'
 import { Button } from '#/components/ui/button'
+import { readStoredInviteToken } from '#/features/auth/invitation-storage'
 
 const SELECTED_ORGANIZATION_STORAGE_KEY = 'phaeno.selectedOrganizationId'
 
@@ -252,17 +253,25 @@ export function AuthGate({ children }: { children: ReactNode }) {
   }
 
   const stateContent = getAccessStateContent(session?.state)
+  const hasPendingInvitation = Boolean(readStoredInviteToken())
   return (
     <AccessState
       title={stateContent.title}
       description={stateContent.description}
       action={
-        <SignOutButton redirectUrl="/">
-          <Button type="button" variant="outline">
-            <LogOut aria-hidden="true" />
-            Sign out
-          </Button>
-        </SignOutButton>
+        <div className="flex flex-wrap gap-2">
+          {hasPendingInvitation && session?.state !== 'disabled' ? (
+            <Button asChild>
+              <a href="/accept-invite">Continue invitation</a>
+            </Button>
+          ) : null}
+          <SignOutButton redirectUrl="/">
+            <Button type="button" variant="outline">
+              <LogOut aria-hidden="true" />
+              Sign out
+            </Button>
+          </SignOutButton>
+        </div>
       }
     />
   )
@@ -541,6 +550,8 @@ const mockSession: SessionResponse = {
     canAcceptLabServiceQuotes: false,
     canRequestLabServiceCancellation: false,
     canViewSampleProgress: false,
+    canViewSampleShipping: false,
+    canManageSampleShipping: false,
     canDownloadLabResults: false,
     canViewReagentOrders: false,
     canCreateReagentOrders: false,
@@ -555,6 +566,7 @@ const mockSession: SessionResponse = {
     canDownloadDataAssemblyOutputs: false,
     canViewAllOperationalOrders: true,
     canManageOrderConfiguration: true,
+    canManageFileManagementConfiguration: true,
     canQuoteLabServiceWork: true,
     canManageLabOperations: true,
     canOperateLabWork: true,
@@ -626,6 +638,9 @@ function MockSessionProvider({ children }: { children: ReactNode }) {
         canRequestLabServiceCancellation:
           selectedMembership?.organizationKind === 'Customer' && selectedMembership.isOrganizationAdmin,
         canViewSampleProgress: selectedMembership?.organizationKind === 'Customer',
+        canViewSampleShipping:
+          selectedMembership?.organizationKind === 'Prospect' ||
+          selectedMembership?.organizationKind === 'Customer',
         canDownloadLabResults: selectedMembership?.organizationKind === 'Customer',
         canViewReagentOrders: selectedMembership?.organizationKind === 'Partner',
         canCreateReagentOrders:
@@ -648,6 +663,7 @@ function MockSessionProvider({ children }: { children: ReactNode }) {
         canDownloadDataAssemblyOutputs: selectedMembership?.organizationKind === 'Partner',
         canViewAllOperationalOrders: selectedMembership?.organizationKind === 'Phaeno',
         canManageOrderConfiguration: selectedMembership?.organizationKind === 'Phaeno',
+        canManageFileManagementConfiguration: selectedMembership?.organizationKind === 'Phaeno',
         canQuoteLabServiceWork: selectedMembership?.organizationKind === 'Phaeno',
         canManageLabOperations: selectedMembership?.organizationKind === 'Phaeno',
         canOperateLabWork: selectedMembership?.organizationKind === 'Phaeno',

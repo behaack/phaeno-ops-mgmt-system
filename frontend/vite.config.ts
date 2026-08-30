@@ -41,16 +41,20 @@ const config = defineConfig(({ command, mode }) => ({
   plugins: [
     { enforce: 'pre', ...mdx() },
     tailwindcss(),
-    tanstackStart(),
-    nitro({
-      devProxy: {
-        '/api/**': {
-          target: 'https://localhost:44399',
-          changeOrigin: true,
-          secure: false,
-        },
-      },
-    }),
+    ...(mode === 'test'
+      ? []
+      : [
+          tanstackStart(),
+          nitro({
+            devProxy: {
+              '/api/**': {
+                target: 'https://localhost:44399',
+                changeOrigin: true,
+                secure: false,
+              },
+            },
+          }),
+        ]),
     viteReact({ include: /\.(js|jsx|md|mdx|ts|tsx)$/ }),
   ],
   test: {

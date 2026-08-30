@@ -25,6 +25,32 @@ available Media content through the same-origin proxy, direct API denial
 without the proxy key, Preview-origin result navigation, and unchanged
 production search results.
 
+Arabic Website browser proof is authorized for the protected Preview deployment
+as of 2026-08-07. Automated generated-HTML parity now covers all 19 route pairs,
+including RTL document metadata, core semantic structures, minimum translated
+content coverage, and the corrected home-page source alignment. Deployed proof must
+cover direct `/ar` deep links, `lang="ar"` and `dir="rtl"`, desktop and narrow
+navigation, keyboard/focus behavior, browser-language suggestion and dismissal,
+stored explicit preference, equivalent-route switching, Arabic form labels and
+validation, English-PDF disclosure, reciprocal alternates, Arabic-only search
+results, bidirectional scientific text, zoom, reduced motion, and unchanged
+English URLs and behavior.
+
+Spanish, Simplified Chinese, Japanese, German (Germany), Italian, and French
+now have complete protected-Preview route sets and generated-HTML parity
+coverage. Their browser proof remains deferred and must include native-language
+copy review, CJK and long-German line breaking, responsive navigation and
+all three localized blog articles, locale-scoped listings and feeds,
+same-article language switching, localized series navigation,
+language-picker fit, keyboard/focus behavior, locale-isolated search, and
+unchanged English production output before any locale is published.
+Local browser regression checks on 2026-08-08 cover the multi-omics
+introduction at 1392 px for Spanish, French, German, Italian, and Japanese:
+the headline and copy columns do not overlap, and the principle-card heading
+and paragraph remain contained. Spanish also stacks at 1024 px without
+horizontal overflow. This is component-level evidence only and does not replace
+the protected deployed-Preview acceptance above.
+
 ## Created Tests
 
 - [ ] `frontend/e2e/pseq-order-to-cash.spec.ts` - dedicated-staging-only
@@ -50,14 +76,19 @@ production search results.
   browser title, header, and dashboard while external organization context uses
   Portal; both contexts retain the Phaeno Inc. legal footer and omit framework
   vendor promotion; the POMS dashboard exposes a keyboard-operable
-  viewport-edge sidebar for Order Operations, Lab Operations, Accounts, and
+  viewport-edge sidebar for Order Operations, Lab Operations, Portal accounts, and
   Web Operations mock intake with a two-button selector showing one
   mailing-list or demo-request panel at a time, independent page-size-10 footer
   pagination, no persistence controls on mock records, and one dashboard
-  section visible at a time while external contexts omit it.
+  section visible at a time while external contexts omit it. External context
+  instead shows its role-appropriate organization workflow cards, labels
+  connected summaries as paused in mock-session mode, and never renders the
+  internal Portal accounts metrics. Customer context keeps Data Library and Lab
+  services as separate starting points while omitting a peer sample-shipping
+  card because shipping is part of each lab job.
 - [x] `frontend/e2e/home.spec.ts` - desktop keeps frequent workspace routes in
   the toolbar, including Docs, while Data provisioning appears under Resources;
-  desktop and mobile expose Accounts and the remaining grouped
+  desktop and mobile expose Portal accounts and the remaining grouped
   administration/resources in the user menu,
   and the three display choices share one compact row directly
   after user identification with a brand-accent selected treatment distinct
@@ -73,25 +104,34 @@ production search results.
 - [x] `frontend/e2e/data-provisioning.spec.ts` - Prospect mock context exposes
   the Data Library without exposing connected data in mock mode.
 - [x] `frontend/e2e/order-management.spec.ts` - Customer mock context exposes
-  laboratory services and request creation.
+  laboratory services; Request lab service opens the bounded Job details modal
+  with required Job name, shared-versus-mixed biological-source choice, storage
+  requirements, and safety declaration plus optional Job notes, without
+  embedding per-sample fields; outside clicks do not dismiss it, and connected
+  creation remains clearly paused in mock-session mode.
 - [x] `frontend/e2e/order-management.spec.ts` - Partner mock context exposes
   reagent ordering and data assembly.
 - [x] `frontend/e2e/order-management.spec.ts` - Phaeno mock context exposes
-  Lab, PSeq kits, Assembly, and Integrations operational queues through the
-  pinned wide-screen rail or accessible edge tab on narrow screens; Order
-  Configuration uses the same rail for Defaults, Analyses, PSeq kits,
-  Assembly, and Credit & QBO instead of an in-page tab row.
+  Commercial Order intake, one Orders list, and Accounting through the pinned
+  wide-screen rail or accessible edge tab on narrow screens; PSeq Lab Service,
+  PSeq Kit, and Data Assembly appear as order types rather than peer modules;
+  Order Operations exposes the bounded `New Customer order` modal with Customer
+  selection, Job pricing-profile fields, and a disabled connected save in mock
+  mode; Order
+  Configuration uses the same rail for Defaults, Catalog, Analyses, PSeq kits,
+  Assembly, and Credit instead of an in-page tab row.
 - [x] `frontend/e2e/documentation.spec.ts` - Prospect, Customer, and Partner
   contexts are offered their own guide set, Phaeno is offered only Phaeno
   guides, the sidebar omits redundant audience controls and headings, every
-  topic has an icon, Data Provisioning, Order Ops, and Lab Ops expose one
+  topic has an icon, CRM, Data Provisioning, Order Ops, and Lab Ops expose one
   keyboard-operable accordion subtopic level that auto-opens for the active
   guide and keeps only one subject expanded, cross-audience routes are denied
   for every context, and substantive MDX content renders on guide routes.
 - [x] `frontend/e2e/customers.spec.ts` - desktop and mobile organization
-  administration is titled Accounts, excludes the internal Phaeno organization,
-  identifies HubSpot intake as not connected, omits standard direct-account and
-  manual-request actions from list/detail surfaces, and uses accessible
+  administration is titled Portal accounts, excludes the internal Phaeno
+  organization, identifies standard first-party CRM intake, links to CRM
+  Companies, and submits a restricted migration or recovery request through
+  the audited review queue without exposing direct account creation; it uses accessible
   consequence dialogs for organization,
   membership, and entitlement lifecycle actions; focus returns to the invoking
   control, ended entitlements retain their reason, and the entitlement source
@@ -127,36 +167,183 @@ production search results.
   option; incomplete MFA setup remaining outside Portal navigation and APIs;
   and Phaeno-admin reset, active-session revocation, and required re-enrollment
   when both authenticator and backup codes are lost.
-- [ ] HubSpot-to-Portal lifecycle journey - cover HubSpot-only company with no
-  Portal access, approved evaluation to Portal Prospect, Closed Won to pending
+- [ ] Clerk Production cutover acceptance - verify the production frontend and
+  API use the same production instance, Preview remains on development, the
+  prior development session no longer grants production access, the relinked
+  bootstrap administrator reaches a ready POMS session, MFA and backup-code
+  policy are active, and the browser emits no development-key warning.
+- [ ] Local-development invitation shortcut - create a fresh sign-in link from
+  an authorized external-account invitation, copy it into a private browser,
+  create a first-time Clerk development identity with the exact invited email,
+  accept the invitation, and verify that the account membership becomes active.
+  Verify that Clerk returns to `/accept-invite` after account verification rather
+  than entering the application before Portal acceptance has completed. If the
+  user reaches the access gate first, verify **Continue invitation** resumes the
+  stored invitation.
+  Start once with a different Clerk account already signed in and verify the
+  page identifies that email, explains the mismatch, signs out without losing
+  the invitation, and continues with the invited identity. Confirm that the
+  development shortcut control and endpoint are absent from Production.
+- [x] First-party CRM Company create boundary journey - on desktop and narrow
+  layouts, cover the shared CRM sidebar and its eight route-backed subjects,
+  current-section identity, list rendering, the standalone CRM/Portal warning, accessible
+  create dialog, normalized create payload, detail navigation, and proof that
+  Company creation makes no Portal write. Confirm card-scoped actions remain
+  compact and right-aligned with their title row on Company, Lead, and
+  Opportunity detail workspaces. Maintained in
+  `frontend/e2e/crm.spec.ts`.
+- [ ] Remaining first-party CRM Company journey - cover search, view, edit,
+  deactivate, reactivate, and proof that each action leaves Portal accounts,
+  access, entitlements, and work unchanged.
+- [ ] Remaining first-party CRM journey - cover Contact, incremental Company
+  and Contact association search, Company-specific title/role and effective
+  dates, equivalent relationship editing from both record workspaces, Lead,
+  qualification,
+  Opportunity, configurable Pipeline/Stage, Activity, Note, Task, reminder,
+  ownership, search, table/board views, reporting, duplicate review/merge,
+  import/export boundaries, authorization, field visibility, and scientific/
+  protected-data exclusion across desktop and narrow layouts.
+- [ ] CRM-to-Portal lifecycle journey - cover CRM-only Company with no Portal
+  access, approved evaluation to Portal Prospect, won Opportunity to pending
   direct Customer/Partner onboarding, designated-admin invitation, selective
-  Partner services, existing-organization service change, Customer/Partner
-  reclassification, pending offboarding, webhook replay, retry, and HubSpot
-  outage. In local development, prove that Accounts can simulate a new
-  Prospect/Customer/Partner account request and that Order Intake can simulate
-  both the sales-assisted and Trial Project inbound request shapes without
-  contacting HubSpot or creating an account or executable work.
-- [ ] Direct/custom sales and HubSpot visibility journey - cover configured-price
+  Partner services, Trial Project and custom-work handoffs, existing-
+  organization service change, Customer/Partner reclassification, pending
+  offboarding, idempotent replay, retry, and relationship-safe summary
+  reconciliation without creating access or executable work from intake alone.
+- [ ] Direct/custom sales and CRM visibility journey - cover configured-price
   Customer and Partner specimen placement, Partner reagent and assembly sales,
-  ineligible work routed to Sales, Closed Won operational handoff, one HubSpot
-  Order per commitment with payment summary, no routine Deal, no scientific or
-  downstream-customer data in HubSpot, and two-tenant isolation.
-- [ ] Prospect Trial Project journey - cover HubSpot-originated request, commercial
-  and scientific approval, Prospect invitation and acceptance, bounded sample
-  submission of up to five extracted-RNA samples, sixth-sample and wrong-type
-  denial, Phaeno receipt/processing, standard FASTQ/FASTA/BAM result release,
-  the three-month access default and an approved override both beginning only
-  with complete-package release, completion, explicit Customer or Partner
-  conversion, normal-order denial before conversion, and two-tenant isolation
-  for project metadata, samples, files, and results.
+  ineligible work routed to Sales, won Opportunity operational handoff, one CRM
+  sale summary per commitment with payment summary, no routine Opportunity, no
+  scientific or downstream-customer data in CRM, and two-tenant isolation.
+- [ ] Released-deliverable retention journeys - cover the global 30/5/5
+  defaults, authorized Customer/Partner/Prospect organization override and
+  partial inheritance, release-time effective-policy snapshot, and a later
+  default or override change affecting only future releases; exact 24-hour UTC
+  calculations without midnight rounding across a daylight-saving boundary;
+  labelled browser-local display with UTC fallback; and local plus UTC values
+  in the PDF. Prove the all-
+  downloaded path has no warning and closes access plus queues package-byte
+  deletion at the standard deadline; the partially or never-downloaded path
+  sends the advance warning to all active organization administrators, activates
+  and announces the full grace period at the standard deadline, and closes
+  access plus queues atomic package-byte deletion at the final deadline;
+  download authorization closes at the exact applicable deadline even when
+  asynchronous byte deletion is delayed or fails, Operations receives the
+  failure, and the receipt preserves both timestamps; a file and complete-
+  archive transfer started under valid pre-cutoff authorization may finish
+  within its bounded timeout and counts only after successful completion while
+  every request whose lease would commit exactly at/after cutoff, including a
+  new, retry, range-resume, or archive request, is denied; partial file/archive,
+  failed, cancelled, disconnected, timed-out, and restart-abandoned streams do
+  not count or gain resume authority; an incomplete standard-deadline lease
+  activates grace despite later completion; deletion waits for all simultaneous
+  eligible leases only until they complete or reach their unchanged original
+  expiries, without reopening access or changing grace/final dates; a lease-
+  duration configuration change affects only newly issued leases; the receipt
+  preserves lease start/completion/outcome and
+  identifies a post-cutoff success as pre-cutoff authorized; emergency
+  quarantine, withdrawal/correction, membership deactivation, and organization
+  deactivation each stop a matching active response stream, record a non-
+  counting revoked attempt, expose only a tenant-safe access-ended state, and
+  cannot recall bytes already delivered; concurrent completion/revocation uses
+  the first durable terminal transition rather than client time, and restored
+  access allows only a fresh pre-deadline request; a complete archive counts
+  every file while individual downloads count only their files; one
+  authorized member's download satisfies the
+  organization without requiring every member to download, and a later
+  membership change preserves that history; a grace-period download does not
+  shorten grace; holds preserve bytes without extending access or resetting the
+  clock/notices, and releasing an overdue hold immediately queues deletion; no
+  active administrator produces urgent
+  Phaeno Operations work without changing a deadline; warning and grace links
+  require sign-in and current tenant authorization at the package page and never
+  grant direct file access; exactly two scheduled emails are possible with no
+  daily reminders; delayed processing suppresses a stale warning before outbox
+  creation, while an already-queued message remains and opens current state;
+  the pre-grace warning clears after complete download while activated grace
+  remains visible through deletion; a correction immediately withdraws the old
+  package and creates a new release with a fresh effective-policy snapshot,
+  full clock, independent download tracking and notices while old-package bytes
+  follow their prior policy/hold; deletion exposes no customer restore action;
+  an authorized regeneration, when source material exists, creates a new linked
+  immutable reissue with fresh policy/dates/download state while the deleted
+  release remains unchanged; and metadata, notification, download, and deletion
+  history remain after bytes are unavailable, including a permanent tenant-safe
+  receipt with member-level download details for organization administrators,
+  status-only visibility for ordinary members, prohibited-field exclusion, and
+  matching Portal/PDF facts with generation time and represented state, no CSV
+  receipt action, sample-scoped non-PHI Customer-ID/original-tube-barcode/
+  accession mapping, complete included-sample lists for combined files, no
+  derived-container leakage, and two-tenant denial across Trial, Customer, and
+  Partner flows.
+- [ ] Prospect Trial Project journey - cover a commercial-only CRM-originated
+  request, POMS-owned scientific scoping, relationship-safe CRM milestones
+  and deep link, commercial and scientific/operations approval using default and
+  delegated coverage, delegate revocation and wrong-domain denial, actual
+  approver and authority-source audit, rejection when one dual-authorized user attempts both
+  approvals, successful two-person approval for initial and amended scope
+  versions, both decisions remaining required, Prospect invitation and
+  acceptance of versioned RUO/no-PHI terms, shipment-confirmation affirmation,
+  non-PHI sample identifiers, prominent RUO result labeling, prohibited-data
+  rejection or restricted quarantine without propagation followed by authorized
+  disposition, bounded sample submission through the project's approved
+  extracted-RNA sample allowance,
+  over-allowance and wrong-type
+  denial, eligible destination and detailed-instruction resolution, Phaeno
+  return-kit preparation with an exact registered-tube inventory, Prospect
+  tube-to-sample assignment/correction and retained CSV, printable frozen
+  shipment packet/crosswalk and barcode, Phaeno packet-plus-tube comparison
+  scan without implicit receipt, matched receipt/accession that adopts the
+  permanent supplier barcode without a second label, derived-container POMS
+  label verification, an approved replacement linked to the original sample,
+  exactly one restored slot after a Phaeno-caused processing failure, no
+  automatic restored slot for a Prospect-supplied sample problem, and an
+  explicit Phaeno exception path that does not rewrite the frozen allowance,
+  the configurable 30-day residual-material default and a project override,
+  frozen destruction versus pre-first-shipment return with identified shipping
+  payer, post-shipment return denial, retain-until work without automatic
+  disposition, operator-confirmed destruction or separate tracked return, and
+  no reuse without separate written authorization,
+  Phaeno processing, configurable FASTQ/FASTA/BAM default selection, exact
+  deliverable/version snapshot at approval, a later configuration change that
+  affects only future projects, and amendment/reapproval for changing an
+  approved project's deliverables,
+  the effective global-plus-Prospect-organization retention policy beginning
+  only with release of the project's complete frozen package and no project-
+  level override, POMS `Completed`
+  versus reason-required `Closed incomplete`, final Customer conversion,
+  Partner conversion, and closed-without-conversion CRM outcomes,
+  nonterminal follow-up with an owner and date, explicit Customer or Partner
+  conversion without an automatic transition or a reset or extension of the
+  frozen Trial package deletion dates, byte deletion with preserved project and
+  audit history, continued organization access for a non-converting Prospect,
+  blocked deactivation while another active Trial Project, grant, or commercial
+  relationship exists, explicit audited Phaeno closeout deactivation, normal-
+  order denial before conversion, retained POMS estimated retail value and
+  anticipated internal cost, no QuickBooks transaction or payment gate even
+  during a QuickBooks outage, and two-tenant isolation for project metadata,
+  samples, files, and results.
+- [ ] Customer promotional freebie and shared shipping journey - cover a named
+  Customer's one-time no-charge placement, zero amount due without a payment
+  gate, the same return-kit/tube-crosswalk/packet/comparison-scan/Lab-adoption
+  path, multiple active destinations, compatible multi-type grouping,
+  mandatory incompatible split shipments, immutable reprint/replacement
+  behavior, and two-tenant non-discovery.
 - [ ] Database-backed organization and user administration journey - verify
   Phaeno and external administrator scope, invitation delivery and acceptance,
   unified active and pending-invitation user cards, accessible action menus,
   required invited names, invitation-time Phaeno role intent with no pre-accept
   access, atomic role activation on acceptance, resend/revoke, role and
-  membership lifecycle, Prospect conversion with stable
-  identity, readiness, request review without implicit provisioning,
-  approved simulated HubSpot account creation and details-page navigation,
+  membership lifecycle, omission of administrative self-deactivation actions,
+  direct API self-deactivation denial, Prospect conversion with stable
+  identity, readiness, account creation limited to eligible new-account
+  approvals, Account directory/Review queue tab separation, removal of an
+  associated approved request from the review queue, atomic first-party CRM
+  approval, stranded approved-request account-creation recovery, account-
+  creation ordering authorization default-on and explicit opt-out with the
+  resulting entitlement state, Customer new-Job blocking when authorization
+  is absent, Phaeno eligible-Customer filtering, quote-recipient fanout, and
+  workspace request completion, and details-page navigation,
   Phaeno-controlled designated-contact invitation and membership management,
   consolidated Phaeno profile, Platform administrator, and additive
   laboratory-role editing on one durable User management record rather than a
@@ -185,10 +372,31 @@ production search results.
   administrator notice/activity, and tenant attestation.
 - [ ] Database-backed order-management journeys - execute the approved Customer
   admin/member, Partner admin/member, Prospect denial, Phaeno operations,
-  payment hold, QuickBooks failure, two-tenant isolation, keyboard, and narrow
-  viewport scenarios through real authentication and API persistence.
+  payment hold, manual accounting report, two-tenant isolation, keyboard, and narrow
+  viewport scenarios through real authentication and API persistence. Include
+  required and duplicate Job-name validation, required storage and safety
+  persistence, biological-source composition with derived sample total,
+  duplicate-source validation, optional Job-notes persistence, generated
+  eight-character Job-number, fixed modal save feedback, concurrency refresh
+  with preserved entries, pricing submission with no sample records, and
+  post-acceptance manual and CSV sample-list preparation. Include a Phaeno user
+  seeing distinct Customer-list loading, failure/retry, genuine-empty, and ready
+  states; initiating a Customer-owned Job; issuing the immediate POMS quote with
+  the visible canonical `pseq-lab-service`/`specimen` line and exact committed
+  quantity; switching to that Customer; accepting as an organization
+  administrator; and proving that neither Phaeno initiation nor quote issuance
+  creates samples or Lab work. Prove Customer and Phaeno order actions require
+  an effective, `Ready` PSeq Lab Service entitlement and active offering; an
+  ended entitlement blocks a new Job without cancelling an accepted one; quote
+  preparation sends no Customer notice; quote issue/revision reaches all active
+  eligible administrators and is blocked when none exists; the accepting
+  administrator receives later ordinary notices; and high-impact fan-out stays
+  organization-wide. Confirm an unexpected pre-acceptance package cannot enter
+  the Job receipt or Lab-authorization journey. Include an interrupted
+  notification claim that becomes recoverable after its lease without repeating
+  the underlying order transition.
 - [ ] Database-backed Lab Operations journey - accept a Customer quote, prove
-  the visible Phaeno Order Operations **Order intake** section and Open intake
+  the visible Lab Operations **Receipt & accession** queue and commercial-order
   handoff to the already-linked
   work order, then prove the already-passing controller/PostgreSQL workflow
   through real Clerk
@@ -198,6 +406,8 @@ production search results.
   last-calibration/due-date validation. The controller/database
   portion already proves atomic Lab authorization, additive Lab roles,
   receipt/accession, barcode allocation/scan/print-outcome history,
+  PSeq kit fulfillment and Data Assembly manufacturing through the Lab API
+  aliases without exposing those mutations in the Order Ops UI,
   system-assigned protocol/library/batch identifiers, named batches with a
   system-owned External sequencing type, structured protocol
   authoring from protocol identity through ordered steps, typed captures,
@@ -210,6 +420,13 @@ production search results.
   timestamp modal capture, sendout/custody, exception resolution, scientific approval, the
   Customer-safe projection, and no file publication at Ready for release.
   Physical printer/scanner qualification remains a manual bench gate.
+- [ ] Released-package completion-aware download journey - through authenticated
+  Customer and Partner sessions, download one full file and one full-package
+  ZIP, confirm package/file state refresh, interrupt a transfer and confirm it
+  remains undownloaded, allow a synthetic short lease to expire, and prove a
+  different tenant cannot discover or download the release. Retention warnings,
+  cutoff, and byte deletion remain outside this journey until their worker is
+  implemented.
 
 ## Requested Execution Log
 
@@ -279,6 +496,13 @@ production search results.
   require the five shared-sidebar subjects and Defaults as the initial active
   selection. The Playwright suite was not executed because E2E execution was
   not separately requested.
+- 2026-08-18: the registered supplier-tube workflow was implemented and its
+  browser coverage plan was expanded. The completion pass ran the existing
+  mock-session Playwright suite on an isolated port with the required test-only
+  session setting: all 30 desktop/mobile tests passed. This suite verifies the
+  surrounding responsive/navigation baseline; it does not substantiate the
+  still-unimplemented authenticated Trial Project or Customer promotional
+  shipping journey, nor physical tube/shipper/scanner acceptance.
 - 2026-07-16: the barcode software slice passed its full 41-test frontend
   regression suite and 113-test backend/database suite. No mock Playwright
   scenario can substantiate an authenticated hosted scan or physical
@@ -322,6 +546,15 @@ production search results.
 - 2026-07-16: Documentation scenarios were updated for automatic
   current-organization audience filtering and topic icons. The suite was not
   executed because E2E execution was not requested.
+- 2026-08-22: add a connected Customer administrator journey that submits a
+  100-sample Job pricing profile without sample records, accepts the issued
+  price, downloads and previews a CSV, atomically confirms the roster,
+  finalizes only after exact count/source compliance, and matches registered
+  barcodes across repeated `Tube N of N` crosswalk rows. Also assert members
+  remain view-only, pre-acceptance sample/API attempts are rejected, the first
+  immutable submission revision is inserted successfully, and a genuine stale
+  submission reloads the latest Job and requires reconfirmation. E2E execution
+  was not requested and was not run.
 - 2026-07-16: Data provisioning, Order operations, and Documentation scenarios
   were updated for the shared pinned/edge sidebar on desktop and narrow
   layouts. The suite was not executed because E2E execution was not requested.
@@ -367,3 +600,25 @@ production search results.
 - 2026-06-01: User ran `pnpm test:e2e`; mobile menu still did not open through the emulated tap path. Restored Radix native menu state and changed the e2e test to use keyboard activation before asserting mobile menu items.
 - 2026-06-01: User requested environment setup only. Reduced e2e coverage to one smoke test and moved the accessibility and mobile navigation checks to deferred tests.
 - 2026-06-01: User requested no Playwright HTML report server. Set Playwright reporter to terminal `list` only.
+- 2026-08-27: Portal accounts and Home verification ran the focused
+  `home.spec.ts` and `customers.spec.ts` suite with
+  `VITE_USE_MOCK_SESSION=true` on isolated port 3101; all 12 desktop/mobile
+  Chromium scenarios passed, including the restricted request submission and
+  consistent Portal accounts labels. An initial run reused the developer's
+  real-Clerk port-3000 server and did not reach the application shell; the
+  isolated mock-session rerun resolved that harness condition. The existing
+  `AcceptInvitePage` route-export warning remains unchanged.
+- 2026-08-28: focused CRM browser verification ran `crm.spec.ts` with the mock
+  session on isolated port 3104; all 6 desktop/mobile Chromium scenarios
+  passed. The new journey opens a Won Opportunity detail route, shows its
+  approved Customer order handoff, opens the source-aware pricing dialog, and
+  verifies that the approved Customer is locked. The Opportunity journey also
+  confirms the generated number is visible, the product-interest field uses
+  the PSeq Lab Service/PSeq Kit domain, and the Owner control stays within the
+  modal bounds on desktop and mobile. The run also repaired stale detail-route
+  mocks, confirms a Lead identifier opens its dedicated detail workspace,
+  confirms its Lead details and simplified Qualification record use equal
+  full-container widths on desktop and mobile, confirms compact right-aligned
+  card-header actions on Company, Lead, and Opportunity detail workspaces, and
+  confirms the standalone Company journey without browser errors. The existing
+  `AcceptInvitePage` route-export warning remains unchanged.

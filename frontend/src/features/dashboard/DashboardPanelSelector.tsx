@@ -247,7 +247,7 @@ export function DashboardPanelSelector() {
       },
       {
         value: 'accounts',
-        label: 'Accounts',
+        label: 'Portal accounts',
         description: 'Customer, Partner, and Prospect administration.',
         count: 21,
         countDescription: '21 items needing attention',

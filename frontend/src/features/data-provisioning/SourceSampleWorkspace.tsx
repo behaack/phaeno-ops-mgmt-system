@@ -51,6 +51,11 @@ import {
   DropdownMenuTrigger,
 } from '#/components/ui/dropdown-menu'
 import { Input } from '#/components/ui/input'
+import {
+  RequiredDialogFooter,
+  RequiredFieldName,
+  RequiredLegend,
+} from '#/components/ui/required-field'
 import { usePhaenoSession } from '#/features/auth/session-context'
 
 const metadataSchema = z.object({
@@ -257,6 +262,7 @@ export function SourceSampleWorkspace({ sourceSampleId }: { sourceSampleId: stri
           </CardHeader>
           <CardContent>
             <form className="space-y-4" onSubmit={form.handleSubmit((values) => saveMutation.mutateAsync(values))}>
+              <RequiredLegend />
               <Field label="Internal label" error={form.formState.errors.label?.message} required>
                 <Input disabled={!isDraft} {...form.register('label')} />
               </Field>
@@ -345,9 +351,10 @@ export function SourceSampleWorkspace({ sourceSampleId }: { sourceSampleId: stri
                     if (selectedFile) uploadMutation.mutate(selectedFile)
                   }}
                 >
+                  <RequiredLegend />
                   <div className="grid gap-1.5 text-sm font-medium">
                     <label htmlFor="approved-source-file">
-                      Approved source file <span className="text-destructive">*</span>
+                      <RequiredFieldName>Approved source file</RequiredFieldName>
                     </label>
                     <Input id="approved-source-file" type="file" accept=".txt,.csv,.json" required onChange={(event) => setSelectedFile(event.target.files?.[0] ?? null)} />
                   </div>
@@ -409,9 +416,6 @@ export function SourceSampleWorkspace({ sourceSampleId }: { sourceSampleId: stri
               discardMutation.mutateAsync(values),
             )}
           >
-            <p className="m-0 text-sm text-muted-foreground">
-              <span className="text-destructive">*</span> Required field
-            </p>
             <Field
               label="Reason"
               error={discardForm.formState.errors.reason?.message}
@@ -436,7 +440,7 @@ export function SourceSampleWorkspace({ sourceSampleId }: { sourceSampleId: stri
               error={discardMutation.error}
               fallback="The draft could not be discarded. Reload the source and try again."
             />
-            <DialogFooter>
+            <RequiredDialogFooter>
               <DialogClose asChild>
                 <Button type="button" variant="outline">Cancel</Button>
               </DialogClose>
@@ -448,7 +452,7 @@ export function SourceSampleWorkspace({ sourceSampleId }: { sourceSampleId: stri
                 <Trash2 data-icon="inline-start" />
                 {discardMutation.isPending ? 'Discarding' : 'Discard draft'}
               </Button>
-            </DialogFooter>
+            </RequiredDialogFooter>
           </form>
         </DialogContent>
       </Dialog>
@@ -461,7 +465,7 @@ function ConfirmationDialog({ open, onOpenChange, title, description, confirmLab
 }
 
 function Field({ label, error, errorId, required, children }: { label: string; error?: string; errorId?: string; required?: boolean; children: React.ReactNode }) {
-  return <label className="grid gap-1.5"><span className="text-sm font-medium">{label}{required ? <span className="text-destructive"> *</span> : null}</span>{children}{error ? <span id={errorId} className="text-sm text-destructive" role="alert">{error}</span> : null}</label>
+  return <label className="grid gap-1.5"><span className="text-sm font-medium">{required ? <RequiredFieldName>{label}</RequiredFieldName> : label}</span>{children}{error ? <span id={errorId} className="text-sm text-destructive" role="alert">{error}</span> : null}</label>
 }
 
 function BackLink() {

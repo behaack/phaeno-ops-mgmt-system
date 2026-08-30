@@ -16,6 +16,7 @@ using PhaenoPortal.App.Features.Accounts.Endpoints;
 using PhaenoPortal.App.Features.Accounts.Services;
 using PhaenoPortal.App.Features.Health.Endpoints;
 using PhaenoPortal.App.Features.DataProvisioning.Services;
+using PhaenoPortal.App.Features.FileManagement.Services;
 using PhaenoPortal.App.Features.LabOperations.Services;
 using PhaenoPortal.App.Features.OrderManagement.Services;
 using PhaenoPortal.App.Features.Website;
@@ -39,10 +40,12 @@ builder.Services.Configure<PSeqOrderToCashOptions>(
     builder.Configuration.GetSection(PSeqOrderToCashOptions.SectionName));
 builder.Services.Configure<DataProvisioningOptions>(
     builder.Configuration.GetSection(DataProvisioningOptions.SectionName));
-builder.Services.Configure<OrderManagementOptions>(
-    builder.Configuration.GetSection(OrderManagementOptions.SectionName));
-builder.Services.Configure<QuickBooksOptions>(
-    builder.Configuration.GetSection(QuickBooksOptions.SectionName));
+builder.Services.AddOptions<OrderManagementOptions>()
+    .Bind(builder.Configuration.GetSection(OrderManagementOptions.SectionName))
+    .Validate(
+        options => options.HasValidDownloadSettings,
+        "OrderManagement download leases must be 1-1440 minutes and reconciliation must run every 5-300 seconds.")
+    .ValidateOnStart();
 if (builder.Environment.IsDevelopment())
 {
     var dataProvisioningSection = builder.Configuration.GetSection(
@@ -85,9 +88,16 @@ if (builder.Environment.IsDevelopment())
 builder.Services.AddSingleton<DataProvisioningProfile>();
 builder.Services.AddSingleton<IManagedFileScanner, EnvironmentManagedFileScanner>();
 builder.Services.AddSingleton<IOperationalFileScanner, EnvironmentOperationalFileScanner>();
+builder.Services.AddScoped<ReleasedDeliverableRetentionSnapshotService>();
+builder.Services.AddScoped<ReleasedDeliverableDownloadAttemptService>();
+builder.Services.AddScoped<ReleasedDeliverableDownloadProjectionService>();
+builder.Services.AddHostedService<ReleasedDeliverableDownloadAttemptReconciler>();
 builder.Services.AddScoped<OrderRequestContext>();
 builder.Services.AddScoped<IPSeqResultPipelineAdapter, ConfiguredPSeqResultPipelineAdapter>();
 builder.Services.AddScoped<OrderIdempotencyService>();
+builder.Services.AddScoped<ManualCommercialReleaseService>();
+builder.Services.AddScoped<SampleShippingPacketService>();
+builder.Services.AddScoped<SampleShippingWorkflowReader>();
 builder.Services.AddScoped<ILabOperationsProvider, InternalLabOperationsProvider>();
 builder.Services.AddScoped<LabOperationsRequestContext>();
 builder.Services.AddHostedService<LabOperationsProjectionDispatcher>();
@@ -128,6 +138,13 @@ builder.Services.AddHttpClient<ClerkBootstrapUserProvisioner>((services, httpCli
 });
 builder.Services.AddScoped<IClerkBootstrapUserProvisioner>(
     services => services.GetRequiredService<ClerkBootstrapUserProvisioner>());
+builder.Services.AddHttpClient<ClerkVerifiedEmailResolver>((services, httpClient) =>
+{
+    var clerkOptions = services.GetRequiredService<IOptions<ClerkOptions>>().Value;
+    httpClient.BaseAddress = new Uri(clerkOptions.ApiBaseUrl.TrimEnd('/') + "/");
+});
+builder.Services.AddScoped<IVerifiedExternalEmailResolver>(
+    services => services.GetRequiredService<ClerkVerifiedEmailResolver>());
 builder.Services.AddScoped<LoggingInvitationEmailSender>();
 builder.Services.AddDataProtection();
 builder.Services.AddSingleton<IInvitationDeliveryPayloadProtector, InvitationDeliveryPayloadProtector>();
@@ -289,6 +306,12 @@ if (args.Contains("--migrate", StringComparer.Ordinal))
     var dbContext = scope.ServiceProvider
         .GetRequiredService<PSeqOperationsDbContext>();
     await dbContext.Database.MigrateAsync();
+    return;
+}
+
+if (args.Contains("--cutover-clerk-bootstrap-identity", StringComparer.Ordinal))
+{
+    await ClerkBootstrapIdentityCutover.RunAsync(app.Services);
     return;
 }
 
