@@ -23,6 +23,8 @@ public sealed record InvitationDto
 
     public required IReadOnlyList<LabRole> LabRoles { get; init; }
 
+    public IReadOnlyList<BusinessRole> BusinessRoles { get; init; } = [];
+
     public required InvitationStatus Status { get; init; }
 
     public required bool IsExpired { get; init; }
@@ -50,6 +52,20 @@ public sealed record InvitationDto
     public string? LastEmailProviderMessageId { get; init; }
 
     public string? LastSendError { get; init; }
+
+    public Guid? LatestDeliveryAttemptId { get; init; }
+
+    public InvitationDeliveryState? DeliveryState { get; init; }
+
+    public int DeliveryAttemptCount { get; init; }
+
+    public string? DeliveryError { get; init; }
+
+    public DateTime? DeliveredAtUtc { get; init; }
+
+    public DateTime? BouncedAtUtc { get; init; }
+
+    public string? BounceType { get; init; }
 
     public required DateTime CreatedAt { get; init; }
 

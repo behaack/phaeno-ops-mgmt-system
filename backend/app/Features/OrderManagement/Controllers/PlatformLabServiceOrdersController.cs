@@ -16,7 +16,10 @@ using PhaenoPortal.App.Features.FileManagement.Services;
 using PhaenoPortal.App.Features.OrderManagement.Domain;
 using PhaenoPortal.App.Features.OrderManagement.DTOs;
 using PhaenoPortal.App.Features.OrderManagement.Services;
+using PhaenoPortal.App.Features.OrderToCash;
 using PhaenoPortal.App.Infrastructure.Persistence;
+using VersionRequest = PhaenoPortal.App.Features.OrderManagement.DTOs.VersionRequest;
+using ReasonRequest = PhaenoPortal.App.Features.OrderManagement.DTOs.ReasonRequest;
 
 [ApiController]
 [Authorize]
@@ -28,6 +31,10 @@ public sealed class PlatformLabServiceOrdersController(
     IOperationalFileStorage fileStorage,
     IOperationalFileScanner fileScanner,
     IOptions<OrderManagementOptions> options,
+    IOptions<OrderToCashOptions> orderToCashOptions,
+    OperationalReadinessService operationalReadiness,
+    OrderToCashAuthorization orderToCashAuthorization,
+    NativeInvoiceService nativeInvoices,
     ILabOperationsProvider labOperationsProvider,
     ReleasedDeliverableRetentionSnapshotService retentionSnapshots) : ControllerBase
 {
@@ -38,6 +45,31 @@ public sealed class PlatformLabServiceOrdersController(
         CancellationToken cancellationToken)
     {
         await requestContext.RequirePlatformAdminAsync(HttpContext, cancellationToken);
+        if (orderToCashOptions.Value.Features.BusinessRoles)
+            _ = await orderToCashAuthorization.RequireAsync(
+                HttpContext, BusinessRole.CommercialOperator, cancellationToken);
+        if (orderToCashOptions.Value.Features.DerivedReadiness)
+        {
+            var customers = await dbContext.Organizations.AsNoTracking()
+                .Where(value => value.Kind == OrganizationKind.Customer && value.IsActive)
+                .OrderBy(value => value.Name)
+                .Select(value => new { value.Id, value.Name })
+                .ToListAsync(cancellationToken);
+            var results = new List<EligibleCustomerOrganizationDto>();
+            foreach (var customer in customers)
+            {
+                var evaluation = await operationalReadiness.EvaluateAsync(
+                    customer.Id, DateTime.UtcNow, cancellationToken);
+                if (evaluation.CanStageOrder)
+                    results.Add(new EligibleCustomerOrganizationDto(
+                        customer.Id,
+                        customer.Name,
+                        evaluation.CanStageOrder,
+                        evaluation.CanIssueQuoteOrCommit,
+                        evaluation.Blockers));
+            }
+            return results;
+        }
         var now = DateTime.UtcNow;
         var offeringAvailable = await dbContext.QboCatalogItems.AsNoTracking()
             .AnyAsync(item => item.IsActive
@@ -132,6 +164,9 @@ public sealed class PlatformLabServiceOrdersController(
         CancellationToken cancellationToken)
     {
         var actor = await requestContext.RequirePlatformAdminAsync(HttpContext, cancellationToken);
+        if (orderToCashOptions.Value.Features.BusinessRoles)
+            _ = await orderToCashAuthorization.RequireAsync(
+                HttpContext, BusinessRole.CommercialOperator, cancellationToken);
         var key = idempotency.RequireKey(HttpContext);
         const string scope = "platform:lab-order:initiate";
         var execution = await idempotency.ExecuteAsync(
@@ -188,27 +223,40 @@ public sealed class PlatformLabServiceOrdersController(
                     ?? throw Conflict(
                         "customer_not_available",
                         "Select an active Customer organization before initiating the order.");
-                var hasActiveAdministrator = await dbContext.OrganizationMemberships.AsNoTracking()
-                    .AnyAsync(
-                        membership => membership.OrganizationId == customer.Id
-                            && membership.IsActive
-                            && membership.IsOrganizationAdmin
-                            && membership.User != null
-                            && membership.User.IsActive
-                            && membership.User.Status == UserAccountStatus.Active,
-                        operationCancellationToken);
-                if (!hasActiveAdministrator)
+                if (orderToCashOptions.Value.Features.DerivedReadiness)
                 {
-                    throw Conflict(
-                        "customer_approver_required",
-                        "This Customer needs an active organization administrator before an order can be sent for approval.");
+                    var evaluation = await operationalReadiness.EvaluateAsync(
+                        customer.Id, DateTime.UtcNow, operationCancellationToken);
+                    if (!evaluation.CanStageOrder)
+                        throw Conflict(
+                            "customer_not_stage_eligible",
+                            "Resolve the blocking Customer configuration before staging this PSeq Job.",
+                            evaluation.Blockers);
                 }
+                else
+                {
+                    var hasActiveAdministrator = await dbContext.OrganizationMemberships.AsNoTracking()
+                        .AnyAsync(
+                            membership => membership.OrganizationId == customer.Id
+                                && membership.IsActive
+                                && membership.IsOrganizationAdmin
+                                && membership.User != null
+                                && membership.User.IsActive
+                                && membership.User.Status == UserAccountStatus.Active,
+                            operationCancellationToken);
+                    if (!hasActiveAdministrator)
+                    {
+                        throw Conflict(
+                            "customer_approver_required",
+                            "This Customer needs an active organization administrator before an order can be sent for approval.");
+                    }
 
-                await LabServiceOrderingEligibility.RequireAsync(
-                    dbContext,
-                    customer.Id,
-                    DateTime.UtcNow,
-                    operationCancellationToken);
+                    await LabServiceOrderingEligibility.RequireAsync(
+                        dbContext,
+                        customer.Id,
+                        DateTime.UtcNow,
+                        operationCancellationToken);
+                }
 
                 var normalizedJobName = NormalizeJobName(request.CustomerReference);
                 await EnsureUniqueJobNameAsync(customer.Id, normalizedJobName, operationCancellationToken);
@@ -369,7 +417,9 @@ public sealed class PlatformLabServiceOrdersController(
     [HttpPost("{orderId:guid}/quotes")]
     public async Task<LabServiceOrderDto> IssueQuote(Guid orderId, [FromBody] IssueQuoteRequest request, CancellationToken cancellationToken)
     {
-        var actor = await requestContext.RequirePlatformAdminAsync(HttpContext, cancellationToken);
+        var actor = orderToCashOptions.Value.Features.BusinessRoles
+            ? (await orderToCashAuthorization.RequireAsync(HttpContext, BusinessRole.CommercialOperator, cancellationToken)).User
+            : await requestContext.RequirePlatformAdminAsync(HttpContext, cancellationToken);
         var key = idempotency.RequireKey(HttpContext);
         var scope = $"platform:lab-order:{orderId}:quote";
         var execution = await idempotency.ExecuteAsync(
@@ -387,6 +437,15 @@ public sealed class PlatformLabServiceOrdersController(
                     DateTime.UtcNow,
                     operationCancellationToken);
                 await RequireCustomerApproverAsync(order.OrganizationId, operationCancellationToken);
+                if (orderToCashOptions.Value.Features.DerivedReadiness)
+                {
+                    var readiness = await operationalReadiness.EvaluateAsync(order.OrganizationId,
+                        DateTime.UtcNow, operationCancellationToken);
+                    if (!readiness.CanIssueQuoteOrCommit)
+                        throw Conflict("operational_readiness_incomplete",
+                            "The Customer is not ready for quote issuance.",
+                            readiness.Blockers);
+                }
                 if (order.Status == LabServiceOrderStatus.SubmittedForQuote) Execute(order.BeginQuotePreparation);
                 if (order.Status != LabServiceOrderStatus.QuoteInPreparation && order.Status != LabServiceOrderStatus.QuoteIssued)
                     throw Conflict("quote_not_allowed", "A quote can be issued only while pricing this request.");
@@ -419,9 +478,45 @@ public sealed class PlatformLabServiceOrdersController(
                 var snapshots = request.Lines.Select(line => new QuoteLineSnapshot(line.CatalogItemId, catalog[line.CatalogItemId].ExternalItemId,
                     line.Description.Trim(), line.Quantity, line.UnitPrice)).ToList();
                 var subtotal = snapshots.Sum(line => decimal.Round(line.Quantity * line.UnitPrice, 2, MidpointRounding.AwayFromZero));
+                OrganizationCommercialProfile? billingProfile = null;
+                var tax = request.Tax;
+                if (orderToCashOptions.Value.Features.NativePSeqAccountsReceivable)
+                {
+                    billingProfile = await dbContext.OrganizationCommercialProfiles
+                        .SingleOrDefaultAsync(value => value.OrganizationId == order.OrganizationId,
+                            operationCancellationToken);
+                    if (billingProfile?.HasApprovedPSeqBillingConfiguration != true)
+                        throw Conflict("billing_configuration_incomplete",
+                            "Finance-approved billing and tax configuration is required before quote issuance.");
+                    tax = billingProfile.PSeqTaxDecision == PSeq.Operations.Commercial.OrderToCash.Domain.TaxDecision.Taxable
+                        ? decimal.Round(subtotal * (billingProfile.ApprovedTaxRate ?? 0), 2, MidpointRounding.AwayFromZero)
+                        : 0;
+                    if (decimal.Round(request.Tax, 2, MidpointRounding.AwayFromZero) != tax)
+                        throw Invalid("quote_tax_mismatch", $"The calculated POMS tax is {tax:0.00} USD.");
+                    if (!string.Equals(request.Currency, "USD", StringComparison.OrdinalIgnoreCase))
+                        throw Invalid("quote_currency_not_supported", "PSeq quotes support USD only.");
+                }
                 var revision = order.Quotes.Count == 0 ? 1 : order.Quotes.Max(item => item.Revision) + 1;
                 var quote = new LabServiceQuote(order.Id, revision, purpose, JsonSerializer.Serialize(snapshots, JsonOptions), subtotal,
-                    request.Tax, request.Currency, now, expiresAt);
+                    tax, request.Currency, now, expiresAt);
+                if (billingProfile is not null)
+                {
+                    quote.FreezePSeqBilling(JsonSerializer.Serialize(new
+                    {
+                        billingProfile.BillingContactName,
+                        billingProfile.BillingContactEmail,
+                        billingAddress = JsonSerializer.Deserialize<JsonElement>(billingProfile.BillingAddressJson!),
+                        billingProfile.PaymentTermsDays,
+                        taxDecision = billingProfile.PSeqTaxDecision,
+                        billingProfile.ApprovedTaxRate,
+                        billingProfile.TaxExemptionEvidenceReference,
+                        billingProfile.TaxApprovedByUserId,
+                        billingProfile.TaxApprovedAtUtc,
+                        billingProfile.PSeqBillingConfigurationVersion
+                    }, JsonOptions), billingProfile.PaymentTermsDays,
+                    billingProfile.PSeqTaxDecision!.Value.ToString(), billingProfile.ApprovedTaxRate,
+                    billingProfile.PSeqBillingConfigurationVersion);
+                }
                 var previous = order.Quotes.Where(item => item.Status is QuoteStatus.Issued or QuoteStatus.SyncPending).OrderByDescending(item => item.Revision).FirstOrDefault();
                 previous?.Supersede(quote.Id);
                 dbContext.LabServiceQuotes.Add(quote);
@@ -490,6 +585,9 @@ public sealed class PlatformLabServiceOrdersController(
         [FromForm] string analysisProfile, [FromForm] string pipelineVersion, [FromForm] string provenance,
         [FromForm] string qcStatus, CancellationToken cancellationToken)
     {
+        if (orderToCashOptions.Value.Features.GovernedPSeqResults)
+            throw Conflict("manual_result_upload_retired",
+                "PSeq final deliverables must be registered by the governed pipeline package workflow.");
         var actor = await requestContext.RequirePlatformAdminAsync(HttpContext, cancellationToken);
         var order = await ReadAsync(orderId, cancellationToken);
         var sample = order.Samples.SingleOrDefault(item => item.Id == sampleId) ?? throw Missing();
@@ -526,6 +624,9 @@ public sealed class PlatformLabServiceOrdersController(
     [HttpPost("{orderId:guid}/samples/{sampleId:guid}/results/{releaseId:guid}/release")]
     public async Task<LabServiceOrderDto> ReleaseResult(Guid orderId, Guid sampleId, Guid releaseId, [FromBody] VersionRequest request, CancellationToken cancellationToken)
     {
+        if (orderToCashOptions.Value.Features.GovernedPSeqResults)
+            throw Conflict("manual_result_release_retired",
+                "PSeq results must be released from an approved governed output package.");
         var actor = await requestContext.RequirePlatformAdminAsync(HttpContext, cancellationToken);
         var key = idempotency.RequireKey(HttpContext);
         var scope = $"platform:lab-order:{orderId}:sample:{sampleId}:result:{releaseId}:release";
@@ -646,7 +747,9 @@ public sealed class PlatformLabServiceOrdersController(
     [HttpPost("{orderId:guid}/complete")]
     public async Task<LabServiceOrderDto> Complete(Guid orderId, [FromBody] VersionRequest request, CancellationToken cancellationToken)
     {
-        var actor = await requestContext.RequirePlatformAdminAsync(HttpContext, cancellationToken);
+        var actor = orderToCashOptions.Value.Features.BusinessRoles
+            ? (await orderToCashAuthorization.RequireAsync(HttpContext, BusinessRole.CommercialOperator, cancellationToken)).User
+            : await requestContext.RequirePlatformAdminAsync(HttpContext, cancellationToken);
         var key = idempotency.RequireKey(HttpContext);
         var scope = $"platform:lab-order:{orderId}:complete";
         var execution = await idempotency.ExecuteAsync(
@@ -661,9 +764,15 @@ public sealed class PlatformLabServiceOrdersController(
                 var before = order.Status.ToString();
                 Execute(() => order.Complete(DateTime.UtcNow));
                 var acceptedQuote = order.Quotes.SingleOrDefault(item => item.Id == order.AcceptedQuoteId) ?? throw Conflict("accepted_quote_missing", "The accepted quote snapshot is unavailable.");
-                var invoice = new CommercialDocumentLink(OrderWorkflowTypes.LabService, order.Id, CommercialDocumentKind.Invoice, acceptedQuote.Total, acceptedQuote.Currency);
-                invoice.MarkReadyForManualAccounting(order.OrderNumber, DateTime.UtcNow);
-                dbContext.CommercialDocumentLinks.Add(invoice);
+                if (orderToCashOptions.Value.Features.NativePSeqAccountsReceivable)
+                    await nativeInvoices.IssueForCompletedOrderAsync(order, acceptedQuote,
+                        actor.Id, order.CompletedAt!.Value, operationCancellationToken);
+                else
+                {
+                    var invoice = new CommercialDocumentLink(OrderWorkflowTypes.LabService, order.Id, CommercialDocumentKind.Invoice, acceptedQuote.Total, acceptedQuote.Currency);
+                    invoice.MarkReadyForManualAccounting(order.OrderNumber, DateTime.UtcNow);
+                    dbContext.CommercialDocumentLinks.Add(invoice);
+                }
                 Event(order, before, order.Status.ToString(), actor.Id);
                 var actingAdministratorId = await ResolveActingAdministratorAsync(order, operationCancellationToken);
                 if (actingAdministratorId.HasValue)
@@ -901,6 +1010,8 @@ public sealed class PlatformLabServiceOrdersController(
     }
     private static OrderManagementException Invalid(string code, string message) => new(code, message);
     private static OrderManagementException Conflict(string code, string message) => new(code, message, StatusCodes.Status409Conflict);
+    private static OrderManagementException Conflict(string code, string message, object details) =>
+        new(code, message, StatusCodes.Status409Conflict, details);
     private static OrderManagementException Missing() => new("lab_order_not_found", "The requested laboratory record was not found.", StatusCodes.Status404NotFound);
     private static IReadOnlyList<Guid> ResultFileIds(string manifestJson)
     {

@@ -1,34 +1,45 @@
 # Results and billing
 
-Scientific readiness and commercial release are separate. The portal always shows whether a result is still being produced, ready but commercially held, or available to download.
+Scientific readiness and Commercial release are separate. PSeq result release
+is never gated by invoice balance, payment, or credit.
 
 ## Follow sample progress
 
 Open a laboratory job to see each sample’s current state. Receipt, accessioning, laboratory work, data processing, result readiness, and completion are recorded independently so one delayed sample does not hide progress on the others.
 
-## Understand the release rule
+## Understand the PSeq release rule
 
-- **Approved Customer credit:** Net 30 terms apply. Phaeno may release a ready sample’s files after the required commercial source record is created, even while other samples remain in progress.
-- **No approved Customer credit:** the portal may show that results are ready, but files remain on payment hold. The current portal does not provide payment confirmation or an operator override; contact Phaeno before relying on a delivery date.
+- A provider-registered final-output package is checked for complete SHA-256
+  checksums and clean malware scans.
+- A Scientific Reviewer pins and approves that exact package and version.
+- A Result Release Manager decides when the eligible package becomes visible to
+  the Customer. This may happen per sample while other samples remain in work.
+- A correction is a new package and release version. Withdrawal preserves the
+  prior package and audit history.
 
-Credit status is maintained by authorized Phaeno users and is not changed from the Customer workspace.
+An invoice may be open, partially paid, paid, adjusted, or overdue without
+changing scientific approval or result-release eligibility.
 
-## Download released results
+## Review governed result status
 
-1. Open the laboratory job and select the sample.
-2. Confirm that the result is marked available rather than payment-required or still under commercial review.
-3. Review the release details and download the available files.
+Open **Order-to-cash** to review the immutable package version, pipeline version,
+sample scope, artifact count, and current approval/release state. The current
+additive slice does not expose governed result bytes or send a result-available
+email. Phaeno must use an approved delivery path until those sensitive-data
+controls are separately activated.
 
-Use **Download package** to retrieve every file in one ZIP, or download an individual file. The portal records a download only after the complete response finishes. A transfer that is partial, cancelled, failed, or timed out remains **Not downloaded** and does not remove the release's conditional grace protection. While a transfer is active, the page shows **Download in progress** and refreshes the authoritative organization-level state after completion. One completed download by any authorized member satisfies that file for the organization.
+Retention warning, cutoff, and grace events are recorded as evidence. The
+current lifecycle raises owned attention when deletion becomes due; it does not
+delete result bytes automatically.
 
-Each release is immutable and linked to its scientific and quality facts. A corrected result is delivered as a new release; it does not replace the audit history of an earlier release.
+## Understand PSeq invoices
 
-For a newly released result, the job's **Data & results** tab shows the retention schedule frozen at release. **Standard deletion** is the normal deletion time. **Conditional grace through** is used only when at least one file in that release remains undownloaded at the standard deadline; in that case the whole release receives the stated grace period. The displayed date and time include your browser's local time-zone label. Earlier releases created before retention snapshots were introduced do not show a schedule; contact Phaeno before relying on a deletion date for one of those releases.
+POMS freezes the approved billing contact/address, payment terms, tax decision,
+and rate or exemption evidence into the issued PSeq quote. Job completion issues
+a numbered USD invoice and immutable PDF from the accepted quote. Open
+**Order-to-cash** to review the invoice status, total, balance, issue/due dates,
+and download the PDF.
 
-Downloads require an active membership in the organization that owns the job and are audited. The Customer view shows whether the organization completed each file, but it does not expose which member downloaded it.
-
-## Understand billing records
-
-POMS keeps the immutable quote and the commercial source record associated with completed work. Phaeno Finance uses a manual accounting report outside the Customer workspace to prepare journal entries and invoices. Payment-card information is not collected by the portal.
-
-QuickBooks Online integration is currently deferred. The Customer workspace does not display a hosted payment page or accept payment. If a ready result remains on payment hold, contact Phaeno and provide the job number.
+Phaeno Finance records receipts and allocations in POMS. QuickBooks Online,
+online ACH/card collection, and a hosted payment page are deferred. Never send
+payment-card or bank-login credentials through Portal notes or support messages.

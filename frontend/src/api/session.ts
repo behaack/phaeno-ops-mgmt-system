@@ -78,6 +78,11 @@ export type SessionCapabilities = {
   canManageDataAssembly: boolean
   canManageOrderIntegrations: boolean
   canViewOrderAudit: boolean
+  canOperateCommercialWork: boolean
+  canReleasePSeqResults: boolean
+  canOperateBilling: boolean
+  canOperateCash: boolean
+  canReconcileCash: boolean
 }
 
 export type SessionResponse = {

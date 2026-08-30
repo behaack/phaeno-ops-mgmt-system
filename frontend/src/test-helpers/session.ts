@@ -47,4 +47,9 @@ export const noSessionCapabilities: SessionCapabilities = {
   canManageDataAssembly: false,
   canManageOrderIntegrations: false,
   canViewOrderAudit: false,
+  canOperateCommercialWork: false,
+  canReleasePSeqResults: false,
+  canOperateBilling: false,
+  canOperateCash: false,
+  canReconcileCash: false,
 }

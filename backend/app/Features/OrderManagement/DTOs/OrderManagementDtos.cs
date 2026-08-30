@@ -47,7 +47,12 @@ public sealed record LabServiceOrderingEligibilityDto(
     bool CanOrder,
     string? BlockingReason);
 
-public sealed record EligibleCustomerOrganizationDto(Guid Id, string Name);
+public sealed record EligibleCustomerOrganizationDto(
+    Guid Id,
+    string Name,
+    bool CanStageOrder = true,
+    bool CanIssueQuoteOrCommit = true,
+    IReadOnlyList<PhaenoPortal.App.Features.OrderToCash.OperationalReadinessBlocker>? Blockers = null);
 
 public sealed record OrderTimelineDto(
     Guid Id,

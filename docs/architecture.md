@@ -30,7 +30,8 @@ The backend targets .NET 10 as a modular monolith:
 
 - `modules/PSeq.Operations.Commercial/Accounts`: users, organizations,
   memberships, invitations, pure authorization policy, invitation-token logic,
-  and the invitation-delivery port.
+  business-role assignments/intents, durable invitation-delivery attempts and
+  provider events, and the invitation-delivery port.
 - `modules/PSeq.Operations.Commercial/Crm`: provider-neutral first-party CRM
   Companies, Contacts and effective-dated relationships, Leads, Opportunities,
   pipelines/stages, Activities, Tasks, administration records, and controlled
@@ -47,6 +48,11 @@ The backend targets .NET 10 as a modular monolith:
   immutable request revisions and quotes, external download audit, commercial
   workflow/accounting-source/notification records, plus a dormant provider-neutral
   accounting adapter seam retained for future scope.
+- `modules/PSeq.Operations.Commercial/OrderToCash`: immutable governed PSeq
+  result packages and artifacts, delivery/retention evidence, native USD
+  invoices, adjustments, receipts, allocations, import and reconciliation
+  batches, attention records, dual-control observations, and the dormant
+  provider-neutral payment-processor seam.
 - `app/Features/Accounts`: HTTP endpoints/contracts, authenticated-actor lookup,
   EF-backed orchestration, Clerk/Postmark adapters, and bootstrap composition.
 - `app/Features/Crm`: platform-authorized CRM HTTP contracts, EF mapping,
@@ -61,6 +67,11 @@ The backend targets .NET 10 as a modular monolith:
 - `app/Features/OrderManagement`: HTTP/EF orchestration, manual journal-entry
   reporting, Postmark notification dispatch, plus the Commercial-owned customer lab-service,
   data-assembly, operational-file, and release records.
+- `app/Features/OrderToCash`: independent feature flags, derived Customer
+  readiness, business-action authorization, invitation dispatch/webhooks,
+  governed pipeline registration and result release, native PSeq accounts
+  receivable, invoice-PDF generation, attention projection, retention evidence,
+  and the platform-admin historical-migration preview.
 - `modules/PSeq.Operations.Commercial/LabOperations`: the Commercial-owned v1
   outbound Lab Operations contract. Its transport-neutral command,
   acknowledgment, projection, event-envelope, and provider-port types do not
@@ -121,9 +132,13 @@ grants. `Distributor` is not a separate product term.
 
 Phaeno laboratory permissions are additive role assignments stored in
 `lab_ops`: Operator, Supervisor, Protocol Administrator, Scientific Reviewer,
-and Lab Operations Administrator. Platform administrators retain bootstrap
-access. Customers and Partners never receive direct Lab workspace access;
-their APIs read only Commercial-owned projections.
+and Lab Operations Administrator. When the `BusinessRoles` flag is enabled,
+platform administration does not imply Lab or business-action authority;
+Commercial Operator, Result Release Manager, Billing Operator, Cash Operator,
+and Cash Reconciler are separately assigned. The default-off flag preserves the
+legacy administrator bootstrap only during migration. Customers and Partners
+never receive direct Lab workspace access; their APIs read only
+Commercial-owned projections.
 
 The first organization-data-provisioning slice includes a minimal Phaeno-only
 source-sample registry. The registry holds internal sample metadata,
@@ -152,21 +167,34 @@ resets, transaction rollback, and isolated temporary managed storage. Curated
 manifests are stored as `jsonb`; publication therefore compares manifest JSON
 semantically and separately verifies the deterministic SHA-256 checksum.
 
-## Order management and manual accounting
+## Order management, governed PSeq results, and accounts receivable
 
 Phaeno Portal is the operational source of truth for Customer laboratory work,
 Partner reagent fulfillment, and Partner data assembly. There is no connected
-ERP, accounting provider, or third-party LIMS in the implemented architecture.
-QuickBooks Online is deferred. POMS owns its manual commercial catalog, quotes,
-credit rules, and stable invoice-source records; Finance uses a Phaeno-only CSV
-to prepare manual journal entries and invoices outside POMS.
+ERP, payment processor, accounting provider, or third-party LIMS in the
+implemented architecture. QuickBooks Online is deferred. POMS owns the PSeq Lab
+Service quote tax/billing snapshot, numbered invoice and immutable PDF,
+receipts, allocations, adjustments, reconciliation, and aging. Partner Kit and
+Partner Data Assembly continue to use stable manual accounting-source records
+and the existing Finance CSV.
 
 Order aggregates retain immutable input, quote, price, profile, result/output,
-shipment, and commercial snapshots. Operational state, accounting-source state,
-payment state, and file-release state remain separate. Notification records are
-dispatched by a hosted service and retried without recreating the local order.
-The dormant QuickBooks types and persisted compatibility names do not activate
-the provider, worker, webhook, or retry path.
+shipment, billing, tax, and commercial snapshots. PSeq output manifests are
+registered idempotently by an authenticated provider-neutral pipeline adapter;
+large bytes do not pass through the API. Checksummed final artifacts must scan
+clean before scientific approval pins the package, and a Result Release Manager
+controls Customer-visible release independently of payment. Native PSeq
+invoices issue idempotently from the accepted frozen quote at job completion.
+Operational, scientific, package, invoice, payment, reconciliation, retention,
+and release state remain separate. The dormant QuickBooks and payment-processor
+types do not activate a provider, worker, webhook, or payment path.
+
+Invitation sends are transactional queued records claimed by a hosted
+dispatcher. Postmark delivery and bounce webhooks use configured credentials,
+deduplicate provider events, and never alter invitation access state. Result
+retention processing records warning, cutoff, and grace evidence and creates
+owned attention when deletion is due; physical result-byte delivery and
+deletion remain outside the currently authorized implementation.
 
 Curated-data and order-management file ports now adapt to the shared
 `IFileStorage` contract. Development uses local storage, and the production
@@ -246,27 +274,25 @@ Generated `dist`, `.astro`, and `node_modules` content is not canonical source.
   `lab_ops`; Website intake entities target `website`; no default schema is
   used.
 - EF migration history: `public.__ef_migrations_history`.
-- Migration checkpoint: the disposable Development database was rebuilt on
-  2026-07-16 from `20260716220428_InitialPSeqOperations`, renamed to
-  `phaeno_ops`, and extended by `20260716223048_AddLabOperationsFoundation`,
-  `20260716225818_AddLabProviderCommandReceipts`,
-  `20260716234233_CompleteLabOperations`,
-  `20260716235343_AddLabQcProjection`, and
-  `20260717000026_EnforceLabLibraryLineage`; `AddWebsiteApi` is generated but
-  has not been applied as part of the code-consolidation work. The model
-  contains no `portal` schema.
+- Migration checkpoint: the configured local Development database contains the
+  current migration chain through `20260829205029_ClosePSeqOrderToCashGaps`.
+  That last migration is additive and has not been applied to a shared
+  environment. The model contains no `portal` schema.
 - External identity: `Clerk` configuration.
-- Invitation delivery: Postmark when configured; logging sender otherwise.
+- Invitation delivery: the `OrderToCash:Features:InvitationDelivery` flag
+  enables queued Postmark attempts, bounded retry, and authenticated webhook
+  processing. Logging delivery is Development/Test only.
 - Data provisioning: `DataProvisioning` storage root, size limit, environment
   approved-file-kind map, synthetic-fixture policy, and scanner mode. Production
   defaults block synthetic content and configure no approved scientific kinds
   or trusted scanner.
 - Order management: `OrderManagement` storage root, file-size limit,
   approved-file-kind map, and scanner mode.
-- Commercial accounting: no runtime provider configuration is active. Phaeno
-  administrators maintain the POMS catalog and Finance downloads the manual
-  journal-entry source report. QuickBooks settings and adapter types are dormant
-  compatibility seams only.
+- PSeq order-to-cash: six independent default-off feature flags plus invitation
+  retry/webhook, pipeline key, result-lifecycle, and dual-control options. POMS
+  owns native PSeq AR; no runtime accounting or payment provider is composed.
+  Partner Finance keeps the manual source report. QuickBooks and payment adapter
+  types are dormant compatibility seams only.
 - Public Website API: `WebsiteApi`, `GoogleAuthSettings`,
   `EmailServiceSettings`, `WebCrawlerSettings`, `WebSearchSettings`, and
   `ChronJobs:IndexWebsite`; production cutover also requires the public

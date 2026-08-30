@@ -14,7 +14,7 @@ An authorized Phaeno order-pricing user can begin the pricing profile when the C
 
 If the designated item is missing, inactive, or not priced per specimen, quote issuance is paused until **Order configuration** is corrected. POMS validates the item identity, unit, and committed quantity again on the server.
 
-POMS sends no Customer notice while a Phaeno-initiated Job remains **Quote in preparation**. Issuing or revising the quote rechecks ordering eligibility and the approver list, makes the quote available immediately, moves the Job to **Quote issued**, and notifies every active Customer administrator. The Customer can approve it; Phaeno cannot approve on the Customer's behalf. The accepting administrator becomes the Job's acting Customer contact for ordinary later notices. High-impact events, including cancellation by Phaeno and result release or payment hold, continue to notify all active Customer administrators.
+POMS sends no Customer notice while a Phaeno-initiated Job remains **Quote in preparation**. Issuing or revising the quote rechecks ordering eligibility and the approver list, makes the quote available immediately, moves the Job to **Quote issued**, and notifies every active Customer administrator. The Customer can approve it; Phaeno cannot approve on the Customer's behalf. The accepting administrator becomes the Job's acting Customer contact for ordinary later notices. High-impact cancellation notices continue to notify all active Customer administrators. Governed PSeq release currently records notification-queued evidence but does not send a result-available email.
 
 ## Review the request
 
@@ -39,4 +39,7 @@ Physical samples must not arrive before quote acceptance and exact roster finali
 
 After acceptance, Order Ops continues to own Customer communication, Commercial holds, cancellation review, billing, files, and publication. Open the linked work from the order or from **Lab operations** > **Receipt & accession**. Lab Ops owns return-kit preparation, shipment identification, receipt, accession, physical lineage, controlled execution, exceptions, and scientific approval.
 
-The Lab milestone **Ready for release** means the scientific gate passed. It does not upload, scan, attach, or publish a result. Order Ops must still apply the file, accounting-source, and credit release gates. Without approved credit, files remain held because manual payment confirmation is not implemented.
+The Lab milestone **Ready for release** means the scientific gate passed. It
+does not upload, scan, attach, or publish a result. Order Ops must still pin the
+approved package, require clean scans, and apply the Result Release Manager
+gate. PSeq release is independent of credit, invoice balance, and payment.

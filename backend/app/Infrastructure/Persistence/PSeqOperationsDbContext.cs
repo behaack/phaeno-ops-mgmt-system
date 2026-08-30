@@ -7,6 +7,7 @@ using PSeq.Operations.Commercial.DataProvisioning.Domain;
 using PSeq.Operations.Commercial.FileManagement.Domain;
 using PSeq.Operations.Commercial.LabOperations.Domain;
 using PSeq.Operations.Commercial.OrderManagement.Domain;
+using PSeq.Operations.Commercial.OrderToCash.Domain;
 using PSeq.Operations.Commercial.Relationships.Domain;
 using PSeq.Operations.Laboratory;
 using PSeq.Operations.Laboratory.Domain;
@@ -15,6 +16,7 @@ using PhaenoPortal.App.Features.Crm;
 using PhaenoPortal.App.Features.FileManagement;
 using PhaenoPortal.App.Features.LabOperations;
 using PhaenoPortal.App.Features.OrderManagement;
+using PhaenoPortal.App.Features.OrderToCash;
 using PhaenoPortal.App.Features.OrderManagement.Domain;
 using PhaenoPortal.App.Features.RelationshipManagement;
 using PhaenoPortal.App.Features.Website;
@@ -49,6 +51,10 @@ public sealed class PSeqOperationsDbContext(
     /// Invitations to create or reactivate organization memberships.
     /// </summary>
     public DbSet<OrganizationInvitation> OrganizationInvitations { get; set; }
+    public DbSet<InvitationDeliveryAttempt> InvitationDeliveryAttempts { get; set; }
+    public DbSet<InvitationProviderEvent> InvitationProviderEvents { get; set; }
+    public DbSet<BusinessRoleAssignment> BusinessRoleAssignments { get; set; }
+    public DbSet<BusinessRoleInvitationIntent> BusinessRoleInvitationIntents { get; set; }
 
     /// <summary>
     /// Append-only audit events for persisted entity changes.
@@ -118,6 +124,20 @@ public sealed class PSeqOperationsDbContext(
     public DbSet<LabSample> LabSamples { get; set; }
     public DbSet<LabServiceQuote> LabServiceQuotes { get; set; }
     public DbSet<LabResultRelease> LabResultReleases { get; set; }
+    public DbSet<ResultOutputPackage> ResultOutputPackages { get; set; }
+    public DbSet<ResultArtifact> ResultArtifacts { get; set; }
+    public DbSet<ResultDeliveryEvidence> ResultDeliveryEvidence { get; set; }
+    public DbSet<Invoice> Invoices { get; set; }
+    public DbSet<InvoiceLine> InvoiceLines { get; set; }
+    public DbSet<InvoiceAdjustment> InvoiceAdjustments { get; set; }
+    public DbSet<InvoiceDocument> InvoiceDocuments { get; set; }
+    public DbSet<PaymentReceipt> PaymentReceipts { get; set; }
+    public DbSet<PaymentAllocation> PaymentAllocations { get; set; }
+    public DbSet<PaymentImportBatch> PaymentImportBatches { get; set; }
+    public DbSet<ReconciliationBatch> ReconciliationBatches { get; set; }
+    public DbSet<ExternalPaymentLink> ExternalPaymentLinks { get; set; }
+    public DbSet<AttentionItem> AttentionItems { get; set; }
+    public DbSet<DualControlObservation> DualControlObservations { get; set; }
     public DbSet<PartnerShippingAddress> PartnerShippingAddresses { get; set; }
     public DbSet<PartnerReagentOrder> PartnerReagentOrders { get; set; }
     public DbSet<PartnerReagentOrderLine> PartnerReagentOrderLines { get; set; }
@@ -201,6 +221,7 @@ public sealed class PSeqOperationsDbContext(
                 .HasConversion<string>()
                 .HasMaxLength(50);
             entity.Property(e => e.PortalReadinessNote).HasMaxLength(2000);
+            entity.Property(e => e.IsPortalReadinessManuallyBlocked).IsRequired();
             entity.Property(e => e.IsActive).IsRequired();
             entity.Property(e => e.CreatedAt).IsRequired();
             entity.Property(e => e.CreatedByUserId);
@@ -334,6 +355,7 @@ public sealed class PSeqOperationsDbContext(
         DataProvisioningModelConfiguration.Configure(modelBuilder);
         FileManagementModelConfiguration.Configure(modelBuilder);
         OrderManagementModelConfiguration.Configure(modelBuilder, this.persistenceOptions.CommercialSchema);
+        OrderToCashModelConfiguration.Configure(modelBuilder, this.persistenceOptions.CommercialSchema);
         CommercialLabOperationsModelConfiguration.Configure(modelBuilder, this.persistenceOptions.CommercialSchema);
         CrmModelConfiguration.Configure(modelBuilder);
         RelationshipManagementModelConfiguration.Configure(modelBuilder);

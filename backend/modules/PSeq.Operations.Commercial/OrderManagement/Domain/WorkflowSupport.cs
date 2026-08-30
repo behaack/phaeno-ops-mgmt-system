@@ -106,4 +106,5 @@ public static class OrderWorkflowTypes
     public const string LabService = "LabService";
     public const string Reagent = "Reagent";
     public const string DataAssembly = "DataAssembly";
+    public const string PSeqResultPackage = "PSeqResultPackage";
 }

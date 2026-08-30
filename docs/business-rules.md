@@ -17,7 +17,16 @@
 - Local development may expose a newly rotated invitation link to an authorized
   account administrator for synthetic invitee testing. That action is audited
   without storing the raw link and is not registered in Production.
-- Email delivery uses Postmark when configured and a logging implementation for local/unconfigured environments.
+- When `InvitationDelivery` is enabled, invitation creation and resend append a
+  queued delivery attempt in the same transaction. A hosted dispatcher applies
+  bounded retry; access state remains independent of delivery state.
+- Postmark delivery and bounce events require configured webhook credentials,
+  are deduplicated by provider-event identity, and may arrive more than once or
+  out of order. A hard bounce requires revocation and a new invitation to the
+  corrected address; it cannot be resent in place.
+- Logging delivery is limited to Development and Test. Production readiness
+  rejects missing or invalid Postmark, public Portal URL, sender, or webhook
+  configuration when durable invitation delivery is enabled.
 - Invite acceptance must connect the external Clerk identity to the intended internal user and membership without bypassing tenant checks. The invited email must match the authenticated Clerk user's verified primary email; when Clerk's session token omits email claims, the API verifies that primary email directly with Clerk before changing Portal access.
 
 ## Customer relationship management
@@ -351,20 +360,38 @@ Confirmed Prospect rules:
   user issues the immutable POMS quote. The default quote-validity period is 30
   days and can be changed in Phaeno configuration; each issued quote snapshots
   its expiration.
-- QuickBooks Online integration is deferred. POMS owns the manual commercial
-  catalog, quotes, workflow facts, and stable accounting source records. At the
-  implemented billing boundary for a completed laboratory job, approved
-  assembly output, or reagent shipment, POMS exposes a Phaeno-only date-filtered
-  CSV for manual journal-entry preparation. Finance selects general-ledger
-  accounts, tax treatment, posting dates, invoices, and adjustments outside
-  POMS; downloading a report never marks a source row as posted.
-- Customer laboratory credit and Partner assembly credit are separate audited
-  organization settings. Approved credit uses Net 30 release. Without approved
-  credit, completed result/output downloads remain on payment hold. Manual
-  payment confirmation and release are a separately approved future workflow.
-- Scientific completion and commercial release are separate. A ready file is
-  downloadable only after its scan, checksum, provenance/QC, membership,
-  accounting-source, credit/payment, and release rules pass.
+- PSeq operational readiness is derived from the active Customer relationship,
+  deliberate manual block, active Customer administrator, ready PSeq
+  entitlement and offering, order/sample/shipping configuration, and approved
+  billing/tax configuration. Staff may stage an internal order before an
+  administrator exists, but quote issuance and Customer commitment require all
+  blockers to be cleared. Historical non-Blocked readiness values are
+  informational only.
+- PSeq business actions use explicit Commercial Operator, Result Release
+  Manager, Billing Operator, Cash Operator, and Cash Reconciler assignments when
+  role enforcement is enabled. Platform administration manages configuration
+  and assignments but grants none of those actions automatically.
+- Protocol author and activator, scientific contributor and reviewer, and cash
+  operator and reconciliation approver must be different people for the same
+  governed work. Dual control starts in audit-only mode and may be enforced only
+  after the staffing check is approved.
+- POMS owns PSeq Lab Service accounts receivable. A Finance-approved effective
+  Taxable, Exempt, or NonTaxable decision, billing address/contact, and payment
+  terms are frozen into each issued quote. Completion issues one idempotent USD
+  invoice and immutable PDF from the accepted quote. POMS records USD receipts,
+  preview/confirm imports, partial and many-to-many allocations, unapplied cash,
+  reversals, immutable adjustments, reconciliation, and aging.
+- QuickBooks Online, online ACH/card collection, and the general-ledger adapter
+  remain deferred. PSeq legacy manual accounting rows remain visible for Finance
+  review but are not synthesized into invoices or paid state. Partner Kit and
+  Partner Data Assembly retain their existing manual accounting-source and
+  credit/payment-hold rules.
+- PSeq scientific approval and Customer-visible release are separate. A
+  pipeline-registered immutable final-output package must have complete
+  checksums and clean malware scans; scientific approval pins that package and
+  a Result Release Manager performs release. PSeq release is never gated by
+  credit, invoice balance, or payment. Corrections create a new package/version;
+  withdrawal preserves the prior history.
 - Released result/output packages use a versioned Phaeno-managed retention
   policy. The global defaults are 30 exact 24-hour days from release, one
   undownloaded-package warning 5 days before the standard deadline, and a

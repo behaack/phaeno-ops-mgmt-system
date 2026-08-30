@@ -14,10 +14,10 @@ PostgreSQL system schemas (`pg_catalog`, `information_schema`, and temporary/toa
 | Schema | Entities | Fields | Foreign keys |
 | --- | ---: | ---: | ---: |
 | `public` | 1 | 2 | 0 |
-| `commercial_ops` | 85 | 1347 | 155 |
-| `lab_ops` | 27 | 308 | 38 |
+| `commercial_ops` | 103 | 1599 | 175 |
+| `lab_ops` | 27 | 310 | 38 |
 | `website` | 2 | 18 | 0 |
-| **Total** | **115** | **1675** | **193** |
+| **Total** | **133** | **1929** | **213** |
 
 ## `public` schema
 
@@ -124,6 +124,69 @@ erDiagram
     users ||--o{ organization_memberships : "user_id"
 ```
 
+### Business roles and invitation delivery
+
+```mermaid
+erDiagram
+    business_role_assignments {
+        uuid id PK "not null"
+        uuid user_id FK,UK "not null"
+        varchar_50 role UK "not null"
+        boolean is_active "not null"
+        timestamptz created_at "not null"
+        uuid created_by_user_id "nullable"
+        timestamptz updated_at "not null"
+        uuid updated_by_user_id "nullable"
+        bigint version "not null"
+    }
+    business_role_invitation_intents {
+        uuid id PK "not null"
+        uuid organization_invitation_id FK,UK "not null"
+        varchar_50 role UK "not null"
+        timestamptz created_at "not null"
+        uuid created_by_user_id "nullable"
+        timestamptz updated_at "not null"
+        uuid updated_by_user_id "nullable"
+        bigint version "not null"
+    }
+    invitation_delivery_attempts {
+        uuid id PK "not null"
+        uuid organization_invitation_id FK,UK "not null"
+        uuid organization_id FK "not null"
+        varchar_255 recipient_email "not null"
+        varchar_8000 protected_payload "not null"
+        varchar_50 state "not null"
+        integer attempt_count "not null"
+        integer maximum_attempts "not null"
+        timestamptz next_attempt_at_utc "not null"
+        timestamptz lease_expires_at_utc "nullable"
+        varchar_255 provider_message_id UK "nullable"
+        varchar_2000 last_error "nullable"
+        timestamptz delivered_at_utc "nullable"
+        timestamptz bounced_at_utc "nullable"
+        varchar_100 bounce_type "nullable"
+        timestamptz accepted_at_utc "nullable"
+        timestamptz created_at "not null"
+        uuid created_by_user_id "nullable"
+        timestamptz updated_at "not null"
+        uuid updated_by_user_id "nullable"
+        bigint version "not null"
+    }
+    invitation_provider_events {
+        uuid id PK "not null"
+        varchar_500 provider_event_identity UK "not null"
+        varchar_100 event_type "not null"
+        varchar_255 provider_message_id "nullable"
+        varchar_64 payload_sha256 "not null"
+        timestamptz provider_occurred_at_utc "not null"
+        timestamptz received_at_utc "not null"
+    }
+    users ||--o{ business_role_assignments : "user_id"
+    organization_invitations ||--o{ business_role_invitation_intents : "organization_invitation_id"
+    organization_invitations ||--o{ invitation_delivery_attempts : "organization_invitation_id"
+    organizations ||--o{ invitation_delivery_attempts : "organization_id"
+```
+
 ### Customer relationship management
 
 ```mermaid
@@ -142,6 +205,7 @@ erDiagram
         integer employee_count "nullable"
         varchar_150 industry "nullable"
         boolean is_active "not null"
+        boolean is_portal_readiness_manually_blocked "not null"
         varchar_50 lifecycle_state "not null"
         uuid merged_into_company_id FK "nullable"
         varchar_255 name "not null"
@@ -584,15 +648,26 @@ erDiagram
         bigint version "not null"
     }
     organization_commercial_profiles {
+        numeric_9_6 approved_tax_rate "nullable"
         uuid id PK "not null"
         boolean assembly_credit_approved "not null"
+        jsonb billing_address_json "nullable"
+        varchar_255 billing_contact_email "nullable"
+        varchar_255 billing_contact_name "nullable"
         timestamptz created_at "not null"
         uuid created_by_user_id "nullable"
         timestamptz credit_reviewed_at "nullable"
         uuid credit_reviewed_by_user_id "nullable"
         boolean lab_credit_approved "not null"
         uuid organization_id FK,UK "not null"
+        integer p_seq_billing_configuration_version "not null"
+        varchar_100 p_seq_tax_decision "nullable"
+        integer payment_terms_days "not null, default 30"
         varchar_255 qbo_customer_id UK "nullable"
+        varchar_4000 tax_approval_notes "nullable"
+        timestamptz tax_approved_at_utc "nullable"
+        uuid tax_approved_by_user_id "nullable"
+        varchar_2000 tax_exemption_evidence_reference "nullable"
         timestamptz updated_at "not null"
         uuid updated_by_user_id "nullable"
         bigint version "not null"
@@ -663,6 +738,257 @@ erDiagram
     qbo_catalog_items ||--o{ analysis_definitions : "qbo_catalog_item_id"
     portal_integration_requests o|--o{ organization_service_entitlements : "source_request_id"
     portal_integration_requests ||--o{ portal_integration_request_services : "portal_integration_request_id"
+```
+
+### Order-to-cash controls and attention
+
+```mermaid
+erDiagram
+    attention_items {
+        uuid id PK "not null"
+        varchar_100 category UK "not null"
+        varchar_100 source_type UK "not null"
+        uuid source_id UK "not null"
+        uuid organization_id "nullable"
+        varchar_100 owner_role "not null"
+        varchar_50 status "not null"
+        integer attempt_count "not null"
+        varchar_1000 next_action "not null"
+        varchar_2000 last_error "nullable"
+        timestamptz first_observed_at_utc "not null"
+        timestamptz last_observed_at_utc "not null"
+        timestamptz resolved_at_utc "nullable"
+        uuid resolved_by_user_id "nullable"
+        varchar_2000 resolution "nullable"
+        timestamptz created_at "not null"
+        uuid created_by_user_id "nullable"
+        timestamptz updated_at "not null"
+        uuid updated_by_user_id "nullable"
+        bigint version "not null"
+    }
+    dual_control_observations {
+        uuid id PK "not null"
+        varchar_100 control_code UK "not null"
+        varchar_100 workflow_type UK "not null"
+        uuid workflow_id UK "not null"
+        uuid actor_user_id "not null"
+        jsonb conflicting_actor_ids_json "not null"
+        varchar_50 mode "not null"
+        boolean was_blocked "not null"
+        timestamptz observed_at_utc UK "not null"
+    }
+    external_payment_links {
+        uuid id PK "not null"
+        varchar_100 provider_key UK "not null"
+        varchar_100 external_object_type UK "not null"
+        varchar_255 external_object_id UK "not null"
+        uuid local_record_id "not null"
+        timestamptz linked_at_utc "not null"
+    }
+```
+
+### PSeq accounts receivable
+
+```mermaid
+erDiagram
+    invoices {
+        uuid id PK "not null"
+        uuid organization_id FK "not null"
+        uuid lab_service_order_id FK,UK "not null"
+        uuid accepted_quote_id FK,UK "not null"
+        varchar_100 invoice_number UK "not null"
+        varchar_50 status "not null"
+        varchar_3 currency "not null"
+        numeric_18_2 subtotal "not null"
+        numeric_18_2 tax "not null"
+        numeric_18_2 adjustment_total "not null"
+        numeric_18_2 total "not null"
+        numeric_18_2 balance "not null"
+        jsonb billing_snapshot_json "not null"
+        timestamptz issued_at_utc "not null"
+        timestamptz due_at_utc "not null"
+        timestamptz closed_at_utc "nullable"
+        timestamptz created_at "not null"
+        uuid created_by_user_id "nullable"
+        timestamptz updated_at "not null"
+        uuid updated_by_user_id "nullable"
+        bigint version "not null"
+    }
+    invoice_adjustments {
+        uuid id PK "not null"
+        uuid invoice_id FK "not null"
+        varchar_50 kind "not null"
+        numeric_18_2 amount "not null"
+        varchar_2000 reason "not null"
+        uuid recorded_by_user_id "not null"
+        timestamptz recorded_at_utc "not null"
+    }
+    invoice_documents {
+        uuid id PK "not null"
+        uuid invoice_id FK,UK "not null"
+        varchar_2000 storage_object_key UK "not null"
+        varchar_64 sha256 "not null"
+        bigint size_bytes "not null"
+        timestamptz generated_at_utc "not null"
+    }
+    invoice_lines {
+        uuid id PK "not null"
+        uuid invoice_id FK,UK "not null"
+        integer line_number UK "not null"
+        varchar_1000 description "not null"
+        numeric_18_6 quantity "not null"
+        numeric_18_2 unit_price "not null"
+        numeric_18_2 line_total "not null"
+        jsonb source_snapshot_json "not null"
+    }
+    payment_import_batches {
+        uuid id PK "not null"
+        varchar_255 source UK "not null"
+        varchar_64 file_sha256 UK "not null"
+        jsonb preview_rows_json "not null"
+        jsonb validation_errors_json "not null"
+        integer valid_row_count "not null"
+        timestamptz expires_at_utc "not null"
+        timestamptz confirmed_at_utc "nullable"
+        uuid created_by_cash_operator_user_id "not null"
+        timestamptz created_at "not null"
+        uuid created_by_user_id "nullable"
+        timestamptz updated_at "not null"
+        uuid updated_by_user_id "nullable"
+        bigint version "not null"
+    }
+    payment_receipts {
+        uuid id PK "not null"
+        uuid organization_id FK "not null"
+        varchar_100 receipt_number UK "not null"
+        varchar_500 payer "not null"
+        numeric_18_2 amount "not null"
+        numeric_18_2 unapplied_amount "not null"
+        varchar_3 currency "not null"
+        timestamptz received_at_utc "not null"
+        varchar_100 method "not null"
+        varchar_255 bank_reference "not null"
+        varchar_2000 evidence_reference "nullable"
+        varchar_255 external_id UK "not null"
+        varchar_2000 memo "nullable"
+        varchar_50 status "not null"
+        uuid recorded_by_user_id "not null"
+        timestamptz reversed_at_utc "nullable"
+        uuid reversed_by_user_id "nullable"
+        varchar_2000 reversal_reason "nullable"
+        timestamptz created_at "not null"
+        uuid created_by_user_id "nullable"
+        timestamptz updated_at "not null"
+        uuid updated_by_user_id "nullable"
+        bigint version "not null"
+    }
+    reconciliation_batches {
+        uuid id PK "not null"
+        varchar_100 batch_number UK "not null"
+        timestamptz period_start_utc "not null"
+        timestamptz period_end_utc "not null"
+        numeric_18_2 expected_amount "not null"
+        numeric_18_2 reconciled_amount "not null"
+        numeric_18_2 difference "not null"
+        varchar_50 status "not null"
+        uuid prepared_by_user_id "not null"
+        jsonb included_activity_actor_ids_json "not null"
+        uuid approved_by_user_id "nullable"
+        timestamptz approved_at_utc "nullable"
+        varchar_4000 approval_notes "nullable"
+        varchar_64 closeout_report_sha256 "nullable"
+        jsonb closeout_report_json "nullable"
+        timestamptz created_at "not null"
+        uuid created_by_user_id "nullable"
+        timestamptz updated_at "not null"
+        uuid updated_by_user_id "nullable"
+        bigint version "not null"
+    }
+    payment_allocations {
+        uuid id PK "not null"
+        uuid payment_receipt_id FK "not null"
+        uuid invoice_id FK "not null"
+        numeric_18_2 amount "not null"
+        uuid allocated_by_user_id "not null"
+        timestamptz allocated_at_utc "not null"
+        uuid reversed_by_user_id "nullable"
+        timestamptz reversed_at_utc "nullable"
+        varchar_2000 reversal_reason "nullable"
+    }
+    organizations ||--o{ invoices : "organization_id"
+    lab_service_orders ||--o| invoices : "lab_service_order_id"
+    lab_service_quotes ||--o| invoices : "accepted_quote_id"
+    invoices ||--o{ invoice_adjustments : "invoice_id"
+    invoices ||--o| invoice_documents : "invoice_id"
+    invoices ||--o{ invoice_lines : "invoice_id"
+    organizations ||--o{ payment_receipts : "organization_id"
+    payment_receipts ||--o{ payment_allocations : "payment_receipt_id"
+    invoices ||--o{ payment_allocations : "invoice_id"
+```
+
+### Governed PSeq result delivery
+
+```mermaid
+erDiagram
+    result_output_packages {
+        uuid id PK "not null"
+        uuid organization_id FK "not null"
+        uuid lab_service_order_id FK "not null"
+        uuid lab_work_order_id FK,UK "not null"
+        uuid lab_sample_id FK,UK "nullable"
+        integer package_version UK "not null"
+        uuid corrects_package_id FK "nullable"
+        varchar_255 pipeline_name UK "not null"
+        varchar_255 pipeline_version "not null"
+        varchar_255 manifest_identity UK "not null"
+        varchar_64 manifest_sha256 "not null"
+        jsonb manifest_json "not null"
+        varchar_100 storage_provider "not null"
+        varchar_2000 storage_object_prefix "not null"
+        varchar_50 status "not null"
+        varchar_2000 failure_reason "nullable"
+        uuid scientific_approval_id "nullable"
+        uuid scientifically_approved_by_user_id "nullable"
+        timestamptz scientifically_approved_at_utc "nullable"
+        uuid released_by_user_id "nullable"
+        timestamptz released_at_utc "nullable"
+        uuid withdrawn_by_user_id "nullable"
+        timestamptz withdrawn_at_utc "nullable"
+        varchar_2000 withdrawal_reason "nullable"
+        timestamptz created_at "not null"
+        uuid created_by_user_id "nullable"
+        timestamptz updated_at "not null"
+        uuid updated_by_user_id "nullable"
+        bigint version "not null"
+    }
+    result_artifacts {
+        uuid id PK "not null"
+        uuid result_output_package_id FK,UK "not null"
+        varchar_255 artifact_identity UK "not null"
+        varchar_500 file_name "not null"
+        varchar_255 media_type "not null"
+        bigint size_bytes "not null"
+        varchar_64 sha256 "not null"
+        varchar_2000 storage_object_key UK "not null"
+        varchar_50 scan_status "not null"
+        varchar_2000 scan_details "nullable"
+        timestamptz registered_at_utc "not null"
+        timestamptz scanned_at_utc "nullable"
+    }
+    result_delivery_evidence {
+        uuid id PK "not null"
+        uuid result_output_package_id FK "not null"
+        varchar_50 kind "not null"
+        uuid actor_user_id "nullable"
+        jsonb evidence_json "not null"
+        timestamptz occurred_at_utc "not null"
+    }
+    organizations ||--o{ result_output_packages : "organization_id"
+    lab_service_orders ||--o{ result_output_packages : "lab_service_order_id"
+    lab_samples o|--o{ result_output_packages : "lab_sample_id"
+    result_output_packages o|--o{ result_output_packages : "corrects_package_id"
+    result_output_packages ||--o{ result_artifacts : "result_output_package_id"
+    result_output_packages ||--o{ result_delivery_evidence : "result_output_package_id"
 ```
 
 ### Data governance and provisioning
@@ -1459,6 +1785,8 @@ erDiagram
         uuid id PK "not null"
         timestamptz accepted_at "nullable"
         uuid accepted_by_user_id "nullable"
+        integer billing_configuration_version_snapshot "nullable"
+        jsonb billing_snapshot_json "nullable"
         timestamptz created_at "not null"
         uuid created_by_user_id "nullable"
         varchar_3 currency "not null"
@@ -1466,12 +1794,15 @@ erDiagram
         timestamptz issued_at "not null"
         uuid lab_service_order_id FK,UK "not null"
         jsonb lines_json "not null"
+        integer payment_terms_days_snapshot "nullable"
         varchar_100 purpose "not null"
         integer revision UK "not null"
         varchar_100 status "not null"
         numeric_18_2 subtotal "not null"
         uuid superseded_by_quote_id FK "nullable"
         numeric_18_2 tax "not null"
+        varchar_50 tax_decision_snapshot "nullable"
+        numeric_9_6 tax_rate_snapshot "nullable"
         numeric_18_2 total "not null"
         timestamptz updated_at "not null"
         uuid updated_by_user_id "nullable"
@@ -2092,6 +2423,8 @@ erDiagram
         bigint version "not null"
     }
     lab_protocol_versions {
+        timestamptz activated_at_utc "nullable"
+        uuid activated_by_user_id "nullable"
         uuid id PK "not null"
         timestamptz approved_at_utc "nullable"
         uuid approved_by_user_id "nullable"
@@ -2311,4 +2644,11 @@ erDiagram
 
 ## Cross-schema relationships
 
-The current model defines no database-enforced foreign keys between schemas. Cross-module handoffs use explicit identifiers, contracts, receipts, projections, and outbox records instead.
+The governed PSeq package pins its Laboratory work order with the model's one
+database-enforced cross-schema foreign key. Other cross-module handoffs use
+explicit identifiers, contracts, receipts, projections, and outbox records.
+
+```mermaid
+erDiagram
+    lab_work_orders ||--o{ result_output_packages : "lab_work_order_id"
+```

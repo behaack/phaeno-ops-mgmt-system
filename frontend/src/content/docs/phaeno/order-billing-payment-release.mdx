@@ -1,25 +1,54 @@
-# Billing, payment, and release gates
+# PSeq accounts receivable and result release
 
-POMS owns immutable quotes, commercial source records, credit decisions, and file-release gates. QuickBooks Online integration is deferred; Phaeno Finance uses the journal-entry source report for manual accounting work outside POMS.
+POMS owns PSeq Lab Service billing snapshots, invoices, receipts, allocations,
+reconciliation, and governed result-release metadata. Result release is never
+gated by invoice balance, credit, or payment. Partner PSeq Kit and Data Assembly
+continue to use the manual accounting-source and payment-hold workflow.
 
-## Understand document timing
+## Configure and freeze PSeq billing
 
-- Customer lab and Partner assembly quotes become available immediately when Phaeno issues them in POMS.
-- Customer lab completion and Partner assembly output approval create a final accounting source record.
-- Each Partner reagent shipment creates its own accounting source record, so partial shipments appear separately.
+Before PSeq quote issuance, a Billing Operator records the billing contact and
+address, payment terms (default 30 days), and effective **Taxable**, **Exempt**,
+or **NonTaxable** decision. Finance approval, date, notes, and the approved rate
+or exemption evidence are required. Quote issuance freezes that configuration
+version and calculates USD tax without an external tax engine.
 
-The source report includes stable IDs, operational references, currency, gross amount, and the POMS balance. Finance chooses accounts, tax treatment, posting dates, and any later adjustment in the accounting system. Downloading a report does not mark entries as posted.
+Job completion issues one idempotent numbered invoice from the accepted quote,
+with due date equal to completion plus the frozen terms. The immutable invoice
+PDF is visible to Finance and the owning Customer. Older manual PSeq billing
+rows remain labeled **Legacy billing source - Finance review required** and are
+not converted into invoices or paid state.
 
-## Apply Customer release gates
+## Record cash and reconcile
 
-A Customer result may be published only when the specific sample is scientifically ready, the release definition is approved, every file is present and checksummed, malware scanning passed, and the required commercial source record exists.
+A Cash Operator records a USD receipt with payer, received date, method, bank
+reference, evidence reference, external ID, and memo. CSV imports must be
+previewed and error-free before confirmation. Matching may suggest invoices but
+never allocates automatically. Partial and many-to-many allocations, unapplied
+cash, reversals, credits, debits, and write-offs retain their history.
 
-For a Customer with approved credit, Phaeno may release a ready sample result under the configured Net 30 terms without waiting for payment. Without approved credit, no job result is downloadable. Payment confirmation and manual release are not implemented; do not clear the hold through an order-status change.
+A Cash Reconciler who did not record or alter the batch's cash activity approves
+the reconciliation and immutable closeout report. Use aging, open invoice,
+receipt, unapplied-cash, and reconciliation reports for active operations.
 
-## Apply Partner assembly release gates
+## Release governed PSeq results
 
-An approved output release must reference the accepted input revision and active assembly profile. Its accounting source record is created at output approval. A Partner with approved assembly credit may receive the output under its terms; otherwise the files remain on payment hold until a separately approved payment-confirmation workflow exists.
+A PSeq package may advance only when the provider-authenticated pipeline has
+registered its immutable manifest and every final artifact has a valid checksum
+and clean malware scan. A Scientific Reviewer pins and approves the exact
+package/version. A Result Release Manager then controls Customer visibility per
+sample. Do not check credit, invoice status, balance, aging, or receipt state as
+a release gate.
 
-## Diagnose a blocked release
+Corrections register a new package/version that points to the package it
+corrects. Withdrawal preserves the package, reason, actor, time, and evidence.
+The current UI/API exposes governed metadata and release control but not result
+bytes or outbound result-available email; automatic retention processing records
+warning/cutoff/grace evidence and attention without deleting bytes.
 
-Review scientific readiness, output approval, file scan and checksum state, accounting-source readiness, credit approval, and publication independently. Show the tenant that work is ready but held when appropriate, without exposing the files. Never bypass a failed gate by attaching a file manually or changing an unrelated workflow status.
+## Keep Partner rules separate
+
+Partner assembly output still requires its accepted input/profile, accounting
+source, and existing credit/payment release rule. Partner reagent shipments
+still create accounting-source rows. Do not apply native PSeq AR or the
+payment-independent PSeq release rule to those Partner workflows.

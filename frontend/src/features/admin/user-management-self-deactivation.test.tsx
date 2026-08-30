@@ -177,5 +177,6 @@ function createPhaenoUser(
     userVersion: 1,
     membershipVersion: 1,
     labRoles: [],
+    businessRoles: [],
   }
 }

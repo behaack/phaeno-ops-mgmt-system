@@ -1,6 +1,9 @@
 # Statuses and troubleshooting
 
-A laboratory job, each sample, its quote, and each result file have separate statuses. Read them together: a job may remain in progress while one sample’s result is ready or held for payment.
+A laboratory job, each sample, its quote, each governed result package, and its
+invoice have separate statuses. Read them together: a job may remain in progress
+while one sample's result has completed scientific review, and an invoice may be
+open without blocking release.
 
 ## Laboratory job statuses
 
@@ -13,7 +16,7 @@ A laboratory job, each sample, its quote, and each result file have separate sta
 | Quote issued | An administrator can review and accept the current unexpired quote. |
 | Placed, awaiting samples | The price was accepted. Enter and finalize the exact sample list; then follow the Job’s shipping instructions. |
 | In progress | Phaeno has begun the accepted work. Review individual sample statuses for detail. |
-| Results available | At least one result is ready. Its file may still be under a release or payment gate. |
+| Results available | At least one result package has been released. Other samples may remain in progress or review. |
 | On hold | Read the Customer-safe reason and complete the requested action or contact Phaeno. |
 | Cancellation requested | Phaeno is reviewing the request; work is not automatically cancelled. |
 | Completed | Accepted work and release handling are complete. |
@@ -23,9 +26,12 @@ A laboratory job, each sample, its quote, and each result file have separate sta
 
 **Expected**, **Received**, and **Accessioned** track intake. **Lab analysis** and **Data processing** track active work. **Data available** means an output exists for that sample, while **Completed** means its processing is finished. **On hold** requires attention; **Rejected** means the submitted material cannot proceed under the current job.
 
-Sample release is independent. A clean result can be **Ready**, **Payment hold**, **Released**, or **Withdrawn**. Download is available only after release.
+Sample release is independent. A governed package progresses through upload,
+malware scanning, scientific review, release readiness, **Released**, or
+**Withdrawn**. PSeq release is not gated by credit, an invoice balance, or
+payment.
 
-## Quotes and payment holds
+## Quotes and invoices
 
 
 - **Issued** means the current quote is available for review.
@@ -33,14 +39,18 @@ Sample release is independent. A clean result can be **Ready**, **Payment hold**
 - **Expired** means its validity period ended; request a current quote.
 - **Accepted** records agreement to the priced scope and opens sample-list entry. Laboratory work is authorized only after the exact compliant list is finalized.
 
-Credit-approved Customer organizations receive Net 30 release. Without approved credit, result download remains on payment hold. The current portal does not provide payment confirmation or a hosted payment page; contact Phaeno about the job rather than attempting to clear the hold in the portal.
+PSeq quotes freeze their billing contact/address, payment terms, tax decision,
+and rate or exemption evidence. Completion creates the numbered invoice and
+immutable PDF from the accepted quote. The invoice can remain open, partially
+paid, adjusted, overdue, or paid without changing result-release eligibility.
+The current portal does not provide a hosted payment page.
 
 ## Troubleshoot a missing result
 
 1. Confirm the correct organization and laboratory job.
 2. Check the individual sample status rather than only the overall job.
-3. Check whether the result is still being scanned, is on payment hold, or was withdrawn.
-4. If you believe the commercial requirement has been satisfied, contact Phaeno with the job number; the portal does not currently clear a payment hold from an accounting-system update.
+3. Check whether the package is still being uploaded, scanned, scientifically reviewed, awaiting release, failed, or withdrawn.
+4. The current additive workflow exposes governed package metadata but not result-byte delivery or a result-available email. Contact Phaeno with the job number for the approved delivery path.
 5. Modal action errors remain visible in the shaded header while you review the form. If the portal reports that the Job changed, it automatically loads the latest record and keeps your entered values. A pricing submission also clears its privacy confirmation so you can review the latest Job, confirm again, and resubmit safely.
 
 Rejected or failed file scans require Phaeno review; do not repeatedly upload the same file unless Phaeno asks you to. For support, provide the portal job and sample references, the visible status, and the time of the last action. Do not include credentials, tokens, patient identifiers, or sensitive sample content.

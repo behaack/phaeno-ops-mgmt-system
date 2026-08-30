@@ -129,8 +129,21 @@ export type LabRole =
   | 'ScientificReviewer'
   | 'OperationsAdministrator'
 
+export type BusinessRole =
+  | 'CommercialOperator'
+  | 'ResultReleaseManager'
+  | 'BillingOperator'
+  | 'CashOperator'
+  | 'CashReconciler'
+
 export type PhaenoLabRoleState = {
   role: LabRole
+  isActive: boolean
+  version: number | null
+}
+
+export type PhaenoBusinessRoleState = {
+  role: BusinessRole
   isActive: boolean
   version: number | null
 }
@@ -147,6 +160,7 @@ export type PhaenoUser = {
   userVersion: number
   membershipVersion: number
   labRoles: PhaenoLabRoleState[]
+  businessRoles: PhaenoBusinessRoleState[]
 }
 
 export type Invitation = {
@@ -158,12 +172,28 @@ export type Invitation = {
   lastName: string
   isOrganizationAdmin: boolean
   labRoles: LabRole[]
+  businessRoles: BusinessRole[]
   status: 'Pending' | 'Accepted' | 'Revoked' | 'Declined'
   isExpired: boolean
   expiresAt: string
   sendCount: number
   lastSentAt: string | null
   lastSendError: string | null
+  latestDeliveryAttemptId: string | null
+  deliveryState:
+    | 'Queued'
+    | 'Sending'
+    | 'Accepted'
+    | 'Delivered'
+    | 'Bounced'
+    | 'Failed'
+    | 'NeedsAttention'
+    | null
+  deliveryAttemptCount: number
+  deliveryError: string | null
+  deliveredAtUtc: string | null
+  bouncedAtUtc: string | null
+  bounceType: string | null
   version: number
 }
 
@@ -369,6 +399,7 @@ export async function updatePhaenoUser(
     userVersion: number
     membershipVersion: number
     labRoles: PhaenoLabRoleState[]
+    businessRoles: PhaenoBusinessRoleState[]
   },
 ) {
   const response = await api.put<PhaenoUser>(`/users/${id}/phaeno`, input)
@@ -396,6 +427,7 @@ export async function createInvitation(input: {
   email: string
   isOrganizationAdmin: boolean
   labRoles: LabRole[]
+  businessRoles?: BusinessRole[]
 }) {
   const response = await api.post<Invitation>('/invitations', input)
   return response.data

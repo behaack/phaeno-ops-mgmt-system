@@ -12,6 +12,7 @@ import {
   Handshake,
   Package,
   PackageCheck,
+  ReceiptText,
   Settings,
   Workflow,
   type LucideIcon,
@@ -133,6 +134,23 @@ export const mainMenuItems: readonly MainMenuItem[] = [
     visibleWhen: (session, context) =>
       context.selectedOrganizationKind === 'Phaeno' &&
       Boolean(session?.capabilities.canViewAllOperationalOrders),
+  },
+  {
+    label: 'Order-to-cash',
+    to: '/order-to-cash',
+    icon: ReceiptText,
+    group: 'workspace',
+    visibleWhen: (session, context) =>
+      (context.selectedOrganizationKind === 'Phaeno' &&
+        Boolean(
+          session?.capabilities.canOperateCommercialWork ||
+            session?.capabilities.canReleasePSeqResults ||
+            session?.capabilities.canOperateBilling ||
+            session?.capabilities.canOperateCash ||
+            session?.capabilities.canReconcileCash,
+        )) ||
+      (context.selectedOrganizationKind === 'Customer' &&
+        Boolean(session?.capabilities.canViewLabServiceOrders)),
   },
   {
     label: 'Lab ops',

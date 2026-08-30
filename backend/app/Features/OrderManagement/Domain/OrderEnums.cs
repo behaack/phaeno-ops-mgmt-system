@@ -72,6 +72,7 @@ public enum FileReleaseStatus
     Internal,
     Ready,
     PaymentHold,
+    CommercialReviewRequired,
     Released,
     Withdrawn
 }

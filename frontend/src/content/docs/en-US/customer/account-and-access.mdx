@@ -13,6 +13,13 @@ The invitation page shows the email address currently signed in. If it is not th
 
 An invitation link is private and can expire, be revoked, or be replaced by a newer link. Do not forward it. If a link is unavailable, ask your organization administrator or Phaeno to send a new invitation.
 
+Invitation access and email delivery are separate. **Pending invitation** means
+the access offer has not been accepted; delivery may independently be queued,
+accepted by the email provider, delivered, failed, or bounced. If delivery is
+still retrying, wait for the status to update. A hard bounce cannot be resent to
+the same address: an administrator must revoke it and issue a new invitation to
+the corrected email.
+
 The portal does not collect or reset your sign-in password. Complete sign-in and account recovery through the identity service shown on the sign-in page.
 
 ## Protect your account
@@ -45,7 +52,8 @@ Enter the person’s first name, last name, and exact sign-in email, but never c
 | What you see | What to do |
 | --- | --- |
 | Access unavailable after sign-in | Choose **Continue invitation** if it is shown, then review and accept the saved invitation. Otherwise, sign out and reopen the newest invitation link. |
-| Invitation link unavailable | Ask an administrator to confirm the invitation is still pending and resend it. Use only the newest link. |
+| Invitation link unavailable | Ask an administrator to confirm both access and delivery state. Resend only a pending, non-bounced invitation and use only the newest link. |
+| Invitation shows Bounced | Confirm the correct address with the recipient. Revoke the bounced invitation and create a new one; do not repeatedly resend it. |
 | Email does not match | Sign out and use the email address that received the invitation, or request a corrected invitation. |
 | No active memberships | Ask your Customer administrator to coordinate a fresh invitation with Phaeno. |
 | Wrong organization shown | Stop before opening records and contact Phaeno to verify the active membership. |

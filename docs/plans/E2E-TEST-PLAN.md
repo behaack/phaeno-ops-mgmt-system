@@ -634,3 +634,11 @@ the protected deployed-Preview acceptance above.
   card-header actions on Company, Lead, and Opportunity detail workspaces, and
   confirms the standalone Company journey without browser errors. The existing
   `AcceptInvitePage` route-export warning remains unchanged.
+- 2026-08-29: the production-built local preview rendered the
+  authentication-configuration boundary with no browser console warning or
+  error. Authenticated order-to-cash E2E and accessibility acceptance were not
+  run because the preview has no Clerk publishable key. The development server
+  separately returned `Vite environment "ssr" is unavailable`; the production
+  client/SSR build and production preview remained healthy. The dedicated
+  staging journey and cross-functional signoff remain pending and require fresh
+  shared-environment authorization.

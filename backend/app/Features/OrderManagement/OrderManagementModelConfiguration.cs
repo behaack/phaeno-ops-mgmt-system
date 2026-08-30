@@ -337,6 +337,14 @@ public static class OrderManagementModelConfiguration
         {
             entity.HasKey(e => e.Id);
             Text(entity.Property(e => e.QboCustomerId), 255, required: false);
+            Text(entity.Property(e => e.BillingContactName), 255, required: false);
+            Text(entity.Property(e => e.BillingContactEmail), 255, required: false);
+            Json(entity.Property(e => e.BillingAddressJson), required: false);
+            entity.Property(e => e.PaymentTermsDays).HasDefaultValue(30);
+            EnumText(entity.Property(e => e.PSeqTaxDecision), required: false);
+            entity.Property(e => e.ApprovedTaxRate).HasPrecision(9, 6);
+            Text(entity.Property(e => e.TaxExemptionEvidenceReference), 2000, required: false);
+            Text(entity.Property(e => e.TaxApprovalNotes), 4000, required: false);
             entity.HasIndex(e => e.OrganizationId).IsUnique();
             entity.HasIndex(e => e.QboCustomerId).IsUnique().HasFilter("\"qbo_customer_id\" IS NOT NULL");
             entity.HasOne<Organization>().WithMany().HasForeignKey(e => e.OrganizationId).OnDelete(DeleteBehavior.Restrict);
@@ -568,6 +576,9 @@ public static class OrderManagementModelConfiguration
             Json(entity.Property(e => e.LinesJson));
             Money(entity.Property(e => e.Subtotal)); Money(entity.Property(e => e.Tax)); Money(entity.Property(e => e.Total));
             Text(entity.Property(e => e.Currency), 3);
+            Json(entity.Property(e => e.BillingSnapshotJson), required: false);
+            Text(entity.Property(e => e.TaxDecisionSnapshot), 50, required: false);
+            entity.Property(e => e.TaxRateSnapshot).HasPrecision(9, 6);
             entity.HasIndex(e => new { e.LabServiceOrderId, e.Revision }).IsUnique();
             entity.HasOne<LabServiceOrder>().WithMany(e => e.Quotes).HasForeignKey(e => e.LabServiceOrderId).OnDelete(DeleteBehavior.Restrict);
             entity.HasOne<LabServiceQuote>().WithMany().HasForeignKey(e => e.SupersededByQuoteId).OnDelete(DeleteBehavior.Restrict);

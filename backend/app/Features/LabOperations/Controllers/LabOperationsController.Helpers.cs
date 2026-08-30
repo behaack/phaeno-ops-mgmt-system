@@ -256,7 +256,8 @@ public sealed partial class LabOperationsController
 
     private static LabProtocolVersionDto MapProtocolVersion(LabProtocolVersion version) =>
         new(version.Id, version.ProtocolVersion, version.Status.ToString(), version.DefinitionJson,
-            version.AuthoredByUserId, version.AuthoredAtUtc, version.ApprovedByUserId, version.ApprovedAtUtc);
+            version.AuthoredByUserId, version.AuthoredAtUtc, version.ApprovedByUserId, version.ApprovedAtUtc,
+            version.ActivatedByUserId, version.ActivatedAtUtc);
 
     private static LabEquipmentDto MapEquipment(LabEquipment item) =>
         new(item.Id, item.AssetCode, item.Name, item.EquipmentType, item.Location,

@@ -17,6 +17,7 @@ using PhaenoPortal.App.Features.OrderManagement.Controllers;
 using PhaenoPortal.App.Features.OrderManagement.Domain;
 using PhaenoPortal.App.Features.OrderManagement.DTOs;
 using PhaenoPortal.App.Features.OrderManagement.Services;
+using PhaenoPortal.App.Features.OrderToCash;
 using PhaenoPortal.App.Infrastructure.Persistence;
 using PhaenoPortal.App.Infrastructure.Persistence.Auditing;
 
@@ -657,12 +658,21 @@ public class SampleShippingPostgresTests
         public SampleShippingWorkflowController CreateOtherCustomerWorkflowController() =>
             CreateCustomerWorkflowController(otherCustomerIdentity, OtherCustomerOrganization.Id);
 
-        public LabOperationsController CreateLabController() => new(
-            DbContext,
-            new LabOperationsRequestContext(DbContext, new FixedIdentityContext(platformIdentity)))
+        public LabOperationsController CreateLabController()
         {
-            ControllerContext = new ControllerContext { HttpContext = new DefaultHttpContext() }
-        };
+            var options = Options.Create(new OrderToCashOptions());
+            return new LabOperationsController(
+                DbContext,
+                new LabOperationsRequestContext(
+                    DbContext,
+                    new FixedIdentityContext(platformIdentity),
+                    options),
+                new DualControlService(DbContext, options),
+                options)
+            {
+                ControllerContext = new ControllerContext { HttpContext = new DefaultHttpContext() }
+            };
+        }
 
         public PSeqOperationsDbContext CreateAdditionalContext() =>
             CreateDbContext(connectionString, persistenceOptions, requestId);

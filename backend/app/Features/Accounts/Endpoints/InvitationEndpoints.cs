@@ -10,6 +10,7 @@ using PhaenoPortal.App.Common.Exceptions.Conflict;
 using PSeq.Operations.Commercial.Accounts.Domain;
 using PhaenoPortal.App.Features.Accounts.DTOs;
 using PhaenoPortal.App.Features.Accounts.Services;
+using PhaenoPortal.App.Features.OrderToCash;
 using PhaenoPortal.App.Infrastructure.Api;
 using PhaenoPortal.App.Infrastructure.Persistence;
 using PSeq.Operations.Laboratory.Domain;
@@ -22,8 +23,10 @@ public static class InvitationEndpoints
         PSeqOperationsDbContext dbContext,
         InvitationTokenService tokenService,
         IInvitationEmailSender emailSender,
+        InvitationDeliveryEnqueuer deliveryEnqueuer,
         IExternalIdentityContext externalIdentityContext,
         IOptions<InvitationOptions> invitationOptions,
+        IOptions<OrderToCashOptions> orderToCashOptions,
         CancellationToken cancellationToken)
     {
         var utcNow = DateTime.UtcNow;
@@ -74,9 +77,16 @@ public static class InvitationEndpoints
                 "Laboratory roles can be assigned only through a Phaeno organization invitation.");
         }
 
+        var intendedBusinessRoles = request.BusinessRoles.Distinct().ToArray();
+        if (intendedBusinessRoles.Length != request.BusinessRoles.Count)
+            throw new BadRequestException("A business role cannot appear more than once.");
+        if (!organization.IsPhaeno() && intendedBusinessRoles.Length > 0)
+            throw new BadRequestException("Business roles can be assigned only through a Phaeno organization invitation.");
+
         if (organization.IsPhaeno()
             && !request.IsOrganizationAdmin
-            && intendedLabRoles.Length == 0)
+            && intendedLabRoles.Length == 0
+            && intendedBusinessRoles.Length == 0)
         {
             throw new BadRequestException(
                 "A Phaeno invitation requires at least one platform or laboratory role.");
@@ -164,6 +174,38 @@ public static class InvitationEndpoints
                 new LabRoleInvitationIntent(invitation.Id, role));
         }
 
+        var existingBusinessRoleIntents = isNewInvitation
+            ? []
+            : await dbContext.BusinessRoleInvitationIntents
+                .Where(intent => intent.OrganizationInvitationId == invitation.Id)
+                .ToListAsync(cancellationToken);
+        foreach (var staleIntent in existingBusinessRoleIntents
+                     .Where(intent => !intendedBusinessRoles.Contains(intent.Role)))
+            dbContext.BusinessRoleInvitationIntents.Remove(staleIntent);
+        foreach (var role in intendedBusinessRoles
+                     .Where(role => existingBusinessRoleIntents.All(intent => intent.Role != role)))
+            dbContext.BusinessRoleInvitationIntents.Add(new BusinessRoleInvitationIntent(invitation.Id, role));
+
+        if (orderToCashOptions.Value.Features.InvitationDelivery)
+        {
+            var delivery = deliveryEnqueuer.Enqueue(dbContext, invitation, organization.Name,
+                BuildInviteUrl(options.PublicBaseUrl, token.RawToken), actor.Id, utcNow);
+            AccountAudit.Add(dbContext, httpContext, nameof(OrganizationInvitation), invitation.Id,
+                isNewInvitation ? AccountAudit.InviteCreated : AccountAudit.InviteResent,
+                invitation.OrganizationId, actor.Id, new
+                {
+                    invitation.Email, invitation.NormalizedEmail, invitation.FirstName,
+                    invitation.LastName, invitation.IsOrganizationAdmin,
+                    LabRoles = intendedLabRoles, BusinessRoles = intendedBusinessRoles,
+                    DeliveryAttemptId = delivery.Id, DeliveryState = delivery.State
+                });
+            await dbContext.SaveChangesAsync(cancellationToken);
+            invitation = await dbContext.OrganizationInvitations.Include(i => i.Organization)
+                .FirstAsync(i => i.Id == invitation.Id, cancellationToken);
+            return TypedResults.Created($"/api/invitations/{invitation.Id}",
+                ToDto(invitation, utcNow, intendedLabRoles, intendedBusinessRoles, delivery));
+        }
+
         await dbContext.SaveChangesAsync(cancellationToken);
 
         var sendResult = await emailSender.SendInvitationAsync(
@@ -191,6 +233,7 @@ public static class InvitationEndpoints
                 invitation.LastName,
                 invitation.IsOrganizationAdmin,
                 LabRoles = intendedLabRoles,
+                BusinessRoles = intendedBusinessRoles,
                 ProviderMessageId = sendResult.ProviderMessageId,
                 invitation.SendCount
             });
@@ -202,7 +245,7 @@ public static class InvitationEndpoints
 
         return TypedResults.Created(
             $"/api/invitations/{invitation.Id}",
-            ToDto(invitation, utcNow, intendedLabRoles));
+            ToDto(invitation, utcNow, intendedLabRoles, intendedBusinessRoles));
     }
 
     public static async Task<IResult> ResendInvitation(
@@ -211,8 +254,10 @@ public static class InvitationEndpoints
         PSeqOperationsDbContext dbContext,
         InvitationTokenService tokenService,
         IInvitationEmailSender emailSender,
+        InvitationDeliveryEnqueuer deliveryEnqueuer,
         IExternalIdentityContext externalIdentityContext,
         IOptions<InvitationOptions> invitationOptions,
+        IOptions<OrderToCashOptions> orderToCashOptions,
         CancellationToken cancellationToken)
     {
         var utcNow = DateTime.UtcNow;
@@ -258,8 +303,40 @@ public static class InvitationEndpoints
             throw new BadRequestException("Invitation was sent recently. Wait before resending.");
         }
 
+        var latestDelivery = orderToCashOptions.Value.Features.InvitationDelivery
+            ? await dbContext.InvitationDeliveryAttempts
+                .Where(value => value.OrganizationInvitationId == invitation.Id)
+                .OrderByDescending(value => value.CreatedAt)
+                .FirstOrDefaultAsync(cancellationToken)
+            : null;
+        if (latestDelivery?.CreatedAt.AddMinutes(options.ResendCooldownMinutes) > utcNow)
+            throw new BadRequestException("Invitation was queued recently. Wait before resending.");
+        if (latestDelivery is { State: InvitationDeliveryState.NeedsAttention, BounceType: not null }
+            && latestDelivery.BounceType.Contains("Hard", StringComparison.OrdinalIgnoreCase))
+            throw new BadRequestException("A hard-bounced invitation must be revoked and replaced for the corrected email address.");
+
         var token = tokenService.CreateToken();
         invitation.RotateToken(token.TokenHash, utcNow.AddDays(options.TokenLifetimeDays));
+        var intendedLabRoles = await ReadIntendedLabRolesAsync(
+            dbContext, invitation.Id, cancellationToken);
+        var intendedBusinessRoles = await ReadIntendedBusinessRolesAsync(
+            dbContext, invitation.Id, cancellationToken);
+        if (orderToCashOptions.Value.Features.InvitationDelivery)
+        {
+            var delivery = deliveryEnqueuer.Enqueue(dbContext, invitation, invitation.Organization.Name,
+                BuildInviteUrl(options.PublicBaseUrl, token.RawToken), actor.Id, utcNow);
+            AccountAudit.Add(dbContext, httpContext, nameof(OrganizationInvitation), invitation.Id,
+                AccountAudit.InviteResent, invitation.OrganizationId, actor.Id, new
+                {
+                    invitation.Email, invitation.NormalizedEmail, invitation.FirstName,
+                    invitation.LastName, invitation.IsOrganizationAdmin,
+                    LabRoles = intendedLabRoles, BusinessRoles = intendedBusinessRoles,
+                    DeliveryAttemptId = delivery.Id, DeliveryState = delivery.State
+                });
+            await dbContext.SaveChangesAsync(cancellationToken);
+            return TypedResults.Ok(ToDto(invitation, utcNow, intendedLabRoles,
+                intendedBusinessRoles, delivery));
+        }
         await dbContext.SaveChangesAsync(cancellationToken);
 
         var sendResult = await emailSender.SendInvitationAsync(
@@ -271,10 +348,6 @@ public static class InvitationEndpoints
             cancellationToken);
 
         invitation.RecordSend(utcNow, actor.Id, sendResult.ProviderMessageId);
-        var intendedLabRoles = await ReadIntendedLabRolesAsync(
-            dbContext,
-            invitation.Id,
-            cancellationToken);
         AccountAudit.Add(
             dbContext,
             httpContext,
@@ -291,12 +364,13 @@ public static class InvitationEndpoints
                 invitation.LastName,
                 invitation.IsOrganizationAdmin,
                 LabRoles = intendedLabRoles,
+                BusinessRoles = intendedBusinessRoles,
                 ProviderMessageId = sendResult.ProviderMessageId,
                 invitation.SendCount
             });
         await dbContext.SaveChangesAsync(cancellationToken);
 
-        return TypedResults.Ok(ToDto(invitation, utcNow, intendedLabRoles));
+        return TypedResults.Ok(ToDto(invitation, utcNow, intendedLabRoles, intendedBusinessRoles));
     }
 
     public static async Task<IResult> CreateDevelopmentInvitationLink(
@@ -420,6 +494,10 @@ public static class InvitationEndpoints
             dbContext,
             invitation.Id,
             cancellationToken);
+        var intendedBusinessRoles = await ReadIntendedBusinessRolesAsync(
+            dbContext,
+            invitation.Id,
+            cancellationToken);
         var firstName = InvitationName(
             invitation.FirstName,
             request.FirstName,
@@ -501,7 +579,29 @@ public static class InvitationEndpoints
             }
         }
 
+        if (invitation.Organization?.IsPhaeno() == true
+            && intendedBusinessRoles.Count > 0)
+        {
+            var existingAssignments = await dbContext.BusinessRoleAssignments
+                .Where(assignment => assignment.UserId == user.Id)
+                .ToListAsync(cancellationToken);
+            foreach (var role in intendedBusinessRoles)
+            {
+                var assignment = existingAssignments.SingleOrDefault(value => value.Role == role);
+                if (assignment == null)
+                    dbContext.BusinessRoleAssignments.Add(new BusinessRoleAssignment(user.Id, role));
+                else
+                    assignment.SetActive(true);
+            }
+        }
+
         invitation.Accept(user.Id, utcNow);
+        var deliveryAttempts = await dbContext.InvitationDeliveryAttempts
+            .Where(value => value.OrganizationInvitationId == invitation.Id
+                && value.State != InvitationDeliveryState.NeedsAttention)
+            .ToListAsync(cancellationToken);
+        foreach (var deliveryAttempt in deliveryAttempts)
+            deliveryAttempt.RecordAccepted(utcNow);
         AccountAudit.Add(
             dbContext,
             httpContext,
@@ -518,6 +618,7 @@ public static class InvitationEndpoints
                 invitation.LastName,
                 invitation.IsOrganizationAdmin,
                 LabRoles = intendedLabRoles,
+                BusinessRoles = intendedBusinessRoles,
                 AcceptedByUserId = user.Id
             });
         AccountAudit.Add(
@@ -541,7 +642,8 @@ public static class InvitationEndpoints
         await dbContext.SaveChangesAsync(cancellationToken);
         await transaction.CommitAsync(cancellationToken);
 
-        return TypedResults.Ok(ToDto(invitation, utcNow, intendedLabRoles));
+        return TypedResults.Ok(ToDto(invitation, utcNow, intendedLabRoles,
+            intendedBusinessRoles, deliveryAttempts.OrderByDescending(value => value.CreatedAt).FirstOrDefault()));
     }
 
     public static async Task<IResult> DeclineInvitation(
@@ -747,13 +849,30 @@ public static class InvitationEndpoints
                 group => (IReadOnlyList<LabRole>)group
                     .Select(intent => intent.Role)
                     .ToArray());
+        var businessRoleIntents = await dbContext.BusinessRoleInvitationIntents
+            .AsNoTracking()
+            .Where(intent => invitationIds.Contains(intent.OrganizationInvitationId))
+            .OrderBy(intent => intent.Role)
+            .ToListAsync(cancellationToken);
+        var businessRoleLookup = businessRoleIntents
+            .GroupBy(intent => intent.OrganizationInvitationId)
+            .ToDictionary(group => group.Key,
+                group => (IReadOnlyList<BusinessRole>)group.Select(intent => intent.Role).ToArray());
+        var deliveries = await dbContext.InvitationDeliveryAttempts.AsNoTracking()
+            .Where(value => invitationIds.Contains(value.OrganizationInvitationId))
+            .OrderByDescending(value => value.CreatedAt)
+            .ToListAsync(cancellationToken);
+        var deliveryLookup = deliveries.GroupBy(value => value.OrganizationInvitationId)
+            .ToDictionary(group => group.Key, group => group.First());
 
         return TypedResults.Ok(
             invitations
                 .Select(invitation => ToDto(
                     invitation,
                     utcNow,
-                    roleLookup.GetValueOrDefault(invitation.Id, [])))
+                    roleLookup.GetValueOrDefault(invitation.Id, []),
+                    businessRoleLookup.GetValueOrDefault(invitation.Id, []),
+                    deliveryLookup.GetValueOrDefault(invitation.Id)))
                 .ToList());
     }
 
@@ -824,7 +943,9 @@ public static class InvitationEndpoints
     private static InvitationDto ToDto(
         OrganizationInvitation invitation,
         DateTime utcNow,
-        IReadOnlyList<LabRole> labRoles)
+        IReadOnlyList<LabRole> labRoles,
+        IReadOnlyList<BusinessRole>? businessRoles = null,
+        InvitationDeliveryAttempt? delivery = null)
     {
         return new InvitationDto
         {
@@ -837,6 +958,7 @@ public static class InvitationEndpoints
             LastName = invitation.LastName,
             IsOrganizationAdmin = invitation.IsOrganizationAdmin,
             LabRoles = labRoles,
+            BusinessRoles = businessRoles ?? [],
             Status = invitation.Status,
             IsExpired = invitation.IsExpired(utcNow),
             ExpiresAt = invitation.ExpiresAt,
@@ -851,6 +973,13 @@ public static class InvitationEndpoints
             SendCount = invitation.SendCount,
             LastEmailProviderMessageId = invitation.LastEmailProviderMessageId,
             LastSendError = invitation.LastSendError,
+            LatestDeliveryAttemptId = delivery?.Id,
+            DeliveryState = delivery?.State,
+            DeliveryAttemptCount = delivery?.AttemptCount ?? 0,
+            DeliveryError = delivery?.LastError,
+            DeliveredAtUtc = delivery?.DeliveredAtUtc,
+            BouncedAtUtc = delivery?.BouncedAtUtc,
+            BounceType = delivery?.BounceType,
             CreatedAt = invitation.CreatedAt,
             UpdatedAt = invitation.UpdatedAt,
             Version = invitation.Version
@@ -871,6 +1000,18 @@ public static class InvitationEndpoints
     {
         return await dbContext.LabRoleInvitationIntents
             .AsNoTracking()
+            .Where(intent => intent.OrganizationInvitationId == invitationId)
+            .OrderBy(intent => intent.Role)
+            .Select(intent => intent.Role)
+            .ToListAsync(cancellationToken);
+    }
+
+    private static async Task<IReadOnlyList<BusinessRole>> ReadIntendedBusinessRolesAsync(
+        PSeqOperationsDbContext dbContext,
+        Guid invitationId,
+        CancellationToken cancellationToken)
+    {
+        return await dbContext.BusinessRoleInvitationIntents.AsNoTracking()
             .Where(intent => intent.OrganizationInvitationId == invitationId)
             .OrderBy(intent => intent.Role)
             .Select(intent => intent.Role)

@@ -6,11 +6,29 @@ Phaeno administrators manage organizations, Portal readiness, service entitlemen
 
 The **Portal accounts** directory and each account workspace are connected to the durable API. The directory contains Prospect, Customer, and Partner accounts; it does not contain the internal Phaeno organization. Changes to account details, Portal requests, service entitlements, members, and invitations made in those workspaces persist and are audited.
 
-**User management** is also connected to durable account APIs. In the Phaeno context, active accounts and invited people appear in one list alongside global account status and every enforced Phaeno role. A **Pending invitation** status means the recipient has not completed account registration. Open a card’s actions menu to edit an active user, deactivate another active user, reactivate a disabled user, or resend or revoke a pending invitation. A Phaeno administrator cannot deactivate their own account. Edit one active user to update their name, Platform administrator assignment, and additive laboratory roles together. Platform administrators retain bootstrap access to every laboratory capability even when no explicit laboratory role is assigned.
+**User management** is connected to durable account APIs. Active accounts and
+invited people appear together with global status, access state, delivery state,
+send attempts, and every enforced Phaeno role. Open a card’s actions menu to
+edit, deactivate/reactivate, or resend/revoke where permitted. A Phaeno
+administrator cannot deactivate their own account. Edit one active user to
+update their name, Platform administrator assignment, explicit business roles,
+and additive Laboratory roles together. When business-role enforcement is on,
+Platform administrator manages configuration and assignments but does not imply
+a Commercial, result-release, billing, cash, reconciliation, bench, protocol,
+or scientific action.
 
-The role picker contains only roles enforced by the current authorization model: **Platform administrator**, **Lab operator**, **Lab supervisor**, **Protocol administrator**, **Scientific reviewer**, and **Lab operations administrator**. Authentication-provider metadata and unsupported job-title labels do not grant Portal access.
+The role picker contains only roles enforced by the current authorization
+model: **Platform administrator**, **Commercial operator**, **Result release
+manager**, **Billing operator**, **Cash operator**, **Cash reconciler**, **Lab
+operator**, **Lab supervisor**, **Protocol administrator**, **Scientific
+reviewer**, and **Lab operations administrator**. Authentication-provider
+metadata and unsupported job-title labels do not grant Portal access.
 
-Cards marked **Pending invitation** still represent invitation records, not accepted user records. Enter the person’s first name, last name, and exact sign-in email, then select the Platform administrator and additive laboratory roles they should receive. The pending role intent grants no access. It becomes active only when the recipient accepts and becomes an active Phaeno member.
+Cards marked **Pending invitation** still represent invitation records, not
+accepted user records. Enter the exact sign-in email, name, Platform
+administrator setting, business roles, and additive Laboratory roles. Pending
+role intent grants no access until acceptance. A hard bounce cannot be resent in
+place; revoke it and issue a new invitation to the corrected address.
 
 ## Review and maintain accounts
 
@@ -29,7 +47,12 @@ For a pending onboarding or evaluation request without an account, select **Appr
 
 If an older approved onboarding or evaluation request shows **Account creation incomplete**, select **Complete account creation**. The same default-on **Ordering authorized** choice appears for a Customer. POMS creates and associates the missing pending-readiness account and the selected ordering authorization in one operation, removes the recovered request from the review queue, then opens the account. This recovery does not invite users, create an order, or complete the request.
 
-Record readiness as **Not reviewed**, **Pending**, **Ready**, or **Blocked**, with an internal note when useful. Readiness describes operational setup; it does not invite a user, activate a service, or place an order.
+Operational readiness is derived as **Needs setup**, **Ready**, or **Blocked**.
+Only a deliberate manual **Blocked** override is authoritative. The checklist
+combines active Customer status, active administrator, ready PSeq entitlement
+and offering, order/sample/shipping configuration, and Finance-approved
+billing/tax configuration. Historical non-Blocked readiness labels are
+informational and do not authorize an order.
 
 ## Review Portal requests
 

@@ -120,6 +120,17 @@ public sealed record PhaenoUserAdministrationDto
     public required long MembershipVersion { get; init; }
 
     public required IReadOnlyList<PhaenoLabRoleStateDto> LabRoles { get; init; }
+
+    public IReadOnlyList<PhaenoBusinessRoleStateDto> BusinessRoles { get; init; } = [];
+}
+
+public sealed record PhaenoBusinessRoleStateDto
+{
+    public required BusinessRole Role { get; init; }
+
+    public required bool IsActive { get; init; }
+
+    public long? Version { get; init; }
 }
 
 public sealed record PhaenoLabRoleStateDto

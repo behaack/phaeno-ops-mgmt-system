@@ -8,21 +8,27 @@ This document records how the application operates in the current repository and
 | --- | --- |
 | Frontend | React 19 and TanStack Start, served by Vite in development and built as client plus SSR assets. |
 | API | .NET 10 ASP.NET Core application. |
-| Database | PostgreSQL through one EF Core `PSeqOperationsDbContext`. The current model maps 85 Commercial/current-flow and Lab-projection tables to `commercial_ops`, 27 Laboratory execution tables to `lab_ops`, two public Website intake tables to `website`, and migration history to `public`; the latest migrations have been applied only to the configured local development database. |
+| Database | PostgreSQL through one EF Core `PSeqOperationsDbContext`. The current model maps 103 Commercial/current-flow and Lab-projection tables to `commercial_ops`, 27 Laboratory execution tables to `lab_ops`, two public Website intake tables to `website`, and migration history to `public`; `ClosePSeqOrderToCashGaps` has been applied only to the configured local development database. |
 | Authentication | Clerk-issued bearer JWTs; application authorization comes from internal users, active memberships, and capabilities. |
 | Lab Operations | Feature-complete internal provider with additive Phaeno roles, operator APIs/workspace, receipt and accession, controlled execution, traceability, outsourced NGS sendouts, exceptions, scientific approval, and customer-safe Commercial projections. Production validation and activation remain incomplete. |
 | Curated-data files | `IManagedFileStorage` adapts to the shared `IFileStorage` contract. Development uses local filesystem storage. Production currently selects a non-persisting `Disabled` adapter, so the API starts but file operations return HTTP 503. The S3 adapter is implemented but not configured or live-validated. |
 | Order files | `IOperationalFileStorage` adapts to the shared `IFileStorage` contract. Development uses local filesystem storage. Production currently selects a non-persisting `Disabled` adapter, so the API starts but file operations return HTTP 503. The S3 adapter is implemented but not configured or live-validated. |
 | File scanning | Environment scanner abstractions. Development can trust configured fixture files; production defaults do not. |
-| Commercial accounting | POMS-owned catalog, immediate quotes, stable billing source records, and a Phaeno-only date-filtered CSV for manual journal-entry preparation. QuickBooks integration is deferred. |
+| Commercial accounting | POMS-owned PSeq quote billing/tax snapshots, numbered invoices/PDFs, USD receipts/import/allocation/reversal, reconciliation, aging, and legacy-source review. Partner workflows retain the manual source CSV. QuickBooks and online payment processing are deferred. |
 | Relationship CRM | A standalone first-party POMS CRM is implemented for Companies, Contacts, Leads, Opportunities, pipelines, Activities, Tasks, reporting, administration, and controlled Portal handoffs. HubSpot is absent from the runtime and deferred as a possible optional adapter. |
 | Email and notices | Portal transactional flows use Postmark when configured. Public Website contact/order templates use Mailgun when configured; logging senders are the local fallback. |
 | Public Website API | Anonymous `/api/v1/web-ops` search, database ping, contact, and order endpoints plus `/public` document hosting are implemented in Portal. Historical data and public traffic have not been cut over. |
-| Background work | Hosted dispatchers retry order notifications, data-provisioning notices, and Lab-to-Commercial projection delivery. A hosted Website crawler rebuilds the Lucene index on its configured interval. The QuickBooks dispatcher is disabled. |
+| Background work | Hosted dispatchers retry invitation delivery, order notifications, data-provisioning notices, and Lab-to-Commercial projection delivery. PSeq result lifecycle work records warning/cutoff/grace evidence and attention without deleting bytes. A hosted Website crawler rebuilds the Lucene index. The QuickBooks dispatcher is disabled. |
 | Help | Browser-bundled MDX with Customer/Partner locale metadata and Phaeno US-English content. Backend search is not implemented. |
-| Organization/user administration UI | Invitation acceptance and Phaeno organization list/detail, request, entitlement, invitation, membership, conversion, lifecycle, and User management workspaces use durable APIs. Invitations retain the person’s name and intended membership role. Phaeno invitations and user edits consolidate Platform administrator and additive Laboratory roles; pending Laboratory-role intent activates only on acceptance, while external administration remains organization-scoped. |
+| Organization/user administration UI | Invitation acceptance and Phaeno organization list/detail, request, entitlement, invitation, membership, conversion, lifecycle, and User management workspaces use durable APIs. Invitations show access and durable delivery lifecycles separately. Phaeno invitations/user edits include explicit Commercial, result-release, billing, cash, reconciliation, and Laboratory roles; pending role intent activates only on acceptance. |
 
-Phaeno Portal is the operational and commercial-source system of record. Its first-party CRM owns relationship and pipeline records, and its order workflows own the manual catalog, quotes, credit rules, and accounting source records. No ERP, accounting provider, third-party LIMS, or external CRM is connected to the running application; Laboratory execution is owned by the internal Lab Operations provider.
+Phaeno Portal is the operational and commercial-source system of record. Its
+first-party CRM owns relationship/pipeline records; PSeq Order-to-Cash owns
+native operational AR and governed release metadata; Partner order workflows
+retain manual accounting-source records. No ERP, accounting provider, payment
+processor, third-party LIMS, or external CRM is connected to the running
+application; Laboratory execution is owned by the internal Lab Operations
+provider.
 
 ## Health and basic verification
 
@@ -45,13 +51,14 @@ Keep environment-specific values outside source control. `appsettings.Developmen
 | `Bootstrap` | One-time bootstrap link inputs | Disabled or cleared after the initial administrator is linked. |
 | `Invitations` | Token lifetime, resend cooldown, public URL | Public URL and expiry policy approved. |
 | `Postmark` | Transactional sender | Verified sender/domain, production token, stream, delivery and failure monitoring. |
+| `OrderToCash` | Six independent activation flags, invitation webhook/retry, pipeline API key, result-lifecycle schedule, and dual-control mode | All flags default off. Production activation requires provider secrets, HTTPS Portal URL, webhook authentication, storage/scanner readiness, staffing evidence, migration preview/review, and cross-functional acceptance. `DualControlEnforced` additionally requires the explicit staffing-valid flag. |
 | `WebsiteApi`, `GoogleAuthSettings`, and `EmailServiceSettings` | Public origins/documents, locale-specific technical briefs, Google reCAPTCHA Enterprise, and Mailgun templates | Existing production credentials and document volume transferred through the secret/storage platform; CORS and rejection verified; every enabled locale's `fulfill-web-technical-brief-request.{locale}` template exists in Mailgun; every configured localized PDF URL returns the intended document; and representative localized delivery is verified. |
 | `WebCrawlerSettings`, `WebSearchSettings`, and `ChronJobs:IndexWebsite` | Public-site crawl target, Lucene index path, and rebuild schedule | Durable writable index storage, successful initial crawl, monitoring, and representative search verified. |
 | `WebsitePreviewSearch` | Protected branch crawl target, dedicated Preview Lucene path, Vercel automation bypass, proxy key, and rebuild schedule | Disabled by default; when activated, secrets remain server-side, the index uses its dedicated volume, direct unauthenticated access is denied, and production search remains unchanged. |
 | `FileStorage` | Provider selection, local development root, and S3 bucket, region, key prefix, optional service URL, and path-style setting | Temporary state: `Provider=Disabled`, which permits startup but no file operations. Activation state: `Provider=S3`; bucket and prefix approved; SDK default credential chain uses a least-privilege identity or protected access keys; encryption, lifecycle, permissions, monitoring, and representative upload/download/delete behavior verified. Production refuses the Local provider. |
 | `DataProvisioning` | Upload limit, synthetic policy, scanner, allowed kinds | Synthetic fixtures rejected; real file policy and trusted scanner approved. |
 | `OrderManagement` | Upload limit, scanner, allowed kinds | Trusted scanner and real Customer/Partner file policy approved. |
-| Manual accounting | POMS commercial catalog plus `/api/platform/order-accounting/journal-entries` and CSV export | Catalog ownership, date-range reconciliation, stable source-ID handling, general-ledger account mapping, tax treatment, posting procedure, duplicate prevention, and Finance ownership approved. |
+| Partner manual accounting | POMS commercial catalog plus `/api/platform/order-accounting/journal-entries` and CSV export | Partner catalog ownership, date-range reconciliation, stable source-ID handling, general-ledger account mapping, tax treatment, posting procedure, duplicate prevention, and Finance ownership approved. |
 | Future external CRM adapter | Provider/account identifiers, credentials, API, webhook verifier, and field mapping | Not present or required today. Before any activation: fresh product scope, field ownership, least-privilege access, non-production proof, webhook validation, reconciliation, monitoring, and rotation approved. |
 | `VITE_CLERK_PUBLISHABLE_KEY` | Frontend Clerk instance | Vercel Preview uses the development `pk_test_` value. Vercel Production uses the `pk_live_` value matching the API's production Clerk configuration. |
 | `VITE_API_BASE_URL` | Frontend API base URL | Points to the approved API origin or reverse proxy. |
@@ -81,14 +88,23 @@ Committed migrations currently cover:
 8. `AddCrmCompanyFoundation`, `CompleteCoreCrm`, and
    `AllowRepeatCrmCompanyContactHistory`, applied to the configured local
    development database only.
+9. `ClosePSeqOrderToCashGaps`, an additive schema for durable invitation
+   delivery, business roles, derived-readiness inputs, governed result packages,
+   native PSeq AR, reconciliation, dual-control evidence, and attention. It was
+   applied to the configured local development database only. The authenticated
+   platform-admin migration preview reports historical row counts but performs
+   no backfill.
 
 Use the repository-local EF tool manifest and commands documented in `README.md`. A migration committed or applied to one developer database is not proof that it ran in another environment. Before a shared-environment migration, record the target, backup/restore point, expected duration, application compatibility, verification query or smoke test, and rollback/forward-fix decision. Never apply a migration to shared, staging, or production data without explicit authorization.
 
 ## Durable delivery and recovery
 
-- Notifications, provisioning notices, and Lab projection events use durable records and hosted dispatchers.
+- Invitations, notifications, provisioning notices, and Lab projection events use durable records and hosted dispatchers.
 - A failed delivery remains visible with its error and retry state. Retry the existing record after correcting configuration or connectivity; do not recreate the order, grant, or notification to force delivery.
 - Manual accounting source records are created transactionally with their billing boundary and keep stable IDs across repeated report downloads. Reconciliation must not rewrite immutable commercial or scientific snapshots.
+- Native PSeq receipts and allocations are append-only/reversible and
+  reconciliation approval requires a different actor from the recorded cash
+  activity. Result release never reads invoice balance as an authorization gate.
 - Tenant-safe timelines and messages must remain separate from internal retry details and investigation notes.
 
 ## Production activation gates
@@ -118,6 +134,16 @@ Production is not ready until all applicable gates are evidenced:
   reporting, CRM-to-Portal handoffs, duplicate prevention, authorization, and
   operational ownership;
 - Postmark sender/domain verification, template review, delivery/bounce monitoring, and retry ownership;
+- reviewed counts-only historical migration preview, separately authorized
+  backfill/forward-fix procedure, all six flags exercised independently, and
+  dual-control staffing evidence before enforcement;
+- provider-authenticated pipeline manifest registration, representative clean
+  and rejected scans, scientific/package pinning, Customer release metadata,
+  correction/withdrawal evidence, approved result-byte delivery design, and an
+  authorized retention deletion procedure;
+- Finance acceptance of PSeq tax approval, quote snapshot, invoice/PDF,
+  receipt/import/allocation/reversal, unapplied cash, aging, reconciliation, and
+  closeout reporting;
 - Website historical-row copy with count/hash comparison, reCAPTCHA and
   Mailgun secret transfer, public-document/index mounts, CORS, search,
   technical-brief delivery, API-base/DNS or reverse-proxy switch, rollback
@@ -142,3 +168,8 @@ Until these gates are complete, a passing local build or test suite demonstrates
 - A third-party LIMS adapter and ownership cutover unless an approved future
   workflow establishes the need.
 - Exceptional curated-package purge and any automated retention deletion workflow.
+- Physical governed-result byte delivery, outbound result-availability email,
+  and automatic governed-result byte deletion until their sensitive-data
+  destinations and authorization are separately approved.
+- PSeq invoice void and unrestricted AR export until their control, privacy,
+  and approval requirements are separately authorized.

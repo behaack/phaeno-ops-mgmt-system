@@ -19,6 +19,7 @@ using PhaenoPortal.App.Features.DataProvisioning.Services;
 using PhaenoPortal.App.Features.FileManagement.Services;
 using PhaenoPortal.App.Features.LabOperations.Services;
 using PhaenoPortal.App.Features.OrderManagement.Services;
+using PhaenoPortal.App.Features.OrderToCash;
 using PhaenoPortal.App.Features.Website;
 using PhaenoPortal.App.Infrastructure.Api;
 using PhaenoPortal.App.Infrastructure.Persistence;
@@ -34,10 +35,31 @@ builder.Services.Configure<ClerkOptions>(
     builder.Configuration.GetSection(ClerkOptions.SectionName));
 builder.Services.Configure<BootstrapOptions>(
     builder.Configuration.GetSection(BootstrapOptions.SectionName));
-builder.Services.Configure<InvitationOptions>(
-    builder.Configuration.GetSection(InvitationOptions.SectionName));
-builder.Services.Configure<PostmarkOptions>(
-    builder.Configuration.GetSection(PostmarkOptions.SectionName));
+var orderToCashConfiguration = builder.Configuration
+    .GetSection(OrderToCashOptions.SectionName)
+    .Get<OrderToCashOptions>() ?? new OrderToCashOptions();
+builder.Services.AddOptions<OrderToCashOptions>()
+    .Bind(builder.Configuration.GetSection(OrderToCashOptions.SectionName))
+    .Validate(options => options.IsValid(),
+        "OrderToCash settings are invalid. Enabled durable delivery requires webhook credentials; governed results require a pipeline key; enforced dual control requires staffing validation.")
+    .ValidateOnStart();
+builder.Services.AddOptions<PostmarkOptions>()
+    .Bind(builder.Configuration.GetSection(PostmarkOptions.SectionName))
+    .Validate(options => !builder.Environment.IsProduction()
+        || !(orderToCashConfiguration.Features.InvitationDelivery
+            || orderToCashConfiguration.Features.GovernedPSeqResults)
+        || options.IsConfigured,
+        "Production invitation and governed-result notification delivery require a valid Postmark server token and sender.")
+    .ValidateOnStart();
+builder.Services.AddOptions<InvitationOptions>()
+    .Bind(builder.Configuration.GetSection(InvitationOptions.SectionName))
+    .Validate(options => !builder.Environment.IsProduction()
+        || !(orderToCashConfiguration.Features.InvitationDelivery
+            || orderToCashConfiguration.Features.GovernedPSeqResults)
+        || (Uri.TryCreate(options.PublicBaseUrl, UriKind.Absolute, out var uri)
+            && uri.Scheme == Uri.UriSchemeHttps),
+        "Production invitation and governed-result delivery require an HTTPS Portal public base URL.")
+    .ValidateOnStart();
 builder.Services.Configure<DataProvisioningOptions>(
     builder.Configuration.GetSection(DataProvisioningOptions.SectionName));
 builder.Services.AddOptions<OrderManagementOptions>()
@@ -95,6 +117,14 @@ builder.Services.AddHostedService<ReleasedDeliverableDownloadAttemptReconciler>(
 builder.Services.AddScoped<OrderRequestContext>();
 builder.Services.AddScoped<OrderIdempotencyService>();
 builder.Services.AddScoped<ManualCommercialReleaseService>();
+builder.Services.AddScoped<OperationalReadinessService>();
+builder.Services.AddScoped<OrderToCashAuthorization>();
+builder.Services.AddScoped<DualControlService>();
+builder.Services.AddScoped<AttentionOperationsService>();
+builder.Services.AddScoped<NativeInvoiceService>();
+builder.Services.AddHostedService<ResultPackageLifecycleDispatcher>();
+builder.Services.AddScoped<InvitationDeliveryEnqueuer>();
+builder.Services.AddHostedService<InvitationDeliveryDispatcher>();
 builder.Services.AddScoped<SampleShippingPacketService>();
 builder.Services.AddScoped<SampleShippingWorkflowReader>();
 builder.Services.AddScoped<ILabOperationsProvider, InternalLabOperationsProvider>();
@@ -149,10 +179,14 @@ builder.Services.AddHttpClient<PostmarkInvitationEmailSender>((services, httpCli
 builder.Services.AddScoped<IInvitationEmailSender>(services =>
 {
     var postmarkOptions = services.GetRequiredService<IOptions<PostmarkOptions>>().Value;
-    return postmarkOptions.IsConfigured
-        ? services.GetRequiredService<PostmarkInvitationEmailSender>()
-        : services.GetRequiredService<LoggingInvitationEmailSender>();
+    if (postmarkOptions.IsConfigured)
+        return services.GetRequiredService<PostmarkInvitationEmailSender>();
+    var hostEnvironment = services.GetRequiredService<IHostEnvironment>();
+    if (hostEnvironment.IsDevelopment() || hostEnvironment.IsEnvironment("Test"))
+        return services.GetRequiredService<LoggingInvitationEmailSender>();
+    throw new InvalidOperationException("Logging invitation delivery is limited to Development and Test.");
 });
+builder.Services.AddDataProtection();
 builder.Services.AddScoped<IExternalIdentityContext, ClaimsExternalIdentityContext>();
 
 var clerkOptions = builder.Configuration

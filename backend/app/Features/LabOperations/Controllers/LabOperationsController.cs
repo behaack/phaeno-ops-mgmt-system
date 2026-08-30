@@ -4,12 +4,14 @@ using System.Text.Json;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Options;
 using PSeq.Operations.Commercial.LabOperations.Application;
 using PSeq.Operations.Commercial.LabOperations.Domain;
 using PSeq.Operations.Laboratory.Domain;
 using PhaenoPortal.App.Features.LabOperations.DTOs;
 using PhaenoPortal.App.Features.LabOperations.Services;
 using PhaenoPortal.App.Features.OrderManagement.Domain;
+using PhaenoPortal.App.Features.OrderToCash;
 using PhaenoPortal.App.Infrastructure.Persistence;
 
 [ApiController]
@@ -17,7 +19,9 @@ using PhaenoPortal.App.Infrastructure.Persistence;
 [Route("api/platform/lab-operations")]
 public sealed partial class LabOperationsController(
     PSeqOperationsDbContext dbContext,
-    LabOperationsRequestContext requestContext) : ControllerBase
+    LabOperationsRequestContext requestContext,
+    DualControlService dualControl,
+    IOptions<OrderToCashOptions> orderToCashOptions) : ControllerBase
 {
     private static readonly JsonSerializerOptions JsonOptions = new(JsonSerializerDefaults.Web);
 
@@ -297,15 +301,21 @@ public sealed partial class LabOperationsController(
         EnsureVersion(protocol.Version, request.ProtocolVersion);
         switch (request.Action.Trim().ToLowerInvariant())
         {
-            case "approve": Execute(() => version.Approve(actor.User.Id, DateTime.UtcNow)); break;
+            case "approve":
+                await dualControl.CheckAsync("protocol_author_not_approver", nameof(LabProtocolVersion),
+                    version.Id, actor.User.Id, [version.AuthoredByUserId], cancellationToken);
+                Execute(() => version.Approve(actor.User.Id, DateTime.UtcNow));
+                break;
             case "withdraw": Execute(version.WithdrawApproval); break;
             case "discard": Execute(version.Discard); break;
             case "activate":
+                await dualControl.CheckAsync("protocol_author_not_activator", nameof(LabProtocolVersion),
+                    version.Id, actor.User.Id, [version.AuthoredByUserId], cancellationToken);
                 var active = await dbContext.LabProtocolVersions
                     .Where(item => item.LabProtocolId == version.LabProtocolId && item.Status == LabProtocolStatus.Active)
                     .ToListAsync(cancellationToken);
                 foreach (var previous in active) Execute(previous.Retire);
-                Execute(version.Activate);
+                Execute(() => version.Activate(actor.User.Id, DateTime.UtcNow));
                 break;
             case "retire": Execute(version.Retire); break;
             default: throw Invalid("protocol_transition_invalid", "The protocol transition is invalid.");

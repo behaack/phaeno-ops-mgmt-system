@@ -13,6 +13,7 @@ import {
   isOrderConcurrencyError,
   updateLabOrder,
   type LabServiceOrder,
+  type EligibleCustomerOrganization,
 } from "#/api/order-management";
 import { Alert, AlertDescription, AlertTitle } from "#/components/ui/alert";
 import { Button } from "#/components/ui/button";
@@ -106,7 +107,7 @@ type JobDetailsValues = z.output<typeof jobDetailsSchema>;
 type LabJobDetailsDialogProps = {
   open: boolean;
   order?: LabServiceOrder | null;
-  platformOrganizations?: Array<{ id: string; name: string }>;
+  platformOrganizations?: EligibleCustomerOrganization[];
   sourceHandoff?: CommercialOrderHandoffSource | null;
   onOpenChange: (open: boolean) => void;
   onSaved: (order: LabServiceOrder) => void | Promise<void>;
@@ -133,6 +134,9 @@ export function LabJobDetailsDialog({
   const queryClient = useQueryClient();
   const platformMode = platformOrganizations !== undefined;
   const eligiblePlatformOrganizations = platformOrganizations ?? [];
+  const selectedPlatformOrganization = eligiblePlatformOrganizations.find(
+    (value) => value.id === organizationId,
+  );
   const [organizationId, setOrganizationId] = useState("");
   const [prohibitedDataConfirmed, setProhibitedDataConfirmed] = useState(false);
   const canCreate = platformMode
@@ -381,8 +385,8 @@ export function LabJobDetailsDialog({
                   <RequiredFieldName>Customer</RequiredFieldName>
                 </Label>
                 <FieldDescription id={`${formId}-organization-help`}>
-                  The Customer must have an active organization administrator
-                  who can approve the quote.
+                  Stage-eligible Customers are listed even when administrator,
+                  shipping, order, or billing setup still blocks quote issuance.
                 </FieldDescription>
                 <select
                   id={`${formId}-organization`}
@@ -400,9 +404,24 @@ export function LabJobDetailsDialog({
                   {eligiblePlatformOrganizations.map((organization) => (
                     <option key={organization.id} value={organization.id}>
                       {organization.name}
+                      {organization.canIssueQuoteOrCommit ? "" : " · setup pending"}
                     </option>
                   ))}
                 </select>
+                {selectedPlatformOrganization?.blockers?.length ? (
+                  <div className="mt-3 rounded-lg border bg-muted/40 p-3">
+                    <p className="text-sm font-medium">
+                      Quote issuance remains blocked
+                    </p>
+                    <ul className="mt-2 list-disc space-y-1 pl-5 text-sm text-muted-foreground">
+                      {selectedPlatformOrganization.blockers.map((blocker) => (
+                        <li key={blocker.code}>
+                          {blocker.label}: {blocker.nextAction}
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                ) : null}
                 {eligiblePlatformOrganizations.length === 0 ? (
                   <FieldError>
                     No eligible Customer organizations were provided.

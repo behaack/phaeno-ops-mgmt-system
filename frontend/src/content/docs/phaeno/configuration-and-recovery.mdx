@@ -2,7 +2,10 @@
 
 Order configuration controls the active scientific, Partner, commercial, release, and integration rules used by new work. Changes must be audited and should not rewrite immutable order snapshots.
 
-**File management** separately controls the retention policy used by future released result and output packages. Only a Phaeno platform administrator can change these settings.
+**File management** separately controls the existing released-deliverable policy
+used by Partner and legacy packages. Governed PSeq packages use the independent
+order-to-cash warning, cutoff, and grace lifecycle. Only a Phaeno platform
+administrator can change file-management settings.
 
 Use the far-left **Order configuration** sidebar to move among **Defaults**, **Catalog**, **Analyses**, **Sample shipping**, **PSeq kits**, **Assembly**, and **Credit**. On wider screens the sidebar can remain pinned; when it is unpinned or the screen is narrow, open the same non-modal navigation from the edge tab. The selected subject appears in the main pane without duplicating the navigation above the configuration form.
 
@@ -14,7 +17,11 @@ The designated laboratory-service item must use the permanent code `pseq-lab-ser
 
 Configure Partner reagent availability, negotiated price, currency, effective period, quantity rules, and shipping restrictions for each eligible Partner. Overlapping active price periods for the same Partner and item are not allowed.
 
-Configure Customer laboratory and Partner assembly credit separately. Approval means Net 30 release under the applicable workflow. Without credit, ready files remain on payment hold. Manual payment confirmation and release are not part of the current workflow; do not bypass that hold with an order-status change.
+Configure Partner assembly credit for its existing Net 30/payment-hold workflow.
+The Customer laboratory-credit field remains only for legacy compatibility;
+governed PSeq result release is independent of credit, invoice balance, and
+payment. Do not use either field to override scientific approval or release
+authority.
 
 Set the default quote-validity period in configuration. The initial default is 30 days, and an issued quote snapshots its own expiration.
 
@@ -48,15 +55,28 @@ Enter a reason for every change. A new revision applies only to packages release
 
 To configure an account-specific policy, open the Customer, Partner, or Prospect in **Portal accounts**, select **Retention**, and add an override. Leave any value blank to inherit that value from the current global policy. The page shows the effective value and source for each field. Removing an override restores global inheritance for future releases and also requires a reason.
 
-New Customer laboratory-result and Partner data-assembly output releases now freeze the effective policy version and exact UTC warning, standard-deletion, and potential final-deletion times in the same transaction as release. Their authorized external detail views show the standard deadline and label the later date as conditional until grace is actually activated. Repeated payment events preserve the first release time. Releases created before the snapshot migration are not backfilled and show no automated retention schedule.
+Partner data-assembly and legacy Customer laboratory-result releases freeze the
+effective policy version and exact UTC warning, standard-deletion, and potential
+final-deletion times in the same transaction as release. Governed PSeq packages
+instead record their warning, cutoff, and grace evidence in the order-to-cash
+lifecycle. Historical releases are not rewritten by the additive migration.
 
 Released-file and full-package ZIP downloads now create a bounded, immutable transfer attempt before storage opens. The attempt counts only after the complete server response succeeds. Partial range responses, failures, cancellations, and timeouts do not count. Abandoned started attempts are reconciled after their frozen lease expires. Existing audit rows from before completion-aware tracking are retained as non-counting `legacy_completion_unverified` failures rather than being reclassified as successful downloads.
 
-Warning delivery, grace activation, download cutoff, and package-byte deletion remain unavailable until the released-package retention worker and production storage are activated. Completion-aware download evidence and package status are active foundations only; they do not run those later retention actions.
+For governed PSeq packages, the lifecycle records warning, cutoff, and grace
+evidence and raises owned attention when deletion would be due. It does not
+delete result bytes automatically. Result-byte delivery and download evidence
+also remain outside the current additive slice.
 
 ## Prepare manual journal entries
 
-Open **Order operations**, then **Accounting**, to review the **Journal-entry source report**. Choose an inclusive UTC accounting-date range and download the CSV for manual entry into the accounting system. POMS creates one stable source record when a laboratory job reaches its billing boundary, an assembly output is approved, or a reagent shipment is recorded.
+Open **Order operations**, then **Accounting**, to review the **Journal-entry
+source report** for Partner workflows. Choose an inclusive UTC accounting-date
+range and download the CSV for manual entry into the accounting system. POMS
+creates one stable source record when a Partner assembly output is approved or
+a reagent shipment reaches its billing boundary. PSeq uses native invoices,
+receipts, allocations, adjustments, reconciliation, and aging in
+**Order-to-cash**.
 
 The report provides the stable entry ID, organization, workflow and source references, purchase-order or project reference, currency, gross amount, outstanding balance, payment status, and memo. Finance assigns general-ledger accounts, tax treatment, and posting dates outside POMS. Repeated downloads do not mark a row as posted.
 
@@ -64,4 +84,11 @@ QuickBooks Online integration is deferred. Do not configure OAuth, retry histori
 
 ## Activate production dependencies
 
-Before production use, confirm approved storage and malware scanning, notification delivery, active catalog and scientific profiles, Partner offerings and prices, credit decisions, quote validity, the manual accounting handoff, and operational ownership. Laboratory activation also requires approved bench workflows, label/printer/scanner and degraded-mode procedures, external NGS provider operating details, and the required database-backed verification. A successful application build alone does not prove these production dependencies are ready.
+Before production use, confirm approved storage and malware scanning,
+notification delivery, active catalog and scientific profiles, Partner
+offerings and prices, PSeq billing/tax configuration, quote validity, Partner
+manual accounting, native PSeq AR operations, and operational ownership.
+Laboratory activation also requires approved bench workflows,
+label/printer/scanner and degraded-mode procedures, external NGS provider
+operating details, and the required database-backed verification. A successful
+application build alone does not prove these production dependencies are ready.

@@ -1,5 +1,10 @@
 # Lab Operations Plan
 
+> PSeq gap-closure note (2026-08-29): scientific approval now pins a complete,
+> checksummed, malware-clean governed output package. Commercial release remains
+> a separate Result Release Manager action and is never payment-gated for PSeq.
+> See `PSeq-Order-to-Cash Gap-Closure Plan.md`.
+
 Keep this file updated as Phaeno's internal laboratory workflows are designed
 and implemented.
 

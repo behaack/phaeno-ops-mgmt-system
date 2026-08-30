@@ -1,6 +1,7 @@
 namespace PSeq.Operations.Commercial.OrderManagement.Domain;
 
 using PSeq.Operations.Commercial.Common.Persistence;
+using PSeq.Operations.Commercial.OrderToCash.Domain;
 
 public sealed class QboCatalogItem : IAudit, IConcurrency
 {
@@ -289,6 +290,17 @@ public sealed class OrganizationCommercialProfile : IAudit, IConcurrency
     public bool AssemblyCreditApproved { get; private set; }
     public DateTime? CreditReviewedAt { get; private set; }
     public Guid? CreditReviewedByUserId { get; private set; }
+    public string? BillingContactName { get; private set; }
+    public string? BillingContactEmail { get; private set; }
+    public string? BillingAddressJson { get; private set; }
+    public int PaymentTermsDays { get; private set; } = 30;
+    public TaxDecision? PSeqTaxDecision { get; private set; }
+    public decimal? ApprovedTaxRate { get; private set; }
+    public string? TaxExemptionEvidenceReference { get; private set; }
+    public Guid? TaxApprovedByUserId { get; private set; }
+    public DateTime? TaxApprovedAtUtc { get; private set; }
+    public string? TaxApprovalNotes { get; private set; }
+    public int PSeqBillingConfigurationVersion { get; private set; }
     public DateTime CreatedAt { get; private set; } = DateTime.UtcNow;
     public Guid? CreatedByUserId { get; private set; }
     public DateTime UpdatedAt { get; private set; } = DateTime.UtcNow;
@@ -312,6 +324,53 @@ public sealed class OrganizationCommercialProfile : IAudit, IConcurrency
         CreditReviewedByUserId = actorUserId;
         CreditReviewedAt = reviewedAt;
     }
+
+    public void ConfigurePSeqBilling(
+        string billingContactName,
+        string billingContactEmail,
+        string billingAddressJson,
+        int paymentTermsDays,
+        TaxDecision taxDecision,
+        decimal? approvedTaxRate,
+        string? exemptionEvidenceReference,
+        Guid financeApproverUserId,
+        DateTime approvedAtUtc,
+        string approvalNotes)
+    {
+        if (paymentTermsDays is < 0 or > 365)
+            throw new ArgumentOutOfRangeException(nameof(paymentTermsDays));
+        if (financeApproverUserId == Guid.Empty)
+            throw new ArgumentException("A Finance approver is required.", nameof(financeApproverUserId));
+        if (taxDecision == TaxDecision.Taxable && approvedTaxRate is null or < 0 or > 1)
+            throw new ArgumentException("A taxable decision requires a tax rate between 0 and 1.", nameof(approvedTaxRate));
+        if (taxDecision != TaxDecision.Taxable && approvedTaxRate is not null)
+            throw new ArgumentException("Only a taxable decision may carry a tax rate.", nameof(approvedTaxRate));
+        if (taxDecision == TaxDecision.Exempt && string.IsNullOrWhiteSpace(exemptionEvidenceReference))
+            throw new ArgumentException("A tax-exempt decision requires evidence.", nameof(exemptionEvidenceReference));
+
+        BillingContactName = OrderText.Required(billingContactName, nameof(billingContactName), 255);
+        BillingContactEmail = OrderText.Required(billingContactEmail, nameof(billingContactEmail), 255);
+        BillingAddressJson = OrderText.Json(billingAddressJson);
+        PaymentTermsDays = paymentTermsDays;
+        PSeqTaxDecision = taxDecision;
+        ApprovedTaxRate = approvedTaxRate.HasValue
+            ? decimal.Round(approvedTaxRate.Value, 6, MidpointRounding.AwayFromZero)
+            : null;
+        TaxExemptionEvidenceReference = OrderText.Optional(exemptionEvidenceReference, 2000);
+        TaxApprovedByUserId = financeApproverUserId;
+        TaxApprovedAtUtc = approvedAtUtc;
+        TaxApprovalNotes = OrderText.Required(approvalNotes, nameof(approvalNotes), 4000);
+        PSeqBillingConfigurationVersion++;
+    }
+
+    public bool HasApprovedPSeqBillingConfiguration =>
+        !string.IsNullOrWhiteSpace(BillingContactName)
+        && !string.IsNullOrWhiteSpace(BillingContactEmail)
+        && !string.IsNullOrWhiteSpace(BillingAddressJson)
+        && PSeqTaxDecision.HasValue
+        && TaxApprovedByUserId.HasValue
+        && TaxApprovedAtUtc.HasValue
+        && PSeqBillingConfigurationVersion > 0;
 
     public void MarkCreated(DateTime utcNow, Guid? actorUserId) { CreatedAt = utcNow; CreatedByUserId = actorUserId; }
     public void MarkUpdated(DateTime utcNow, Guid? actorUserId) { UpdatedAt = utcNow; UpdatedByUserId = actorUserId; }

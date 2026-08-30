@@ -71,6 +71,25 @@ public class LabOperationsAuthorizationTests
     }
 
     [Fact]
+    public void ExplicitRoleEnforcementRemovesPlatformAdminBusinessActionBootstrap()
+    {
+        var (user, _) = CreatePhaenoUser(isPlatformAdmin: true);
+
+        var withoutRoles = LabOperationsAuthorization.Evaluate(user, [], enforceExplicitRoles: true);
+        var accessOnly = LabOperationsAuthorization.Evaluate(user,
+            [LabRole.OperationsAdministrator], enforceExplicitRoles: true);
+
+        Assert.False(withoutRoles.CanManageLabOperations);
+        Assert.False(withoutRoles.CanOperateLabWork);
+        Assert.False(withoutRoles.CanManageLabProtocols);
+        Assert.False(withoutRoles.CanReviewLabWork);
+        Assert.True(accessOnly.CanManageLabAccess);
+        Assert.False(accessOnly.CanOperateLabWork);
+        Assert.False(accessOnly.CanManageLabProtocols);
+        Assert.False(accessOnly.CanReviewLabWork);
+    }
+
+    [Fact]
     public void OrdinaryPhaenoMemberWithoutALabRoleHasNoLabCapability()
     {
         var (user, _) = CreatePhaenoUser(isPlatformAdmin: false);

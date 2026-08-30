@@ -578,6 +578,11 @@ const mockSession: SessionResponse = {
     canManageDataAssembly: true,
     canManageOrderIntegrations: true,
     canViewOrderAudit: true,
+    canOperateCommercialWork: true,
+    canReleasePSeqResults: true,
+    canOperateBilling: true,
+    canOperateCash: true,
+    canReconcileCash: true,
   },
 }
 
@@ -670,6 +675,11 @@ function MockSessionProvider({ children }: { children: ReactNode }) {
         canManageDataAssembly: selectedMembership?.organizationKind === 'Phaeno',
         canManageOrderIntegrations: selectedMembership?.organizationKind === 'Phaeno',
         canViewOrderAudit: selectedMembership?.organizationKind === 'Phaeno',
+        canOperateCommercialWork: selectedMembership?.organizationKind === 'Phaeno',
+        canReleasePSeqResults: selectedMembership?.organizationKind === 'Phaeno',
+        canOperateBilling: selectedMembership?.organizationKind === 'Phaeno',
+        canOperateCash: selectedMembership?.organizationKind === 'Phaeno',
+        canReconcileCash: selectedMembership?.organizationKind === 'Phaeno',
       },
     }
 

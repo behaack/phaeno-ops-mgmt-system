@@ -1,5 +1,10 @@
 # Order Management Plan
 
+> PSeq gap-closure note (2026-08-29): native PSeq AR and payment-independent
+> governed result release supersede the PSeq manual-accounting and payment-hold
+> assumptions in this document. Partner Kit and Partner Data Assembly behavior
+> is unchanged. See `PSeq-Order-to-Cash Gap-Closure Plan.md`.
+
 Keep this file updated as Customer and Partner ordering requirements are
 supplied and decisions are made.
 

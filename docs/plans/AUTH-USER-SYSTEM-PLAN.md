@@ -1,5 +1,17 @@
 # Auth and User System Plan
 
+> PSeq gap-closure note (2026-08-29): durable invitation attempts/webhooks and
+> explicit Commercial, result-release, billing, cash, and reconciliation roles
+> are implemented behind independent default-off flags. For PSeq behavior, the
+> approved `PSeq-Order-to-Cash Gap-Closure Plan.md` supersedes older assumptions
+> that Platform administrator automatically grants every business/Lab action.
+
+> PSeq gap-closure note (2026-08-29): durable invitation attempts/webhooks and
+> explicit Commercial, result-release, billing, cash, and reconciliation roles
+> are implemented behind independent default-off flags. For PSeq behavior, the
+> approved `PSeq-Order-to-Cash Gap-Closure Plan.md` supersedes older assumptions
+> that Platform administrator automatically grants every business/Lab action.
+
 Keep this file updated as authentication, authorization, user lifecycle, and invitation decisions change.
 
 Do not execute this plan unless explicitly requested.

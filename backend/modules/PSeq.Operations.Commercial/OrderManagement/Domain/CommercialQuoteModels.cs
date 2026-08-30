@@ -41,6 +41,11 @@ public sealed class LabServiceQuote : IAudit, IConcurrency
     public decimal Tax { get; private set; }
     public decimal Total { get; private set; }
     public string Currency { get; private set; } = "USD";
+    public string? BillingSnapshotJson { get; private set; }
+    public int? PaymentTermsDaysSnapshot { get; private set; }
+    public string? TaxDecisionSnapshot { get; private set; }
+    public decimal? TaxRateSnapshot { get; private set; }
+    public int? BillingConfigurationVersionSnapshot { get; private set; }
     public DateTime IssuedAt { get; private set; }
     public DateTime ExpiresAt { get; private set; }
     public DateTime? AcceptedAt { get; private set; }
@@ -81,6 +86,23 @@ public sealed class LabServiceQuote : IAudit, IConcurrency
     }
 
     public void MarkIssued() { if (Status != QuoteStatus.SyncPending) throw new InvalidOperationException(); Status = QuoteStatus.Issued; }
+    public void FreezePSeqBilling(
+        string billingSnapshotJson,
+        int paymentTermsDays,
+        string taxDecision,
+        decimal? taxRate,
+        int billingConfigurationVersion)
+    {
+        if (Status != QuoteStatus.SyncPending)
+            throw new InvalidOperationException("Billing must be frozen before quote issuance.");
+        if (paymentTermsDays is < 0 or > 365 || billingConfigurationVersion < 1)
+            throw new ArgumentOutOfRangeException(nameof(paymentTermsDays));
+        BillingSnapshotJson = OrderText.Json(billingSnapshotJson);
+        PaymentTermsDaysSnapshot = paymentTermsDays;
+        TaxDecisionSnapshot = OrderText.Required(taxDecision, nameof(taxDecision), 50);
+        TaxRateSnapshot = taxRate;
+        BillingConfigurationVersionSnapshot = billingConfigurationVersion;
+    }
     public void Supersede(Guid nextQuoteId) { if (Status is QuoteStatus.Accepted or QuoteStatus.Superseded) throw new InvalidOperationException(); Status = QuoteStatus.Superseded; SupersededByQuoteId = nextQuoteId; }
 
     public void Accept(Guid actorUserId, DateTime utcNow)

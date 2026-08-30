@@ -38,6 +38,11 @@ public sealed class Organization : IAudit, IConcurrency
     public string? PortalReadinessNote { get; private set; }
 
     /// <summary>
+    /// The only authoritative manual readiness override. All other readiness is derived.
+    /// </summary>
+    public bool IsPortalReadinessManuallyBlocked { get; private set; }
+
+    /// <summary>
     /// Date and time when the organization was created.
     /// </summary>
     public DateTime CreatedAt { get; private set; } = DateTime.UtcNow;
@@ -111,6 +116,14 @@ public sealed class Organization : IAudit, IConcurrency
     public void UpdatePortalReadiness(PortalReadinessStatus status, string? note)
     {
         PortalReadiness = status;
+        PortalReadinessNote = string.IsNullOrWhiteSpace(note) ? null : note.Trim();
+        IsPortalReadinessManuallyBlocked = status == PortalReadinessStatus.Blocked;
+    }
+
+    public void SetPortalReadinessManualBlock(bool isBlocked, string? note)
+    {
+        IsPortalReadinessManuallyBlocked = isBlocked;
+        PortalReadiness = isBlocked ? PortalReadinessStatus.Blocked : PortalReadinessStatus.Pending;
         PortalReadinessNote = string.IsNullOrWhiteSpace(note) ? null : note.Trim();
     }
 

@@ -7,7 +7,7 @@ Treat operational work, accounting source records, notifications, file scanning,
 Use Customer lab, Partner reagent, and Partner assembly queues to find work by its current status. Prioritize:
 
 1. scan or safety failures that block intake or release;
-2. payment or release-state conflicts that affect a ready result;
+2. governed package, scientific-approval, or release-state conflicts;
 3. missing or unexpected accounting source records;
 4. Customer- or Partner-visible holds and requested corrections;
 5. notifications that remain pending or failed.
@@ -18,11 +18,23 @@ The overall order status is not sufficient evidence. Check sample or shipment pr
 
 Lab execution events are delivered durably to Commercial projections. If a Customer milestone, schedule, action request, or permitted QC summary is delayed, verify the Lab work order and event state, then retry the existing delivery path. Do not recreate the authorization, create a second work order, or copy Laboratory facts directly into Commercial records.
 
-Internal and Customer-action-required exceptions are separate. Resolve the existing blocking exception with an authorized Supervisor action and a retained resolution note. Never copy an internal investigation description into the Customer-safe summary. Ready for release is a scientific milestone only; recover file scanning, payment, and publication through their own lifecycles.
+Internal and Customer-action-required exceptions are separate. Resolve the
+existing blocking exception with an authorized Supervisor action and a retained
+resolution note. Never copy an internal investigation description into the
+Customer-safe summary. For PSeq, recover package scanning, scientific approval,
+and Commercial release through their own lifecycles; payment is independent.
+Partner payment holds remain separate.
 
-## Review manual accounting source records
+## Recover PSeq accounts receivable and Partner accounting sources
 
-POMS creates stable journal-entry source rows at the implemented billing boundaries. The report itself does not post entries or choose general-ledger accounts.
+PSeq invoices, receipts, allocations, adjustments, and reconciliation are native
+POMS records. Retry an idempotent operation with the existing external ID or
+record identifier; never create a second receipt, invoice, or reconciliation to
+hide a failure. Reverse an incorrect allocation/receipt and preserve its reason.
+
+Partner workflows continue to create stable journal-entry source rows at their
+implemented billing boundaries. The report itself does not post entries or
+choose general-ledger accounts.
 
 1. Open **Order operations**, then **Accounting**.
 2. Select the inclusive accounting-date range.
@@ -42,7 +54,9 @@ Files progress through **Pending**, **Scanning**, **Clean**, **Rejected**, **Fai
 - Use **Ready** when operational review is complete, **Payment hold** when commercial release is blocked, and **Released** only when every applicable gate passes.
 - Use **Withdrawn** when a previously available file must no longer be delivered; preserve the record and audit history.
 
-Credit approval permits Net 30 release for the applicable Customer lab or Partner assembly workflow. Without credit, files remain on payment hold until a separately approved payment-confirmation workflow is implemented. Do not use an order-status change to bypass this rule.
+PSeq result release is independent of credit and payment. Partner assembly keeps
+its existing credit/payment hold. Do not use an order or invoice status change
+to bypass either workflow's release policy.
 
 ## Recover notifications
 

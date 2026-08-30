@@ -134,6 +134,9 @@ public sealed partial class LabOperationsController
     public async Task<LabWorkOrderDetailDto> ApproveScientificReview(Guid workOrderId,
         [FromBody] ScientificApprovalRequest request, CancellationToken cancellationToken)
     {
+        if (orderToCashOptions.Value.Features.GovernedPSeqResults)
+            throw Conflict("governed_result_package_required",
+                "Scientific approval must pin a complete, checksummed, malware-clean governed output package.");
         var actor = await requestContext.RequireAsync(HttpContext, cancellationToken,
             LabRole.ScientificReviewer, LabRole.OperationsAdministrator);
         var work = await RequireWorkOrderAsync(workOrderId, cancellationToken);
@@ -146,6 +149,12 @@ public sealed partial class LabOperationsController
         if (await dbContext.LabProtocolExecutions.AnyAsync(item => item.LabWorkOrderId == work.Id
             && item.Status != LabExecutionStatus.Completed && item.Status != LabExecutionStatus.Abandoned, cancellationToken))
             throw Conflict("execution_incomplete", "Every assigned protocol execution must be completed or abandoned before approval.");
+        var contributors = await dbContext.LabWorkEvents.AsNoTracking()
+            .Where(item => item.LabWorkOrderId == work.Id)
+            .Select(item => item.ActorUserId)
+            .ToListAsync(cancellationToken);
+        await dualControl.CheckAsync("scientific_approver_not_contributor", nameof(LabWorkOrder),
+            work.Id, actor.User.Id, contributors, cancellationToken);
         var approvalVersion = await dbContext.LabScientificApprovals
             .CountAsync(item => item.LabWorkOrderId == work.Id, cancellationToken) + 1;
         work.RecordMilestone(LabWorkOrderStatus.ReadyForRelease);

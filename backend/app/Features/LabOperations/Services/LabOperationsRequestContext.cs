@@ -6,13 +6,15 @@ using PSeq.Operations.Commercial.Accounts.Domain;
 using PSeq.Operations.Laboratory.Domain;
 using PhaenoPortal.App.Features.Accounts.Services;
 using PhaenoPortal.App.Features.OrderManagement.Services;
+using PhaenoPortal.App.Features.OrderToCash;
 using PhaenoPortal.App.Infrastructure.Persistence;
+using Microsoft.Extensions.Options;
 
-public sealed record LabOperationsActor(User User, IReadOnlySet<LabRole> Roles)
+public sealed record LabOperationsActor(User User, IReadOnlySet<LabRole> Roles, bool EnforceExplicitRoles = false)
 {
     public bool IsPlatformAdmin => AccountAuthorization.IsPlatformAdmin(User);
     public bool HasAny(params LabRole[] roles) =>
-        LabOperationsAuthorization.HasAny(User, Roles, roles);
+        LabOperationsAuthorization.HasAny(User, Roles, EnforceExplicitRoles, roles);
 }
 
 internal sealed record LabOperationsCapabilities(
@@ -36,6 +38,15 @@ internal static class LabOperationsAuthorization
         params LabRole[] requiredRoles) =>
         AccountAuthorization.IsPlatformAdmin(user)
         || IsEligibleLabStaff(user) && requiredRoles.Any(assignedRoles.Contains);
+
+    public static bool HasAny(
+        User user,
+        IReadOnlyCollection<LabRole> assignedRoles,
+        bool enforceExplicitRoles,
+        params LabRole[] requiredRoles) =>
+        IsEligibleLabStaff(user)
+        && requiredRoles.Any(assignedRoles.Contains)
+        || !enforceExplicitRoles && AccountAuthorization.IsPlatformAdmin(user);
 
     public static bool IsEligibleLabStaff(User user) =>
         user is { IsActive: true, Status: UserAccountStatus.Active }
@@ -67,11 +78,30 @@ internal static class LabOperationsAuthorization
                 || hasRole(LabRole.OperationsAdministrator),
             CanManageLabAccess: hasRole(LabRole.OperationsAdministrator));
     }
+
+    public static LabOperationsCapabilities Evaluate(
+        User user,
+        IReadOnlyCollection<LabRole> assignedRoles,
+        bool enforceExplicitRoles)
+    {
+        if (!enforceExplicitRoles) return Evaluate(user, assignedRoles);
+        if (!IsEligibleLabStaff(user))
+            return new LabOperationsCapabilities(false, false, false, false, false, false);
+        var hasRole = (LabRole role) => assignedRoles.Contains(role);
+        return new LabOperationsCapabilities(
+            CanManageLabOperations: assignedRoles.Count > 0,
+            CanOperateLabWork: hasRole(LabRole.Operator) || hasRole(LabRole.Supervisor),
+            CanSuperviseLabWork: hasRole(LabRole.Supervisor),
+            CanManageLabProtocols: hasRole(LabRole.ProtocolAdministrator),
+            CanReviewLabWork: hasRole(LabRole.ScientificReviewer),
+            CanManageLabAccess: hasRole(LabRole.OperationsAdministrator));
+    }
 }
 
 public sealed class LabOperationsRequestContext(
     PSeqOperationsDbContext dbContext,
-    IExternalIdentityContext externalIdentityContext)
+    IExternalIdentityContext externalIdentityContext,
+    IOptions<OrderToCashOptions> orderToCashOptions)
 {
     public async Task<LabOperationsActor> RequireAsync(
         HttpContext httpContext,
@@ -87,7 +117,8 @@ public sealed class LabOperationsRequestContext(
                 dbContext.LabRoleAssignments.AsNoTracking(), user.Id)
             .Select(assignment => assignment.Role)
             .ToHashSetAsync(cancellationToken);
-        var actor = new LabOperationsActor(user, assignedRoles);
+        var actor = new LabOperationsActor(user, assignedRoles,
+            orderToCashOptions.Value.Features.BusinessRoles);
         if (roles.Length > 0 && !actor.HasAny(roles))
         {
             throw new OrderManagementException(

@@ -22,6 +22,11 @@ using PhaenoPortal.App.Features.OrderManagement.Controllers;
 using PhaenoPortal.App.Features.OrderManagement.Domain;
 using PhaenoPortal.App.Features.OrderManagement.DTOs;
 using PhaenoPortal.App.Features.OrderManagement.Services;
+using DualControlService = PhaenoPortal.App.Features.OrderToCash.DualControlService;
+using NativeInvoiceService = PhaenoPortal.App.Features.OrderToCash.NativeInvoiceService;
+using OperationalReadinessService = PhaenoPortal.App.Features.OrderToCash.OperationalReadinessService;
+using OrderToCashAuthorization = PhaenoPortal.App.Features.OrderToCash.OrderToCashAuthorization;
+using OrderToCashOptions = PhaenoPortal.App.Features.OrderToCash.OrderToCashOptions;
 using PhaenoPortal.App.Infrastructure.Persistence;
 using PhaenoPortal.App.Infrastructure.Persistence.Auditing;
 
@@ -1554,18 +1559,24 @@ public class LabOperationsCommercialHandoffPostgresTests
         public LabOperationsController CreatePlatformLabController() =>
             CreateLabController(platformIdentity);
 
-        public LabOperationsController CreateLabController(ExternalIdentity identity) =>
-            new(
+        public LabOperationsController CreateLabController(ExternalIdentity identity)
+        {
+            var options = Options.Create(new OrderToCashOptions());
+            return new LabOperationsController(
                 DbContext,
                 new LabOperationsRequestContext(
                     DbContext,
-                    new FixedIdentityContext(identity)))
+                    new FixedIdentityContext(identity),
+                    options),
+                new DualControlService(DbContext, options),
+                options)
             {
                 ControllerContext = new ControllerContext
                 {
                     HttpContext = new DefaultHttpContext()
                 }
             };
+        }
 
         private LabServiceOrdersController CreateCustomerController(
             ILabOperationsProvider provider,
@@ -1600,13 +1611,19 @@ public class LabOperationsCommercialHandoffPostgresTests
             var httpContext = new DefaultHttpContext();
             if (idempotencyKey != null)
                 httpContext.Request.Headers["Idempotency-Key"] = idempotencyKey;
+            var orderToCashOptions = Options.Create(new OrderToCashOptions());
+            var identityContext = new FixedIdentityContext(platformIdentity);
             return new(
                 DbContext,
-                new OrderRequestContext(DbContext, new FixedIdentityContext(platformIdentity)),
+                new OrderRequestContext(DbContext, identityContext),
                 new OrderIdempotencyService(DbContext),
                 NullOperationalFileStorage.Instance,
                 NullOperationalFileScanner.Instance,
                 Options.Create(new OrderManagementOptions()),
+                orderToCashOptions,
+                new OperationalReadinessService(DbContext),
+                new OrderToCashAuthorization(DbContext, identityContext, orderToCashOptions),
+                new NativeInvoiceService(DbContext, NullOperationalFileStorage.Instance),
                 provider,
                 new ReleasedDeliverableRetentionSnapshotService(DbContext))
             {

@@ -226,6 +226,8 @@ public sealed class LabProtocolVersion
     public DateTime AuthoredAtUtc { get; private set; }
     public Guid? ApprovedByUserId { get; private set; }
     public DateTime? ApprovedAtUtc { get; private set; }
+    public Guid? ActivatedByUserId { get; private set; }
+    public DateTime? ActivatedAtUtc { get; private set; }
 
     private LabProtocolVersion() { }
 
@@ -267,10 +269,13 @@ public sealed class LabProtocolVersion
         Status = LabProtocolStatus.Discarded;
     }
 
-    public void Activate()
+    public void Activate(Guid actorUserId, DateTime utcNow)
     {
         if (Status != LabProtocolStatus.Approved) throw new InvalidOperationException("Only an approved protocol can be activated.");
+        if (actorUserId == Guid.Empty) throw new ArgumentException("An activator is required.", nameof(actorUserId));
         Status = LabProtocolStatus.Active;
+        ActivatedByUserId = actorUserId;
+        ActivatedAtUtc = utcNow;
     }
 
     public void Retire()

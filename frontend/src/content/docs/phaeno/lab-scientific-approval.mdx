@@ -10,16 +10,27 @@ The Scientific Reviewer should be able to trace the submitted specimen through c
 
 ## Record the approval
 
-Record the release-definition key and version, reviewer identity, approval time, and the permitted QC projection. The release definition establishes what Commercial may expect; it does not attach or generate files.
+For PSeq, approval requires the provider-registered final-output manifest and
+every checksummed artifact to have a clean malware scan. Record the
+release-definition key/version, reviewer identity, approval time, permitted QC
+projection, and exact governed package identifier/version. Approval pins that
+immutable package; it does not publish it.
 
 If the gate is not satisfied, leave the work in review and create the appropriate exception or rework action. Do not approve merely to move the Commercial order forward.
 
 ## Publish readiness
 
-Approval moves the Lab work order to **Ready for release** and publishes the controlled Customer-safe milestone to Commercial. Commercial may receive the milestone, schedule health, expected timing, and safe QC projection defined by the contract.
+Approval moves the Lab work order and pinned governed package through **Ready
+for release** and publishes the controlled Customer-safe milestone to
+Commercial. Commercial may receive the package/approval identifiers, milestone,
+schedule health, expected timing, and safe QC projection defined by the
+contract.
 
 ## Respect the release boundary
 
-Ready for release does not create, attach, upload, scan, or publish a result artifact. Order Ops must still verify the result manifest, checksums, malware scan, accounting source record, approved credit, and publication decision. Work without approved credit remains on payment hold because manual payment confirmation is not implemented.
+Ready for release does not publish a result artifact. A Result Release Manager
+still makes the Customer-visibility decision, and PSeq payment/credit never
+gates it. Corrections require a new registered, scanned, and scientifically
+approved package version; do not revise an approved package in place.
 
 If the Lab-to-Commercial event fails, retry the existing durable projection. Do not duplicate the approval, recreate the work order, or manually mark the Customer file released.

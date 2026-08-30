@@ -1,6 +1,11 @@
 # Order operations
 
-Order operations is the Commercial workspace for taking in demand, preparing quotes, recording customer approval, managing orders, and producing accounting source records. PSeq Lab Service, PSeq Kit, and Data Assembly appear as order types in one Commercial order list. QuickBooks Online integration is deferred.
+Order operations is the Commercial workspace for taking in demand, staging
+incomplete Customer work, preparing quotes, recording Customer approval, and
+managing orders. PSeq Lab Service, PSeq Kit, and Data Assembly appear as order
+types in one Commercial list; PSeq Lab Service also has a feature-flagged
+**Order-to-cash** workspace for governed results and native POMS accounts
+receivable.
 
 Use the far-left sidebar beneath the toolbar to move among **Order intake**, **Orders**, and **Accounting**. **Order intake** is where Commercial staff enter a new Customer order and review first-party sales handoffs. A custom-work handoff and a requested Trial Project still require Phaeno review; they are not an executable order or Lab work merely because the handoff arrived. Create the handoff from its CRM Company or Opportunity, then review the resulting request in **Portal accounts**.
 
@@ -8,13 +13,23 @@ The sidebar header identifies Order operations and, on wider screens, provides t
 
 ## Enter and find orders
 
-Choose **New Customer order** in **Order intake** when a salesperson is taking a PSeq Lab Service order for an eligible Customer. The order remains Commercial while scope, pricing, and Customer approval are being established. Approval and exact sample-roster finalization create the immutable authorization and linked Lab work; staff do not accession specimens in Order operations.
+Choose **New Customer order** in **Order intake** when a salesperson is taking a
+PSeq Lab Service order for a stage-eligible Customer. Stage eligibility requires
+an active Customer, ready entitlement, and active offering; the selector shows
+all such Customers with their remaining blockers. A staged order may exist
+before an active Customer administrator or complete operational/billing setup,
+but the quote cannot be issued and no Customer commitment can occur until the
+derived readiness checklist is complete. Approval and exact sample-roster
+finalization create the immutable authorization and linked Lab work.
 
 For negotiated work, use the reviewed CRM handoff instead of **New Customer order**. The intake queue shows whether a handoff is pending review, blocked by an exact Customer or Opportunity prerequisite, ready to start, or already linked to an order. **Start Customer order** locks the Customer from the approved handoff and asks only for the price-bearing Job scope. One handoff can start one order. The order's internal details retain links to the CRM Company, optional Opportunity, and request number; Customer users do not see that internal CRM context.
 
 Use **Orders** to search all Commercial orders. Narrow the list by **Order type** to distinguish **PSeq Lab Service**, **PSeq Kit**, and **Data Assembly** without turning those products into separate Order Ops modules. Open the order to review its immutable Commercial facts, quote or approval state, assignment, cancellation requests, and linked Lab workflow.
 
-**Accounting** provides the date-filtered journal-entry source report and notification delivery recovery.
+**Accounting** retains the Partner/manual journal-entry source report and
+notification recovery. **Order-to-cash** provides PSeq governed package status,
+release actions, native invoices/PDFs, receipt/allocation work, aging, and owned
+attention according to the signed-in business roles.
 
 Use status, hold, overdue, organization, assignment, and due-date filters to narrow the queue. Assign an owner and due date when the workflow supports them. A queue assignment coordinates work; it does not grant authorization or change the workflow state.
 

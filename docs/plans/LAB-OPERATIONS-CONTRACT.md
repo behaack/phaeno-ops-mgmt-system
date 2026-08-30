@@ -1,5 +1,10 @@
 # Commercial to Lab Operations Contract
 
+> PSeq gap-closure note (2026-08-29): `LabWorkReadyForRelease` carries the
+> scientific approval and governed package identifiers for PSeq. The package,
+> release, AR, and Customer-visibility rules are owned by the approved
+> `PSeq-Order-to-Cash Gap-Closure Plan.md`.
+
 This document defines the version 1 application contract between
 Commercial Operations and Lab Operations.
 

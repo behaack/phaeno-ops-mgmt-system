@@ -12,6 +12,7 @@ import { Route as rootRouteImport } from './routes/__root'
 import { Route as SampleShippingRouteImport } from './routes/sample-shipping'
 import { Route as ReagentOrdersRouteImport } from './routes/reagent-orders'
 import { Route as PhaenoUsersRouteImport } from './routes/phaeno-users'
+import { Route as OrderToCashRouteImport } from './routes/order-to-cash'
 import { Route as OrderOperationsRouteImport } from './routes/order-operations'
 import { Route as OrderConfigurationRouteImport } from './routes/order-configuration'
 import { Route as LabServicesRouteImport } from './routes/lab-services'
@@ -75,6 +76,11 @@ const ReagentOrdersRoute = ReagentOrdersRouteImport.update({
 const PhaenoUsersRoute = PhaenoUsersRouteImport.update({
   id: '/phaeno-users',
   path: '/phaeno-users',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const OrderToCashRoute = OrderToCashRouteImport.update({
+  id: '/order-to-cash',
+  path: '/order-to-cash',
   getParentRoute: () => rootRouteImport,
 } as any)
 const OrderOperationsRoute = OrderOperationsRouteImport.update({
@@ -351,6 +357,7 @@ export interface FileRoutesByFullPath {
   '/lab-services': typeof LabServicesRouteWithChildren
   '/order-configuration': typeof OrderConfigurationRoute
   '/order-operations': typeof OrderOperationsRouteWithChildren
+  '/order-to-cash': typeof OrderToCashRoute
   '/phaeno-users': typeof PhaenoUsersRoute
   '/reagent-orders': typeof ReagentOrdersRouteWithChildren
   '/sample-shipping': typeof SampleShippingRouteWithChildren
@@ -405,6 +412,7 @@ export interface FileRoutesByTo {
   '/lab-services': typeof LabServicesRouteWithChildren
   '/order-configuration': typeof OrderConfigurationRoute
   '/order-operations': typeof OrderOperationsRouteWithChildren
+  '/order-to-cash': typeof OrderToCashRoute
   '/phaeno-users': typeof PhaenoUsersRoute
   '/reagent-orders': typeof ReagentOrdersRouteWithChildren
   '/sample-shipping': typeof SampleShippingRouteWithChildren
@@ -460,6 +468,7 @@ export interface FileRoutesById {
   '/lab-services': typeof LabServicesRouteWithChildren
   '/order-configuration': typeof OrderConfigurationRoute
   '/order-operations': typeof OrderOperationsRouteWithChildren
+  '/order-to-cash': typeof OrderToCashRoute
   '/phaeno-users': typeof PhaenoUsersRoute
   '/reagent-orders': typeof ReagentOrdersRouteWithChildren
   '/sample-shipping': typeof SampleShippingRouteWithChildren
@@ -516,6 +525,7 @@ export interface FileRouteTypes {
     | '/lab-services'
     | '/order-configuration'
     | '/order-operations'
+    | '/order-to-cash'
     | '/phaeno-users'
     | '/reagent-orders'
     | '/sample-shipping'
@@ -570,6 +580,7 @@ export interface FileRouteTypes {
     | '/lab-services'
     | '/order-configuration'
     | '/order-operations'
+    | '/order-to-cash'
     | '/phaeno-users'
     | '/reagent-orders'
     | '/sample-shipping'
@@ -624,6 +635,7 @@ export interface FileRouteTypes {
     | '/lab-services'
     | '/order-configuration'
     | '/order-operations'
+    | '/order-to-cash'
     | '/phaeno-users'
     | '/reagent-orders'
     | '/sample-shipping'
@@ -679,6 +691,7 @@ export interface RootRouteChildren {
   LabServicesRoute: typeof LabServicesRouteWithChildren
   OrderConfigurationRoute: typeof OrderConfigurationRoute
   OrderOperationsRoute: typeof OrderOperationsRouteWithChildren
+  OrderToCashRoute: typeof OrderToCashRoute
   PhaenoUsersRoute: typeof PhaenoUsersRoute
   ReagentOrdersRoute: typeof ReagentOrdersRouteWithChildren
   SampleShippingRoute: typeof SampleShippingRouteWithChildren
@@ -707,6 +720,13 @@ declare module '@tanstack/react-router' {
       path: '/phaeno-users'
       fullPath: '/phaeno-users'
       preLoaderRoute: typeof PhaenoUsersRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/order-to-cash': {
+      id: '/order-to-cash'
+      path: '/order-to-cash'
+      fullPath: '/order-to-cash'
+      preLoaderRoute: typeof OrderToCashRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/order-operations': {
@@ -1286,6 +1306,7 @@ const rootRouteChildren: RootRouteChildren = {
   LabServicesRoute: LabServicesRouteWithChildren,
   OrderConfigurationRoute: OrderConfigurationRoute,
   OrderOperationsRoute: OrderOperationsRouteWithChildren,
+  OrderToCashRoute: OrderToCashRoute,
   PhaenoUsersRoute: PhaenoUsersRoute,
   ReagentOrdersRoute: ReagentOrdersRouteWithChildren,
   SampleShippingRoute: SampleShippingRouteWithChildren,

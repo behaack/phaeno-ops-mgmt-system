@@ -17,7 +17,8 @@ public sealed record LabProtocolDto(
 
 public sealed record LabProtocolVersionDto(
     Guid Id, int ProtocolVersion, string Status, string DefinitionJson,
-    Guid AuthoredByUserId, DateTime AuthoredAtUtc, Guid? ApprovedByUserId, DateTime? ApprovedAtUtc);
+    Guid AuthoredByUserId, DateTime AuthoredAtUtc, Guid? ApprovedByUserId, DateTime? ApprovedAtUtc,
+    Guid? ActivatedByUserId, DateTime? ActivatedAtUtc);
 
 public sealed record LabMaterialDefinitionDto(
     Guid Id, string Key, string Name, string Kind, bool IsActive);

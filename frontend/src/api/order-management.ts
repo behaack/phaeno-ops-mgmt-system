@@ -148,6 +148,15 @@ export type LabServiceOrderingEligibility = {
 export type EligibleCustomerOrganization = {
   id: string;
   name: string;
+  canStageOrder: boolean;
+  canIssueQuoteOrCommit: boolean;
+  blockers: Array<{
+    code: string;
+    label: string;
+    nextAction: string;
+    blocksStaging: boolean;
+    blocksQuoteOrCommitment: boolean;
+  }> | null;
 };
 
 export type ReleasedDeliverableRetention = {
