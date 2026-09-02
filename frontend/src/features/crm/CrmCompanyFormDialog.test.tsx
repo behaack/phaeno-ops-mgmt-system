@@ -4,7 +4,7 @@ import { describe, expect, it, vi } from "vitest";
 import { CrmCompanyFormDialog } from "./CrmCompanyFormDialog";
 
 describe("CRM Company form", () => {
-  it("identifies the record as separate from Portal access", () => {
+  it("keeps Portal access disabled until the Company is approved", () => {
     render(
       <CrmCompanyFormDialog
         open
@@ -17,7 +17,7 @@ describe("CRM Company form", () => {
 
     expect(screen.getByRole("dialog", { name: "New company" })).toBeTruthy();
     expect(
-      screen.getByText(/does not create a Portal account or grant access/),
+      screen.getByText(/Portal access remains disabled until a reviewed request is approved/),
     ).toBeTruthy();
     expect(
       document.querySelector('[data-slot="required-legend"]')?.textContent,

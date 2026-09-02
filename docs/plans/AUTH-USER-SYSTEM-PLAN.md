@@ -54,14 +54,14 @@ Do not execute this plan unless explicitly requested.
   verify in each Clerk instance.
 - The user menu no longer exposes an organization-context search or act-as
   switcher. Phaeno administrators manage external organizations through the
-  Portal accounts workspace; the authenticated session still supplies the
-  organization context required for tenant authorization.
+  CRM Company workspace; the authenticated session still supplies the internal
+  organization scope required for tenant authorization.
 - The POMS dashboard groups the existing mock organization, user, invitation,
-  readiness, and activity summaries under a Phaeno-only **Portal accounts** panel
+  readiness, and activity summaries under a Phaeno-only **Customer access** panel
   alongside Order Operations and Lab Operations. This is a layout mock-up, not
   a connected account queue or authorization change.
 - Prospect, Customer, and Partner dashboards do not reuse that internal mock
-  Portal accounts panel. They show only capability-eligible, organization-scoped
+  Customer access panel. They show only capability-eligible, organization-scoped
   workflow cards backed by the existing tenant APIs: Customer laboratory work
   and sample shipping, Prospect sample shipping, Partner reagent and data-
   assembly work, assigned Data Library packages, and durable User management
@@ -77,11 +77,10 @@ Do not execute this plan unless explicitly requested.
   creates or reactivates an eligible Phaeno membership. The unsupported
   mock-only Operations admin and Customer manager labels were removed rather
   than represented as effective authorization.
-- The standard Portal accounts workspace is a Portal-account review and operations
-  surface. Ordinary onboarding begins from an explicit first-party CRM Company
-  action. A restricted direct proposal path supports migration and recovery;
-  both routes use the same audited review boundary and grant no access by
-  themselves.
+- CRM Company is the canonical external customer record. Its detail workspace
+  owns users, invitations, readiness, services, retention, and lifecycle
+  operations after Portal access is approved. CRM's **Portal access** section is
+  the shared review surface; there is no separate Portal Accounts directory.
 - Organization create and edit actions use modal forms, and selecting an
   organization opens a dedicated, view-first detail route.
 - Production identity configuration is being separated from development. The

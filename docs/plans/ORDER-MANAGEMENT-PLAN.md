@@ -43,6 +43,14 @@ by `FILE-MANAGEMENT-PLAN.md`.
 
 ## Status
 
+- Customer selection for PSeq Lab Service order intake now comes from canonical
+  active CRM Companies. A Company is eligible only when its attached internal
+  Customer operational scope is active and not manually blocked, and has the
+  current service authorization and active offering required to begin pricing.
+  An online administrator is not required at intake; full readiness and an
+  active Customer administrator are rechecked before quote issuance. The
+  displayed name always comes from the Company; the internal scope identifier
+  remains the tenant key stored on the order.
 - Development state: the approved initial-release workflows are implemented in
   the backend, frontend, and local PostgreSQL schema. Customer laboratory,
   Partner reagent, Partner data-assembly, and Phaeno operations/configuration
@@ -1975,8 +1983,9 @@ Phaeno navigation:
   status, overdue, and hold filters. Detail pages expose only Commercial
   commands and separate tenant-safe reasons from internal notes.
 - Order intake exposes `New Customer order` to Phaeno users with order-pricing
-  authority. Its bounded modal selects an active Customer and captures
-  the same price-bearing Job profile as the Customer flow. Saving creates the
+  authority. Its bounded modal incrementally searches the eligible Customer
+  list and captures the same price-bearing Job profile as the Customer flow.
+  Saving creates the
   immutable submitted revision, opens the operational detail in `Quote in
   preparation`, and leaves quote issuance as the only path that makes pricing
   available for Customer-admin approval.

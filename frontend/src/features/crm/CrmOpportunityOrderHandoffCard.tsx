@@ -10,7 +10,7 @@ import {
   type CrmHandoff,
   type CrmOpportunity,
 } from "#/api/crm";
-import { listEligibleCustomerOrganizations } from "#/api/order-management";
+import { listEligibleCustomerCompanies } from "#/api/order-management";
 import { Alert, AlertDescription } from "#/components/ui/alert";
 import { Badge } from "#/components/ui/badge";
 import { Button } from "#/components/ui/button";
@@ -32,7 +32,7 @@ export function CrmOpportunityOrderHandoffCard({ opportunity }: { opportunity: C
   });
   const customers = useQuery({
     queryKey: ["order-operations", "eligible-customers"],
-    queryFn: listEligibleCustomerOrganizations,
+    queryFn: listEligibleCustomerCompanies,
   });
   const create = useMutation({
     mutationFn: (input: { summary: string; internalNotes: string | null }) =>
@@ -89,7 +89,7 @@ export function CrmOpportunityOrderHandoffCard({ opportunity }: { opportunity: C
               ) : handoff.canStartCustomerOrder && handoff.organizationId ? (
                 <Button type="button" onClick={() => setStartHandoff(handoff)}>Start Customer order</Button>
               ) : (
-                <Button asChild variant="outline"><Link to="/customers">Review in Portal accounts</Link></Button>
+                <Button asChild variant="outline"><Link to="/crm/companies">Review Company access</Link></Button>
               )}
             </div>
           ))}
@@ -149,7 +149,7 @@ function CreateOpportunityHandoffDialog({ open, pending, error, onOpenChange, on
           <DialogHeader className="px-5 pt-5 pr-12">
             <DialogTitle>Create Customer order handoff</DialogTitle>
             <DialogDescription>
-              This creates a pending Customer PSeq Lab Service request. Portal account review is required before an order can start.
+              This creates a pending Customer PSeq Lab Service request. Company request review is required before an order can start.
             </DialogDescription>
           </DialogHeader>
           {error ? <div className="px-5"><Alert variant="destructive"><AlertDescription>{apiErrorMessage(error)}</AlertDescription></Alert></div> : null}

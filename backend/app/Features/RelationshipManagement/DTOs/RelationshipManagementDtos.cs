@@ -84,6 +84,7 @@ public sealed record PortalIntegrationRequestDto
 {
     public required Guid Id { get; init; }
     public required string RequestNumber { get; init; }
+    public Guid? CompanyId { get; init; }
     public Guid? OrganizationId { get; init; }
     public required string CandidateOrganizationName { get; init; }
     public required PortalIntegrationRequestType RequestType { get; init; }

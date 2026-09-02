@@ -72,8 +72,8 @@ export function CrmCompaniesPage() {
           </Badge>
           <h1 className="text-3xl font-semibold leading-tight">Companies</h1>
           <p className="mt-3 text-sm leading-6 text-muted-foreground sm:text-base">
-            Maintain commercial relationships before, during, and after a Portal
-            customer relationship.
+            Maintain the complete customer relationship, including optional
+            Portal access, services, and operational readiness.
           </p>
         </div>
         <Button className="cursor-pointer" onClick={() => setCreateOpen(true)}>
@@ -83,10 +83,11 @@ export function CrmCompaniesPage() {
       </section>
 
       <Alert>
-        <AlertTitle>CRM records are separate from Portal accounts</AlertTitle>
+        <AlertTitle>Companies are the customer record</AlertTitle>
         <AlertDescription>
-          A Company record supports commercial work only. It never grants Portal
-          access or starts services or laboratory work.
+          Portal access, users, services, and readiness are enabled and managed
+          from each Company. Creating a Company alone does not grant access or
+          start work.
         </AlertDescription>
       </Alert>
 
@@ -209,6 +210,20 @@ export function CrmCompaniesPage() {
                         variant={company.isActive ? "secondary" : "outline"}
                       >
                         {company.isActive ? "Active" : "Inactive"}
+                      </Badge>
+                      <Badge
+                        className="ml-2"
+                        variant={
+                          company.portalAccessStatus === "Enabled"
+                            ? "secondary"
+                            : "outline"
+                        }
+                      >
+                        {company.portalAccessStatus === "Enabled"
+                          ? "Portal enabled"
+                          : company.portalAccessStatus === "Suspended"
+                            ? "Portal suspended"
+                            : "Portal not enabled"}
                       </Badge>
                     </td>
                     <td className="px-4 py-3 text-muted-foreground">

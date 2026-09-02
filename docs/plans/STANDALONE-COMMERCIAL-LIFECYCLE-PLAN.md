@@ -20,8 +20,10 @@ retain their normal approval boundaries.
   placeholder for HubSpot.
 - The standalone CRM v1 was implemented locally on 2026-08-26. It provides
   first-party relationship, qualification, pipeline, activity, task, reporting,
-  data-quality, import/export, and administration workflows while keeping CRM
-  records separate from Portal accounts, access, entitlements, and work.
+  data-quality, import/export, and administration workflows. On 2026-09-01 the
+  separate Portal Account record was removed: CRM Company became the canonical
+  Customer, Partner, or Prospect record, while access, entitlements, and work
+  remain separately controlled capabilities attached to that Company.
 - A later external CRM integration remains a permitted future enhancement, not
   a current dependency or delivery phase. HubSpot is a possible future
   migration or synchronization adapter, not the foundation of the current
@@ -44,14 +46,14 @@ retain their normal approval boundaries.
 
 Phaeno staff need to manage the commercial relationship and operate the
 scientific product from one application. POMS therefore includes a full
-first-party CRM as well as the Portal account and operational workflows. A
+first-party CRM with Company-owned Portal access and operational workflows. A
 missing external CRM must not prevent staff from managing companies, contacts,
 opportunities, pipelines, activities, tasks, follow-up, reporting, onboarding,
 Prospect evaluations, custom work, or authorized operations.
 
 `CRM-PLAN.md` owns the first-party CRM capability and phased delivery. This
 plan owns the controlled transition from CRM relationship and sales records
-into Portal accounts, Trial Projects, custom work, orders, relationship
+into Portal access, Trial Projects, custom work, orders, relationship
 changes, and offboarding.
 
 ## Users And Outcomes
@@ -62,7 +64,7 @@ changes, and offboarding.
   stages, activities, tasks, notes, and follow-up inside POMS
 - searches and reports on commercial relationships without creating a Portal
   tenant for every CRM record
-- creates a proposed Prospect, Customer, or Partner account in POMS
+- proposes Portal access for a Prospect, Customer, or Partner Company in POMS
 - records the primary relationship contact, Phaeno owner, business objective,
   commercial justification, requested services, and intended relationship
 - submits the proposal into the existing review boundary rather than granting
@@ -150,10 +152,13 @@ executable scientific work, or overwrite POMS-owned operational state.
 
 ### Account proposal and onboarding
 
-1. An authorized Phaeno user opens the CRM Company and selects **Create
-   handoff**.
-2. POMS captures the proposed organization kind, linked Opportunity when
-   applicable, requested services, business purpose, and safe internal notes.
+1. An authorized Phaeno user opens the CRM Company's **Company requests** area
+   and selects **Create request**.
+2. POMS captures an online-access, products-and-services, work, or relationship
+   category and then discloses only the relevant request type, proposed
+   relationship, linked Opportunity, requested products and services, business
+   purpose, and safe internal notes. Products and services use a searchable
+   multi-select.
 3. POMS creates a pending request with its own stable request identifier and
    records the actor and time.
 4. An authorized reviewer approves, returns, or declines the request using the
@@ -168,6 +173,12 @@ executable scientific work, or overwrite POMS-owned operational state.
    and invite the designated organization administrator through explicit
    actions.
 7. Staff mark the request complete only after the owning setup checks pass.
+
+Order-pricing preparation may begin before step 6 is complete when the active
+Customer operational scope has no manual block, its PSeq Lab Service
+entitlement is current and `Ready`, and the offering is active. Online access
+and an active Customer administrator are a later quote-issuance and approval
+gate, not an intake gate.
 
 ### Trial Project request
 
@@ -229,22 +240,17 @@ executable scientific work, or overwrite POMS-owned operational state.
 
 - CRM is a first-class POMS workspace for companies, contacts, opportunities,
   pipelines, activities, tasks, and relationship reporting.
-- Portal accounts is a separate POMS-owned Portal account directory and review
-  workspace, not a disconnected-integration status page.
-- The Administration menu, dashboard selector, workspace heading, and return
-  links consistently label this destination **Portal accounts** so it cannot be
-  mistaken for the CRM Companies directory.
-- The list remains a form-free discovery surface. A bounded create action opens
-  a modal and submits a request; selecting the organization opens its dedicated
-  detail workspace.
-- CRM Companies and Portal Accounts use distinct labels, routes, and records.
-  The CRM company workspace exposes an explicit, authorized action to propose
-  or link a Portal account when the relationship reaches the right point.
-- Production-authorized manual entry replaces development-only HubSpot
-  simulation. The Portal accounts review queue exposes **New Portal account
-  request** only as a restricted migration or recovery path; it submits into
-  the same audited review boundary and does not directly activate users or
-  services. Users do not enter HubSpot Company or Deal identifiers.
+- Company request review is a section of CRM. The Company directory remains
+  the one customer discovery surface, and Company detail owns requests, online
+  access, users, readiness, services, and retention configuration.
+- CRM Companies and internal tenant scopes use distinct identifiers but never
+  appear as two customer records. The Company workspace exposes an explicit,
+  authorized action to request Portal access when the relationship reaches the
+  right point.
+- Company requests use the existing audited review boundary and do not directly
+  activate users, services, or work. Online access remains one possible outcome
+  rather than the container for every request. Users do not enter HubSpot
+  Company or Deal identifiers.
 - Order Operations presents POMS intake and review queues. It does not describe
   pending work as HubSpot handoffs.
 - Internal screens may show Phaeno owner, primary contact, business purpose,
@@ -306,16 +312,15 @@ an unused HubSpot dependency.
 The first-party CRM is implemented through `CRM-PLAN.md`. The slices below
 integrate that CRM with existing Accounts and operational boundaries.
 
-### Slice 1: First-party CRM foundation and standalone Accounts entry — completed
+### Slice 1: First-party CRM foundation and Company access entry — completed
 
 - Implement the first CRM foundation slice from `CRM-PLAN.md`.
 - Replace the development-only HubSpot account simulator with an authorized,
-  production-safe **Propose Portal account** flow from a CRM Company. Keep a
-  restricted direct proposal path for authorized migration and recovery.
+  production-safe **Request Portal access** flow from a CRM Company.
 - Remove required HubSpot Company and Deal identifiers from the user workflow.
 - Create a provider-neutral internal request through the existing durable
   review and approval boundary.
-- Preserve atomic approval-plus-account creation, pending readiness, the
+- Preserve atomic approval-plus-access-scope creation, pending readiness, the
   default-on but explicit Customer ordering-authorization choice, separate
   invitation handling, recovery behavior, and request completion.
 - Update Accounts help and focused backend, frontend, and E2E coverage.
@@ -365,10 +370,9 @@ integrate that CRM with existing Accounts and operational boundaries.
 - Authorized staff can manage companies, contacts, opportunities, pipelines,
   activities, tasks, and commercial reporting inside POMS.
 - Authorized staff can create and resolve Prospect, Customer, and Partner
-  Portal account proposals from the first-party CRM entirely in POMS.
-- No standalone account or commercial-intake form requires a CRM record or
-  external identifier.
-- Approval and account creation remain atomic. Customer ordering authorization
+  Portal-access proposals from the canonical Company entirely in POMS.
+- No commercial-intake form requires an external CRM record or identifier.
+- Approval and internal access-scope creation remain atomic. Customer ordering authorization
   is an explicit, audited choice on that operation and defaults on; invitation,
   readiness completion, and executable work remain separate and auditable.
 - Authorized staff can create Trial Project and custom-work requests entirely

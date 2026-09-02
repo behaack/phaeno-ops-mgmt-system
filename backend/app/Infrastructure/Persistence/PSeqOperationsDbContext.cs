@@ -172,7 +172,6 @@ public sealed class PSeqOperationsDbContext(
     public DbSet<CrmImportBatch> CrmImportBatches { get; set; }
     public DbSet<CrmExportRecord> CrmExportRecords { get; set; }
     public DbSet<CrmHandoff> CrmHandoffs { get; set; }
-    public DbSet<CrmPortalAccountLink> CrmPortalAccountLinks { get; set; }
     public DbSet<LabWorkOrder> LabWorkOrders { get; set; }
     public DbSet<LabWorkAuthorizationVersion> LabWorkAuthorizationVersions { get; set; }
     public DbSet<LabSpecimen> LabSpecimens { get; set; }

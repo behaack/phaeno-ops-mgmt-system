@@ -50,6 +50,7 @@ import { CrmRecordWork } from "./CrmRecordWork";
 import { CrmMergeDialog } from "./CrmMergeDialog";
 import { CrmOwnerSelect } from "./CrmOwnerSelect";
 import { toInput } from "./CrmCompaniesPage";
+import { OrganizationDetailPage } from "#/features/organizations/OrganizationDetailPage";
 
 export function CrmCompanyDetailPage({ companyId }: { companyId: string }) {
   const queryClient = useQueryClient();
@@ -183,16 +184,23 @@ export function CrmCompanyDetailPage({ companyId }: { companyId: string }) {
       <section className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
         <div className="min-w-0">
           <div className="mb-3 flex flex-wrap gap-2">
-            <Badge variant="secondary">CRM company</Badge>
+            <Badge variant="secondary">Company</Badge>
             <Badge variant={company.isActive ? "outline" : "destructive"}>
               {company.isActive ? "Active" : "Inactive"}
+            </Badge>
+            <Badge variant={company.portalAccessStatus === "Enabled" ? "secondary" : "outline"}>
+              {company.portalAccessStatus === "Enabled"
+                ? "Portal access enabled"
+                : company.portalAccessStatus === "Suspended"
+                  ? "Portal access suspended"
+                  : "Portal access not enabled"}
             </Badge>
           </div>
           <h1 className="break-words text-3xl font-semibold leading-tight">
             {company.name}
           </h1>
           <p className="mt-3 max-w-3xl text-sm leading-6 text-muted-foreground sm:text-base">
-            Commercial relationship record owned by {company.ownerName}.
+            Customer and commercial relationship owned by {company.ownerName}.
           </p>
         </div>
         <div className="flex flex-wrap gap-2">
@@ -222,13 +230,16 @@ export function CrmCompanyDetailPage({ companyId }: { companyId: string }) {
         </div>
       </section>
 
-      <Alert>
-        <AlertTitle>No Portal access is attached</AlertTitle>
-        <AlertDescription>
-          This Company is not a Portal customer account. Access, service
-          entitlements, and operational work require separate reviewed handoffs.
-        </AlertDescription>
-      </Alert>
+      {!company.accessOrganizationId ? (
+        <Alert>
+          <AlertTitle>Portal access is not enabled</AlertTitle>
+          <AlertDescription>
+            This Company remains the customer record. Create and approve an
+            onboarding request below when it should receive Portal users,
+            services, or ordering access.
+          </AlertDescription>
+        </Alert>
+      ) : null}
 
       <div className="grid gap-6 lg:grid-cols-[minmax(0,2fr)_minmax(18rem,1fr)]">
         <Card>
@@ -313,6 +324,12 @@ export function CrmCompanyDetailPage({ companyId }: { companyId: string }) {
       </div>
 
       <CrmCompanyRelationships companyId={companyId} />
+      {company.accessOrganizationId ? (
+        <OrganizationDetailPage
+          organizationId={company.accessOrganizationId}
+          embedded
+        />
+      ) : null}
       <CrmCustomFields recordType="Company" recordId={companyId} />
       <CrmRecordWork links={{ companyId }} />
 

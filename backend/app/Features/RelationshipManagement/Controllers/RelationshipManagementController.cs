@@ -210,7 +210,16 @@ public sealed class RelationshipManagementController(
             .OrderBy(value => value.Status == PortalIntegrationRequestStatus.PendingReview ? 0 : 1)
             .ThenByDescending(value => value.CreatedAt)
             .ToListAsync(cancellationToken);
-        return values.Select(ToDto).ToList();
+        var requestIds = values.Select(value => value.Id).ToList();
+        var companyIds = await dbContext.CrmHandoffs.AsNoTracking()
+            .Where(value => requestIds.Contains(value.RelationshipRequestId))
+            .ToDictionaryAsync(
+                value => value.RelationshipRequestId,
+                value => value.CompanyId,
+                cancellationToken);
+        return values
+            .Select(value => ToDto(value, companyIds.GetValueOrDefault(value.Id)))
+            .ToList();
     }
 
     [HttpGet("requests/{requestId:guid}")]
@@ -275,7 +284,7 @@ public sealed class RelationshipManagementController(
 
         if (request.Approved)
         {
-            await EnsureCrmPortalAccountLinkAsync(value, actor.Id, cancellationToken);
+            await EnsureCompanyPortalAccessAsync(value, actor.Id, cancellationToken);
         }
 
         await dbContext.SaveChangesAsync(cancellationToken);
@@ -296,7 +305,7 @@ public sealed class RelationshipManagementController(
             actor.Id,
             request.OrderingAuthorized,
             cancellationToken);
-        await EnsureCrmPortalAccountLinkAsync(value, actor.Id, cancellationToken);
+        await EnsureCompanyPortalAccessAsync(value, actor.Id, cancellationToken);
         await dbContext.SaveChangesAsync(cancellationToken);
 
         return ToDto(organization);
@@ -346,7 +355,7 @@ public sealed class RelationshipManagementController(
             }
         }
 
-        await EnsureCrmPortalAccountLinkAsync(value, actor.Id, cancellationToken);
+        await EnsureCompanyPortalAccessAsync(value, actor.Id, cancellationToken);
         Execute(() => value.MarkApplied(request.Notes, actor.Id, DateTime.UtcNow));
         await dbContext.SaveChangesAsync(cancellationToken);
         return ToDto(value);
@@ -413,18 +422,25 @@ public sealed class RelationshipManagementController(
         bool orderingAuthorized,
         CancellationToken cancellationToken)
     {
+        var handoff = await dbContext.CrmHandoffs
+            .Include(item => item.Company)
+            .FirstOrDefaultAsync(item => item.RelationshipRequestId == value.Id, cancellationToken)
+            ?? throw Conflict(
+                "company_access_request_required",
+                "Portal access can be enabled only from a CRM Company request.");
+
         if (value.Status != PortalIntegrationRequestStatus.Approved)
         {
             throw Conflict(
                 "account_request_not_approved",
-                "Approve the account request before creating its account.");
+                "Approve the Company access request before enabling Portal access.");
         }
 
         if (value.OrganizationId.HasValue)
         {
             throw Conflict(
                 "account_request_already_associated",
-                "This request is already associated with an account.");
+                "Portal access is already enabled for this Company request.");
         }
 
         if (value.RequestType is not (
@@ -433,7 +449,7 @@ public sealed class RelationshipManagementController(
         {
             throw new RelationshipManagementException(
                 "account_request_type_invalid",
-                "Only an onboarding or evaluation request can create a new account.");
+                "Only an onboarding or evaluation request can enable Portal access.");
         }
 
         if (value.RequestedOrganizationKind is not (
@@ -446,13 +462,20 @@ public sealed class RelationshipManagementController(
                 "The approved request must identify a Prospect, Customer, or Partner relationship.");
         }
 
+        if (handoff.Company.AccessOrganizationId.HasValue)
+        {
+            throw Conflict(
+                "company_portal_access_exists",
+                "Portal access is already enabled for this Company.");
+        }
+
         var duplicate = await dbContext.Organizations.AsNoTracking()
-            .AnyAsync(organization => organization.Name == value.CandidateOrganizationName, cancellationToken);
+            .AnyAsync(organization => organization.Name == handoff.Company.Name, cancellationToken);
         if (duplicate)
         {
             throw Conflict(
                 "account_name_already_exists",
-                "An account with this name already exists. Associate the request with that account instead.");
+                "An internal access scope with this Company name already exists. Remove the orphaned scope before enabling access.");
         }
 
         var description = value.Summary.Length <= 1000
@@ -460,7 +483,7 @@ public sealed class RelationshipManagementController(
             : value.Summary[..1000];
         var now = DateTime.UtcNow;
         var organization = new Organization(
-            value.CandidateOrganizationName,
+            handoff.Company.Name,
             value.RequestedOrganizationKind.Value,
             description);
         var createsOrderingAuthorization = organization.Kind == OrganizationKind.Customer
@@ -473,6 +496,7 @@ public sealed class RelationshipManagementController(
 
         dbContext.Organizations.Add(organization);
         Execute(() => value.AssociateOrganization(organization.Id));
+        Execute(() => handoff.Company.EnablePortalAccess(organization.Id));
 
         if (createsOrderingAuthorization)
         {
@@ -575,37 +599,31 @@ public sealed class RelationshipManagementController(
         };
     }
 
-    private async Task EnsureCrmPortalAccountLinkAsync(PortalIntegrationRequest request, Guid actorUserId, CancellationToken cancellationToken)
+    private async Task EnsureCompanyPortalAccessAsync(PortalIntegrationRequest request, Guid actorUserId, CancellationToken cancellationToken)
     {
         if (!request.OrganizationId.HasValue)
         {
             return;
         }
 
-        var handoff = await dbContext.CrmHandoffs.FirstOrDefaultAsync(value => value.RelationshipRequestId == request.Id, cancellationToken);
+        var handoff = await dbContext.CrmHandoffs
+            .Include(value => value.Company)
+            .FirstOrDefaultAsync(value => value.RelationshipRequestId == request.Id, cancellationToken);
         if (handoff is null)
         {
             return;
         }
 
-        var exists = await dbContext.CrmPortalAccountLinks.AnyAsync(
-            value => value.CompanyId == handoff.CompanyId && value.OrganizationId == request.OrganizationId.Value,
-            cancellationToken);
-        if (exists)
+        if (handoff.Company.AccessOrganizationId == request.OrganizationId)
         {
             return;
         }
 
-        dbContext.CrmPortalAccountLinks.Add(new CrmPortalAccountLink(
-            handoff.CompanyId,
-            request.OrganizationId.Value,
-            $"Portal account associated through {request.RequestNumber}.",
-            actorUserId,
-            DateTime.UtcNow));
+        Execute(() => handoff.Company.EnablePortalAccess(request.OrganizationId.Value));
         dbContext.CrmActivities.Add(new CrmActivity(
             CrmActivityType.PortalEvent,
-            "Portal account linked",
-            $"Portal request {request.RequestNumber} was associated with a Portal organization.",
+            "Portal access enabled",
+            $"Portal access was enabled through Company request {request.RequestNumber}.",
             DateTime.UtcNow,
             CrmActivityVisibility.Internal,
             actorUserId,
@@ -683,10 +701,13 @@ public sealed class RelationshipManagementController(
         };
     }
 
-    private static PortalIntegrationRequestDto ToDto(PortalIntegrationRequest value) => new()
+    private static PortalIntegrationRequestDto ToDto(
+        PortalIntegrationRequest value,
+        Guid? companyId = null) => new()
     {
         Id = value.Id,
         RequestNumber = value.RequestNumber,
+        CompanyId = companyId,
         OrganizationId = value.OrganizationId,
         CandidateOrganizationName = value.CandidateOrganizationName,
         RequestType = value.RequestType,

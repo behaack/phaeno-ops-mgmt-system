@@ -53,6 +53,25 @@ public class CrmCompanyDomainTests
     }
 
     [Fact]
+    public void PortalAccessBelongsToOneCompanyAndTransfersDuringMerge()
+    {
+        var source = new CrmCompany("Source", Guid.NewGuid());
+        var target = new CrmCompany("Target", Guid.NewGuid());
+        var organizationId = Guid.NewGuid();
+
+        source.EnablePortalAccess(organizationId);
+        source.EnablePortalAccess(organizationId);
+        Assert.Equal(organizationId, source.AccessOrganizationId);
+        Assert.Throws<InvalidOperationException>(() =>
+            source.EnablePortalAccess(Guid.NewGuid()));
+
+        source.TransferPortalAccessTo(target);
+
+        Assert.Null(source.AccessOrganizationId);
+        Assert.Equal(organizationId, target.AccessOrganizationId);
+    }
+
+    [Fact]
     public void ContactNormalizesEmailTagsAndMergeHistory()
     {
         var contact = new CrmContact(
@@ -238,7 +257,7 @@ public class CrmCompanyDomainTests
     {
         var activity = new CrmActivity(
             CrmActivityType.PortalEvent,
-            "Portal account linked",
+            "Portal access enabled",
             null,
             DateTime.UtcNow,
             CrmActivityVisibility.Internal,

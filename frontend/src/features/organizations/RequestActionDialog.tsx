@@ -68,13 +68,13 @@ export function RequestActionDialog({
 
   if (!action || !request) return null
 
-  const createsAccountOnApproval = action === 'approve'
+  const enablesAccessOnApproval = action === 'approve'
     && !request.organizationId
     && (request.requestType === 'Onboarding' || request.requestType === 'Evaluation')
     && (request.requestedOrganizationKind === 'Prospect' || request.requestedOrganizationKind === 'Customer' || request.requestedOrganizationKind === 'Partner')
-  const createsCustomerAccount = createsAccountOnApproval
+  const enablesCustomerAccess = enablesAccessOnApproval
     && request.requestedOrganizationKind === 'Customer'
-  const content = actionContent(action, createsAccountOnApproval)
+  const content = actionContent(action, enablesAccessOnApproval)
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -137,7 +137,7 @@ export function RequestActionDialog({
               ) : null}
             </div>
           ) : null}
-          {createsCustomerAccount ? (
+          {enablesCustomerAccess ? (
             <div className="mb-3">
               <OrderingAuthorizationField
                 id="request-action-ordering-authorized"
@@ -185,15 +185,15 @@ export function RequestActionDialog({
   )
 }
 
-function actionContent(action: RequestAction, createsAccountOnApproval: boolean) {
+function actionContent(action: RequestAction, enablesAccessOnApproval: boolean) {
   switch (action) {
     case 'approve':
-      return createsAccountOnApproval
+      return enablesAccessOnApproval
         ? {
-            title: 'Approve and create Portal account',
-            description: 'Approval creates the account with pending Portal readiness. Customer ordering authorization follows the selection below; users and orders are not created.',
+            title: 'Approve and enable Portal access',
+            description: 'Approval enables Portal access on this Company with pending readiness. Customer ordering authorization follows the selection below; users and orders are not created.',
             label: 'Approval reason',
-            submitLabel: 'Approve and create account',
+            submitLabel: 'Approve and enable access',
           }
         : {
             title: 'Approve Portal request',
@@ -210,8 +210,8 @@ function actionContent(action: RequestAction, createsAccountOnApproval: boolean)
       }
     case 'apply':
       return {
-        title: 'Complete account request',
-        description: 'Confirm the owning organization, invitation, entitlement, or order work was completed first.',
+        title: 'Complete Portal access request',
+        description: 'Confirm the owning Company access, invitation, entitlement, or order work was completed first.',
         label: 'Completed work',
         submitLabel: 'Complete request',
       }

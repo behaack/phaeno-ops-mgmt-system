@@ -145,8 +145,9 @@ export type LabServiceOrderingEligibility = {
   blockingReason: string | null;
 };
 
-export type EligibleCustomerOrganization = {
+export type EligibleCustomerCompany = {
   id: string;
+  companyId: string;
   name: string;
 };
 
@@ -1026,8 +1027,8 @@ export async function initiateCustomerLabOrder(
 ) {
   return post<LabServiceOrder>("/platform/lab-service-orders", input, true);
 }
-export async function listEligibleCustomerOrganizations() {
-  return get<EligibleCustomerOrganization[]>(
+export async function listEligibleCustomerCompanies() {
+  return get<EligibleCustomerCompany[]>(
     "/platform/lab-service-orders/eligible-customers",
   );
 }

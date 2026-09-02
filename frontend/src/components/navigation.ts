@@ -1,6 +1,5 @@
 import {
   Activity,
-  Building2,
   Database,
   BookOpenText,
   Library,
@@ -55,16 +54,6 @@ export const mainMenuItems: readonly MainMenuItem[] = [
     to: '/crm',
     icon: Handshake,
     group: 'workspace',
-    visibleWhen: (session, context) =>
-      isPhaenoEmployee(session) &&
-      context.selectedOrganizationKind === 'Phaeno' &&
-      Boolean(session?.capabilities.canManageOrganizations),
-  },
-  {
-    label: 'Portal accounts',
-    to: '/customers',
-    icon: Building2,
-    group: 'administration',
     visibleWhen: (session, context) =>
       isPhaenoEmployee(session) &&
       context.selectedOrganizationKind === 'Phaeno' &&

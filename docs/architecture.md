@@ -34,10 +34,13 @@ The backend targets .NET 10 as a modular monolith:
 - `modules/PSeq.Operations.Commercial/Crm`: provider-neutral first-party CRM
   Companies, Contacts and effective-dated relationships, Leads, Opportunities,
   pipelines/stages, Activities, Tasks, administration records, and controlled
-  Portal handoff/link records. CRM aggregates never grant Portal access or
-  create executable work.
+  Portal handoffs. The Company is the canonical customer record and may own one
+  optional internal Organization used only as its tenant-isolation and Portal-
+  access scope. Creating a Company alone never grants access or creates
+  executable work.
 - `modules/PSeq.Operations.Commercial/Relationships`: Portal integration
-  requests, organization service entitlements, and service-eligibility policy.
+  requests, Company access-scope service entitlements, and service-eligibility
+  policy.
 - `modules/PSeq.Operations.Commercial/DataProvisioning`: Phaeno source samples,
   managed-file metadata, immutable curated versions, exact-version grants,
   governance records, environment-neutral policy, deterministic manifest

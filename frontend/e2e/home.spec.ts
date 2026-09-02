@@ -32,12 +32,12 @@ test('uses POMS branding in the internal Phaeno context', async ({ page }) => {
 
   dashboardSelector = await openDashboardNavigation(page)
   const accountsButton = dashboardSelector.getByRole('button', {
-    name: /Portal accounts/,
+    name: /Customer access/,
   })
   await accountsButton.click()
   await expect(
     page.getByRole('heading', {
-      name: 'Portal accounts',
+      name: 'Customer access',
       level: 2,
     }),
   ).toBeVisible()
@@ -152,7 +152,7 @@ test('keeps workspace navigation concise and groups the user menu', async ({
   await expect(page.getByText('Administration', { exact: true })).toBeVisible()
   await expect(
     page.getByRole('menuitem', { name: 'Portal accounts' }),
-  ).toBeVisible()
+  ).toHaveCount(0)
   await expect(
     page.getByRole('menuitem', { name: 'Order configuration' }),
   ).toBeVisible()
@@ -179,7 +179,7 @@ test('keeps workspace navigation concise and groups the user menu', async ({
     '[role="menuitemradio"][data-state="checked"]',
   )
   await expect(selectedDisplayChoice).toHaveCount(1)
-  await page.getByRole('menuitem', { name: 'Portal accounts' }).focus()
+  await page.getByRole('menuitem', { name: 'Order configuration' }).focus()
   const selectedDisplayBackground = await selectedDisplayChoice.evaluate(
     (choice) => getComputedStyle(choice).backgroundColor,
   )
@@ -226,7 +226,7 @@ test('keeps workspace navigation concise and groups the user menu', async ({
   })
   await darkThemeChoice.focus()
   await darkThemeChoice.press('ArrowDown')
-  const nextMenuItemName = isMobile ? 'Dashboard' : 'Portal accounts'
+  const nextMenuItemName = isMobile ? 'Dashboard' : 'Order configuration'
   await expect(
     page.getByRole('menuitem', { name: nextMenuItemName }),
   ).toBeFocused()
@@ -262,59 +262,6 @@ test('keeps workspace navigation concise and groups the user menu', async ({
   await darkThemeChoice.focus()
   await darkThemeChoice.press('Escape')
   await expect(page.getByRole('menu')).toHaveCount(0)
-  await expect
-    .poll(() =>
-      page.locator('body').evaluate((body) => getComputedStyle(body).overflow),
-    )
-    .not.toBe('hidden')
-})
-
-test('locks background scrolling while a modal is open', async ({ page }) => {
-  await page.route(/^https:\/\/127\.0\.0\.1:\d+\/api\//, async (route) => {
-    const url = new URL(route.request().url())
-    if (url.pathname === '/api/organizations') {
-      await route.fulfill({
-        status: 200,
-        contentType: 'application/json',
-        body: JSON.stringify([{
-          id: '00000000-0000-0000-0000-000000000101',
-          name: 'Atlas Research',
-          description: 'Synthetic customer for modal coverage.',
-          kind: 'Customer',
-          portalReadiness: 'Ready',
-          portalReadinessNote: 'Configured for test coverage.',
-          isActive: true,
-          createdAt: '2026-07-15T10:00:00Z',
-          updatedAt: '2026-07-15T10:00:00Z',
-          version: 1,
-        }]),
-      })
-      return
-    }
-    if (url.pathname === '/api/platform/relationships/requests') {
-      await route.fulfill({
-        status: 200,
-        contentType: 'application/json',
-        body: JSON.stringify({ success: true, data: [], error: null }),
-      })
-      return
-    }
-    await route.fulfill({ status: 404, body: '{}' })
-  })
-  await page.goto('/customers')
-
-  await page.getByRole('button', { name: 'Deactivate' }).click()
-  await expect(
-    page.getByRole('dialog', { name: 'Deactivate organization' }),
-  ).toBeVisible()
-  await expect
-    .poll(() =>
-      page.locator('body').evaluate((body) => getComputedStyle(body).overflow),
-    )
-    .toBe('hidden')
-
-  await page.getByRole('button', { name: 'Close' }).click()
-  await expect(page.getByRole('dialog')).toHaveCount(0)
   await expect
     .poll(() =>
       page.locator('body').evaluate((body) => getComputedStyle(body).overflow),

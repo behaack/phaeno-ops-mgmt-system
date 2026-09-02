@@ -46,8 +46,10 @@ public static class CrmModelConfiguration
             entity.HasIndex(value => value.DomainName);
             entity.HasIndex(value => new { value.IsActive, value.Name });
             entity.HasIndex(value => value.LifecycleState);
+            entity.HasIndex(value => value.AccessOrganizationId).IsUnique();
             entity.HasOne(value => value.Owner).WithMany().HasForeignKey(value => value.OwnerUserId).OnDelete(DeleteBehavior.Restrict);
             entity.HasOne(value => value.MergedIntoCompany).WithMany().HasForeignKey(value => value.MergedIntoCompanyId).OnDelete(DeleteBehavior.Restrict);
+            entity.HasOne(value => value.AccessOrganization).WithOne().HasForeignKey<CrmCompany>(value => value.AccessOrganizationId).OnDelete(DeleteBehavior.Restrict);
         });
     }
 
@@ -340,17 +342,6 @@ public static class CrmModelConfiguration
             entity.HasOne(value => value.RelationshipRequest).WithMany().HasForeignKey(value => value.RelationshipRequestId).OnDelete(DeleteBehavior.Restrict);
         });
 
-        modelBuilder.Entity<CrmPortalAccountLink>(entity =>
-        {
-            entity.HasKey(value => value.Id);
-            entity.Property(value => value.Reason).HasMaxLength(1000).IsRequired();
-            ConfigureAudit(entity);
-            entity.HasIndex(value => new { value.CompanyId, value.OrganizationId }).IsUnique();
-            entity.HasIndex(value => value.OrganizationId);
-            entity.HasOne(value => value.Company).WithMany().HasForeignKey(value => value.CompanyId).OnDelete(DeleteBehavior.Restrict);
-            entity.HasOne(value => value.Organization).WithMany().HasForeignKey(value => value.OrganizationId).OnDelete(DeleteBehavior.Restrict);
-            entity.HasOne(value => value.LinkedByUser).WithMany().HasForeignKey(value => value.LinkedByUserId).OnDelete(DeleteBehavior.Restrict);
-        });
     }
 
     private static object DefaultStage(string id, string name, int position, CrmPipelineStageCategory category, int probability, bool requiresReason) => new

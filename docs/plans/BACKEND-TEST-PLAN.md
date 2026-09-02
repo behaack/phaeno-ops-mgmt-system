@@ -17,7 +17,8 @@ and rollback-isolated PostgreSQL coverage.
 ## Created Tests
 
 - [x] `backend/test/PSeqOrderToCashDomainTests.cs` - invitation retry and hard
-  bounce transitions; derived full readiness versus permitted internal staging;
+  bounce transitions; derived full readiness versus permitted internal staging
+  without an active Customer administrator;
   manual Blocked override; enforced and audit-only protocol author separation;
   result-package
   completeness, approval, release, correction, and withdrawal; invoice decimal
@@ -33,8 +34,10 @@ and rollback-isolated PostgreSQL coverage.
   deduplication and out-of-order retry, durable dispatch concurrency, tenant
   isolation, pipeline idempotency, invoice-number uniqueness, serializable
   allocation/reconciliation conflicts, CSV duplicate import, exact decimal
-  persistence, migration backfills, and forward-fix behavior remain required
-  against a restored production-like database before shared activation.
+  persistence, stage-eligible Company filtering, administrator-free pricing
+  initiation with quote-issuance blocking until an approver is active,
+  migration backfills, and forward-fix behavior remain required against a
+  restored production-like database before shared activation.
 
 - [x] `backend/test/FileStorageTests.cs` - local provider round-trip, checksum,
   deletion, oversize cleanup, feature-area separation, dependency-injection
@@ -308,7 +311,8 @@ and rollback-isolated PostgreSQL coverage.
   qualification/conversion identity; Pipeline terminal rules; Opportunity
   close/reopen behavior; Task state; immutable Portal activities; typed custom
   fields; and effective-dated Company/Contact history, including the
-  Company-specific job title. The 11 focused tests are maintained in
+  Company-specific job title. Company access-scope uniqueness and transfer
+  during a merge are also covered. The focused tests are maintained in
   `backend/test/CrmCompanyDomainTests.cs`.
 - [x] Controller route materialization - build the complete MVC controller
   endpoint collection so reserved route-token conflicts and other startup-time
@@ -323,9 +327,10 @@ and rollback-isolated PostgreSQL coverage.
   duplicate detection, controlled merge, search/report projection, optimistic
   concurrency, soft deactivation, authorization, field visibility, audit, and
   scientific/protected-data exclusion.
-- [ ] CRM/Portal lifecycle - cover explicit Company-to-Portal proposal/link,
-  pending onboarding with no access, direct Customer/Partner creation, narrow
-  Portal Prospect creation, designated-admin invitation, service entitlements,
+- [ ] CRM/Portal lifecycle - cover explicit Company Portal-access proposal,
+  pending onboarding with no access, approval that creates exactly one internal
+  tenant scope, direct Customer/Partner Company creation, designated-admin
+  invitation, service entitlements,
   Trial Project and custom-work handoffs, Customer/Partner reclassification,
   offboarding review, idempotent retries, relationship-safe summary
   publication, reconciliation, and domain authority.
@@ -545,29 +550,31 @@ and rollback-isolated PostgreSQL coverage.
 
 - [ ] Remaining relationship management - cover authorized CRM and
   platform-admin boundaries,
-  organization creation with persisted readiness, organization summary
+  Company access-scope creation with persisted readiness, organization summary
   derivation, readiness concurrency, service eligibility by organization kind,
   entitlement overlap and all effective boundaries, required
   completed-organization association for a
   pre-organization request, request state transitions, controller routing under
   one `/api` prefix, first-party CRM Company/Opportunity correlation,
   path-specific organization/service validation, request idempotency, the
-  standalone proposal's Prospect/Customer/Partner and service validation,
+  Company proposal's Prospect/Customer/Partner and service validation,
   provider-neutral source mapping, and the guarantee that intake alone creates
   no organization, invitation, entitlement, order, or Trial Project. Cover
   atomic approval plus
-  account creation for unassociated onboarding/evaluation requests, including
+  access-scope creation for Company onboarding/evaluation requests, including
   supported kind validation, duplicate-name and stale-version rejection,
   durable request association, Pending readiness, default-on Customer ordering
   authorization, explicit opt-out, one atomic `Ready` PSeq Lab Service
   entitlement, and the guarantee that it creates no invitation or order and
   does not mark the request applied.
-  Retain coverage of the separate endpoint as a legacy-request recovery path.
+  Retain coverage of the legacy access-scope lookup as a deep-link recovery path.
 - [x] Customer Lab ordering eligibility - focused PostgreSQL coverage verifies
   that Phaeno initiation requires a current `Ready` entitlement, sends no
-  Customer notice during quote preparation, and queues quote issue for all
-  active Customer administrators. Canonical item identity/quantity and
-  idempotent initiation coverage remain in the same reference journey.
+  Customer notice during quote preparation, permits pricing before Customer
+  administrator activation, blocks quote issuance until that administrator is
+  active, and then queues quote issue for all active Customer administrators.
+  Canonical item identity/quantity and idempotent initiation coverage remain in
+  the same reference journey.
 - [ ] Remaining relationship management persistence - cover audit
   actor/time/version stamping, existing-organization readiness migration
   default, and request-number uniqueness.
@@ -715,3 +722,9 @@ and rollback-isolated PostgreSQL coverage.
   `20260828234907_AddCrmOpportunityNumber` was applied successfully to the local
   development PostgreSQL database, including deterministic legacy backfill and
   the database unique index.
+- 2026-09-01: the Company-as-canonical-customer change passed the Release API
+  build and EF pending-model check. Migration
+  `20260901162409_FoldPortalAccountsIntoCrmCompanies` was applied to the local
+  development database. The Release backend suite passed 234 tests with no
+  failures; 27 opt-in database tests remained skipped under the default test
+  configuration.

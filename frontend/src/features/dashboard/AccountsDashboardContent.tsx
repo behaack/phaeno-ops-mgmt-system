@@ -16,11 +16,11 @@ export function AccountsDashboardContent({
         <div className="flex flex-wrap items-start justify-between gap-3">
           <div>
             <h2 className="text-lg font-semibold">
-              Portal accounts
+              Customer access
             </h2>
             <p className="mt-1 text-sm text-muted-foreground">
-              Review organization readiness, access, invitations, and account
-              activity.
+              Review Company readiness, access, invitations, services, and
+              activity in CRM.
             </p>
           </div>
           <Badge variant="outline">Mock data</Badge>

@@ -2,6 +2,7 @@ import { useNavigate, useRouterState } from '@tanstack/react-router'
 import {
   Building2,
   ChartColumn,
+  ClipboardCheck,
   ContactRound,
   House,
   ListTodo,
@@ -19,6 +20,7 @@ import {
 type CrmSection =
   | 'home'
   | 'companies'
+  | 'portalAccess'
   | 'contacts'
   | 'leads'
   | 'opportunities'
@@ -40,6 +42,13 @@ const crmSections = [
     description: 'Organizations and relationship context',
     icon: Building2,
     to: '/crm/companies',
+  },
+  {
+    value: 'portalAccess',
+    label: 'Requests',
+    description: 'Company requests and approvals',
+    icon: ClipboardCheck,
+    to: '/customers',
   },
   {
     value: 'contacts',

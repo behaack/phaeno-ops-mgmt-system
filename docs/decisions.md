@@ -378,6 +378,28 @@ operational domains. The 2026-07-15 HubSpot-first decision is superseded except
 for its still-valid safety boundaries around explicit Portal access,
 idempotency, data minimization, and operational authority.
 
+## 2026-09-01: CRM Company is the canonical customer record
+
+Status: confirmed by the Product Owner and implemented locally; deployment and
+signed-in production acceptance remain incomplete.
+
+The separate Portal Account customer entity and directory are removed. A CRM
+Company is the single Prospect, Customer, or Partner identity. A Company may
+exist without Portal access. Approved onboarding or evaluation attaches one
+internal Organization to that Company solely for tenant isolation, users,
+readiness, service entitlements, retention, and operational foreign keys.
+
+Portal access review is a CRM section, and Company detail owns the resulting
+access administration. Customer order intake queries eligible Companies and
+displays the Company name while retaining the internal access-scope identifier
+on operational records. Creating or editing a Company alone never grants user
+access, services, ordering authority, or executable work.
+
+This decision supersedes the 2026-08-26 statement that CRM Companies and Portal
+Accounts are distinct customer records. It preserves the prior authorization,
+review, idempotency, tenant-isolation, data-minimization, and operational-domain
+boundaries.
+
 ## 2026-08-27: QuickBooks is deferred in favor of a manual accounting report
 
 Status: confirmed by the Product Owner and implemented locally; Finance

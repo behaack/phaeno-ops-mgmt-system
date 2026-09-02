@@ -33,6 +33,7 @@ import {
   RequiredFieldName,
   RequiredMark,
 } from "#/components/ui/required-field";
+import { SearchableSelect } from "#/components/ui/searchable-select";
 import { Textarea } from "#/components/ui/textarea";
 import { usePhaenoSession } from "#/features/auth/session-context";
 
@@ -363,7 +364,7 @@ export function LabJobDetailsDialog({
           </DialogFeedback>
         ) : null}
 
-        <div className="px-5">
+        <div className="px-5 py-4">
           <form id={formId} noValidate onSubmit={form.handleSubmit(submit)}>
             {platformMode ? (
               <>
@@ -381,28 +382,39 @@ export function LabJobDetailsDialog({
                   <RequiredFieldName>Customer</RequiredFieldName>
                 </Label>
                 <FieldDescription id={`${formId}-organization-help`}>
-                  The Customer must have an active organization administrator
-                  who can approve the quote.
+                  Active Customers with a current Ready PSeq Lab Service
+                  authorization appear. An online administrator is required
+                  later, before the quote can be issued.
                 </FieldDescription>
-                <select
+                <SearchableSelect
                   id={`${formId}-organization`}
-                  required
-                  className="mt-2 h-9 w-full rounded-lg border border-input bg-background px-3 text-sm"
+                  className="mt-2"
+                  options={[
+                    ...(sourceHandoff &&
+                    !eligiblePlatformOrganizations.some(
+                      (organization) =>
+                        organization.id === sourceHandoff.organizationId,
+                    )
+                      ? [
+                          {
+                            value: sourceHandoff.organizationId,
+                            label: sourceHandoff.organizationName,
+                          },
+                        ]
+                      : []),
+                    ...eligiblePlatformOrganizations.map((organization) => ({
+                      value: organization.id,
+                      label: organization.name,
+                    })),
+                  ]}
                   value={organizationId}
+                  onValueChange={setOrganizationId}
+                  placeholder="Search eligible Customers"
+                  emptyMessage="No eligible Customer organizations were provided."
+                  required
                   disabled={Boolean(sourceHandoff)}
                   aria-describedby={`${formId}-organization-help`}
-                  onChange={(event) => setOrganizationId(event.target.value)}
-                >
-                  <option value="">Select Customer</option>
-                  {sourceHandoff && !eligiblePlatformOrganizations.some((organization) => organization.id === sourceHandoff.organizationId) ? (
-                    <option value={sourceHandoff.organizationId}>{sourceHandoff.organizationName}</option>
-                  ) : null}
-                  {eligiblePlatformOrganizations.map((organization) => (
-                    <option key={organization.id} value={organization.id}>
-                      {organization.name}
-                    </option>
-                  ))}
-                </select>
+                />
                 {eligiblePlatformOrganizations.length === 0 ? (
                   <FieldError>
                     No eligible Customer organizations were provided.
@@ -411,7 +423,10 @@ export function LabJobDetailsDialog({
               </>
             ) : null}
 
-            <Label htmlFor={`${formId}-reference`}>
+            <Label
+              htmlFor={`${formId}-reference`}
+              className={platformMode ? "mt-4" : undefined}
+            >
               <RequiredFieldName>Job name</RequiredFieldName>
             </Label>
             <FieldDescription id={`${formId}-reference-help`}>

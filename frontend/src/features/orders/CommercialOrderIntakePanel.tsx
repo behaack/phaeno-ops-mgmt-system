@@ -4,7 +4,7 @@ import { Plus } from 'lucide-react'
 import { useState } from 'react'
 
 import { listCrmOrderHandoffs, type CrmOrderHandoff } from '#/api/crm'
-import { getOrderErrorMessage, listEligibleCustomerOrganizations } from '#/api/order-management'
+import { getOrderErrorMessage, listEligibleCustomerCompanies } from '#/api/order-management'
 import { Alert, AlertDescription, AlertTitle } from '#/components/ui/alert'
 import { Badge } from '#/components/ui/badge'
 import { Button } from '#/components/ui/button'
@@ -18,7 +18,7 @@ export function CommercialOrderIntakePanel({ apiEnabled, mock }: { apiEnabled: b
   const [selectedHandoff, setSelectedHandoff] = useState<CrmOrderHandoff | null>(null)
   const customers = useQuery({
     queryKey: ['order-operations', 'eligible-customers'],
-    queryFn: listEligibleCustomerOrganizations,
+    queryFn: listEligibleCustomerCompanies,
     enabled: apiEnabled,
   })
   const handoffs = useQuery({
@@ -62,7 +62,7 @@ export function CommercialOrderIntakePanel({ apiEnabled, mock }: { apiEnabled: b
             <Alert>
               <AlertTitle>No eligible Customers</AlertTitle>
               <AlertDescription>
-                A Customer needs ordering authorization, an active PSeq Lab Service offering, and an active administrator before staff can enter its order.
+                A Customer needs an active operational scope, ordering authorization, and an active PSeq Lab Service offering before staff can begin pricing. An online administrator is required later, before the quote can be issued.
               </AlertDescription>
             </Alert>
           </CardContent>
@@ -111,7 +111,7 @@ export function CommercialOrderIntakePanel({ apiEnabled, mock }: { apiEnabled: b
                 ) : item.handoff.canStartCustomerOrder && item.handoff.organizationId ? (
                   <Button type="button" onClick={() => setSelectedHandoff(item)}>Start Customer order</Button>
                 ) : (
-                  <Button asChild variant="outline"><Link to="/customers">Review in Portal accounts</Link></Button>
+                  <Button asChild variant="outline"><Link to="/crm/companies">Review Companies in CRM</Link></Button>
                 )}
               </div>
             ))}

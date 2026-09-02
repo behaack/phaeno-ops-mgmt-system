@@ -1,15 +1,20 @@
 import { Outlet, createFileRoute, useRouterState } from '@tanstack/react-router'
 
-import { OrganizationListPage } from '#/features/organizations/OrganizationListPage'
+import { CrmPortalAccessPage } from '#/features/crm/CrmPortalAccessPage'
+import { CrmShell } from '#/features/crm/CrmShell'
 
 export const Route = createFileRoute('/customers')({
-  component: OrganizationsRoute,
+  component: LegacyCompaniesRoute,
 })
 
-function OrganizationsRoute() {
+function LegacyCompaniesRoute() {
   const isDetail = useRouterState({
     select: (state) => state.location.pathname !== '/customers',
   })
 
-  return isDetail ? <Outlet /> : <OrganizationListPage />
+  return isDetail ? <Outlet /> : (
+    <CrmShell>
+      <CrmPortalAccessPage />
+    </CrmShell>
+  )
 }

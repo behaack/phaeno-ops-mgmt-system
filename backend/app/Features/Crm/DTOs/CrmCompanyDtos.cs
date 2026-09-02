@@ -1,5 +1,6 @@
 namespace PhaenoPortal.App.Features.Crm.DTOs;
 
+using PSeq.Operations.Commercial.Accounts.Domain;
 using PSeq.Operations.Commercial.Crm.Domain;
 
 public sealed record CrmCompanyDto
@@ -25,6 +26,10 @@ public sealed record CrmCompanyDto
     public Guid? MergedIntoCompanyId { get; init; }
     public required Guid OwnerUserId { get; init; }
     public required string OwnerName { get; init; }
+    public Guid? AccessOrganizationId { get; init; }
+    public OrganizationKind? PortalRelationship { get; init; }
+    public PortalReadinessStatus? PortalReadiness { get; init; }
+    public string PortalAccessStatus { get; init; } = "NotEnabled";
     public required bool IsActive { get; init; }
     public required DateTime CreatedAt { get; init; }
     public required DateTime UpdatedAt { get; init; }

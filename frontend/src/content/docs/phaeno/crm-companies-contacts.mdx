@@ -1,6 +1,6 @@
 # Companies and Contacts
 
-Companies and Contacts are durable relationship records. They do not represent Portal Accounts or Portal users, and changing them does not change access.
+Companies and Contacts are durable relationship records. The Company is also the canonical Customer, Partner, or Prospect identity. A Company does not become accessible to external users until Portal access is reviewed and enabled; a Contact never becomes a Portal user automatically.
 
 ## Create and find a Company
 
@@ -11,9 +11,9 @@ Open **Companies** from the CRM sidebar. Search by the known organization identi
 - source, industry, employee count, phone, and postal address
 - tags and a relationship summary
 
-POMS assigns the creator as owner unless another supported owner is selected later. The Company name opens a stable, view-first workspace. Use **Edit** for commercial facts; use activities, tasks, associations, Opportunities, and Portal handoffs in their dedicated sections.
+POMS assigns the creator as owner unless another supported owner is selected later. The Company name opens a stable, view-first workspace. Use **Edit** for commercial facts; use activities, tasks, associations, Opportunities, and Company requests in their dedicated sections.
 
-Changing a CRM lifecycle to Active customer or Partner is descriptive only. It does not create or reclassify a Portal Account, grant membership, activate services, or authorize orders.
+Changing a CRM lifecycle to Active customer or Partner is descriptive only. It does not enable or reclassify Portal access, grant membership, activate services, or authorize orders.
 
 ## Create and manage a Contact
 
@@ -38,7 +38,7 @@ Each relationship row provides the same edit action from either the Company's **
 
 ## Deactivate, reactivate, and merge
 
-Deactivate a Company or Contact when it should leave active directories while its history remains available. Reactivation restores the same CRM identity. Neither action changes a linked Portal Account or user.
+Deactivate a Company or Contact when it should leave active directories while its history remains available. Reactivation restores the same CRM identity. Deactivating a Company suspends its attached Portal access scope; reactivating restores it. Contact lifecycle actions do not change Portal users.
 
 Use **Merge** only for a confirmed duplicate:
 
@@ -47,7 +47,7 @@ Use **Merge** only for a confirmed duplicate:
 3. Record a required merge reason.
 4. Review the consequence and confirm.
 
-POMS retains the source as an inactive alias, moves supported relationships and history, and writes a permanent merge record. Ordinary CRM UI does not undo a merge. If the records describe different legal entities or people, do not merge them; correct their fields or effective-dated relationships instead.
+POMS retains the source as an inactive alias, moves supported relationships and history, and writes a permanent merge record. If only one Company has Portal access, that access scope follows the surviving Company. POMS blocks a merge when both Companies have Portal access because choosing the surviving tenant requires an explicit data decision. Ordinary CRM UI does not undo a merge. If the records describe different legal entities or people, do not merge them; correct their fields or effective-dated relationships instead.
 
 ## Complete required custom data
 

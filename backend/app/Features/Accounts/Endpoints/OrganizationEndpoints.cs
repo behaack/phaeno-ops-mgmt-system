@@ -6,6 +6,7 @@ using Microsoft.EntityFrameworkCore;
 using PSeq.Operations.Commercial.Accounts.Application;
 using PhaenoPortal.App.Common.Exceptions.Accounts;
 using PSeq.Operations.Commercial.Accounts.Domain;
+using PSeq.Operations.Commercial.Crm.Domain;
 using PSeq.Operations.Commercial.Relationships.Domain;
 using PhaenoPortal.App.Features.Accounts.DTOs;
 using PhaenoPortal.App.Features.Accounts.Services;
@@ -47,7 +48,9 @@ public static class OrganizationEndpoints
         var existingOrg = await dbContext.Organizations
             .FirstOrDefaultAsync(o => o.Name == request.Name, cancellationToken);
 
-        if (existingOrg != null)
+        var existingCompany = await dbContext.CrmCompanies
+            .AnyAsync(company => company.Name == request.Name, cancellationToken);
+        if (existingOrg != null || existingCompany)
         {
             throw new OrganizationAlreadyExistsException(request.Name);
         }
@@ -59,8 +62,21 @@ public static class OrganizationEndpoints
 
         var organization = new Organization(request.Name, request.Kind, request.Description);
         organization.UpdatePortalReadiness(request.PortalReadiness, request.PortalReadinessNote);
+        var company = new CrmCompany(
+            request.Name,
+            actor.Id,
+            description: request.Description,
+            lifecycleState: request.Kind switch
+            {
+                OrganizationKind.Customer => CrmCompanyLifecycleState.ActiveCustomer,
+                OrganizationKind.Partner => CrmCompanyLifecycleState.Partner,
+                _ => CrmCompanyLifecycleState.Target
+            },
+            source: "Portal access enablement");
+        company.EnablePortalAccess(organization.Id);
 
         dbContext.Organizations.Add(organization);
+        dbContext.CrmCompanies.Add(company);
         if (organization.Kind == OrganizationKind.Customer && request.OrderingAuthorized)
         {
             dbContext.OrganizationServiceEntitlements.Add(
@@ -211,6 +227,9 @@ public static class OrganizationEndpoints
 
         var wasActive = organization.IsActive;
         organization.Deactivate();
+        var company = await dbContext.CrmCompanies
+            .FirstOrDefaultAsync(value => value.AccessOrganizationId == id, cancellationToken);
+        company?.Deactivate();
         if (wasActive)
         {
             AccountAudit.Add(
@@ -286,6 +305,13 @@ public static class OrganizationEndpoints
 
         organization.UpdateProfile(name, request.Description?.Trim());
         organization.UpdatePortalReadiness(request.PortalReadiness, request.PortalReadinessNote);
+        var company = await dbContext.CrmCompanies
+            .FirstOrDefaultAsync(value => value.AccessOrganizationId == id, cancellationToken);
+        if (company is not null && !string.Equals(company.Name, name, StringComparison.Ordinal))
+        {
+            throw new OrganizationConversionException(
+                "Rename the Company in CRM so its customer identity remains authoritative.");
+        }
         await dbContext.SaveChangesAsync(cancellationToken);
 
         return TypedResults.Ok(ToDto(organization));
@@ -316,6 +342,9 @@ public static class OrganizationEndpoints
 
         var wasInactive = !organization.IsActive;
         organization.Activate();
+        var company = await dbContext.CrmCompanies
+            .FirstOrDefaultAsync(value => value.AccessOrganizationId == id, cancellationToken);
+        company?.Reactivate();
         if (wasInactive)
         {
             AccountAudit.Add(

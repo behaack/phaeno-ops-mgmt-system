@@ -30,6 +30,10 @@ export type CrmCompany = {
   mergedIntoCompanyId: string | null;
   ownerUserId: string;
   ownerName: string;
+  accessOrganizationId: string | null;
+  portalRelationship: "Prospect" | "Customer" | "Partner" | null;
+  portalReadiness: "NotReviewed" | "Pending" | "Ready" | "Blocked" | null;
+  portalAccessStatus: "NotEnabled" | "Enabled" | "Suspended";
   isActive: boolean;
   createdAt: string;
   updatedAt: string;
@@ -447,6 +451,7 @@ export type CrmHandoff = {
   organizationId: string | null;
   idempotencyKey: string;
   createdAt: string;
+  requestVersion: number;
   orderId: string | null;
   orderNumber: string | null;
   orderStatus: string | null;
@@ -459,18 +464,6 @@ export type CrmOrderHandoff = {
   opportunityName: string | null;
   organizationName: string | null;
   summary: string;
-};
-export type CrmPortalAccountLink = {
-  id: string;
-  companyId: string;
-  organizationId: string;
-  organizationName: string;
-  organizationKind: string;
-  reason: string;
-  linkedByName: string;
-  linkedAt: string;
-  isActive: boolean;
-  version: number;
 };
 
 export async function listCrmCompanies(input: {
@@ -489,6 +482,15 @@ export async function listCrmCompanies(input: {
 export async function getCrmCompany(id: string) {
   const response = await api.get<ApiEnvelope<CrmCompany>>(
     `/platform/crm/companies/${id}`,
+  );
+  return unwrap(response.data);
+}
+
+export async function getCrmCompanyByAccessOrganization(
+  organizationId: string,
+) {
+  const response = await api.get<ApiEnvelope<CrmCompany>>(
+    `/platform/crm/companies/by-access/${organizationId}`,
   );
   return unwrap(response.data);
 }
@@ -1201,13 +1203,6 @@ export async function createCrmHandoff(
   );
   return unwrap(response.data);
 }
-export async function listCrmPortalLinks(companyId: string) {
-  const response = await api.get<ApiEnvelope<CrmPortalAccountLink[]>>(
-    `/platform/crm/companies/${companyId}/portal-links`,
-  );
-  return unwrap(response.data);
-}
-
 function unwrap<T>(envelope: ApiEnvelope<T>) {
   if (!envelope.success || !envelope.data) {
     throw new Error(

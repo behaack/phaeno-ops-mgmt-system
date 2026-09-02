@@ -33,15 +33,15 @@ export function AccountCreationRecoveryDialog({
     if (request) setOrderingAuthorized(true)
   }, [request])
 
-  const createsCustomerAccount = request?.requestedOrganizationKind === 'Customer'
+  const enablesCustomerAccess = request?.requestedOrganizationKind === 'Customer'
 
   return (
     <Dialog open={Boolean(request)} onOpenChange={onOpenChange}>
       <DialogContent>
         <DialogHeader>
-          <DialogTitle>Complete account creation</DialogTitle>
+          <DialogTitle>Complete Portal access enablement</DialogTitle>
           <DialogDescription>
-            Recover this approved request by creating and associating its Portal account.
+            Recover this approved Company request by creating its internal access scope.
           </DialogDescription>
         </DialogHeader>
         {error ? (
@@ -59,7 +59,7 @@ export function AccountCreationRecoveryDialog({
               </div>
               <p className="mt-2 text-sm text-muted-foreground">{request.summary}</p>
             </div>
-            {createsCustomerAccount ? (
+            {enablesCustomerAccess ? (
               <OrderingAuthorizationField
                 id="account-recovery-ordering-authorized"
                 checked={orderingAuthorized}
@@ -68,8 +68,8 @@ export function AccountCreationRecoveryDialog({
               />
             ) : null}
             <p className="text-sm text-muted-foreground">
-              The account starts with pending Portal readiness. This recovery does not
-              invite users, create an order, or mark the request applied.
+              The Company starts with pending Portal readiness. This recovery does not
+              invite users, create an order, or mark the request completed.
             </p>
           </div>
         ) : null}
@@ -78,7 +78,7 @@ export function AccountCreationRecoveryDialog({
             Keep incomplete
           </Button>
           <Button type="button" disabled={isPending} onClick={() => onConfirm(orderingAuthorized)}>
-            {isPending ? 'Creating…' : 'Create and open account'}
+            {isPending ? 'Enabling…' : 'Enable Portal access'}
           </Button>
         </DialogFooter>
       </DialogContent>

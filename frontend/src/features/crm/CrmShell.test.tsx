@@ -51,6 +51,7 @@ describe('CrmShell', () => {
     ).toEqual([
       'HomeAttention, search, and recent commercial activity',
       'CompaniesOrganizations and relationship context',
+      'RequestsCompany requests and approvals',
       'ContactsPeople and Company associations',
       'LeadsQualification and conversion work',
       'OpportunitiesPipelines, stages, and commercial pursuits',

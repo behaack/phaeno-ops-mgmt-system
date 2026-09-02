@@ -108,11 +108,11 @@ test('shows only Phaeno guides in expandable topic groups', async ({ page }) => 
   await expect(orderTopics.getByRole('link')).toHaveCount(5)
   await expect(orderTopics.locator('a > svg')).toHaveCount(5)
   await orderTopics.getByRole('link', {
-    name: 'Billing, payment, and release gates',
+    name: 'PSeq billing, cash, and result release',
   }).click()
   await expect(
     page.getByRole('heading', {
-      name: 'Billing, payment, and release gates',
+      name: 'PSeq billing, cash, and result release',
       level: 1,
     }),
   ).toBeVisible()

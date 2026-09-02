@@ -315,6 +315,7 @@ public sealed record CrmHandoffDto(
     Guid? OrganizationId,
     string IdempotencyKey,
     DateTime CreatedAt,
+    long RequestVersion,
     Guid? OrderId = null,
     string? OrderNumber = null,
     string? OrderStatus = null,
@@ -326,7 +327,3 @@ public sealed record CrmOrderHandoffDto(
     string? OpportunityName,
     string? OrganizationName,
     string Summary);
-
-public sealed record CrmPortalAccountLinkDto(Guid Id, Guid CompanyId, Guid OrganizationId, string OrganizationName, OrganizationKind OrganizationKind, string Reason, string LinkedByName, DateTime LinkedAt, bool IsActive, long Version);
-public sealed record CreateCrmPortalAccountLinkRequest(Guid OrganizationId, string Reason);
-public sealed record ChangeCrmPortalAccountLinkRequest(long Version);

@@ -26,6 +26,10 @@ const company: CrmCompany = {
   mergedIntoCompanyId: null,
   ownerUserId: "00000000-0000-0000-0000-000000000201",
   ownerName: "Phaeno Admin",
+  accessOrganizationId: null,
+  portalRelationship: null,
+  portalReadiness: null,
+  portalAccessStatus: "NotEnabled",
   isActive: true,
   createdAt: "2026-08-26T12:00:00Z",
   updatedAt: "2026-08-26T12:00:00Z",
@@ -44,7 +48,7 @@ describe("CRM Company lifecycle dialog", () => {
       />,
     );
 
-    expect(screen.getByText(/does not change Portal access/)).toBeTruthy();
+    expect(screen.getByText(/suspends the Company’s Portal access/)).toBeTruthy();
     fireEvent.click(screen.getByRole("button", { name: "Deactivate company" }));
     expect(onConfirm).toHaveBeenCalledOnce();
   });

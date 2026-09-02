@@ -76,20 +76,20 @@ the protected deployed-Preview acceptance above.
   browser title, header, and dashboard while external organization context uses
   Portal; both contexts retain the Phaeno Inc. legal footer and omit framework
   vendor promotion; the POMS dashboard exposes a keyboard-operable
-  viewport-edge sidebar for Order Operations, Lab Operations, Portal accounts, and
+  viewport-edge sidebar for Order Operations, Lab Operations, Customer access, and
   Web Operations mock intake with a two-button selector showing one
   mailing-list or demo-request panel at a time, independent page-size-10 footer
   pagination, no persistence controls on mock records, and one dashboard
   section visible at a time while external contexts omit it. External context
   instead shows its role-appropriate organization workflow cards, labels
   connected summaries as paused in mock-session mode, and never renders the
-  internal Portal accounts metrics. Customer context keeps Data Library and Lab
+  internal Customer access metrics. Customer context keeps Data Library and Lab
   services as separate starting points while omitting a peer sample-shipping
   card because shipping is part of each lab job.
 - [x] `frontend/e2e/home.spec.ts` - desktop keeps frequent workspace routes in
   the toolbar, including Docs, while Data provisioning appears under Resources;
-  desktop and mobile expose Portal accounts and the remaining grouped
-  administration/resources in the user menu,
+  desktop and mobile omit the retired Portal Accounts destination and expose
+  the remaining grouped administration/resources in the user menu,
   and the three display choices share one compact row directly
   after user identification with a brand-accent selected treatment distinct
   from active navigation and a separate focus-ring treatment;
@@ -127,12 +127,10 @@ the protected deployed-Preview acceptance above.
   keyboard-operable accordion subtopic level that auto-opens for the active
   guide and keeps only one subject expanded, cross-audience routes are denied
   for every context, and substantive MDX content renders on guide routes.
-- [x] `frontend/e2e/customers.spec.ts` - desktop and mobile organization
-  administration is titled Portal accounts, excludes the internal Phaeno
-  organization, identifies standard first-party CRM intake, links to CRM
-  Companies, and submits a restricted migration or recovery request through
-  the audited review queue without exposing direct account creation; it uses accessible
-  consequence dialogs for organization,
+- [ ] `frontend/e2e/customers.spec.ts` - update desktop and mobile coverage for
+  the CRM Portal-access review queue and Company-embedded access administration.
+  Confirm there is one Company identity, no standalone account creation, and accessible
+  consequence dialogs for access,
   membership, and entitlement lifecycle actions; focus returns to the invoking
   control, ended entitlements retain their reason, and the entitlement source
   selector excludes an approved onboarding request that did not request the
@@ -185,16 +183,20 @@ the protected deployed-Preview acceptance above.
   the invitation, and continues with the invited identity. Confirm that the
   development shortcut control and endpoint are absent from Production.
 - [x] First-party CRM Company create boundary journey - on desktop and narrow
-  layouts, cover the shared CRM sidebar and its eight route-backed subjects,
-  current-section identity, list rendering, the standalone CRM/Portal warning, accessible
+  layouts, cover the shared CRM sidebar and its route-backed subjects,
+  current-section identity, list rendering, the no-access-yet warning, accessible
   create dialog, normalized create payload, detail navigation, and proof that
   Company creation makes no Portal write. Confirm card-scoped actions remain
   compact and right-aligned with their title row on Company, Lead, and
-  Opportunity detail workspaces. Maintained in
+  Opportunity detail workspaces. Confirm the Company request entry point uses
+  category-aware progressive disclosure while Opportunity order handoffs
+  remain in the Opportunity workspace. Maintained in
   `frontend/e2e/crm.spec.ts`.
 - [ ] Remaining first-party CRM Company journey - cover search, view, edit,
-  deactivate, reactivate, and proof that each action leaves Portal accounts,
-  access, entitlements, and work unchanged.
+  deactivate, reactivate, embedded online-access administration, and submitting
+  the searchable requested-products-and-services multi-select, plus the
+  documented effects each lifecycle action has on access, entitlements, and
+  work.
 - [ ] Remaining first-party CRM journey - cover Contact, incremental Company
   and Contact association search, Company-specific title/role and effective
   dates, equivalent relationship editing from both record workspaces, Lead,
@@ -203,8 +205,8 @@ the protected deployed-Preview acceptance above.
   ownership, search, table/board views, reporting, duplicate review/merge,
   import/export boundaries, authorization, field visibility, and scientific/
   protected-data exclusion across desktop and narrow layouts.
-- [ ] CRM-to-Portal lifecycle journey - cover CRM-only Company with no Portal
-  access, approved evaluation to Portal Prospect, won Opportunity to pending
+- [ ] CRM-to-Portal lifecycle journey - cover a Company with no Portal access,
+  approved evaluation that enables Prospect access, won Opportunity to pending
   direct Customer/Partner onboarding, designated-admin invitation, selective
   Partner services, Trial Project and custom-work handoffs, existing-
   organization service change, Customer/Partner reclassification, pending
@@ -336,13 +338,15 @@ the protected deployed-Preview acceptance above.
   access, atomic role activation on acceptance, resend/revoke, role and
   membership lifecycle, omission of administrative self-deactivation actions,
   direct API self-deactivation denial, Prospect conversion with stable
-  identity, readiness, account creation limited to eligible new-account
-  approvals, Account directory/Review queue tab separation, removal of an
+  identity, readiness, internal access-scope creation limited to eligible
+  Company approvals, CRM Company/Portal-access review separation, removal of an
   associated approved request from the review queue, atomic first-party CRM
-  approval, stranded approved-request account-creation recovery, account-
-  creation ordering authorization default-on and explicit opt-out with the
+  approval, stranded approved-request access-scope recovery, access-enable
+  ordering authorization default-on and explicit opt-out with the
   resulting entitlement state, Customer new-Job blocking when authorization
-  is absent, Phaeno eligible-Customer filtering, quote-recipient fanout, and
+  is absent, Phaeno eligible-Customer filtering and pricing initiation without
+  an active administrator, quote-issuance blocking until an approver is active,
+  quote-recipient fanout, and
   workspace request completion, and details-page navigation,
   Phaeno-controlled designated-contact invitation and membership management,
   consolidated Phaeno profile, Platform administrator, and additive
@@ -622,3 +626,9 @@ the protected deployed-Preview acceptance above.
   card-header actions on Company, Lead, and Opportunity detail workspaces, and
   confirms the standalone Company journey without browser errors. The existing
   `AcceptInvitePage` route-export warning remains unchanged.
+- 2026-09-01: the complete mock-session browser suite ran in CI mode on
+  isolated port 3102; all 34 desktop/mobile Chromium scenarios passed.
+  Coverage includes CRM Portal-access review, legacy access-link resolution
+  into Company detail, current CRM and order navigation, the searchable
+  Customer selector, and modal scroll locking. The existing `AcceptInvitePage`
+  route-export warning remains unchanged.

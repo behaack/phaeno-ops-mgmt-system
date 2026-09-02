@@ -4,8 +4,9 @@ using PSeq.Operations.Commercial.Accounts.Domain;
 using PSeq.Operations.Commercial.Common.Persistence;
 
 /// <summary>
-/// A commercial relationship organization in the first-party CRM. A CRM
-/// company does not grant Portal access or create a Portal organization.
+/// The canonical commercial organization in POMS. Portal access is an optional
+/// capability of the Company; the associated Organization is an internal
+/// tenant-isolation scope rather than a second customer record.
 /// </summary>
 public sealed class CrmCompany : IAudit, IConcurrency
 {
@@ -31,6 +32,8 @@ public sealed class CrmCompany : IAudit, IConcurrency
     public CrmCompany? MergedIntoCompany { get; private set; }
     public Guid OwnerUserId { get; private set; }
     public User Owner { get; private set; } = null!;
+    public Guid? AccessOrganizationId { get; private set; }
+    public Organization? AccessOrganization { get; private set; }
     public bool IsActive { get; private set; } = true;
     public DateTime CreatedAt { get; private set; } = DateTime.UtcNow;
     public Guid? CreatedByUserId { get; private set; }
@@ -148,6 +151,38 @@ public sealed class CrmCompany : IAudit, IConcurrency
     public void AddAlias(string alias)
     {
         Aliases = NormalizeTags(Aliases.Append(alias), 255);
+    }
+
+    public void EnablePortalAccess(Guid organizationId)
+    {
+        if (organizationId == Guid.Empty)
+        {
+            throw new ArgumentException("An access organization is required.", nameof(organizationId));
+        }
+
+        if (AccessOrganizationId.HasValue && AccessOrganizationId.Value != organizationId)
+        {
+            throw new InvalidOperationException("Portal access is already enabled for this Company.");
+        }
+
+        AccessOrganizationId = organizationId;
+    }
+
+    public void TransferPortalAccessTo(CrmCompany target)
+    {
+        ArgumentNullException.ThrowIfNull(target);
+        if (!AccessOrganizationId.HasValue)
+        {
+            return;
+        }
+
+        if (target.AccessOrganizationId.HasValue)
+        {
+            throw new InvalidOperationException("Both Companies already have Portal access. Resolve access before merging them.");
+        }
+
+        target.AccessOrganizationId = AccessOrganizationId;
+        AccessOrganizationId = null;
     }
 
     public void Deactivate() => IsActive = false;

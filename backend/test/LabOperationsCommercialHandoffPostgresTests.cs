@@ -11,6 +11,7 @@ using PSeq.Operations.Commercial.Crm.Domain;
 using PSeq.Operations.Commercial.LabOperations.Application;
 using PSeq.Operations.Commercial.LabOperations.Domain;
 using PSeq.Operations.Commercial.OrderManagement.Domain;
+using PSeq.Operations.Commercial.Relationships.Application;
 using PSeq.Operations.Commercial.Relationships.Domain;
 using PSeq.Operations.Laboratory.Domain;
 using PhaenoPortal.App.Features.Accounts.Services;
@@ -29,9 +30,12 @@ using PhaenoPortal.App.Infrastructure.Persistence.Auditing;
 public class LabOperationsCommercialHandoffPostgresTests
 {
     [PostgreSqlReferenceFact]
-    public async Task AuthorizedPhaenoUserInitiatesCustomerOrderForQuoteApproval()
+    public async Task AuthorizedPhaenoUserInitiatesCustomerOrderBeforeCustomerAdministratorActivation()
     {
         await using var scope = await HandoffTestScope.CreateAsync();
+        await scope.DbContext.OrganizationMemberships
+            .Where(value => value.OrganizationId == scope.CustomerOrganization.Id)
+            .ExecuteDeleteAsync();
 
         var response = await scope.InitiateCustomerOrderAsync();
 
@@ -54,6 +58,28 @@ public class LabOperationsCommercialHandoffPostgresTests
         Assert.Single(persisted.Revisions);
         Assert.Equal(3, await scope.DbContext.OrderStatusEvents
             .CountAsync(item => item.WorkflowId == persisted.Id));
+    }
+
+    [PostgreSqlReferenceFact]
+    public async Task QuoteIssueStillRequiresCustomerAdministratorAfterPricingStarts()
+    {
+        await using var scope = await HandoffTestScope.CreateAsync();
+        await scope.DbContext.OrganizationMemberships
+            .Where(value => value.OrganizationId == scope.CustomerOrganization.Id)
+            .ExecuteDeleteAsync();
+        var order = await scope.InitiateCustomerOrderAsync();
+        var catalogItem = await scope.DbContext.QboCatalogItems.AsNoTracking()
+            .SingleAsync(item => item.IsActive
+                && item.ExternalItemId == OrderServiceKeys.PSeqLabService
+                && item.SalesUnit == OrderSalesUnits.Specimen);
+
+        var exception = await Assert.ThrowsAsync<OrderManagementException>(() =>
+            scope.IssueQuoteAsync(order, catalogItem));
+
+        Assert.Equal("operational_readiness_incomplete", exception.ErrorCode);
+        var blockers = Assert.IsAssignableFrom<IReadOnlyList<OperationalReadinessBlocker>>(exception.Details);
+        Assert.Contains(blockers, blocker =>
+            blocker.Code == OperationalReadinessBlockerCode.ActiveCustomerAdministratorRequired);
     }
 
     [PostgreSqlReferenceFact]

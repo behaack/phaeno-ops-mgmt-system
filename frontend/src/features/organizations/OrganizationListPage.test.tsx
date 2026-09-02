@@ -68,11 +68,11 @@ describe('approved account-request recovery', () => {
       />,
     )
 
-    expect(screen.getByRole('dialog', { name: 'Complete account creation' })).toBeTruthy()
+    expect(screen.getByRole('dialog', { name: 'Complete Portal access enablement' })).toBeTruthy()
     const orderingAuthorization = screen.getByRole('checkbox', { name: 'Ordering authorized' })
     expect(orderingAuthorization.getAttribute('data-state')).toBe('checked')
     fireEvent.click(orderingAuthorization)
-    fireEvent.click(screen.getByRole('button', { name: 'Create and open account' }))
+    fireEvent.click(screen.getByRole('button', { name: 'Enable Portal access' }))
     expect(onConfirm).toHaveBeenCalledWith(false)
   })
 })

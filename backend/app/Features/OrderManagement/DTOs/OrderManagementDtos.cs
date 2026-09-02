@@ -47,7 +47,7 @@ public sealed record LabServiceOrderingEligibilityDto(
     bool CanOrder,
     string? BlockingReason);
 
-public sealed record EligibleCustomerOrganizationDto(Guid Id, string Name);
+public sealed record EligibleCustomerCompanyDto(Guid Id, Guid CompanyId, string Name);
 
 public sealed record OrderTimelineDto(
     Guid Id,

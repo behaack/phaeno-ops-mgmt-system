@@ -19,15 +19,16 @@ deployment, and test execution retain their normal approval boundaries.
   Activities, Tasks and recurrence, global search, home attention, reporting,
   saved views, typed custom fields, duplicate review, controlled merges,
   previewed/idempotent imports, audited exports, and explicit Portal handoffs
-  and account links.
+  and Company-owned Portal access.
 - The CRM workspace now uses the shared far-left responsive sidebar for Home,
-  Companies, Contacts, Leads, Opportunities, Tasks, Reports, and
+  Companies, Contacts, Leads, Opportunities, Tasks, Portal access, Reports, and
   Administration. Phaeno CRM help is organized as one expandable subject with
   independently routed workflow, administration, handoff, and recovery guides.
   This navigation and documentation refinement has no persistence or API
   contract change.
-- The CRM and Portal domains retain independent identifiers. CRM-to-Portal
-  handoffs create pending, idempotent requests through the existing review
+- The canonical Company and its optional internal tenant scope retain distinct
+  identifiers without becoming two customer records. CRM Portal handoffs create
+  pending, idempotent requests through the existing review
   boundary; intake does not grant membership, enable a service, create
   executable work, or expose scientific data. When an authorized reviewer
   creates a Customer account, a visible **Ordering authorized** choice defaults
@@ -35,7 +36,7 @@ deployment, and test execution retain their normal approval boundaries.
   same transaction.
 - The first Customer PSeq Lab Service Opportunity-to-Order slice is implemented
   locally. A Won Opportunity can create a Customer order handoff; Portal
-  account review must approve it before Order operations can start pricing.
+  access review must approve it before Order operations can start pricing.
   One reviewed handoff can source exactly one order, while an Opportunity may
   retain multiple separately reviewed handoffs and orders. Starting the order
   atomically marks the request Applied and records the linked order on the CRM
@@ -60,9 +61,25 @@ deployment, and test execution retain their normal approval boundaries.
   deterministically backfills legacy Opportunities. Product interest uses the
   controlled PSeq Lab Service or PSeq Kit domain; retained legacy values remain
   visible but cannot be newly entered.
+- Migration `20260901162409_FoldPortalAccountsIntoCrmCompanies` removes the
+  separate CRM-to-Portal account link and makes the CRM Company the canonical
+  customer record. A Company may own one optional internal Organization used
+  only for tenant isolation, users, readiness, services, and operational access.
+  No legacy link data is preserved by this migration.
 - Company and Contact relationship dialogs capture a free-form job title and a
   controlled relationship role. Their Company and Contact selectors query
   incrementally so association is not limited to an initial page of records.
+- The Company request workflow groups online access, products and services,
+  work, and relationship requests under one Company-level entry point. The
+  modal discloses only fields relevant to the chosen category and type.
+  Requested products and services use one searchable multi-select whose values
+  remain the existing controlled service keys, so adding another approved
+  product does not require another fixed checkbox in the modal.
+- Customer order pricing is not gated by online-user activation. An active
+  Company-owned Customer operational scope with no manual block, a current
+  `Ready` PSeq Lab Service entitlement, and the active offering may begin
+  pricing; full readiness and an active Customer administrator remain required
+  before a quote can be issued.
 - Company and Contact detail workspaces render associations with the same
   relationship summary, primary/ended status, and edit action. Both directions
   use one shared editor for title, role, primary designation, and effective
@@ -137,10 +154,10 @@ Portal handoff.
 - **Activity:** a timeline event such as a note, call, meeting, email, status
   change, task completion, or linked POMS business event.
 - **Task:** owned follow-up work with status, priority, and due date.
-- **Portal Account:** a Prospect, Customer, or Partner organization authorized
-  for some form of Portal relationship. It is distinct from a CRM Company.
+- **Portal access:** the approved tenant scope, users, readiness, and services
+  attached to a CRM Company. It is not a separate customer record.
 - **Commercial handoff:** an explicit, audited request from CRM context into a
-  Portal account, Trial Project, custom-work, order, relationship-change, or
+  Portal access, Trial Project, custom-work, order, relationship-change, or
   offboarding review.
 
 ## System Ownership
@@ -148,6 +165,7 @@ Portal handoff.
 ### CRM domain owns
 
 - CRM Companies and Contacts
+- the Company's optional internal Portal-access organization reference
 - company-contact associations and relationship roles
 - leads and qualification state
 - opportunities, pipelines, stages, amounts, currencies, probability,
@@ -174,9 +192,11 @@ They do not replace or directly mutate their owning domains.
 
 ## Core Product Rules
 
-1. CRM Company, Contact, Lead, and Opportunity records grant no Portal access.
-2. CRM and Portal records use stable independent identifiers and explicit
-   links. A name or email match never silently creates a link.
+1. A CRM Company is the canonical customer record, but Company creation alone
+   grants no Portal access.
+2. A Company may own at most one internal Organization used as its Portal and
+   tenant-isolation scope. That technical identifier never becomes a second
+   customer identity, and a name or email match never silently enables access.
 3. Every opportunity has one pipeline, one current stage, one Phaeno owner, and
    immutable stage history.
 4. Won/lost outcomes and reasons are explicit and audited; changing a closed
@@ -186,9 +206,9 @@ They do not replace or directly mutate their owning domains.
 6. Internal notes are never exposed to external organization users.
 7. CRM tasks and reminders do not become operational work orders.
 8. A commercial handoff is explicit and idempotent. Retrying it cannot create a
-   duplicate Portal account, Trial Project, order, invitation, or entitlement.
-   The later account-review action may explicitly create the default-on
-   Customer ordering entitlement atomically with the account.
+   duplicate access scope, Trial Project, order, invitation, or entitlement.
+   The later access-review action may explicitly create the default-on Customer
+   ordering entitlement atomically with the access scope.
 9. Scientific, patient, sample, file, and protected data are excluded from CRM
    records, search indexes, exports, notifications, and future integrations.
 10. A future external provider never becomes a prerequisite for first-party CRM
@@ -202,7 +222,7 @@ They do not replace or directly mutate their owning domains.
   and merge Companies
 - retain legal/display name, domains, phones, addresses, industry, size,
   lifecycle state, owner, source, tags, and safe custom fields
-- show related Contacts, Opportunities, Activities, Tasks, Portal Accounts,
+- show related Contacts, Opportunities, Activities, Tasks, Portal access,
   Trial Projects, orders, and relationship-safe operational summaries
 - preserve aliases, merge redirects, external links, and full audit history
 
@@ -218,7 +238,7 @@ They do not replace or directly mutate their owning domains.
 
 ### Leads and qualification
 
-- capture individual or company leads without requiring a Portal Account
+- capture individual or company leads without requiring Portal access
 - record source, owner, status, qualification facts, disqualification reason,
   next action, and history
 - convert a qualified lead into or associate it with a Company, Contact, and
@@ -268,7 +288,7 @@ They do not replace or directly mutate their owning domains.
   source performance, win/loss, activity, follow-up, and owner workload reports
 - exports that honor the same authorization, privacy, field-visibility, and
   audit rules as the interactive UI
-- relationship-safe summaries of Portal accounts, committed sales, operational
+- relationship-safe summaries of Company Portal access, committed sales, operational
   schedule health, and high-level QuickBooks state
 
 ### Administration and data quality
@@ -298,8 +318,11 @@ They do not replace or directly mutate their owning domains.
   action width.
 - Opportunity pipeline boards complement, but do not replace, accessible tables.
 - Company detail is the relationship workspace: summary, Contacts,
-  Opportunities, Activity, Tasks, Portal links, and reporting context.
-- Portal Accounts remains the external-tenant administration workspace.
+  Opportunities, Activity, Tasks, Company requests, online access, and
+  reporting context.
+- CRM includes a Company request review section; online access is one possible
+  request outcome, and there is no separate Portal Accounts directory or
+  customer entity.
 - Every CRM-to-Portal transition previews the consequence and clearly states
   that it does not itself grant access, entitlements, or executable work.
 - External organization users do not receive CRM navigation or internal CRM
@@ -371,8 +394,8 @@ commercial history.
 
 - create provider-neutral onboarding, evaluation, Trial Project, custom-work,
   service-change, relationship-change, and offboarding review requests
-- create and retain explicit CRM-to-Portal account links after approved account
-  creation
+- attach exactly one internal tenant scope to the canonical Company after
+  approved Portal-access enablement
 - keep deeper Trial Project, order, schedule, QuickBooks, reconciliation, and
   exception journeys in their owning implementation plans
 
@@ -400,8 +423,8 @@ commercial history.
 
 - Phaeno staff can manage Companies, Contacts, Leads, Opportunities, pipelines,
   Activities, Tasks, follow-up, and reporting entirely in POMS.
-- A CRM record can exist without a Portal Account, and a Portal Account can
-  remain usable without an external CRM link.
+- A Company can exist without Portal access; when access is enabled, its
+  internal tenant scope belongs to exactly that Company.
 - CRM-to-Portal handoffs are explicit, authorized, idempotent, and audited.
 - No CRM action directly grants membership, service entitlement, Trial Project
   execution, order commitment, or laboratory work.

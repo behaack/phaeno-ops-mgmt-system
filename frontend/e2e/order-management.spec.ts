@@ -46,20 +46,32 @@ test('shows Phaeno operations and configuration workspaces in mock mode', async 
   await expect(page.getByRole('heading', { name: 'Order operations' })).toBeVisible()
   await openSidebarIfCollapsed(page, 'Order operations')
   await expect(page.getByRole('button', { name: /^Order intake/ })).toHaveAttribute('aria-current', 'page')
-  await expect(page.getByRole('button', { name: /^Orders/ })).toBeVisible()
-  await expect(page.getByRole('button', { name: /^Accounting/ })).toBeVisible()
-  await expect(page.getByRole('button', { name: /^PSeq kits/ })).toHaveCount(0)
-  await expect(page.getByRole('button', { name: /^Assembly/ })).toHaveCount(0)
+  await expect(page.getByRole('button', { name: /^Order staging/ })).toBeVisible()
+  await expect(page.getByRole('button', { name: /^Lab/ })).toBeVisible()
+  await expect(page.getByRole('button', { name: /^PSeq kits/ })).toBeVisible()
+  await expect(page.getByRole('button', { name: /^Assembly/ })).toBeVisible()
+  await expect(page.getByRole('button', { name: /^Result release/ })).toBeVisible()
+  await expect(page.getByRole('button', { name: /^Finance/ })).toBeVisible()
+  await closeSidebarIfExpanded(page, 'Order operations')
   await page.getByRole('button', { name: 'New Customer order' }).click()
   const initiatedOrder = page.getByRole('dialog', { name: 'New Customer order' })
   await expect(initiatedOrder).toBeVisible()
+  await expect
+    .poll(() => page.locator('body').evaluate((body) => getComputedStyle(body).overflow))
+    .toBe('hidden')
   await expect(initiatedOrder.getByText('Creation is paused in mock-session mode')).toBeVisible()
-  await expect(initiatedOrder.getByLabel('Customer')).toBeVisible()
+  const customerSearch = initiatedOrder.getByRole('combobox', { name: 'Customer' })
+  await expect(customerSearch).toBeVisible()
+  await expect(customerSearch).toHaveAttribute('aria-autocomplete', 'list')
   await expect(initiatedOrder.getByLabel('Job name')).toBeVisible()
   await expect(initiatedOrder.getByRole('group', { name: 'Biological-source composition' })).toBeVisible()
   await expect(initiatedOrder.getByLabel(/no patient identifiers, PHI/)).toBeVisible()
   await expect(initiatedOrder.getByRole('button', { name: 'Start pricing' })).toBeDisabled()
   await initiatedOrder.getByRole('button', { name: 'Close' }).click()
+  await expect(page.getByRole('dialog')).toHaveCount(0)
+  await expect
+    .poll(() => page.locator('body').evaluate((body) => getComputedStyle(body).overflow))
+    .not.toBe('hidden')
 
   await page.goto('/lab-operations')
   await expect(page.getByRole('heading', { name: 'Lab operations' })).toBeVisible()
@@ -76,8 +88,7 @@ test('shows Phaeno operations and configuration workspaces in mock mode', async 
   await expect(page.getByRole('button', { name: /^Analyses/ })).toBeVisible()
   await expect(page.getByRole('button', { name: /^PSeq kits/ })).toBeVisible()
   await expect(page.getByRole('button', { name: /^Assembly/ })).toBeVisible()
-  await expect(page.getByRole('button', { name: /^Catalog/ })).toBeVisible()
-  await expect(page.getByRole('button', { name: /^Credit/ })).toBeVisible()
+  await expect(page.getByRole('button', { name: /^Legacy links/ })).toBeVisible()
 })
 
 async function selectOrganization(page: import('@playwright/test').Page, organizationId: string) {
@@ -101,5 +112,21 @@ async function openSidebarIfCollapsed(
       }
       await expect(trigger).toHaveAttribute('aria-expanded', 'true')
     }).toPass()
+  }
+}
+
+async function closeSidebarIfExpanded(
+  page: import('@playwright/test').Page,
+  workspaceLabel: string,
+) {
+  const trigger = page.getByRole('button', {
+    name: new RegExp(`^(?:Open|Close) ${workspaceLabel} navigation`),
+  })
+  if (
+    (page.viewportSize()?.width ?? 1280) < 1024 &&
+    (await trigger.getAttribute('aria-expanded')) === 'true'
+  ) {
+    await trigger.click()
+    await expect(trigger).toHaveAttribute('aria-expanded', 'false')
   }
 }

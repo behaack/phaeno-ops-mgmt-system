@@ -247,8 +247,8 @@ export function DashboardPanelSelector() {
       },
       {
         value: 'accounts',
-        label: 'Portal accounts',
-        description: 'Customer, Partner, and Prospect administration.',
+        label: 'Customer access',
+        description: 'Company access, services, readiness, and invitations.',
         count: 21,
         countDescription: '21 items needing attention',
         icon: Building2,

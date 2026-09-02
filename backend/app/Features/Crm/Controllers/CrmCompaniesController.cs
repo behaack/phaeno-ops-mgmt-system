@@ -32,6 +32,7 @@ public sealed class CrmCompaniesController(
         var query = dbContext.CrmCompanies
             .AsNoTracking()
             .Include(value => value.Owner)
+            .Include(value => value.AccessOrganization)
             .AsQueryable();
         if (!includeInactive)
         {
@@ -70,6 +71,25 @@ public sealed class CrmCompaniesController(
     {
         await RequirePlatformAdminAsync(cancellationToken);
         return ToDto(await RequireCompanyAsync(companyId, tracking: false, cancellationToken));
+    }
+
+    [HttpGet("by-access/{organizationId:guid}")]
+    public async Task<CrmCompanyDto> GetCompanyByAccessOrganization(
+        Guid organizationId,
+        CancellationToken cancellationToken)
+    {
+        await RequirePlatformAdminAsync(cancellationToken);
+        var company = await dbContext.CrmCompanies
+            .AsNoTracking()
+            .Include(value => value.Owner)
+            .Include(value => value.AccessOrganization)
+            .FirstOrDefaultAsync(
+                value => value.AccessOrganizationId == organizationId,
+                cancellationToken)
+            ?? throw NotFound(
+                "crm_company_access_not_found",
+                "No Company owns this access scope.");
+        return ToDto(company);
     }
 
     [HttpPost]
@@ -130,6 +150,10 @@ public sealed class CrmCompaniesController(
             request.LifecycleState,
             request.Source,
             request.Tags));
+        if (company.AccessOrganization is not null)
+        {
+            Execute(() => company.AccessOrganization.UpdateProfile(company.Name, company.Description));
+        }
 
         await dbContext.SaveChangesAsync(cancellationToken);
         return ToDto(company);
@@ -145,6 +169,10 @@ public sealed class CrmCompaniesController(
         var company = await RequireCompanyAsync(companyId, tracking: true, cancellationToken);
         EnsureVersion(company.Version, request.Version);
         Execute(company.Deactivate);
+        if (company.AccessOrganization is not null)
+        {
+            Execute(company.AccessOrganization.Deactivate);
+        }
         await dbContext.SaveChangesAsync(cancellationToken);
         return ToDto(company);
     }
@@ -159,6 +187,10 @@ public sealed class CrmCompaniesController(
         var company = await RequireCompanyAsync(companyId, tracking: true, cancellationToken);
         EnsureVersion(company.Version, request.Version);
         Execute(company.Reactivate);
+        if (company.AccessOrganization is not null)
+        {
+            Execute(company.AccessOrganization.Activate);
+        }
         await dbContext.SaveChangesAsync(cancellationToken);
         return ToDto(company);
     }
@@ -222,15 +254,13 @@ public sealed class CrmCompaniesController(
         foreach (var task in await dbContext.CrmTasks.Where(value => value.CompanyId == source.Id).ToListAsync(cancellationToken)) task.ReassignCompany(target.Id);
         foreach (var handoff in await dbContext.CrmHandoffs.Where(value => value.CompanyId == source.Id).ToListAsync(cancellationToken)) handoff.ReassignCompany(target.Id);
 
-        var targetOrganizationIds = await dbContext.CrmPortalAccountLinks
-            .Where(value => value.CompanyId == target.Id)
-            .Select(value => value.OrganizationId)
-            .ToListAsync(cancellationToken);
-        foreach (var link in await dbContext.CrmPortalAccountLinks.Where(value => value.CompanyId == source.Id).ToListAsync(cancellationToken))
+        if (source.AccessOrganizationId.HasValue && target.AccessOrganizationId.HasValue)
         {
-            if (targetOrganizationIds.Contains(link.OrganizationId)) link.Deactivate();
-            else link.ReassignCompany(target.Id);
+            throw Conflict(
+                "crm_company_merge_access_conflict",
+                "These Companies cannot be merged while both have Portal access. Resolve their tenant data as a separate administrative operation first.");
         }
+        Execute(() => source.TransferPortalAccessTo(target));
 
         await CopyMissingCustomFieldValues(source.Id, target.Id, cancellationToken);
 
@@ -279,7 +309,10 @@ public sealed class CrmCompaniesController(
         bool tracking,
         CancellationToken cancellationToken)
     {
-        var query = dbContext.CrmCompanies.Include(value => value.Owner).AsQueryable();
+        var query = dbContext.CrmCompanies
+            .Include(value => value.Owner)
+            .Include(value => value.AccessOrganization)
+            .AsQueryable();
         if (!tracking)
         {
             query = query.AsNoTracking();
@@ -339,6 +372,12 @@ public sealed class CrmCompaniesController(
             MergedIntoCompanyId = value.MergedIntoCompanyId,
             OwnerUserId = value.OwnerUserId,
             OwnerName = $"{resolvedOwner.FirstName} {resolvedOwner.LastName}".Trim(),
+            AccessOrganizationId = value.AccessOrganizationId,
+            PortalRelationship = value.AccessOrganization?.Kind,
+            PortalReadiness = value.AccessOrganization?.PortalReadiness,
+            PortalAccessStatus = value.AccessOrganization is null
+                ? "NotEnabled"
+                : value.AccessOrganization.IsActive ? "Enabled" : "Suspended",
             IsActive = value.IsActive,
             CreatedAt = value.CreatedAt,
             UpdatedAt = value.UpdatedAt,

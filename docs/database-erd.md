@@ -132,6 +132,7 @@ erDiagram
 erDiagram
     crm_companies {
         uuid id PK "not null"
+        uuid access_organization_id FK,UK "nullable; internal Portal tenant scope"
         varchar_255 address_line1 "nullable"
         varchar_255 address_line2 "nullable"
         text_array aliases "not null"
@@ -431,21 +432,8 @@ erDiagram
         uuid updated_by_user_id "nullable"
         bigint version "not null"
     }
-    crm_portal_account_links {
-        uuid id PK "not null"
-        uuid company_id FK,UK "not null"
-        timestamptz created_at "not null"
-        uuid created_by_user_id "nullable"
-        boolean is_active "not null"
-        timestamptz linked_at "not null"
-        uuid linked_by_user_id FK "not null"
-        uuid organization_id FK,UK "not null"
-        varchar_1000 reason "not null"
-        timestamptz updated_at "not null"
-        uuid updated_by_user_id "nullable"
-        bigint version "not null"
-    }
     users ||--o{ crm_companies : "owner_user_id"
+    organizations o|--o| crm_companies : "access_organization_id"
     crm_companies o|--o{ crm_companies : "merged_into_company_id"
     users ||--o{ crm_contacts : "owner_user_id"
     crm_contacts o|--o{ crm_contacts : "merged_into_contact_id"
@@ -480,9 +468,6 @@ erDiagram
     crm_companies ||--o{ crm_handoffs : "company_id"
     crm_opportunities o|--o{ crm_handoffs : "opportunity_id"
     portal_integration_requests ||--o| crm_handoffs : "relationship_request_id"
-    crm_companies ||--o{ crm_portal_account_links : "company_id"
-    organizations ||--o{ crm_portal_account_links : "organization_id"
-    users ||--o{ crm_portal_account_links : "linked_by_user_id"
 ```
 
 ### Invitation delivery and business roles

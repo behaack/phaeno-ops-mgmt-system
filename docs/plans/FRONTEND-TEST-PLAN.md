@@ -50,12 +50,8 @@ remain incomplete production-activation gates.
   and Phaeno organization contexts.
 - [x] `frontend/src/components/navigation.test.ts` - frequent workspace routes,
   including Docs, remain in the desktop toolbar while Data provisioning and
-  Portal accounts and other administration or resource routes move to the
-  user dropdown without changing permission filtering.
-- [x] `frontend/src/features/organizations/RelationshipRequestDialog.test.tsx`
-  - the restricted accountless request is labeled as a Portal account request,
-  validates organization identity, and permits only onboarding or evaluation
-  before submission to review.
+  other administration or resource routes move to the user dropdown without
+  changing permission filtering; there is no separate Portal Accounts item.
 - [x] `frontend/src/components/application-branding.test.ts` - the selected
   Phaeno organization resolves to POMS, external organization kinds resolve to
   Portal, and the pre-selection fallback is Portal.
@@ -147,6 +143,16 @@ remain incomplete production-activation gates.
   footers inherit theme-safe muted surfaces and dividers; general feedback and
   direct destructive alerts render inside the fixed header; all app dialogs
   inherit these behaviors.
+- [x] `frontend/src/components/ui/searchable-select.test.tsx` - the shared
+  searchable selector incrementally filters visible options and returns the
+  selected record's stable identifier.
+- [x] `frontend/src/components/ui/multi-select.test.tsx` - the shared searchable
+  multi-select filters service options while retaining multiple selected
+  stable values in one dropdown.
+- [x] `frontend/src/features/crm/CrmCompanyRelationships.test.tsx` - the Company
+  request modal groups online access, products and services, work, and
+  relationship requests, and progressively discloses only the fields relevant
+  to the selected category and type.
 - [ ] Customer laboratory draft workspace - cover Job pricing-details
   create/edit modal required name, biological-source composition,
   storage/safety, derived sample total, duplicate nonblank source validation,
@@ -173,7 +179,7 @@ remain incomplete production-activation gates.
   error states, organization switching, and complete absence of internal mock
   Accounts metrics from external dashboards.
 - [x] `frontend/src/features/crm/CrmShell.test.tsx` - CRM Home, Companies,
-  Contacts, Leads, Opportunities, Tasks, Reports, and Administration use the
+  Contacts, Leads, Opportunities, Tasks, Portal access, Reports, and Administration use the
   shared responsive workspace sidebar, preserve the active section on a detail
   route, and navigate to the existing section routes.
 - [x] CRM foundation components - cover the Company create/edit form's required
@@ -201,8 +207,8 @@ remain incomplete production-activation gates.
   reports, imports/exports, duplicate review, merge consequences, loading/empty/
   error states, authorization, field visibility, accessible interaction, and
   supported viewports.
-- [ ] CRM-to-Portal lifecycle components - cover CRM Company account proposal/
-  linking, pending-request queues, exact proposed changes, readiness review,
+- [ ] CRM-to-Portal lifecycle components - cover CRM Company access proposals,
+  pending-request queues, exact proposed changes, readiness review,
   internal relationship-safe summaries and deep links, service-entitlement
   activation, Trial Project and custom-work handoffs, relationship/offboarding
   warnings, retryable projection failure, complete hiding of CRM context from
@@ -297,15 +303,12 @@ remain incomplete production-activation gates.
   shipment behavior, packet reprint/void behavior, one-time promotional
   placement with explicit no-charge treatment, and preservation of order-
   versus-Trial terminology.
-- [ ] Remaining connected organization/user administration - cover organization
-  list/detail, readiness persistence through create/edit, request queue
-  decisions, the first-party CRM account-proposal and restricted direct-
-  proposal relationship/service field rules, CRM Company/Opportunity linking,
-  error and success feedback, and queue refresh,
-  separate Account directory and Review queue tab panels, pending-only review
-  filtering with an unassociated approved-request recovery exception, approve-
-  and-create account confirmation, stranded account-creation recovery,
-  details-page navigation, account-workspace request completion language,
+- [ ] Remaining connected Company access/user administration - cover embedded
+  readiness persistence, request queue decisions, first-party CRM access-
+  proposal relationship/service rules, CRM Company/Opportunity correlation,
+  error and success feedback, queue refresh, pending-only review filtering,
+  approve-and-enable-access confirmation, stranded access-scope recovery,
+  Company-detail navigation, request completion language,
   prominent user management, CRM-designated Contact invitation messaging,
   completed-organization selection for other pre-organization requests,
   accessible request-action and Prospect-conversion dialogs that close after
@@ -582,3 +585,8 @@ remain incomplete production-activation gates.
   actions remain compact at the far right of the title row rather than
   stretching beneath the description. The existing `AcceptInvitePage`
   route-export warning remains.
+- 2026-09-01: the Company-owned Portal-access and searchable Customer selector
+  changes passed `pnpm run lint`, `pnpm run typecheck`, `pnpm run test`, and
+  `pnpm run build`; all 120 tests in 50 files passed and both the client and SSR
+  production builds completed. The existing advisory client-chunk and
+  `AcceptInvitePage` route-export warnings remain unchanged.

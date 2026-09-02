@@ -74,7 +74,9 @@ public sealed class CrmHandoffsController(PSeqOperationsDbContext dbContext, IEx
     public async Task<ActionResult<CrmHandoffDto>> CreateHandoff(Guid companyId, [FromBody] CreateCrmHandoffRequest request, CancellationToken cancellationToken)
     {
         var actor = await RequireActor(cancellationToken);
-        var company = await dbContext.CrmCompanies.FirstOrDefaultAsync(value => value.Id == companyId && value.IsActive, cancellationToken)
+        var company = await dbContext.CrmCompanies
+            .Include(value => value.AccessOrganization)
+            .FirstOrDefaultAsync(value => value.Id == companyId && value.IsActive, cancellationToken)
             ?? throw Missing("crm_company_not_found", "The active CRM company was not found.");
         if (await dbContext.CrmHandoffs.AnyAsync(value => value.IdempotencyKey == request.IdempotencyKey, cancellationToken))
             throw CrmAccess.Conflict("crm_handoff_duplicate", "This CRM handoff has already been created.");
@@ -86,10 +88,8 @@ public sealed class CrmHandoffsController(PSeqOperationsDbContext dbContext, IEx
                 ?? throw Missing("crm_handoff_opportunity_not_found", "The selected Opportunity does not belong to this Company.");
         }
 
-        var activeLink = await dbContext.CrmPortalAccountLinks.AsNoTracking().Include(value => value.Organization)
-            .Where(value => value.CompanyId == companyId && value.IsActive).OrderByDescending(value => value.LinkedAt).FirstOrDefaultAsync(cancellationToken);
-        var organizationId = activeLink?.OrganizationId;
-        var requestedKind = activeLink?.Organization.Kind ?? request.RequestedOrganizationKind;
+        var organizationId = company.AccessOrganizationId;
+        var requestedKind = company.AccessOrganization?.Kind ?? request.RequestedOrganizationKind;
         var (requestType, defaultKind) = RequestType(request.Type);
         requestedKind ??= defaultKind;
         foreach (var service in request.RequestedServices.Distinct())
@@ -102,7 +102,7 @@ public sealed class CrmHandoffsController(PSeqOperationsDbContext dbContext, IEx
         if (sourceReference.Length > 255) throw new CrmException("crm_handoff_key_too_long", "Use an idempotency key of 190 characters or fewer.");
         var relationshipRequest = Execute(() => new PortalIntegrationRequest(
             organizationId,
-            activeLink?.Organization.Name ?? company.Name,
+            company.Name,
             requestType,
             PortalIntegrationRequestSource.FirstPartyCrm,
             requestedKind,
@@ -117,43 +117,6 @@ public sealed class CrmHandoffsController(PSeqOperationsDbContext dbContext, IEx
         dbContext.CrmActivities.Add(new CrmActivity(CrmActivityType.PortalEvent, "Portal handoff created", request.Summary, DateTime.UtcNow, CrmActivityVisibility.Internal, actor.Id, company.Id, opportunityId: opportunity?.Id));
         await dbContext.SaveChangesAsync(cancellationToken);
         return Created($"/api/platform/crm/companies/{companyId}/handoffs/{value.Id}", await ToDtoAsync(value, cancellationToken, relationshipRequest));
-    }
-
-    [HttpGet("portal-links")]
-    public async Task<IReadOnlyList<CrmPortalAccountLinkDto>> PortalLinks(Guid companyId, CancellationToken cancellationToken)
-    {
-        await RequireActor(cancellationToken);
-        return await dbContext.CrmPortalAccountLinks.AsNoTracking().Where(value => value.CompanyId == companyId)
-            .OrderByDescending(value => value.IsActive).ThenByDescending(value => value.LinkedAt)
-            .Select(value => new CrmPortalAccountLinkDto(value.Id, value.CompanyId, value.OrganizationId, value.Organization.Name, value.Organization.Kind, value.Reason, value.LinkedByUser.FirstName + " " + value.LinkedByUser.LastName, value.LinkedAt, value.IsActive, value.Version))
-            .ToListAsync(cancellationToken);
-    }
-
-    [HttpPost("portal-links")]
-    public async Task<ActionResult<CrmPortalAccountLinkDto>> LinkPortalAccount(Guid companyId, [FromBody] CreateCrmPortalAccountLinkRequest request, CancellationToken cancellationToken)
-    {
-        var actor = await RequireActor(cancellationToken);
-        if (!await dbContext.CrmCompanies.AnyAsync(value => value.Id == companyId && value.IsActive, cancellationToken)) throw Missing("crm_company_not_found", "The active CRM company was not found.");
-        var organization = await dbContext.Organizations.FirstOrDefaultAsync(value => value.Id == request.OrganizationId && value.IsActive, cancellationToken)
-            ?? throw Missing("portal_organization_not_found", "The active Portal organization was not found.");
-        var prior = await dbContext.CrmPortalAccountLinks.FirstOrDefaultAsync(value => value.CompanyId == companyId && value.OrganizationId == organization.Id, cancellationToken);
-        if (prior?.IsActive == true) throw CrmAccess.Conflict("crm_portal_link_exists", "This Company is already linked to that Portal organization.");
-        var value = prior ?? Execute(() => new CrmPortalAccountLink(companyId, organization.Id, request.Reason, actor.Id, DateTime.UtcNow));
-        if (prior is null) dbContext.CrmPortalAccountLinks.Add(value); else value.Reactivate();
-        await dbContext.SaveChangesAsync(cancellationToken);
-        return Created($"/api/platform/crm/companies/{companyId}/portal-links/{value.Id}", new CrmPortalAccountLinkDto(value.Id, companyId, organization.Id, organization.Name, organization.Kind, value.Reason, $"{actor.FirstName} {actor.LastName}".Trim(), value.LinkedAt, value.IsActive, value.Version));
-    }
-
-    [HttpPost("portal-links/{linkId:guid}/{lifecycleAction:regex(^(deactivate|reactivate)$)}")]
-    public async Task<CrmPortalAccountLinkDto> ChangePortalLink(Guid companyId, Guid linkId, string lifecycleAction, [FromBody] ChangeCrmPortalAccountLinkRequest request, CancellationToken cancellationToken)
-    {
-        await RequireActor(cancellationToken);
-        var value = await dbContext.CrmPortalAccountLinks.Include(item => item.Organization).Include(item => item.LinkedByUser).FirstOrDefaultAsync(item => item.Id == linkId && item.CompanyId == companyId, cancellationToken)
-            ?? throw Missing("crm_portal_link_not_found", "The CRM-to-Portal account link was not found.");
-        EnsureVersion(value.Version, request.Version);
-        Execute(lifecycleAction == "reactivate" ? value.Reactivate : value.Deactivate);
-        await dbContext.SaveChangesAsync(cancellationToken);
-        return new(value.Id, value.CompanyId, value.OrganizationId, value.Organization.Name, value.Organization.Kind, value.Reason, $"{value.LinkedByUser.FirstName} {value.LinkedByUser.LastName}".Trim(), value.LinkedAt, value.IsActive, value.Version);
     }
 
     private static (PortalIntegrationRequestType Type, OrganizationKind? DefaultKind) RequestType(CrmHandoffType type) => type switch
@@ -176,7 +139,7 @@ public sealed class CrmHandoffsController(PSeqOperationsDbContext dbContext, IEx
             .Select(item => new { item.Id, item.OrderNumber, item.Status })
             .SingleOrDefaultAsync(cancellationToken);
         var (canStartOrder, blocker) = await EvaluateOrderStartAsync(value, relationshipRequest, order is not null, cancellationToken);
-        return new(value.Id, value.CompanyId, value.OpportunityId, value.Type, value.RelationshipRequestId, relationshipRequest.RequestNumber, relationshipRequest.Status, relationshipRequest.RequestedOrganizationKind, relationshipRequest.OrganizationId, value.IdempotencyKey, value.CreatedAt,
+        return new(value.Id, value.CompanyId, value.OpportunityId, value.Type, value.RelationshipRequestId, relationshipRequest.RequestNumber, relationshipRequest.Status, relationshipRequest.RequestedOrganizationKind, relationshipRequest.OrganizationId, value.IdempotencyKey, value.CreatedAt, relationshipRequest.Version,
             order?.Id, order?.OrderNumber, order?.Status.ToString(), canStartOrder, blocker);
     }
 
@@ -192,10 +155,10 @@ public sealed class CrmHandoffsController(PSeqOperationsDbContext dbContext, IEx
             return (false, "This handoff is not a Customer order handoff.");
         if (request.Status != PortalIntegrationRequestStatus.Approved)
             return (false, request.Status == PortalIntegrationRequestStatus.PendingReview
-                ? "Approve this handoff in Portal accounts before starting an order."
+                ? "Approve this handoff in CRM before starting an order."
                 : "Only an approved handoff can start an order.");
         if (!request.OrganizationId.HasValue || request.RequestedOrganizationKind != OrganizationKind.Customer)
-            return (false, "Link and approve this handoff for a Customer organization before starting an order.");
+            return (false, "Attach an active Customer operational scope and approve this handoff before starting an order.");
         if (!request.RequestedServices.Any(value => value.Service == PortalService.PSeqLabService))
             return (false, "This handoff does not request PSeq Lab Service.");
         if (handoff.Opportunity is not null && handoff.Opportunity.Stage.Category != CrmPipelineStageCategory.Won)
@@ -203,16 +166,11 @@ public sealed class CrmHandoffsController(PSeqOperationsDbContext dbContext, IEx
         var organization = await dbContext.Organizations.AsNoTracking()
             .SingleOrDefaultAsync(value => value.Id == request.OrganizationId.Value, cancellationToken);
         if (organization is null || !organization.IsActive || organization.Kind != OrganizationKind.Customer)
-            return (false, "The linked Customer organization is not active.");
-        var hasApprover = await dbContext.OrganizationMemberships.AsNoTracking().AnyAsync(
-            membership => membership.OrganizationId == organization.Id
-                && membership.IsActive
-                && membership.IsOrganizationAdmin
-                && membership.User != null
-                && membership.User.IsActive
-                && membership.User.Status == UserAccountStatus.Active,
-            cancellationToken);
-        if (!hasApprover) return (false, "The Customer needs an active organization administrator before an order can start.");
+            return (false, "The Company does not have an active Customer operational scope.");
+        if (organization.IsOperationalReadinessBlocked)
+            return (false, string.IsNullOrWhiteSpace(organization.OperationalReadinessBlockReason)
+                ? "Clear the Customer's manual operational block before starting pricing."
+                : organization.OperationalReadinessBlockReason);
         var eligibility = await LabServiceOrderingEligibility.ReadAsync(dbContext, organization.Id, DateTime.UtcNow, cancellationToken);
         if (!eligibility.OrderingAuthorized)
             return (false, "Enable a current Ready PSeq Lab Service entitlement for this Customer.");

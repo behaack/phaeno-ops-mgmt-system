@@ -84,26 +84,45 @@ test("creates a standalone CRM company without changing Portal access", async ({
   }
   await closeCrmNavigationIfOpen(page);
   await expect(
-    page.getByText("CRM records are separate from Portal accounts"),
+    page.getByText("Companies are the customer record"),
   ).toBeVisible();
 
   await page.getByRole("link", { name: "Atlas Research" }).click();
   await expect(page).toHaveURL(`/crm/companies/${companyId}`);
-  await expect(page.getByText("CRM company", { exact: true })).toBeVisible();
+  await expect(page.getByText("Company", { exact: true })).toBeVisible();
   await expect(
     page.getByRole("heading", { name: "Atlas Research" }),
   ).toBeVisible();
   await expectCompactCardHeaderAction(
     page,
-    "Portal handoffs and account links",
-    "Create handoff",
+    "Company requests",
+    "Create request",
   );
+  await page.getByRole("button", { name: "Create request" }).click();
+  const requestDialog = page.getByRole("dialog", {
+    name: "Create Company request",
+  });
+  await expect(
+    requestDialog.getByRole("combobox", { name: "Request category" }),
+  ).toHaveValue(
+    "OnlineAccess",
+  );
+  await requestDialog
+    .getByRole("combobox", { name: "Request category" })
+    .selectOption("Work");
+  await expect(
+    requestDialog.getByRole("combobox", { name: "Request type" }),
+  ).toHaveValue(
+    "TrialProject",
+  );
+  await expect(requestDialog.getByLabel("Opportunity")).toBeVisible();
+  await requestDialog.getByRole("button", { name: "Cancel" }).click();
   await page.getByRole("link", { name: "Back to companies" }).click();
   await expect(page.getByRole("heading", { name: "Companies" })).toBeVisible();
 
   await page.getByRole("button", { name: "New company" }).click();
   const dialog = page.getByRole("dialog", { name: "New company" });
-  await expect(dialog).toContainText("does not create a Portal account or grant access");
+  await expect(dialog).toContainText("Portal access remains disabled until a reviewed request is approved");
   await expectNoSeriousAccessibilityViolations(page, dialog);
   await dialog.getByLabel(/Company name/).fill("Example Biosciences");
   await dialog.getByLabel("Website").fill("https://example.test");
@@ -257,7 +276,9 @@ test("opens an approved Won Opportunity handoff as a locked Customer order", asy
   await expect(dialog).toBeVisible();
   await expect(dialog.getByText(/Atlas Research · PSeq program · PRQ-ORDER-1/)).toBeVisible();
   await expect(dialog.getByLabel("Customer")).toBeDisabled();
-  await expect(dialog.getByLabel("Customer")).toHaveValue("customer-1");
+  await expect(dialog.getByLabel("Customer")).toHaveValue(
+    "Atlas Research Customer",
+  );
 });
 
 async function expectCompactCardHeaderAction(

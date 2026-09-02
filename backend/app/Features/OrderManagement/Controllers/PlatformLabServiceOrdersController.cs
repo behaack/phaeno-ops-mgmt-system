@@ -37,7 +37,7 @@ public sealed class PlatformLabServiceOrdersController(
     private static readonly JsonSerializerOptions JsonOptions = new(JsonSerializerDefaults.Web);
 
     [HttpGet("eligible-customers")]
-    public async Task<IReadOnlyList<EligibleCustomerOrganizationDto>> ListEligibleCustomers(
+    public async Task<IReadOnlyList<EligibleCustomerCompanyDto>> ListEligibleCustomers(
         CancellationToken cancellationToken)
     {
         await requestContext.RequirePlatformAdminAsync(HttpContext, cancellationToken);
@@ -52,26 +52,24 @@ public sealed class PlatformLabServiceOrdersController(
             return [];
         }
 
-        return await dbContext.Organizations.AsNoTracking()
-            .Where(organization => organization.Kind == OrganizationKind.Customer
-                && organization.IsActive
+        return await dbContext.CrmCompanies.AsNoTracking()
+            .Where(company => company.IsActive
+                && company.AccessOrganizationId.HasValue
+                && company.AccessOrganization != null
+                && company.AccessOrganization.Kind == OrganizationKind.Customer
+                && company.AccessOrganization.IsActive
+                && !company.AccessOrganization.IsOperationalReadinessBlocked
                 && dbContext.OrganizationServiceEntitlements.Any(entitlement =>
-                    entitlement.OrganizationId == organization.Id
+                    entitlement.OrganizationId == company.AccessOrganizationId.Value
                     && entitlement.Service == PortalService.PSeqLabService
                     && entitlement.ConfigurationStatus == EntitlementConfigurationStatus.Ready
                     && entitlement.EffectiveFrom <= now
-                    && (!entitlement.EffectiveTo.HasValue || entitlement.EffectiveTo.Value > now))
-                && dbContext.OrganizationMemberships.Any(membership =>
-                    membership.OrganizationId == organization.Id
-                    && membership.IsActive
-                    && membership.IsOrganizationAdmin
-                    && membership.User != null
-                    && membership.User.IsActive
-                    && membership.User.Status == UserAccountStatus.Active))
-            .OrderBy(organization => organization.Name)
-            .Select(organization => new EligibleCustomerOrganizationDto(
-                organization.Id,
-                organization.Name))
+                    && (!entitlement.EffectiveTo.HasValue || entitlement.EffectiveTo.Value > now)))
+            .OrderBy(company => company.Name)
+            .Select(company => new EligibleCustomerCompanyDto(
+                company.AccessOrganizationId!.Value,
+                company.Id,
+                company.Name))
             .ToListAsync(cancellationToken);
     }
 
@@ -191,20 +189,13 @@ public sealed class PlatformLabServiceOrdersController(
                     ?? throw Conflict(
                         "customer_not_available",
                         "Select an active Customer organization before initiating the order.");
-                var hasActiveAdministrator = await dbContext.OrganizationMemberships.AsNoTracking()
-                    .AnyAsync(
-                        membership => membership.OrganizationId == customer.Id
-                            && membership.IsActive
-                            && membership.IsOrganizationAdmin
-                            && membership.User != null
-                            && membership.User.IsActive
-                            && membership.User.Status == UserAccountStatus.Active,
-                        operationCancellationToken);
-                if (!hasActiveAdministrator)
+                if (customer.IsOperationalReadinessBlocked)
                 {
                     throw Conflict(
-                        "customer_approver_required",
-                        "This Customer needs an active organization administrator before an order can be sent for approval.");
+                        "customer_operationally_blocked",
+                        string.IsNullOrWhiteSpace(customer.OperationalReadinessBlockReason)
+                            ? "Clear the Customer's manual operational block before starting pricing."
+                            : customer.OperationalReadinessBlockReason);
                 }
 
                 await LabServiceOrderingEligibility.RequireAsync(
@@ -786,26 +777,6 @@ public sealed class PlatformLabServiceOrdersController(
         => await dbContext.LabServiceOrders.Include(order => order.Samples).Include(order => order.SourceGroups)
             .Include(order => order.Quotes).Include(order => order.Revisions)
             .FirstOrDefaultAsync(order => order.Id == orderId && !order.IsDiscarded, cancellationToken) ?? throw Missing();
-
-    private async Task RequireCustomerApproverAsync(
-        Guid organizationId,
-        CancellationToken cancellationToken)
-    {
-        var hasActiveAdministrator = await dbContext.OrganizationMemberships.AsNoTracking()
-            .AnyAsync(membership => membership.OrganizationId == organizationId
-                && membership.IsActive
-                && membership.IsOrganizationAdmin
-                && membership.User != null
-                && membership.User.IsActive
-                && membership.User.Status == UserAccountStatus.Active,
-                cancellationToken);
-        if (!hasActiveAdministrator)
-        {
-            throw Conflict(
-                "customer_approver_required",
-                "This Customer needs an active organization administrator before the quote can be issued.");
-        }
-    }
 
     private async Task<Guid?> ResolveActingAdministratorAsync(
         LabServiceOrder order,

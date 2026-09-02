@@ -96,8 +96,8 @@ export function CrmCompanyFormDialog({
         <DialogHeader>
           <DialogTitle>{editing ? "Edit company" : "New company"}</DialogTitle>
           <DialogDescription>
-            This is a CRM relationship record. It does not create a Portal
-            account or grant access.
+            This creates the customer Company. Portal access remains disabled
+            until a reviewed request is approved.
           </DialogDescription>
         </DialogHeader>
         {error ? (

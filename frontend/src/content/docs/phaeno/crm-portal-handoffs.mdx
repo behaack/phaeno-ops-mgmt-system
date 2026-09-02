@@ -1,46 +1,43 @@
-# Portal handoffs and account links
+# Company requests and approvals
 
-A CRM handoff carries approved commercial context into a separate review queue. It is the supported boundary between CRM and Portal operations.
+A Company request carries commercial context into an audited review queue. It can propose online access, products and services, a relationship change, or reviewed work without creating another customer identity.
 
-## Create the handoff
+## Create a Company request
 
-Open the CRM Company and find **Portal handoffs and account links**. Select **Create handoff** and choose one type:
+Open the CRM Company and find **Company requests**. Select **Create request**, then choose a category and request type:
 
-- Portal onboarding
-- Portal evaluation
-- Trial Project
-- Custom work
-- Service change
-- Relationship change
-- Offboarding
+- **Online access:** onboarding, evaluation, or offboarding
+- **Products and services:** service change
+- **Work:** Trial Project or custom work
+- **Relationship:** relationship change
 
-Choose the requested Prospect, Customer, or Partner relationship when the request requires it, or retain the linked-account/workflow default. Link an Opportunity when the request arose from a specific pursuit. Select P-Seq Lab Service or P-Seq Kit only when that service is actually being requested. Enter a required tenant-safe summary and optional internal notes.
+The form shows only fields relevant to the selected request. Choose the requested Prospect, Customer, or Partner relationship when required. Link an Opportunity when evaluation or work arose from a specific pursuit; Customer order handoffs still begin from the Opportunity workspace. Open **Requested products and services**, search when needed, and select each applicable item; select an item again to remove it. Enter a required tenant-safe summary and optional internal notes.
 
 Do not include patient information, sample identifiers, scientific results, credentials, confidential file contents, or laboratory investigation detail. The handoff summary is relationship context for review, not an unrestricted notes field.
 
 ## Understand what is created
 
-Submitting creates one pending, idempotent relationship request. It appears in the Portal accounts review queue and, when applicable, Order operations intake. The Company workspace shows the request number, handoff type, status, and creation time.
+Submitting creates one pending, idempotent Company request. It appears in CRM's **Requests** review queue and, when applicable, Order operations intake. The Company workspace shows the request number, type, status, and creation time.
 
 The handoff does not by itself:
 
-- create or reclassify a Portal Account
+- enable or reclassify Portal access
 - invite or activate a user
-- mark an Account Ready
+- mark the Company Ready
 - activate a service entitlement or ordering authorization
 - create a quote, order, sample roster, shipment, or Lab work order
 - approve offboarding or revoke existing access
 
-An authorized reviewer owns those consequences in the destination workflow. If an approved Account is created or linked, POMS records an explicit CRM-to-Portal account link with organization identity, relationship kind, reason, actor, and time.
+An authorized reviewer owns those consequences in the destination workflow. Online access is one possible request outcome, not the parent of every request. When onboarding or evaluation is approved, POMS attaches one internal tenant scope to the existing Company. That scope provides tenant isolation and access controls; it is not another Company or customer identity.
 
 ## Review and follow up
 
-Open **Portal accounts** to review onboarding, evaluation, service, relationship, or offboarding requests. Open **Order operations** for custom-work or order-intake review when the request is applicable there. Keep CRM Activities and Tasks focused on commercial follow-up; record Portal decisions in their owning workflow.
+Open CRM's **Requests** section to review onboarding, evaluation, products and services, relationship, work, or offboarding requests. Open **Order operations** for custom-work or order-intake review when the request is applicable there. Keep CRM Activities and Tasks focused on commercial follow-up; record each decision in its owning workflow.
 
-For Customer PSeq Lab Service, a Won Opportunity can create a dedicated **Customer order handoff** from its detail page. After Portal accounts approves the request and confirms the linked active Customer, Ready ordering entitlement, active Customer administrator, and available service offering, **Start Customer order** appears in both the Opportunity and Order intake. Starting it creates one order, marks the request Applied in the same transaction, and links both records. Open the resulting order from either surface. Create a separate reviewed handoff when the same Opportunity legitimately produces another order; never retry by creating a duplicate handoff.
+For Customer PSeq Lab Service, a Won Opportunity can create a dedicated **Customer order handoff** from its detail page. After Company request review approves the request and confirms the active Company operational scope, Ready ordering entitlement, available service offering, and no manual operational block, **Start Customer order** appears in both the Opportunity and Order intake. An online Customer administrator is not required to begin pricing, but full readiness and an active administrator are required before the quote can be issued. Starting the order creates one order, marks the request Applied in the same transaction, and links both records. Open the resulting order from either surface. Create a separate reviewed handoff when the same Opportunity legitimately produces another order; never retry by creating a duplicate handoff.
 
 Trial Project and Portal Evaluation handoffs do not start Customer orders. Company-level Customer order handoffs may start an order without an Opportunity, but they follow the same approval and eligibility checks.
 
-If the Company already has an active account link, choose the appropriate change or offboarding request instead of creating a second onboarding request. If the same handoff submission is retried, POMS returns the existing request through its idempotency boundary rather than creating duplicate work.
+If the Company already has active online access, choose the appropriate change or offboarding request instead of creating a second onboarding request. If the same submission is retried, POMS returns the existing request through its idempotency boundary rather than creating duplicate work.
 
 CRM lifecycle labels and Opportunity Won status never substitute for this reviewed boundary.

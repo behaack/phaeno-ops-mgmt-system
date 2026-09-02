@@ -30,7 +30,7 @@ const onboardingRequest: RelationshipRequest = {
 }
 
 describe('RequestActionDialog', () => {
-  it('explains that approving a new-account request creates the pending account', () => {
+  it('explains that approval enables pending Company-owned Portal access', () => {
     render(
       <RequestActionDialog
         action="approve"
@@ -42,13 +42,13 @@ describe('RequestActionDialog', () => {
     )
 
     expect(
-      screen.getByRole('dialog', { name: 'Approve and create Portal account' }),
+      screen.getByRole('dialog', { name: 'Approve and enable Portal access' }),
     ).toBeTruthy()
-    expect(screen.getByText(/creates the account with pending Portal readiness/)).toBeTruthy()
+    expect(screen.getByText(/enables Portal access on this Company with pending readiness/)).toBeTruthy()
     expect(screen.getByText(/Customer ordering authorization follows the selection below/)).toBeTruthy()
     expect(screen.getByRole('checkbox', { name: 'Ordering authorized' })).toHaveProperty('dataset')
     expect(screen.getByRole('checkbox', { name: 'Ordering authorized' }).getAttribute('data-state')).toBe('checked')
-    expect(screen.getByRole('button', { name: 'Approve and create account' })).toBeTruthy()
+    expect(screen.getByRole('button', { name: 'Approve and enable access' })).toBeTruthy()
   })
 
   it('submits ordering authorization on by default and allows staff to turn it off', async () => {
@@ -67,7 +67,7 @@ describe('RequestActionDialog', () => {
     fireEvent.change(screen.getByRole('textbox'), {
       target: { value: 'Create the account without ordering access.' },
     })
-    fireEvent.click(screen.getByRole('button', { name: 'Approve and create account' }))
+    fireEvent.click(screen.getByRole('button', { name: 'Approve and enable access' }))
 
     await waitFor(() => expect(onSubmit).toHaveBeenCalledWith({
       explanation: 'Create the account without ordering access.',
@@ -110,7 +110,7 @@ describe('RequestActionDialog', () => {
       />,
     )
 
-    expect(screen.getByRole('dialog', { name: 'Complete account request' })).toBeTruthy()
+    expect(screen.getByRole('dialog', { name: 'Complete Portal access request' })).toBeTruthy()
     expect(screen.getByRole('button', { name: 'Complete request' })).toBeTruthy()
   })
 })

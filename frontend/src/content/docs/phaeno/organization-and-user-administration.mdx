@@ -1,10 +1,10 @@
-# Organization and user administration
+# Company access and user administration
 
-Phaeno administrators manage organizations, Portal readiness, service entitlements, integration requests, and global access. Prospect, Customer, and Partner administrators manage membership only within their own organization. Access is invitation-based and every durable administrative change is audited.
+Phaeno administrators manage Portal access, readiness, service entitlements, integration requests, and global access from the canonical CRM Company. Prospect, Customer, and Partner administrators manage membership only within their own access scope. Access is invitation-based and every durable administrative change is audited.
 
 ## Know which administration surface owns each record
 
-The **Portal accounts** directory and each account workspace are connected to the durable API. The directory contains Prospect, Customer, and Partner accounts; it does not contain the internal Phaeno organization. Changes to account details, Portal requests, service entitlements, members, and invitations made in those workspaces persist and are audited.
+The CRM **Companies** directory is the only customer directory. A Company may exist before Portal access is approved. After approval, the same Company workspace displays its relationship type, readiness, services, members, invitations, requests, and retention settings. The internal Organization identifier used for tenant isolation is not a second customer record and does not appear in a separate directory.
 
 **User management** is also connected to durable account APIs. In the Phaeno context, active accounts and invited people appear in one list alongside global account status and every enforced Phaeno role. A **Pending invitation** status means the recipient has not completed account registration. Open a card’s actions menu to edit an active user, deactivate another active user, reactivate a disabled user, or resend or revoke a pending invitation. A Phaeno administrator cannot deactivate their own account. Edit one active user to update their name, Platform administrator assignment, and additive laboratory roles together. Platform administrators retain bootstrap access to every laboratory capability even when no explicit laboratory role is assigned.
 
@@ -12,36 +12,36 @@ The role picker contains only roles enforced by the current authorization model:
 
 Cards marked **Pending invitation** still represent invitation records, not accepted user records. Enter the person’s first name, last name, and exact sign-in email, then select the Platform administrator and additive laboratory roles they should receive. The pending role intent grants no access. It becomes active only when the recipient accepts and becomes an active Phaeno member.
 
-## Review and maintain accounts
+## Review and maintain Companies
 
-Create the organization with the current business relationship:
+Create the Company first, then request the approved Portal relationship when access is needed:
 
 - **Prospect** for an external organization that may receive explicitly granted curated data but cannot order work.
 - **Customer** for organizations that request laboratory services.
 - **Partner** for organizations that submit specimens for PSeq Lab Service or purchase the PSeq Kit, which includes data assembly.
 - **Phaeno** for internal platform operations.
 
-Do not use organization kind or Portal readiness as a shortcut for access. Curated package access requires an exact-version grant, member access requires an accepted invitation, and commercial work requires a current service entitlement.
+Do not use Company lifecycle or Portal readiness as a shortcut for access. Curated package access requires an exact-version grant, member access requires an accepted invitation, and commercial work requires a current service entitlement.
 
-Open **Portal accounts** and use the **Account directory** tab to search durable external accounts. Select the account name to open its dedicated workspace, or use a row's **Edit** action for bounded maintenance of an existing Portal account. Use the separate **Review queue** tab for requests that still need a Phaeno decision. Standard commercial onboarding begins with an explicit handoff in the first-party CRM Company or Opportunity workspace. A platform administrator may use **New Portal account request** only for an exceptional migration or recovery case. That action submits an onboarding or evaluation request for the same audited review; it does not directly create an account, invite a user, or activate a service.
+Open **CRM** and select **Companies** to search durable external customer records. Select the Company name to open its workspace. Use **Company requests** to propose online access, a product or service change, a relationship change, or reviewed work. Use CRM's **Requests** section for requests that still need a Phaeno decision. There is no standalone customer-creation action outside CRM.
 
-For a pending onboarding or evaluation request without an account, select **Approve and create Portal account** and record the approval reason. When the new account is a Customer, **Ordering authorized** defaults to **On**. Leave it on to create a current **Ready** PSeq Lab Service entitlement with the account, or turn it off to create the account without ordering access. POMS atomically approves the request, removes it from the review queue, creates the durable Prospect, Customer, or Partner with **Pending** Portal readiness, creates the selected Customer ordering authorization, associates the request, and opens the account details page. The request remains **Approved** in that account's **Requests** tab until Phaeno completes and verifies the user, service, or other requested setup and selects **Complete request**.
+For a pending onboarding or evaluation request, select **Approve and enable Portal access** and record the approval reason. When the relationship is Customer, **Ordering authorized** defaults to **On**. Leave it on to create a current **Ready** PSeq Lab Service entitlement, or turn it off to enable access without ordering authorization. POMS atomically approves the request, creates the Company's internal tenant scope with **Pending** readiness, creates the selected Customer ordering authorization, and attaches it to the existing Company. It never creates another customer record or a user.
 
-If an older approved onboarding or evaluation request shows **Account creation incomplete**, select **Complete account creation**. The same default-on **Ordering authorized** choice appears for a Customer. POMS creates and associates the missing pending-readiness account and the selected ordering authorization in one operation, removes the recovered request from the review queue, then opens the account. This recovery does not invite users, create an order, or complete the request.
+If an older approved onboarding or evaluation request shows **Portal access incomplete**, select **Complete Portal access**. POMS creates and attaches the missing tenant scope and selected ordering authorization in one operation. This recovery does not create another Company, invite users, create an order, or complete the request.
 
 Record readiness as **Not reviewed**, **Pending**, **Ready**, or **Blocked**, with an internal note when useful. Readiness describes operational setup; it does not invite a user, activate a service, or place an order.
 
-## Review Portal requests
+## Review Company requests
 
-Use the **Review queue** tab to decide pending onboarding, evaluation, service, relationship, Sales-assisted order, and offboarding handoffs created by the first-party CRM, together with restricted migration or recovery requests submitted through **New Portal account request**. Approved requests associated with an account leave this queue and remain available in the account workspace's **Requests** tab. An approved request without an associated account remains in the review queue only as a recovery exception. Historical HubSpot-sourced requests remain readable, but no HubSpot intake or simulation endpoint is part of the standalone workflow.
+Use CRM's **Requests** section to decide pending onboarding, evaluation, product and service, relationship, sales-assisted order, and offboarding requests created by the first-party CRM. Approved requests remain available in the Company's **Company requests** area. An approved online-access request without its tenant scope remains in the queue only as a recovery exception. Historical HubSpot-sourced requests remain readable, but no HubSpot intake or simulation endpoint is part of the standalone workflow.
 
-Approve or decline a pending request with a reason. For an onboarding or evaluation request without an account, approval also creates and associates the pending-readiness account. The Customer account dialog makes ordering authorization explicit and defaults it on; no user access or order is created. Other request types record the decision only. For pre-organization recovery cases that do not represent a new account, select the completed organization while completing the request. Complete each approved invitation, entitlement, or order change through its owning workflow, verify the outcome, and then select **Complete request** from the account's **Requests** tab and record what was completed.
+Approve or decline a pending request with a reason. For onboarding or evaluation, approval also creates and attaches the Company's pending-readiness access scope. The Customer dialog makes ordering authorization explicit and defaults it on; no user access or order is created. Other request types record the decision only. Complete each approved invitation, entitlement, or order change through its owning workflow, verify the outcome, and then select **Complete request** from the Company's request area and record what was completed.
 
 Never put specimen, scientific, downstream-customer, credential, or other sensitive operational details in an external reference or request summary.
 
 ## Invite administrators and members
 
-From the account details page, use **Manage users** or open the **Users** tab. Enter the designated CRM Contact’s exact sign-in email after Phaeno review, and assign **Administrator** only when the person must authorize commercial work or manage membership; otherwise assign **Member**. A CRM Contact remains separate from a Portal user and grants no access. Ask the recipient to sign in with the invited email and accept the Portal invitation.
+From Company detail, use **Manage users** or open the **Users** section. Enter the designated CRM Contact’s exact sign-in email after Phaeno review, and assign **Administrator** only when the person must authorize commercial work or manage membership; otherwise assign **Member**. A CRM Contact remains separate from a Portal user and grants no access. Ask the recipient to sign in with the invited email and accept the Portal invitation.
 
 Do not create a normal membership directly. Invitation acceptance provides the user-facing consent point and the audit link between invitation, user, and membership.
 
@@ -49,11 +49,11 @@ For an internal employee, select the Phaeno organization and open **User managem
 
 To follow up before acceptance, find the card marked **Pending invitation**, open its actions menu, and choose **Resend invitation**. Resending rotates the private link and is subject to a cooldown. Revoke an invitation that should not be accepted.
 
-In local development, an external account's **Users** tab also provides **Create sign-in link**. It replaces the prior invitation link and displays a fresh link that you can copy into a private window. On the invitation page, choose **Sign in or create account**; if the fake email does not yet exist in the Clerk development instance, choose **Sign up**, create it with that exact invited email, and then accept the invitation. This development control is not available in production. Use it only with fake development accounts, and do not put a real invitation link into tickets or documentation.
+In local development, a Company's **Users** section also provides **Create sign-in link** after Portal access is enabled. It replaces the prior invitation link and displays a fresh link that you can copy into a private window. On the invitation page, choose **Sign in or create account**; if the fake email does not yet exist in the Clerk development instance, choose **Sign up**, create it with that exact invited email, and then accept the invitation. This development control is not available in production. Use it only with fake development accounts, and do not put a real invitation link into tickets or documentation.
 
 ## Convert a Prospect
 
-Convert a Prospect to Customer or Partner only after the business relationship is approved. Conversion preserves the organization identifier, users, memberships, grants, and audit history. It does not create an order, assign broad data access, or configure prices automatically.
+Convert a Prospect access relationship to Customer or Partner only after the business relationship is approved. Conversion preserves the Company, internal access identifier, users, memberships, grants, and audit history. It does not create an order, assign broad data access, or configure prices automatically.
 
 After conversion, complete the applicable operational setup: analysis availability and Customer credit for a Customer, or offerings, negotiated reagent pricing, assembly profiles, and Partner assembly credit for a Partner.
 
@@ -67,7 +67,7 @@ Use the organization’s **Services** tab to record dated commercial permission:
 
 Set configuration to **Pending**, **Ready**, or **Blocked**. A service is usable only when its entitlement is effective and configuration is Ready. Overlapping periods for the same service are rejected.
 
-A Customer account created with **Ordering authorized** on already has an open-ended **Ready** PSeq Lab Service entitlement. Review it here before adding another. Turning the account-creation choice off leaves this list unchanged; add a dated entitlement here only after the commercial authorization is approved.
+A Customer access scope enabled with **Ordering authorized** on already has an open-ended **Ready** PSeq Lab Service entitlement. Review it here before adding another. Turning the access-enable choice off leaves this list unchanged; add a dated entitlement here only after the commercial authorization is approved.
 
 When the entitlement implements an approved Portal request, select that request as its source. The selector shows only approved or applied requests for this organization that include the selected service. Leave the source blank only for a documented manual exception; do not attach an onboarding-only request to a service entitlement.
 
@@ -77,7 +77,7 @@ PSeq Kit includes kit fulfillment followed by data submission and assembly. Do n
 
 ## Deactivate and restore access
 
-Deactivate a membership in the connected organization workspace to remove one organization relationship. Deactivate an organization when none of its memberships should be usable. Each action opens a consequence dialog; verify the named organization or person before confirming.
+Deactivate a membership in Company detail to remove one access relationship. Deactivate the Company when none of its memberships should be usable; this suspends its attached Portal access scope. Reactivating the Company restores that scope. Each action opens a consequence dialog; verify the named Company or person before confirming.
 
 A deactivated membership is restored through a fresh invitation and acceptance. When all Portal access for another person must stop, select **Deactivate** on that Phaeno user and confirm the named person. The account, memberships, assigned roles, and audit history remain, but the user immediately loses effective access. A Phaeno administrator cannot deactivate their own account. Use **Reactivate** to restore an authorized disabled account; then review its memberships and roles before considering access complete. Preserve historical records; do not delete users, memberships, or organizations to resolve access problems.
 

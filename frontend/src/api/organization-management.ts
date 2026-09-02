@@ -77,6 +77,7 @@ export type ServiceEntitlement = {
 export type RelationshipRequest = {
   id: string
   requestNumber: string
+  companyId?: string | null
   organizationId: string | null
   candidateOrganizationName: string
   requestType: RelationshipRequestType

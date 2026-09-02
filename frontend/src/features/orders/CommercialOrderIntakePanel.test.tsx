@@ -13,7 +13,7 @@ const apiMocks = vi.hoisted(() => ({
 vi.mock("#/api/crm", () => ({ listCrmOrderHandoffs: apiMocks.handoffs }));
 vi.mock("#/api/order-management", () => ({
   getOrderErrorMessage: (_error: unknown, fallback: string) => fallback,
-  listEligibleCustomerOrganizations: apiMocks.customers,
+  listEligibleCustomerCompanies: apiMocks.customers,
 }));
 vi.mock("@tanstack/react-router", () => ({
   Link: ({ children }: { children: ReactNode }) => <a href="#test">{children}</a>,

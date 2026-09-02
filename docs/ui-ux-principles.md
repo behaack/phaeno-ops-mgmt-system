@@ -48,10 +48,10 @@ Use task-oriented entry points with record-centered workspaces.
 
 - The home experience should answer, "What needs my attention?"
 - The POMS home uses the shared far-left sidebar as one **Order Operations / Lab
-  Operations / Portal accounts / Web Operations** panel selector so internal users can
-  move among the two primary operational queues, Customer, Partner, and Prospect
-  account administration, and public Website intake without stacking the
-  dashboards. Show one panel at a time, emphasize attention or intake counts
+  Operations / Customer access / Web Operations** panel selector so internal users can
+  move among the two primary operational queues, CRM-owned Customer, Partner,
+  and Prospect access administration, and public Website intake without
+  stacking the dashboards. Show one panel at a time, emphasize attention or intake counts
   and representative priority work, and route users to the full owning
   workspace when one exists. Web Operations keeps mailing-list signups and demo
   requests read-only on the dashboard and is visible only to Phaeno platform
@@ -64,13 +64,15 @@ Use task-oriented entry points with record-centered workspaces.
   workspace, while external users remain in the organization context
   established by their authenticated session.
 - Present CRM as a first-class POMS workspace for Companies, Contacts, Leads,
-  Opportunities, Activities, Tasks, and relationship reporting. Keep CRM
-  records distinct from Portal Accounts and users.
-- Present **Portal accounts** as the POMS-owned Portal account directory and review
-  surface. A CRM Company may propose or link a Portal Account through an
-  explicit authorized action; the Portal accounts review queue also exposes a
-  restricted direct proposal action for migration and recovery. Neither path grants
-  access, readiness, services, or executable work by itself.
+  Opportunities, Activities, Tasks, relationship reporting, and Company
+  requests.
+  The CRM Company is the canonical Customer, Partner, or Prospect record; keep
+  Portal users and tenant-scoped operational data distinct from that Company.
+- Present **Company requests** as a CRM section and as part of Company detail,
+  not as a separate account directory or customer entity. Online access is one
+  possible request outcome alongside product and service, relationship, and
+  work outcomes. Creating or editing the Company alone grants no access,
+  readiness, service entitlement, or executable work.
 - Multi-section workspaces use one shared sidebar anchored to the far-left viewport edge beneath the primary toolbar. On wide screens it may remain pinned; when unpinned, a fine pointer may preview the same rail from the viewport edge. The persistent edge tab provides keyboard, click, and touch access. On narrow or coarse-pointer layouts, the rail stays open until the user selects a section, toggles the tab, or presses Escape.
 - The unpinned rail is non-modal: it does not add a backdrop, trap focus, blur the page, or move content. A pinned rail preserves the normal centered page position when it fits in the available left margin and reflows the page only when the rail would otherwise overlap it.
 - Remember the sidebar pin preference as a low-risk presentation setting, and show pin controls only on wide layouts. Keep section selection, keyboard focus, Escape behavior, and accessible names intact across pinned and unpinned states, and do not render duplicate navigation for one viewport.

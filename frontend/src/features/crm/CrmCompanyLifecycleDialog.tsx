@@ -43,8 +43,9 @@ export function CrmCompanyLifecycleDialog({
           </Alert>
         ) : null}
         <p className="text-sm text-muted-foreground">
-          This action does not change Portal access, customer accounts, or
-          service entitlements.
+          {active
+            ? "This also suspends the Company’s Portal access. Users, service entitlements, orders, and history are retained."
+            : "This restores the Company and its existing Portal access. Review readiness before starting new work."}
         </p>
         <DialogFooter>
           <Button
