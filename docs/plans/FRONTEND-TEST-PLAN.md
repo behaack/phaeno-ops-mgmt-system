@@ -130,9 +130,9 @@ remain incomplete production-activation gates.
   explicit mock-data identity, page-size-10 footer paginators, independent
   pagination actions, single-page paginator suppression, and isolated retryable
   API failures. Connected panels require confirmation before unsubscribe or
-  demo completion, explain that original intake is retained, invoke the
-  selected record action, and show contextual success feedback; mock panels do
-  not expose persistence actions.
+  demo completion, render the retained-intake explanation in the modal body,
+  invoke the selected record action, and show contextual success feedback;
+  mock panels do not expose persistence actions.
 
 ## Deferred Tests
 

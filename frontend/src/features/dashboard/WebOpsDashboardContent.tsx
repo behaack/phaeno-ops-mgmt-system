@@ -480,8 +480,10 @@ function WebOpsActionDialog({
       <DialogContent>
         <DialogHeader>
           <DialogTitle>{title}</DialogTitle>
-          <DialogDescription>{description}</DialogDescription>
         </DialogHeader>
+        <div>
+          <DialogDescription>{description}</DialogDescription>
+        </div>
         {error ? (
           <Alert variant="destructive">
             <AlertTitle>{errorTitle}</AlertTitle>

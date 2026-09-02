@@ -252,7 +252,10 @@ describe('WebOpsDashboardContent', () => {
       screen.getAllByRole('button', { name: 'Unsubscribe' })[0],
     )
     const unsubscribeDialog = screen.getByRole('dialog')
-    expect(unsubscribeDialog.textContent).toContain(
+    expect(
+      unsubscribeDialog.querySelector('[data-slot="dialog-body"]')
+        ?.textContent,
+    ).toContain(
       'The original Website submission remains in POMS.',
     )
     fireEvent.click(
@@ -273,7 +276,10 @@ describe('WebOpsDashboardContent', () => {
       screen.getAllByRole('button', { name: 'Mark complete' })[0],
     )
     const completeDialog = screen.getByRole('dialog')
-    expect(completeDialog.textContent).toContain(
+    expect(
+      completeDialog.querySelector('[data-slot="dialog-body"]')
+        ?.textContent,
+    ).toContain(
       'The original Website inquiry remains in POMS.',
     )
     fireEvent.click(
