@@ -1,7 +1,9 @@
-import { useEffect, useState } from 'react'
-
-import type { RelationshipRequest } from '#/api/organization-management'
-import { Alert, AlertDescription } from '#/components/ui/alert'
+import {
+  apiErrorMessage,
+  existingAccessScopeCandidate,
+  type RelationshipRequest,
+} from '#/api/organization-management'
+import { Alert, AlertDescription, AlertTitle } from '#/components/ui/alert'
 import { Badge } from '#/components/ui/badge'
 import { Button } from '#/components/ui/button'
 import {
@@ -12,7 +14,6 @@ import {
   DialogHeader,
   DialogTitle,
 } from '#/components/ui/dialog'
-import { OrderingAuthorizationField } from './OrderingAuthorizationField'
 
 export function AccountCreationRecoveryDialog({
   error,
@@ -21,19 +22,13 @@ export function AccountCreationRecoveryDialog({
   onOpenChange,
   request,
 }: {
-  error?: string
+  error?: unknown
   isPending: boolean
-  onConfirm: (orderingAuthorized: boolean) => void
+  onConfirm: (existingOrganizationId?: string) => void
   onOpenChange: (open: boolean) => void
   request: RelationshipRequest | null
 }) {
-  const [orderingAuthorized, setOrderingAuthorized] = useState(true)
-
-  useEffect(() => {
-    if (request) setOrderingAuthorized(true)
-  }, [request])
-
-  const enablesCustomerAccess = request?.requestedOrganizationKind === 'Customer'
+  const reuseCandidate = existingAccessScopeCandidate(error)
 
   return (
     <Dialog open={Boolean(request)} onOpenChange={onOpenChange}>
@@ -44,9 +39,18 @@ export function AccountCreationRecoveryDialog({
             Recover this approved Company request by creating its internal access scope.
           </DialogDescription>
         </DialogHeader>
-        {error ? (
+        {reuseCandidate ? (
+          <Alert>
+            <AlertTitle>Existing access scope found</AlertTitle>
+            <AlertDescription>
+              {reuseCandidate.organizationName} already has an active unlinked{' '}
+              {reuseCandidate.organizationKind} access scope. Confirm reuse to
+              preserve its users, orders, invitations, and history.
+            </AlertDescription>
+          </Alert>
+        ) : error ? (
           <Alert variant="destructive">
-            <AlertDescription>{error}</AlertDescription>
+            <AlertDescription>{apiErrorMessage(error)}</AlertDescription>
           </Alert>
         ) : null}
         {request ? (
@@ -59,17 +63,10 @@ export function AccountCreationRecoveryDialog({
               </div>
               <p className="mt-2 text-sm text-muted-foreground">{request.summary}</p>
             </div>
-            {enablesCustomerAccess ? (
-              <OrderingAuthorizationField
-                id="account-recovery-ordering-authorized"
-                checked={orderingAuthorized}
-                disabled={isPending}
-                onCheckedChange={setOrderingAuthorized}
-              />
-            ) : null}
             <p className="text-sm text-muted-foreground">
               The Company starts with pending Portal readiness. This recovery does not
-              invite users, create an order, or mark the request completed.
+              invite users, change product or service access, create an order, or mark
+              the request completed.
             </p>
           </div>
         ) : null}
@@ -77,8 +74,16 @@ export function AccountCreationRecoveryDialog({
           <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
             Keep incomplete
           </Button>
-          <Button type="button" disabled={isPending} onClick={() => onConfirm(orderingAuthorized)}>
-            {isPending ? 'Enabling…' : 'Enable Portal access'}
+          <Button
+            type="button"
+            disabled={isPending}
+            onClick={() => onConfirm(reuseCandidate?.organizationId)}
+          >
+            {isPending
+              ? 'Enabling…'
+              : reuseCandidate
+                ? 'Use existing access scope'
+                : 'Enable Portal access'}
           </Button>
         </DialogFooter>
       </DialogContent>

@@ -134,7 +134,9 @@ the protected deployed-Preview acceptance above.
   membership, and entitlement lifecycle actions; focus returns to the invoking
   control, ended entitlements retain their reason, and the entitlement source
   selector excludes an approved onboarding request that did not request the
-  selected service. Serious and critical Axe violations are checked in the
+  selected service. Confirm an existing non-ended entitlement can be edited to
+  Ready with an eligible approved source request without creating an
+  overlapping record. Serious and critical Axe violations are checked in the
   dialogs.
 
 ## Manual Acceptance Evidence
@@ -183,20 +185,25 @@ the protected deployed-Preview acceptance above.
   the invitation, and continues with the invited identity. Confirm that the
   development shortcut control and endpoint are absent from Production.
 - [x] First-party CRM Company create boundary journey - on desktop and narrow
-  layouts, cover the shared CRM sidebar and its route-backed subjects,
+  layouts, cover the shared grouped CRM sidebar and its route-backed subjects,
   current-section identity, list rendering, the no-access-yet warning, accessible
-  create dialog, normalized create payload, detail navigation, and proof that
-  Company creation makes no Portal write. Confirm card-scoped actions remain
+  create dialog with optional details collapsed, Website-derived domain,
+  normalized create payload, detail navigation, and proof that Company creation
+  makes no Portal write. Confirm card-scoped actions remain
   compact and right-aligned with their title row on Company, Lead, and
-  Opportunity detail workspaces. Confirm the Company request entry point uses
-  category-aware progressive disclosure while Opportunity order handoffs
-  remain in the Opportunity workspace. Maintained in
+  Opportunity detail workspaces. Confirm Company detail separates Overview,
+  People and sales, Requests, Access and services, and Activity. Confirm the
+  Company request entry point uses outcome-aware progressive disclosure,
+  suppresses redundant request-type controls, and links pending history to the
+  central Requests review queue while Opportunity order handoffs remain in the
+  Opportunity workspace. Maintained in
   `frontend/e2e/crm.spec.ts`.
 - [ ] Remaining first-party CRM Company journey - cover search, view, edit,
-  deactivate, reactivate, embedded online-access administration, and submitting
-  the searchable requested-products-and-services multi-select, plus the
-  documented effects each lifecycle action has on access, entitlements, and
-  work.
+  deactivate, reactivate, tabbed Company navigation, embedded online-access
+  administration without duplicate request decisions, central request review,
+  and submitting the searchable requested-products-and-services multi-select,
+  plus the documented effects each lifecycle action has on access,
+  entitlements, and work.
 - [ ] Remaining first-party CRM journey - cover Contact, incremental Company
   and Contact association search, Company-specific title/role and effective
   dates, equivalent relationship editing from both record workspaces, Lead,

@@ -11,18 +11,8 @@ public class RelationshipManagementDomainTests
     private static readonly DateTime Now = new(2026, 7, 15, 12, 0, 0, DateTimeKind.Utc);
 
     [Fact]
-    public void AccountCreationOrderingAuthorizationDefaultsOnForCompatibleClients()
+    public void DirectOrganizationCreationStillDefaultsOrderingAuthorizationOn()
     {
-        Assert.True(new DecidePortalIntegrationRequest
-        {
-            Approved = true,
-            Reason = "Approved.",
-            Version = 1
-        }.OrderingAuthorized);
-        Assert.True(new CreateAccountFromPortalIntegrationRequest
-        {
-            Version = 1
-        }.OrderingAuthorized);
         Assert.True(new CreateOrganizationRequest
         {
             Name = "Customer",
@@ -93,6 +83,32 @@ public class RelationshipManagementDomainTests
         Assert.Equal(Now.AddDays(1), entitlement.EffectiveTo);
         Assert.Equal("Commercial term ended.", entitlement.EndReason);
         Assert.False(entitlement.IsEffectiveAt(Now.AddDays(2)));
+    }
+
+    [Fact]
+    public void ExistingEntitlementCanBeMadeReadyAndLinkedToApprovedRequest()
+    {
+        var sourceRequestId = Guid.NewGuid();
+        var entitlement = new OrganizationServiceEntitlement(
+            Guid.NewGuid(),
+            PortalService.PSeqLabService,
+            Now,
+            null,
+            EntitlementConfigurationStatus.Pending,
+            Guid.NewGuid(),
+            null,
+            null);
+
+        entitlement.Update(
+            Now,
+            null,
+            EntitlementConfigurationStatus.Ready,
+            sourceRequestId,
+            "Configured from the approved service request.");
+
+        Assert.Equal(EntitlementConfigurationStatus.Ready, entitlement.ConfigurationStatus);
+        Assert.Equal(sourceRequestId, entitlement.SourceRequestId);
+        Assert.Equal("Configured from the approved service request.", entitlement.Notes);
     }
 
     private static PortalIntegrationRequest CreateRequest(

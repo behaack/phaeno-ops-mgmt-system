@@ -24,6 +24,7 @@ export type WorkspaceSidebarItem<Value extends string> = {
   label: string
   description: string
   icon: LucideIcon
+  group?: string
   count?: number
   countDescription?: string
 }
@@ -215,52 +216,76 @@ function WorkspaceNavigation<Value extends string>({
   value,
   onValueChange,
 }: Omit<WorkspaceSidebarProps<Value>, 'children'>) {
+  const groups = items.reduce<Array<{
+    label?: string
+    items: Array<WorkspaceSidebarItem<Value>>
+  }>>((result, item) => {
+    const currentGroup = result.at(-1)
+    if (!currentGroup || currentGroup.label !== item.group) {
+      result.push({ label: item.group, items: [item] })
+    } else {
+      currentGroup.items.push(item)
+    }
+    return result
+  }, [])
+
   return (
     <nav aria-label={`${workspaceLabel} sections`}>
-      <ul className="space-y-1">
-        {items.map((item) => {
-          const Icon = item.icon
-          const isActive = item.value === value
+      <ul className="space-y-4">
+        {groups.map((group, groupIndex) => (
+          <li key={group.label ?? `primary-${groupIndex}`}>
+            {group.label ? (
+              <h3 className="mb-1 px-3 text-[0.6875rem] font-semibold tracking-wide text-muted-foreground uppercase">
+                {group.label}
+              </h3>
+            ) : null}
+            <ul className="space-y-1">
+              {group.items.map((item) => {
+                const Icon = item.icon
+                const isActive = item.value === value
 
-          return (
-            <li key={item.value}>
-              <button
-                type="button"
-                aria-current={isActive ? 'page' : undefined}
-                className={cn(
-                  'flex w-full cursor-pointer items-start gap-3 rounded-lg px-3 py-2.5 text-left transition-colors outline-none focus-visible:ring-3 focus-visible:ring-ring/50',
-                  isActive
-                    ? 'bg-primary/10 text-foreground ring-1 ring-primary/20'
-                    : 'text-muted-foreground hover:bg-muted hover:text-foreground',
-                )}
-                onClick={() => onValueChange(item.value)}
-              >
-                <Icon aria-hidden="true" className="mt-0.5 size-4 shrink-0" />
-                <span className="min-w-0 flex-1">
-                  <span className="flex items-start justify-between gap-2">
-                    <span className="block text-sm font-medium">{item.label}</span>
-                    {item.count !== undefined ? (
-                      <span
-                        aria-hidden="true"
-                        className="inline-flex min-w-6 shrink-0 justify-center rounded-full bg-background/80 px-1.5 py-0.5 text-[0.6875rem] leading-4 tabular-nums ring-1 ring-foreground/10"
-                      >
-                        {item.count}
+                return (
+                  <li key={item.value}>
+                    <button
+                      type="button"
+                      aria-current={isActive ? 'page' : undefined}
+                      className={cn(
+                        'flex w-full cursor-pointer items-start gap-3 rounded-lg px-3 py-2.5 text-left transition-colors outline-none focus-visible:ring-3 focus-visible:ring-ring/50',
+                        isActive
+                          ? 'bg-primary/10 text-foreground ring-1 ring-primary/20'
+                          : 'text-muted-foreground hover:bg-muted hover:text-foreground',
+                      )}
+                      onClick={() => onValueChange(item.value)}
+                    >
+                      <Icon aria-hidden="true" className="mt-0.5 size-4 shrink-0" />
+                      <span className="min-w-0 flex-1">
+                        <span className="flex items-start justify-between gap-2">
+                          <span className="block text-sm font-medium">{item.label}</span>
+                          {item.count !== undefined ? (
+                            <span
+                              aria-hidden="true"
+                              className="inline-flex min-w-6 shrink-0 justify-center rounded-full bg-background/80 px-1.5 py-0.5 text-[0.6875rem] leading-4 tabular-nums ring-1 ring-foreground/10"
+                            >
+                              {item.count}
+                            </span>
+                          ) : null}
+                        </span>
+                        <span className="mt-0.5 block text-xs leading-4 text-muted-foreground">
+                          {item.description}
+                        </span>
+                        {item.count !== undefined ? (
+                          <span className="sr-only">
+                            {item.countDescription ?? `${item.count} items`}
+                          </span>
+                        ) : null}
                       </span>
-                    ) : null}
-                  </span>
-                  <span className="mt-0.5 block text-xs leading-4 text-muted-foreground">
-                    {item.description}
-                  </span>
-                  {item.count !== undefined ? (
-                    <span className="sr-only">
-                      {item.countDescription ?? `${item.count} items`}
-                    </span>
-                  ) : null}
-                </span>
-              </button>
-            </li>
-          )
-        })}
+                    </button>
+                  </li>
+                )
+              })}
+            </ul>
+          </li>
+        ))}
       </ul>
     </nav>
   )

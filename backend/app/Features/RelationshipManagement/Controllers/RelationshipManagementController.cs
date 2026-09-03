@@ -164,8 +164,14 @@ public sealed class RelationshipManagementController(
         await RequirePlatformAdminAsync(cancellationToken);
         var entitlement = await RequireEntitlementAsync(organizationId, entitlementId, cancellationToken);
         EnsureVersion(entitlement.Version, request.Version);
+        await EnsureSourceRequestAsync(request.SourceRequestId, organizationId, entitlement.Service, cancellationToken);
         await EnsureNoOverlapAsync(organizationId, entitlement.Service, request.EffectiveFrom, request.EffectiveTo, entitlementId, cancellationToken);
-        Execute(() => entitlement.Update(request.EffectiveFrom, request.EffectiveTo, request.ConfigurationStatus, request.Notes));
+        Execute(() => entitlement.Update(
+            request.EffectiveFrom,
+            request.EffectiveTo,
+            request.ConfigurationStatus,
+            request.SourceRequestId,
+            request.Notes));
         await dbContext.SaveChangesAsync(cancellationToken);
         return ToDto(entitlement);
     }
@@ -245,6 +251,7 @@ public sealed class RelationshipManagementController(
 
         var candidateName = organization?.Name ?? request.CandidateOrganizationName;
         var requestedKind = request.RequestedOrganizationKind ?? organization?.Kind;
+        EnsureOnlineAccessRequestHasNoServices(request.RequestType, request.RequestedServices);
         EnsureRequestServicesAllowed(requestedKind, request.RequestedServices);
         var value = Execute(() => new PortalIntegrationRequest(
             organization?.Id,
@@ -275,10 +282,9 @@ public sealed class RelationshipManagementController(
 
         if (request.Approved && IsNewAccountRequest(value))
         {
-            await CreateAndAssociateAccountAsync(
+            await CreateOrAssociateAccountAsync(
                 value,
-                actor.Id,
-                request.OrderingAuthorized,
+                request.ExistingOrganizationId,
                 cancellationToken);
         }
 
@@ -300,10 +306,9 @@ public sealed class RelationshipManagementController(
         var actor = await RequirePlatformAdminAsync(cancellationToken);
         var value = await RequireRequestAsync(requestId, tracking: true, cancellationToken);
         EnsureVersion(value.Version, request.Version);
-        var organization = await CreateAndAssociateAccountAsync(
+        var organization = await CreateOrAssociateAccountAsync(
             value,
-            actor.Id,
-            request.OrderingAuthorized,
+            request.ExistingOrganizationId,
             cancellationToken);
         await EnsureCompanyPortalAccessAsync(value, actor.Id, cancellationToken);
         await dbContext.SaveChangesAsync(cancellationToken);
@@ -416,10 +421,9 @@ public sealed class RelationshipManagementController(
         && value.RequestType is PortalIntegrationRequestType.Onboarding or PortalIntegrationRequestType.Evaluation
         && value.RequestedOrganizationKind is OrganizationKind.Prospect or OrganizationKind.Customer or OrganizationKind.Partner;
 
-    private async Task<Organization> CreateAndAssociateAccountAsync(
+    private async Task<Organization> CreateOrAssociateAccountAsync(
         PortalIntegrationRequest value,
-        Guid actorUserId,
-        bool orderingAuthorized,
+        Guid? confirmedExistingOrganizationId,
         CancellationToken cancellationToken)
     {
         var handoff = await dbContext.CrmHandoffs
@@ -469,54 +473,107 @@ public sealed class RelationshipManagementController(
                 "Portal access is already enabled for this Company.");
         }
 
-        var duplicate = await dbContext.Organizations.AsNoTracking()
-            .AnyAsync(organization => organization.Name == handoff.Company.Name, cancellationToken);
-        if (duplicate)
+        var existingOrganization = await dbContext.Organizations
+            .FirstOrDefaultAsync(
+                organization => organization.Name == handoff.Company.Name,
+                cancellationToken);
+        if (existingOrganization is not null)
+        {
+            var linkedCompany = await dbContext.CrmCompanies.AsNoTracking()
+                .Where(company => company.AccessOrganizationId == existingOrganization.Id)
+                .Select(company => new { company.Id, company.Name })
+                .FirstOrDefaultAsync(cancellationToken);
+            if (linkedCompany is not null)
+            {
+                throw Conflict(
+                    "account_name_already_linked",
+                    $"An internal access scope with this Company name is already linked to {linkedCompany.Name}.");
+            }
+
+            if (!existingOrganization.IsActive)
+            {
+                throw Conflict(
+                    "account_name_inactive",
+                    "An inactive internal access scope with this Company name already exists. Resolve or reactivate it before enabling access.");
+            }
+
+            if (existingOrganization.Kind != value.RequestedOrganizationKind.Value)
+            {
+                throw Conflict(
+                    "account_kind_mismatch",
+                    $"The existing internal access scope is {existingOrganization.Kind}, but this request is for {value.RequestedOrganizationKind.Value}. Resolve the relationship before enabling access.");
+            }
+
+            if (confirmedExistingOrganizationId != existingOrganization.Id)
+            {
+                throw new RelationshipManagementException(
+                    "existing_access_scope_confirmation_required",
+                    "An active unlinked access scope with this Company name already exists. Confirm that it should be used before enabling access.",
+                    StatusCodes.Status409Conflict,
+                    new
+                    {
+                        organizationId = existingOrganization.Id,
+                        organizationName = existingOrganization.Name,
+                        organizationKind = existingOrganization.Kind
+                    });
+            }
+
+            Execute(() => value.AssociateOrganization(existingOrganization.Id));
+            Execute(() => handoff.Company.EnablePortalAccess(existingOrganization.Id));
+            await AssociateUnlinkedCompanyRequestsAsync(
+                handoff.Company.Id,
+                existingOrganization.Id,
+                cancellationToken);
+            return existingOrganization;
+        }
+
+        if (confirmedExistingOrganizationId.HasValue)
         {
             throw Conflict(
-                "account_name_already_exists",
-                "An internal access scope with this Company name already exists. Remove the orphaned scope before enabling access.");
+                "existing_access_scope_changed",
+                "The previously identified access scope is no longer available. Review the latest Company state and try again.");
         }
 
         var description = value.Summary.Length <= 1000
             ? value.Summary
             : value.Summary[..1000];
-        var now = DateTime.UtcNow;
         var organization = new Organization(
             handoff.Company.Name,
             value.RequestedOrganizationKind.Value,
             description);
-        var createsOrderingAuthorization = organization.Kind == OrganizationKind.Customer
-            && orderingAuthorized;
         organization.UpdatePortalReadiness(
             PortalReadinessStatus.Pending,
-            createsOrderingAuthorization
-                ? $"Created from approved request {value.RequestNumber}. PSeq Lab Service ordering is authorized; Phaeno must still configure users and complete Portal readiness."
-                : $"Created from approved request {value.RequestNumber}. Phaeno must still configure users, Portal readiness, and any service authorization.");
+            $"Created from approved request {value.RequestNumber}. Phaeno must still configure users, Portal readiness, and product or service entitlements.");
 
         dbContext.Organizations.Add(organization);
         Execute(() => value.AssociateOrganization(organization.Id));
         Execute(() => handoff.Company.EnablePortalAccess(organization.Id));
-
-        if (createsOrderingAuthorization)
-        {
-            var sourceRequestId = value.RequestedServices.Any(
-                requested => requested.Service == PortalService.PSeqLabService)
-                ? value.Id
-                : (Guid?)null;
-            dbContext.OrganizationServiceEntitlements.Add(
-                new OrganizationServiceEntitlement(
-                    organization.Id,
-                    PortalService.PSeqLabService,
-                    now,
-                    null,
-                    EntitlementConfigurationStatus.Ready,
-                    actorUserId,
-                    sourceRequestId,
-                    $"Ordering authorized during account creation from {value.RequestNumber}."));
-        }
+        await AssociateUnlinkedCompanyRequestsAsync(
+            handoff.Company.Id,
+            organization.Id,
+            cancellationToken);
 
         return organization;
+    }
+
+    private async Task AssociateUnlinkedCompanyRequestsAsync(
+        Guid companyId,
+        Guid organizationId,
+        CancellationToken cancellationToken)
+    {
+        var requests = await (
+            from handoff in dbContext.CrmHandoffs
+            join request in dbContext.PortalIntegrationRequests
+                on handoff.RelationshipRequestId equals request.Id
+            where handoff.CompanyId == companyId
+                && !request.OrganizationId.HasValue
+            select request)
+            .ToListAsync(cancellationToken);
+
+        foreach (var request in requests)
+        {
+            Execute(() => request.AssociateOrganization(organizationId));
+        }
     }
 
     private async Task EnsureSourceRequestAsync(Guid? requestId, Guid organizationId, PortalService service, CancellationToken cancellationToken)
@@ -648,7 +705,9 @@ public sealed class RelationshipManagementController(
                 cancellationToken);
         if (overlaps)
         {
-            throw Conflict("entitlement_period_overlap", "This service already has an overlapping entitlement period.");
+            throw Conflict(
+                "entitlement_period_overlap",
+                "This service already has an overlapping entitlement period. Edit the existing entitlement or choose a non-overlapping period.");
         }
     }
 
@@ -674,6 +733,22 @@ public sealed class RelationshipManagementController(
             }
 
             EnsureServiceAllowed(kind.Value, service);
+        }
+    }
+
+    private static void EnsureOnlineAccessRequestHasNoServices(
+        PortalIntegrationRequestType requestType,
+        IEnumerable<PortalService> services)
+    {
+        if (requestType is (
+                PortalIntegrationRequestType.Onboarding
+                or PortalIntegrationRequestType.Evaluation
+                or PortalIntegrationRequestType.Offboarding)
+            && services.Any())
+        {
+            throw new RelationshipManagementException(
+                "online_access_services_not_allowed",
+                "Online access requests cannot include products or services. Use a service change request instead.");
         }
     }
 

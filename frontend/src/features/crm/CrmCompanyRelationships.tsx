@@ -11,10 +11,8 @@ import {
   listCrmOpportunities,
   updateCompanyContact,
   type CrmCompanyContact,
-  type CrmHandoff,
   type CrmHandoffType,
 } from "#/api/crm";
-import { decideRelationshipRequest } from "#/api/organization-management";
 import { Alert, AlertDescription, AlertTitle } from "#/components/ui/alert";
 import { Badge } from "#/components/ui/badge";
 import { Button } from "#/components/ui/button";
@@ -43,19 +41,22 @@ import { CrmAssociationRecordCombobox } from "./CrmAssociationRecordCombobox";
 import { CrmCompanyContactEditDialog } from "./CrmCompanyContactEditDialog";
 import { CrmRelationshipRoleSelect } from "./CrmRelationshipRoleSelect";
 
-export function CrmCompanyRelationships({ companyId }: { companyId: string }) {
+export function CrmCompanyRelationships({
+  companyId,
+  view,
+}: {
+  companyId: string;
+  view: "relationships" | "requests";
+}) {
   const client = useQueryClient();
   const [associateOpen, setAssociateOpen] = useState(false);
   const [managingAssociation, setManagingAssociation] =
     useState<CrmCompanyContact | null>(null);
   const [handoffOpen, setHandoffOpen] = useState(false);
-  const [reviewTarget, setReviewTarget] = useState<{
-    handoff: CrmHandoff;
-    approved: boolean;
-  } | null>(null);
   const contacts = useQuery({
     queryKey: ["crm-company-contacts", companyId],
     queryFn: () => listCompanyContacts(companyId),
+    enabled: view === "relationships",
   });
   const opportunities = useQuery({
     queryKey: ["crm-company-opportunities", companyId],
@@ -64,6 +65,7 @@ export function CrmCompanyRelationships({ companyId }: { companyId: string }) {
   const handoffs = useQuery({
     queryKey: ["crm-handoffs", companyId],
     queryFn: () => listCrmHandoffs(companyId),
+    enabled: view === "requests",
   });
   const associate = useMutation({
     mutationFn: (input: {
@@ -119,246 +121,183 @@ export function CrmCompanyRelationships({ companyId }: { companyId: string }) {
       ]);
     },
   });
-  const reviewHandoff = useMutation({
-    mutationFn: ({
-      handoff,
-      approved,
-      reason,
-      orderingAuthorized,
-    }: {
-      handoff: CrmHandoff;
-      approved: boolean;
-      reason: string;
-      orderingAuthorized: boolean;
-    }) =>
-      decideRelationshipRequest(handoff.relationshipRequestId, {
-        approved,
-        reason,
-        version: handoff.requestVersion,
-        orderingAuthorized,
-      }),
-    onSuccess: async () => {
-      setReviewTarget(null);
-      await Promise.all([
-        client.invalidateQueries({ queryKey: ["crm-handoffs", companyId] }),
-        client.invalidateQueries({ queryKey: ["crm-company", companyId] }),
-        client.invalidateQueries({ queryKey: ["relationship-requests"] }),
-        client.invalidateQueries({ queryKey: ["organizations"] }),
-      ]);
-    },
-  });
   return (
     <>
-      <div className="grid gap-6">
-        <Card>
-          <CardHeader>
-            <CardTitle>Contacts</CardTitle>
-            <CardDescription>
-              People connected to this Company.
-            </CardDescription>
-            <CardAction>
-              <Button
-                size="sm"
-                variant="outline"
-                onClick={() => setAssociateOpen(true)}
-              >
-                <Plus data-icon="inline-start" />
-                Associate
-              </Button>
-            </CardAction>
-          </CardHeader>
-          <CardContent className="space-y-2">
-            {(contacts.data ?? []).map((contact) => (
-              <div
-                key={contact.id}
-                className="flex items-center justify-between gap-3 rounded-lg border p-3"
-              >
-                <Link
-                  to="/crm/contacts/$contactId"
-                  params={{ contactId: contact.contactId }}
-                  className="min-w-0 hover:underline"
-                >
-                  <span className="block font-medium">{contact.contactName}</span>
-                  <span className="block text-xs text-muted-foreground">
-                    {contact.jobTitle ?? "Job title not recorded"} ·{" "}
-                    {contact.relationshipRole ?? "Role not recorded"}
-                  </span>
-                </Link>
-                <div className="flex shrink-0 items-center gap-2">
-                  {contact.isPrimaryCompany ? <Badge>Primary</Badge> : null}
-                  {!contact.isActive ? (
-                    <Badge variant="outline">Ended</Badge>
-                  ) : null}
+      {view === "relationships" ? (
+        <>
+          <div className="grid gap-6 lg:grid-cols-2">
+            <Card>
+              <CardHeader>
+                <CardTitle>Contacts</CardTitle>
+                <CardDescription>People connected to this Company.</CardDescription>
+                <CardAction>
                   <Button
-                    size="icon"
-                    variant="ghost"
-                    aria-label={`Edit ${contact.contactName} relationship`}
-                    onClick={() => setManagingAssociation(contact)}
+                    size="sm"
+                    variant="outline"
+                    onClick={() => setAssociateOpen(true)}
                   >
-                    <Pencil aria-hidden="true" />
+                    <Plus data-icon="inline-start" />
+                    Associate
                   </Button>
-                </div>
-              </div>
-            ))}
-            {!contacts.isLoading && !(contacts.data?.length ?? 0) ? (
-              <p className="text-sm text-muted-foreground">
-                No contacts associated.
-              </p>
-            ) : null}
-          </CardContent>
-        </Card>
-        <Card>
-          <CardHeader>
-            <CardTitle>Opportunities</CardTitle>
-            <CardDescription>
-              Commercial work tied to this Company.
-            </CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-2">
-            {(opportunities.data?.items ?? []).map((value) => (
-              <Link
-                key={value.id}
-                to="/crm/opportunities/$opportunityId"
-                params={{ opportunityId: value.id }}
-                className="flex justify-between rounded-lg border p-3 hover:bg-muted/50"
-              >
-                <span className="font-medium">{value.name}</span>
-                <Badge variant="outline">{value.stageName}</Badge>
-              </Link>
-            ))}
-            {!opportunities.isLoading &&
-            !(opportunities.data?.items.length ?? 0) ? (
-              <p className="text-sm text-muted-foreground">
-                No opportunities recorded.
-              </p>
-            ) : null}
-          </CardContent>
-        </Card>
-      </div>
-      <Card>
-        <CardHeader>
-          <CardTitle>Company requests</CardTitle>
-          <CardDescription>
-            Review online access, product and service, relationship, and work
-            requests for this Company. Each outcome stays behind its owning
-            approval workflow.
-          </CardDescription>
-          <CardAction>
-            <Button size="sm" onClick={() => setHandoffOpen(true)}>
-              <ArrowRight data-icon="inline-start" />
-              Create request
-            </Button>
-          </CardAction>
-        </CardHeader>
-        <CardContent className="space-y-4">
-          {(handoffs.data ?? []).map((value) => (
-            <div key={value.id} className="rounded-lg border p-3">
-              <div className="flex flex-wrap items-center justify-between gap-2">
-                <div>
-                  <p className="font-medium">{requestTypeLabel(value.type)}</p>
-                  <p className="mt-1 text-xs text-muted-foreground">
-                    {value.requestNumber} · {formatDate(value.createdAt)}
+                </CardAction>
+              </CardHeader>
+              <CardContent className="space-y-2">
+                {(contacts.data ?? []).map((contact) => (
+                  <div
+                    key={contact.id}
+                    className="flex items-center justify-between gap-3 rounded-lg border p-3"
+                  >
+                    <Link
+                      to="/crm/contacts/$contactId"
+                      params={{ contactId: contact.contactId }}
+                      className="min-w-0 hover:underline"
+                    >
+                      <span className="block font-medium">{contact.contactName}</span>
+                      <span className="block text-xs text-muted-foreground">
+                        {contact.jobTitle ?? "Job title not recorded"} ·{" "}
+                        {contact.relationshipRole ?? "Role not recorded"}
+                      </span>
+                    </Link>
+                    <div className="flex shrink-0 items-center gap-2">
+                      {contact.isPrimaryCompany ? <Badge>Primary</Badge> : null}
+                      {!contact.isActive ? <Badge variant="outline">Ended</Badge> : null}
+                      <Button
+                        size="icon"
+                        variant="ghost"
+                        aria-label={`Edit ${contact.contactName} relationship`}
+                        onClick={() => setManagingAssociation(contact)}
+                      >
+                        <Pencil aria-hidden="true" />
+                      </Button>
+                    </div>
+                  </div>
+                ))}
+                {!contacts.isLoading && !(contacts.data?.length ?? 0) ? (
+                  <p className="text-sm text-muted-foreground">
+                    No contacts associated.
                   </p>
-                </div>
-                <div className="flex flex-wrap items-center gap-2">
-                  <Badge variant="outline">{spaced(value.status)}</Badge>
-                  {value.status === "PendingReview" ? (
-                    <>
-                      <Button
-                        size="sm"
-                        disabled={reviewHandoff.isPending}
-                        onClick={() =>
-                          setReviewTarget({ handoff: value, approved: true })
-                        }
-                      >
-                        Approve
-                      </Button>
-                      <Button
-                        size="sm"
-                        variant="outline"
-                        disabled={reviewHandoff.isPending}
-                        onClick={() =>
-                          setReviewTarget({ handoff: value, approved: false })
-                        }
-                      >
-                        Decline
-                      </Button>
-                    </>
-                  ) : null}
-                </div>
-              </div>
-            </div>
-          ))}
-          {!handoffs.isLoading && !(handoffs.data?.length ?? 0) ? (
-            <Alert>
-              <AlertTitle>No Company requests</AlertTitle>
-              <AlertDescription>
-                Create a request when this Company needs online access, a
-                product or service change, a relationship change, or reviewed
-                work.
-              </AlertDescription>
-            </Alert>
+                ) : null}
+              </CardContent>
+            </Card>
+            <Card>
+              <CardHeader>
+                <CardTitle>Opportunities</CardTitle>
+                <CardDescription>Commercial work tied to this Company.</CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-2">
+                {(opportunities.data?.items ?? []).map((value) => (
+                  <Link
+                    key={value.id}
+                    to="/crm/opportunities/$opportunityId"
+                    params={{ opportunityId: value.id }}
+                    className="flex justify-between rounded-lg border p-3 hover:bg-muted/50"
+                  >
+                    <span className="font-medium">{value.name}</span>
+                    <Badge variant="outline">{value.stageName}</Badge>
+                  </Link>
+                ))}
+                {!opportunities.isLoading &&
+                !(opportunities.data?.items.length ?? 0) ? (
+                  <p className="text-sm text-muted-foreground">
+                    No opportunities recorded.
+                  </p>
+                ) : null}
+              </CardContent>
+            </Card>
+          </div>
+          <AssociateDialog
+            open={associateOpen}
+            excludedContactIds={(contacts.data ?? [])
+              .filter((contact) => contact.isActive)
+              .map((contact) => contact.contactId)}
+            pending={associate.isPending}
+            error={associate.error}
+            onOpenChange={setAssociateOpen}
+            onSubmit={(input) => associate.mutate(input)}
+          />
+          {managingAssociation ? (
+            <CrmCompanyContactEditDialog
+              value={managingAssociation}
+              pending={updateAssociation.isPending}
+              error={updateAssociation.error}
+              onOpenChange={(open) => {
+                if (!open) {
+                  setManagingAssociation(null);
+                  updateAssociation.reset();
+                }
+              }}
+              onSubmit={(input) =>
+                updateAssociation.mutate({
+                  associationId: managingAssociation.id,
+                  input: { ...input, version: managingAssociation.version },
+                })
+              }
+            />
           ) : null}
-        </CardContent>
-      </Card>
-      <AssociateDialog
-        open={associateOpen}
-        excludedContactIds={(contacts.data ?? [])
-          .filter((contact) => contact.isActive)
-          .map((contact) => contact.contactId)}
-        pending={associate.isPending}
-        error={associate.error}
-        onOpenChange={setAssociateOpen}
-        onSubmit={(input) => associate.mutate(input)}
-      />
-      {managingAssociation ? (
-        <CrmCompanyContactEditDialog
-          value={managingAssociation}
-          pending={updateAssociation.isPending}
-          error={updateAssociation.error}
-          onOpenChange={(open) => {
-            if (!open) {
-              setManagingAssociation(null);
-              updateAssociation.reset();
-            }
-          }}
-          onSubmit={(input) =>
-            updateAssociation.mutate({
-              associationId: managingAssociation.id,
-              input: { ...input, version: managingAssociation.version },
-            })
-          }
-        />
-      ) : null}
-      <HandoffDialog
-        open={handoffOpen}
-        opportunities={opportunities.data?.items ?? []}
-        pending={handoff.isPending}
-        error={handoff.error}
-        onOpenChange={setHandoffOpen}
-        onSubmit={(input) => handoff.mutate(input)}
-      />
-      <ReviewHandoffDialog
-        key={reviewTarget?.handoff.id ?? "closed"}
-        target={reviewTarget}
-        pending={reviewHandoff.isPending}
-        error={reviewHandoff.error}
-        onOpenChange={(open) => {
-          if (!open) {
-            setReviewTarget(null);
-            reviewHandoff.reset();
-          }
-        }}
-        onSubmit={(reason, orderingAuthorized) => {
-          if (reviewTarget) {
-            reviewHandoff.mutate({
-              ...reviewTarget,
-              reason,
-              orderingAuthorized,
-            });
-          }
-        }}
-      />
+        </>
+      ) : (
+        <>
+          <Card>
+            <CardHeader>
+              <CardTitle>Company requests</CardTitle>
+              <CardDescription>
+                Request online access, product or service changes, relationship
+                changes, or reviewed work. Use the central Requests queue for
+                decisions.
+              </CardDescription>
+              <CardAction>
+                <Button size="sm" onClick={() => setHandoffOpen(true)}>
+                  <ArrowRight data-icon="inline-start" />
+                  Create request
+                </Button>
+              </CardAction>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              {(handoffs.data ?? []).map((value) => (
+                <div key={value.id} className="rounded-lg border p-3">
+                  <div className="flex flex-wrap items-center justify-between gap-2">
+                    <div>
+                      <p className="font-medium">{requestTypeLabel(value.type)}</p>
+                      <p className="mt-1 text-xs text-muted-foreground">
+                        {value.requestNumber} · {formatDate(value.createdAt)}
+                      </p>
+                    </div>
+                    <div className="flex flex-wrap items-center gap-2">
+                      <Badge variant="outline">{spaced(value.status)}</Badge>
+                      {value.status === "PendingReview" ? (
+                        <Button asChild size="sm" variant="outline">
+                          <Link to="/customers">
+                            Review in Requests
+                            <ArrowRight data-icon="inline-end" />
+                          </Link>
+                        </Button>
+                      ) : null}
+                    </div>
+                  </div>
+                </div>
+              ))}
+              {!handoffs.isLoading && !(handoffs.data?.length ?? 0) ? (
+                <Alert>
+                  <AlertTitle>No Company requests</AlertTitle>
+                  <AlertDescription>
+                    Create a request when this Company needs online access, a
+                    product or service change, a relationship change, or
+                    reviewed work.
+                  </AlertDescription>
+                </Alert>
+              ) : null}
+            </CardContent>
+          </Card>
+          <HandoffDialog
+            open={handoffOpen}
+            opportunities={opportunities.data?.items ?? []}
+            pending={handoff.isPending}
+            error={handoff.error}
+            onOpenChange={setHandoffOpen}
+            onSubmit={(input) => handoff.mutate(input)}
+          />
+        </>
+      )}
     </>
   );
 }
@@ -485,22 +424,22 @@ const companyRequestCategories: ReadonlyArray<{
 }> = [
   {
     value: "OnlineAccess",
-    label: "Online access",
+    label: "Enable or change online access",
     requestTypes: ["PortalOnboarding", "PortalEvaluation", "Offboarding"],
   },
   {
     value: "ProductsAndServices",
-    label: "Products and services",
+    label: "Add or change products and services",
     requestTypes: ["ServiceChange"],
   },
   {
     value: "Work",
-    label: "Work",
+    label: "Start reviewed work",
     requestTypes: ["TrialProject", "CustomWork"],
   },
   {
     value: "Relationship",
-    label: "Relationship",
+    label: "Change the relationship",
     requestTypes: ["RelationshipChange"],
   },
 ];
@@ -520,14 +459,14 @@ const companyRequestTypeConfig: Record<
     label: "Onboarding",
     showRelationship: true,
     showOpportunity: false,
-    showServices: true,
+    showServices: false,
   },
   PortalEvaluation: {
     category: "OnlineAccess",
     label: "Evaluation",
     showRelationship: true,
     showOpportunity: true,
-    showServices: true,
+    showServices: false,
   },
   Offboarding: {
     category: "OnlineAccess",
@@ -620,8 +559,10 @@ export function HandoffDialog({
                 ? nullable(data, "kind")
                 : null,
               requestedServices: config.showServices ? requestedServices : [],
-              summary: String(data.get("summary") ?? "").trim(),
-              internalNotes: nullable(data, "notes"),
+              summary:
+                String(data.get("summary") ?? "").trim() ||
+                `${config.label} request`,
+              internalNotes: null,
             });
           }}
         >
@@ -638,8 +579,17 @@ export function HandoffDialog({
             </Alert>
           ) : null}
           <div className="grid gap-4">
-            <div className="grid gap-4 sm:grid-cols-2">
-              <Field label="Request category *" id="handoff-category">
+            <div
+              className={
+                category.requestTypes.length > 1
+                  ? "grid gap-4 sm:grid-cols-2"
+                  : "grid gap-4"
+              }
+            >
+              <Field
+                label="What does this Company need? *"
+                id="handoff-category"
+              >
                 <select
                   id="handoff-category"
                   required
@@ -661,23 +611,25 @@ export function HandoffDialog({
                   ))}
                 </select>
               </Field>
-              <Field label="Request type *" id="handoff-type">
-                <select
-                  id="handoff-type"
-                  required
-                  value={type}
-                  onChange={(event) =>
-                    changeRequestType(event.target.value as CrmHandoffType)
-                  }
-                  className="h-9 rounded-md border bg-background px-3 text-sm"
-                >
-                  {category.requestTypes.map((value) => (
-                    <option key={value} value={value}>
-                      {companyRequestTypeConfig[value].label}
-                    </option>
-                  ))}
-                </select>
-              </Field>
+              {category.requestTypes.length > 1 ? (
+                <Field label="Request type *" id="handoff-type">
+                  <select
+                    id="handoff-type"
+                    required
+                    value={type}
+                    onChange={(event) =>
+                      changeRequestType(event.target.value as CrmHandoffType)
+                    }
+                    className="h-9 rounded-md border bg-background px-3 text-sm"
+                  >
+                    {category.requestTypes.map((value) => (
+                      <option key={value} value={value}>
+                        {companyRequestTypeConfig[value].label}
+                      </option>
+                    ))}
+                  </select>
+                </Field>
+              ) : null}
             </div>
             {config.showRelationship ? (
               <Field label="Requested relationship *" id="handoff-kind">
@@ -730,11 +682,12 @@ export function HandoffDialog({
                 />
               </Field>
             ) : null}
-            <Field label="Summary *" id="handoff-summary">
-              <Textarea id="handoff-summary" name="summary" required rows={4} />
-            </Field>
-            <Field label="Internal notes" id="handoff-notes">
-              <Textarea id="handoff-notes" name="notes" rows={3} />
+            <Field
+              label="Summary"
+              id="handoff-summary"
+              description="Optional context for the reviewer."
+            >
+              <Textarea id="handoff-summary" name="summary" rows={3} />
             </Field>
           </div>
           <DialogFooter>
@@ -758,111 +711,6 @@ export function HandoffDialog({
   );
 }
 
-function ReviewHandoffDialog({
-  target,
-  pending,
-  error,
-  onOpenChange,
-  onSubmit,
-}: {
-  target: { handoff: CrmHandoff; approved: boolean } | null;
-  pending: boolean;
-  error: unknown;
-  onOpenChange: (open: boolean) => void;
-  onSubmit: (reason: string, orderingAuthorized: boolean) => void;
-}) {
-  const [orderingAuthorized, setOrderingAuthorized] = useState(true);
-  const enablesCustomerAccess =
-    target?.approved === true &&
-    target.handoff.requestedOrganizationKind === "Customer" &&
-    (target.handoff.type === "PortalOnboarding" ||
-      target.handoff.type === "PortalEvaluation");
-
-  return (
-    <Dialog open={Boolean(target)} onOpenChange={onOpenChange}>
-      <DialogContent>
-        <form
-          onSubmit={(event) => {
-            event.preventDefault();
-            const reason = String(
-              new FormData(event.currentTarget).get("reason") ?? "",
-            ).trim();
-            if (reason) onSubmit(reason, orderingAuthorized);
-          }}
-        >
-          <DialogHeader>
-            <DialogTitle>
-              {target?.approved ? "Approve Company request" : "Decline Company request"}
-            </DialogTitle>
-            <DialogDescription>
-              {target?.approved
-                ? enablesCustomerAccess
-                  ? "Approval enables Portal access for this Company and records any selected ordering authorization."
-                  : "Approval records the decision on this Company. Complete any resulting work in its owning workflow."
-                : "Declining preserves the request and decision history on this Company."}
-            </DialogDescription>
-          </DialogHeader>
-          {error ? (
-            <Alert variant="destructive">
-              <AlertDescription>{apiErrorMessage(error)}</AlertDescription>
-            </Alert>
-          ) : null}
-          <div className="grid gap-4">
-            <Field label="Decision reason *" id="handoff-review-reason">
-              <Textarea
-                id="handoff-review-reason"
-                name="reason"
-                required
-                rows={4}
-              />
-            </Field>
-            {enablesCustomerAccess ? (
-              <div className="flex items-start gap-2 rounded-lg border p-3">
-                <Checkbox
-                  id="handoff-ordering-authorized"
-                  checked={orderingAuthorized}
-                  onCheckedChange={(value) =>
-                    setOrderingAuthorized(value === true)
-                  }
-                />
-                <div>
-                  <Label
-                    htmlFor="handoff-ordering-authorized"
-                    className="cursor-pointer"
-                  >
-                    Authorize PSeq Lab Service ordering
-                  </Label>
-                  <p className="mt-1 text-xs text-muted-foreground">
-                    Users and operational readiness still require separate setup.
-                  </p>
-                </div>
-              </div>
-            ) : null}
-          </div>
-          <DialogFooter>
-            <span className="mr-auto text-xs text-muted-foreground">
-              * Required
-            </span>
-            <Button
-              type="button"
-              variant="outline"
-              onClick={() => onOpenChange(false)}
-            >
-              Cancel
-            </Button>
-            <Button type="submit" disabled={pending}>
-              {pending
-                ? "Saving…"
-                : target?.approved
-                  ? "Approve request"
-                  : "Decline request"}
-            </Button>
-          </DialogFooter>
-        </form>
-      </DialogContent>
-    </Dialog>
-  );
-}
 function Field({
   label,
   id,

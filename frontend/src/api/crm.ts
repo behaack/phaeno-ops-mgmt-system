@@ -1,6 +1,6 @@
 import { api } from "./client";
 
-export { apiErrorMessage } from "./api-error";
+export { apiErrorMessage, existingAccessScopeCandidate } from "./api-error";
 
 type ApiEnvelope<T> = {
   success: boolean;

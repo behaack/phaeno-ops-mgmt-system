@@ -72,8 +72,8 @@ export function OrganizationListPage() {
         requestType: values.requestType,
         requestedOrganizationKind: values.requestedOrganizationKind,
         sourceReference: values.sourceReference || null,
-        summary: values.summary,
-        internalNotes: values.internalNotes || null,
+        summary: values.summary || `${values.requestType} request`,
+        internalNotes: null,
         requestedServices: requestedServices(values),
       }),
     onSuccess: async () => {
@@ -87,10 +87,10 @@ export function OrganizationListPage() {
     onSuccess: () => { setDeactivationTarget(null); void refresh() },
   })
   const requestAction = useMutation({
-    mutationFn: async ({ action, orderingAuthorized, organizationId, request, text }: { action: 'approve' | 'decline' | 'apply' | 'cancel'; orderingAuthorized?: boolean; organizationId?: string; request: RelationshipRequest; text: string }) => {
+    mutationFn: async ({ action, existingOrganizationId, organizationId, request, text }: { action: 'approve' | 'decline' | 'apply' | 'cancel'; existingOrganizationId?: string; organizationId?: string; request: RelationshipRequest; text: string }) => {
       if (action === 'apply') return applyRelationshipRequest(request.id, { notes: text, organizationId, version: request.version })
       if (action === 'cancel') return cancelRelationshipRequest(request.id, { reason: text, version: request.version })
-      return decideRelationshipRequest(request.id, { approved: action === 'approve', reason: text, version: request.version, orderingAuthorized })
+      return decideRelationshipRequest(request.id, { approved: action === 'approve', existingOrganizationId, reason: text, version: request.version })
     },
     onSuccess: async (request, variables) => {
       setRequestActionTarget(null)
@@ -104,8 +104,8 @@ export function OrganizationListPage() {
     },
   })
   const accountRecovery = useMutation({
-    mutationFn: ({ orderingAuthorized, request }: { orderingAuthorized: boolean; request: RelationshipRequest }) =>
-      completeRelationshipRequestAccountCreation(request.id, request.version, orderingAuthorized),
+    mutationFn: ({ existingOrganizationId, request }: { existingOrganizationId?: string; request: RelationshipRequest }) =>
+      completeRelationshipRequestAccountCreation(request.id, request.version, existingOrganizationId),
     onSuccess: async (organization) => {
       setAccountRecoveryTarget(null)
       await refresh()
@@ -127,7 +127,7 @@ export function OrganizationListPage() {
     return matchesSearch && (showInactive || value.isActive)
   }), [externalOrganizations, search, showInactive])
   const reviewQueue = (requestsQuery.data ?? []).filter(isAccountReviewQueueRequest)
-  const error = organizationsQuery.error ?? requestsQuery.error ?? organizationMutation.error ?? createRequest.error ?? activeMutation.error ?? requestAction.error
+  const error = organizationsQuery.error ?? requestsQuery.error ?? organizationMutation.error ?? createRequest.error ?? activeMutation.error
 
   return (
     <main className="page-wrap space-y-6 px-4 py-8">
@@ -173,7 +173,7 @@ export function OrganizationListPage() {
                   <Button asChild><Link to="/crm/companies"><Plus data-icon="inline-start" />Open CRM Companies</Link></Button>
                 </div>
               </div>
-              <CardDescription>Use a CRM Company or Opportunity handoff for standard commercial onboarding. Platform administrators may submit a direct request here only for migration or recovery. Submission activates nothing; review explicitly controls account creation and Customer ordering authorization.</CardDescription>
+              <CardDescription>Use a CRM Company or Opportunity handoff for standard commercial onboarding. Platform administrators may submit a direct request here only for migration or recovery. Submission activates nothing; review controls online access, while product and service entitlements remain separate.</CardDescription>
             </CardHeader>
           </Card>
 
@@ -196,19 +196,19 @@ export function OrganizationListPage() {
         }}
         onSubmit={(values) => createRequest.mutate(values)}
       />
-      <RequestActionDialog action={requestActionTarget?.action ?? null} request={requestActionTarget?.request ?? null} organizations={externalOrganizations} isPending={requestAction.isPending} error={requestAction.error ? apiErrorMessage(requestAction.error) : undefined} onOpenChange={(open) => { if (!open) setRequestActionTarget(null) }} onSubmit={({ explanation, orderingAuthorized, organizationId }) => { if (requestActionTarget) requestAction.mutate({ ...requestActionTarget, orderingAuthorized, organizationId, text: explanation }) }} />
+      <RequestActionDialog action={requestActionTarget?.action ?? null} request={requestActionTarget?.request ?? null} organizations={externalOrganizations} isPending={requestAction.isPending} error={requestAction.error} onOpenChange={(open) => { if (!open) setRequestActionTarget(null) }} onSubmit={({ existingOrganizationId, explanation, organizationId }) => { if (requestActionTarget) requestAction.mutate({ ...requestActionTarget, existingOrganizationId, organizationId, text: explanation }) }} />
       <AccountCreationRecoveryDialog
         request={accountRecoveryTarget}
         isPending={accountRecovery.isPending}
-        error={accountRecovery.error ? apiErrorMessage(accountRecovery.error) : undefined}
+        error={accountRecovery.error}
         onOpenChange={(open) => {
           if (!open) {
             setAccountRecoveryTarget(null)
             accountRecovery.reset()
           }
         }}
-        onConfirm={(orderingAuthorized) => {
-          if (accountRecoveryTarget) accountRecovery.mutate({ orderingAuthorized, request: accountRecoveryTarget })
+        onConfirm={(existingOrganizationId) => {
+          if (accountRecoveryTarget) accountRecovery.mutate({ existingOrganizationId, request: accountRecoveryTarget })
         }}
       />
       <LifecycleActionDialog

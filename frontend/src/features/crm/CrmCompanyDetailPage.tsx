@@ -40,6 +40,12 @@ import {
 } from "#/components/ui/dialog";
 import { Label } from "#/components/ui/label";
 import {
+  Tabs,
+  TabsContent,
+  TabsList,
+  TabsTrigger,
+} from "#/components/ui/tabs";
+import {
   CrmCompanyFormDialog,
   type CrmCompanyFormValues,
 } from "./CrmCompanyFormDialog";
@@ -59,6 +65,9 @@ export function CrmCompanyDetailPage({ companyId }: { companyId: string }) {
   const [lifecycleOpen, setLifecycleOpen] = useState(false);
   const [mergeOpen, setMergeOpen] = useState(false);
   const [ownerOpen, setOwnerOpen] = useState(false);
+  const [activeSection, setActiveSection] = useState<
+    "overview" | "relationships" | "requests" | "access" | "activity"
+  >("overview");
   const companyQuery = useQuery({
     queryKey: ["crm-company", companyId],
     queryFn: () => getCrmCompany(companyId),
@@ -230,108 +239,161 @@ export function CrmCompanyDetailPage({ companyId }: { companyId: string }) {
         </div>
       </section>
 
-      {!company.accessOrganizationId ? (
-        <Alert>
-          <AlertTitle>Portal access is not enabled</AlertTitle>
-          <AlertDescription>
-            This Company remains the customer record. Create and approve an
-            onboarding request below when it should receive Portal users,
-            services, or ordering access.
-          </AlertDescription>
-        </Alert>
-      ) : null}
+      <Tabs
+        value={activeSection}
+        onValueChange={(value) =>
+          setActiveSection(value as typeof activeSection)
+        }
+        className="gap-5"
+      >
+        <TabsList
+          aria-label="Company workspace sections"
+          className="flex h-auto w-full flex-wrap justify-start"
+        >
+          <TabsTrigger className="min-w-fit flex-none px-3 py-1.5" value="overview">
+            Overview
+          </TabsTrigger>
+          <TabsTrigger className="min-w-fit flex-none px-3 py-1.5" value="relationships">
+            People &amp; sales
+          </TabsTrigger>
+          <TabsTrigger className="min-w-fit flex-none px-3 py-1.5" value="requests">
+            Requests
+          </TabsTrigger>
+          <TabsTrigger className="min-w-fit flex-none px-3 py-1.5" value="access">
+            Access &amp; services
+          </TabsTrigger>
+          <TabsTrigger className="min-w-fit flex-none px-3 py-1.5" value="activity">
+            Activity
+          </TabsTrigger>
+        </TabsList>
 
-      <div className="grid gap-6 lg:grid-cols-[minmax(0,2fr)_minmax(18rem,1fr)]">
-        <Card>
-          <CardHeader>
-            <CardTitle>Company profile</CardTitle>
-            <CardDescription>
-              Core information used to recognize and manage this commercial
-              relationship.
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            <dl className="grid gap-4 sm:grid-cols-2">
-              <Info
-                label="Domain"
-                value={company.domainName ?? "Not recorded"}
-              />
-              <Info
-                label="Industry"
-                value={company.industry ?? "Not recorded"}
-              />
-              <Info label="Phone" value={company.phone ?? "Not recorded"} />
-              <Info label="Lifecycle" value={spaced(company.lifecycleState)} />
-              <Info label="Source" value={company.source ?? "Not recorded"} />
-              <Info
-                label="Employees"
-                value={
-                  company.employeeCount?.toLocaleString() ?? "Not recorded"
-                }
-              />
-              <div className="rounded-lg border p-4">
-                <dt className="text-xs font-medium text-muted-foreground">
-                  Website
-                </dt>
-                <dd className="mt-1 text-sm font-medium">
-                  {company.websiteUrl ? (
-                    <a
-                      href={company.websiteUrl}
-                      target="_blank"
-                      rel="noreferrer"
-                      className="inline-flex cursor-pointer items-center gap-1 underline-offset-4 hover:underline focus-visible:rounded-sm focus-visible:ring-3 focus-visible:ring-ring/50 focus-visible:outline-none"
-                    >
-                      {company.websiteUrl}
-                      <ExternalLink className="size-3.5" aria-hidden="true" />
-                    </a>
-                  ) : (
-                    "Not recorded"
-                  )}
-                </dd>
-              </div>
-              <div className="rounded-lg border p-4 sm:col-span-2">
-                <dt className="text-xs font-medium text-muted-foreground">
-                  Relationship summary
-                </dt>
-                <dd className="mt-1 whitespace-pre-wrap text-sm">
-                  {company.description ?? "No relationship summary recorded."}
-                </dd>
-              </div>
-              <Info label="Address" value={formatAddress(company)} />
-              <Info
-                label="Tags"
-                value={company.tags.length ? company.tags.join(", ") : "None"}
-              />
-            </dl>
-          </CardContent>
-        </Card>
+        <TabsContent value="overview" className="space-y-6">
+          {!company.accessOrganizationId ? (
+            <Alert>
+              <AlertTitle>Online access is not enabled</AlertTitle>
+              <AlertDescription className="flex flex-wrap items-center justify-between gap-3">
+                <span>
+                  This Company remains the customer record. Create an online
+                  access request only when its users need to sign in.
+                </span>
+                <Button
+                  type="button"
+                  size="sm"
+                  variant="outline"
+                  onClick={() => setActiveSection("requests")}
+                >
+                  Open requests
+                </Button>
+              </AlertDescription>
+            </Alert>
+          ) : null}
 
-        <Card>
-          <CardHeader>
-            <CardTitle>Record details</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <dl className="space-y-4">
-              <Meta label="CRM owner" value={company.ownerName} />
-              <Meta label="Created" value={formatDate(company.createdAt)} />
-              <Meta
-                label="Last updated"
-                value={formatDate(company.updatedAt)}
-              />
-            </dl>
-          </CardContent>
-        </Card>
-      </div>
+          <div className="grid gap-6 lg:grid-cols-[minmax(0,2fr)_minmax(18rem,1fr)]">
+            <Card>
+              <CardHeader>
+                <CardTitle>Company profile</CardTitle>
+                <CardDescription>
+                  Core information used to recognize and manage this commercial
+                  relationship.
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <dl className="grid gap-4 sm:grid-cols-2">
+                  <Info label="Domain" value={company.domainName ?? "Not recorded"} />
+                  <Info label="Industry" value={company.industry ?? "Not recorded"} />
+                  <Info label="Phone" value={company.phone ?? "Not recorded"} />
+                  <Info label="Lifecycle" value={spaced(company.lifecycleState)} />
+                  <Info label="Source" value={company.source ?? "Not recorded"} />
+                  <Info
+                    label="Employees"
+                    value={company.employeeCount?.toLocaleString() ?? "Not recorded"}
+                  />
+                  <div className="rounded-lg border p-4">
+                    <dt className="text-xs font-medium text-muted-foreground">Website</dt>
+                    <dd className="mt-1 text-sm font-medium">
+                      {company.websiteUrl ? (
+                        <a
+                          href={company.websiteUrl}
+                          target="_blank"
+                          rel="noreferrer"
+                          className="inline-flex cursor-pointer items-center gap-1 underline-offset-4 hover:underline focus-visible:rounded-sm focus-visible:ring-3 focus-visible:ring-ring/50 focus-visible:outline-none"
+                        >
+                          {company.websiteUrl}
+                          <ExternalLink className="size-3.5" aria-hidden="true" />
+                        </a>
+                      ) : (
+                        "Not recorded"
+                      )}
+                    </dd>
+                  </div>
+                  <div className="rounded-lg border p-4 sm:col-span-2">
+                    <dt className="text-xs font-medium text-muted-foreground">
+                      Relationship summary
+                    </dt>
+                    <dd className="mt-1 whitespace-pre-wrap text-sm">
+                      {company.description ?? "No relationship summary recorded."}
+                    </dd>
+                  </div>
+                  <Info label="Address" value={formatAddress(company)} />
+                  <Info
+                    label="Tags"
+                    value={company.tags.length ? company.tags.join(", ") : "None"}
+                  />
+                </dl>
+              </CardContent>
+            </Card>
 
-      <CrmCompanyRelationships companyId={companyId} />
-      {company.accessOrganizationId ? (
-        <OrganizationDetailPage
-          organizationId={company.accessOrganizationId}
-          embedded
-        />
-      ) : null}
-      <CrmCustomFields recordType="Company" recordId={companyId} />
-      <CrmRecordWork links={{ companyId }} />
+            <Card>
+              <CardHeader>
+                <CardTitle>Record details</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <dl className="space-y-4">
+                  <Meta label="CRM owner" value={company.ownerName} />
+                  <Meta label="Created" value={formatDate(company.createdAt)} />
+                  <Meta label="Last updated" value={formatDate(company.updatedAt)} />
+                </dl>
+              </CardContent>
+            </Card>
+          </div>
+          <CrmCustomFields recordType="Company" recordId={companyId} />
+        </TabsContent>
+
+        <TabsContent value="relationships">
+          <CrmCompanyRelationships companyId={companyId} view="relationships" />
+        </TabsContent>
+
+        <TabsContent value="requests">
+          <CrmCompanyRelationships companyId={companyId} view="requests" />
+        </TabsContent>
+
+        <TabsContent value="access" className="space-y-6">
+          {company.accessOrganizationId ? (
+            <OrganizationDetailPage
+              organizationId={company.accessOrganizationId}
+              embedded
+            />
+          ) : (
+            <Card>
+              <CardHeader>
+                <CardTitle>Access &amp; services</CardTitle>
+                <CardDescription>
+                  Online access has not been approved for this Company.
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <Button type="button" onClick={() => setActiveSection("requests")}>
+                  Open Company requests
+                </Button>
+              </CardContent>
+            </Card>
+          )}
+        </TabsContent>
+
+        <TabsContent value="activity">
+          <CrmRecordWork links={{ companyId }} />
+        </TabsContent>
+      </Tabs>
 
       {(editMutation.error || lifecycleMutation.error) &&
       !editOpen &&

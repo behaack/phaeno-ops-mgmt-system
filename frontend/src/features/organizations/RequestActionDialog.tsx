@@ -7,7 +7,11 @@ import type {
   Organization,
   RelationshipRequest,
 } from '#/api/organization-management'
-import { Alert, AlertDescription } from '#/components/ui/alert'
+import {
+  apiErrorMessage,
+  existingAccessScopeCandidate,
+} from '#/api/organization-management'
+import { Alert, AlertDescription, AlertTitle } from '#/components/ui/alert'
 import { Button } from '#/components/ui/button'
 import {
   Dialog,
@@ -22,7 +26,6 @@ import {
   RequiredFieldName,
 } from '#/components/ui/required-field'
 import { selectClass, textareaClass } from './OrganizationFormDialog'
-import { OrderingAuthorizationField } from './OrderingAuthorizationField'
 
 export type RequestAction = 'approve' | 'decline' | 'apply' | 'cancel'
 
@@ -33,7 +36,6 @@ const schema = z.object({
     .min(1, 'Record the reason or completed work.')
     .max(2000),
   organizationId: z.string(),
-  orderingAuthorized: z.boolean(),
 })
 
 type Values = z.infer<typeof schema>
@@ -48,32 +50,35 @@ export function RequestActionDialog({
   request,
 }: {
   action: RequestAction | null
-  error?: string
+  error?: unknown
   isPending: boolean
   onOpenChange: (open: boolean) => void
-  onSubmit: (values: { explanation: string; organizationId?: string; orderingAuthorized: boolean }) => void
+  onSubmit: (values: {
+    existingOrganizationId?: string
+    explanation: string
+    organizationId?: string
+  }) => void
   organizations?: Organization[]
   request: RelationshipRequest | null
 }) {
   const open = Boolean(action && request)
   const form = useForm<Values>({
-    defaultValues: { explanation: '', organizationId: '', orderingAuthorized: true },
+    defaultValues: { explanation: '', organizationId: '' },
     mode: 'onBlur',
     resolver: zodResolver(schema),
   })
 
   useEffect(() => {
-    if (open) form.reset({ explanation: '', organizationId: request?.organizationId ?? '', orderingAuthorized: true })
+    if (open) form.reset({ explanation: '', organizationId: request?.organizationId ?? '' })
   }, [form, open, request?.organizationId])
 
   if (!action || !request) return null
 
+  const reuseCandidate = existingAccessScopeCandidate(error)
   const enablesAccessOnApproval = action === 'approve'
     && !request.organizationId
     && (request.requestType === 'Onboarding' || request.requestType === 'Evaluation')
     && (request.requestedOrganizationKind === 'Prospect' || request.requestedOrganizationKind === 'Customer' || request.requestedOrganizationKind === 'Partner')
-  const enablesCustomerAccess = enablesAccessOnApproval
-    && request.requestedOrganizationKind === 'Customer'
   const content = actionContent(action, enablesAccessOnApproval)
 
   return (
@@ -86,9 +91,18 @@ export function RequestActionDialog({
             {request.candidateOrganizationName}.
           </DialogDescription>
         </DialogHeader>
-        {error ? (
+        {reuseCandidate ? (
+          <Alert>
+            <AlertTitle>Existing access scope found</AlertTitle>
+            <AlertDescription>
+              {reuseCandidate.organizationName} already has an active unlinked{' '}
+              {reuseCandidate.organizationKind} access scope. Confirm reuse to
+              preserve its users, orders, invitations, and history.
+            </AlertDescription>
+          </Alert>
+        ) : error ? (
           <Alert variant="destructive">
-            <AlertDescription>{error}</AlertDescription>
+            <AlertDescription>{apiErrorMessage(error)}</AlertDescription>
           </Alert>
         ) : null}
         <form
@@ -104,9 +118,11 @@ export function RequestActionDialog({
             }
 
             onSubmit({
+              ...(reuseCandidate
+                ? { existingOrganizationId: reuseCandidate.organizationId }
+                : {}),
               explanation: values.explanation,
               organizationId: values.organizationId || undefined,
-              orderingAuthorized: values.orderingAuthorized,
             })
           })}
         >
@@ -135,16 +151,6 @@ export function RequestActionDialog({
                   {form.formState.errors.organizationId.message}
                 </p>
               ) : null}
-            </div>
-          ) : null}
-          {enablesCustomerAccess ? (
-            <div className="mb-3">
-              <OrderingAuthorizationField
-                id="request-action-ordering-authorized"
-                checked={form.watch('orderingAuthorized')}
-                disabled={isPending}
-                onCheckedChange={(checked) => form.setValue('orderingAuthorized', checked, { shouldDirty: true })}
-              />
             </div>
           ) : null}
           <Label htmlFor="request-action-explanation">
@@ -177,7 +183,11 @@ export function RequestActionDialog({
             variant={action === 'decline' || action === 'cancel' ? 'destructive' : 'default'}
             disabled={isPending}
           >
-            {isPending ? 'Saving…' : content.submitLabel}
+            {isPending
+              ? 'Saving…'
+              : reuseCandidate
+                ? 'Use existing access scope'
+                : content.submitLabel}
           </Button>
         </RequiredDialogFooter>
       </DialogContent>
@@ -191,7 +201,7 @@ function actionContent(action: RequestAction, enablesAccessOnApproval: boolean) 
       return enablesAccessOnApproval
         ? {
             title: 'Approve and enable Portal access',
-            description: 'Approval enables Portal access on this Company with pending readiness. Customer ordering authorization follows the selection below; users and orders are not created.',
+            description: 'Approval enables online access on this Company with pending readiness. Product and service access remains controlled by separate entitlements; users and orders are not created.',
             label: 'Approval reason',
             submitLabel: 'Approve and enable access',
           }

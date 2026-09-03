@@ -1,5 +1,6 @@
 import { zodResolver } from "@hookform/resolvers/zod";
-import { useEffect, type ReactNode } from "react";
+import { ChevronDown } from "lucide-react";
+import { useEffect, useState, type ReactNode } from "react";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
 
@@ -77,6 +78,8 @@ export function CrmCompanyFormDialog({
   onSubmit: (values: CrmCompanyFormValues) => void;
   open: boolean;
 }) {
+  const editing = Boolean(company);
+  const [showAdditional, setShowAdditional] = useState(editing);
   const form = useForm<CrmCompanyFormValues>({
     resolver: zodResolver(companySchema),
     defaultValues: valuesFor(company),
@@ -84,10 +87,12 @@ export function CrmCompanyFormDialog({
   });
 
   useEffect(() => {
-    if (open) form.reset(valuesFor(company));
-  }, [company, form, open]);
+    if (open) {
+      form.reset(valuesFor(company));
+      setShowAdditional(editing);
+    }
+  }, [company, editing, form, open]);
 
-  const editing = Boolean(company);
   const formId = editing ? "edit-crm-company" : "create-crm-company";
 
   return (
@@ -139,22 +144,7 @@ export function CrmCompanyFormDialog({
                 {...form.register("websiteUrl")}
               />
             </Field>
-            <Field
-              id={`${formId}-domain`}
-              label="Domain"
-              error={form.formState.errors.domainName?.message}
-            >
-              <Input
-                id={`${formId}-domain`}
-                inputMode="url"
-                placeholder="example.com"
-                aria-invalid={Boolean(form.formState.errors.domainName)}
-                {...form.register("domainName")}
-              />
-            </Field>
-          </div>
-          <div className="grid gap-4 sm:grid-cols-3">
-            <Field id={`${formId}-lifecycle`} label="Lifecycle">
+            <Field id={`${formId}-lifecycle`} label="Relationship stage">
               <select
                 id={`${formId}-lifecycle`}
                 className="h-9 rounded-md border bg-background px-3 text-sm"
@@ -168,115 +158,160 @@ export function CrmCompanyFormDialog({
                 <option value="Other">Other</option>
               </select>
             </Field>
-            <Field id={`${formId}-source`} label="Source">
-              <Input id={`${formId}-source`} {...form.register("source")} />
-            </Field>
-            <Field
-              id={`${formId}-employees`}
-              label="Employees"
-              error={form.formState.errors.employeeCount?.message}
-            >
-              <Input
-                id={`${formId}-employees`}
-                type="number"
-                min="0"
-                aria-invalid={Boolean(form.formState.errors.employeeCount)}
-                {...form.register("employeeCount")}
-              />
-            </Field>
           </div>
-          <div className="grid gap-4 sm:grid-cols-2">
-            <Field id={`${formId}-address-1`} label="Address line 1">
-              <Input
-                id={`${formId}-address-1`}
-                autoComplete="address-line1"
-                {...form.register("addressLine1")}
-              />
-            </Field>
-            <Field id={`${formId}-address-2`} label="Address line 2">
-              <Input
-                id={`${formId}-address-2`}
-                autoComplete="address-line2"
-                {...form.register("addressLine2")}
-              />
-            </Field>
-            <Field id={`${formId}-city`} label="City">
-              <Input
-                id={`${formId}-city`}
-                autoComplete="address-level2"
-                {...form.register("city")}
-              />
-            </Field>
-            <Field id={`${formId}-region`} label="State or region">
-              <Input
-                id={`${formId}-region`}
-                autoComplete="address-level1"
-                {...form.register("region")}
-              />
-            </Field>
-            <Field id={`${formId}-postal`} label="Postal code">
-              <Input
-                id={`${formId}-postal`}
-                autoComplete="postal-code"
-                {...form.register("postalCode")}
-              />
-            </Field>
-            <Field id={`${formId}-country`} label="Country code">
-              <Input
-                id={`${formId}-country`}
-                autoComplete="country"
-                maxLength={2}
-                placeholder="US"
-                {...form.register("countryCode")}
-              />
-            </Field>
-          </div>
-          <Field id={`${formId}-tags`} label="Tags">
-            <Input
-              id={`${formId}-tags`}
-              placeholder="Comma-separated"
-              {...form.register("tags")}
-            />
-          </Field>
-          <div className="grid gap-4 sm:grid-cols-2">
-            <Field
-              id={`${formId}-phone`}
-              label="Phone"
-              error={form.formState.errors.phone?.message}
+          <div className="overflow-hidden rounded-lg border">
+            <Button
+              type="button"
+              variant="ghost"
+              className="h-auto w-full justify-between rounded-none px-4 py-3 text-left"
+              aria-expanded={showAdditional}
+              aria-controls={`${formId}-additional-details`}
+              onClick={() => setShowAdditional((value) => !value)}
             >
-              <Input
-                id={`${formId}-phone`}
-                type="tel"
-                autoComplete="tel"
-                aria-invalid={Boolean(form.formState.errors.phone)}
-                {...form.register("phone")}
+              <span>
+                <span className="block font-medium">Additional details</span>
+                <span className="mt-0.5 block text-xs font-normal text-muted-foreground">
+                  Address, contact information, classification, and notes
+                </span>
+              </span>
+              <ChevronDown
+                aria-hidden="true"
+                className={showAdditional ? "rotate-180 transition-transform" : "transition-transform"}
               />
-            </Field>
-            <Field
-              id={`${formId}-industry`}
-              label="Industry"
-              error={form.formState.errors.industry?.message}
+            </Button>
+            <div
+              id={`${formId}-additional-details`}
+              className="space-y-4 border-t p-4"
+              hidden={!showAdditional}
             >
-              <Input
-                id={`${formId}-industry`}
-                aria-invalid={Boolean(form.formState.errors.industry)}
-                {...form.register("industry")}
-              />
-            </Field>
+              <Field
+                id={`${formId}-domain`}
+                label="Domain"
+                error={form.formState.errors.domainName?.message}
+              >
+                <Input
+                  id={`${formId}-domain`}
+                  inputMode="url"
+                  placeholder="example.com"
+                  aria-invalid={Boolean(form.formState.errors.domainName)}
+                  {...form.register("domainName")}
+                />
+                <p className="text-xs text-muted-foreground">
+                  Leave blank to derive it from the Website.
+                </p>
+              </Field>
+              <div className="grid gap-4 sm:grid-cols-2">
+                <Field id={`${formId}-source`} label="Source">
+                  <Input id={`${formId}-source`} {...form.register("source")} />
+                </Field>
+                <Field
+                  id={`${formId}-employees`}
+                  label="Employees"
+                  error={form.formState.errors.employeeCount?.message}
+                >
+                  <Input
+                    id={`${formId}-employees`}
+                    type="number"
+                    min="0"
+                    aria-invalid={Boolean(form.formState.errors.employeeCount)}
+                    {...form.register("employeeCount")}
+                  />
+                </Field>
+              </div>
+              <div className="grid gap-4 sm:grid-cols-2">
+                <Field id={`${formId}-address-1`} label="Address line 1">
+                  <Input
+                    id={`${formId}-address-1`}
+                    autoComplete="address-line1"
+                    {...form.register("addressLine1")}
+                  />
+                </Field>
+                <Field id={`${formId}-address-2`} label="Address line 2">
+                  <Input
+                    id={`${formId}-address-2`}
+                    autoComplete="address-line2"
+                    {...form.register("addressLine2")}
+                  />
+                </Field>
+                <Field id={`${formId}-city`} label="City">
+                  <Input
+                    id={`${formId}-city`}
+                    autoComplete="address-level2"
+                    {...form.register("city")}
+                  />
+                </Field>
+                <Field id={`${formId}-region`} label="State or region">
+                  <Input
+                    id={`${formId}-region`}
+                    autoComplete="address-level1"
+                    {...form.register("region")}
+                  />
+                </Field>
+                <Field id={`${formId}-postal`} label="Postal code">
+                  <Input
+                    id={`${formId}-postal`}
+                    autoComplete="postal-code"
+                    {...form.register("postalCode")}
+                  />
+                </Field>
+                <Field id={`${formId}-country`} label="Country code">
+                  <Input
+                    id={`${formId}-country`}
+                    autoComplete="country"
+                    maxLength={2}
+                    placeholder="US"
+                    {...form.register("countryCode")}
+                  />
+                </Field>
+              </div>
+              <Field id={`${formId}-tags`} label="Tags">
+                <Input
+                  id={`${formId}-tags`}
+                  placeholder="Comma-separated"
+                  {...form.register("tags")}
+                />
+              </Field>
+              <div className="grid gap-4 sm:grid-cols-2">
+                <Field
+                  id={`${formId}-phone`}
+                  label="Phone"
+                  error={form.formState.errors.phone?.message}
+                >
+                  <Input
+                    id={`${formId}-phone`}
+                    type="tel"
+                    autoComplete="tel"
+                    aria-invalid={Boolean(form.formState.errors.phone)}
+                    {...form.register("phone")}
+                  />
+                </Field>
+                <Field
+                  id={`${formId}-industry`}
+                  label="Industry"
+                  error={form.formState.errors.industry?.message}
+                >
+                  <Input
+                    id={`${formId}-industry`}
+                    aria-invalid={Boolean(form.formState.errors.industry)}
+                    {...form.register("industry")}
+                  />
+                </Field>
+              </div>
+              <Field
+                id={`${formId}-description`}
+                label="Relationship summary"
+                error={form.formState.errors.description?.message}
+              >
+                <textarea
+                  id={`${formId}-description`}
+                  rows={4}
+                  className={textareaClass}
+                  aria-invalid={Boolean(form.formState.errors.description)}
+                  {...form.register("description")}
+                />
+              </Field>
+            </div>
           </div>
-          <Field
-            id={`${formId}-description`}
-            label="Relationship summary"
-            error={form.formState.errors.description?.message}
-          >
-            <textarea
-              id={`${formId}-description`}
-              rows={4}
-              className={textareaClass}
-              aria-invalid={Boolean(form.formState.errors.description)}
-              {...form.register("description")}
-            />
-          </Field>
         </form>
         <RequiredDialogFooter>
           <Button

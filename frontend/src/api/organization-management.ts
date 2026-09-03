@@ -1,7 +1,7 @@
 import { api } from './client'
 import type { OrganizationKind } from './session'
 
-export { apiErrorMessage } from './api-error'
+export { apiErrorMessage, existingAccessScopeCandidate } from './api-error'
 
 type ApiEnvelope<T> = {
   success: boolean
@@ -294,6 +294,25 @@ export async function createEntitlement(
   return unwrap(response.data)
 }
 
+export async function updateEntitlement(
+  organizationId: string,
+  entitlementId: string,
+  input: {
+    effectiveFrom: string
+    effectiveTo: string | null
+    configurationStatus: EntitlementConfigurationStatus
+    sourceRequestId: string | null
+    notes: string | null
+    version: number
+  },
+) {
+  const response = await api.patch<ApiEnvelope<ServiceEntitlement>>(
+    `/platform/relationships/organizations/${organizationId}/entitlements/${entitlementId}`,
+    input,
+  )
+  return unwrap(response.data)
+}
+
 export async function endEntitlement(
   organizationId: string,
   entitlementId: string,
@@ -336,7 +355,12 @@ export async function createRelationshipRequest(input: {
 
 export async function decideRelationshipRequest(
   id: string,
-  input: { approved: boolean; reason: string; version: number; orderingAuthorized?: boolean },
+  input: {
+    approved: boolean
+    existingOrganizationId?: string
+    reason: string
+    version: number
+  },
 ) {
   const response = await api.post<ApiEnvelope<RelationshipRequest>>(
     `/platform/relationships/requests/${id}/decision`,
@@ -348,11 +372,11 @@ export async function decideRelationshipRequest(
 export async function completeRelationshipRequestAccountCreation(
   id: string,
   version: number,
-  orderingAuthorized = true,
+  existingOrganizationId?: string,
 ) {
   const response = await api.post<ApiEnvelope<Organization>>(
     `/platform/relationships/requests/${id}/account`,
-    { version, orderingAuthorized },
+    { existingOrganizationId, version },
   )
   return unwrap(response.data)
 }

@@ -320,7 +320,7 @@ export const documentationEntries: readonly DocumentationEntry[] = [
     summary: 'Select the Phaeno workspace, find operational tools, and support users safely.',
     section: 'Basics',
     order: 10,
-    reviewedAt: '2026-09-01',
+    reviewedAt: '2026-09-02',
     Content: PhaenoGettingStarted,
   },
   {
@@ -332,7 +332,7 @@ export const documentationEntries: readonly DocumentationEntry[] = [
     summary: 'Manage canonical Companies, Contacts, Leads, Opportunities, Portal access, Tasks, reporting, and data quality.',
     section: 'Customer relationship management',
     order: 15,
-    reviewedAt: '2026-09-01',
+    reviewedAt: '2026-09-02',
     Content: PhaenoCrm,
   },
   {
@@ -344,7 +344,7 @@ export const documentationEntries: readonly DocumentationEntry[] = [
     summary: 'Manage canonical customer Companies, effective-dated Contact relationships, access state, and duplicates.',
     section: 'Customer relationship management',
     order: 16,
-    reviewedAt: '2026-09-01',
+    reviewedAt: '2026-09-02',
     Content: PhaenoCrmCompaniesContacts,
   },
   {
@@ -404,7 +404,7 @@ export const documentationEntries: readonly DocumentationEntry[] = [
     summary: 'Review online access, product and service, relationship, and work requests without creating a second customer identity.',
     section: 'Customer relationship management',
     order: 21,
-    reviewedAt: '2026-09-01',
+    reviewedAt: '2026-09-02',
     Content: PhaenoCrmPortalHandoffs,
   },
   {
@@ -427,7 +427,7 @@ export const documentationEntries: readonly DocumentationEntry[] = [
     summary: 'Manage Company Portal requests, readiness, service entitlements, invitations, and access.',
     section: 'Platform operations',
     order: 25,
-    reviewedAt: '2026-09-01',
+    reviewedAt: '2026-09-02',
     Content: PhaenoOrganizationAndUserAdministration,
   },
   {

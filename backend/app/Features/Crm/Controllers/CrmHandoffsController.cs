@@ -92,6 +92,16 @@ public sealed class CrmHandoffsController(PSeqOperationsDbContext dbContext, IEx
         var requestedKind = company.AccessOrganization?.Kind ?? request.RequestedOrganizationKind;
         var (requestType, defaultKind) = RequestType(request.Type);
         requestedKind ??= defaultKind;
+        if (request.Type is (
+                CrmHandoffType.PortalOnboarding
+                or CrmHandoffType.PortalEvaluation
+                or CrmHandoffType.Offboarding)
+            && request.RequestedServices.Count > 0)
+        {
+            throw new CrmException(
+                "crm_online_access_services_not_allowed",
+                "Online access requests cannot include products or services. Use a service change request instead.");
+        }
         foreach (var service in request.RequestedServices.Distinct())
         {
             if (!requestedKind.HasValue || !RelationshipPolicy.IsServiceAllowed(requestedKind.Value, service))

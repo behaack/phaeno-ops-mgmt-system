@@ -21,19 +21,22 @@ deployment, and test execution retain their normal approval boundaries.
   previewed/idempotent imports, audited exports, and explicit Portal handoffs
   and Company-owned Portal access.
 - The CRM workspace now uses the shared far-left responsive sidebar for Home,
-  Companies, Contacts, Leads, Opportunities, Tasks, Portal access, Reports, and
-  Administration. Phaeno CRM help is organized as one expandable subject with
-  independently routed workflow, administration, handoff, and recovery guides.
-  This navigation and documentation refinement has no persistence or API
-  contract change.
+  Companies, Contacts, Leads, Opportunities, Tasks, Requests, Reports, and
+  Administration. The destinations are grouped as Relationships, Sales,
+  Follow-up, Insights, and Administration so the complete CRM remains available
+  without presenting every record type as an unrelated top-level concept.
+  Phaeno CRM help is organized as one expandable subject with independently
+  routed workflow, administration, handoff, and recovery guides. This
+  navigation and documentation refinement has no persistence or API contract
+  change.
 - The canonical Company and its optional internal tenant scope retain distinct
   identifiers without becoming two customer records. CRM Portal handoffs create
   pending, idempotent requests through the existing review
   boundary; intake does not grant membership, enable a service, create
-  executable work, or expose scientific data. When an authorized reviewer
-  creates a Customer account, a visible **Ordering authorized** choice defaults
-  on and may create the existing `Ready` PSeq Lab Service entitlement in the
-  same transaction.
+  executable work, or expose scientific data. Online-access approval creates
+  only the Company's internal tenant scope. It does not select products or
+  change service entitlements; those remain explicit Products and services
+  requests and account-administration actions.
 - The first Customer PSeq Lab Service Opportunity-to-Order slice is implemented
   locally. A Won Opportunity can create a Customer order handoff; Portal
   access review must approve it before Order operations can start pricing.
@@ -71,7 +74,19 @@ deployment, and test execution retain their normal approval boundaries.
   incrementally so association is not limited to an initial page of records.
 - The Company request workflow groups online access, products and services,
   work, and relationship requests under one Company-level entry point. The
-  modal discloses only fields relevant to the chosen category and type.
+  modal begins with the outcome the Company needs, hides the request-type
+  control when that outcome has only one type, and discloses only fields
+  relevant to the chosen category and type.
+  Online access never asks for products or services, and it has one optional
+  summary instead of separate summary and internal-note fields. When omitted,
+  POMS records a concise request-type label for readable history.
+  If approval finds an active, compatible, exact-name access scope that is not
+  linked to another Company, the reviewer must explicitly confirm reuse. POMS
+  then links that scope instead of deleting or duplicating it, preserving its
+  users, orders, invitations, and audit history. Existing Company requests are
+  attached to the scope so their owning workflows can fulfill them, but this
+  does not grant any product or service entitlement. Linked, inactive, or
+  relationship-kind-mismatched scopes fail closed for manual resolution.
   Requested products and services use one searchable multi-select whose values
   remain the existing controlled service keys, so adding another approved
   product does not require another fixed checkbox in the modal.
@@ -80,10 +95,21 @@ deployment, and test execution retain their normal approval boundaries.
   `Ready` PSeq Lab Service entitlement, and the active offering may begin
   pricing; full readiness and an active Customer administrator remain required
   before a quote can be issued.
+- Existing non-ended service entitlements are editable from the Company access
+  workspace. Staff can correct dates, configuration, approved source request,
+  and notes without creating an overlapping duplicate; the service remains
+  immutable and the update retains optimistic concurrency and audit history.
 - Company and Contact detail workspaces render associations with the same
   relationship summary, primary/ended status, and edit action. Both directions
   use one shared editor for title, role, primary designation, and effective
   dates.
+- Company detail is organized as Overview, People and sales, Requests, Access
+  and services, and Activity. Request history remains visible on the Company,
+  while the central Requests queue is the only decision and completion surface;
+  the embedded access workspace does not duplicate request review. New Company
+  entry keeps name, Website, and relationship stage visible, places optional
+  metadata under Additional details, and derives the domain from Website when
+  no explicit domain is supplied.
 - Connected communications, marketing automation, telephony, service cases,
   and any external CRM adapter remain separately scoped expansions. Deeper
   Trial Project, order, QuickBooks, and operational projections remain owned by
@@ -154,8 +180,9 @@ Portal handoff.
 - **Activity:** a timeline event such as a note, call, meeting, email, status
   change, task completion, or linked POMS business event.
 - **Task:** owned follow-up work with status, priority, and due date.
-- **Portal access:** the approved tenant scope, users, readiness, and services
-  attached to a CRM Company. It is not a separate customer record.
+- **Portal access:** the approved tenant scope, users, and readiness attached to
+  a CRM Company. It is not a separate customer record and does not itself grant
+  product or service access.
 - **Commercial handoff:** an explicit, audited request from CRM context into a
   Portal access, Trial Project, custom-work, order, relationship-change, or
   offboarding review.
@@ -207,8 +234,8 @@ They do not replace or directly mutate their owning domains.
 7. CRM tasks and reminders do not become operational work orders.
 8. A commercial handoff is explicit and idempotent. Retrying it cannot create a
    duplicate access scope, Trial Project, order, invitation, or entitlement.
-   The later access-review action may explicitly create the default-on Customer
-   ordering entitlement atomically with the access scope.
+   Online-access review creates or reconnects only the Company's tenant scope;
+   product and service entitlements remain separate approved actions.
 9. Scientific, patient, sample, file, and protected data are excluded from CRM
    records, search indexes, exports, notifications, and future integrations.
 10. A future external provider never becomes a prerequisite for first-party CRM
@@ -306,9 +333,10 @@ They do not replace or directly mutate their owning domains.
 - Add a first-class **CRM** area to Phaeno navigation rather than overloading
   **Accounts**.
 - Use the shared far-left responsive workspace sidebar for CRM Home, Companies,
-  Contacts, Leads, Opportunities, Tasks, Reports, and Administration. Preserve
-  the active section on list and detail routes and do not duplicate these items
-  in a horizontal section bar.
+  Contacts, Leads, Opportunities, Tasks, Requests, Reports, and Administration.
+  Group the complete destination set into Relationships, Sales, Follow-up,
+  Insights, and Administration. Preserve the active section on list and detail
+  routes and do not duplicate these items in a horizontal section bar.
 - CRM landing answers: what needs attention, which opportunities changed, what
   is overdue, and how the pipeline is performing.
 - Companies, Contacts, Leads, Opportunities, and Tasks use the standard
@@ -317,12 +345,16 @@ They do not replace or directly mutate their owning domains.
   title row; descriptions remain beneath the title instead of determining the
   action width.
 - Opportunity pipeline boards complement, but do not replace, accessible tables.
-- Company detail is the relationship workspace: summary, Contacts,
-  Opportunities, Activity, Tasks, Company requests, online access, and
-  reporting context.
+- Company detail is the relationship workspace. Organize its substantial areas
+  as Overview, People and sales, Requests, Access and services, and Activity so
+  one long page does not expose every capability simultaneously.
 - CRM includes a Company request review section; online access is one possible
   request outcome, and there is no separate Portal Accounts directory or
   customer entity.
+- The Company workspace shows request history and links pending records to the
+  central Requests queue. Review, decline, recovery, application, and completion
+  decisions occur in that queue rather than being repeated in Company and
+  access views.
 - Every CRM-to-Portal transition previews the consequence and clearly states
   that it does not itself grant access, entitlements, or executable work.
 - External organization users do not receive CRM navigation or internal CRM

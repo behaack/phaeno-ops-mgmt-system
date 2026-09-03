@@ -49,12 +49,12 @@ export function CrmPortalAccessPage() {
   const action = useMutation({
     mutationFn: ({
       action,
-      orderingAuthorized,
+      existingOrganizationId,
       request,
       reason,
     }: {
       action: RequestAction
-      orderingAuthorized?: boolean
+      existingOrganizationId?: string
       request: RelationshipRequest
       reason: string
     }) =>
@@ -65,9 +65,9 @@ export function CrmPortalAccessPage() {
           })
         : decideRelationshipRequest(request.id, {
             approved: action === 'approve',
+            existingOrganizationId,
             reason,
             version: request.version,
-            orderingAuthorized,
           }),
     onSuccess: async () => {
       setActionTarget(null)
@@ -75,17 +75,11 @@ export function CrmPortalAccessPage() {
     },
   })
   const recovery = useMutation({
-    mutationFn: ({
-      orderingAuthorized,
-      request,
-    }: {
-      orderingAuthorized: boolean
-      request: RelationshipRequest
-    }) =>
+    mutationFn: ({ existingOrganizationId, request }: { existingOrganizationId?: string; request: RelationshipRequest }) =>
       completeRelationshipRequestAccountCreation(
         request.id,
         request.version,
-        orderingAuthorized,
+        existingOrganizationId,
       ),
     onSuccess: async () => {
       setRecoveryTarget(null)
@@ -99,7 +93,7 @@ export function CrmPortalAccessPage() {
       (request.status === 'PendingReview' ||
         (request.status === 'Approved' && !request.organizationId)),
   )
-  const error = requests.error ?? action.error ?? recovery.error
+  const error = requests.error
 
   return (
     <main className="page-wrap space-y-6 px-4 py-8">
@@ -242,18 +236,18 @@ export function CrmPortalAccessPage() {
         action={actionTarget?.action ?? null}
         request={actionTarget?.request ?? null}
         isPending={action.isPending}
-        error={action.error ? apiErrorMessage(action.error) : undefined}
+        error={action.error}
         onOpenChange={(open) => {
           if (!open) {
             setActionTarget(null)
             action.reset()
           }
         }}
-        onSubmit={({ explanation, orderingAuthorized }) => {
+        onSubmit={({ existingOrganizationId, explanation }) => {
           if (actionTarget) {
             action.mutate({
               ...actionTarget,
-              orderingAuthorized,
+              existingOrganizationId,
               reason: explanation,
             })
           }
@@ -262,17 +256,17 @@ export function CrmPortalAccessPage() {
       <AccountCreationRecoveryDialog
         request={recoveryTarget}
         isPending={recovery.isPending}
-        error={recovery.error ? apiErrorMessage(recovery.error) : undefined}
+        error={recovery.error}
         onOpenChange={(open) => {
           if (!open) {
             setRecoveryTarget(null)
             recovery.reset()
           }
         }}
-        onConfirm={(orderingAuthorized) => {
+        onConfirm={(existingOrganizationId) => {
           if (recoveryTarget) {
             recovery.mutate({
-              orderingAuthorized,
+              existingOrganizationId,
               request: recoveryTarget,
             })
           }

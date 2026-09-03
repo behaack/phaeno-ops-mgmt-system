@@ -4,14 +4,16 @@ A Company request carries commercial context into an audited review queue. It ca
 
 ## Create a Company request
 
-Open the CRM Company and find **Company requests**. Select **Create request**, then choose a category and request type:
+Open the CRM Company, select **Requests**, and then select **Create request**. Start with **What does this Company need?**:
 
 - **Online access:** onboarding, evaluation, or offboarding
 - **Products and services:** service change
 - **Work:** Trial Project or custom work
 - **Relationship:** relationship change
 
-The form shows only fields relevant to the selected request. Choose the requested Prospect, Customer, or Partner relationship when required. Link an Opportunity when evaluation or work arose from a specific pursuit; Customer order handoffs still begin from the Opportunity workspace. Open **Requested products and services**, search when needed, and select each applicable item; select an item again to remove it. Enter a required tenant-safe summary and optional internal notes.
+The form asks for a more specific request type only when the selected outcome has more than one. It then shows only fields relevant to that request. Choose the requested Prospect, Customer, or Partner relationship when required. Link an Opportunity when evaluation or work arose from a specific commercial pursuit; Customer order handoffs still begin from the Opportunity workspace.
+
+An **Online access** request never asks for a product or service. It creates or changes the Company's sign-in scope, and users can reach only the products and services the Company is separately entitled to use. Choose **Products and services** and **Service change** when product or ordering eligibility must change. Add a tenant-safe summary only when the reviewer needs more context; POMS supplies a short request label when the summary is blank.
 
 Do not include patient information, sample identifiers, scientific results, credentials, confidential file contents, or laboratory investigation detail. The handoff summary is relationship context for review, not an unrestricted notes field.
 
@@ -28,11 +30,11 @@ The handoff does not by itself:
 - create a quote, order, sample roster, shipment, or Lab work order
 - approve offboarding or revoke existing access
 
-An authorized reviewer owns those consequences in the destination workflow. Online access is one possible request outcome, not the parent of every request. When onboarding or evaluation is approved, POMS attaches one internal tenant scope to the existing Company. That scope provides tenant isolation and access controls; it is not another Company or customer identity.
+An authorized reviewer owns those consequences in the destination workflow. Online access is one possible request outcome, not the parent of every request. When onboarding or evaluation is approved, POMS attaches one internal tenant scope to the existing Company. That scope provides tenant isolation and sign-in controls; it is not another Company or customer identity and does not add or remove any product or service entitlement.
 
 ## Review and follow up
 
-Open CRM's **Requests** section to review onboarding, evaluation, products and services, relationship, work, or offboarding requests. Open **Order operations** for custom-work or order-intake review when the request is applicable there. Keep CRM Activities and Tasks focused on commercial follow-up; record each decision in its owning workflow.
+Open CRM's central **Requests** section to review onboarding, evaluation, products and services, relationship, work, or offboarding requests. The Company's **Requests** tab keeps the history in context and links pending items to that queue; it does not repeat approve, decline, or completion controls. Open **Order operations** for custom-work or order-intake review when the request is applicable there. Keep CRM Activities and Tasks focused on commercial follow-up; record each decision in its owning workflow.
 
 For Customer PSeq Lab Service, a Won Opportunity can create a dedicated **Customer order handoff** from its detail page. After Company request review approves the request and confirms the active Company operational scope, Ready ordering entitlement, available service offering, and no manual operational block, **Start Customer order** appears in both the Opportunity and Order intake. An online Customer administrator is not required to begin pricing, but full readiness and an active administrator are required before the quote can be issued. Starting the order creates one order, marks the request Applied in the same transaction, and links both records. Open the resulting order from either surface. Create a separate reviewed handoff when the same Opportunity legitimately produces another order; never retry by creating a duplicate handoff.
 

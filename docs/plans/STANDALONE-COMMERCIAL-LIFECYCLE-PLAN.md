@@ -72,9 +72,9 @@ changes, and offboarding.
 - reviews, approves, returns, declines, applies, or closes requests according
   to existing authorization and concurrency rules
 - invites the designated Portal administrator only after the account decision
-- chooses the default-on Customer ordering authorization during account
-  creation, then configures readiness and any other service entitlements in
-  their owning account surfaces
+- enables Company online access without selecting a product, then manages
+  product and service entitlements through their separate reviewed workflow
+  and owning account surfaces
 - records custom-work, Trial Project, relationship-change, and
   offboarding requests inside POMS
 - records commercial follow-up and final outcome when those facts are required
@@ -156,19 +156,17 @@ executable scientific work, or overwrite POMS-owned operational state.
    and selects **Create request**.
 2. POMS captures an online-access, products-and-services, work, or relationship
    category and then discloses only the relevant request type, proposed
-   relationship, linked Opportunity, requested products and services, business
-   purpose, and safe internal notes. Products and services use a searchable
-   multi-select.
+   relationship, linked Opportunity, requested products and services, and an
+   optional safe summary. Online access never includes a product choice;
+   Products and services uses a searchable multi-select.
 3. POMS creates a pending request with its own stable request identifier and
    records the actor and time.
 4. An authorized reviewer approves, returns, or declines the request using the
    existing review queue and optimistic-concurrency rules.
-5. Approval atomically creates and associates the pending organization when one
-   does not already exist. For a Customer, the reviewer also sees an explicit
-   **Ordering authorized** choice that defaults on. On creates a current,
-   `Ready` PSeq Lab Service entitlement in the same transaction; off creates
-   the account without ordering access. Neither choice grants user access or
-   creates an order.
+5. Online-access approval atomically creates and associates the pending
+   internal tenant scope when one does not already exist. It does not add or
+   remove product or service entitlements, grant membership, or create an
+   order.
 6. Staff complete readiness, review or add any remaining approved services,
    and invite the designated organization administrator through explicit
    actions.
@@ -372,8 +370,8 @@ integrate that CRM with existing Accounts and operational boundaries.
 - Authorized staff can create and resolve Prospect, Customer, and Partner
   Portal-access proposals from the canonical Company entirely in POMS.
 - No commercial-intake form requires an external CRM record or identifier.
-- Approval and internal access-scope creation remain atomic. Customer ordering authorization
-  is an explicit, audited choice on that operation and defaults on; invitation,
+- Approval and internal access-scope creation remain atomic. That operation
+  does not change product or service entitlements; invitation, entitlement,
   readiness completion, and executable work remain separate and auditable.
 - Authorized staff can create Trial Project and custom-work requests entirely
   in POMS without creating active work prematurely.

@@ -214,8 +214,10 @@ and rollback-isolated PostgreSQL coverage.
 - [x] `backend/test/RelationshipManagementDomainTests.cs` - an approved request
   authorizes only its associated organization and requested service,
   onboarding-only requests cannot source service entitlements, and entitlement
-  end reasons are required and retained; service eligibility is covered for
-  Customer, Partner, Prospect, and Phaeno organizations.
+  end reasons are required and retained; an existing entitlement can become
+  Ready and attach its approved source without changing service identity;
+  service eligibility is covered for Customer, Partner, Prospect, and Phaeno
+  organizations.
 
 ## Created Database Verification
 
@@ -563,11 +565,15 @@ and rollback-isolated PostgreSQL coverage.
   atomic approval plus
   access-scope creation for Company onboarding/evaluation requests, including
   supported kind validation, duplicate-name and stale-version rejection,
-  durable request association, Pending readiness, default-on Customer ordering
-  authorization, explicit opt-out, one atomic `Ready` PSeq Lab Service
-  entitlement, and the guarantee that it creates no invitation or order and
-  does not mark the request applied.
+  durable request association, Pending readiness, rejection of products or
+  services on online-access intake, unchanged entitlements, and the guarantee
+  that it creates no invitation or order and does not mark the request applied.
   Retain coverage of the legacy access-scope lookup as a deep-link recovery path.
+- [ ] Guarded exact-name access-scope recovery - add focused PostgreSQL coverage
+  proving the first attempt returns a confirmation candidate, the confirmed
+  retry links only the same active, unlinked, kind-compatible scope, and
+  changed, linked, inactive, or kind-mismatched candidates are rejected without
+  mutation.
 - [x] Customer Lab ordering eligibility - focused PostgreSQL coverage verifies
   that Phaeno initiation requires a current `Ready` entitlement, sends no
   Customer notice during quote preparation, permits pricing before Customer

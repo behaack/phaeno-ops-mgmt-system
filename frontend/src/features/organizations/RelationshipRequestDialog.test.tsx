@@ -23,6 +23,8 @@ describe('direct Portal account requests', () => {
     expect(screen.getByRole('option', { name: 'Onboarding' })).toBeTruthy()
     expect(screen.getByRole('option', { name: 'Evaluation' })).toBeTruthy()
     expect(screen.queryByRole('option', { name: 'Service change' })).toBeNull()
+    expect(screen.queryByRole('checkbox', { name: 'PSeq Lab Service' })).toBeNull()
+    expect(screen.queryByLabelText('Internal notes')).toBeNull()
 
     fireEvent.click(screen.getByRole('button', { name: 'Submit for review' }))
     expect(await screen.findByText('Enter an organization name.')).toBeTruthy()
@@ -33,10 +35,6 @@ describe('direct Portal account requests', () => {
     fireEvent.change(screen.getByLabelText(/Requested relationship/), {
       target: { value: 'Customer' },
     })
-    fireEvent.click(screen.getByRole('checkbox', { name: 'PSeq Lab Service' }))
-    fireEvent.change(screen.getByLabelText(/Requested outcome/), {
-      target: { value: 'Recover the approved customer onboarding request.' },
-    })
     fireEvent.click(screen.getByRole('button', { name: 'Submit for review' }))
 
     await waitFor(() =>
@@ -45,7 +43,8 @@ describe('direct Portal account requests', () => {
           candidateOrganizationName: 'Example Biotech',
           requestType: 'Onboarding',
           requestedOrganizationKind: 'Customer',
-          pseqLabService: true,
+          pseqLabService: false,
+          summary: '',
         }),
         expect.anything(),
       ),

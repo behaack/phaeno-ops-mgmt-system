@@ -8,13 +8,11 @@ import { z } from 'zod'
 
 import {
   apiErrorMessage,
-  applyRelationshipRequest,
   convertProspect,
   createDevelopmentInvitationLink,
   createEntitlement,
   createInvitation,
   deactivateMembership,
-  decideRelationshipRequest,
   endEntitlement,
   getOrganization,
   getOperationalReadiness,
@@ -25,10 +23,10 @@ import {
   listRelationshipRequests,
   revokeInvitation,
   resendInvitation,
+  updateEntitlement,
   updateMembershipRole,
   updateOrganization,
   type DevelopmentInvitationLink,
-  type RelationshipRequest,
   type ServiceEntitlement,
   type Invitation,
 } from '#/api/organization-management'
@@ -44,10 +42,10 @@ import { usePhaenoSession } from '#/features/auth/session-context'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '#/components/ui/tabs'
 import { OrganizationRetentionPolicyPanel } from '#/features/file-management/OrganizationRetentionPolicyPanel'
 import { EntitlementDialog, type EntitlementFormValues } from './EntitlementDialog'
+import { EditEntitlementDialog, type EditEntitlementFormValues } from './EditEntitlementDialog'
 import { LifecycleActionDialog, type LifecycleAction } from './LifecycleActionDialog'
 import { OrganizationFormDialog, readinessLabel, type OrganizationFormValues } from './OrganizationFormDialog'
 import { OrganizationConversionDialog } from './OrganizationConversionDialog'
-import { RequestActionDialog, type RequestAction } from './RequestActionDialog'
 
 export function OrganizationDetailPage({
   organizationId,
@@ -62,13 +60,10 @@ export function OrganizationDetailPage({
   const [activeTab, setActiveTab] = useState('overview')
   const [inviteOpen, setInviteOpen] = useState(false)
   const [entitlementOpen, setEntitlementOpen] = useState(false)
+  const [entitlementEditTarget, setEntitlementEditTarget] = useState<ServiceEntitlement | null>(null)
   const [conversionTarget, setConversionTarget] = useState<'Customer' | 'Partner' | null>(null)
   const [lifecycleTarget, setLifecycleTarget] = useState<DetailLifecycleTarget>(null)
   const [developmentInviteLink, setDevelopmentInviteLink] = useState<DevelopmentInvitationLink | null>(null)
-  const [requestActionTarget, setRequestActionTarget] = useState<{
-    action: RequestAction
-    request: RelationshipRequest
-  } | null>(null)
   const organizationQuery = useQuery({ queryKey: ['organization', organizationId], queryFn: () => getOrganization(organizationId) })
   const summaryQuery = useQuery({ queryKey: ['organization-summary', organizationId], queryFn: () => getOrganizationSummary(organizationId) })
   const readinessQuery = useQuery({
@@ -103,8 +98,8 @@ export function OrganizationDetailPage({
   })
   const developmentLinkMutation = useMutation({ mutationFn: createDevelopmentInvitationLink, onSuccess: async (result) => { setDevelopmentInviteLink(result); await client.invalidateQueries({ queryKey: ['organization-invitations', organizationId] }) } })
   const entitlementMutation = useMutation({ mutationFn: (values: EntitlementFormValues) => createEntitlement(organizationId, { service: values.service, effectiveFrom: new Date(values.effectiveFrom).toISOString(), effectiveTo: values.effectiveTo ? new Date(values.effectiveTo).toISOString() : null, configurationStatus: values.configurationStatus, sourceRequestId: values.sourceRequestId || null, notes: values.notes || null }), onSuccess: async () => { await refresh(); setEntitlementOpen(false) } })
+  const editEntitlementMutation = useMutation({ mutationFn: ({ entitlement, values }: { entitlement: ServiceEntitlement; values: EditEntitlementFormValues }) => updateEntitlement(organizationId, entitlement.id, { effectiveFrom: new Date(values.effectiveFrom).toISOString(), effectiveTo: values.effectiveTo ? new Date(values.effectiveTo).toISOString() : null, configurationStatus: values.configurationStatus, sourceRequestId: values.sourceRequestId || null, notes: values.notes || null, version: entitlement.version }), onSuccess: async () => { await refresh(); setEntitlementEditTarget(null) } })
   const endMutation = useMutation({ mutationFn: ({ entitlement, reason }: { entitlement: ServiceEntitlement; reason: string }) => endEntitlement(organizationId, entitlement.id, { effectiveTo: new Date().toISOString(), reason, version: entitlement.version }), onSuccess: () => { setLifecycleTarget(null); void refresh() } })
-  const requestAction = useMutation({ mutationFn: ({ request, action, text }: { request: RelationshipRequest; action: RequestAction; text: string }) => action === 'apply' ? applyRelationshipRequest(request.id, { notes: text, version: request.version }) : decideRelationshipRequest(request.id, { approved: action === 'approve', reason: text, version: request.version }), onSuccess: () => { setRequestActionTarget(null); void refresh() } })
 
   const errorState = [
     { label: 'Portal access details', error: organizationQuery.error },
@@ -114,7 +109,7 @@ export function OrganizationDetailPage({
     { label: 'Invitations', error: invitationsQuery.error },
     { label: 'Service entitlements', error: entitlementsQuery.error },
     { label: 'Company requests', error: requestsQuery.error },
-    { label: 'Portal access action', error: editMutation.error ?? conversionMutation.error ?? inviteMutation.error ?? memberMutation.error ?? inviteAction.error ?? developmentLinkMutation.error ?? entitlementMutation.error ?? endMutation.error ?? requestAction.error },
+    { label: 'Portal access action', error: editMutation.error ?? conversionMutation.error ?? inviteMutation.error ?? memberMutation.error ?? inviteAction.error ?? developmentLinkMutation.error ?? entitlementMutation.error ?? editEntitlementMutation.error ?? endMutation.error },
   ].find((item) => item.error)
   if (organizationQuery.isLoading) return <div className={embedded ? '' : 'page-wrap px-4 py-8'}><p className="text-sm text-muted-foreground">Loading Portal access…</p></div>
   if (!organization) return <NotFound />
@@ -151,11 +146,88 @@ export function OrganizationDetailPage({
       {errorState ? <Alert variant="destructive"><AlertTitle>{errorState.label} could not be loaded</AlertTitle><AlertDescription>{apiErrorMessage(errorState.error)}</AlertDescription></Alert> : null}
       <section className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4"><Summary label="Operational readiness" value={readinessQuery.isLoading ? 'Checking…' : readinessQuery.data?.state ?? 'Not applicable'} /><Summary label="Administrator" value={summary?.administratorStatus ?? 'Loading'} /><Summary label="Active users" value={`${summary?.activeMemberCount ?? 0}`} /><Summary label="Usable services" value={`${summary?.effectiveServices.length ?? 0}`} /></section>
 
-      <Card><CardContent className="pt-6"><Tabs value={activeTab} onValueChange={setActiveTab}><TabsList className="flex h-auto flex-wrap"><TabsTrigger value="overview">Overview</TabsTrigger><TabsTrigger value="members">Users</TabsTrigger><TabsTrigger value="services">Services</TabsTrigger><TabsTrigger value="requests">Requests</TabsTrigger><TabsTrigger value="retention">Retention</TabsTrigger></TabsList>
+      <Card><CardContent className="pt-6"><Tabs value={activeTab} onValueChange={setActiveTab}><TabsList className="flex h-auto flex-wrap"><TabsTrigger value="overview">Overview</TabsTrigger><TabsTrigger value="members">Users</TabsTrigger><TabsTrigger value="services">Services</TabsTrigger><TabsTrigger value="retention">Retention</TabsTrigger></TabsList>
         <TabsContent value="overview" className="mt-5 space-y-4"><div className="grid gap-4 md:grid-cols-2"><Info label="Portal relationship" value={organization.kind} /><Info label="Access status" value={organization.isActive ? 'Enabled' : 'Suspended'} /><Info label="Setup readiness" value={readinessLabel(organization.portalReadiness)} /><Info label="Pending requests" value={`${summary?.pendingRequestCount ?? 0}`} /></div>{organization.kind === 'Customer' ? <ReadinessChecklist readiness={readinessQuery.data} isLoading={readinessQuery.isLoading} isStale={readinessQuery.isStale} /> : null}<div className="rounded-lg border p-4"><h2 className="font-medium">Readiness note</h2><p className="mt-2 text-sm text-muted-foreground">{organization.portalReadinessNote || 'No readiness note recorded. It does not authorize transactions.'}</p></div>{!embedded && organization.kind === 'Prospect' ? <div className="rounded-lg border p-4"><h2 className="font-medium">Convert qualified prospect</h2><p className="mt-1 text-sm text-muted-foreground">Conversion changes the relationship type only. Access, invitations, and services remain explicit.</p><div className="mt-3 flex gap-2"><Button size="sm" disabled={conversionMutation.isPending} onClick={() => setConversionTarget('Customer')}>Convert to customer</Button><Button size="sm" variant="outline" disabled={conversionMutation.isPending} onClick={() => setConversionTarget('Partner')}>Convert to partner</Button></div></div> : null}</TabsContent>
         <TabsContent value="members" className="mt-5 space-y-5"><div className="flex items-center justify-between gap-3"><div><h2 className="font-medium">Portal users and invitations</h2><p className="text-sm text-muted-foreground">Only a Phaeno-reviewed Portal invitation grants access. Email delivery is tracked separately from invitation access.</p></div><Button size="sm" onClick={() => setInviteOpen(true)}><UserPlus data-icon="inline-start" />Invite user</Button></div><div className="space-y-3">{(usersQuery.data ?? []).map((user) => { const membership = user.memberships.find((value) => value.organizationId === organizationId); if (!membership) return null; return <div key={user.id} className="flex flex-col gap-3 rounded-lg border p-4 sm:flex-row sm:items-center sm:justify-between"><div><p className="font-medium">{user.firstName} {user.lastName}</p><p className="text-sm text-muted-foreground">{user.email} · {membership.isOrganizationAdmin ? 'Administrator' : 'Member'} · {membership.isActive ? user.status : 'Membership inactive'}</p></div><div className="flex gap-2">{membership.isActive ? <><Button size="sm" variant="outline" disabled={memberMutation.isPending} onClick={() => memberMutation.mutate({ membershipId: membership.id, action: 'role', isAdmin: !membership.isOrganizationAdmin })}>{membership.isOrganizationAdmin ? 'Make member' : 'Make admin'}</Button>{user.id !== session?.user?.id ? <Button size="sm" variant="destructive" disabled={memberMutation.isPending} onClick={() => setLifecycleTarget({ kind: 'member', membershipId: membership.id, email: user.email })}>Deactivate</Button> : null}</> : null}</div></div> })}{!usersQuery.isLoading && !(usersQuery.data ?? []).length ? <p className="rounded-lg border p-6 text-center text-sm text-muted-foreground">No Portal users yet.</p> : null}</div><div><h3 className="mb-3 font-medium">Pending invitations</h3><div className="space-y-2">{pendingInvitations.map((invite) => <InvitationRow key={invite.id} invitation={invite} isPending={inviteAction.isPending || developmentLinkMutation.isPending} onAction={(action) => inviteAction.mutate({ id: invite.id, action })} onDevelopmentLink={import.meta.env.DEV ? () => developmentLinkMutation.mutate(invite.id) : undefined} />)}{invitationsQuery.isLoading ? <p role="status" className="text-sm text-muted-foreground">Checking invitation delivery…</p> : null}{!invitationsQuery.isLoading && !pendingInvitations.length ? <p className="text-sm text-muted-foreground">No pending invitations.</p> : null}</div></div></TabsContent>
-        <TabsContent value="services" className="mt-5 space-y-4"><div className="flex items-center justify-between gap-3"><div><h2 className="font-medium">Service entitlements</h2><p className="text-sm text-muted-foreground">PSeq Kit always includes its data-assembly phase; it is not a separate entitlement.</p></div>{organization.kind === 'Customer' || organization.kind === 'Partner' ? <Button size="sm" onClick={() => setEntitlementOpen(true)}><Plus data-icon="inline-start" />Add entitlement</Button> : null}</div><div className="space-y-3">{(entitlementsQuery.data ?? []).map((value) => <div key={value.id} className="flex flex-col gap-3 rounded-lg border p-4 sm:flex-row sm:items-start sm:justify-between"><div><div className="flex flex-wrap gap-2"><span className="font-medium">{serviceLabel(value.service)}</span><Badge variant={value.isUsable ? 'secondary' : 'outline'}>{value.endReason ? 'Ended' : `Service configuration: ${value.configurationStatus}`}</Badge></div><p className="mt-2 text-sm text-muted-foreground">{formatDate(value.effectiveFrom)} to {value.effectiveTo ? formatDate(value.effectiveTo) : 'open ended'}</p>{value.notes ? <p className="mt-1 text-sm">{value.notes}</p> : null}{value.endReason ? <p className="mt-1 text-sm text-muted-foreground">Ended: {value.endReason}</p> : null}</div>{value.isEffective ? <Button size="sm" variant="outline" disabled={endMutation.isPending} onClick={() => setLifecycleTarget({ kind: 'entitlement', entitlement: value })}>End now</Button> : null}</div>)}{!entitlementsQuery.isLoading && !(entitlementsQuery.data ?? []).length ? <p className="rounded-lg border p-6 text-center text-sm text-muted-foreground">No service entitlements recorded.</p> : null}</div></TabsContent>
-        <TabsContent value="requests" className="mt-5 space-y-4"><div><h2 className="font-medium">Company request history</h2><p className="text-sm text-muted-foreground">First-party CRM requests appear here after commercial qualification. Existing durable requests remain reviewable.</p></div><div className="space-y-3">{(requestsQuery.data ?? []).map((request) => <div key={request.id} className="rounded-lg border p-4"><div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between"><div><div className="flex flex-wrap gap-2"><span className="font-medium">{request.requestNumber}</span><Badge variant="outline">{request.status}</Badge><Badge variant="outline">{request.source}</Badge></div><p className="mt-2 text-sm">{request.summary}</p><p className="mt-1 text-xs text-muted-foreground">{request.requestType} · {formatDate(request.createdAt)}</p></div><div className="flex gap-2">{request.status === 'PendingReview' ? <><Button size="sm" disabled={requestAction.isPending} onClick={() => setRequestActionTarget({ action: 'approve', request })}>Approve</Button><Button size="sm" variant="outline" disabled={requestAction.isPending} onClick={() => setRequestActionTarget({ action: 'decline', request })}>Decline</Button></> : request.status === 'Approved' ? <Button size="sm" disabled={requestAction.isPending} onClick={() => setRequestActionTarget({ action: 'apply', request })}>Mark applied</Button> : null}</div></div></div>)}{!requestsQuery.isLoading && !(requestsQuery.data ?? []).length ? <p className="rounded-lg border p-6 text-center text-sm text-muted-foreground">No Company requests recorded.</p> : null}</div></TabsContent>
+        <TabsContent value="services" className="mt-5 space-y-4">
+          <div className="flex items-center justify-between gap-3">
+            <div>
+              <h2 className="font-medium">Service entitlements</h2>
+              <p className="text-sm text-muted-foreground">
+                PSeq Kit always includes its data-assembly phase; it is not a
+                separate entitlement.
+              </p>
+            </div>
+            {organization.kind === 'Customer' || organization.kind === 'Partner' ? (
+              <Button size="sm" onClick={() => setEntitlementOpen(true)}>
+                <Plus data-icon="inline-start" />
+                Add entitlement
+              </Button>
+            ) : null}
+          </div>
+          <div className="space-y-3">
+            {(entitlementsQuery.data ?? []).map((value) => (
+              <div
+                key={value.id}
+                className="flex flex-col gap-3 rounded-lg border p-4 sm:flex-row sm:items-start sm:justify-between"
+              >
+                <div>
+                  <div className="flex flex-wrap gap-2">
+                    <span className="font-medium">{serviceLabel(value.service)}</span>
+                    <Badge variant={value.isUsable ? 'secondary' : 'outline'}>
+                      {value.endReason
+                        ? 'Ended'
+                        : `Service configuration: ${value.configurationStatus}`}
+                    </Badge>
+                  </div>
+                  <p className="mt-2 text-sm text-muted-foreground">
+                    {formatDate(value.effectiveFrom)} to{' '}
+                    {value.effectiveTo ? formatDate(value.effectiveTo) : 'open ended'}
+                  </p>
+                  {value.notes ? <p className="mt-1 text-sm">{value.notes}</p> : null}
+                  {value.endReason ? (
+                    <p className="mt-1 text-sm text-muted-foreground">
+                      Ended: {value.endReason}
+                    </p>
+                  ) : null}
+                </div>
+                <div className="flex flex-wrap gap-2">
+                  {!value.endReason ? (
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      disabled={editEntitlementMutation.isPending}
+                      onClick={() => {
+                        editEntitlementMutation.reset()
+                        setEntitlementEditTarget(value)
+                      }}
+                    >
+                      <Pencil data-icon="inline-start" />
+                      Edit
+                    </Button>
+                  ) : null}
+                  {value.isEffective ? (
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      disabled={endMutation.isPending}
+                      onClick={() =>
+                        setLifecycleTarget({ kind: 'entitlement', entitlement: value })
+                      }
+                    >
+                      End now
+                    </Button>
+                  ) : null}
+                </div>
+              </div>
+            ))}
+            {!entitlementsQuery.isLoading && !(entitlementsQuery.data ?? []).length ? (
+              <p className="rounded-lg border p-6 text-center text-sm text-muted-foreground">
+                No service entitlements recorded.
+              </p>
+            ) : null}
+          </div>
+        </TabsContent>
         <TabsContent value="retention" className="mt-5"><OrganizationRetentionPolicyPanel enabled={activeTab === 'retention'} organizationId={organizationId} organizationName={organization.name} /></TabsContent>
       </Tabs></CardContent></Card>
 
@@ -169,7 +241,27 @@ export function OrganizationDetailPage({
         }}
       />
       <EntitlementDialog open={entitlementOpen} organization={organization} requests={requestsQuery.data ?? []} isPending={entitlementMutation.isPending} error={entitlementMutation.error ? apiErrorMessage(entitlementMutation.error) : undefined} onOpenChange={setEntitlementOpen} onSubmit={(values) => entitlementMutation.mutate(values)} />
-      <RequestActionDialog action={requestActionTarget?.action ?? null} request={requestActionTarget?.request ?? null} isPending={requestAction.isPending} error={requestAction.error ? apiErrorMessage(requestAction.error) : undefined} onOpenChange={(open) => { if (!open) setRequestActionTarget(null) }} onSubmit={({ explanation }) => { if (requestActionTarget) requestAction.mutate({ ...requestActionTarget, text: explanation }) }} />
+      <EditEntitlementDialog
+        entitlement={entitlementEditTarget}
+        organization={organization}
+        requests={requestsQuery.data ?? []}
+        isPending={editEntitlementMutation.isPending}
+        error={editEntitlementMutation.error ? apiErrorMessage(editEntitlementMutation.error) : undefined}
+        onOpenChange={(open) => {
+          if (!open) {
+            setEntitlementEditTarget(null)
+            editEntitlementMutation.reset()
+          }
+        }}
+        onSubmit={(values) => {
+          if (entitlementEditTarget) {
+            editEntitlementMutation.mutate({
+              entitlement: entitlementEditTarget,
+              values,
+            })
+          }
+        }}
+      />
       <LifecycleActionDialog
         action={lifecycleAction}
         isPending={lifecyclePending}

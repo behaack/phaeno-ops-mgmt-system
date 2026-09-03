@@ -42,13 +42,7 @@ const crmSections = [
     description: 'Organizations and relationship context',
     icon: Building2,
     to: '/crm/companies',
-  },
-  {
-    value: 'portalAccess',
-    label: 'Requests',
-    description: 'Company requests and approvals',
-    icon: ClipboardCheck,
-    to: '/customers',
+    group: 'Relationships',
   },
   {
     value: 'contacts',
@@ -56,6 +50,7 @@ const crmSections = [
     description: 'People and Company associations',
     icon: ContactRound,
     to: '/crm/contacts',
+    group: 'Relationships',
   },
   {
     value: 'leads',
@@ -63,6 +58,7 @@ const crmSections = [
     description: 'Qualification and conversion work',
     icon: UserSearch,
     to: '/crm/leads',
+    group: 'Sales',
   },
   {
     value: 'opportunities',
@@ -70,6 +66,7 @@ const crmSections = [
     description: 'Pipelines, stages, and commercial pursuits',
     icon: Target,
     to: '/crm/opportunities',
+    group: 'Sales',
   },
   {
     value: 'tasks',
@@ -77,6 +74,15 @@ const crmSections = [
     description: 'Owned follow-up and reminders',
     icon: ListTodo,
     to: '/crm/tasks',
+    group: 'Follow-up',
+  },
+  {
+    value: 'portalAccess',
+    label: 'Requests',
+    description: 'Company requests and approvals',
+    icon: ClipboardCheck,
+    to: '/customers',
+    group: 'Follow-up',
   },
   {
     value: 'reports',
@@ -84,6 +90,7 @@ const crmSections = [
     description: 'Pipeline, conversion, and activity reporting',
     icon: ChartColumn,
     to: '/crm/reports',
+    group: 'Insights',
   },
   {
     value: 'administration',
@@ -91,6 +98,7 @@ const crmSections = [
     description: 'Pipelines, views, imports, and data quality',
     icon: Settings,
     to: '/crm/administration',
+    group: 'Administration',
   },
 ] as const satisfies ReadonlyArray<
   WorkspaceSidebarItem<CrmSection> & { to: string }

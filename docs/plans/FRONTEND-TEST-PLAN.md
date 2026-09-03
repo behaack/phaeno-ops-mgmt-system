@@ -84,6 +84,10 @@ remain incomplete production-activation gates.
   approved source-request selector includes only requests for the current
   organization and selected service while preserving a documented manual
   exception.
+- [x] `frontend/src/features/organizations/EditEntitlementDialog.test.tsx` - an
+  existing entitlement opens prefilled with immutable service identity and can
+  submit Ready configuration plus an approved source request instead of
+  creating an overlapping record.
 - [x] `frontend/src/features/lab-operations/Code39Barcode.test.tsx` - POMS
   barcodes encode with Code 39 start/stop characters and unsupported
   characters are rejected rather than rendered ambiguously.
@@ -116,9 +120,11 @@ remain incomplete production-activation gates.
   - mock, loading, failure, genuine-empty, and ready Customer-list states remain
   distinct so a failed or pending query is not presented as an empty result.
 - [x] `frontend/src/features/organizations/RequestActionDialog.test.tsx` and
-  `OrganizationListPage.test.tsx` - Customer account approval and stranded-
-  request recovery show the default-on ordering authorization and preserve an
-  explicit off choice in the submitted command.
+  `OrganizationListPage.test.tsx` - Company online-access approval and
+  stranded-request recovery explicitly leave product and service entitlements
+  unchanged and submit no ordering-authorization choice. Exact-name orphan
+  recovery shows the preservation warning and submits the candidate scope ID
+  only after the reviewer selects **Use existing access scope**.
 - [x] `frontend/src/features/orders/configuration/SampleShippingConfigurationPanel.test.tsx`
   - current versioned destinations, sample types, and combination rules render;
   instruction preview submits exact revisions and presents resolved content;
@@ -151,8 +157,11 @@ remain incomplete production-activation gates.
   stable values in one dropdown.
 - [x] `frontend/src/features/crm/CrmCompanyRelationships.test.tsx` - the Company
   request modal groups online access, products and services, work, and
-  relationship requests, and progressively discloses only the fields relevant
-  to the selected category and type.
+  relationship requests; online access omits product selection, the single
+  summary is optional, single-type outcomes omit a redundant request-type
+  control, and the modal progressively discloses only fields relevant to the
+  selected outcome and type. Company request history links pending work to the
+  central Requests queue instead of duplicating review actions.
 - [ ] Customer laboratory draft workspace - cover Job pricing-details
   create/edit modal required name, biological-source composition,
   storage/safety, derived sample total, duplicate nonblank source validation,
@@ -179,15 +188,17 @@ remain incomplete production-activation gates.
   error states, organization switching, and complete absence of internal mock
   Accounts metrics from external dashboards.
 - [x] `frontend/src/features/crm/CrmShell.test.tsx` - CRM Home, Companies,
-  Contacts, Leads, Opportunities, Tasks, Portal access, Reports, and Administration use the
-  shared responsive workspace sidebar, preserve the active section on a detail
-  route, and navigate to the existing section routes.
+  Contacts, Leads, Opportunities, Tasks, Requests, Reports, and Administration
+  use the shared responsive workspace sidebar, group destinations as
+  Relationships, Sales, Follow-up, Insights, and Administration, preserve the
+  active section on a detail route, and navigate to the existing section
+  routes.
 - [x] CRM foundation components - cover the Company create/edit form's required
-  fields and CRM/Portal warning, lifecycle confirmation consequences, CRM
-  navigation placement, standalone Lead capture and conditional Company
-  requirement, and controlled merge target/reason behavior. The seven focused
-  CRM tests are maintained under `frontend/src/features/crm/`, with navigation
-  placement coverage also maintained in
+  fields and CRM/Portal warning, collapsed optional details, Website-derived
+  domain, lifecycle confirmation consequences, CRM navigation placement,
+  standalone Lead capture and conditional Company requirement, and controlled
+  merge target/reason behavior. The focused CRM tests are maintained under
+  `frontend/src/features/crm/`, with navigation placement coverage also maintained in
   `frontend/src/components/navigation.test.ts`.
 - [x] `frontend/src/features/crm/CrmAssociationRecordCombobox.test.tsx` - cover
   incremental server-backed Company and Contact searches and selection of the

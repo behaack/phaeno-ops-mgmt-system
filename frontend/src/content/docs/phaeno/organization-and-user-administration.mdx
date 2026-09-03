@@ -23,25 +23,27 @@ Create the Company first, then request the approved Portal relationship when acc
 
 Do not use Company lifecycle or Portal readiness as a shortcut for access. Curated package access requires an exact-version grant, member access requires an accepted invitation, and commercial work requires a current service entitlement.
 
-Open **CRM** and select **Companies** to search durable external customer records. Select the Company name to open its workspace. Use **Company requests** to propose online access, a product or service change, a relationship change, or reviewed work. Use CRM's **Requests** section for requests that still need a Phaeno decision. There is no standalone customer-creation action outside CRM.
+Open **CRM** and select **Companies** to search durable external customer records. Select the Company name to open its workspace. Use its **Requests** tab to propose online access, a product or service change, a relationship change, or reviewed work. Use CRM's central **Requests** section for requests that still need a Phaeno decision. The Company tab preserves request history but does not duplicate the decision controls. There is no standalone customer-creation action outside CRM.
 
-For a pending onboarding or evaluation request, select **Approve and enable Portal access** and record the approval reason. When the relationship is Customer, **Ordering authorized** defaults to **On**. Leave it on to create a current **Ready** PSeq Lab Service entitlement, or turn it off to enable access without ordering authorization. POMS atomically approves the request, creates the Company's internal tenant scope with **Pending** readiness, creates the selected Customer ordering authorization, and attaches it to the existing Company. It never creates another customer record or a user.
+For a pending onboarding or evaluation request, select **Approve and enable Portal access** and record the approval reason. POMS atomically approves the request, creates the Company's internal tenant scope with **Pending** readiness, and attaches it to the existing Company. Online-access approval never adds or removes a product or service entitlement, creates another customer record, or creates a user.
 
-If an older approved onboarding or evaluation request shows **Portal access incomplete**, select **Complete Portal access**. POMS creates and attaches the missing tenant scope and selected ordering authorization in one operation. This recovery does not create another Company, invite users, create an order, or complete the request.
+If an older approved onboarding or evaluation request shows **Portal access incomplete**, select **Complete Portal access**. POMS creates and attaches the missing tenant scope without changing product or service entitlements. This recovery does not create another Company, invite users, create an order, or complete the request.
+
+If POMS finds an active, compatible access scope with the exact Company name that is not linked to another Company, it pauses and shows **Existing access scope found**. Review the displayed name and relationship, then select **Use existing access scope** to reconnect it. Reuse preserves existing users, orders, invitations, and history. Existing Company requests are attached to the scope so they can be fulfilled through their separate owning workflows; attaching them does not grant product or service access. POMS will not offer this shortcut when the scope is inactive, belongs to another Company, or has a different relationship kind; resolve those cases before approving access.
 
 Record readiness as **Not reviewed**, **Pending**, **Ready**, or **Blocked**, with an internal note when useful. Readiness describes operational setup; it does not invite a user, activate a service, or place an order.
 
 ## Review Company requests
 
-Use CRM's **Requests** section to decide pending onboarding, evaluation, product and service, relationship, sales-assisted order, and offboarding requests created by the first-party CRM. Approved requests remain available in the Company's **Company requests** area. An approved online-access request without its tenant scope remains in the queue only as a recovery exception. Historical HubSpot-sourced requests remain readable, but no HubSpot intake or simulation endpoint is part of the standalone workflow.
+Use CRM's central **Requests** section to decide pending onboarding, evaluation, product and service, relationship, sales-assisted order, and offboarding requests created by the first-party CRM. Approved requests remain available in the Company's **Requests** tab as history. An approved online-access request without its tenant scope remains in the queue only as a recovery exception. Historical HubSpot-sourced requests remain readable, but no HubSpot intake or simulation endpoint is part of the standalone workflow.
 
-Approve or decline a pending request with a reason. For onboarding or evaluation, approval also creates and attaches the Company's pending-readiness access scope. The Customer dialog makes ordering authorization explicit and defaults it on; no user access or order is created. Other request types record the decision only. Complete each approved invitation, entitlement, or order change through its owning workflow, verify the outcome, and then select **Complete request** from the Company's request area and record what was completed.
+Approve or decline a pending request with a reason. For onboarding or evaluation, approval also creates and attaches the Company's pending-readiness access scope while leaving product and service entitlements unchanged. Other request types record the decision only. Complete each approved invitation, entitlement, or order change through its owning workflow, verify the outcome, and then select **Complete request** in the central **Requests** queue and record what was completed.
 
 Never put specimen, scientific, downstream-customer, credential, or other sensitive operational details in an external reference or request summary.
 
 ## Invite administrators and members
 
-From Company detail, use **Manage users** or open the **Users** section. Enter the designated CRM Contact’s exact sign-in email after Phaeno review, and assign **Administrator** only when the person must authorize commercial work or manage membership; otherwise assign **Member**. A CRM Contact remains separate from a Portal user and grants no access. Ask the recipient to sign in with the invited email and accept the Portal invitation.
+From Company detail, open **Access & services**, then select **Users**. Enter the designated CRM Contact’s exact sign-in email after Phaeno review, and assign **Administrator** only when the person must authorize commercial work or manage membership; otherwise assign **Member**. A CRM Contact remains separate from a Portal user and grants no access. Ask the recipient to sign in with the invited email and accept the Portal invitation.
 
 Do not create a normal membership directly. Invitation acceptance provides the user-facing consent point and the audit link between invitation, user, and membership.
 
@@ -59,7 +61,7 @@ After conversion, complete the applicable operational setup: analysis availabili
 
 ## Manage service entitlements
 
-Use the organization’s **Services** tab to record dated commercial permission:
+From the Company, open **Access & services**, then select **Services** to record dated commercial permission:
 
 - Customers may receive **PSeq Lab Service**.
 - Partners may receive **PSeq Lab Service** and **PSeq Kit**.
@@ -67,7 +69,9 @@ Use the organization’s **Services** tab to record dated commercial permission:
 
 Set configuration to **Pending**, **Ready**, or **Blocked**. A service is usable only when its entitlement is effective and configuration is Ready. Overlapping periods for the same service are rejected.
 
-A Customer access scope enabled with **Ordering authorized** on already has an open-ended **Ready** PSeq Lab Service entitlement. Review it here before adding another. Turning the access-enable choice off leaves this list unchanged; add a dated entitlement here only after the commercial authorization is approved.
+If a service already has a non-ended entitlement, select **Edit** on that entitlement instead of adding another overlapping period. Preserve the service and existing effective date unless the commercial authorization changed, set the current configuration, attach the eligible approved source request, and save. Editing updates the existing audited record; it does not create a duplicate. Ended historical entitlements remain read-only.
+
+Online access does not imply a product or service entitlement. Add a dated entitlement here only after the corresponding product or service authorization is approved.
 
 When the entitlement implements an approved Portal request, select that request as its source. The selector shows only approved or applied requests for this organization that include the selected service. Leave the source blank only for a documented manual exception; do not attach an onboarding-only request to a service entitlement.
 

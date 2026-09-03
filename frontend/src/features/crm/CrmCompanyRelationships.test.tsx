@@ -5,6 +5,7 @@ import { HandoffDialog } from "./CrmCompanyRelationships";
 
 describe("Company request dialog", () => {
   it("shows only the fields relevant to the selected request category and type", () => {
+    const onSubmit = vi.fn();
     render(
       <HandoffDialog
         open
@@ -17,7 +18,7 @@ describe("Company request dialog", () => {
         pending={false}
         error={null}
         onOpenChange={vi.fn()}
-        onSubmit={vi.fn()}
+        onSubmit={onSubmit}
       />,
     );
 
@@ -28,21 +29,40 @@ describe("Company request dialog", () => {
       screen.getByRole("combobox", { name: "Requested relationship" }),
     ).toBeTruthy();
     expect(
+      screen.queryByLabelText("Requested products and services"),
+    ).toBeNull();
+    expect(screen.queryByLabelText("Opportunity")).toBeNull();
+    expect(screen.queryByLabelText("Internal notes")).toBeNull();
+
+    fireEvent.click(
+      screen.getByRole("button", { name: "Create pending request" }),
+    );
+    expect(onSubmit).toHaveBeenCalledWith(
+      expect.objectContaining({
+        type: "PortalOnboarding",
+        requestedServices: [],
+        summary: "Onboarding request",
+        internalNotes: null,
+      }),
+    );
+
+    const category = screen.getByRole("combobox", {
+      name: "What does this Company need?",
+    });
+
+    fireEvent.change(category, { target: { value: "ProductsAndServices" } });
+    expect(
       screen.getByLabelText("Requested products and services"),
     ).toBeTruthy();
-    expect(screen.queryByLabelText("Opportunity")).toBeNull();
+    expect(screen.queryByRole("combobox", { name: "Request type" })).toBeNull();
 
-    fireEvent.change(screen.getByRole("combobox", { name: "Request category" }), {
-      target: { value: "Work" },
-    });
+    fireEvent.change(category, { target: { value: "Work" } });
     expect(
       (screen.getByRole("combobox", { name: "Request type" }) as HTMLSelectElement).value,
     ).toBe("TrialProject");
     expect(screen.getByLabelText("Opportunity")).toBeTruthy();
 
-    fireEvent.change(screen.getByRole("combobox", { name: "Request category" }), {
-      target: { value: "Relationship" },
-    });
+    fireEvent.change(category, { target: { value: "Relationship" } });
     expect(
       screen.getByRole("combobox", { name: "Requested relationship" }),
     ).toBeTruthy();
@@ -50,10 +70,9 @@ describe("Company request dialog", () => {
       screen.queryByLabelText("Requested products and services"),
     ).toBeNull();
     expect(screen.queryByLabelText("Opportunity")).toBeNull();
+    expect(screen.queryByRole("combobox", { name: "Request type" })).toBeNull();
 
-    fireEvent.change(screen.getByRole("combobox", { name: "Request category" }), {
-      target: { value: "OnlineAccess" },
-    });
+    fireEvent.change(category, { target: { value: "OnlineAccess" } });
     fireEvent.change(screen.getByRole("combobox", { name: "Request type" }), {
       target: { value: "Offboarding" },
     });

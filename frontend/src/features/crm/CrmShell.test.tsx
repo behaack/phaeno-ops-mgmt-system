@@ -51,13 +51,24 @@ describe('CrmShell', () => {
     ).toEqual([
       'HomeAttention, search, and recent commercial activity',
       'CompaniesOrganizations and relationship context',
-      'RequestsCompany requests and approvals',
       'ContactsPeople and Company associations',
       'LeadsQualification and conversion work',
       'OpportunitiesPipelines, stages, and commercial pursuits',
       'TasksOwned follow-up and reminders',
+      'RequestsCompany requests and approvals',
       'ReportsPipeline, conversion, and activity reporting',
       'AdministrationPipelines, views, imports, and data quality',
+    ])
+    expect(
+      within(navigation).getAllByRole('heading').map((heading) =>
+        heading.textContent,
+      ),
+    ).toEqual([
+      'Relationships',
+      'Sales',
+      'Follow-up',
+      'Insights',
+      'Administration',
     ])
 
     fireEvent.click(

@@ -69,6 +69,7 @@ public sealed record UpdateOrganizationServiceEntitlementRequest
     public required DateTime EffectiveFrom { get; init; }
     public DateTime? EffectiveTo { get; init; }
     public required EntitlementConfigurationStatus ConfigurationStatus { get; init; }
+    public required Guid? SourceRequestId { get; init; }
     public string? Notes { get; init; }
     public required long Version { get; init; }
 }
@@ -124,13 +125,13 @@ public sealed record DecidePortalIntegrationRequest
     public required bool Approved { get; init; }
     public required string Reason { get; init; }
     public required long Version { get; init; }
-    public bool OrderingAuthorized { get; init; } = true;
+    public Guid? ExistingOrganizationId { get; init; }
 }
 
 public sealed record CreateAccountFromPortalIntegrationRequest
 {
     public required long Version { get; init; }
-    public bool OrderingAuthorized { get; init; } = true;
+    public Guid? ExistingOrganizationId { get; init; }
 }
 
 public sealed record ApplyPortalIntegrationRequest

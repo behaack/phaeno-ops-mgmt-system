@@ -306,10 +306,12 @@ export function CrmCompaniesPage() {
 }
 
 export function toInput(values: CrmCompanyFormValues): CrmCompanyInput {
+  const explicitDomain = valueOrNull(values.domainName)?.toLowerCase() ?? null;
+
   return {
     name: values.name.trim(),
     websiteUrl: valueOrNull(values.websiteUrl),
-    domainName: valueOrNull(values.domainName)?.toLowerCase() ?? null,
+    domainName: explicitDomain ?? domainFromWebsite(values.websiteUrl),
     phone: valueOrNull(values.phone),
     industry: valueOrNull(values.industry),
     description: valueOrNull(values.description),
@@ -327,6 +329,17 @@ export function toInput(values: CrmCompanyFormValues): CrmCompanyInput {
       .map((value) => value.trim())
       .filter(Boolean),
   };
+}
+
+export function domainFromWebsite(websiteUrl: string) {
+  const value = valueOrNull(websiteUrl);
+  if (!value) return null;
+
+  try {
+    return new URL(value).hostname.toLowerCase().replace(/^www\./, "");
+  } catch {
+    return null;
+  }
 }
 
 function valueOrNull(value: string) {

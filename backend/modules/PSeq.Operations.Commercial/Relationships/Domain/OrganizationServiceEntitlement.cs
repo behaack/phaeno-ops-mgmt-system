@@ -37,14 +37,14 @@ public sealed class OrganizationServiceEntitlement : IAudit, IConcurrency
         OrganizationId = organizationId;
         Service = service;
         ApprovedByUserId = approvedByUserId;
-        SourceRequestId = sourceRequestId;
-        Update(effectiveFrom, effectiveTo, configurationStatus, notes);
+        Update(effectiveFrom, effectiveTo, configurationStatus, sourceRequestId, notes);
     }
 
     public void Update(
         DateTime effectiveFrom,
         DateTime? effectiveTo,
         EntitlementConfigurationStatus configurationStatus,
+        Guid? sourceRequestId,
         string? notes)
     {
         if (effectiveTo.HasValue && effectiveTo.Value <= effectiveFrom)
@@ -55,6 +55,7 @@ public sealed class OrganizationServiceEntitlement : IAudit, IConcurrency
         EffectiveFrom = effectiveFrom;
         EffectiveTo = effectiveTo;
         ConfigurationStatus = configurationStatus;
+        SourceRequestId = sourceRequestId;
         Notes = RelationshipText.Optional(notes, 2000);
         if (!effectiveTo.HasValue)
         {
