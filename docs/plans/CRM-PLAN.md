@@ -93,8 +93,9 @@ deployment, and test execution retain their normal approval boundaries.
 - Customer order pricing is not gated by online-user activation. An active
   Company-owned Customer operational scope with no manual block, a current
   `Ready` PSeq Lab Service entitlement, and the active offering may begin
-  pricing; full readiness and an active Customer administrator remain required
-  before a quote can be issued.
+  pricing; every non-billing readiness item and an active Customer
+  administrator remain required before a quote can be issued. Billing
+  readiness may be completed after acceptance and is required before invoicing.
 - Existing non-ended service entitlements are editable from the Company access
   workspace. Staff can correct dates, configuration, approved source request,
   and notes without creating an overlapping duplicate; the service remains

@@ -198,7 +198,7 @@ export const documentationEntries: readonly DocumentationEntry[] = [
     summary: 'Price a Job from its sample profile, then enter or import, finalize, and ship its sample list.',
     section: 'Laboratory work',
     order: 30,
-    reviewedAt: '2026-08-29',
+    reviewedAt: '2026-09-03',
     Content: CustomerLabServices,
   },
   {
@@ -221,7 +221,7 @@ export const documentationEntries: readonly DocumentationEntry[] = [
     summary: 'Understand governed sample-level result release and POMS invoices, payments, and adjustments.',
     section: 'Laboratory work',
     order: 40,
-    reviewedAt: '2026-08-29',
+    reviewedAt: '2026-09-03',
     Content: CustomerResultsAndBilling,
   },
   {
@@ -404,7 +404,7 @@ export const documentationEntries: readonly DocumentationEntry[] = [
     summary: 'Review online access, product and service, relationship, and work requests without creating a second customer identity.',
     section: 'Customer relationship management',
     order: 21,
-    reviewedAt: '2026-09-02',
+    reviewedAt: '2026-09-03',
     Content: PhaenoCrmPortalHandoffs,
   },
   {
@@ -439,7 +439,7 @@ export const documentationEntries: readonly DocumentationEntry[] = [
     summary: 'Manage Phaeno-owned sources, immutable packages, exact-version grants, and governance events.',
     section: 'Data provisioning',
     order: 30,
-    reviewedAt: '2026-08-29',
+    reviewedAt: '2026-09-03',
     Content: PhaenoDataProvisioningAndAccounts,
   },
   {
@@ -496,10 +496,10 @@ export const documentationEntries: readonly DocumentationEntry[] = [
     slug: 'order-operations',
     overviewTitle: 'Overview and queue triage',
     title: 'Order operations',
-    summary: 'Operate staging, attention, governed PSeq release, native AR, Customer lab, and Partner workflows.',
+    summary: 'Manage commercial intake, pricing, quotes, staging, governed PSeq release, native AR, and Partner workflows.',
     section: 'Order operations',
     order: 40,
-    reviewedAt: '2026-08-29',
+    reviewedAt: '2026-09-03',
     Content: PhaenoOrderOperations,
   },
   {
@@ -511,7 +511,7 @@ export const documentationEntries: readonly DocumentationEntry[] = [
     summary: 'Review Job pricing profiles, issue POMS quotes, and authorize Lab work after roster finalization.',
     section: 'Order operations',
     order: 41,
-    reviewedAt: '2026-09-01',
+    reviewedAt: '2026-09-03',
     Content: PhaenoOrderCustomerLabAuthorization,
   },
   {
@@ -559,7 +559,7 @@ export const documentationEntries: readonly DocumentationEntry[] = [
     summary: 'Operate POMS invoices, receipts, allocation, reconciliation, and scientifically governed PSeq release.',
     section: 'Order operations',
     order: 45,
-    reviewedAt: '2026-08-29',
+    reviewedAt: '2026-09-03',
     Content: PhaenoOrderBillingPaymentRelease,
   },
   {
@@ -603,11 +603,11 @@ export const documentationEntries: readonly DocumentationEntry[] = [
     locale: null,
     slug: 'lab-protocol-execution',
     parentSlug: 'lab-operations',
-    title: 'Protocol control and execution',
-    summary: 'Approve versioned protocols, pin assignments, capture controlled execution, and recover safely.',
+    title: 'Service workflows, protocol control, and execution',
+    summary: 'Stitch protocols into a production service workflow, pin jobs and stages, and preserve controlled history.',
     section: 'Laboratory operations',
     order: 54,
-    reviewedAt: '2026-07-18',
+    reviewedAt: '2026-09-03',
     Content: PhaenoLabProtocolExecution,
   },
   {

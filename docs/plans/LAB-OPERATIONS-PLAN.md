@@ -11,13 +11,14 @@ clean package, pins its package identifier/version, and projects that identity
 with `LabWorkReadyForRelease`. Corrections create a new package/approval/release
 version; withdrawal and delivery/retention evidence remain historical.
 
-Protocol authors cannot approve or activate their own version. A scientific
+Protocol authors cannot approve their own version. This separation is always
+enforced at the formal protocol-approval boundary. A scientific
 reviewer cannot approve work to which that actor contributed through receipt,
 accessioning, execution, QC, library, batch, or sendout events. Lab Operations
 Administrator is an access/resource role; bench, supervisory, protocol, and
 scientific work require their explicit additive roles after enforcement.
-These checks launch in audit-only mode and become blocking only after staffing
-and staging acceptance.
+Other dual-control checks launch in audit-only mode and become blocking only
+after staffing and staging acceptance.
 
 Keep this file updated as Phaeno's internal laboratory workflows are designed
 and implemented.
@@ -434,12 +435,13 @@ The UI and operating procedures must minimize scanning and data-entry burden.
 Batch actions and inherited values should be preferred whenever they preserve
 unambiguous identity and scientific validity.
 
-## Versioned Protocol Builder
+## Versioned Protocol and Service Workflow Builders
 
-Workflow flexibility belongs primarily inside controlled laboratory protocols,
-not in arbitrary changes to the high-level commercial lifecycle.
+Workflow flexibility belongs inside controlled laboratory protocols and their
+service-level composition, not in arbitrary changes to the commercial
+lifecycle.
 
-The initial Lab Operations scope includes a bounded protocol builder supporting:
+The bounded protocol builder supports:
 
 - ordered and repeatable steps
 - approved optional and conditional steps
@@ -451,40 +453,77 @@ The initial Lab Operations scope includes a bounded protocol builder supporting:
 - equipment type requirements and actual equipment used
 - QC gates with pass, fail, and hold outcomes
 - role-based execution and approval
-- draft, approved, active, retired, and discarded protocol versions
+- Draft, Approved, Superseded, and Discarded user-facing protocol versions;
+  the internal Active status remains an implementation detail for exact
+  service-workflow pinning and is presented as Approved
 - a POMS-generated immutable protocol key derived from the entered protocol
   name, with a stable suffix when the readable key is already in use
 
-Each execution is pinned to the approved protocol version under which it began.
-A procedure change creates a new version and does not rewrite active or
-historical work. A deviation is recorded against an execution; it does not
-mutate the protocol definition.
+Each marketed laboratory service has one canonical controlled service workflow.
+That stable workflow identity has ordered versions made from exact approved
+protocol versions. Each workflow stage has a name, sequence, Required,
+Optional, or Conditional requirement, a plain-language condition when
+conditional, and optional handoff criteria. This stitches reusable protocols
+into a complete service process without merging them into one unmaintainable
+protocol.
 
-Each protocol may have only one open candidate version: Draft or Approved. A
-Draft remains resumable and editable until approval, or it may be discarded
-while remaining visible in version history. Approval locks the definition.
-Withdrawing approval clears the recorded approval and returns the same reserved
-version number to Draft for correction and reapproval. An Approved candidate
-must be activated or returned to Draft, and a Draft must be approved or
-discarded, before POMS permits another version. Creating a later version starts
-from the active definition, or the most recent retired definition when no
-version is active. Activation retires the previously active version for new
-assignments.
+Service workflow versions follow Draft, Approved, Production, Retired, and
+Discarded states. Promoting an Approved workflow to Production pins its exact
+Approved protocol versions, retires the previous Production workflow for that
+service, and preserves every historical version. There is only one Production
+workflow version for a marketed service at a time.
 
-The initial product will use a structured step editor rather than a generic
-drag-and-drop workflow programming environment. Arbitrary graphs, parallel
-branches, unrestricted formulas, general API calls, nested workflows, and
-other programming-language capabilities are out of scope. The underlying
-model may gain additional controlled step types when proven laboratory needs
+A Lab work order pins the Production service workflow version when Commercial
+authorizes it. Work created before workflow control was introduced pins the
+current Production workflow when its first protocol execution is assigned.
+Each execution then pins both a workflow stage and that stage's exact protocol
+version. Required prior stages must be completed in the same specimen or
+work-order scope before a later stage can be assigned. A procedure or workflow
+change does not rewrite active or historical work. A deviation is recorded
+against an execution; it does not mutate either controlled definition.
+
+Each protocol may have only one Draft. A Draft remains resumable and editable
+until approval, or it may be discarded while remaining in history. Protocol
+approval is an irreversible controlled release: an independent Protocol
+Administrator reviews the exact ordered definition, explicitly attests that it
+is ready, and POMS records the approver and timestamp. Approval locks the
+version, makes it the current Approved version for future use, and marks the
+previous Approved version Superseded. A later version starts from the current
+Approved definition and is not in effect until it completes approval. Existing
+work and service workflows remain pinned to their exact historical versions.
+
+The product uses structured ordered editors rather than a generic drag-and-drop
+workflow programming environment. Arbitrary graphs, parallel branches,
+unrestricted formulas, general API calls, nested workflows, and other
+programming-language capabilities are out of scope. The underlying model may
+gain additional controlled step or stage types when proven laboratory needs
 justify them.
 
-Protocol identity remains a bounded modal create action. Authoring a protocol
-version is a documented exception to the default modal-edit pattern and uses a
-dedicated page because it contains ordered child steps, typed captures,
-resource requirements, QC gates, validation, review, and unsaved-work
-protection. The editor generates the existing portable JSON definition and
-keeps raw JSON as a collapsed read-only preview rather than an authoring
-control.
+Protocol and service-workflow identities remain bounded modal create actions.
+Authoring either kind of version is a documented exception to the default
+modal-edit pattern and uses a dedicated page because each contains ordered
+children, validation, review, and unsaved-work protection. The protocol editor
+also manages typed captures, resource requirements, and QC gates and keeps raw
+JSON as a collapsed read-only preview rather than an authoring control.
+
+The Protocols workspace presents a newly created protocol identity as **Setup
+incomplete**, hides its system key from the working card, and uses **Edit
+protocol** for the initial controlled definition.
+Creating an identity continues directly to that structured builder. Version
+language begins only after the initial definition exists; later controlled
+changes use **Create new version**. The bounded name/description action is
+explicitly labeled **Edit name and description** so it is not mistaken for the
+procedure editor. These commands, **Review and approve**, Draft discard, and
+eligible deletion are grouped in a labeled **Actions** menu to keep the list
+compact.
+
+Protocol Administrators may edit the protocol name and optional description in
+a bounded modal only until its first approval. The POMS-generated protocol key
+and every Approved or Superseded identity and version remain immutable. A
+protocol that has never been approved may be deleted with destructive
+confirmation after POMS verifies that no laboratory or workflow record
+references it. Once any version has been approved, the protocol and its full
+history are permanent controlled records.
 
 ## Controlled Operational Flexibility
 
@@ -798,8 +837,13 @@ remove competing internal write paths. The durable strategy is recorded in
 - Complete: structured protocol authoring with ordered steps, typed captures,
   resource requirements, QC gates, JSON preview, cloned version creation,
   resumable draft editing and discard history, approval withdrawal,
-  one-open-candidate enforcement, approval, activation/retirement, pinned
+  one-open-candidate enforcement, approval, Production/Retired control, pinned
   versioning, execution, and system-owned readable protocol-key allocation.
+- Complete: one canonical controlled workflow per marketed laboratory service,
+  ordered Required, Optional, and Conditional protocol stages, workflow
+  Draft/Approved/Production/Retired/Discarded lifecycle, atomic protocol
+  promotion, exact work-order and execution pinning, and prior-required-stage
+  gating through `AddControlledLabServiceWorkflows`.
 - Complete: controlled material definitions with POMS-assigned keys,
   supplier/storage references, supplier and prepared-reagent lots, structured
   component lineage, date-only expiration/retest, consumption, equipment,

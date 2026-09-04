@@ -66,6 +66,12 @@ const jobDetailsSchema = z
         }),
       )
       .min(1, "Add at least one biological source."),
+    proposePrice: z.boolean(),
+    proposedUnitPrice: z.string().trim().max(30),
+    priceProposalNote: z
+      .string()
+      .trim()
+      .max(1000, "Pricing note must be 1,000 characters or fewer."),
     storageRequirements: z
       .string()
       .trim()
@@ -99,6 +105,21 @@ const jobDetailsSchema = z
         path: ["sourceGroups"],
         message: duplicateBiologicalSourcesMessage,
       });
+    if (values.proposePrice) {
+      if (!/^\d+(?:\.\d{1,2})?$/.test(values.proposedUnitPrice)) {
+        context.addIssue({
+          code: "custom",
+          path: ["proposedUnitPrice"],
+          message: "Enter a proposed price with no more than two decimal places.",
+        });
+      } else if (Number(values.proposedUnitPrice) <= 0) {
+        context.addIssue({
+          code: "custom",
+          path: ["proposedUnitPrice"],
+          message: "Proposed price must be greater than zero.",
+        });
+      }
+    }
   });
 
 type JobDetailsFormInput = z.input<typeof jobDetailsSchema>;
@@ -146,6 +167,9 @@ export function LabJobDetailsDialog({
     defaultValues: {
       customerReference: "",
       sourceGroups: [{ biologicalSource: "", specimenCount: 1 }],
+      proposePrice: false,
+      proposedUnitPrice: "",
+      priceProposalNote: "",
       storageRequirements: "",
       safetyDeclaration: "",
       jobNotes: "",
@@ -173,6 +197,12 @@ export function LabJobDetailsDialog({
         : values.sourceGroups[0].biologicalSource;
       const storageRequirements = values.storageRequirements;
       const safetyDeclaration = values.safetyDeclaration;
+      const proposedUnitPrice = values.proposePrice
+        ? Number(values.proposedUnitPrice)
+        : undefined;
+      const priceProposalNote = values.proposePrice
+        ? values.priceProposalNote || undefined
+        : undefined;
       if (!order) {
         if (platformMode) {
           if (!organizationId)
@@ -187,6 +217,8 @@ export function LabJobDetailsDialog({
             requestedSpecimenCount,
             sourceGroups: values.sourceGroups,
             sourceRequestId: sourceHandoff?.requestId,
+            proposedUnitPrice,
+            priceProposalNote,
           });
         }
         return createLabOrder({
@@ -199,6 +231,8 @@ export function LabJobDetailsDialog({
           samples: [],
           requestedSpecimenCount,
           sourceGroups: values.sourceGroups,
+          proposedUnitPrice,
+          priceProposalNote,
         });
       }
 
@@ -216,6 +250,8 @@ export function LabJobDetailsDialog({
           version,
           requestedSpecimenCount,
           sourceGroups: values.sourceGroups,
+          proposedUnitPrice,
+          priceProposalNote,
         });
 
       try {
@@ -287,10 +323,16 @@ export function LabJobDetailsDialog({
     (!platformMode || Boolean(organizationId)) &&
     (!platformMode || prohibitedDataConfirmed);
   const watchedSourceGroups = form.watch("sourceGroups");
+  const proposesPrice = form.watch("proposePrice");
+  const proposedUnitPriceValue = Number(form.watch("proposedUnitPrice"));
   const sourceTotal = watchedSourceGroups.reduce(
     (sum, group) => sum + (Number(group.specimenCount) || 0),
     0,
   );
+  const proposedSubtotal =
+    proposesPrice && Number.isFinite(proposedUnitPriceValue)
+      ? sourceTotal * proposedUnitPriceValue
+      : null;
   const normalizedSources = normalizedBiologicalSources(watchedSourceGroups);
   const hasDuplicateSources =
     new Set(normalizedSources).size !== normalizedSources.length;
@@ -323,8 +365,8 @@ export function LabJobDetailsDialog({
           </DialogTitle>
           <DialogDescription>
             {platformMode
-              ? "Select the Customer and enter the price-bearing Job scope. The new order opens in quote preparation; the Customer approves the synchronized quote before adding samples."
-              : "Enter each biological source and its sample count for pricing. Individual sample IDs and tube barcodes are added only after you accept the price."}
+              ? "Select the Customer, enter the price-bearing Job scope, and optionally record the price discussed by Sales. Phaeno reviews that proposal before issuing the Customer quote."
+              : "Enter each biological source and its sample count. You may propose a price for Phaeno to approve or amend before issuing the quote."}
           </DialogDescription>
         </DialogHeader>
 
@@ -567,6 +609,92 @@ export function LabJobDetailsDialog({
               </div>
             </fieldset>
 
+            <section className="mt-4 rounded-lg border p-4">
+              <label
+                htmlFor={`${formId}-propose-price`}
+                className="flex cursor-pointer items-start gap-3"
+              >
+                <Checkbox
+                  id={`${formId}-propose-price`}
+                  checked={proposesPrice}
+                  onCheckedChange={(checked) =>
+                    form.setValue("proposePrice", checked === true, {
+                      shouldDirty: true,
+                      shouldValidate: true,
+                    })
+                  }
+                />
+                <span>
+                  <span className="block text-sm font-medium">
+                    Propose a price
+                  </span>
+                  <span className="mt-1 block text-xs leading-5 text-muted-foreground">
+                    Record a Sales-discussed or requested price. This proposal is
+                    not a quote and does not authorize work.
+                  </span>
+                </span>
+              </label>
+              {proposesPrice ? (
+                <div className="mt-4 grid gap-4 sm:grid-cols-2">
+                  <div>
+                    <Label htmlFor={`${formId}-proposed-unit-price`}>
+                      <RequiredFieldName>Proposed price per specimen</RequiredFieldName>
+                    </Label>
+                    <FieldDescription id={`${formId}-proposed-unit-price-help`}>
+                      USD per specimen. Phaeno may approve or amend this amount.
+                    </FieldDescription>
+                    <div className="relative mt-2">
+                      <span className="pointer-events-none absolute top-1/2 left-3 -translate-y-1/2 text-sm text-muted-foreground">$</span>
+                      <Input
+                        id={`${formId}-proposed-unit-price`}
+                        type="number"
+                        min="0.01"
+                        step="0.01"
+                        inputMode="decimal"
+                        className="pl-7"
+                        required
+                        aria-invalid={Boolean(form.formState.errors.proposedUnitPrice)}
+                        aria-describedby={`${formId}-proposed-unit-price-help${form.formState.errors.proposedUnitPrice ? ` ${formId}-proposed-unit-price-error` : ""}`}
+                        {...form.register("proposedUnitPrice")}
+                      />
+                    </div>
+                    <FieldError id={`${formId}-proposed-unit-price-error`}>
+                      {form.formState.errors.proposedUnitPrice?.message}
+                    </FieldError>
+                  </div>
+                  <div className="rounded-lg bg-muted/40 p-3">
+                    <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">Proposed subtotal</p>
+                    <p className="mt-1 text-xl font-semibold">
+                      {proposedSubtotal === null
+                        ? "—"
+                        : formatUsd(proposedSubtotal)}
+                    </p>
+                    <p className="mt-1 text-xs text-muted-foreground">
+                      {sourceTotal} specimen{sourceTotal === 1 ? "" : "s"}
+                    </p>
+                  </div>
+                  <div className="sm:col-span-2">
+                    <Label htmlFor={`${formId}-price-proposal-note`}>
+                      Pricing note <span className="font-normal text-muted-foreground">(optional)</span>
+                    </Label>
+                    <FieldDescription id={`${formId}-price-proposal-note-help`}>
+                      Add Customer-safe context from the pricing conversation. Do not include PHI.
+                    </FieldDescription>
+                    <Textarea
+                      id={`${formId}-price-proposal-note`}
+                      className="mt-2 min-h-20"
+                      aria-invalid={Boolean(form.formState.errors.priceProposalNote)}
+                      aria-describedby={`${formId}-price-proposal-note-help${form.formState.errors.priceProposalNote ? ` ${formId}-price-proposal-note-error` : ""}`}
+                      {...form.register("priceProposalNote")}
+                    />
+                    <FieldError id={`${formId}-price-proposal-note-error`}>
+                      {form.formState.errors.priceProposalNote?.message}
+                    </FieldError>
+                  </div>
+                </div>
+              ) : null}
+            </section>
+
             <Label htmlFor={`${formId}-storage`} className="mt-4">
               <RequiredFieldName>Storage requirements</RequiredFieldName>
             </Label>
@@ -722,6 +850,9 @@ function jobDetailsFormValues(
             specimenCount: order?.requestedSpecimenCount || 1,
           },
         ],
+    proposePrice: order?.proposedUnitPrice != null,
+    proposedUnitPrice: order?.proposedUnitPrice?.toFixed(2) ?? "",
+    priceProposalNote: order?.priceProposalNote ?? "",
     storageRequirements: order?.storageRequirements ?? "",
     safetyDeclaration: order?.safetyDeclaration ?? "",
     jobNotes: order?.description ?? "",
@@ -751,6 +882,8 @@ function editableJobDetails(order: LabServiceOrder) {
       ),
     storageRequirements: order.storageRequirements,
     safetyDeclaration: order.safetyDeclaration,
+    proposedUnitPrice: order.proposedUnitPrice ?? null,
+    priceProposalNote: order.priceProposalNote ?? "",
   };
 }
 
@@ -760,4 +893,11 @@ function normalizedBiologicalSources(
   return groups
     .map((group) => group.biologicalSource?.trim().toLocaleLowerCase() ?? "")
     .filter(Boolean);
+}
+
+function formatUsd(value: number) {
+  return new Intl.NumberFormat("en-US", {
+    style: "currency",
+    currency: "USD",
+  }).format(value);
 }

@@ -113,8 +113,12 @@ and rollback-isolated PostgreSQL coverage.
   handling, material-lot quantity and structured-component invariants, and
   date-stamped scanner-safe batch-number generation and captured batch lifecycle
   timestamps; plus draft definition
-  updates, approval withdrawal, discarded-version history, and illegal
-  post-discard transitions.
+  updates, protocol name/description edits that preserve the immutable key,
+  irreversible independent approval, replacement of the prior Approved
+  version, discarded-version history, and illegal post-discard
+  transitions; plus service-workflow service-key normalization,
+  Draft-to-Production lifecycle and immutability, conditional-stage validation,
+  and exact work-order workflow-version pinning.
 - [x] `backend/test/LabOperationsAuthorizationTests.cs` - exact additive
   Operator, Supervisor, Protocol Administrator, Scientific Reviewer, and Lab
   Operations Administrator capabilities; platform-administrator bootstrap;
@@ -172,18 +176,37 @@ and rollback-isolated PostgreSQL coverage.
   shared-versus-mixed biological-source validation and normalization, trimmed
   optional Job notes, eight-character mixed Job numbers with ambiguous-
   character and offensive-fragment rejection, laboratory request/quote
-  transitions, immutable request revisions, sample stages, and quote expiry.
+  transitions, immutable request revisions, sample stages, quote expiry,
+  price-proposal validation, frozen proposal metadata, approval-as-proposed,
+  and reason-required price amendment.
 - [ ] Laboratory pricing-profile controller coverage - prove an authorized
   Customer administrator may create a draft with no sample records, receives a
   unique generated Job number, must supply a case-insensitively unique Job name
   plus a complete source-count composition, storage, and safety profile, and
-  may save optional Job notes. Prove submission requires zero sample records,
+  may save optional Job notes and an optional positive two-decimal USD unit-
+  price proposal with Customer-safe context. Prove submission requires zero sample records,
   inserts the first immutable request revision rather than treating it as a
   stale update, and retains tenant, role, duplicate-name, limit, idempotency,
   and genuine stale-version enforcement. After quote acceptance, prove manual
   and CSV sample entry use the server-owned `extracted_rna` material type and
   `tube` quantity unit and cannot be finalized until identifiers and source
   counts exactly comply with the accepted Job profile.
+- [ ] Laboratory proposal-review controller coverage - prove quote issuance
+  binds the designated `pseq-lab-service` line to the requested specimen count,
+  records the source request revision, proposed-price snapshot, reviewer,
+  decision type and time, requires an internal reason for an amended proposal,
+  blocks proposer self-review when dual control is enabled, and leaves Jobs
+  without proposals backward compatible. Prove incomplete billing does not
+  block quote issuance or acceptance; a complete Finance-approved profile
+  calculates and freezes quote tax (including a valid zero-tax decision), while
+  an incomplete profile produces a pre-tax quote and defers the system tax
+  calculation and billing snapshot until invoice issuance. Invoice issuance
+  remains blocked until the current billing and tax profile is complete and
+  Finance-approved.
+- [ ] Unified Commercial intake query - prove `activeIntake` returns only
+  pre-acceptance Customer laboratory, Partner kit-review, and Data Assembly
+  pricing states and excludes held, accepted, or executing work. Held work
+  remains governed by the separate Attention queue.
 - [ ] Order-entitlement and Phaeno-recipient controller coverage - prove an
   effective, `Ready` PSeq Lab Service entitlement and active offering are
   required for Customer Job creation/submission/acceptance and Phaeno Job
@@ -237,7 +260,9 @@ and rollback-isolated PostgreSQL coverage.
   `QuoteInPreparation`, the exact same initiation key/request replays one Job
   and one idempotency record, missing no-PHI attestation is rejected without
   creating a Job, an unrelated specimen-priced catalog item cannot satisfy the
-  designated laboratory-service quote line, the shared idempotency boundary
+  designated laboratory-service quote line, quote issuance requires neither a
+  QuickBooks Customer link nor a completed billing profile and creates no
+  QuickBooks estimate/outbox work, the shared idempotency boundary
   preserves replay status, rejects payload mismatch, and rolls back an
   intermediate business save, quote acceptance opens sample-roster preparation
   without creating Lab work, and roster finalization atomically creates and
@@ -247,7 +272,8 @@ and rollback-isolated PostgreSQL coverage.
   accepted cancellation updates Commercial and Lab together, and started Lab
   work vetoes the decision without partially approving it. The rollback-
   isolated operator journey assigns additive Lab roles
-  and exercises one-open-candidate protocol enforcement, active protocols,
+  and exercises immutable-key protocol metadata editing,
+  one-Draft protocol enforcement, Approved protocol replacement,
   receipt/accession and barcode-print history,
   including automatic submitted/derived barcode allocation, readable protocol
   keys, library keys derived from their container barcodes, scanner-safe batch
@@ -355,7 +381,11 @@ and rollback-isolated PostgreSQL coverage.
   lineage rejection, stale-version conflict, parallel protocol-candidate
   rejection, invalid draft/approval transitions, expired material, overdue
   calibration, wrong-work-order batch/custody, unresolved blocking exception,
-  and cross-tenant HTTP/authentication scenarios.
+  and cross-tenant HTTP/authentication scenarios. Also cover canonical
+  marketed-service workflow uniqueness, ordered Required/Optional/Conditional
+  stage persistence, workflow promotion with exact Approved protocol versions,
+  historical protocol pinning, and rejection of a protocol
+  or later stage outside the pinned workflow.
 - [x] Completion-aware released-download foundation - create domain coverage for
   immutable `Started` to terminal transitions, successful retention counting,
   rejection of non-success counting, partial range success remaining
@@ -734,3 +764,9 @@ and rollback-isolated PostgreSQL coverage.
   development database. The Release backend suite passed 234 tests with no
   failures; 27 opt-in database tests remained skipped under the default test
   configuration.
+- 2026-09-03: controlled service-workflow implementation verification compiled
+  the Release API and test project through isolated output directories without
+  warnings or errors. EF reported no model changes after migration
+  `20260903160117_AddControlledLabServiceWorkflows`; that migration was backed
+  up and applied to the local `phaeno_ops` database, and its three workflow
+  tables were verified. Automated tests were not requested and were not run.

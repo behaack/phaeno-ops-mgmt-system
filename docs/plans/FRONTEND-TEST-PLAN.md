@@ -115,7 +115,19 @@ remain incomplete production-activation gates.
 - [x] `frontend/src/features/orders/operations/PlatformQuoteDialog.test.tsx` -
   the canonical PSeq Lab Service item is preselected and bound to the committed
   specimen count, a mismatched quantity is blocked, and missing canonical
-  configuration pauses issuance.
+  configuration pauses issuance. Proposal coverage starts the reviewer at the
+  proposed unit price, approves it unchanged, and requires an internal reason
+  before an amended price can be issued. PSeq tax is presented as
+  system-calculated, the request cannot submit a staff-entered tax amount, and
+  the live pre-tax total follows line quantity and price changes. Required and
+  optional quote lines use user-facing pricing guidance without exposing
+  internal catalog codes.
+- [x] `frontend/src/features/orders/LabJobDetailsDialog.test.tsx` - an optional
+  USD price per specimen and Customer-safe pricing note are submitted with the
+  Job pricing profile.
+- [x] `frontend/src/features/orders/CommercialOrderIntakePanel.test.tsx` - CRM
+  handoffs and active pricing work share one intake queue, and a failed request
+  is not simultaneously presented as an empty queue.
 - [x] `frontend/src/features/orders/operations/customer-organization-state.test.ts`
   - mock, loading, failure, genuine-empty, and ready Customer-list states remain
   distinct so a failed or pending query is not presented as an empty result.
@@ -147,8 +159,19 @@ remain incomplete production-activation gates.
   explicit dismissal control; shared modal structure keeps direct and form-
   wrapped headers and footers outside the scrolling body; shared headers and
   footers inherit theme-safe muted surfaces and dividers; general feedback and
-  direct destructive alerts render inside the fixed header; all app dialogs
-  inherit these behaviors.
+  direct destructive alerts render inside the fixed header; header-and-footer
+  confirmations omit an empty scrolling-body band; all app dialogs inherit
+  these behaviors.
+- [x] `frontend/src/features/lab-operations/ProtocolIdentityDialog.test.tsx` -
+  protocol identity editing prefills the current values, keeps the generated
+  key read-only, and submits changed name/description values.
+- [x] `frontend/src/features/lab-operations/ProtocolList.test.tsx` - an identity
+  without a definition is labeled Setup incomplete without repeating its
+  generated key; Draft and Approved state labels avoid internal Production
+  terminology; lifecycle commands are grouped under the labeled Actions menu.
+- [x] `frontend/src/features/lab-operations/protocol-list.test.ts` - protocol
+  records remain visible until explicitly deleted, including never-approved
+  records whose only draft was discarded.
 - [x] `frontend/src/components/ui/searchable-select.test.tsx` - the shared
   searchable selector incrementally filters visible options and returns the
   selected record's stable identifier.
@@ -165,7 +188,8 @@ remain incomplete production-activation gates.
 - [ ] Customer laboratory draft workspace - cover Job pricing-details
   create/edit modal required name, biological-source composition,
   storage/safety, derived sample total, duplicate nonblank source validation,
-  and optional Job-notes validation; duplicate-name feedback and
+  optional positive two-decimal USD unit-price proposal, calculated subtotal,
+  Customer-safe pricing note, and optional Job-notes validation; duplicate-name feedback and
   dirty-dismissal; redirect after empty-draft creation; Job name,
   notes-before-updated header order, single breadcrumb Job number, and shared
   sample-profile display with one shared source or `Varies by sample`; the zero-sample detail empty
@@ -399,8 +423,10 @@ remain incomplete production-activation gates.
   the eight-section operational sidebar with access administration omitted,
   list/detail loading, return-kit and shipment lookup, receipt/accession,
   PSeq kit fulfillment, Data Assembly, protocol lifecycle,
-  the Phaeno Order Operations Commercial intake and unified Orders list plus
-  the linked Lab **Receipt & accession** handoff for placed lab orders,
+  the Phaeno Order Operations single active intake queue combining CRM
+  handoffs, commercial review, pricing, and quotes without a product-named
+  `Lab` section, plus the linked Lab **Receipt & accession** handoff for placed
+  lab orders,
   including blocked pre-placement states and navigation to the existing work
   order,
   system-assigned protocol/library/batch identifiers, required batch names, and
@@ -415,9 +441,15 @@ remain incomplete production-activation gates.
   batch status filtering, transition timestamp modal capture, and display of
   captured start/completion times,
   generated JSON preview, clone-from-controlled
-  initialization, draft resume/save/discard, approval withdrawal,
-  one-open-candidate action gating, unsaved-change warning, concurrency
+  initialization, protocol name/description editing with an immutable key,
+  discarded-only protocol deletion, draft resume/save/discard, formal
+  independent approval with exact-definition review and attestation,
+  never-approved protocol deletion, one-Draft action gating, unsaved-change warning, concurrency
   recovery, and return to the Protocols section,
+  the canonical marketed-service workflow create flow, ordered workflow-stage
+  builder, Required/Optional/Conditional validation, Production promotion,
+  immutable Production terminology, job workflow pin display, and stage-only
+  protocol assignment with earlier Required-stage gating,
   execution/material/equipment capture, library and batch actions, sendout and
   custody states, internal versus customer-action exceptions, scientific
   approval, ready-for-release messaging, concurrency recovery, and mock-mode
@@ -601,3 +633,8 @@ remain incomplete production-activation gates.
   `pnpm run build`; all 120 tests in 50 files passed and both the client and SSR
   production builds completed. The existing advisory client-chunk and
   `AcceptInvitePage` route-export warnings remain unchanged.
+- 2026-09-03: the controlled service-workflow UI passed `pnpm run lint`,
+  `pnpm run typecheck`, and the client and SSR production build. The existing
+  advisory client-chunk and `AcceptInvitePage` route-export warnings remain.
+  Frontend tests were updated but were not run because test execution was not
+  requested.

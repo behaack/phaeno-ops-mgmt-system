@@ -71,6 +71,53 @@ public class OrderManagementDomainTests
     }
 
     [Fact]
+    public void LabPriceProposalIsEditableBeforeSubmissionAndQuotePreservesTheDecision()
+    {
+        var proposer = Guid.NewGuid();
+        var reviewer = Guid.NewGuid();
+        var order = new LabServiceOrder(
+            Guid.NewGuid(), OrderNumberGenerator.Lab(), "Study pricing", null,
+            2, false, "Human PBMCs", "Keep frozen.", "No known hazards.", "Ship cold");
+        order.SourceGroups.Add(new LabServiceSourceGroup(order.Id, "Human PBMCs", 2));
+
+        order.UpdatePriceProposal(125.50m, "Price discussed with Customer.", proposer, Now);
+
+        Assert.Equal(125.50m, order.ProposedUnitPrice);
+        Assert.Equal("Price discussed with Customer.", order.PriceProposalNote);
+        Assert.Equal(proposer, order.PriceProposedByUserId);
+        Assert.Equal(Now, order.PriceProposedAt);
+        Assert.Throws<ArgumentOutOfRangeException>(() =>
+            order.UpdatePriceProposal(125.555m, null, proposer, Now));
+
+        order.Submit(proposer, Now.AddMinutes(1));
+        Assert.Throws<InvalidOperationException>(() =>
+            order.UpdatePriceProposal(120m, null, proposer, Now.AddMinutes(2)));
+
+        var approvedQuote = new LabServiceQuote(
+            order.Id, 1, QuotePurpose.Initial, "[]", 251, 0, "USD", Now, Now.AddDays(30));
+        approvedQuote.RecordPricingDecision(
+            order.RequestRevision, order.ProposedUnitPrice, 125.50m, null, reviewer, Now.AddMinutes(2));
+
+        Assert.Equal(order.RequestRevision, approvedQuote.SourceRequestRevision);
+        Assert.Equal(125.50m, approvedQuote.ProposedUnitPriceSnapshot);
+        Assert.Equal(QuotePricingDecision.ApprovedAsProposed, approvedQuote.PricingDecision);
+        Assert.Null(approvedQuote.PricingDecisionReason);
+        Assert.Equal(reviewer, approvedQuote.PricingDecidedByUserId);
+
+        var amendedQuote = new LabServiceQuote(
+            order.Id, 2, QuotePurpose.Change, "[]", 240, 0, "USD", Now, Now.AddDays(30));
+        Assert.Throws<ArgumentException>(() => amendedQuote.RecordPricingDecision(
+            order.RequestRevision, order.ProposedUnitPrice, 120m, null, reviewer, Now.AddMinutes(3)));
+
+        amendedQuote.RecordPricingDecision(
+            order.RequestRevision, order.ProposedUnitPrice, 120m,
+            "Approved scope supports the standard price only.", reviewer, Now.AddMinutes(3));
+
+        Assert.Equal(QuotePricingDecision.AmendedProposal, amendedQuote.PricingDecision);
+        Assert.Equal("Approved scope supports the standard price only.", amendedQuote.PricingDecisionReason);
+    }
+
+    [Fact]
     public void LabJobNumbersAreEightUnambiguousMixedCharactersWithoutBlockedTerms()
     {
         const string allowed = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";

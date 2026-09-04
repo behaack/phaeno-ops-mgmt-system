@@ -32,6 +32,8 @@ export type OrderListItem = {
 
 export type CommercialOrderListItem = OrderListItem & {
   orderType: "PSeqLabService" | "PSeqKit" | "DataAssembly";
+  proposedUnitPrice?: number | null;
+  proposedCurrency?: string | null;
 };
 
 export type TimelineItem = {
@@ -92,6 +94,16 @@ export type Quote = {
   expiresAt: string;
   acceptedAt: string | null;
   version: number;
+  billingContactSnapshotJson?: string | null;
+  billingAddressSnapshotJson?: string | null;
+  paymentTermsDaysSnapshot?: number | null;
+  taxDecisionSnapshotJson?: string | null;
+  commercialConfigurationVersion?: number | null;
+  sourceRequestRevision?: number | null;
+  proposedUnitPriceSnapshot?: number | null;
+  pricingDecision?: "PricedWithoutProposal" | "ApprovedAsProposed" | "AmendedProposal" | null;
+  pricingDecidedByUserId?: string | null;
+  pricingDecidedAt?: string | null;
 };
 
 export type CancellationRequest = {
@@ -257,6 +269,11 @@ export type LabServiceOrder = {
     opportunityId: string | null;
     opportunityName: string | null;
   } | null;
+  proposedUnitPrice?: number | null;
+  proposedCurrency?: string | null;
+  priceProposalNote?: string | null;
+  priceProposedByUserId?: string | null;
+  priceProposedAt?: string | null;
 };
 
 export type ReagentOrderLine = {
@@ -577,6 +594,8 @@ export async function listAnalysisDefinitions() {
 export type LabPricingProfileWrite = {
   requestedSpecimenCount: number;
   sourceGroups: Array<{ biologicalSource: string; specimenCount: number }>;
+  proposedUnitPrice?: number;
+  priceProposalNote?: string;
 };
 export type InitiateCustomerLabOrderInput = {
   organizationId: string;
@@ -1096,6 +1115,7 @@ export async function issuePlatformQuote(
     currency: string;
     expiresAt?: string | null;
     purpose: "Initial" | "Change";
+    pricingDecisionReason?: string | null;
   },
 ) {
   const path =

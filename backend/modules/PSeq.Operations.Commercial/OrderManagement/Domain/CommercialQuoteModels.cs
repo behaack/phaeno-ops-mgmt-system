@@ -51,6 +51,12 @@ public sealed class LabServiceQuote : IAudit, IConcurrency
     public int? PaymentTermsDaysSnapshot { get; private set; }
     public string? TaxDecisionSnapshotJson { get; private set; }
     public int? CommercialConfigurationVersion { get; private set; }
+    public int? SourceRequestRevision { get; private set; }
+    public decimal? ProposedUnitPriceSnapshot { get; private set; }
+    public QuotePricingDecision? PricingDecision { get; private set; }
+    public string? PricingDecisionReason { get; private set; }
+    public Guid? PricingDecidedByUserId { get; private set; }
+    public DateTime? PricingDecidedAt { get; private set; }
     public DateTime CreatedAt { get; private set; } = DateTime.UtcNow;
     public Guid? CreatedByUserId { get; private set; }
     public DateTime UpdatedAt { get; private set; } = DateTime.UtcNow;
@@ -103,6 +109,35 @@ public sealed class LabServiceQuote : IAudit, IConcurrency
         PaymentTermsDaysSnapshot = paymentTermsDays;
         TaxDecisionSnapshotJson = OrderText.Json(taxDecisionSnapshotJson);
         CommercialConfigurationVersion = commercialConfigurationVersion;
+    }
+
+    public void RecordPricingDecision(
+        int sourceRequestRevision,
+        decimal? proposedUnitPrice,
+        decimal finalUnitPrice,
+        string? amendmentReason,
+        Guid actorUserId,
+        DateTime utcNow)
+    {
+        if (Status != QuoteStatus.SyncPending)
+            throw new InvalidOperationException("Pricing must be decided before quote issuance.");
+        if (sourceRequestRevision < 1) throw new ArgumentOutOfRangeException(nameof(sourceRequestRevision));
+        if (actorUserId == Guid.Empty) throw new ArgumentException("A pricing reviewer is required.", nameof(actorUserId));
+        if (utcNow.Kind != DateTimeKind.Utc) throw new ArgumentException("Pricing decision time must be UTC.", nameof(utcNow));
+
+        SourceRequestRevision = sourceRequestRevision;
+        ProposedUnitPriceSnapshot = proposedUnitPrice;
+        PricingDecision = !proposedUnitPrice.HasValue
+            ? QuotePricingDecision.PricedWithoutProposal
+            : proposedUnitPrice.Value == finalUnitPrice
+                ? QuotePricingDecision.ApprovedAsProposed
+                : QuotePricingDecision.AmendedProposal;
+        if (PricingDecision == QuotePricingDecision.AmendedProposal)
+            PricingDecisionReason = OrderText.Required(amendmentReason, "Price amendment reason", 2000);
+        else
+            PricingDecisionReason = null;
+        PricingDecidedByUserId = actorUserId;
+        PricingDecidedAt = utcNow;
     }
     public void Supersede(Guid nextQuoteId) { if (Status is QuoteStatus.Accepted or QuoteStatus.Superseded) throw new InvalidOperationException(); Status = QuoteStatus.Superseded; SupersededByQuoteId = nextQuoteId; }
 

@@ -183,6 +183,9 @@ public sealed class PSeqOperationsDbContext(
     public DbSet<LabContainer> LabContainers { get; set; }
     public DbSet<LabProtocol> LabProtocols { get; set; }
     public DbSet<LabProtocolVersion> LabProtocolVersions { get; set; }
+    public DbSet<LabServiceWorkflow> LabServiceWorkflows { get; set; }
+    public DbSet<LabServiceWorkflowVersion> LabServiceWorkflowVersions { get; set; }
+    public DbSet<LabServiceWorkflowStage> LabServiceWorkflowStages { get; set; }
     public DbSet<LabProtocolExecution> LabProtocolExecutions { get; set; }
     public DbSet<LabMaterialDefinition> LabMaterialDefinitions { get; set; }
     public DbSet<LabSupplier> LabSuppliers { get; set; }

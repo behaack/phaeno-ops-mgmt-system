@@ -715,6 +715,8 @@ public static class OrderManagementModelConfiguration
             Text(entity.Property(e => e.SafetyDeclaration), 2000);
             Text(entity.Property(e => e.SubmissionInstructionsSnapshot), 8000);
             Json(entity.Property(e => e.PlacementSnapshotJson), false);
+            entity.Property(e => e.ProposedUnitPrice).HasPrecision(18, 2);
+            Text(entity.Property(e => e.PriceProposalNote), 1000, false);
             EnumText(entity.Property(e => e.Status));
             EnumText(entity.Property(e => e.ResumeStatus), false);
             Text(entity.Property(e => e.TenantSafeReason), 2000, false);
@@ -729,6 +731,7 @@ public static class OrderManagementModelConfiguration
             entity.HasOne(e => e.SourceRequest).WithMany().HasForeignKey(e => e.SourceRequestId).OnDelete(DeleteBehavior.Restrict);
             entity.HasOne<User>().WithMany().HasForeignKey(e => e.AssignedToUserId).OnDelete(DeleteBehavior.Restrict);
             entity.HasOne<User>().WithMany().HasForeignKey(e => e.SampleRosterFinalizedByUserId).OnDelete(DeleteBehavior.Restrict);
+            entity.HasOne<User>().WithMany().HasForeignKey(e => e.PriceProposedByUserId).OnDelete(DeleteBehavior.Restrict);
             Audit(entity);
         });
 
@@ -813,9 +816,13 @@ public static class OrderManagementModelConfiguration
             Json(entity.Property(e => e.BillingContactSnapshotJson), false);
             Json(entity.Property(e => e.BillingAddressSnapshotJson), false);
             Json(entity.Property(e => e.TaxDecisionSnapshotJson), false);
+            entity.Property(e => e.ProposedUnitPriceSnapshot).HasPrecision(18, 2);
+            EnumText(entity.Property(e => e.PricingDecision), false);
+            Text(entity.Property(e => e.PricingDecisionReason), 2000, false);
             entity.HasIndex(e => new { e.LabServiceOrderId, e.Revision }).IsUnique();
             entity.HasOne<LabServiceOrder>().WithMany(e => e.Quotes).HasForeignKey(e => e.LabServiceOrderId).OnDelete(DeleteBehavior.Restrict);
             entity.HasOne<LabServiceQuote>().WithMany().HasForeignKey(e => e.SupersededByQuoteId).OnDelete(DeleteBehavior.Restrict);
+            entity.HasOne<User>().WithMany().HasForeignKey(e => e.PricingDecidedByUserId).OnDelete(DeleteBehavior.Restrict);
             Audit(entity);
         });
 

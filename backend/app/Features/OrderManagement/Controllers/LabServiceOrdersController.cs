@@ -179,6 +179,11 @@ public sealed class LabServiceOrdersController(
                     request.StorageRequirements,
                     request.SafetyDeclaration,
                     config?.SampleSubmissionInstructions ?? string.Empty);
+                Execute(() => order.UpdatePriceProposal(
+                    request.ProposedUnitPrice,
+                    request.PriceProposalNote,
+                    tenant.Actor.Id,
+                    DateTime.UtcNow));
                 foreach (var group in sourceGroups)
                     order.SourceGroups.Add(new LabServiceSourceGroup(order.Id, group.BiologicalSource, group.SpecimenCount));
                 dbContext.LabServiceOrders.Add(order);
@@ -204,8 +209,8 @@ public sealed class LabServiceOrdersController(
                 .EvaluateAsync(order.OrganizationId, cancellationToken);
             if (!readiness.Evaluation.CanIssueQuote)
                 throw new OrderManagementException("operational_readiness_incomplete",
-                    "Resolve every PSeq readiness blocker before accepting the quote.",
-                    StatusCodes.Status409Conflict, readiness.Evaluation.Blockers);
+                    "Resolve every non-billing PSeq readiness blocker before accepting the quote.",
+                    StatusCodes.Status409Conflict, readiness.Evaluation.QuoteBlockers);
         }
         var normalizedJobName = NormalizeJobName(request.CustomerReference);
         await EnsureUniqueJobNameAsync(tenant.Organization.Id, normalizedJobName, order.Id, cancellationToken);
@@ -220,6 +225,11 @@ public sealed class LabServiceOrdersController(
             sourceGroups.Count == 1 ? sourceGroups[0].BiologicalSource : null,
             request.StorageRequirements,
             request.SafetyDeclaration));
+        Execute(() => order.UpdatePriceProposal(
+            request.ProposedUnitPrice,
+            request.PriceProposalNote,
+            tenant.Actor.Id,
+            DateTime.UtcNow));
         var existingSourceGroups = order.SourceGroups
             .ToDictionary(group => group.NormalizedBiologicalSource, StringComparer.Ordinal);
         foreach (var group in sourceGroups)
@@ -936,7 +946,12 @@ public sealed class LabServiceOrdersController(
                 .Select(group => new LabServiceSourceGroupDto(group.Id, group.BiologicalSource, group.SpecimenCount, group.Version)).ToList(),
             SampleRosterFinalizedAt: order.SampleRosterFinalizedAt,
             CanEditSamples: canManage && order.CanEditSampleRoster,
-            CanFinalizeSamples: canManage && order.CanEditSampleRoster && order.Samples.Count == order.RequestedSpecimenCount);
+            CanFinalizeSamples: canManage && order.CanEditSampleRoster && order.Samples.Count == order.RequestedSpecimenCount,
+            ProposedUnitPrice: order.ProposedUnitPrice,
+            ProposedCurrency: order.ProposedUnitPrice.HasValue ? "USD" : null,
+            PriceProposalNote: order.PriceProposalNote,
+            PriceProposedByUserId: order.PriceProposedByUserId,
+            PriceProposedAt: order.PriceProposedAt);
     }
 
     private async Task<string> BuildRequestSnapshotAsync(LabServiceOrder order, CancellationToken cancellationToken)
@@ -959,6 +974,11 @@ public sealed class LabServiceOrdersController(
             }),
             order.StorageRequirements,
             order.SafetyDeclaration,
+            proposedUnitPrice = order.ProposedUnitPrice,
+            proposedCurrency = order.ProposedUnitPrice.HasValue ? "USD" : null,
+            priceProposalNote = order.PriceProposalNote,
+            priceProposedByUserId = order.PriceProposedByUserId,
+            priceProposedAt = order.PriceProposedAt,
             serviceKey = OrderServiceKeys.PSeqLabService,
             submissionInstructions = order.SubmissionInstructionsSnapshot,
             samples = order.Samples.OrderBy(item => item.CreatedAt).Select(item => new

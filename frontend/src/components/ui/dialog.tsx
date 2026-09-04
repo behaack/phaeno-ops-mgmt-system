@@ -219,7 +219,9 @@ function arrangeDialogChildren(children: React.ReactNode) {
 
   return [
     ...fixedDialogHeader(regions.header, regions.feedback, "dialog-header"),
-    scrollableDialogBody(regions.body, "dialog-body"),
+    ...(regions.body.length > 0
+      ? [scrollableDialogBody(regions.body, "dialog-body")]
+      : []),
     ...regions.footer,
   ]
 }

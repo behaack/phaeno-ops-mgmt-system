@@ -59,7 +59,18 @@ public sealed record OperationalReadinessEvaluation(
         or OperationalReadinessBlockerCode.PSeqServiceEntitlementNotReady
         or OperationalReadinessBlockerCode.ActivePSeqOfferingRequired));
 
-    public bool CanIssueQuote => State == OperationalReadiness.Ready;
+    public IReadOnlyList<OperationalReadinessBlocker> QuoteBlockers => Blockers
+        .Where(blocker => !IsPostAcceptanceBillingBlocker(blocker.Code))
+        .ToArray();
+
+    public bool CanIssueQuote => QuoteBlockers.Count == 0;
+
+    private static bool IsPostAcceptanceBillingBlocker(OperationalReadinessBlockerCode code) => code is
+        OperationalReadinessBlockerCode.BillingContactIncomplete
+        or OperationalReadinessBlockerCode.BillingAddressIncomplete
+        or OperationalReadinessBlockerCode.PaymentTermsIncomplete
+        or OperationalReadinessBlockerCode.TaxDecisionIncomplete
+        or OperationalReadinessBlockerCode.FinanceTaxApprovalRequired;
 }
 
 public static class OperationalReadinessPolicy
@@ -106,23 +117,23 @@ public static class OperationalReadinessPolicy
         AddIfMissing(input.HasCompleteBillingContact,
             OperationalReadinessBlockerCode.BillingContactIncomplete,
             "Billing contact",
-            "Add the Customer billing contact.", blockers);
+            "Add the Customer billing contact before invoice issuance.", blockers);
         AddIfMissing(input.HasCompleteBillingAddress,
             OperationalReadinessBlockerCode.BillingAddressIncomplete,
             "Billing address",
-            "Add the Customer billing address.", blockers);
+            "Add the Customer billing address before invoice issuance.", blockers);
         AddIfMissing(input.HasValidPaymentTerms,
             OperationalReadinessBlockerCode.PaymentTermsIncomplete,
             "Payment terms",
-            "Set valid Customer payment terms.", blockers);
+            "Set valid Customer payment terms before invoice issuance.", blockers);
         AddIfMissing(input.HasEffectiveTaxDecision,
             OperationalReadinessBlockerCode.TaxDecisionIncomplete,
             "Tax decision",
-            "Record Taxable, Exempt, or Non-taxable.", blockers);
+            "Record Taxable, Exempt, or Non-taxable before invoice issuance.", blockers);
         AddIfMissing(input.HasFinanceApprovedTaxDecision,
             OperationalReadinessBlockerCode.FinanceTaxApprovalRequired,
             "Finance tax approval",
-            "Have Finance approve the effective tax decision.", blockers);
+            "Have Finance approve the effective tax decision before invoice issuance.", blockers);
 
         if (input.HasManualBlock)
         {

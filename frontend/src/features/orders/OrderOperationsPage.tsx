@@ -1,11 +1,12 @@
 import { useMutation, useQuery, useQueryClient, type UseQueryResult } from '@tanstack/react-query'
 import { Link } from '@tanstack/react-router'
-import { Boxes, CircleDollarSign, ClipboardCheck, FileCheck2, FlaskConical, ListChecks, PlugZap, RefreshCw, ShoppingCart, Workflow as WorkflowIcon } from 'lucide-react'
+import { Boxes, CircleDollarSign, ClipboardCheck, FileCheck2, ListChecks, PlugZap, RefreshCw, ShoppingCart, Workflow as WorkflowIcon } from 'lucide-react'
 import { useState } from 'react'
 
 import { getOrderConfiguration, getOrderErrorMessage, getPlatformOrder, listIntegrationMessages, listNotificationMessages, listPlatformOrders, retryIntegrationMessage, retryNotificationMessage, runPlatformAction, updateOperationalAssignment, type DataAssemblyRequest, type IntegrationMessage, type LabServiceOrder, type NotificationMessage, type PagedResult, type ReagentOrder } from '#/api/order-management'
 import type { SessionCapabilities } from '#/api/session'
 import { listOrganizations } from '#/api/data-provisioning'
+import { getLabWorkOrderByCommercialOrder } from '#/api/lab-operations'
 import { Alert, AlertDescription, AlertTitle } from '#/components/ui/alert'
 import { WorkspaceSidebar, type WorkspaceSidebarItem } from '#/components/WorkspaceSidebar'
 import { Button } from '#/components/ui/button'
@@ -17,16 +18,17 @@ import { usePhaenoSession } from '#/features/auth/session-context'
 import { humanizeStatus, OrderStatusBadge } from './OrderStatusBadge'
 import { CommercialOrderIntakePanel } from './CommercialOrderIntakePanel'
 import { AssemblyOperationsPanel } from './operations/AssemblyOperationsPanel'
+import { CancellationDecisionPanel } from './operations/CancellationDecisionPanel'
+import { PlatformQuoteDialog } from './operations/PlatformQuoteDialog'
 import { ReagentOperationsPanel } from './operations/ReagentOperationsPanel'
 import { FinanceOperationsPanel, OperationalAttentionPanel, PSeqStagingPanel, ResultReleasePanel } from './PSeqOrderToCashPanels'
 
 type Workflow = 'lab' | 'reagent' | 'assembly'
-type OrderSection = Workflow | 'intake' | 'staging' | 'attention' | 'results' | 'finance' | 'integrations'
+type OrderSection = Exclude<Workflow, 'lab'> | 'intake' | 'staging' | 'attention' | 'results' | 'finance' | 'integrations'
 
 const orderSections: ReadonlyArray<WorkspaceSidebarItem<OrderSection>> = [
-  { value: 'intake', label: 'Order intake', description: 'Placed laboratory orders awaiting specimens', icon: ClipboardCheck },
+  { value: 'intake', label: 'Order intake', description: 'Commercial intake, pricing, and quotes', icon: ClipboardCheck },
   { value: 'staging', label: 'Order staging', description: 'Prepare PSeq work before Customer access is complete', icon: ShoppingCart },
-  { value: 'lab', label: 'Lab', description: 'Pricing, samples, and laboratory execution', icon: FlaskConical },
   { value: 'reagent', label: 'PSeq kits', description: 'Review, processing, and fulfillment', icon: Boxes },
   { value: 'assembly', label: 'Assembly', description: 'Intake, processing, and output release', icon: WorkflowIcon },
   { value: 'attention', label: 'Attention', description: 'Owned cross-workflow blockers and failures', icon: ListChecks },
@@ -77,8 +79,8 @@ function OperationalQueues({ apiEnabled, mock, userId, capabilities }: { apiEnab
           <section className="mb-6 max-w-3xl">
             <h1 className="text-3xl font-semibold">Order operations</h1>
             <p className="mt-2 text-sm leading-6 text-muted-foreground">
-              Cross-organization queues for commercial staging, laboratory execution,
-              governed result release, accounts receivable, holds, and exception recovery.
+              Commercial intake, pricing, Customer decisions, governed result release,
+              accounts receivable, holds, and exception recovery.
             </p>
           </section>
           {mock ? (
@@ -87,9 +89,8 @@ function OperationalQueues({ apiEnabled, mock, userId, capabilities }: { apiEnab
               <AlertDescription>Use a real Phaeno session to work operational orders.</AlertDescription>
             </Alert>
           ) : null}
-          {section === 'intake' ? <CommercialOrderIntakePanel apiEnabled={apiEnabled} mock={mock} /> : null}
+          {section === 'intake' ? <CommercialOrderIntakePanel apiEnabled={apiEnabled} mock={mock} userId={userId} organizations={organizationOptions} /> : null}
           {section === 'staging' ? <PSeqStagingPanel apiEnabled={apiEnabled} /> : null}
-          {section === 'lab' ? <QueueCard title="Laboratory queue" workflow="lab" apiEnabled={apiEnabled} userId={userId} organizations={organizationOptions} /> : null}
           {section === 'reagent' ? <QueueCard title="PSeq kit queue" workflow="reagent" apiEnabled={apiEnabled} userId={userId} organizations={organizationOptions} /> : null}
           {section === 'assembly' ? <QueueCard title="Assembly queue" workflow="assembly" apiEnabled={apiEnabled} userId={userId} organizations={organizationOptions} /> : null}
           {section === 'attention' ? <OperationalAttentionPanel apiEnabled={apiEnabled} userId={userId} /> : null}
@@ -133,9 +134,17 @@ function OperationalDetail({ workflow, orderId, apiEnabled, userId }: { workflow
   const [assignmentDueAt, setAssignmentDueAt] = useState('')
   const order = useQuery({ queryKey: ['platform-order', workflow, orderId], queryFn: () => getPlatformOrder(workflow, orderId), enabled: apiEnabled })
   const configuration = useQuery({ queryKey: ['order-configuration'], queryFn: getOrderConfiguration, enabled: apiEnabled })
+  const labWork = useQuery({
+    queryKey: ['lab-work-by-commercial-order', orderId],
+    queryFn: () => getLabWorkOrderByCommercialOrder(orderId),
+    enabled: apiEnabled && workflow === 'lab' && Boolean(order.data && 'sampleRosterFinalizedAt' in order.data && order.data.sampleRosterFinalizedAt),
+    retry: false,
+  })
   async function refresh() {
     await client.invalidateQueries({ queryKey: ['platform-order', workflow, orderId] })
     await client.invalidateQueries({ queryKey: ['platform-orders', workflow] })
+    await client.invalidateQueries({ queryKey: ['commercial-orders'] })
+    if (workflow === 'lab') await client.invalidateQueries({ queryKey: ['lab-work-by-commercial-order', orderId] })
   }
   const mutation = useMutation({
     mutationFn: async (input: { action: string; reason?: string }) => {
@@ -158,13 +167,130 @@ function OperationalDetail({ workflow, orderId, apiEnabled, userId }: { workflow
   const item = order.data
   const number = 'orderNumber' in item ? item.orderNumber : item.requestNumber
   const actions = primaryActions(workflow, item.status)
-  return <main className="page-wrap px-4 py-8"><section className="mb-6 flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between"><div><p className="text-sm text-muted-foreground"><Link to="/order-operations" className="hover:underline">Order operations</Link> / {humanizeStatus(workflow)} / <span className="font-mono">{number}</span></p><div className="mt-2 flex items-center gap-3"><h1 className="text-3xl font-semibold">{number}</h1><OrderStatusBadge status={item.status} /></div><p className="mt-2 text-sm text-muted-foreground">Organization {item.organizationId} · {item.assignedToUserId ? item.assignedToUserId === userId ? 'Assigned to you' : 'Assigned to another operator' : 'Unassigned'}{item.dueAt ? ` · Due ${formatDateTime(item.dueAt)}` : ''} · Version {item.version}</p></div><div className="flex flex-wrap gap-2"><Button type="button" variant="outline" onClick={() => { setAssignmentDueAt(item.dueAt ? new Date(item.dueAt).toISOString().slice(0, 16) : ''); setAssignmentOpen(true) }}>Assignment</Button>{workflow === 'lab' && item.status === 'PlacedAwaitingSamples' ? <Button asChild variant="outline"><Link to="/order-operations/intake/$orderId" params={{ orderId }}>Open intake</Link></Button> : null}{actions.map((action) => <Button key={action.path} type="button" variant={action.reason ? 'outline' : 'default'} disabled={mutation.isPending} onClick={() => action.reason ? setReasonDialog(action.path) : mutation.mutate({ action: action.path })}>{action.label}</Button>)}</div></section>{mutation.error || assignment.error ? <Alert variant="destructive" className="mb-5"><AlertTitle>Operation failed</AlertTitle><AlertDescription>{getOrderErrorMessage(mutation.error ?? assignment.error, 'Reload the record and try again.')}</AlertDescription></Alert> : null}{configuration.error ? <Alert variant="destructive" className="mb-5"><AlertTitle>Commercial configuration could not be loaded</AlertTitle><AlertDescription>{getOrderErrorMessage(configuration.error, 'Operational status changes remain available, but quote and catalog actions are paused.')}</AlertDescription></Alert> : null}<OperationalSummary workflow={workflow} item={item} />{workflow === 'lab' && 'samples' in item ? <Alert className="mt-5"><AlertTitle>Laboratory work is managed in Lab operations</AlertTitle><AlertDescription>Use the dedicated Lab operations workspace for receipt, accessioning, bench work, QC, and scientific approval.</AlertDescription></Alert> : null}{workflow === 'reagent' && 'lines' in item ? <ReagentOperationsPanel order={item} offerings={[]} onSaved={refresh} /> : null}{workflow === 'assembly' && 'inputFiles' in item ? <AssemblyOperationsPanel request={item} onSaved={refresh} /> : null}<Dialog open={reasonDialog !== null} onOpenChange={(open) => !open && setReasonDialog(null)}><DialogContent><DialogHeader><DialogTitle>{reasonDialog ? humanizeStatus(reasonDialog) : 'Record action'} for {number}</DialogTitle><DialogDescription>Provide a tenant-safe reason. Internal scientific or commercial details must remain in the separate internal record.</DialogDescription></DialogHeader><div><Label htmlFor="operationReason">Tenant-safe reason <span className="text-[var(--ruby-red,#b4233c)]" aria-hidden="true">*</span></Label><textarea id="operationReason" value={reason} onChange={(event) => setReason(event.target.value)} className="mt-2 min-h-24 w-full rounded-lg border border-input bg-background px-3 py-2 text-sm focus-visible:ring-3 focus-visible:ring-ring/50 focus-visible:outline-none" /></div><DialogFooter><DialogClose asChild><Button type="button" variant="outline">Cancel</Button></DialogClose><Button type="button" disabled={!reason.trim() || mutation.isPending} onClick={() => reasonDialog && mutation.mutate({ action: reasonDialog, reason })}>Apply status change</Button></DialogFooter></DialogContent></Dialog><Dialog open={assignmentOpen} onOpenChange={setAssignmentOpen}><DialogContent><DialogHeader><DialogTitle>Operational assignment</DialogTitle><DialogDescription>Assign this record to yourself and set an optional operational due time. Dedicated staff-role routing remains outside the initial release.</DialogDescription></DialogHeader><div><Label htmlFor="assignmentDueAt">Due at</Label><Input id="assignmentDueAt" type="datetime-local" className="mt-2" value={assignmentDueAt} onChange={(event) => setAssignmentDueAt(event.target.value)} /></div><DialogFooter>{item.assignedToUserId ? <Button type="button" variant="outline" disabled={assignment.isPending} onClick={() => assignment.mutate(false)}>Clear assignment</Button> : null}<DialogClose asChild><Button type="button" variant="outline">Cancel</Button></DialogClose><Button type="button" disabled={assignment.isPending} onClick={() => assignment.mutate(true)}>{item.assignedToUserId === userId ? 'Update my assignment' : 'Assign to me'}</Button></DialogFooter></DialogContent></Dialog></main>
+  const recordTitle = workflow === 'lab' && 'customerReference' in item ? item.customerReference : number
+  const breadcrumb = workflow === 'lab' ? 'Order intake' : humanizeStatus(workflow)
+  return <main className="page-wrap px-4 py-8"><section className="mb-6 flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between"><div><p className="text-sm text-muted-foreground"><Link to="/order-operations" className="hover:underline">Order operations</Link> / {breadcrumb} / <span className="font-mono">{number}</span></p><div className="mt-2 flex items-center gap-3"><h1 className="text-3xl font-semibold">{recordTitle}</h1><OrderStatusBadge status={item.status} /></div><p className="mt-2 text-sm text-muted-foreground">{workflow === 'lab' ? <>Job number <span className="font-mono">{number}</span> · </> : null}Organization {item.organizationId} · {item.assignedToUserId ? item.assignedToUserId === userId ? 'Assigned to you' : 'Assigned to another operator' : 'Unassigned'}{item.dueAt ? ` · Due ${formatDateTime(item.dueAt)}` : ''} · Version {item.version}</p></div><div className="flex flex-wrap gap-2"><Button type="button" variant="outline" onClick={() => { setAssignmentDueAt(item.dueAt ? new Date(item.dueAt).toISOString().slice(0, 16) : ''); setAssignmentOpen(true) }}>Assignment</Button>{workflow === 'lab' && labWork.data ? <Button asChild variant="outline"><Link to="/lab-operations/$workOrderId" params={{ workOrderId: labWork.data.id }} search={{ section: undefined }}>Open Lab work</Link></Button> : null}{actions.map((action) => <Button key={action.path} type="button" variant={action.reason ? 'outline' : 'default'} disabled={mutation.isPending} onClick={() => action.reason ? setReasonDialog(action.path) : mutation.mutate({ action: action.path })}>{action.label}</Button>)}</div></section>{mutation.error || assignment.error ? <Alert variant="destructive" className="mb-5"><AlertTitle>Operation failed</AlertTitle><AlertDescription>{getOrderErrorMessage(mutation.error ?? assignment.error, 'Reload the record and try again.')}</AlertDescription></Alert> : null}{configuration.error ? <Alert variant="destructive" className="mb-5"><AlertTitle>Commercial configuration could not be loaded</AlertTitle><AlertDescription>{getOrderErrorMessage(configuration.error, 'Operational status changes remain available, but quote and catalog actions are paused.')}</AlertDescription></Alert> : null}<OperationalSummary workflow={workflow} item={item} /><CommercialControlPanel workflow={workflow} item={item} catalogItems={configuration.data?.catalogItems ?? []} labWorkOrderId={labWork.data?.id ?? null} onSaved={refresh} />{workflow === 'reagent' && 'lines' in item ? <ReagentOperationsPanel order={item} offerings={[]} onSaved={refresh} /> : null}{workflow === 'assembly' && 'inputFiles' in item ? <AssemblyOperationsPanel request={item} onSaved={refresh} /> : null}<Dialog open={reasonDialog !== null} onOpenChange={(open) => !open && setReasonDialog(null)}><DialogContent><DialogHeader><DialogTitle>{reasonDialog ? humanizeStatus(reasonDialog) : 'Record action'} for {number}</DialogTitle><DialogDescription>Provide a tenant-safe reason. Internal scientific or commercial details must remain in the separate internal record.</DialogDescription></DialogHeader><div><Label htmlFor="operationReason">Tenant-safe reason <span className="text-[var(--ruby-red,#b4233c)]" aria-hidden="true">*</span></Label><textarea id="operationReason" value={reason} onChange={(event) => setReason(event.target.value)} className="mt-2 min-h-24 w-full rounded-lg border border-input bg-background px-3 py-2 text-sm focus-visible:ring-3 focus-visible:ring-ring/50 focus-visible:outline-none" /></div><DialogFooter><DialogClose asChild><Button type="button" variant="outline">Cancel</Button></DialogClose><Button type="button" disabled={!reason.trim() || mutation.isPending} onClick={() => reasonDialog && mutation.mutate({ action: reasonDialog, reason })}>Apply status change</Button></DialogFooter></DialogContent></Dialog><Dialog open={assignmentOpen} onOpenChange={setAssignmentOpen}><DialogContent><DialogHeader><DialogTitle>Operational assignment</DialogTitle><DialogDescription>Assign this record to yourself and set an optional operational due time. Dedicated staff-role routing remains outside the initial release.</DialogDescription></DialogHeader><div><Label htmlFor="assignmentDueAt">Due at</Label><Input id="assignmentDueAt" type="datetime-local" className="mt-2" value={assignmentDueAt} onChange={(event) => setAssignmentDueAt(event.target.value)} /></div><DialogFooter>{item.assignedToUserId ? <Button type="button" variant="outline" disabled={assignment.isPending} onClick={() => assignment.mutate(false)}>Clear assignment</Button> : null}<DialogClose asChild><Button type="button" variant="outline">Cancel</Button></DialogClose><Button type="button" disabled={assignment.isPending} onClick={() => assignment.mutate(true)}>{item.assignedToUserId === userId ? 'Update my assignment' : 'Assign to me'}</Button></DialogFooter></DialogContent></Dialog></main>
 }
 
 function OperationalSummary({ workflow, item }: { workflow: Workflow; item: LabServiceOrder | ReagentOrder | DataAssemblyRequest }) {
   const internalNote = item.internalNote
   const timeline = item.timeline
-  return <div className="grid gap-5 lg:grid-cols-[minmax(0,1.5fr)_minmax(18rem,1fr)]"><Card><CardHeader><CardTitle>Operational facts</CardTitle><CardDescription>Tenant-visible and internal evidence remain separated.</CardDescription></CardHeader><CardContent>{workflow === 'lab' && 'samples' in item ? <ul className="divide-y">{item.samples.map((sample) => <li key={sample.id} className="flex justify-between gap-3 py-3"><span>{sample.customerSampleId}{sample.accessionId ? ` · ${sample.accessionId}` : ''}</span><OrderStatusBadge status={sample.status} /></li>)}</ul> : null}{workflow === 'reagent' && 'lines' in item ? <ul className="divide-y">{item.lines.map((line) => <li key={line.id} className="flex justify-between gap-3 py-3"><span>{line.description} · {line.remainingQuantity} remaining</span><span>{line.currency} {line.lineTotal.toFixed(2)}</span></li>)}</ul> : null}{workflow === 'assembly' && 'inputFiles' in item ? <div><p className="text-sm">{item.profileName} v{item.assemblyProfileVersion}</p><p className="mt-2 text-sm text-muted-foreground">{item.inputFiles.length} input file(s) · {item.processingRuns.length} processing run(s) · {item.outputReleases.length} output release(s)</p></div> : null}</CardContent></Card><div className="space-y-5">{item.tenantSafeReason ? <Alert><AlertTitle>Tenant-safe reason</AlertTitle><AlertDescription>{item.tenantSafeReason}</AlertDescription></Alert> : null}{internalNote ? <Alert variant="destructive"><AlertTitle>Internal note</AlertTitle><AlertDescription>{internalNote}</AlertDescription></Alert> : null}<Card><CardHeader><CardTitle>Audit timeline</CardTitle></CardHeader><CardContent><ol className="space-y-3">{timeline.slice().reverse().map((entry) => <li key={entry.id} className="border-l-2 pl-3 text-sm"><strong>{humanizeStatus(entry.toStatus)}</strong><span className="block text-xs text-muted-foreground">{formatDateTime(entry.occurredAt)}</span>{entry.internalNote ? <span className="mt-1 block text-destructive">Internal: {entry.internalNote}</span> : null}</li>)}</ol></CardContent></Card></div></div>
+  return (
+    <div className="grid gap-5 lg:grid-cols-[minmax(0,1.5fr)_minmax(18rem,1fr)]">
+      <Card>
+        <CardHeader>
+          <CardTitle>{workflow === 'lab' ? 'Commercial scope' : 'Operational facts'}</CardTitle>
+          <CardDescription>
+            {workflow === 'lab'
+              ? 'The priced Customer scope remains separate from specimen receipt, accessioning, and laboratory execution.'
+              : 'Tenant-visible and internal evidence remain separated.'}
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          {workflow === 'lab' && 'sourceGroups' in item ? (
+            <dl className="grid gap-4 text-sm sm:grid-cols-2">
+              <div><dt className="font-medium">Requested specimens</dt><dd className="mt-1 text-muted-foreground">{item.requestedSpecimenCount}</dd></div>
+              <div><dt className="font-medium">Biological sources</dt><dd className="mt-1 text-muted-foreground">{item.sourceGroups.map((group) => `${group.biologicalSource} (${group.specimenCount})`).join(', ')}</dd></div>
+              <div><dt className="font-medium">Storage requirements</dt><dd className="mt-1 whitespace-pre-wrap text-muted-foreground">{item.storageRequirements}</dd></div>
+              <div><dt className="font-medium">Safety declaration</dt><dd className="mt-1 whitespace-pre-wrap text-muted-foreground">{item.safetyDeclaration}</dd></div>
+              <div>
+                <dt className="font-medium">Proposed price</dt>
+                <dd className="mt-1 text-muted-foreground">
+                  {item.proposedUnitPrice != null
+                    ? `${formatMoney(item.proposedUnitPrice, item.proposedCurrency ?? 'USD')} per specimen · ${formatMoney(item.proposedUnitPrice * item.requestedSpecimenCount, item.proposedCurrency ?? 'USD')} proposed subtotal`
+                    : 'No price proposed'}
+                </dd>
+              </div>
+              {item.priceProposalNote ? <div><dt className="font-medium">Proposal note</dt><dd className="mt-1 whitespace-pre-wrap text-muted-foreground">{item.priceProposalNote}</dd></div> : null}
+            </dl>
+          ) : null}
+          {workflow === 'reagent' && 'lines' in item ? <ul className="divide-y">{item.lines.map((line) => <li key={line.id} className="flex justify-between gap-3 py-3"><span>{line.description} · {line.remainingQuantity} remaining</span><span>{line.currency} {line.lineTotal.toFixed(2)}</span></li>)}</ul> : null}
+          {workflow === 'assembly' && 'inputFiles' in item ? <div><p className="text-sm">{item.profileName} v{item.assemblyProfileVersion}</p><p className="mt-2 text-sm text-muted-foreground">{item.inputFiles.length} input file(s) · {item.processingRuns.length} processing run(s) · {item.outputReleases.length} output release(s)</p></div> : null}
+        </CardContent>
+      </Card>
+      <div className="space-y-5">
+        {item.tenantSafeReason ? <Alert><AlertTitle>Tenant-safe reason</AlertTitle><AlertDescription>{item.tenantSafeReason}</AlertDescription></Alert> : null}
+        {internalNote ? <Alert variant="destructive"><AlertTitle>Internal note</AlertTitle><AlertDescription>{internalNote}</AlertDescription></Alert> : null}
+        <Card><CardHeader><CardTitle>Audit timeline</CardTitle></CardHeader><CardContent><ol className="space-y-3">{timeline.slice().reverse().map((entry) => <li key={entry.id} className="border-l-2 pl-3 text-sm"><strong>{humanizeStatus(entry.toStatus)}</strong><span className="block text-xs text-muted-foreground">{formatDateTime(entry.occurredAt)}</span>{entry.internalNote ? <span className="mt-1 block text-destructive">Internal: {entry.internalNote}</span> : null}</li>)}</ol></CardContent></Card>
+      </div>
+    </div>
+  )
+}
+
+function CommercialControlPanel({
+  workflow,
+  item,
+  catalogItems,
+  labWorkOrderId,
+  onSaved,
+}: {
+  workflow: Workflow
+  item: LabServiceOrder | ReagentOrder | DataAssemblyRequest
+  catalogItems: Awaited<ReturnType<typeof getOrderConfiguration>>['catalogItems']
+  labWorkOrderId: string | null
+  onSaved: () => Promise<void>
+}) {
+  const [quoteOpen, setQuoteOpen] = useState(false)
+  const mayQuote = (workflow === 'lab' || workflow === 'assembly') && item.status === 'QuoteInPreparation'
+  const workflowPath = workflow === 'lab' ? 'lab-service-orders' : workflow === 'reagent' ? 'reagent-orders' : 'data-assembly-requests'
+  return (
+    <div className="mt-5 space-y-5">
+      <Card>
+        <CardHeader>
+          <div className="flex flex-wrap items-start justify-between gap-3">
+            <div>
+              <CardTitle>Commercial control</CardTitle>
+              <CardDescription>
+                {workflow === 'lab'
+                  ? 'Pricing, quotes, Customer decisions, and the immutable order remain in Order intake. Receipt, accessioning, and execution are performed in Lab operations.'
+                  : 'Commercial approval and the immutable order remain here.'}
+              </CardDescription>
+            </div>
+            <div className="flex flex-wrap gap-2">
+              {mayQuote ? <Button type="button" onClick={() => setQuoteOpen(true)}>{workflow === 'lab' && 'proposedUnitPrice' in item && item.proposedUnitPrice != null ? 'Review proposed price' : 'Issue quote'}</Button> : null}
+              {workflow === 'lab' && labWorkOrderId ? <Button asChild variant="outline"><Link to="/lab-operations/$workOrderId" params={{ workOrderId: labWorkOrderId }} search={{ section: undefined }}>Open Lab work</Link></Button> : null}
+            </div>
+          </div>
+        </CardHeader>
+        {workflow === 'lab' ? (
+          <CardContent>
+            <p className="text-sm text-muted-foreground">
+              {labWorkOrderId
+                ? 'The commercial order remains the source record; Lab operations owns all authorized physical and scientific work.'
+                : 'Lab work is created only after quote acceptance and finalization of the exact sample roster.'}
+            </p>
+          </CardContent>
+        ) : null}
+      </Card>
+      <CancellationDecisionPanel
+        workflowPath={workflowPath}
+        recordId={item.id}
+        version={item.version}
+        requests={item.cancellationRequests}
+        reagentLines={workflow === 'reagent' && 'lines' in item ? item.lines : undefined}
+        onSaved={onSaved}
+      />
+      {workflow === 'lab' || workflow === 'assembly' ? (
+        <PlatformQuoteDialog
+          open={quoteOpen}
+          workflow={workflow}
+          recordId={item.id}
+          version={item.version}
+          defaultQuantity={workflow === 'lab' && 'requestedSpecimenCount' in item ? item.requestedSpecimenCount : undefined}
+          priceProposal={workflow === 'lab' && 'proposedUnitPrice' in item && item.proposedUnitPrice != null ? {
+            unitPrice: item.proposedUnitPrice,
+            currency: item.proposedCurrency ?? 'USD',
+            note: item.priceProposalNote,
+            proposedByUserId: item.priceProposedByUserId,
+            proposedAt: item.priceProposedAt,
+          } : null}
+          catalogItems={catalogItems}
+          onOpenChange={setQuoteOpen}
+          onSaved={onSaved}
+        />
+      ) : null}
+    </div>
+  )
 }
 
 function primaryActions(workflow: Workflow, status: string) {
@@ -191,6 +317,7 @@ function primaryActions(workflow: Workflow, status: string) {
 }
 
 function formatDateTime(value: string) { return new Intl.DateTimeFormat('en-US', { dateStyle: 'medium', timeStyle: 'short' }).format(new Date(value)) }
+function formatMoney(value: number, currency: string) { return new Intl.NumberFormat('en-US', { style: 'currency', currency }).format(value) }
 function nextDate(value: string) { const date = new Date(`${value}T00:00:00.000Z`); date.setUTCDate(date.getUTCDate() + 1); return date.toISOString().slice(0, 10) }
 
 const workflowStatuses: Record<Workflow, string[]> = {

@@ -9,7 +9,8 @@ public sealed record LabPSeqKitOfferingDto(
 public sealed record LabWorkOrderSummaryDto(
     Guid Id, Guid AuthorizationId, Guid? CommercialOrderId, string? CommercialOrderNumber,
     Guid SubmittingOrganizationId, string ServiceKey, string Status, int SpecimenCount,
-    int OpenExceptionCount, DateTime UpdatedAt, long Version);
+    int OpenExceptionCount, DateTime UpdatedAt, long Version,
+    Guid? LabServiceWorkflowVersionId = null);
 
 public sealed record LabProtocolDto(
     Guid Id, string Key, string Name, string? Description, int LatestVersion,
@@ -18,6 +19,24 @@ public sealed record LabProtocolDto(
 public sealed record LabProtocolVersionDto(
     Guid Id, int ProtocolVersion, string Status, string DefinitionJson,
     Guid AuthoredByUserId, DateTime AuthoredAtUtc, Guid? ApprovedByUserId, DateTime? ApprovedAtUtc);
+
+public sealed record LabMarketedServiceDto(string ServiceKey, string Name);
+
+public sealed record LabServiceWorkflowStageDto(
+    Guid Id, int Sequence, string Name, Guid LabProtocolVersionId,
+    Guid LabProtocolId, string ProtocolKey, string ProtocolName, int ProtocolVersion,
+    string Requirement, string? Condition, string? HandoffCriteria);
+
+public sealed record LabServiceWorkflowVersionDto(
+    Guid Id, int WorkflowVersion, string Status,
+    Guid AuthoredByUserId, DateTime AuthoredAtUtc,
+    Guid? ApprovedByUserId, DateTime? ApprovedAtUtc,
+    Guid? ProductionByUserId, DateTime? ProductionAtUtc,
+    IReadOnlyList<LabServiceWorkflowStageDto> Stages, long Version);
+
+public sealed record LabServiceWorkflowDto(
+    Guid Id, string ServiceKey, string Name, string? Description, int LatestVersion,
+    IReadOnlyList<LabServiceWorkflowVersionDto> Versions, long Version);
 
 public sealed record LabMaterialDefinitionDto(
     Guid Id, string Key, string Name, string Kind, bool IsActive);
@@ -50,6 +69,8 @@ public sealed record LabBatchDto(
 public sealed record LabOperationsDashboardDto(
     IReadOnlyList<LabWorkOrderSummaryDto> WorkOrders,
     IReadOnlyList<LabProtocolDto> Protocols,
+    IReadOnlyList<LabServiceWorkflowDto> ServiceWorkflows,
+    IReadOnlyList<LabMarketedServiceDto> MarketedServices,
     IReadOnlyList<LabMaterialLotDto> MaterialLots,
     IReadOnlyList<LabMaterialDefinitionDto> MaterialDefinitions,
     IReadOnlyList<LabSupplierDto> Suppliers,
@@ -87,7 +108,8 @@ public sealed record LabContainerLabelDto(
 public sealed record LabExecutionDto(
     Guid Id, Guid? LabSpecimenId, Guid LabProtocolVersionId, Guid? AssignedToUserId,
     string Status, string CapturedResultsJson, string? DeviationNote,
-    DateTime? StartedAtUtc, DateTime? CompletedAtUtc, long Version);
+    DateTime? StartedAtUtc, DateTime? CompletedAtUtc, long Version,
+    Guid? LabServiceWorkflowStageId = null);
 
 public sealed record LabLibraryDto(
     Guid Id, Guid LabSpecimenId, Guid SourceContainerId, Guid LibraryContainerId,
@@ -116,9 +138,20 @@ public sealed record LabScientificApprovalDto(
 
 public sealed record SetLabRoleRequest(bool IsActive, long? Version);
 public sealed record CreateProtocolRequest(string Name, string? Description);
+public sealed record UpdateProtocolRequest(string Name, string? Description, long Version);
 public sealed record CreateProtocolVersionRequest(string DefinitionJson, long ProtocolVersion);
 public sealed record UpdateProtocolVersionRequest(string DefinitionJson, long ProtocolVersion);
 public sealed record ProtocolTransitionRequest(string Action, long ProtocolVersion);
+public sealed record DeleteProtocolRequest(long Version);
+public sealed record CreateServiceWorkflowRequest(string ServiceKey, string Name, string? Description);
+public sealed record ServiceWorkflowStageRequest(
+    string Name, Guid LabProtocolVersionId, string Requirement,
+    string? Condition, string? HandoffCriteria);
+public sealed record CreateServiceWorkflowVersionRequest(
+    IReadOnlyList<ServiceWorkflowStageRequest> Stages, long WorkflowVersion);
+public sealed record UpdateServiceWorkflowVersionRequest(
+    IReadOnlyList<ServiceWorkflowStageRequest> Stages, long WorkflowVersion);
+public sealed record ServiceWorkflowTransitionRequest(string Action, long WorkflowVersion);
 public sealed record WorkMilestoneRequest(string Status, long Version);
 public sealed record SpecimenReceiptRequest(DateTime ReceivedAtUtc, string? ReceiptCondition, string? CurrentLocation, long Version);
 public sealed record SpecimenAccessionRequest(string AccessionNumber, string Label, string Location,
@@ -128,7 +161,8 @@ public sealed record SpecimenDispositionRequest(string Disposition, string? Reas
 public sealed record CreateContainerRequest(Guid? LabSpecimenId, Guid? ParentContainerId, string Kind,
     string Label, string Location, decimal? Quantity, string? QuantityUnit, DateTime? RetainUntilUtc);
 public sealed record RecordLabelPrintRequest(string Reason, string Outcome, string? FailureDetails);
-public sealed record CreateExecutionRequest(Guid? LabSpecimenId, Guid LabProtocolVersionId, Guid? AssignedToUserId);
+public sealed record CreateExecutionRequest(Guid? LabSpecimenId, Guid LabProtocolVersionId,
+    Guid? AssignedToUserId, Guid? LabServiceWorkflowStageId = null);
 public sealed record ExecutionTransitionRequest(string Action, string? CapturedResultsJson, string? DeviationNote, long Version);
 public sealed record CreatePreparedReagentComponentRequest(
     Guid ComponentMaterialLotId, decimal Quantity, string QuantityUnit);

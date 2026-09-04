@@ -162,6 +162,9 @@ public sealed class InternalLabOperationsProvider(PSeqOperationsDbContext dbCont
                 acknowledgedAtUtc);
         }
 
+        var workflowVersionId = await ResolveProductionWorkflowVersionAsync(
+            command.ServiceKey, cancellationToken);
+
         var workOrder = new LabWorkOrder(
             command.AuthorizationId,
             command.AuthorizationVersion,
@@ -171,7 +174,8 @@ public sealed class InternalLabOperationsProvider(PSeqOperationsDbContext dbCont
             command.ServiceKey,
             command.ServiceVersion,
             command.TurnaroundPolicyKey,
-            command.OpaqueSubmitterReference);
+            command.OpaqueSubmitterReference,
+            workflowVersionId);
 
         workOrder.AuthorizationVersions.Add(new LabWorkAuthorizationVersion(
             workOrder.Id,
@@ -294,12 +298,15 @@ public sealed class InternalLabOperationsProvider(PSeqOperationsDbContext dbCont
             return ManualReviewAcknowledgment(command.Metadata, workOrder, acknowledgedAtUtc);
         }
 
+        var workflowVersionId = await ResolveProductionWorkflowVersionAsync(
+            replacement.ServiceKey, cancellationToken);
         workOrder.RecordAuthorizationVersion(
             command.NewAuthorizationVersion,
             replacement.ServiceKey,
             replacement.ServiceVersion,
             replacement.TurnaroundPolicyKey,
-            replacement.OpaqueSubmitterReference);
+            replacement.OpaqueSubmitterReference,
+            workflowVersionId);
 
         foreach (var removedSpecimen in removedSpecimens)
         {
@@ -337,6 +344,20 @@ public sealed class InternalLabOperationsProvider(PSeqOperationsDbContext dbCont
             command.NewAuthorizationVersion,
             ReasonCode: null,
             acknowledgedAtUtc);
+    }
+
+    private async Task<Guid?> ResolveProductionWorkflowVersionAsync(
+        string serviceKey, CancellationToken cancellationToken)
+    {
+        var normalizedServiceKey = serviceKey.Trim().ToLowerInvariant();
+        return await (
+            from workflow in dbContext.LabServiceWorkflows.AsNoTracking()
+            join version in dbContext.LabServiceWorkflowVersions.AsNoTracking()
+                on workflow.Id equals version.LabServiceWorkflowId
+            where workflow.ServiceKey == normalizedServiceKey
+                && version.Status == LabServiceWorkflowStatus.Production
+            orderby version.WorkflowVersion descending
+            select (Guid?)version.Id).FirstOrDefaultAsync(cancellationToken);
     }
 
     private async Task<LabCancellationOutcome> ApplyCancellationAsync(

@@ -194,6 +194,34 @@ public class LabOperationsCommercialHandoffPostgresTests
     }
 
     [PostgreSqlReferenceFact]
+    public async Task QuoteIssueDoesNotRequireQuickBooksOrACompletedBillingProfile()
+    {
+        await using var scope = await HandoffTestScope.CreateAsync();
+        var order = await scope.InitiateCustomerOrderAsync();
+        var catalogItem = await scope.DbContext.QboCatalogItems.AsNoTracking()
+            .SingleAsync(item => item.IsActive
+                && item.ExternalItemId == OrderServiceKeys.PSeqLabService
+                && item.SalesUnit == OrderSalesUnits.Specimen);
+
+        Assert.False(await scope.DbContext.OrganizationCommercialProfiles.AsNoTracking()
+            .AnyAsync(item => item.OrganizationId == scope.CustomerOrganization.Id));
+
+        var response = await scope.IssueQuoteAsync(order, catalogItem);
+
+        var quote = Assert.Single(response.Quotes);
+        Assert.Equal(LabServiceOrderStatus.QuoteIssued.ToString(), response.Status);
+        Assert.Equal(QuoteStatus.Issued.ToString(), quote.Status);
+        Assert.Equal(0m, quote.Tax);
+        Assert.Empty(await scope.DbContext.CommercialDocumentLinks.AsNoTracking()
+            .Where(item => item.WorkflowId == order.Id)
+            .ToListAsync());
+        Assert.Empty(await scope.DbContext.OrderOutboxMessages.AsNoTracking()
+            .Where(item => item.WorkflowId == order.Id
+                && item.Operation == IntegrationOperation.CreateEstimate)
+            .ToListAsync());
+    }
+
+    [PostgreSqlReferenceFact]
     public async Task PhaenoInitiationReplaysOneAtomicIdempotentResult()
     {
         await using var scope = await HandoffTestScope.CreateAsync();
@@ -604,8 +632,15 @@ public class LabOperationsCommercialHandoffPostgresTests
                     CancellationToken.None);
                 Assert.True(assignment.IsActive);
             }
+            var protocolApprover = await scope.CreateLabStaffAsync();
+            await administrator.SetRole(
+                protocolApprover.User.Id,
+                LabRole.ProtocolAdministrator.ToString(),
+                new SetLabRoleRequest(true, null),
+                CancellationToken.None);
 
             var lab = scope.CreateLabController(staff.Identity);
+            var approvalLab = scope.CreateLabController(protocolApprover.Identity);
             var protocolName = $"Reference library preparation {Guid.NewGuid():N}";
             var protocol = await lab.CreateProtocol(
                 new CreateProtocolRequest(
@@ -615,6 +650,17 @@ public class LabOperationsCommercialHandoffPostgresTests
             Assert.Equal(
                 LabIdentifierService.CreateProtocolKey(protocolName, Array.Empty<string>()),
                 protocol.Key);
+            var immutableProtocolKey = protocol.Key;
+            protocol = await lab.UpdateProtocol(
+                protocol.Id,
+                new UpdateProtocolRequest(
+                    $"{protocolName} updated",
+                    "Updated database-backed verification protocol.",
+                    protocol.Version),
+                CancellationToken.None);
+            Assert.Equal(immutableProtocolKey, protocol.Key);
+            Assert.Equal($"{protocolName} updated", protocol.Name);
+            Assert.Equal("Updated database-backed verification protocol.", protocol.Description);
             protocol = await lab.CreateProtocolVersion(
                 protocol.Id,
                 new CreateProtocolVersionRequest(
@@ -637,35 +683,32 @@ public class LabOperationsCommercialHandoffPostgresTests
                     protocol.Version),
                 CancellationToken.None);
             protocolVersion = Assert.Single(protocol.Versions);
-            protocol = await lab.TransitionProtocol(
+            protocol = await approvalLab.TransitionProtocol(
                 protocolVersion.Id,
                 new ProtocolTransitionRequest("approve", protocol.Version),
                 CancellationToken.None);
             protocolVersion = Assert.Single(protocol.Versions);
-            protocol = await lab.TransitionProtocol(
-                protocolVersion.Id,
-                new ProtocolTransitionRequest("withdraw", protocol.Version),
-                CancellationToken.None);
-            protocolVersion = Assert.Single(protocol.Versions);
-            Assert.Equal(LabProtocolStatus.Draft.ToString(), protocolVersion.Status);
-            protocol = await lab.UpdateProtocolVersion(
-                protocolVersion.Id,
-                new UpdateProtocolVersionRequest(
+            Assert.Equal(LabProtocolStatus.Approved.ToString(), protocolVersion.Status);
+            protocol = await lab.CreateProtocolVersion(
+                protocol.Id,
+                new CreateProtocolVersionRequest(
                     """{"steps":[{"key":"prepare-library-final","required":true}]}""",
                     protocol.Version),
                 CancellationToken.None);
-            protocolVersion = Assert.Single(protocol.Versions);
-            protocol = await lab.TransitionProtocol(
+            protocolVersion = Assert.Single(
+                protocol.Versions,
+                item => item.Status == LabProtocolStatus.Draft.ToString());
+            protocol = await approvalLab.TransitionProtocol(
                 protocolVersion.Id,
                 new ProtocolTransitionRequest("approve", protocol.Version),
                 CancellationToken.None);
-            protocolVersion = Assert.Single(protocol.Versions);
-            protocol = await lab.TransitionProtocol(
-                protocolVersion.Id,
-                new ProtocolTransitionRequest("activate", protocol.Version),
-                CancellationToken.None);
-            protocolVersion = Assert.Single(protocol.Versions);
-            Assert.Equal(LabProtocolStatus.Active.ToString(), protocolVersion.Status);
+            Assert.Contains(
+                protocol.Versions,
+                item => item.ProtocolVersion == 1
+                    && item.Status == LabProtocolStatus.Retired.ToString());
+            protocolVersion = Assert.Single(
+                protocol.Versions,
+                item => item.Status == LabProtocolStatus.Approved.ToString());
             protocol = await lab.CreateProtocolVersion(
                 protocol.Id,
                 new CreateProtocolVersionRequest(
@@ -684,7 +727,7 @@ public class LabOperationsCommercialHandoffPostgresTests
                 item => item.Status == LabProtocolStatus.Discarded.ToString());
             protocolVersion = Assert.Single(
                 protocol.Versions,
-                item => item.Status == LabProtocolStatus.Active.ToString());
+                item => item.Status == LabProtocolStatus.Approved.ToString());
 
             var material = await lab.CreateMaterialLot(
                 new CreateMaterialLotRequest(
@@ -1606,7 +1649,10 @@ public class LabOperationsCommercialHandoffPostgresTests
                 new OrderRequestContext(DbContext, new FixedIdentityContext(customerIdentity)),
                 new OrderIdempotencyService(DbContext),
                 NullOperationalFileStorage.Instance,
-                Options.Create(new PSeqOrderToCashOptions()),
+                Options.Create(new PSeqOrderToCashOptions
+                {
+                    NativePSeqAccountsReceivable = true
+                }),
                 provider,
                 new ReleasedDeliverableDownloadAttemptService(
                     DbContext,
@@ -1634,7 +1680,10 @@ public class LabOperationsCommercialHandoffPostgresTests
                 NullOperationalFileStorage.Instance,
                 NullOperationalFileScanner.Instance,
                 Options.Create(new OrderManagementOptions()),
-                Options.Create(new PSeqOrderToCashOptions()),
+                Options.Create(new PSeqOrderToCashOptions
+                {
+                    NativePSeqAccountsReceivable = true
+                }),
                 provider,
                  new ReleasedDeliverableRetentionSnapshotService(DbContext))
             {

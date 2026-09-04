@@ -1,12 +1,13 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
-import { Link } from '@tanstack/react-router'
-import { BookOpenCheck, ClipboardList, FlaskConical, Layers3, Microscope, PackageCheck, Plus, RefreshCw, ScanLine, Workflow } from 'lucide-react'
+import { Link, useNavigate } from '@tanstack/react-router'
+import { BookOpenCheck, CheckCircle2, ChevronDown, ClipboardList, FlaskConical, Layers3, Microscope, PackageCheck, Pencil, Plus, RefreshCw, ScanLine, Trash2, Workflow } from 'lucide-react'
 import { useState, type FormEvent } from 'react'
 
 import {
   createLabBatch,
   createLabProtocol,
   createLabSendout,
+  deleteLabProtocol,
   getLabOperationsDashboard,
   getLabOperationsError,
   recordLabMaterialQc,
@@ -14,6 +15,7 @@ import {
   transitionLabBatch,
   transitionLabProtocolVersion,
   transitionLabSendout,
+  updateLabProtocol,
   type LabBatch,
   type LabMaterialLot,
   type LabProtocol,
@@ -23,6 +25,14 @@ import { WorkspaceSidebar, type WorkspaceSidebarItem } from '#/components/Worksp
 import { Button } from '#/components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '#/components/ui/card'
 import { Dialog, DialogClose, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '#/components/ui/dialog'
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from '#/components/ui/dropdown-menu'
 import { Input } from '#/components/ui/input'
 import { Label } from '#/components/ui/label'
 import {
@@ -36,6 +46,10 @@ import { EquipmentCreateDialog } from './EquipmentCreateDialog'
 import { MaterialLotCreateDialog } from './MaterialLotCreateDialog'
 import { LabManufacturingQueue } from './LabManufacturingPage'
 import { LabReceiptAccessionPanel } from './LabReceiptAccessionPanel'
+import { ProtocolApprovalDialog } from './ProtocolApprovalDialog'
+import { ProtocolIdentityDialog, type ProtocolIdentityFormValues } from './ProtocolIdentityDialog'
+import { isProtocolVisible } from './protocol-list'
+import { ServiceWorkflowList } from './ServiceWorkflowList'
 
 type CreateKind = 'protocol' | 'material' | 'equipment' | 'batch' | null
 type SimpleCreateKind = Exclude<CreateKind, 'material' | 'equipment'>
@@ -54,6 +68,7 @@ const labSections: ReadonlyArray<WorkspaceSidebarItem<LabSection>> = [
 
 export function LabOperationsPage({ section, onSectionChange }: { section: LabSection; onSectionChange: (section: LabSection) => void }) {
   const { authProvider, session } = usePhaenoSession()
+  const navigate = useNavigate()
   const canView = Boolean(session?.capabilities.canManageLabOperations)
   const apiEnabled = canView && authProvider !== 'mock'
   const queryClient = useQueryClient()
@@ -91,7 +106,7 @@ export function LabOperationsPage({ section, onSectionChange }: { section: LabSe
           {dashboard.data && section === 'work' ? <div className="space-y-5"><LabBarcodeLookup /><WorkQueue items={dashboard.data.workOrders.filter((item) => item.status !== 'AwaitingSpecimens')} /></div> : null}
           {section === 'kits' ? <LabManufacturingQueue workflow="reagent" apiEnabled={apiEnabled} /> : null}
           {section === 'assembly' ? <LabManufacturingQueue workflow="assembly" apiEnabled={apiEnabled} /> : null}
-          {dashboard.data && section === 'protocols' ? <ProtocolList protocols={dashboard.data.protocols} canManage={Boolean(session?.capabilities.canManageLabProtocols)} onCreate={() => setCreateKind('protocol')} refresh={refresh} /> : null}
+          {dashboard.data && section === 'protocols' ? <div className="space-y-5"><ServiceWorkflowList workflows={dashboard.data.serviceWorkflows} marketedServices={dashboard.data.marketedServices} canManage={Boolean(session?.capabilities.canManageLabProtocols)} refresh={refresh} /><ProtocolList protocols={dashboard.data.protocols} canManage={Boolean(session?.capabilities.canManageLabProtocols)} onCreate={() => setCreateKind('protocol')} refresh={refresh} /></div> : null}
           {dashboard.data && section === 'materials' ? <MaterialList items={dashboard.data.materialLots} canManage={Boolean(session?.capabilities.canOperateLabWork)} canApprove={Boolean(session?.capabilities.canSuperviseLabWork)} onCreate={() => setCreateKind('material')} refresh={refresh} /> : null}
           {dashboard.data && section === 'equipment' ? <EquipmentList items={dashboard.data.equipment} canManage={Boolean(session?.capabilities.canSuperviseLabWork)} onCreate={() => setCreateKind('equipment')} /> : null}
           {dashboard.data && section === 'batches' ? <BatchList items={dashboard.data.batches} canManage={Boolean(session?.capabilities.canOperateLabWork)} onCreate={() => setCreateKind('batch')} refresh={refresh} /> : null}
@@ -129,9 +144,16 @@ export function LabOperationsPage({ section, onSectionChange }: { section: LabSe
           <CreateRecordDialog
             kind={createKind === 'material' || createKind === 'equipment' ? null : createKind}
             onClose={() => setCreateKind(null)}
-            onSaved={async () => {
+            onSaved={async (record) => {
               setCreateKind(null)
               await refresh()
+              if (record.kind === 'protocol') {
+                await navigate({
+                  to: '/lab-operations/protocols/$protocolId/versions/new',
+                  params: { protocolId: record.id },
+                  search: { section: undefined },
+                })
+              }
             }}
           />
         </div>
@@ -144,12 +166,17 @@ function WorkQueue({ items }: { items: Awaited<ReturnType<typeof getLabOperation
   return <Card><CardHeader><CardTitle>Authorized laboratory work</CardTitle><CardDescription>Open a work order for accession, lineage, execution, exceptions, and scientific review.</CardDescription></CardHeader><CardContent><div className="divide-y">{items.map((item) => <div key={item.id} className="flex flex-wrap items-center justify-between gap-3 py-3"><div><Link to="/lab-operations/$workOrderId" params={{ workOrderId: item.id }} search={{ section: undefined }} className="font-medium text-primary hover:underline">{item.commercialOrderNumber ?? item.id}</Link><p className="mt-1 text-xs text-muted-foreground">{item.specimenCount} specimen(s) · {item.openExceptionCount} open exception(s) · updated {formatDate(item.updatedAt)}</p></div><Status value={item.status} /></div>)}</div>{items.length === 0 ? <Empty>No accepted Commercial order has authorized Lab work yet.</Empty> : null}</CardContent></Card>
 }
 
-function ProtocolList({ protocols, canManage, onCreate, refresh }: { protocols: LabProtocol[]; canManage: boolean; onCreate: () => void; refresh: () => Promise<unknown> }) {
-  const [confirmation, setConfirmation] = useState<{
+export function ProtocolList({ protocols, canManage, onCreate, refresh }: { protocols: LabProtocol[]; canManage: boolean; onCreate: () => void; refresh: () => Promise<unknown> }) {
+  const [editTarget, setEditTarget] = useState<LabProtocol | null>(null)
+  const [approvalTarget, setApprovalTarget] = useState<{
     protocol: LabProtocol
     version: LabProtocol['versions'][number]
-    action: 'discard' | 'withdraw'
   } | null>(null)
+  const [discardTarget, setDiscardTarget] = useState<{
+    protocol: LabProtocol
+    version: LabProtocol['versions'][number]
+  } | null>(null)
+  const [deleteTarget, setDeleteTarget] = useState<LabProtocol | null>(null)
   const transition = useMutation({
     mutationFn: ({
       protocol,
@@ -164,7 +191,32 @@ function ProtocolList({ protocols, canManage, onCreate, refresh }: { protocols: 
       protocolVersion: protocol.version,
     }),
     onSuccess: async () => {
-      setConfirmation(null)
+      setApprovalTarget(null)
+      setDiscardTarget(null)
+      await refresh()
+    },
+  })
+  const remove = useMutation({
+    mutationFn: (protocol: LabProtocol) => deleteLabProtocol(protocol.id, protocol.version),
+    onSuccess: async () => {
+      setDeleteTarget(null)
+      await refresh()
+    },
+  })
+  const edit = useMutation({
+    mutationFn: ({
+      protocol,
+      values,
+    }: {
+      protocol: LabProtocol
+      values: ProtocolIdentityFormValues
+    }) => updateLabProtocol(protocol.id, {
+      name: values.name,
+      description: values.description || null,
+      version: protocol.version,
+    }),
+    onSuccess: async () => {
+      setEditTarget(null)
       await refresh()
     },
   })
@@ -176,14 +228,7 @@ function ProtocolList({ protocols, canManage, onCreate, refresh }: { protocols: 
     transition.reset()
     transition.mutate({ protocol, versionId, action })
   }
-  const requestConfirmation = (
-    protocol: LabProtocol,
-    version: LabProtocol['versions'][number],
-    action: 'discard' | 'withdraw',
-  ) => {
-    transition.reset()
-    setConfirmation({ protocol, version, action })
-  }
+  const visibleProtocols = protocols.filter(isProtocolVisible)
 
   return (
     <>
@@ -193,7 +238,7 @@ function ProtocolList({ protocols, canManage, onCreate, refresh }: { protocols: 
             <div>
               <CardTitle>Controlled protocols</CardTitle>
               <CardDescription>
-                Execution pins an approved, active version. Each protocol may have only one open draft or approved candidate.
+                Drafts remain editable. Approval is a formal release that locks the version; later changes require a new draft.
               </CardDescription>
             </div>
             {canManage ? (
@@ -213,130 +258,184 @@ function ProtocolList({ protocols, canManage, onCreate, refresh }: { protocols: 
             </Alert>
           ) : null}
           <div className="space-y-4">
-            {protocols.map((protocol) => {
-              const openCandidate = protocol.versions.find(
-                (version) => version.status === 'Draft' || version.status === 'Approved',
+            {visibleProtocols.map((protocol) => {
+              const draft = protocol.versions.find((version) => version.status === 'Draft')
+              const hasEverBeenApproved = protocol.versions.some(
+                (version) => version.approvedByUserId !== null
+                  || ['Approved', 'Active', 'Retired'].includes(version.status),
               )
+              const hasDefinition = protocol.latestVersion > 0
+              const approvedVersion = protocol.versions
+                .filter((version) => version.status === 'Approved' || version.status === 'Active')
+                .at(-1)
               return (
                 <section key={protocol.id} className="rounded-lg border bg-background p-4 shadow-xs">
                   <div className="flex flex-wrap items-start justify-between gap-3">
                     <div>
                       <h3 className="font-medium">{protocol.name}</h3>
-                      <p className="text-xs text-muted-foreground">
-                        {protocol.key} · latest v{protocol.latestVersion || 'none'}
-                      </p>
+                      {protocol.description ? (
+                        <p className="mt-1 text-sm text-muted-foreground">{protocol.description}</p>
+                      ) : null}
+                      <div className="mt-2 flex flex-wrap gap-2">
+                        <Status value={draft
+                          ? `Draft v${draft.protocolVersion}`
+                          : approvedVersion
+                            ? `Approved v${approvedVersion.protocolVersion}`
+                            : 'Setup incomplete'} />
+                      </div>
+                      {!hasDefinition ? (
+                        <p className="mt-2 text-xs text-muted-foreground">
+                          Edit the protocol to define its ordered procedure before approval.
+                        </p>
+                      ) : null}
                     </div>
-                    {canManage && !openCandidate ? (
-                      <Button asChild size="sm" variant="outline">
-                        <Link
-                          to="/lab-operations/protocols/$protocolId/versions/new"
-                          params={{ protocolId: protocol.id }}
-                          search={{ section: undefined }}
-                        >
-                          Add version
-                        </Link>
-                      </Button>
-                    ) : null}
-                  </div>
-                  <div className="mt-3 flex flex-wrap gap-2">
-                    {protocol.versions.map((version) => (
-                      <div
-                        key={version.id}
-                        className="flex flex-wrap items-center gap-2 rounded-md bg-muted px-3 py-2 text-sm"
-                      >
-                        <span>v{version.protocolVersion}</span>
-                        <Status value={version.status} />
-                        {canManage && version.status === 'Draft' ? (
-                          <>
-                            <Button asChild size="sm">
+                    {canManage ? (
+                      <DropdownMenu>
+                        <DropdownMenuTrigger asChild>
+                          <Button type="button" size="sm" variant="outline">
+                            Actions <ChevronDown data-icon="inline-end" />
+                          </Button>
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent align="end" className="w-60">
+                          <DropdownMenuLabel>Protocol actions</DropdownMenuLabel>
+                          {draft ? (
+                            <DropdownMenuItem asChild>
                               <Link
                                 to="/lab-operations/protocols/$protocolId/versions/$versionId/edit"
-                                params={{ protocolId: protocol.id, versionId: version.id }}
+                                params={{ protocolId: protocol.id, versionId: draft.id }}
                                 search={{ section: undefined }}
                               >
-                                Continue editing
+                                <Pencil /> Edit protocol
                               </Link>
-                            </Button>
-                            <Button
-                              type="button"
-                              size="sm"
-                              variant="outline"
+                            </DropdownMenuItem>
+                          ) : (
+                            <DropdownMenuItem asChild>
+                              <Link
+                                to="/lab-operations/protocols/$protocolId/versions/new"
+                                params={{ protocolId: protocol.id }}
+                                search={{ section: undefined }}
+                              >
+                                <Plus /> {hasDefinition ? 'Create new version' : 'Edit protocol'}
+                              </Link>
+                            </DropdownMenuItem>
+                          )}
+                          {draft ? (
+                            <DropdownMenuItem
                               disabled={transition.isPending}
-                              onClick={() => applyTransition(protocol, version.id, 'approve')}
+                              onSelect={() => {
+                                transition.reset()
+                                setApprovalTarget({ protocol, version: draft })
+                              }}
                             >
-                              Approve
-                            </Button>
-                            <Button
-                              type="button"
-                              size="sm"
-                              variant="ghost"
-                              disabled={transition.isPending}
-                              onClick={() => requestConfirmation(protocol, version, 'discard')}
+                              <CheckCircle2 /> Review and approve
+                            </DropdownMenuItem>
+                          ) : null}
+                          {!hasEverBeenApproved ? (
+                            <DropdownMenuItem
+                              onSelect={() => {
+                                edit.reset()
+                                setEditTarget(protocol)
+                              }}
                             >
-                              Discard
-                            </Button>
-                          </>
-                        ) : null}
-                        {canManage && version.status === 'Approved' ? (
-                          <>
-                            <Button
-                              type="button"
-                              size="sm"
-                              disabled={transition.isPending}
-                              onClick={() => applyTransition(protocol, version.id, 'activate')}
+                              <Pencil /> Edit name and description
+                            </DropdownMenuItem>
+                          ) : null}
+                          {draft ? (
+                            <DropdownMenuItem
+                              onSelect={() => {
+                                transition.reset()
+                                setDiscardTarget({ protocol, version: draft })
+                              }}
                             >
-                              Activate
-                            </Button>
-                            <Button
-                              type="button"
-                              size="sm"
-                              variant="outline"
-                              disabled={transition.isPending}
-                              onClick={() => requestConfirmation(protocol, version, 'withdraw')}
-                            >
-                              Withdraw approval
-                            </Button>
-                          </>
-                        ) : null}
-                        {canManage && version.status === 'Active' ? (
-                          <Button
-                            type="button"
-                            size="sm"
-                            variant="ghost"
-                            disabled={transition.isPending}
-                            onClick={() => applyTransition(protocol, version.id, 'retire')}
-                          >
-                            Retire
-                          </Button>
-                        ) : null}
-                      </div>
-                    ))}
+                              Discard draft
+                            </DropdownMenuItem>
+                          ) : null}
+                          {!hasEverBeenApproved ? (
+                            <>
+                              <DropdownMenuSeparator />
+                              <DropdownMenuItem
+                                variant="destructive"
+                                onSelect={() => {
+                                  remove.reset()
+                                  setDeleteTarget(protocol)
+                                }}
+                              >
+                                <Trash2 /> Delete protocol
+                              </DropdownMenuItem>
+                            </>
+                          ) : null}
+                        </DropdownMenuContent>
+                      </DropdownMenu>
+                    ) : null}
                   </div>
+                  {hasDefinition ? (
+                    <div className="mt-3 divide-y rounded-md border bg-muted/30 px-3">
+                      {[...protocol.versions].reverse().map((version) => (
+                        <div key={version.id} className="flex flex-wrap items-center justify-between gap-2 py-2 text-sm">
+                          <div className="flex items-center gap-2">
+                            <span className="font-medium">Version {version.protocolVersion}</span>
+                            <Status value={protocolVersionStatusLabel(version.status)} />
+                          </div>
+                          {version.approvedAtUtc ? (
+                            <span className="text-xs text-muted-foreground">Approved {formatDate(version.approvedAtUtc)}</span>
+                          ) : null}
+                        </div>
+                      ))}
+                    </div>
+                  ) : null}
                 </section>
               )
             })}
           </div>
-          {protocols.length === 0 ? <Empty>No protocols have been authored.</Empty> : null}
+          {visibleProtocols.length === 0 ? <Empty>No current protocols have been authored.</Empty> : null}
         </CardContent>
       </Card>
 
-      <Dialog
-        open={confirmation !== null}
+      <ProtocolIdentityDialog
+        protocol={editTarget}
+        error={edit.error ? getLabOperationsError(edit.error, 'Refresh the protocol and try again.') : undefined}
+        isPending={edit.isPending}
         onOpenChange={(open) => {
           if (open) return
-          setConfirmation(null)
+          setEditTarget(null)
+          edit.reset()
+        }}
+        onSubmit={(values) => {
+          if (editTarget) edit.mutate({ protocol: editTarget, values })
+        }}
+      />
+
+      <ProtocolApprovalDialog
+        protocol={approvalTarget?.protocol ?? null}
+        version={approvalTarget?.version ?? null}
+        error={approvalTarget && transition.error
+          ? getLabOperationsError(transition.error, 'Refresh the protocol and try again.')
+          : undefined}
+        isPending={transition.isPending}
+        onOpenChange={(open) => {
+          if (open || transition.isPending) return
+          setApprovalTarget(null)
+          transition.reset()
+        }}
+        onApprove={() => {
+          if (!approvalTarget) return
+          applyTransition(approvalTarget.protocol, approvalTarget.version.id, 'approve')
+        }}
+      />
+
+      <Dialog
+        open={discardTarget !== null}
+        onOpenChange={(open) => {
+          if (open || transition.isPending) return
+          setDiscardTarget(null)
           transition.reset()
         }}
       >
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>
-              {confirmation?.action === 'discard' ? 'Discard protocol draft?' : 'Withdraw protocol approval?'}
-            </DialogTitle>
+            <DialogTitle>Discard protocol draft?</DialogTitle>
             <DialogDescription>
-              {confirmation?.action === 'discard'
-                ? `Version ${confirmation.version.protocolVersion} will remain in history as discarded and cannot be approved or activated.`
-                : `Version ${confirmation?.version.protocolVersion} will return to Draft. Its recorded approval will be cleared, and it must be approved again before activation.`}
+              Version {discardTarget?.version.protocolVersion} will remain in history as discarded and cannot be approved.
             </DialogDescription>
           </DialogHeader>
           {transition.error ? (
@@ -353,20 +452,51 @@ function ProtocolList({ protocols, canManage, onCreate, refresh }: { protocols: 
             </DialogClose>
             <Button
               type="button"
-              variant={confirmation?.action === 'discard' ? 'destructive' : 'default'}
-              disabled={!confirmation || transition.isPending}
+              variant="destructive"
+              disabled={!discardTarget || transition.isPending}
               onClick={() => {
-                if (!confirmation) return
-                applyTransition(
-                  confirmation.protocol,
-                  confirmation.version.id,
-                  confirmation.action,
-                )
+                if (!discardTarget) return
+                applyTransition(discardTarget.protocol, discardTarget.version.id, 'discard')
               }}
             >
-              {transition.isPending
-                ? 'Saving…'
-                : confirmation?.action === 'discard' ? 'Discard draft' : 'Withdraw approval'}
+              {transition.isPending ? 'Discarding…' : 'Discard draft'}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog
+        open={deleteTarget !== null}
+        onOpenChange={(open) => {
+          if (open || remove.isPending) return
+          setDeleteTarget(null)
+          remove.reset()
+        }}
+      >
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Delete {deleteTarget?.name}?</DialogTitle>
+            <DialogDescription>
+              This permanently deletes the unapproved protocol and all of its draft or discarded versions. This action cannot be undone.
+            </DialogDescription>
+          </DialogHeader>
+          {remove.error ? (
+            <Alert variant="destructive">
+              <AlertTitle>Protocol was not deleted</AlertTitle>
+              <AlertDescription>{getLabOperationsError(remove.error, 'Refresh the protocol and try again.')}</AlertDescription>
+            </Alert>
+          ) : null}
+          <DialogFooter>
+            <DialogClose asChild>
+              <Button type="button" variant="outline" disabled={remove.isPending}>Cancel</Button>
+            </DialogClose>
+            <Button
+              type="button"
+              variant="destructive"
+              disabled={!deleteTarget || remove.isPending}
+              onClick={() => deleteTarget && remove.mutate(deleteTarget)}
+            >
+              {remove.isPending ? 'Deleting…' : 'Delete protocol'}
             </Button>
           </DialogFooter>
         </DialogContent>
@@ -769,21 +899,26 @@ function BatchList({ items, canManage, onCreate, refresh }: { items: Awaited<Ret
     </>
   )
 }
-function CreateRecordDialog({ kind, onClose, onSaved }: { kind: SimpleCreateKind; onClose: () => void; onSaved: () => Promise<unknown> }) {
+function CreateRecordDialog({ kind, onClose, onSaved }: { kind: SimpleCreateKind; onClose: () => void; onSaved: (record: { kind: 'protocol' | 'batch'; id: string }) => Promise<unknown> }) {
   const [form, setForm] = useState<Record<string, string>>({})
   const mutation = useMutation({ mutationFn: async () => {
     if (kind === 'protocol') return createLabProtocol({ name: form.name, description: form.description })
     if (kind === 'batch') return createLabBatch({ name: form.name, notes: form.notes || null })
     throw new Error('Choose a record type.')
-  }, onSuccess: async () => { setForm({}); await onSaved() } })
+  }, onSuccess: async (record) => {
+    if (kind !== 'protocol' && kind !== 'batch') return
+    setForm({})
+    await onSaved({ kind, id: record.id })
+  } })
   const set = (key: string) => (event: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => setForm((current) => ({ ...current, [key]: event.target.value }))
   function submit(event: FormEvent) { event.preventDefault(); mutation.mutate() }
-  return <Dialog open={kind !== null} onOpenChange={(open) => !open && onClose()}><DialogContent><form onSubmit={submit}><DialogHeader><DialogTitle>{kind ? `Create ${humanize(kind)}` : 'Create record'}</DialogTitle><DialogDescription>{kind === 'protocol' ? 'Enter the controlled protocol details. POMS assigns its immutable key.' : kind === 'batch' ? 'Name the batch. POMS assigns its batch number and external sequencing type.' : 'Laboratory records remain internal to Phaeno.'}</DialogDescription></DialogHeader><div className="my-5 grid gap-4 sm:grid-cols-2">{kind === 'protocol' ? <><div className="sm:col-span-2"><Field label="Name" value={form.name} onChange={set('name')} required /></div><TextField label="Description" value={form.description} onChange={set('description')} /></> : null}{kind === 'batch' ? <><div className="sm:col-span-2"><Field label="Batch name" value={form.name} onChange={set('name')} required /></div><TextField label="Notes" value={form.notes} onChange={set('notes')} /></> : null}</div>{mutation.error ? <Alert variant="destructive" className="mb-4"><AlertTitle>Record was not created</AlertTitle><AlertDescription>{getLabOperationsError(mutation.error, 'Check the entered values.')}</AlertDescription></Alert> : null}<RequiredDialogFooter><DialogClose asChild><Button type="button" variant="outline">Cancel</Button></DialogClose><Button type="submit" disabled={mutation.isPending}>{kind ? createActionLabel(kind) : 'Create'}</Button></RequiredDialogFooter></form></DialogContent></Dialog>
+  return <Dialog open={kind !== null} onOpenChange={(open) => !open && onClose()}><DialogContent><form onSubmit={submit}><DialogHeader><DialogTitle>{kind ? `Create ${humanize(kind)}` : 'Create record'}</DialogTitle><DialogDescription>{kind === 'protocol' ? 'Name the controlled procedure. After this step, define its ordered instructions, captures, resources, and QC gates.' : kind === 'batch' ? 'Name the batch. POMS assigns its batch number and external sequencing type.' : 'Laboratory records remain internal to Phaeno.'}</DialogDescription></DialogHeader><div className="my-5 grid gap-4 sm:grid-cols-2">{kind === 'protocol' ? <><div className="sm:col-span-2"><Field label="Name" value={form.name} onChange={set('name')} required /></div><TextField label="Description" value={form.description} onChange={set('description')} /></> : null}{kind === 'batch' ? <><div className="sm:col-span-2"><Field label="Batch name" value={form.name} onChange={set('name')} required /></div><TextField label="Notes" value={form.notes} onChange={set('notes')} /></> : null}</div>{mutation.error ? <Alert variant="destructive" className="mb-4"><AlertTitle>Record was not created</AlertTitle><AlertDescription>{getLabOperationsError(mutation.error, 'Check the entered values.')}</AlertDescription></Alert> : null}<RequiredDialogFooter><DialogClose asChild><Button type="button" variant="outline">Cancel</Button></DialogClose><Button type="submit" disabled={mutation.isPending}>{mutation.isPending ? 'Creating…' : kind === 'protocol' ? 'Continue to definition' : kind ? createActionLabel(kind) : 'Create'}</Button></RequiredDialogFooter></form></DialogContent></Dialog>
 }
 
 function Field({ label, value = '', onChange, required, type = 'text' }: { label: string; value?: string; onChange: React.ChangeEventHandler<HTMLInputElement>; required?: boolean; type?: string }) { const id = `lab-${label.toLowerCase().replaceAll(' ', '-')}`; return <div><Label htmlFor={id}>{required ? <RequiredFieldName>{label}</RequiredFieldName> : label}</Label><Input id={id} className="mt-2" type={type} value={value ?? ''} onChange={onChange} required={required} /></div> }
 function TextField({ label, value = '', onChange }: { label: string; value?: string; onChange: React.ChangeEventHandler<HTMLTextAreaElement> }) { const id = `lab-${label.toLowerCase().replaceAll(' ', '-')}`; return <div className="sm:col-span-2"><Label htmlFor={id}>{label}</Label><textarea id={id} className="mt-2 min-h-20 w-full rounded-lg border bg-background px-3 py-2 text-sm" value={value ?? ''} onChange={onChange} /></div> }
 function Status({ value, prefix }: { value: string; prefix?: string }) { return <span className="rounded-full border bg-muted px-2.5 py-1 text-xs font-medium">{prefix ? `${prefix}: ` : ''}{humanize(value)}</span> }
+function protocolVersionStatusLabel(status: string) { if (status === 'Approved' || status === 'Active') return 'Approved'; if (status === 'Retired') return 'Superseded'; return status }
 function Empty({ children }: { children: React.ReactNode }) { return <p className="py-8 text-center text-sm text-muted-foreground">{children}</p> }
 function AccessDenied() { return <main className="page-wrap px-4 py-8"><Alert variant="destructive"><AlertTitle>Lab operations unavailable</AlertTitle><AlertDescription>An assigned Phaeno laboratory role is required.</AlertDescription></Alert></main> }
 function humanize(value: string) { return value.replace(/([a-z])([A-Z])/g, '$1 $2').replaceAll('_', ' ').replace(/^./, (character) => character.toUpperCase()) }

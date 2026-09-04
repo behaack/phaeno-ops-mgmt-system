@@ -391,10 +391,20 @@ the protected deployed-Preview acceptance above.
   eight-character Job-number, fixed modal save feedback, concurrency refresh
   with preserved entries, pricing submission with no sample records, and
   post-acceptance manual and CSV sample-list preparation. Include a Phaeno user
-  seeing distinct Customer-list loading, failure/retry, genuine-empty, and ready
-  states; initiating a Customer-owned Job; issuing the immediate POMS quote with
+  working sales handoffs, pricing, and quotes from one **Order intake** queue
+  without a product-named `Lab` section, then following accepted authorized
+  work into **Lab Operations** rather than operating receipt or execution from
+  Order Operations. Include distinct Customer-list loading, failure/retry,
+  genuine-empty, and ready
+  states; initiating a Customer-owned Job with and without a proposed USD unit
+  price; finding that proposal in the intake queue; reviewing it beside the
+  catalog price, scope, difference, and subtotal; approving it unchanged or
+  amending it only with an internal reason; enforcing proposer/reviewer dual
+  control when enabled; issuing the immediate POMS quote with
   the visible canonical `pseq-lab-service`/`specimen` line and exact committed
-  quantity; switching to that Customer; accepting as an organization
+  quantity; proving a Finance-approved billing profile includes and freezes tax
+  in the quote while an incomplete profile produces an explicitly pre-tax quote
+  and defers tax until invoicing; switching to that Customer; accepting as an organization
   administrator; and proving that neither Phaeno initiation nor quote issuance
   creates samples or Lab work. Prove Customer and Phaeno order actions require
   an effective, `Ready` PSeq Lab Service entitlement and active offering; an
@@ -421,10 +431,15 @@ the protected deployed-Preview acceptance above.
   aliases without exposing those mutations in the Order Ops UI,
   system-assigned protocol/library/batch identifiers, named batches with a
   system-owned External sequencing type, structured protocol
-  authoring from protocol identity through ordered steps, typed captures,
+  authoring from editable protocol name/description and immutable protocol key
+  through ordered steps, typed captures,
   resources, QC gates, draft creation and resume, parallel-candidate rejection,
-  discard history, approval withdrawal, controlled-definition cloning, approval
-  and activation, active protocol execution with controlled material identity,
+  discard history with discarded-only protocols omitted from the working list,
+  approval withdrawal, controlled-definition cloning, approval
+  and Production promotion through the canonical marketed-service workflow;
+  ordered Required/Optional/Conditional stages; exact workflow, stage, and
+  protocol version pinning; prior-Required-stage gating; Production protocol
+  immutability; and controlled execution with material identity,
   supplier/storage references, date-only expiration/retest, structured
   prepared-reagent component lineage, QC-approved material and calibrated
   equipment, scan-first library batching with status filtering and transition
@@ -639,3 +654,7 @@ the protected deployed-Preview acceptance above.
   into Company detail, current CRM and order navigation, the searchable
   Customer selector, and modal scroll locking. The existing `AcceptInvitePage`
   route-export warning remains unchanged.
+- 2026-09-03: a read-only check reached the active local Portal session, but
+  the application stopped at `Access check failed` before Lab Operations could
+  render. No E2E tests were requested or run; signed-in workflow acceptance
+  remains pending after the local API session is restarted.

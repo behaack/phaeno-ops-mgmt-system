@@ -5,9 +5,10 @@ POMS owns operational accounts receivable for PSeq Lab Service. Result release i
 ## Configure and issue PSeq documents
 
 - Record billing contact/address and Net 30 terms by default.
-- Record `Taxable`, `Exempt`, or `NonTaxable`, including the approved rate or exemption evidence, then obtain Finance approval before quoting.
-- Issue the POMS quote only after full operational readiness. Its billing, tax, terms, currency, and configuration version are immutable snapshots.
-- Job completion idempotently creates one numbered invoice and immutable PDF from the accepted quote. Due date is completion plus the snapshotted terms.
+- Record `Taxable`, `Exempt`, or `NonTaxable`, including the approved rate or exemption evidence. Finance approval is required before the tax determination can be used.
+- If the profile is complete and approved at quote issuance, POMS includes calculated tax and freezes billing, tax, terms, currency, and configuration version in the quote. Zero calculated tax is valid.
+- If the profile is not ready, issue an explicitly pre-tax quote. Complete and approve the profile before invoicing; POMS then calculates tax and freezes the current billing terms in the invoice.
+- Job completion idempotently creates one numbered invoice and immutable PDF. Due date is completion plus the applicable snapshotted terms.
 
 POMS calculates the approved tax rate without a tax engine. Never edit an issued invoice; use an append-only credit, debit, or write-off adjustment.
 

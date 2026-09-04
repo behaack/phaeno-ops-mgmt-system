@@ -302,11 +302,15 @@ Confirmed Prospect rules:
   immutable Phaeno-issued quotes. Partner reagents use active,
   organization-specific negotiated pricing. A Partner never sees or uses
   another Partner's offering or price.
-- PSeq Lab Service quotes require complete derived operational readiness and a
-  Finance-approved tax decision. POMS snapshots billing contact/address,
-  payment terms, tax decision, tax rate or exemption evidence, quote lines,
-  totals, currency, and expiration. Partner kit and data-assembly quoting retain
-  their existing QuickBooks-linked rules.
+- PSeq Lab Service quote issuance and acceptance require every non-billing
+  derived-readiness item and an active Customer administrator. When a complete,
+  Finance-approved billing and tax profile exists, POMS calculates and includes
+  tax and snapshots billing contact/address, payment terms, tax decision, rate
+  or exemption evidence, quote lines, totals, currency, and expiration. When
+  tax cannot be calculated, the quote is explicitly pre-tax and the current
+  approved billing profile and tax are required and snapshotted at invoicing.
+  A calculated zero-tax amount is valid. Partner kit and data-assembly quoting
+  retain their existing QuickBooks-linked rules.
 - POMS owns operational accounts receivable for PSeq Lab Service: automatic
   invoice issuance at job completion, immutable invoice PDFs, append-only
   adjustments, receipts, explicit allocations, reconciliation, and aging.

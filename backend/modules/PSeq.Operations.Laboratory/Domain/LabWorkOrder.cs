@@ -31,6 +31,7 @@ public sealed class LabWorkOrder : IAudit, IConcurrency
     public Guid SubmittingOrganizationId { get; private set; }
     public string ServiceKey { get; private set; } = null!;
     public int ServiceVersion { get; private set; }
+    public Guid? LabServiceWorkflowVersionId { get; private set; }
     public string TurnaroundPolicyKey { get; private set; } = null!;
     public string? OpaqueSubmitterReference { get; private set; }
     public LabWorkOrderStatus Status { get; private set; } = LabWorkOrderStatus.AwaitingSpecimens;
@@ -59,7 +60,8 @@ public sealed class LabWorkOrder : IAudit, IConcurrency
         string serviceKey,
         int serviceVersion,
         string turnaroundPolicyKey,
-        string? opaqueSubmitterReference)
+        string? opaqueSubmitterReference,
+        Guid? labServiceWorkflowVersionId = null)
     {
         if (authorizationId == Guid.Empty
             || authorizationSourceId == Guid.Empty
@@ -82,6 +84,8 @@ public sealed class LabWorkOrder : IAudit, IConcurrency
         SubmittingOrganizationId = submittingOrganizationId;
         ServiceKey = Required(serviceKey, nameof(serviceKey));
         ServiceVersion = serviceVersion;
+        LabServiceWorkflowVersionId = ValidOptionalId(
+            labServiceWorkflowVersionId, nameof(labServiceWorkflowVersionId));
         TurnaroundPolicyKey = Required(turnaroundPolicyKey, nameof(turnaroundPolicyKey));
         OpaqueSubmitterReference = Optional(opaqueSubmitterReference);
     }
@@ -91,7 +95,8 @@ public sealed class LabWorkOrder : IAudit, IConcurrency
         string serviceKey,
         int serviceVersion,
         string turnaroundPolicyKey,
-        string? opaqueSubmitterReference)
+        string? opaqueSubmitterReference,
+        Guid? labServiceWorkflowVersionId = null)
     {
         if (authorizationVersion <= CurrentAuthorizationVersion)
         {
@@ -106,6 +111,8 @@ public sealed class LabWorkOrder : IAudit, IConcurrency
         CurrentAuthorizationVersion = authorizationVersion;
         ServiceKey = Required(serviceKey, nameof(serviceKey));
         ServiceVersion = serviceVersion;
+        LabServiceWorkflowVersionId = ValidOptionalId(
+            labServiceWorkflowVersionId, nameof(labServiceWorkflowVersionId));
         TurnaroundPolicyKey = Required(turnaroundPolicyKey, nameof(turnaroundPolicyKey));
         OpaqueSubmitterReference = Optional(opaqueSubmitterReference);
     }
@@ -165,6 +172,15 @@ public sealed class LabWorkOrder : IAudit, IConcurrency
 
     public void AdvanceProjectionVersion() => ProjectionVersion++;
 
+    public void PinServiceWorkflow(Guid workflowVersionId)
+    {
+        if (workflowVersionId == Guid.Empty)
+            throw new ArgumentException("A workflow version is required.", nameof(workflowVersionId));
+        if (LabServiceWorkflowVersionId.HasValue && LabServiceWorkflowVersionId != workflowVersionId)
+            throw new InvalidOperationException("This laboratory job is already pinned to a different workflow version.");
+        LabServiceWorkflowVersionId = workflowVersionId;
+    }
+
     public void MarkCreated(DateTime utcNow, Guid? actorUserId)
     {
         CreatedAt = utcNow;
@@ -186,6 +202,9 @@ public sealed class LabWorkOrder : IAudit, IConcurrency
 
     private static string? Optional(string? value) =>
         string.IsNullOrWhiteSpace(value) ? null : value.Trim();
+
+    private static Guid? ValidOptionalId(Guid? value, string parameterName) =>
+        value == Guid.Empty ? throw new ArgumentException("An identifier cannot be empty.", parameterName) : value;
 }
 
 public sealed class LabWorkAuthorizationVersion

@@ -281,15 +281,69 @@ public sealed partial class LabOperationsController
     {
         await requestContext.RequireAsync(HttpContext, cancellationToken,
             LabRole.Operator, LabRole.Supervisor);
-        await RequireWorkOrderAsync(workOrderId, cancellationToken);
+        var work = await RequireWorkOrderAsync(workOrderId, cancellationToken);
         if (request.LabSpecimenId.HasValue)
             await RequireSpecimenAsync(workOrderId, request.LabSpecimenId.Value, cancellationToken);
-        var protocolVersion = await dbContext.LabProtocolVersions.AsNoTracking()
-            .SingleOrDefaultAsync(item => item.Id == request.LabProtocolVersionId, cancellationToken) ?? throw Missing();
-        if (protocolVersion.Status != LabProtocolStatus.Active)
-            throw Conflict("protocol_not_active", "Only an active protocol version can be assigned.");
+
+        var workflowVersionId = work.LabServiceWorkflowVersionId;
+        if (!workflowVersionId.HasValue)
+        {
+            workflowVersionId = await (
+                from workflow in dbContext.LabServiceWorkflows.AsNoTracking()
+                join version in dbContext.LabServiceWorkflowVersions.AsNoTracking()
+                    on workflow.Id equals version.LabServiceWorkflowId
+                where workflow.ServiceKey == work.ServiceKey.ToLower()
+                    && version.Status == LabServiceWorkflowStatus.Production
+                orderby version.WorkflowVersion descending
+                select (Guid?)version.Id).FirstOrDefaultAsync(cancellationToken);
+            if (!workflowVersionId.HasValue)
+                throw Conflict("service_workflow_not_in_production",
+                    "This service does not have a production laboratory workflow. Promote one before starting work.");
+            Execute(() => work.PinServiceWorkflow(workflowVersionId.Value));
+        }
+
+        LabServiceWorkflowStage? stage;
+        if (request.LabServiceWorkflowStageId.HasValue)
+        {
+            stage = await dbContext.LabServiceWorkflowStages.AsNoTracking().SingleOrDefaultAsync(item =>
+                item.Id == request.LabServiceWorkflowStageId.Value
+                && item.LabServiceWorkflowVersionId == workflowVersionId.Value,
+                cancellationToken);
+        }
+        else
+        {
+            stage = await dbContext.LabServiceWorkflowStages.AsNoTracking().SingleOrDefaultAsync(item =>
+                item.LabServiceWorkflowVersionId == workflowVersionId.Value
+                && item.LabProtocolVersionId == request.LabProtocolVersionId,
+                cancellationToken);
+        }
+        if (stage is null)
+            throw Conflict("protocol_not_in_pinned_workflow",
+                "Choose a protocol stage from this job's pinned laboratory workflow.");
+        if (request.LabProtocolVersionId != stage.LabProtocolVersionId)
+            throw Invalid("workflow_stage_protocol_mismatch",
+                "The selected workflow stage and protocol version do not match.");
+        var priorRequiredStageIds = await dbContext.LabServiceWorkflowStages.AsNoTracking()
+            .Where(item => item.LabServiceWorkflowVersionId == workflowVersionId.Value
+                && item.Sequence < stage.Sequence
+                && item.Requirement == LabServiceWorkflowStageRequirement.Required)
+            .Select(item => item.Id).ToListAsync(cancellationToken);
+        if (priorRequiredStageIds.Count > 0)
+        {
+            var completedStageIds = await dbContext.LabProtocolExecutions.AsNoTracking()
+                .Where(item => item.LabWorkOrderId == workOrderId
+                    && item.LabSpecimenId == request.LabSpecimenId
+                    && item.Status == LabExecutionStatus.Completed
+                    && item.LabServiceWorkflowStageId.HasValue
+                    && priorRequiredStageIds.Contains(item.LabServiceWorkflowStageId.Value))
+                .Select(item => item.LabServiceWorkflowStageId!.Value)
+                .Distinct().ToListAsync(cancellationToken);
+            if (completedStageIds.Count != priorRequiredStageIds.Count)
+                throw Conflict("workflow_prior_required_stage_incomplete",
+                    "Complete all earlier required workflow stages before assigning this stage.");
+        }
         var execution = new LabProtocolExecution(workOrderId, request.LabSpecimenId,
-            request.LabProtocolVersionId, request.AssignedToUserId);
+            stage.LabProtocolVersionId, request.AssignedToUserId, stage.Id);
         dbContext.LabProtocolExecutions.Add(execution);
         await dbContext.SaveChangesAsync(cancellationToken);
         return MapExecution(execution);

@@ -10,9 +10,13 @@ type ApiEnvelope<T> = {
 }
 
 export type LabRoleAssignment = { id: string; userId: string; userName: string; email: string; role: string; isActive: boolean; version: number }
-export type LabWorkOrderSummary = { id: string; authorizationId: string; commercialOrderId: string | null; commercialOrderNumber: string | null; submittingOrganizationId: string; serviceKey: string; status: string; specimenCount: number; openExceptionCount: number; updatedAt: string; version: number }
+export type LabWorkOrderSummary = { id: string; authorizationId: string; commercialOrderId: string | null; commercialOrderNumber: string | null; submittingOrganizationId: string; serviceKey: string; status: string; specimenCount: number; openExceptionCount: number; updatedAt: string; version: number; labServiceWorkflowVersionId: string | null }
 export type LabProtocolVersion = { id: string; protocolVersion: number; status: string; definitionJson: string; authoredByUserId: string; authoredAtUtc: string; approvedByUserId: string | null; approvedAtUtc: string | null }
 export type LabProtocol = { id: string; key: string; name: string; description: string | null; latestVersion: number; versions: LabProtocolVersion[]; version: number }
+export type LabMarketedService = { serviceKey: string; name: string }
+export type LabServiceWorkflowStage = { id: string; sequence: number; name: string; labProtocolVersionId: string; labProtocolId: string; protocolKey: string; protocolName: string; protocolVersion: number; requirement: 'Required' | 'Optional' | 'Conditional'; condition: string | null; handoffCriteria: string | null }
+export type LabServiceWorkflowVersion = { id: string; workflowVersion: number; status: 'Draft' | 'Approved' | 'Production' | 'Retired' | 'Discarded'; authoredByUserId: string; authoredAtUtc: string; approvedByUserId: string | null; approvedAtUtc: string | null; productionByUserId: string | null; productionAtUtc: string | null; stages: LabServiceWorkflowStage[]; version: number }
+export type LabServiceWorkflow = { id: string; serviceKey: string; name: string; description: string | null; latestVersion: number; versions: LabServiceWorkflowVersion[]; version: number }
 export type LabMaterialDefinition = { id: string; key: string; name: string; kind: string; isActive: boolean }
 export type LabSupplier = { id: string; name: string; isActive: boolean }
 export type LabStorageLocation = { id: string; name: string; isActive: boolean }
@@ -20,7 +24,7 @@ export type LabPreparedReagentComponent = { id: string; componentMaterialLotId: 
 export type LabMaterialLot = { id: string; kind: string; materialDefinitionId: string; materialKey: string; name: string; lotNumber: string; supplierId: string | null; supplier: string | null; expirationOrRetestDate: string | null; storageLocationId: string; storageLocation: string; availableQuantity: number; quantityUnit: string; qcDisposition: string; qcPerformedOn: string | null; qcFailureReason: string | null; components: LabPreparedReagentComponent[]; version: number }
 export type LabEquipment = { id: string; assetCode: string; name: string; equipmentType: string; location: string; status: string; lastCalibrationOn: string | null; calibrationDueOn: string | null; version: number }
 export type LabBatch = { id: string; batchNumber: string; name: string; batchType: string; status: string; startedAtUtc: string | null; completedAtUtc: string | null; notes: string | null; memberCount: number; sendoutId: string | null; sendoutStatus: string | null; sendoutVersion: number | null; version: number }
-export type LabOperationsDashboard = { workOrders: LabWorkOrderSummary[]; protocols: LabProtocol[]; materialLots: LabMaterialLot[]; materialDefinitions: LabMaterialDefinition[]; suppliers: LabSupplier[]; storageLocations: LabStorageLocation[]; equipment: LabEquipment[]; batches: LabBatch[]; roleAssignments: LabRoleAssignment[] }
+export type LabOperationsDashboard = { workOrders: LabWorkOrderSummary[]; protocols: LabProtocol[]; serviceWorkflows: LabServiceWorkflow[]; marketedServices: LabMarketedService[]; materialLots: LabMaterialLot[]; materialDefinitions: LabMaterialDefinition[]; suppliers: LabSupplier[]; storageLocations: LabStorageLocation[]; equipment: LabEquipment[]; batches: LabBatch[]; roleAssignments: LabRoleAssignment[] }
 export type CreateLabMaterialLotInput = {
   kind: 'SupplierLot' | 'PreparedReagent'
   materialDefinitionId: string | null
@@ -41,7 +45,7 @@ export type LabContainer = { id: string; labSpecimenId: string | null; parentCon
 export type LabContainerScan = { labWorkOrderId: string; commercialOrderNumber: string | null; accessionNumber: string | null; parentBarcode: string | null; labLibraryId: string | null; libraryStatus: string | null; container: LabContainer }
 export type LabLabelPrintEvent = { id: string; labContainerId: string; outcome: string; reason: string; failureDetails: string | null; printNumber: number | null; actorUserId: string | null; occurredAtUtc: string }
 export type LabContainerLabel = { labWorkOrderId: string; commercialOrderNumber: string | null; accessionNumber: string | null; parentBarcode: string | null; container: LabContainer; printHistory: LabLabelPrintEvent[] }
-export type LabExecution = { id: string; labSpecimenId: string | null; labProtocolVersionId: string; assignedToUserId: string | null; status: string; capturedResultsJson: string; deviationNote: string | null; startedAtUtc: string | null; completedAtUtc: string | null; version: number }
+export type LabExecution = { id: string; labSpecimenId: string | null; labProtocolVersionId: string; assignedToUserId: string | null; status: string; capturedResultsJson: string; deviationNote: string | null; startedAtUtc: string | null; completedAtUtc: string | null; version: number; labServiceWorkflowStageId: string | null }
 export type LabLibrary = { id: string; labSpecimenId: string; sourceContainerId: string; libraryContainerId: string; preparationExecutionId: string; libraryKey: string; status: string; qcResultsJson: string | null; version: number }
 export type LabException = { id: string; labSpecimenId: string | null; labProtocolExecutionId: string | null; audience: string; categoryCode: string; title: string; internalDescription: string; customerSafeSummary: string | null; isBlocking: boolean; status: string; responseDueAtUtc: string | null; resolvedAtUtc: string | null; version: number }
 export type LabScientificApproval = { id: string; approvalVersion: number; releaseDefinitionKey: string; releaseDefinitionVersion: number; approvedByUserId: string; approvedAtUtc: string; projectionVersion: number }
@@ -79,9 +83,15 @@ export async function uploadLabAssemblyOutput(requestId: string, runId: string, 
 }
 export const setLabRole = (userId: string, role: string, input: { isActive: boolean; version?: number }) => put<LabRoleAssignment>(`/platform/lab-operations/roles/${userId}/${role}`, input)
 export const createLabProtocol = (input: { name: string; description?: string }) => post<LabProtocol>('/platform/lab-operations/protocols', input)
+export const updateLabProtocol = (id: string, input: { name: string; description: string | null; version: number }) => put<LabProtocol>(`/platform/lab-operations/protocols/${id}`, input)
+export const deleteLabProtocol = (id: string, version: number) => api.delete(`/platform/lab-operations/protocols/${id}`, { data: { version } })
 export const createLabProtocolVersion = (id: string, input: { definitionJson: string; protocolVersion: number }) => post<LabProtocol>(`/platform/lab-operations/protocols/${id}/versions`, input)
 export const updateLabProtocolVersion = (id: string, input: { definitionJson: string; protocolVersion: number }) => put<LabProtocol>(`/platform/lab-operations/protocol-versions/${id}`, input)
 export const transitionLabProtocolVersion = (id: string, input: { action: string; protocolVersion: number }) => post<LabProtocol>(`/platform/lab-operations/protocol-versions/${id}/transition`, input)
+export const createLabServiceWorkflow = (input: { serviceKey: string; name: string; description?: string | null }) => post<LabServiceWorkflow>('/platform/lab-operations/service-workflows', input)
+export const createLabServiceWorkflowVersion = (id: string, input: { stages: Array<{ name: string; labProtocolVersionId: string; requirement: string; condition: string | null; handoffCriteria: string | null }>; workflowVersion: number }) => post<LabServiceWorkflow>(`/platform/lab-operations/service-workflows/${id}/versions`, input)
+export const updateLabServiceWorkflowVersion = (id: string, input: { stages: Array<{ name: string; labProtocolVersionId: string; requirement: string; condition: string | null; handoffCriteria: string | null }>; workflowVersion: number }) => put<LabServiceWorkflow>(`/platform/lab-operations/service-workflow-versions/${id}`, input)
+export const transitionLabServiceWorkflowVersion = (id: string, input: { action: string; workflowVersion: number }) => post<LabServiceWorkflow>(`/platform/lab-operations/service-workflow-versions/${id}/transition`, input)
 export const setLabMilestone = (id: string, status: string, version: number) => post<LabWorkOrderDetail>(`/platform/lab-operations/work-orders/${id}/milestone`, { status, version })
 export const receiveLabSpecimen = (workId: string, specimenId: string, input: object) => post<LabWorkOrderDetail>(`/platform/lab-operations/work-orders/${workId}/specimens/${specimenId}/receipt`, input)
 export const accessionLabSpecimen = (workId: string, specimenId: string, input: object) => post<LabWorkOrderDetail>(`/platform/lab-operations/work-orders/${workId}/specimens/${specimenId}/accession`, input)

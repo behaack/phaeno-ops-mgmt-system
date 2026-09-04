@@ -92,11 +92,11 @@ export function ProtocolVersionBuilderPage({
   const draft = draftVersionId
     ? protocol?.versions.find((item) => item.id === draftVersionId)
     : undefined
-  const openCandidate = protocol?.versions.find(
-    (item) => item.status === 'Draft' || item.status === 'Approved',
-  )
-  const controlledSource = protocol?.versions.find((item) => item.status === 'Active')
-    ?? protocol?.versions.filter((item) => item.status === 'Retired').slice(-1)[0]
+  const openCandidate = protocol?.versions.find((item) => item.status === 'Draft')
+  const controlledSource = protocol?.versions
+    .filter((item) => item.status === 'Approved' || item.status === 'Active')
+    .at(-1)
+    ?? protocol?.versions.filter((item) => item.status === 'Retired').at(-1)
   const isEditing = Boolean(draftVersionId)
   const form = useForm<ProtocolDefinitionFormValues>({
     resolver: zodResolver(protocolDefinitionFormSchema),
@@ -248,23 +248,19 @@ export function ProtocolVersionBuilderPage({
         <Alert>
           <AlertTitle>An open protocol version already exists</AlertTitle>
           <AlertDescription>
-            {openCandidate.status === 'Draft'
-              ? 'Continue or discard the current draft before creating another version.'
-              : 'Activate or withdraw approval from the approved version before creating another version.'}
+            Continue or discard the current draft before creating another version.
           </AlertDescription>
         </Alert>
         <div className="mt-4 flex flex-wrap gap-2">
-          {openCandidate.status === 'Draft' ? (
-            <Button asChild>
-              <Link
-                to="/lab-operations/protocols/$protocolId/versions/$versionId/edit"
-                params={{ protocolId, versionId: openCandidate.id }}
-                search={{ section: undefined }}
-              >
-                Continue editing
-              </Link>
-            </Button>
-          ) : null}
+          <Button asChild>
+            <Link
+              to="/lab-operations/protocols/$protocolId/versions/$versionId/edit"
+              params={{ protocolId, versionId: openCandidate.id }}
+              search={{ section: undefined }}
+            >
+              Edit protocol
+            </Link>
+          </Button>
           <Button asChild variant="outline">
             <Link to="/lab-operations" search={{ section: 'protocols' }}>
               Back to protocols
@@ -298,6 +294,7 @@ export function ProtocolVersionBuilderPage({
   }
 
   const displayedVersion = draft?.protocolVersion ?? protocol.latestVersion + 1
+  const isInitialDefinition = !isEditing && protocol.latestVersion === 0
 
   return (
     <main className="page-wrap px-4 py-8">
@@ -308,19 +305,29 @@ export function ProtocolVersionBuilderPage({
           </Link>
           {' / '}
           {protocol.name}
-          {isEditing ? ` / Edit draft v${displayedVersion}` : ' / New version'}
+          {isEditing
+              ? ` / Edit draft v${displayedVersion}`
+              : isInitialDefinition
+              ? ' / Edit protocol'
+              : ' / New version'}
         </p>
         <div className="mt-2 flex flex-wrap items-start justify-between gap-4">
           <div className="max-w-3xl">
             <h1 className="text-3xl font-semibold">
-              {isEditing ? 'Edit' : 'Build'} {protocol.name} version {displayedVersion}
+              {isEditing
+                ? `Edit ${protocol.name} draft v${displayedVersion}`
+                : isInitialDefinition
+                  ? `Edit ${protocol.name}`
+                  : `Build ${protocol.name} version ${displayedVersion}`}
             </h1>
             <p className="mt-2 text-sm leading-6 text-muted-foreground">
               {isEditing
-                ? 'Continue the open draft. Saving updates this version; approval locks it for activation.'
-                : controlledSource
-                  ? `This draft starts from controlled version ${controlledSource.protocolVersion}. Approval and activation remain separate actions.`
-                  : 'Define an ordered, controlled procedure. Saving creates a draft; approval and activation remain separate actions.'}
+                ? 'Continue the open draft. Saving updates this version; formal approval locks it and makes it the approved version for future use.'
+                : isInitialDefinition
+                  ? 'Define the initial controlled procedure. Saving creates a draft that must be formally reviewed and approved before use.'
+                  : controlledSource
+                  ? `This draft starts from approved version ${controlledSource.protocolVersion}. It does not replace that version until formally approved.`
+                  : 'Define an ordered, controlled procedure. Saving creates a draft that is not in effect until formally approved.'}
             </p>
           </div>
           <div className="rounded-lg border bg-muted/40 px-3 py-2 text-sm">
@@ -431,8 +438,16 @@ export function ProtocolVersionBuilderPage({
           </Button>
           <Button type="submit" disabled={mutation.isPending}>
             {mutation.isPending
-              ? isEditing ? 'Saving draft…' : 'Creating draft…'
-              : isEditing ? 'Save draft' : 'Create protocol draft'}
+              ? isEditing
+                ? 'Saving draft…'
+                : isInitialDefinition
+                  ? 'Saving initial draft…'
+                  : 'Creating draft…'
+              : isEditing
+                ? 'Save draft'
+                : isInitialDefinition
+                  ? 'Save initial draft'
+                  : 'Create protocol draft'}
           </Button>
         </div>
       </form>

@@ -231,6 +231,11 @@ public sealed class PlatformLabServiceOrdersController(
                 }
 
                 var initiatedAt = DateTime.UtcNow;
+                Execute(() => order.UpdatePriceProposal(
+                    request.ProposedUnitPrice,
+                    request.PriceProposalNote,
+                    actor.Id,
+                    initiatedAt));
                 dbContext.LabServiceOrders.Add(order);
                 Event(order, "Created", order.Status.ToString(), actor.Id);
                 var draftStatus = order.Status.ToString();
@@ -381,26 +386,42 @@ public sealed class PlatformLabServiceOrdersController(
                 .EvaluateAsync(order.OrganizationId, cancellationToken);
             if (!readiness.Evaluation.CanIssueQuote)
                 throw new OrderManagementException("operational_readiness_incomplete",
-                    "Resolve every PSeq readiness blocker before issuing a Customer quote.",
-                    StatusCodes.Status409Conflict, readiness.Evaluation.Blockers);
+                    "Resolve every quote-readiness blocker before issuing a Customer quote.",
+                    StatusCodes.Status409Conflict, readiness.Evaluation.QuoteBlockers);
         }
         if (order.Status == LabServiceOrderStatus.SubmittedForQuote) Execute(order.BeginQuotePreparation);
         if (order.Status != LabServiceOrderStatus.QuoteInPreparation && order.Status != LabServiceOrderStatus.QuoteIssued)
             throw Conflict("quote_not_allowed", "A quote can be issued only while pricing this request.");
+        if (orderToCashOptions.Value.DualControlEnforced
+            && order.ProposedUnitPrice.HasValue
+            && order.PriceProposedByUserId == actor.Id)
+            throw Conflict("price_proposal_self_approval_not_allowed", "A different Commercial Operator must review this proposed price.");
         if (request.Lines.Count == 0) throw Invalid("quote_lines_required", "At least one quote line is required.");
-        if (request.Lines.Any(line => line.Quantity <= 0 || line.UnitPrice < 0)) throw Invalid("invalid_quote_line", "Quote quantities must be positive and prices cannot be negative.");
+        if (request.Lines.Any(line => line.Quantity <= 0
+                || line.UnitPrice < 0
+                || line.UnitPrice != decimal.Round(line.UnitPrice, 2, MidpointRounding.AwayFromZero)))
+            throw Invalid("invalid_quote_line", "Quote quantities must be positive and prices must use no more than two decimal places.");
         var itemIds = request.Lines.Select(line => line.CatalogItemId).Distinct().ToList();
         var catalog = await dbContext.QboCatalogItems.AsNoTracking().Where(item => itemIds.Contains(item.Id) && item.IsActive)
             .ToDictionaryAsync(item => item.Id, cancellationToken);
         if (catalog.Count != itemIds.Count) throw Invalid("catalog_item_unavailable", "One or more QuickBooks items are unavailable.");
-        var commercial = await dbContext.OrganizationCommercialProfiles.AsNoTracking().FirstOrDefaultAsync(item => item.OrganizationId == order.OrganizationId, cancellationToken);
-        if (commercial is null) throw Conflict("billing_profile_required", "Complete the Customer billing profile before issuing a quote.");
-        if (!nativeReceivables && string.IsNullOrWhiteSpace(commercial.QboCustomerId))
+        var labServiceLines = request.Lines.Where(line =>
+            catalog.TryGetValue(line.CatalogItemId, out var item)
+            && string.Equals(item.ExternalItemId, OrderServiceKeys.PSeqLabService, StringComparison.OrdinalIgnoreCase)
+            && string.Equals(item.SalesUnit, OrderSalesUnits.Specimen, StringComparison.OrdinalIgnoreCase)).ToList();
+        if (labServiceLines.Count != 1)
+            throw Invalid("quote_lab_service_line_required", "Include the active PSeq Lab Service specimen item exactly once.");
+        var labServiceLine = labServiceLines[0];
+        if (labServiceLine.Quantity != order.RequestedSpecimenCount)
+            throw Invalid("quote_lab_service_quantity_mismatch", "The PSeq Lab Service quantity must equal the requested specimen count.");
+        var commercial = await dbContext.OrganizationCommercialProfiles.AsNoTracking()
+            .FirstOrDefaultAsync(item => item.OrganizationId == order.OrganizationId, cancellationToken);
+        if (!nativeReceivables && string.IsNullOrWhiteSpace(commercial?.QboCustomerId))
             throw Conflict("qbo_customer_required", "Link this customer to QuickBooks before issuing a quote.");
-        if (nativeReceivables && !commercial.HasFinanceApprovedTaxDecision)
-            throw Conflict("finance_tax_approval_required", "Finance must approve the effective tax decision before quote issuance.");
         if (nativeReceivables && !string.Equals(request.Currency, "USD", StringComparison.OrdinalIgnoreCase))
             throw Invalid("currency_not_supported", "PSeq accounts receivable supports USD only.");
+        if (nativeReceivables && request.Tax != 0)
+            throw Invalid("quote_tax_not_allowed", "PSeq quote tax is calculated by the system when approved tax information is available; otherwise it is calculated when the invoice is issued.");
         var now = DateTime.UtcNow;
         var config = await dbContext.OrderSystemConfigurations.AsNoTracking().OrderBy(item => item.CreatedAt).FirstOrDefaultAsync(cancellationToken);
         var expiresAt = request.ExpiresAt ?? now.AddDays(config?.QuoteValidityDays ?? 30);
@@ -409,45 +430,42 @@ public sealed class PlatformLabServiceOrdersController(
             line.Description.Trim(), line.Quantity, line.UnitPrice)).ToList();
         var subtotal = snapshots.Sum(line => decimal.Round(line.Quantity * line.UnitPrice, 2, MidpointRounding.AwayFromZero));
         var revision = order.Quotes.Count == 0 ? 1 : order.Quotes.Max(item => item.Revision) + 1;
-        var computedTax = nativeReceivables && commercial.TaxDecision == EffectiveTaxDecision.Taxable
-            ? decimal.Round(subtotal * commercial.ApprovedTaxRate!.Value, 2, MidpointRounding.AwayFromZero)
-            : nativeReceivables ? 0 : request.Tax;
+        var canCalculateTax = nativeReceivables && HasInvoiceReadyCommercialProfile(commercial);
+        var computedTax = canCalculateTax ? CalculateTax(subtotal, commercial!) : nativeReceivables ? 0 : request.Tax;
         var quote = new LabServiceQuote(order.Id, revision, purpose, JsonSerializer.Serialize(snapshots, JsonOptions), subtotal,
             computedTax, nativeReceivables ? "USD" : request.Currency, now, expiresAt);
-        if (nativeReceivables)
+        if (canCalculateTax)
         {
             quote.FreezeCommercialTerms(
-                JsonSerializer.Serialize(new
-                {
-                    name = commercial.BillingContactName,
-                    email = commercial.BillingContactEmail
-                }, JsonOptions),
-                commercial.BillingAddressJson!,
+                SerializeBillingContact(commercial!),
+                commercial!.BillingAddressJson!,
                 commercial.PaymentTermsDays,
-                JsonSerializer.Serialize(new
-                {
-                    decision = commercial.TaxDecision!.Value.ToString(),
-                    rate = commercial.ApprovedTaxRate,
-                    exemptionEvidence = commercial.TaxExemptionEvidence,
-                    approvedByUserId = commercial.FinanceApprovedByUserId,
-                    approvedAtUtc = commercial.FinanceApprovedAtUtc
-                }, JsonOptions),
+                SerializeTaxDecision(commercial),
                 commercial.ConfigurationVersion);
         }
+        Execute(() => quote.RecordPricingDecision(
+            order.RequestRevision,
+            order.ProposedUnitPrice,
+            labServiceLine.UnitPrice,
+            request.PricingDecisionReason,
+            actor.Id,
+            now));
         var previous = order.Quotes.Where(item => item.Status is QuoteStatus.Issued or QuoteStatus.SyncPending).OrderByDescending(item => item.Revision).FirstOrDefault();
         previous?.Supersede(quote.Id);
         order.Quotes.Add(quote);
         if (nativeReceivables)
         {
+            var previousStatus = order.Status.ToString();
             quote.MarkIssued();
             order.MarkQuoteIssued(quote.Id);
+            Event(order, previousStatus, order.Status.ToString(), actor.Id, internalNote: PricingDecisionAudit(quote));
             Notice(order, "lab-quote-issued", "Laboratory quote available", $"Pricing for {order.OrderNumber} is available for review.");
         }
         else
         {
             var document = new CommercialDocumentLink(OrderWorkflowTypes.LabService, order.Id, CommercialDocumentKind.Estimate, quote.Total, quote.Currency);
             dbContext.CommercialDocumentLinks.Add(document);
-            var payload = new OrderDocumentOutboxPayload(document.Id, quote.Id, commercial.QboCustomerId!, order.OrderNumber, null,
+            var payload = new OrderDocumentOutboxPayload(document.Id, quote.Id, commercial!.QboCustomerId!, order.OrderNumber, null,
                 quote.Currency, snapshots.Select(line => new QuickBooksLineRequest(line.ExternalItemId, line.Description, line.Quantity, line.UnitPrice)).ToList());
             dbContext.OrderOutboxMessages.Add(new OrderOutboxMessage(IntegrationOperation.CreateEstimate, OrderWorkflowTypes.LabService,
                 order.Id, key, JsonSerializer.Serialize(payload, JsonOptions)));
@@ -694,17 +712,43 @@ public sealed class PlatformLabServiceOrdersController(
         var lines = JsonSerializer.Deserialize<List<QuoteLineSnapshot>>(acceptedQuote.LinesJson, JsonOptions) ?? [];
         if (nativeReceivables)
         {
-            if (acceptedQuote.BillingContactSnapshotJson is null
-                || acceptedQuote.BillingAddressSnapshotJson is null
-                || acceptedQuote.TaxDecisionSnapshotJson is null
-                || !acceptedQuote.PaymentTermsDaysSnapshot.HasValue)
-                throw Conflict("quote_billing_snapshot_missing", "The accepted quote does not contain an approved billing, tax, and payment-terms snapshot.");
             if (!string.Equals(acceptedQuote.Currency, "USD", StringComparison.Ordinal))
                 throw Conflict("currency_not_supported", "PSeq accounts receivable supports USD only.");
             if (await dbContext.Invoices.AnyAsync(item => item.LabServiceOrderId == order.Id, cancellationToken))
                 throw Conflict("invoice_already_issued", "An invoice has already been issued for this completed order.");
+            var quoteHasCommercialSnapshot = acceptedQuote.BillingContactSnapshotJson is not null
+                && acceptedQuote.BillingAddressSnapshotJson is not null
+                && acceptedQuote.TaxDecisionSnapshotJson is not null
+                && acceptedQuote.PaymentTermsDaysSnapshot.HasValue;
+            if (!quoteHasCommercialSnapshot)
+            {
+                if (profile is null
+                    || !profile.HasCompleteBillingContact
+                    || !profile.HasCompleteBillingAddress
+                    || profile.PaymentTermsDays is < 0 or > 365
+                    || !profile.HasEffectiveTaxDecision)
+                    throw Conflict("billing_profile_required", "Complete the Customer billing contact, address, payment terms, and tax decision before issuing the invoice.");
+                if (!profile.HasFinanceApprovedTaxDecision)
+                    throw Conflict("finance_tax_approval_required", "Finance must approve the effective tax decision before invoice issuance.");
+            }
+            var billingContactSnapshotJson = quoteHasCommercialSnapshot
+                ? acceptedQuote.BillingContactSnapshotJson!
+                : SerializeBillingContact(profile!);
+            var billingAddressSnapshotJson = quoteHasCommercialSnapshot
+                ? acceptedQuote.BillingAddressSnapshotJson!
+                : profile!.BillingAddressJson!;
+            var taxDecisionSnapshotJson = quoteHasCommercialSnapshot
+                ? acceptedQuote.TaxDecisionSnapshotJson!
+                : SerializeTaxDecision(profile!);
+            var paymentTermsDays = quoteHasCommercialSnapshot
+                ? acceptedQuote.PaymentTermsDaysSnapshot!.Value
+                : profile!.PaymentTermsDays;
+            var invoiceTax = quoteHasCommercialSnapshot
+                ? acceptedQuote.Tax
+                : CalculateTax(acceptedQuote.Subtotal, profile!);
+            var invoiceTotal = decimal.Round(acceptedQuote.Subtotal + invoiceTax, 2, MidpointRounding.AwayFromZero);
             var issuedOn = DateOnly.FromDateTime(order.CompletedAt ?? DateTime.UtcNow);
-            var dueOn = issuedOn.AddDays(acceptedQuote.PaymentTermsDaysSnapshot.Value);
+            var dueOn = issuedOn.AddDays(paymentTermsDays);
             var invoiceNumber = $"INV-{issuedOn:yyyyMMdd}-{Guid.NewGuid():N}"[..21].ToUpperInvariant();
             var customerName = await dbContext.Organizations.AsNoTracking()
                 .Where(item => item.Id == order.OrganizationId).Select(item => item.Name)
@@ -712,19 +756,19 @@ public sealed class PlatformLabServiceOrdersController(
             var pdf = InvoicePdfRenderer.Render(invoiceNumber, customerName, issuedOn, dueOn,
                 lines.Select(line => new InvoicePdfLine(line.Description, line.Quantity, line.UnitPrice,
                     decimal.Round(line.Quantity * line.UnitPrice, 2, MidpointRounding.AwayFromZero))).ToList(),
-                acceptedQuote.Subtotal, acceptedQuote.Tax, acceptedQuote.Total, "USD");
+                acceptedQuote.Subtotal, invoiceTax, invoiceTotal, "USD");
             await using var pdfStream = new MemoryStream(pdf, writable: false);
             var stored = await fileStorage.SaveAsync(pdfStream, ".pdf", 5_000_000, cancellationToken);
             try
             {
                 var nativeInvoice = new Invoice(order.OrganizationId, order.Id, acceptedQuote.Id,
-                    invoiceNumber, issuedOn, acceptedQuote.PaymentTermsDaysSnapshot.Value,
-                    acceptedQuote.BillingContactSnapshotJson, acceptedQuote.BillingAddressSnapshotJson,
-                    acceptedQuote.TaxDecisionSnapshotJson, acceptedQuote.Subtotal, acceptedQuote.Tax,
+                    invoiceNumber, issuedOn, paymentTermsDays,
+                    billingContactSnapshotJson, billingAddressSnapshotJson,
+                    taxDecisionSnapshotJson, acceptedQuote.Subtotal, invoiceTax,
                     stored.StorageKey, stored.Sha256, actor.Id, DateTime.UtcNow);
                 dbContext.Invoices.Add(nativeInvoice);
                 var taxRate = acceptedQuote.Subtotal == 0 ? 0
-                    : decimal.Round(acceptedQuote.Tax / acceptedQuote.Subtotal, 6, MidpointRounding.AwayFromZero);
+                    : decimal.Round(invoiceTax / acceptedQuote.Subtotal, 6, MidpointRounding.AwayFromZero);
                 dbContext.InvoiceLines.AddRange(lines.Select((line, index) => new InvoiceLine(
                     nativeInvoice.Id, index + 1, null, line.Description, line.Quantity, line.UnitPrice, taxRate)));
                 Notice(order, "lab-invoice-issued", "Invoice available",
@@ -860,7 +904,12 @@ public sealed class PlatformLabServiceOrdersController(
             SampleRosterFinalizedAt: order.SampleRosterFinalizedAt,
             CanEditSamples: false,
             CanFinalizeSamples: false,
-            CommercialSource: commercialSource);
+            CommercialSource: commercialSource,
+            ProposedUnitPrice: order.ProposedUnitPrice,
+            ProposedCurrency: order.ProposedUnitPrice.HasValue ? "USD" : null,
+            PriceProposalNote: order.PriceProposalNote,
+            PriceProposedByUserId: order.PriceProposedByUserId,
+            PriceProposedAt: order.PriceProposedAt);
     }
 
     private static IReadOnlyList<LabServiceSourceGroupWriteRequest> ValidatePricingProfile(
@@ -929,11 +978,54 @@ public sealed class PlatformLabServiceOrdersController(
             }),
             order.StorageRequirements,
             order.SafetyDeclaration,
+            proposedUnitPrice = order.ProposedUnitPrice,
+            proposedCurrency = order.ProposedUnitPrice.HasValue ? "USD" : null,
+            priceProposalNote = order.PriceProposalNote,
+            priceProposedByUserId = order.PriceProposedByUserId,
+            priceProposedAt = order.PriceProposedAt,
             serviceKey = OrderServiceKeys.PSeqLabService,
             submissionInstructions = order.SubmissionInstructionsSnapshot,
             prohibitedDataConfirmed = true,
             samples = Array.Empty<object>(),
             analyses = Array.Empty<object>()
+        }, JsonOptions);
+
+    private static string PricingDecisionAudit(LabServiceQuote quote)
+        => quote.PricingDecision switch
+        {
+            QuotePricingDecision.ApprovedAsProposed => $"Approved the proposed USD {quote.ProposedUnitPriceSnapshot:0.00} per specimen and issued quote revision {quote.Revision}.",
+            QuotePricingDecision.AmendedProposal => $"Amended the proposed USD {quote.ProposedUnitPriceSnapshot:0.00} per specimen and issued quote revision {quote.Revision}. Reason: {quote.PricingDecisionReason}",
+            _ => $"Set pricing without a proposal and issued quote revision {quote.Revision}."
+        };
+
+    private static bool HasInvoiceReadyCommercialProfile(OrganizationCommercialProfile? profile)
+        => profile is not null
+            && profile.HasCompleteBillingContact
+            && profile.HasCompleteBillingAddress
+            && profile.PaymentTermsDays is >= 0 and <= 365
+            && profile.HasEffectiveTaxDecision
+            && profile.HasFinanceApprovedTaxDecision;
+
+    private static decimal CalculateTax(decimal subtotal, OrganizationCommercialProfile profile)
+        => profile.TaxDecision == EffectiveTaxDecision.Taxable
+            ? decimal.Round(subtotal * profile.ApprovedTaxRate!.Value, 2, MidpointRounding.AwayFromZero)
+            : 0;
+
+    private static string SerializeBillingContact(OrganizationCommercialProfile profile)
+        => JsonSerializer.Serialize(new
+        {
+            name = profile.BillingContactName,
+            email = profile.BillingContactEmail
+        }, JsonOptions);
+
+    private static string SerializeTaxDecision(OrganizationCommercialProfile profile)
+        => JsonSerializer.Serialize(new
+        {
+            decision = profile.TaxDecision!.Value.ToString(),
+            rate = profile.ApprovedTaxRate,
+            exemptionEvidence = profile.TaxExemptionEvidence,
+            approvedByUserId = profile.FinanceApprovedByUserId,
+            approvedAtUtc = profile.FinanceApprovedAtUtc
         }, JsonOptions);
 
     private void Event(LabServiceOrder order, string from, string to, Guid actorId, string? reason = null, string? internalNote = null, Guid? childId = null)

@@ -21,13 +21,18 @@ acceptance gates remain in `PSEQ-ORDER-TO-CASH-GAP-CLOSURE-PLAN.md`.
 1. Finance records billing contact/address, Net 30 by default, and an effective
    `Taxable`, `Exempt`, or `NonTaxable` decision with applicable rate or
    exemption evidence.
-2. A Finance approver records approval, date, and notes. Quote issuance rejects
-   incomplete or unapproved tax configuration.
-3. The issued quote freezes billing, tax, terms, currency, and configuration
-   version. POMS calculates tax from the approved rate.
-4. Completing the job idempotently creates one numbered invoice from the
-   accepted quote. Due date is completion date plus the snapshotted terms. The
-   invoice and PDF are immutable.
+2. A Finance approver records approval, date, and notes. When this profile is
+   complete at quote issuance, POMS calculates tax from the approved decision
+   and rate and freezes billing, tax, terms, currency, and configuration
+   version in the quote. A calculated zero-tax amount is valid.
+3. When tax cannot be calculated at quote issuance, POMS issues an explicitly
+   pre-tax quote. Quote issuance and acceptance do not require the billing
+   profile, but invoice issuance does.
+4. Completing the job idempotently creates one numbered invoice. It preserves
+   tax and terms frozen in the accepted quote or calculates tax and snapshots
+   the then-current complete, Finance-approved profile for a pre-tax quote. Due
+   date is completion date plus the applicable snapshotted terms. The invoice
+   and PDF are immutable.
 5. Finance enters a manual receipt with evidence or previews and confirms a CSV
    import. Imported and manual receipts begin unapplied; duplicate source and
    external IDs are rejected.

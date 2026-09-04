@@ -20,6 +20,8 @@ public static class LabOperationsModelConfiguration
             entity.Property(e => e.Version).IsConcurrencyToken().IsRequired();
             entity.HasIndex(e => e.AuthorizationId).IsUnique();
             entity.HasIndex(e => new { e.SubmittingOrganizationId, e.Status, e.CreatedAt });
+            entity.HasOne<LabServiceWorkflowVersion>().WithMany()
+                .HasForeignKey(e => e.LabServiceWorkflowVersionId).OnDelete(DeleteBehavior.Restrict);
         });
 
         modelBuilder.Entity<LabWorkAuthorizationVersion>(entity =>
@@ -169,6 +171,43 @@ public static class LabOperationsModelConfiguration
             entity.HasOne<LabProtocol>().WithMany().HasForeignKey(e => e.LabProtocolId).OnDelete(DeleteBehavior.Restrict);
         });
 
+        modelBuilder.Entity<LabServiceWorkflow>(entity =>
+        {
+            entity.ToTable("lab_service_workflows", laboratorySchema);
+            entity.HasKey(e => e.Id);
+            ConfigureAudited(entity);
+            entity.Property(e => e.ServiceKey).HasMaxLength(255).IsRequired();
+            entity.Property(e => e.Name).HasMaxLength(255).IsRequired();
+            entity.Property(e => e.Description).HasMaxLength(2000);
+            entity.HasIndex(e => e.ServiceKey).IsUnique();
+        });
+
+        modelBuilder.Entity<LabServiceWorkflowVersion>(entity =>
+        {
+            entity.ToTable("lab_service_workflow_versions", laboratorySchema);
+            entity.HasKey(e => e.Id);
+            ConfigureAudited(entity);
+            entity.Property(e => e.Status).HasConversion<string>().HasMaxLength(50).IsRequired();
+            entity.HasIndex(e => new { e.LabServiceWorkflowId, e.WorkflowVersion }).IsUnique();
+            entity.HasOne<LabServiceWorkflow>().WithMany()
+                .HasForeignKey(e => e.LabServiceWorkflowId).OnDelete(DeleteBehavior.Restrict);
+        });
+
+        modelBuilder.Entity<LabServiceWorkflowStage>(entity =>
+        {
+            entity.ToTable("lab_service_workflow_stages", laboratorySchema);
+            entity.HasKey(e => e.Id);
+            entity.Property(e => e.Name).HasMaxLength(255).IsRequired();
+            entity.Property(e => e.Requirement).HasConversion<string>().HasMaxLength(50).IsRequired();
+            entity.Property(e => e.Condition).HasMaxLength(1000);
+            entity.Property(e => e.HandoffCriteria).HasMaxLength(2000);
+            entity.HasIndex(e => new { e.LabServiceWorkflowVersionId, e.Sequence }).IsUnique();
+            entity.HasOne<LabServiceWorkflowVersion>().WithMany()
+                .HasForeignKey(e => e.LabServiceWorkflowVersionId).OnDelete(DeleteBehavior.Restrict);
+            entity.HasOne<LabProtocolVersion>().WithMany()
+                .HasForeignKey(e => e.LabProtocolVersionId).OnDelete(DeleteBehavior.Restrict);
+        });
+
         modelBuilder.Entity<LabProtocolExecution>(entity =>
         {
             entity.ToTable("lab_protocol_executions", laboratorySchema);
@@ -181,6 +220,7 @@ public static class LabOperationsModelConfiguration
             entity.HasOne<LabWorkOrder>().WithMany().HasForeignKey(e => e.LabWorkOrderId).OnDelete(DeleteBehavior.Restrict);
             entity.HasOne<LabSpecimen>().WithMany().HasForeignKey(e => e.LabSpecimenId).OnDelete(DeleteBehavior.Restrict);
             entity.HasOne<LabProtocolVersion>().WithMany().HasForeignKey(e => e.LabProtocolVersionId).OnDelete(DeleteBehavior.Restrict);
+            entity.HasOne<LabServiceWorkflowStage>().WithMany().HasForeignKey(e => e.LabServiceWorkflowStageId).OnDelete(DeleteBehavior.Restrict);
         });
 
         modelBuilder.Entity<LabMaterialDefinition>(entity =>

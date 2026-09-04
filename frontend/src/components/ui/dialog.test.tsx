@@ -66,6 +66,25 @@ describe('DialogContent', () => {
     consoleError.mockRestore()
   })
 
+  it('does not render an empty scrolling body between a header and footer', () => {
+    render(
+      <Dialog open>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Confirm action</DialogTitle>
+            <DialogDescription>This action keeps its recorded history.</DialogDescription>
+          </DialogHeader>
+          <DialogFooter>Confirmation actions</DialogFooter>
+        </DialogContent>
+      </Dialog>,
+    )
+
+    const dialog = screen.getByRole('dialog', { name: 'Confirm action' })
+    expect(dialog.querySelector(':scope > [data-slot="dialog-header"]')).toBeTruthy()
+    expect(dialog.querySelector(':scope > [data-slot="dialog-body"]')).toBeNull()
+    expect(dialog.querySelector(':scope > [data-slot="dialog-footer"]')).toBeTruthy()
+  })
+
   it('keeps form-wrapped headers and footers fixed without moving actions out of the form', () => {
     render(
       <Dialog open>

@@ -53,6 +53,11 @@ public class PSeqOrderToCashDomainTests
         Assert.True(incomplete.CanStageOrder);
         Assert.False(incomplete.CanIssueQuote);
 
+        var billingIncomplete = OperationalReadinessPolicy.Evaluate(Input(completeBilling: false));
+        Assert.Equal(OperationalReadiness.NeedsSetup, billingIncomplete.State);
+        Assert.True(billingIncomplete.CanIssueQuote);
+        Assert.Empty(billingIncomplete.QuoteBlockers);
+
         var blocked = OperationalReadinessPolicy.Evaluate(Input(manualBlock: true));
         Assert.Equal(OperationalReadiness.Blocked, blocked.State);
         Assert.False(blocked.CanStageOrder);

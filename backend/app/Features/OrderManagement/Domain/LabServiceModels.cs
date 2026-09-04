@@ -21,6 +21,10 @@ public sealed class LabServiceOrder : IAudit, IConcurrency
     public string SafetyDeclaration { get; private set; } = null!;
     public string SubmissionInstructionsSnapshot { get; private set; } = string.Empty;
     public string? PlacementSnapshotJson { get; private set; }
+    public decimal? ProposedUnitPrice { get; private set; }
+    public string? PriceProposalNote { get; private set; }
+    public Guid? PriceProposedByUserId { get; private set; }
+    public DateTime? PriceProposedAt { get; private set; }
     public LabServiceOrderStatus Status { get; private set; } = LabServiceOrderStatus.DraftRequest;
     public LabServiceOrderStatus? ResumeStatus { get; private set; }
     public int RequestRevision { get; private set; }
@@ -109,6 +113,35 @@ public sealed class LabServiceOrder : IAudit, IConcurrency
         SetBiologicalSourceProfile(hasMixedBiologicalSources, sharedBiologicalSource);
         StorageRequirements = OrderText.Required(storageRequirements, "Storage requirements", 2000);
         SafetyDeclaration = OrderText.Required(safetyDeclaration, "Safety declaration", 2000);
+    }
+
+    public void UpdatePriceProposal(decimal? proposedUnitPrice, string? proposalNote, Guid actorUserId, DateTime utcNow)
+    {
+        EnsureStatus(LabServiceOrderStatus.DraftRequest, LabServiceOrderStatus.ChangesRequested);
+        if (actorUserId == Guid.Empty) throw new ArgumentException("A price proposer is required.", nameof(actorUserId));
+        if (utcNow.Kind != DateTimeKind.Utc) throw new ArgumentException("Price proposal time must be UTC.", nameof(utcNow));
+
+        if (!proposedUnitPrice.HasValue)
+        {
+            if (!string.IsNullOrWhiteSpace(proposalNote))
+                throw new ArgumentException("A pricing note requires a proposed price.", nameof(proposalNote));
+            if (!ProposedUnitPrice.HasValue) return;
+            ProposedUnitPrice = null;
+            PriceProposalNote = null;
+            PriceProposedByUserId = null;
+            PriceProposedAt = null;
+            return;
+        }
+
+        var normalizedPrice = decimal.Round(proposedUnitPrice.Value, 2, MidpointRounding.AwayFromZero);
+        if (normalizedPrice <= 0 || normalizedPrice != proposedUnitPrice.Value)
+            throw new ArgumentOutOfRangeException(nameof(proposedUnitPrice), "Proposed unit price must be greater than zero with no more than two decimal places.");
+        var normalizedNote = OrderText.Optional(proposalNote, 1000);
+        if (ProposedUnitPrice == normalizedPrice && PriceProposalNote == normalizedNote) return;
+        ProposedUnitPrice = normalizedPrice;
+        PriceProposalNote = normalizedNote;
+        PriceProposedByUserId = actorUserId;
+        PriceProposedAt = utcNow;
     }
 
     public void UpdateDraft(

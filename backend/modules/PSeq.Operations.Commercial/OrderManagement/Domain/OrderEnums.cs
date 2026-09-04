@@ -101,3 +101,10 @@ public enum QuotePurpose
     Initial,
     Change
 }
+
+public enum QuotePricingDecision
+{
+    PricedWithoutProposal,
+    ApprovedAsProposed,
+    AmendedProposal
+}

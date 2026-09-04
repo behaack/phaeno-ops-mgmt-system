@@ -7,6 +7,7 @@ using Microsoft.EntityFrameworkCore;
 using PSeq.Operations.Commercial.LabOperations.Application;
 using PSeq.Operations.Commercial.LabOperations.Domain;
 using PSeq.Operations.Laboratory.Domain;
+using PSeq.Operations.Commercial.OrderManagement.Domain;
 using PhaenoPortal.App.Features.LabOperations.DTOs;
 using PhaenoPortal.App.Features.LabOperations.Services;
 using PhaenoPortal.App.Features.OrderManagement.Domain;
@@ -48,6 +49,14 @@ public sealed partial class LabOperationsController(
             .ToDictionaryAsync(item => item.WorkOrderId, item => item.Count, cancellationToken);
 
         var protocols = await ReadProtocolsAsync(cancellationToken);
+        var workflows = await ReadServiceWorkflowsAsync(cancellationToken);
+        var marketedServices = await dbContext.QboCatalogItems.AsNoTracking()
+            .Where(item => item.IsActive
+                && item.ExternalItemId.ToLower() == OrderServiceKeys.PSeqLabService
+                && item.SalesUnit.ToLower() == OrderSalesUnits.Specimen)
+            .OrderBy(item => item.Name)
+            .Select(item => new LabMarketedServiceDto(item.ExternalItemId.ToLower(), item.Name))
+            .ToListAsync(cancellationToken);
         var lots = await ReadMaterialLotsAsync(cancellationToken);
         var materialDefinitions = await dbContext.LabMaterialDefinitions.AsNoTracking()
             .Where(item => item.IsActive).OrderBy(item => item.Name)
@@ -72,7 +81,7 @@ public sealed partial class LabOperationsController(
         return new LabOperationsDashboardDto(
             workOrders.Select(work => MapWorkOrder(work, authorizations, commercialOrders,
                 specimenCounts.GetValueOrDefault(work.Id), exceptionCounts.GetValueOrDefault(work.Id))).ToList(),
-            protocols, lots, materialDefinitions, suppliers, storageLocations,
+            protocols, workflows, marketedServices, lots, materialDefinitions, suppliers, storageLocations,
             equipment, batches, roles);
     }
 
@@ -102,7 +111,8 @@ public sealed partial class LabOperationsController(
             .OrderBy(item => item.CreatedAt).Select(item => new LabExecutionDto(item.Id,
                 item.LabSpecimenId, item.LabProtocolVersionId, item.AssignedToUserId,
                 item.Status.ToString(), item.CapturedResultsJson, item.DeviationNote,
-                item.StartedAtUtc, item.CompletedAtUtc, item.Version)).ToListAsync(cancellationToken);
+                item.StartedAtUtc, item.CompletedAtUtc, item.Version,
+                item.LabServiceWorkflowStageId)).ToListAsync(cancellationToken);
         var libraries = await dbContext.LabLibraries.AsNoTracking().Where(item => item.LabWorkOrderId == work.Id)
             .OrderBy(item => item.LibraryKey).Select(item => new LabLibraryDto(item.Id,
                 item.LabSpecimenId, item.SourceContainerId, item.LibraryContainerId,
@@ -237,6 +247,31 @@ public sealed partial class LabOperationsController(
         return MapProtocol(protocol, []);
     }
 
+    [HttpPut("protocols/{protocolId:guid}")]
+    public async Task<LabProtocolDto> UpdateProtocol(Guid protocolId,
+        [FromBody] UpdateProtocolRequest request, CancellationToken cancellationToken)
+    {
+        await requestContext.RequireAsync(HttpContext, cancellationToken,
+            LabRole.ProtocolAdministrator);
+        var protocol = await dbContext.LabProtocols
+            .SingleOrDefaultAsync(item => item.Id == protocolId, cancellationToken)
+            ?? throw Missing();
+        EnsureVersion(protocol.Version, request.Version);
+        var identityLocked = await dbContext.LabProtocolVersions.AsNoTracking().AnyAsync(item =>
+            item.LabProtocolId == protocolId
+            && (item.ApprovedByUserId.HasValue
+                || item.Status == LabProtocolStatus.Approved
+                || item.Status == LabProtocolStatus.Active
+                || item.Status == LabProtocolStatus.Retired),
+            cancellationToken);
+        if (identityLocked)
+            throw Conflict("protocol_identity_locked",
+                "An approved protocol cannot be renamed. Create a new protocol identity instead.");
+        Execute(() => protocol.UpdateDetails(request.Name, request.Description));
+        await dbContext.SaveChangesAsync(cancellationToken);
+        return (await ReadProtocolsAsync(cancellationToken)).Single(item => item.Id == protocol.Id);
+    }
+
     [HttpPost("protocols/{protocolId:guid}/versions")]
     public async Task<LabProtocolDto> CreateProtocolVersion(Guid protocolId,
         [FromBody] CreateProtocolVersionRequest request, CancellationToken cancellationToken)
@@ -248,12 +283,12 @@ public sealed partial class LabOperationsController(
         EnsureVersion(protocol.Version, request.ProtocolVersion);
         var hasOpenCandidate = await dbContext.LabProtocolVersions.AnyAsync(item =>
             item.LabProtocolId == protocolId
-            && (item.Status == LabProtocolStatus.Draft || item.Status == LabProtocolStatus.Approved),
+            && item.Status == LabProtocolStatus.Draft,
             cancellationToken);
         if (hasOpenCandidate)
         {
             throw Conflict("protocol_candidate_exists",
-                "Continue, activate, withdraw, or discard the open protocol version before creating another.");
+                "Continue or discard the open protocol draft before creating another version.");
         }
         var definition = NormalizeJson(request.DefinitionJson, "protocol_definition_invalid");
         var nextVersion = protocol.LatestVersion + 1;
@@ -299,34 +334,57 @@ public sealed partial class LabOperationsController(
         switch (request.Action.Trim().ToLowerInvariant())
         {
             case "approve":
-                if (version.AuthoredByUserId == actor.User.Id)
-                    requestContext.EnforceOrAuditActorConflict(actor.User.Id,
-                        "protocol_author_approval_conflict",
-                        "A protocol author cannot approve the same protocol version.",
-                        new { protocolId = protocol.Id, protocolVersionId = version.Id });
-                Execute(() => version.Approve(actor.User.Id, DateTime.UtcNow,
-                    requestContext.DualControlEnforced));
-                break;
-            case "withdraw": Execute(version.WithdrawApproval); break;
-            case "discard": Execute(version.Discard); break;
-            case "activate":
-                var active = await dbContext.LabProtocolVersions
-                    .Where(item => item.LabProtocolId == version.LabProtocolId && item.Status == LabProtocolStatus.Active)
+                var previousApprovedVersions = await dbContext.LabProtocolVersions
+                    .Where(item => item.LabProtocolId == version.LabProtocolId
+                        && item.Id != version.Id
+                        && (item.Status == LabProtocolStatus.Approved
+                            || item.Status == LabProtocolStatus.Active))
                     .ToListAsync(cancellationToken);
-                foreach (var previous in active) Execute(previous.Retire);
                 if (version.AuthoredByUserId == actor.User.Id)
-                    requestContext.EnforceOrAuditActorConflict(actor.User.Id,
-                        "protocol_author_activation_conflict",
-                        "A protocol author cannot activate the same protocol version.",
-                        new { protocolId = protocol.Id, protocolVersionId = version.Id });
-                Execute(() => version.Activate(actor.User.Id,
-                    requestContext.DualControlEnforced));
+                    throw Conflict(
+                        "protocol_author_approval_conflict",
+                        "A protocol author cannot approve the same protocol version. An independent Protocol Administrator must approve it.");
+                Execute(() => version.Approve(actor.User.Id, DateTime.UtcNow));
+                foreach (var previous in previousApprovedVersions) Execute(previous.Retire);
                 break;
-            case "retire": Execute(version.Retire); break;
+            case "discard": Execute(version.Discard); break;
             default: throw Invalid("protocol_transition_invalid", "The protocol transition is invalid.");
         }
         MarkProtocolCandidateChanged(protocol);
         await dbContext.SaveChangesAsync(cancellationToken);
         return (await ReadProtocolsAsync(cancellationToken)).Single(item => item.Id == protocol.Id);
+    }
+
+    [HttpDelete("protocols/{protocolId:guid}")]
+    public async Task<IActionResult> DeleteProtocol(Guid protocolId,
+        [FromBody] DeleteProtocolRequest request, CancellationToken cancellationToken)
+    {
+        await requestContext.RequireAsync(HttpContext, cancellationToken,
+            LabRole.ProtocolAdministrator);
+        var protocol = await dbContext.LabProtocols
+            .SingleOrDefaultAsync(item => item.Id == protocolId, cancellationToken)
+            ?? throw Missing();
+        EnsureVersion(protocol.Version, request.Version);
+        var versions = await dbContext.LabProtocolVersions
+            .Where(item => item.LabProtocolId == protocolId)
+            .ToListAsync(cancellationToken);
+        if (versions.Any(item => item.ApprovedByUserId.HasValue
+            || item.Status is LabProtocolStatus.Approved or LabProtocolStatus.Active or LabProtocolStatus.Retired))
+            throw Conflict("protocol_approved_delete_forbidden",
+                "A protocol cannot be deleted after any version has been approved.");
+
+        var versionIds = versions.Select(item => item.Id).ToList();
+        var isReferenced = versionIds.Count > 0 && (await dbContext.LabServiceWorkflowStages
+            .AnyAsync(item => versionIds.Contains(item.LabProtocolVersionId), cancellationToken)
+            || await dbContext.LabProtocolExecutions
+                .AnyAsync(item => versionIds.Contains(item.LabProtocolVersionId), cancellationToken));
+        if (isReferenced)
+            throw Conflict("protocol_delete_referenced",
+                "The protocol cannot be deleted because a laboratory record references one of its versions.");
+
+        dbContext.LabProtocolVersions.RemoveRange(versions);
+        dbContext.LabProtocols.Remove(protocol);
+        await dbContext.SaveChangesAsync(cancellationToken);
+        return NoContent();
     }
 }

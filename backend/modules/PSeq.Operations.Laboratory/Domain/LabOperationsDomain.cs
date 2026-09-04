@@ -204,6 +204,11 @@ public sealed class LabProtocol : LabAuditedEntity
     public LabProtocol(string key, string name, string? description)
     {
         Key = Required(key, nameof(key), 100);
+        UpdateDetails(name, description);
+    }
+
+    public void UpdateDetails(string name, string? description)
+    {
         Name = Required(name, nameof(name), 255);
         Description = Optional(description, 2000);
     }
@@ -256,14 +261,6 @@ public sealed class LabProtocolVersion
         DefinitionJson = RequiredDefinition(definitionJson);
     }
 
-    public void WithdrawApproval()
-    {
-        if (Status != LabProtocolStatus.Approved) throw new InvalidOperationException("Only an approved protocol can return to draft.");
-        Status = LabProtocolStatus.Draft;
-        ApprovedByUserId = null;
-        ApprovedAtUtc = null;
-    }
-
     public void Discard()
     {
         if (Status != LabProtocolStatus.Draft) throw new InvalidOperationException("Only a draft protocol can be discarded.");
@@ -305,6 +302,7 @@ public sealed class LabProtocolExecution : LabAuditedEntity
     public Guid LabWorkOrderId { get; private set; }
     public Guid? LabSpecimenId { get; private set; }
     public Guid LabProtocolVersionId { get; private set; }
+    public Guid? LabServiceWorkflowStageId { get; private set; }
     public Guid? AssignedToUserId { get; private set; }
     public LabExecutionStatus Status { get; private set; } = LabExecutionStatus.Planned;
     public string CapturedResultsJson { get; private set; } = "{}";
@@ -315,11 +313,15 @@ public sealed class LabProtocolExecution : LabAuditedEntity
     private LabProtocolExecution() { }
 
     public LabProtocolExecution(Guid labWorkOrderId, Guid? labSpecimenId,
-        Guid labProtocolVersionId, Guid? assignedToUserId)
+        Guid labProtocolVersionId, Guid? assignedToUserId,
+        Guid? labServiceWorkflowStageId = null)
     {
         LabWorkOrderId = labWorkOrderId != Guid.Empty ? labWorkOrderId : throw new ArgumentException("A work order is required.");
         LabSpecimenId = labSpecimenId;
         LabProtocolVersionId = labProtocolVersionId != Guid.Empty ? labProtocolVersionId : throw new ArgumentException("A protocol version is required.");
+        LabServiceWorkflowStageId = labServiceWorkflowStageId == Guid.Empty
+            ? throw new ArgumentException("A workflow stage identifier cannot be empty.")
+            : labServiceWorkflowStageId;
         AssignedToUserId = assignedToUserId;
     }
 

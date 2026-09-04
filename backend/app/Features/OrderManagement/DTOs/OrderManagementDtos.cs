@@ -34,7 +34,9 @@ public sealed record CommercialOrderListItemDto(
     string? TenantSafeReason,
     Guid? AssignedToUserId = null,
     DateTime? DueAt = null,
-    bool IsOverdue = false);
+    bool IsOverdue = false,
+    decimal? ProposedUnitPrice = null,
+    string? ProposedCurrency = null);
 
 public sealed record LabIntakeDto(
     Guid OrderId,
@@ -119,7 +121,12 @@ public sealed record QuoteDto(
     string? BillingAddressSnapshotJson = null,
     int? PaymentTermsDaysSnapshot = null,
     string? TaxDecisionSnapshotJson = null,
-    int? CommercialConfigurationVersion = null);
+    int? CommercialConfigurationVersion = null,
+    int? SourceRequestRevision = null,
+    decimal? ProposedUnitPriceSnapshot = null,
+    string? PricingDecision = null,
+    Guid? PricingDecidedByUserId = null,
+    DateTime? PricingDecidedAt = null);
 
 public sealed record LabSampleDto(
     Guid Id,
@@ -251,7 +258,12 @@ public sealed record LabServiceOrderDto(
     DateTime? SampleRosterFinalizedAt = null,
     bool CanEditSamples = false,
     bool CanFinalizeSamples = false,
-    CommercialOrderSourceDto? CommercialSource = null);
+    CommercialOrderSourceDto? CommercialSource = null,
+    decimal? ProposedUnitPrice = null,
+    string? ProposedCurrency = null,
+    string? PriceProposalNote = null,
+    Guid? PriceProposedByUserId = null,
+    DateTime? PriceProposedAt = null);
 
 public sealed record ReagentOrderLineDto(
     Guid Id,
@@ -550,7 +562,9 @@ public sealed record LabOrderWriteRequest(
     IReadOnlyList<LabSampleWriteRequest> Samples,
     long? Version = null,
     int RequestedSpecimenCount = 0,
-    IReadOnlyList<LabServiceSourceGroupWriteRequest>? SourceGroups = null);
+    IReadOnlyList<LabServiceSourceGroupWriteRequest>? SourceGroups = null,
+    decimal? ProposedUnitPrice = null,
+    string? PriceProposalNote = null);
 public sealed record InitiateCustomerLabOrderRequest(
     Guid OrganizationId,
     string? CustomerReference,
@@ -560,7 +574,9 @@ public sealed record InitiateCustomerLabOrderRequest(
     string SafetyDeclaration,
     bool ProhibitedDataConfirmed,
     IReadOnlyList<LabServiceSourceGroupWriteRequest>? SourceGroups,
-    Guid? SourceRequestId = null);
+    Guid? SourceRequestId = null,
+    decimal? ProposedUnitPrice = null,
+    string? PriceProposalNote = null);
 public sealed record LabServiceSourceGroupWriteRequest(string BiologicalSource, int SpecimenCount);
 public sealed record LabSampleRosterWriteRequest(
     string CustomerSampleId,
@@ -591,7 +607,7 @@ public sealed record LabSampleReceiptRequest(long Version, DateTime ReceivedAt, 
 public sealed record LabSampleAccessionRequest(long Version, string AccessionId);
 public sealed record LabSampleTransitionRequest(long Version, string Status, string? Reason, string? InternalNote);
 public sealed record QuoteLineRequest(Guid CatalogItemId, string Description, decimal Quantity, decimal UnitPrice);
-public sealed record IssueQuoteRequest(long Version, IReadOnlyList<QuoteLineRequest> Lines, decimal Tax, string Currency, DateTime? ExpiresAt, string Purpose = "Initial");
+public sealed record IssueQuoteRequest(long Version, IReadOnlyList<QuoteLineRequest> Lines, decimal Tax, string Currency, DateTime? ExpiresAt, string Purpose = "Initial", string? PricingDecisionReason = null);
 public sealed record AcceptQuoteRequest(long Version, Guid QuoteId, string? PurchaseOrderNumber = null);
 
 public sealed record ReagentLineWriteRequest(Guid OfferingId, decimal Quantity, string? Note);
@@ -688,7 +704,9 @@ public static class OrderManagementMappings
         quote.Subtotal, quote.Tax, quote.Total, quote.Currency, quote.IssuedAt, quote.ExpiresAt,
         quote.AcceptedAt, quote.Version, quote.BillingContactSnapshotJson,
         quote.BillingAddressSnapshotJson, quote.PaymentTermsDaysSnapshot,
-        quote.TaxDecisionSnapshotJson, quote.CommercialConfigurationVersion);
+        quote.TaxDecisionSnapshotJson, quote.CommercialConfigurationVersion,
+        quote.SourceRequestRevision, quote.ProposedUnitPriceSnapshot, quote.PricingDecision?.ToString(),
+        quote.PricingDecidedByUserId, quote.PricingDecidedAt);
 
     public static QuoteDto ToDto(this DataAssemblyQuote quote) => new(
         quote.Id, quote.Revision, quote.Purpose.ToString(), quote.Status.ToString(), quote.LinesJson,

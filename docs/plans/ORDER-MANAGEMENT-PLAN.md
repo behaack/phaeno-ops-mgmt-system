@@ -6,9 +6,11 @@ For PSeq Lab Service, `PSEQ-ORDER-TO-CASH-GAP-CLOSURE-PLAN.md` supersedes the
 older QuickBooks-authoritative billing and payment-gated result-release
 statements in this plan. POMS now derives operational readiness, permits an
 internal staged order before Customer administrator activation when the active
-Customer/entitlement/offering minimum is met, requires full readiness for quote
-issuance and commitment, and snapshots POMS-owned billing, tax, and payment
-terms in the quote.
+Customer/entitlement/offering minimum is met, requires non-billing readiness
+and an active Customer administrator for quote issuance and commitment, and
+requires complete Finance-approved billing before invoicing. When that profile
+is ready at quote time, POMS includes and freezes tax and payment terms;
+otherwise it issues an explicitly pre-tax quote and calculates tax at invoicing.
 
 On governed feature activation, scientifically approved output packages create
 the Commercial release candidate without the duplicate manual-upload bridge.
@@ -47,8 +49,9 @@ by `FILE-MANAGEMENT-PLAN.md`.
   active CRM Companies. A Company is eligible only when its attached internal
   Customer operational scope is active and not manually blocked, and has the
   current service authorization and active offering required to begin pricing.
-  An online administrator is not required at intake; full readiness and an
-  active Customer administrator are rechecked before quote issuance. The
+  An online administrator is not required at intake; non-billing readiness and
+  an active Customer administrator are rechecked before quote issuance. Billing
+  readiness remains visible but is required at the invoice boundary. The
   displayed name always comes from the Company; the internal scope identifier
   remains the tenant key stored on the order.
 - Development state: the approved initial-release workflows are implemented in
@@ -90,8 +93,11 @@ by `FILE-MANAGEMENT-PLAN.md`.
   responsibilities in `commercial_ops`.
 - Phaeno Commercial staff use **Order intake** to enter Customer orders and
   review first-party CRM-originated `SalesAssistedOrder` and `Evaluation`
-  requests. Placed work, return kits, shipment lookup, physical receipt, and
-  accession are intentionally absent; those begin in Lab Operations.
+  requests. The same active queue owns commercial review, pricing, quote
+  issuance, and Customer acceptance; there is no separate product-named `Lab`
+  queue in Order Operations. Accepted work leaves active intake, while placed
+  work, return kits, shipment lookup, physical receipt, accession, and
+  laboratory execution begin in Lab Operations.
   The former local HubSpot simulator and its active UI have been removed;
   historical HubSpot-sourced requests remain readable. Trial Project execution
   remains governed by its owning plan. The first sales-assisted conversion
@@ -714,6 +720,20 @@ The pricing and commitment rules are:
 
 - submitting a Job for pricing requires a complete, internally consistent Job-
   level pricing profile and requires zero individual sample records;
+- the Customer administrator or Phaeno Commercial Operator creating the Job
+  may optionally propose one USD unit price per specimen and add Customer-safe
+  context. This is a requested Commercial term, not a draft quote, approval,
+  promise, or authorization to begin work;
+- the submitted request revision freezes the proposed unit price, note,
+  proposer, and proposal time. Existing Jobs without a proposal remain valid;
+- when a proposal exists, the Commercial Operator reviews it beside the active
+  catalog price, requested specimen count, calculated subtotal, and difference.
+  Issuing the quote records either `Approved as proposed` or `Amended proposal`;
+  an amendment requires an internal reason;
+- when dual control is enabled, the Phaeno user who proposed the price cannot
+  approve or amend that same proposal. No separate order status is introduced:
+  review remains in `Quote in preparation`, and only the issued quote becomes
+  Customer-approvable;
 - existing draft sample rows from the former workflow are preserved rather
   than deleted by migration. The Customer must explicitly remove each labeled
   legacy row before pricing submission, then enter the current roster only
@@ -829,8 +849,11 @@ commercial direction is implemented and verified.
   accept the resulting quote on the Customer's behalf. Because initiation is
   also submission, the Phaeno user must make the same no-PHI attestation before
   the server accepts it.
-- Phaeno reviews the submitted job, determines its itemized job-specific price,
-  and issues a quote through the portal.
+- The Customer administrator or Phaeno order-pricing user may optionally
+  propose a USD price per specimen with Customer-safe context. Phaeno reviews
+  that proposal against the active catalog price and scope, then either
+  approves it unchanged or amends it with an internal reason while issuing the
+  immutable quote through the portal.
 - A Customer organization administrator reviews and explicitly accepts the
   quote. Quote acceptance places the lab-service order and freezes the accepted
   commercial snapshot, including POMS catalog item codes, descriptions, units,
@@ -1922,7 +1945,8 @@ Customer navigation:
 - `Request lab service` opens a bounded Job pricing-details modal with a
   required, organization-unique Job name, one or more required biological-
   source groups and sample counts, required shared storage requirements and
-  safety declaration, and optional Job notes. Creating the Job assigns the
+  safety declaration, optional proposed USD price per specimen and pricing
+  note, and optional Job notes. Creating the Job assigns the
   immutable Job number and opens its record workspace with no individual
   samples.
 - After quote acceptance, the record workspace owns the exact sample list. Add
@@ -1984,7 +2008,8 @@ Phaeno navigation:
   commands and separate tenant-safe reasons from internal notes.
 - Order intake exposes `New Customer order` to Phaeno users with order-pricing
   authority. Its bounded modal incrementally searches the eligible Customer
-  list and captures the same price-bearing Job profile as the Customer flow.
+  list and captures the same price-bearing Job profile as the Customer flow,
+  including an optional price proposed during the sales conversation.
   Saving creates the
   immutable submitted revision, opens the operational detail in `Quote in
   preparation`, and leaves quote issuance as the only path that makes pricing
@@ -2146,16 +2171,27 @@ Execution checkpoint:
 3. Phaeno returns a field-specific change request. The Customer submits a new
    revision; both versions and the reason remain visible in the permitted
    timeline.
-4. Phaeno issues an itemized job quote after rechecking the effective
+4. Phaeno reviews any optional proposed per-specimen price beside the active
+   catalog price, scope, difference, and calculated subtotal, then issues an
+   itemized job quote after rechecking the effective
    entitlement, active offering, and at least one eligible Customer approver.
+   Approving the proposal unchanged or amending it records the submitted
+   request revision, proposed-price snapshot, pricing reviewer, decision time,
+   and decision type. An amendment requires an internal reason; with dual
+   control enabled, the proposer cannot review the same proposal. If the
+   Customer's complete tax profile is Finance-approved, POMS calculates and
+   includes tax and freezes the commercial terms in the quote. Otherwise the
+   quote is explicitly pre-tax and applicable tax is deferred to invoicing.
    The same transaction makes it Customer-visible, records the status event,
    and queues one deduplicated approval notice for every active eligible
    Customer administrator. A newer revision supersedes the first; expired or
    superseded quotes cannot be accepted.
 5. Customer-admin acceptance freezes the Job name, Job notes, specimen count,
    biological-source composition, shared storage and safety declarations,
-   standard service/output scope, instructions, prices, currency, and
-   expiration plus the effective entitlement/offer eligibility. The accepting
+   standard service/output scope, instructions, prices, currency, expiration,
+   and any included tax determination plus the effective entitlement/offer
+   eligibility. Acceptance of a pre-tax quote acknowledges that applicable tax
+   will be calculated at invoicing. The accepting
    administrator becomes the acting order contact. Acceptance opens exact
    sample-list preparation; finalization creates the Lab authorization.
    Repeated acceptance with the same idempotency key returns the same placed
@@ -2168,9 +2204,12 @@ Execution checkpoint:
    other samples remain in progress, before the overall job accounting source
    exists. A non-credit Customer sees readiness but cannot download any held job
    result; report generation never clears the hold.
-8. Completion succeeds only when every sample is terminal. Cancellation after
-   placement is decided by Phaeno, preserves work/history, and retains any
-   financial follow-up for Finance outside POMS.
+8. Completion succeeds only when every sample is terminal and invoice-ready
+   billing and tax information is available. Invoicing preserves a tax
+   determination frozen in the accepted quote or calculates and snapshots tax
+   from the current Finance-approved profile for a pre-tax quote. Cancellation
+   after placement is decided by Phaeno, preserves work/history, and retains
+   any financial follow-up for Finance outside POMS.
 
 ### Partner Reagent
 

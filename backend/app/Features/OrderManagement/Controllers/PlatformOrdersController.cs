@@ -26,6 +26,7 @@ public sealed class PlatformOrdersController(
         [FromQuery] bool unassigned = false,
         [FromQuery] bool overdue = false,
         [FromQuery] bool holds = false,
+        [FromQuery] bool activeIntake = false,
         [FromQuery] DateTime? updatedFrom = null,
         [FromQuery] DateTime? updatedTo = null,
         [FromQuery] int page = 1,
@@ -42,6 +43,11 @@ public sealed class PlatformOrdersController(
         if (Includes(normalizedType, "PSeqLabService"))
         {
             var query = dbContext.LabServiceOrders.AsNoTracking().Where(item => !item.IsDiscarded);
+            if (activeIntake) query = query.Where(item =>
+                item.Status == LabServiceOrderStatus.SubmittedForQuote
+                || item.Status == LabServiceOrderStatus.ChangesRequested
+                || item.Status == LabServiceOrderStatus.QuoteInPreparation
+                || item.Status == LabServiceOrderStatus.QuoteIssued);
             if (organizationId.HasValue) query = query.Where(item => item.OrganizationId == organizationId.Value);
             if (!string.IsNullOrWhiteSpace(search))
             {
@@ -65,12 +71,16 @@ public sealed class PlatformOrdersController(
                 item.AssignedToUserId, item.DueAt, item.DueAt != null && item.DueAt < now
                     && item.Status != LabServiceOrderStatus.Completed
                     && item.Status != LabServiceOrderStatus.Cancelled
-                    && item.Status != LabServiceOrderStatus.Declined)).ToListAsync(cancellationToken));
+                    && item.Status != LabServiceOrderStatus.Declined,
+                item.ProposedUnitPrice, item.ProposedUnitPrice == null ? null : "USD")).ToListAsync(cancellationToken));
         }
 
         if (Includes(normalizedType, "PSeqKit"))
         {
             var query = dbContext.PartnerReagentOrders.AsNoTracking().Where(item => !item.IsDiscarded);
+            if (activeIntake) query = query.Where(item =>
+                item.Status == ReagentOrderStatus.Placed
+                || item.Status == ReagentOrderStatus.UnderReview);
             if (organizationId.HasValue) query = query.Where(item => item.OrganizationId == organizationId.Value);
             if (!string.IsNullOrWhiteSpace(search))
             {
@@ -101,6 +111,12 @@ public sealed class PlatformOrdersController(
         if (Includes(normalizedType, "DataAssembly"))
         {
             var query = dbContext.DataAssemblyRequests.AsNoTracking().Where(item => !item.IsDiscarded);
+            if (activeIntake) query = query.Where(item =>
+                item.Status == AssemblyRequestStatus.Submitted
+                || item.Status == AssemblyRequestStatus.IntakeValidation
+                || item.Status == AssemblyRequestStatus.ChangesRequested
+                || item.Status == AssemblyRequestStatus.QuoteInPreparation
+                || item.Status == AssemblyRequestStatus.QuoteIssued);
             if (organizationId.HasValue) query = query.Where(item => item.OrganizationId == organizationId.Value);
             if (!string.IsNullOrWhiteSpace(search))
             {

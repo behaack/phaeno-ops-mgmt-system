@@ -158,6 +158,44 @@ public sealed partial class LabOperationsController
             versionsByProtocol.GetValueOrDefault(protocol.Id) ?? [])).ToList();
     }
 
+    private async Task<List<LabServiceWorkflowDto>> ReadServiceWorkflowsAsync(
+        CancellationToken cancellationToken)
+    {
+        var workflows = await dbContext.LabServiceWorkflows.AsNoTracking()
+            .OrderBy(item => item.Name).ToListAsync(cancellationToken);
+        var versions = await dbContext.LabServiceWorkflowVersions.AsNoTracking()
+            .OrderBy(item => item.WorkflowVersion).ToListAsync(cancellationToken);
+        var stages = await dbContext.LabServiceWorkflowStages.AsNoTracking()
+            .OrderBy(item => item.Sequence).ToListAsync(cancellationToken);
+        var protocolVersions = await dbContext.LabProtocolVersions.AsNoTracking()
+            .ToDictionaryAsync(item => item.Id, cancellationToken);
+        var protocolIds = protocolVersions.Values.Select(item => item.LabProtocolId).Distinct().ToList();
+        var protocols = await dbContext.LabProtocols.AsNoTracking()
+            .Where(item => protocolIds.Contains(item.Id))
+            .ToDictionaryAsync(item => item.Id, cancellationToken);
+        var stagesByVersion = stages.GroupBy(item => item.LabServiceWorkflowVersionId)
+            .ToDictionary(group => group.Key, group => (IReadOnlyList<LabServiceWorkflowStageDto>)group
+                .Select(stage =>
+                {
+                    var protocolVersion = protocolVersions[stage.LabProtocolVersionId];
+                    var protocol = protocols[protocolVersion.LabProtocolId];
+                    return new LabServiceWorkflowStageDto(stage.Id, stage.Sequence, stage.Name,
+                        stage.LabProtocolVersionId, protocol.Id, protocol.Key, protocol.Name,
+                        protocolVersion.ProtocolVersion, stage.Requirement.ToString(),
+                        stage.Condition, stage.HandoffCriteria);
+                }).ToList());
+        var versionsByWorkflow = versions.GroupBy(item => item.LabServiceWorkflowId)
+            .ToDictionary(group => group.Key, group => (IReadOnlyList<LabServiceWorkflowVersionDto>)group
+                .Select(version => new LabServiceWorkflowVersionDto(version.Id, version.WorkflowVersion,
+                    version.Status.ToString(), version.AuthoredByUserId, version.AuthoredAtUtc,
+                    version.ApprovedByUserId, version.ApprovedAtUtc, version.ProductionByUserId,
+                    version.ProductionAtUtc, stagesByVersion.GetValueOrDefault(version.Id) ?? [],
+                    version.Version)).ToList());
+        return workflows.Select(workflow => new LabServiceWorkflowDto(workflow.Id,
+            workflow.ServiceKey, workflow.Name, workflow.Description, workflow.LatestVersion,
+            versionsByWorkflow.GetValueOrDefault(workflow.Id) ?? [], workflow.Version)).ToList();
+    }
+
     private async Task<List<LabBatchDto>> ReadBatchesAsync(CancellationToken cancellationToken)
     {
         var batches = await dbContext.LabOperationalBatches.AsNoTracking()
@@ -250,7 +288,8 @@ public sealed partial class LabOperationsController
         return new LabWorkOrderSummaryDto(work.Id, work.AuthorizationId,
             authorization?.CommercialOrderId, commercialOrder?.OrderNumber,
             work.SubmittingOrganizationId, work.ServiceKey, work.Status.ToString(),
-            specimenCount, openExceptionCount, work.UpdatedAt, work.Version);
+            specimenCount, openExceptionCount, work.UpdatedAt, work.Version,
+            work.LabServiceWorkflowVersionId);
     }
 
     private static LabProtocolDto MapProtocol(LabProtocol protocol, IReadOnlyList<LabProtocolVersionDto> versions) =>
@@ -280,7 +319,8 @@ public sealed partial class LabOperationsController
     private static LabExecutionDto MapExecution(LabProtocolExecution item) =>
         new(item.Id, item.LabSpecimenId, item.LabProtocolVersionId, item.AssignedToUserId,
             item.Status.ToString(), item.CapturedResultsJson, item.DeviationNote,
-            item.StartedAtUtc, item.CompletedAtUtc, item.Version);
+            item.StartedAtUtc, item.CompletedAtUtc, item.Version,
+            item.LabServiceWorkflowStageId);
 
     private static LabLibraryDto MapLibrary(LabLibrary item) =>
         new(item.Id, item.LabSpecimenId, item.SourceContainerId, item.LibraryContainerId,

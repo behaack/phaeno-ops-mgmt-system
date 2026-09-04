@@ -30,6 +30,9 @@ be deactivated after evidence is preserved; this release does not alter them.
 - Result release is never gated by invoice balance or credit status.
 - Partner PSeq Kit and Partner data-assembly payment/release behavior is not
   changed by this plan.
+- Local Development enables the native PSeq accounts-receivable path so quote
+  issuance is exercised without a QuickBooks Customer link. The base setting
+  remains disabled pending the separate shared-environment activation gates.
 
 ## Superseded PSeq Lab-Service Assumptions
 
@@ -90,8 +93,11 @@ work unless their owning plan is separately changed.
   is complete. The account detail shows the same readiness checklist.
 - Authorized staff may create an internal staged order and prepare a quote
   before a Customer administrator exists, but an active Customer,
-  entitlement, and offering are still required. Quote issuance and customer
-  commitment require full readiness and an active administrator/approver.
+  entitlement, and offering are still required. Quote issuance and Customer
+  commitment require every non-billing readiness item and an active
+  administrator/approver. Billing and tax remain visible readiness blockers,
+  but may be completed after acceptance and must be complete before invoice
+  issuance.
 - Customer selectors show stage-eligible Customers and their blockers instead
   of silently omitting incomplete Customers.
 
@@ -142,17 +148,23 @@ work unless their owning plan is separately changed.
   `PaymentTermsDays` (default 30), effective tax decision
   `Taxable`/`Exempt`/`NonTaxable`, approved tax rate or exemption evidence,
   Finance approver/date/notes, and configuration version.
-- Finance approval of the tax decision is required before quote issuance.
-  POMS calculates and snapshots tax without a tax engine.
-- Freeze billing, tax, and payment terms in every issued PSeq quote.
+- When a complete Finance-approved billing and tax profile exists at quote
+  issuance, POMS calculates and includes tax without a tax engine and freezes
+  the billing, tax, and payment terms in the quote. A valid zero-tax result is
+  retained for exempt, non-taxable, or zero-rate decisions.
+- When tax cannot be calculated at quote issuance, issue an explicitly pre-tax
+  quote without a billing/tax/terms snapshot. Require the current complete,
+  Finance-approved profile and calculate tax when the invoice is issued.
 - Add `Invoice` and `InvoiceLine` with `Issued`, `PartiallyPaid`, `Paid`,
   `Voided`, and `WrittenOff`; append-only `InvoiceAdjustment`; `PaymentReceipt`
   with `Unapplied`, `PartiallyApplied`, `Applied`, and `Reversed`;
   `PaymentAllocation`; `PaymentImportBatch`; and `ReconciliationBatch`.
-- Job completion idempotently issues a numbered invoice from the accepted quote
-  when billing configuration is valid. Due date is completion date plus the
-  snapshotted payment terms. Generate an immutable invoice PDF visible to
-  Finance and the Customer.
+- Job completion idempotently issues a numbered invoice when billing
+  configuration is valid. Use the accepted quote's frozen tax and terms when
+  present; otherwise snapshot the then-current approved billing profile and
+  calculate tax. Due date is completion date plus the applicable snapshotted
+  payment terms. Generate an immutable invoice PDF visible to Finance and the
+  Customer.
 - Manual Finance receipt entry captures payer, amount, currency, received date,
   method, bank reference, evidence, and external ID. CSV import is preview-only
   before confirmation and requires source, external ID, date, amount, currency,

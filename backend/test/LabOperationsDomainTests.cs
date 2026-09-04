@@ -145,30 +145,96 @@ public class LabOperationsDomainTests
     }
 
     [Fact]
-    public void ProtocolDraftCanBeEditedWithdrawnAndDiscardedWithoutReusingItsVersion()
+    public void ProtocolApprovalLocksTheVersionAndDraftsMayBeDiscardedWithoutReusingTheirNumber()
     {
         var protocol = new LabProtocol("rna-prep", "RNA preparation", null);
         protocol.RecordVersion(1);
-        var version = new LabProtocolVersion(protocol.Id, 1, "{\"steps\":[]}",
+        var approvedVersion = new LabProtocolVersion(protocol.Id, 1, "{\"steps\":[]}",
             Guid.NewGuid(), DateTime.UtcNow);
 
-        version.UpdateDraft("""{"steps":[{"key":"verify"}]}""");
-        version.Approve(Guid.NewGuid(), DateTime.UtcNow);
+        approvedVersion.UpdateDraft("""{"steps":[{"key":"verify"}]}""");
+        approvedVersion.Approve(Guid.NewGuid(), DateTime.UtcNow);
         Assert.Throws<InvalidOperationException>(() =>
-            version.UpdateDraft("""{"steps":[{"key":"changed-after-approval"}]}"""));
-
-        version.WithdrawApproval();
-        Assert.Equal(LabProtocolStatus.Draft, version.Status);
-        Assert.Null(version.ApprovedByUserId);
-        Assert.Null(version.ApprovedAtUtc);
-
-        version.Discard();
-        Assert.Equal(LabProtocolStatus.Discarded, version.Status);
-        Assert.Equal(1, protocol.LatestVersion);
-        Assert.Throws<InvalidOperationException>(() => version.Approve(Guid.NewGuid(), DateTime.UtcNow));
+            approvedVersion.UpdateDraft("""{"steps":[{"key":"changed-after-approval"}]}"""));
+        Assert.Throws<InvalidOperationException>(approvedVersion.Discard);
 
         protocol.RecordVersion(2);
+        var discardedVersion = new LabProtocolVersion(protocol.Id, 2, "{\"steps\":[]}",
+            Guid.NewGuid(), DateTime.UtcNow);
+        discardedVersion.Discard();
+        Assert.Equal(LabProtocolStatus.Discarded, discardedVersion.Status);
         Assert.Equal(2, protocol.LatestVersion);
+        Assert.Throws<InvalidOperationException>(() => discardedVersion.Approve(Guid.NewGuid(), DateTime.UtcNow));
+
+        protocol.RecordVersion(3);
+        Assert.Equal(3, protocol.LatestVersion);
+    }
+
+    [Fact]
+    public void ServiceWorkflowMovesFromDraftToProductionAndThenBecomesImmutable()
+    {
+        var author = Guid.NewGuid();
+        var approver = Guid.NewGuid();
+        var productionActor = Guid.NewGuid();
+        var workflow = new LabServiceWorkflow(
+            "PSEQ-LAB-SERVICE", "PSeq laboratory workflow", "Canonical production workflow");
+        workflow.RecordVersion(1);
+        var version = new LabServiceWorkflowVersion(
+            workflow.Id, 1, author, DateTime.UtcNow);
+
+        version.Approve(approver, DateTime.UtcNow);
+        version.PromoteToProduction(productionActor, DateTime.UtcNow);
+
+        Assert.Equal("pseq-lab-service", workflow.ServiceKey);
+        Assert.Equal(LabServiceWorkflowStatus.Production, version.Status);
+        Assert.Equal(productionActor, version.ProductionByUserId);
+        Assert.Throws<InvalidOperationException>(version.WithdrawApproval);
+        version.Retire();
+        Assert.Equal(LabServiceWorkflowStatus.Retired, version.Status);
+    }
+
+    [Fact]
+    public void ConditionalWorkflowStageRequiresACondition()
+    {
+        Assert.Throws<ArgumentException>(() => new LabServiceWorkflowStage(
+            Guid.NewGuid(), 1, "Concentration recovery", Guid.NewGuid(),
+            LabServiceWorkflowStageRequirement.Conditional, null, null));
+
+        var stage = new LabServiceWorkflowStage(
+            Guid.NewGuid(), 1, "Concentration recovery", Guid.NewGuid(),
+            LabServiceWorkflowStageRequirement.Conditional,
+            "Incoming concentration is below the approved threshold",
+            "Concentration meets the next protocol's input range");
+
+        Assert.Equal(LabServiceWorkflowStageRequirement.Conditional, stage.Requirement);
+        Assert.NotNull(stage.Condition);
+    }
+
+    [Fact]
+    public void WorkOrderPinsOneExactServiceWorkflowVersion()
+    {
+        var workOrder = WorkOrder(authorizationVersion: 1);
+        var workflowVersionId = Guid.NewGuid();
+
+        workOrder.PinServiceWorkflow(workflowVersionId);
+
+        Assert.Equal(workflowVersionId, workOrder.LabServiceWorkflowVersionId);
+        workOrder.PinServiceWorkflow(workflowVersionId);
+        Assert.Throws<InvalidOperationException>(() =>
+            workOrder.PinServiceWorkflow(Guid.NewGuid()));
+    }
+
+    [Fact]
+    public void ProtocolIdentifyingDetailsCanChangeWithoutChangingItsImmutableKey()
+    {
+        var protocol = new LabProtocol("rna-prep", "RNA preparation", "Original description");
+
+        protocol.UpdateDetails(" Updated RNA preparation ", " Updated description ");
+
+        Assert.Equal("rna-prep", protocol.Key);
+        Assert.Equal("Updated RNA preparation", protocol.Name);
+        Assert.Equal("Updated description", protocol.Description);
+        Assert.Equal(0, protocol.LatestVersion);
     }
 
     [Fact]
