@@ -147,7 +147,7 @@ export function OrderForm() {
   return (
     <div className="contact-form-panel contact-form-panel--demo">
       <div className="px-6 py-6">
-        <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
+        <form noValidate onSubmit={handleSubmit(onSubmit)} className="space-y-4">
           {isWebsiteReviewMode && (
             <p className="rounded-xl border border-amber-300 bg-amber-50 px-4 py-3 text-sm font-medium text-amber-950">
               Submissions are disabled in this team preview.
@@ -157,16 +157,19 @@ export function OrderForm() {
           <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
             <div>
               <label htmlFor={`${formId}-firstname`} className={labelBase}>
-                First Name
+                First Name<span className="required-marker" aria-hidden="true">*</span>
               </label>
               <input
                 id={`${formId}-firstname`}
+                required
+                aria-invalid={Boolean(errors.firstname)}
+                aria-describedby={errors.firstname ? `${formId}-firstname-error` : undefined}
                 autoComplete="given-name"
                 className={inputBase}
                 {...register("firstname")}
               />
               {errors.firstname && (
-                <p className="mt-px p-0 text-sm text-red-600">
+                <p id={`${formId}-firstname-error`} className="contact-field-error mt-px p-0 text-sm">
                   {errors.firstname.message}
                 </p>
               )}
@@ -174,16 +177,19 @@ export function OrderForm() {
 
             <div>
               <label htmlFor={`${formId}-lastname`} className={labelBase}>
-                Last Name
+                Last Name<span className="required-marker" aria-hidden="true">*</span>
               </label>
               <input
                 id={`${formId}-lastname`}
+                required
+                aria-invalid={Boolean(errors.lastname)}
+                aria-describedby={errors.lastname ? `${formId}-lastname-error` : undefined}
                 autoComplete="family-name"
                 className={inputBase}
                 {...register("lastname")}
               />
               {errors.lastname && (
-                <p className="mt-px p-0 text-sm text-red-600">
+                <p id={`${formId}-lastname-error`} className="contact-field-error mt-px p-0 text-sm">
                   {errors.lastname.message}
                 </p>
               )}
@@ -193,16 +199,19 @@ export function OrderForm() {
           {/* ORG */}
           <div>
             <label htmlFor={`${formId}-organization`} className={labelBase}>
-              Organization
+              Organization<span className="required-marker" aria-hidden="true">*</span>
             </label>
             <input
               id={`${formId}-organization`}
+              required
+              aria-invalid={Boolean(errors.organizationname)}
+              aria-describedby={errors.organizationname ? `${formId}-organization-error` : undefined}
               autoComplete="organization"
               className={inputBase}
               {...register("organizationname")}
             />
             {errors.organizationname && (
-              <p className="mt-px p-0 text-sm text-red-600">
+              <p id={`${formId}-organization-error`} className="contact-field-error mt-px p-0 text-sm">
                 {errors.organizationname.message}
               </p>
             )}
@@ -211,10 +220,13 @@ export function OrderForm() {
           {/* EMAIL */}
           <div>
             <label htmlFor={`${formId}-email`} className={labelBase}>
-              Email
+              Email<span className="required-marker" aria-hidden="true">*</span>
             </label>
             <input
               id={`${formId}-email`}
+              required
+              aria-invalid={Boolean(errors.email)}
+              aria-describedby={errors.email ? `${formId}-email-error` : undefined}
               type="email"
               inputMode="email"
               autoComplete="email"
@@ -223,17 +235,20 @@ export function OrderForm() {
               {...register("email")}
             />
             {errors.email && (
-              <p className="mt-px p-0 text-sm text-red-600">{errors.email.message}</p>
+              <p id={`${formId}-email-error`} className="contact-field-error mt-px p-0 text-sm">{errors.email.message}</p>
             )}
           </div>
 
           {/* DESCRIPTION */}
           <div>
             <label htmlFor={`${formId}-description`} className={labelBase}>
-              Project Description
+              Project Description<span className="required-marker" aria-hidden="true">*</span>
             </label>
             <textarea
               id={`${formId}-description`}
+              required
+              aria-invalid={Boolean(errors.description)}
+              aria-describedby={`${formId}-description-help${errors.description ? ` ${formId}-description-error` : ""}`}
               className={[
                 inputBase,
                 "min-h-30 resize-y leading-5",
@@ -242,9 +257,9 @@ export function OrderForm() {
               {...register("description")}
             />
             {errors.description && (
-              <p className="mt-px p-0 text-sm text-red-600">{errors.description.message}</p>
+              <p id={`${formId}-description-error`} className="contact-field-error mt-px p-0 text-sm">{errors.description.message}</p>
             )}
-            <p className="mt-px text-xs text-slate-700">
+            <p id={`${formId}-description-help`} className="mt-px text-xs text-slate-700">
               Include sample type, organism, and study goals if you can.
             </p>
           </div>
@@ -266,21 +281,24 @@ export function OrderForm() {
           )}
 
           <div className="contact-form-actions flex items-center justify-between gap-4 pt-2">
-            <p className="text-xs text-slate-700">
-              We usually reply within 1–3 business days.
-            </p>
+            <div>
+              <p className="contact-required-legend"><span aria-hidden="true">*</span> Required</p>
+              <p className="text-xs text-slate-700">
+                We usually reply within 1–3 business days.
+              </p>
+            </div>
 
             <button
               type="submit"
               disabled={isSubmitting || isWebsiteReviewMode}
               aria-busy={isSubmitting}
               className={[
-                "contact-submit inline-flex items-center justify-center gap-2 rounded-lg px-4 py-2 text-sm font-semibold",
+                "contact-submit contact-submit--demo inline-flex min-h-12 items-center justify-center gap-2 rounded-full px-5 py-3 text-sm font-semibold",
                 "shadow-sm",
                 "disabled:cursor-not-allowed disabled:opacity-60",
               ].join(" ")}
             >
-              {isSubmitting ? <Spinner size={21} /> : "Request Demo"}
+              {isSubmitting ? <><Spinner size={21} /><span>Sending request…</span></> : "Request a demo"}
             </button>
           </div>
         </form>

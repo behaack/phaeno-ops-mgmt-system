@@ -28,14 +28,15 @@ const remainingTitle = remainingTitleParts.join(' ')
   position: relative;
   overflow: hidden;
   width: 100%;
-  min-height: clamp(13rem, 25vw, 19rem);
+  min-height: clamp(10rem, 16vw, 13rem);
   display: flex;
   align-items: center;
   justify-content: center;
   
   .background-layer {
-    position: absolute;
-    inset: 0;
+    position: relative;
+    width: 100%;
+    min-height: inherit;
     background-size: cover;
     background-repeat: no-repeat;
     background-position: center;
@@ -62,16 +63,16 @@ const remainingTitle = remainingTitleParts.join(' ')
 
       .inner-title-holder {
         width: 100%;
-        padding-top: var(--space-6);
 
         h1 {
-          max-width: 13ch;
+          max-width: 24ch;
           margin: 0;
           padding: var(--space-2) 0 0;
-          font-size: clamp(2.5rem, 6vw, 4.75rem);
+          font-size: clamp(2rem, 4.5vw, 3.5rem);
           font-weight: var(--font-weight-medium);
           letter-spacing: -.045em;
-          line-height: .98;
+          line-height: 1.1;
+          text-wrap: balance;
           text-transform: none;
 
           sup {
@@ -120,7 +121,7 @@ const remainingTitle = remainingTitleParts.join(' ')
 
 @media (max-width: 725px) {
   .top-banner {
-    min-height: 11rem;
+    min-height: 9rem;
   }
 }
 </style>

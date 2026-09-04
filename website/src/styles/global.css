@@ -302,7 +302,7 @@ label > input[type="checkbox"] {
 }
 
 /* ─── draw our own box on the <span>::before ──────────── */
-label > span::before {
+label > input[type="checkbox"] + span::before {
   content: "";
   display: inline-block;
   width: 1.1rem;

@@ -72,6 +72,15 @@ patterns before changing the visual system. The Website should make Phaeno's
 scientific evidence clear and credible, use established semantic tokens, and
 meet WCAG 2.2 AA.
 
+On phones, the homepage comparison initially shows three key metrics with a
+keyboard-accessible control to reveal every metric. Desktop and
+JavaScript-disabled views show the complete table. Both contact forms mark
+their required fields and associate validation messages with the relevant
+controls. Demo actions use the orange accent and pill shape throughout the
+site. White-paper cards use compact thumbnails and numbered part labels when
+their slugs identify a series; the empty Blog page links to white papers and
+Phaeno updates.
+
 Searchable pages need meaningful titles, descriptions, `phaeno:document-type`
 metadata, and stable heading IDs. Route, metadata, heading, content, sitemap,
 and RSS changes should be checked together because the Portal-owned crawler

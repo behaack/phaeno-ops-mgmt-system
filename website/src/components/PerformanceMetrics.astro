@@ -1,7 +1,7 @@
 ---
 ---
 
-<div class="comparison">
+<div class="comparison" data-comparison>
   <div class="comparison__header">
     <h2
       id="performance-metrics"
@@ -12,8 +12,17 @@
     <p>Preliminary performance data against standard short-read and long-read workflows.</p>
   </div>
 
+  <button
+    class="comparison__toggle"
+    type="button"
+    aria-expanded="true"
+    aria-controls="pseq-comparison-table"
+    hidden
+    data-phaeno-search-ignore
+  >Show all metrics</button>
+
   <div class="comparison__table-wrap">
-    <table>
+    <table id="pseq-comparison-table">
       <caption class="sr-only">PSeq, short-read NGS, and long-read sequencing comparison</caption>
       <thead>
         <tr>
@@ -24,7 +33,7 @@
         </tr>
       </thead>
       <tbody>
-        <tr>
+        <tr class="comparison__highlight">
           <th scope="row">Isoform resolution</th>
           <td data-label="PSeq"><span class="status status--yes" aria-hidden="true">✓</span><span class="sr-only">Yes</span></td>
           <td data-label="Short-Read NGS"><span class="status status--no" aria-hidden="true">✕</span><span class="sr-only">No</span></td>
@@ -36,7 +45,7 @@
           <td data-label="Short-Read NGS"><span class="status status--no" aria-hidden="true">✕</span><span class="sr-only">No</span></td>
           <td data-label="Long-Read"><span class="status-with-detail"><span class="status status--partial" aria-hidden="true">◐</span><span>partial only</span></span></td>
         </tr>
-        <tr>
+        <tr class="comparison__highlight">
           <th scope="row">Full-length isoform structure</th>
           <td data-label="PSeq"><span class="status-with-detail"><span class="status status--yes" aria-hidden="true">✓</span><span>molecule-constrained</span></span></td>
           <td data-label="Short-Read NGS"><span class="status-with-detail"><span class="status status--no" aria-hidden="true">✕</span><span>inferred from pooled fragments</span></span></td>
@@ -72,7 +81,7 @@
           <td data-label="Short-Read NGS"><span class="status-with-detail"><span class="status status--partial" aria-hidden="true">◐</span><span>multi-step &amp; model-dependent</span></span></td>
           <td data-label="Long-Read"><span class="status status--no" aria-hidden="true">✕</span><span class="sr-only">No</span></td>
         </tr>
-        <tr>
+        <tr class="comparison__highlight">
           <th scope="row">NGS-compatible</th>
           <td data-label="PSeq"><span class="status status--yes" aria-hidden="true">✓</span><span class="sr-only">Yes</span></td>
           <td data-label="Short-Read NGS"><span class="status status--yes" aria-hidden="true">✓</span><span class="sr-only">Yes</span></td>
@@ -118,6 +127,24 @@
   </div>
 </div>
 
+<script>
+  document.querySelectorAll<HTMLElement>('[data-comparison]').forEach((comparison) => {
+    const toggle = comparison.querySelector<HTMLButtonElement>('.comparison__toggle');
+    if (!toggle) return;
+
+    const metricCount = comparison.querySelectorAll('tbody tr').length;
+    const setExpanded = (expanded: boolean) => {
+      comparison.dataset.expanded = String(expanded);
+      toggle.setAttribute('aria-expanded', String(expanded));
+      toggle.textContent = expanded ? 'Show key metrics' : `Show all ${metricCount} metrics`;
+    };
+
+    toggle.addEventListener('click', () => setExpanded(comparison.dataset.expanded !== 'true'));
+    setExpanded(false);
+    toggle.hidden = false;
+  });
+</script>
+
 <style>
 .comparison {
   width: 100%;
@@ -145,6 +172,24 @@
 
 .comparison__table-wrap {
   width: 100%;
+}
+
+.comparison__toggle {
+  display: none;
+  min-height: 2.75rem;
+  margin-bottom: var(--space-5);
+  padding: .65rem 1rem;
+  border: 1px solid var(--color-brand-strong);
+  border-radius: var(--radius-pill);
+  color: var(--color-brand-strong);
+  background: var(--color-surface-brand);
+  font-size: var(--font-size-sm);
+  font-weight: var(--font-weight-semibold);
+  cursor: pointer;
+}
+
+.comparison__toggle:hover:not(:disabled) {
+  background: var(--phaeno-green-100);
 }
 
 table {
@@ -276,8 +321,8 @@ tbody td:nth-child(2) {
   margin: 0;
   padding: 0;
   color: var(--color-text-muted);
-  font-family: ui-monospace, SFMono-Regular, Consolas, 'Liberation Mono', monospace;
-  font-size: .68rem;
+  font-family: var(--font-family-sans);
+  font-size: var(--font-size-sm);
   line-height: 1.6;
 }
 
@@ -286,6 +331,15 @@ tbody td:nth-child(2) {
 }
 
 @media (max-width: 760px) {
+  .comparison__toggle:not([hidden]) {
+    display: inline-flex;
+    align-items: center;
+  }
+
+  .comparison[data-expanded="false"] tbody tr:not(.comparison__highlight) {
+    display: none;
+  }
+
   .comparison__header {
     margin-bottom: var(--space-6);
   }

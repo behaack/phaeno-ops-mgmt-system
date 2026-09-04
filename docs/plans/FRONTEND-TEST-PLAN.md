@@ -1,5 +1,14 @@
 # Frontend Test Plan
 
+## Website UI polish checkpoint (2026-09-04)
+
+The separate Astro Website's contact forms received required markers,
+required semantics, error associations, and a consistent demo action.
+Focused browser checks verified all nine controls, invalid-field focus,
+legends, and the checkbox-style regression correction. No component suite was
+added for these presentation changes or run against the Portal. Website build
+and manual evidence are recorded in `WEBSITE-UI-POLISH-PLAN.md`.
+
 Keep this file updated as frontend tests are created, changed, or intentionally deferred.
 
 Do not execute this test plan unless explicitly requested.

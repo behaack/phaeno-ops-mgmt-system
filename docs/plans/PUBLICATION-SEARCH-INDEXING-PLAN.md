@@ -9,6 +9,12 @@ reindex, or external search-console change.
 
 ## Status
 
+- On 2026-09-04 the owner authorized local Website UI polish. White-paper
+  cards now use compact thumbnails, complete titles, numbered part labels,
+  numeric slug ordering, and part-label filtering. Publication content, PDF
+  assets, canonical paths, and indexing contracts are unchanged. See
+  `WEBSITE-UI-POLISH-PLAN.md` for verification and the authorized release scope.
+
 - On 2026-07-29 the representative-image contract was simplified to permit a
   supported local Website image to be shared by multiple publications. The
   stable slug continues to own the landing page and PDF paths; a distinct

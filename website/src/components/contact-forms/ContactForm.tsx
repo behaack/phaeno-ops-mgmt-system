@@ -154,7 +154,7 @@ export function ContactForm() {
   return (
     <div className="contact-form-panel contact-form-panel--updates">
       <div className="px-6 py-6">
-        <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
+        <form noValidate onSubmit={handleSubmit(onSubmit)} className="space-y-4">
           {isWebsiteReviewMode && (
             <p className="rounded-xl border border-amber-300 bg-amber-50 px-4 py-3 text-sm font-medium text-amber-950">
               Submissions are disabled in this team preview.
@@ -164,16 +164,19 @@ export function ContactForm() {
           <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
             <div>
               <label htmlFor={`${formId}-firstname`} className={labelBase}>
-                First Name
+                First Name<span className="required-marker" aria-hidden="true">*</span>
               </label>
               <input
                 id={`${formId}-firstname`}
+                required
+                aria-invalid={Boolean(errors.firstname)}
+                aria-describedby={errors.firstname ? `${formId}-firstname-error` : undefined}
                 autoComplete="given-name"
                 className={inputBase}
                 {...register("firstname")}
               />
               {errors.firstname && (
-                <p className="mt-px p-0 text-sm text-red-600">
+                <p id={`${formId}-firstname-error`} className="contact-field-error mt-px p-0 text-sm">
                   {errors.firstname.message}
                 </p>
               )}
@@ -181,16 +184,19 @@ export function ContactForm() {
 
             <div>
               <label htmlFor={`${formId}-lastname`} className={labelBase}>
-                Last Name
+                Last Name<span className="required-marker" aria-hidden="true">*</span>
               </label>
               <input
                 id={`${formId}-lastname`}
+                required
+                aria-invalid={Boolean(errors.lastname)}
+                aria-describedby={errors.lastname ? `${formId}-lastname-error` : undefined}
                 autoComplete="family-name"
                 className={inputBase}
                 {...register("lastname")}
               />
               {errors.lastname && (
-                <p className="mt-px p-0 text-sm text-red-600">
+                <p id={`${formId}-lastname-error`} className="contact-field-error mt-px p-0 text-sm">
                   {errors.lastname.message}
                 </p>
               )}
@@ -200,16 +206,19 @@ export function ContactForm() {
           {/* ORG */}
           <div>
             <label htmlFor={`${formId}-organization`} className={labelBase}>
-              Organization
+              Organization<span className="required-marker" aria-hidden="true">*</span>
             </label>
             <input
               id={`${formId}-organization`}
+              required
+              aria-invalid={Boolean(errors.organizationname)}
+              aria-describedby={errors.organizationname ? `${formId}-organization-error` : undefined}
               autoComplete="organization"
               className={inputBase}
               {...register("organizationname")}
             />
             {errors.organizationname && (
-              <p className="mt-px p-0 text-sm text-red-600">
+              <p id={`${formId}-organization-error`} className="contact-field-error mt-px p-0 text-sm">
                 {errors.organizationname.message}
               </p>
             )}
@@ -218,10 +227,13 @@ export function ContactForm() {
           {/* EMAIL */}
           <div>
             <label htmlFor={`${formId}-email`} className={labelBase}>
-              Email
+              Email<span className="required-marker" aria-hidden="true">*</span>
             </label>
             <input
               id={`${formId}-email`}
+              required
+              aria-invalid={Boolean(errors.email)}
+              aria-describedby={errors.email ? `${formId}-email-error` : undefined}
               type="email"
               inputMode="email"
               autoComplete="email"
@@ -230,7 +242,7 @@ export function ContactForm() {
               {...register("email")}
             />
             {errors.email && (
-              <p className="mt-px p-0 text-sm text-red-600">{errors.email.message}</p>
+              <p id={`${formId}-email-error`} className="contact-field-error mt-px p-0 text-sm">{errors.email.message}</p>
             )}
           </div>
 
@@ -266,9 +278,12 @@ export function ContactForm() {
           )}
 
           <div className="contact-form-actions flex items-center justify-between gap-4 pt-2">
-            <p className="text-xs text-slate-700">
-              We’ll never share your email.
-            </p>
+            <div>
+              <p className="contact-required-legend"><span aria-hidden="true">*</span> Required</p>
+              <p className="text-xs text-slate-700">
+                We’ll never share your email.
+              </p>
+            </div>
 
             <button
               type="submit"

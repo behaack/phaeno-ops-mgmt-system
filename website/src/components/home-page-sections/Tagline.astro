@@ -28,7 +28,7 @@ const bannerUrl = '/images/home-page-banner.webp'
       data-phaeno-search="Full-length isoform-resolved RNA insight at scale"
       data-phaeno-search-summary="Phaeno turns RNA into full-length, isoform-resolved insight for molecule-level transcriptomics and machine learning workflows."
       data-phaeno-search-keywords="Phaeno PSeq full-length RNA sequencing isoform-resolved transcriptomics ML-ready RNA insight"
-    >Turning RNA into full-length, isoform-resolved insight—at scale</h1>
+    >Turning RNA into full-length, <span class="hero__phrase">isoform-resolved</span> insight<span class="hero__phrase">—at scale</span></h1>
     <h2
       id="home-output"
       data-phaeno-search="ML-ready isoform-level RNA outputs from short-read sequencing"
@@ -169,13 +169,13 @@ const bannerUrl = '/images/home-page-banner.webp'
 
 .hero__primary {
   color: var(--color-text-on-dark);
-  background: var(--color-action-primary);
-  border: 1px solid var(--phaeno-green-500);
+  background: var(--color-action-accent);
+  border: 1px solid var(--color-action-accent);
 }
 
 .hero__primary:hover {
   color: var(--color-text-on-dark);
-  background: var(--color-action-primary-hover);
+  background: var(--color-action-accent-hover);
   transform: translateY(-1px);
 }
 
@@ -247,7 +247,7 @@ const bannerUrl = '/images/home-page-banner.webp'
 
 @media (max-width: 725px) {
   .hero {
-    min-height: max(43rem, 100svh);
+    min-height: auto;
   }
 
   .hero__wash {
@@ -255,7 +255,28 @@ const bannerUrl = '/images/home-page-banner.webp'
   }
 
   .hero__content {
-    padding: 6.5rem var(--space-4) var(--space-10);
+    padding: calc(var(--header-height) + var(--space-8)) var(--space-4) var(--space-8);
+  }
+
+  .hero h1 {
+    max-width: 18ch;
+    font-size: clamp(2rem, 8.75vw, 2.75rem);
+    letter-spacing: -.04em;
+    line-height: 1.06;
+    text-wrap: balance;
+  }
+
+  .hero__phrase {
+    white-space: nowrap;
+  }
+
+  .hero h2 {
+    font-size: var(--font-size-md);
+    line-height: var(--line-height-relaxed);
+  }
+
+  .hero__actions {
+    margin-top: var(--space-6);
   }
 
   .hero__actions a {

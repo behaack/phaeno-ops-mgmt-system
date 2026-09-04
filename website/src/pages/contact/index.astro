@@ -274,6 +274,27 @@ import ReCaptchaNotification from '@/components/ReCaptchaNotification.astro';
   caret-color: var(--color-text);
 }
 
+:global(.required-marker) {
+  margin-inline-start: .125rem;
+  color: var(--color-danger);
+}
+
+:global(.contact-field-error),
+:global(.contact-required-legend span) {
+  color: var(--color-danger);
+}
+
+:global(.contact-input[aria-invalid="true"]) {
+  border-color: var(--color-danger);
+}
+
+:global(.contact-required-legend) {
+  margin: 0 0 var(--space-1);
+  padding: 0;
+  color: var(--color-text-muted);
+  font-size: var(--font-size-sm);
+}
+
 :global(.contact-input:-webkit-autofill),
 :global(.contact-input:-webkit-autofill:hover),
 :global(.contact-input:-webkit-autofill:focus) {
@@ -299,6 +320,15 @@ import ReCaptchaNotification from '@/components/ReCaptchaNotification.astro';
 :global(.contact-submit:hover:not(:disabled)) {
   background: var(--color-action-primary-hover);
   box-shadow: var(--shadow-md);
+}
+
+:global(.contact-submit--demo) {
+  background: var(--color-action-accent);
+  border-radius: var(--radius-pill);
+}
+
+:global(.contact-submit--demo:hover:not(:disabled)) {
+  background: var(--color-action-accent-hover);
 }
 
 :global(.contact-submit:focus-visible) {

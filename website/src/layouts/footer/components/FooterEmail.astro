@@ -9,6 +9,6 @@ const { contentItem } = Astro.props as IProps
 ---
 
 <div class="text-sm">
-  <a href={`email:${contentItem.value}`}>{contentItem.label}</a>
+  <a href={`mailto:${contentItem.value}`}>{contentItem.label}</a>
 </div>
 

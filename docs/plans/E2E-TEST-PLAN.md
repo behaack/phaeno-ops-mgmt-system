@@ -1,5 +1,18 @@
 # Playwright E2E Test Plan
 
+## Website UI polish checkpoint (2026-09-04)
+
+Focused local inspection covered the homepage at 1280px, 390px, and 320px;
+comparison expansion/collapse and keyboard focus; contact required markers
+and empty-form errors; the real technical-brief checkbox; white-paper part
+labels/filtering; long banner titles; empty Blog navigation; and `mailto:`
+links. Checks passed without sending a valid form. No new automated suite or
+full Portal E2E run was needed for this bounded Website change.
+JavaScript-disabled browser verification, real delivery, and full accessibility
+certification remain unperformed. The owner subsequently authorized commit,
+push, Website/API deployment, and needed EF migrations. Local evidence and
+release verification requirements are in `WEBSITE-UI-POLISH-PLAN.md`.
+
 Keep this file updated as Playwright e2e tests are created, changed, or intentionally deferred.
 
 Do not execute this test plan unless explicitly requested.

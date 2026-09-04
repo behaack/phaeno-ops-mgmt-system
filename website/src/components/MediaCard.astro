@@ -8,15 +8,17 @@ interface IProps {
   summary?: string
   link: string
   searchString: string
+  compact?: boolean
+  eyebrow?: string
 }
-const { title, image="", link, searchString, summary } = Astro.props as IProps
+const { title, image="", link, searchString, summary, compact = false, eyebrow } = Astro.props as IProps
 ---
 
 <li 
-  class="media-card-item"
+  class:list={['media-card-item', { 'media-card-item--compact': compact }]}
   data-search={searchString} 
 >
-  <a class="media-card-link" href={link} aria-label={title}>
+  <a class="media-card-link" href={link} aria-label={eyebrow ? `${eyebrow}: ${title}` : title}>
     <div class="photo-frame">
       <Image
         src={image}
@@ -26,6 +28,7 @@ const { title, image="", link, searchString, summary } = Astro.props as IProps
       />
     </div>
     <div class="text-frame">
+      {eyebrow && <p class="card-eyebrow">{eyebrow}</p>}
       <div class="title-frame">
         <h2>{title}</h2>
       </div>
@@ -119,6 +122,26 @@ const { title, image="", link, searchString, summary } = Astro.props as IProps
   margin-top: auto;
   max-width: 100%;
   padding-right: calc(1.25rem + var(--space-3));
+}
+
+.media-card-item--compact .photo-frame {
+  height: 7rem;
+  aspect-ratio: auto;
+}
+
+.media-card-item--compact h2 {
+  display: block;
+  overflow: visible;
+}
+
+.card-eyebrow {
+  margin: 0;
+  padding: 0;
+  color: var(--color-brand-strong);
+  font-size: var(--font-size-xs);
+  font-weight: var(--font-weight-semibold);
+  letter-spacing: .08em;
+  text-transform: uppercase;
 }
 
 .card-arrow {

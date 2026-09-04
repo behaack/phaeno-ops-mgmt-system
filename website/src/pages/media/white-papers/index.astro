@@ -11,9 +11,10 @@ import { formatContentDate } from '@/lib/dates'
 import { getWhitePaperPublication } from '@/lib/publications'
 
 const papers = await getCollection('white_papers')
-const publications = papers.map((paper) => ({
+const publications = papers.toSorted((a, b) => a.id.localeCompare(b.id, 'en', { numeric: true })).map((paper) => ({
   paper,
   paths: getWhitePaperPublication(paper, Astro.site),
+  part: paper.id.match(/-part-(\d+)(?:-|$)/)?.[1],
 }))
 ---
 
@@ -33,9 +34,11 @@ const publications = papers.map((paper) => ({
     <section>
       <MediaSearch listLength={publications.length} placeholder="Search title or topic" />
       <MediaCollection>
-        {publications.map(({ paper, paths }) => (
+        {publications.map(({ paper, paths, part }) => (
           <MediaCard 
-            searchString={`${paper.data.title} ${paper.data.topics.join(' ')}`.toLowerCase()}
+            compact
+            eyebrow={part ? `Part ${part}` : undefined}
+            searchString={`${part ? `Part ${part} ` : ''}${paper.data.title} ${paper.data.topics.join(' ')}`.toLowerCase()}
             title={paper.data.title} 
             image={paper.data.image} 
             summary={paper.data.summary}

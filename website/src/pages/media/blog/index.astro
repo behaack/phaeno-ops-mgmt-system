@@ -7,7 +7,6 @@ import RSSFeed from '@/components/RSSFeed.astro'
 import TopPageBanner from '@/components/TopPageBanner.astro'
 import SEOMeta from '@/components/meta-data-helpers/SEOMeta.astro'
 import MediaSearch from '@/components/MediaSearch.astro'
-import MediaNoItems from '@/components/MediaNoItems.astro'
 import { BLOG_FEED_PATH, getBlogPostPath } from '@/lib/blogRoutes'
 import { formatContentDate } from '@/lib/dates'
 
@@ -48,7 +47,56 @@ const blog = await getCollection('blog')
         </MediaCard>
       ))}      
     </MediaCollection>  
-    <MediaNoItems listLength={blog.length} message="No blog entries yet. Check back again soon." />
+    {blog.length === 0 && (
+      <div class="blog-empty">
+        <h2>Explore the science behind PSeq</h2>
+        <p>Our first blog articles are on the way. Read our technical white papers or sign up for Phaeno updates.</p>
+        <div class="blog-empty__actions">
+          <a href="/media/white-papers">Browse white papers <span aria-hidden="true">→</span></a>
+          <a href="/contact#sign-up">Get Phaeno updates <span aria-hidden="true">→</span></a>
+        </div>
+      </div>
+    )}
     </section>
   </main>
 </Layout>
+
+<style>
+.blog-empty {
+  max-width: var(--copy-max-width);
+  padding-block: var(--space-6);
+}
+
+.blog-empty h2 {
+  padding-top: 0;
+}
+
+.blog-empty p {
+  color: var(--color-text-muted);
+}
+
+.blog-empty__actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-3);
+  margin-top: var(--space-5);
+}
+
+.blog-empty__actions a {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-3);
+  min-height: 2.75rem;
+  padding: .7rem 1rem;
+  border: 1px solid var(--color-brand-strong);
+  border-radius: var(--radius-pill);
+  color: var(--color-brand-strong);
+  background: var(--color-surface-brand);
+  font-size: var(--font-size-sm);
+  font-weight: var(--font-weight-semibold);
+}
+
+.blog-empty__actions a:hover {
+  background: var(--phaeno-green-100);
+}
+</style>
