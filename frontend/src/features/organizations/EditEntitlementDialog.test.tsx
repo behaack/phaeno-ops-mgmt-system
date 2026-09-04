@@ -83,7 +83,7 @@ describe('EditEntitlementDialog', () => {
     const source = screen.getByLabelText('Approved source request')
     expect(within(source).getByRole('option', { name: /PRQ-APPROVED/ })).toBeTruthy()
 
-    fireEvent.change(screen.getByLabelText('Service configuration'), {
+    fireEvent.change(screen.getByRole('combobox', { name: 'Service configuration' }), {
       target: { value: 'Ready' },
     })
     fireEvent.change(source, { target: { value: approvedRequest.id } })
@@ -94,6 +94,7 @@ describe('EditEntitlementDialog', () => {
         configurationStatus: 'Ready',
         sourceRequestId: approvedRequest.id,
       }),
+      expect.anything(),
     ))
   })
 })

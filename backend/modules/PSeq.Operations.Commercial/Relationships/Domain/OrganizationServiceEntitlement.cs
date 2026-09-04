@@ -6,6 +6,7 @@ public sealed class OrganizationServiceEntitlement : IAudit, IConcurrency
 {
     public Guid Id { get; private set; } = Guid.NewGuid();
     public Guid OrganizationId { get; private set; }
+    public Guid? DepartmentId { get; private set; }
     public PortalService Service { get; private set; }
     public DateTime EffectiveFrom { get; private set; }
     public DateTime? EffectiveTo { get; private set; }
@@ -32,9 +33,11 @@ public sealed class OrganizationServiceEntitlement : IAudit, IConcurrency
         EntitlementConfigurationStatus configurationStatus,
         Guid approvedByUserId,
         Guid? sourceRequestId,
-        string? notes)
+        string? notes,
+        Guid? departmentId = null)
     {
         OrganizationId = organizationId;
+        DepartmentId = departmentId;
         Service = service;
         ApprovedByUserId = approvedByUserId;
         Update(effectiveFrom, effectiveTo, configurationStatus, sourceRequestId, notes);

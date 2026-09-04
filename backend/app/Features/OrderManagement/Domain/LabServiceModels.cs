@@ -8,6 +8,7 @@ public sealed class LabServiceOrder : IAudit, IConcurrency
 {
     public Guid Id { get; private set; } = Guid.NewGuid();
     public Guid OrganizationId { get; private set; }
+    public Guid DepartmentId { get; private set; }
     public Guid? SourceRequestId { get; private set; }
     public PortalIntegrationRequest? SourceRequest { get; private set; }
     public string OrderNumber { get; private set; } = null!;
@@ -55,6 +56,7 @@ public sealed class LabServiceOrder : IAudit, IConcurrency
 
     public LabServiceOrder(
         Guid organizationId,
+        Guid departmentId,
         string orderNumber,
         string? customerReference,
         string? description,
@@ -66,7 +68,10 @@ public sealed class LabServiceOrder : IAudit, IConcurrency
         string submissionInstructionsSnapshot,
         Guid? sourceRequestId = null)
     {
+        if (organizationId == Guid.Empty || departmentId == Guid.Empty)
+            throw new ArgumentException("An organization and department are required.");
         OrganizationId = organizationId;
+        DepartmentId = departmentId;
         SourceRequestId = sourceRequestId;
         OrderNumber = OrderText.Required(orderNumber, nameof(orderNumber), 50);
         CustomerReference = OrderText.Required(customerReference, "Job name", 255);
@@ -81,6 +86,7 @@ public sealed class LabServiceOrder : IAudit, IConcurrency
 
     public LabServiceOrder(
         Guid organizationId,
+        Guid departmentId,
         string orderNumber,
         string? customerReference,
         string? description,
@@ -89,7 +95,7 @@ public sealed class LabServiceOrder : IAudit, IConcurrency
         string storageRequirements,
         string safetyDeclaration,
         string submissionInstructionsSnapshot)
-        : this(organizationId, orderNumber, customerReference, description, 1,
+        : this(organizationId, departmentId, orderNumber, customerReference, description, 1,
             hasMixedBiologicalSources, sharedBiologicalSource, storageRequirements,
             safetyDeclaration, submissionInstructionsSnapshot) { }
 

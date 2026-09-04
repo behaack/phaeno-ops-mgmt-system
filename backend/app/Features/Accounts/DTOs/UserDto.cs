@@ -90,10 +90,24 @@ public sealed record OrganizationMembershipDto
 
     public required bool IsOrganizationAdmin { get; init; }
 
+    public IReadOnlyList<DepartmentMembershipSummaryDto> Departments { get; init; } = [];
+
     public required DateTime CreatedAt { get; init; }
 
     public required DateTime UpdatedAt { get; init; }
 
+    public required long Version { get; init; }
+}
+
+public sealed record DepartmentMembershipSummaryDto
+{
+    public required Guid Id { get; init; }
+    public required Guid DepartmentId { get; init; }
+    public required string DepartmentName { get; init; }
+    public required string DepartmentCode { get; init; }
+    public required bool IsDefault { get; init; }
+    public required bool IsDepartmentAdmin { get; init; }
+    public required bool IsActive { get; init; }
     public required long Version { get; init; }
 }
 

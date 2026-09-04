@@ -25,6 +25,13 @@ Do not execute this plan unless explicitly requested.
 
 ## Status
 
+- The local 2026-09-04 department-access slice adds a default General
+  Department to every Organization, explicit Department memberships and invite
+  intent, selected-department session context, and department-scoped customer
+  operational roots. Organization administrators retain all-department access;
+  Department administrators and members remain limited to assigned active
+  Departments. See `PEOPLE-DEPARTMENTS-ACCESS-PLAN.md`.
+
 - The backend account, session, organization, invitation, membership, user
   lifecycle, audit, and Clerk-linking workflows are implemented.
 - Account domain entities, pure authorization policy, invitation-token logic,
@@ -78,8 +85,8 @@ Do not execute this plan unless explicitly requested.
   mock-only Operations admin and Customer manager labels were removed rather
   than represented as effective authorization.
 - CRM Company is the canonical external customer record. Its detail workspace
-  owns users, invitations, readiness, services, retention, and lifecycle
-  operations after Portal access is approved. CRM's **Portal access** section is
+  owns People, Departments, invitations, readiness, services, retention, and lifecycle
+  operations after Portal access is approved. CRM's **Departments & services** section is
   the shared review surface; there is no separate Portal Accounts directory.
 - Organization create and edit actions use modal forms, and selecting an
   organization opens a dedicated, view-first detail route.

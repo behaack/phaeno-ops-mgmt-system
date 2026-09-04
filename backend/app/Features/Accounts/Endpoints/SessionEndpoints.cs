@@ -15,6 +15,7 @@ using PhaenoPortal.App.Infrastructure.Persistence.Auditing;
 public static class SessionEndpoints
 {
     private const string SelectedOrganizationHeader = "X-Organization-Id";
+    private const string SelectedDepartmentHeader = "X-Department-Id";
 
     public static async Task<IResult> GetSession(
         HttpContext httpContext,
@@ -33,6 +34,10 @@ public static class SessionEndpoints
         var user = await dbContext.Users
             .Include(u => u.Memberships)
             .ThenInclude(m => m.Organization)
+            .ThenInclude(o => o!.Departments)
+            .Include(u => u.Memberships)
+            .ThenInclude(m => m.DepartmentMemberships)
+            .ThenInclude(m => m.Department)
             .FirstOrDefaultAsync(
                 u => u.ExternalIdentityProvider == identity.Provider
                     && u.ExternalSubjectId == identity.SubjectId,
@@ -108,6 +113,39 @@ public static class SessionEndpoints
             }
         }
 
+        OrganizationDepartment? selectedDepartment = null;
+        var selectedDepartmentId = ReadSelectedDepartmentId(httpContext);
+        if (selectedMembership is not null)
+        {
+            var availableDepartments = selectedMembership.IsOrganizationAdmin
+                ? selectedMembership.Organization!.Departments
+                    .Where(value => value.IsActive)
+                    .OrderByDescending(value => value.IsDefault)
+                    .ThenBy(value => value.Name)
+                    .ToList()
+                : selectedMembership.DepartmentMemberships
+                    .Where(value => value.IsActive && value.Department.IsActive)
+                    .Select(value => value.Department)
+                    .OrderByDescending(value => value.IsDefault)
+                    .ThenBy(value => value.Name)
+                    .ToList();
+            selectedDepartment = selectedDepartmentId.HasValue
+                ? availableDepartments.FirstOrDefault(value => value.Id == selectedDepartmentId.Value)
+                : availableDepartments.FirstOrDefault();
+
+            if (selectedDepartment is null)
+            {
+                return TypedResults.Ok(ToSession(
+                    user,
+                    labRoles,
+                    state: "department_unavailable",
+                    selectedMembership,
+                    businessRoles,
+                    orderToCashOptions.Value.BusinessRoles,
+                    orderToCashOptions.Value.DualControlEnforced));
+            }
+        }
+
         return TypedResults.Ok(ToSession(
             user,
             labRoles,
@@ -115,7 +153,8 @@ public static class SessionEndpoints
             selectedMembership,
             businessRoles,
             orderToCashOptions.Value.BusinessRoles,
-            orderToCashOptions.Value.DualControlEnforced));
+            orderToCashOptions.Value.DualControlEnforced,
+            selectedDepartment));
     }
 
     public static void MapSessionEndpoints(this WebApplication app)
@@ -155,6 +194,7 @@ public static class SessionEndpoints
             Memberships = [],
             IsPlatformAdmin = false,
             SelectedOrganization = null,
+            SelectedDepartment = null,
             Capabilities = EmptyCapabilities()
         };
     }
@@ -166,23 +206,29 @@ public static class SessionEndpoints
         OrganizationMembership? selectedMembership,
         IReadOnlyCollection<BusinessRole>? businessRoles = null,
         bool businessRolesEnabled = false,
-        bool labRolesEnforced = false)
+        bool labRolesEnforced = false,
+        OrganizationDepartment? selectedDepartment = null)
     {
         var memberships = GetActiveMemberships(user);
         var isPlatformAdmin = IsPlatformAdmin(user);
-        var canManageSelectedMembers = selectedMembership?.IsOrganizationAdmin == true || isPlatformAdmin;
+        var isSelectedDepartmentAdmin = selectedMembership?.IsOrganizationAdmin == true
+            || selectedMembership?.DepartmentMemberships.Any(value =>
+                value.DepartmentId == selectedDepartment?.Id
+                && value.IsActive
+                && value.IsDepartmentAdmin) == true;
+        var canInviteSelectedMembers = selectedMembership?.IsOrganizationAdmin == true || isPlatformAdmin;
+        var canManageSelectedMembers = isSelectedDepartmentAdmin || isPlatformAdmin;
         var canViewOrganizationDatasets = selectedMembership?.Organization is
         {
             IsActive: true
         } selectedOrganization && selectedOrganization.IsExternalOrganization();
         var selectedKind = selectedMembership?.Organization?.Kind;
-        var isSelectedOrganizationAdmin = selectedMembership?.IsOrganizationAdmin == true;
         var canViewLabOrders = selectedKind == OrganizationKind.Customer;
-        var canManageLabOrders = canViewLabOrders && isSelectedOrganizationAdmin;
+        var canManageLabOrders = canViewLabOrders && isSelectedDepartmentAdmin;
         var canViewSampleShipping = selectedKind is OrganizationKind.Prospect or OrganizationKind.Customer;
-        var canManageSampleShipping = canViewSampleShipping && isSelectedOrganizationAdmin;
+        var canManageSampleShipping = canViewSampleShipping && isSelectedDepartmentAdmin;
         var canViewPartnerOrders = selectedKind == OrganizationKind.Partner;
-        var canManagePartnerOrders = canViewPartnerOrders && isSelectedOrganizationAdmin;
+        var canManagePartnerOrders = canViewPartnerOrders && isSelectedDepartmentAdmin;
         var labCapabilities = LabOperationsAuthorization.Evaluate(
             user, labRoles, labRolesEnforced);
         var effectiveBusinessRoles = businessRoles ?? [];
@@ -224,7 +270,31 @@ public static class SessionEndpoints
                 OrganizationId = m.OrganizationId,
                 OrganizationName = m.Organization!.Name,
                 OrganizationKind = m.Organization.Kind,
-                IsOrganizationAdmin = m.IsOrganizationAdmin
+                IsOrganizationAdmin = m.IsOrganizationAdmin,
+                Departments = (m.IsOrganizationAdmin
+                        ? m.Organization.Departments
+                            .Where(value => value.IsActive)
+                            .Select(value => new SessionDepartmentDto
+                            {
+                                DepartmentId = value.Id,
+                                DepartmentName = value.Name,
+                                DepartmentCode = value.Code,
+                                IsDefault = value.IsDefault,
+                                IsDepartmentAdmin = true
+                            })
+                        : m.DepartmentMemberships
+                            .Where(value => value.IsActive && value.Department.IsActive)
+                            .Select(value => new SessionDepartmentDto
+                            {
+                                DepartmentId = value.DepartmentId,
+                                DepartmentName = value.Department.Name,
+                                DepartmentCode = value.Department.Code,
+                                IsDefault = value.Department.IsDefault,
+                                IsDepartmentAdmin = value.IsDepartmentAdmin
+                            }))
+                    .OrderByDescending(value => value.IsDefault)
+                    .ThenBy(value => value.DepartmentName)
+                    .ToList()
             }).ToList(),
             IsPlatformAdmin = isPlatformAdmin,
             SelectedOrganization = selectedMembership == null
@@ -235,9 +305,23 @@ public static class SessionEndpoints
                     MembershipId = selectedMembership.Id,
                     IsAvailable = true
                 },
+            SelectedDepartment = selectedDepartment == null || selectedMembership == null
+                ? null
+                : new SessionSelectedDepartmentDto
+                {
+                    DepartmentId = selectedDepartment.Id,
+                    OrganizationId = selectedMembership.OrganizationId,
+                    IsDepartmentAdmin = isSelectedDepartmentAdmin,
+                    IsAvailable = true,
+                    PurchaseOrderRequired = selectedDepartment.PurchaseOrderRequired,
+                    BillingContactEmail = selectedDepartment.BillingContactEmail,
+                    NotificationEmail = selectedDepartment.NotificationEmail,
+                    ShippingInstructions = selectedDepartment.ShippingInstructions,
+                    ResultDeliveryInstructions = selectedDepartment.ResultDeliveryInstructions
+                },
             Capabilities = new SessionCapabilitiesDto
             {
-                CanInviteUsers = canManageSelectedMembers,
+                CanInviteUsers = canInviteSelectedMembers,
                 CanManageMembers = canManageSelectedMembers,
                 CanChangeMemberRoles = canManageSelectedMembers,
                 CanLeaveOrganization = selectedMembership != null,
@@ -362,6 +446,18 @@ public static class SessionEndpoints
             : null;
     }
 
+    private static Guid? ReadSelectedDepartmentId(HttpContext httpContext)
+    {
+        if (!httpContext.Request.Headers.TryGetValue(SelectedDepartmentHeader, out var values))
+        {
+            return null;
+        }
+
+        return Guid.TryParse(values.FirstOrDefault(), out var departmentId)
+            ? departmentId
+            : null;
+    }
+
     private static async Task<User?> TryLinkBootstrapUserAsync(
         ExternalIdentity identity,
         PSeqOperationsDbContext dbContext,
@@ -386,6 +482,10 @@ public static class SessionEndpoints
         var user = await dbContext.Users
             .Include(u => u.Memberships)
             .ThenInclude(m => m.Organization)
+            .ThenInclude(o => o!.Departments)
+            .Include(u => u.Memberships)
+            .ThenInclude(m => m.DepartmentMemberships)
+            .ThenInclude(m => m.Department)
             .FirstOrDefaultAsync(u => u.NormalizedEmail == normalizedBootstrapEmail, cancellationToken);
 
         if (user == null || user.HasLinkedExternalIdentity())

@@ -51,12 +51,15 @@ import {
 } from "./CrmCompanyFormDialog";
 import { CrmCompanyLifecycleDialog } from "./CrmCompanyLifecycleDialog";
 import { CrmCompanyRelationships } from "./CrmCompanyRelationships";
+import { CrmCompanyPeople } from "./CrmCompanyPeople";
+import { CrmCompanySales } from "./CrmCompanySales";
 import { CrmCustomFields } from "./CrmCustomFields";
 import { CrmRecordWork } from "./CrmRecordWork";
 import { CrmMergeDialog } from "./CrmMergeDialog";
 import { CrmOwnerSelect } from "./CrmOwnerSelect";
 import { toInput } from "./CrmCompaniesPage";
 import { OrganizationDetailPage } from "#/features/organizations/OrganizationDetailPage";
+import { OrganizationDepartmentsPanel } from "#/features/organizations/OrganizationDepartmentsPanel";
 
 export function CrmCompanyDetailPage({ companyId }: { companyId: string }) {
   const queryClient = useQueryClient();
@@ -66,7 +69,7 @@ export function CrmCompanyDetailPage({ companyId }: { companyId: string }) {
   const [mergeOpen, setMergeOpen] = useState(false);
   const [ownerOpen, setOwnerOpen] = useState(false);
   const [activeSection, setActiveSection] = useState<
-    "overview" | "relationships" | "requests" | "access" | "activity"
+    "overview" | "people" | "sales" | "departments" | "requests" | "activity"
   >("overview");
   const companyQuery = useQuery({
     queryKey: ["crm-company", companyId],
@@ -253,14 +256,17 @@ export function CrmCompanyDetailPage({ companyId }: { companyId: string }) {
           <TabsTrigger className="min-w-fit flex-none px-3 py-1.5" value="overview">
             Overview
           </TabsTrigger>
-          <TabsTrigger className="min-w-fit flex-none px-3 py-1.5" value="relationships">
-            People &amp; sales
+          <TabsTrigger className="min-w-fit flex-none px-3 py-1.5" value="people">
+            People
+          </TabsTrigger>
+          <TabsTrigger className="min-w-fit flex-none px-3 py-1.5" value="sales">
+            Sales
+          </TabsTrigger>
+          <TabsTrigger className="min-w-fit flex-none px-3 py-1.5" value="departments">
+            Departments &amp; services
           </TabsTrigger>
           <TabsTrigger className="min-w-fit flex-none px-3 py-1.5" value="requests">
             Requests
-          </TabsTrigger>
-          <TabsTrigger className="min-w-fit flex-none px-3 py-1.5" value="access">
-            Access &amp; services
           </TabsTrigger>
           <TabsTrigger className="min-w-fit flex-none px-3 py-1.5" value="activity">
             Activity
@@ -359,24 +365,35 @@ export function CrmCompanyDetailPage({ companyId }: { companyId: string }) {
           <CrmCustomFields recordType="Company" recordId={companyId} />
         </TabsContent>
 
-        <TabsContent value="relationships">
-          <CrmCompanyRelationships companyId={companyId} view="relationships" />
+        <TabsContent value="people">
+          <CrmCompanyPeople
+            companyId={companyId}
+            accessOrganizationId={company.accessOrganizationId}
+          />
+        </TabsContent>
+
+        <TabsContent value="sales">
+          <CrmCompanySales companyId={companyId} />
         </TabsContent>
 
         <TabsContent value="requests">
           <CrmCompanyRelationships companyId={companyId} view="requests" />
         </TabsContent>
 
-        <TabsContent value="access" className="space-y-6">
+        <TabsContent value="departments" className="space-y-6">
           {company.accessOrganizationId ? (
-            <OrganizationDetailPage
-              organizationId={company.accessOrganizationId}
-              embedded
-            />
+            <>
+              <OrganizationDepartmentsPanel organizationId={company.accessOrganizationId} />
+              <OrganizationDetailPage
+                organizationId={company.accessOrganizationId}
+                embedded
+                showUsers={false}
+              />
+            </>
           ) : (
             <Card>
               <CardHeader>
-                <CardTitle>Access &amp; services</CardTitle>
+                <CardTitle>Departments &amp; services</CardTitle>
                 <CardDescription>
                   Online access has not been approved for this Company.
                 </CardDescription>

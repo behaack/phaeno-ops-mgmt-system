@@ -14,6 +14,8 @@ public sealed record SessionDto
 
     public SessionSelectedOrganizationDto? SelectedOrganization { get; init; }
 
+    public SessionSelectedDepartmentDto? SelectedDepartment { get; init; }
+
     public required SessionCapabilitiesDto Capabilities { get; init; }
 }
 
@@ -41,6 +43,17 @@ public sealed record SessionMembershipDto
     public required OrganizationKind OrganizationKind { get; init; }
 
     public required bool IsOrganizationAdmin { get; init; }
+
+    public IReadOnlyList<SessionDepartmentDto> Departments { get; init; } = [];
+}
+
+public sealed record SessionDepartmentDto
+{
+    public required Guid DepartmentId { get; init; }
+    public required string DepartmentName { get; init; }
+    public required string DepartmentCode { get; init; }
+    public required bool IsDefault { get; init; }
+    public required bool IsDepartmentAdmin { get; init; }
 }
 
 public sealed record SessionSelectedOrganizationDto
@@ -50,6 +63,19 @@ public sealed record SessionSelectedOrganizationDto
     public required Guid MembershipId { get; init; }
 
     public required bool IsAvailable { get; init; }
+}
+
+public sealed record SessionSelectedDepartmentDto
+{
+    public required Guid DepartmentId { get; init; }
+    public required Guid OrganizationId { get; init; }
+    public required bool IsDepartmentAdmin { get; init; }
+    public required bool IsAvailable { get; init; }
+    public bool? PurchaseOrderRequired { get; init; }
+    public string? BillingContactEmail { get; init; }
+    public string? NotificationEmail { get; init; }
+    public string? ShippingInstructions { get; init; }
+    public string? ResultDeliveryInstructions { get; init; }
 }
 
 public sealed record SessionCapabilitiesDto

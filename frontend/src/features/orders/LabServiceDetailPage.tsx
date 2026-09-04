@@ -9,7 +9,9 @@ import { Alert, AlertDescription, AlertTitle } from '#/components/ui/alert'
 import { Button } from '#/components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '#/components/ui/card'
 import { Dialog, DialogClose, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '#/components/ui/dialog'
+import { Input } from '#/components/ui/input'
 import { Label } from '#/components/ui/label'
+import { RequiredDialogFooter, RequiredFieldName } from '#/components/ui/required-field'
 import { usePhaenoSession } from '#/features/auth/session-context'
 import { humanizeStatus, OrderStatusBadge } from './OrderStatusBadge'
 
@@ -21,6 +23,7 @@ export function LabServiceDetailPage({ orderId }: { orderId: string }) {
   const [shipmentSampleId, setShipmentSampleId] = useState('')
   const [carrier, setCarrier] = useState('')
   const [trackingNumber, setTrackingNumber] = useState('')
+  const [purchaseOrderNumber, setPurchaseOrderNumber] = useState('')
   const apiEnabled = Boolean(session?.capabilities.canViewLabServiceOrders) && authProvider !== 'mock'
   const orderQuery = useQuery({ queryKey: ['lab-service-order', orderId], queryFn: () => getLabOrder(orderId), enabled: apiEnabled })
   const invoicesQuery = useQuery({ queryKey: ['customer-invoices'], queryFn: listCustomerInvoices, enabled: apiEnabled })
@@ -35,7 +38,7 @@ export function LabServiceDetailPage({ orderId }: { orderId: string }) {
       if (kind === 'accept') {
         const quote = currentQuote(order.quotes)
         if (!quote) throw new Error('No current quote is available.')
-        return acceptLabQuote(order.id, quote.id, order.version)
+        return acceptLabQuote(order.id, quote.id, order.version, purchaseOrderNumber)
       }
       if (kind === 'withdraw') return withdrawLabOrder(order.id, order.version, cancellationReason)
       if (kind === 'shipment') {
@@ -46,7 +49,7 @@ export function LabServiceDetailPage({ orderId }: { orderId: string }) {
       return requestLabCancellation(order.id, order.version, cancellationReason)
     },
     onSuccess: async () => {
-      setDialog(null); setCancellationReason(''); setShipmentSampleId(''); setCarrier(''); setTrackingNumber('')
+      setDialog(null); setCancellationReason(''); setShipmentSampleId(''); setCarrier(''); setTrackingNumber(''); setPurchaseOrderNumber('')
       await queryClient.invalidateQueries({ queryKey: ['lab-service-order', orderId] })
       await queryClient.invalidateQueries({ queryKey: ['lab-service-orders'] })
     },
@@ -58,6 +61,7 @@ export function LabServiceDetailPage({ orderId }: { orderId: string }) {
 
   const order = orderQuery.data
   const quote = currentQuote(order.quotes)
+  const requiresPurchaseOrder = session?.selectedDepartment?.purchaseOrderRequired === true
   const invoices = invoicesQuery.data?.filter((invoice) => invoice.labServiceOrderId === order.id) ?? []
   const resultPackages = resultPackagesQuery.data ?? []
   return (
@@ -102,7 +106,29 @@ export function LabServiceDetailPage({ orderId }: { orderId: string }) {
         </div>
       </div>
 
-      <Dialog open={dialog === 'accept'} onOpenChange={(open) => !open && setDialog(null)}><DialogContent><DialogHeader><DialogTitle>Accept quote for {order.orderNumber}?</DialogTitle><DialogDescription>This places the complete quoted scope and authorizes Phaeno to perform the work. {quote?.taxDecisionSnapshotJson ? 'The displayed total includes the current tax determination.' : 'This quote is pre-tax; applicable tax will be calculated at invoicing.'} The accepted snapshot remains in the order history.</DialogDescription></DialogHeader>{quote ? <QuoteSummary quote={quote} /> : null}<DialogFooter><DialogClose asChild><Button type="button" variant="outline">Keep reviewing</Button></DialogClose><Button type="button" onClick={() => action.mutate('accept')} disabled={action.isPending}>{action.isPending ? 'Accepting…' : 'Accept quote and place order'}</Button></DialogFooter></DialogContent></Dialog>
+      <Dialog open={dialog === 'accept'} onOpenChange={(open) => !open && setDialog(null)}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Accept quote for {order.orderNumber}?</DialogTitle>
+            <DialogDescription>
+              This places the complete quoted scope and authorizes Phaeno to perform the work.{' '}
+              {quote?.taxDecisionSnapshotJson ? 'The displayed total includes the current tax determination.' : 'This quote is pre-tax; applicable tax will be calculated at invoicing.'}{' '}
+              The accepted Department and commercial settings remain in the order history.
+            </DialogDescription>
+          </DialogHeader>
+          {quote ? <QuoteSummary quote={quote} /> : null}
+          {requiresPurchaseOrder ? (
+            <div>
+              <Label htmlFor="labPurchaseOrderNumber"><RequiredFieldName>Purchase order number</RequiredFieldName></Label>
+              <Input id="labPurchaseOrderNumber" className="mt-2" value={purchaseOrderNumber} onChange={(event) => setPurchaseOrderNumber(event.target.value)} />
+            </div>
+          ) : null}
+          <RequiredDialogFooter showLegend={requiresPurchaseOrder}>
+            <DialogClose asChild><Button type="button" variant="outline">Keep reviewing</Button></DialogClose>
+            <Button type="button" onClick={() => action.mutate('accept')} disabled={action.isPending || (requiresPurchaseOrder && !purchaseOrderNumber.trim())}>{action.isPending ? 'Accepting…' : 'Accept quote and place order'}</Button>
+          </RequiredDialogFooter>
+        </DialogContent>
+      </Dialog>
       <Dialog open={dialog === 'cancel' || dialog === 'withdraw'} onOpenChange={(open) => !open && setDialog(null)}><DialogContent><DialogHeader><DialogTitle>{dialog === 'withdraw' ? 'Withdraw' : 'Request cancellation for'} {order.orderNumber}</DialogTitle><DialogDescription>{dialog === 'withdraw' ? 'This closes the request before work is placed.' : 'Phaeno will review completed work and financial effects before deciding the request.'}</DialogDescription></DialogHeader><div><Label htmlFor="cancellationReason">Reason <span className="text-[var(--ruby-red,#b4233c)]" aria-hidden="true">*</span></Label><textarea id="cancellationReason" value={cancellationReason} onChange={(event) => setCancellationReason(event.target.value)} className="mt-2 min-h-24 w-full rounded-lg border border-input bg-background px-3 py-2 text-sm focus-visible:ring-3 focus-visible:ring-ring/50 focus-visible:outline-none" /></div><DialogFooter><DialogClose asChild><Button type="button" variant="outline">Keep order</Button></DialogClose><Button type="button" variant="destructive" disabled={!cancellationReason.trim() || action.isPending} onClick={() => action.mutate(dialog === 'withdraw' ? 'withdraw' : 'cancel')}>{action.isPending ? 'Updating…' : dialog === 'withdraw' ? 'Withdraw request' : 'Request cancellation'}</Button></DialogFooter></DialogContent></Dialog>
       <Dialog open={dialog === 'shipment'} onOpenChange={(open) => !open && setDialog(null)}><DialogContent><DialogHeader><DialogTitle>Record sample shipment</DialogTitle><DialogDescription>Add the carrier and tracking number after the sample leaves your organization.</DialogDescription></DialogHeader><div className="grid gap-4"><div><Label htmlFor="sampleCarrier">Carrier</Label><input id="sampleCarrier" value={carrier} onChange={(event) => setCarrier(event.target.value)} className="mt-2 h-9 w-full rounded-lg border border-input bg-background px-3 text-sm" /></div><div><Label htmlFor="sampleTrackingNumber">Tracking number</Label><input id="sampleTrackingNumber" value={trackingNumber} onChange={(event) => setTrackingNumber(event.target.value)} className="mt-2 h-9 w-full rounded-lg border border-input bg-background px-3 text-sm" /></div></div><DialogFooter><DialogClose asChild><Button type="button" variant="outline">Cancel</Button></DialogClose><Button type="button" disabled={action.isPending} onClick={() => action.mutate('shipment')}>{action.isPending ? 'Saving…' : 'Record shipment'}</Button></DialogFooter></DialogContent></Dialog>
     </main>

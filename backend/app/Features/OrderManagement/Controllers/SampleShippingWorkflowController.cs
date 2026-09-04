@@ -23,14 +23,14 @@ public sealed class SampleShippingWorkflowController(
     public async Task<IReadOnlyList<SampleShipmentWorkflowDto>> Shipments(CancellationToken cancellationToken)
     {
         var tenant = await requestContext.RequireSampleShippingTenantAsync(HttpContext, false, cancellationToken);
-        return await reader.ListAsync(tenant.Organization.Id, cancellationToken);
+        return await reader.ListAsync(tenant.Organization.Id, tenant.Department.Id, cancellationToken);
     }
 
     [HttpGet("{shipmentId:guid}")]
     public async Task<SampleShipmentWorkflowDto> Shipment(Guid shipmentId, CancellationToken cancellationToken)
     {
         var tenant = await requestContext.RequireSampleShippingTenantAsync(HttpContext, false, cancellationToken);
-        return await reader.ReadAsync(shipmentId, tenant.Organization.Id, cancellationToken);
+        return await reader.ReadAsync(shipmentId, tenant.Organization.Id, tenant.Department.Id, cancellationToken);
     }
 
     [HttpPut("{shipmentId:guid}/items/{shipmentItemId:guid}/tube")]
@@ -48,7 +48,8 @@ public sealed class SampleShippingWorkflowController(
             .Include(item => item.ReturnKit)
                 .ThenInclude(item => item!.Tubes)
             .SingleOrDefaultAsync(item => item.Id == shipmentId
-                && item.OrganizationId == tenant.Organization.Id, cancellationToken)
+                && item.OrganizationId == tenant.Organization.Id
+                && item.DepartmentId == tenant.Department.Id, cancellationToken)
             ?? throw Missing();
         var currentPacket = shipment.PacketRevisions
             .Where(value => !value.IsVoided)
@@ -79,7 +80,7 @@ public sealed class SampleShippingWorkflowController(
         if (assignedElsewhere)
             throw Conflict("supplier_tube_already_assigned", "That tube is already matched to another tube slot in this shipment.");
         if ((slot?.RegisteredSampleTubeId ?? item.RegisteredSampleTubeId) == tube.Id)
-            return await reader.ReadAsync(shipment.Id, tenant.Organization.Id, cancellationToken);
+            return await reader.ReadAsync(shipment.Id, tenant.Organization.Id, tenant.Department.Id, cancellationToken);
 
         var now = DateTime.UtcNow;
         var previousTubeId = slot?.RegisteredSampleTubeId ?? item.RegisteredSampleTubeId;
@@ -120,7 +121,7 @@ public sealed class SampleShippingWorkflowController(
         {
             await dbContext.SaveChangesAsync(cancellationToken);
         }
-        return await reader.ReadAsync(shipment.Id, tenant.Organization.Id, cancellationToken);
+        return await reader.ReadAsync(shipment.Id, tenant.Organization.Id, tenant.Department.Id, cancellationToken);
     }
 
     [HttpPost("{shipmentId:guid}/packet")]
@@ -132,7 +133,8 @@ public sealed class SampleShippingWorkflowController(
         var tenant = await requestContext.RequireSampleShippingTenantAsync(HttpContext, true, cancellationToken);
         var shipment = await dbContext.SampleShipments.AsNoTracking()
             .SingleOrDefaultAsync(item => item.Id == shipmentId
-                && item.OrganizationId == tenant.Organization.Id, cancellationToken)
+                && item.OrganizationId == tenant.Organization.Id
+                && item.DepartmentId == tenant.Department.Id, cancellationToken)
             ?? throw Missing();
         EnsureVersion(shipment.Version, request.Version);
         await packetService.IssueAsync(
@@ -141,7 +143,7 @@ public sealed class SampleShippingWorkflowController(
             DateTime.UtcNow,
             request.ReplacementReason,
             cancellationToken);
-        return await reader.ReadAsync(shipment.Id, tenant.Organization.Id, cancellationToken);
+        return await reader.ReadAsync(shipment.Id, tenant.Organization.Id, tenant.Department.Id, cancellationToken);
     }
 
     [HttpPost("{shipmentId:guid}/shipped")]
@@ -152,12 +154,13 @@ public sealed class SampleShippingWorkflowController(
     {
         var tenant = await requestContext.RequireSampleShippingTenantAsync(HttpContext, true, cancellationToken);
         var shipment = await dbContext.SampleShipments.SingleOrDefaultAsync(item => item.Id == shipmentId
-            && item.OrganizationId == tenant.Organization.Id, cancellationToken) ?? throw Missing();
+            && item.OrganizationId == tenant.Organization.Id
+            && item.DepartmentId == tenant.Department.Id, cancellationToken) ?? throw Missing();
         EnsureVersion(shipment.Version, request.Version);
         var shippedAt = RequireUtc(request.ShippedAt, "Shipment time");
         Execute(() => shipment.RecordShipment(request.Carrier, request.TrackingNumber, shippedAt));
         await dbContext.SaveChangesAsync(cancellationToken);
-        return await reader.ReadAsync(shipment.Id, tenant.Organization.Id, cancellationToken);
+        return await reader.ReadAsync(shipment.Id, tenant.Organization.Id, tenant.Department.Id, cancellationToken);
     }
 
     [HttpGet("{shipmentId:guid}/packet")]
@@ -166,14 +169,14 @@ public sealed class SampleShippingWorkflowController(
         CancellationToken cancellationToken)
     {
         var tenant = await requestContext.RequireSampleShippingTenantAsync(HttpContext, false, cancellationToken);
-        return await reader.ReadPacketAsync(shipmentId, tenant.Organization.Id, cancellationToken);
+        return await reader.ReadPacketAsync(shipmentId, tenant.Organization.Id, tenant.Department.Id, cancellationToken);
     }
 
     [HttpGet("{shipmentId:guid}/crosswalk.csv")]
     public async Task<IActionResult> CrosswalkCsv(Guid shipmentId, CancellationToken cancellationToken)
     {
         var tenant = await requestContext.RequireSampleShippingTenantAsync(HttpContext, false, cancellationToken);
-        var packet = await reader.ReadPacketAsync(shipmentId, tenant.Organization.Id, cancellationToken);
+        var packet = await reader.ReadPacketAsync(shipmentId, tenant.Organization.Id, tenant.Department.Id, cancellationToken);
         var shipment = packet.Shipment;
         using var manifest = JsonDocument.Parse(packet.ManifestSnapshotJson);
         if (!manifest.RootElement.TryGetProperty("samples", out var samples)

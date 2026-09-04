@@ -631,6 +631,7 @@ public sealed class SampleShipment : IAudit, IConcurrency
     public Guid Id { get; private set; } = Guid.NewGuid();
     public string ShipmentNumber { get; private set; } = null!;
     public Guid OrganizationId { get; private set; }
+    public Guid DepartmentId { get; private set; }
     public SampleShipmentAuthorizationSource AuthorizationSource { get; private set; }
     public Guid AuthorizationSourceId { get; private set; }
     public string AuthorizationReference { get; private set; } = null!;
@@ -657,6 +658,7 @@ public sealed class SampleShipment : IAudit, IConcurrency
     public SampleShipment(
         string shipmentNumber,
         Guid organizationId,
+        Guid departmentId,
         SampleShipmentAuthorizationSource authorizationSource,
         Guid authorizationSourceId,
         string authorizationReference,
@@ -664,11 +666,12 @@ public sealed class SampleShipment : IAudit, IConcurrency
         Guid labWorkOrderId,
         Guid destinationId)
     {
-        if (organizationId == Guid.Empty || authorizationSourceId == Guid.Empty
+        if (organizationId == Guid.Empty || departmentId == Guid.Empty || authorizationSourceId == Guid.Empty
             || labWorkOrderId == Guid.Empty || destinationId == Guid.Empty)
             throw new ArgumentException("Organization, authorization, Lab work, and destination identifiers are required.");
         ShipmentNumber = SampleShippingText.Reference(shipmentNumber, nameof(shipmentNumber));
         OrganizationId = organizationId;
+        DepartmentId = departmentId;
         AuthorizationSource = authorizationSource;
         AuthorizationSourceId = authorizationSourceId;
         AuthorizationReference = SampleShippingText.Reference(authorizationReference, nameof(authorizationReference));

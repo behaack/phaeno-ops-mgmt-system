@@ -16,6 +16,27 @@ and rollback-isolated PostgreSQL coverage.
 
 ## Created Tests
 
+- [x] `backend/test/DepartmentAccessDomainTests.cs` - new Organizations receive
+  one active General Department, typed Department overrides use null for
+  inheritance and protect the default lifecycle, and explicit Contact/User
+  identity links require a reason while retaining deactivate/reactivate history.
+- [x] `backend/test/DepartmentAccessPostgresTests.cs` - 12 rollback-isolated
+  PostgreSQL checks for foreign-Organization denial, selected-Department result
+  and invoice downloads, default uniqueness/audit, safe deactivation/reactivation,
+  invalid/missing invitation intent, inactive Department denial, and service-rule
+  override precedence. Passed locally on 2026-09-04.
+- [x] Review regression run: 243 non-reference tests passed; 42 focused tests
+  passed with the local PostgreSQL connection, including all 12 new checks plus
+  quote issue and staff initiation. Other opt-in database suites were not run.
+  Updated persistence assertions for separate organization/department grant
+  indexes and existing lab workflow entities; fixed handoff fixture cleanup.
+- [ ] Remaining Department PostgreSQL/API coverage - migration backfill, selected-header
+  validation, organization-admin all-Department access, Department-admin and
+  member isolation, invitation acceptance, cross-Department reads/counts/
+  exports/downloads, Department-scoped service entitlements and curated-data
+  grants, and notification-recipient isolation remain required.
+  The tests above do not replace signed-in cross-role acceptance.
+
 - [x] `backend/test/PSeqOrderToCashDomainTests.cs` - invitation retry and hard
   bounce transitions; derived full readiness versus permitted internal staging
   without an active Customer administrator;
@@ -161,6 +182,8 @@ and rollback-isolated PostgreSQL coverage.
 - [x] `backend/test/DataProvisioningDomainTests.cs` - `EligibilityAndGrantPinOnePublishedExactVersionUntilRevoked`.
 - [x] `backend/test/DataProvisioningDomainTests.cs` -
   `GrantUpgradeSupersedesPriorExactVersionWithoutErasingHistory`.
+  The scenario now also preserves the Department access scope across an exact-
+  version upgrade; the source change was not executed on 2026-09-04.
 - [x] `backend/test/DataProvisioningDomainTests.cs` -
   `GovernanceQuarantineCanRestoreUnchangedContentOrWithdrawUnsafeContent`.
 - [x] `backend/test/DataProvisioningDomainTests.cs` -
@@ -261,8 +284,9 @@ and rollback-isolated PostgreSQL coverage.
   and one idempotency record, missing no-PHI attestation is rejected without
   creating a Job, an unrelated specimen-priced catalog item cannot satisfy the
   designated laboratory-service quote line, quote issuance requires neither a
-  QuickBooks Customer link nor a completed billing profile and creates no
-  QuickBooks estimate/outbox work, the shared idempotency boundary
+  QuickBooks Customer link nor a completed billing profile, inserts the new
+  quote instead of treating its client-generated ID as an existing row, and
+  creates no QuickBooks estimate/outbox work, the shared idempotency boundary
   preserves replay status, rejects payload mismatch, and rolls back an
   intermediate business save, quote acceptance opens sample-roster preparation
   without creating Lab work, and roster finalization atomically creates and

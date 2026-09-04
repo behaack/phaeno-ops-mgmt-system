@@ -367,7 +367,7 @@ public sealed class PlatformDataAssemblyRequestsController(
     private void Event(DataAssemblyRequest item, string from, string to, Guid actorId, string? reason = null, string? internalNote = null)
         => dbContext.OrderStatusEvents.Add(new OrderStatusEvent(item.OrganizationId, OrderWorkflowTypes.DataAssembly, item.Id, null, from, to, reason, internalNote, actorId, DateTime.UtcNow));
     private void Notice(DataAssemblyRequest item, string eventType, string subject, string body)
-        => dbContext.OrderNotifications.Add(new OrderNotification(item.OrganizationId, null, OrderWorkflowTypes.DataAssembly, item.Id, eventType, subject, body));
+        => dbContext.OrderNotifications.Add(new OrderNotification(item.OrganizationId, null, OrderWorkflowTypes.DataAssembly, item.Id, eventType, subject, body, item.DepartmentId));
     private static void EnsureVersion(long current, long supplied) { if (current != supplied) throw new DbUpdateConcurrencyException(); }
     private static void Execute(Action action)
     {

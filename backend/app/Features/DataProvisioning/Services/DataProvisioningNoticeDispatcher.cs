@@ -40,6 +40,10 @@ public sealed class DataProvisioningNoticeDispatcher(
             .Include(notice => notice.Organization)
                 .ThenInclude(organization => organization.Memberships)
                 .ThenInclude(membership => membership.User)
+            .Include(notice => notice.Organization)
+                .ThenInclude(organization => organization.Memberships)
+                .ThenInclude(membership => membership.DepartmentMemberships)
+            .Include(notice => notice.OrganizationDatasetGrant)
             .Where(notice => notice.Status == DataProvisioningNoticeStatus.Pending
                 || (notice.Status == DataProvisioningNoticeStatus.Failed
                     && notice.AttemptCount < 10
@@ -54,8 +58,13 @@ public sealed class DataProvisioningNoticeDispatcher(
             {
                 var recipients = notice.Organization.Memberships
                     .Where(membership => membership.IsActive
-                        && membership.IsOrganizationAdmin
-                        && membership.User is { IsActive: true })
+                        && membership.User is { IsActive: true }
+                        && (membership.IsOrganizationAdmin
+                            || (notice.OrganizationDatasetGrant?.DepartmentId is Guid departmentId
+                                && membership.DepartmentMemberships.Any(access =>
+                                    access.DepartmentId == departmentId
+                                    && access.IsActive
+                                    && access.IsDepartmentAdmin))))
                     .Select(membership => membership.User!.Email)
                     .Distinct(StringComparer.OrdinalIgnoreCase)
                     .ToList();

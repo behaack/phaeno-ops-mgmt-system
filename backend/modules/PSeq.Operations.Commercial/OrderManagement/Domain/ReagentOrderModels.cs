@@ -6,6 +6,7 @@ public sealed class PartnerShippingAddress : IAudit, IConcurrency
 {
     public Guid Id { get; private set; } = Guid.NewGuid();
     public Guid OrganizationId { get; private set; }
+    public Guid DepartmentId { get; private set; }
     public string Label { get; private set; } = null!;
     public string Recipient { get; private set; } = null!;
     public string Line1 { get; private set; } = null!;
@@ -26,6 +27,7 @@ public sealed class PartnerShippingAddress : IAudit, IConcurrency
 
     public PartnerShippingAddress(
         Guid organizationId,
+        Guid departmentId,
         string label,
         string recipient,
         string line1,
@@ -36,7 +38,10 @@ public sealed class PartnerShippingAddress : IAudit, IConcurrency
         string countryCode,
         string? phone)
     {
+        if (organizationId == Guid.Empty || departmentId == Guid.Empty)
+            throw new ArgumentException("An organization and department are required.");
         OrganizationId = organizationId;
+        DepartmentId = departmentId;
         Update(label, recipient, line1, line2, city, region, postalCode, countryCode, phone);
     }
 
@@ -73,6 +78,7 @@ public sealed class PartnerReagentOrder : IAudit, IConcurrency
 {
     public Guid Id { get; private set; } = Guid.NewGuid();
     public Guid OrganizationId { get; private set; }
+    public Guid DepartmentId { get; private set; }
     public string OrderNumber { get; private set; } = null!;
     public ReagentOrderStatus Status { get; private set; } = ReagentOrderStatus.Draft;
     public ReagentOrderStatus? ResumeStatus { get; private set; }
@@ -100,9 +106,12 @@ public sealed class PartnerReagentOrder : IAudit, IConcurrency
 
     private PartnerReagentOrder() { }
 
-    public PartnerReagentOrder(Guid organizationId, string orderNumber)
+    public PartnerReagentOrder(Guid organizationId, Guid departmentId, string orderNumber)
     {
+        if (organizationId == Guid.Empty || departmentId == Guid.Empty)
+            throw new ArgumentException("An organization and department are required.");
         OrganizationId = organizationId;
+        DepartmentId = departmentId;
         OrderNumber = OrderText.Required(orderNumber, nameof(orderNumber), 50);
     }
 

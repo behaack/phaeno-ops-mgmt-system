@@ -23,6 +23,14 @@ public static class AccountAudit
     public const string MembershipDeactivated = nameof(MembershipDeactivated);
     public const string MembershipRoleChanged = nameof(MembershipRoleChanged);
     public const string MembershipLeft = nameof(MembershipLeft);
+    public const string DepartmentCreated = nameof(DepartmentCreated);
+    public const string DepartmentUpdated = nameof(DepartmentUpdated);
+    public const string DepartmentDeactivated = nameof(DepartmentDeactivated);
+    public const string DepartmentReactivated = nameof(DepartmentReactivated);
+    public const string DepartmentMadeDefault = nameof(DepartmentMadeDefault);
+    public const string DepartmentMembershipUpdated = nameof(DepartmentMembershipUpdated);
+    public const string ContactUserLinked = nameof(ContactUserLinked);
+    public const string ContactUserUnlinked = nameof(ContactUserUnlinked);
 
     public static void Add(
         PSeqOperationsDbContext dbContext,

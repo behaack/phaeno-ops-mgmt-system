@@ -12,6 +12,21 @@ remain incomplete production-activation gates.
 
 ## Created Tests
 
+- [x] Existing CRM sidebar and browser expectations now use **People** instead
+  of **Contacts**, preserving the compatible `/crm/contacts` route.
+- [x] `src/api/client.test.ts` captures Department/Organization headers before
+  delayed authentication and preserves explicitly supplied scope.
+- [x] `LabJobDetailsDialog.test.tsx` verifies the staff-selected Department is
+  included in Customer job initiation. Existing test assertions now use accessible
+  required-field names and await asynchronous validation correctly.
+- [x] The full frontend unit suite (140 tests) passed locally during the 2026-09-04 review;
+  People/Department rendered interaction coverage is in the E2E plan.
+- [ ] Remaining focused People and Departments coverage for invite/link/
+  unlink review, identity-conflict display, Department CRUD and assignments,
+  selected-Department persistence, service/data-grant scoping, keyboard use,
+  reflow, and error recovery.
+  The 2026-09-04 follow-up authorized review and local automated verification.
+
 - [x] `frontend/src/api/pseq-order-to-cash.test.ts` - successful collection and
   command responses are unwrapped from the standard API envelope, while
   provider errors remain actionable request failures.
@@ -121,7 +136,9 @@ remain incomplete production-activation gates.
   system-calculated, the request cannot submit a staff-entered tax amount, and
   the live pre-tax total follows line quantity and price changes. Required and
   optional quote lines use user-facing pricing guidance without exposing
-  internal catalog codes.
+  internal catalog codes. Quote issuance fetches the latest record version at
+  submission time; a later stale-record conflict preserves entered quote values
+  and asks the operator to review them before issuing against the new version.
 - [x] `frontend/src/features/orders/LabJobDetailsDialog.test.tsx` - an optional
   USD price per specimen and Customer-safe pricing note are submitted with the
   Job pricing profile.
@@ -405,7 +422,9 @@ remain incomplete production-activation gates.
   quantity quote defaults, active-Customer and approver failures, effective
   `Ready` entitlement and active-offering action states for Customer and Phaeno
   paths, actionable eligibility errors without a manual bypass, no Customer
-  notice during Phaeno quote preparation, all-eligible-admin approval delivery,
+  notice during Phaeno quote preparation, the Phaeno operational detail's
+  current quote value and neutral internal-context presentation,
+  all-eligible-admin approval delivery,
   accepting-administrator ownership of later ordinary notices,
   upload and scan feedback, payment holds,
   substitutions, backorders, immutable-document downloads, operational queue

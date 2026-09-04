@@ -67,6 +67,46 @@ public sealed record UpdateCrmCompanyContactRequest(
     DateOnly? EffectiveTo,
     long Version);
 
+public sealed record CrmCompanyPersonDto(
+    string RecordKind,
+    Guid? ContactAssociationId,
+    Guid? ContactId,
+    long? ContactVersion,
+    Guid? PortalUserId,
+    Guid? OrganizationMembershipId,
+    Guid? InvitationId,
+    Guid? ContactUserLinkId,
+    long? ContactUserLinkVersion,
+    string DisplayName,
+    string FirstName,
+    string LastName,
+    string? Email,
+    string? JobTitle,
+    string? RelationshipRole,
+    bool IsPrimaryCompany,
+    bool IsContactActive,
+    string PortalAccessState,
+    bool IsOrganizationAdmin,
+    IReadOnlyList<CrmPersonDepartmentAccessDto> Departments,
+    Guid? SuggestedPortalUserId,
+    Guid? SuggestedInvitationId,
+    bool RequiresIdentityReview);
+
+public sealed record CrmPersonDepartmentAccessDto(
+    Guid DepartmentId,
+    string DepartmentName,
+    bool IsDepartmentAdmin,
+    bool IsActive);
+
+public sealed record LinkCrmContactUserRequest(
+    Guid UserId,
+    string Reason,
+    long ContactVersion);
+
+public sealed record UnlinkCrmContactUserRequest(
+    string Reason,
+    long Version);
+
 public sealed record CrmLeadDto(
     Guid Id,
     CrmLeadKind Kind,

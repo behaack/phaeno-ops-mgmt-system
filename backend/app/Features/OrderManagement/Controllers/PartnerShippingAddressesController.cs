@@ -20,7 +20,9 @@ public sealed class PartnerShippingAddressesController(PSeqOperationsDbContext d
     {
         var tenant = await requestContext.RequireTenantAsync(HttpContext, OrganizationKind.Partner, false, cancellationToken);
         var addresses = await dbContext.PartnerShippingAddresses.AsNoTracking()
-            .Where(item => item.OrganizationId == tenant.Organization.Id && item.IsActive)
+            .Where(item => item.OrganizationId == tenant.Organization.Id
+                && item.DepartmentId == tenant.Department.Id
+                && item.IsActive)
             .OrderBy(item => item.Label).ToListAsync(cancellationToken);
         return addresses.Select(item => item.ToDto()).ToList();
     }
@@ -29,7 +31,7 @@ public sealed class PartnerShippingAddressesController(PSeqOperationsDbContext d
     public async Task<ShippingAddressDto> Create([FromBody] ShippingAddressWriteRequest request, CancellationToken cancellationToken)
     {
         var tenant = await requestContext.RequireTenantAsync(HttpContext, OrganizationKind.Partner, true, cancellationToken);
-        var address = Construct(tenant.Organization.Id, request);
+        var address = Construct(tenant.Organization.Id, tenant.Department.Id, request);
         dbContext.PartnerShippingAddresses.Add(address);
         await dbContext.SaveChangesAsync(cancellationToken);
         Response.StatusCode = StatusCodes.Status201Created;
@@ -40,7 +42,7 @@ public sealed class PartnerShippingAddressesController(PSeqOperationsDbContext d
     public async Task<ShippingAddressDto> Update(Guid addressId, [FromBody] ShippingAddressWriteRequest request, CancellationToken cancellationToken)
     {
         var tenant = await requestContext.RequireTenantAsync(HttpContext, OrganizationKind.Partner, true, cancellationToken);
-        var address = await ReadAsync(addressId, tenant.Organization.Id, cancellationToken);
+        var address = await ReadAsync(addressId, tenant, cancellationToken);
         if (!request.Version.HasValue || request.Version.Value != address.Version) throw new DbUpdateConcurrencyException();
         Execute(() => address.Update(request.Label, request.Recipient, request.Line1, request.Line2, request.City,
             request.Region, request.PostalCode, request.CountryCode, request.Phone));
@@ -52,20 +54,23 @@ public sealed class PartnerShippingAddressesController(PSeqOperationsDbContext d
     public async Task<ShippingAddressDto> Delete(Guid addressId, [FromQuery] long version, CancellationToken cancellationToken)
     {
         var tenant = await requestContext.RequireTenantAsync(HttpContext, OrganizationKind.Partner, true, cancellationToken);
-        var address = await ReadAsync(addressId, tenant.Organization.Id, cancellationToken);
+        var address = await ReadAsync(addressId, tenant, cancellationToken);
         if (version != address.Version) throw new DbUpdateConcurrencyException();
         address.Deactivate();
         await dbContext.SaveChangesAsync(cancellationToken);
         return address.ToDto();
     }
 
-    private async Task<PartnerShippingAddress> ReadAsync(Guid id, Guid organizationId, CancellationToken cancellationToken)
-        => await dbContext.PartnerShippingAddresses.FirstOrDefaultAsync(item => item.Id == id && item.OrganizationId == organizationId && item.IsActive, cancellationToken)
+    private async Task<PartnerShippingAddress> ReadAsync(Guid id, OrderTenantContext tenant, CancellationToken cancellationToken)
+        => await dbContext.PartnerShippingAddresses.FirstOrDefaultAsync(item => item.Id == id
+                && item.OrganizationId == tenant.Organization.Id
+                && item.DepartmentId == tenant.Department.Id
+                && item.IsActive, cancellationToken)
             ?? throw new OrderManagementException("shipping_address_not_found", "The shipping address was not found.", StatusCodes.Status404NotFound);
 
-    private static PartnerShippingAddress Construct(Guid organizationId, ShippingAddressWriteRequest request)
+    private static PartnerShippingAddress Construct(Guid organizationId, Guid departmentId, ShippingAddressWriteRequest request)
     {
-        try { return new PartnerShippingAddress(organizationId, request.Label, request.Recipient, request.Line1, request.Line2,
+        try { return new PartnerShippingAddress(organizationId, departmentId, request.Label, request.Recipient, request.Line1, request.Line2,
             request.City, request.Region, request.PostalCode, request.CountryCode, request.Phone); }
         catch (ArgumentException exception) { throw new OrderManagementException("shipping_address_invalid", exception.Message); }
     }

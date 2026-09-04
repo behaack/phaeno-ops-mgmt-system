@@ -9,6 +9,13 @@ deployment, and test execution retain their normal approval boundaries.
 
 ## Status
 
+- On 2026-09-04 the Company workspace was reorganized into Overview, People,
+  Sales, Departments & services, Requests, and Activity. People unifies CRM
+  Contacts, Portal users, invitations, and department access without collapsing
+  the underlying records. Contact/User linking is explicit and audited; email
+  matches are review suggestions only. Sales Opportunities no longer share the
+  People surface. See `PEOPLE-DEPARTMENTS-ACCESS-PLAN.md`.
+
 - Product direction was approved on 2026-08-26: POMS will be developed as a
   standalone application with a full first-party CRM rather than depending on
   HubSpot.
@@ -104,8 +111,8 @@ deployment, and test execution retain their normal approval boundaries.
   relationship summary, primary/ended status, and edit action. Both directions
   use one shared editor for title, role, primary designation, and effective
   dates.
-- Company detail is organized as Overview, People and sales, Requests, Access
-  and services, and Activity. Request history remains visible on the Company,
+- Company detail is organized as Overview, People, Sales, Departments and
+  services, Requests, and Activity. Request history remains visible on the Company,
   while the central Requests queue is the only decision and completion surface;
   the embedded access workspace does not duplicate request review. New Company
   entry keeps name, Website, and relationship stage visible, places optional

@@ -1,15 +1,19 @@
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { fireEvent, render, screen, waitFor } from "@testing-library/react";
+import { fireEvent, render, screen, waitFor, within } from "@testing-library/react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 import { PlatformQuoteDialog } from "./PlatformQuoteDialog";
 
 const api = vi.hoisted(() => ({
+  getPlatformOrder: vi.fn(),
+  isOrderConcurrencyError: vi.fn(),
   issuePlatformQuote: vi.fn(),
 }));
 
 vi.mock("#/api/order-management", () => ({
   getOrderErrorMessage: (_error: unknown, fallback: string) => fallback,
+  getPlatformOrder: api.getPlatformOrder,
+  isOrderConcurrencyError: api.isOrderConcurrencyError,
   issuePlatformQuote: api.issuePlatformQuote,
 }));
 
@@ -37,6 +41,8 @@ const unrelatedSpecimenItem = {
 describe("PlatformQuoteDialog", () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    api.getPlatformOrder.mockResolvedValue({ version: 7 });
+    api.isOrderConcurrencyError.mockReturnValue(false);
     api.issuePlatformQuote.mockResolvedValue({});
   });
 
@@ -85,7 +91,7 @@ describe("PlatformQuoteDialog", () => {
     ).toBeTruthy();
     expect(screen.queryByText("specimen-handling-fee")).toBeNull();
     expect(
-      screen.getByRole("option", { name: "Specimen handling fee" }),
+      within(catalogItems[1]).getByRole("option", { name: "Specimen handling fee" }),
     ).toBeTruthy();
   });
 
@@ -114,12 +120,16 @@ describe("PlatformQuoteDialog", () => {
       "lab",
       "22222222-2222-4222-8222-222222222222",
       expect.objectContaining({
-        version: 3,
+        version: 7,
         tax: 0,
         pricingDecisionReason: null,
         lines: [expect.objectContaining({ unitPrice: 120, quantity: 3 })],
       }),
     ));
+    expect(api.getPlatformOrder).toHaveBeenCalledWith(
+      "lab",
+      "22222222-2222-4222-8222-222222222222",
+    );
   });
 
   it("requires an internal reason when the reviewer amends a proposed price", async () => {
@@ -144,11 +154,31 @@ describe("PlatformQuoteDialog", () => {
       }),
     ));
   });
+
+  it("refreshes a stale Job while preserving the entered quote", async () => {
+    const concurrencyError = new Error("stale");
+    const onSaved = vi.fn().mockResolvedValue(undefined);
+    api.isOrderConcurrencyError.mockImplementation(
+      (error) => error === concurrencyError,
+    );
+    api.issuePlatformQuote.mockRejectedValueOnce(concurrencyError);
+    renderDialog([canonicalItem], undefined, onSaved);
+    fireEvent.change(screen.getByLabelText(/Unit price/), {
+      target: { value: "150" },
+    });
+
+    fireEvent.click(screen.getByRole("button", { name: "Issue quote" }));
+
+    expect(await screen.findByText(/The latest Job was loaded/)).toBeTruthy();
+    expect(onSaved).toHaveBeenCalledTimes(1);
+    expect(screen.getByLabelText(/Unit price/)).toHaveProperty("value", "150");
+  });
 });
 
 function renderDialog(
   catalogItems: Array<typeof canonicalItem>,
   priceProposal?: { unitPrice: number; currency: string; note?: string | null },
+  onSaved = vi.fn().mockResolvedValue(undefined),
 ) {
   const client = new QueryClient({
     defaultOptions: {
@@ -162,12 +192,11 @@ function renderDialog(
         open
         workflow="lab"
         recordId="22222222-2222-4222-8222-222222222222"
-        version={3}
         defaultQuantity={3}
         priceProposal={priceProposal}
         catalogItems={catalogItems}
         onOpenChange={vi.fn()}
-        onSaved={vi.fn().mockResolvedValue(undefined)}
+        onSaved={onSaved}
       />
     </QueryClientProvider>,
   );

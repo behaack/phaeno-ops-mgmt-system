@@ -596,7 +596,9 @@ public sealed class CustomerInvoicesController(
     public async Task<IReadOnlyList<InvoiceReceivableDto>> List(CancellationToken cancellationToken)
     {
         var tenant = await requestContext.RequireTenantAsync(HttpContext, OrganizationKind.Customer, false, cancellationToken);
-        return await dbContext.Invoices.AsNoTracking().Where(item => item.OrganizationId == tenant.Organization.Id)
+        return await dbContext.Invoices.AsNoTracking().Where(item => item.OrganizationId == tenant.Organization.Id
+                && dbContext.LabServiceOrders.Any(order => order.Id == item.LabServiceOrderId
+                    && order.OrganizationId == tenant.Organization.Id && order.DepartmentId == tenant.Department.Id))
             .OrderByDescending(item => item.IssuedOn).Select(item => new InvoiceReceivableDto(item.Id,
                 item.OrganizationId, item.LabServiceOrderId, item.InvoiceNumber, item.Status.ToString(),
                 item.IssuedOn, item.DueOn, Math.Max(0, DateOnly.FromDateTime(DateTime.UtcNow).DayNumber - item.DueOn.DayNumber),
@@ -609,7 +611,9 @@ public sealed class CustomerInvoicesController(
     {
         var tenant = await requestContext.RequireTenantAsync(HttpContext, OrganizationKind.Customer, false, cancellationToken);
         var invoice = await dbContext.Invoices.AsNoTracking().SingleOrDefaultAsync(item =>
-            item.Id == invoiceId && item.OrganizationId == tenant.Organization.Id, cancellationToken)
+            item.Id == invoiceId && item.OrganizationId == tenant.Organization.Id
+                && dbContext.LabServiceOrders.Any(order => order.Id == item.LabServiceOrderId
+                    && order.OrganizationId == tenant.Organization.Id && order.DepartmentId == tenant.Department.Id), cancellationToken)
             ?? throw new OrderManagementException("invoice_not_found", "The invoice was not found.", StatusCodes.Status404NotFound);
         var stream = await fileStorage.OpenReadAsync(invoice.PdfStorageKey, cancellationToken);
         return File(stream, "application/pdf", $"{invoice.InvoiceNumber}.pdf", enableRangeProcessing: true);

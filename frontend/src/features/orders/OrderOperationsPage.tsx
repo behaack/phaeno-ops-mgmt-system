@@ -3,7 +3,7 @@ import { Link } from '@tanstack/react-router'
 import { Boxes, CircleDollarSign, ClipboardCheck, FileCheck2, ListChecks, PlugZap, RefreshCw, ShoppingCart, Workflow as WorkflowIcon } from 'lucide-react'
 import { useState } from 'react'
 
-import { getOrderConfiguration, getOrderErrorMessage, getPlatformOrder, listIntegrationMessages, listNotificationMessages, listPlatformOrders, retryIntegrationMessage, retryNotificationMessage, runPlatformAction, updateOperationalAssignment, type DataAssemblyRequest, type IntegrationMessage, type LabServiceOrder, type NotificationMessage, type PagedResult, type ReagentOrder } from '#/api/order-management'
+import { getOrderConfiguration, getOrderErrorMessage, getPlatformOrder, listIntegrationMessages, listNotificationMessages, listPlatformOrders, retryIntegrationMessage, retryNotificationMessage, runPlatformAction, updateOperationalAssignment, type DataAssemblyRequest, type IntegrationMessage, type LabServiceOrder, type NotificationMessage, type PagedResult, type Quote, type ReagentOrder } from '#/api/order-management'
 import type { SessionCapabilities } from '#/api/session'
 import { listOrganizations } from '#/api/data-provisioning'
 import { getLabWorkOrderByCommercialOrder } from '#/api/lab-operations'
@@ -141,10 +141,15 @@ function OperationalDetail({ workflow, orderId, apiEnabled, userId }: { workflow
     retry: false,
   })
   async function refresh() {
-    await client.invalidateQueries({ queryKey: ['platform-order', workflow, orderId] })
-    await client.invalidateQueries({ queryKey: ['platform-orders', workflow] })
-    await client.invalidateQueries({ queryKey: ['commercial-orders'] })
-    if (workflow === 'lab') await client.invalidateQueries({ queryKey: ['lab-work-by-commercial-order', orderId] })
+    const refreshes = [
+      client.invalidateQueries({ queryKey: ['platform-order', workflow, orderId] }),
+      client.invalidateQueries({ queryKey: ['platform-orders', workflow] }),
+      client.invalidateQueries({ queryKey: ['commercial-orders'] }),
+    ]
+    if (workflow === 'lab') {
+      refreshes.push(client.invalidateQueries({ queryKey: ['lab-work-by-commercial-order', orderId] }))
+    }
+    await Promise.all(refreshes)
   }
   const mutation = useMutation({
     mutationFn: async (input: { action: string; reason?: string }) => {
@@ -175,6 +180,7 @@ function OperationalDetail({ workflow, orderId, apiEnabled, userId }: { workflow
 function OperationalSummary({ workflow, item }: { workflow: Workflow; item: LabServiceOrder | ReagentOrder | DataAssemblyRequest }) {
   const internalNote = item.internalNote
   const timeline = item.timeline
+  const quote = 'quotes' in item ? latestQuote(item.quotes) : undefined
   return (
     <div className="grid gap-5 lg:grid-cols-[minmax(0,1.5fr)_minmax(18rem,1fr)]">
       <Card>
@@ -201,6 +207,17 @@ function OperationalSummary({ workflow, item }: { workflow: Workflow; item: LabS
                     : 'No price proposed'}
                 </dd>
               </div>
+              {quote ? (
+                <div>
+                  <dt className="font-medium">Current quote</dt>
+                  <dd className="mt-1">
+                    <span className="font-semibold text-foreground">{formatMoney(quote.total, quote.currency)}</span>
+                    <span className="mt-1 block text-xs text-muted-foreground">
+                      {quote.tax === 0 ? 'Pre-tax total' : `${formatMoney(quote.subtotal, quote.currency)} pre-tax`} · Revision {quote.revision} · {humanizeStatus(quote.status)}
+                    </span>
+                  </dd>
+                </div>
+              ) : null}
               {item.priceProposalNote ? <div><dt className="font-medium">Proposal note</dt><dd className="mt-1 whitespace-pre-wrap text-muted-foreground">{item.priceProposalNote}</dd></div> : null}
             </dl>
           ) : null}
@@ -210,8 +227,8 @@ function OperationalSummary({ workflow, item }: { workflow: Workflow; item: LabS
       </Card>
       <div className="space-y-5">
         {item.tenantSafeReason ? <Alert><AlertTitle>Tenant-safe reason</AlertTitle><AlertDescription>{item.tenantSafeReason}</AlertDescription></Alert> : null}
-        {internalNote ? <Alert variant="destructive"><AlertTitle>Internal note</AlertTitle><AlertDescription>{internalNote}</AlertDescription></Alert> : null}
-        <Card><CardHeader><CardTitle>Audit timeline</CardTitle></CardHeader><CardContent><ol className="space-y-3">{timeline.slice().reverse().map((entry) => <li key={entry.id} className="border-l-2 pl-3 text-sm"><strong>{humanizeStatus(entry.toStatus)}</strong><span className="block text-xs text-muted-foreground">{formatDateTime(entry.occurredAt)}</span>{entry.internalNote ? <span className="mt-1 block text-destructive">Internal: {entry.internalNote}</span> : null}</li>)}</ol></CardContent></Card>
+        {internalNote ? <Alert><AlertTitle>Internal context</AlertTitle><AlertDescription>{internalNote}</AlertDescription></Alert> : null}
+        <Card><CardHeader><CardTitle>Audit timeline</CardTitle></CardHeader><CardContent><ol className="space-y-3">{timeline.slice().reverse().map((entry) => <li key={entry.id} className="border-l-2 pl-3 text-sm"><strong>{humanizeStatus(entry.toStatus)}</strong><span className="block text-xs text-muted-foreground">{formatDateTime(entry.occurredAt)}</span>{entry.internalNote ? <span className="mt-1 block text-muted-foreground"><span className="font-medium text-foreground">Internal context:</span> {entry.internalNote}</span> : null}</li>)}</ol></CardContent></Card>
       </div>
     </div>
   )
@@ -231,8 +248,18 @@ function CommercialControlPanel({
   onSaved: () => Promise<void>
 }) {
   const [quoteOpen, setQuoteOpen] = useState(false)
+  const [quoteOpening, setQuoteOpening] = useState(false)
   const mayQuote = (workflow === 'lab' || workflow === 'assembly') && item.status === 'QuoteInPreparation'
   const workflowPath = workflow === 'lab' ? 'lab-service-orders' : workflow === 'reagent' ? 'reagent-orders' : 'data-assembly-requests'
+  async function openQuote() {
+    setQuoteOpening(true)
+    try {
+      await onSaved()
+      setQuoteOpen(true)
+    } finally {
+      setQuoteOpening(false)
+    }
+  }
   return (
     <div className="mt-5 space-y-5">
       <Card>
@@ -247,7 +274,7 @@ function CommercialControlPanel({
               </CardDescription>
             </div>
             <div className="flex flex-wrap gap-2">
-              {mayQuote ? <Button type="button" onClick={() => setQuoteOpen(true)}>{workflow === 'lab' && 'proposedUnitPrice' in item && item.proposedUnitPrice != null ? 'Review proposed price' : 'Issue quote'}</Button> : null}
+              {mayQuote ? <Button type="button" disabled={quoteOpening} onClick={() => void openQuote()}>{quoteOpening ? 'Refreshing…' : workflow === 'lab' && 'proposedUnitPrice' in item && item.proposedUnitPrice != null ? 'Review proposed price' : 'Issue quote'}</Button> : null}
               {workflow === 'lab' && labWorkOrderId ? <Button asChild variant="outline"><Link to="/lab-operations/$workOrderId" params={{ workOrderId: labWorkOrderId }} search={{ section: undefined }}>Open Lab work</Link></Button> : null}
             </div>
           </div>
@@ -275,7 +302,6 @@ function CommercialControlPanel({
           open={quoteOpen}
           workflow={workflow}
           recordId={item.id}
-          version={item.version}
           defaultQuantity={workflow === 'lab' && 'requestedSpecimenCount' in item ? item.requestedSpecimenCount : undefined}
           priceProposal={workflow === 'lab' && 'proposedUnitPrice' in item && item.proposedUnitPrice != null ? {
             unitPrice: item.proposedUnitPrice,
@@ -318,6 +344,7 @@ function primaryActions(workflow: Workflow, status: string) {
 
 function formatDateTime(value: string) { return new Intl.DateTimeFormat('en-US', { dateStyle: 'medium', timeStyle: 'short' }).format(new Date(value)) }
 function formatMoney(value: number, currency: string) { return new Intl.NumberFormat('en-US', { style: 'currency', currency }).format(value) }
+function latestQuote(quotes: Quote[]) { return quotes.reduce<Quote | undefined>((latest, quote) => !latest || quote.revision > latest.revision ? quote : latest, undefined) }
 function nextDate(value: string) { const date = new Date(`${value}T00:00:00.000Z`); date.setUTCDate(date.getUTCDate() + 1); return date.toISOString().slice(0, 10) }
 
 const workflowStatuses: Record<Workflow, string[]> = {

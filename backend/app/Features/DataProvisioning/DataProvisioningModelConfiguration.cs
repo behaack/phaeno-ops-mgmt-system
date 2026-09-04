@@ -114,13 +114,21 @@ public static class DataProvisioningModelConfiguration
             entity.Property(e => e.Status).HasConversion<string>().HasMaxLength(50);
             entity.Property(e => e.RevocationReason).HasMaxLength(2000);
             entity.HasIndex(e => e.OrganizationId);
+            entity.HasIndex(e => e.DepartmentId);
             entity.HasIndex(e => e.CuratedDatasetVersionId);
             entity.HasIndex(e => new { e.OrganizationId, e.CuratedDatasetId })
                 .IsUnique()
-                .HasFilter("\"status\" = 'Active'");
+                .HasFilter("\"status\" = 'Active' AND \"department_id\" IS NULL");
+            entity.HasIndex(e => new { e.OrganizationId, e.DepartmentId, e.CuratedDatasetId })
+                .IsUnique()
+                .HasFilter("\"status\" = 'Active' AND \"department_id\" IS NOT NULL");
             entity.HasOne(e => e.Organization)
                 .WithMany()
                 .HasForeignKey(e => e.OrganizationId)
+                .OnDelete(DeleteBehavior.Restrict);
+            entity.HasOne(e => e.Department)
+                .WithMany()
+                .HasForeignKey(e => e.DepartmentId)
                 .OnDelete(DeleteBehavior.Restrict);
             entity.HasOne(e => e.CuratedDataset)
                 .WithMany()
@@ -285,7 +293,7 @@ public static class DataProvisioningModelConfiguration
                 .WithMany()
                 .HasForeignKey(e => e.IncidentId)
                 .OnDelete(DeleteBehavior.Restrict);
-            entity.HasOne<OrganizationDatasetGrant>()
+            entity.HasOne(e => e.OrganizationDatasetGrant)
                 .WithMany()
                 .HasForeignKey(e => e.OrganizationDatasetGrantId)
                 .OnDelete(DeleteBehavior.Restrict);

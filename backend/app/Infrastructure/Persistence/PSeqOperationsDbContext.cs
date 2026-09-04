@@ -45,10 +45,16 @@ public sealed class PSeqOperationsDbContext(
     /// </summary>
     public DbSet<OrganizationMembership> OrganizationMemberships { get; set; }
 
+    public DbSet<OrganizationDepartment> OrganizationDepartments { get; set; }
+
+    public DbSet<OrganizationDepartmentMembership> OrganizationDepartmentMemberships { get; set; }
+
     /// <summary>
     /// Invitations to create or reactivate organization memberships.
     /// </summary>
     public DbSet<OrganizationInvitation> OrganizationInvitations { get; set; }
+
+    public DbSet<OrganizationInvitationDepartment> OrganizationInvitationDepartments { get; set; }
 
     public DbSet<InvitationDeliveryAttempt> InvitationDeliveryAttempts { get; set; }
 
@@ -156,6 +162,7 @@ public sealed class PSeqOperationsDbContext(
     public DbSet<PortalIntegrationRequestService> PortalIntegrationRequestServices { get; set; }
     public DbSet<CrmCompany> CrmCompanies { get; set; }
     public DbSet<CrmContact> CrmContacts { get; set; }
+    public DbSet<CrmContactUserLink> CrmContactUserLinks { get; set; }
     public DbSet<CrmCompanyContact> CrmCompanyContacts { get; set; }
     public DbSet<CrmLead> CrmLeads { get; set; }
     public DbSet<CrmPipeline> CrmPipelines { get; set; }
@@ -241,6 +248,11 @@ public sealed class PSeqOperationsDbContext(
                 .HasForeignKey(m => m.OrganizationId)
                 .OnDelete(DeleteBehavior.Restrict);
 
+            entity.HasMany(e => e.Departments)
+                .WithOne(department => department.Organization)
+                .HasForeignKey(department => department.OrganizationId)
+                .OnDelete(DeleteBehavior.Restrict);
+
             // Create unique index on Name
             entity.HasIndex(e => e.Name).IsUnique();
         });
@@ -304,6 +316,47 @@ public sealed class PSeqOperationsDbContext(
                 .OnDelete(DeleteBehavior.Restrict);
         });
 
+        modelBuilder.Entity<OrganizationDepartment>(entity =>
+        {
+            entity.HasKey(e => e.Id);
+            entity.Property(e => e.Code).IsRequired().HasMaxLength(50);
+            entity.Property(e => e.Name).IsRequired().HasMaxLength(150);
+            entity.Property(e => e.Description).HasMaxLength(1000);
+            entity.Property(e => e.BillingContactEmail).HasMaxLength(255);
+            entity.Property(e => e.NotificationEmail).HasMaxLength(255);
+            entity.Property(e => e.ShippingInstructions).HasMaxLength(2000);
+            entity.Property(e => e.ResultDeliveryInstructions).HasMaxLength(2000);
+            entity.Property(e => e.IsDefault).IsRequired();
+            entity.Property(e => e.IsActive).IsRequired();
+            entity.Property(e => e.CreatedAt).IsRequired();
+            entity.Property(e => e.UpdatedAt).IsRequired();
+            entity.Property(e => e.Version).IsRequired().IsConcurrencyToken();
+            entity.HasIndex(e => new { e.OrganizationId, e.Code }).IsUnique();
+            entity.HasIndex(e => e.OrganizationId)
+                .IsUnique()
+                .HasFilter("\"is_default\" = TRUE");
+        });
+
+        modelBuilder.Entity<OrganizationDepartmentMembership>(entity =>
+        {
+            entity.HasKey(e => e.Id);
+            entity.Property(e => e.IsDepartmentAdmin).IsRequired();
+            entity.Property(e => e.IsActive).IsRequired();
+            entity.Property(e => e.CreatedAt).IsRequired();
+            entity.Property(e => e.UpdatedAt).IsRequired();
+            entity.Property(e => e.Version).IsRequired().IsConcurrencyToken();
+            entity.HasIndex(e => e.DepartmentId);
+            entity.HasIndex(e => new { e.OrganizationMembershipId, e.DepartmentId }).IsUnique();
+            entity.HasOne(e => e.OrganizationMembership)
+                .WithMany(e => e.DepartmentMemberships)
+                .HasForeignKey(e => e.OrganizationMembershipId)
+                .OnDelete(DeleteBehavior.Restrict);
+            entity.HasOne(e => e.Department)
+                .WithMany(e => e.Memberships)
+                .HasForeignKey(e => e.DepartmentId)
+                .OnDelete(DeleteBehavior.Restrict);
+        });
+
         modelBuilder.Entity<OrganizationInvitation>(entity =>
         {
             entity.HasKey(e => e.Id);
@@ -334,10 +387,31 @@ public sealed class PSeqOperationsDbContext(
                 .IsUnique()
                 .HasFilter("\"status\" = 'Pending'");
             entity.HasIndex(e => e.TokenHash).IsUnique();
+            entity.HasIndex(e => e.CrmContactId);
 
             entity.HasOne(e => e.Organization)
                 .WithMany()
                 .HasForeignKey(e => e.OrganizationId)
+                .OnDelete(DeleteBehavior.Restrict);
+
+            entity.HasOne<CrmContact>()
+                .WithMany()
+                .HasForeignKey(e => e.CrmContactId)
+                .OnDelete(DeleteBehavior.Restrict);
+        });
+
+        modelBuilder.Entity<OrganizationInvitationDepartment>(entity =>
+        {
+            entity.HasKey(e => e.Id);
+            entity.Property(e => e.IsDepartmentAdmin).IsRequired();
+            entity.HasIndex(e => new { e.OrganizationInvitationId, e.DepartmentId }).IsUnique();
+            entity.HasOne(e => e.OrganizationInvitation)
+                .WithMany()
+                .HasForeignKey(e => e.OrganizationInvitationId)
+                .OnDelete(DeleteBehavior.Cascade);
+            entity.HasOne(e => e.Department)
+                .WithMany()
+                .HasForeignKey(e => e.DepartmentId)
                 .OnDelete(DeleteBehavior.Restrict);
         });
 

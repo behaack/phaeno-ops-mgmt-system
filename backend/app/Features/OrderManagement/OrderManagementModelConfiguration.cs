@@ -125,10 +125,14 @@ public static class OrderManagementModelConfiguration
             entity.HasIndex(e => e.ShipmentNumber).IsUnique();
             entity.HasIndex(e => new { e.AuthorizationSource, e.AuthorizationSourceId });
             entity.HasIndex(e => e.LabWorkOrderId);
-            entity.HasIndex(e => new { e.OrganizationId, e.Status });
+            entity.HasIndex(e => new { e.OrganizationId, e.DepartmentId, e.Status });
             entity.HasOne<Organization>()
                 .WithMany()
                 .HasForeignKey(e => e.OrganizationId)
+                .OnDelete(DeleteBehavior.Restrict);
+            entity.HasOne<OrganizationDepartment>()
+                .WithMany()
+                .HasForeignKey(e => e.DepartmentId)
                 .OnDelete(DeleteBehavior.Restrict);
             entity.HasOne<SampleShippingDestination>()
                 .WithMany()
@@ -462,6 +466,7 @@ public static class OrderManagementModelConfiguration
             entity.HasIndex(e => new { e.Status, e.NextAttemptAt });
             entity.HasIndex(e => new { e.OrganizationId, e.CreatedAt });
             entity.HasOne<Organization>().WithMany().HasForeignKey(e => e.OrganizationId).OnDelete(DeleteBehavior.Restrict);
+            entity.HasOne<OrganizationDepartment>().WithMany().HasForeignKey(e => e.DepartmentId).OnDelete(DeleteBehavior.Restrict);
             entity.HasOne<User>().WithMany().HasForeignKey(e => e.RecipientUserId).OnDelete(DeleteBehavior.Restrict);
             Audit(entity);
         });
@@ -723,11 +728,12 @@ public static class OrderManagementModelConfiguration
             Text(entity.Property(e => e.InternalNote), 4000, false);
             entity.HasIndex(e => e.OrderNumber).IsUnique();
             entity.HasIndex(e => e.SourceRequestId).IsUnique();
-            entity.HasIndex(e => new { e.OrganizationId, e.NormalizedJobName }).IsUnique();
-            entity.HasIndex(e => new { e.OrganizationId, e.Status, e.CreatedAt });
+            entity.HasIndex(e => new { e.OrganizationId, e.DepartmentId, e.NormalizedJobName }).IsUnique();
+            entity.HasIndex(e => new { e.OrganizationId, e.DepartmentId, e.Status, e.CreatedAt });
             entity.HasIndex(e => new { e.AssignedToUserId, e.DueAt });
             entity.HasIndex(e => e.CurrentQuoteId);
             entity.HasOne<Organization>().WithMany().HasForeignKey(e => e.OrganizationId).OnDelete(DeleteBehavior.Restrict);
+            entity.HasOne<OrganizationDepartment>().WithMany().HasForeignKey(e => e.DepartmentId).OnDelete(DeleteBehavior.Restrict);
             entity.HasOne(e => e.SourceRequest).WithMany().HasForeignKey(e => e.SourceRequestId).OnDelete(DeleteBehavior.Restrict);
             entity.HasOne<User>().WithMany().HasForeignKey(e => e.AssignedToUserId).OnDelete(DeleteBehavior.Restrict);
             entity.HasOne<User>().WithMany().HasForeignKey(e => e.SampleRosterFinalizedByUserId).OnDelete(DeleteBehavior.Restrict);
@@ -855,8 +861,9 @@ public static class OrderManagementModelConfiguration
             Text(entity.Property(e => e.City), 255); Text(entity.Property(e => e.Region), 255);
             Text(entity.Property(e => e.PostalCode), 50); Text(entity.Property(e => e.CountryCode), 2);
             Text(entity.Property(e => e.Phone), 100, false);
-            entity.HasIndex(e => new { e.OrganizationId, e.IsActive, e.Label });
+            entity.HasIndex(e => new { e.OrganizationId, e.DepartmentId, e.IsActive, e.Label });
             entity.HasOne<Organization>().WithMany().HasForeignKey(e => e.OrganizationId).OnDelete(DeleteBehavior.Restrict);
+            entity.HasOne<OrganizationDepartment>().WithMany().HasForeignKey(e => e.DepartmentId).OnDelete(DeleteBehavior.Restrict);
             Audit(entity);
         });
 
@@ -868,10 +875,11 @@ public static class OrderManagementModelConfiguration
             Json(entity.Property(e => e.PlacementSnapshotJson), false);
             Text(entity.Property(e => e.ShippingInstructions), 2000, false); Text(entity.Property(e => e.TenantSafeReason), 2000, false); Text(entity.Property(e => e.InternalNote), 4000, false);
             entity.HasIndex(e => e.OrderNumber).IsUnique();
-            entity.HasIndex(e => new { e.OrganizationId, e.Status, e.CreatedAt });
+            entity.HasIndex(e => new { e.OrganizationId, e.DepartmentId, e.Status, e.CreatedAt });
             entity.HasIndex(e => new { e.AssignedToUserId, e.DueAt });
             entity.HasIndex(e => new { e.OrganizationId, e.PurchaseOrderNumber });
             entity.HasOne<Organization>().WithMany().HasForeignKey(e => e.OrganizationId).OnDelete(DeleteBehavior.Restrict);
+            entity.HasOne<OrganizationDepartment>().WithMany().HasForeignKey(e => e.DepartmentId).OnDelete(DeleteBehavior.Restrict);
             entity.HasOne<User>().WithMany().HasForeignKey(e => e.AssignedToUserId).OnDelete(DeleteBehavior.Restrict);
             entity.HasOne<PartnerShippingAddress>().WithMany().HasForeignKey(e => e.ShippingAddressId).OnDelete(DeleteBehavior.Restrict);
             Audit(entity);
@@ -929,10 +937,11 @@ public static class OrderManagementModelConfiguration
             Json(entity.Property(e => e.MetadataJson)); Text(entity.Property(e => e.RequestedOutput), 2000); Text(entity.Property(e => e.ProcessingNotes), 4000, false);
             EnumText(entity.Property(e => e.Status)); EnumText(entity.Property(e => e.ResumeStatus), false); Text(entity.Property(e => e.PurchaseOrderNumber), 255, false);
             Text(entity.Property(e => e.TenantSafeReason), 2000, false); Text(entity.Property(e => e.InternalNote), 4000, false);
-            entity.HasIndex(e => e.RequestNumber).IsUnique(); entity.HasIndex(e => new { e.OrganizationId, e.Status, e.CreatedAt });
+            entity.HasIndex(e => e.RequestNumber).IsUnique(); entity.HasIndex(e => new { e.OrganizationId, e.DepartmentId, e.Status, e.CreatedAt });
             entity.HasIndex(e => new { e.AssignedToUserId, e.DueAt });
             entity.HasIndex(e => new { e.OrganizationId, e.ProjectReference });
             entity.HasOne<Organization>().WithMany().HasForeignKey(e => e.OrganizationId).OnDelete(DeleteBehavior.Restrict);
+            entity.HasOne<OrganizationDepartment>().WithMany().HasForeignKey(e => e.DepartmentId).OnDelete(DeleteBehavior.Restrict);
             entity.HasOne<User>().WithMany().HasForeignKey(e => e.AssignedToUserId).OnDelete(DeleteBehavior.Restrict);
             entity.HasOne<AssemblyProfile>().WithMany().HasForeignKey(e => e.AssemblyProfileId).OnDelete(DeleteBehavior.Restrict);
             Audit(entity);

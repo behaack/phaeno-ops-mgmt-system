@@ -54,10 +54,14 @@ public sealed class ResultRetentionWorker(
                 }
                 if (evidenceKind == ResultDeliveryEvidenceKind.RetentionWarning)
                 {
+                    var departmentId = await db.LabServiceOrders.AsNoTracking()
+                        .Where(order => order.Id == package.LabServiceOrderId)
+                        .Select(order => order.DepartmentId)
+                        .SingleAsync(cancellationToken);
                     db.OrderNotifications.Add(new OrderNotification(package.OrganizationId, null,
                         OrderWorkflowTypes.LabService, package.LabServiceOrderId,
                         "pseq-result-retention-warning", "PSeq result retention warning",
-                        "A released PSeq result package is approaching its configured download cutoff."));
+                        "A released PSeq result package is approaching its configured download cutoff.", departmentId));
                 }
                 db.ResultDeliveryEvidence.Add(new ResultDeliveryEvidence(package.Id, null,
                     evidenceKind.Value, null, now,

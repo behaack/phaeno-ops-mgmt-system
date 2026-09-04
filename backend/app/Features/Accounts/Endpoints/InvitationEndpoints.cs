@@ -8,6 +8,7 @@ using PSeq.Operations.Commercial.Accounts.Application;
 using PhaenoPortal.App.Common.Exceptions.Accounts;
 using PhaenoPortal.App.Common.Exceptions.Conflict;
 using PSeq.Operations.Commercial.Accounts.Domain;
+using PSeq.Operations.Commercial.Crm.Domain;
 using PhaenoPortal.App.Features.Accounts.DTOs;
 using PhaenoPortal.App.Features.Accounts.Services;
 using PhaenoPortal.App.Infrastructure.Api;
@@ -97,7 +98,59 @@ public static class InvitationEndpoints
                 "A Phaeno invitation requires at least one platform, laboratory, or business role.");
         }
 
+        var duplicateDepartmentIntent = request.Departments
+            .GroupBy(value => value.DepartmentId)
+            .Any(group => group.Count() > 1);
+        if (duplicateDepartmentIntent)
+        {
+            throw new BadRequestException("A department cannot appear more than once.");
+        }
+
+        var intendedDepartments = request.Departments.Count > 0
+            ? await dbContext.OrganizationDepartments
+                .Where(value => request.Departments.Select(item => item.DepartmentId).Contains(value.Id)
+                    && value.OrganizationId == organization.Id
+                    && value.IsActive)
+                .OrderByDescending(value => value.IsDefault)
+                .ThenBy(value => value.Name)
+                .ToListAsync(cancellationToken)
+            : await dbContext.OrganizationDepartments
+                .Where(value => value.OrganizationId == organization.Id && value.IsDefault && value.IsActive)
+                .ToListAsync(cancellationToken);
+        if (intendedDepartments.Count != Math.Max(1, request.Departments.Count))
+        {
+            throw new BadRequestException("Select one or more active departments in this organization.");
+        }
+
         var normalizedEmail = User.NormalizeEmail(request.Email);
+        if (request.CrmContactId.HasValue)
+        {
+            var contact = await dbContext.CrmContacts.AsNoTracking()
+                .SingleOrDefaultAsync(value => value.Id == request.CrmContactId.Value && value.IsActive, cancellationToken)
+                ?? throw new BadRequestException("The active CRM Contact was not found.");
+            var belongsToCompany = await dbContext.CrmCompanyContacts.AsNoTracking().AnyAsync(value =>
+                value.ContactId == contact.Id
+                && value.IsActive
+                && value.Company.AccessOrganizationId == organization.Id,
+                cancellationToken);
+            if (!belongsToCompany)
+            {
+                throw new BadRequestException("The CRM Contact is not actively associated with this Company.");
+            }
+
+            if (contact.NormalizedEmail is null
+                || !string.Equals(contact.NormalizedEmail, normalizedEmail, StringComparison.Ordinal))
+            {
+                throw new BadRequestException("The invitation email must match the CRM Contact email.");
+            }
+
+            var hasActiveContactLink = await dbContext.CrmContactUserLinks.AsNoTracking()
+                .AnyAsync(value => value.ContactId == contact.Id && value.IsActive, cancellationToken);
+            if (hasActiveContactLink)
+            {
+                throw new BadRequestException("The CRM Contact is already linked to a Portal user.");
+            }
+        }
         var existingUser = await dbContext.Users
             .FirstOrDefaultAsync(u => u.NormalizedEmail == normalizedEmail, cancellationToken);
 
@@ -159,7 +212,8 @@ public static class InvitationEndpoints
                 lastName,
                 request.IsOrganizationAdmin,
                 token.TokenHash,
-                expiresAt);
+                expiresAt,
+                request.CrmContactId);
             dbContext.OrganizationInvitations.Add(invitation);
         }
         else
@@ -168,7 +222,8 @@ public static class InvitationEndpoints
             invitation.UpdateIntent(
                 firstName,
                 lastName,
-                request.IsOrganizationAdmin);
+                request.IsOrganizationAdmin,
+                request.CrmContactId);
             invitation.RotateToken(token.TokenHash, expiresAt);
         }
 
@@ -206,6 +261,33 @@ public static class InvitationEndpoints
         {
             dbContext.BusinessRoleInvitationIntents.Add(
                 new BusinessRoleInvitationIntent(invitation.Id, role));
+        }
+
+        var existingDepartmentIntents = isNewInvitation
+            ? []
+            : await dbContext.OrganizationInvitationDepartments
+                .Where(intent => intent.OrganizationInvitationId == invitation.Id)
+                .ToListAsync(cancellationToken);
+        foreach (var staleIntent in existingDepartmentIntents
+                     .Where(intent => intendedDepartments.All(department => department.Id != intent.DepartmentId)))
+        {
+            dbContext.OrganizationInvitationDepartments.Remove(staleIntent);
+        }
+
+        foreach (var department in intendedDepartments)
+        {
+            var requested = request.Departments.SingleOrDefault(value => value.DepartmentId == department.Id);
+            var isDepartmentAdmin = requested?.IsDepartmentAdmin == true;
+            var existing = existingDepartmentIntents.SingleOrDefault(value => value.DepartmentId == department.Id);
+            if (existing is null)
+            {
+                dbContext.OrganizationInvitationDepartments.Add(
+                    new OrganizationInvitationDepartment(invitation.Id, department.Id, isDepartmentAdmin));
+            }
+            else
+            {
+                existing.SetDepartmentAdmin(isDepartmentAdmin);
+            }
         }
 
         InvitationDeliveryAttempt? deliveryAttempt = null;
@@ -251,6 +333,14 @@ public static class InvitationEndpoints
                 invitation.FirstName,
                 invitation.LastName,
                 invitation.IsOrganizationAdmin,
+                invitation.CrmContactId,
+                Departments = intendedDepartments.Select(department => new
+                {
+                    DepartmentId = department.Id,
+                    department.Name,
+                    IsDepartmentAdmin = request.Departments
+                        .SingleOrDefault(value => value.DepartmentId == department.Id)?.IsDepartmentAdmin == true
+                }),
                 LabRoles = intendedLabRoles,
                 BusinessRoles = intendedBusinessRoles,
                 DeliveryAttemptId = deliveryAttempt?.Id,
@@ -266,7 +356,16 @@ public static class InvitationEndpoints
 
         return TypedResults.Created(
             $"/api/invitations/{invitation.Id}",
-            ToDto(invitation, utcNow, intendedLabRoles, deliveryAttempt, intendedBusinessRoles));
+            ToDto(
+                invitation,
+                utcNow,
+                intendedLabRoles,
+                deliveryAttempt,
+                intendedBusinessRoles,
+                intendedDepartments.Select(department => new InvitationDepartmentDto(
+                    department.Id,
+                    department.Name,
+                    request.Departments.SingleOrDefault(value => value.DepartmentId == department.Id)?.IsDepartmentAdmin == true)).ToList()));
     }
 
     public static async Task<IResult> ResendInvitation(
@@ -317,6 +416,8 @@ public static class InvitationEndpoints
         {
             throw new BadRequestException("Cannot resend invitation for an inactive organization.");
         }
+
+        await ValidateDepartmentIntentAsync(dbContext, invitation, cancellationToken);
 
         if (invitation.LastSentAt is DateTime lastSentAt
             && lastSentAt.AddMinutes(options.ResendCooldownMinutes) > utcNow)
@@ -371,6 +472,14 @@ public static class InvitationEndpoints
             dbContext,
             invitation.Id,
             cancellationToken);
+        var intendedDepartments = await dbContext.OrganizationInvitationDepartments
+            .Include(value => value.Department)
+            .Where(value => value.OrganizationInvitationId == invitation.Id
+                && value.Department.IsActive
+                && value.Department.OrganizationId == invitation.OrganizationId)
+            .OrderByDescending(value => value.Department.IsDefault)
+            .ThenBy(value => value.Department.Name)
+            .ToListAsync(cancellationToken);
         AccountAudit.Add(
             dbContext,
             httpContext,
@@ -400,7 +509,11 @@ public static class InvitationEndpoints
             utcNow,
             intendedLabRoles,
             deliveryAttempt,
-            intendedBusinessRoles));
+            intendedBusinessRoles,
+            intendedDepartments.Select(value => new InvitationDepartmentDto(
+                value.DepartmentId,
+                value.Department?.Name ?? string.Empty,
+                value.IsDepartmentAdmin)).ToList()));
     }
 
     public static async Task<IResult> CreateDevelopmentInvitationLink(
@@ -520,6 +633,7 @@ public static class InvitationEndpoints
 
         identity = identity with { Email = invitation.Email, IsEmailVerified = true };
         ValidateInvitationForAuthenticatedEmail(invitation, identity, utcNow);
+        await ValidateDepartmentIntentAsync(dbContext, invitation, cancellationToken);
         var intendedLabRoles = await ReadIntendedLabRolesAsync(
             dbContext,
             invitation.Id,
@@ -528,6 +642,14 @@ public static class InvitationEndpoints
             dbContext,
             invitation.Id,
             cancellationToken);
+        var intendedDepartments = await dbContext.OrganizationInvitationDepartments
+            .Include(value => value.Department)
+            .Where(value => value.OrganizationInvitationId == invitation.Id
+                && value.Department.IsActive
+                && value.Department.OrganizationId == invitation.OrganizationId)
+            .OrderByDescending(value => value.Department.IsDefault)
+            .ThenBy(value => value.Department.Name)
+            .ToListAsync(cancellationToken);
         var firstName = InvitationName(
             invitation.FirstName,
             request.FirstName,
@@ -587,6 +709,67 @@ public static class InvitationEndpoints
             membership.Activate();
         }
 
+        var existingDepartmentMemberships = await dbContext.OrganizationDepartmentMemberships
+            .Where(value => value.OrganizationMembershipId == membership.Id)
+            .ToListAsync(cancellationToken);
+        foreach (var staleAssignment in existingDepartmentMemberships.Where(value =>
+                     intendedDepartments.All(intent => intent.DepartmentId != value.DepartmentId)))
+        {
+            staleAssignment.Deactivate();
+        }
+
+        foreach (var intent in intendedDepartments)
+        {
+            var assignment = existingDepartmentMemberships
+                .SingleOrDefault(value => value.DepartmentId == intent.DepartmentId);
+            if (assignment is null)
+            {
+                dbContext.OrganizationDepartmentMemberships.Add(
+                    new OrganizationDepartmentMembership(
+                        membership.Id,
+                        intent.DepartmentId,
+                        intent.IsDepartmentAdmin));
+            }
+            else
+            {
+                assignment.SetDepartmentAdmin(intent.IsDepartmentAdmin);
+                assignment.Reactivate();
+            }
+        }
+
+        CrmContactUserLink? contactUserLink = null;
+        if (invitation.CrmContactId.HasValue)
+        {
+            var contactId = invitation.CrmContactId.Value;
+            var conflictingLink = await dbContext.CrmContactUserLinks.AsNoTracking().AnyAsync(value =>
+                value.IsActive
+                && (value.ContactId == contactId || value.UserId == user.Id)
+                && !(value.ContactId == contactId && value.UserId == user.Id),
+                cancellationToken);
+            if (conflictingLink)
+            {
+                throw new BadRequestException(
+                    "Portal access was not accepted because the Contact or User already has a different active identity link.");
+            }
+
+            contactUserLink = await dbContext.CrmContactUserLinks
+                .Where(value => value.ContactId == contactId && value.UserId == user.Id)
+                .OrderByDescending(value => value.CreatedAt)
+                .FirstOrDefaultAsync(cancellationToken);
+            if (contactUserLink is null)
+            {
+                contactUserLink = new CrmContactUserLink(
+                    contactId,
+                    user.Id,
+                    $"Created by accepted Organization invitation {invitation.Id}.");
+                dbContext.CrmContactUserLinks.Add(contactUserLink);
+            }
+            else if (!contactUserLink.IsActive)
+            {
+                contactUserLink.Reactivate($"Reactivated by accepted Organization invitation {invitation.Id}.");
+            }
+        }
+
         if (invitation.Organization?.IsPhaeno() == true
             && intendedLabRoles.Count > 0)
         {
@@ -641,6 +824,13 @@ public static class InvitationEndpoints
                 invitation.FirstName,
                 invitation.LastName,
                 invitation.IsOrganizationAdmin,
+                invitation.CrmContactId,
+                Departments = intendedDepartments.Select(value => new
+                {
+                    value.DepartmentId,
+                    DepartmentName = value.Department?.Name,
+                    value.IsDepartmentAdmin
+                }),
                 LabRoles = intendedLabRoles,
                 BusinessRoles = intendedBusinessRoles,
                 AcceptedByUserId = user.Id
@@ -663,6 +853,23 @@ public static class InvitationEndpoints
                 InvitationId = invitation.Id,
                 WasReactivated = reactivatedMembershipByInvite
             });
+        if (contactUserLink is not null)
+        {
+            AccountAudit.Add(
+                dbContext,
+                httpContext,
+                nameof(CrmContactUserLink),
+                contactUserLink.Id,
+                AccountAudit.ContactUserLinked,
+                invitation.OrganizationId,
+                user.Id,
+                new
+                {
+                    contactUserLink.ContactId,
+                    contactUserLink.UserId,
+                    InvitationId = invitation.Id
+                });
+        }
         await dbContext.SaveChangesAsync(cancellationToken);
         await transaction.CommitAsync(cancellationToken);
 
@@ -670,7 +877,11 @@ public static class InvitationEndpoints
             invitation,
             utcNow,
             intendedLabRoles,
-            businessRoles: intendedBusinessRoles));
+            businessRoles: intendedBusinessRoles,
+            departments: intendedDepartments.Select(value => new InvitationDepartmentDto(
+                value.DepartmentId,
+                value.Department?.Name ?? string.Empty,
+                value.IsDepartmentAdmin)).ToList()));
     }
 
     public static async Task<IResult> DeclineInvitation(
@@ -904,6 +1115,23 @@ public static class InvitationEndpoints
                 group => (IReadOnlyList<BusinessRole>)group
                     .Select(intent => intent.Role)
                     .ToArray());
+        var departmentIntents = await dbContext.OrganizationInvitationDepartments
+            .AsNoTracking()
+            .Include(intent => intent.Department)
+            .Where(intent => invitationIds.Contains(intent.OrganizationInvitationId))
+            .OrderByDescending(intent => intent.Department.IsDefault)
+            .ThenBy(intent => intent.Department.Name)
+            .ToListAsync(cancellationToken);
+        var departmentLookup = departmentIntents
+            .GroupBy(intent => intent.OrganizationInvitationId)
+            .ToDictionary(
+                group => group.Key,
+                group => (IReadOnlyList<InvitationDepartmentDto>)group
+                    .Select(intent => new InvitationDepartmentDto(
+                        intent.DepartmentId,
+                        intent.Department.Name,
+                        intent.IsDepartmentAdmin))
+                    .ToArray());
         var deliveryAttempts = await dbContext.InvitationDeliveryAttempts
             .AsNoTracking()
             .Where(attempt => invitationIds.Contains(attempt.OrganizationInvitationId))
@@ -920,7 +1148,8 @@ public static class InvitationEndpoints
                     utcNow,
                     roleLookup.GetValueOrDefault(invitation.Id, []),
                     deliveryLookup.GetValueOrDefault(invitation.Id),
-                    businessRoleLookup.GetValueOrDefault(invitation.Id, [])))
+                    businessRoleLookup.GetValueOrDefault(invitation.Id, []),
+                    departmentLookup.GetValueOrDefault(invitation.Id, [])))
                 .ToList());
     }
 
@@ -993,7 +1222,8 @@ public static class InvitationEndpoints
         DateTime utcNow,
         IReadOnlyList<LabRole> labRoles,
         InvitationDeliveryAttempt? deliveryAttempt = null,
-        IReadOnlyList<BusinessRole>? businessRoles = null)
+        IReadOnlyList<BusinessRole>? businessRoles = null,
+        IReadOnlyList<InvitationDepartmentDto>? departments = null)
     {
         return new InvitationDto
         {
@@ -1005,6 +1235,8 @@ public static class InvitationEndpoints
             FirstName = invitation.FirstName,
             LastName = invitation.LastName,
             IsOrganizationAdmin = invitation.IsOrganizationAdmin,
+            CrmContactId = invitation.CrmContactId,
+            Departments = departments ?? [],
             LabRoles = labRoles,
             BusinessRoles = businessRoles ?? [],
             Status = invitation.Status,
@@ -1110,6 +1342,35 @@ public static class InvitationEndpoints
         }
 
         return value;
+    }
+
+    internal static async Task ValidateDepartmentIntentAsync(
+        PSeqOperationsDbContext dbContext,
+        OrganizationInvitation invitation,
+        CancellationToken cancellationToken)
+    {
+        if (invitation.CrmContactId.HasValue)
+        {
+            var contactStillEligible = await dbContext.CrmCompanyContacts.AsNoTracking().AnyAsync(value =>
+                value.ContactId == invitation.CrmContactId.Value && value.IsActive && value.Contact.IsActive
+                && value.Contact.NormalizedEmail == invitation.NormalizedEmail
+                && value.Company.IsActive && value.Company.AccessOrganizationId == invitation.OrganizationId,
+                cancellationToken);
+            if (!contactStillEligible)
+            {
+                throw new BadRequestException("The invited Contact or Company relationship changed. Ask an administrator to review and reissue the invitation.");
+            }
+        }
+
+        var intents = await dbContext.OrganizationInvitationDepartments.AsNoTracking()
+            .Include(value => value.Department)
+            .Where(value => value.OrganizationInvitationId == invitation.Id)
+            .ToListAsync(cancellationToken);
+        if (intents.Count == 0 || intents.Any(value => !value.Department.IsActive
+                || value.Department.OrganizationId != invitation.OrganizationId))
+        {
+            throw new BadRequestException("The invitation's department access is no longer available. Ask an organization administrator to review and reissue the invitation.");
+        }
     }
 
     private static void ValidateInvitationForAuthenticatedEmail(

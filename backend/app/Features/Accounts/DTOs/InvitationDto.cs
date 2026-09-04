@@ -21,6 +21,10 @@ public sealed record InvitationDto
 
     public required bool IsOrganizationAdmin { get; init; }
 
+    public Guid? CrmContactId { get; init; }
+
+    public IReadOnlyList<InvitationDepartmentDto> Departments { get; init; } = [];
+
     public required IReadOnlyList<LabRole> LabRoles { get; init; }
 
     public IReadOnlyList<BusinessRole> BusinessRoles { get; init; } = [];
@@ -73,3 +77,8 @@ public sealed record InvitationDto
 
     public required long Version { get; init; }
 }
+
+public sealed record InvitationDepartmentDto(
+    Guid DepartmentId,
+    string DepartmentName,
+    bool IsDepartmentAdmin);

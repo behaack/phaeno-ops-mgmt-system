@@ -333,6 +333,153 @@ namespace PSeq.Operations.Api.Migrations
                     b.ToTable("organizations", "commercial_ops");
                 });
 
+            modelBuilder.Entity("PSeq.Operations.Commercial.Accounts.Domain.OrganizationDepartment", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid")
+                        .HasColumnName("id");
+
+                    b.Property<string>("BillingContactEmail")
+                        .HasMaxLength(255)
+                        .HasColumnType("character varying(255)")
+                        .HasColumnName("billing_contact_email");
+
+                    b.Property<string>("Code")
+                        .IsRequired()
+                        .HasMaxLength(50)
+                        .HasColumnType("character varying(50)")
+                        .HasColumnName("code");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("created_at");
+
+                    b.Property<Guid?>("CreatedByUserId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("created_by_user_id");
+
+                    b.Property<string>("Description")
+                        .HasMaxLength(1000)
+                        .HasColumnType("character varying(1000)")
+                        .HasColumnName("description");
+
+                    b.Property<bool>("IsActive")
+                        .HasColumnType("boolean")
+                        .HasColumnName("is_active");
+
+                    b.Property<bool>("IsDefault")
+                        .HasColumnType("boolean")
+                        .HasColumnName("is_default");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasMaxLength(150)
+                        .HasColumnType("character varying(150)")
+                        .HasColumnName("name");
+
+                    b.Property<string>("NotificationEmail")
+                        .HasMaxLength(255)
+                        .HasColumnType("character varying(255)")
+                        .HasColumnName("notification_email");
+
+                    b.Property<Guid>("OrganizationId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("organization_id");
+
+                    b.Property<bool?>("PurchaseOrderRequired")
+                        .HasColumnType("boolean")
+                        .HasColumnName("purchase_order_required");
+
+                    b.Property<string>("ResultDeliveryInstructions")
+                        .HasMaxLength(2000)
+                        .HasColumnType("character varying(2000)")
+                        .HasColumnName("result_delivery_instructions");
+
+                    b.Property<string>("ShippingInstructions")
+                        .HasMaxLength(2000)
+                        .HasColumnType("character varying(2000)")
+                        .HasColumnName("shipping_instructions");
+
+                    b.Property<DateTime>("UpdatedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("updated_at");
+
+                    b.Property<Guid?>("UpdatedByUserId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("updated_by_user_id");
+
+                    b.Property<long>("Version")
+                        .IsConcurrencyToken()
+                        .HasColumnType("bigint")
+                        .HasColumnName("version");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("OrganizationId")
+                        .IsUnique()
+                        .HasFilter("\"is_default\" = TRUE");
+
+                    b.HasIndex("OrganizationId", "Code")
+                        .IsUnique();
+
+                    b.ToTable("organization_departments", "commercial_ops");
+                });
+
+            modelBuilder.Entity("PSeq.Operations.Commercial.Accounts.Domain.OrganizationDepartmentMembership", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid")
+                        .HasColumnName("id");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("created_at");
+
+                    b.Property<Guid?>("CreatedByUserId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("created_by_user_id");
+
+                    b.Property<Guid>("DepartmentId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("department_id");
+
+                    b.Property<bool>("IsActive")
+                        .HasColumnType("boolean")
+                        .HasColumnName("is_active");
+
+                    b.Property<bool>("IsDepartmentAdmin")
+                        .HasColumnType("boolean")
+                        .HasColumnName("is_department_admin");
+
+                    b.Property<Guid>("OrganizationMembershipId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("organization_membership_id");
+
+                    b.Property<DateTime>("UpdatedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("updated_at");
+
+                    b.Property<Guid?>("UpdatedByUserId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("updated_by_user_id");
+
+                    b.Property<long>("Version")
+                        .IsConcurrencyToken()
+                        .HasColumnType("bigint")
+                        .HasColumnName("version");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("DepartmentId");
+
+                    b.HasIndex("OrganizationMembershipId", "DepartmentId")
+                        .IsUnique();
+
+                    b.ToTable("organization_department_memberships", "commercial_ops");
+                });
+
             modelBuilder.Entity("PSeq.Operations.Commercial.Accounts.Domain.OrganizationInvitation", b =>
                 {
                     b.Property<Guid>("Id")
@@ -355,6 +502,10 @@ namespace PSeq.Operations.Api.Migrations
                     b.Property<Guid?>("CreatedByUserId")
                         .HasColumnType("uuid")
                         .HasColumnName("created_by_user_id");
+
+                    b.Property<Guid?>("CrmContactId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("crm_contact_id");
 
                     b.Property<DateTime?>("DeclinedAt")
                         .HasColumnType("timestamp with time zone")
@@ -457,6 +608,8 @@ namespace PSeq.Operations.Api.Migrations
 
                     b.HasKey("Id");
 
+                    b.HasIndex("CrmContactId");
+
                     b.HasIndex("NormalizedEmail");
 
                     b.HasIndex("OrganizationId");
@@ -469,6 +622,35 @@ namespace PSeq.Operations.Api.Migrations
                         .HasFilter("\"status\" = 'Pending'");
 
                     b.ToTable("organization_invitations", "commercial_ops");
+                });
+
+            modelBuilder.Entity("PSeq.Operations.Commercial.Accounts.Domain.OrganizationInvitationDepartment", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid")
+                        .HasColumnName("id");
+
+                    b.Property<Guid>("DepartmentId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("department_id");
+
+                    b.Property<bool>("IsDepartmentAdmin")
+                        .HasColumnType("boolean")
+                        .HasColumnName("is_department_admin");
+
+                    b.Property<Guid>("OrganizationInvitationId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("organization_invitation_id");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("DepartmentId");
+
+                    b.HasIndex("OrganizationInvitationId", "DepartmentId")
+                        .IsUnique();
+
+                    b.ToTable("organization_invitation_departments", "commercial_ops");
                 });
 
             modelBuilder.Entity("PSeq.Operations.Commercial.Accounts.Domain.OrganizationMembership", b =>
@@ -1057,6 +1239,65 @@ namespace PSeq.Operations.Api.Migrations
                     b.HasIndex("LastName", "FirstName");
 
                     b.ToTable("crm_contacts", "commercial_ops");
+                });
+
+            modelBuilder.Entity("PSeq.Operations.Commercial.Crm.Domain.CrmContactUserLink", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid")
+                        .HasColumnName("id");
+
+                    b.Property<Guid>("ContactId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("contact_id");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("created_at");
+
+                    b.Property<Guid?>("CreatedByUserId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("created_by_user_id");
+
+                    b.Property<bool>("IsActive")
+                        .HasColumnType("boolean")
+                        .HasColumnName("is_active");
+
+                    b.Property<string>("LinkReason")
+                        .IsRequired()
+                        .HasMaxLength(500)
+                        .HasColumnType("character varying(500)")
+                        .HasColumnName("link_reason");
+
+                    b.Property<DateTime>("UpdatedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("updated_at");
+
+                    b.Property<Guid?>("UpdatedByUserId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("updated_by_user_id");
+
+                    b.Property<Guid>("UserId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("user_id");
+
+                    b.Property<long>("Version")
+                        .IsConcurrencyToken()
+                        .HasColumnType("bigint")
+                        .HasColumnName("version");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("ContactId")
+                        .IsUnique()
+                        .HasFilter("is_active = TRUE");
+
+                    b.HasIndex("UserId")
+                        .IsUnique()
+                        .HasFilter("is_active = TRUE");
+
+                    b.ToTable("crm_contact_user_links", "commercial_ops");
                 });
 
             modelBuilder.Entity("PSeq.Operations.Commercial.Crm.Domain.CrmCustomFieldDefinition", b =>
@@ -3029,6 +3270,10 @@ namespace PSeq.Operations.Api.Migrations
                         .HasColumnType("uuid")
                         .HasColumnName("curated_dataset_version_id");
 
+                    b.Property<Guid?>("DepartmentId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("department_id");
+
                     b.Property<DateTime>("GrantedAt")
                         .HasColumnType("timestamp with time zone")
                         .HasColumnName("granted_at");
@@ -3087,11 +3332,17 @@ namespace PSeq.Operations.Api.Migrations
 
                     b.HasIndex("CuratedDatasetVersionId");
 
+                    b.HasIndex("DepartmentId");
+
                     b.HasIndex("OrganizationId");
 
                     b.HasIndex("OrganizationId", "CuratedDatasetId")
                         .IsUnique()
-                        .HasFilter("\"status\" = 'Active'");
+                        .HasFilter("\"status\" = 'Active' AND \"department_id\" IS NULL");
+
+                    b.HasIndex("OrganizationId", "DepartmentId", "CuratedDatasetId")
+                        .IsUnique()
+                        .HasFilter("\"status\" = 'Active' AND \"department_id\" IS NOT NULL");
 
                     b.ToTable("organization_dataset_grants", "commercial_ops");
                 });
@@ -5075,6 +5326,10 @@ namespace PSeq.Operations.Api.Migrations
                         .HasColumnType("uuid")
                         .HasColumnName("created_by_user_id");
 
+                    b.Property<Guid?>("DepartmentId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("department_id");
+
                     b.Property<string>("EventType")
                         .IsRequired()
                         .HasMaxLength(100)
@@ -5138,6 +5393,8 @@ namespace PSeq.Operations.Api.Migrations
                         .HasColumnName("workflow_type");
 
                     b.HasKey("Id");
+
+                    b.HasIndex("DepartmentId");
 
                     b.HasIndex("RecipientUserId");
 
@@ -5594,6 +5851,10 @@ namespace PSeq.Operations.Api.Migrations
                         .HasColumnType("uuid")
                         .HasColumnName("created_by_user_id");
 
+                    b.Property<Guid>("DepartmentId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("department_id");
+
                     b.Property<DateTime?>("DueAt")
                         .HasColumnType("timestamp with time zone")
                         .HasColumnName("due_at");
@@ -5682,6 +5943,8 @@ namespace PSeq.Operations.Api.Migrations
 
                     b.HasKey("Id");
 
+                    b.HasIndex("DepartmentId");
+
                     b.HasIndex("OrderNumber")
                         .IsUnique();
 
@@ -5691,7 +5954,7 @@ namespace PSeq.Operations.Api.Migrations
 
                     b.HasIndex("OrganizationId", "PurchaseOrderNumber");
 
-                    b.HasIndex("OrganizationId", "Status", "CreatedAt");
+                    b.HasIndex("OrganizationId", "DepartmentId", "Status", "CreatedAt");
 
                     b.ToTable("partner_reagent_orders", "commercial_ops");
                 });
@@ -5832,6 +6095,10 @@ namespace PSeq.Operations.Api.Migrations
                         .HasColumnType("uuid")
                         .HasColumnName("created_by_user_id");
 
+                    b.Property<Guid>("DepartmentId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("department_id");
+
                     b.Property<bool>("IsActive")
                         .HasColumnType("boolean")
                         .HasColumnName("is_active");
@@ -5895,7 +6162,9 @@ namespace PSeq.Operations.Api.Migrations
 
                     b.HasKey("Id");
 
-                    b.HasIndex("OrganizationId", "IsActive", "Label");
+                    b.HasIndex("DepartmentId");
+
+                    b.HasIndex("OrganizationId", "DepartmentId", "IsActive", "Label");
 
                     b.ToTable("partner_shipping_addresses", "commercial_ops");
                 });
@@ -7269,6 +7538,10 @@ namespace PSeq.Operations.Api.Migrations
                         .HasColumnType("timestamp with time zone")
                         .HasColumnName("delivered_at");
 
+                    b.Property<Guid>("DepartmentId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("department_id");
+
                     b.Property<Guid>("DestinationId")
                         .HasColumnType("uuid")
                         .HasColumnName("destination_id");
@@ -7321,6 +7594,8 @@ namespace PSeq.Operations.Api.Migrations
 
                     b.HasKey("Id");
 
+                    b.HasIndex("DepartmentId");
+
                     b.HasIndex("DestinationId");
 
                     b.HasIndex("LabWorkOrderId");
@@ -7330,7 +7605,7 @@ namespace PSeq.Operations.Api.Migrations
 
                     b.HasIndex("AuthorizationSource", "AuthorizationSourceId");
 
-                    b.HasIndex("OrganizationId", "Status");
+                    b.HasIndex("OrganizationId", "DepartmentId", "Status");
 
                     b.ToTable("sample_shipments", "commercial_ops");
                 });
@@ -8123,6 +8398,10 @@ namespace PSeq.Operations.Api.Migrations
                         .HasColumnType("uuid")
                         .HasColumnName("created_by_user_id");
 
+                    b.Property<Guid?>("DepartmentId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("department_id");
+
                     b.Property<DateTime>("EffectiveFrom")
                         .HasColumnType("timestamp with time zone")
                         .HasColumnName("effective_from");
@@ -8170,9 +8449,11 @@ namespace PSeq.Operations.Api.Migrations
 
                     b.HasKey("Id");
 
+                    b.HasIndex("DepartmentId");
+
                     b.HasIndex("SourceRequestId");
 
-                    b.HasIndex("OrganizationId", "Service", "EffectiveFrom");
+                    b.HasIndex("OrganizationId", "DepartmentId", "Service", "EffectiveFrom");
 
                     b.ToTable("organization_service_entitlements", "commercial_ops");
                 });
@@ -10572,6 +10853,10 @@ namespace PSeq.Operations.Api.Migrations
                         .HasColumnType("uuid")
                         .HasColumnName("current_quote_id");
 
+                    b.Property<Guid>("DepartmentId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("department_id");
+
                     b.Property<DateTime?>("DueAt")
                         .HasColumnType("timestamp with time zone")
                         .HasColumnName("due_at");
@@ -10683,6 +10968,8 @@ namespace PSeq.Operations.Api.Migrations
 
                     b.HasIndex("AssemblyProfileId");
 
+                    b.HasIndex("DepartmentId");
+
                     b.HasIndex("RequestNumber")
                         .IsUnique();
 
@@ -10690,7 +10977,7 @@ namespace PSeq.Operations.Api.Migrations
 
                     b.HasIndex("OrganizationId", "ProjectReference");
 
-                    b.HasIndex("OrganizationId", "Status", "CreatedAt");
+                    b.HasIndex("OrganizationId", "DepartmentId", "Status", "CreatedAt");
 
                     b.ToTable("data_assembly_requests", "commercial_ops");
                 });
@@ -11077,6 +11364,10 @@ namespace PSeq.Operations.Api.Migrations
                         .HasColumnType("character varying(255)")
                         .HasColumnName("customer_reference");
 
+                    b.Property<Guid>("DepartmentId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("department_id");
+
                     b.Property<string>("Description")
                         .HasMaxLength(2000)
                         .HasColumnType("character varying(2000)")
@@ -11225,6 +11516,8 @@ namespace PSeq.Operations.Api.Migrations
 
                     b.HasIndex("CurrentQuoteId");
 
+                    b.HasIndex("DepartmentId");
+
                     b.HasIndex("OrderNumber")
                         .IsUnique();
 
@@ -11237,10 +11530,10 @@ namespace PSeq.Operations.Api.Migrations
 
                     b.HasIndex("AssignedToUserId", "DueAt");
 
-                    b.HasIndex("OrganizationId", "NormalizedJobName")
+                    b.HasIndex("OrganizationId", "DepartmentId", "NormalizedJobName")
                         .IsUnique();
 
-                    b.HasIndex("OrganizationId", "Status", "CreatedAt");
+                    b.HasIndex("OrganizationId", "DepartmentId", "Status", "CreatedAt");
 
                     b.ToTable("lab_service_orders", "commercial_ops");
                 });
@@ -11628,8 +11921,43 @@ namespace PSeq.Operations.Api.Migrations
                         .IsRequired();
                 });
 
+            modelBuilder.Entity("PSeq.Operations.Commercial.Accounts.Domain.OrganizationDepartment", b =>
+                {
+                    b.HasOne("PSeq.Operations.Commercial.Accounts.Domain.Organization", "Organization")
+                        .WithMany("Departments")
+                        .HasForeignKey("OrganizationId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.Navigation("Organization");
+                });
+
+            modelBuilder.Entity("PSeq.Operations.Commercial.Accounts.Domain.OrganizationDepartmentMembership", b =>
+                {
+                    b.HasOne("PSeq.Operations.Commercial.Accounts.Domain.OrganizationDepartment", "Department")
+                        .WithMany("Memberships")
+                        .HasForeignKey("DepartmentId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("PSeq.Operations.Commercial.Accounts.Domain.OrganizationMembership", "OrganizationMembership")
+                        .WithMany("DepartmentMemberships")
+                        .HasForeignKey("OrganizationMembershipId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.Navigation("Department");
+
+                    b.Navigation("OrganizationMembership");
+                });
+
             modelBuilder.Entity("PSeq.Operations.Commercial.Accounts.Domain.OrganizationInvitation", b =>
                 {
+                    b.HasOne("PSeq.Operations.Commercial.Crm.Domain.CrmContact", null)
+                        .WithMany()
+                        .HasForeignKey("CrmContactId")
+                        .OnDelete(DeleteBehavior.Restrict);
+
                     b.HasOne("PSeq.Operations.Commercial.Accounts.Domain.Organization", "Organization")
                         .WithMany()
                         .HasForeignKey("OrganizationId")
@@ -11637,6 +11965,25 @@ namespace PSeq.Operations.Api.Migrations
                         .IsRequired();
 
                     b.Navigation("Organization");
+                });
+
+            modelBuilder.Entity("PSeq.Operations.Commercial.Accounts.Domain.OrganizationInvitationDepartment", b =>
+                {
+                    b.HasOne("PSeq.Operations.Commercial.Accounts.Domain.OrganizationDepartment", "Department")
+                        .WithMany()
+                        .HasForeignKey("DepartmentId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("PSeq.Operations.Commercial.Accounts.Domain.OrganizationInvitation", "OrganizationInvitation")
+                        .WithMany()
+                        .HasForeignKey("OrganizationInvitationId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Department");
+
+                    b.Navigation("OrganizationInvitation");
                 });
 
             modelBuilder.Entity("PSeq.Operations.Commercial.Accounts.Domain.OrganizationMembership", b =>
@@ -11757,6 +12104,25 @@ namespace PSeq.Operations.Api.Migrations
                     b.Navigation("MergedIntoContact");
 
                     b.Navigation("Owner");
+                });
+
+            modelBuilder.Entity("PSeq.Operations.Commercial.Crm.Domain.CrmContactUserLink", b =>
+                {
+                    b.HasOne("PSeq.Operations.Commercial.Crm.Domain.CrmContact", "Contact")
+                        .WithMany()
+                        .HasForeignKey("ContactId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("PSeq.Operations.Commercial.Accounts.Domain.User", "User")
+                        .WithMany()
+                        .HasForeignKey("UserId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.Navigation("Contact");
+
+                    b.Navigation("User");
                 });
 
             modelBuilder.Entity("PSeq.Operations.Commercial.Crm.Domain.CrmCustomFieldValue", b =>
@@ -12092,7 +12458,7 @@ namespace PSeq.Operations.Api.Migrations
                         .HasForeignKey("IncidentId")
                         .OnDelete(DeleteBehavior.Restrict);
 
-                    b.HasOne("PSeq.Operations.Commercial.DataProvisioning.Domain.OrganizationDatasetGrant", null)
+                    b.HasOne("PSeq.Operations.Commercial.DataProvisioning.Domain.OrganizationDatasetGrant", "OrganizationDatasetGrant")
                         .WithMany()
                         .HasForeignKey("OrganizationDatasetGrantId")
                         .OnDelete(DeleteBehavior.Restrict);
@@ -12106,6 +12472,8 @@ namespace PSeq.Operations.Api.Migrations
                     b.Navigation("Incident");
 
                     b.Navigation("Organization");
+
+                    b.Navigation("OrganizationDatasetGrant");
                 });
 
             modelBuilder.Entity("PSeq.Operations.Commercial.DataProvisioning.Domain.DatasetDownloadAudit", b =>
@@ -12165,6 +12533,11 @@ namespace PSeq.Operations.Api.Migrations
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
 
+                    b.HasOne("PSeq.Operations.Commercial.Accounts.Domain.OrganizationDepartment", "Department")
+                        .WithMany()
+                        .HasForeignKey("DepartmentId")
+                        .OnDelete(DeleteBehavior.Restrict);
+
                     b.HasOne("PSeq.Operations.Commercial.Accounts.Domain.Organization", "Organization")
                         .WithMany()
                         .HasForeignKey("OrganizationId")
@@ -12174,6 +12547,8 @@ namespace PSeq.Operations.Api.Migrations
                     b.Navigation("CuratedDataset");
 
                     b.Navigation("CuratedDatasetVersion");
+
+                    b.Navigation("Department");
 
                     b.Navigation("Organization");
                 });
@@ -12439,6 +12814,11 @@ namespace PSeq.Operations.Api.Migrations
 
             modelBuilder.Entity("PSeq.Operations.Commercial.OrderManagement.Domain.OrderNotification", b =>
                 {
+                    b.HasOne("PSeq.Operations.Commercial.Accounts.Domain.OrganizationDepartment", null)
+                        .WithMany()
+                        .HasForeignKey("DepartmentId")
+                        .OnDelete(DeleteBehavior.Restrict);
+
                     b.HasOne("PSeq.Operations.Commercial.Accounts.Domain.Organization", null)
                         .WithMany()
                         .HasForeignKey("OrganizationId")
@@ -12497,6 +12877,12 @@ namespace PSeq.Operations.Api.Migrations
                         .HasForeignKey("AssignedToUserId")
                         .OnDelete(DeleteBehavior.Restrict);
 
+                    b.HasOne("PSeq.Operations.Commercial.Accounts.Domain.OrganizationDepartment", null)
+                        .WithMany()
+                        .HasForeignKey("DepartmentId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
                     b.HasOne("PSeq.Operations.Commercial.Accounts.Domain.Organization", null)
                         .WithMany()
                         .HasForeignKey("OrganizationId")
@@ -12532,6 +12918,12 @@ namespace PSeq.Operations.Api.Migrations
 
             modelBuilder.Entity("PSeq.Operations.Commercial.OrderManagement.Domain.PartnerShippingAddress", b =>
                 {
+                    b.HasOne("PSeq.Operations.Commercial.Accounts.Domain.OrganizationDepartment", null)
+                        .WithMany()
+                        .HasForeignKey("DepartmentId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
                     b.HasOne("PSeq.Operations.Commercial.Accounts.Domain.Organization", null)
                         .WithMany()
                         .HasForeignKey("OrganizationId")
@@ -12701,6 +13093,12 @@ namespace PSeq.Operations.Api.Migrations
 
             modelBuilder.Entity("PSeq.Operations.Commercial.OrderManagement.Domain.SampleShipment", b =>
                 {
+                    b.HasOne("PSeq.Operations.Commercial.Accounts.Domain.OrganizationDepartment", null)
+                        .WithMany()
+                        .HasForeignKey("DepartmentId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
                     b.HasOne("PSeq.Operations.Commercial.OrderManagement.Domain.SampleShippingDestination", null)
                         .WithMany()
                         .HasForeignKey("DestinationId")
@@ -12826,6 +13224,11 @@ namespace PSeq.Operations.Api.Migrations
 
             modelBuilder.Entity("PSeq.Operations.Commercial.Relationships.Domain.OrganizationServiceEntitlement", b =>
                 {
+                    b.HasOne("PSeq.Operations.Commercial.Accounts.Domain.OrganizationDepartment", null)
+                        .WithMany()
+                        .HasForeignKey("DepartmentId")
+                        .OnDelete(DeleteBehavior.Restrict);
+
                     b.HasOne("PSeq.Operations.Commercial.Accounts.Domain.Organization", null)
                         .WithMany()
                         .HasForeignKey("OrganizationId")
@@ -13239,6 +13642,12 @@ namespace PSeq.Operations.Api.Migrations
                         .HasForeignKey("AssignedToUserId")
                         .OnDelete(DeleteBehavior.Restrict);
 
+                    b.HasOne("PSeq.Operations.Commercial.Accounts.Domain.OrganizationDepartment", null)
+                        .WithMany()
+                        .HasForeignKey("DepartmentId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
                     b.HasOne("PSeq.Operations.Commercial.Accounts.Domain.Organization", null)
                         .WithMany()
                         .HasForeignKey("OrganizationId")
@@ -13309,6 +13718,12 @@ namespace PSeq.Operations.Api.Migrations
                         .HasForeignKey("AssignedToUserId")
                         .OnDelete(DeleteBehavior.Restrict);
 
+                    b.HasOne("PSeq.Operations.Commercial.Accounts.Domain.OrganizationDepartment", null)
+                        .WithMany()
+                        .HasForeignKey("DepartmentId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
                     b.HasOne("PSeq.Operations.Commercial.Accounts.Domain.Organization", null)
                         .WithMany()
                         .HasForeignKey("OrganizationId")
@@ -13353,7 +13768,19 @@ namespace PSeq.Operations.Api.Migrations
 
             modelBuilder.Entity("PSeq.Operations.Commercial.Accounts.Domain.Organization", b =>
                 {
+                    b.Navigation("Departments");
+
                     b.Navigation("Memberships");
+                });
+
+            modelBuilder.Entity("PSeq.Operations.Commercial.Accounts.Domain.OrganizationDepartment", b =>
+                {
+                    b.Navigation("Memberships");
+                });
+
+            modelBuilder.Entity("PSeq.Operations.Commercial.Accounts.Domain.OrganizationMembership", b =>
+                {
+                    b.Navigation("DepartmentMemberships");
                 });
 
             modelBuilder.Entity("PSeq.Operations.Commercial.Accounts.Domain.User", b =>

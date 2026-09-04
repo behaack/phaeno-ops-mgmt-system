@@ -51,6 +51,8 @@ export function UserMenu() {
     signedIn,
     session,
     selectedOrganizationId,
+    selectedDepartmentId,
+    setSelectedDepartmentId,
   } = usePhaenoSession()
   const user = session?.user
   const selectedMembership = getSelectedMembership(
@@ -133,6 +135,31 @@ export function UserMenu() {
             </DropdownMenuRadioItem>
           ))}
         </DropdownMenuRadioGroup>
+
+        {(selectedMembership?.departments?.length ?? 0) > 1 ? (
+          <>
+            <DropdownMenuSeparator />
+            <DropdownMenuLabel>Department</DropdownMenuLabel>
+            <DropdownMenuRadioGroup
+              value={selectedDepartmentId ?? ''}
+              onValueChange={(value) => setSelectedDepartmentId?.(value)}
+            >
+              {selectedMembership?.departments?.map((department) => (
+                <DropdownMenuRadioItem
+                  key={department.departmentId}
+                  value={department.departmentId}
+                >
+                  <span className="min-w-0 flex-1 truncate">
+                    {department.departmentName}
+                  </span>
+                  {department.isDepartmentAdmin ? (
+                    <span className="text-xs text-muted-foreground">Admin</span>
+                  ) : null}
+                </DropdownMenuRadioItem>
+              ))}
+            </DropdownMenuRadioGroup>
+          </>
+        ) : null}
 
         <div className="md:hidden">
           <DropdownMenuSeparator />

@@ -5,6 +5,7 @@ export type SessionState =
   | 'disabled'
   | 'no_active_memberships'
   | 'organization_unavailable'
+  | 'department_unavailable'
   | 'ready'
 
 export type OrganizationKind = 'Phaeno' | 'Prospect' | 'Customer' | 'Partner'
@@ -23,12 +24,33 @@ export type SessionMembership = {
   organizationName: string
   organizationKind: OrganizationKind
   isOrganizationAdmin: boolean
+  departments?: SessionDepartment[]
+}
+
+export type SessionDepartment = {
+  departmentId: string
+  departmentName: string
+  departmentCode: string
+  isDefault: boolean
+  isDepartmentAdmin: boolean
 }
 
 export type SessionSelectedOrganization = {
   organizationId: string
   membershipId: string
   isAvailable: boolean
+}
+
+export type SessionSelectedDepartment = {
+  departmentId: string
+  organizationId: string
+  isAvailable: boolean
+  isDepartmentAdmin: boolean
+  purchaseOrderRequired?: boolean | null
+  billingContactEmail?: string | null
+  notificationEmail?: string | null
+  shippingInstructions?: string | null
+  resultDeliveryInstructions?: string | null
 }
 
 export type SessionCapabilities = {
@@ -91,6 +113,7 @@ export type SessionResponse = {
   memberships: SessionMembership[]
   isPlatformAdmin: boolean
   selectedOrganization: SessionSelectedOrganization | null
+  selectedDepartment?: SessionSelectedDepartment | null
   capabilities: SessionCapabilities
 }
 

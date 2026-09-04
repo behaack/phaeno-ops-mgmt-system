@@ -1,5 +1,5 @@
 import { zodResolver } from "@hookform/resolvers/zod";
-import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Minus, Plus } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import { useFieldArray, useForm } from "react-hook-form";
@@ -36,6 +36,7 @@ import {
 import { SearchableSelect } from "#/components/ui/searchable-select";
 import { Textarea } from "#/components/ui/textarea";
 import { usePhaenoSession } from "#/features/auth/session-context";
+import { listDepartments } from "#/api/organization-management";
 
 const duplicateBiologicalSourcesMessage =
   "Duplicate biological sources are not permitted.";
@@ -156,11 +157,20 @@ export function LabJobDetailsDialog({
   const platformMode = platformOrganizations !== undefined;
   const eligiblePlatformOrganizations = platformOrganizations ?? [];
   const [organizationId, setOrganizationId] = useState("");
+  const [departmentId, setDepartmentId] = useState("");
   const [prohibitedDataConfirmed, setProhibitedDataConfirmed] = useState(false);
   const canCreate = platformMode
     ? Boolean(session?.capabilities.canQuoteLabServiceWork)
     : Boolean(session?.capabilities.canCreateLabServiceRequests);
   const apiEnabled = authProvider !== "mock" && canCreate;
+  const departments = useQuery({
+    queryKey: ["organization-departments", organizationId, false],
+    queryFn: () => listDepartments(organizationId, false),
+    enabled: open && platformMode && apiEnabled && Boolean(organizationId),
+  });
+  const selectedDepartment = departmentId
+    ? departments.data?.find((value) => value.id === departmentId)
+    : departments.data?.find((value) => value.isDefault);
   const form = useForm<JobDetailsFormInput, unknown, JobDetailsValues>({
     resolver: zodResolver(jobDetailsSchema),
     mode: "onBlur",
@@ -207,8 +217,11 @@ export function LabJobDetailsDialog({
         if (platformMode) {
           if (!organizationId)
             throw new Error("Select a Customer organization.");
+          if (!selectedDepartment || departments.isError)
+            throw new Error("Select an available Customer department.");
           return initiateCustomerLabOrder({
             organizationId,
+            departmentId: selectedDepartment.id,
             customerReference,
             description,
             storageRequirements,
@@ -311,6 +324,7 @@ export function LabJobDetailsDialog({
     baseOrderRef.current = order ?? null;
     saveVersionRef.current = order?.version ?? null;
     setOrganizationId(sourceHandoff?.organizationId ?? "");
+    setDepartmentId("");
     setProhibitedDataConfirmed(false);
     form.reset(jobDetailsFormValues(order));
   }, [form, open, order, platformMode, sourceHandoff]);
@@ -320,7 +334,7 @@ export function LabJobDetailsDialog({
   const canSave =
     apiEnabled &&
     (!editing || Boolean(order?.canEdit)) &&
-    (!platformMode || Boolean(organizationId)) &&
+    (!platformMode || (Boolean(organizationId && selectedDepartment) && !departments.isError)) &&
     (!platformMode || prohibitedDataConfirmed);
   const watchedSourceGroups = form.watch("sourceGroups");
   const proposesPrice = form.watch("proposePrice");
@@ -450,7 +464,7 @@ export function LabJobDetailsDialog({
                     })),
                   ]}
                   value={organizationId}
-                  onValueChange={setOrganizationId}
+                  onValueChange={(value) => { setOrganizationId(value); setDepartmentId(""); }}
                   placeholder="Search eligible Customers"
                   emptyMessage="No eligible Customer organizations were provided."
                   required
@@ -462,6 +476,23 @@ export function LabJobDetailsDialog({
                     No eligible Customer organizations were provided.
                   </FieldError>
                 ) : null}
+                {organizationId ? <div className="mt-4 grid gap-1.5">
+                  {(departments.data?.length ?? 0) === 1
+                    ? <p className="text-sm font-medium">Department</p>
+                    : <Label htmlFor={`${formId}-department`}><RequiredFieldName>Department</RequiredFieldName></Label>}
+                  {departments.isLoading ? <p role="status" className="text-sm text-muted-foreground">Loading Customer departments…</p> : null}
+                  {(departments.data?.length ?? 0) === 1 ? <p className="text-sm">{selectedDepartment?.name}</p> : (
+                    <select id={`${formId}-department`} className="h-9 w-full cursor-pointer rounded-lg border border-input bg-background px-3 text-sm"
+                      value={selectedDepartment?.id ?? ""} onChange={(event) => setDepartmentId(event.target.value)}
+                      disabled={departments.isLoading || departments.isError || mutation.isPending} required aria-describedby={`${formId}-department-help`}>
+                      <option value="" disabled>Select department</option>
+                      {(departments.data ?? []).map((value) => <option key={value.id} value={value.id}>{value.name}{value.isDefault ? " (default)" : ""}</option>)}
+                    </select>
+                  )}
+                  <FieldDescription id={`${formId}-department-help`}>This department owns the Job and controls Customer access and applicable service rules.</FieldDescription>
+                  {departments.isError ? <FieldError>Customer departments could not be loaded. Check your connection and reopen the form.</FieldError> : null}
+                  {!departments.isPending && !departments.isError && !departments.data?.length ? <FieldError>No active Customer departments are available.</FieldError> : null}
+                </div> : null}
               </>
             ) : null}
 

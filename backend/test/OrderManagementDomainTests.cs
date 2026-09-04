@@ -12,7 +12,7 @@ public class OrderManagementDomainTests
     public void LabRequestPricesFromJobProfileAndOpensSamplesAfterQuoteAcceptance()
     {
         var actor = Guid.NewGuid();
-        var order = new LabServiceOrder(Guid.NewGuid(), OrderNumberGenerator.Lab(), "customer-job", null,
+        var order = new LabServiceOrder(Guid.NewGuid(), Guid.NewGuid(), OrderNumberGenerator.Lab(), "customer-job", null,
             1, false, "Human PBMCs", "Keep frozen.", "No known hazards.", "Ship cold");
         Assert.Throws<InvalidOperationException>(() => order.Submit(actor, Now));
         order.SourceGroups.Add(new LabServiceSourceGroup(order.Id, "Human PBMCs", 1));
@@ -40,14 +40,14 @@ public class OrderManagementDomainTests
     public void LabJobRequiresNameAndNormalizesEditableDetails()
     {
         Assert.Throws<ArgumentException>(() => new LabServiceOrder(
-            Guid.NewGuid(), OrderNumberGenerator.Lab(), " ", null,
+            Guid.NewGuid(), Guid.NewGuid(), OrderNumberGenerator.Lab(), " ", null,
             false, "Human PBMCs", "Keep frozen.", "No known hazards.", "Ship cold"));
         Assert.Throws<ArgumentException>(() => new LabServiceOrder(
-            Guid.NewGuid(), OrderNumberGenerator.Lab(), "Study", null,
+            Guid.NewGuid(), Guid.NewGuid(), OrderNumberGenerator.Lab(), "Study", null,
             false, null, "Keep frozen.", "No known hazards.", "Ship cold"));
 
         var order = new LabServiceOrder(
-            Guid.NewGuid(), OrderNumberGenerator.Lab(), "  Study Alpha  ", "  Initial scope  ",
+            Guid.NewGuid(), Guid.NewGuid(), OrderNumberGenerator.Lab(), "  Study Alpha  ", "  Initial scope  ",
             false, "  Human PBMCs  ", "  Keep frozen.  ", "  No known hazards.  ", "Ship cold");
 
         Assert.Equal("Study Alpha", order.CustomerReference);
@@ -76,7 +76,7 @@ public class OrderManagementDomainTests
         var proposer = Guid.NewGuid();
         var reviewer = Guid.NewGuid();
         var order = new LabServiceOrder(
-            Guid.NewGuid(), OrderNumberGenerator.Lab(), "Study pricing", null,
+            Guid.NewGuid(), Guid.NewGuid(), OrderNumberGenerator.Lab(), "Study pricing", null,
             2, false, "Human PBMCs", "Keep frozen.", "No known hazards.", "Ship cold");
         order.SourceGroups.Add(new LabServiceSourceGroup(order.Id, "Human PBMCs", 2));
 
@@ -167,7 +167,7 @@ public class OrderManagementDomainTests
     [Fact]
     public void ReagentOrderSnapshotsNegotiatedPriceAndTracksPartialShipment()
     {
-        var order = new PartnerReagentOrder(Guid.NewGuid(), OrderNumberGenerator.Reagent());
+        var order = new PartnerReagentOrder(Guid.NewGuid(), Guid.NewGuid(), OrderNumberGenerator.Reagent());
         var line = new PartnerReagentOrderLine(order.Id, Guid.NewGuid(), 10, null);
         line.Snapshot(Guid.NewGuid(), "QBO-1", "Synthetic reagent", "vial", 12.50m, "USD");
         order.Lines.Add(line);
@@ -210,7 +210,7 @@ public class OrderManagementDomainTests
     [Fact]
     public void ReagentPlacementSnapshotIsImmutable()
     {
-        var order = new PartnerReagentOrder(Guid.NewGuid(), OrderNumberGenerator.Reagent());
+        var order = new PartnerReagentOrder(Guid.NewGuid(), Guid.NewGuid(), OrderNumberGenerator.Reagent());
         var line = new PartnerReagentOrderLine(order.Id, Guid.NewGuid(), 1, null);
         line.Snapshot(Guid.NewGuid(), "QBO-1", "Synthetic reagent", "vial", 12, "USD");
         order.Lines.Add(line);
@@ -240,7 +240,7 @@ public class OrderManagementDomainTests
     [Fact]
     public void PartialReagentCancellationResumesFulfillmentWithRemainingQuantity()
     {
-        var order = new PartnerReagentOrder(Guid.NewGuid(), OrderNumberGenerator.Reagent());
+        var order = new PartnerReagentOrder(Guid.NewGuid(), Guid.NewGuid(), OrderNumberGenerator.Reagent());
         var line = new PartnerReagentOrderLine(order.Id, Guid.NewGuid(), 10, null);
         line.Snapshot(Guid.NewGuid(), "QBO-1", "Synthetic reagent", "vial", 12, "USD");
         order.Lines.Add(line);
@@ -261,7 +261,7 @@ public class OrderManagementDomainTests
     public void AssemblyRequestPreservesInputRevisionThroughQuoteAndProcessing()
     {
         var actor = Guid.NewGuid();
-        var request = new DataAssemblyRequest(Guid.NewGuid(), OrderNumberGenerator.Assembly(), "Project X", Guid.NewGuid(), 3,
+        var request = new DataAssemblyRequest(Guid.NewGuid(), Guid.NewGuid(), OrderNumberGenerator.Assembly(), "Project X", Guid.NewGuid(), 3,
             "Synthetic assembly", "Upload fixtures", "{}", "FASTA and manifest", null, true);
         var revision = new AssemblyInputRevision(request.Id, 1, null, "{\"files\":[]}", null, "{}", actor, Now);
         request.InputRevisions.Add(revision);

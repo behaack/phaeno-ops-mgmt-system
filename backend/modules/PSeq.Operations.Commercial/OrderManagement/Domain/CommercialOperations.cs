@@ -187,6 +187,7 @@ public sealed class OrderNotification : IAudit, IConcurrency
 {
     public Guid Id { get; private set; } = Guid.NewGuid();
     public Guid OrganizationId { get; private set; }
+    public Guid? DepartmentId { get; private set; }
     public Guid? RecipientUserId { get; private set; }
     public string WorkflowType { get; private set; } = null!;
     public Guid WorkflowId { get; private set; }
@@ -213,9 +214,11 @@ public sealed class OrderNotification : IAudit, IConcurrency
         Guid workflowId,
         string eventType,
         string subject,
-        string body)
+        string body,
+        Guid? departmentId = null)
     {
         OrganizationId = organizationId;
+        DepartmentId = departmentId;
         RecipientUserId = recipientUserId;
         WorkflowType = OrderText.Required(workflowType, nameof(workflowType), 100);
         WorkflowId = workflowId;

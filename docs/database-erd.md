@@ -14,10 +14,10 @@ PostgreSQL system schemas (`pg_catalog`, `information_schema`, and temporary/toa
 | Schema | Entities | Fields | Foreign keys |
 | --- | ---: | ---: | ---: |
 | `public` | 1 | 2 | 0 |
-| `commercial_ops` | 72 | 1125 | 113 |
+| `commercial_ops` | 76 | 1174 | 129 |
 | `lab_ops` | 27 | 307 | 38 |
 | `website` | 2 | 18 | 0 |
-| **Total** | **102** | **1452** | **151** |
+| **Total** | **106** | **1501** | **167** |
 
 ## `public` schema
 
@@ -54,6 +54,7 @@ erDiagram
         uuid accepted_by_user_id "nullable"
         timestamptz created_at "not null"
         uuid created_by_user_id "nullable"
+        uuid crm_contact_id FK "nullable; explicit reviewed Portal identity intent"
         timestamptz declined_at "nullable"
         uuid declined_by_user_id "nullable"
         varchar_255 email "not null"
@@ -87,6 +88,43 @@ erDiagram
         uuid updated_by_user_id "nullable"
         uuid user_id FK,UK "not null"
         bigint version "not null"
+    }
+    organization_departments {
+        uuid id PK "not null"
+        uuid organization_id FK,UK "not null"
+        varchar_50 code UK "not null"
+        varchar_150 name "not null"
+        varchar_1000 description "nullable"
+        boolean is_default UK "not null; one per organization"
+        boolean is_active "not null"
+        boolean purchase_order_required "nullable; inherited when null"
+        varchar_255 billing_contact_email "nullable"
+        varchar_255 notification_email "nullable"
+        varchar_2000 shipping_instructions "nullable"
+        varchar_2000 result_delivery_instructions "nullable"
+        timestamptz created_at "not null"
+        uuid created_by_user_id "nullable"
+        timestamptz updated_at "not null"
+        uuid updated_by_user_id "nullable"
+        bigint version "not null"
+    }
+    organization_department_memberships {
+        uuid id PK "not null"
+        uuid organization_membership_id FK,UK "not null"
+        uuid department_id FK,UK "not null"
+        boolean is_department_admin "not null"
+        boolean is_active "not null"
+        timestamptz created_at "not null"
+        uuid created_by_user_id "nullable"
+        timestamptz updated_at "not null"
+        uuid updated_by_user_id "nullable"
+        bigint version "not null"
+    }
+    organization_invitation_departments {
+        uuid id PK "not null"
+        uuid organization_invitation_id FK,UK "not null"
+        uuid department_id FK,UK "not null"
+        boolean is_department_admin "not null"
     }
     organizations {
         uuid id PK "not null"
@@ -123,6 +161,11 @@ erDiagram
     }
     organizations ||--o{ organization_invitations : "organization_id"
     organizations ||--o{ organization_memberships : "organization_id"
+    organizations ||--o{ organization_departments : "organization_id"
+    organization_memberships ||--o{ organization_department_memberships : "organization_membership_id"
+    organization_departments ||--o{ organization_department_memberships : "department_id"
+    organization_invitations ||--o{ organization_invitation_departments : "organization_invitation_id"
+    organization_departments ||--o{ organization_invitation_departments : "department_id"
     users ||--o{ organization_memberships : "user_id"
 ```
 
@@ -432,6 +475,18 @@ erDiagram
         uuid updated_by_user_id "nullable"
         bigint version "not null"
     }
+    crm_contact_user_links {
+        uuid id PK "not null"
+        uuid contact_id FK,UK "not null; unique while active"
+        uuid user_id FK,UK "not null; unique while active"
+        boolean is_active "not null"
+        varchar_500 link_reason "not null"
+        timestamptz created_at "not null"
+        uuid created_by_user_id "nullable"
+        timestamptz updated_at "not null"
+        uuid updated_by_user_id "nullable"
+        bigint version "not null"
+    }
     users ||--o{ crm_companies : "owner_user_id"
     organizations o|--o| crm_companies : "access_organization_id"
     crm_companies o|--o{ crm_companies : "merged_into_company_id"
@@ -439,6 +494,9 @@ erDiagram
     crm_contacts o|--o{ crm_contacts : "merged_into_contact_id"
     crm_companies ||--o{ crm_company_contacts : "company_id"
     crm_contacts ||--o{ crm_company_contacts : "contact_id"
+    crm_contacts ||--o{ crm_contact_user_links : "contact_id"
+    users ||--o{ crm_contact_user_links : "user_id"
+    crm_contacts o|--o{ organization_invitations : "crm_contact_id"
     users ||--o{ crm_leads : "owner_user_id"
     crm_pipelines ||--o{ crm_pipeline_stages : "pipeline_id"
     crm_companies ||--o{ crm_opportunities : "company_id"
@@ -581,6 +639,7 @@ erDiagram
         varchar_50 configuration_status "not null"
         timestamptz created_at "not null"
         uuid created_by_user_id "nullable"
+        uuid department_id FK "nullable; organization default when null"
         timestamptz effective_from "not null"
         timestamptz effective_to "nullable"
         varchar_1000 end_reason "nullable"
@@ -809,6 +868,7 @@ erDiagram
         uuid created_by_user_id "nullable"
         uuid curated_dataset_id FK,UK "not null"
         uuid curated_dataset_version_id FK "not null"
+        uuid department_id FK,UK "nullable; null grants all departments"
         timestamptz granted_at "not null"
         uuid granted_by_user_id "not null"
         uuid organization_id FK,UK "not null"
@@ -889,6 +949,7 @@ erDiagram
     source_samples ||--o{ managed_files : "source_sample_id"
     curated_dataset_versions ||--o{ organization_dataset_grants : "curated_dataset_version_id"
     curated_datasets ||--o{ organization_dataset_grants : "curated_dataset_id"
+    organization_departments o|--o{ organization_dataset_grants : "department_id"
     curated_dataset_versions ||--o{ provisioning_runs : "curated_dataset_version_id"
     organization_dataset_grants o|--o{ provisioning_runs : "organization_dataset_grant_id"
     organization_dataset_grants o|--o{ provisioning_runs : "previous_organization_dataset_grant_id"
@@ -991,6 +1052,7 @@ erDiagram
     }
     order_notifications {
         uuid id PK "not null"
+        uuid department_id FK "nullable"
         integer attempt_count "not null"
         varchar_4000 body "not null"
         timestamptz created_at "not null"
@@ -1150,6 +1212,7 @@ erDiagram
     }
     sample_shipments {
         uuid id PK "not null"
+        uuid department_id FK "not null"
         varchar_100 shipment_number UK "not null"
         uuid organization_id FK "not null"
         varchar_100 authorization_source UK "not null"
@@ -1370,6 +1433,7 @@ erDiagram
     }
     lab_service_orders {
         uuid id PK "not null"
+        uuid department_id FK,UK "not null"
         uuid accepted_quote_id "nullable"
         uuid assigned_to_user_id FK "nullable"
         timestamptz completed_at "nullable"
@@ -1892,6 +1956,7 @@ erDiagram
     }
     data_assembly_requests {
         uuid id PK "not null"
+        uuid department_id FK "not null"
         uuid accepted_quote_id "nullable"
         uuid assembly_profile_id FK "not null"
         integer assembly_profile_version "not null"
@@ -1984,6 +2049,7 @@ erDiagram
     }
     partner_reagent_orders {
         uuid id PK "not null"
+        uuid department_id FK "not null"
         timestamptz accepted_at "nullable"
         uuid assigned_to_user_id FK "nullable"
         timestamptz created_at "not null"
@@ -2010,6 +2076,7 @@ erDiagram
     }
     partner_shipping_addresses {
         uuid id PK "not null"
+        uuid department_id FK "not null"
         varchar_255 city "not null"
         varchar_2 country_code "not null"
         timestamptz created_at "not null"
@@ -2106,6 +2173,14 @@ erDiagram
     organizations o|--o{ portal_integration_requests : "organization_id"
     organizations ||--o{ provisioning_runs : "organization_id"
     organizations ||--o{ sample_shipments : "organization_id"
+    organization_departments ||--o{ data_assembly_requests : "department_id"
+    organization_departments ||--o{ lab_service_orders : "department_id"
+    organization_departments o|--o{ order_notifications : "department_id"
+    organization_departments ||--o{ partner_reagent_orders : "department_id"
+    organization_departments ||--o{ partner_shipping_addresses : "department_id"
+    organization_departments ||--o{ sample_shipments : "department_id"
+    organization_departments o|--o{ organization_service_entitlements : "department_id"
+    organization_departments o|--o{ organization_dataset_grants : "department_id"
     qbo_catalog_items ||--o{ assembly_profiles : "qbo_catalog_item_id"
     qbo_catalog_items ||--o{ partner_reagent_offerings : "qbo_catalog_item_id"
     qbo_catalog_items ||--o{ partner_reagent_order_lines : "qbo_catalog_item_id"

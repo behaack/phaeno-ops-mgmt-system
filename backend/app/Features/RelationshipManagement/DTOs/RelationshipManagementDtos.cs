@@ -39,6 +39,7 @@ public sealed record OrganizationServiceEntitlementDto
 {
     public required Guid Id { get; init; }
     public required Guid OrganizationId { get; init; }
+    public Guid? DepartmentId { get; init; }
     public required PortalService Service { get; init; }
     public required DateTime EffectiveFrom { get; init; }
     public DateTime? EffectiveTo { get; init; }
@@ -56,6 +57,7 @@ public sealed record OrganizationServiceEntitlementDto
 
 public sealed record CreateOrganizationServiceEntitlementRequest
 {
+    public Guid? DepartmentId { get; init; }
     public required PortalService Service { get; init; }
     public required DateTime EffectiveFrom { get; init; }
     public DateTime? EffectiveTo { get; init; }

@@ -71,7 +71,7 @@ test("creates a standalone CRM company without changing Portal access", async ({
   ).toHaveAttribute("aria-current", "page");
   for (const label of [
     "Home",
-    "Contacts",
+    "People",
     "Leads",
     "Opportunities",
     "Tasks",
@@ -93,6 +93,7 @@ test("creates a standalone CRM company without changing Portal access", async ({
   await expect(
     page.getByRole("heading", { name: "Atlas Research" }),
   ).toBeVisible();
+  await page.getByRole("tab", { name: "Requests", exact: true }).click();
   await expectCompactCardHeaderAction(
     page,
     "Company requests",
@@ -103,12 +104,12 @@ test("creates a standalone CRM company without changing Portal access", async ({
     name: "Create Company request",
   });
   await expect(
-    requestDialog.getByRole("combobox", { name: "Request category" }),
+    requestDialog.getByRole("combobox", { name: "What does this Company need?" }),
   ).toHaveValue(
     "OnlineAccess",
   );
   await requestDialog
-    .getByRole("combobox", { name: "Request category" })
+    .getByRole("combobox", { name: "What does this Company need?" })
     .selectOption("Work");
   await expect(
     requestDialog.getByRole("combobox", { name: "Request type" }),

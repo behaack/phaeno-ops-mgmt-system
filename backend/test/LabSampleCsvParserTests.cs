@@ -35,7 +35,7 @@ public sealed class LabSampleCsvParserTests
 
     private static LabServiceOrder Order(int count, params (string Source, int Count)[] groups)
     {
-        var order = new LabServiceOrder(Guid.NewGuid(), OrderNumberGenerator.Lab(), "CSV Job", null,
+        var order = new LabServiceOrder(Guid.NewGuid(), Guid.NewGuid(), OrderNumberGenerator.Lab(), "CSV Job", null,
             count, groups.Length > 1, groups.Length == 1 ? groups[0].Source : null,
             "Keep frozen.", "No known hazards.", "Ship cold");
         foreach (var group in groups)

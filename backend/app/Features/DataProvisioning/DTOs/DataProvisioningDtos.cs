@@ -236,6 +236,8 @@ public sealed record GrantDatasetRequest
 {
     public required Guid DatasetVersionId { get; init; }
 
+    public Guid? DepartmentId { get; init; }
+
     public required string IdempotencyKey { get; init; }
 }
 
@@ -359,6 +361,10 @@ public sealed record DatasetGrantDto
     public required string OrganizationName { get; init; }
 
     public required OrganizationKind OrganizationKind { get; init; }
+
+    public Guid? DepartmentId { get; init; }
+
+    public string? DepartmentName { get; init; }
 
     public required Guid CuratedDatasetId { get; init; }
 

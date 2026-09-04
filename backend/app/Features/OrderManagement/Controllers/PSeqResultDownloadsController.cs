@@ -31,6 +31,7 @@ public sealed class PSeqResultDownloadsController(
     {
         var tenant = await requestContext.RequireTenantAsync(HttpContext,
             OrganizationKind.Customer, false, cancellationToken);
+        await RequireDepartmentOrderAsync(orderId, tenant, cancellationToken);
         var packages = await dbContext.ResultOutputPackages.AsNoTracking()
             .Where(item => item.OrganizationId == tenant.Organization.Id
                 && item.LabServiceOrderId == orderId
@@ -69,6 +70,7 @@ public sealed class PSeqResultDownloadsController(
     {
         var tenant = await requestContext.RequireTenantAsync(HttpContext,
             OrganizationKind.Customer, false, cancellationToken);
+        await RequireDepartmentOrderAsync(orderId, tenant, cancellationToken);
         var package = await dbContext.ResultOutputPackages.AsNoTracking().SingleOrDefaultAsync(item =>
             item.Id == packageId && item.OrganizationId == tenant.Organization.Id
             && item.LabServiceOrderId == orderId && item.LabSampleId == sampleId
@@ -102,5 +104,15 @@ public sealed class PSeqResultDownloadsController(
             })));
         await dbContext.SaveChangesAsync(cancellationToken);
         return File(stream, artifact.ContentType, artifact.FileName, enableRangeProcessing: true);
+    }
+
+    private async Task RequireDepartmentOrderAsync(Guid orderId, OrderTenantContext tenant, CancellationToken cancellationToken)
+    {
+        if (!await dbContext.LabServiceOrders.AsNoTracking().AnyAsync(order =>
+                order.Id == orderId && order.OrganizationId == tenant.Organization.Id
+                && order.DepartmentId == tenant.Department.Id, cancellationToken))
+        {
+            throw new OrderManagementException("result_package_not_found", "The result package was not found.", StatusCodes.Status404NotFound);
+        }
     }
 }

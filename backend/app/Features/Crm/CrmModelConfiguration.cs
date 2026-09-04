@@ -93,6 +93,27 @@ public static class CrmModelConfiguration
             entity.HasOne(value => value.Company).WithMany().HasForeignKey(value => value.CompanyId).OnDelete(DeleteBehavior.Restrict);
             entity.HasOne(value => value.Contact).WithMany().HasForeignKey(value => value.ContactId).OnDelete(DeleteBehavior.Restrict);
         });
+
+        modelBuilder.Entity<CrmContactUserLink>(entity =>
+        {
+            entity.HasKey(value => value.Id);
+            entity.Property(value => value.LinkReason).HasMaxLength(500).IsRequired();
+            ConfigureAudit(entity);
+            entity.HasIndex(value => value.ContactId)
+                .IsUnique()
+                .HasFilter("is_active = TRUE");
+            entity.HasIndex(value => value.UserId)
+                .IsUnique()
+                .HasFilter("is_active = TRUE");
+            entity.HasOne(value => value.Contact)
+                .WithMany()
+                .HasForeignKey(value => value.ContactId)
+                .OnDelete(DeleteBehavior.Restrict);
+            entity.HasOne(value => value.User)
+                .WithMany()
+                .HasForeignKey(value => value.UserId)
+                .OnDelete(DeleteBehavior.Restrict);
+        });
     }
 
     private static void ConfigureLead(ModelBuilder modelBuilder)

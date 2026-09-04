@@ -78,6 +78,11 @@ public sealed class Organization : IAudit, IConcurrency
     public ICollection<OrganizationMembership> Memberships { get; } = [];
 
     /// <summary>
+    /// Operational and access scopes inside this organization.
+    /// </summary>
+    public ICollection<OrganizationDepartment> Departments { get; } = [];
+
+    /// <summary>
     /// Creates a new organization instance.
     /// </summary>
     private Organization()
@@ -95,6 +100,12 @@ public sealed class Organization : IAudit, IConcurrency
         Name = name;
         Kind = kind;
         Description = description;
+        Departments.Add(new OrganizationDepartment(
+            Id,
+            OrganizationDepartment.DefaultCode,
+            OrganizationDepartment.DefaultName,
+            "Default organization-wide department.",
+            isDefault: true));
     }
 
     /// <summary>

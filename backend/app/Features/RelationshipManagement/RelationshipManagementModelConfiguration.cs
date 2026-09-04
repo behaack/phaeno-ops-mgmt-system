@@ -19,10 +19,14 @@ public static class RelationshipManagementModelConfiguration
             entity.Property(value => value.CreatedAt).IsRequired();
             entity.Property(value => value.UpdatedAt).IsRequired();
             entity.Property(value => value.Version).IsRequired().IsConcurrencyToken();
-            entity.HasIndex(value => new { value.OrganizationId, value.Service, value.EffectiveFrom });
+            entity.HasIndex(value => new { value.OrganizationId, value.DepartmentId, value.Service, value.EffectiveFrom });
             entity.HasOne<Organization>()
                 .WithMany()
                 .HasForeignKey(value => value.OrganizationId)
+                .OnDelete(DeleteBehavior.Restrict);
+            entity.HasOne<OrganizationDepartment>()
+                .WithMany()
+                .HasForeignKey(value => value.DepartmentId)
                 .OnDelete(DeleteBehavior.Restrict);
             entity.HasOne<PortalIntegrationRequest>()
                 .WithMany()

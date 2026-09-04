@@ -279,7 +279,7 @@ public sealed class PlatformReagentOrdersController(
     private void Event(PartnerReagentOrder order, string from, string to, Guid actorId, string? reason = null, string? internalNote = null)
         => dbContext.OrderStatusEvents.Add(new OrderStatusEvent(order.OrganizationId, OrderWorkflowTypes.Reagent, order.Id, null, from, to, reason, internalNote, actorId, DateTime.UtcNow));
     private void Notice(PartnerReagentOrder order, string eventType, string subject, string body)
-        => dbContext.OrderNotifications.Add(new OrderNotification(order.OrganizationId, null, OrderWorkflowTypes.Reagent, order.Id, eventType, subject, body));
+        => dbContext.OrderNotifications.Add(new OrderNotification(order.OrganizationId, null, OrderWorkflowTypes.Reagent, order.Id, eventType, subject, body, order.DepartmentId));
     private static void EnsureVersion(long current, long supplied) { if (current != supplied) throw new DbUpdateConcurrencyException(); }
     private static void Execute(Action action)
     {

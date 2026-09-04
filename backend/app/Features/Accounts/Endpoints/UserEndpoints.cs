@@ -98,6 +98,10 @@ public static class UserEndpoints
             .Include(m => m.User)
             .ThenInclude(u => u!.Memberships)
             .ThenInclude(m => m.Organization)
+            .Include(m => m.User)
+            .ThenInclude(u => u!.Memberships)
+            .ThenInclude(m => m.DepartmentMemberships)
+            .ThenInclude(m => m.Department)
             .OrderBy(m => m.CreatedAt)
             .Select(m => m.User!)
             .ToListAsync(cancellationToken);
@@ -469,6 +473,21 @@ public static class UserEndpoints
                     OrganizationKind = m.Organization?.Kind,
                     IsActive = m.IsActive,
                     IsOrganizationAdmin = m.IsOrganizationAdmin,
+                    Departments = m.DepartmentMemberships
+                        .OrderByDescending(value => value.Department.IsDefault)
+                        .ThenBy(value => value.Department.Name)
+                        .Select(value => new DepartmentMembershipSummaryDto
+                        {
+                            Id = value.Id,
+                            DepartmentId = value.DepartmentId,
+                            DepartmentName = value.Department.Name,
+                            DepartmentCode = value.Department.Code,
+                            IsDefault = value.Department.IsDefault,
+                            IsDepartmentAdmin = value.IsDepartmentAdmin,
+                            IsActive = value.IsActive,
+                            Version = value.Version
+                        })
+                        .ToList(),
                     CreatedAt = m.CreatedAt,
                     UpdatedAt = m.UpdatedAt,
                     Version = m.Version
@@ -543,6 +562,9 @@ public static class UserEndpoints
         var user = await dbContext.Users
             .Include(u => u.Memberships)
             .ThenInclude(m => m.Organization)
+            .Include(u => u.Memberships)
+            .ThenInclude(m => m.DepartmentMemberships)
+            .ThenInclude(m => m.Department)
             .FirstOrDefaultAsync(u => u.Id == id, cancellationToken);
 
         if (user == null)

@@ -28,7 +28,8 @@ public sealed class ReagentOrdersController(
     {
         var tenant = await requestContext.RequireTenantAsync(HttpContext, OrganizationKind.Partner, false, cancellationToken);
         page = Math.Max(1, page); pageSize = Math.Clamp(pageSize, 1, 100);
-        var query = dbContext.PartnerReagentOrders.AsNoTracking().Where(order => order.OrganizationId == tenant.Organization.Id && !order.IsDiscarded);
+        var query = dbContext.PartnerReagentOrders.AsNoTracking().Where(order => order.OrganizationId == tenant.Organization.Id
+            && order.DepartmentId == tenant.Department.Id && !order.IsDiscarded);
         if (!string.IsNullOrWhiteSpace(status))
         {
             if (!Enum.TryParse<ReagentOrderStatus>(status, true, out var parsed)) throw Invalid("invalid_status", "The reagent status is invalid.");
@@ -57,7 +58,8 @@ public sealed class ReagentOrdersController(
         CancellationToken cancellationToken = default)
     {
         var tenant = await requestContext.RequireTenantAsync(HttpContext, OrganizationKind.Partner, false, cancellationToken);
-        var query = dbContext.PartnerReagentOrders.AsNoTracking().Where(order => order.OrganizationId == tenant.Organization.Id && !order.IsDiscarded);
+        var query = dbContext.PartnerReagentOrders.AsNoTracking().Where(order => order.OrganizationId == tenant.Organization.Id
+            && order.DepartmentId == tenant.Department.Id && !order.IsDiscarded);
         if (!string.IsNullOrWhiteSpace(status))
         {
             if (!Enum.TryParse<ReagentOrderStatus>(status, true, out var parsed)) throw Invalid("invalid_status", "The reagent status is invalid.");
@@ -83,7 +85,7 @@ public sealed class ReagentOrdersController(
     public async Task<PartnerReagentOrderDto> Get(Guid orderId, CancellationToken cancellationToken)
     {
         var tenant = await requestContext.RequireTenantAsync(HttpContext, OrganizationKind.Partner, false, cancellationToken);
-        return await MapAsync(await ReadAsync(orderId, tenant.Organization.Id, cancellationToken), tenant.Membership.IsOrganizationAdmin, false, cancellationToken);
+        return await MapAsync(await ReadAsync(orderId, tenant, cancellationToken), tenant.IsDepartmentAdmin, false, cancellationToken);
     }
 
     [HttpPost]
@@ -103,7 +105,7 @@ public sealed class ReagentOrdersController(
                     request.Lines,
                     DateTime.UtcNow,
                     operationCancellationToken);
-                var order = new PartnerReagentOrder(tenant.Organization.Id, OrderNumberGenerator.Reagent());
+                var order = new PartnerReagentOrder(tenant.Organization.Id, tenant.Department.Id, OrderNumberGenerator.Reagent());
                 AddLines(order, request.Lines, offerings);
                 dbContext.PartnerReagentOrders.Add(order);
                 Event(order, "Created", order.Status.ToString(), tenant.Actor.Id);
@@ -130,7 +132,7 @@ public sealed class ReagentOrdersController(
             request,
             async operationCancellationToken =>
             {
-                var source = await ReadAsync(orderId, tenant.Organization.Id, operationCancellationToken);
+                var source = await ReadAsync(orderId, tenant, operationCancellationToken);
                 var offeringIds = source.Lines.Select(line => line.OfferingId).Distinct().ToList();
                 var now = DateTime.UtcNow;
                 var offerings = await dbContext.PartnerReagentOfferings.AsNoTracking()
@@ -148,7 +150,7 @@ public sealed class ReagentOrdersController(
                     throw Invalid("reagent_prior_order_has_no_eligible_lines", "No lines from the prior order are currently eligible for a new draft.");
 
                 var snapshots = await ValidateLinesAsync(tenant.Organization.Id, writes, now, operationCancellationToken);
-                var draft = new PartnerReagentOrder(tenant.Organization.Id, OrderNumberGenerator.Reagent());
+                var draft = new PartnerReagentOrder(tenant.Organization.Id, tenant.Department.Id, OrderNumberGenerator.Reagent());
                 AddLines(draft, writes, snapshots);
                 dbContext.PartnerReagentOrders.Add(draft);
                 Event(draft, "CreatedFromPrior", draft.Status.ToString(), tenant.Actor.Id, $"Created from {source.OrderNumber}.");
@@ -165,7 +167,7 @@ public sealed class ReagentOrdersController(
     public async Task<PartnerReagentOrderDto> Update(Guid orderId, [FromBody] ReagentOrderWriteRequest request, CancellationToken cancellationToken)
     {
         var tenant = await requestContext.RequireTenantAsync(HttpContext, OrganizationKind.Partner, true, cancellationToken);
-        var order = await ReadAsync(orderId, tenant.Organization.Id, cancellationToken);
+        var order = await ReadAsync(orderId, tenant, cancellationToken);
         EnsureVersion(order.Version, request.Version);
         if (order.Status != ReagentOrderStatus.Draft) throw Conflict("reagent_order_not_editable", "Only draft reagent orders can be edited.");
         var offerings = await ValidateLinesAsync(tenant.Organization.Id, request.Lines, DateTime.UtcNow, cancellationToken);
@@ -188,10 +190,12 @@ public sealed class ReagentOrdersController(
             request,
             async operationCancellationToken =>
             {
-                var order = await ReadAsync(orderId, tenant.Organization.Id, operationCancellationToken);
+                var order = await ReadAsync(orderId, tenant, operationCancellationToken);
                 EnsureVersion(order.Version, request.Version);
                 var address = await dbContext.PartnerShippingAddresses.AsNoTracking().FirstOrDefaultAsync(item => item.Id == request.ShippingAddressId
-                    && item.OrganizationId == tenant.Organization.Id && item.IsActive, operationCancellationToken)
+                    && item.OrganizationId == tenant.Organization.Id
+                    && item.DepartmentId == tenant.Department.Id
+                    && item.IsActive, operationCancellationToken)
                     ?? throw Invalid("shipping_address_unavailable", "Select an active Partner shipping address.");
                 var writes = order.Lines.Select(line => new ReagentLineWriteRequest(line.OfferingId, line.Quantity, line.Note)).ToList();
                 var offerings = await ValidateLinesAsync(tenant.Organization.Id, writes, DateTime.UtcNow, operationCancellationToken);
@@ -241,7 +245,7 @@ public sealed class ReagentOrdersController(
     public async Task<PartnerReagentOrderDto> Cancel(Guid orderId, [FromBody] ReasonRequest request, CancellationToken cancellationToken)
     {
         var tenant = await requestContext.RequireTenantAsync(HttpContext, OrganizationKind.Partner, true, cancellationToken);
-        var order = await ReadAsync(orderId, tenant.Organization.Id, cancellationToken);
+        var order = await ReadAsync(orderId, tenant, cancellationToken);
         EnsureVersion(order.Version, request.Version);
         var before = order.Status.ToString();
         Execute(() => order.CancelBeforeAcceptance(request.Reason));
@@ -262,7 +266,7 @@ public sealed class ReagentOrdersController(
             request,
             async operationCancellationToken =>
             {
-                var order = await ReadAsync(orderId, tenant.Organization.Id, operationCancellationToken);
+                var order = await ReadAsync(orderId, tenant, operationCancellationToken);
                 EnsureVersion(order.Version, request.Version);
                 var before = order.Status.ToString();
                 Execute(order.RequestCancellation);
@@ -282,7 +286,7 @@ public sealed class ReagentOrdersController(
         [FromBody] ReagentAdjustmentDecisionRequest request, CancellationToken cancellationToken)
     {
         var tenant = await requestContext.RequireTenantAsync(HttpContext, OrganizationKind.Partner, true, cancellationToken);
-        var order = await ReadAsync(orderId, tenant.Organization.Id, cancellationToken);
+        var order = await ReadAsync(orderId, tenant, cancellationToken);
         EnsureVersion(order.Version, request.Version);
         var adjustment = await dbContext.ReagentOrderAdjustments.FirstOrDefaultAsync(item => item.Id == adjustmentId
             && item.PartnerReagentOrderId == orderId, cancellationToken) ?? throw Missing();
@@ -310,13 +314,16 @@ public sealed class ReagentOrdersController(
     public async Task<IReadOnlyList<ReagentShipmentDto>> Shipments(Guid orderId, CancellationToken cancellationToken)
     {
         var tenant = await requestContext.RequireTenantAsync(HttpContext, OrganizationKind.Partner, false, cancellationToken);
-        var order = await ReadAsync(orderId, tenant.Organization.Id, cancellationToken);
+        var order = await ReadAsync(orderId, tenant, cancellationToken);
         return order.Shipments.OrderByDescending(item => item.ShippedAt).Select(item => item.ToDto()).ToList();
     }
 
-    private async Task<PartnerReagentOrder> ReadAsync(Guid id, Guid organizationId, CancellationToken cancellationToken)
+    private async Task<PartnerReagentOrder> ReadAsync(Guid id, OrderTenantContext tenant, CancellationToken cancellationToken)
         => await dbContext.PartnerReagentOrders.Include(order => order.Lines).Include(order => order.Shipments).ThenInclude(shipment => shipment.Lines)
-            .FirstOrDefaultAsync(order => order.Id == id && order.OrganizationId == organizationId && !order.IsDiscarded, cancellationToken) ?? throw Missing();
+            .FirstOrDefaultAsync(order => order.Id == id
+                && order.OrganizationId == tenant.Organization.Id
+                && order.DepartmentId == tenant.Department.Id
+                && !order.IsDiscarded, cancellationToken) ?? throw Missing();
 
     private async Task<Dictionary<Guid, OfferingSnapshot>> ValidateLinesAsync(Guid organizationId, IReadOnlyList<ReagentLineWriteRequest> lines,
         DateTime now, CancellationToken cancellationToken)
@@ -391,7 +398,7 @@ public sealed class ReagentOrdersController(
     private void Event(PartnerReagentOrder order, string from, string to, Guid actorId, string? reason = null, string? internalNote = null)
         => dbContext.OrderStatusEvents.Add(new OrderStatusEvent(order.OrganizationId, OrderWorkflowTypes.Reagent, order.Id, null, from, to, reason, internalNote, actorId, DateTime.UtcNow));
     private void Notice(PartnerReagentOrder order, string eventType, string subject, string body)
-        => dbContext.OrderNotifications.Add(new OrderNotification(order.OrganizationId, null, OrderWorkflowTypes.Reagent, order.Id, eventType, subject, body));
+        => dbContext.OrderNotifications.Add(new OrderNotification(order.OrganizationId, null, OrderWorkflowTypes.Reagent, order.Id, eventType, subject, body, order.DepartmentId));
     private static string RequireSingleCurrency(IEnumerable<string> values)
     {
         var currencies = values.Distinct(StringComparer.OrdinalIgnoreCase).ToList();

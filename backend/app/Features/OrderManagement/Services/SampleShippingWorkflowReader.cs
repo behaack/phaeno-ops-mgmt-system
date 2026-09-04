@@ -9,11 +9,19 @@ public sealed class SampleShippingWorkflowReader(PSeqOperationsDbContext dbConte
 {
     public async Task<IReadOnlyList<SampleShipmentWorkflowDto>> ListAsync(
         Guid? organizationId,
+        CancellationToken cancellationToken) =>
+        await ListAsync(organizationId, departmentId: null, cancellationToken);
+
+    public async Task<IReadOnlyList<SampleShipmentWorkflowDto>> ListAsync(
+        Guid? organizationId,
+        Guid? departmentId,
         CancellationToken cancellationToken)
     {
         var query = dbContext.SampleShipments.AsNoTracking();
         if (organizationId.HasValue)
             query = query.Where(item => item.OrganizationId == organizationId.Value);
+        if (departmentId.HasValue)
+            query = query.Where(item => item.DepartmentId == departmentId.Value);
 
         var shipments = await query
             .Include(item => item.Items)
@@ -30,12 +38,21 @@ public sealed class SampleShippingWorkflowReader(PSeqOperationsDbContext dbConte
     public async Task<SampleShipmentWorkflowDto> ReadAsync(
         Guid shipmentId,
         Guid? organizationId,
+        CancellationToken cancellationToken) =>
+        await ReadAsync(shipmentId, organizationId, departmentId: null, cancellationToken);
+
+    public async Task<SampleShipmentWorkflowDto> ReadAsync(
+        Guid shipmentId,
+        Guid? organizationId,
+        Guid? departmentId,
         CancellationToken cancellationToken)
     {
         var query = dbContext.SampleShipments.AsNoTracking()
             .Where(item => item.Id == shipmentId);
         if (organizationId.HasValue)
             query = query.Where(item => item.OrganizationId == organizationId.Value);
+        if (departmentId.HasValue)
+            query = query.Where(item => item.DepartmentId == departmentId.Value);
         var shipment = await query
             .Include(item => item.Items)
                 .ThenInclude(item => item.TubeSlots)
@@ -53,9 +70,16 @@ public sealed class SampleShippingWorkflowReader(PSeqOperationsDbContext dbConte
     public async Task<SampleShippingPacketDocumentDto> ReadPacketAsync(
         Guid shipmentId,
         Guid? organizationId,
+        CancellationToken cancellationToken) =>
+        await ReadPacketAsync(shipmentId, organizationId, departmentId: null, cancellationToken);
+
+    public async Task<SampleShippingPacketDocumentDto> ReadPacketAsync(
+        Guid shipmentId,
+        Guid? organizationId,
+        Guid? departmentId,
         CancellationToken cancellationToken)
     {
-        var shipment = await ReadAsync(shipmentId, organizationId, cancellationToken);
+        var shipment = await ReadAsync(shipmentId, organizationId, departmentId, cancellationToken);
         if (shipment.CurrentPacket is null)
             throw new OrderManagementException(
                 "sample_shipping_packet_not_issued",

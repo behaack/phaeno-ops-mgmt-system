@@ -7,6 +7,7 @@ public sealed class DataAssemblyRequest : IAudit, IConcurrency
 {
     public Guid Id { get; private set; } = Guid.NewGuid();
     public Guid OrganizationId { get; private set; }
+    public Guid DepartmentId { get; private set; }
     public string RequestNumber { get; private set; } = null!;
     public string ProjectReference { get; private set; } = null!;
     public Guid AssemblyProfileId { get; private set; }
@@ -46,6 +47,7 @@ public sealed class DataAssemblyRequest : IAudit, IConcurrency
 
     public DataAssemblyRequest(
         Guid organizationId,
+        Guid departmentId,
         string requestNumber,
         string projectReference,
         Guid assemblyProfileId,
@@ -57,7 +59,10 @@ public sealed class DataAssemblyRequest : IAudit, IConcurrency
         string? processingNotes,
         bool prohibitedDataConfirmed)
     {
+        if (organizationId == Guid.Empty || departmentId == Guid.Empty)
+            throw new ArgumentException("An organization and department are required.");
         OrganizationId = organizationId;
+        DepartmentId = departmentId;
         RequestNumber = OrderText.Required(requestNumber, nameof(requestNumber), 50);
         AssemblyProfileId = assemblyProfileId;
         AssemblyProfileVersion = assemblyProfileVersion;

@@ -31,6 +31,8 @@ public sealed class OrganizationMembership : IAudit, IConcurrency
 
     public long Version { get; private set; } = 1;
 
+    public ICollection<OrganizationDepartmentMembership> DepartmentMemberships { get; } = [];
+
     private OrganizationMembership()
     {
     }

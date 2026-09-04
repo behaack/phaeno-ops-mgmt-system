@@ -1,12 +1,14 @@
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useMutation } from "@tanstack/react-query";
 import { Plus, Trash2 } from "lucide-react";
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { useFieldArray, useForm } from "react-hook-form";
 import { z } from "zod";
 
 import {
   getOrderErrorMessage,
+  getPlatformOrder,
+  isOrderConcurrencyError,
   issuePlatformQuote,
   type OrderConfiguration,
 } from "#/api/order-management";
@@ -63,7 +65,6 @@ export function PlatformQuoteDialog({
   open,
   workflow,
   recordId,
-  version,
   defaultQuantity,
   priceProposal,
   catalogItems,
@@ -73,7 +74,6 @@ export function PlatformQuoteDialog({
   open: boolean;
   workflow: "lab" | "assembly";
   recordId: string;
-  version: number;
   defaultQuantity?: number;
   priceProposal?: {
     unitPrice: number;
@@ -106,6 +106,7 @@ export function PlatformQuoteDialog({
     resolver: zodResolver(schema),
     defaultValues,
   });
+  const [recordRefreshed, setRecordRefreshed] = useState(false);
   const lines = useFieldArray({ control: form.control, name: "lines" });
   const watchedLines = form.watch("lines");
   const watchedCurrency = form.watch("currency");
@@ -143,20 +144,27 @@ export function PlatformQuoteDialog({
     Number.isFinite(currentLabUnitPrice) &&
     roundMoney(currentLabUnitPrice) !== roundMoney(proposedUnitPrice);
   const mutation = useMutation({
-    mutationFn: (values: Values) =>
-      issuePlatformQuote(workflow, recordId, {
+    mutationFn: async (values: Values) => {
+      const latestRecord = await getPlatformOrder(workflow, recordId);
+      return issuePlatformQuote(workflow, recordId, {
         ...values,
-        version,
+        version: latestRecord.version,
         tax: workflow === "lab" ? 0 : values.tax,
         expiresAt: values.expiresAt || null,
         pricingDecisionReason:
           workflow === "lab" && amendsProposedPrice
             ? values.pricingDecisionReason
             : null,
-      }),
+      });
+    },
     onSuccess: async () => {
       await onSaved();
       close();
+    },
+    onError: async (error) => {
+      if (!isOrderConcurrencyError(error)) return;
+      await onSaved();
+      setRecordRefreshed(true);
     },
   });
 
@@ -192,11 +200,13 @@ export function PlatformQuoteDialog({
 
   function close() {
     mutation.reset();
+    setRecordRefreshed(false);
     form.reset(createDefaultValues(workflow, defaultQuantity, requiredLabItem, proposedUnitPrice));
     onOpenChange(false);
   }
 
   function submit(values: Values) {
+    setRecordRefreshed(false);
     form.clearErrors("root");
     if (workflow === "lab") {
       if (!requiredLabItem) {
@@ -599,10 +609,12 @@ export function PlatformQuoteDialog({
             <Alert variant="destructive">
               <AlertTitle>Quote was not issued</AlertTitle>
               <AlertDescription>
-                {getOrderErrorMessage(
-                  mutation.error,
-                  "Review the quote and try again.",
-                )}
+                {recordRefreshed && isOrderConcurrencyError(mutation.error)
+                  ? `The latest ${workflow === "lab" ? "Job" : "request"} was loaded and your quote entries were preserved. Review them, then issue the quote again.`
+                  : getOrderErrorMessage(
+                      mutation.error,
+                      "Review the quote and try again.",
+                    )}
               </AlertDescription>
             </Alert>
           ) : null}

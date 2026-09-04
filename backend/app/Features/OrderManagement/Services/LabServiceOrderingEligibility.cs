@@ -20,18 +20,22 @@ public static class LabServiceOrderingEligibility
         PSeqOperationsDbContext dbContext,
         Guid organizationId,
         DateTime utcNow,
-        CancellationToken cancellationToken)
+        CancellationToken cancellationToken,
+        Guid? departmentId = null)
     {
-        var entitlementId = await dbContext.OrganizationServiceEntitlements
+        var entitlement = await dbContext.OrganizationServiceEntitlements
             .AsNoTracking()
             .Where(item => item.OrganizationId == organizationId
+                && (item.DepartmentId == null || (departmentId.HasValue && item.DepartmentId == departmentId.Value))
                 && item.Service == PortalService.PSeqLabService
-                && item.ConfigurationStatus == EntitlementConfigurationStatus.Ready
                 && item.EffectiveFrom <= utcNow
                 && (!item.EffectiveTo.HasValue || item.EffectiveTo.Value > utcNow))
-            .OrderByDescending(item => item.EffectiveFrom)
-            .Select(item => (Guid?)item.Id)
+            .OrderByDescending(item => item.DepartmentId.HasValue)
+            .ThenByDescending(item => item.EffectiveFrom)
             .FirstOrDefaultAsync(cancellationToken);
+        var entitlementId = entitlement?.ConfigurationStatus == EntitlementConfigurationStatus.Ready
+            ? (Guid?)entitlement.Id
+            : null;
         var catalogItemId = await dbContext.QboCatalogItems
             .AsNoTracking()
             .Where(item => item.IsActive
@@ -47,9 +51,17 @@ public static class LabServiceOrderingEligibility
         PSeqOperationsDbContext dbContext,
         Guid organizationId,
         DateTime utcNow,
-        CancellationToken cancellationToken)
+        CancellationToken cancellationToken,
+        Guid? departmentId = null)
     {
-        var eligibility = await ReadAsync(dbContext, organizationId, utcNow, cancellationToken);
+        if (departmentId.HasValue && !await dbContext.OrganizationDepartments.AsNoTracking()
+                .AnyAsync(value => value.Id == departmentId.Value && value.OrganizationId == organizationId
+                    && value.IsActive && value.Organization.IsActive, cancellationToken))
+        {
+            throw new OrderManagementException("customer_department_not_available",
+                "The Customer department is inactive or unavailable.", StatusCodes.Status409Conflict);
+        }
+        var eligibility = await ReadAsync(dbContext, organizationId, utcNow, cancellationToken, departmentId);
         if (!eligibility.OrderingAuthorized)
         {
             throw new OrderManagementException(

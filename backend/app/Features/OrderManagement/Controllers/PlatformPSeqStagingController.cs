@@ -19,7 +19,8 @@ public sealed record StageEligibleCustomerDto(
     IReadOnlyList<PSeq.Operations.Commercial.Relationships.Application.OperationalReadinessBlocker> Blockers);
 public sealed record CreateStagedPSeqOrderRequest(
     Guid OrganizationId, string? CustomerReference,
-    IReadOnlyList<LabSampleWriteRequest> Samples);
+    IReadOnlyList<LabSampleWriteRequest> Samples,
+    Guid? DepartmentId = null);
 
 [ApiController]
 [Authorize]
@@ -70,12 +71,23 @@ public sealed class PlatformPSeqStagingController(
             throw new OrderManagementException("analysis_definition_unavailable", "Every staged sample requires an active PSeq analysis offering.");
         var config = await dbContext.OrderSystemConfigurations.AsNoTracking().OrderBy(item => item.CreatedAt)
             .FirstOrDefaultAsync(cancellationToken);
+        var departmentQuery = dbContext.OrganizationDepartments.AsNoTracking()
+            .Where(value => value.OrganizationId == request.OrganizationId && value.IsActive);
+        var department = request.DepartmentId.HasValue
+            ? await departmentQuery.SingleOrDefaultAsync(value => value.Id == request.DepartmentId.Value, cancellationToken)
+            : await departmentQuery.SingleOrDefaultAsync(value => value.IsDefault, cancellationToken);
+        if (department is null)
+            throw new OrderManagementException("customer_department_not_available",
+                "Select an active Department for this Customer before staging the order.", StatusCodes.Status409Conflict);
+        await LabServiceOrderingEligibility.RequireAsync(dbContext, request.OrganizationId,
+            DateTime.UtcNow, cancellationToken, department.Id);
         var sourceGroups = request.Samples
             .GroupBy(item => item.BiologicalSource.Trim(), StringComparer.OrdinalIgnoreCase)
             .Select(group => new { BiologicalSource = group.First().BiologicalSource.Trim(), Count = group.Count() })
             .ToList();
         var order = new LabServiceOrder(
             request.OrganizationId,
+            department.Id,
             OrderNumberGenerator.Lab(),
             request.CustomerReference ?? $"Staged PSeq order {DateTime.UtcNow:yyyy-MM-dd HH:mm}",
             description: "Internally staged before Customer administrator activation.",
@@ -84,7 +96,9 @@ public sealed class PlatformPSeqStagingController(
             sharedBiologicalSource: sourceGroups.Count == 1 ? sourceGroups[0].BiologicalSource : null,
             storageRequirements: request.Samples[0].StorageRequirements,
             safetyDeclaration: request.Samples[0].SafetyDeclaration,
-            submissionInstructionsSnapshot: config?.SampleSubmissionInstructions ?? string.Empty);
+            submissionInstructionsSnapshot: department.ShippingInstructions
+                ?? config?.SampleSubmissionInstructions
+                ?? string.Empty);
         foreach (var sourceGroup in sourceGroups)
             order.SourceGroups.Add(new LabServiceSourceGroup(order.Id, sourceGroup.BiologicalSource, sourceGroup.Count));
         order.Submit(actor.Id, DateTime.UtcNow);

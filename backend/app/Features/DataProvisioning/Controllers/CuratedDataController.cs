@@ -25,10 +25,10 @@ public sealed class CuratedDataController(
     public async Task<IReadOnlyList<TenantDatasetDto>> List(
         CancellationToken cancellationToken)
     {
-        var (_, organization) = await RequireTenantAccessAsync(
-            requireOrganizationAdmin: false,
+        var tenant = await RequireTenantAccessAsync(
+            requireScopeAdmin: false,
             cancellationToken);
-        var grants = await AccessibleGrantQuery(organization.Id)
+        var grants = await AccessibleGrantQuery(tenant.Organization.Id, tenant.Department.Id)
             .OrderBy(grant => grant.CuratedDataset.Name)
             .ToListAsync(cancellationToken);
         return grants.Select(DataProvisioningMappings.ToTenantDto).ToList();
@@ -39,11 +39,12 @@ public sealed class CuratedDataController(
         Guid datasetId,
         CancellationToken cancellationToken)
     {
-        var (_, organization) = await RequireTenantAccessAsync(
-            requireOrganizationAdmin: false,
+        var tenant = await RequireTenantAccessAsync(
+            requireScopeAdmin: false,
             cancellationToken);
         var grant = await ReadAccessibleGrantAsync(
-            organization.Id,
+            tenant.Organization.Id,
+            tenant.Department.Id,
             datasetId,
             cancellationToken);
         return DataProvisioningMappings.ToTenantDto(grant);
@@ -56,11 +57,12 @@ public sealed class CuratedDataController(
         Guid fileId,
         CancellationToken cancellationToken)
     {
-        var (actor, organization) = await RequireTenantAccessAsync(
-            requireOrganizationAdmin: false,
+        var tenant = await RequireTenantAccessAsync(
+            requireScopeAdmin: false,
             cancellationToken);
         var grant = await ReadAccessibleGrantAsync(
-            organization.Id,
+            tenant.Organization.Id,
+            tenant.Department.Id,
             datasetId,
             cancellationToken);
         var versionFile = grant.CuratedDatasetVersion.Files.FirstOrDefault(file => file.Id == fileId)
@@ -72,8 +74,8 @@ public sealed class CuratedDataController(
         try
         {
             AddDownloadAudit(
-                actor,
-                organization,
+                tenant.Actor,
+                tenant.Organization,
                 grant,
                 DatasetDownloadKind.File,
                 versionFile.ManagedFileId);
@@ -98,11 +100,12 @@ public sealed class CuratedDataController(
         Guid datasetId,
         CancellationToken cancellationToken)
     {
-        var (actor, organization) = await RequireTenantAccessAsync(
-            requireOrganizationAdmin: false,
+        var tenant = await RequireTenantAccessAsync(
+            requireScopeAdmin: false,
             cancellationToken);
         var grant = await ReadAccessibleGrantAsync(
-            organization.Id,
+            tenant.Organization.Id,
+            tenant.Department.Id,
             datasetId,
             cancellationToken);
 
@@ -127,8 +130,8 @@ public sealed class CuratedDataController(
 
             archiveStream.Position = 0;
             AddDownloadAudit(
-                actor,
-                organization,
+                tenant.Actor,
+                tenant.Organization,
                 grant,
                 DatasetDownloadKind.Archive,
                 managedFileId: null);
@@ -153,13 +156,16 @@ public sealed class CuratedDataController(
     public async Task<IReadOnlyList<DatasetDownloadAuditDto>> ListDownloadHistory(
         CancellationToken cancellationToken)
     {
-        var (_, organization) = await RequireTenantAccessAsync(
-            requireOrganizationAdmin: true,
+        var tenant = await RequireTenantAccessAsync(
+            requireScopeAdmin: true,
             cancellationToken);
         var downloads = await (
             from download in dbContext.DatasetDownloadAudits.AsNoTracking()
             join user in dbContext.Users.AsNoTracking() on download.UserId equals user.Id
-            where download.OrganizationId == organization.Id
+            join grant in dbContext.OrganizationDatasetGrants.AsNoTracking()
+                on download.OrganizationDatasetGrantId equals grant.Id
+            where download.OrganizationId == tenant.Organization.Id
+                && (grant.DepartmentId == null || grant.DepartmentId == tenant.Department.Id)
             orderby download.DownloadedAt descending
             select new DatasetDownloadAuditDto
             {
@@ -180,12 +186,16 @@ public sealed class CuratedDataController(
     public async Task<IReadOnlyList<DataProvisioningNoticeDto>> ListActivity(
         CancellationToken cancellationToken)
     {
-        var (_, organization) = await RequireTenantAccessAsync(
-            requireOrganizationAdmin: false,
+        var tenant = await RequireTenantAccessAsync(
+            requireScopeAdmin: false,
             cancellationToken);
         var notices = await dbContext.DataProvisioningNotices
             .AsNoTracking()
-            .Where(notice => notice.OrganizationId == organization.Id)
+            .Where(notice => notice.OrganizationId == tenant.Organization.Id
+                && (notice.OrganizationDatasetGrantId == null
+                    || dbContext.OrganizationDatasetGrants.Any(grant =>
+                        grant.Id == notice.OrganizationDatasetGrantId
+                        && (grant.DepartmentId == null || grant.DepartmentId == tenant.Department.Id))))
             .OrderByDescending(notice => notice.CreatedAt)
             .Take(500)
             .ToListAsync(cancellationToken);
@@ -196,13 +206,13 @@ public sealed class CuratedDataController(
     public async Task<IReadOnlyList<TenantGovernanceIncidentDto>> ListGovernanceIncidents(
         CancellationToken cancellationToken)
     {
-        var (_, organization) = await RequireTenantAccessAsync(
-            requireOrganizationAdmin: false,
+        var tenant = await RequireTenantAccessAsync(
+            requireScopeAdmin: false,
             cancellationToken);
         var affectedOrganizations = await dbContext.DataGovernanceAffectedOrganizations
             .AsNoTracking()
             .Include(affected => affected.Incident)
-            .Where(affected => affected.OrganizationId == organization.Id)
+            .Where(affected => affected.OrganizationId == tenant.Organization.Id)
             .OrderByDescending(affected => affected.Incident.CreatedAt)
             .Take(500)
             .ToListAsync(cancellationToken);
@@ -215,14 +225,21 @@ public sealed class CuratedDataController(
         [FromBody] TenantGovernanceAttestationRequest request,
         CancellationToken cancellationToken)
     {
-        var (actor, organization) = await RequireTenantAccessAsync(
-            requireOrganizationAdmin: true,
+        var tenant = await RequireTenantAccessAsync(
+            requireScopeAdmin: true,
             cancellationToken);
+        if (!tenant.Membership.IsOrganizationAdmin)
+        {
+            throw new DataProvisioningException(
+                "tenant_access_forbidden",
+                "Organization administrator access is required to submit a governance attestation.",
+                StatusCodes.Status403Forbidden);
+        }
         var affected = await dbContext.DataGovernanceAffectedOrganizations
             .Include(item => item.Incident)
             .FirstOrDefaultAsync(
                 item => item.IncidentId == incidentId
-                    && item.OrganizationId == organization.Id,
+                    && item.OrganizationId == tenant.Organization.Id,
                 cancellationToken)
             ?? throw NotFound(
                 "governance_incident_not_found",
@@ -235,18 +252,18 @@ public sealed class CuratedDataController(
         var notes = RequireText(request.Notes, "notes", 4000);
         var now = DateTime.UtcNow;
         affected.Attest(
-            actor.Id,
+            tenant.Actor.Id,
             AttestationSource.SubmittedInPortal,
-            actor.Email,
+            tenant.Actor.Email,
             "Submitted in portal",
             notes,
             now);
         dbContext.DataGovernanceFollowUps.Add(new DataGovernanceFollowUp(
             affected.IncidentId,
-            organization.Id,
+            tenant.Organization.Id,
             "AttestationSubmittedInPortal",
             notes,
-            actor.Id,
+            tenant.Actor.Id,
             now));
         AccountAudit.Add(
             dbContext,
@@ -254,26 +271,28 @@ public sealed class CuratedDataController(
             nameof(DataGovernanceAffectedOrganization),
             affected.Id,
             "DataGovernanceAttestationSubmitted",
-            organization.Id,
-            actor.Id,
+            tenant.Organization.Id,
+            tenant.Actor.Id,
             new { affected.IncidentId });
         await dbContext.SaveChangesAsync(cancellationToken);
         return ToTenantIncidentDto(affected);
     }
 
-    private Task<(User Actor, Organization Organization)> RequireTenantAccessAsync(
-        bool requireOrganizationAdmin,
+    private Task<DataProvisioningTenantContext> RequireTenantAccessAsync(
+        bool requireScopeAdmin,
         CancellationToken cancellationToken)
     {
         return DataProvisioningAuthorization.RequireTenantAccessAsync(
             HttpContext,
             dbContext,
             externalIdentityContext,
-            requireOrganizationAdmin,
+            requireScopeAdmin,
             cancellationToken);
     }
 
-    private IQueryable<OrganizationDatasetGrant> AccessibleGrantQuery(Guid organizationId)
+    private IQueryable<OrganizationDatasetGrant> AccessibleGrantQuery(
+        Guid organizationId,
+        Guid departmentId)
     {
         return dbContext.OrganizationDatasetGrants
             .AsNoTracking()
@@ -282,6 +301,7 @@ public sealed class CuratedDataController(
             .ThenInclude(version => version.Files)
             .ThenInclude(file => file.ManagedFile)
             .Where(grant => grant.OrganizationId == organizationId
+                && (grant.DepartmentId == null || grant.DepartmentId == departmentId)
                 && grant.Status == OrganizationDatasetGrantStatus.Active
                 && (grant.CuratedDatasetVersion.Status == CuratedDatasetVersionStatus.Published
                     || grant.CuratedDatasetVersion.Status == CuratedDatasetVersionStatus.Retired));
@@ -289,10 +309,11 @@ public sealed class CuratedDataController(
 
     private async Task<OrganizationDatasetGrant> ReadAccessibleGrantAsync(
         Guid organizationId,
+        Guid departmentId,
         Guid datasetId,
         CancellationToken cancellationToken)
     {
-        return await AccessibleGrantQuery(organizationId)
+        return await AccessibleGrantQuery(organizationId, departmentId)
             .FirstOrDefaultAsync(
                 grant => grant.CuratedDatasetId == datasetId,
                 cancellationToken)

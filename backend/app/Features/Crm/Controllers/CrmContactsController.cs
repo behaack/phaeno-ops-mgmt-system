@@ -152,6 +152,17 @@ public sealed class CrmContactsController(
             throw Conflict("crm_merge_target_invalid", "Select an active, unmerged target contact.");
         }
 
+        var sourceIdentityLink = await dbContext.CrmContactUserLinks
+            .SingleOrDefaultAsync(value => value.ContactId == source.Id && value.IsActive, cancellationToken);
+        var targetHasIdentityLink = await dbContext.CrmContactUserLinks.AsNoTracking()
+            .AnyAsync(value => value.ContactId == target.Id && value.IsActive, cancellationToken);
+        if (sourceIdentityLink is not null && targetHasIdentityLink)
+        {
+            throw Conflict(
+                "crm_merge_identity_conflict",
+                "Resolve one of the active Portal identity links before merging these Contacts.");
+        }
+
         var targetCompanyIds = await dbContext.CrmCompanyContacts.Where(value => value.ContactId == target.Id).Select(value => value.CompanyId).ToListAsync(cancellationToken);
         foreach (var association in await dbContext.CrmCompanyContacts.Where(value => value.ContactId == source.Id).ToListAsync(cancellationToken))
         {
@@ -169,6 +180,7 @@ public sealed class CrmContactsController(
         foreach (var activity in await dbContext.CrmActivities.Where(value => value.ContactId == source.Id).ToListAsync(cancellationToken)) activity.ReassignContact(target.Id);
         foreach (var task in await dbContext.CrmTasks.Where(value => value.ContactId == source.Id).ToListAsync(cancellationToken)) task.ReassignContact(target.Id);
         foreach (var lead in await dbContext.CrmLeads.Where(value => value.ConvertedContactId == source.Id).ToListAsync(cancellationToken)) lead.ReassignConvertedContact(target.Id);
+        sourceIdentityLink?.ReassignContact(target.Id);
         var targetDefinitionIds = await dbContext.CrmCustomFieldValues.Where(value => value.RecordId == target.Id && value.Definition.RecordType == CrmRecordType.Contact).Select(value => value.DefinitionId).ToListAsync(cancellationToken);
         foreach (var fieldValue in await dbContext.CrmCustomFieldValues.AsNoTracking().Where(value => value.RecordId == source.Id && value.Definition.RecordType == CrmRecordType.Contact && !targetDefinitionIds.Contains(value.DefinitionId)).ToListAsync(cancellationToken))
         {

@@ -92,6 +92,33 @@ public static class AccountsBootstrapSeeder
             membership.SetOrganizationAdmin(isOrganizationAdmin: true);
         }
 
+        var defaultDepartment = await dbContext.OrganizationDepartments
+            .SingleOrDefaultAsync(value => value.OrganizationId == organization.Id && value.IsDefault, cancellationToken);
+        if (defaultDepartment is null)
+        {
+            defaultDepartment = new OrganizationDepartment(
+                organization.Id,
+                OrganizationDepartment.DefaultCode,
+                OrganizationDepartment.DefaultName,
+                "Default organization-wide department.",
+                isDefault: true);
+            dbContext.OrganizationDepartments.Add(defaultDepartment);
+        }
+
+        var departmentMembership = await dbContext.OrganizationDepartmentMemberships
+            .SingleOrDefaultAsync(value => value.OrganizationMembershipId == membership.Id
+                && value.DepartmentId == defaultDepartment.Id, cancellationToken);
+        if (departmentMembership is null)
+        {
+            dbContext.OrganizationDepartmentMemberships.Add(
+                new OrganizationDepartmentMembership(membership.Id, defaultDepartment.Id, isDepartmentAdmin: true));
+        }
+        else
+        {
+            departmentMembership.Reactivate();
+            departmentMembership.SetDepartmentAdmin(isDepartmentAdmin: true);
+        }
+
         await dbContext.SaveChangesAsync(cancellationToken);
     }
 }

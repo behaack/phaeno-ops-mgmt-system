@@ -43,7 +43,15 @@ Never put specimen, scientific, downstream-customer, credential, or other sensit
 
 ## Invite administrators and members
 
-From Company detail, open **Access & services**, then select **Users**. Enter the designated CRM Contact’s exact sign-in email after Phaeno review, and assign **Administrator** only when the person must authorize commercial work or manage membership; otherwise assign **Member**. A CRM Contact remains separate from a Portal user and grants no access. Ask the recipient to sign in with the invited email and accept the Portal invitation.
+From Company detail, open **People**. Start with the reviewed CRM Contact, select **Invite to Portal**, and choose the Departments the person may access. Assign organization-wide administrator access only when the person must govern every Department; otherwise use Department membership and grant Department administrator access only where needed. A CRM Contact remains separate from a Portal user and grants no access until the invitation is accepted. Ask the recipient to sign in with the invited email and accept the Portal invitation.
+
+Use **Departments & services** to create or rename operational units, choose the default, record typed configuration overrides, and manage Department membership. Every Organization begins with **General**. Blank billing email uses the commercial profile and blank shipping instructions use the system submission instructions. The default PO rule is not required; a Department can require it. Result-delivery instructions are retained with the commercial commitment, not an automatic change to storage destinations. Organization administrators can access every active Department; other users must retain at least one active Department assignment. When one business unit must not be discoverable or governed by another—or it has separate contracting, tax, legal, ownership, or retention obligations—create a separate Company/Organization instead of a Department.
+
+Department changes use review dialogs. Deactivation requires affected active members to have another Department assignment and retains historical records. Reactivation does not restore revoked assignments automatically. Changing the default affects future default selections, not existing records or memberships. A conflict reloads the latest Department version while preserving your form entries for review. Contact invitation access must still be valid when the invitation is resent or accepted; if the Contact or Department changed, review and reissue the invitation.
+
+Service entitlements and curated-data packages may be organization-wide or limited to one Department. A Department-specific service entitlement takes precedence over the Organization default for that Department. In **Data provisioning**, choose an explicit access scope when assigning a package; users in other Departments cannot list or download that Department's grant.
+
+Users with more than one available Department select the working Department from the user menu. The header shows the Organization and Department currently in force. Do not rely on a browser URL or a previously opened page to establish access; the API validates both scopes on every protected operation.
 
 Do not create a normal membership directly. Invitation acceptance provides the user-facing consent point and the audit link between invitation, user, and membership.
 
@@ -61,7 +69,7 @@ After conversion, complete the applicable operational setup: analysis availabili
 
 ## Manage service entitlements
 
-From the Company, open **Access & services**, then select **Services** to record dated commercial permission:
+From the Company, open **Departments & services**, then select **Services** to record dated commercial permission:
 
 - Customers may receive **PSeq Lab Service**.
 - Partners may receive **PSeq Lab Service** and **PSeq Kit**.

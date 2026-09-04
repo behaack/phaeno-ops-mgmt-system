@@ -10,13 +10,16 @@ using PhaenoPortal.App.Infrastructure.Persistence;
 public sealed record OrderTenantContext(
     User Actor,
     Organization Organization,
-    OrganizationMembership Membership);
+    OrganizationMembership Membership,
+    OrganizationDepartment Department,
+    bool IsDepartmentAdmin);
 
 public sealed class OrderRequestContext(
     PSeqOperationsDbContext dbContext,
     IExternalIdentityContext externalIdentityContext)
 {
     private const string SelectedOrganizationHeader = "X-Organization-Id";
+    private const string SelectedDepartmentHeader = "X-Department-Id";
 
     public async Task<OrderTenantContext> RequireTenantAsync(
         HttpContext httpContext,
@@ -56,15 +59,24 @@ public sealed class OrderRequestContext(
                 StatusCodes.Status404NotFound);
         }
 
-        if (requireOrganizationAdmin && !membership.IsOrganizationAdmin)
+        var department = await ResolveDepartmentAsync(httpContext, membership, cancellationToken);
+        var isDepartmentAdmin = membership.IsOrganizationAdmin
+            || await dbContext.OrganizationDepartmentMemberships.AsNoTracking().AnyAsync(value =>
+                value.OrganizationMembershipId == membership.Id
+                && value.DepartmentId == department.Id
+                && value.IsActive
+                && value.IsDepartmentAdmin,
+                cancellationToken);
+
+        if (requireOrganizationAdmin && !isDepartmentAdmin)
         {
             throw new OrderManagementException(
-                "organization_admin_required",
-                "An active organization administrator is required for this action.",
+                "department_admin_required",
+                "An active organization or department administrator is required for this action.",
                 StatusCodes.Status403Forbidden);
         }
 
-        return new OrderTenantContext(actor, membership.Organization, membership);
+        return new OrderTenantContext(actor, membership.Organization, membership, department, isDepartmentAdmin);
     }
 
     public async Task<OrderTenantContext> RequireSampleShippingTenantAsync(
@@ -98,13 +110,61 @@ public sealed class OrderRequestContext(
                 "sample_shipment_not_found",
                 "The requested sample-shipping resource was not found.",
                 StatusCodes.Status404NotFound);
-        if (requireOrganizationAdmin && !membership.IsOrganizationAdmin)
+        var department = await ResolveDepartmentAsync(httpContext, membership, cancellationToken);
+        var isDepartmentAdmin = membership.IsOrganizationAdmin
+            || await dbContext.OrganizationDepartmentMemberships.AsNoTracking().AnyAsync(value =>
+                value.OrganizationMembershipId == membership.Id
+                && value.DepartmentId == department.Id
+                && value.IsActive
+                && value.IsDepartmentAdmin,
+                cancellationToken);
+        if (requireOrganizationAdmin && !isDepartmentAdmin)
             throw new OrderManagementException(
-                "organization_admin_required",
-                "An active organization administrator is required for this action.",
+                "department_admin_required",
+                "An active organization or department administrator is required for this action.",
                 StatusCodes.Status403Forbidden);
 
-        return new OrderTenantContext(actor, membership.Organization, membership);
+        return new OrderTenantContext(actor, membership.Organization, membership, department, isDepartmentAdmin);
+    }
+
+    private async Task<OrganizationDepartment> ResolveDepartmentAsync(
+        HttpContext httpContext,
+        OrganizationMembership membership,
+        CancellationToken cancellationToken)
+    {
+        Guid? selectedDepartmentId = null;
+        if (httpContext.Request.Headers.TryGetValue(SelectedDepartmentHeader, out var values))
+        {
+            if (!Guid.TryParse(values.FirstOrDefault(), out var parsedDepartmentId))
+            {
+                throw new OrderManagementException(
+                    "selected_department_invalid",
+                    "Select a valid department before accessing this workflow.",
+                    StatusCodes.Status400BadRequest);
+            }
+
+            selectedDepartmentId = parsedDepartmentId;
+        }
+
+        var query = dbContext.OrganizationDepartments.AsNoTracking()
+            .Where(value => value.OrganizationId == membership.OrganizationId && value.IsActive);
+        if (!membership.IsOrganizationAdmin)
+        {
+            query = query.Where(value => dbContext.OrganizationDepartmentMemberships.Any(access =>
+                access.OrganizationMembershipId == membership.Id
+                && access.DepartmentId == value.Id
+                && access.IsActive));
+        }
+
+        var department = selectedDepartmentId.HasValue
+            ? await query.SingleOrDefaultAsync(value => value.Id == selectedDepartmentId.Value, cancellationToken)
+            : await query.OrderByDescending(value => value.IsDefault)
+                .ThenBy(value => value.Name)
+                .FirstOrDefaultAsync(cancellationToken);
+        return department ?? throw new OrderManagementException(
+            "order_not_found",
+            "The requested order resource was not found.",
+            StatusCodes.Status404NotFound);
     }
 
     public async Task<User> RequirePlatformAdminAsync(

@@ -599,6 +599,7 @@ export type LabPricingProfileWrite = {
 };
 export type InitiateCustomerLabOrderInput = {
   organizationId: string;
+  departmentId?: string;
   customerReference: string;
   description?: string;
   storageRequirements: string;
@@ -655,10 +656,11 @@ export async function acceptLabQuote(
   orderId: string,
   quoteId: string,
   version: number,
+  purchaseOrderNumber?: string,
 ) {
   return post<LabServiceOrder>(
     `/lab-service-orders/${orderId}/quotes/${quoteId}/accept`,
-    { version, quoteId },
+    { version, quoteId, purchaseOrderNumber: purchaseOrderNumber || null },
     true,
   );
 }

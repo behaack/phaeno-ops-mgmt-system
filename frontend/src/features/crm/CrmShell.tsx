@@ -46,8 +46,8 @@ const crmSections = [
   },
   {
     value: 'contacts',
-    label: 'Contacts',
-    description: 'People and Company associations',
+    label: 'People',
+    description: 'Contacts, Company relationships, and Portal identity',
     icon: ContactRound,
     to: '/crm/contacts',
     group: 'Relationships',

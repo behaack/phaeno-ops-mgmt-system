@@ -339,6 +339,7 @@ app.MapOrganizationEndpoints();
 app.MapUserEndpoints();
 app.MapInvitationEndpoints();
 app.MapMembershipEndpoints();
+app.MapDepartmentEndpoints();
 app.MapSessionEndpoints();
 app.MapControllers().RequireRateLimiting("api");
 

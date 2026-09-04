@@ -585,6 +585,7 @@ public class SampleShippingPostgresTests
             var shipment = new SampleShipment(
                 $"SS-{Suffix}-{Guid.NewGuid():N}"[..30],
                 CustomerOrganization.Id,
+                CustomerOrganization.Departments.Single(department => department.IsDefault).Id,
                 SampleShipmentAuthorizationSource.CustomerPromotionalOrder,
                 authorizationSourceId,
                 $"PROMO-{Suffix}",
@@ -613,6 +614,7 @@ public class SampleShippingPostgresTests
             var shipment = new SampleShipment(
                 $"SS-{Suffix}-{Guid.NewGuid():N}"[..30],
                 CustomerOrganization.Id,
+                CustomerOrganization.Departments.Single(department => department.IsDefault).Id,
                 SampleShipmentAuthorizationSource.CustomerPromotionalOrder,
                 fixture.Shipment.AuthorizationSourceId,
                 $"PROMO-{Suffix}-DUP",

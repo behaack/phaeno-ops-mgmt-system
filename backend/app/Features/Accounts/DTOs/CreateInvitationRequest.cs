@@ -15,6 +15,10 @@ public sealed record CreateInvitationRequest
 
     public bool IsOrganizationAdmin { get; init; }
 
+    public Guid? CrmContactId { get; init; }
+
+    public IReadOnlyList<DepartmentInvitationAccessRequest> Departments { get; init; } = [];
+
     public IReadOnlyList<LabRole> LabRoles { get; init; } = [];
 
     public IReadOnlyList<BusinessRole> BusinessRoles { get; init; } = [];

@@ -784,6 +784,8 @@ public sealed class DataProvisioningAdminController(
             .Include(run => run.OrganizationDatasetGrant)!
                 .ThenInclude(grant => grant!.Organization)
             .Include(run => run.OrganizationDatasetGrant)!
+                .ThenInclude(grant => grant!.Department)
+            .Include(run => run.OrganizationDatasetGrant)!
                 .ThenInclude(grant => grant!.CuratedDataset)
             .Include(run => run.OrganizationDatasetGrant)!
                 .ThenInclude(grant => grant!.CuratedDatasetVersion)
@@ -805,6 +807,20 @@ public sealed class DataProvisioningAdminController(
                 "Curated data can be granted only to an active Prospect, Customer, or Partner.");
         }
 
+        OrganizationDepartment? department = null;
+        if (request.DepartmentId.HasValue)
+        {
+            department = await dbContext.OrganizationDepartments
+                .SingleOrDefaultAsync(candidate =>
+                    candidate.Id == request.DepartmentId.Value
+                    && candidate.OrganizationId == organizationId
+                    && candidate.IsActive,
+                    cancellationToken)
+                ?? throw NotFound(
+                    "department_not_found",
+                    "The selected active department was not found in this organization.");
+        }
+
         var datasetVersion = await dbContext.CuratedDatasetVersions
             .Include(version => version.CuratedDataset)
             .FirstOrDefaultAsync(version => version.Id == request.DatasetVersionId, cancellationToken)
@@ -819,12 +835,23 @@ public sealed class DataProvisioningAdminController(
                 "The selected exact version is not currently eligible for organization assignment.");
         }
 
-        var activeGrant = await GrantQuery(tracking: true)
-            .FirstOrDefaultAsync(
-                grant => grant.OrganizationId == organizationId
-                    && grant.CuratedDatasetId == datasetVersion.CuratedDatasetId
-                    && grant.Status == OrganizationDatasetGrantStatus.Active,
-                cancellationToken);
+        var activeGrants = await GrantQuery(tracking: true)
+            .Where(grant => grant.OrganizationId == organizationId
+                && grant.CuratedDatasetId == datasetVersion.CuratedDatasetId
+                && grant.Status == OrganizationDatasetGrantStatus.Active)
+            .ToListAsync(cancellationToken);
+        var hasScopeConflict = department is null
+            ? activeGrants.Any(grant => grant.DepartmentId.HasValue)
+            : activeGrants.Any(grant => !grant.DepartmentId.HasValue);
+        if (hasScopeConflict)
+        {
+            throw new DataProvisioningException(
+                "dataset_grant_scope_conflict",
+                "Revoke the existing organization-wide or department grants before changing this dataset's access scope.",
+                StatusCodes.Status409Conflict);
+        }
+
+        var activeGrant = activeGrants.FirstOrDefault(grant => grant.DepartmentId == department?.Id);
         if (activeGrant != null && activeGrant.CuratedDatasetVersionId != datasetVersion.Id)
         {
             throw new DataProvisioningException(
@@ -839,7 +866,8 @@ public sealed class DataProvisioningAdminController(
             datasetVersion.CuratedDataset,
             datasetVersion,
             actor.Id,
-            now);
+            now,
+            department);
         if (activeGrant == null)
         {
             dbContext.OrganizationDatasetGrants.Add(grant);
@@ -847,7 +875,9 @@ public sealed class DataProvisioningAdminController(
                 organization,
                 DataProvisioningNoticeKind.Grant,
                 $"Sample data assigned: {datasetVersion.CuratedDataset.Name}",
-                $"Phaeno assigned {datasetVersion.CuratedDataset.Name} version {datasetVersion.VersionNumber} to your organization.",
+                department is null
+                    ? $"Phaeno assigned {datasetVersion.CuratedDataset.Name} version {datasetVersion.VersionNumber} to your organization."
+                    : $"Phaeno assigned {datasetVersion.CuratedDataset.Name} version {datasetVersion.VersionNumber} to the {department.Name} department.",
                 now,
                 grantId: grant.Id));
         }
@@ -876,6 +906,8 @@ public sealed class DataProvisioningAdminController(
             .AsNoTracking()
             .Include(run => run.OrganizationDatasetGrant)!
                 .ThenInclude(grant => grant!.Organization)
+            .Include(run => run.OrganizationDatasetGrant)!
+                .ThenInclude(grant => grant!.Department)
             .Include(run => run.OrganizationDatasetGrant)!
                 .ThenInclude(grant => grant!.CuratedDataset)
             .Include(run => run.OrganizationDatasetGrant)!
@@ -928,7 +960,8 @@ public sealed class DataProvisioningAdminController(
             currentGrant.CuratedDataset,
             targetVersion,
             actor.Id,
-            now);
+            now,
+            currentGrant.Department);
         dbContext.OrganizationDatasetGrants.Add(replacement);
         var run = new ProvisioningRun(
             currentGrant.Organization,
@@ -1062,6 +1095,7 @@ public sealed class DataProvisioningAdminController(
     {
         var query = dbContext.OrganizationDatasetGrants
             .Include(grant => grant.Organization)
+            .Include(grant => grant.Department)
             .Include(grant => grant.CuratedDataset)
             .Include(grant => grant.CuratedDatasetVersion)
             .AsQueryable();

@@ -152,6 +152,8 @@ export type DatasetGrant = {
   organizationId: string
   organizationName: string
   organizationKind: OrganizationKind
+  departmentId?: string | null
+  departmentName?: string | null
   curatedDatasetId: string
   datasetName: string
   curatedDatasetVersionId: string
@@ -501,11 +503,13 @@ export async function listOrganizationGrants(organizationId: string) {
 
 export async function grantDataset(input: {
   organizationId: string
+  departmentId?: string
   datasetVersionId: string
   idempotencyKey: string
 }) {
   const response = await api.post<ApiEnvelope<ProvisioningResult>>(
     `/data-provisioning/organizations/${input.organizationId}/grants`, {
+    departmentId: input.departmentId || null,
     datasetVersionId: input.datasetVersionId,
     idempotencyKey: input.idempotencyKey,
   })

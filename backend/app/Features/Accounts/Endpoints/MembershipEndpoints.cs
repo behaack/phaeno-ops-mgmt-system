@@ -100,6 +100,10 @@ public static class MembershipEndpoints
         }
 
         membership.Deactivate();
+        foreach (var departmentMembership in membership.DepartmentMemberships.Where(value => value.IsActive))
+        {
+            departmentMembership.Deactivate();
+        }
         AccountAudit.Add(
             dbContext,
             httpContext,
@@ -149,6 +153,10 @@ public static class MembershipEndpoints
         }
 
         membership.Deactivate();
+        foreach (var departmentMembership in membership.DepartmentMemberships.Where(value => value.IsActive))
+        {
+            departmentMembership.Deactivate();
+        }
         AccountAudit.Add(
             dbContext,
             httpContext,
@@ -207,6 +215,8 @@ public static class MembershipEndpoints
         var membership = await dbContext.OrganizationMemberships
             .Include(m => m.User)
             .Include(m => m.Organization)
+            .Include(m => m.DepartmentMemberships)
+            .ThenInclude(m => m.Department)
             .FirstOrDefaultAsync(m => m.Id == id, cancellationToken);
 
         if (membership == null)
@@ -262,6 +272,21 @@ public static class MembershipEndpoints
             OrganizationKind = membership.Organization?.Kind ?? OrganizationKind.Customer,
             IsActive = membership.IsActive,
             IsOrganizationAdmin = membership.IsOrganizationAdmin,
+            Departments = membership.DepartmentMemberships
+                .OrderByDescending(value => value.Department.IsDefault)
+                .ThenBy(value => value.Department.Name)
+                .Select(value => new DepartmentMembershipSummaryDto
+                {
+                    Id = value.Id,
+                    DepartmentId = value.DepartmentId,
+                    DepartmentName = value.Department.Name,
+                    DepartmentCode = value.Department.Code,
+                    IsDefault = value.Department.IsDefault,
+                    IsDepartmentAdmin = value.IsDepartmentAdmin,
+                    IsActive = value.IsActive,
+                    Version = value.Version
+                })
+                .ToList(),
             CreatedAt = membership.CreatedAt,
             UpdatedAt = membership.UpdatedAt,
             Version = membership.Version

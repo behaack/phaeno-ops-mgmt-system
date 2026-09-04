@@ -166,7 +166,13 @@ public sealed class OrderNotificationDispatcher(
                     where membership.OrganizationId == item.OrganizationId
                         && membership.UserId == item.RecipientUserId.Value
                         && membership.IsActive
-                        && membership.IsOrganizationAdmin
+                        && (membership.IsOrganizationAdmin
+                            || (item.DepartmentId.HasValue
+                                && dbContext.OrganizationDepartmentMemberships.Any(departmentMembership =>
+                                    departmentMembership.OrganizationMembershipId == membership.Id
+                                    && departmentMembership.DepartmentId == item.DepartmentId.Value
+                                    && departmentMembership.IsActive
+                                    && departmentMembership.IsDepartmentAdmin)))
                         && user.IsActive
                         && user.Status == PSeq.Operations.Commercial.Accounts.Domain.UserAccountStatus.Active
                     select user.Email).Distinct().ToListAsync(cancellationToken)
@@ -174,10 +180,32 @@ public sealed class OrderNotificationDispatcher(
                     join user in dbContext.Users.AsNoTracking() on membership.UserId equals user.Id
                     where membership.OrganizationId == item.OrganizationId
                         && membership.IsActive
-                        && membership.IsOrganizationAdmin
+                        && (membership.IsOrganizationAdmin
+                            || (item.DepartmentId.HasValue
+                                && dbContext.OrganizationDepartmentMemberships.Any(departmentMembership =>
+                                    departmentMembership.OrganizationMembershipId == membership.Id
+                                    && departmentMembership.DepartmentId == item.DepartmentId.Value
+                                    && departmentMembership.IsActive
+                                    && departmentMembership.IsDepartmentAdmin)))
                         && user.IsActive
                         && user.Status == PSeq.Operations.Commercial.Accounts.Domain.UserAccountStatus.Active
                     select user.Email).Distinct().ToListAsync(cancellationToken);
+            if (item.DepartmentId.HasValue)
+            {
+                var departmentNotificationEmail = await dbContext.OrganizationDepartments
+                    .AsNoTracking()
+                    .Where(department => department.Id == item.DepartmentId.Value
+                        && department.OrganizationId == item.OrganizationId
+                        && department.IsActive)
+                    .Select(department => department.NotificationEmail)
+                    .SingleOrDefaultAsync(cancellationToken);
+                if (!string.IsNullOrWhiteSpace(departmentNotificationEmail)
+                    && !recipients.Contains(departmentNotificationEmail, StringComparer.OrdinalIgnoreCase))
+                {
+                    recipients.Add(departmentNotificationEmail);
+                }
+            }
+
             if (recipients.Count == 0)
             {
                 throw new InvalidOperationException(

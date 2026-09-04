@@ -576,7 +576,8 @@ public sealed record InitiateCustomerLabOrderRequest(
     IReadOnlyList<LabServiceSourceGroupWriteRequest>? SourceGroups,
     Guid? SourceRequestId = null,
     decimal? ProposedUnitPrice = null,
-    string? PriceProposalNote = null);
+    string? PriceProposalNote = null,
+    Guid? DepartmentId = null);
 public sealed record LabServiceSourceGroupWriteRequest(string BiologicalSource, int SpecimenCount);
 public sealed record LabSampleRosterWriteRequest(
     string CustomerSampleId,

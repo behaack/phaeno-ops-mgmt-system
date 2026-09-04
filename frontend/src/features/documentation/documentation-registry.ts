@@ -105,7 +105,7 @@ export const documentationEntries: readonly DocumentationEntry[] = [
       'Accept invitations, complete MFA, confirm the current organization, understand roles, and resolve access problems.',
     section: 'Basics',
     order: 20,
-    reviewedAt: '2026-08-29',
+    reviewedAt: '2026-09-04',
     Content: ProspectAccountAndAccess,
   },
   {
@@ -187,7 +187,7 @@ export const documentationEntries: readonly DocumentationEntry[] = [
     summary: 'Accept invitations, complete MFA, confirm the current organization, understand roles, and resolve access problems.',
     section: 'Basics',
     order: 20,
-    reviewedAt: '2026-08-29',
+    reviewedAt: '2026-09-04',
     Content: CustomerAccountAndAccess,
   },
   {
@@ -265,7 +265,7 @@ export const documentationEntries: readonly DocumentationEntry[] = [
     summary: 'Accept invitations, complete MFA, confirm the current Partner, understand roles, and resolve access problems.',
     section: 'Basics',
     order: 20,
-    reviewedAt: '2026-08-20',
+    reviewedAt: '2026-09-04',
     Content: PartnerAccountAndAccess,
   },
   {
@@ -427,7 +427,7 @@ export const documentationEntries: readonly DocumentationEntry[] = [
     summary: 'Manage Company Portal requests, readiness, service entitlements, invitations, and access.',
     section: 'Platform operations',
     order: 25,
-    reviewedAt: '2026-09-02',
+    reviewedAt: '2026-09-04',
     Content: PhaenoOrganizationAndUserAdministration,
   },
   {
@@ -499,7 +499,7 @@ export const documentationEntries: readonly DocumentationEntry[] = [
     summary: 'Manage commercial intake, pricing, quotes, staging, governed PSeq release, native AR, and Partner workflows.',
     section: 'Order operations',
     order: 40,
-    reviewedAt: '2026-09-03',
+    reviewedAt: '2026-09-04',
     Content: PhaenoOrderOperations,
   },
   {

@@ -41,6 +41,7 @@ import {
   type DatasetGrant,
   type ProvisioningRun,
 } from '#/api/data-provisioning'
+import { listDepartments, type Department } from '#/api/organization-management'
 import { Alert, AlertDescription, AlertTitle } from '#/components/ui/alert'
 import { WorkspaceSidebar, type WorkspaceSidebarItem } from '#/components/WorkspaceSidebar'
 import { Badge } from '#/components/ui/badge'
@@ -84,6 +85,7 @@ const versionSchema = z.object({
 
 const grantSchema = z.object({
   organizationId: z.string().uuid('Select an organization.'),
+  departmentId: z.string(),
   datasetVersionId: z.string().uuid('Select an eligible version.'),
 })
 
@@ -539,10 +541,20 @@ function OrganizationGrantsPanel({ apiEnabled }: { apiEnabled: boolean }) {
   const [upgradingGrant, setUpgradingGrant] = useState<DatasetGrant | null>(null)
   const organizationsQuery = useQuery({ queryKey: ['organizations', 'external'], queryFn: listOrganizations, enabled: apiEnabled })
   const datasetsQuery = useQuery({ queryKey: ['data-provisioning', 'datasets'], queryFn: listDatasets, enabled: apiEnabled })
+  const grantForm = useForm<GrantValues>({
+    resolver: zodResolver(grantSchema),
+    defaultValues: { organizationId: '', departmentId: '', datasetVersionId: '' },
+  })
   const grantsQuery = useQuery({
     queryKey: ['data-provisioning', 'grants', selectedOrganizationId],
     queryFn: () => listOrganizationGrants(selectedOrganizationId),
     enabled: apiEnabled && Boolean(selectedOrganizationId),
+  })
+  const grantOrganizationId = grantForm.watch('organizationId')
+  const grantDepartmentsQuery = useQuery({
+    queryKey: ['organization-departments', grantOrganizationId, false],
+    queryFn: () => listDepartments(grantOrganizationId, false),
+    enabled: apiEnabled && Boolean(grantOrganizationId),
   })
   const runsQuery = useQuery({
     queryKey: ['data-provisioning', 'runs', selectedOrganizationId],
@@ -553,10 +565,6 @@ function OrganizationGrantsPanel({ apiEnabled }: { apiEnabled: boolean }) {
     queryKey: ['data-provisioning', 'activity', selectedOrganizationId],
     queryFn: () => listProvisioningActivity(selectedOrganizationId),
     enabled: apiEnabled && Boolean(selectedOrganizationId),
-  })
-  const grantForm = useForm<GrantValues>({
-    resolver: zodResolver(grantSchema),
-    defaultValues: { organizationId: '', datasetVersionId: '' },
   })
   const upgradeForm = useForm<UpgradeValues>({
     resolver: zodResolver(upgradeSchema),
@@ -577,6 +585,7 @@ function OrganizationGrantsPanel({ apiEnabled }: { apiEnabled: boolean }) {
   const grantMutation = useMutation({
     mutationFn: (values: GrantValues) => grantDataset({
       ...values,
+      departmentId: values.departmentId || undefined,
       idempotencyKey: crypto.randomUUID(),
     }),
     onSuccess: async (_, values) => {
@@ -678,7 +687,9 @@ function OrganizationGrantsPanel({ apiEnabled }: { apiEnabled: boolean }) {
                   <span className="font-medium">{grant.datasetName}</span>
                   <StatusBadge status={grant.status} />
                 </div>
-                <p className="m-0 mt-1 text-sm text-muted-foreground">Pinned to version {grant.datasetVersionNumber}</p>
+                <p className="m-0 mt-1 text-sm text-muted-foreground">
+                  {grant.departmentName ?? 'All departments'} · pinned to version {grant.datasetVersionNumber}
+                </p>
               </div>
               {grant.status === 'Active' ? (
                 <div className="flex flex-wrap gap-2">
@@ -739,7 +750,7 @@ function OrganizationGrantsPanel({ apiEnabled }: { apiEnabled: boolean }) {
         </CardContent>
       </Card>
 
-      <GrantDialog open={grantOpen} onOpenChange={setGrantOpen} form={grantForm} organizations={organizationsQuery.data ?? []} eligibleVersions={eligibleVersions} mutation={grantMutation} />
+      <GrantDialog open={grantOpen} onOpenChange={setGrantOpen} form={grantForm} organizations={organizationsQuery.data ?? []} departments={grantDepartmentsQuery.data ?? []} eligibleVersions={eligibleVersions} mutation={grantMutation} />
       <OrganizationCreateDialog open={organizationOpen} onOpenChange={setOrganizationOpen} form={organizationForm} eligibleVersions={eligibleVersions} mutation={createOrganizationMutation} />
       <UpgradeDialog grant={upgradingGrant} onOpenChange={(open) => !open && setUpgradingGrant(null)} form={upgradeForm} eligibleVersions={eligibleVersions} mutation={upgradeMutation} />
       <RevokeDialog grant={revokingGrant} onOpenChange={(open) => !open && setRevokingGrant(null)} form={revokeForm} mutation={revokeMutation} />
@@ -774,8 +785,9 @@ function PublishDialog({ version, onOpenChange, onConfirm, pending, error }: { v
   return <Dialog open={Boolean(version)} onOpenChange={onOpenChange}><DialogContent><DialogHeader><DialogTitle>Publish immutable version?</DialogTitle><DialogDescription>Publication validates the complete manifest atomically and freezes this exact source snapshot. A failed validation leaves it in Draft.</DialogDescription></DialogHeader>{version ? <div className="rounded-lg border bg-muted/30 p-3 text-sm"><p className="m-0 font-medium">{version.sampleLabel} · version {version.versionNumber}</p><p className="m-0 mt-1">{version.files.length} file{version.files.length === 1 ? '' : 's'}</p><p className="m-0 mt-1 break-all font-mono text-xs text-muted-foreground">{version.contentChecksum}</p></div> : null}<MutationError error={error} fallback="The version could not be published." /><DialogFooter><DialogClose asChild><Button type="button" variant="outline">Cancel</Button></DialogClose><Button type="button" disabled={pending} onClick={onConfirm}>{pending ? 'Publishing' : 'Publish version'}</Button></DialogFooter></DialogContent></Dialog>
 }
 
-function GrantDialog({ open, onOpenChange, form, organizations, eligibleVersions, mutation }: { open: boolean; onOpenChange: (open: boolean) => void; form: ReturnType<typeof useForm<GrantValues>>; organizations: Awaited<ReturnType<typeof listOrganizations>>; eligibleVersions: { dataset: CuratedDataset; version: CuratedDatasetVersion }[]; mutation: ReturnType<typeof useMutation<unknown, Error, GrantValues>> }) {
-  return <Dialog open={open} onOpenChange={onOpenChange}><DialogContent><DialogHeader><DialogTitle>Assign curated sample data</DialogTitle><DialogDescription>All active users in the selected organization can access the exact pinned version. Catalog eligibility alone does not grant access.</DialogDescription></DialogHeader><form className="space-y-4" onSubmit={form.handleSubmit((values) => mutation.mutateAsync(values))}><FormField label="Organization" error={form.formState.errors.organizationId?.message} required><select className={selectClass} {...form.register('organizationId')}><option value="">Select an organization</option>{organizations.map((organization) => <option key={organization.id} value={organization.id}>{organization.name} ({organization.kind})</option>)}</select></FormField><FormField label="Eligible package version" error={form.formState.errors.datasetVersionId?.message} required><select className={selectClass} {...form.register('datasetVersionId')}><option value="">Select a version</option>{eligibleVersions.map(({ dataset, version }) => <option key={version.id} value={version.id}>{dataset.name} · version {version.versionNumber}</option>)}</select></FormField><MutationError error={mutation.error} fallback="The package could not be assigned." /><RequiredDialogFooter><DialogClose asChild><Button type="button" variant="outline">Cancel</Button></DialogClose><Button type="submit" disabled={mutation.isPending}>{mutation.isPending ? 'Assigning' : 'Assign exact version'}</Button></RequiredDialogFooter></form></DialogContent></Dialog>
+function GrantDialog({ open, onOpenChange, form, organizations, departments, eligibleVersions, mutation }: { open: boolean; onOpenChange: (open: boolean) => void; form: ReturnType<typeof useForm<GrantValues>>; organizations: Awaited<ReturnType<typeof listOrganizations>>; departments: Department[]; eligibleVersions: { dataset: CuratedDataset; version: CuratedDatasetVersion }[]; mutation: ReturnType<typeof useMutation<unknown, Error, GrantValues>> }) {
+  const organizationField = form.register('organizationId')
+  return <Dialog open={open} onOpenChange={onOpenChange}><DialogContent><DialogHeader><DialogTitle>Assign curated sample data</DialogTitle><DialogDescription>Choose whether the exact pinned version is available throughout the organization or only inside one department. Catalog eligibility alone does not grant access.</DialogDescription></DialogHeader><form className="space-y-4" onSubmit={form.handleSubmit((values) => mutation.mutateAsync(values))}><FormField label="Organization" error={form.formState.errors.organizationId?.message} required><select className={selectClass} {...organizationField} onChange={(event) => { void organizationField.onChange(event); form.setValue('departmentId', '') }}><option value="">Select an organization</option>{organizations.map((organization) => <option key={organization.id} value={organization.id}>{organization.name} ({organization.kind})</option>)}</select></FormField><FormField label="Access scope" error={form.formState.errors.departmentId?.message}><select className={selectClass} {...form.register('departmentId')} disabled={!form.watch('organizationId')}><option value="">All departments (organization-wide)</option>{departments.map((department) => <option key={department.id} value={department.id}>{department.name}</option>)}</select></FormField><FormField label="Eligible package version" error={form.formState.errors.datasetVersionId?.message} required><select className={selectClass} {...form.register('datasetVersionId')}><option value="">Select a version</option>{eligibleVersions.map(({ dataset, version }) => <option key={version.id} value={version.id}>{dataset.name} · version {version.versionNumber}</option>)}</select></FormField><MutationError error={mutation.error} fallback="The package could not be assigned." /><RequiredDialogFooter><DialogClose asChild><Button type="button" variant="outline">Cancel</Button></DialogClose><Button type="submit" disabled={mutation.isPending}>{mutation.isPending ? 'Assigning' : 'Assign exact version'}</Button></RequiredDialogFooter></form></DialogContent></Dialog>
 }
 
 function OrganizationCreateDialog({ open, onOpenChange, form, eligibleVersions, mutation }: { open: boolean; onOpenChange: (open: boolean) => void; form: ReturnType<typeof useForm<OrganizationValues>>; eligibleVersions: { dataset: CuratedDataset; version: CuratedDatasetVersion }[]; mutation: ReturnType<typeof useMutation<unknown, Error, OrganizationValues>> }) {
@@ -788,7 +800,7 @@ function UpgradeDialog({ grant, onOpenChange, form, eligibleVersions, mutation }
 }
 
 function RevokeDialog({ grant, onOpenChange, form, mutation }: { grant: DatasetGrant | null; onOpenChange: (open: boolean) => void; form: ReturnType<typeof useForm<RevokeValues>>; mutation: ReturnType<typeof useMutation<unknown, Error, { grant: DatasetGrant; values: RevokeValues }>> }) {
-  return <Dialog open={Boolean(grant)} onOpenChange={onOpenChange}><DialogContent><DialogHeader><DialogTitle>Revoke organization access?</DialogTitle><DialogDescription>Portal access ends immediately for every user in this organization. Previously downloaded copies cannot be recalled.</DialogDescription></DialogHeader>{grant ? <form className="space-y-4" onSubmit={form.handleSubmit((values) => mutation.mutateAsync({ grant, values }))}><FormField label="Reason" error={form.formState.errors.reason?.message} required><textarea className={textareaClass} rows={4} {...form.register('reason')} /></FormField><MutationError error={mutation.error} fallback="Access could not be revoked." /><RequiredDialogFooter><DialogClose asChild><Button type="button" variant="outline">Cancel</Button></DialogClose><Button type="submit" variant="destructive" disabled={mutation.isPending}>{mutation.isPending ? 'Revoking' : 'Revoke access'}</Button></RequiredDialogFooter></form> : null}</DialogContent></Dialog>
+  return <Dialog open={Boolean(grant)} onOpenChange={onOpenChange}><DialogContent><DialogHeader><DialogTitle>Revoke {grant?.departmentName ? `${grant.departmentName} department` : 'organization'} access?</DialogTitle><DialogDescription>Portal access ends immediately for users in this grant's scope. Previously downloaded copies cannot be recalled.</DialogDescription></DialogHeader>{grant ? <form className="space-y-4" onSubmit={form.handleSubmit((values) => mutation.mutateAsync({ grant, values }))}><FormField label="Reason" error={form.formState.errors.reason?.message} required><textarea className={textareaClass} rows={4} {...form.register('reason')} /></FormField><MutationError error={mutation.error} fallback="Access could not be revoked." /><RequiredDialogFooter><DialogClose asChild><Button type="button" variant="outline">Cancel</Button></DialogClose><Button type="submit" variant="destructive" disabled={mutation.isPending}>{mutation.isPending ? 'Revoking' : 'Revoke access'}</Button></RequiredDialogFooter></form> : null}</DialogContent></Dialog>
 }
 
 function FormField({ label, error, required, children }: { label: string; error?: string; required?: boolean; children: React.ReactNode }) {

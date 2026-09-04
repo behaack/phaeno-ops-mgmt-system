@@ -184,6 +184,39 @@ export type CrmCompanyContact = {
   version: number;
 };
 
+export type CrmPersonDepartmentAccess = {
+  departmentId: string;
+  departmentName: string;
+  isDepartmentAdmin: boolean;
+  isActive: boolean;
+};
+
+export type CrmCompanyPerson = {
+  recordKind: "Contact" | "PortalUser" | "Invitation";
+  contactAssociationId: string | null;
+  contactId: string | null;
+  contactVersion: number | null;
+  portalUserId: string | null;
+  organizationMembershipId: string | null;
+  invitationId: string | null;
+  contactUserLinkId: string | null;
+  contactUserLinkVersion: number | null;
+  displayName: string;
+  firstName: string;
+  lastName: string;
+  email: string | null;
+  jobTitle: string | null;
+  relationshipRole: string | null;
+  isPrimaryCompany: boolean;
+  isContactActive: boolean;
+  portalAccessState: string;
+  isOrganizationAdmin: boolean;
+  departments: CrmPersonDepartmentAccess[];
+  suggestedPortalUserId: string | null;
+  suggestedInvitationId: string | null;
+  requiresIdentityReview: boolean;
+};
+
 export type CrmLead = {
   id: string;
   kind: CrmLeadKind;
@@ -620,6 +653,33 @@ export async function listCompanyContacts(companyId: string) {
     `/platform/crm/companies/${companyId}/contacts`,
   );
   return unwrap(response.data);
+}
+export async function listCrmCompanyPeople(companyId: string) {
+  const response = await api.get<ApiEnvelope<CrmCompanyPerson[]>>(
+    `/platform/crm/companies/${companyId}/people`,
+  );
+  return unwrap(response.data);
+}
+export async function linkCrmContactUser(
+  companyId: string,
+  contactId: string,
+  input: { userId: string; reason: string; contactVersion: number },
+) {
+  const response = await api.post<ApiEnvelope<CrmCompanyPerson>>(
+    `/platform/crm/companies/${companyId}/people/${contactId}/link`,
+    input,
+  );
+  return unwrap(response.data);
+}
+export async function unlinkCrmContactUser(
+  companyId: string,
+  linkId: string,
+  input: { reason: string; version: number },
+) {
+  await api.post(
+    `/platform/crm/companies/${companyId}/people/links/${linkId}/deactivate`,
+    input,
+  );
 }
 export async function associateCompanyContact(
   companyId: string,

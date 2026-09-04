@@ -137,8 +137,9 @@ public sealed class RelationshipManagementController(
         var actor = await RequirePlatformAdminAsync(cancellationToken);
         var organization = await RequireOrganizationAsync(organizationId, cancellationToken);
         EnsureServiceAllowed(organization.Kind, request.Service);
+        await EnsureDepartmentAsync(organizationId, request.DepartmentId, cancellationToken);
         await EnsureSourceRequestAsync(request.SourceRequestId, organizationId, request.Service, cancellationToken);
-        await EnsureNoOverlapAsync(organizationId, request.Service, request.EffectiveFrom, request.EffectiveTo, null, cancellationToken);
+        await EnsureNoOverlapAsync(organizationId, request.DepartmentId, request.Service, request.EffectiveFrom, request.EffectiveTo, null, cancellationToken);
 
         var entitlement = Execute(() => new OrganizationServiceEntitlement(
             organizationId,
@@ -148,7 +149,8 @@ public sealed class RelationshipManagementController(
             request.ConfigurationStatus,
             actor.Id,
             request.SourceRequestId,
-            request.Notes));
+            request.Notes,
+            request.DepartmentId));
         dbContext.OrganizationServiceEntitlements.Add(entitlement);
         await dbContext.SaveChangesAsync(cancellationToken);
         return Created($"/api/platform/relationships/organizations/{organizationId}/entitlements/{entitlement.Id}", ToDto(entitlement));
@@ -165,7 +167,7 @@ public sealed class RelationshipManagementController(
         var entitlement = await RequireEntitlementAsync(organizationId, entitlementId, cancellationToken);
         EnsureVersion(entitlement.Version, request.Version);
         await EnsureSourceRequestAsync(request.SourceRequestId, organizationId, entitlement.Service, cancellationToken);
-        await EnsureNoOverlapAsync(organizationId, entitlement.Service, request.EffectiveFrom, request.EffectiveTo, entitlementId, cancellationToken);
+        await EnsureNoOverlapAsync(organizationId, entitlement.DepartmentId, entitlement.Service, request.EffectiveFrom, request.EffectiveTo, entitlementId, cancellationToken);
         Execute(() => entitlement.Update(
             request.EffectiveFrom,
             request.EffectiveTo,
@@ -690,6 +692,7 @@ public sealed class RelationshipManagementController(
 
     private async Task EnsureNoOverlapAsync(
         Guid organizationId,
+        Guid? departmentId,
         PortalService service,
         DateTime effectiveFrom,
         DateTime? effectiveTo,
@@ -698,6 +701,7 @@ public sealed class RelationshipManagementController(
     {
         var overlaps = await dbContext.OrganizationServiceEntitlements.AsNoTracking()
             .AnyAsync(value => value.OrganizationId == organizationId
+                && value.DepartmentId == departmentId
                 && value.Service == service
                 && (!excludedId.HasValue || value.Id != excludedId.Value)
                 && (!effectiveTo.HasValue || value.EffectiveFrom < effectiveTo.Value)
@@ -752,6 +756,23 @@ public sealed class RelationshipManagementController(
         }
     }
 
+    private async Task EnsureDepartmentAsync(
+        Guid organizationId,
+        Guid? departmentId,
+        CancellationToken cancellationToken)
+    {
+        if (!departmentId.HasValue) return;
+        var valid = await dbContext.OrganizationDepartments.AsNoTracking().AnyAsync(value =>
+            value.Id == departmentId.Value
+            && value.OrganizationId == organizationId
+            && value.IsActive,
+            cancellationToken);
+        if (!valid)
+        {
+            throw Conflict("department_not_available", "Select an active Department in this Organization.");
+        }
+    }
+
     private static OrganizationServiceEntitlementDto ToDto(OrganizationServiceEntitlement value)
     {
         var now = DateTime.UtcNow;
@@ -760,6 +781,7 @@ public sealed class RelationshipManagementController(
         {
             Id = value.Id,
             OrganizationId = value.OrganizationId,
+            DepartmentId = value.DepartmentId,
             Service = value.Service,
             EffectiveFrom = value.EffectiveFrom,
             EffectiveTo = value.EffectiveTo,

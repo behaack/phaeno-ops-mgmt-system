@@ -10,6 +10,7 @@ public sealed class DataProvisioningNotice
     public Guid? IncidentId { get; private set; }
     public DataGovernanceIncident? Incident { get; private set; }
     public Guid? OrganizationDatasetGrantId { get; private set; }
+    public OrganizationDatasetGrant? OrganizationDatasetGrant { get; private set; }
     public DataProvisioningNoticeKind Kind { get; private set; }
     public DataProvisioningNoticeStatus Status { get; private set; } = DataProvisioningNoticeStatus.Pending;
     public string Subject { get; private set; } = null!;

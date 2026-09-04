@@ -29,10 +29,13 @@ lives at `backend/PSeq.Operations.slnx`; Website commands run from `website/`.
 The backend targets .NET 10 as a modular monolith:
 
 - `modules/PSeq.Operations.Commercial/Accounts`: users, organizations,
-  memberships, invitations, pure authorization policy, invitation-token logic,
-  and the invitation-delivery port.
+  departments, organization and department memberships, invitations, pure
+  authorization policy, invitation-token logic, and the invitation-delivery
+  port. Organization is the tenant boundary; Department is the subordinate
+  operational and configuration boundary selected through `X-Department-Id`.
 - `modules/PSeq.Operations.Commercial/Crm`: provider-neutral first-party CRM
-  Companies, Contacts and effective-dated relationships, Leads, Opportunities,
+  Companies, Contacts and effective-dated relationships, explicit audited
+  Contact/User identity links, Leads, Opportunities,
   pipelines/stages, Activities, Tasks, administration records, and controlled
   Portal handoffs. The Company is the canonical customer record and may own one
   optional internal Organization used only as its tenant-isolation and Portal-

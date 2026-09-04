@@ -5,9 +5,11 @@ import {
   TaskSetupMFA,
   useAuth,
 } from '@clerk/react'
-import { useQuery } from '@tanstack/react-query'
+import { useQuery, useQueryClient } from '@tanstack/react-query'
 import {
   createContext,
+  Fragment,
+  useCallback,
   useContext,
   useEffect,
   useMemo,
@@ -27,6 +29,7 @@ import { Button } from '#/components/ui/button'
 import { readStoredInviteToken } from '#/features/auth/invitation-storage'
 
 const SELECTED_ORGANIZATION_STORAGE_KEY = 'phaeno.selectedOrganizationId'
+const SELECTED_DEPARTMENT_STORAGE_KEY = 'phaeno.selectedDepartmentId'
 
 export type PhaenoSessionContextValue = {
   authConfigured: boolean
@@ -38,6 +41,8 @@ export type PhaenoSessionContextValue = {
   error: unknown
   selectedOrganizationId: string | null
   setSelectedOrganizationId: (organizationId: string | null) => void
+  selectedDepartmentId?: string | null
+  setSelectedDepartmentId?: (departmentId: string | null) => void
 }
 
 export const PhaenoSessionContext =
@@ -117,14 +122,55 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 }
 
 export function PhaenoSessionProvider({ children }: { children: ReactNode }) {
-  const { isLoaded, isSignedIn, getToken } = useAuth()
+  const { isLoaded, isSignedIn, getToken, userId } = useAuth()
+  const queryClient = useQueryClient()
   const [selectedOrganizationId, setSelectedOrganizationIdState] = useState<
     string | null
   >(null)
+  const [selectedDepartmentId, setSelectedDepartmentIdState] = useState<
+    string | null
+  >(null)
   const selectedOrganizationIdRef = useRef(selectedOrganizationId)
+  const selectedDepartmentIdRef = useRef(selectedDepartmentId)
+  const setSelectedDepartmentId = useCallback((departmentId: string | null) => {
+    if (departmentId !== selectedDepartmentIdRef.current) {
+      queryClient.removeQueries({
+        predicate: (query) => query.queryKey[0] !== 'session',
+      })
+    }
+    selectedDepartmentIdRef.current = departmentId
+    setSelectedDepartmentIdState(departmentId)
+    if (typeof window === 'undefined') return
+    if (departmentId) {
+      window.localStorage.setItem(SELECTED_DEPARTMENT_STORAGE_KEY, departmentId)
+    } else {
+      window.localStorage.removeItem(SELECTED_DEPARTMENT_STORAGE_KEY)
+    }
+  }, [queryClient])
+  const setSelectedOrganizationId = useCallback((organizationId: string | null) => {
+    if (organizationId !== selectedOrganizationIdRef.current) {
+      queryClient.removeQueries({
+        predicate: (query) => query.queryKey[0] !== 'session',
+      })
+      setSelectedDepartmentId(null)
+    }
+    selectedOrganizationIdRef.current = organizationId
+    setSelectedOrganizationIdState(organizationId)
+    if (typeof window === 'undefined') return
+    if (organizationId) {
+      window.localStorage.setItem(SELECTED_ORGANIZATION_STORAGE_KEY, organizationId)
+    } else {
+      window.localStorage.removeItem(SELECTED_ORGANIZATION_STORAGE_KEY)
+    }
+  }, [queryClient, setSelectedDepartmentId])
 
   useEffect(() => {
-    setSelectedOrganizationIdState(readStoredSelectedOrganizationId())
+    const organizationId = readStoredSelectedOrganizationId()
+    const departmentId = readStoredSelectedDepartmentId()
+    selectedOrganizationIdRef.current = organizationId
+    selectedDepartmentIdRef.current = departmentId
+    setSelectedOrganizationIdState(organizationId)
+    setSelectedDepartmentIdState(departmentId)
   }, [])
 
   useEffect(() => {
@@ -132,16 +178,21 @@ export function PhaenoSessionProvider({ children }: { children: ReactNode }) {
   }, [selectedOrganizationId])
 
   useEffect(() => {
+    selectedDepartmentIdRef.current = selectedDepartmentId
+  }, [selectedDepartmentId])
+
+  useEffect(() => {
     configureApiAuth({
       getToken: () => getToken(),
       getSelectedOrganizationId: () => selectedOrganizationIdRef.current,
+      getSelectedDepartmentId: () => selectedDepartmentIdRef.current,
     })
 
     return () => configureApiAuth({})
   }, [getToken])
 
   const sessionQuery = useQuery({
-    queryKey: ['session', selectedOrganizationId],
+    queryKey: ['session', userId, selectedOrganizationId, selectedDepartmentId],
     queryFn: getSession,
     enabled: isLoaded && isSignedIn,
   })
@@ -149,6 +200,7 @@ export function PhaenoSessionProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     if (!isLoaded || !isSignedIn) {
       setSelectedOrganizationId(null)
+      setSelectedDepartmentId(null)
       return
     }
 
@@ -167,7 +219,26 @@ export function PhaenoSessionProvider({ children }: { children: ReactNode }) {
     ) {
       setSelectedOrganizationId(memberships[0].organizationId)
     }
-  }, [isLoaded, isSignedIn, selectedOrganizationId, sessionQuery.data])
+  }, [isLoaded, isSignedIn, selectedOrganizationId, sessionQuery.data, setSelectedDepartmentId, setSelectedOrganizationId])
+
+  useEffect(() => {
+    const membership = sessionQuery.data?.memberships.find(
+      (value) => value.organizationId === selectedOrganizationId,
+    )
+    if (!membership) return
+
+    const departments = membership.departments ?? []
+    if (!departments.length) {
+      setSelectedDepartmentId(null)
+      return
+    }
+
+    if (!departments.some((value) => value.departmentId === selectedDepartmentId)) {
+      const nextDepartment =
+        departments.find((value) => value.isDefault) ?? departments[0]
+      setSelectedDepartmentId(nextDepartment.departmentId)
+    }
+  }, [selectedDepartmentId, selectedOrganizationId, sessionQuery.data, setSelectedDepartmentId])
 
   const contextValue = useMemo<PhaenoSessionContextValue>(
     () => ({
@@ -180,11 +251,16 @@ export function PhaenoSessionProvider({ children }: { children: ReactNode }) {
       error: sessionQuery.error,
       selectedOrganizationId,
       setSelectedOrganizationId,
+      selectedDepartmentId,
+      setSelectedDepartmentId,
     }),
     [
       isLoaded,
       isSignedIn,
       selectedOrganizationId,
+      selectedDepartmentId,
+      setSelectedDepartmentId,
+      setSelectedOrganizationId,
       sessionQuery.data,
       sessionQuery.error,
       sessionQuery.isLoading,
@@ -193,25 +269,11 @@ export function PhaenoSessionProvider({ children }: { children: ReactNode }) {
 
   return (
     <PhaenoSessionContext.Provider value={contextValue}>
-      {children}
+      <Fragment key={`${userId ?? ''}:${selectedOrganizationId ?? ''}:${selectedDepartmentId ?? ''}`}>
+        {children}
+      </Fragment>
     </PhaenoSessionContext.Provider>
   )
-
-  function setSelectedOrganizationId(organizationId: string | null) {
-    setSelectedOrganizationIdState(organizationId)
-    if (typeof window === 'undefined') {
-      return
-    }
-
-    if (organizationId) {
-      window.localStorage.setItem(
-        SELECTED_ORGANIZATION_STORAGE_KEY,
-        organizationId,
-      )
-    } else {
-      window.localStorage.removeItem(SELECTED_ORGANIZATION_STORAGE_KEY)
-    }
-  }
 }
 
 export function AuthGate({ children }: { children: ReactNode }) {
@@ -290,6 +352,8 @@ export function usePhaenoSession() {
       error: null,
       selectedOrganizationId: null,
       setSelectedOrganizationId: () => undefined,
+      selectedDepartmentId: null,
+      setSelectedDepartmentId: () => undefined,
     } satisfies PhaenoSessionContextValue
   }
 
@@ -324,6 +388,8 @@ function AuthConfigurationMissing({ children }: { children: ReactNode }) {
         error: new Error('Missing Clerk publishable key.'),
         selectedOrganizationId: null,
         setSelectedOrganizationId: () => undefined,
+        selectedDepartmentId: null,
+        setSelectedDepartmentId: () => undefined,
       }}
     >
       {children}
@@ -463,6 +529,11 @@ function getAccessStateContent(state: SessionResponse['state'] | undefined) {
         title: 'Organization unavailable',
         description: 'The selected organization is inactive or unavailable.',
       }
+    case 'department_unavailable':
+      return {
+        title: 'Department unavailable',
+        description: 'The selected department is inactive or unavailable.',
+      }
     default:
       return {
         title: 'Access unavailable',
@@ -477,6 +548,23 @@ function readStoredSelectedOrganizationId() {
   }
 
   return window.localStorage.getItem(SELECTED_ORGANIZATION_STORAGE_KEY)
+}
+
+function readStoredSelectedDepartmentId() {
+  if (typeof window === 'undefined') return null
+  return window.localStorage.getItem(SELECTED_DEPARTMENT_STORAGE_KEY)
+}
+
+function mockDepartments(organizationId: string) {
+  return [
+    {
+      departmentId: `${organizationId}-general`,
+      departmentName: 'General',
+      departmentCode: 'GENERAL',
+      isDefault: true,
+      isDepartmentAdmin: true,
+    },
+  ]
 }
 
 const mockSession: SessionResponse = {
@@ -495,6 +583,7 @@ const mockSession: SessionResponse = {
       organizationName: 'Phaeno',
       organizationKind: 'Phaeno',
       isOrganizationAdmin: true,
+      departments: mockDepartments('phaeno'),
     },
     {
       membershipId: 'mock-membership-prospect',
@@ -502,6 +591,7 @@ const mockSession: SessionResponse = {
       organizationName: 'Helix Discovery Group',
       organizationKind: 'Prospect',
       isOrganizationAdmin: true,
+      departments: mockDepartments('7dbd474b-c73f-4df4-a9c9-9f1a72b5341b'),
     },
     {
       membershipId: 'mock-membership-northline',
@@ -509,6 +599,7 @@ const mockSession: SessionResponse = {
       organizationName: 'Northline Labs',
       organizationKind: 'Customer',
       isOrganizationAdmin: true,
+      departments: mockDepartments('northline-labs'),
     },
     {
       membershipId: 'mock-membership-valley',
@@ -516,6 +607,7 @@ const mockSession: SessionResponse = {
       organizationName: 'Valley Diagnostics',
       organizationKind: 'Customer',
       isOrganizationAdmin: false,
+      departments: mockDepartments('valley-diagnostics'),
     },
     {
       membershipId: 'mock-membership-partner',
@@ -523,12 +615,19 @@ const mockSession: SessionResponse = {
       organizationName: 'Genome Partner Network',
       organizationKind: 'Partner',
       isOrganizationAdmin: true,
+      departments: mockDepartments('genome-partner'),
     },
   ],
   isPlatformAdmin: true,
   selectedOrganization: {
     organizationId: 'phaeno',
     membershipId: 'mock-membership-phaeno',
+    isAvailable: true,
+  },
+  selectedDepartment: {
+    departmentId: 'phaeno-general',
+    organizationId: 'phaeno',
+    isDepartmentAdmin: true,
     isAvailable: true,
   },
   capabilities: {
@@ -587,18 +686,30 @@ const mockSession: SessionResponse = {
 }
 
 function MockSessionProvider({ children }: { children: ReactNode }) {
+  const queryClient = useQueryClient()
   const [selectedOrganizationId, setSelectedOrganizationIdState] = useState<string | null>(
     mockSession.selectedOrganization?.organizationId ?? null,
   )
-
-  useEffect(() => {
-    const storedOrganizationId = readStoredSelectedOrganizationId()
-    if (storedOrganizationId) {
-      setSelectedOrganizationIdState(storedOrganizationId)
+  const [selectedDepartmentId, setSelectedDepartmentIdState] = useState<string | null>(
+    mockSession.selectedDepartment?.departmentId ?? null,
+  )
+  const setSelectedDepartmentId = useCallback((departmentId: string | null) => {
+    queryClient.removeQueries({
+      predicate: (query) => query.queryKey[0] !== 'session',
+    })
+    setSelectedDepartmentIdState(departmentId)
+    if (typeof window === 'undefined') return
+    if (departmentId) {
+      window.localStorage.setItem(SELECTED_DEPARTMENT_STORAGE_KEY, departmentId)
+    } else {
+      window.localStorage.removeItem(SELECTED_DEPARTMENT_STORAGE_KEY)
     }
-  }, [])
-
-  function setSelectedOrganizationId(organizationId: string | null) {
+  }, [queryClient])
+  const setSelectedOrganizationId = useCallback((organizationId: string | null) => {
+    queryClient.removeQueries({
+      predicate: (query) => query.queryKey[0] !== 'session',
+    })
+    setSelectedDepartmentId(null)
     setSelectedOrganizationIdState(organizationId)
     if (typeof window === 'undefined') return
     if (organizationId) {
@@ -606,7 +717,34 @@ function MockSessionProvider({ children }: { children: ReactNode }) {
     } else {
       window.localStorage.removeItem(SELECTED_ORGANIZATION_STORAGE_KEY)
     }
-  }
+  }, [queryClient, setSelectedDepartmentId])
+
+  useEffect(() => {
+    const storedOrganizationId = readStoredSelectedOrganizationId()
+    if (storedOrganizationId) {
+      setSelectedOrganizationIdState(storedOrganizationId)
+    }
+    const storedDepartmentId = readStoredSelectedDepartmentId()
+    if (storedDepartmentId) setSelectedDepartmentIdState(storedDepartmentId)
+  }, [])
+
+  useEffect(() => {
+    const membership = mockSession.memberships.find(
+      (value) => value.organizationId === selectedOrganizationId,
+    )
+    const departments = membership?.departments ?? []
+    if (departments.length && !departments.some((value) => value.departmentId === selectedDepartmentId)) {
+      setSelectedDepartmentId(departments.find((value) => value.isDefault)?.departmentId ?? departments[0].departmentId)
+    }
+  }, [selectedDepartmentId, selectedOrganizationId, setSelectedDepartmentId])
+
+  useEffect(() => {
+    configureApiAuth({
+      getSelectedOrganizationId: () => selectedOrganizationId,
+      getSelectedDepartmentId: () => selectedDepartmentId,
+    })
+    return () => configureApiAuth({})
+  }, [selectedDepartmentId, selectedOrganizationId, setSelectedDepartmentId, setSelectedOrganizationId])
 
   const contextValue = useMemo<PhaenoSessionContextValue>(() => {
     const selectedMembership = mockSession.memberships.find(
@@ -616,12 +754,23 @@ function MockSessionProvider({ children }: { children: ReactNode }) {
       selectedMembership?.organizationKind === 'Prospect' ||
       selectedMembership?.organizationKind === 'Customer' ||
       selectedMembership?.organizationKind === 'Partner'
+    const selectedDepartment = selectedMembership?.departments?.find(
+      (department) => department.departmentId === selectedDepartmentId,
+    ) ?? selectedMembership?.departments?.[0]
     const contextualSession: SessionResponse = {
       ...mockSession,
       selectedOrganization: selectedMembership
         ? {
             organizationId: selectedMembership.organizationId,
             membershipId: selectedMembership.membershipId,
+            isAvailable: true,
+          }
+        : null,
+      selectedDepartment: selectedDepartment && selectedMembership
+        ? {
+            departmentId: selectedDepartment.departmentId,
+            organizationId: selectedMembership.organizationId,
+            isDepartmentAdmin: selectedDepartment.isDepartmentAdmin,
             isAvailable: true,
           }
         : null,
@@ -688,8 +837,10 @@ function MockSessionProvider({ children }: { children: ReactNode }) {
       error: null,
       selectedOrganizationId,
       setSelectedOrganizationId,
+      selectedDepartmentId: selectedDepartment?.departmentId ?? null,
+      setSelectedDepartmentId,
     }
-  }, [selectedOrganizationId])
+  }, [selectedDepartmentId, selectedOrganizationId, setSelectedDepartmentId, setSelectedOrganizationId])
 
   return (
     <PhaenoSessionContext.Provider value={contextValue}>

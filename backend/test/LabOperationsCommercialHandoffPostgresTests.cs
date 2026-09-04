@@ -74,7 +74,7 @@ public class LabOperationsCommercialHandoffPostgresTests
                 && item.SalesUnit == OrderSalesUnits.Specimen);
 
         var exception = await Assert.ThrowsAsync<OrderManagementException>(() =>
-            scope.IssueQuoteAsync(order, catalogItem));
+            scope.IssueQuoteAsync(order, catalogItem, derivedReadiness: true));
 
         Assert.Equal("operational_readiness_incomplete", exception.ErrorCode);
         var blockers = Assert.IsAssignableFrom<IReadOnlyList<OperationalReadinessBlocker>>(exception.Details);
@@ -1351,6 +1351,7 @@ public class LabOperationsCommercialHandoffPostgresTests
             var now = DateTime.UtcNow;
             var order = new LabServiceOrder(
                 CustomerOrganization.Id,
+                CustomerOrganization.Departments.Single(department => department.IsDefault).Id,
                 OrderNumberGenerator.Lab(),
                 "reference-handoff",
                 null,
@@ -1485,12 +1486,13 @@ public class LabOperationsCommercialHandoffPostgresTests
 
         public async Task<LabServiceOrderDto> IssueQuoteAsync(
             LabServiceOrderDto order,
-            QboCatalogItem item)
+            QboCatalogItem item,
+            bool derivedReadiness = false)
         {
             DbContext.ChangeTracker.Clear();
             var controller = CreatePlatformController(
                 new InternalLabOperationsProvider(DbContext),
-                Guid.NewGuid().ToString("N"));
+                Guid.NewGuid().ToString("N"), derivedReadiness);
             return await controller.IssueQuote(
                 order.Id,
                 new IssueQuoteRequest(
@@ -1668,7 +1670,8 @@ public class LabOperationsCommercialHandoffPostgresTests
 
         private PlatformLabServiceOrdersController CreatePlatformController(
             ILabOperationsProvider provider,
-            string? idempotencyKey = null)
+            string? idempotencyKey = null,
+            bool derivedReadiness = false)
         {
             var httpContext = new DefaultHttpContext();
             if (idempotencyKey != null)
@@ -1682,10 +1685,12 @@ public class LabOperationsCommercialHandoffPostgresTests
                 Options.Create(new OrderManagementOptions()),
                 Options.Create(new PSeqOrderToCashOptions
                 {
-                    NativePSeqAccountsReceivable = true
+                    NativePSeqAccountsReceivable = true,
+                    DerivedReadiness = derivedReadiness
                 }),
                 provider,
-                 new ReleasedDeliverableRetentionSnapshotService(DbContext))
+                new ReleasedDeliverableRetentionSnapshotService(DbContext),
+                NullLogger<PlatformLabServiceOrdersController>.Instance)
             {
                 ControllerContext = new ControllerContext
                 {
@@ -1763,6 +1768,8 @@ public class LabOperationsCommercialHandoffPostgresTests
                 await DbContext.CrmCompanies.Where(item => createdCrmCompanyIds.Contains(item.Id)).ExecuteDeleteAsync();
                 await DbContext.OrganizationServiceEntitlements.Where(item => organizationIds.Contains(item.OrganizationId)).ExecuteDeleteAsync();
                 await DbContext.QboCatalogItems.Where(item => catalogItemIds.Contains(item.Id)).ExecuteDeleteAsync();
+                await DbContext.OrganizationDepartmentMemberships.Where(item => organizationIds.Contains(item.Department.OrganizationId)).ExecuteDeleteAsync();
+                await DbContext.OrganizationDepartments.Where(item => organizationIds.Contains(item.OrganizationId)).ExecuteDeleteAsync();
                 await DbContext.OrganizationMemberships.Where(item => organizationIds.Contains(item.OrganizationId)).ExecuteDeleteAsync();
                 await DbContext.Users.Where(item => item.Id == CustomerUser.Id || item.Id == PlatformUser.Id).ExecuteDeleteAsync();
                 await DbContext.Organizations.Where(item => organizationIds.Contains(item.Id)).ExecuteDeleteAsync();

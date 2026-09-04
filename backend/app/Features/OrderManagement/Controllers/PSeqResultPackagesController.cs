@@ -290,9 +290,13 @@ public sealed class PSeqResultReleaseController(
         dbContext.ResultDeliveryEvidence.Add(new ResultDeliveryEvidence(package.Id, null,
             ResultDeliveryEvidenceKind.Notification, actor.Id, now,
             JsonSerializer.Serialize(new { status = "queued", paymentGateApplied = false }, JsonOptions)));
+        var departmentId = await dbContext.LabServiceOrders.AsNoTracking()
+            .Where(order => order.Id == package.LabServiceOrderId)
+            .Select(order => order.DepartmentId)
+            .SingleAsync(cancellationToken);
         dbContext.OrderNotifications.Add(new OrderNotification(package.OrganizationId, null,
             OrderWorkflowTypes.LabService, package.LabServiceOrderId, "pseq-result-released",
-            "PSeq result available", "A scientifically approved PSeq result package is available for download."));
+            "PSeq result available", "A scientifically approved PSeq result package is available for download.", departmentId));
         await dbContext.SaveChangesAsync(cancellationToken);
         return (await List(package.State.ToString(), cancellationToken)).Single(item => item.Id == package.Id);
     }

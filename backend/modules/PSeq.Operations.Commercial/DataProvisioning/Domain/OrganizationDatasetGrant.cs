@@ -12,6 +12,10 @@ public sealed class OrganizationDatasetGrant : IAudit, IConcurrency
 
     public Organization Organization { get; private set; } = null!;
 
+    public Guid? DepartmentId { get; private set; }
+
+    public OrganizationDepartment? Department { get; private set; }
+
     public Guid CuratedDatasetId { get; private set; }
 
     public CuratedDataset CuratedDataset { get; private set; } = null!;
@@ -55,10 +59,18 @@ public sealed class OrganizationDatasetGrant : IAudit, IConcurrency
         CuratedDataset curatedDataset,
         CuratedDatasetVersion curatedDatasetVersion,
         Guid actorUserId,
-        DateTime grantedAt)
+        DateTime grantedAt,
+        OrganizationDepartment? department = null)
     {
         OrganizationId = organization.Id;
         Organization = organization;
+        if (department is not null && department.OrganizationId != organization.Id)
+        {
+            throw new ArgumentException("The department must belong to the grant organization.", nameof(department));
+        }
+
+        DepartmentId = department?.Id;
+        Department = department;
         CuratedDatasetId = curatedDataset.Id;
         CuratedDataset = curatedDataset;
         CuratedDatasetVersionId = curatedDatasetVersion.Id;

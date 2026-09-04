@@ -53,6 +53,24 @@ the protected deployed-Preview acceptance above.
 
 ## Created Tests
 
+- [x] `frontend/e2e/people-departments.spec.ts` - desktop/light and mobile/dark
+  Department forms: unchanged-save prevention, inline validation, preserved
+  entries/latest version after 409, focus restoration, dirty-close confirmation,
+  lifecycle confirmation, People/Sales separation, and explicit invitation
+  department payload. Dialog scans found no WCAG A/AA axe violations and no
+  viewport overflow. These use mocked HTTP responses, not signed-in acceptance.
+  Together with `crm.spec.ts`, all 10 desktop/mobile cases passed on 2026-09-04.
+- [ ] Multi-Department signed-in acceptance must create two Departments and
+  differently assigned users, then prove that detail pages, lists, search,
+  counts, exports, downloads, audit views, and notifications do not disclose
+  the other Department. It must also cover Organization-admin all-Department
+  access, Department-scoped service entitlements and curated-data grants,
+  default General continuity, explicit Contact/User linking, and the People/
+  Sales Company navigation on desktop and narrow layouts.
+- [x] The existing CRM navigation scenario now expects **People** while keeping
+  the `/crm/contacts` route compatible. It was updated but not executed on
+  2026-09-04 because test execution was not requested.
+
 - [ ] `frontend/e2e/pseq-order-to-cash.spec.ts` - dedicated-staging-only
   acceptance for CRM/account handoff, internal staging before administrator,
   invitation delivery/acceptance, derived readiness, quote/acceptance, sample
@@ -192,7 +210,7 @@ the protected deployed-Preview acceptance above.
   makes no Portal write. Confirm card-scoped actions remain
   compact and right-aligned with their title row on Company, Lead, and
   Opportunity detail workspaces. Confirm Company detail separates Overview,
-  People and sales, Requests, Access and services, and Activity. Confirm the
+  People, Sales, Requests, Departments & services, and Activity. Confirm the
   Company request entry point uses outcome-aware progressive disclosure,
   suppresses redundant request-type controls, and links pending history to the
   central Requests review queue while Opportunity order handoffs remain in the

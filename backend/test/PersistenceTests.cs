@@ -192,7 +192,10 @@ public class PersistenceTests
             .Where(entityType => entityType.ClrType.Assembly == laboratoryAssembly)
             .ToList();
 
-        Assert.Equal(27, laboratoryEntities.Count);
+        Assert.Equal(30, laboratoryEntities.Count);
+        Assert.Equal("lab_service_workflows", dbContext.Model.FindEntityType(typeof(LabServiceWorkflow))?.GetTableName());
+        Assert.Equal("lab_service_workflow_versions", dbContext.Model.FindEntityType(typeof(LabServiceWorkflowVersion))?.GetTableName());
+        Assert.Equal("lab_service_workflow_stages", dbContext.Model.FindEntityType(typeof(LabServiceWorkflowStage))?.GetTableName());
         Assert.Equal(
             "lab_work_orders",
             dbContext.Model.FindEntityType(typeof(LabWorkOrder))?.GetTableName());
@@ -403,7 +406,16 @@ public class PersistenceTests
                     nameof(OrganizationDatasetGrant.OrganizationId),
                     nameof(OrganizationDatasetGrant.CuratedDatasetId)
                 ])
-                && index.GetFilter() == "\"status\" = 'Active'");
+                && index.GetFilter() == "\"status\" = 'Active' AND \"department_id\" IS NULL");
+        Assert.Contains(
+            grantEntity.GetIndexes(),
+            index => index.IsUnique
+                && index.Properties.Select(property => property.Name).SequenceEqual([
+                    nameof(OrganizationDatasetGrant.OrganizationId),
+                    nameof(OrganizationDatasetGrant.DepartmentId),
+                    nameof(OrganizationDatasetGrant.CuratedDatasetId)
+                ])
+                && index.GetFilter() == "\"status\" = 'Active' AND \"department_id\" IS NOT NULL");
 
         Assert.Equal(
             "provisioning_runs",

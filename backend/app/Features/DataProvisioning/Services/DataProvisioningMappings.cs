@@ -134,6 +134,8 @@ public static class DataProvisioningMappings
             OrganizationId = grant.OrganizationId,
             OrganizationName = grant.Organization.Name,
             OrganizationKind = grant.Organization.Kind,
+            DepartmentId = grant.DepartmentId,
+            DepartmentName = grant.Department?.Name,
             CuratedDatasetId = grant.CuratedDatasetId,
             DatasetName = grant.CuratedDataset.Name,
             CuratedDatasetVersionId = grant.CuratedDatasetVersionId,

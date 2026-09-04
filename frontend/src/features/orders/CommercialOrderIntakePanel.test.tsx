@@ -114,7 +114,7 @@ describe("Commercial order intake CRM handoffs", () => {
 
     expect(await screen.findByRole("link", { name: "Johns Hopkins pilot" })).toBeTruthy();
     expect(screen.getByText(/JOB-1001 · Johns Hopkins University/)).toBeTruthy();
-    expect(screen.getByText("Quote in preparation")).toBeTruthy();
+    expect(screen.getByText("Quote In Preparation")).toBeTruthy();
     expect(screen.getByText("Price proposed · $120.00 per specimen")).toBeTruthy();
     expect(apiMocks.orders).toHaveBeenCalledWith({ activeIntake: true, pageSize: 100 });
   });

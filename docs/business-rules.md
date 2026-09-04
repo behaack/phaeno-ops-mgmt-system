@@ -4,6 +4,15 @@
 
 - A Clerk identity must resolve to an active internal `User` before it can act in the product.
 - Users receive access through active `OrganizationMembership` records.
+- Every organization has one active default Department; existing records use
+  the backfilled General department until a deliberate department is selected.
+- Non-organization administrators can act only in Departments granted through
+  an active `OrganizationDepartmentMembership`. Organization administrators
+  can act across all active Departments in their Organization.
+- A selected Department must be active, belong to the selected Organization,
+  and be available to the current User. Invalid department context fails closed.
+- Customer operational roots, address books, searches, exports, downloads, and
+  outbound operational notifications are scoped by Department.
 - A platform administrator is an active user with a membership that grants platform-admin capability.
 - Platform administrators can manage organizations broadly.
 - An active organization administrator can manage members and invitations for that active non-Phaeno organization.
@@ -19,6 +28,9 @@
   independently from invitation access state; signed webhook events record
   delivery or permanent failure without granting or revoking access.
 - Invite acceptance must connect the external Clerk identity to the intended internal user and membership without bypassing tenant checks.
+- Invitations carry reviewed Department access intent. A CRM Contact becomes a
+  Portal identity only through an explicit invite or audited link action; an
+  email match alone never links the records.
 
 ## Lifecycle, audit, and concurrency
 
@@ -109,9 +121,11 @@ Confirmed Prospect rules:
   stop using or sharing prior downloads, isolate local copies, and await final
   Phaeno instructions. Deletion is not required before the final disposition.
 - A confirmed unsafe or no-longer-shareable disposition requires one
-  administrator per affected organization to attest that local copies were
-  deleted and downstream recipients were notified. Phaeno tracks the attestation
-  and follow-up status but cannot technically verify deletion.
+  organization administrator per affected organization to attest that local
+  copies were deleted and downstream recipients were notified. Department
+  administrator authority is insufficient for this organization-wide action.
+  Phaeno tracks the attestation and follow-up status but cannot technically
+  verify deletion.
 - The affected version then becomes permanently `Withdrawn`. It can never regain
   tenant access or receive new grants, remains preserved internally as evidence,
   and any corrected content requires a new version.

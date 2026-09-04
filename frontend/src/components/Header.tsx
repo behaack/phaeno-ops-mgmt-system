@@ -12,11 +12,14 @@ import { isExternalOrganizationKind } from './navigation'
 
 export default function Header() {
   const branding = useApplicationBranding()
-  const { signedIn, session, selectedOrganizationId } = usePhaenoSession()
+  const { signedIn, session, selectedOrganizationId, selectedDepartmentId } = usePhaenoSession()
   const { customers } = useMockAdminData()
   const selectedMembership = getSelectedMembership(session, selectedOrganizationId)
   const selectedCustomer = customers.find(
     (customer) => customer.id === selectedOrganizationId,
+  )
+  const selectedDepartment = selectedMembership?.departments?.find(
+    (department) => department.departmentId === selectedDepartmentId,
   )
   const impersonatedCustomer =
     signedIn && selectedCustomer
@@ -58,6 +61,7 @@ export default function Header() {
             <span className="shrink-0 font-medium">Acting as:</span>
             <span className="min-w-0 truncate font-medium text-foreground/80">
               {selectedCustomer?.name ?? selectedMembership?.organizationName}
+              {selectedDepartment ? ` · ${selectedDepartment.departmentName}` : ''}
             </span>
           </div>
         ) : null}

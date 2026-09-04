@@ -1,5 +1,10 @@
 # Order operations
 
+When starting a Customer Job, select the Customer department as well as the
+Company. A single available department is shown automatically. The department
+owns the Job and determines Customer access and the applicable service rule;
+a Blocked department rule cannot be bypassed by a Ready organization default.
+
 Order operations is the Commercial workspace for Customer laboratory orders, Partner PSeq kit fulfillment, and Partner data assembly. POMS owns operational state, assignments, tenant-safe communication, PSeq result release, and PSeq accounts receivable.
 
 Use the far-left sidebar beneath the toolbar to move among **Order intake**, **Order staging**, **PSeq kits**, **Assembly**, **Attention**, **Result release**, **Finance**, and **Legacy integrations**, subject to your explicit roles. **Order intake** combines sales handoffs, commercial review, pricing, and quotes in one active queue. **Order staging** shows every Customer and its readiness blockers; a Commercial Operator may prepare internal PSeq work before the Customer administrator is active when the stage-eligibility minimum is met. Quote issue and Customer commitment require all non-billing readiness items and an active Customer administrator. Billing readiness may be completed after acceptance but is required before invoicing.
@@ -18,7 +23,7 @@ The sidebar header identifies Order operations and, on wider screens, provides t
 - **Finance** owns PSeq invoices, receipts/import, explicit allocation, aging, and reconciliation.
 - **Legacy integrations** covers retained accounting-connector and notification recovery outside the active native PSeq AR workflow.
 
-Search Order intake by order, Job, Company, or request number. A PSeq Lab Service row identifies an optional proposed price so Commercial users can find pricing decisions without opening every record. On the order, **Review proposed price** compares the proposed USD price per specimen with the active catalog price, requested quantity, difference, and subtotal. **Approve price and issue quote** preserves the proposal unchanged; **Amend price and issue quote** requires an internal reason. Tax is system-calculated: include and freeze it when the billing and tax profile is complete and Finance-approved, or issue an explicitly pre-tax quote and calculate tax at invoicing. The issued quote, not the proposal, is the offer a Customer administrator may accept. Assign an owner and due date when the workflow supports them. A queue assignment coordinates work; it does not grant authorization or change the workflow state.
+Search Order intake by order, Job, Company, or request number. A PSeq Lab Service row identifies an optional proposed price so Commercial users can find pricing decisions without opening every record. On the order, **Review proposed price** compares the proposed USD price per specimen with the active catalog price, requested quantity, difference, and subtotal. **Approve price and issue quote** preserves the proposal unchanged; **Amend price and issue quote** requires an internal reason. Tax is system-calculated: include and freeze it when the billing and tax profile is complete and Finance-approved, or issue an explicitly pre-tax quote and calculate tax at invoicing. The issued quote, not the proposal, is the offer a Customer administrator may accept. The operational detail shows the current quote value, revision, and status. **Internal context** in the audit timeline explains Phaeno-only decisions; it is informational, not a Customer-facing warning. Assign an owner and due date when the workflow supports them. A queue assignment coordinates work; it does not grant authorization or change the workflow state.
 
 ## Keep state boundaries visible
 
@@ -34,4 +39,4 @@ Order Ops ends at the Commercial boundary for a Customer laboratory order: it re
 4. Assign the work and due date when ownership is unclear.
 5. Perform the smallest valid next action and preserve the existing record.
 
-If a record appears stale, refresh it before retrying. Never repair a failed workflow by creating a duplicate order, quote, invoice, receipt, result package, Lab work order, shipment, or release. Assign an attention item, preserve attempts, and record its resolution.
+POMS checks the latest Job immediately before issuing a quote. If the record changes after that check, POMS reloads it and preserves the entered quote lines; review those values, then issue the quote again. Never repair a failed workflow by creating a duplicate order, quote, invoice, receipt, result package, Lab work order, shipment, or release. Assign an attention item, preserve attempts, and record its resolution.

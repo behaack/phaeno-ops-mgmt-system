@@ -59,6 +59,7 @@ export type OrganizationSummary = {
 export type ServiceEntitlement = {
   id: string
   organizationId: string
+  departmentId?: string | null
   service: PortalService
   effectiveFrom: string
   effectiveTo: string | null
@@ -107,8 +108,52 @@ export type OrganizationMembership = {
   organizationKind: OrganizationKind | null
   isActive: boolean
   isOrganizationAdmin: boolean
+  departments?: DepartmentMembershipSummary[]
   createdAt: string
   updatedAt: string
+  version: number
+}
+
+export type DepartmentMembershipSummary = {
+  id: string
+  departmentId: string
+  departmentName: string
+  departmentCode: string
+  isDefault: boolean
+  isDepartmentAdmin: boolean
+  isActive: boolean
+  version: number
+}
+
+export type Department = {
+  id: string
+  organizationId: string
+  code: string
+  name: string
+  description: string | null
+  isDefault: boolean
+  isActive: boolean
+  purchaseOrderRequired: boolean | null
+  billingContactEmail: string | null
+  notificationEmail: string | null
+  shippingInstructions: string | null
+  resultDeliveryInstructions: string | null
+  activeMemberCount: number
+  createdAt: string
+  updatedAt: string
+  version: number
+}
+
+export type DepartmentMember = {
+  id: string
+  organizationMembershipId: string
+  userId: string
+  userName: string
+  userEmail: string
+  departmentId: string
+  departmentName: string
+  isDepartmentAdmin: boolean
+  isActive: boolean
   version: number
 }
 
@@ -181,6 +226,12 @@ export type Invitation = {
   firstName: string
   lastName: string
   isOrganizationAdmin: boolean
+  crmContactId: string | null
+  departments: Array<{
+    departmentId: string
+    departmentName: string
+    isDepartmentAdmin: boolean
+  }>
   labRoles: LabRole[]
   businessRoles: BusinessRole[]
   status: 'Pending' | 'Accepted' | 'Revoked' | 'Declined'
@@ -279,6 +330,7 @@ export async function listEntitlements(id: string) {
 export async function createEntitlement(
   organizationId: string,
   input: {
+    departmentId?: string | null
     service: PortalService
     effectiveFrom: string
     effectiveTo: string | null
@@ -452,10 +504,116 @@ export async function createInvitation(input: {
   lastName: string
   email: string
   isOrganizationAdmin: boolean
+  crmContactId?: string | null
+  departments?: Array<{ departmentId: string; isDepartmentAdmin: boolean }>
   labRoles: LabRole[]
   businessRoles?: BusinessRole[]
 }) {
   const response = await api.post<Invitation>('/invitations', input)
+  return response.data
+}
+
+export async function listDepartments(
+  organizationId: string,
+  includeInactive = true,
+) {
+  const response = await api.get<Department[]>(
+    `/organizations/${organizationId}/departments`,
+    { params: { includeInactive } },
+  )
+  return response.data
+}
+
+export type DepartmentInput = {
+  code: string
+  name: string
+  description: string | null
+  purchaseOrderRequired: boolean | null
+  billingContactEmail: string | null
+  notificationEmail: string | null
+  shippingInstructions: string | null
+  resultDeliveryInstructions: string | null
+}
+
+export async function createDepartment(
+  organizationId: string,
+  input: DepartmentInput,
+) {
+  const response = await api.post<Department>(
+    `/organizations/${organizationId}/departments`,
+    input,
+  )
+  return response.data
+}
+
+export async function updateDepartment(
+  organizationId: string,
+  departmentId: string,
+  input: DepartmentInput & { version: number },
+) {
+  const response = await api.put<Department>(
+    `/organizations/${organizationId}/departments/${departmentId}`,
+    input,
+  )
+  return response.data
+}
+
+export async function setDepartmentActive(
+  organizationId: string,
+  department: Department,
+  active: boolean,
+) {
+  const response = await api.post<Department>(
+    `/organizations/${organizationId}/departments/${department.id}/${active ? 'reactivate' : 'deactivate'}`,
+    { version: department.version },
+  )
+  return response.data
+}
+
+export async function setDefaultDepartment(
+  organizationId: string,
+  department: Department,
+) {
+  const response = await api.post<Department>(
+    `/organizations/${organizationId}/departments/${department.id}/default`,
+    { version: department.version },
+  )
+  return response.data
+}
+
+export async function listDepartmentMembers(
+  organizationId: string,
+  departmentId: string,
+) {
+  const response = await api.get<DepartmentMember[]>(
+    `/organizations/${organizationId}/departments/${departmentId}/members`,
+  )
+  return response.data
+}
+
+export async function upsertDepartmentMember(
+  organizationId: string,
+  departmentId: string,
+  organizationMembershipId: string,
+  input: { isDepartmentAdmin: boolean; version: number | null },
+) {
+  const response = await api.put<DepartmentMember>(
+    `/organizations/${organizationId}/departments/${departmentId}/members/${organizationMembershipId}`,
+    input,
+  )
+  return response.data
+}
+
+export async function deactivateDepartmentMember(
+  organizationId: string,
+  departmentId: string,
+  organizationMembershipId: string,
+  version: number,
+) {
+  const response = await api.post<DepartmentMember>(
+    `/organizations/${organizationId}/departments/${departmentId}/members/${organizationMembershipId}/deactivate`,
+    { version },
+  )
   return response.data
 }
 

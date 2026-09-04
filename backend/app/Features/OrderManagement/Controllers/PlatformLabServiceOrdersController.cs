@@ -32,7 +32,8 @@ public sealed class PlatformLabServiceOrdersController(
     IOptions<OrderManagementOptions> options,
     IOptions<PSeqOrderToCashOptions> orderToCashOptions,
     ILabOperationsProvider labOperationsProvider,
-    ReleasedDeliverableRetentionSnapshotService retentionSnapshots) : ControllerBase
+    ReleasedDeliverableRetentionSnapshotService retentionSnapshots,
+    ILogger<PlatformLabServiceOrdersController> logger) : ControllerBase
 {
     private static readonly JsonSerializerOptions JsonOptions = new(JsonSerializerDefaults.Web);
 
@@ -198,20 +199,27 @@ public sealed class PlatformLabServiceOrdersController(
                             : customer.OperationalReadinessBlockReason);
                 }
 
+                var department = await ResolveDepartmentAsync(
+                    customer.Id,
+                    request.DepartmentId,
+                    operationCancellationToken);
+
                 await LabServiceOrderingEligibility.RequireAsync(
                     dbContext,
                     customer.Id,
                     DateTime.UtcNow,
-                    operationCancellationToken);
+                    operationCancellationToken,
+                    department.Id);
 
                 var normalizedJobName = NormalizeJobName(request.CustomerReference);
-                await EnsureUniqueJobNameAsync(customer.Id, normalizedJobName, operationCancellationToken);
+                await EnsureUniqueJobNameAsync(customer.Id, department.Id, normalizedJobName, operationCancellationToken);
                 var sourceGroups = ValidatePricingProfile(request.RequestedSpecimenCount, request.SourceGroups);
                 var configuration = await dbContext.OrderSystemConfigurations.AsNoTracking()
                     .OrderBy(item => item.CreatedAt)
                     .FirstOrDefaultAsync(operationCancellationToken);
                 var order = new LabServiceOrder(
                     customer.Id,
+                    department.Id,
                     await GenerateUniqueJobNumberAsync(operationCancellationToken),
                     request.CustomerReference,
                     request.Description,
@@ -220,7 +228,9 @@ public sealed class PlatformLabServiceOrdersController(
                     sourceGroups.Count == 1 ? sourceGroups[0].BiologicalSource : null,
                     request.StorageRequirements,
                     request.SafetyDeclaration,
-                    configuration?.SampleSubmissionInstructions ?? string.Empty,
+                    department.ShippingInstructions
+                        ?? configuration?.SampleSubmissionInstructions
+                        ?? string.Empty,
                     request.SourceRequestId);
                 foreach (var group in sourceGroups)
                 {
@@ -379,7 +389,15 @@ public sealed class PlatformLabServiceOrdersController(
         var replay = await idempotency.ReadAsync<LabServiceOrderDto>(actor.Id, scope, key, request, cancellationToken);
         if (replay != null) return replay;
         var order = await ReadAsync(orderId, cancellationToken);
-        EnsureVersion(order.Version, request.Version);
+        if (order.Version != request.Version)
+        {
+            logger.LogWarning(
+                "Quote issuance version mismatch for Job {OrderId}: request version {RequestVersion}, database version {DatabaseVersion}.",
+                orderId,
+                request.Version,
+                order.Version);
+            throw new DbUpdateConcurrencyException();
+        }
         if (orderToCashOptions.Value.DerivedReadiness)
         {
             var readiness = await new OperationalReadinessService(dbContext)
@@ -389,6 +407,8 @@ public sealed class PlatformLabServiceOrdersController(
                     "Resolve every quote-readiness blocker before issuing a Customer quote.",
                     StatusCodes.Status409Conflict, readiness.Evaluation.QuoteBlockers);
         }
+        await LabServiceOrderingEligibility.RequireAsync(dbContext, order.OrganizationId,
+            DateTime.UtcNow, cancellationToken, order.DepartmentId);
         if (order.Status == LabServiceOrderStatus.SubmittedForQuote) Execute(order.BeginQuotePreparation);
         if (order.Status != LabServiceOrderStatus.QuoteInPreparation && order.Status != LabServiceOrderStatus.QuoteIssued)
             throw Conflict("quote_not_allowed", "A quote can be issued only while pricing this request.");
@@ -416,6 +436,10 @@ public sealed class PlatformLabServiceOrdersController(
             throw Invalid("quote_lab_service_quantity_mismatch", "The PSeq Lab Service quantity must equal the requested specimen count.");
         var commercial = await dbContext.OrganizationCommercialProfiles.AsNoTracking()
             .FirstOrDefaultAsync(item => item.OrganizationId == order.OrganizationId, cancellationToken);
+        var department = await dbContext.OrganizationDepartments.AsNoTracking()
+            .SingleAsync(item => item.Id == order.DepartmentId
+                && item.OrganizationId == order.OrganizationId, cancellationToken);
+        var billingContactEmail = department.BillingContactEmail ?? commercial?.BillingContactEmail;
         if (!nativeReceivables && string.IsNullOrWhiteSpace(commercial?.QboCustomerId))
             throw Conflict("qbo_customer_required", "Link this customer to QuickBooks before issuing a quote.");
         if (nativeReceivables && !string.Equals(request.Currency, "USD", StringComparison.OrdinalIgnoreCase))
@@ -430,14 +454,15 @@ public sealed class PlatformLabServiceOrdersController(
             line.Description.Trim(), line.Quantity, line.UnitPrice)).ToList();
         var subtotal = snapshots.Sum(line => decimal.Round(line.Quantity * line.UnitPrice, 2, MidpointRounding.AwayFromZero));
         var revision = order.Quotes.Count == 0 ? 1 : order.Quotes.Max(item => item.Revision) + 1;
-        var canCalculateTax = nativeReceivables && HasInvoiceReadyCommercialProfile(commercial);
+        var canCalculateTax = nativeReceivables
+            && HasInvoiceReadyCommercialProfile(commercial, billingContactEmail);
         var computedTax = canCalculateTax ? CalculateTax(subtotal, commercial!) : nativeReceivables ? 0 : request.Tax;
         var quote = new LabServiceQuote(order.Id, revision, purpose, JsonSerializer.Serialize(snapshots, JsonOptions), subtotal,
             computedTax, nativeReceivables ? "USD" : request.Currency, now, expiresAt);
         if (canCalculateTax)
         {
             quote.FreezeCommercialTerms(
-                SerializeBillingContact(commercial!),
+                SerializeBillingContact(commercial!, billingContactEmail!),
                 commercial!.BillingAddressJson!,
                 commercial.PaymentTermsDays,
                 SerializeTaxDecision(commercial),
@@ -452,7 +477,7 @@ public sealed class PlatformLabServiceOrdersController(
             now));
         var previous = order.Quotes.Where(item => item.Status is QuoteStatus.Issued or QuoteStatus.SyncPending).OrderByDescending(item => item.Revision).FirstOrDefault();
         previous?.Supersede(quote.Id);
-        order.Quotes.Add(quote);
+        dbContext.LabServiceQuotes.Add(quote);
         if (nativeReceivables)
         {
             var previousStatus = order.Status.ToString();
@@ -471,7 +496,22 @@ public sealed class PlatformLabServiceOrdersController(
                 order.Id, key, JsonSerializer.Serialize(payload, JsonOptions)));
             Notice(order, "lab-quote-sync-pending", "Laboratory quote is being prepared", $"Pricing for {order.OrderNumber} is being synchronized.");
         }
-        await dbContext.SaveChangesAsync(cancellationToken);
+        try
+        {
+            await dbContext.SaveChangesAsync(cancellationToken);
+        }
+        catch (DbUpdateConcurrencyException exception)
+        {
+            var entries = string.Join(", ", exception.Entries.Select(entry =>
+                $"{entry.Metadata.ClrType.Name}:{entry.State}"));
+            logger.LogError(
+                exception,
+                "Quote issuance persistence conflict for Job {OrderId} at request version {RequestVersion}. Conflicting entries: {Entries}.",
+                orderId,
+                request.Version,
+                entries);
+            throw;
+        }
         var response = await MapAsync(order, cancellationToken);
         idempotency.Store(actor.Id, scope, key, request, response, StatusCodes.Status202Accepted);
         await dbContext.SaveChangesAsync(cancellationToken);
@@ -733,7 +773,7 @@ public sealed class PlatformLabServiceOrdersController(
             }
             var billingContactSnapshotJson = quoteHasCommercialSnapshot
                 ? acceptedQuote.BillingContactSnapshotJson!
-                : SerializeBillingContact(profile!);
+                : SerializeBillingContact(profile!, profile!.BillingContactEmail!);
             var billingAddressSnapshotJson = quoteHasCommercialSnapshot
                 ? acceptedQuote.BillingAddressSnapshotJson!
                 : profile!.BillingAddressJson!;
@@ -933,15 +973,32 @@ public sealed class PlatformLabServiceOrdersController(
 
     private async Task EnsureUniqueJobNameAsync(
         Guid organizationId,
+        Guid departmentId,
         string normalizedJobName,
         CancellationToken cancellationToken)
     {
         var exists = await dbContext.LabServiceOrders.AsNoTracking().AnyAsync(
             order => order.OrganizationId == organizationId
+                && order.DepartmentId == departmentId
                 && order.NormalizedJobName == normalizedJobName,
             cancellationToken);
         if (exists)
             throw Conflict("duplicate_job_name", "A Job with this name already exists for this Customer.");
+    }
+
+    private async Task<OrganizationDepartment> ResolveDepartmentAsync(
+        Guid organizationId,
+        Guid? departmentId,
+        CancellationToken cancellationToken)
+    {
+        var query = dbContext.OrganizationDepartments.AsNoTracking()
+            .Where(value => value.OrganizationId == organizationId && value.IsActive);
+        var department = departmentId.HasValue
+            ? await query.SingleOrDefaultAsync(value => value.Id == departmentId.Value, cancellationToken)
+            : await query.SingleOrDefaultAsync(value => value.IsDefault, cancellationToken);
+        return department ?? throw Conflict(
+            "customer_department_not_available",
+            "Select an active Department for this Customer before initiating the order.");
     }
 
     private async Task<string> GenerateUniqueJobNumberAsync(CancellationToken cancellationToken)
@@ -998,9 +1055,12 @@ public sealed class PlatformLabServiceOrdersController(
             _ => $"Set pricing without a proposal and issued quote revision {quote.Revision}."
         };
 
-    private static bool HasInvoiceReadyCommercialProfile(OrganizationCommercialProfile? profile)
+    private static bool HasInvoiceReadyCommercialProfile(
+        OrganizationCommercialProfile? profile,
+        string? billingContactEmail)
         => profile is not null
-            && profile.HasCompleteBillingContact
+            && !string.IsNullOrWhiteSpace(profile.BillingContactName)
+            && System.Net.Mail.MailAddress.TryCreate(billingContactEmail, out _)
             && profile.HasCompleteBillingAddress
             && profile.PaymentTermsDays is >= 0 and <= 365
             && profile.HasEffectiveTaxDecision
@@ -1011,11 +1071,13 @@ public sealed class PlatformLabServiceOrdersController(
             ? decimal.Round(subtotal * profile.ApprovedTaxRate!.Value, 2, MidpointRounding.AwayFromZero)
             : 0;
 
-    private static string SerializeBillingContact(OrganizationCommercialProfile profile)
+    private static string SerializeBillingContact(
+        OrganizationCommercialProfile profile,
+        string billingContactEmail)
         => JsonSerializer.Serialize(new
         {
             name = profile.BillingContactName,
-            email = profile.BillingContactEmail
+            email = billingContactEmail
         }, JsonOptions);
 
     private static string SerializeTaxDecision(OrganizationCommercialProfile profile)
@@ -1045,7 +1107,8 @@ public sealed class PlatformLabServiceOrdersController(
             order.Id,
             eventType,
             subject,
-            body));
+            body,
+            order.DepartmentId));
 
     private static void EnsureVersion(long current, long supplied) { if (current != supplied) throw new DbUpdateConcurrencyException(); }
     private static void Execute(Action action)

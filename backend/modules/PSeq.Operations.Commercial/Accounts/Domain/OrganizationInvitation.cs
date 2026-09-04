@@ -23,6 +23,11 @@ public sealed class OrganizationInvitation : IAudit, IConcurrency
 
     public bool IsOrganizationAdmin { get; private set; }
 
+    /// <summary>
+    /// Optional CRM Contact that initiated this reviewed Portal access invitation.
+    /// </summary>
+    public Guid? CrmContactId { get; private set; }
+
     public string TokenHash { get; private set; } = null!;
 
     public DateTime ExpiresAt { get; private set; }
@@ -72,12 +77,14 @@ public sealed class OrganizationInvitation : IAudit, IConcurrency
         string lastName,
         bool isOrganizationAdmin,
         string tokenHash,
-        DateTime expiresAt)
+        DateTime expiresAt,
+        Guid? crmContactId = null)
     {
         OrganizationId = organizationId;
         SetEmail(email);
         SetInviteeName(firstName, lastName);
         IsOrganizationAdmin = isOrganizationAdmin;
+        CrmContactId = crmContactId;
         TokenHash = tokenHash;
         ExpiresAt = expiresAt;
     }
@@ -106,7 +113,8 @@ public sealed class OrganizationInvitation : IAudit, IConcurrency
     public void UpdateIntent(
         string firstName,
         string lastName,
-        bool isOrganizationAdmin)
+        bool isOrganizationAdmin,
+        Guid? crmContactId = null)
     {
         if (Status != InvitationStatus.Pending)
         {
@@ -115,6 +123,7 @@ public sealed class OrganizationInvitation : IAudit, IConcurrency
 
         SetInviteeName(firstName, lastName);
         IsOrganizationAdmin = isOrganizationAdmin;
+        CrmContactId = crmContactId;
     }
 
     public void RecordSend(DateTime utcNow, Guid? senderUserId, string? providerMessageId, string? sendError = null)

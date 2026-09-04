@@ -165,12 +165,14 @@ public class DataProvisioningDomainTests
         var secondVersion = CreatePublishedVersion(dataset, source, 2, actorId, now.AddMinutes(1));
         dataset.SetEligibleVersion(secondVersion, actorId, now.AddMinutes(1));
         var prospect = new Organization("Prospect", OrganizationKind.Prospect);
+        var department = Assert.Single(prospect.Departments);
         var priorGrant = new OrganizationDatasetGrant(
             prospect,
             dataset,
             firstVersion,
             actorId,
-            now);
+            now,
+            department);
 
         priorGrant.Supersede(actorId, now.AddMinutes(2));
         var replacement = new OrganizationDatasetGrant(
@@ -178,12 +180,14 @@ public class DataProvisioningDomainTests
             dataset,
             secondVersion,
             actorId,
-            now.AddMinutes(2));
+            now.AddMinutes(2),
+            priorGrant.Department);
 
         Assert.Equal(OrganizationDatasetGrantStatus.Superseded, priorGrant.Status);
         Assert.Equal(now.AddMinutes(2), priorGrant.SupersededAt);
         Assert.Equal(OrganizationDatasetGrantStatus.Active, replacement.Status);
         Assert.Equal(secondVersion.Id, replacement.CuratedDatasetVersionId);
+        Assert.Equal(department.Id, replacement.DepartmentId);
     }
 
     [Fact]

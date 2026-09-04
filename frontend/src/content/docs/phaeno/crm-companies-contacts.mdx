@@ -1,4 +1,4 @@
-# Companies and Contacts
+# Companies and People
 
 Companies and Contacts are durable relationship records. The Company is also the canonical Customer, Partner, or Prospect identity. A Company does not become accessible to external users until Portal access is reviewed and enabled; a Contact never becomes a Portal user automatically.
 
@@ -10,13 +10,13 @@ Open **Companies** from the CRM sidebar. Search by the known organization identi
 - source, industry, employee count, phone, and postal address
 - tags and a relationship summary
 
-POMS assigns the creator as owner unless another supported owner is selected later. The Company name opens a stable, view-first workspace. Use **Overview** for the Company profile and custom data, **People & sales** for Contacts and Opportunities, **Requests** for request creation and history, **Access & services** for approved Portal administration, and **Activity** for the commercial timeline and Tasks. Use CRM's central **Requests** queue for approve, decline, recovery, application, and completion decisions.
+POMS assigns the creator as owner unless another supported owner is selected later. The Company name opens a stable, view-first workspace. Use **Overview** for the Company profile and custom data, **People** for Contacts and Portal identity/access state, **Sales** for Opportunities, **Departments & services** for approved operational access and configuration, **Requests** for request creation and history, and **Activity** for the commercial timeline and Tasks. Use CRM's central **Requests** queue for approve, decline, recovery, application, and completion decisions.
 
 Changing a CRM lifecycle to Active customer or Partner is descriptive only. It does not enable or reclassify Portal access, grant membership, activate services, or authorize orders.
 
 ## Create and manage a Contact
 
-Open **Contacts** and select **New contact**. First name and last name are required. Record email, phone, Phaeno owner, tags, and the communication controls that apply:
+Open **People** and select **New contact**. First name and last name are required. Record email, phone, Phaeno owner, tags, and the communication controls that apply:
 
 - **Unknown** means permission has not been established.
 - **Permitted** means the recorded commercial basis permits contact.
@@ -27,13 +27,15 @@ Record the lawful-contact basis and communication notes when known. These fields
 
 A Contact is not a Portal user. Email equality does not link identities, issue an invitation, or grant access.
 
+From a Company&apos;s **People** section, use **Invite to Portal** for a reviewed Contact and choose the Departments the person may access. Successful acceptance creates the Portal membership and the explicit Contact/User identity link. If POMS finds an existing Portal user with the same email, it shows **Identity review**; select **Review and link**, verify that both records identify the same person, and record the reason. Never treat the suggestion as proof. Unlinked Portal users and invitations remain visible until staff intentionally resolve them.
+
 ## Associate Contacts and Companies
 
 Open either record workspace to create the association: use **Associate** in the Company's Contacts area to search incrementally for an existing Contact, or use **Associate** in the Contact's Company relationships area to search incrementally for an existing Company. Record the Contact's free-form job title at that Company and choose the relationship role—Decision maker, Scientific lead, Procurement, Executive sponsor, Champion, Influencer, Technical evaluator, or Other—then record whether this is the Contact's primary Company and the effective-from date. A Contact may be associated with more than one Company, with a different title and relationship role at each.
 
 Job title and relationship role are intentionally different. **Job title** is the person's organization-specific position, such as Director of Genomics, and remains free-form. **Relationship role** describes how the person participates in the commercial relationship and uses the controlled choices above. The Contacts directory displays the title and Company from the active primary relationship.
 
-Each relationship row provides the same edit action from either the Company's **People & sales** section or the Contact's **Company relationships** card. When a title, role, primary designation, or effective date changes, edit the Company relationship rather than the Contact's identity. When a relationship ends, record an effective-to date. Do not delete the Contact or overwrite the former Company simply to hide historical employment. POMS retains the effective-dated relationship and marks ended rows consistently in both workspaces.
+Each relationship remains visible from the Company's **People** section and the Contact's **Company relationships** card. When a title, role, primary designation, or effective date changes, edit the Company relationship rather than the Contact's identity. When a relationship ends, record an effective-to date. Do not delete the Contact or overwrite the former Company simply to hide historical employment. POMS retains the effective-dated relationship and marks ended rows consistently in both workspaces.
 
 ## Deactivate, reactivate, and merge
 

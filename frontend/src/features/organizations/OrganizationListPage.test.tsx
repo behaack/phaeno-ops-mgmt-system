@@ -89,7 +89,7 @@ describe('approved account-request recovery', () => {
     expect(screen.queryByRole('checkbox', { name: 'Ordering authorized' })).toBeNull()
     expect(screen.getByText(/does not invite users, change product or service access/)).toBeTruthy()
     fireEvent.click(screen.getByRole('button', { name: 'Enable Portal access' }))
-    expect(onConfirm).toHaveBeenCalledWith()
+    expect(onConfirm).toHaveBeenCalledWith(undefined)
   })
 
   it('confirms the exact existing access scope during recovery', () => {
