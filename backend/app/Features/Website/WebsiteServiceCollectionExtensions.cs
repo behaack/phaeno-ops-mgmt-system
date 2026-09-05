@@ -67,6 +67,12 @@ public static class WebsiteServiceCollectionExtensions
         });
 
         services.AddScoped<WebsiteService>();
+        services.AddScoped<WebsiteNotificationDispatcher>();
+        services.AddScoped<WebsiteNotificationRecoveryService>();
+        services.AddScoped<WebsiteNotificationProcessingService>();
+        services.AddHostedService<WebsiteNotificationBackgroundService>();
+        services.AddSingleton<WebsiteNotificationQueueMonitor>();
+        services.AddHostedService<WebsiteNotificationMonitoringBackgroundService>();
         services.AddScoped<IWebsiteRecaptchaVerifier, GoogleWebsiteRecaptchaVerifier>();
         services.AddScoped<LoggingWebsiteNotificationSender>();
         services.AddHttpClient<MailgunWebsiteNotificationSender>();

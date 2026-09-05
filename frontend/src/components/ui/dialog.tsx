@@ -51,6 +51,7 @@ function DialogContent({
   className,
   onInteractOutside,
   onPointerDownOutside,
+  onEscapeKeyDown,
   showCloseButton = true,
   ...props
 }: React.ComponentProps<typeof DialogPrimitive.Content> & {
@@ -63,6 +64,14 @@ function DialogContent({
       <DialogOverlay />
       <DialogPrimitive.Content
         data-slot="dialog-content"
+        onEscapeKeyDown={(event) => {
+          // Radix handles Escape in capture, before the combobox closes its list.
+          if (event.target instanceof Element && event.target.closest('[data-searchable-select-open="true"]')) {
+            event.preventDefault()
+            return
+          }
+          onEscapeKeyDown?.(event)
+        }}
         onInteractOutside={(event) => {
           onInteractOutside?.(event)
           event.preventDefault()

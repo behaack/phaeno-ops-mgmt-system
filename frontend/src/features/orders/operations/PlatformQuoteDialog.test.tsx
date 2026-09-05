@@ -1,5 +1,6 @@
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { fireEvent, render, screen, waitFor, within } from "@testing-library/react";
+import { act, fireEvent, render, screen, waitFor, within } from "@testing-library/react";
+import { useState } from "react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 import { PlatformQuoteDialog } from "./PlatformQuoteDialog";
@@ -173,12 +174,89 @@ describe("PlatformQuoteDialog", () => {
     expect(onSaved).toHaveBeenCalledTimes(1);
     expect(screen.getByLabelText(/Unit price/)).toHaveProperty("value", "150");
   });
+
+  it.each(["Cancel", "Close", "Escape"])("protects dirty quote entries when dismissed using %s", async (action) => {
+    const onOpenChange = vi.fn();
+    renderDialog([canonicalItem], undefined, undefined, onOpenChange);
+    fireEvent.change(screen.getByLabelText(/Unit price/), { target: { value: "150" } });
+
+    if (action === "Escape") fireEvent.keyDown(screen.getByRole("dialog"), { key: "Escape" });
+    else fireEvent.click(screen.getByRole("button", { name: new RegExp(`^${action}$`) }));
+
+    expect(await screen.findByText("Discard your unsaved quote changes?")).toBeTruthy();
+    expect(onOpenChange).not.toHaveBeenCalled();
+    expect(document.activeElement).toBe(screen.getByRole("button", { name: "Keep editing" }));
+    expect(screen.getByLabelText(/Unit price/)).toHaveProperty("value", "150");
+    expect(screen.getByRole("button", { name: "Issue quote" })).toHaveProperty("disabled", true);
+    fireEvent.click(screen.getByRole("button", { name: "Keep editing" }));
+    expect(screen.queryByText("Discard your unsaved quote changes?")).toBeNull();
+    expect(screen.getByLabelText(/Unit price/)).toHaveProperty("value", "150");
+
+    fireEvent.click(screen.getByRole("button", { name: "Cancel" }));
+    fireEvent.click(screen.getByRole("button", { name: "Discard changes" }));
+    expect(onOpenChange).toHaveBeenCalledWith(false);
+    expect(api.issuePlatformQuote).not.toHaveBeenCalled();
+  });
+
+  it("closes an untouched quote without a discard prompt", () => {
+    const onOpenChange = vi.fn();
+    renderDialog([canonicalItem], undefined, undefined, onOpenChange);
+    fireEvent.click(screen.getByRole("button", { name: "Cancel" }));
+    expect(onOpenChange).toHaveBeenCalledWith(false);
+    expect(screen.queryByText("Discard your unsaved quote changes?")).toBeNull();
+  });
+
+  it("blocks dismissal and editing until quote issuance and refresh finish", async () => {
+    let finishIssue!: (value: object) => void;
+    let finishRefresh!: () => void;
+    api.issuePlatformQuote.mockReturnValue(new Promise((resolve) => { finishIssue = resolve; }));
+    const onSaved = vi.fn(() => new Promise<void>((resolve) => { finishRefresh = resolve; }));
+    const onOpenChange = vi.fn();
+    renderDialog([canonicalItem], undefined, onSaved, onOpenChange);
+    fireEvent.change(screen.getByLabelText(/Unit price/), { target: { value: "150" } });
+    fireEvent.click(screen.getByRole("button", { name: "Issue quote" }));
+    await waitFor(() => expect(api.issuePlatformQuote).toHaveBeenCalledTimes(1));
+
+    expect(screen.getByRole("button", { name: "Cancel" })).toHaveProperty("disabled", true);
+    expect(screen.queryByRole("button", { name: /^Close$/ })).toBeNull();
+    expect(screen.getByLabelText(/Unit price/).matches(":disabled")).toBe(true);
+    fireEvent.keyDown(screen.getByRole("dialog"), { key: "Escape" });
+    expect(onOpenChange).not.toHaveBeenCalled();
+    await act(async () => { finishIssue({}); });
+    await waitFor(() => expect(onSaved).toHaveBeenCalledTimes(1));
+    fireEvent.keyDown(screen.getByRole("dialog"), { key: "Escape" });
+    expect(onOpenChange).not.toHaveBeenCalled();
+    await act(async () => { finishRefresh(); });
+    await waitFor(() => expect(onOpenChange).toHaveBeenCalledWith(false));
+    expect(screen.queryByText("Discard your unsaved quote changes?")).toBeNull();
+  });
+
+  it("restores focus to the action that opened the quote", async () => {
+    function Harness() {
+      const [open, setOpen] = useState(false);
+      return <>
+        <button type="button" onClick={() => setOpen(true)}>Review quote</button>
+        <PlatformQuoteDialog open={open} workflow="lab" recordId="record-1" defaultQuantity={3} catalogItems={[canonicalItem]} onOpenChange={setOpen} onSaved={vi.fn().mockResolvedValue(undefined)} />
+      </>;
+    }
+    const client = new QueryClient();
+    render(<QueryClientProvider client={client}><Harness /></QueryClientProvider>);
+    const opener = screen.getByRole("button", { name: "Review quote" });
+    opener.focus();
+    fireEvent.click(opener);
+    fireEvent.change(screen.getByLabelText(/Unit price/), { target: { value: "150" } });
+    fireEvent.click(screen.getByRole("button", { name: "Cancel" }));
+    fireEvent.click(screen.getByRole("button", { name: "Discard changes" }));
+    await waitFor(() => expect(screen.queryByRole("dialog")).toBeNull());
+    await waitFor(() => expect(document.activeElement).toBe(opener));
+  });
 });
 
 function renderDialog(
   catalogItems: Array<typeof canonicalItem>,
   priceProposal?: { unitPrice: number; currency: string; note?: string | null },
   onSaved = vi.fn().mockResolvedValue(undefined),
+  onOpenChange = vi.fn(),
 ) {
   const client = new QueryClient({
     defaultOptions: {
@@ -195,7 +273,7 @@ function renderDialog(
         defaultQuantity={3}
         priceProposal={priceProposal}
         catalogItems={catalogItems}
-        onOpenChange={vi.fn()}
+        onOpenChange={onOpenChange}
         onSaved={onSaved}
       />
     </QueryClientProvider>,

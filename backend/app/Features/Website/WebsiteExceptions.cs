@@ -43,3 +43,10 @@ public sealed class WebsiteOperationsRecordNotFoundException(string recordType)
 
     public override string ErrorCode => "web_ops_record_not_found";
 }
+
+public sealed class WebsiteNotificationProcessingValidationException()
+    : DomainException("Enter a reason between 1 and 500 characters for changing Website email processing.")
+{
+    public override string ErrorType => "validation_error";
+    public override string ErrorCode => "website_notification_processing_reason_required";
+}

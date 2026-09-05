@@ -1,5 +1,98 @@
 # Frontend Test Plan
 
+## Combined API/Portal release checkpoint — 2026-09-05
+
+The Product Owner authorized the combined commit/push and production API/Portal
+UI release. The bounded Web Operations correction adds an optional third Email
+delivery Radix tab and mounts only the selected panel. Without a delivery panel,
+the existing two-tab view remains. Equal-width tab labels/counts wrap on mobile.
+All **seven WebOpsDashboardContent component cases** and scoped lint passed;
+the integrated release browser checkpoint passed 18 distinct cases across its
+initial run and targeted rerun. The earlier separate-unit hold below
+records the discovery checkpoint, not a current instruction to extract
+independent artifacts.
+
+The full release-checkpoint frontend suite passed **203 tests across 66 files**,
+and the Portal production build passed. Frontend lint and typecheck exited
+successfully. Documentation freshness passed for all **55 guides**, fingerprint
+`3633301d1516`. Logs are retained under
+`artifacts/review-gap-closure/release-frontend-*`.
+
+Prior frontend, keyboard and local build results remain dated evidence below.
+The verified Portal target is Vercel `cadexgenomics/phaeno-ops-mgmt-system`,
+project `prj_wbE9S9mT46sJxlM3ev0EcaAWJ20R`, repository root directory `frontend`.
+The production API/Portal rollout awaits explicit approval for the three pending
+production migrations documented in the closure plan. Commit/push, released
+artifact identity and production Portal verification remain unrecorded; target
+identification and local builds do not prove promotion. No public Website
+promotion is authorized or claimed by this checkpoint.
+
+## Option-focused Escape correction — 2026-09-05
+
+The selector now handles Escape from either its input or a focused result:
+choices close, focus returns to the input, and the current selection remains.
+The containing dialog handles a subsequent Escape through its existing discard
+policy. Its Radix capture guard recognizes the whole open selector.
+
+All **27 focused tests across five files** passed for SearchableSelect, Trial
+form/sample/scope and PlatformQuoteDialog. The new option-focus regression checks
+preserved value, restored focus, closed choices, and the dialog's deferred Escape
+callback. Scoped lint, typecheck and the Portal production build passed, with
+the existing large-chunk advisory. These are targeted checks of the
+combined working tree, not independent release-unit verification.
+
+At that review checkpoint, `REVIEW-GAP-CLOSURE-2026-09-05.md` held the Website
+email unit because the parent dashboard lacked the documented Email delivery tab
+and isolated-panel tests did not cover that integration. Tab-composition coverage
+was deferred with the bounded correction. The current combined-release section
+above records the subsequent authorization and its verification status.
+
+## Follow-up: review gap closure and Website processing controls — 2026-09-05
+
+All **201 frontend tests across 66 files** passed before the final narrow
+busy-scroll accessibility correction. After that correction, all 11 focused Trial
+and six WebOps tests passed, the Portal production build passed, and scoped lint
+and final typecheck passed. Full lint passed before the correction. The earlier
+195-test integration checkpoint remains recorded below as prior evidence;
+overlapping focused runs are not additional distinct tests.
+
+`WebOpsDeliveryPanel.test.tsx` covers processing status and attention filtering,
+queued messages retained during pause, explicit interrupted labels without
+counting expired attempts as sending, required reasons, preserved reason text
+through a stale version and failed reload, refreshed-version resubmission, and
+blocked editing/dismissal during resume. Existing resend recipient review,
+history, failure/retry, and provider-acceptance wording remain covered. Trial
+follow-up cases cover retained entries and busy protection during reload. Browser
+verification found a keyboard-scroll gap while controls were disabled; named
+focus targets available only while busy now retain keyboard access to the scroll
+region, with the affected browser checks passing.
+
+Audience-specific guides and the generated search corpus were updated: 55 guides,
+fingerprint `3633301d1516`. Documentation routing and audience admission remain
+unchanged. The final browser rerun is recorded in the E2E plan. Local verification
+for this follow-up is complete; hosted acceptance, provider delivery, and external
+alert-sink setup remain separate deployment checks.
+
+## Review gap closure — 2026-09-05
+
+All 195 frontend tests across 65 files passed at the final integration checkpoint;
+47 focused shared-dialog, CRM, quote, Trial, WebOps and documentation cases also
+passed. Lint, typecheck and production build passed. New cases cover CRM
+loading/failure/retry with cached data; quote discard and pending protection;
+changed-scope re-acceptance, dirty Trial dialogs, batch payloads and quantity/
+concentration/replacement validation; WebOps resend review/history and legacy
+brief recovery; and first-Escape combobox dismissal inside a real Radix dialog.
+`CrmCompanyWorkspaces.test.tsx` adds five cases against the actual live People and
+Sales components, including cached rows and preserved association/invitation
+entries when prerequisite queries fail. The final focused CRM run passed 11 cases.
+SearchableSelect preserves Customer wording by default and accepts workflow
+labels, validation names and focus refs for Trial uses.
+
+Website error classification has two dependency-free Node cases; both passed.
+The separate Website build passed for all 17 pages. Audience-specific guides,
+review dates and generated search corpus were updated; guide routing and audience
+admission are unchanged. Browser results are recorded in the E2E plan.
+
 ## Portal documentation search — 2026-09-05
 
 All 168 frontend tests across 62 files passed; full lint/typecheck and production

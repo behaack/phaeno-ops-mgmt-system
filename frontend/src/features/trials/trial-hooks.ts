@@ -17,5 +17,5 @@ export function useTrialQueries(id?: string, search = '', status = '', ownerId =
 export function useTrialMutation<T>() {
   const cache = useQueryClient()
   return useMutation({ mutationFn: ({ path, payload, key }: { path: string; payload: unknown; key: string }) => changeTrial<T>(path, payload, key),
-    onSuccess: async () => { await Promise.all(['trials', 'trial', 'trial-configuration', 'trial-packages', 'sample-shipments'].map(key => cache.invalidateQueries({ queryKey: [key] }))) } })
+    onSuccess: async () => { await Promise.all(['trials', 'trial', 'trial-configuration', 'trial-packages', 'trial-requests', 'crm-handoffs', 'crm-activities', 'sample-shipments'].map(key => cache.invalidateQueries({ queryKey: [key] }))) } })
 }

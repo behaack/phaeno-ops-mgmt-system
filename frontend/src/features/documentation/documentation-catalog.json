@@ -1107,7 +1107,7 @@
       "title": "Troubleshooting and recovery",
       "summary": "Resolve access, duplicate, stale-update, conversion, stage, import, Task, and handoff problems safely.",
       "order": 22,
-      "reviewedAt": "2026-09-01",
+      "reviewedAt": "2026-09-05",
       "navigationGroup": "customer-relationship-management",
       "contentType": "troubleshooting",
       "topicIds": [
@@ -1373,7 +1373,7 @@
       "title": "Customer lab authorization",
       "summary": "Review Job pricing profiles, issue POMS quotes, and authorize Lab work after roster finalization.",
       "order": 41,
-      "reviewedAt": "2026-09-03",
+      "reviewedAt": "2026-09-05",
       "navigationGroup": "order-operations",
       "contentType": "guide",
       "topicIds": [

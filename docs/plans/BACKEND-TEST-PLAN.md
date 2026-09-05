@@ -1,5 +1,79 @@
 # Backend Test Plan
 
+## Combined API/Portal release checkpoint — 2026-09-05
+
+The Product Owner authorized committing/pushing the combined change and deploying
+the production API plus Portal UI. Inspected production workflow `33975386749`
+at commit `ab2df0a` records migration through
+`20260905140916_FreezeReleasedDeliverableReceiptLineage`. The pending release
+migrations are `20260905172646_AddTrialProjectIntegration`,
+`20260905213944_AddWebsiteNotificationRecovery`, and
+`20260905222201_AddWebsiteNotificationProcessingControl`, in that order.
+Their reviewed idempotent script is
+`artifacts/review-gap-closure/production-review-migrations.sql`, SHA-256
+`10A12E85A0B0930AA98E5766D3991227B19556E58248FE60D7F33AC1BBC01EA3`.
+Explicit approval for the shared migration is still pending; API/Portal
+deployment authorization and earlier local applications do not establish it.
+No production application of these migrations is claimed at this checkpoint.
+
+The current release-focused run passed **59 tests with zero failures/skips**.
+The backend Release build passed with zero warnings/errors, and EF reports no
+pending model changes. Evidence is in `artifacts/review-gap-closure/release-backend-*`
+and `release-pending-model.log`. The earlier 27 distinct Website checks remain
+the prior subsystem checkpoint. Local release verification is complete;
+commit/push, exact deployed artifact, production migration/backup evidence and
+runtime health remain unrecorded pending release-owner confirmation.
+Hosted operator admission, real provider acceptance versus inbox delivery,
+external alert collection/routing and actual Trial/storage paths remain separate
+acceptance evidence. Public Website deployment is outside this request.
+
+## Follow-up: review gap closure and Website processing controls — 2026-09-05
+
+All **27 distinct Website checks** passed: 11 PostgreSQL workflow cases, one
+independent-connection processing case, one sender case, one queue-monitor case,
+and 13 API cases. This follow-up extends the prior checkpoint below; the counts
+overlap and must not be added together as independent coverage.
+
+Coverage includes durable pause/resume with required reason, current-version
+conflicts and actor audit; intake and manual recovery queuing without consuming
+attempts while paused; acknowledgement without waiting for an in-flight provider
+call; persistence across fresh connections; and resumed processing of retained
+work. Summary/filter cases cover failed and expired claims, including an explicit
+interrupted-row projection. Monitor checks cover counts while paused, changed
+attention, bounded reminders, cleared attention, numerical gauges, and exclusion
+of actor/reason details from logs. Unsubscribe and completion cancel queued or
+failed work while retaining attempt history; retired intake also cancels a final
+expired claim and a provider failure that finishes after retirement.
+
+The Release build passed with zero warnings, and the EF pending-model check was
+clean. Migration `20260905222201_AddWebsiteNotificationProcessingControl` was
+applied to isolated loopback PostgreSQL on port 55435 and configured local
+`phaeno_ops` on port 5432; the configured-local application followed a backup.
+The regenerated ERD accounts for all 157 tables at this checkpoint. Providers
+and identities remain synthetic. These results do not establish shared or
+production rollout, hosted admission, real provider acceptance, or inbox delivery.
+External collection of the emitted metrics/logs and alert-sink configuration
+remain deployment work; the monitor tests do not establish an active external
+alerting service.
+
+## Review gap closure — 2026-09-05
+
+All 51 focused Website API, notification, Trial domain/PostgreSQL, and persistence
+cases passed with zero skips. The PostgreSQL cases used the isolated loopback
+reference cluster with commit tracking; notification providers were fake.
+`WebsiteNotificationPostgresTests.cs` covers atomic intake/enqueue, duplicate
+suppression, bounded retries and immutable attempt history, version/cooldown and
+actor audit for recovery, interrupted final leases, inactive intake, legacy brief
+recovery, and propagation of Mailgun rejection through a fake HTTP handler.
+`TrialProjectPostgresTests.cs` adds a two-sample authorization/shipment, sample-type
+quantity rules, exact Company/request lookup, and superseded/expired availability.
+
+Release build passed with zero warnings/errors. Additive migration
+`20260905213944_AddWebsiteNotificationRecovery` was applied to the isolated
+reference database and configured local `phaeno_ops` after a backup; the complete
+ERD was regenerated. Real provider acceptance/inbox delivery, hosted admission,
+shared migration and production workers remain release verification steps.
+
 ## Portal documentation search — 2026-09-05
 
 All 51 focused documentation-search, Website API and Website crawler cases passed

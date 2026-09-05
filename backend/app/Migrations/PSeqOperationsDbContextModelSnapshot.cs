@@ -12961,6 +12961,192 @@ namespace PSeq.Operations.Api.Migrations
                     b.ToTable("web_contacts", "website");
                 });
 
+            modelBuilder.Entity("PhaenoPortal.App.Features.Website.Entities.WebNotificationAttempt", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid")
+                        .HasColumnName("id");
+
+                    b.Property<int>("AttemptNumber")
+                        .HasColumnType("integer")
+                        .HasColumnName("attempt_number");
+
+                    b.Property<string>("Error")
+                        .HasMaxLength(500)
+                        .HasColumnType("character varying(500)")
+                        .HasColumnName("error");
+
+                    b.Property<DateTimeOffset?>("FinishedAtUtc")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("finished_at_utc");
+
+                    b.Property<string>("Outcome")
+                        .IsRequired()
+                        .HasMaxLength(30)
+                        .HasColumnType("character varying(30)")
+                        .HasColumnName("outcome");
+
+                    b.Property<Guid?>("RecoveryByUserId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("recovery_by_user_id");
+
+                    b.Property<DateTimeOffset>("StartedAtUtc")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("started_at_utc");
+
+                    b.Property<Guid>("WebNotificationDeliveryId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("web_notification_delivery_id");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("WebNotificationDeliveryId", "AttemptNumber")
+                        .IsUnique();
+
+                    b.ToTable("web_notification_attempts", "website");
+                });
+
+            modelBuilder.Entity("PhaenoPortal.App.Features.Website.Entities.WebNotificationDelivery", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid")
+                        .HasColumnName("id");
+
+                    b.Property<DateTimeOffset?>("AcceptedAtUtc")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("accepted_at_utc");
+
+                    b.Property<int>("AttemptCount")
+                        .HasColumnType("integer")
+                        .HasColumnName("attempt_count");
+
+                    b.Property<int>("AttemptsSinceRecovery")
+                        .HasColumnType("integer")
+                        .HasColumnName("attempts_since_recovery");
+
+                    b.Property<DateTimeOffset>("CreatedAtUtc")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("created_at_utc");
+
+                    b.Property<string>("Kind")
+                        .IsRequired()
+                        .HasMaxLength(40)
+                        .HasColumnType("character varying(40)")
+                        .HasColumnName("kind");
+
+                    b.Property<DateTimeOffset?>("LastAttemptAtUtc")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("last_attempt_at_utc");
+
+                    b.Property<string>("LastError")
+                        .HasMaxLength(500)
+                        .HasColumnType("character varying(500)")
+                        .HasColumnName("last_error");
+
+                    b.Property<DateTimeOffset?>("LastRecoveryAtUtc")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("last_recovery_at_utc");
+
+                    b.Property<Guid?>("LastRecoveryByUserId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("last_recovery_by_user_id");
+
+                    b.Property<DateTimeOffset?>("LeaseExpiresAtUtc")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("lease_expires_at_utc");
+
+                    b.Property<Guid?>("LeaseToken")
+                        .HasColumnType("uuid")
+                        .HasColumnName("lease_token");
+
+                    b.Property<DateTimeOffset>("NextAttemptAtUtc")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("next_attempt_at_utc");
+
+                    b.Property<string>("State")
+                        .IsRequired()
+                        .HasMaxLength(30)
+                        .HasColumnType("character varying(30)")
+                        .HasColumnName("state");
+
+                    b.Property<Guid>("Version")
+                        .IsConcurrencyToken()
+                        .HasColumnType("uuid")
+                        .HasColumnName("version");
+
+                    b.Property<Guid?>("WebContactId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("web_contact_id");
+
+                    b.Property<Guid?>("WebOrderId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("web_order_id");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("State", "NextAttemptAtUtc");
+
+                    b.HasIndex("WebContactId", "Kind")
+                        .IsUnique();
+
+                    b.HasIndex("WebOrderId", "Kind")
+                        .IsUnique();
+
+                    b.ToTable("web_notification_deliveries", "website", t =>
+                        {
+                            t.HasCheckConstraint("ck_web_notification_target", "(web_contact_id IS NOT NULL AND web_order_id IS NULL AND kind IN ('MailingListAlert', 'TechnicalBrief')) OR (web_order_id IS NOT NULL AND web_contact_id IS NULL AND kind = 'DemoRequestAlert')");
+                        });
+                });
+
+            modelBuilder.Entity("PhaenoPortal.App.Features.Website.Entities.WebNotificationProcessingControl", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid")
+                        .HasColumnName("id");
+
+                    b.Property<bool>("IsPaused")
+                        .HasColumnType("boolean")
+                        .HasColumnName("is_paused");
+
+                    b.Property<string>("Reason")
+                        .HasMaxLength(500)
+                        .HasColumnType("character varying(500)")
+                        .HasColumnName("reason");
+
+                    b.Property<DateTimeOffset?>("UpdatedAtUtc")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("updated_at_utc");
+
+                    b.Property<Guid?>("UpdatedByUserId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("updated_by_user_id");
+
+                    b.Property<Guid>("Version")
+                        .IsConcurrencyToken()
+                        .HasColumnType("uuid")
+                        .HasColumnName("version");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("UpdatedByUserId");
+
+                    b.ToTable("web_notification_processing_controls", "website", t =>
+                        {
+                            t.HasCheckConstraint("ck_web_notification_processing_singleton", "id = '526a3498-feb3-4a94-a5f2-9277c2bc9c97'::uuid");
+                        });
+
+                    b.HasData(
+                        new
+                        {
+                            Id = new Guid("526a3498-feb3-4a94-a5f2-9277c2bc9c97"),
+                            IsPaused = false,
+                            Version = new Guid("a6d4f4cc-c523-4a08-86f7-5d2bb44a1099")
+                        });
+                });
+
             modelBuilder.Entity("PhaenoPortal.App.Features.Website.Entities.WebOrder", b =>
                 {
                     b.Property<Guid>("Id")
@@ -15359,6 +15545,36 @@ namespace PSeq.Operations.Api.Migrations
                         .HasForeignKey("OrganizationId")
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
+                });
+
+            modelBuilder.Entity("PhaenoPortal.App.Features.Website.Entities.WebNotificationAttempt", b =>
+                {
+                    b.HasOne("PhaenoPortal.App.Features.Website.Entities.WebNotificationDelivery", null)
+                        .WithMany()
+                        .HasForeignKey("WebNotificationDeliveryId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+                });
+
+            modelBuilder.Entity("PhaenoPortal.App.Features.Website.Entities.WebNotificationDelivery", b =>
+                {
+                    b.HasOne("PhaenoPortal.App.Features.Website.Entities.WebContact", null)
+                        .WithMany()
+                        .HasForeignKey("WebContactId")
+                        .OnDelete(DeleteBehavior.Restrict);
+
+                    b.HasOne("PhaenoPortal.App.Features.Website.Entities.WebOrder", null)
+                        .WithMany()
+                        .HasForeignKey("WebOrderId")
+                        .OnDelete(DeleteBehavior.Restrict);
+                });
+
+            modelBuilder.Entity("PhaenoPortal.App.Features.Website.Entities.WebNotificationProcessingControl", b =>
+                {
+                    b.HasOne("PSeq.Operations.Commercial.Accounts.Domain.User", null)
+                        .WithMany()
+                        .HasForeignKey("UpdatedByUserId")
+                        .OnDelete(DeleteBehavior.Restrict);
                 });
 
             modelBuilder.Entity("PSeq.Operations.Commercial.Accounts.Domain.Organization", b =>

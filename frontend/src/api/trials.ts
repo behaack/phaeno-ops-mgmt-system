@@ -1,6 +1,11 @@
 import { api } from './client'
+import type { ReleasedDeliverableRetention } from './order-management'
+import { isAxiosError } from 'axios'
 
 export type TrialChoice = { id: string; name: string; version: number }
+export type TrialSampleType = TrialChoice & { quantityUnit: string; minimumQuantity: number | null; maximumQuantity: number | null }
+export type TrialHandoff = { id: string; companyName: string; opportunityName: string; summary: string }
+export type TrialHandoffPage = { items: TrialHandoff[]; total: number; page: number; pageSize: number }
 export type TrialDeliverable = { id: string; revision: number; key: string; name: string }
 export type TrialAnalysis = { id: string; version: number; name: string; instructions: string; requiredInputsJson: string; resultContractJson: string }
 export type TrialScopeValues = {
@@ -14,7 +19,7 @@ export type TrialScope = Omit<TrialScopeValues, 'workflowVersionId' | 'estimated
   decisions: { domain: string; decision: string; reason: string | null; actorUserId: string | null; asDelegate: boolean | null; atUtc: string }[]
 }
 export type TrialRow = { salesOwnerUserId?: string; salesOwnerName?: string; requestedAtUtc?: string; dueAtUtc?: string; id: string; number: string; name: string; companyName: string; status: string; isOnHold: boolean; sampleCount: number; sampleAllowance: number | null; submissionClosesAtUtc: string | null; updatedAtUtc: string; version: number }
-export type TrialRelease = { id: string; releaseVersion: number; scopeRevision: number; isCompletePackage: boolean; isWithdrawn: boolean; releasedAtUtc: string; retentionSnapshotId: string | null; files: { id: string; fileName: string; fileKind: string; sizeBytes: number; sha256: string }[] }
+export type TrialRelease = { id: string; releaseVersion: number; scopeRevision: number; isCompletePackage: boolean; isWithdrawn: boolean; releasedAtUtc: string; retentionSnapshotId: string | null; isDownloadAvailable: boolean; downloadUnavailableReason: string | null; retention: ReleasedDeliverableRetention | null; files: { id: string; fileName: string; fileKind: string; sizeBytes: number; sha256: string }[] }
 export type TrialDetail = {
   crmPendingMilestones?: number; canRecordCommercialOutcome?: boolean; canDeactivateProspect?: boolean; canReleaseResults?: boolean; id: string; number: string; companyName: string; companyId: string; opportunityId: string; organizationId: string | null; departmentId: string | null
   status: string; version: number; isStaff: boolean; canManage: boolean; canAccept: boolean; canSubmit: boolean; submissionBlocker: string | null
@@ -30,7 +35,7 @@ export type TrialConfiguration = {
   canManageConfiguration: boolean; canAssignPrimary: boolean; primaryDomains: string[]
   handoffs: { id: string; companyName: string; opportunityName: string; summary: string }[]
   analyses: TrialChoice[]; workflows: TrialChoice[]; deliverables: TrialDeliverable[]; defaultDeliverableIds: string[]
-  departments: TrialChoice[]; destinations: TrialChoice[]; sampleTypes: TrialChoice[]; staff: TrialChoice[]
+  departments: TrialChoice[]; destinations: TrialChoice[]; sampleTypes: TrialSampleType[]; staff: TrialChoice[]
   authorities: { id: string; userId: string; userName: string; domain: string; isPrimary: boolean; primaryAuthorityId: string | null; designatedByUserId?: string; effectiveAtUtc?: string; reason?: string; revocationReason?: string; revokedAtUtc: string | null; version: number }[]
 }
 export type TrialOutputPackage = { id: string; trialSampleId: string; packageVersion: number; state: string; scientificApprovalId: string | null; artifacts: { id: string; logicalRole: string; fileName: string; scanState: string }[] }
@@ -38,11 +43,19 @@ type Envelope<T> = { data: T }
 export const listTrials = async (search: string, status?: string, ownerId?: string) => (await api.get<Envelope<TrialRow[]>>('/trials', { params: { search, status: status || undefined, ownerId: ownerId || undefined } })).data.data
 export const getTrial = async (id: string) => (await api.get<Envelope<TrialDetail>>(`/trials/${id}`)).data.data
 export const getTrialConfiguration = async (companyId?: string) => (await api.get<Envelope<TrialConfiguration>>('/trials/configuration', { params: { companyId } })).data.data
+export const getTrialHandoffs = async (search: string, page: number, companyId?: string, requestId?: string) => (await api.get<Envelope<TrialHandoffPage>>('/trials/requests', { params: { search, page, companyId, requestId } })).data.data
 export const getTrialOutputPackages = async (id: string) => (await api.get<Envelope<TrialOutputPackage[]>>(`/trials/${id}/results/candidates`)).data.data
 export const changeTrial = async <T = TrialDetail>(path: string, payload: unknown, key: string) =>
   (await api.post<Envelope<T>>(`/trials${path}`, payload, { headers: { 'Idempotency-Key': key } })).data.data
-export async function downloadTrial(path: string, fallbackName: string) {
-  const result = await api.get<Blob>(`/trials${path}`, { responseType: 'blob' })
+export async function downloadTrial(path: string, fallbackName: string, onProgress?: (percent: number | null) => void) {
+  let result
+  try { result = await api.get<Blob>(`/trials${path}`, { responseType: 'blob', onDownloadProgress: event => onProgress?.(event.total ? Math.round(event.loaded / event.total * 100) : null) }) }
+  catch (failure) {
+    if (isAxiosError(failure) && failure.response?.data instanceof Blob) {
+      try { failure.response.data = JSON.parse(await failure.response.data.text()) } catch { /* Preserve the original error if the body is not JSON. */ }
+    }
+    throw failure
+  }
   const link = document.createElement('a'); const url = URL.createObjectURL(result.data)
   link.href = url; link.download = fallbackName; document.body.append(link); link.click(); link.remove()
   setTimeout(() => URL.revokeObjectURL(url), 60_000)

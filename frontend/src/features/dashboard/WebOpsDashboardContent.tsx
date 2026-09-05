@@ -8,7 +8,7 @@ import {
   Send,
   UserMinus,
 } from 'lucide-react'
-import { useRef, useState } from 'react'
+import { useRef, useState, type ReactNode } from 'react'
 
 import {
   getWebOpsErrorMessage,
@@ -67,23 +67,32 @@ type WebOpsDashboardContentProps = {
   mailingList: WebOpsPanelState<WebOpsMailingListContact>
   demoRequests: WebOpsPanelState<WebOpsDemoRequest>
   isMockData?: boolean
+  notificationPanel?: ReactNode
+  briefAction?: WebOpsPanelAction<WebOpsMailingListContact>
 }
 
 export function WebOpsDashboardContent({
   mailingList,
   demoRequests,
   isMockData = false,
+  notificationPanel,
+  briefAction,
 }: WebOpsDashboardContentProps) {
   const [contactToUnsubscribe, setContactToUnsubscribe] =
     useState<WebOpsMailingListContact>()
   const [requestToComplete, setRequestToComplete] =
     useState<WebOpsDemoRequest>()
+  const [briefContact, setBriefContact] = useState<WebOpsMailingListContact>()
   const [mailingListSuccess, setMailingListSuccess] = useState<string>()
   const [demoRequestSuccess, setDemoRequestSuccess] = useState<string>()
   const mailingListActionButton = useRef<HTMLElement | null>(null)
   const demoRequestActionButton = useRef<HTMLElement | null>(null)
   const mailingListHeading = useRef<HTMLHeadingElement | null>(null)
   const demoRequestsHeading = useRef<HTMLHeadingElement | null>(null)
+  const hasNotificationPanel = Boolean(notificationPanel)
+  const responsiveTabClass = hasNotificationPanel
+    ? 'min-h-11 flex-col gap-0.5 whitespace-normal px-2 py-1.5 sm:min-h-0 sm:flex-row sm:gap-1.5 sm:whitespace-nowrap sm:py-0.5'
+    : undefined
 
   const closeUnsubscribeDialog = () => {
     setContactToUnsubscribe(undefined)
@@ -147,8 +156,9 @@ export function WebOpsDashboardContent({
             Web Operations
           </h2>
           <p className="mt-1 text-sm text-muted-foreground">
-            Review mailing-list signups and demo requests received from the
-            public Website.
+            {hasNotificationPanel
+              ? 'Review public Website signups, demo requests, and email delivery.'
+              : 'Review mailing-list signups and demo requests received from the public Website.'}
           </p>
         </div>
         <Badge variant="outline">
@@ -157,21 +167,25 @@ export function WebOpsDashboardContent({
       </div>
 
       <Tabs defaultValue="mailing-list">
-        <TabsList aria-label="Web Operations lists">
-          <TabsTrigger value="mailing-list">
-            <Mail aria-hidden="true" />
-            Mailing List
-            <Badge variant="secondary" className="ml-1 tabular-nums">
+        <TabsList aria-label="Web Operations lists" className={hasNotificationPanel ? 'grid w-full grid-cols-3 gap-1 group-data-horizontal/tabs:h-auto sm:w-fit' : undefined}>
+          <TabsTrigger value="mailing-list" className={responsiveTabClass}>
+            <Mail aria-hidden="true" className={hasNotificationPanel ? 'hidden sm:block' : undefined} />
+            <span>Mailing List</span>
+            <Badge variant="secondary" className={hasNotificationPanel ? 'tabular-nums sm:ml-1' : 'ml-1 tabular-nums'}>
               {mailingList.data?.totalCount ?? 0}
             </Badge>
           </TabsTrigger>
-          <TabsTrigger value="demo-requests">
-            <Send aria-hidden="true" />
-            Demo Requests
-            <Badge variant="secondary" className="ml-1 tabular-nums">
+          <TabsTrigger value="demo-requests" className={responsiveTabClass}>
+            <Send aria-hidden="true" className={hasNotificationPanel ? 'hidden sm:block' : undefined} />
+            <span>Demo Requests</span>
+            <Badge variant="secondary" className={hasNotificationPanel ? 'tabular-nums sm:ml-1' : 'ml-1 tabular-nums'}>
               {demoRequests.data?.totalCount ?? 0}
             </Badge>
           </TabsTrigger>
+          {hasNotificationPanel ? <TabsTrigger value="email-delivery" className={responsiveTabClass}>
+            <Mail aria-hidden="true" className="hidden sm:block" />
+            <span>Email delivery</span>
+          </TabsTrigger> : null}
         </TabsList>
 
         <TabsContent value="mailing-list">
@@ -253,6 +267,10 @@ export function WebOpsDashboardContent({
                           >
                             {formatDateTime(contact.createdAtUtc)}
                           </time>
+                          {briefAction && contact.technicalBriefRequested && contact.technicalBriefDeliveryRecorded === false && <Button
+                            size="sm" variant="outline" disabled={briefAction.isPending}
+                            onClick={event => { mailingListActionButton.current = event.currentTarget; briefAction.onReset(); setBriefContact(contact) }}
+                          >Queue technical brief</Button>}
                           {mailingList.action ? (
                             <Button
                               type="button"
@@ -411,7 +429,28 @@ export function WebOpsDashboardContent({
             ) : null}
           </Card>
         </TabsContent>
+        {hasNotificationPanel ? <TabsContent value="email-delivery">{notificationPanel}</TabsContent> : null}
       </Tabs>
+      <WebOpsActionDialog
+        open={Boolean(briefContact)}
+        title="Queue this requested technical brief?"
+        description={`This older signup requested a technical brief, but its original email delivery status is unknown. This queues the brief for ${briefContact?.email ?? 'the signup email'} and may send a duplicate. Review the request before continuing.`}
+        confirmLabel="Queue technical brief"
+        pendingLabel="Queuing…"
+        errorTitle="Technical brief was not queued"
+        error={briefAction?.error}
+        isPending={briefAction?.isPending ?? false}
+        onOpenChange={open => { if (!open && !briefAction?.isPending) { setBriefContact(undefined); closeUnsubscribeDialog() } }}
+        onConfirm={async () => {
+          if (!briefContact || !briefAction) return
+          try {
+            await briefAction.onExecute(briefContact)
+            setMailingListSuccess('The requested technical brief was queued. Review its status in Email delivery.')
+            setBriefContact(undefined)
+            closeUnsubscribeDialog()
+          } catch { /* The error remains visible for recovery. */ }
+        }}
+      />
 
       <WebOpsActionDialog
         open={Boolean(contactToUnsubscribe)}

@@ -1,5 +1,10 @@
 # Order Management Plan
 
+The 2026-09-05 [review gap closure](REVIEW-GAP-CLOSURE-2026-09-05.md)
+adds explicit discard confirmation to the quote dialog, including Close,
+Cancel and Escape, while preserving price proposals, authoritative conflict
+recovery and pending-issuance protection. Quote business rules are unchanged.
+
 ## 2026-08-29 PSeq order-to-cash implementation update
 
 For PSeq Lab Service, `PSEQ-ORDER-TO-CASH-GAP-CLOSURE-PLAN.md` supersedes the

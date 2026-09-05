@@ -1,5 +1,5 @@
 import { Search } from "lucide-react";
-import { useEffect, useId, useMemo, useRef, useState } from "react";
+import { useEffect, useId, useMemo, useRef, useState, type KeyboardEvent, type Ref } from "react";
 
 import { Input } from "#/components/ui/input";
 import { cn } from "#/lib/utils";
@@ -19,9 +19,15 @@ export function SearchableSelect({
   onValueChange,
   placeholder,
   emptyMessage,
+  resultsLabel = "Customer search results",
+  selectionMessage = "Select a Customer from the search results.",
+  noMatchMessage = "No matching eligible Customers.",
+  narrowMessage = (count: number) => `Keep typing to narrow ${count} eligible Customers.`,
   disabled = false,
   required = false,
   "aria-describedby": ariaDescribedBy,
+  "aria-invalid": ariaInvalid,
+  inputRef: externalInputRef,
   className,
 }: {
   id: string;
@@ -30,9 +36,15 @@ export function SearchableSelect({
   onValueChange: (value: string) => void;
   placeholder: string;
   emptyMessage: string;
+  resultsLabel?: string;
+  selectionMessage?: string;
+  noMatchMessage?: string;
+  narrowMessage?: (count: number) => string;
   disabled?: boolean;
   required?: boolean;
   "aria-describedby"?: string;
+  "aria-invalid"?: boolean;
+  inputRef?: Ref<HTMLInputElement>;
   className?: string;
 }) {
   const generatedId = useId();
@@ -68,9 +80,19 @@ export function SearchableSelect({
     inputRef.current?.setCustomValidity("");
   }
 
+  function dismissChoices(event: KeyboardEvent<HTMLElement>) {
+    if (event.key !== "Escape" || !open) return;
+    event.preventDefault();
+    event.stopPropagation();
+    // Focus first: the input's focus handler opens choices, then this closes them.
+    inputRef.current?.focus();
+    setOpen(false);
+  }
+
   return (
     <div
       className={cn("relative", className)}
+      data-searchable-select-open={open || undefined}
       onBlur={(event) => {
         if (!event.currentTarget.contains(event.relatedTarget)) setOpen(false);
       }}
@@ -81,7 +103,11 @@ export function SearchableSelect({
           className="pointer-events-none absolute top-1/2 left-3 size-4 -translate-y-1/2 text-muted-foreground"
         />
         <Input
-          ref={inputRef}
+          ref={(element) => {
+            inputRef.current = element;
+            if (typeof externalInputRef === "function") externalInputRef(element);
+            else if (externalInputRef) externalInputRef.current = element;
+          }}
           id={id}
           value={search}
           disabled={disabled}
@@ -91,6 +117,7 @@ export function SearchableSelect({
           aria-expanded={open}
           aria-controls={listboxId}
           aria-describedby={ariaDescribedBy}
+          aria-invalid={ariaInvalid}
           aria-activedescendant={
             open && activeOption
               ? `${listboxId}-${activeOption.value}`
@@ -110,7 +137,7 @@ export function SearchableSelect({
             setOpen(true);
             onValueChange("");
             event.currentTarget.setCustomValidity(
-              "Select a Customer from the search results.",
+              selectionMessage,
             );
           }}
           onKeyDown={(event) => {
@@ -126,9 +153,7 @@ export function SearchableSelect({
             } else if (event.key === "Enter" && open && activeOption) {
               event.preventDefault();
               choose(activeOption);
-            } else if (event.key === "Escape") {
-              setOpen(false);
-            }
+            } else dismissChoices(event);
           }}
         />
       </div>
@@ -137,7 +162,7 @@ export function SearchableSelect({
         <div
           id={listboxId}
           role="listbox"
-          aria-label="Customer search results"
+          aria-label={resultsLabel}
           className="absolute z-50 mt-1 max-h-60 w-full overflow-y-auto rounded-md border bg-popover p-1 text-popover-foreground shadow-md"
         >
           {visibleOptions.length ? (
@@ -157,6 +182,7 @@ export function SearchableSelect({
                   onMouseEnter={() => setActiveIndex(index)}
                   onMouseDown={(event) => event.preventDefault()}
                   onClick={() => choose(option)}
+                  onKeyDown={dismissChoices}
                 >
                   {option.label}
                 </button>
@@ -166,14 +192,13 @@ export function SearchableSelect({
                   className="border-t px-3 py-2 text-xs text-muted-foreground"
                   role="status"
                 >
-                  Keep typing to narrow {filteredOptions.length} eligible
-                  Customers.
+                  {narrowMessage(filteredOptions.length)}
                 </p>
               ) : null}
             </>
           ) : (
             <p className="px-3 py-2 text-sm text-muted-foreground" role="status">
-              {options.length ? "No matching eligible Customers." : emptyMessage}
+              {options.length ? noMatchMessage : emptyMessage}
             </p>
           )}
         </div>

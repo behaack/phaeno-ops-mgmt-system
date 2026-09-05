@@ -29,6 +29,7 @@ import {
   Dialog,
   DialogContent,
   DialogDescription,
+  DialogFeedback,
   DialogFooter,
   DialogHeader,
   DialogTitle,
@@ -40,6 +41,7 @@ import { Textarea } from "#/components/ui/textarea";
 import { CrmAssociationRecordCombobox } from "./CrmAssociationRecordCombobox";
 import { CrmCompanyContactEditDialog } from "./CrmCompanyContactEditDialog";
 import { CrmRelationshipRoleSelect } from "./CrmRelationshipRoleSelect";
+import { CrmCollectionFeedback as CollectionFeedback, type CrmCollectionQueryState as CollectionQueryState } from "./CrmCollectionFeedback";
 
 export function CrmCompanyRelationships({
   companyId,
@@ -134,6 +136,7 @@ export function CrmCompanyRelationships({
                   <Button
                     size="sm"
                     variant="outline"
+                    disabled={contacts.isPending || contacts.isError}
                     onClick={() => setAssociateOpen(true)}
                   >
                     <Plus data-icon="inline-start" />
@@ -142,6 +145,7 @@ export function CrmCompanyRelationships({
                 </CardAction>
               </CardHeader>
               <CardContent className="space-y-2">
+                <CollectionFeedback name="contacts" query={contacts} />
                 {(contacts.data ?? []).map((contact) => (
                   <div
                     key={contact.id}
@@ -172,7 +176,7 @@ export function CrmCompanyRelationships({
                     </div>
                   </div>
                 ))}
-                {!contacts.isLoading && !(contacts.data?.length ?? 0) ? (
+                {contacts.isSuccess && contacts.data.length === 0 ? (
                   <p className="text-sm text-muted-foreground">
                     No contacts associated.
                   </p>
@@ -185,6 +189,7 @@ export function CrmCompanyRelationships({
                 <CardDescription>Commercial work tied to this Company.</CardDescription>
               </CardHeader>
               <CardContent className="space-y-2">
+                <CollectionFeedback name="opportunities" query={opportunities} />
                 {(opportunities.data?.items ?? []).map((value) => (
                   <Link
                     key={value.id}
@@ -196,8 +201,7 @@ export function CrmCompanyRelationships({
                     <Badge variant="outline">{value.stageName}</Badge>
                   </Link>
                 ))}
-                {!opportunities.isLoading &&
-                !(opportunities.data?.items.length ?? 0) ? (
+                {opportunities.isSuccess && opportunities.data.items.length === 0 ? (
                   <p className="text-sm text-muted-foreground">
                     No opportunities recorded.
                   </p>
@@ -212,6 +216,7 @@ export function CrmCompanyRelationships({
               .map((contact) => contact.contactId)}
             pending={associate.isPending}
             error={associate.error}
+            contactsQuery={contacts}
             onOpenChange={setAssociateOpen}
             onSubmit={(input) => associate.mutate(input)}
           />
@@ -246,13 +251,14 @@ export function CrmCompanyRelationships({
                 decisions.
               </CardDescription>
               <CardAction>
-                <Button size="sm" onClick={() => setHandoffOpen(true)}>
+                <Button size="sm" disabled={handoffs.isPending || handoffs.isError} onClick={() => setHandoffOpen(true)}>
                   <ArrowRight data-icon="inline-start" />
                   Create request
                 </Button>
               </CardAction>
             </CardHeader>
             <CardContent className="space-y-4">
+              <CollectionFeedback name="Company requests" query={handoffs} />
               {(handoffs.data ?? []).map((value) => (
                 <div key={value.id} className="rounded-lg border p-3">
                   <div className="flex flex-wrap items-center justify-between gap-2">
@@ -264,7 +270,15 @@ export function CrmCompanyRelationships({
                     </div>
                     <div className="flex flex-wrap items-center gap-2">
                       <Badge variant="outline">{spaced(value.status)}</Badge>
-                      {value.type === "TrialProject" ? <Button asChild size="sm" variant="outline">{value.trialProjectId ? <Link to="/trial-projects/$trialId" params={{ trialId: value.trialProjectId }}>Open Trial</Link> : <Link to="/trial-projects">Start Trial</Link>}</Button> : null}
+                      {value.type === "TrialProject" ? (
+                        <Button asChild size="sm" variant="outline">
+                          {value.trialProjectId ? (
+                            <Link to="/trial-projects/$trialId" params={{ trialId: value.trialProjectId }} search={{ fromCompanyId: companyId }}>Open Trial</Link>
+                          ) : (
+                            <Link to="/trial-projects" search={{ requestId: value.id, fromCompanyId: companyId }}>Start Trial</Link>
+                          )}
+                        </Button>
+                      ) : null}
                       {value.status === "PendingReview" ? (
                         <Button asChild size="sm" variant="outline">
                           <Link to="/customers">
@@ -277,7 +291,7 @@ export function CrmCompanyRelationships({
                   </div>
                 </div>
               ))}
-              {!handoffs.isLoading && !(handoffs.data?.length ?? 0) ? (
+              {handoffs.isSuccess && handoffs.data.length === 0 ? (
                 <Alert>
                   <AlertTitle>No Company requests</AlertTitle>
                   <AlertDescription>
@@ -292,6 +306,7 @@ export function CrmCompanyRelationships({
           <HandoffDialog
             open={handoffOpen}
             opportunities={opportunities.data?.items ?? []}
+            opportunitiesQuery={opportunities}
             pending={handoff.isPending}
             error={handoff.error}
             onOpenChange={setHandoffOpen}
@@ -302,11 +317,13 @@ export function CrmCompanyRelationships({
     </>
   );
 }
+
 function AssociateDialog({
   open,
   excludedContactIds,
   pending,
   error,
+  contactsQuery,
   onOpenChange,
   onSubmit,
 }: {
@@ -314,6 +331,7 @@ function AssociateDialog({
   excludedContactIds: string[];
   pending: boolean;
   error: unknown;
+  contactsQuery: CollectionQueryState;
   onOpenChange: (open: boolean) => void;
   onSubmit: (value: {
     contactId: string;
@@ -330,6 +348,7 @@ function AssociateDialog({
         <form
           onSubmit={(event) => {
             event.preventDefault();
+            if (pending || contactsQuery.isPending || contactsQuery.isError) return;
             const data = new FormData(event.currentTarget);
             onSubmit({
               contactId: String(data.get("contactId")),
@@ -347,6 +366,7 @@ function AssociateDialog({
               the Contact.
             </DialogDescription>
           </DialogHeader>
+          {contactsQuery.isPending || contactsQuery.isError ? <DialogFeedback><CollectionFeedback name="contacts" query={contactsQuery} /></DialogFeedback> : null}
           {error ? (
             <Alert variant="destructive">
               <AlertDescription>{apiErrorMessage(error)}</AlertDescription>
@@ -403,7 +423,7 @@ function AssociateDialog({
             >
               Cancel
             </Button>
-            <Button type="submit" disabled={pending}>
+            <Button type="submit" disabled={pending || contactsQuery.isPending || contactsQuery.isError}>
               Associate contact
             </Button>
           </DialogFooter>
@@ -509,6 +529,7 @@ const companyRequestTypeConfig: Record<
 export function HandoffDialog({
   open,
   opportunities,
+  opportunitiesQuery,
   pending,
   error,
   onOpenChange,
@@ -516,6 +537,7 @@ export function HandoffDialog({
 }: {
   open: boolean;
   opportunities: Array<{ id: string; name: string }>;
+  opportunitiesQuery?: CollectionQueryState;
   pending: boolean;
   error: unknown;
   onOpenChange: (open: boolean) => void;
@@ -532,6 +554,7 @@ export function HandoffDialog({
   const [type, setType] = useState<CrmHandoffType>("PortalOnboarding");
   const [requestedServices, setRequestedServices] = useState<string[]>([]);
   const config = companyRequestTypeConfig[type];
+  const opportunitiesUnavailable = config.showOpportunity && Boolean(opportunitiesQuery?.isPending || opportunitiesQuery?.isError);
   const category = companyRequestCategories.find(
     (value) => value.value === config.category,
   )!;
@@ -549,6 +572,7 @@ export function HandoffDialog({
         <form
           onSubmit={(event) => {
             event.preventDefault();
+            if (pending || opportunitiesUnavailable) return;
             const data = new FormData(event.currentTarget);
             onSubmit({
               type,
@@ -574,6 +598,7 @@ export function HandoffDialog({
               changed, or started until the responsible workflow approves it.
             </DialogDescription>
           </DialogHeader>
+          {config.showOpportunity && opportunitiesQuery && (opportunitiesQuery.isPending || opportunitiesQuery.isError) ? <DialogFeedback><CollectionFeedback name="opportunities" query={opportunitiesQuery} /></DialogFeedback> : null}
           {error ? (
             <Alert variant="destructive">
               <AlertDescription>{apiErrorMessage(error)}</AlertDescription>
@@ -656,9 +681,10 @@ export function HandoffDialog({
                 <select
                   id="handoff-opportunity"
                   name="opportunityId"
+                  disabled={opportunitiesUnavailable}
                   className="h-9 rounded-md border bg-background px-3 text-sm"
                 >
-                  <option value="">No specific opportunity</option>
+                  <option value="">{opportunitiesUnavailable ? "Load opportunities to continue" : "No specific opportunity"}</option>
                   {opportunities.map((value) => (
                     <option key={value.id} value={value.id}>
                       {value.name}
@@ -702,7 +728,7 @@ export function HandoffDialog({
             >
               Cancel
             </Button>
-            <Button type="submit" disabled={pending}>
+            <Button type="submit" disabled={pending || opportunitiesUnavailable}>
               {pending ? "Creating…" : "Create pending request"}
             </Button>
           </DialogFooter>

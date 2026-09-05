@@ -1,6 +1,7 @@
 namespace PhaenoPortal.App.Features.Trials.DTOs;
 
 using PSeq.Operations.Commercial.Trials.Domain;
+using PhaenoPortal.App.Features.OrderManagement.DTOs;
 
 public sealed record TrialCreateRequest(Guid CrmHandoffId);
 public sealed record TrialScopeRequest(long Version, Guid DepartmentId, string Name, string Objective, int SampleAllowance,
@@ -34,7 +35,8 @@ public sealed record TrialTimelineDto(string Kind, string Summary, DateTime AtUt
 public sealed record TrialListDto(Guid Id, string Number, string Name, string CompanyName, string Status,
     bool IsOnHold, int SampleCount, int? SampleAllowance, DateTime? SubmissionClosesAtUtc, DateTime UpdatedAtUtc, long Version, Guid? SalesOwnerUserId = null, string? SalesOwnerName = null, DateTime? RequestedAtUtc = null, DateTime? DueAtUtc = null);
 public sealed record TrialReleaseDto(Guid Id, int ReleaseVersion, int ScopeRevision, bool IsCompletePackage,
-    bool IsWithdrawn, DateTime ReleasedAtUtc, Guid? RetentionSnapshotId, IReadOnlyList<TrialFileDto> Files);
+    bool IsWithdrawn, DateTime ReleasedAtUtc, Guid? RetentionSnapshotId, IReadOnlyList<TrialFileDto> Files,
+    bool IsDownloadAvailable = false, string? DownloadUnavailableReason = null, ReleasedDeliverableRetentionDto? Retention = null);
 public sealed record TrialFileDto(Guid Id, string FileName, string FileKind, long SizeBytes, string Sha256);
 public sealed record TrialDetailDto(Guid Id, string Number, string CompanyName, Guid CompanyId, Guid OpportunityId,
     Guid? OrganizationId, Guid? DepartmentId, string Status, long Version, bool IsStaff, bool CanManage,
@@ -46,10 +48,12 @@ public sealed record TrialDetailDto(Guid Id, string Number, string CompanyName, 
     IReadOnlyList<TrialSampleDto> Samples, IReadOnlyList<TrialReplacementDto> Replacements,
     IReadOnlyList<TrialReleaseDto> Releases, IReadOnlyList<TrialTimelineDto> Timeline, int CrmPendingMilestones = 0, bool CanRecordCommercialOutcome = false, bool CanDeactivateProspect = false, bool CanReleaseResults = false);
 public sealed record TrialChoiceDto(Guid Id, string Name, long Version = 1);
+public sealed record TrialSampleTypeDto(Guid Id, string Name, long Version, string QuantityUnit, decimal? MinimumQuantity, decimal? MaximumQuantity);
+public sealed record TrialHandoffPageDto(IReadOnlyList<TrialHandoffChoiceDto> Items, int Total, int Page, int PageSize);
 public sealed record TrialHandoffChoiceDto(Guid Id, string CompanyName, string OpportunityName, string Summary);
 public sealed record TrialAuthorityDto(Guid Id, Guid UserId, string UserName, string Domain, bool IsPrimary, Guid? PrimaryAuthorityId, DateTime? RevokedAtUtc, long Version, Guid DesignatedByUserId, DateTime EffectiveAtUtc, string Reason, string? RevocationReason);
 public sealed record TrialConfigurationDto(bool CanManageConfiguration, bool CanAssignPrimary, IReadOnlyList<string> PrimaryDomains,
     IReadOnlyList<TrialHandoffChoiceDto> Handoffs, IReadOnlyList<TrialChoiceDto> Analyses, IReadOnlyList<TrialChoiceDto> Workflows,
     IReadOnlyList<TrialDeliverableSnapshot> Deliverables, IReadOnlyList<Guid> DefaultDeliverableIds, IReadOnlyList<TrialChoiceDto> Departments,
-    IReadOnlyList<TrialChoiceDto> Destinations, IReadOnlyList<TrialChoiceDto> SampleTypes,
+    IReadOnlyList<TrialChoiceDto> Destinations, IReadOnlyList<TrialSampleTypeDto> SampleTypes,
     IReadOnlyList<TrialChoiceDto> Staff, IReadOnlyList<TrialAuthorityDto> Authorities);

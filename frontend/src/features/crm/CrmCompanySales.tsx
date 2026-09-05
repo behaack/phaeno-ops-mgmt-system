@@ -4,6 +4,7 @@ import { Link } from '@tanstack/react-router'
 import { listCrmOpportunities } from '#/api/crm'
 import { Badge } from '#/components/ui/badge'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '#/components/ui/card'
+import { CrmCollectionFeedback } from './CrmCollectionFeedback'
 
 export function CrmCompanySales({ companyId }: { companyId: string }) {
   const opportunities = useQuery({
@@ -20,6 +21,7 @@ export function CrmCompanySales({ companyId }: { companyId: string }) {
         </CardDescription>
       </CardHeader>
       <CardContent className="space-y-2">
+        <CrmCollectionFeedback name="opportunities" query={opportunities} />
         {(opportunities.data?.items ?? []).map((opportunity) => (
           <Link
             key={opportunity.id}
@@ -36,10 +38,7 @@ export function CrmCompanySales({ companyId }: { companyId: string }) {
             <Badge variant="outline">{opportunity.stageName}</Badge>
           </Link>
         ))}
-        {opportunities.isLoading ? (
-          <p className="text-sm text-muted-foreground" role="status">Loading sales…</p>
-        ) : null}
-        {!opportunities.isLoading && !(opportunities.data?.items.length ?? 0) ? (
+        {opportunities.isSuccess && opportunities.data.items.length === 0 ? (
           <p className="text-sm text-muted-foreground">No opportunities recorded.</p>
         ) : null}
       </CardContent>

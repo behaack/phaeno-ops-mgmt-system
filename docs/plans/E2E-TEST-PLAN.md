@@ -1,5 +1,116 @@
 # Playwright E2E Test Plan
 
+## Combined API/Portal release checkpoint — 2026-09-05
+
+The Product Owner authorized a combined commit/push and production API/Portal
+release with the bounded parent-tab correction. The browser fixture now mounts
+the actual Web Operations parent around the delivery panel. Both existing
+recovery journeys exercise mailing/demo/email switching and ArrowRight tab
+selection; one also switches away and back after successful recovery. Integrated
+single-panel visibility, keyboard and responsive/accessibility checks now pass.
+This replaces the isolated-panel composition that missed the original gap.
+
+The release browser checkpoint passed **18 distinct cases** across an initial
+17/18 run and a 1/1 desktop pause/resume rerun. Its initial Axe failure observed
+a button's disabled-to-enabled opacity transition. The test now waits for the
+enabled state and actual CSS animation completion before scanning; no fixed
+sleep, source color change or rule suppression was added. Rerun evidence is in
+`artifacts/review-gap-closure/release-processing-recheck`. This targeted rerun is
+part of the 18-case set, not another distinct case. Earlier browser results
+remain historical checkpoints below.
+
+Final desktop/light and mobile/dark Web Operations screenshots were visually
+reviewed. They show the third Email delivery tab, one selected panel, clean
+label/count wrapping and no horizontal overflow.
+
+Local release verification is complete. API/Portal rollout awaits explicit
+approval for the three pending production migrations recorded in the closure
+plan. Commit/push and production deployment outcomes are not yet recorded. The
+release owner will separately record exact production API/Portal artifact
+identity, health and any authenticated acceptance evidence. Local synthetic
+browser responses do not prove hosted authorization, real email acceptance or
+inbox delivery, external alert routing, or real Trial/storage transfers. The
+separate public Website is not being promoted under this request.
+
+## Option-focused Escape correction and release review — 2026-09-05
+
+Six distinct focused Trial cases passed across desktop Chromium and mobile
+Chrome: sample recovery, exact Company handoff, and the new create-dialog keyboard
+journey. The latter uses real Tab focus on an option: first Escape closes choices
+and restores the input without losing the selected request or invoking discard;
+second Escape reaches the existing dirty-discard confirmation. It also checks
+ArrowDown/Enter, pointer selection, declined and confirmed discard, no submission,
+and no page errors. Mobile uses dark mode and reduced motion; dialog Axe scans
+passed. The initial new test missed the existing count label's final period;
+after correcting that test selector, both new cases passed.
+
+This validates the bounded keyboard correction using synthetic API responses.
+It did not independently assemble or validate a release artifact. At that review
+checkpoint, Website email release was held until its parent Web Operations tabs
+matched the documented selectable Email delivery panel. Integrated tab/keyboard/
+responsive coverage was deferred with the correction; the earlier tests mounted
+the email panel alone and could not establish parent composition. The current
+combined-release checkpoint above tracks the subsequent correction and checks.
+
+## Follow-up: review gap closure and Website processing controls — 2026-09-05
+
+All **14 distinct targeted Trial/WebOps browser cases** passed across the
+follow-up runs. The initial run passed 12/14: all four WebOps cases passed, while
+two Trial sample-reload cases exposed a keyboard-scroll accessibility gap with
+disabled inputs. After adding named focus targets available only while busy, the
+affected sample-reload and pause-controls journeys passed **4/4** across desktop
+and mobile. This rerun includes Tab/PageDown access to the sample scroll region
+and Axe checks while busy. These four cases overlap the 14-case set and are not
+additional distinct cases. The earlier review checkpoint remains recorded below.
+
+The WebOps journey exercises pause and resume with queued work retained, required
+reason entry, stale-version recovery with the exact reason preserved, delayed
+reload with editing and dismissal blocked, explicit interrupted labels, active
+sending counts, and failed/expired attention filtering with queued rows excluded.
+The fixture includes separate failed and interrupted records, and asserts that
+interrupted attempts are excluded from Sending. It verifies the submitted
+versions/reasons, keyboard behavior, page errors, overflow, and Axe WCAG
+2/2.1/2.2 AA checks in the relevant busy, recovered, and paused states. The existing
+recipient/resend/history journey remains part of the four-case WebOps set.
+
+The Trial follow-up targets preserved sample entries and scope state through
+failed reloads, busy states, and renewed acceptance. Browser responses and contact
+identities are synthetic; backend tests separately exercise actual local
+PostgreSQL admission, pause, and retirement races. No shared deployment,
+production identity, real email, or provider-delivery result is claimed. Automated
+accessibility checks supplement keyboard/reflow review and are not a full
+conformance claim. External alert collection and routing are not exercised by
+these browser fixtures and remain separate deployment checks.
+
+## Review gap closure — 2026-09-05
+
+The Trial suite exercises acceptance and atomic two-row intake with conflict
+recovery, dirty Cancel/navigation, changed-scope terms with failed reload and
+renewed acceptance, superseded/closed result controls and parsed transfer errors,
+and exact Company request handoff beyond configuration choices. It runs in
+desktop Chromium and mobile Chrome, with dark/reduced-motion mobile coverage.
+All ten Trial cases passed after restricting a test URL matcher to API paths so
+it could not intercept source imports. Subsequent focused roster and handoff
+checks passed 2/2 each after label and cache/navigation refinements.
+`web-ops-recovery.spec.ts` passed in both viewports, including exact recipient
+review, stale-version recovery, attempt history and focus return. Fourteen
+synthetic public Website scenarios (six preserved-entry failures and one success
+per viewport) passed using the actual built contact form. The browser found a
+dark-theme delivery badge contrast issue; the scoped status styling was corrected
+and its Axe check passed. `crm-company-recovery.spec.ts` passed **2/2** against
+the live People/Sales components, verifying independent people/contact/opportunity
+retry, no false empty records, guarded association and keyboard recovery. Its
+desktop and mobile screenshots were inspected; no writes, page errors, overflow
+or Axe violations occurred. These suites total **14 distinct Portal browser cases**.
+
+The local Portal passed agent-browser startup, meaningful-content, screenshot and
+page-error checks using the installed Chromium executable. Trial desktop scope
+and mobile detail screenshots were inspected for spacing, readable required
+fields and overflow. Workflow Axe WCAG 2/2.1/2.2 AA scans supplement keyboard and
+responsive checks; they are not a full conformance or hosted acceptance claim.
+All browser API responses and contact identities are synthetic. No real inquiry,
+email, production file transfer or identity-provider operation is exercised.
+
 ## Portal documentation search — 2026-09-05
 
 All 14 relevant Playwright cases passed across desktop Chromium and mobile Chrome:

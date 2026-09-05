@@ -16,7 +16,7 @@ import {
   createInvitation,
   listDepartments,
 } from '#/api/organization-management'
-import { Alert, AlertDescription, AlertTitle } from '#/components/ui/alert'
+import { Alert, AlertDescription } from '#/components/ui/alert'
 import { Badge } from '#/components/ui/badge'
 import { Button } from '#/components/ui/button'
 import {
@@ -32,6 +32,7 @@ import {
   Dialog,
   DialogContent,
   DialogDescription,
+  DialogFeedback,
   DialogHeader,
   DialogTitle,
 } from '#/components/ui/dialog'
@@ -41,6 +42,7 @@ import { RequiredDialogFooter, RequiredFieldName } from '#/components/ui/require
 import { Textarea } from '#/components/ui/textarea'
 import { CrmAssociationRecordCombobox } from './CrmAssociationRecordCombobox'
 import { CrmRelationshipRoleSelect } from './CrmRelationshipRoleSelect'
+import { CrmCollectionFeedback, type CrmCollectionQueryState } from './CrmCollectionFeedback'
 
 type IdentityAction =
   | { kind: 'link'; person: CrmCompanyPerson }
@@ -151,7 +153,7 @@ export function CrmCompanyPeople({
       await refresh()
     },
   })
-  const error = people.error ?? contacts.error ?? departments.error
+  const contactsUnavailable = contacts.isPending || contacts.isError
 
   return (
     <>
@@ -162,32 +164,26 @@ export function CrmCompanyPeople({
             Company contacts, Portal identities, invitations, and department access in one reviewed list.
           </CardDescription>
           <CardAction>
-            <Button size="sm" variant="outline" onClick={() => setAssociateOpen(true)}>
+            <Button size="sm" variant="outline" disabled={contactsUnavailable} onClick={() => setAssociateOpen(true)}>
               <Plus data-icon="inline-start" />
               Associate contact
             </Button>
           </CardAction>
         </CardHeader>
         <CardContent className="space-y-3">
-          {error ? (
-            <Alert variant="destructive">
-              <AlertTitle>People could not be loaded</AlertTitle>
-              <AlertDescription>{apiErrorMessage(error)}</AlertDescription>
-            </Alert>
-          ) : null}
-          {people.isLoading ? (
-            <p className="text-sm text-muted-foreground" role="status">Loading people…</p>
-          ) : null}
+          <CrmCollectionFeedback name="people" query={people} />
+          <CrmCollectionFeedback name="contacts" query={contacts} />
+          {accessOrganizationId ? <CrmCollectionFeedback name="departments" query={departments} /> : null}
           {(people.data ?? []).map((person) => (
             <PersonRow
               key={`${person.recordKind}-${person.contactAssociationId ?? person.contactId ?? person.portalUserId ?? person.invitationId}`}
               person={person}
-              canInvite={Boolean(accessOrganizationId && person.contactId && person.isContactActive && person.email && person.portalAccessState === 'NotInvited' && !person.suggestedPortalUserId && !person.suggestedInvitationId)}
+              canInvite={Boolean(people.isSuccess && departments.isSuccess && accessOrganizationId && person.contactId && person.isContactActive && person.email && person.portalAccessState === 'NotInvited' && !person.suggestedPortalUserId && !person.suggestedInvitationId)}
               onInvite={() => { invite.reset(); setInviteTarget(person) }}
               onIdentityAction={(action) => { identity.reset(); setIdentityAction(action) }}
             />
           ))}
-          {!people.isLoading && !people.error && !(people.data?.length ?? 0) ? (
+          {people.isSuccess && people.data.length === 0 ? (
             <p className="rounded-lg border p-6 text-center text-sm text-muted-foreground">
               No people are associated with this Company.
             </p>
@@ -202,6 +198,7 @@ export function CrmCompanyPeople({
           .map((contact) => contact.contactId)}
         pending={associate.isPending}
         error={associate.error}
+        contactsQuery={contacts}
         onOpenChange={setAssociateOpen}
         onSubmit={(input) => associate.mutate(input)}
       />
@@ -211,6 +208,7 @@ export function CrmCompanyPeople({
         departments={departments.data ?? []}
         pending={invite.isPending}
         error={invite.error}
+        departmentsQuery={departments}
         onOpenChange={(open) => { if (!open) setInviteTarget(null) }}
         onSubmit={(departmentIds) => {
           if (inviteTarget) invite.mutate({ person: inviteTarget, departmentIds })
@@ -320,6 +318,7 @@ function PortalInviteDialog({
   departments,
   pending,
   error,
+  departmentsQuery,
   onOpenChange,
   onSubmit,
 }: {
@@ -327,6 +326,7 @@ function PortalInviteDialog({
   departments: Array<{ id: string; name: string; isDefault: boolean }>
   pending: boolean
   error: unknown
+  departmentsQuery: CrmCollectionQueryState
   onOpenChange: (open: boolean) => void
   onSubmit: (departmentIds: string[]) => void
 }) {
@@ -336,6 +336,7 @@ function PortalInviteDialog({
       <DialogContent>
         <form onSubmit={(event) => {
           event.preventDefault()
+          if (pending || departmentsQuery.isPending || departmentsQuery.isError) return
           const data = new FormData(event.currentTarget)
           const departmentIds = data.getAll('departmentId').map(String)
           if (!departmentIds.length) {
@@ -352,6 +353,7 @@ function PortalInviteDialog({
               Invite {person?.displayName} to the selected departments. Access and the Contact/User link begin only after the recipient accepts this reviewed invitation.
             </DialogDescription>
           </DialogHeader>
+          {departmentsQuery.isPending || departmentsQuery.isError ? <DialogFeedback><CrmCollectionFeedback name="departments" query={departmentsQuery} /></DialogFeedback> : null}
           {error ? <Alert variant="destructive"><AlertDescription>{apiErrorMessage(error)}</AlertDescription></Alert> : null}
           {validationError ? <Alert variant="destructive"><AlertDescription>{validationError}</AlertDescription></Alert> : null}
           <fieldset disabled={pending} className="grid gap-2">
@@ -365,7 +367,7 @@ function PortalInviteDialog({
           </fieldset>
           <RequiredDialogFooter>
             <Button type="button" variant="outline" disabled={pending} onClick={() => onOpenChange(false)}>Cancel</Button>
-            <Button type="submit" disabled={pending || !departments.length}>{pending ? 'Sending invitation…' : 'Send invitation'}</Button>
+            <Button type="submit" disabled={pending || departmentsQuery.isPending || departmentsQuery.isError || !departments.length}>{pending ? 'Sending invitation…' : 'Send invitation'}</Button>
           </RequiredDialogFooter>
         </form>
       </DialogContent>
@@ -423,6 +425,7 @@ function AssociatePersonDialog({
   excludedContactIds,
   pending,
   error,
+  contactsQuery,
   onOpenChange,
   onSubmit,
 }: {
@@ -430,6 +433,7 @@ function AssociatePersonDialog({
   excludedContactIds: string[]
   pending: boolean
   error: unknown
+  contactsQuery: CrmCollectionQueryState
   onOpenChange: (open: boolean) => void
   onSubmit: (value: {
     contactId: string
@@ -445,6 +449,7 @@ function AssociatePersonDialog({
       <DialogContent>
         <form onSubmit={(event) => {
           event.preventDefault()
+          if (pending || contactsQuery.isPending || contactsQuery.isError) return
           const data = new FormData(event.currentTarget)
           onSubmit({
             contactId: String(data.get('contactId')),
@@ -458,6 +463,7 @@ function AssociatePersonDialog({
             <DialogTitle>Associate contact</DialogTitle>
             <DialogDescription>Add an existing CRM Contact to this Company without granting Portal access.</DialogDescription>
           </DialogHeader>
+          {contactsQuery.isPending || contactsQuery.isError ? <DialogFeedback><CrmCollectionFeedback name="contacts" query={contactsQuery} /></DialogFeedback> : null}
           {error ? <Alert variant="destructive"><AlertDescription>{apiErrorMessage(error)}</AlertDescription></Alert> : null}
           <div className="grid gap-4">
             <div className="grid gap-1.5">
@@ -471,7 +477,7 @@ function AssociatePersonDialog({
           </div>
           <RequiredDialogFooter>
             <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>Cancel</Button>
-            <Button type="submit" disabled={pending}>Associate contact</Button>
+            <Button type="submit" disabled={pending || contactsQuery.isPending || contactsQuery.isError}>Associate contact</Button>
           </RequiredDialogFooter>
         </form>
       </DialogContent>

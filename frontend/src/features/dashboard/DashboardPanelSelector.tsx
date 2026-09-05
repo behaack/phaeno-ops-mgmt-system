@@ -19,8 +19,10 @@ import { useMemo, useState } from 'react'
 import { AccountsDashboardContent } from './AccountsDashboardContent'
 import { DashboardHero } from './DashboardHero'
 import { WebOpsDashboardContent } from './WebOpsDashboardContent'
+import { WebOpsDeliveryPanel } from './WebOpsDeliveryPanel'
 import {
   completeWebOpsDemoRequest,
+  queueWebOpsTechnicalBrief,
   getWebOpsDemoRequests,
   getWebOpsMailingList,
   unsubscribeWebOpsMailingListContact,
@@ -218,6 +220,10 @@ export function DashboardPanelSelector() {
       await queryClient.invalidateQueries({ queryKey: ['web-ops'] })
     },
   })
+  const queueTechnicalBrief = useMutation({
+    mutationFn: queueWebOpsTechnicalBrief,
+    onSuccess: async () => { await queryClient.invalidateQueries({ queryKey: ['web-ops'] }) },
+  })
   const mailingListData = apiEnabled ? mailingList.data : mockMailingListPage
   const demoRequestData = apiEnabled
     ? demoRequests.data
@@ -324,6 +330,13 @@ export function DashboardPanelSelector() {
                     }
                   : undefined,
               }}
+              notificationPanel={apiEnabled ? <WebOpsDeliveryPanel /> : undefined}
+              briefAction={apiEnabled ? {
+                error: queueTechnicalBrief.error,
+                isPending: queueTechnicalBrief.isPending,
+                onExecute: contact => queueTechnicalBrief.mutateAsync(contact.id),
+                onReset: queueTechnicalBrief.reset,
+              } : undefined}
               isMockData={!apiEnabled}
             />
           ) : null}

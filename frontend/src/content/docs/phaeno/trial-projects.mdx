@@ -8,7 +8,7 @@ Trial Projects provide no-charge, closed-ended PSeq evaluations of extracted RNA
 
 From a CRM Company's **Requests** tab, create a **Work → Trial Project** request linked to an active Opportunity. Include commercial context only. Prepare the Company's active Prospect Portal access and department through the separate access workflow. A CRM request or an approved access request does not approve scientific Trial work.
 
-Open **Trial projects**, select **Start Trial**, and choose the request. A request can create only one Trial. The Company's request history links to the resulting workspace.
+Select **Start Trial** beside the Company's request to carry that request into Trial creation and retain a route back to the Company. From **Trial projects**, you can also search and page through eligible requests. A request can create only one Trial; its link opens the existing workspace once started.
 
 Select **Define scope**. The dedicated scope page captures the objective, numeric original sample allowance, explicit submission window, current production PSeq workflow, active PSeq analysis definitions, and versioned deliverables. FASTQ, FASTA, and BAM are configurable initial defaults. Select the deliverables required for this evaluation; approved scopes preserve the selected definitions and versions.
 
@@ -24,7 +24,9 @@ Scientific Operations authorities maintain the versioned deliverable catalog. De
 
 ## Execute the approved work
 
-The Prospect organization administrator accepts the approved RUO/no-PHI terms and submits samples during the agreed window. Department administrators cannot substitute for that role. Each submission checks allowance, extracted-RNA metadata, approved analysis inputs, configured quantity limits, and active shipping instructions.
+The Prospect organization administrator accepts the approved RUO/no-PHI terms and submits samples during the agreed window. Department administrators cannot substitute for that role. **Submit samples** lets the administrator prepare a roster sharing one RNA type and shipping destination; submitting the roster creates one authorization and shipment. Each sample checks allowance, extracted-RNA metadata, approved analysis inputs, configured quantity units and limits, and active shipping instructions. The form identifies concentration and other inputs required by the approved analyses.
+
+Changed forms ask before discarding entries, including when leaving the scope page. During a save or explicit reload, editing, repeat actions, and dismissal are blocked until the operation finishes. The scope page also protects navigation while reloading. **Reload current Trial; keep my entries** refreshes scope-dependent choices and preserves entries for review, including when the reload fails; a changed scope requires a fresh acceptance confirmation.
 
 The shared Lab Operations provider creates Trial-authorized work pinned to the approved workflow version. Existing registered-tube, packet, receipt, accession, protocol, QC, sequencing, and scientific-review controls apply. Use **Shipping and packets** and each sample's **Open laboratory work** link. Trial holds and approval changes stop scientific progress and shipping mutations; custody facts and exception handling remain recordable.
 
@@ -36,7 +38,7 @@ The governed PSeq pipeline supplies immutable output packages tied to the Trial,
 
 Choose **Partial** when only some approved results are ready. Choose **Complete** only when the full approved package for every submitted sample, including approved replacements, is available. A complete release closes the Trial and freezes the shared global/organization retention policy. No payment or credit gate applies.
 
-The result archive includes a Trial manifest with the exact RUO statement, scope revision, sample/file lineage, and checksums. Internal downloads do not satisfy the organization's retention condition. **Retention and receipt** supports the shared warning, grace, hold, deletion, and reissue workflow. A complete reissue after byte deletion requires newly transferred, scientifically approved packages for the same Trial samples and retains the original closure/material dates.
+The result archive includes a Trial manifest with the exact RUO statement, scope revision, sample/file lineage, and checksums. After complete release, earlier partial archives remain historical and direct members to the current complete package. Download controls show progress and availability, including closed retention access, and refresh after transfer attempts. Internal downloads do not satisfy the organization's retention condition. **Retention and receipt** supports the shared warning, grace, hold, deletion, and reissue workflow. A complete reissue after byte deletion requires newly transferred, scientifically approved packages for the same Trial samples and retains the original closure/material dates.
 
 Release and physical shipping remain subject to configured operational readiness. A visible workflow or a passing software test does not activate real storage, scanning, automated byte deletion, or validate laboratory packing instructions.
 

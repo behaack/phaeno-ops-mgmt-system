@@ -20,6 +20,9 @@ public sealed class TrialProjectsController(PSeqOperationsDbContext db, TrialAcc
     [HttpGet("configuration")]
     public async Task<TrialConfigurationDto> Configuration([FromQuery] Guid? companyId, CancellationToken token) =>
         await reader.ConfigurationAsync(await access.ReadAsync(HttpContext, token), companyId, token);
+    [HttpGet("requests")]
+    public async Task<TrialHandoffPageDto> Requests(CancellationToken token, [FromQuery] string? search = null, [FromQuery] int page = 0, [FromQuery] Guid? companyId = null, [FromQuery] Guid? requestId = null) =>
+        await reader.HandoffsAsync(await access.ReadAsync(HttpContext, token), search, page, companyId, requestId, token);
     [HttpGet("{id:guid}")]
     public async Task<TrialDetailDto> Detail(Guid id, CancellationToken token)
     { var actor = await access.ReadAsync(HttpContext, token); return await reader.DetailAsync(await workflow.ReadAsync(id, actor, token), actor, token); }

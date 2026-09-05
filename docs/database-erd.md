@@ -15,8 +15,8 @@ Generated from [PSeqOperationsDbContextModelSnapshot.cs](../backend/app/Migratio
 | `public` | 1 | 2 | 0 |
 | `commercial_ops` | 122 | 1942 | 270 |
 | `lab_ops` | 30 | 344 | 43 |
-| `website` | 2 | 18 | 0 |
-| **Total** | **155** | **2306** | **313** |
+| `website` | 5 | 49 | 4 |
+| **Total** | **158** | **2337** | **317** |
 
 ## `public` schema
 
@@ -3091,4 +3091,51 @@ erDiagram
         character_varying_60 last_name "not null"
         character_varying_250 organization_name "not null"
     }
+```
+
+### Website
+
+```mermaid
+erDiagram
+    web_notification_attempts {
+        uuid id PK "not null"
+        integer attempt_number UK "not null"
+        character_varying_500 error "nullable"
+        timestamp_with_time_zone finished_at_utc "nullable"
+        character_varying_30 outcome "not null"
+        uuid recovery_by_user_id "nullable"
+        timestamp_with_time_zone started_at_utc "not null"
+        uuid web_notification_delivery_id FK,UK "not null"
+    }
+    web_notification_deliveries {
+        uuid id PK "not null"
+        timestamp_with_time_zone accepted_at_utc "nullable"
+        integer attempt_count "not null"
+        integer attempts_since_recovery "not null"
+        timestamp_with_time_zone created_at_utc "not null"
+        character_varying_40 kind UK "not null"
+        timestamp_with_time_zone last_attempt_at_utc "nullable"
+        character_varying_500 last_error "nullable"
+        timestamp_with_time_zone last_recovery_at_utc "nullable"
+        uuid last_recovery_by_user_id "nullable"
+        timestamp_with_time_zone lease_expires_at_utc "nullable"
+        uuid lease_token "nullable"
+        timestamp_with_time_zone next_attempt_at_utc "not null"
+        character_varying_30 state "not null"
+        uuid version "not null"
+        uuid web_contact_id FK,UK "nullable"
+        uuid web_order_id FK,UK "nullable"
+    }
+    web_notification_processing_controls {
+        uuid id PK "not null"
+        boolean is_paused "not null"
+        character_varying_500 reason "nullable"
+        timestamp_with_time_zone updated_at_utc "nullable"
+        uuid updated_by_user_id FK "nullable"
+        uuid version "not null"
+    }
+    web_notification_deliveries ||--o{ web_notification_attempts : "web_notification_delivery_id"
+    web_contacts o|--o{ web_notification_deliveries : "web_contact_id"
+    web_orders o|--o{ web_notification_deliveries : "web_order_id"
+    users o|--o{ web_notification_processing_controls : "updated_by_user_id"
 ```

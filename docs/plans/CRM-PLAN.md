@@ -9,6 +9,13 @@ deployment, and test execution retain their normal approval boundaries.
 
 ## Status
 
+- The 2026-09-05 [review gap closure](REVIEW-GAP-CLOSURE-2026-09-05.md)
+  addresses Company relationship loading/error/empty-state distinctions and
+  preserves an exact Company Trial request through the creation handoff.
+  Trial Project handoffs now have their own implemented Trial workspace;
+  historical references below to review-only Trial handoffs are superseded by
+  `TRIAL-INTEGRATION-CLOSEOUT.md`. Verification is recorded in the review plan.
+
 - On 2026-09-04 the Company workspace was reorganized into Overview, People,
   Sales, Departments & services, Requests, and Activity. People unifies CRM
   Contacts, Portal users, invitations, and department access without collapsing

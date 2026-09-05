@@ -1,7 +1,7 @@
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useMutation } from "@tanstack/react-query";
 import { Plus, Trash2 } from "lucide-react";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useFieldArray, useForm } from "react-hook-form";
 import { z } from "zod";
 
@@ -16,9 +16,9 @@ import { Alert, AlertDescription, AlertTitle } from "#/components/ui/alert";
 import { Button } from "#/components/ui/button";
 import {
   Dialog,
-  DialogClose,
   DialogContent,
   DialogDescription,
+  DialogFeedback,
   DialogHeader,
   DialogTitle,
 } from "#/components/ui/dialog";
@@ -107,6 +107,10 @@ export function PlatformQuoteDialog({
     defaultValues,
   });
   const [recordRefreshed, setRecordRefreshed] = useState(false);
+  const [confirmDiscard, setConfirmDiscard] = useState(false);
+  const keepEditingRef = useRef<HTMLButtonElement>(null);
+  const dismissSourceRef = useRef<HTMLElement | null>(null);
+  const openerRef = useRef<HTMLElement | null>(null);
   const lines = useFieldArray({ control: form.control, name: "lines" });
   const watchedLines = form.watch("lines");
   const watchedCurrency = form.watch("currency");
@@ -168,6 +172,12 @@ export function PlatformQuoteDialog({
     },
   });
 
+  const isSubmitting = mutation.isPending || form.formState.isSubmitting;
+
+  useEffect(() => {
+    if (confirmDiscard) keepEditingRef.current?.focus();
+  }, [confirmDiscard]);
+
   useEffect(() => {
     if (!open || form.formState.isDirty) return;
     form.reset(createDefaultValues(workflow, defaultQuantity, requiredLabItem, proposedUnitPrice));
@@ -200,12 +210,33 @@ export function PlatformQuoteDialog({
 
   function close() {
     mutation.reset();
+    setConfirmDiscard(false);
     setRecordRefreshed(false);
     form.reset(createDefaultValues(workflow, defaultQuantity, requiredLabItem, proposedUnitPrice));
     onOpenChange(false);
   }
 
+  function keepEditing() {
+    setConfirmDiscard(false);
+    dismissSourceRef.current?.focus();
+  }
+
+  function requestClose() {
+    if (isSubmitting) return;
+    if (confirmDiscard) {
+      keepEditing();
+      return;
+    }
+    if (form.formState.isDirty) {
+      dismissSourceRef.current = document.activeElement instanceof HTMLElement ? document.activeElement : null;
+      setConfirmDiscard(true);
+      return;
+    }
+    close();
+  }
+
   function submit(values: Values) {
+    if (mutation.isPending || confirmDiscard) return;
     setRecordRefreshed(false);
     form.clearErrors("root");
     if (workflow === "lab") {
@@ -256,9 +287,21 @@ export function PlatformQuoteDialog({
   return (
     <Dialog
       open={open}
-      onOpenChange={(nextOpen) => (nextOpen ? onOpenChange(true) : close())}
+      onOpenChange={(nextOpen) => (nextOpen ? onOpenChange(true) : requestClose())}
     >
-      <DialogContent className="sm:max-w-5xl">
+      <DialogContent
+        className="sm:max-w-5xl"
+        showCloseButton={!isSubmitting}
+        onOpenAutoFocus={() => {
+          openerRef.current = document.activeElement instanceof HTMLElement ? document.activeElement : null;
+        }}
+        onCloseAutoFocus={(event) => {
+          if (openerRef.current?.isConnected) {
+            event.preventDefault();
+            openerRef.current.focus();
+          }
+        }}
+      >
         <DialogHeader>
           <DialogTitle>
             {workflow === "lab" && proposedUnitPrice !== undefined
@@ -271,6 +314,17 @@ export function PlatformQuoteDialog({
               : "Use active Phaeno commercial catalog items, then set the job-specific quantities and prices. Issuing the quote makes it available to the Customer immediately."}
           </DialogDescription>
         </DialogHeader>
+        {confirmDiscard ? (
+          <DialogFeedback>
+            <section role="alert" className="space-y-3">
+              <p>Discard your unsaved quote changes?</p>
+              <div className="flex flex-wrap gap-2">
+                <Button ref={keepEditingRef} type="button" variant="outline" onClick={keepEditing}>Keep editing</Button>
+                <Button type="button" variant="destructive" disabled={isSubmitting} onClick={close}>Discard changes</Button>
+              </div>
+            </section>
+          </DialogFeedback>
+        ) : null}
         {workflow === "lab" && !requiredLabItem ? (
           <Alert variant="destructive">
             <AlertTitle>PSeq Lab Service item is not ready</AlertTitle>
@@ -288,6 +342,7 @@ export function PlatformQuoteDialog({
           onSubmit={form.handleSubmit(submit)}
           className="max-h-[65vh] space-y-5 overflow-y-auto px-1"
         >
+          <fieldset disabled={isSubmitting} className="space-y-5">
           {workflow === "lab" && proposedUnitPrice !== undefined ? (
             <section className="rounded-lg border bg-muted/30 p-4">
               <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
@@ -597,6 +652,7 @@ export function PlatformQuoteDialog({
               </FieldError>
             </div>
           ) : null}
+          </fieldset>
           {form.formState.errors.root?.message ? (
             <Alert variant="destructive" role="alert">
               <AlertTitle>Quote needs attention</AlertTitle>
@@ -620,16 +676,14 @@ export function PlatformQuoteDialog({
           ) : null}
         </form>
         <DialogFooter>
-          <DialogClose asChild>
-            <Button type="button" variant="outline">
-              Cancel
-            </Button>
-          </DialogClose>
+          <Button type="button" variant="outline" disabled={isSubmitting} onClick={requestClose}>
+            Cancel
+          </Button>
           <Button
             type="submit"
             form="platform-quote-form"
             disabled={
-              mutation.isPending || (workflow === "lab" && !requiredLabItem)
+              isSubmitting || confirmDiscard || (workflow === "lab" && !requiredLabItem)
             }
           >
             {mutation.isPending

@@ -53,9 +53,13 @@ Use task-oriented entry points with record-centered workspaces.
   and Prospect access administration, and public Website intake without
   stacking the dashboards. Show one panel at a time, emphasize attention or intake counts
   and representative priority work, and route users to the full owning
-  workspace when one exists. Web Operations keeps mailing-list signups and demo
-  requests read-only on the dashboard and is visible only to Phaeno platform
-  administrators. External organization dashboards do not expose this internal
+  workspace when one exists. Web Operations shows mailing-list signups, demo
+  requests, and email delivery to Phaeno platform administrators. Intake records
+  remain view-first; bounded unsubscribe, completion, technical-brief recovery,
+  and resend actions require explicit confirmation with the affected recipient
+  or intake identified. Show queued work, provider acceptance, and failed attempts
+  distinctly; provider acceptance does not establish inbox delivery. External
+  organization dashboards do not expose this internal
   selector.
 - Work queues surface pending tasks, exceptions, recent activity, and important status changes.
 - Primary navigation uses recognizable business and scientific areas rather than technical modules.

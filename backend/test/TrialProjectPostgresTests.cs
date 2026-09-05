@@ -25,6 +25,33 @@ using PhaenoPortal.App.Infrastructure.Persistence.Auditing;
 public sealed class TrialProjectPostgresTests
 {
     [PostgreSqlReferenceFact]
+    public async Task BatchSubmissionUsesOneAuthorizationAndShipmentAndExposesQuantityRules()
+    {
+        await using var scope = await Fixture.Create(); var trial = await scope.CreateApprovedTrial();
+        scope.Workflow.Accept(trial, scope.Prospect, new(trial.Version, trial.CurrentScopeRevision, TrialRules.TermsVersion, true)); await scope.Db.SaveChangesAsync();
+        var first = scope.Submission(trial, "RNA-BATCH-1"); var second = scope.Submission(trial, "RNA-BATCH-2");
+        var configuration = await scope.Reader.ConfigurationAsync(scope.Prospect, null, default);
+        var type = Assert.Single(configuration.SampleTypes, value => value.Id == first.SampleTypeId);
+        Assert.Equal("ng", type.QuantityUnit); Assert.Equal(1m, type.MinimumQuantity); Assert.Equal(1000m, type.MaximumQuantity);
+        await scope.Workflow.SubmitAsync(trial, scope.Prospect, first with { Samples = [first.Samples[0], second.Samples[0]] }, default); await scope.Db.SaveChangesAsync();
+        Assert.Equal(2, trial.Samples.Count); Assert.Single(trial.Samples.Select(value => value.AuthorizationId).Distinct()); Assert.Single(trial.Samples.Select(value => value.LabWorkOrderId).Distinct());
+        var shipment = await scope.Db.SampleShipments.Include(value => value.Items).ThenInclude(value => value.TubeSlots).SingleAsync(value => value.AuthorizationSourceId == trial.Id);
+        Assert.Equal(2, shipment.Items.Count); Assert.All(shipment.Items, value => Assert.Equal(2, value.TubeSlots.Count));
+    }
+
+    [PostgreSqlReferenceFact]
+    public async Task TrialRequestSearchFindsExactEligibleRequestAndHonorsCompanyContext()
+    {
+        await using var scope = await Fixture.Create();
+        var page = await scope.Reader.HandoffsAsync(scope.Commercial, null, 0, scope.Company.Id, scope.Handoff.Id, default);
+        Assert.Equal(scope.Handoff.Id, Assert.Single(page.Items).Id); Assert.Equal(1, page.Total);
+        Assert.Empty((await scope.Reader.HandoffsAsync(scope.Commercial, null, 0, Guid.NewGuid(), scope.Handoff.Id, default)).Items);
+        Assert.Empty((await scope.Reader.HandoffsAsync(scope.Commercial, "no-such-request", 0, scope.Company.Id, null, default)).Items);
+        await Assert.ThrowsAsync<OrderManagementException>(() => scope.Reader.HandoffsAsync(scope.Prospect, null, 0, scope.Company.Id, null, default));
+        await scope.CreateApprovedTrial();
+        Assert.Empty((await scope.Reader.HandoffsAsync(scope.Commercial, null, 0, scope.Company.Id, scope.Handoff.Id, default)).Items);
+    }
+    [PostgreSqlReferenceFact]
     public async Task CrmApprovalAcceptanceSubmissionPinsLabWorkWithoutCreatingAnOrder()
     {
         await using var scope = await Fixture.Create();
@@ -82,6 +109,11 @@ public sealed class TrialProjectPostgresTests
         var snapshot = await scope.Db.ReleasedDeliverableRetentionSnapshots.SingleAsync(value => value.TrialResultReleaseId == trial.CompleteReleaseId);
         Assert.Equal(snapshot.ReleasedAtUtc.AddDays(30), snapshot.StandardDeletionAtUtc);
         Assert.False(await managed.HasAccessAsync(ReleasedDeliverablePackageType.TrialResult, partial.Id, scope.Organization.Id, scope.Customer.Id, partialPackage.FileIds, default));
+        var released = await scope.Reader.DetailAsync(trial, scope.Prospect, default);
+        Assert.False(released.Releases.Single(value => value.Id == partial.Id).IsDownloadAvailable);
+        Assert.Contains("Superseded", released.Releases.Single(value => value.Id == partial.Id).DownloadUnavailableReason);
+        Assert.True(released.Releases.Single(value => value.IsCompletePackage).IsDownloadAvailable);
+        Assert.NotNull(released.Releases.Single(value => value.IsCompletePackage).Retention);
         scope.Organization.ConvertProspectTo(OrganizationKind.Partner); await scope.Db.SaveChangesAsync();
         var full = await managed.ReadPackageAsync(ReleasedDeliverablePackageType.TrialResult, trial.CompleteReleaseId!.Value, default);
         Assert.True(await managed.HasAccessAsync(ReleasedDeliverablePackageType.TrialResult, trial.CompleteReleaseId.Value, scope.Organization.Id, scope.Customer.Id, full!.FileIds, default));
@@ -159,6 +191,9 @@ public sealed class TrialProjectPostgresTests
         foreach (var property in new[] { nameof(snapshot.ReleasedAtUtc), nameof(snapshot.WarningAtUtc), nameof(snapshot.StandardDeletionAtUtc), nameof(snapshot.PotentialFinalDeletionAtUtc) })
             scope.Db.Entry(snapshot).Property<DateTime>(property).CurrentValue = scope.Db.Entry(snapshot).Property<DateTime>(property).CurrentValue.AddDays(-40);
         await scope.Db.SaveChangesAsync(); await scope.Db.Entry(snapshot).ReloadAsync(); var deadline = snapshot.StandardDeletionAtUtc; var closed = trial.ClosedAtUtc;
+        var expiredView = await scope.Reader.DetailAsync(trial, scope.Prospect, default);
+        Assert.False(Assert.Single(expiredView.Releases).IsDownloadAvailable);
+        Assert.NotNull(Assert.Single(expiredView.Releases).Retention!.DownloadAccessClosedAtUtc);
         var notices = new GovernedRetentionCheckpointService(scope.Db, Options.Create(new InvitationOptions()));
         var checkpoints = new ManagedReleaseRetentionCheckpointService(scope.Db, notices);
         await checkpoints.ProcessAsync(ReleasedDeliverablePackageType.TrialResult, releaseId, default, snapshot.WarningAtUtc.AddMinutes(1));
@@ -204,7 +239,7 @@ public sealed class TrialProjectPostgresTests
         private SampleTypeDefinition sampleType = null!;
         public TrialAccess Access => new(db, new Identity(), new(db, new Identity()));
         public TrialWorkflowService Workflow => new(db, new InternalLabOperationsProvider(db), Access);
-        public TrialReader Reader => new(db, Workflow);
+        public TrialReader Reader => new(db, Workflow, orders: Options.Create(new OrderManagementOptions { ReleasedDeliverableRetentionEnforcement = true }));
         public TrialResultService Results => new(db, Workflow, Options.Create(new PSeqOrderToCashOptions { GovernedPSeqResults = true, PipelineServiceSecret = new string('s', 24), PipelineProviderKey = "fixture", ObjectStorageTransferBaseUrl = "https://storage.example.test" }), Options.Create(new OrderManagementOptions { ReleasedDeliverableRetentionEnforcement = true }));
         public static async Task<Fixture> Create()
         {

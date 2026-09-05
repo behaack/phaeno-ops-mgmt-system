@@ -28,6 +28,8 @@ The Customer or Sales price proposal is part of the submitted request revision, 
 
 The quote is a versioned, immutable Commercial offer for one job. Confirm the configured service, quantities, prices, currency, expected turnaround information, and expiration before issuance. Tax is calculated by POMS: when the complete billing and tax profile is Finance-approved, the quote includes and freezes tax; otherwise the quote is explicitly pre-tax and tax is calculated from the approved profile at invoicing. Saving the issued POMS quote makes it available for Customer acceptance.
 
+Cancel, Close, or Escape asks you to keep editing or discard unsaved quote changes. Dismissal is unavailable while the quote is being issued or its current record is being refreshed. A stale-record response preserves your entries; review the refreshed Job and pricing before deliberately submitting again.
+
 Customer acceptance performs one Commercial operation that:
 
 - records the accepted quote revision and frozen pricing profile; and
@@ -41,4 +43,4 @@ Physical samples must not arrive before quote acceptance and exact roster finali
 
 After acceptance, Order Ops continues to own Customer communication, Commercial holds, cancellation review, billing, files, and publication. Open the linked work from the order or from **Lab operations** > **Receipt & accession**. Lab Ops owns return-kit preparation, shipment identification, receipt, accession, physical lineage, controlled execution, exceptions, and scientific approval.
 
-The Lab milestone **Ready for release** means the scientific gate passed. It does not upload, scan, attach, or publish a result. Order Ops must still apply the file, accounting-source, and credit release gates. Without approved credit, files remain held because manual payment confirmation is not implemented.
+The Lab milestone **Ready for release** means the scientific gate passed. It does not upload, scan, attach, or publish a result. PSeq result publication still requires the governed file and release checks. PSeq scientific result release is independent of invoice balance, credit status, and payment; Partner workflows retain their separate commercial rules.

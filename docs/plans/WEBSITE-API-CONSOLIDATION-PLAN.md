@@ -1,5 +1,17 @@
 # Website API consolidation plan
 
+## 2026-09-05 inquiry and delivery recovery
+
+The Product Owner authorized the [review gap closure](REVIEW-GAP-CLOSURE-2026-09-05.md).
+Website intake now persists durable notification intent and retained attempt history,
+bounded automatic delivery retries, and platform-administrator recovery. Public
+route and duplicate-contact behavior remain compatible; intake success confirms
+receipt and queued delivery, not inbox delivery. Contact form failures preserve
+entries and use the API error code to distinguish duplicates from validation.
+The additive delivery migration, local verification and release boundaries are
+recorded in the review plan. Shared migrations and real provider acceptance are
+separate from local implementation evidence.
+
 ## Status
 
 The code consolidation is implemented in `phaeno-portal`. The isolated Portal

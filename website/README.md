@@ -24,6 +24,25 @@ available for explicit deployment and operational smoke checks; visitor page
 loads do not call it. Changes to that contract must be planned and verified
 across both the Website and backend.
 
+Successful intake is saved together with durable email notification intent.
+Technical-brief confirmation says the message is queued; it does not claim inbox
+delivery. Failed intake preserves the visitor's entries, and duplicate-email
+feedback is shown only for the API's `email_already_in_use` code. Visitors may
+retry a failed request without re-entering their details; repeating an accepted
+signup does not resend a brief.
+
+Phaeno administrators use Portal Web Operations **Email delivery** to inspect
+attempts and queue eligible resends after review. **Mailing List** also supports
+queuing a technical brief for an active opted-in legacy contact whose delivery
+status is unknown. The API worker retries failures up to five attempts, records
+provider acceptance separately, and stops inactive intake. The Email delivery
+panel also shows queue counts and a Needs attention filter. Administrators can
+pause or resume processing with an audited reason; paused intake continues to
+queue messages, while attempts already in flight may finish. Queue monitoring
+continues while paused. Deployment requires the Website delivery and processing
+control migrations and configured Mailgun delivery; local verification uses fake
+senders. See `docs/operations-readiness.md` for monitoring and rollout boundaries.
+
 ## Project structure
 
 ```text

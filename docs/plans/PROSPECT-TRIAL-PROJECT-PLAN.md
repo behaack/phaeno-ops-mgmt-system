@@ -1,5 +1,12 @@
 # Prospect Trial Project Plan
 
+The authorized 2026-09-05 [review gap closure](REVIEW-GAP-CLOSURE-2026-09-05.md)
+extends the existing Trial workflow with batch sample entry, visible sample-type
+requirements, current-scope conflict recovery, download availability and
+retention feedback, unsaved-work protection, and contextual CRM request creation.
+The existing batch endpoint and scientific authorization boundaries are retained.
+Verification and delivery boundaries are recorded in that review plan.
+
 Keep this file updated as Prospect trial-project requirements are supplied and
 decisions are made.
 
