@@ -218,8 +218,12 @@ shipping fixture Department cleanup; canonical CRM product-interest values; and
 an explicit production workflow inside the rolled-back Lab reference journey.
 No production scientific workflow was changed by these fixtures.
 
-All seven pending schema migrations are applied locally. The production release
-procedure and migration review are in `PORTAL-CLOSEOUT-RELEASE-2026-09-05.md`.
+All seven schema migrations are applied locally and, following the Product
+Owner's "Deploy please" approval, in production after encrypted backup checks.
+The API and Portal UI application release `ab2df0a` is live. API health, database
+connectivity, public Portal routes and the production sign-in screen were checked.
+The production release, migration and backup evidence are in
+[the release record](PORTAL-CLOSEOUT-RELEASE-2026-09-05.md#production-release-evidence).
 Trial implementation still needs the pending decision on scientific criteria;
 hosted authenticated/physical/mailbox acceptance remains unperformed. This is
 not a claim that every feature plan or activation gate is complete.

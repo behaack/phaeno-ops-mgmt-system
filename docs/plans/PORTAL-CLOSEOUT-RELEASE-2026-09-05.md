@@ -2,7 +2,8 @@
 
 The Product Owner authorized tests, documentation, commit and API/UI deployment.
 The repository separately requires explicit approval for a production database
-migration. Deployment is prepared; production migration approval is still pending.
+migration. The Product Owner approved the reviewed migration and API/UI release
+on 2026-09-05 with "Deploy please." The API and Portal UI are deployed to production.
 Trial scientific criteria and storage activation are separate unresolved items.
 
 ## Reviewed schema changes
@@ -63,9 +64,38 @@ Portal alias/HTTP health and deployment logs. Record migration application and
 backup artifacts from the workflow. These checks do not replace hosted Clerk,
 two-Department, streaming, mailbox, physical shipping or scientific acceptance.
 
-## Evidence
+## Production release evidence
 
-Local logs and TRX/PDF/browser artifacts are under `artifacts/portal-closeout`.
-The local verification checkpoint records full-suite counts in
-`PORTAL-PLAN-CLOSEOUT.md`. Commit and deployment identifiers are recorded only
-after their operations succeed; production rollout is not yet recorded here.
+The application release is commit `ab2df0aa6b88a515dce0e13a01c415e5b3154c47`,
+pushed to `main`. A subsequent documentation-only commit records this evidence;
+it does not change the deployed application code.
+
+- API: [Deploy Portal Green run 33975386749](https://github.com/behaack/phaeno-ops-mgmt-system/actions/runs/33975386749)
+  succeeded on 2026-09-05 at 15:40:56 UTC. The runtime image revision matched the
+  full release commit. All seven reviewed migrations applied successfully.
+- Backup: `pre-migration-20260905T154037Z-ab2df0aa6b88` under
+  `/var/backups/phaeno-portal-deploy`. Both the encrypted dump and wrapped key
+  passed checksum verification. This is backup evidence, not full restore acceptance.
+- UI: [Vercel deployment C4mxejzDYqEGHMJuoZzqBUpeVnNt](https://vercel.com/cadexgenomics/phaeno-ops-mgmt-system/C4mxejzDYqEGHMJuoZzqBUpeVnNt)
+  (`dpl_C4mxejzDYqEGHMJuoZzqBUpeVnNt`) reached Ready and Production on the
+  exact release commit and served [the Portal](https://portal.phaenobiotech.com).
+  Git integration promoted it automatically; no separate promotion was needed.
+- Public probes at approximately 15:43 UTC: API health returned 200/healthy,
+  database ping returned 204, and an unauthenticated released-deliverables API
+  request returned 401 as expected. Portal `/`, `/departments`, and
+  `/released-deliverables` returned 200. The production browser rendered the
+  invitation-only sign-in screen.
+- The inspected Vercel runtime-log window had no Warning, Error or Fatal entries.
+  Build-time requests to Clerk proxy paths on the unique `vercel.app` host
+  returned 404; the production custom-domain sign-in screen rendered successfully.
+  No signed-in Clerk or Department workflow acceptance was performed.
+
+`FileStorage__Provider=Disabled` was installed by the deployment workflow.
+Retention/deletion activation remains held, and the database was not restarted
+to enable commit tracking. Trial scientific criteria, signed-in hosted workflows,
+mailbox delivery, physical shipping and storage activation remain separate gates.
+
+Local logs and TRX/PDF/browser artifacts are under `artifacts/portal-closeout`,
+including `api-deployment.log` and `public-probes.json`. The local verification
+checkpoint and full-suite counts are recorded in
+[Portal plan closeout](PORTAL-PLAN-CLOSEOUT.md#release-closeout-checkpoint-2026-09-05).
