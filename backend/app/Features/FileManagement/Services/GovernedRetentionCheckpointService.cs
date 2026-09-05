@@ -124,7 +124,7 @@ public sealed class GovernedRetentionCheckpointService(PSeqOperationsDbContext d
             ? snapshot.PotentialFinalDeletionAtUtc : snapshot.StandardDeletionAtUtc;
         var packageId = await db.ResultRetentionSchedules.AsNoTracking().Where(value => value.RetentionSnapshotId == snapshot.Id)
             .Select(value => (Guid?)value.ResultOutputPackageId).SingleOrDefaultAsync(token)
-            ?? snapshot.LabResultReleaseId ?? snapshot.AssemblyOutputReleaseId
+            ?? snapshot.LabResultReleaseId ?? snapshot.AssemblyOutputReleaseId ?? snapshot.TrialResultReleaseId
             ?? throw new InvalidOperationException("Retention notice has no retained package.");
         var summary = $"Urgent: retention notice needs attention for package {packageId:D}. Deadline {deadline:yyyy-MM-dd HH:mm:ss} UTC.";
         var action = $"Review active organization administrators and notification delivery. Correct the cause and retry notification {notice.Id:D}. The retention deadline does not change.";

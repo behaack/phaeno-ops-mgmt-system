@@ -142,7 +142,7 @@ public sealed class CompletionTrackedArchiveResult(
     ReleasedDeliverableDownloadTransfer transfer,
     IOperationalFileStorage fileStorage,
     ReleasedDeliverableDownloadAttemptService attemptService,
-    ILogger<CompletionTrackedArchiveResult> logger) : IActionResult
+    ILogger<CompletionTrackedArchiveResult> logger, string? packageManifestJson = null) : IActionResult
 {
     private CancellationTokenSource? monitorCancellation;
     private Task? monitorTask;
@@ -177,6 +177,12 @@ public sealed class CompletionTrackedArchiveResult(
             using (var archive = new ZipArchive(archiveStream, ZipArchiveMode.Create, leaveOpen: true))
             {
                 var allocatedNames = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+                if (packageManifestJson is not null)
+                {
+                    var manifest = archive.CreateEntry(AllocateEntryName("TRIAL-MANIFEST.json", allocatedNames), CompressionLevel.Fastest);
+                    await using var destination = manifest.Open();
+                    await destination.WriteAsync(System.Text.Encoding.UTF8.GetBytes(packageManifestJson), leaseCancellation.Token);
+                }
                 foreach (var file in files.OrderBy(item => item.ReleasedAt).ThenBy(item => item.FileName))
                 {
                     var entry = archive.CreateEntry(

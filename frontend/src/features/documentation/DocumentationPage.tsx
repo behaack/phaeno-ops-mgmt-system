@@ -554,6 +554,8 @@ function getGuideIcon(slug: string): LucideIcon {
       return ReceiptText
     case 'order-integration-recovery':
       return RefreshCw
+    case 'trial-projects':
+    case 'trial-history':
     case 'lab-operations':
       return Microscope
     case 'lab-receipt-accession':

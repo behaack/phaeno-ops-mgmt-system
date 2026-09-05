@@ -411,3 +411,17 @@ same organization, workflow and sample where applicable. Deleted bytes are not
 restored by linking. Retained receipts preserve manifest, checksum, completion,
 retention/deletion and lineage facts. External Organization admins may see their
 organization's download audit; staff investigation reasons remain Phaeno-only.
+
+## Initial PSeq Trials
+
+A Trial is a no-charge Prospect project linked to a first-party CRM Opportunity.
+Commercial and Scientific Operations approvals must come from different active
+authorized people for the same immutable scope version. An organization
+administrator accepts that scope and RUO/no-PHI terms before coded extracted-RNA
+submissions within the frozen allowance and dates. Department administrators do
+not gain this acceptance authority. Initial analyses and acceptance rules reuse
+PSeq definitions and the pinned Lab workflow. Complete result release alone marks
+successful completion and starts the shared frozen retention policy. Partial
+release does neither. Conversion preserves department ownership and original
+download/deletion dates. Commercial closeout and explicit Prospect deactivation
+remain separate audited actions.

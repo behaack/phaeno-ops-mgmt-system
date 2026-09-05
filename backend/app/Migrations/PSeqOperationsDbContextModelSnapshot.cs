@@ -4001,6 +4001,10 @@ namespace PSeq.Operations.Api.Migrations
                         .HasColumnType("character varying(50)")
                         .HasColumnName("standard_retention_source");
 
+                    b.Property<Guid?>("TrialResultReleaseId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("trial_result_release_id");
+
                     b.Property<int>("UndownloadedGraceDays")
                         .HasColumnType("integer")
                         .HasColumnName("undownloaded_grace_days");
@@ -4069,6 +4073,9 @@ namespace PSeq.Operations.Api.Migrations
 
                     b.HasIndex("PotentialFinalDeletionAtUtc");
 
+                    b.HasIndex("TrialResultReleaseId")
+                        .IsUnique();
+
                     b.HasIndex("WarningAtUtc");
 
                     b.HasIndex("WarningNotificationId");
@@ -4077,7 +4084,7 @@ namespace PSeq.Operations.Api.Migrations
 
                     b.ToTable("released_deliverable_retention_snapshots", "commercial_ops", t =>
                         {
-                            t.HasCheckConstraint("ck_released_retention_snapshot_one_package", "(lab_result_release_id IS NOT NULL AND assembly_output_release_id IS NULL) OR (lab_result_release_id IS NULL AND assembly_output_release_id IS NOT NULL)");
+                            t.HasCheckConstraint("ck_released_retention_snapshot_one_package", "num_nonnulls(lab_result_release_id, assembly_output_release_id, trial_result_release_id) = 1");
                         });
                 });
 
@@ -7435,11 +7442,11 @@ namespace PSeq.Operations.Api.Migrations
                         .HasColumnType("character varying(255)")
                         .HasColumnName("idempotency_key");
 
-                    b.Property<Guid>("LabSampleId")
+                    b.Property<Guid?>("LabSampleId")
                         .HasColumnType("uuid")
                         .HasColumnName("lab_sample_id");
 
-                    b.Property<Guid>("LabServiceOrderId")
+                    b.Property<Guid?>("LabServiceOrderId")
                         .HasColumnType("uuid")
                         .HasColumnName("lab_service_order_id");
 
@@ -7504,6 +7511,14 @@ namespace PSeq.Operations.Api.Migrations
                         .HasColumnType("character varying(100)")
                         .HasColumnName("state");
 
+                    b.Property<Guid?>("TrialProjectId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("trial_project_id");
+
+                    b.Property<Guid?>("TrialSampleId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("trial_sample_id");
+
                     b.Property<DateTime>("UpdatedAt")
                         .HasColumnType("timestamp with time zone")
                         .HasColumnName("updated_at");
@@ -7539,15 +7554,23 @@ namespace PSeq.Operations.Api.Migrations
 
                     b.HasIndex("LabServiceOrderId");
 
+                    b.HasIndex("TrialProjectId");
+
                     b.HasIndex("LabSampleId", "PackageVersion")
                         .IsUnique();
 
                     b.HasIndex("PipelineProviderKey", "PipelineSubmissionId")
                         .IsUnique();
 
+                    b.HasIndex("TrialSampleId", "PackageVersion")
+                        .IsUnique();
+
                     b.HasIndex("OrganizationId", "State", "CreatedAt");
 
-                    b.ToTable("result_output_packages", "commercial_ops");
+                    b.ToTable("result_output_packages", "commercial_ops", t =>
+                        {
+                            t.HasCheckConstraint("ck_result_output_package_parent", "(lab_service_order_id IS NOT NULL AND lab_sample_id IS NOT NULL AND trial_project_id IS NULL AND trial_sample_id IS NULL) OR (lab_service_order_id IS NULL AND lab_sample_id IS NULL AND trial_project_id IS NOT NULL AND trial_sample_id IS NOT NULL)");
+                        });
                 });
 
             modelBuilder.Entity("PSeq.Operations.Commercial.OrderManagement.Domain.ResultRetentionSchedule", b =>
@@ -8859,6 +8882,915 @@ namespace PSeq.Operations.Api.Migrations
                         .IsUnique();
 
                     b.ToTable("portal_integration_request_services", "commercial_ops");
+                });
+
+            modelBuilder.Entity("PSeq.Operations.Commercial.Trials.Domain.TrialApprovalAuthority", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid")
+                        .HasColumnName("id");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("created_at");
+
+                    b.Property<Guid?>("CreatedByUserId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("created_by_user_id");
+
+                    b.Property<Guid>("DesignatedByUserId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("designated_by_user_id");
+
+                    b.Property<string>("Domain")
+                        .IsRequired()
+                        .HasMaxLength(50)
+                        .HasColumnType("character varying(50)")
+                        .HasColumnName("domain");
+
+                    b.Property<DateTime>("EffectiveAtUtc")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("effective_at_utc");
+
+                    b.Property<bool>("IsPrimary")
+                        .HasColumnType("boolean")
+                        .HasColumnName("is_primary");
+
+                    b.Property<Guid?>("PrimaryAuthorityId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("primary_authority_id");
+
+                    b.Property<string>("Reason")
+                        .IsRequired()
+                        .HasMaxLength(4000)
+                        .HasColumnType("character varying(4000)")
+                        .HasColumnName("reason");
+
+                    b.Property<string>("RevocationReason")
+                        .HasMaxLength(4000)
+                        .HasColumnType("character varying(4000)")
+                        .HasColumnName("revocation_reason");
+
+                    b.Property<DateTime?>("RevokedAtUtc")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("revoked_at_utc");
+
+                    b.Property<Guid?>("RevokedByUserId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("revoked_by_user_id");
+
+                    b.Property<DateTime>("UpdatedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("updated_at");
+
+                    b.Property<Guid?>("UpdatedByUserId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("updated_by_user_id");
+
+                    b.Property<Guid>("UserId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("user_id");
+
+                    b.Property<long>("Version")
+                        .IsConcurrencyToken()
+                        .HasColumnType("bigint")
+                        .HasColumnName("version");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("CreatedByUserId");
+
+                    b.HasIndex("DesignatedByUserId");
+
+                    b.HasIndex("Domain")
+                        .IsUnique()
+                        .HasFilter("is_primary AND revoked_at_utc IS NULL");
+
+                    b.HasIndex("PrimaryAuthorityId");
+
+                    b.HasIndex("RevokedByUserId");
+
+                    b.HasIndex("UpdatedByUserId");
+
+                    b.HasIndex("UserId", "Domain")
+                        .IsUnique()
+                        .HasFilter("revoked_at_utc IS NULL");
+
+                    b.ToTable("trial_approval_authorities", "commercial_ops");
+                });
+
+            modelBuilder.Entity("PSeq.Operations.Commercial.Trials.Domain.TrialDecision", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid")
+                        .HasColumnName("id");
+
+                    b.Property<Guid>("ActorUserId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("actor_user_id");
+
+                    b.Property<bool>("AsDelegate")
+                        .HasColumnType("boolean")
+                        .HasColumnName("as_delegate");
+
+                    b.Property<Guid>("AuthorityId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("authority_id");
+
+                    b.Property<DateTime>("DecidedAtUtc")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("decided_at_utc");
+
+                    b.Property<string>("Domain")
+                        .IsRequired()
+                        .HasMaxLength(50)
+                        .HasColumnType("character varying(50)")
+                        .HasColumnName("domain");
+
+                    b.Property<string>("Kind")
+                        .IsRequired()
+                        .HasMaxLength(50)
+                        .HasColumnType("character varying(50)")
+                        .HasColumnName("kind");
+
+                    b.Property<string>("Reason")
+                        .IsRequired()
+                        .HasMaxLength(4000)
+                        .HasColumnType("character varying(4000)")
+                        .HasColumnName("reason");
+
+                    b.Property<Guid>("TrialScopeId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("trial_scope_id");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("ActorUserId");
+
+                    b.HasIndex("AuthorityId");
+
+                    b.HasIndex("TrialScopeId", "Domain")
+                        .IsUnique();
+
+                    b.ToTable("trial_decisions", "commercial_ops");
+                });
+
+            modelBuilder.Entity("PSeq.Operations.Commercial.Trials.Domain.TrialDeliverableDefinition", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid")
+                        .HasColumnName("id");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("created_at");
+
+                    b.Property<Guid?>("CreatedByUserId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("created_by_user_id");
+
+                    b.Property<bool>("IsActive")
+                        .HasColumnType("boolean")
+                        .HasColumnName("is_active");
+
+                    b.Property<bool>("IsDefault")
+                        .HasColumnType("boolean")
+                        .HasColumnName("is_default");
+
+                    b.Property<string>("Key")
+                        .IsRequired()
+                        .HasMaxLength(4000)
+                        .HasColumnType("character varying(4000)")
+                        .HasColumnName("key");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasMaxLength(4000)
+                        .HasColumnType("character varying(4000)")
+                        .HasColumnName("name");
+
+                    b.Property<int>("Revision")
+                        .HasColumnType("integer")
+                        .HasColumnName("revision");
+
+                    b.Property<DateTime>("UpdatedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("updated_at");
+
+                    b.Property<Guid?>("UpdatedByUserId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("updated_by_user_id");
+
+                    b.Property<long>("Version")
+                        .IsConcurrencyToken()
+                        .HasColumnType("bigint")
+                        .HasColumnName("version");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("CreatedByUserId");
+
+                    b.HasIndex("Key")
+                        .IsUnique()
+                        .HasFilter("is_active");
+
+                    b.HasIndex("UpdatedByUserId");
+
+                    b.HasIndex("Key", "Revision")
+                        .IsUnique();
+
+                    b.ToTable("trial_deliverable_definitions", "commercial_ops");
+
+                    b.HasData(
+                        new
+                        {
+                            Id = new Guid("87c083a2-8039-4d9a-9b61-4ec577e1a001"),
+                            CreatedAt = new DateTime(2026, 9, 5, 0, 0, 0, 0, DateTimeKind.Utc),
+                            IsActive = true,
+                            IsDefault = true,
+                            Key = "FASTQ",
+                            Name = "FASTQ sequencing reads",
+                            Revision = 1,
+                            UpdatedAt = new DateTime(2026, 9, 5, 0, 0, 0, 0, DateTimeKind.Utc),
+                            Version = 1L
+                        },
+                        new
+                        {
+                            Id = new Guid("87c083a2-8039-4d9a-9b61-4ec577e1a002"),
+                            CreatedAt = new DateTime(2026, 9, 5, 0, 0, 0, 0, DateTimeKind.Utc),
+                            IsActive = true,
+                            IsDefault = true,
+                            Key = "FASTA",
+                            Name = "FASTA sequences",
+                            Revision = 1,
+                            UpdatedAt = new DateTime(2026, 9, 5, 0, 0, 0, 0, DateTimeKind.Utc),
+                            Version = 1L
+                        },
+                        new
+                        {
+                            Id = new Guid("87c083a2-8039-4d9a-9b61-4ec577e1a003"),
+                            CreatedAt = new DateTime(2026, 9, 5, 0, 0, 0, 0, DateTimeKind.Utc),
+                            IsActive = true,
+                            IsDefault = true,
+                            Key = "BAM",
+                            Name = "BAM alignments",
+                            Revision = 1,
+                            UpdatedAt = new DateTime(2026, 9, 5, 0, 0, 0, 0, DateTimeKind.Utc),
+                            Version = 1L
+                        });
+                });
+
+            modelBuilder.Entity("PSeq.Operations.Commercial.Trials.Domain.TrialEvent", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid")
+                        .HasColumnName("id");
+
+                    b.Property<Guid>("ActorUserId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("actor_user_id");
+
+                    b.Property<string>("InternalDetailsJson")
+                        .IsRequired()
+                        .HasColumnType("jsonb")
+                        .HasColumnName("internal_details_json");
+
+                    b.Property<string>("Kind")
+                        .IsRequired()
+                        .HasMaxLength(4000)
+                        .HasColumnType("character varying(4000)")
+                        .HasColumnName("kind");
+
+                    b.Property<DateTime>("OccurredAtUtc")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("occurred_at_utc");
+
+                    b.Property<string>("Summary")
+                        .IsRequired()
+                        .HasMaxLength(4000)
+                        .HasColumnType("character varying(4000)")
+                        .HasColumnName("summary");
+
+                    b.Property<Guid>("TrialProjectId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("trial_project_id");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("ActorUserId");
+
+                    b.HasIndex("TrialProjectId", "OccurredAtUtc");
+
+                    b.ToTable("trial_events", "commercial_ops");
+                });
+
+            modelBuilder.Entity("PSeq.Operations.Commercial.Trials.Domain.TrialProject", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid")
+                        .HasColumnName("id");
+
+                    b.Property<DateTime?>("AcceptedAtUtc")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("accepted_at_utc");
+
+                    b.Property<Guid?>("AcceptedByUserId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("accepted_by_user_id");
+
+                    b.Property<int?>("AcceptedScopeRevision")
+                        .HasColumnType("integer")
+                        .HasColumnName("accepted_scope_revision");
+
+                    b.Property<string>("AcceptedTermsVersion")
+                        .HasMaxLength(4000)
+                        .HasColumnType("character varying(4000)")
+                        .HasColumnName("accepted_terms_version");
+
+                    b.Property<string>("ActualMaterialDisposition")
+                        .HasMaxLength(4000)
+                        .HasColumnType("character varying(4000)")
+                        .HasColumnName("actual_material_disposition");
+
+                    b.Property<int?>("ApprovedScopeRevision")
+                        .HasColumnType("integer")
+                        .HasColumnName("approved_scope_revision");
+
+                    b.Property<DateTime?>("ClosedAtUtc")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("closed_at_utc");
+
+                    b.Property<string>("ClosureReason")
+                        .HasMaxLength(4000)
+                        .HasColumnType("character varying(4000)")
+                        .HasColumnName("closure_reason");
+
+                    b.Property<string>("CommercialOutcome")
+                        .HasMaxLength(50)
+                        .HasColumnType("character varying(50)")
+                        .HasColumnName("commercial_outcome");
+
+                    b.Property<string>("CommercialOutcomeReason")
+                        .HasMaxLength(4000)
+                        .HasColumnType("character varying(4000)")
+                        .HasColumnName("commercial_outcome_reason");
+
+                    b.Property<Guid>("CompanyId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("company_id");
+
+                    b.Property<Guid?>("CompleteReleaseId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("complete_release_id");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("created_at");
+
+                    b.Property<Guid?>("CreatedByUserId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("created_by_user_id");
+
+                    b.Property<Guid>("CrmHandoffId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("crm_handoff_id");
+
+                    b.Property<int>("CurrentScopeRevision")
+                        .HasColumnType("integer")
+                        .HasColumnName("current_scope_revision");
+
+                    b.Property<Guid?>("DepartmentId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("department_id");
+
+                    b.Property<DateTime?>("FollowUpAtUtc")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("follow_up_at_utc");
+
+                    b.Property<Guid?>("FollowUpOwnerUserId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("follow_up_owner_user_id");
+
+                    b.Property<string>("HoldReason")
+                        .HasMaxLength(4000)
+                        .HasColumnType("character varying(4000)")
+                        .HasColumnName("hold_reason");
+
+                    b.Property<bool>("IsOnHold")
+                        .HasColumnType("boolean")
+                        .HasColumnName("is_on_hold");
+
+                    b.Property<DateTime?>("MaterialDisposedAtUtc")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("material_disposed_at_utc");
+
+                    b.Property<Guid?>("MaterialDisposedByUserId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("material_disposed_by_user_id");
+
+                    b.Property<string>("Number")
+                        .IsRequired()
+                        .HasMaxLength(4000)
+                        .HasColumnType("character varying(4000)")
+                        .HasColumnName("number");
+
+                    b.Property<Guid>("OpportunityId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("opportunity_id");
+
+                    b.Property<Guid?>("OrganizationId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("organization_id");
+
+                    b.Property<DateTime?>("ResidualRetainUntilUtc")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("residual_retain_until_utc");
+
+                    b.Property<Guid>("SalesOwnerUserId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("sales_owner_user_id");
+
+                    b.Property<string>("ScheduleEstimate")
+                        .HasMaxLength(4000)
+                        .HasColumnType("character varying(4000)")
+                        .HasColumnName("schedule_estimate");
+
+                    b.Property<string>("Status")
+                        .IsRequired()
+                        .HasMaxLength(50)
+                        .HasColumnType("character varying(50)")
+                        .HasColumnName("status");
+
+                    b.Property<DateTime>("UpdatedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("updated_at");
+
+                    b.Property<Guid?>("UpdatedByUserId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("updated_by_user_id");
+
+                    b.Property<long>("Version")
+                        .IsConcurrencyToken()
+                        .HasColumnType("bigint")
+                        .HasColumnName("version");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("AcceptedByUserId");
+
+                    b.HasIndex("CompanyId");
+
+                    b.HasIndex("CompleteReleaseId");
+
+                    b.HasIndex("CreatedByUserId");
+
+                    b.HasIndex("CrmHandoffId")
+                        .IsUnique();
+
+                    b.HasIndex("DepartmentId");
+
+                    b.HasIndex("FollowUpOwnerUserId");
+
+                    b.HasIndex("MaterialDisposedByUserId");
+
+                    b.HasIndex("Number")
+                        .IsUnique();
+
+                    b.HasIndex("OpportunityId");
+
+                    b.HasIndex("SalesOwnerUserId");
+
+                    b.HasIndex("UpdatedByUserId");
+
+                    b.HasIndex("OrganizationId", "DepartmentId", "Status");
+
+                    b.ToTable("trial_projects", "commercial_ops");
+                });
+
+            modelBuilder.Entity("PSeq.Operations.Commercial.Trials.Domain.TrialReplacementAuthorization", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid")
+                        .HasColumnName("id");
+
+                    b.Property<DateTime>("ApprovedAtUtc")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("approved_at_utc");
+
+                    b.Property<Guid>("ApprovedByUserId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("approved_by_user_id");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("created_at");
+
+                    b.Property<Guid?>("CreatedByUserId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("created_by_user_id");
+
+                    b.Property<Guid>("OriginalSampleId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("original_sample_id");
+
+                    b.Property<bool>("PhaenoCausedFailure")
+                        .HasColumnType("boolean")
+                        .HasColumnName("phaeno_caused_failure");
+
+                    b.Property<string>("Reason")
+                        .IsRequired()
+                        .HasMaxLength(4000)
+                        .HasColumnType("character varying(4000)")
+                        .HasColumnName("reason");
+
+                    b.Property<Guid>("TrialProjectId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("trial_project_id");
+
+                    b.Property<DateTime>("UpdatedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("updated_at");
+
+                    b.Property<Guid?>("UpdatedByUserId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("updated_by_user_id");
+
+                    b.Property<Guid?>("UsedBySampleId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("used_by_sample_id");
+
+                    b.Property<long>("Version")
+                        .IsConcurrencyToken()
+                        .HasColumnType("bigint")
+                        .HasColumnName("version");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("ApprovedByUserId");
+
+                    b.HasIndex("CreatedByUserId");
+
+                    b.HasIndex("OriginalSampleId")
+                        .IsUnique();
+
+                    b.HasIndex("TrialProjectId");
+
+                    b.HasIndex("UpdatedByUserId");
+
+                    b.HasIndex("UsedBySampleId");
+
+                    b.ToTable("trial_replacement_authorizations", "commercial_ops");
+                });
+
+            modelBuilder.Entity("PSeq.Operations.Commercial.Trials.Domain.TrialResultFile", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid")
+                        .HasColumnName("id");
+
+                    b.Property<Guid>("ManagedOperationalFileId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("managed_operational_file_id");
+
+                    b.Property<Guid>("ResultArtifactId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("result_artifact_id");
+
+                    b.Property<Guid>("ResultOutputPackageId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("result_output_package_id");
+
+                    b.Property<Guid>("TrialSampleId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("trial_sample_id");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("ManagedOperationalFileId")
+                        .IsUnique();
+
+                    b.HasIndex("ResultArtifactId")
+                        .IsUnique();
+
+                    b.HasIndex("ResultOutputPackageId");
+
+                    b.HasIndex("TrialSampleId");
+
+                    b.ToTable("trial_result_files", "commercial_ops");
+                });
+
+            modelBuilder.Entity("PSeq.Operations.Commercial.Trials.Domain.TrialResultRelease", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid")
+                        .HasColumnName("id");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("created_at");
+
+                    b.Property<Guid?>("CreatedByUserId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("created_by_user_id");
+
+                    b.Property<Guid>("DepartmentId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("department_id");
+
+                    b.Property<bool>("IsCompletePackage")
+                        .HasColumnType("boolean")
+                        .HasColumnName("is_complete_package");
+
+                    b.Property<bool>("IsWithdrawn")
+                        .HasColumnType("boolean")
+                        .HasColumnName("is_withdrawn");
+
+                    b.Property<string>("ManifestJson")
+                        .IsRequired()
+                        .HasColumnType("jsonb")
+                        .HasColumnName("manifest_json");
+
+                    b.Property<Guid>("OrganizationId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("organization_id");
+
+                    b.Property<int>("ReleaseVersion")
+                        .HasColumnType("integer")
+                        .HasColumnName("release_version");
+
+                    b.Property<DateTime>("ReleasedAtUtc")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("released_at_utc");
+
+                    b.Property<Guid>("ReleasedByUserId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("released_by_user_id");
+
+                    b.Property<int>("ScopeRevision")
+                        .HasColumnType("integer")
+                        .HasColumnName("scope_revision");
+
+                    b.Property<Guid?>("SupersedesReleaseId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("supersedes_release_id");
+
+                    b.Property<Guid>("TrialProjectId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("trial_project_id");
+
+                    b.Property<DateTime>("UpdatedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("updated_at");
+
+                    b.Property<Guid?>("UpdatedByUserId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("updated_by_user_id");
+
+                    b.Property<long>("Version")
+                        .IsConcurrencyToken()
+                        .HasColumnType("bigint")
+                        .HasColumnName("version");
+
+                    b.Property<string>("WithdrawalReason")
+                        .HasMaxLength(4000)
+                        .HasColumnType("character varying(4000)")
+                        .HasColumnName("withdrawal_reason");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("CreatedByUserId");
+
+                    b.HasIndex("DepartmentId");
+
+                    b.HasIndex("OrganizationId");
+
+                    b.HasIndex("ReleasedByUserId");
+
+                    b.HasIndex("SupersedesReleaseId");
+
+                    b.HasIndex("UpdatedByUserId");
+
+                    b.HasIndex("TrialProjectId", "ReleaseVersion")
+                        .IsUnique();
+
+                    b.ToTable("trial_result_releases", "commercial_ops");
+                });
+
+            modelBuilder.Entity("PSeq.Operations.Commercial.Trials.Domain.TrialSample", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid")
+                        .HasColumnName("id");
+
+                    b.Property<Guid>("AuthorizationId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("authorization_id");
+
+                    b.Property<string>("BiologicalSource")
+                        .IsRequired()
+                        .HasMaxLength(4000)
+                        .HasColumnType("character varying(4000)")
+                        .HasColumnName("biological_source");
+
+                    b.Property<decimal?>("Concentration")
+                        .HasColumnType("numeric")
+                        .HasColumnName("concentration");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("created_at");
+
+                    b.Property<Guid?>("CreatedByUserId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("created_by_user_id");
+
+                    b.Property<string>("InputsJson")
+                        .IsRequired()
+                        .HasColumnType("jsonb")
+                        .HasColumnName("inputs_json");
+
+                    b.Property<Guid?>("LabWorkOrderId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("lab_work_order_id");
+
+                    b.Property<string>("OutcomeReason")
+                        .HasMaxLength(4000)
+                        .HasColumnType("character varying(4000)")
+                        .HasColumnName("outcome_reason");
+
+                    b.Property<decimal>("Quantity")
+                        .HasColumnType("numeric")
+                        .HasColumnName("quantity");
+
+                    b.Property<string>("QuantityUnit")
+                        .IsRequired()
+                        .HasMaxLength(4000)
+                        .HasColumnType("character varying(4000)")
+                        .HasColumnName("quantity_unit");
+
+                    b.Property<string>("Reference")
+                        .IsRequired()
+                        .HasMaxLength(4000)
+                        .HasColumnType("character varying(4000)")
+                        .HasColumnName("reference");
+
+                    b.Property<Guid?>("ReplacementAuthorizationId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("replacement_authorization_id");
+
+                    b.Property<Guid?>("ReplacesSampleId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("replaces_sample_id");
+
+                    b.Property<string>("SafetyDeclaration")
+                        .IsRequired()
+                        .HasMaxLength(4000)
+                        .HasColumnType("character varying(4000)")
+                        .HasColumnName("safety_declaration");
+
+                    b.Property<int>("ScopeRevision")
+                        .HasColumnType("integer")
+                        .HasColumnName("scope_revision");
+
+                    b.Property<string>("Status")
+                        .IsRequired()
+                        .HasMaxLength(4000)
+                        .HasColumnType("character varying(4000)")
+                        .HasColumnName("status");
+
+                    b.Property<string>("StorageRequirements")
+                        .IsRequired()
+                        .HasMaxLength(4000)
+                        .HasColumnType("character varying(4000)")
+                        .HasColumnName("storage_requirements");
+
+                    b.Property<DateTime>("SubmittedAtUtc")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("submitted_at_utc");
+
+                    b.Property<Guid>("SubmittedByUserId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("submitted_by_user_id");
+
+                    b.Property<Guid>("TrialProjectId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("trial_project_id");
+
+                    b.Property<int>("TubeCount")
+                        .HasColumnType("integer")
+                        .HasColumnName("tube_count");
+
+                    b.Property<DateTime>("UpdatedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("updated_at");
+
+                    b.Property<Guid?>("UpdatedByUserId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("updated_by_user_id");
+
+                    b.Property<long>("Version")
+                        .IsConcurrencyToken()
+                        .HasColumnType("bigint")
+                        .HasColumnName("version");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("AuthorizationId");
+
+                    b.HasIndex("CreatedByUserId");
+
+                    b.HasIndex("LabWorkOrderId");
+
+                    b.HasIndex("ReplacementAuthorizationId");
+
+                    b.HasIndex("ReplacesSampleId");
+
+                    b.HasIndex("SubmittedByUserId");
+
+                    b.HasIndex("UpdatedByUserId");
+
+                    b.HasIndex("TrialProjectId", "Reference")
+                        .IsUnique();
+
+                    b.ToTable("trial_samples", "commercial_ops");
+                });
+
+            modelBuilder.Entity("PSeq.Operations.Commercial.Trials.Domain.TrialScope", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid")
+                        .HasColumnName("id");
+
+                    b.Property<string>("AmendmentReason")
+                        .IsRequired()
+                        .HasMaxLength(4000)
+                        .HasColumnType("character varying(4000)")
+                        .HasColumnName("amendment_reason");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("created_at");
+
+                    b.Property<Guid?>("CreatedByUserId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("created_by_user_id");
+
+                    b.Property<DateTime>("ProposedAtUtc")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("proposed_at_utc");
+
+                    b.Property<Guid>("ProposedByUserId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("proposed_by_user_id");
+
+                    b.Property<int>("Revision")
+                        .HasColumnType("integer")
+                        .HasColumnName("revision");
+
+                    b.Property<Guid>("TrialProjectId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("trial_project_id");
+
+                    b.Property<DateTime>("UpdatedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("updated_at");
+
+                    b.Property<Guid?>("UpdatedByUserId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("updated_by_user_id");
+
+                    b.Property<string>("ValuesJson")
+                        .IsRequired()
+                        .HasColumnType("jsonb")
+                        .HasColumnName("values_json");
+
+                    b.Property<long>("Version")
+                        .IsConcurrencyToken()
+                        .HasColumnType("bigint")
+                        .HasColumnName("version");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("CreatedByUserId");
+
+                    b.HasIndex("ProposedByUserId");
+
+                    b.HasIndex("UpdatedByUserId");
+
+                    b.HasIndex("TrialProjectId", "Revision")
+                        .IsUnique();
+
+                    b.ToTable("trial_scopes", "commercial_ops");
                 });
 
             modelBuilder.Entity("PSeq.Operations.Laboratory.Domain.LabBatchMember", b =>
@@ -12948,6 +13880,11 @@ namespace PSeq.Operations.Api.Migrations
                         .OnDelete(DeleteBehavior.Restrict)
                         .HasConstraintName("fk_released_retention_snapshot_org_override");
 
+                    b.HasOne("PSeq.Operations.Commercial.Trials.Domain.TrialResultRelease", null)
+                        .WithMany()
+                        .HasForeignKey("TrialResultReleaseId")
+                        .OnDelete(DeleteBehavior.Restrict);
+
                     b.HasOne("PSeq.Operations.Commercial.OrderManagement.Domain.OrderNotification", null)
                         .WithMany()
                         .HasForeignKey("WarningNotificationId")
@@ -13375,20 +14312,28 @@ namespace PSeq.Operations.Api.Migrations
                     b.HasOne("PhaenoPortal.App.Features.OrderManagement.Domain.LabSample", null)
                         .WithMany()
                         .HasForeignKey("LabSampleId")
-                        .OnDelete(DeleteBehavior.Restrict)
-                        .IsRequired();
+                        .OnDelete(DeleteBehavior.Restrict);
 
                     b.HasOne("PhaenoPortal.App.Features.OrderManagement.Domain.LabServiceOrder", null)
                         .WithMany()
                         .HasForeignKey("LabServiceOrderId")
-                        .OnDelete(DeleteBehavior.Restrict)
-                        .IsRequired();
+                        .OnDelete(DeleteBehavior.Restrict);
 
                     b.HasOne("PSeq.Operations.Commercial.Accounts.Domain.Organization", null)
                         .WithMany()
                         .HasForeignKey("OrganizationId")
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
+
+                    b.HasOne("PSeq.Operations.Commercial.Trials.Domain.TrialProject", null)
+                        .WithMany()
+                        .HasForeignKey("TrialProjectId")
+                        .OnDelete(DeleteBehavior.Restrict);
+
+                    b.HasOne("PSeq.Operations.Commercial.Trials.Domain.TrialSample", null)
+                        .WithMany()
+                        .HasForeignKey("TrialSampleId")
+                        .OnDelete(DeleteBehavior.Restrict);
                 });
 
             modelBuilder.Entity("PSeq.Operations.Commercial.OrderManagement.Domain.ResultRetentionSchedule", b =>
@@ -13585,6 +14530,327 @@ namespace PSeq.Operations.Api.Migrations
                         .HasForeignKey("PortalIntegrationRequestId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
+                });
+
+            modelBuilder.Entity("PSeq.Operations.Commercial.Trials.Domain.TrialApprovalAuthority", b =>
+                {
+                    b.HasOne("PSeq.Operations.Commercial.Accounts.Domain.User", null)
+                        .WithMany()
+                        .HasForeignKey("CreatedByUserId")
+                        .OnDelete(DeleteBehavior.Restrict);
+
+                    b.HasOne("PSeq.Operations.Commercial.Accounts.Domain.User", null)
+                        .WithMany()
+                        .HasForeignKey("DesignatedByUserId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("PSeq.Operations.Commercial.Trials.Domain.TrialApprovalAuthority", null)
+                        .WithMany()
+                        .HasForeignKey("PrimaryAuthorityId")
+                        .OnDelete(DeleteBehavior.Restrict);
+
+                    b.HasOne("PSeq.Operations.Commercial.Accounts.Domain.User", null)
+                        .WithMany()
+                        .HasForeignKey("RevokedByUserId")
+                        .OnDelete(DeleteBehavior.Restrict);
+
+                    b.HasOne("PSeq.Operations.Commercial.Accounts.Domain.User", null)
+                        .WithMany()
+                        .HasForeignKey("UpdatedByUserId")
+                        .OnDelete(DeleteBehavior.Restrict);
+
+                    b.HasOne("PSeq.Operations.Commercial.Accounts.Domain.User", null)
+                        .WithMany()
+                        .HasForeignKey("UserId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+                });
+
+            modelBuilder.Entity("PSeq.Operations.Commercial.Trials.Domain.TrialDecision", b =>
+                {
+                    b.HasOne("PSeq.Operations.Commercial.Accounts.Domain.User", null)
+                        .WithMany()
+                        .HasForeignKey("ActorUserId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("PSeq.Operations.Commercial.Trials.Domain.TrialApprovalAuthority", null)
+                        .WithMany()
+                        .HasForeignKey("AuthorityId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("PSeq.Operations.Commercial.Trials.Domain.TrialScope", null)
+                        .WithMany("Decisions")
+                        .HasForeignKey("TrialScopeId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+                });
+
+            modelBuilder.Entity("PSeq.Operations.Commercial.Trials.Domain.TrialDeliverableDefinition", b =>
+                {
+                    b.HasOne("PSeq.Operations.Commercial.Accounts.Domain.User", null)
+                        .WithMany()
+                        .HasForeignKey("CreatedByUserId")
+                        .OnDelete(DeleteBehavior.Restrict);
+
+                    b.HasOne("PSeq.Operations.Commercial.Accounts.Domain.User", null)
+                        .WithMany()
+                        .HasForeignKey("UpdatedByUserId")
+                        .OnDelete(DeleteBehavior.Restrict);
+                });
+
+            modelBuilder.Entity("PSeq.Operations.Commercial.Trials.Domain.TrialEvent", b =>
+                {
+                    b.HasOne("PSeq.Operations.Commercial.Accounts.Domain.User", null)
+                        .WithMany()
+                        .HasForeignKey("ActorUserId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("PSeq.Operations.Commercial.Trials.Domain.TrialProject", null)
+                        .WithMany()
+                        .HasForeignKey("TrialProjectId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+                });
+
+            modelBuilder.Entity("PSeq.Operations.Commercial.Trials.Domain.TrialProject", b =>
+                {
+                    b.HasOne("PSeq.Operations.Commercial.Accounts.Domain.User", null)
+                        .WithMany()
+                        .HasForeignKey("AcceptedByUserId")
+                        .OnDelete(DeleteBehavior.Restrict);
+
+                    b.HasOne("PSeq.Operations.Commercial.Crm.Domain.CrmCompany", null)
+                        .WithMany()
+                        .HasForeignKey("CompanyId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("PSeq.Operations.Commercial.Trials.Domain.TrialResultRelease", null)
+                        .WithMany()
+                        .HasForeignKey("CompleteReleaseId")
+                        .OnDelete(DeleteBehavior.Restrict);
+
+                    b.HasOne("PSeq.Operations.Commercial.Accounts.Domain.User", null)
+                        .WithMany()
+                        .HasForeignKey("CreatedByUserId")
+                        .OnDelete(DeleteBehavior.Restrict);
+
+                    b.HasOne("PSeq.Operations.Commercial.Crm.Domain.CrmHandoff", null)
+                        .WithMany()
+                        .HasForeignKey("CrmHandoffId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("PSeq.Operations.Commercial.Accounts.Domain.OrganizationDepartment", null)
+                        .WithMany()
+                        .HasForeignKey("DepartmentId")
+                        .OnDelete(DeleteBehavior.Restrict);
+
+                    b.HasOne("PSeq.Operations.Commercial.Accounts.Domain.User", null)
+                        .WithMany()
+                        .HasForeignKey("FollowUpOwnerUserId")
+                        .OnDelete(DeleteBehavior.Restrict);
+
+                    b.HasOne("PSeq.Operations.Commercial.Accounts.Domain.User", null)
+                        .WithMany()
+                        .HasForeignKey("MaterialDisposedByUserId")
+                        .OnDelete(DeleteBehavior.Restrict);
+
+                    b.HasOne("PSeq.Operations.Commercial.Crm.Domain.CrmOpportunity", null)
+                        .WithMany()
+                        .HasForeignKey("OpportunityId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("PSeq.Operations.Commercial.Accounts.Domain.Organization", null)
+                        .WithMany()
+                        .HasForeignKey("OrganizationId")
+                        .OnDelete(DeleteBehavior.Restrict);
+
+                    b.HasOne("PSeq.Operations.Commercial.Accounts.Domain.User", null)
+                        .WithMany()
+                        .HasForeignKey("SalesOwnerUserId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("PSeq.Operations.Commercial.Accounts.Domain.User", null)
+                        .WithMany()
+                        .HasForeignKey("UpdatedByUserId")
+                        .OnDelete(DeleteBehavior.Restrict);
+                });
+
+            modelBuilder.Entity("PSeq.Operations.Commercial.Trials.Domain.TrialReplacementAuthorization", b =>
+                {
+                    b.HasOne("PSeq.Operations.Commercial.Accounts.Domain.User", null)
+                        .WithMany()
+                        .HasForeignKey("ApprovedByUserId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("PSeq.Operations.Commercial.Accounts.Domain.User", null)
+                        .WithMany()
+                        .HasForeignKey("CreatedByUserId")
+                        .OnDelete(DeleteBehavior.Restrict);
+
+                    b.HasOne("PSeq.Operations.Commercial.Trials.Domain.TrialSample", null)
+                        .WithMany()
+                        .HasForeignKey("OriginalSampleId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("PSeq.Operations.Commercial.Trials.Domain.TrialProject", null)
+                        .WithMany()
+                        .HasForeignKey("TrialProjectId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("PSeq.Operations.Commercial.Accounts.Domain.User", null)
+                        .WithMany()
+                        .HasForeignKey("UpdatedByUserId")
+                        .OnDelete(DeleteBehavior.Restrict);
+
+                    b.HasOne("PSeq.Operations.Commercial.Trials.Domain.TrialSample", null)
+                        .WithMany()
+                        .HasForeignKey("UsedBySampleId")
+                        .OnDelete(DeleteBehavior.Restrict);
+                });
+
+            modelBuilder.Entity("PSeq.Operations.Commercial.Trials.Domain.TrialResultFile", b =>
+                {
+                    b.HasOne("PhaenoPortal.App.Features.OrderManagement.Domain.ManagedOperationalFile", null)
+                        .WithMany()
+                        .HasForeignKey("ManagedOperationalFileId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("PSeq.Operations.Commercial.OrderManagement.Domain.ResultArtifact", null)
+                        .WithMany()
+                        .HasForeignKey("ResultArtifactId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("PSeq.Operations.Commercial.OrderManagement.Domain.ResultOutputPackage", null)
+                        .WithMany()
+                        .HasForeignKey("ResultOutputPackageId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("PSeq.Operations.Commercial.Trials.Domain.TrialSample", null)
+                        .WithMany()
+                        .HasForeignKey("TrialSampleId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+                });
+
+            modelBuilder.Entity("PSeq.Operations.Commercial.Trials.Domain.TrialResultRelease", b =>
+                {
+                    b.HasOne("PSeq.Operations.Commercial.Accounts.Domain.User", null)
+                        .WithMany()
+                        .HasForeignKey("CreatedByUserId")
+                        .OnDelete(DeleteBehavior.Restrict);
+
+                    b.HasOne("PSeq.Operations.Commercial.Accounts.Domain.OrganizationDepartment", null)
+                        .WithMany()
+                        .HasForeignKey("DepartmentId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("PSeq.Operations.Commercial.Accounts.Domain.Organization", null)
+                        .WithMany()
+                        .HasForeignKey("OrganizationId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("PSeq.Operations.Commercial.Accounts.Domain.User", null)
+                        .WithMany()
+                        .HasForeignKey("ReleasedByUserId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("PSeq.Operations.Commercial.Trials.Domain.TrialResultRelease", null)
+                        .WithMany()
+                        .HasForeignKey("SupersedesReleaseId")
+                        .OnDelete(DeleteBehavior.Restrict);
+
+                    b.HasOne("PSeq.Operations.Commercial.Trials.Domain.TrialProject", null)
+                        .WithMany()
+                        .HasForeignKey("TrialProjectId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("PSeq.Operations.Commercial.Accounts.Domain.User", null)
+                        .WithMany()
+                        .HasForeignKey("UpdatedByUserId")
+                        .OnDelete(DeleteBehavior.Restrict);
+                });
+
+            modelBuilder.Entity("PSeq.Operations.Commercial.Trials.Domain.TrialSample", b =>
+                {
+                    b.HasOne("PSeq.Operations.Commercial.Accounts.Domain.User", null)
+                        .WithMany()
+                        .HasForeignKey("CreatedByUserId")
+                        .OnDelete(DeleteBehavior.Restrict);
+
+                    b.HasOne("PSeq.Operations.Laboratory.Domain.LabWorkOrder", null)
+                        .WithMany()
+                        .HasForeignKey("LabWorkOrderId")
+                        .OnDelete(DeleteBehavior.Restrict);
+
+                    b.HasOne("PSeq.Operations.Commercial.Trials.Domain.TrialReplacementAuthorization", null)
+                        .WithMany()
+                        .HasForeignKey("ReplacementAuthorizationId")
+                        .OnDelete(DeleteBehavior.Restrict);
+
+                    b.HasOne("PSeq.Operations.Commercial.Trials.Domain.TrialSample", null)
+                        .WithMany()
+                        .HasForeignKey("ReplacesSampleId")
+                        .OnDelete(DeleteBehavior.Restrict);
+
+                    b.HasOne("PSeq.Operations.Commercial.Accounts.Domain.User", null)
+                        .WithMany()
+                        .HasForeignKey("SubmittedByUserId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("PSeq.Operations.Commercial.Trials.Domain.TrialProject", null)
+                        .WithMany("Samples")
+                        .HasForeignKey("TrialProjectId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("PSeq.Operations.Commercial.Accounts.Domain.User", null)
+                        .WithMany()
+                        .HasForeignKey("UpdatedByUserId")
+                        .OnDelete(DeleteBehavior.Restrict);
+                });
+
+            modelBuilder.Entity("PSeq.Operations.Commercial.Trials.Domain.TrialScope", b =>
+                {
+                    b.HasOne("PSeq.Operations.Commercial.Accounts.Domain.User", null)
+                        .WithMany()
+                        .HasForeignKey("CreatedByUserId")
+                        .OnDelete(DeleteBehavior.Restrict);
+
+                    b.HasOne("PSeq.Operations.Commercial.Accounts.Domain.User", null)
+                        .WithMany()
+                        .HasForeignKey("ProposedByUserId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("PSeq.Operations.Commercial.Trials.Domain.TrialProject", null)
+                        .WithMany("Scopes")
+                        .HasForeignKey("TrialProjectId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("PSeq.Operations.Commercial.Accounts.Domain.User", null)
+                        .WithMany()
+                        .HasForeignKey("UpdatedByUserId")
+                        .OnDelete(DeleteBehavior.Restrict);
                 });
 
             modelBuilder.Entity("PSeq.Operations.Laboratory.Domain.LabBatchMember", b =>
@@ -14180,6 +15446,18 @@ namespace PSeq.Operations.Api.Migrations
             modelBuilder.Entity("PSeq.Operations.Commercial.Relationships.Domain.PortalIntegrationRequest", b =>
                 {
                     b.Navigation("RequestedServices");
+                });
+
+            modelBuilder.Entity("PSeq.Operations.Commercial.Trials.Domain.TrialProject", b =>
+                {
+                    b.Navigation("Samples");
+
+                    b.Navigation("Scopes");
+                });
+
+            modelBuilder.Entity("PSeq.Operations.Commercial.Trials.Domain.TrialScope", b =>
+                {
+                    b.Navigation("Decisions");
                 });
 
             modelBuilder.Entity("PSeq.Operations.Laboratory.Domain.LabWorkOrder", b =>

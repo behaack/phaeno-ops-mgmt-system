@@ -54,7 +54,7 @@ public sealed class PSeqResultDownloadsController(
         return packages.Select(package =>
         {
             var status = retention[package.Id];
-            return new CustomerResultPackageDto(package.Id, package.LabSampleId,
+            return new CustomerResultPackageDto(package.Id, package.LabSampleId!.Value,
                 package.PackageVersion, package.State.ToString(), package.ReleasedAtUtc,
                 status.State, status.IsDownloadAvailable,
                 artifacts.Where(item => item.ResultOutputPackageId == package.Id && item.ScanState == ResultArtifactScanState.Clean)

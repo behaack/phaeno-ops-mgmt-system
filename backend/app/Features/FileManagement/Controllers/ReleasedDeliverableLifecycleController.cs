@@ -68,10 +68,12 @@ public sealed class ReleasedDeliverableLifecycleController(PSeqOperationsDbConte
             if (membership is null) throw Missing();
             var context = new OrderRequestContext(db, identity);
             var tenant = await context.RequireTenantAsync(HttpContext, membership.Organization!.Kind, false, token);
-            if (!tenant.Membership.IsOrganizationAdmin && tenant.Department.Id != package.DepartmentId) throw Missing();
+            if ((package.Type == ReleasedDeliverablePackageType.TrialResult || !tenant.Membership.IsOrganizationAdmin) && tenant.Department.Id != package.DepartmentId) throw Missing();
         }
+        var fileIds = package.Files.Select(value => value.Id).ToArray();
         var attempts = await db.OperationalFileDownloads.AsNoTracking().Where(value => value.OrganizationId == snapshot.OrganizationId
-            && value.ReleasedPackageId == package.Id && value.ReleasedPackageType == package.Type).ToListAsync(token);
+            && value.ReleasedPackageType == package.Type && (value.ReleasedPackageId == package.Id
+                || package.Type == ReleasedDeliverablePackageType.TrialResult && value.ManagedOperationalFileId != null && fileIds.Contains(value.ManagedOperationalFileId.Value))).ToListAsync(token);
         var now = DateTime.UtcNow;
         var commits = await new DownloadCommitEvidenceService(db).ReadCompletionsAsync(attempts, token);
         var projection = ReleasedDeliverableDownloadProjection.Create(package.Files.Select(value => value.Id).ToList(), attempts, now, commits);
@@ -86,7 +88,7 @@ public sealed class ReleasedDeliverableLifecycleController(PSeqOperationsDbConte
                 commits.GetValueOrDefault(value.Id), commits.GetValueOrDefault(value.Id) > decision.DeletionDueAtUtc && value.StartedAtUtc < decision.DeletionDueAtUtc)));
         }
         var name = await db.Organizations.Where(value => value.Id == snapshot.OrganizationId).Select(value => value.Name).SingleAsync(token);
-        var path = package.Type == ReleasedDeliverablePackageType.AssemblyOutput ? $"/data-assembly/{package.WorkflowId:D}" : $"/lab-services/{package.WorkflowId:D}";
+        var path = package.Type == ReleasedDeliverablePackageType.TrialResult ? $"/trial-projects/{package.WorkflowId:D}" : package.Type == ReleasedDeliverablePackageType.AssemblyOutput ? $"/data-assembly/{package.WorkflowId:D}" : $"/lab-services/{package.WorkflowId:D}";
         return new(Row(snapshot, name, package), snapshot.ToDto(projection) with { GraceActivatedAtUtc = decision.GraceActivatedAtUtc, DownloadAccessClosedAtUtc = decision.DownloadAccessClosedAtUtc },
             package.WorkflowId, path, snapshot.Version, admin,
             package.Type == ReleasedDeliverablePackageType.PSeqResult ? pseq.Value.GovernedPSeqResults : options.Value.ReleasedDeliverableRetentionEnforcement,

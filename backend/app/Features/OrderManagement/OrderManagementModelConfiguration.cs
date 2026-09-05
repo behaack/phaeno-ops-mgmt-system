@@ -662,6 +662,10 @@ public static class OrderManagementModelConfiguration
     {
         modelBuilder.Entity<ResultOutputPackage>(entity =>
         {
+            entity.HasOne<PSeq.Operations.Commercial.Trials.Domain.TrialProject>().WithMany().HasForeignKey(value => value.TrialProjectId).OnDelete(DeleteBehavior.Restrict);
+            entity.HasOne<PSeq.Operations.Commercial.Trials.Domain.TrialSample>().WithMany().HasForeignKey(value => value.TrialSampleId).OnDelete(DeleteBehavior.Restrict);
+            entity.HasIndex(value => new { value.TrialSampleId, value.PackageVersion }).IsUnique();
+            entity.ToTable(table => table.HasCheckConstraint("ck_result_output_package_parent", "(lab_service_order_id IS NOT NULL AND lab_sample_id IS NOT NULL AND trial_project_id IS NULL AND trial_sample_id IS NULL) OR (lab_service_order_id IS NULL AND lab_sample_id IS NULL AND trial_project_id IS NOT NULL AND trial_sample_id IS NOT NULL)"));
             entity.ToTable("result_output_packages", commercialSchema);
             entity.HasKey(e => e.Id);
             Text(entity.Property(e => e.PipelineProviderKey), 100);

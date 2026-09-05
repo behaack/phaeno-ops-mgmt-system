@@ -360,7 +360,7 @@ public sealed record CrmHandoffDto(
     string? OrderNumber = null,
     string? OrderStatus = null,
     bool CanStartCustomerOrder = false,
-    string? OrderBlockingReason = null);
+    string? OrderBlockingReason = null, Guid? TrialProjectId = null);
 public sealed record CrmOrderHandoffDto(
     CrmHandoffDto Handoff,
     string CompanyName,

@@ -2,14 +2,16 @@ namespace PSeq.Operations.Commercial.OrderManagement.Application;
 
 public sealed record PSeqResultManifestRegistration(
     Guid OrganizationId,
-    Guid LabServiceOrderId,
+    Guid? LabServiceOrderId,
     Guid LabWorkOrderId,
-    Guid LabSampleId,
+    Guid? LabSampleId,
     int PackageVersion,
     string ManifestJson,
     string ManifestSha256,
     int ExpectedArtifactCount,
-    string IdempotencyKey);
+    string IdempotencyKey,
+    Guid? TrialProjectId = null,
+    Guid? TrialSampleId = null);
 
 public sealed record PSeqResultTransferRegistration(
     string ProviderKey,

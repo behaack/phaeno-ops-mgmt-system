@@ -54,6 +54,8 @@ export type SessionSelectedDepartment = {
 }
 
 export type SessionCapabilities = {
+  canViewTrialProjects?: boolean
+  canManageTrialProjects?: boolean
   canInviteUsers: boolean
   canManageMembers: boolean
   canChangeMemberRoles: boolean

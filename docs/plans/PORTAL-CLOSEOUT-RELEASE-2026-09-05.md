@@ -4,7 +4,9 @@ The Product Owner authorized tests, documentation, commit and API/UI deployment.
 The repository separately requires explicit approval for a production database
 migration. The Product Owner approved the reviewed migration and API/UI release
 on 2026-09-05 with "Deploy please." The API and Portal UI are deployed to production.
-Trial scientific criteria and storage activation are separate unresolved items.
+The later Trial scientific criteria decision was resolved by reusing existing
+PSeq rules; its subsequent application integration and new migration boundary are
+recorded in `TRIAL-INTEGRATION-CLOSEOUT.md`. Storage activation remains separate.
 
 ## Reviewed schema changes
 

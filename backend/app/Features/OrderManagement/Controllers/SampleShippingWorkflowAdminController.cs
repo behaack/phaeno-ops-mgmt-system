@@ -8,6 +8,7 @@ using PhaenoPortal.App.Features.OrderManagement.DTOs;
 using PhaenoPortal.App.Features.OrderManagement.Services;
 using PhaenoPortal.App.Infrastructure.Persistence;
 
+[ServiceFilter(typeof(PhaenoPortal.App.Features.Trials.Services.TrialWorkGuard))]
 [ApiController]
 [Authorize]
 [Route("api/platform/sample-shipping/workflow")]

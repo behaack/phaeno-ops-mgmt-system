@@ -225,6 +225,7 @@ public static class OrganizationEndpoints
             return TypedResults.Forbid();
         }
 
+        await PhaenoPortal.App.Features.Trials.Services.TrialAccess.GuardProspectDeactivationAsync(dbContext, id, cancellationToken);
         var wasActive = organization.IsActive;
         organization.Deactivate();
         var company = await dbContext.CrmCompanies

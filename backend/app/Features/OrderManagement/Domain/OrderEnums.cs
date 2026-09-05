@@ -54,7 +54,8 @@ public enum OperationalFilePurpose
     LabResult,
     AssemblyInput,
     AssemblyOutput,
-    GeneratedDocument
+    GeneratedDocument,
+    TrialResult
 }
 
 public enum OperationalFileScanStatus

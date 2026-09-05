@@ -952,3 +952,7 @@ For future Lab Operations changes:
   Customer, Partner, and Phaeno user guides only as behavior becomes real
 - keep `docs/lims-integration-strategy.md` provider-neutral and aligned with
   the internal-provider-first direction
+
+## Trial parent integration (2026-09-05)
+
+The distinct Trial workflow now invokes the existing PSeq Lab provider with a frozen approved workflow, creates shared shipments after Prospect acceptance and sample validation, and releases governed packages through the shared retention lifecycle. Complete packages freeze policy and close the Trial; partial packages do not start that clock. Trial holds serialize with scientific writes and byte cleanup. See `PROSPECT-TRIAL-PROJECT-PLAN.md` and `TRIAL-INTEGRATION-CLOSEOUT.md` for evidence and remaining production activation gates. Promotional Customer freebie issuance remains separate.

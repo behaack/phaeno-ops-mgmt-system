@@ -3,9 +3,20 @@
 Keep this file updated as Prospect trial-project requirements are supplied and
 decisions are made.
 
-Do not execute this plan unless explicitly requested.
+Implementation was requested during Portal closeout. On 2026-09-05 the Product
+Owner confirmed that initial Trials use the existing PSeq analyses and acceptance
+rules. The execution scope below supersedes the earlier planning-only boundary.
 
 ## Status
+
+- Initial application integration implemented and verified locally (2026-09-05).
+  Trials use existing versioned PSeq analysis definitions and Lab workflow
+  acceptance rules. Approval freezes those versions. Production rollout awaits
+  new migration approval; activation gates remain tracked separately.
+- Authorized closeout includes implementation, tests and audience-specific user
+  documentation. Existing storage/deletion holds and physical/provider acceptance
+  gates remain in force. Review any new migration before requesting shared-database
+  approval; the preceding release approved only its seven reviewed migrations.
 
 - Product direction was approved on 2026-07-15 for planning purposes.
 - A Trial Project is a no-charge, closed-ended project through which a Prospect
@@ -13,26 +24,13 @@ Do not execute this plan unless explicitly requested.
   Customer or Partner.
 - A Trial Project is not an order, quote, invoice, curated demonstration-data
   grant, or general Prospect capability.
-- The current application does not implement Trial Projects. Existing code and
-  authorization correctly prevent Prospects from viewing, creating, or placing
-  orders.
-- Order Operations includes a local-development-only simulator that can create
-  the pending HubSpot-sourced `Evaluation` request that precedes Trial Project
-  review. This exercises only the durable inbound request boundary; it does not
-  implement the Trial Project aggregate, dual approval, Prospect acceptance,
-  sample submission, execution authorization, or result release.
-  Product direction changed on 2026-08-26: this simulator is superseded
-  implementation debt and will be replaced by first-party CRM intake.
-- The implemented Lab Operations v1 contract already reserves `TrialProject`
-  as an authorization source, but no Trial Project currently invokes it. A
-  future Trial Project implementation must route approved work through the
-  existing provider and Phaeno-only Lab roles rather than create a second
-  laboratory execution path.
-- The shared sample-shipping configuration, return-kit and registered supplier-
-  tube inventory, Prospect tube crosswalk, printable packet/CSV, packet-plus-
-  tube comparison scan, and Lab supplier-barcode adoption are implemented. No
-  Trial Project currently creates an authorized shared shipment, so this
-  foundation does not change the Trial Project implementation status.
+- The Trial parent workflow is now implemented locally: first-party CRM intake,
+  versioned PSeq scope, independent approval, Prospect acceptance, coded samples,
+  replacements, Lab authorization, shared shipments, governed result release,
+  retention and explicit commercial closeout. Prospect order denial remains.
+- Trial execution calls the existing Lab provider with the frozen PSeq workflow
+  version; operators use existing Lab roles, scientific review and shipping paths.
+  Parent holds and acceptance are enforced across those shared write paths.
 - Product direction was clarified on 2026-08-18: there is no universal sample
   cap for a Trial Project. Each project records an explicitly approved sample
   allowance based on its scope and anticipated cost. Approval freezes that
@@ -113,14 +111,13 @@ Do not execute this plan unless explicitly requested.
   approved before the first sample shipment, with return-shipping responsibility
   frozen in the terms. Trial material is never reused without separate written
   authorization.
-- This approved digital-file policy is not implemented. The current application
-  has no Trial Project result package, download-state warning, grace-period, or
-  automatic released-file deletion worker.
-- POMS will include the full first-party CRM defined by `CRM-PLAN.md`. HubSpot
-  is a deferred optional adapter, and no external CRM integration exists in the
-  running application.
-- No implementation, dependency, schema, authentication, migration, external
-  CRM integration, or test execution is authorized by this planning decision.
+- Trial partial releases reuse governed clean artifacts and do not start the
+  complete-package clock. Complete release freezes the shared policy and closes
+  the Trial. Existing warning/grace, byte cleanup, receipts and reissue mechanisms
+  include Trial packages. Production storage and processing switches remain held.
+- First-party CRM is implemented; HubSpot remains a deferred optional adapter.
+- The execution authorization at the top supersedes the historical planning-only
+  scope. New shared-database migration approval is still a release prerequisite.
 
 ## Related Documents
 
@@ -137,8 +134,7 @@ Do not execute this plan unless explicitly requested.
   defaults, organization overrides, notification, grace, byte-deletion, and
   retained-metadata contract used by Trial, Customer, and Partner packages.
 - `LAB-OPERATIONS-PLAN.md` and `LAB-OPERATIONS-CONTRACT.md` own the implemented
-  provider boundary that a future approved Trial Project uses for laboratory
-  execution. They do not make Trial Projects implemented.
+  provider boundary used by approved Trial Projects for laboratory execution.
 - `SAMPLE-SHIPPING-AND-INTAKE-PLAN.md` owns the shared versioned ship-to,
   sample-type, detailed-instruction, return-kit, registered-tube crosswalk,
   printable packet, pre-receipt barcode, and scan-first intake capability used
@@ -278,8 +274,10 @@ trial.
   project may freeze a different retention duration or pre-shipment return
   disposition. A return disposition identifies who pays return shipping. No
   material is reused without separate written authorization.
-- Scientific inputs, analysis definitions, acceptance rules, and related
-  production configuration: TBD.
+- Scientific inputs, analysis definitions and acceptance rules: use the existing
+  PSeq definitions and Lab workflow versions (confirmed 2026-09-05). Approval
+  freezes the selected active versions; production configuration must be ready
+  before authorizing execution.
 - Scope exclusion: reagent and data-assembly trials are not part of this
   workflow. Those require Customer status and are handled through an offline
   process.
@@ -1140,9 +1138,10 @@ Do not run tests or execute this verification plan until explicitly requested.
   temperature, carrier, timing, and exception instructions. The structured
   multi-destination and multi-sample-type configuration behavior is owned by
   `SAMPLE-SHIPPING-AND-INTAKE-PLAN.md`.
-- Required scientific inputs, approved analyses and versions, sample-acceptance
-  rules, raw/intermediate pipeline provenance and retention, and the production
-  handoff into the immutable released customer package.
+- Initial scientific inputs, analyses and sample-acceptance rules were resolved
+  on 2026-09-05: reuse existing PSeq rules. Raw/intermediate pipeline provenance
+  and retention remain owned by the existing pipeline activation work; Trial
+  integration consumes the same approved immutable final-package handoff.
 
 ## Definition Of Ready For Implementation
 
@@ -1192,8 +1191,38 @@ Do not run tests or execute this verification plan until explicitly requested.
 
 The Portal closeout now implements shared retention enforcement, durable notices,
 cleanup/holds/reissue and retained receipts for existing Lab/PSeq/Assembly release
-parents. It does not create the missing Trial parent workflow. Completing that
-integration still requires the Trial analyses and scientific acceptance rules;
-the Product Owner was asked whether to adopt current PSeq rules or supply
-trial-specific criteria. No answer has been recorded. Do not treat shared file
-infrastructure or reserved provider identifiers as implemented Trial behavior.
+parents. The Trial integration now connects its distinct parent workflow to
+those shared mechanisms using current PSeq analyses and scientific acceptance rules, explicitly
+confirmed by the Product Owner on 2026-09-05. Do not treat shared file infrastructure
+or reserved provider identifiers as implemented Trial behavior before verification.
+
+## Execution slices (2026-09-05)
+
+1. Distinct Trial aggregate, versioned scope, domain-specific approval authority,
+   two-person approval, acceptance, amendments, samples/replacements and closure.
+2. First-party CRM request and safe milestones; reuse the existing Lab provider,
+   versioned shipping configuration and governed file lifecycle without an order
+   or payment gate. Preserve organization and Department scope after conversion.
+3. Phaeno and Prospect list/detail workspaces with bounded modal actions,
+   backend-derived permissions, typed forms, concurrency recovery and clear terms.
+4. Regression/reference-journey tests, user guides, ERD and readiness evidence.
+   Keep production activation and physical acceptance distinct from local proof.
+
+## Engineering decisions and current verification
+
+- Scope editing uses a dedicated page because it coordinates a versioned analysis
+  and deliverable selection, time window, sample allowance, material disposition,
+  terms and internal costs. Lists remain form-free; other actions use bounded
+  modals. This is the complexity exception under the UI/UX principles.
+- CRM activities are a recoverable projection of immutable Trial events, keyed by
+  event ID. A minute-based publisher and explicit retry publish only safe summaries
+  and links. Pending projection does not block scientific transactions.
+- An explicit close-access action checks final evaluations and other relationships
+  and records a reason. General Company/organization deactivation directs Trial
+  Prospects to this action. Conversion remains an explicit existing CRM workflow.
+- New persistence is migration `20260905172646_AddTrialProjectIntegration`; it has
+  been applied to an isolated local PostgreSQL reference database. Shared database
+  application and production activation have not been performed for this change.
+- Detailed final checks and remaining rollout gates are recorded in
+  `TRIAL-INTEGRATION-CLOSEOUT.md`. Do not infer production readiness from local
+  tests or from the previously deployed Portal closeout.

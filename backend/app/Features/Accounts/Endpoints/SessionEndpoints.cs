@@ -146,7 +146,13 @@ public static class SessionEndpoints
             }
         }
 
-        return TypedResults.Ok(ToSession(
+        var trialStaff = selectedMembership?.Organization?.Kind == OrganizationKind.Phaeno && (IsPlatformAdmin(user)
+            || businessRoles.Any(role => role is BusinessRole.CommercialOperator or BusinessRole.ResultReleaseManager)
+            || labRoles.Any(role => role is LabRole.Operator or LabRole.Supervisor or LabRole.ScientificReviewer)
+            || await dbContext.TrialApprovalAuthorities.AnyAsync(value => value.UserId == user.Id && value.RevokedAtUtc == null, cancellationToken));
+        var trialViewer = selectedMembership?.Organization?.Kind == OrganizationKind.Prospect || (selectedMembership is not null && selectedDepartment is not null
+            && await dbContext.TrialProjects.AnyAsync(value => value.OrganizationId == selectedMembership.OrganizationId && value.DepartmentId == selectedDepartment.Id && value.ApprovedScopeRevision != null, cancellationToken));
+        var readySession = ToSession(
             user,
             labRoles,
             state: "ready",
@@ -154,7 +160,8 @@ public static class SessionEndpoints
             businessRoles,
             orderToCashOptions.Value.BusinessRoles,
             orderToCashOptions.Value.DualControlEnforced,
-            selectedDepartment));
+            selectedDepartment);
+        return TypedResults.Ok(readySession with { Capabilities = readySession.Capabilities with { CanViewTrialProjects = trialStaff || trialViewer, CanManageTrialProjects = trialStaff } });
     }
 
     public static void MapSessionEndpoints(this WebApplication app)

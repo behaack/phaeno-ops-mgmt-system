@@ -7,6 +7,7 @@ using PSeq.Operations.Commercial.OrderManagement.Domain;
 using PhaenoPortal.App.Features.OrderManagement.Domain;
 using PhaenoPortal.App.Features.OrderManagement.Services;
 using PhaenoPortal.App.Infrastructure.Persistence;
+using PSeq.Operations.Commercial.Trials.Domain;
 
 internal sealed record ManagedRelease(Guid OrganizationId, Guid WorkflowId, Guid DepartmentId,
     FileReleaseStatus Status, IReadOnlyCollection<Guid> FileIds, Guid? SampleId = null, bool IsDiscarded = false);
@@ -15,6 +16,19 @@ internal sealed class ManagedReleaseRetentionService(PSeqOperationsDbContext db)
 {
     public async Task<ManagedRelease?> ReadPackageAsync(ReleasedDeliverablePackageType type, Guid packageId, CancellationToken token)
     {
+        if (type == ReleasedDeliverablePackageType.TrialResult)
+        {
+            var value = await (from release in db.TrialResultReleases.AsNoTracking()
+                join trial in db.TrialProjects on release.TrialProjectId equals trial.Id
+                where release.Id == packageId && trial.OrganizationId == release.OrganizationId
+                select new { release, trial.IsOnHold, trial.CompleteReleaseId }).SingleOrDefaultAsync(token);
+            if (value is null) return null;
+            var available = !value.release.IsWithdrawn && !value.IsOnHold
+                && (!value.CompleteReleaseId.HasValue || value.release.IsCompletePackage);
+            return new(value.release.OrganizationId, value.release.TrialProjectId, value.release.DepartmentId,
+                available ? FileReleaseStatus.Released : FileReleaseStatus.Withdrawn,
+                ReleasedDeliverableManifest.ReadFileIds(value.release.ManifestJson));
+        }
         if (type == ReleasedDeliverablePackageType.LabResult)
         {
             var value = await (from release in db.LabResultReleases.AsNoTracking()
@@ -42,7 +56,7 @@ internal sealed class ManagedReleaseRetentionService(PSeqOperationsDbContext db)
     public Task<ReleasedDeliverableRetentionSnapshot?> ReadSnapshotAsync(ReleasedDeliverablePackageType type,
         Guid packageId, Guid organizationId, CancellationToken token) => db.ReleasedDeliverableRetentionSnapshots.AsNoTracking()
         .SingleOrDefaultAsync(value => value.OrganizationId == organizationId
-            && (type == ReleasedDeliverablePackageType.LabResult ? value.LabResultReleaseId == packageId : value.AssemblyOutputReleaseId == packageId), token);
+            && (type == ReleasedDeliverablePackageType.TrialResult ? value.TrialResultReleaseId == packageId : type == ReleasedDeliverablePackageType.LabResult ? value.LabResultReleaseId == packageId : value.AssemblyOutputReleaseId == packageId), token);
 
     public async Task<ReleasedDeliverableRetentionDecision?> DecideAsync(ReleasedDeliverablePackageType type, Guid packageId,
         ManagedRelease package, DateTime now, bool persist, CancellationToken token)
@@ -50,7 +64,8 @@ internal sealed class ManagedReleaseRetentionService(PSeqOperationsDbContext db)
         var snapshot = await ReadSnapshotAsync(type, packageId, package.OrganizationId, token);
         if (snapshot is null) return null; // Earlier releases keep their existing contract, without manufactured dates.
         var attempts = await db.OperationalFileDownloads.AsNoTracking().Where(value => value.ReleasedPackageType == type
-            && value.ReleasedPackageId == packageId && value.OrganizationId == package.OrganizationId).ToListAsync(token);
+            && (value.ReleasedPackageId == packageId || type == ReleasedDeliverablePackageType.TrialResult && value.ManagedOperationalFileId != null && package.FileIds.Contains(value.ManagedOperationalFileId.Value))
+            && value.OrganizationId == package.OrganizationId).ToListAsync(token);
         var commits = await new DownloadCommitEvidenceService(db).ReadCompletionsAsync(attempts, token);
         var download = ReleasedDeliverableDownloadProjection.Create(package.FileIds, attempts, now, commits);
         var decision = ReleasedDeliverableRetentionDecision.Evaluate(snapshot, download.Files.Values.Select(value => value.DownloadedAtUtc).ToList(), now);
@@ -67,23 +82,27 @@ internal sealed class ManagedReleaseRetentionService(PSeqOperationsDbContext db)
         Guid userId, IReadOnlyCollection<Guid> fileIds, CancellationToken token)
     {
         if (await db.ReleasedDeliverableRetentionSnapshots.AnyAsync(value => value.OrganizationId == organizationId
-            && (type == ReleasedDeliverablePackageType.LabResult ? value.LabResultReleaseId == packageId : value.AssemblyOutputReleaseId == packageId)
+            && (type == ReleasedDeliverablePackageType.TrialResult ? value.TrialResultReleaseId == packageId : type == ReleasedDeliverablePackageType.LabResult ? value.LabResultReleaseId == packageId : value.AssemblyOutputReleaseId == packageId)
             && (value.IsQuarantined || value.ByteDeletedAtUtc != null), token)) return false;
         var package = await ReadPackageAsync(type, packageId, token);
         if (package is null || package.OrganizationId != organizationId || package.IsDiscarded || package.Status != FileReleaseStatus.Released
             || fileIds.Count == 0 || fileIds.Any(id => !package.FileIds.Contains(id))) return false;
         if (!await db.OrganizationMemberships.AsNoTracking().AnyAsync(member => member.OrganizationId == organizationId
             && member.UserId == userId && member.IsActive && member.Organization!.IsActive
-            && member.Organization.Kind == (type == ReleasedDeliverablePackageType.LabResult ? OrganizationKind.Customer : OrganizationKind.Partner)
+            && (type == ReleasedDeliverablePackageType.TrialResult
+                ? member.Organization.Kind == OrganizationKind.Prospect || member.Organization.Kind == OrganizationKind.Customer || member.Organization.Kind == OrganizationKind.Partner
+                : member.Organization.Kind == (type == ReleasedDeliverablePackageType.LabResult ? OrganizationKind.Customer : OrganizationKind.Partner))
             && member.User!.IsActive
             && member.User.Status == UserAccountStatus.Active
             && db.OrganizationDepartments.Any(department => department.Id == package.DepartmentId && department.OrganizationId == organizationId && department.IsActive)
             && (member.IsOrganizationAdmin || db.OrganizationDepartmentMemberships.Any(access => access.OrganizationMembershipId == member.Id
                 && access.DepartmentId == package.DepartmentId && access.IsActive)), token)) return false;
-        var purpose = type == ReleasedDeliverablePackageType.LabResult ? OperationalFilePurpose.LabResult : OperationalFilePurpose.AssemblyOutput;
+        var purpose = Purpose(type);
         return await db.ManagedOperationalFiles.AsNoTracking().CountAsync(file => fileIds.Contains(file.Id)
             && file.OrganizationId == organizationId && file.WorkflowId == package.WorkflowId && file.Purpose == purpose
-            && (type == ReleasedDeliverablePackageType.LabResult ? file.ParentRecordId == package.SampleId : file.ParentRecordId == packageId)
+            && (type == ReleasedDeliverablePackageType.TrialResult ? db.TrialResultFiles.Any(binding => binding.ManagedOperationalFileId == file.Id
+                && db.TrialSamples.Any(sample => sample.Id == binding.TrialSampleId && sample.TrialProjectId == package.WorkflowId))
+                : type == ReleasedDeliverablePackageType.LabResult ? file.ParentRecordId == package.SampleId : file.ParentRecordId == packageId)
             && file.ReleaseStatus == FileReleaseStatus.Released && file.ScanStatus == OperationalFileScanStatus.Clean, token) == fileIds.Count;
     }
 
@@ -100,10 +119,12 @@ internal sealed class ManagedReleaseRetentionService(PSeqOperationsDbContext db)
         }
         await Lock<Organization>(organizationId);
         await Lock<User>(userId);
-        if (type == ReleasedDeliverablePackageType.LabResult) await Lock<LabResultRelease>(packageId);
+        if (type == ReleasedDeliverablePackageType.TrialResult) await Lock<TrialResultRelease>(packageId);
+        else if (type == ReleasedDeliverablePackageType.LabResult) await Lock<LabResultRelease>(packageId);
         else await Lock<AssemblyOutputRelease>(packageId);
         var package = await ReadPackageAsync(type, packageId, token) ?? throw Denied();
-        if (type == ReleasedDeliverablePackageType.LabResult) await Lock<LabServiceOrder>(package.WorkflowId);
+        if (type == ReleasedDeliverablePackageType.TrialResult) await Lock<TrialProject>(package.WorkflowId);
+        else if (type == ReleasedDeliverablePackageType.LabResult) await Lock<LabServiceOrder>(package.WorkflowId);
         else await Lock<DataAssemblyRequest>(package.WorkflowId);
         await Lock<OrganizationDepartment>(package.DepartmentId);
         var members = await db.OrganizationMemberships.AsNoTracking().Where(value => value.OrganizationId == organizationId && value.UserId == userId)
@@ -118,6 +139,8 @@ internal sealed class ManagedReleaseRetentionService(PSeqOperationsDbContext db)
         foreach (var id in fileIds.Order()) await Lock<ManagedOperationalFile>(id);
     }
 #pragma warning restore EF1002
+    internal static OperationalFilePurpose Purpose(ReleasedDeliverablePackageType type) => type == ReleasedDeliverablePackageType.TrialResult
+        ? OperationalFilePurpose.TrialResult : type == ReleasedDeliverablePackageType.LabResult ? OperationalFilePurpose.LabResult : OperationalFilePurpose.AssemblyOutput;
     internal static OrderManagementException Denied() => new("released_deliverable_access_unavailable",
         "This released file is no longer available to your current account. Refresh the release before trying again.", StatusCodes.Status403Forbidden);
     internal static OrderManagementException Cutoff() => new("released_deliverable_retention_cutoff_reached",

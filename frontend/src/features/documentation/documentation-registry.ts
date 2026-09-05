@@ -1,3 +1,7 @@
+import PhaenoTrialProjects from '#/content/docs/phaeno/trial-projects.mdx'
+import PartnerTrialHistory from '#/content/docs/en-US/partner/trial-history.mdx'
+import CustomerTrialHistory from '#/content/docs/en-US/customer/trial-history.mdx'
+import ProspectTrialProjects from '#/content/docs/en-US/prospect/trial-projects.mdx'
 import type { ComponentType, ElementType } from 'react'
 
 import CustomerAccountAndAccess from '#/content/docs/en-US/customer/account-and-access.mdx'
@@ -84,6 +88,10 @@ export type DocumentationEntry = {
 }
 
 export const documentationEntries: readonly DocumentationEntry[] = [
+  { audience: 'phaeno', locale: null, slug: 'trial-projects', title: 'Trial Projects', summary: 'Scope, approve, execute, release, and close Trial Projects using existing PSeq workflows.', section: 'Trial Project', order: 26, reviewedAt: '2026-09-05', Content: PhaenoTrialProjects },
+  { audience: 'partner', locale: 'en-US', slug: 'trial-history', title: 'Trial history', summary: 'Find preserved Trial scope, results, and retention receipts after conversion.', section: 'Trial Project', order: 45, reviewedAt: '2026-09-05', Content: PartnerTrialHistory },
+  { audience: 'customer', locale: 'en-US', slug: 'trial-history', title: 'Trial history', summary: 'Find preserved Trial scope, results, and retention receipts after conversion.', section: 'Trial Project', order: 45, reviewedAt: '2026-09-05', Content: CustomerTrialHistory },
+  { audience: 'prospect', locale: 'en-US', slug: 'trial-projects', title: 'Trial Projects', summary: 'Review and accept approved Trial scope, submit coded RNA, and download released results.', section: 'Trial Project', order: 24, reviewedAt: '2026-09-05', Content: ProspectTrialProjects },
   {
     audience: 'prospect',
     locale: 'en-US',
@@ -93,7 +101,7 @@ export const documentationEntries: readonly DocumentationEntry[] = [
       'Confirm the current organization, understand Prospect access, and find granted data.',
     section: 'Basics',
     order: 10,
-    reviewedAt: '2026-08-19',
+    reviewedAt: '2026-09-05',
     Content: ProspectGettingStarted,
   },
   {
@@ -117,7 +125,7 @@ export const documentationEntries: readonly DocumentationEntry[] = [
       'Associate Phaeno-supplied tube barcodes with your sample identifiers, retain the crosswalk, and ship an authorized Trial Project package.',
     section: 'Trial Project',
     order: 25,
-    reviewedAt: '2026-08-18',
+    reviewedAt: '2026-09-05',
     Content: ProspectSampleShipping,
   },
   {
@@ -176,7 +184,7 @@ export const documentationEntries: readonly DocumentationEntry[] = [
     summary: 'Confirm the current organization, understand access, and find Customer work.',
     section: 'Basics',
     order: 10,
-    reviewedAt: '2026-08-20',
+    reviewedAt: '2026-09-05',
     Content: CustomerGettingStarted,
   },
   {
@@ -254,7 +262,7 @@ export const documentationEntries: readonly DocumentationEntry[] = [
     summary: 'Confirm the current Partner, understand access, and find Partner work.',
     section: 'Basics',
     order: 10,
-    reviewedAt: '2026-08-19',
+    reviewedAt: '2026-09-05',
     Content: PartnerGettingStarted,
   },
   {
@@ -404,7 +412,7 @@ export const documentationEntries: readonly DocumentationEntry[] = [
     summary: 'Review online access, product and service, relationship, and work requests without creating a second customer identity.',
     section: 'Customer relationship management',
     order: 21,
-    reviewedAt: '2026-09-03',
+    reviewedAt: '2026-09-05',
     Content: PhaenoCrmPortalHandoffs,
   },
   {

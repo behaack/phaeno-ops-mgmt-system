@@ -132,7 +132,10 @@ public static class FileManagementModelConfiguration
                 .HasConstraintName("fk_released_retention_snapshot_assembly_output");
             entity.ToTable(table => table.HasCheckConstraint(
                 "ck_released_retention_snapshot_one_package",
-                "(lab_result_release_id IS NOT NULL AND assembly_output_release_id IS NULL) OR (lab_result_release_id IS NULL AND assembly_output_release_id IS NOT NULL)"));
+                "num_nonnulls(lab_result_release_id, assembly_output_release_id, trial_result_release_id) = 1"));
+            entity.HasIndex(value => value.TrialResultReleaseId).IsUnique();
+            entity.HasOne<PSeq.Operations.Commercial.Trials.Domain.TrialResultRelease>().WithMany()
+                .HasForeignKey(value => value.TrialResultReleaseId).OnDelete(DeleteBehavior.Restrict);
             Audit(entity);
         });
     }

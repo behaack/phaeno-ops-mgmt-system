@@ -14,11 +14,11 @@ public sealed class ManagedReleaseRetentionCheckpointService(PSeqOperationsDbCon
     // Match download admission/completion's package lock. Explicit time is only for deterministic local verification.
     internal async Task ProcessAsync(ReleasedDeliverablePackageType type, Guid packageId, CancellationToken token, DateTime? evaluationTime = null)
     {
-        if (type is not (ReleasedDeliverablePackageType.LabResult or ReleasedDeliverablePackageType.AssemblyOutput))
+        if (type is not (ReleasedDeliverablePackageType.LabResult or ReleasedDeliverablePackageType.AssemblyOutput or ReleasedDeliverablePackageType.TrialResult))
             throw new ArgumentException("A Lab or Assembly release is required.", nameof(type));
         await using var transaction = await RetentionTransaction.OpenAsync(db, packageId, token);
         var snapshot = await db.ReleasedDeliverableRetentionSnapshots.SingleOrDefaultAsync(value =>
-            (type == ReleasedDeliverablePackageType.LabResult ? value.LabResultReleaseId == packageId : value.AssemblyOutputReleaseId == packageId)
+            (type == ReleasedDeliverablePackageType.TrialResult ? value.TrialResultReleaseId == packageId : type == ReleasedDeliverablePackageType.LabResult ? value.LabResultReleaseId == packageId : value.AssemblyOutputReleaseId == packageId)
             && !db.ResultRetentionSchedules.Any(schedule => schedule.RetentionSnapshotId == value.Id), token);
         if (snapshot is null) return; // Legacy releases and governed projections have no general checkpoints.
         await db.Entry(snapshot).ReloadAsync(token);
@@ -27,18 +27,19 @@ public sealed class ManagedReleaseRetentionCheckpointService(PSeqOperationsDbCon
         var package = await new ManagedReleaseRetentionService(db).ReadPackageAsync(type, packageId, token);
         if (package is null || package.OrganizationId != snapshot.OrganizationId) return;
         var attempts = await db.OperationalFileDownloads.AsNoTracking().Where(value => value.ReleasedPackageType == type
-            && value.ReleasedPackageId == packageId && value.OrganizationId == snapshot.OrganizationId).ToListAsync(token);
+            && (value.ReleasedPackageId == packageId || type == ReleasedDeliverablePackageType.TrialResult && value.ManagedOperationalFileId != null && package.FileIds.Contains(value.ManagedOperationalFileId.Value))
+            && value.OrganizationId == snapshot.OrganizationId).ToListAsync(token);
         var commits = await new DownloadCommitEvidenceService(db).ReadCompletionsAsync(attempts, token);
         var download = ReleasedDeliverableDownloadProjection.Create(package.FileIds, attempts, now, commits);
         var decision = ReleasedDeliverableRetentionDecision.Evaluate(snapshot, download.Files.Values.Select(value => value.DownloadedAtUtc).ToList(), now);
         if (now >= snapshot.StandardDeletionAtUtc) snapshot.ApplyDeadlineDecision(decision, now);
-        var purpose = type == ReleasedDeliverablePackageType.LabResult ? OperationalFilePurpose.LabResult : OperationalFilePurpose.AssemblyOutput;
+        var purpose = ManagedReleaseRetentionService.Purpose(type);
         var available = !snapshot.IsQuarantined && package.Status == FileReleaseStatus.Released && !package.IsDiscarded && package.FileIds.Count > 0
             && await db.ManagedOperationalFiles.AsNoTracking().CountAsync(file => package.FileIds.Contains(file.Id)
                 && file.OrganizationId == package.OrganizationId && file.WorkflowId == package.WorkflowId && file.Purpose == purpose
-                && (type == ReleasedDeliverablePackageType.LabResult ? file.ParentRecordId == package.SampleId : file.ParentRecordId == packageId)
+                && (type == ReleasedDeliverablePackageType.TrialResult || (type == ReleasedDeliverablePackageType.LabResult ? file.ParentRecordId == package.SampleId : file.ParentRecordId == packageId))
                 && file.ReleaseStatus == FileReleaseStatus.Released && file.ScanStatus == OperationalFileScanStatus.Clean, token) == package.FileIds.Count;
-        var route = type == ReleasedDeliverablePackageType.LabResult ? $"/lab-services/{package.WorkflowId:D}" : $"/data-assembly/{package.WorkflowId:D}";
+        var route = type == ReleasedDeliverablePackageType.TrialResult ? $"/trial-projects/{package.WorkflowId:D}" : type == ReleasedDeliverablePackageType.LabResult ? $"/lab-services/{package.WorkflowId:D}" : $"/data-assembly/{package.WorkflowId:D}";
         if (!snapshot.WarningCheckpointAtUtc.HasValue && now >= snapshot.WarningAtUtc)
         {
             if (!available) snapshot.RecordWarningCheckpoint(now, "SkippedUnavailable", null);
@@ -89,12 +90,12 @@ public sealed class ManagedReleaseRetentionWorker(IServiceScopeFactory scopes, I
                     || (snapshot.GraceActivatedAtUtc != null && snapshot.GraceNotificationId == null && snapshot.DownloadAccessClosedAtUtc == null)
                     || (snapshot.DownloadAccessClosedAtUtc == null && snapshot.PotentialFinalDeletionAtUtc <= now)))
             .OrderBy(snapshot => snapshot.WarningAtUtc)
-            .Select(snapshot => new { snapshot.LabResultReleaseId, snapshot.AssemblyOutputReleaseId }).ToListAsync(token);
+            .Select(snapshot => new { snapshot.LabResultReleaseId, snapshot.AssemblyOutputReleaseId, snapshot.TrialResultReleaseId }).ToListAsync(token);
         foreach (var release in releases)
         {
             await using var packageScope = scopes.CreateAsyncScope();
-            var id = release.LabResultReleaseId ?? release.AssemblyOutputReleaseId!.Value;
-            var type = release.LabResultReleaseId.HasValue ? ReleasedDeliverablePackageType.LabResult : ReleasedDeliverablePackageType.AssemblyOutput;
+            var id = release.TrialResultReleaseId ?? release.LabResultReleaseId ?? release.AssemblyOutputReleaseId!.Value;
+            var type = release.TrialResultReleaseId.HasValue ? ReleasedDeliverablePackageType.TrialResult : release.LabResultReleaseId.HasValue ? ReleasedDeliverablePackageType.LabResult : ReleasedDeliverablePackageType.AssemblyOutput;
             try { await packageScope.ServiceProvider.GetRequiredService<ManagedReleaseRetentionCheckpointService>().ProcessAsync(type, id, token); }
             catch (OperationCanceledException) when (token.IsCancellationRequested) { throw; }
             catch (Exception error) { logger.LogError(error, "Retention checkpoint failed for {PackageId}.", id); }

@@ -6,7 +6,8 @@ public enum ReleasedDeliverablePackageType
 {
     LabResult = 1,
     AssemblyOutput = 2,
-    PSeqResult = 3
+    PSeqResult = 3,
+    TrialResult = 4
 }
 
 public enum OperationalFileDownloadScope

@@ -934,3 +934,23 @@ revocation, stale version recovery, tenant/auditor privacy and new-object reissu
 lineage. Fixtures use synthetic storage and uniquely named loopback databases.
 Full regression execution is authorized for this closeout. Shipping fixture
 cleanup now deletes its Department assignments/departments before organizations.
+
+## Trial integration checkpoint (2026-09-05)
+
+`TrialProjectDomainTests` and `TrialProjectPostgresTests` cover immutable scope,
+two-person approval and revoked authorities, RUO/no-PHI coded samples, allowance
+and windows, amendments, one-use replacement lineage, residual-material terms,
+first-party CRM outbox retry/deduplication, exact organization/department access,
+organization-admin acceptance, Lab authorization and shared shipments without
+paid orders, real Lab scientific approval, complete versus partial release,
+conversion without changed deadlines, parent holds, commercial closeout and
+Prospect deactivation blockers. The combined lifecycle journey verifies warning,
+grace, held cleanup, actual artifact deletion metadata and explicit reissue with
+new objects and a distinct scientific approval.
+
+The full backend suite includes PostgreSQL reference journeys. Use a local
+`phaeno_ops` source with `track_commit_timestamp=on`; concurrency tests create and
+remove their own isolated databases. Merely supplying a differently named source
+or a server without commit tracking does not meet those tests' prerequisites.
+Final execution evidence is in `TRIAL-INTEGRATION-CLOSEOUT.md`. Production
+mailbox/scanner/storage and physical acceptance remain separate.

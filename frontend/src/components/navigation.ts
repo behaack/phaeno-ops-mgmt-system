@@ -46,6 +46,13 @@ type MainMenuItem = {
 
 export const mainMenuItems: readonly MainMenuItem[] = [
   {
+    label: 'Trial projects',
+    to: '/trial-projects',
+    icon: FlaskConical,
+    group: 'workspace',
+    visibleWhen: (session) => session?.state === 'ready' && Boolean(session.capabilities.canViewTrialProjects),
+  },
+  {
     label: departmentMessages.departments,
     to: '/departments',
     icon: UsersRound,

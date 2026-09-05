@@ -13,6 +13,7 @@ using PhaenoPortal.App.Features.LabOperations.Services;
 using PhaenoPortal.App.Features.OrderManagement.Domain;
 using PhaenoPortal.App.Infrastructure.Persistence;
 
+[ServiceFilter(typeof(PhaenoPortal.App.Features.Trials.Services.TrialWorkGuard))]
 [ApiController]
 [Authorize]
 [Route("api/platform/lab-operations")]

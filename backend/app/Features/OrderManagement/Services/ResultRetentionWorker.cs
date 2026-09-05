@@ -60,7 +60,7 @@ public sealed class ResultRetentionWorker(
                         .Select(order => order.DepartmentId)
                         .SingleAsync(cancellationToken);
                     db.OrderNotifications.Add(new OrderNotification(package.OrganizationId, null,
-                        OrderWorkflowTypes.LabService, package.LabServiceOrderId,
+                        OrderWorkflowTypes.LabService, package.LabServiceOrderId!.Value,
                         "pseq-result-retention-warning", "PSeq result retention warning",
                         "A released PSeq result package is approaching its configured download cutoff.", departmentId));
                 }

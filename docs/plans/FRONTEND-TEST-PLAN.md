@@ -749,3 +749,14 @@ remain incomplete production-activation gates.
 frozen/historical lineage, member versus staff actions, and stale-version retry
 with the entered hold reason retained and the refreshed version submitted.
 File management's navigation test includes its new retained-package link.
+
+## Trial integration checkpoint (2026-09-05)
+
+`TrialFormDialog.test.tsx` covers explicit RUO/no-PHI acceptance, required frozen
+PSeq inputs and concurrency recovery preserving values while refreshing version
+and idempotency identity. The documentation registry tests cover the maintained
+Prospect/Phaeno Trial guides and Customer/Partner history guides. Backend-derived
+capabilities control acceptance, submission, commercial closeout and release.
+The staff review queue has URL-backed status and Sales owner filters. Dedicated
+scope editing is the documented complexity exception; other actions use modals.
+See `TRIAL-INTEGRATION-CLOSEOUT.md` for full checks and production gates.

@@ -12,8 +12,8 @@ procedure change.
 
 - Customer sample shipping was placed inside the owning Lab service job UI on
   2026-08-20. Customer primary navigation and dashboard no longer present it as
-  a peer workspace; Prospect shipping remains standalone until the Trial
-  Project detail workflow owns it. The shared shipment records, packet routes,
+  a peer workspace; Prospect shipping is linked from the Trial Project detail
+  workspace and retains its shared packet routes. The shared shipment records, packet routes,
   and authorization boundaries remain separate underneath.
 - Product direction was approved for planning on 2026-08-17.
 - Phase 1 shared configuration and packet foundation was implemented on
@@ -96,10 +96,10 @@ procedure change.
   must be confirmed with representative units.
 - The shared software now implements supplier-tube registration, external
   assignment and correction, retained crosswalks, comparison scanning, and Lab
-  adoption. It deliberately does not create an approved Trial Project or
-  Customer promotional order: those parent aggregates remain owned by their
-  separate plans, so no real external shipment is issued until one of those
-  workflows creates an authorized shared shipment.
+  adoption. The 2026-09-05 Trial integration now creates authorized shipments
+  from accepted, in-scope Trial sample submissions. Customer promotional order
+  issuance remains owned by its separate plan. First-destination and physical
+  acceptance remain activation gates.
 - The 2026-08-18 completion pass added atomic pre-shipment correction after
   packet confirmation: POMS requires a correction reason, voids the prior
   packet, and issues a new immutable packet revision with the corrected frozen

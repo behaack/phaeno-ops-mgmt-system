@@ -490,6 +490,7 @@ export type CrmHandoff = {
   orderStatus: string | null;
   canStartCustomerOrder: boolean;
   orderBlockingReason: string | null;
+  trialProjectId?: string | null;
 };
 export type CrmOrderHandoff = {
   handoff: CrmHandoff;

@@ -139,7 +139,7 @@ public sealed partial class LabOperationsController
             LabRole.ScientificReviewer);
         var work = await RequireWorkOrderAsync(workOrderId, cancellationToken);
         EnsureVersion(work.Version, request.WorkOrderVersion);
-        if (work.Status != LabWorkOrderStatus.ScientificReview)
+        if (work.Status != LabWorkOrderStatus.ScientificReview && !(work.AuthorizationSource == LabAuthorizationSource.TrialProject && work.Status == LabWorkOrderStatus.ReadyForRelease))
             throw Conflict("scientific_review_not_ready", "The work order must be in scientific review.");
         if (await dbContext.LabExceptions.AnyAsync(item => item.LabWorkOrderId == work.Id
             && item.Status == LabExceptionStatus.Open && item.IsBlocking, cancellationToken))
@@ -171,7 +171,8 @@ public sealed partial class LabOperationsController
         }
         var approvalVersion = await dbContext.LabScientificApprovals
             .CountAsync(item => item.LabWorkOrderId == work.Id, cancellationToken) + 1;
-        work.RecordMilestone(LabWorkOrderStatus.ReadyForRelease);
+        if (work.Status != LabWorkOrderStatus.ReadyForRelease) work.RecordMilestone(LabWorkOrderStatus.ReadyForRelease);
+        else work.AdvanceProjectionVersion();
         var permittedQcProjectionJson = NormalizeOptionalJson(
             request.PermittedQcProjectionJson, "qc_projection_invalid");
         var approval = new LabScientificApproval(work.Id, approvalVersion,

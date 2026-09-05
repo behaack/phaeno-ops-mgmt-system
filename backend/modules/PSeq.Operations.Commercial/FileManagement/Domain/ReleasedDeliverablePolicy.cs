@@ -290,6 +290,7 @@ public sealed class ReleasedDeliverableRetentionSnapshot : IAudit, IConcurrency
     public Guid OrganizationId { get; private set; }
     public Guid? LabResultReleaseId { get; private set; }
     public Guid? AssemblyOutputReleaseId { get; private set; }
+    public Guid? TrialResultReleaseId { get; private set; }
     public Guid GlobalPolicyId { get; private set; }
     public int GlobalPolicyRevision { get; private set; }
     public Guid? OrganizationPolicyOverrideId { get; private set; }
@@ -410,18 +411,12 @@ public sealed class ReleasedDeliverableRetentionSnapshot : IAudit, IConcurrency
             organizationOverride,
             releasedAtUtc);
 
-    public void MarkCreated(DateTime utcNow, Guid? actorUserId)
-    {
-        CreatedAt = RequireUtc(utcNow);
-        CreatedByUserId = actorUserId;
-    }
+    public static ReleasedDeliverableRetentionSnapshot ForTrialResult(Guid organizationId, Guid trialReleaseId,
+        ReleasedDeliverablePolicyDefault globalPolicy, OrganizationReleasedDeliverablePolicyOverride? organizationOverride, DateTime now) =>
+        Create(organizationId, null, null, globalPolicy, organizationOverride, now, trialReleaseId);
 
-    public void MarkUpdated(DateTime utcNow, Guid? actorUserId)
-    {
-        UpdatedAt = RequireUtc(utcNow);
-        UpdatedByUserId = actorUserId;
-    }
-
+    public void MarkCreated(DateTime utcNow, Guid? actorUserId) { CreatedAt = RequireUtc(utcNow); CreatedByUserId = actorUserId; }
+    public void MarkUpdated(DateTime utcNow, Guid? actorUserId) { UpdatedAt = RequireUtc(utcNow); UpdatedByUserId = actorUserId; }
     public void IncrementVersion() => Version++;
 
     private static ReleasedDeliverableRetentionSnapshot Create(
@@ -430,17 +425,17 @@ public sealed class ReleasedDeliverableRetentionSnapshot : IAudit, IConcurrency
         Guid? assemblyOutputReleaseId,
         ReleasedDeliverablePolicyDefault globalPolicy,
         OrganizationReleasedDeliverablePolicyOverride? organizationOverride,
-        DateTime releasedAtUtc)
+        DateTime releasedAtUtc,
+        Guid? trialResultReleaseId = null)
     {
         if (organizationId == Guid.Empty)
         {
             throw new ArgumentException("Organization is required.", nameof(organizationId));
         }
 
-        if ((labResultReleaseId.HasValue && assemblyOutputReleaseId.HasValue)
-            || (!labResultReleaseId.HasValue && !assemblyOutputReleaseId.HasValue)
+        if (new[] { labResultReleaseId, assemblyOutputReleaseId, trialResultReleaseId }.Count(value => value.HasValue) != 1
             || labResultReleaseId == Guid.Empty
-            || assemblyOutputReleaseId == Guid.Empty)
+            || assemblyOutputReleaseId == Guid.Empty || trialResultReleaseId == Guid.Empty)
         {
             throw new ArgumentException("Exactly one released deliverable is required.");
         }
@@ -473,6 +468,7 @@ public sealed class ReleasedDeliverableRetentionSnapshot : IAudit, IConcurrency
             OrganizationId = organizationId,
             LabResultReleaseId = labResultReleaseId,
             AssemblyOutputReleaseId = assemblyOutputReleaseId,
+            TrialResultReleaseId = trialResultReleaseId,
             GlobalPolicyId = globalPolicy.Id,
             GlobalPolicyRevision = globalPolicy.Revision,
             OrganizationPolicyOverrideId = organizationOverride?.Id,

@@ -9,6 +9,7 @@
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
 import { Route as rootRouteImport } from './routes/__root'
+import { Route as TrialProjectsRouteImport } from './routes/trial-projects'
 import { Route as SampleShippingRouteImport } from './routes/sample-shipping'
 import { Route as ReleasedDeliverablesRouteImport } from './routes/released-deliverables'
 import { Route as ReagentOrdersRouteImport } from './routes/reagent-orders'
@@ -28,6 +29,8 @@ import { Route as CrmRouteImport } from './routes/crm'
 import { Route as AcceptInviteRouteImport } from './routes/accept-invite'
 import { Route as AboutRouteImport } from './routes/about'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as TrialProjectsConfigurationRouteImport } from './routes/trial-projects.configuration'
+import { Route as TrialProjectsTrialIdRouteImport } from './routes/trial-projects.$trialId'
 import { Route as SessionTasksSetupMfaRouteImport } from './routes/session-tasks.setup-mfa'
 import { Route as SampleShippingShipmentIdRouteImport } from './routes/sample-shipping.$shipmentId'
 import { Route as ReleasedDeliverablesSnapshotIdRouteImport } from './routes/released-deliverables.$snapshotId'
@@ -48,6 +51,7 @@ import { Route as CrmLeadsRouteImport } from './routes/crm.leads'
 import { Route as CrmContactsRouteImport } from './routes/crm.contacts'
 import { Route as CrmCompaniesRouteImport } from './routes/crm.companies'
 import { Route as CrmAdministrationRouteImport } from './routes/crm.administration'
+import { Route as TrialProjectsTrialIdScopeRouteImport } from './routes/trial-projects.$trialId.scope'
 import { Route as SampleShippingShipmentIdPacketRouteImport } from './routes/sample-shipping.$shipmentId.packet'
 import { Route as ReagentOrdersOrderIdEditRouteImport } from './routes/reagent-orders.$orderId.edit'
 import { Route as OrderOperationsIntakeOrderIdRouteImport } from './routes/order-operations.intake.$orderId'
@@ -67,6 +71,11 @@ import { Route as LabOperationsProtocolsProtocolIdVersionsNewRouteImport } from 
 import { Route as LabOperationsWorkflowsWorkflowIdVersionsVersionIdEditRouteImport } from './routes/lab-operations.workflows.$workflowId.versions.$versionId.edit'
 import { Route as LabOperationsProtocolsProtocolIdVersionsVersionIdEditRouteImport } from './routes/lab-operations.protocols.$protocolId.versions.$versionId.edit'
 
+const TrialProjectsRoute = TrialProjectsRouteImport.update({
+  id: '/trial-projects',
+  path: '/trial-projects',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const SampleShippingRoute = SampleShippingRouteImport.update({
   id: '/sample-shipping',
   path: '/sample-shipping',
@@ -161,6 +170,17 @@ const IndexRoute = IndexRouteImport.update({
   id: '/',
   path: '/',
   getParentRoute: () => rootRouteImport,
+} as any)
+const TrialProjectsConfigurationRoute =
+  TrialProjectsConfigurationRouteImport.update({
+    id: '/configuration',
+    path: '/configuration',
+    getParentRoute: () => TrialProjectsRoute,
+  } as any)
+const TrialProjectsTrialIdRoute = TrialProjectsTrialIdRouteImport.update({
+  id: '/$trialId',
+  path: '/$trialId',
+  getParentRoute: () => TrialProjectsRoute,
 } as any)
 const SessionTasksSetupMfaRoute = SessionTasksSetupMfaRouteImport.update({
   id: '/session-tasks/setup-mfa',
@@ -265,6 +285,12 @@ const CrmAdministrationRoute = CrmAdministrationRouteImport.update({
   path: '/administration',
   getParentRoute: () => CrmRoute,
 } as any)
+const TrialProjectsTrialIdScopeRoute =
+  TrialProjectsTrialIdScopeRouteImport.update({
+    id: '/scope',
+    path: '/scope',
+    getParentRoute: () => TrialProjectsTrialIdRoute,
+  } as any)
 const SampleShippingShipmentIdPacketRoute =
   SampleShippingShipmentIdPacketRouteImport.update({
     id: '/packet',
@@ -389,6 +415,7 @@ export interface FileRoutesByFullPath {
   '/reagent-orders': typeof ReagentOrdersRouteWithChildren
   '/released-deliverables': typeof ReleasedDeliverablesRouteWithChildren
   '/sample-shipping': typeof SampleShippingRouteWithChildren
+  '/trial-projects': typeof TrialProjectsRouteWithChildren
   '/crm/administration': typeof CrmAdministrationRoute
   '/crm/companies': typeof CrmCompaniesRoute
   '/crm/contacts': typeof CrmContactsRoute
@@ -409,6 +436,8 @@ export interface FileRoutesByFullPath {
   '/released-deliverables/$snapshotId': typeof ReleasedDeliverablesSnapshotIdRoute
   '/sample-shipping/$shipmentId': typeof SampleShippingShipmentIdRouteWithChildren
   '/session-tasks/setup-mfa': typeof SessionTasksSetupMfaRoute
+  '/trial-projects/$trialId': typeof TrialProjectsTrialIdRouteWithChildren
+  '/trial-projects/configuration': typeof TrialProjectsConfigurationRoute
   '/crm/companies/$companyId': typeof CrmCompaniesCompanyIdRoute
   '/crm/contacts/$contactId': typeof CrmContactsContactIdRoute
   '/crm/leads/$leadId': typeof CrmLeadsLeadIdRoute
@@ -423,6 +452,7 @@ export interface FileRoutesByFullPath {
   '/order-operations/intake/$orderId': typeof OrderOperationsIntakeOrderIdRoute
   '/reagent-orders/$orderId/edit': typeof ReagentOrdersOrderIdEditRoute
   '/sample-shipping/$shipmentId/packet': typeof SampleShippingShipmentIdPacketRoute
+  '/trial-projects/$trialId/scope': typeof TrialProjectsTrialIdScopeRoute
   '/lab-operations/protocols/$protocolId/versions/new': typeof LabOperationsProtocolsProtocolIdVersionsNewRoute
   '/lab-operations/workflows/$workflowId/versions/new': typeof LabOperationsWorkflowsWorkflowIdVersionsNewRoute
   '/lab-operations/protocols/$protocolId/versions/$versionId/edit': typeof LabOperationsProtocolsProtocolIdVersionsVersionIdEditRoute
@@ -448,6 +478,7 @@ export interface FileRoutesByTo {
   '/reagent-orders': typeof ReagentOrdersRouteWithChildren
   '/released-deliverables': typeof ReleasedDeliverablesRouteWithChildren
   '/sample-shipping': typeof SampleShippingRouteWithChildren
+  '/trial-projects': typeof TrialProjectsRouteWithChildren
   '/crm/administration': typeof CrmAdministrationRoute
   '/crm/companies': typeof CrmCompaniesRoute
   '/crm/contacts': typeof CrmContactsRoute
@@ -468,6 +499,8 @@ export interface FileRoutesByTo {
   '/released-deliverables/$snapshotId': typeof ReleasedDeliverablesSnapshotIdRoute
   '/sample-shipping/$shipmentId': typeof SampleShippingShipmentIdRouteWithChildren
   '/session-tasks/setup-mfa': typeof SessionTasksSetupMfaRoute
+  '/trial-projects/$trialId': typeof TrialProjectsTrialIdRouteWithChildren
+  '/trial-projects/configuration': typeof TrialProjectsConfigurationRoute
   '/crm/companies/$companyId': typeof CrmCompaniesCompanyIdRoute
   '/crm/contacts/$contactId': typeof CrmContactsContactIdRoute
   '/crm/leads/$leadId': typeof CrmLeadsLeadIdRoute
@@ -482,6 +515,7 @@ export interface FileRoutesByTo {
   '/order-operations/intake/$orderId': typeof OrderOperationsIntakeOrderIdRoute
   '/reagent-orders/$orderId/edit': typeof ReagentOrdersOrderIdEditRoute
   '/sample-shipping/$shipmentId/packet': typeof SampleShippingShipmentIdPacketRoute
+  '/trial-projects/$trialId/scope': typeof TrialProjectsTrialIdScopeRoute
   '/lab-operations/protocols/$protocolId/versions/new': typeof LabOperationsProtocolsProtocolIdVersionsNewRoute
   '/lab-operations/workflows/$workflowId/versions/new': typeof LabOperationsWorkflowsWorkflowIdVersionsNewRoute
   '/lab-operations/protocols/$protocolId/versions/$versionId/edit': typeof LabOperationsProtocolsProtocolIdVersionsVersionIdEditRoute
@@ -508,6 +542,7 @@ export interface FileRoutesById {
   '/reagent-orders': typeof ReagentOrdersRouteWithChildren
   '/released-deliverables': typeof ReleasedDeliverablesRouteWithChildren
   '/sample-shipping': typeof SampleShippingRouteWithChildren
+  '/trial-projects': typeof TrialProjectsRouteWithChildren
   '/crm/administration': typeof CrmAdministrationRoute
   '/crm/companies': typeof CrmCompaniesRoute
   '/crm/contacts': typeof CrmContactsRoute
@@ -528,6 +563,8 @@ export interface FileRoutesById {
   '/released-deliverables/$snapshotId': typeof ReleasedDeliverablesSnapshotIdRoute
   '/sample-shipping/$shipmentId': typeof SampleShippingShipmentIdRouteWithChildren
   '/session-tasks/setup-mfa': typeof SessionTasksSetupMfaRoute
+  '/trial-projects/$trialId': typeof TrialProjectsTrialIdRouteWithChildren
+  '/trial-projects/configuration': typeof TrialProjectsConfigurationRoute
   '/crm/companies_/$companyId': typeof CrmCompaniesCompanyIdRoute
   '/crm/contacts_/$contactId': typeof CrmContactsContactIdRoute
   '/crm/leads_/$leadId': typeof CrmLeadsLeadIdRoute
@@ -542,6 +579,7 @@ export interface FileRoutesById {
   '/order-operations/intake/$orderId': typeof OrderOperationsIntakeOrderIdRoute
   '/reagent-orders/$orderId/edit': typeof ReagentOrdersOrderIdEditRoute
   '/sample-shipping/$shipmentId/packet': typeof SampleShippingShipmentIdPacketRoute
+  '/trial-projects/$trialId/scope': typeof TrialProjectsTrialIdScopeRoute
   '/lab-operations/protocols/$protocolId/versions/new': typeof LabOperationsProtocolsProtocolIdVersionsNewRoute
   '/lab-operations/workflows/$workflowId/versions/new': typeof LabOperationsWorkflowsWorkflowIdVersionsNewRoute
   '/lab-operations/protocols/$protocolId/versions/$versionId/edit': typeof LabOperationsProtocolsProtocolIdVersionsVersionIdEditRoute
@@ -569,6 +607,7 @@ export interface FileRouteTypes {
     | '/reagent-orders'
     | '/released-deliverables'
     | '/sample-shipping'
+    | '/trial-projects'
     | '/crm/administration'
     | '/crm/companies'
     | '/crm/contacts'
@@ -589,6 +628,8 @@ export interface FileRouteTypes {
     | '/released-deliverables/$snapshotId'
     | '/sample-shipping/$shipmentId'
     | '/session-tasks/setup-mfa'
+    | '/trial-projects/$trialId'
+    | '/trial-projects/configuration'
     | '/crm/companies/$companyId'
     | '/crm/contacts/$contactId'
     | '/crm/leads/$leadId'
@@ -603,6 +644,7 @@ export interface FileRouteTypes {
     | '/order-operations/intake/$orderId'
     | '/reagent-orders/$orderId/edit'
     | '/sample-shipping/$shipmentId/packet'
+    | '/trial-projects/$trialId/scope'
     | '/lab-operations/protocols/$protocolId/versions/new'
     | '/lab-operations/workflows/$workflowId/versions/new'
     | '/lab-operations/protocols/$protocolId/versions/$versionId/edit'
@@ -628,6 +670,7 @@ export interface FileRouteTypes {
     | '/reagent-orders'
     | '/released-deliverables'
     | '/sample-shipping'
+    | '/trial-projects'
     | '/crm/administration'
     | '/crm/companies'
     | '/crm/contacts'
@@ -648,6 +691,8 @@ export interface FileRouteTypes {
     | '/released-deliverables/$snapshotId'
     | '/sample-shipping/$shipmentId'
     | '/session-tasks/setup-mfa'
+    | '/trial-projects/$trialId'
+    | '/trial-projects/configuration'
     | '/crm/companies/$companyId'
     | '/crm/contacts/$contactId'
     | '/crm/leads/$leadId'
@@ -662,6 +707,7 @@ export interface FileRouteTypes {
     | '/order-operations/intake/$orderId'
     | '/reagent-orders/$orderId/edit'
     | '/sample-shipping/$shipmentId/packet'
+    | '/trial-projects/$trialId/scope'
     | '/lab-operations/protocols/$protocolId/versions/new'
     | '/lab-operations/workflows/$workflowId/versions/new'
     | '/lab-operations/protocols/$protocolId/versions/$versionId/edit'
@@ -687,6 +733,7 @@ export interface FileRouteTypes {
     | '/reagent-orders'
     | '/released-deliverables'
     | '/sample-shipping'
+    | '/trial-projects'
     | '/crm/administration'
     | '/crm/companies'
     | '/crm/contacts'
@@ -707,6 +754,8 @@ export interface FileRouteTypes {
     | '/released-deliverables/$snapshotId'
     | '/sample-shipping/$shipmentId'
     | '/session-tasks/setup-mfa'
+    | '/trial-projects/$trialId'
+    | '/trial-projects/configuration'
     | '/crm/companies_/$companyId'
     | '/crm/contacts_/$contactId'
     | '/crm/leads_/$leadId'
@@ -721,6 +770,7 @@ export interface FileRouteTypes {
     | '/order-operations/intake/$orderId'
     | '/reagent-orders/$orderId/edit'
     | '/sample-shipping/$shipmentId/packet'
+    | '/trial-projects/$trialId/scope'
     | '/lab-operations/protocols/$protocolId/versions/new'
     | '/lab-operations/workflows/$workflowId/versions/new'
     | '/lab-operations/protocols/$protocolId/versions/$versionId/edit'
@@ -747,12 +797,20 @@ export interface RootRouteChildren {
   ReagentOrdersRoute: typeof ReagentOrdersRouteWithChildren
   ReleasedDeliverablesRoute: typeof ReleasedDeliverablesRouteWithChildren
   SampleShippingRoute: typeof SampleShippingRouteWithChildren
+  TrialProjectsRoute: typeof TrialProjectsRouteWithChildren
   DemoTanstackQueryRoute: typeof DemoTanstackQueryRoute
   SessionTasksSetupMfaRoute: typeof SessionTasksSetupMfaRoute
 }
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
+    '/trial-projects': {
+      id: '/trial-projects'
+      path: '/trial-projects'
+      fullPath: '/trial-projects'
+      preLoaderRoute: typeof TrialProjectsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/sample-shipping': {
       id: '/sample-shipping'
       path: '/sample-shipping'
@@ -885,6 +943,20 @@ declare module '@tanstack/react-router' {
       fullPath: '/'
       preLoaderRoute: typeof IndexRouteImport
       parentRoute: typeof rootRouteImport
+    }
+    '/trial-projects/configuration': {
+      id: '/trial-projects/configuration'
+      path: '/configuration'
+      fullPath: '/trial-projects/configuration'
+      preLoaderRoute: typeof TrialProjectsConfigurationRouteImport
+      parentRoute: typeof TrialProjectsRoute
+    }
+    '/trial-projects/$trialId': {
+      id: '/trial-projects/$trialId'
+      path: '/$trialId'
+      fullPath: '/trial-projects/$trialId'
+      preLoaderRoute: typeof TrialProjectsTrialIdRouteImport
+      parentRoute: typeof TrialProjectsRoute
     }
     '/session-tasks/setup-mfa': {
       id: '/session-tasks/setup-mfa'
@@ -1025,6 +1097,13 @@ declare module '@tanstack/react-router' {
       fullPath: '/crm/administration'
       preLoaderRoute: typeof CrmAdministrationRouteImport
       parentRoute: typeof CrmRoute
+    }
+    '/trial-projects/$trialId/scope': {
+      id: '/trial-projects/$trialId/scope'
+      path: '/scope'
+      fullPath: '/trial-projects/$trialId/scope'
+      preLoaderRoute: typeof TrialProjectsTrialIdScopeRouteImport
+      parentRoute: typeof TrialProjectsTrialIdRoute
     }
     '/sample-shipping/$shipmentId/packet': {
       id: '/sample-shipping/$shipmentId/packet'
@@ -1388,6 +1467,31 @@ const SampleShippingRouteWithChildren = SampleShippingRoute._addFileChildren(
   SampleShippingRouteChildren,
 )
 
+interface TrialProjectsTrialIdRouteChildren {
+  TrialProjectsTrialIdScopeRoute: typeof TrialProjectsTrialIdScopeRoute
+}
+
+const TrialProjectsTrialIdRouteChildren: TrialProjectsTrialIdRouteChildren = {
+  TrialProjectsTrialIdScopeRoute: TrialProjectsTrialIdScopeRoute,
+}
+
+const TrialProjectsTrialIdRouteWithChildren =
+  TrialProjectsTrialIdRoute._addFileChildren(TrialProjectsTrialIdRouteChildren)
+
+interface TrialProjectsRouteChildren {
+  TrialProjectsTrialIdRoute: typeof TrialProjectsTrialIdRouteWithChildren
+  TrialProjectsConfigurationRoute: typeof TrialProjectsConfigurationRoute
+}
+
+const TrialProjectsRouteChildren: TrialProjectsRouteChildren = {
+  TrialProjectsTrialIdRoute: TrialProjectsTrialIdRouteWithChildren,
+  TrialProjectsConfigurationRoute: TrialProjectsConfigurationRoute,
+}
+
+const TrialProjectsRouteWithChildren = TrialProjectsRoute._addFileChildren(
+  TrialProjectsRouteChildren,
+)
+
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   AboutRoute: AboutRoute,
@@ -1408,6 +1512,7 @@ const rootRouteChildren: RootRouteChildren = {
   ReagentOrdersRoute: ReagentOrdersRouteWithChildren,
   ReleasedDeliverablesRoute: ReleasedDeliverablesRouteWithChildren,
   SampleShippingRoute: SampleShippingRouteWithChildren,
+  TrialProjectsRoute: TrialProjectsRouteWithChildren,
   DemoTanstackQueryRoute: DemoTanstackQueryRoute,
   SessionTasksSetupMfaRoute: SessionTasksSetupMfaRoute,
 }

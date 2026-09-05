@@ -7,8 +7,8 @@ The original checkpoint was local-only. On 2026-09-05 the Product Owner
 explicitly authorized completing this plan, all test suites, documentation and
 user-guide updates, a commit, and deployment of both the API and Portal UI.
 Production storage activation and human acceptance remain distinct from shipping
-the code; retain the existing storage hold. Scientific Trial Project criteria
-are being confirmed before dependent implementation.
+the code; retain the existing storage hold. Scientific Trial Project criteria were confirmed on 2026-09-05: initial Trials
+reuse existing PSeq analyses and acceptance rules.
 
 | Area | Current result | Remaining next action |
 | --- | --- | --- |
@@ -16,7 +16,7 @@ are being confirmed before dependent implementation.
 | PSeq order-to-cash | Additive implementation/release recorded in its owning plan; local domain/API regression passed and staging checklist refreshed. | Dedicated staging from CRM through Paid, restored-database migration/recovery evidence, provider/staffing checks, and six-function signoff before activation. |
 | File management | Governed PSeq and general Lab/Assembly policy, completion/grace/cutoff, durable warning/grace checkpoints, recoverable notices, and database-backed stream revocation are implemented locally behind default-off activation switches; historical schedules retain dates. | Actual commit-time boundary proof is local; hosted commit-tracking recovery, authenticated/mailbox acceptance, and storage/scanner/deletion activation remain open. General folder/version management remains separate scope. |
 | Orders | Existing manually prepared quote workflow implemented. | Configured pricing and bundled-order workflow remain future product delivery. |
-| Trial Projects | Planning exists; parent issuance and release model are not implemented. | Execute the owning feature plan when prioritized. |
+| Trial Projects | Initial PSeq Trial integration implemented and verified locally, including its distinct parent, Lab/shipping authorization and governed result lifecycle. | New production migration approval and the activation gates in `TRIAL-INTEGRATION-CLOSEOUT.md`. |
 | Lab and shipping | Internal operator and shipping foundation implemented. | Representative tube/shipper/label/scanner validation, NGS operating decisions, signed-in parent workflow, and activation. Raw/intermediate pipeline ownership remains unresolved; final PSeq deliverable handoff is implemented behind flags. |
 | Authentication | Existing Clerk sign-in and membership authorization retained. | Production MFA/recovery/provider acceptance evidence remains an operational gate; this closeout changed no identity-provider configuration. |
 
@@ -224,6 +224,7 @@ The API and Portal UI application release `ab2df0a` is live. API health, databas
 connectivity, public Portal routes and the production sign-in screen were checked.
 The production release, migration and backup evidence are in
 [the release record](PORTAL-CLOSEOUT-RELEASE-2026-09-05.md#production-release-evidence).
-Trial implementation still needs the pending decision on scientific criteria;
-hosted authenticated/physical/mailbox acceptance remains unperformed. This is
+The subsequent initial Trial implementation is recorded in
+`TRIAL-INTEGRATION-CLOSEOUT.md`; hosted authenticated/physical/mailbox acceptance
+remains unperformed. This is
 not a claim that every feature plan or activation gate is complete.

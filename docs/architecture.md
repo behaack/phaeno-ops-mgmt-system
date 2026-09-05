@@ -345,3 +345,16 @@ state. A reissue must use new objects for the same organization, workflow and
 sample (where applicable). New Lab snapshot receipts freeze sample/accession/tube
 lineage; Assembly receipts retain project scope. API-authorized metadata receipts
 remain accessible after byte deletion. Physical deletion defaults off.
+
+## Trial Projects
+
+Commercial owns the distinct Trial aggregate, versioned scope, domain approval
+authorities, acceptance, coded samples, replacement authorizations, immutable
+release manifests and safe event outbox. The first-party CRM Company Opportunity
+is its commercial parent. Trial events project asynchronously into CRM activity
+receipts and never carry scientific payloads. Trials create no paid order or QBO
+transaction. The Lab provider consumes a TrialProject authorization pinned to the
+approved PSeq workflow version; shared shipping and governed result services keep
+the original organization and department. Complete packages use the existing
+retention, download commit evidence, cleanup and retained-receipt mechanisms.
+See `plans/PROSPECT-TRIAL-PROJECT-PLAN.md` for current scope and activation gates.

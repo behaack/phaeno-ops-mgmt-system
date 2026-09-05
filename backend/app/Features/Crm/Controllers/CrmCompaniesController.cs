@@ -168,6 +168,8 @@ public sealed class CrmCompaniesController(
         await RequirePlatformAdminAsync(cancellationToken);
         var company = await RequireCompanyAsync(companyId, tracking: true, cancellationToken);
         EnsureVersion(company.Version, request.Version);
+        if (company.AccessOrganizationId.HasValue)
+            await PhaenoPortal.App.Features.Trials.Services.TrialAccess.GuardProspectDeactivationAsync(dbContext, company.AccessOrganizationId.Value, cancellationToken);
         Execute(company.Deactivate);
         if (company.AccessOrganization is not null)
         {

@@ -80,6 +80,8 @@ public sealed record SessionSelectedDepartmentDto
 
 public sealed record SessionCapabilitiesDto
 {
+    public bool CanViewTrialProjects { get; init; }
+    public bool CanManageTrialProjects { get; init; }
     public required bool CanInviteUsers { get; init; }
 
     public required bool CanManageMembers { get; init; }

@@ -18,9 +18,11 @@ public sealed class ResultOutputPackage : CommercialReceivableEntity
 {
     public Guid Id { get; private set; } = Guid.NewGuid();
     public Guid OrganizationId { get; private set; }
-    public Guid LabServiceOrderId { get; private set; }
+    public Guid? LabServiceOrderId { get; private set; }
     public Guid LabWorkOrderId { get; private set; }
-    public Guid LabSampleId { get; private set; }
+    public Guid? LabSampleId { get; private set; }
+    public Guid? TrialProjectId { get; private set; }
+    public Guid? TrialSampleId { get; private set; }
     public int PackageVersion { get; private set; }
     public Guid? CorrectsPackageId { get; private set; }
     public string PipelineProviderKey { get; private set; } = null!;
@@ -43,14 +45,16 @@ public sealed class ResultOutputPackage : CommercialReceivableEntity
 
     private ResultOutputPackage() { }
 
-    public ResultOutputPackage(Guid organizationId, Guid labServiceOrderId,
-        Guid labWorkOrderId, Guid labSampleId, int packageVersion,
+    public ResultOutputPackage(Guid organizationId, Guid? labServiceOrderId,
+        Guid labWorkOrderId, Guid? labSampleId, int packageVersion,
         Guid? correctsPackageId, string pipelineProviderKey,
         string pipelineSubmissionId, string idempotencyKey, string manifestJson,
-        string manifestSha256, int expectedArtifactCount)
+        string manifestSha256, int expectedArtifactCount, Guid? trialProjectId = null, Guid? trialSampleId = null)
     {
-        if (organizationId == Guid.Empty || labServiceOrderId == Guid.Empty
-            || labWorkOrderId == Guid.Empty || labSampleId == Guid.Empty)
+        if (organizationId == Guid.Empty || labServiceOrderId == Guid.Empty || trialProjectId == Guid.Empty || trialSampleId == Guid.Empty
+            || labWorkOrderId == Guid.Empty || labSampleId == Guid.Empty
+            || !((labServiceOrderId.HasValue && labSampleId.HasValue && !trialProjectId.HasValue && !trialSampleId.HasValue)
+                || (!labServiceOrderId.HasValue && !labSampleId.HasValue && trialProjectId.HasValue && trialSampleId.HasValue)))
             throw new ArgumentException("Organization, order, work-order, and sample identifiers are required.");
         if (packageVersion < 1 || expectedArtifactCount < 1)
             throw new ArgumentOutOfRangeException(nameof(packageVersion));
@@ -58,6 +62,7 @@ public sealed class ResultOutputPackage : CommercialReceivableEntity
         LabServiceOrderId = labServiceOrderId;
         LabWorkOrderId = labWorkOrderId;
         LabSampleId = labSampleId;
+        TrialProjectId = trialProjectId; TrialSampleId = trialSampleId;
         PackageVersion = packageVersion;
         CorrectsPackageId = correctsPackageId;
         PipelineProviderKey = Required(pipelineProviderKey, nameof(pipelineProviderKey), 100);

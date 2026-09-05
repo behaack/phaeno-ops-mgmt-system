@@ -30,14 +30,14 @@ public sealed class ReleasedDeliverableLifecycleService(PSeqOperationsDbContext 
                 package.State == ResultOutputPackageState.Released, package.ExpectedArtifactCount,
                 artifacts.Select(value => new RetainedFile(value.Id, value.FileName, value.SizeBytes, value.Sha256, value.ObjectStorageKey, value.ScanState == ResultArtifactScanState.Clean)).ToList());
         }
-        var type = snapshot.LabResultReleaseId.HasValue ? ReleasedDeliverablePackageType.LabResult : ReleasedDeliverablePackageType.AssemblyOutput;
-        var id = snapshot.LabResultReleaseId ?? snapshot.AssemblyOutputReleaseId!.Value;
+        var type = snapshot.TrialResultReleaseId.HasValue ? ReleasedDeliverablePackageType.TrialResult : snapshot.LabResultReleaseId.HasValue ? ReleasedDeliverablePackageType.LabResult : ReleasedDeliverablePackageType.AssemblyOutput;
+        var id = snapshot.TrialResultReleaseId ?? snapshot.LabResultReleaseId ?? snapshot.AssemblyOutputReleaseId!.Value;
         var release = await new ManagedReleaseRetentionService(db).ReadPackageAsync(type, id, token);
         if (release is null || release.OrganizationId != snapshot.OrganizationId) return null;
-        var purpose = type == ReleasedDeliverablePackageType.LabResult ? OperationalFilePurpose.LabResult : OperationalFilePurpose.AssemblyOutput;
+        var purpose = ManagedReleaseRetentionService.Purpose(type);
         var files = await db.ManagedOperationalFiles.AsNoTracking().Where(value => release.FileIds.Contains(value.Id)
             && value.OrganizationId == snapshot.OrganizationId && value.WorkflowId == release.WorkflowId && value.Purpose == purpose
-            && (type == ReleasedDeliverablePackageType.LabResult ? value.ParentRecordId == release.SampleId : value.ParentRecordId == id)).ToListAsync(token);
+            && (type == ReleasedDeliverablePackageType.TrialResult || (type == ReleasedDeliverablePackageType.LabResult ? value.ParentRecordId == release.SampleId : value.ParentRecordId == id))).ToListAsync(token);
         return new(id, type, release.WorkflowId, release.DepartmentId, release.SampleId, release.Status == FileReleaseStatus.Released && !release.IsDiscarded,
             release.FileIds.Count, files.Select(value => new RetainedFile(value.Id, value.FileName, value.SizeBytes, value.Sha256, value.StorageKey, value.ScanStatus == OperationalFileScanStatus.Clean)).ToList());
     }
@@ -48,6 +48,15 @@ public sealed class ReleasedDeliverableLifecycleService(PSeqOperationsDbContext 
         var initial = await ReadPackageAsync(snapshot, token);
         if (initial is null) return;
         await using var transaction = await RetentionTransaction.OpenAsync(db, initial.Id, token);
+        if (initial.Type == ReleasedDeliverablePackageType.TrialResult && db.Database.IsNpgsql())
+        {
+            // Serialize byte cleanup with Trial holds, withdrawal and closeout.
+            var entity = db.Model.FindEntityType(typeof(PSeq.Operations.Commercial.Trials.Domain.TrialProject))!;
+            var table = $"\"{entity.GetSchema()!.Replace("\"", "\"\"")}\".\"{entity.GetTableName()!.Replace("\"", "\"\"")}\"";
+#pragma warning disable EF1002
+            await db.Database.ExecuteSqlRawAsync($"SELECT id FROM {table} WHERE id = {{0}} FOR SHARE", [initial.WorkflowId], token);
+#pragma warning restore EF1002
+        }
         await db.Entry(snapshot).ReloadAsync(token);
         if (snapshot.ByteDeletedAtUtc.HasValue) return;
         var now = evaluationTime ?? await RetentionTransaction.ClockAsync(db, token);
@@ -56,13 +65,16 @@ public sealed class ReleasedDeliverableLifecycleService(PSeqOperationsDbContext 
         if (!snapshot.DownloadAccessClosedAtUtc.HasValue) { await transaction.CommitAsync(token); return; }
         var package = await ReadPackageAsync(snapshot, token);
         string? blocked = package is null || package.ExpectedFiles == 0 || package.Files.Count != package.ExpectedFiles ? "UnavailablePackage" : null;
+        if (blocked is null && package!.Type == ReleasedDeliverablePackageType.TrialResult && !package.Released) blocked = "Preserved";
         if (blocked is null)
         {
             await LockFilesAsync(package!, token);
             package = await ReadPackageAsync(snapshot, token);
-            if (package!.Files.Any(file => !file.Clean) || await db.ReleasedDeliverablePreservationHolds.AnyAsync(value => value.RetentionSnapshotId == snapshot.Id && value.ReleasedAtUtc == null, token)) blocked = "Preserved";
+            var packageFileIds = package!.Files.Select(file => file.Id).ToArray();
+            if (package.Files.Any(file => !file.Clean) || await db.ReleasedDeliverablePreservationHolds.AnyAsync(value => value.RetentionSnapshotId == snapshot.Id && value.ReleasedAtUtc == null, token)) blocked = "Preserved";
             else if (await db.OperationalFileDownloads.AnyAsync(value => value.OrganizationId == snapshot.OrganizationId
-                && (value.ReleasedPackageId == package.Id || value.ReleasedPackageId == snapshot.LabResultReleaseId)
+                && (value.ReleasedPackageId == package.Id || value.ReleasedPackageId == snapshot.LabResultReleaseId
+                    || package.Type == ReleasedDeliverablePackageType.TrialResult && value.ManagedOperationalFileId != null && packageFileIds.Contains(value.ManagedOperationalFileId.Value))
                 && value.Outcome == OperationalFileDownloadOutcome.Started && value.LeaseExpiresAtUtc > now, token)) blocked = "WaitingForLease";
             else if (await HasSharedSourcesAsync(snapshot, package, token)) blocked = "SharedSource";
         }
@@ -75,6 +87,12 @@ public sealed class ReleasedDeliverableLifecycleService(PSeqOperationsDbContext 
                 if (package.Type == ReleasedDeliverablePackageType.PSeqResult)
                 {
                     var artifacts = await db.ResultArtifacts.Where(value => value.ResultOutputPackageId == package.Id && value.DeletedAtUtc == null).ToListAsync(token);
+                    foreach (var artifact in artifacts) artifact.MarkDeleted(now);
+                }
+                if (package.Type == ReleasedDeliverablePackageType.TrialResult)
+                {
+                    var fileIds = package.Files.Select(file => file.Id).ToArray();
+                    var artifacts = await db.ResultArtifacts.Where(value => value.DeletedAtUtc == null && db.TrialResultFiles.Any(binding => binding.ResultArtifactId == value.Id && fileIds.Contains(binding.ManagedOperationalFileId))).ToListAsync(token);
                     foreach (var artifact in artifacts) artifact.MarkDeleted(now);
                 }
                 snapshot.RecordCleanup("Deleted", evaluationTime ?? await RetentionTransaction.ClockAsync(db, token));
@@ -93,7 +111,8 @@ public sealed class ReleasedDeliverableLifecycleService(PSeqOperationsDbContext 
     {
         var keys = package.Files.Select(file => file.StorageKey).Distinct().ToArray();
         var ids = package.Files.Select(file => file.Id).ToArray();
-        if (await db.ResultArtifacts.AnyAsync(value => keys.Contains(value.ObjectStorageKey) && value.ResultOutputPackageId != package.Id, token)) return true;
+        if (await db.ResultArtifacts.AnyAsync(value => keys.Contains(value.ObjectStorageKey) && value.ResultOutputPackageId != package.Id
+            && !(package.Type == ReleasedDeliverablePackageType.TrialResult && db.TrialResultFiles.Any(binding => binding.ResultArtifactId == value.Id && ids.Contains(binding.ManagedOperationalFileId))), token)) return true;
         if (await db.ManagedOperationalFiles.AnyAsync(value => keys.Contains(value.StorageKey)
             && (package.Type == ReleasedDeliverablePackageType.PSeqResult || !ids.Contains(value.Id)), token)) return true;
         if (package.Type == ReleasedDeliverablePackageType.LabResult)

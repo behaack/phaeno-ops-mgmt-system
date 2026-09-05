@@ -28,7 +28,7 @@ public sealed class CrmHandoffsController(PSeqOperationsDbContext dbContext, IEx
             .Include(value => value.Company)
             .Include(value => value.Opportunity).ThenInclude(value => value!.Stage)
             .Include(value => value.RelationshipRequest).ThenInclude(value => value.RequestedServices)
-            .Where(value => value.RelationshipRequest.Source == PortalIntegrationRequestSource.FirstPartyCrm
+            .Where(value => value.Type != CrmHandoffType.TrialProject && value.RelationshipRequest.Source == PortalIntegrationRequestSource.FirstPartyCrm
                 && (value.RelationshipRequest.RequestType == PortalIntegrationRequestType.SalesAssistedOrder
                     || value.RelationshipRequest.RequestType == PortalIntegrationRequestType.Evaluation)
                 && (value.RelationshipRequest.Status == PortalIntegrationRequestStatus.PendingReview
@@ -88,6 +88,8 @@ public sealed class CrmHandoffsController(PSeqOperationsDbContext dbContext, IEx
                 ?? throw Missing("crm_handoff_opportunity_not_found", "The selected Opportunity does not belong to this Company.");
         }
 
+        if (request.Type == CrmHandoffType.TrialProject && (opportunity is not { IsActive: true } || request.RequestedServices.Count > 0))
+            throw new CrmException("crm_trial_context_invalid", "Link an active Opportunity and keep scientific scope and service selection in the Trial workspace.");
         var organizationId = company.AccessOrganizationId;
         var requestedKind = company.AccessOrganization?.Kind ?? request.RequestedOrganizationKind;
         var (requestType, defaultKind) = RequestType(request.Type);
@@ -148,9 +150,10 @@ public sealed class CrmHandoffsController(PSeqOperationsDbContext dbContext, IEx
             .Where(item => item.SourceRequestId == relationshipRequest.Id)
             .Select(item => new { item.Id, item.OrderNumber, item.Status })
             .SingleOrDefaultAsync(cancellationToken);
+        var trialId = await dbContext.TrialProjects.Where(item => item.CrmHandoffId == value.Id).Select(item => (Guid?)item.Id).SingleOrDefaultAsync(cancellationToken);
         var (canStartOrder, blocker) = await EvaluateOrderStartAsync(value, relationshipRequest, order is not null, cancellationToken);
         return new(value.Id, value.CompanyId, value.OpportunityId, value.Type, value.RelationshipRequestId, relationshipRequest.RequestNumber, relationshipRequest.Status, relationshipRequest.RequestedOrganizationKind, relationshipRequest.OrganizationId, value.IdempotencyKey, value.CreatedAt, relationshipRequest.Version,
-            order?.Id, order?.OrderNumber, order?.Status.ToString(), canStartOrder, blocker);
+            order?.Id, order?.OrderNumber, order?.Status.ToString(), canStartOrder, blocker, trialId);
     }
 
     private async Task<(bool CanStart, string? Blocker)> EvaluateOrderStartAsync(

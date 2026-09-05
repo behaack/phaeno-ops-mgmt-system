@@ -42,7 +42,8 @@ public sealed record AuthorizeLabWorkCommand(
     int ServiceVersion,
     string TurnaroundPolicyKey,
     string? OpaqueSubmitterReference,
-    IReadOnlyList<AuthorizedSpecimen> Specimens);
+    IReadOnlyList<AuthorizedSpecimen> Specimens,
+    Guid? ApprovedWorkflowVersionId = null);
 
 public sealed record AmendLabWorkAuthorizationCommand(
     LabOperationsCommandMetadata Metadata,

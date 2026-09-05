@@ -163,7 +163,7 @@ public sealed class InternalLabOperationsProvider(PSeqOperationsDbContext dbCont
         }
 
         var workflowVersionId = await ResolveProductionWorkflowVersionAsync(
-            command.ServiceKey, cancellationToken);
+            command.ServiceKey, cancellationToken, command.ApprovedWorkflowVersionId);
 
         var workOrder = new LabWorkOrder(
             command.AuthorizationId,
@@ -299,7 +299,7 @@ public sealed class InternalLabOperationsProvider(PSeqOperationsDbContext dbCont
         }
 
         var workflowVersionId = await ResolveProductionWorkflowVersionAsync(
-            replacement.ServiceKey, cancellationToken);
+            replacement.ServiceKey, cancellationToken, replacement.ApprovedWorkflowVersionId);
         workOrder.RecordAuthorizationVersion(
             command.NewAuthorizationVersion,
             replacement.ServiceKey,
@@ -347,9 +347,18 @@ public sealed class InternalLabOperationsProvider(PSeqOperationsDbContext dbCont
     }
 
     private async Task<Guid?> ResolveProductionWorkflowVersionAsync(
-        string serviceKey, CancellationToken cancellationToken)
+        string serviceKey, CancellationToken cancellationToken, Guid? approvedVersionId = null)
     {
         var normalizedServiceKey = serviceKey.Trim().ToLowerInvariant();
+        if (approvedVersionId.HasValue)
+        {
+            var version = await (from workflow in dbContext.LabServiceWorkflows.AsNoTracking()
+                join candidate in dbContext.LabServiceWorkflowVersions.AsNoTracking() on workflow.Id equals candidate.LabServiceWorkflowId
+                where workflow.ServiceKey == normalizedServiceKey && candidate.Id == approvedVersionId
+                    && (candidate.Status == LabServiceWorkflowStatus.Production || candidate.Status == LabServiceWorkflowStatus.Retired)
+                select (Guid?)candidate.Id).SingleOrDefaultAsync(cancellationToken);
+            return version ?? throw new InvalidOperationException("The approved laboratory workflow version is unavailable.");
+        }
         return await (
             from workflow in dbContext.LabServiceWorkflows.AsNoTracking()
             join version in dbContext.LabServiceWorkflowVersions.AsNoTracking()

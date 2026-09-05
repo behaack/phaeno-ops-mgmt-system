@@ -264,6 +264,7 @@ export function CrmCompanyRelationships({
                     </div>
                     <div className="flex flex-wrap items-center gap-2">
                       <Badge variant="outline">{spaced(value.status)}</Badge>
+                      {value.type === "TrialProject" ? <Button asChild size="sm" variant="outline">{value.trialProjectId ? <Link to="/trial-projects/$trialId" params={{ trialId: value.trialProjectId }}>Open Trial</Link> : <Link to="/trial-projects">Start Trial</Link>}</Button> : null}
                       {value.status === "PendingReview" ? (
                         <Button asChild size="sm" variant="outline">
                           <Link to="/customers">
@@ -487,7 +488,7 @@ const companyRequestTypeConfig: Record<
     label: "Trial Project",
     showRelationship: true,
     showOpportunity: true,
-    showServices: true,
+    showServices: false,
   },
   CustomWork: {
     category: "Work",

@@ -805,3 +805,15 @@ reviewed People invitations and Department access are covered by their dedicated
 journeys. Order operations checks its current Attention section. Receipt printing
 uses A4 while named Lab-label pages keep their 50 mm by 25 mm size; dark display
 mode prints receipts on white paper.
+
+## Trial integration checkpoint (2026-09-05)
+
+`e2e/trials.spec.ts` exercises desktop and mobile Prospect scope review in the
+visible dialog body, RUO/no-PHI acceptance, coded-RNA submission and a 409 retry
+that preserves inputs and submits the refreshed version. A Phaeno scenario
+checks the existing selected PSeq analysis/workflow/deliverable revisions and
+submits scope for approval. Both scenarios check WCAG 2.2 AA automated rules,
+page errors and horizontal overflow; mobile also uses dark mode and reduced
+motion. Synthetic route fixtures are isolated from normal application auth.
+These checks do not substitute for signed-in production or physical lab UAT.
+See `TRIAL-INTEGRATION-CLOSEOUT.md` for full results and activation gates.

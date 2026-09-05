@@ -41,7 +41,7 @@ public sealed class ReleasedDeliverableDownloadAttemptService(
             throw new ArgumentException("A download transfer cannot contain a file more than once.", nameof(files));
 
         if (await dbContext.ReleasedDeliverableRetentionSnapshots.AnyAsync(value => value.OrganizationId == organizationId
-            && (packageType == ReleasedDeliverablePackageType.LabResult ? value.LabResultReleaseId == packageId : value.AssemblyOutputReleaseId == packageId)
+            && (packageType == ReleasedDeliverablePackageType.TrialResult ? value.TrialResultReleaseId == packageId : packageType == ReleasedDeliverablePackageType.LabResult ? value.LabResultReleaseId == packageId : value.AssemblyOutputReleaseId == packageId)
             && (value.IsQuarantined || value.ByteDeletedAtUtc != null), cancellationToken)) throw ManagedReleaseRetentionService.Denied();
         if (options.Value.ReleasedDeliverableRetentionEnforcement)
             return await StartManagedAsync(files, organizationId, userId, packageType, packageId, scope,
@@ -270,7 +270,8 @@ public sealed class ReleasedDeliverableDownloadAttemptService(
         await db.Database.ExecuteSqlRawAsync($"SELECT id FROM {Table<Organization>(db)} WHERE id = {{0}} FOR SHARE", [organizationId], token);
         await db.Database.ExecuteSqlRawAsync($"SELECT id FROM {Table<User>(db)} WHERE id = {{0}} FOR SHARE", [userId], token);
         await db.Database.ExecuteSqlRawAsync($"SELECT id FROM {Table<ResultOutputPackage>(db)} WHERE id = {{0}} FOR SHARE", [packageId], token);
-        var orderId = await db.ResultOutputPackages.AsNoTracking().Where(value => value.Id == packageId).Select(value => value.LabServiceOrderId).SingleAsync(token);
+        var orderId = await db.ResultOutputPackages.AsNoTracking().Where(value => value.Id == packageId).Select(value => value.LabServiceOrderId).SingleAsync(token)
+            ?? throw ManagedReleaseRetentionService.Denied();
         await db.Database.ExecuteSqlRawAsync($"SELECT id FROM {Table<LabServiceOrder>(db)} WHERE id = {{0}} FOR SHARE", [orderId], token);
         var departmentId = await db.LabServiceOrders.AsNoTracking().Where(value => value.Id == orderId).Select(value => value.DepartmentId).SingleAsync(token);
         await db.Database.ExecuteSqlRawAsync($"SELECT id FROM {Table<OrganizationDepartment>(db)} WHERE id = {{0}} FOR SHARE", [departmentId], token);

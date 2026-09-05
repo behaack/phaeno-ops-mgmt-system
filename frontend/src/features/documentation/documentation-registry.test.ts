@@ -16,17 +16,17 @@ describe('documentation registry', () => {
       expect(entries.map((entry) => entry.order)).toEqual([
         ...(audience === 'phaeno'
           ? [
-              10, 15, 16, 17, 18, 19, 20, 21, 22, 25,
+              10, 15, 16, 17, 18, 19, 20, 21, 22, 25, 26,
               30, 31, 32, 33, 34,
               40, 41, 44, 45, 46,
               50, 51, 52, 53, 54, 55, 56, 57, 58,
               60, 70,
             ]
           : audience === 'prospect'
-            ? [10, 20, 25, 30, 40, 50, 60]
+            ? [10, 20, 24, 25, 30, 40, 50, 60]
             : audience === 'customer'
-              ? [10, 20, 30, 35, 40, 50, 60]
-              : [10, 20, 30, 40, 50, 60]),
+              ? [10, 20, 30, 35, 40, 45, 50, 60]
+              : [10, 20, 30, 40, 45, 50, 60]),
       ])
       expect(entries.every((entry) => entry.audience === audience)).toBe(true)
     }

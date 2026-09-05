@@ -1280,3 +1280,7 @@ Cleanup remains default-off. A replacement is created and scientifically approve
 through the owning release workflow, then explicitly linked; no link regenerates
 or silently restores an old object. Trial Project integration remains dependent
 on the separate Trial workflow and its unresolved scientific criteria.
+
+## Trial parent integration (2026-09-05)
+
+The distinct Trial workflow now invokes the existing PSeq Lab provider with a frozen approved workflow, creates shared shipments after Prospect acceptance and sample validation, and releases governed packages through the shared retention lifecycle. Complete packages freeze policy and close the Trial; partial packages do not start that clock. Trial holds serialize with scientific writes and byte cleanup. See `PROSPECT-TRIAL-PROJECT-PLAN.md` and `TRIAL-INTEGRATION-CLOSEOUT.md` for evidence and remaining production activation gates. Promotional Customer freebie issuance remains separate.

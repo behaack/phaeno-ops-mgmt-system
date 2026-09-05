@@ -21,6 +21,8 @@ using PhaenoPortal.App.Features.Website;
 using PhaenoPortal.App.Features.Website.Entities;
 using PhaenoPortal.App.Infrastructure.Persistence.Auditing;
 using System.Text;
+using PSeq.Operations.Commercial.Trials.Domain;
+using PhaenoPortal.App.Features.Trials;
 
 namespace PhaenoPortal.App.Infrastructure.Persistence;
 
@@ -61,6 +63,17 @@ public sealed class PSeqOperationsDbContext(
     public DbSet<InvitationDeliveryWebhookEvent> InvitationDeliveryWebhookEvents { get; set; }
 
     public DbSet<BusinessRoleAssignment> BusinessRoleAssignments { get; set; }
+
+    public DbSet<TrialProject> TrialProjects { get; set; }
+    public DbSet<TrialScope> TrialScopes { get; set; }
+    public DbSet<TrialDecision> TrialDecisions { get; set; }
+    public DbSet<TrialApprovalAuthority> TrialApprovalAuthorities { get; set; }
+    public DbSet<TrialDeliverableDefinition> TrialDeliverableDefinitions { get; set; }
+    public DbSet<TrialSample> TrialSamples { get; set; }
+    public DbSet<TrialReplacementAuthorization> TrialReplacementAuthorizations { get; set; }
+    public DbSet<TrialResultRelease> TrialResultReleases { get; set; }
+    public DbSet<TrialEvent> TrialEvents { get; set; }
+    public DbSet<TrialResultFile> TrialResultFiles { get; set; }
 
     public DbSet<BusinessRoleInvitationIntent> BusinessRoleInvitationIntents { get; set; }
 
@@ -507,6 +520,7 @@ public sealed class PSeqOperationsDbContext(
         OrderManagementModelConfiguration.Configure(modelBuilder, this.persistenceOptions.CommercialSchema);
         CommercialLabOperationsModelConfiguration.Configure(modelBuilder, this.persistenceOptions.CommercialSchema);
         CrmModelConfiguration.Configure(modelBuilder);
+        TrialModelConfiguration.Configure(modelBuilder);
         RelationshipManagementModelConfiguration.Configure(modelBuilder);
         LabOperationsModelConfiguration.Configure(modelBuilder, this.persistenceOptions.LaboratorySchema);
         WebsiteModelConfiguration.Configure(modelBuilder, this.persistenceOptions.WebsiteSchema);

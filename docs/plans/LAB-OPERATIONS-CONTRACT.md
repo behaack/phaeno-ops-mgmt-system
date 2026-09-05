@@ -715,3 +715,26 @@ The first two items are activation and future-integration boundaries, not gaps
 in the completed internal Lab Operations application scope. The registered
 provider and current workflows do not make a future external LIMS adapter or
 pipeline/file integration implemented.
+
+## Initial Trial contract extension (2026-09-05)
+
+`LabAuthorizeCommand.ApprovedWorkflowVersionId` optionally pins a Trial to the
+approved PSeq workflow version. The provider permits that previously approved
+version after catalog retirement; an unapproved draft is never eligible.
+`TrialProject` is now an active authorization source, with immutable organization
+and department ownership and one work authorization per submitted Trial sample.
+
+Governed package registration accepts either the existing Lab order/sample pair
+or the new `trialProjectId`/`trialSampleId` pair, with the other pair null. Both
+forms require matching organization and Lab work authorization. Idempotency replay
+checks the parent identity. Clean artifacts still need the existing Lab scientific
+approval and Result Release Manager boundary; a Trial reissue requires a new
+package correcting the same original sample and newly transferred objects.
+Subsequent Trial package approvals advance the work's projection version so every
+scientific decision has a distinct audit identity. Whole-Trial release and its
+retention snapshot are owned by the Trial aggregate, not a paid Lab order.
+
+Shared scientific/pipeline/shipping writes honor the Trial's current approval,
+acceptance and hold. Custody, receipt and exception documentation can continue
+while held. Completed Trials permit only governed correction/reissue work through
+the result path. See `TRIAL-INTEGRATION-CLOSEOUT.md` for release and activation gates.
