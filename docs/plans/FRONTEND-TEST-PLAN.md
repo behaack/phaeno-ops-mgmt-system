@@ -1,5 +1,20 @@
 # Frontend Test Plan
 
+## Portal documentation search — 2026-09-05
+
+All 168 frontend tests across 62 files passed; full lint/typecheck and production
+build passed. Existing registry tests retain all audience, identity, ordering and
+component guarantees. `documentation-search.test.tsx` adds cancellation and
+response-isolation checks across organization/Department changes, captured request
+headers, and bounded route input. Five Node publication tests cover fresh source
+artifacts, catalog/source validation, executable-MDX refusal, duplicate/Unicode
+heading anchors and invalid component mapping.
+
+The metadata catalog is shared by navigation, topic/workflow browsing, related
+guides and generated backend input. Generated files are validated separately from
+rendering code. Browser evidence, including the initial context/hydration input
+fix, is recorded in the E2E plan. No new dependency was added.
+
 ## General retention notices continuation (2026-09-05)
 
 This slice changes backend scheduling/delivery and audience-specific help prose.

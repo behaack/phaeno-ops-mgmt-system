@@ -21,6 +21,11 @@ export default tseslint.config(
   ...tseslint.configs.recommended,
   jsxA11y.flatConfigs.recommended,
   {
+    files: ['scripts/**/*.mjs'],
+    languageOptions: { globals: globals.node },
+    rules: { '@typescript-eslint/no-unused-vars': ['error', { varsIgnorePattern: '^_' }] },
+  },
+  {
     files: ['**/*.{ts,tsx}'],
     languageOptions: {
       ecmaVersion: 'latest',

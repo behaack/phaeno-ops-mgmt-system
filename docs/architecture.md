@@ -214,14 +214,19 @@ activates them in the same transaction as the Phaeno membership.
 
 User documentation is authored as portable MDX. Prospect, Customer, and Partner
 content is stored by locale, with `en-US` as the only current locale;
-Phaeno-only content may remain US English. The frontend registry owns audience,
-locale, slug, parent topic, overview label, summary, section, order, and review
-metadata. Phaeno Data Provisioning, Order Ops, and Lab Ops guides use one
+Phaeno-only content may remain US English. A validated data-only catalog owns
+audience, locale, slug, navigation, summary, review dates, controlled topics,
+workflows, guide type and related links; the registry separately maps components. Phaeno Data Provisioning, Order Ops, and Lab Ops guides use one
 expandable navigation level backed by independently routed MDX pages. The current
 organization is the exclusive audience boundary for the offered guide set;
 cross-audience routes are not exposed. Because the current corpus is compiled into
-browser assets, it contains no confidential procedures. Future help search will
-use a backend index with authenticated audience and locale filtering.
+browser assets, it contains no confidential procedures. Documentation search uses
+`Features/Documentation/Search`, an authenticated endpoint, and its own Lucene
+volume, readers and rebuild lifecycle. A generated, versioned guide artifact ships
+with the API; heading anchors share the MDX renderer rule. Audience and locale
+constraints precede search results and facet counts. Website search has separate
+endpoints, content and indexes. No application schema change is required. See
+`docs/documentation-search-operations.md` for packaging and recovery.
 
 ## Public Website
 

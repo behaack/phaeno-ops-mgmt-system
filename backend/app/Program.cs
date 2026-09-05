@@ -20,6 +20,7 @@ using PhaenoPortal.App.Features.FileManagement.Services;
 using PhaenoPortal.App.Features.LabOperations.Services;
 using PhaenoPortal.App.Features.OrderManagement.Services;
 using PhaenoPortal.App.Features.Website;
+using PhaenoPortal.App.Features.Documentation.Search;
 using PhaenoPortal.App.Infrastructure.Api;
 using PhaenoPortal.App.Infrastructure.Persistence;
 using PhaenoPortal.App.Infrastructure.Storage;
@@ -30,6 +31,7 @@ var builder = WebApplication.CreateBuilder(args);
 builder.Services.AddPersistence(builder.Configuration);
 builder.Services.AddFileStorage(builder.Configuration, builder.Environment);
 builder.Services.AddWebsiteApi(builder.Configuration, builder.Environment);
+builder.Services.AddDocumentationSearch(builder.Configuration);
 builder.Services.Configure<ClerkOptions>(
     builder.Configuration.GetSection(ClerkOptions.SectionName));
 builder.Services.Configure<BootstrapOptions>(

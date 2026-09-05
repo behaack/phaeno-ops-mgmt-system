@@ -1,5 +1,24 @@
 # Backend Test Plan
 
+## Portal documentation search — 2026-09-05
+
+All 51 focused documentation-search, Website API and Website crawler cases passed
+with zero failures/skips. `DocumentationSearchTests.cs` covers packaged corpus
+loading without frontend files, cached-index restart, corrupt-index recovery,
+guide removal/version mismatch, audience filtering before counts/facets/snippets,
+metadata browsing, short terms and literal syntax, relevance, bounds, index path
+separation, concurrent-process locks, rebuild cooldown and Website sentinel/index
+byte isolation. A loopback HTTP test exercises the real controller, MVC binding,
+authentication admission, error/envelope handling, no-store caching, forbidden
+scope overrides and rebuild denial. The test uses a synthetic authentication
+handler and active-user source; hosted Clerk/database admission remains separate.
+
+Measured locally with 55 guides: 100 sequential warm searches had p95 19.54 ms;
+one recorded initial index build took 183.09 ms. These are search-engine timings,
+not production identity/database/network measurements. Backend build and Release
+publish passed; the publish artifact contains the exact generated corpus and no
+frontend source directory. No database migration is introduced.
+
 ## General Lab/Assembly scheduled notices (2026-09-05)
 
 All 111 affected policy/download/PSeq/Department/persistence cases passed with

@@ -40,4 +40,7 @@
                       LogicalName="EmailTemplates/organization-invitation.en-US.txt"
                       WithCulture="false" />
   </ItemGroup>
+  <ItemGroup>
+    <Content Update="Documentation/corpus.json" CopyToOutputDirectory="PreserveNewest" CopyToPublishDirectory="PreserveNewest" />
+  </ItemGroup>
 </Project>

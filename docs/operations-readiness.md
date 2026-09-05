@@ -38,7 +38,7 @@ This document records how the application operates in the current repository and
 | Email and notices | Portal invitations use durable Mailgun attempts plus signed, idempotent delivery/permanent-failure webhooks behind `InvitationDelivery`. Production rejects incomplete Mailgun API/sender, public URL, or webhook-signing configuration; logging invitation delivery is Development/Test only. Invitation HTML and text are embedded, locale-named templates. Public Website contact/order templates use the same configured Mailgun account. |
 | Public Website API | Anonymous `/api/v1/web-ops` search, database ping, contact, and order endpoints plus `/public` document hosting are implemented in Portal. Historical data and public traffic have not been cut over. |
 | Background work | Hosted dispatchers retry invitation delivery, order integrations, order notifications, data-provisioning notices, and Lab-to-Commercial projection delivery. The historical governed PSeq worker processes only schedules without a policy snapshot. New governed releases use shared policy/completion-aware deadline admission; snapshot-backed warning/grace outboxes, concurrent checkpoints, stream revocation, general execution, and deletion activation remain incomplete. A hosted Website crawler rebuilds the Lucene index on its configured interval. |
-| Help | Browser-bundled MDX with Customer/Partner locale metadata and Phaeno US-English content. Backend search is not implemented. |
+| Help | Browser-bundled, audience-specific MDX and a validated metadata catalog. Dedicated authenticated documentation search and an independent Lucene volume are implemented locally, with packaged corpus validation and scoped facets. Deployment and hosted acceptance remain pending; see `docs/documentation-search-operations.md`. |
 | Organization/user administration UI | Invitation acceptance and Phaeno organization list/detail, request, entitlement, invitation, membership, conversion, lifecycle, and User management workspaces use durable APIs. Invitations retain the person’s name and intended membership role. Phaeno invitations and user edits consolidate Platform administrator and additive Laboratory roles; pending Laboratory-role intent activates only on acceptance, while external administration remains organization-scoped. |
 
 Phaeno Portal is the operational and commercial-source system of record. Its first-party CRM owns relationship and pipeline records, and its order workflows own the manual catalog, quotes, credit rules, and accounting source records. No ERP, accounting provider, third-party LIMS, or external CRM is connected to the running application; Laboratory execution is owned by the internal Lab Operations provider.
@@ -248,7 +248,7 @@ Until these gates are complete, a passing local build or test suite demonstrates
 
 - A general shared-folder and file-version product outside the feature-owned file boundaries.
 - A confidential Phaeno runbook delivery system; browser-bundled help must remain distributable.
-- Backend-indexed help search and additional Customer/Partner locales.
+- Deployment and hosted acceptance of documentation search; additional external guide locales.
 - Any external CRM integration until a fresh adapter plan is explicitly
   approved, implemented, and production-validated.
 - A third-party LIMS adapter and ownership cutover unless an approved future

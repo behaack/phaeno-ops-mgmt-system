@@ -8,6 +8,25 @@ export const defaultExternalDocumentationLocale: ExternalDocumentationLocale =
 
 const documentationMessagesByLocale = {
   'en-US': {
+    search: {
+      label: 'Search documentation', submit: 'Search guides',
+      placeholder: 'Search by task, topic, or keyword',
+      hint: 'Search guides for your current organization. Use at least 2 characters, or choose a filter.',
+      filters: 'Filters', topic: 'Topic', workflow: 'Workflow', contentType: 'Guide type', all: 'All',
+      clearFilters: 'Clear filters', unknownFilter: 'Unavailable filter',
+      results: 'Documentation search', loading: 'Searching guides…',
+      initial: 'Enter a task or keyword, or select a topic or workflow.',
+      count: (count: number) => `${count} ${count === 1 ? 'guide' : 'guides'} found`,
+      changed: 'Documentation has been updated. Refresh this page to search the current guides. If the update is still in progress, you can continue browsing guides.',
+      invalid: 'Use 2 to 200 characters and valid documentation filters.',
+      denied: 'Select an active organization to search its documentation.',
+      unavailable: 'Documentation search is temporarily unavailable. Try again, or browse the guides below.',
+      refresh: 'Refresh page', retry: 'Try again',
+      noMatches: 'No guides matched. Try fewer words, another term, or clear the filters.',
+      pagination: 'Search result pages', previous: 'Previous', next: 'Next',
+      page: (page: number, total: number) => `Page ${page} of ${total}`,
+      browseAll: 'Browse all guides', browse: 'Browse by topic', related: 'Related guides',
+    },
     helpCenter: 'Help center',
     guides: 'Guides',
     documentation: 'Documentation',

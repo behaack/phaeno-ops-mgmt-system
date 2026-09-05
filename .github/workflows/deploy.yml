@@ -212,6 +212,22 @@ jobs:
           printf '%s\n' "$DEPLOY_KNOWN_HOSTS" > ~/.ssh/known_hosts
           chmod 600 ~/.ssh/deploy_key ~/.ssh/known_hosts
 
+      - name: Set up documentation build runtime
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+
+      - name: Set up documentation package manager
+        uses: pnpm/action-setup@v4
+        with:
+          version: 10.24.0
+
+      - name: Validate packaged Portal documentation
+        working-directory: frontend
+        run: |
+          pnpm install --frozen-lockfile
+          node scripts/generate-documentation.mjs --check
+
       - name: Create deployment archive
         env:
           DEPLOY_ARCHIVE: ${{ steps.release.outputs.archive_name }}

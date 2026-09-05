@@ -35,7 +35,8 @@ external NGS provider runbook, or evidence of production activation.
 - Customer content: `frontend/src/content/docs/{locale}/customer/*.mdx`
 - Partner content: `frontend/src/content/docs/{locale}/partner/*.mdx`
 - Phaeno content: `frontend/src/content/docs/phaeno/*.mdx`
-- Document metadata and indexable identity: `frontend/src/features/documentation/documentation-registry.ts`
+- Canonical metadata and taxonomy: `frontend/src/features/documentation/documentation-catalog.json`
+- Typed metadata and component mapping: `frontend/src/features/documentation/documentation-metadata.ts` and `documentation-registry.ts`
 - Help landing page: `/docs`
 - Guide pages: `/docs/{audience}/{slug}`
 
@@ -135,12 +136,50 @@ exception-recovery screens that benefit from visual orientation. Do not block
 documentation completeness on a screenshot while a screen is still changing;
 accurate prose remains the required source of truth.
 
-## Future search
+## Documentation search and metadata
 
-Help search is intentionally deferred. When introduced, the backend will index the MDX corpus and registry metadata rather than relying on a browser-only search index. Search results must be filtered by the caller's authenticated selected-organization audience before results or excerpts are returned.
+The help center uses a dedicated authenticated backend search endpoint at
+`GET /api/documentation/search`. Its corpus, Lucene index, options, rebuilds and
+operational endpoints are separate from both public and preview Website search.
+The active internal user and selected organization's active membership determine
+the only permitted audience. Audience/locale filters apply before ranking,
+excerpts, totals and facets. Browser-bundled guides remain distribution-safe;
+metadata is not a confidentiality boundary.
 
-The stable search identity is `{audience}/{locale}/{slug}` for Prospect, Customer, and Partner guides and `{audience}/{slug}` for US-English-only Phaeno guides. The initial indexable fields are locale, audience, slug, title, summary, section, review date, headings, and rendered plain text. The backend indexer should ignore code used for rendering and must not index unpublished plans, repository notes, or secrets.
+Maintain `frontend/src/features/documentation/documentation-catalog.json` alongside
+the MDX files. Each guide retains its audience, locale, slug, title, summary,
+navigation group, parent, order and review date, and adds controlled topics,
+workflows, content type, task keywords, aliases, related guide identities and
+publication status. Stable taxonomy IDs have localized labels. Optional role
+labels describe procedures and never grant rights. Related guides stay in the
+same audience and locale. Existing one-level sidebar groups remain intact.
 
-The frontend should consume a tenant-safe search API, filter Prospect, Customer, and Partner results to the requested supported locale, and link results back to the canonical guide route. Search ranking, locale fallback, typo tolerance, synonyms, analytics, and re-indexing policy remain future implementation decisions.
+The stable identity is `{audience}/{locale}/{slug}` for external guides and
+`{audience}/{slug}` for Phaeno. Phaeno's source locale remains null; its index uses
+US English. Only published registered guides are indexed. Unknown taxonomy,
+duplicate identities, invalid dates, broken relationships, deeper/cyclic parents,
+source escapes and executable MDX fail publication validation.
 
-Trial integration adds maintained Prospect and Phaeno `trial-projects` guides plus Customer and Partner `trial-history` guides (reviewed 2026-09-05). They explain frozen PSeq scope, authority boundaries, RUO/no-PHI acceptance, sample and shipping flow, partial versus complete release, retention receipts, conversion and explicit closeout. Guide content is bundled and safe for public distribution; API authorization remains authoritative.
+When adding a guide, also register its MDX component against its canonical
+identity in `documentation-registry.ts`; generation validates this mapping.
+
+After guide or catalog edits, run `pnpm docs:generate` from `frontend/`. This emits
+the reviewed `backend/app/Documentation/corpus.json` and frontend corpus version.
+Keep both generated artifacts with the source change. `pnpm docs:check` verifies
+that they are current. Frontend production builds regenerate their version;
+API release preparation independently validates the entire artifact before
+packaging it. The API needs neither Node nor frontend files at runtime.
+
+Rendering and extraction share `frontend/scripts/documentation-markdown.mjs` for
+heading anchors. Search matches title, heading, summary, body, taxonomy labels and
+authored terminology. It returns one result per guide with a matching section,
+escaped highlights and distinct-guide facet counts. Two-character abbreviations
+such as QC work; broad fuzzy matching and AI answers are not included.
+
+Users can browse topics, filter by workflow/guide type and follow related guides.
+Search text, filters and page are preserved in `/docs/search` URLs. Organization
+or department changes cancel previous requests and clear prior-context results.
+An index outage is shown separately from no matches; corpus mismatch offers a
+refresh and guide browsing. See [the operations runbook](documentation-search-operations.md)
+and [the owning plan](plans/PORTAL-DOCUMENTATION-SEARCH-PLAN.md) for release and
+verification boundaries.

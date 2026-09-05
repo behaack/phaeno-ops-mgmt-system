@@ -1,4 +1,4 @@
-import { Link } from '@tanstack/react-router'
+import { Link, useRouterState } from '@tanstack/react-router'
 import {
   ArrowRightLeft,
   BadgeCheck,
@@ -34,7 +34,8 @@ import {
   Workflow,
   type LucideIcon,
 } from 'lucide-react'
-import { useEffect, useState } from 'react'
+import { useEffect, useState, type ReactNode } from 'react'
+import { DocumentationSearchBar, DocumentationTopics, DocumentationRelatedGuides } from './DocumentationSearch'
 
 import type { OrganizationKind } from '#/api/session'
 import { Alert, AlertDescription } from '#/components/ui/alert'
@@ -71,6 +72,26 @@ const messages = getDocumentationMessages(documentationLocale)
 type DocumentationPageProps = {
   audience?: string
   slug?: string
+}
+
+export function DocumentationLayout({ children }: { children: ReactNode }) {
+  const { session, selectedOrganizationId, selectedDepartmentId } = usePhaenoSession()
+  const audience = getAudienceForOrganization(getSelectedMembership(session, selectedOrganizationId)?.organizationKind)
+  const pathname = useRouterState({ select: (state) => state.location.pathname })
+  if (!audience) return <DocumentationUnavailable />
+  const activeSlug = pathname.split('/')[3]
+  const entry = activeSlug ? getDocumentationEntry(audience, activeSlug) : undefined
+  return (
+    <main className="py-8">
+      <ResponsiveSidebar workspaceLabel={messages.documentation} activeLabel={entry?.title ?? messages.guides}
+        navigation={(closeSidebar) => <DocumentationNavigation audience={audience} activeSlug={activeSlug} onNavigate={closeSidebar} />}>
+        <div className="page-wrap min-w-0 px-4">
+          <DocumentationSearchBar key={`${selectedOrganizationId}:${selectedDepartmentId}:${audience}`} audience={audience} />
+          {children}
+        </div>
+      </ResponsiveSidebar>
+    </main>
+  )
 }
 
 export function DocumentationPage({ audience, slug }: DocumentationPageProps) {
@@ -122,18 +143,7 @@ function DocumentationIndex({ audience }: { audience: DocumentationAudience }) {
   const audienceDetails = messages.audiences[audience]
 
   return (
-    <main className="py-8">
-      <ResponsiveSidebar
-        workspaceLabel={messages.documentation}
-        activeLabel={messages.guides}
-        navigation={(closeSidebar) => (
-          <DocumentationNavigation
-            audience={audience}
-            onNavigate={closeSidebar}
-          />
-        )}
-      >
-        <div className="page-wrap px-4">
+    <div>
           <section className="mb-7 max-w-3xl">
             <Badge variant="secondary" className="mb-3">
               {messages.helpCenter}
@@ -146,6 +156,7 @@ function DocumentationIndex({ audience }: { audience: DocumentationAudience }) {
             </p>
           </section>
 
+          <DocumentationTopics audience={audience} />
           <section aria-labelledby="guide-list-heading">
             <h2 id="guide-list-heading" className="mb-4 text-lg font-semibold">
               {messages.guides}
@@ -180,9 +191,7 @@ function DocumentationIndex({ audience }: { audience: DocumentationAudience }) {
               })}
             </div>
           </section>
-        </div>
-      </ResponsiveSidebar>
-    </main>
+    </div>
   )
 }
 
@@ -201,19 +210,7 @@ function DocumentationArticle({
   const Content = entry.Content
 
   return (
-    <main className="py-8">
-      <ResponsiveSidebar
-        workspaceLabel={messages.documentation}
-        activeLabel={entry.title}
-        navigation={(closeSidebar) => (
-          <DocumentationNavigation
-            audience={audience}
-            activeSlug={slug}
-            onNavigate={closeSidebar}
-          />
-        )}
-      >
-        <div className="page-wrap px-4">
+    <div>
           <div className="mb-6">
             <Link
               to="/docs"
@@ -238,6 +235,7 @@ function DocumentationArticle({
               <Content components={documentationMdxComponents} />
             </div>
 
+            <DocumentationRelatedGuides entry={entry} />
             <nav
               aria-label={messages.previousAndNextGuides}
               className="mt-10 grid gap-3 border-t pt-6 sm:grid-cols-2"
@@ -264,9 +262,7 @@ function DocumentationArticle({
               ) : null}
             </nav>
           </article>
-        </div>
-      </ResponsiveSidebar>
-    </main>
+    </div>
   )
 }
 
@@ -474,7 +470,7 @@ function DocumentationUnavailable({ missingGuide = false }: { missingGuide?: boo
   )
 }
 
-function getAudienceForOrganization(
+export function getAudienceForOrganization(
   kind: OrganizationKind | null | undefined,
 ): DocumentationAudience | null {
   switch (kind) {

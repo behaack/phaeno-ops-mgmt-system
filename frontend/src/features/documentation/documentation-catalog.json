@@ -1,0 +1,1871 @@
+{
+  "schemaVersion": 1,
+  "taxonomy": {
+    "topics": {
+      "access": {
+        "en-US": "Accounts and access"
+      },
+      "shipping": {
+        "en-US": "Sample shipping"
+      },
+      "trials": {
+        "en-US": "Trial Projects"
+      },
+      "data": {
+        "en-US": "Data and downloads"
+      },
+      "orders": {
+        "en-US": "Orders"
+      },
+      "billing": {
+        "en-US": "Billing and payments"
+      },
+      "crm": {
+        "en-US": "Customer relationships"
+      },
+      "laboratory": {
+        "en-US": "Laboratory work"
+      },
+      "governance": {
+        "en-US": "Data governance"
+      },
+      "recovery": {
+        "en-US": "Troubleshooting and recovery"
+      },
+      "configuration": {
+        "en-US": "Configuration"
+      },
+      "basics": {
+        "en-US": "Getting started"
+      }
+    },
+    "workflows": {
+      "onboarding": {
+        "en-US": "Getting started"
+      },
+      "trial-projects": {
+        "en-US": "Trial Projects"
+      },
+      "data-library": {
+        "en-US": "Data Library"
+      },
+      "lab-services": {
+        "en-US": "Lab services"
+      },
+      "lab-operations": {
+        "en-US": "Lab Operations"
+      },
+      "order-operations": {
+        "en-US": "Order Operations"
+      },
+      "data-assembly": {
+        "en-US": "Data assembly"
+      },
+      "crm": {
+        "en-US": "CRM"
+      },
+      "platform-administration": {
+        "en-US": "Platform administration"
+      }
+    },
+    "navigationGroups": {
+      "trial-project": {
+        "en-US": "Trial Project"
+      },
+      "basics": {
+        "en-US": "Basics"
+      },
+      "data-access": {
+        "en-US": "Data access"
+      },
+      "organization": {
+        "en-US": "Organization"
+      },
+      "support": {
+        "en-US": "Support"
+      },
+      "laboratory-work": {
+        "en-US": "Laboratory work"
+      },
+      "data-and-access": {
+        "en-US": "Data and access"
+      },
+      "partner-work": {
+        "en-US": "Partner work"
+      },
+      "customer-relationship-management": {
+        "en-US": "Customer relationship management"
+      },
+      "platform-operations": {
+        "en-US": "Platform operations"
+      },
+      "data-provisioning": {
+        "en-US": "Data provisioning"
+      },
+      "order-operations": {
+        "en-US": "Order operations"
+      },
+      "laboratory-operations": {
+        "en-US": "Laboratory operations"
+      }
+    },
+    "contentTypes": {
+      "overview": {
+        "en-US": "Overview"
+      },
+      "guide": {
+        "en-US": "Guide"
+      },
+      "reference": {
+        "en-US": "Reference"
+      },
+      "troubleshooting": {
+        "en-US": "Troubleshooting"
+      }
+    },
+    "roles": {
+      "organization-admin": {
+        "en-US": "Organization administrator"
+      },
+      "department-admin": {
+        "en-US": "Department administrator"
+      },
+      "member": {
+        "en-US": "Member"
+      }
+    }
+  },
+  "guides": [
+    {
+      "audience": "phaeno",
+      "locale": null,
+      "slug": "trial-projects",
+      "title": "Trial Projects",
+      "summary": "Scope, approve, execute, release, and close Trial Projects using existing PSeq workflows.",
+      "order": 26,
+      "reviewedAt": "2026-09-05",
+      "navigationGroup": "trial-project",
+      "contentType": "guide",
+      "topicIds": [
+        "trials"
+      ],
+      "workflowIds": [
+        "trial-projects"
+      ],
+      "taskKeywords": [
+        "Trial Projects",
+        "trial projects"
+      ],
+      "aliases": [
+        "trial acceptance",
+        "pilot"
+      ],
+      "applicableRoles": [],
+      "relatedGuideIds": [],
+      "publicationStatus": "published",
+      "sourcePath": "src/content/docs/phaeno/trial-projects.mdx"
+    },
+    {
+      "audience": "partner",
+      "locale": "en-US",
+      "slug": "trial-history",
+      "title": "Trial history",
+      "summary": "Find preserved Trial scope, results, and retention receipts after conversion.",
+      "order": 45,
+      "reviewedAt": "2026-09-05",
+      "navigationGroup": "trial-project",
+      "contentType": "guide",
+      "topicIds": [
+        "trials"
+      ],
+      "workflowIds": [
+        "trial-projects"
+      ],
+      "taskKeywords": [
+        "Trial history",
+        "trial history"
+      ],
+      "aliases": [
+        "trial acceptance",
+        "pilot"
+      ],
+      "applicableRoles": [],
+      "relatedGuideIds": [
+        "partner/en-US/data-and-organization"
+      ],
+      "publicationStatus": "published",
+      "sourcePath": "src/content/docs/en-US/partner/trial-history.mdx"
+    },
+    {
+      "audience": "customer",
+      "locale": "en-US",
+      "slug": "trial-history",
+      "title": "Trial history",
+      "summary": "Find preserved Trial scope, results, and retention receipts after conversion.",
+      "order": 45,
+      "reviewedAt": "2026-09-05",
+      "navigationGroup": "trial-project",
+      "contentType": "guide",
+      "topicIds": [
+        "trials"
+      ],
+      "workflowIds": [
+        "trial-projects"
+      ],
+      "taskKeywords": [
+        "Trial history",
+        "trial history"
+      ],
+      "aliases": [
+        "trial acceptance",
+        "pilot"
+      ],
+      "applicableRoles": [],
+      "relatedGuideIds": [
+        "customer/en-US/results-and-billing",
+        "customer/en-US/data-and-organization"
+      ],
+      "publicationStatus": "published",
+      "sourcePath": "src/content/docs/en-US/customer/trial-history.mdx"
+    },
+    {
+      "audience": "prospect",
+      "locale": "en-US",
+      "slug": "trial-projects",
+      "title": "Trial Projects",
+      "summary": "Review and accept approved Trial scope, submit coded RNA, and download released results.",
+      "order": 24,
+      "reviewedAt": "2026-09-05",
+      "navigationGroup": "trial-project",
+      "contentType": "guide",
+      "topicIds": [
+        "trials"
+      ],
+      "workflowIds": [
+        "trial-projects"
+      ],
+      "taskKeywords": [
+        "Trial Projects",
+        "trial projects"
+      ],
+      "aliases": [
+        "trial acceptance",
+        "pilot"
+      ],
+      "applicableRoles": [],
+      "relatedGuideIds": [
+        "prospect/en-US/sample-shipping",
+        "prospect/en-US/data-library"
+      ],
+      "publicationStatus": "published",
+      "sourcePath": "src/content/docs/en-US/prospect/trial-projects.mdx"
+    },
+    {
+      "audience": "prospect",
+      "locale": "en-US",
+      "slug": "getting-started",
+      "title": "Getting started",
+      "summary": "Confirm the current organization, understand Prospect access, and find granted data.",
+      "order": 10,
+      "reviewedAt": "2026-09-05",
+      "navigationGroup": "basics",
+      "contentType": "overview",
+      "topicIds": [
+        "basics"
+      ],
+      "workflowIds": [
+        "onboarding"
+      ],
+      "taskKeywords": [
+        "Getting started",
+        "getting started"
+      ],
+      "aliases": [],
+      "applicableRoles": [],
+      "relatedGuideIds": [],
+      "publicationStatus": "published",
+      "sourcePath": "src/content/docs/en-US/prospect/getting-started.mdx"
+    },
+    {
+      "audience": "prospect",
+      "locale": "en-US",
+      "slug": "account-and-access",
+      "title": "Account and access",
+      "summary": "Accept invitations, complete MFA, confirm the current organization, understand roles, and resolve access problems.",
+      "order": 20,
+      "reviewedAt": "2026-09-04",
+      "navigationGroup": "basics",
+      "contentType": "guide",
+      "topicIds": [
+        "access"
+      ],
+      "workflowIds": [
+        "platform-administration"
+      ],
+      "taskKeywords": [
+        "Account and access",
+        "account and access"
+      ],
+      "aliases": [
+        "MFA",
+        "2FA",
+        "admin",
+        "administrator",
+        "permissions"
+      ],
+      "applicableRoles": [],
+      "relatedGuideIds": [],
+      "publicationStatus": "published",
+      "sourcePath": "src/content/docs/en-US/prospect/account-and-access.mdx"
+    },
+    {
+      "audience": "prospect",
+      "locale": "en-US",
+      "slug": "sample-shipping",
+      "title": "Prepare and ship samples",
+      "summary": "Associate Phaeno-supplied tube barcodes with your sample identifiers, retain the crosswalk, and ship an authorized Trial Project package.",
+      "order": 25,
+      "reviewedAt": "2026-09-05",
+      "navigationGroup": "trial-project",
+      "contentType": "guide",
+      "topicIds": [
+        "shipping"
+      ],
+      "workflowIds": [
+        "trial-projects"
+      ],
+      "taskKeywords": [
+        "Prepare and ship samples",
+        "sample shipping"
+      ],
+      "aliases": [
+        "tube barcode",
+        "crosswalk",
+        "RNA",
+        "shipment"
+      ],
+      "applicableRoles": [],
+      "relatedGuideIds": [
+        "prospect/en-US/trial-projects"
+      ],
+      "publicationStatus": "published",
+      "sourcePath": "src/content/docs/en-US/prospect/sample-shipping.mdx"
+    },
+    {
+      "audience": "prospect",
+      "locale": "en-US",
+      "slug": "data-library",
+      "title": "Use the Data Library",
+      "summary": "Review explicitly granted package versions and verify file or archive downloads.",
+      "order": 30,
+      "reviewedAt": "2026-08-29",
+      "navigationGroup": "data-access",
+      "contentType": "guide",
+      "topicIds": [
+        "data"
+      ],
+      "workflowIds": [
+        "data-library"
+      ],
+      "taskKeywords": [
+        "Use the Data Library",
+        "data library"
+      ],
+      "aliases": [
+        "download",
+        "files"
+      ],
+      "applicableRoles": [],
+      "relatedGuideIds": [
+        "prospect/en-US/data-governance-and-downloads"
+      ],
+      "publicationStatus": "published",
+      "sourcePath": "src/content/docs/en-US/prospect/data-library.mdx"
+    },
+    {
+      "audience": "prospect",
+      "locale": "en-US",
+      "slug": "data-governance-and-downloads",
+      "title": "Data governance and downloads",
+      "summary": "Understand revocation, quarantine, retirement, download history, and safe governance responses.",
+      "order": 40,
+      "reviewedAt": "2026-09-04",
+      "navigationGroup": "data-access",
+      "contentType": "guide",
+      "topicIds": [
+        "data",
+        "governance"
+      ],
+      "workflowIds": [
+        "data-library"
+      ],
+      "taskKeywords": [
+        "Data governance and downloads",
+        "data governance and downloads"
+      ],
+      "aliases": [
+        "download",
+        "files",
+        "retention",
+        "grace period"
+      ],
+      "applicableRoles": [],
+      "relatedGuideIds": [
+        "prospect/en-US/data-library"
+      ],
+      "publicationStatus": "published",
+      "sourcePath": "src/content/docs/en-US/prospect/data-governance-and-downloads.mdx"
+    },
+    {
+      "audience": "prospect",
+      "locale": "en-US",
+      "slug": "organization-and-transition",
+      "title": "Organization access and transition",
+      "summary": "Understand membership boundaries and what changes when Phaeno converts a Prospect relationship.",
+      "order": 50,
+      "reviewedAt": "2026-08-20",
+      "navigationGroup": "organization",
+      "contentType": "guide",
+      "topicIds": [
+        "access"
+      ],
+      "workflowIds": [
+        "onboarding"
+      ],
+      "taskKeywords": [
+        "Organization access and transition",
+        "organization and transition"
+      ],
+      "aliases": [
+        "MFA",
+        "2FA",
+        "admin",
+        "administrator",
+        "permissions"
+      ],
+      "applicableRoles": [],
+      "relatedGuideIds": [],
+      "publicationStatus": "published",
+      "sourcePath": "src/content/docs/en-US/prospect/organization-and-transition.mdx"
+    },
+    {
+      "audience": "prospect",
+      "locale": "en-US",
+      "slug": "statuses-and-troubleshooting",
+      "title": "Statuses and troubleshooting",
+      "summary": "Resolve common grant, package, download, checksum, organization, and access problems.",
+      "order": 60,
+      "reviewedAt": "2026-07-16",
+      "navigationGroup": "support",
+      "contentType": "troubleshooting",
+      "topicIds": [
+        "recovery"
+      ],
+      "workflowIds": [
+        "onboarding"
+      ],
+      "taskKeywords": [
+        "Statuses and troubleshooting",
+        "statuses and troubleshooting"
+      ],
+      "aliases": [
+        "error",
+        "troubleshooting"
+      ],
+      "applicableRoles": [],
+      "relatedGuideIds": [],
+      "publicationStatus": "published",
+      "sourcePath": "src/content/docs/en-US/prospect/statuses-and-troubleshooting.mdx"
+    },
+    {
+      "audience": "customer",
+      "locale": "en-US",
+      "slug": "getting-started",
+      "title": "Getting started",
+      "summary": "Confirm the current organization, understand access, and find Customer work.",
+      "order": 10,
+      "reviewedAt": "2026-09-05",
+      "navigationGroup": "basics",
+      "contentType": "overview",
+      "topicIds": [
+        "basics"
+      ],
+      "workflowIds": [
+        "onboarding"
+      ],
+      "taskKeywords": [
+        "Getting started",
+        "getting started"
+      ],
+      "aliases": [],
+      "applicableRoles": [],
+      "relatedGuideIds": [],
+      "publicationStatus": "published",
+      "sourcePath": "src/content/docs/en-US/customer/getting-started.mdx"
+    },
+    {
+      "audience": "customer",
+      "locale": "en-US",
+      "slug": "account-and-access",
+      "title": "Account and access",
+      "summary": "Accept invitations, complete MFA, confirm the current organization, understand roles, and resolve access problems.",
+      "order": 20,
+      "reviewedAt": "2026-09-04",
+      "navigationGroup": "basics",
+      "contentType": "guide",
+      "topicIds": [
+        "access"
+      ],
+      "workflowIds": [
+        "platform-administration"
+      ],
+      "taskKeywords": [
+        "Account and access",
+        "account and access"
+      ],
+      "aliases": [
+        "MFA",
+        "2FA",
+        "admin",
+        "administrator",
+        "permissions"
+      ],
+      "applicableRoles": [],
+      "relatedGuideIds": [],
+      "publicationStatus": "published",
+      "sourcePath": "src/content/docs/en-US/customer/account-and-access.mdx"
+    },
+    {
+      "audience": "customer",
+      "locale": "en-US",
+      "slug": "lab-services",
+      "title": "Request laboratory services",
+      "summary": "Price a Job from its sample profile, then enter or import, finalize, and ship its sample list.",
+      "order": 30,
+      "reviewedAt": "2026-09-03",
+      "navigationGroup": "laboratory-work",
+      "contentType": "guide",
+      "topicIds": [
+        "laboratory"
+      ],
+      "workflowIds": [
+        "lab-services"
+      ],
+      "taskKeywords": [
+        "Request laboratory services",
+        "lab services"
+      ],
+      "aliases": [
+        "QC",
+        "quality control",
+        "PSeq"
+      ],
+      "applicableRoles": [],
+      "relatedGuideIds": [
+        "customer/en-US/sample-shipping",
+        "customer/en-US/results-and-billing"
+      ],
+      "publicationStatus": "published",
+      "sourcePath": "src/content/docs/en-US/customer/lab-services.mdx"
+    },
+    {
+      "audience": "customer",
+      "locale": "en-US",
+      "slug": "sample-shipping",
+      "title": "Prepare and ship samples",
+      "summary": "Match each Phaeno-supplied tube to a finalized sample tube slot, retain the crosswalk, and ship the package.",
+      "order": 35,
+      "reviewedAt": "2026-08-22",
+      "navigationGroup": "laboratory-work",
+      "contentType": "guide",
+      "topicIds": [
+        "shipping"
+      ],
+      "workflowIds": [
+        "lab-services"
+      ],
+      "taskKeywords": [
+        "Prepare and ship samples",
+        "sample shipping"
+      ],
+      "aliases": [
+        "tube barcode",
+        "crosswalk",
+        "RNA",
+        "shipment"
+      ],
+      "applicableRoles": [],
+      "relatedGuideIds": [
+        "customer/en-US/lab-services"
+      ],
+      "publicationStatus": "published",
+      "sourcePath": "src/content/docs/en-US/customer/sample-shipping.mdx"
+    },
+    {
+      "audience": "customer",
+      "locale": "en-US",
+      "slug": "results-and-billing",
+      "title": "Results and billing",
+      "summary": "Understand governed sample-level result release and POMS invoices, payments, and adjustments.",
+      "order": 40,
+      "reviewedAt": "2026-09-05",
+      "navigationGroup": "laboratory-work",
+      "contentType": "guide",
+      "topicIds": [
+        "governance",
+        "orders",
+        "billing"
+      ],
+      "workflowIds": [
+        "order-operations"
+      ],
+      "taskKeywords": [
+        "Results and billing",
+        "results and billing"
+      ],
+      "aliases": [
+        "retention",
+        "grace period",
+        "invoice",
+        "payment",
+        "credit"
+      ],
+      "applicableRoles": [],
+      "relatedGuideIds": [],
+      "publicationStatus": "published",
+      "sourcePath": "src/content/docs/en-US/customer/results-and-billing.mdx"
+    },
+    {
+      "audience": "customer",
+      "locale": "en-US",
+      "slug": "data-and-organization",
+      "title": "Data Library and organization access",
+      "summary": "Use released lab-job data, assigned curated packages, and Customer organization access.",
+      "order": 50,
+      "reviewedAt": "2026-09-04",
+      "navigationGroup": "data-and-access",
+      "contentType": "guide",
+      "topicIds": [
+        "data"
+      ],
+      "workflowIds": [
+        "data-library"
+      ],
+      "taskKeywords": [
+        "Data Library and organization access",
+        "data and organization"
+      ],
+      "aliases": [
+        "download",
+        "files"
+      ],
+      "applicableRoles": [],
+      "relatedGuideIds": [],
+      "publicationStatus": "published",
+      "sourcePath": "src/content/docs/en-US/customer/data-and-organization.mdx"
+    },
+    {
+      "audience": "customer",
+      "locale": "en-US",
+      "slug": "statuses-and-troubleshooting",
+      "title": "Statuses and troubleshooting",
+      "summary": "Interpret job, sample, quote, payment, scan, and release states and resolve common problems.",
+      "order": 60,
+      "reviewedAt": "2026-08-26",
+      "navigationGroup": "support",
+      "contentType": "troubleshooting",
+      "topicIds": [
+        "recovery"
+      ],
+      "workflowIds": [
+        "onboarding"
+      ],
+      "taskKeywords": [
+        "Statuses and troubleshooting",
+        "statuses and troubleshooting"
+      ],
+      "aliases": [
+        "error",
+        "troubleshooting"
+      ],
+      "applicableRoles": [],
+      "relatedGuideIds": [],
+      "publicationStatus": "published",
+      "sourcePath": "src/content/docs/en-US/customer/statuses-and-troubleshooting.mdx"
+    },
+    {
+      "audience": "partner",
+      "locale": "en-US",
+      "slug": "getting-started",
+      "title": "Getting started",
+      "summary": "Confirm the current Partner, understand access, and find Partner work.",
+      "order": 10,
+      "reviewedAt": "2026-09-05",
+      "navigationGroup": "basics",
+      "contentType": "overview",
+      "topicIds": [
+        "basics"
+      ],
+      "workflowIds": [
+        "onboarding"
+      ],
+      "taskKeywords": [
+        "Getting started",
+        "getting started"
+      ],
+      "aliases": [],
+      "applicableRoles": [],
+      "relatedGuideIds": [],
+      "publicationStatus": "published",
+      "sourcePath": "src/content/docs/en-US/partner/getting-started.mdx"
+    },
+    {
+      "audience": "partner",
+      "locale": "en-US",
+      "slug": "account-and-access",
+      "title": "Account and access",
+      "summary": "Accept invitations, complete MFA, confirm the current Partner, understand roles, and resolve access problems.",
+      "order": 20,
+      "reviewedAt": "2026-09-04",
+      "navigationGroup": "basics",
+      "contentType": "guide",
+      "topicIds": [
+        "access"
+      ],
+      "workflowIds": [
+        "platform-administration"
+      ],
+      "taskKeywords": [
+        "Account and access",
+        "account and access"
+      ],
+      "aliases": [
+        "MFA",
+        "2FA",
+        "admin",
+        "administrator",
+        "permissions"
+      ],
+      "applicableRoles": [],
+      "relatedGuideIds": [],
+      "publicationStatus": "published",
+      "sourcePath": "src/content/docs/en-US/partner/account-and-access.mdx"
+    },
+    {
+      "audience": "partner",
+      "locale": "en-US",
+      "slug": "reagent-orders",
+      "title": "Order reagents",
+      "summary": "Use negotiated offerings, place orders, approve changes, and track shipments.",
+      "order": 30,
+      "reviewedAt": "2026-08-26",
+      "navigationGroup": "partner-work",
+      "contentType": "guide",
+      "topicIds": [
+        "orders"
+      ],
+      "workflowIds": [
+        "order-operations"
+      ],
+      "taskKeywords": [
+        "Order reagents",
+        "reagent orders"
+      ],
+      "aliases": [],
+      "applicableRoles": [],
+      "relatedGuideIds": [],
+      "publicationStatus": "published",
+      "sourcePath": "src/content/docs/en-US/partner/reagent-orders.mdx"
+    },
+    {
+      "audience": "partner",
+      "locale": "en-US",
+      "slug": "data-assembly",
+      "title": "Request data assembly",
+      "summary": "Submit inputs, accept a job quote, follow processing, and download outputs.",
+      "order": 40,
+      "reviewedAt": "2026-09-05",
+      "navigationGroup": "partner-work",
+      "contentType": "guide",
+      "topicIds": [
+        "data"
+      ],
+      "workflowIds": [
+        "data-assembly"
+      ],
+      "taskKeywords": [
+        "Request data assembly",
+        "data assembly"
+      ],
+      "aliases": [
+        "download",
+        "files"
+      ],
+      "applicableRoles": [],
+      "relatedGuideIds": [],
+      "publicationStatus": "published",
+      "sourcePath": "src/content/docs/en-US/partner/data-assembly.mdx"
+    },
+    {
+      "audience": "partner",
+      "locale": "en-US",
+      "slug": "data-and-organization",
+      "title": "Data Library, billing, and organization access",
+      "summary": "Use curated data, understand commercial records, and manage Partner membership.",
+      "order": 50,
+      "reviewedAt": "2026-09-04",
+      "navigationGroup": "data-and-access",
+      "contentType": "guide",
+      "topicIds": [
+        "data"
+      ],
+      "workflowIds": [
+        "data-library"
+      ],
+      "taskKeywords": [
+        "Data Library, billing, and organization access",
+        "data and organization"
+      ],
+      "aliases": [
+        "download",
+        "files"
+      ],
+      "applicableRoles": [],
+      "relatedGuideIds": [],
+      "publicationStatus": "published",
+      "sourcePath": "src/content/docs/en-US/partner/data-and-organization.mdx"
+    },
+    {
+      "audience": "partner",
+      "locale": "en-US",
+      "slug": "statuses-and-troubleshooting",
+      "title": "Statuses and troubleshooting",
+      "summary": "Interpret reagent, assembly, commercial, scan, shipment, and release states.",
+      "order": 60,
+      "reviewedAt": "2026-08-26",
+      "navigationGroup": "support",
+      "contentType": "troubleshooting",
+      "topicIds": [
+        "recovery"
+      ],
+      "workflowIds": [
+        "onboarding"
+      ],
+      "taskKeywords": [
+        "Statuses and troubleshooting",
+        "statuses and troubleshooting"
+      ],
+      "aliases": [
+        "error",
+        "troubleshooting"
+      ],
+      "applicableRoles": [],
+      "relatedGuideIds": [],
+      "publicationStatus": "published",
+      "sourcePath": "src/content/docs/en-US/partner/statuses-and-troubleshooting.mdx"
+    },
+    {
+      "audience": "phaeno",
+      "locale": null,
+      "slug": "getting-started",
+      "title": "Phaeno operations guide",
+      "summary": "Select the Phaeno workspace, find operational tools, and support users safely.",
+      "order": 10,
+      "reviewedAt": "2026-09-05",
+      "navigationGroup": "basics",
+      "contentType": "overview",
+      "topicIds": [
+        "basics"
+      ],
+      "workflowIds": [
+        "onboarding"
+      ],
+      "taskKeywords": [
+        "Phaeno operations guide",
+        "getting started"
+      ],
+      "aliases": [],
+      "applicableRoles": [],
+      "relatedGuideIds": [],
+      "publicationStatus": "published",
+      "sourcePath": "src/content/docs/phaeno/getting-started.mdx"
+    },
+    {
+      "audience": "phaeno",
+      "locale": null,
+      "slug": "crm",
+      "overviewTitle": "Overview and navigation",
+      "title": "Customer relationship management",
+      "summary": "Manage canonical Companies, Contacts, Leads, Opportunities, Portal access, Tasks, reporting, and data quality.",
+      "order": 15,
+      "reviewedAt": "2026-09-02",
+      "navigationGroup": "customer-relationship-management",
+      "contentType": "overview",
+      "topicIds": [
+        "crm"
+      ],
+      "workflowIds": [
+        "crm"
+      ],
+      "taskKeywords": [
+        "Customer relationship management",
+        "crm"
+      ],
+      "aliases": [],
+      "applicableRoles": [],
+      "relatedGuideIds": [],
+      "publicationStatus": "published",
+      "sourcePath": "src/content/docs/phaeno/crm.mdx"
+    },
+    {
+      "audience": "phaeno",
+      "locale": null,
+      "slug": "crm-companies-contacts",
+      "parentSlug": "crm",
+      "title": "Companies and Contacts",
+      "summary": "Manage canonical customer Companies, effective-dated Contact relationships, access state, and duplicates.",
+      "order": 16,
+      "reviewedAt": "2026-09-02",
+      "navigationGroup": "customer-relationship-management",
+      "contentType": "guide",
+      "topicIds": [
+        "crm"
+      ],
+      "workflowIds": [
+        "crm"
+      ],
+      "taskKeywords": [
+        "Companies and Contacts",
+        "crm companies contacts"
+      ],
+      "aliases": [],
+      "applicableRoles": [],
+      "relatedGuideIds": [
+        "phaeno/crm"
+      ],
+      "publicationStatus": "published",
+      "sourcePath": "src/content/docs/phaeno/crm-companies-contacts.mdx"
+    },
+    {
+      "audience": "phaeno",
+      "locale": null,
+      "slug": "crm-leads-conversion",
+      "parentSlug": "crm",
+      "title": "Leads and conversion",
+      "summary": "Capture signals, record qualification decisions, and convert without granting Portal access.",
+      "order": 17,
+      "reviewedAt": "2026-08-27",
+      "navigationGroup": "customer-relationship-management",
+      "contentType": "guide",
+      "topicIds": [
+        "crm"
+      ],
+      "workflowIds": [
+        "crm"
+      ],
+      "taskKeywords": [
+        "Leads and conversion",
+        "crm leads conversion"
+      ],
+      "aliases": [],
+      "applicableRoles": [],
+      "relatedGuideIds": [
+        "phaeno/crm"
+      ],
+      "publicationStatus": "published",
+      "sourcePath": "src/content/docs/phaeno/crm-leads-conversion.mdx"
+    },
+    {
+      "audience": "phaeno",
+      "locale": null,
+      "slug": "crm-opportunities-pipelines",
+      "parentSlug": "crm",
+      "title": "Opportunities and pipelines",
+      "summary": "Run commercial pursuits through controlled stages, immutable history, and currency-safe reporting.",
+      "order": 18,
+      "reviewedAt": "2026-08-27",
+      "navigationGroup": "customer-relationship-management",
+      "contentType": "guide",
+      "topicIds": [
+        "crm"
+      ],
+      "workflowIds": [
+        "crm"
+      ],
+      "taskKeywords": [
+        "Opportunities and pipelines",
+        "crm opportunities pipelines"
+      ],
+      "aliases": [],
+      "applicableRoles": [],
+      "relatedGuideIds": [
+        "phaeno/crm"
+      ],
+      "publicationStatus": "published",
+      "sourcePath": "src/content/docs/phaeno/crm-opportunities-pipelines.mdx"
+    },
+    {
+      "audience": "phaeno",
+      "locale": null,
+      "slug": "crm-activities-tasks",
+      "parentSlug": "crm",
+      "title": "Activities and Tasks",
+      "summary": "Record commercial interactions and manage owned, recurring follow-up in record context.",
+      "order": 19,
+      "reviewedAt": "2026-08-27",
+      "navigationGroup": "customer-relationship-management",
+      "contentType": "guide",
+      "topicIds": [
+        "crm"
+      ],
+      "workflowIds": [
+        "crm"
+      ],
+      "taskKeywords": [
+        "Activities and Tasks",
+        "crm activities tasks"
+      ],
+      "aliases": [],
+      "applicableRoles": [],
+      "relatedGuideIds": [
+        "phaeno/crm"
+      ],
+      "publicationStatus": "published",
+      "sourcePath": "src/content/docs/phaeno/crm-activities-tasks.mdx"
+    },
+    {
+      "audience": "phaeno",
+      "locale": null,
+      "slug": "crm-reports-administration",
+      "parentSlug": "crm",
+      "title": "Reports and administration",
+      "summary": "Interpret commercial reports and manage pipelines, fields, views, duplicates, imports, and exports.",
+      "order": 20,
+      "reviewedAt": "2026-08-27",
+      "navigationGroup": "customer-relationship-management",
+      "contentType": "guide",
+      "topicIds": [
+        "access",
+        "crm"
+      ],
+      "workflowIds": [
+        "platform-administration",
+        "crm"
+      ],
+      "taskKeywords": [
+        "Reports and administration",
+        "crm reports administration"
+      ],
+      "aliases": [
+        "MFA",
+        "2FA",
+        "admin",
+        "administrator",
+        "permissions"
+      ],
+      "applicableRoles": [],
+      "relatedGuideIds": [
+        "phaeno/crm"
+      ],
+      "publicationStatus": "published",
+      "sourcePath": "src/content/docs/phaeno/crm-reports-administration.mdx"
+    },
+    {
+      "audience": "phaeno",
+      "locale": null,
+      "slug": "crm-portal-handoffs",
+      "parentSlug": "crm",
+      "title": "Company requests and approvals",
+      "summary": "Review online access, product and service, relationship, and work requests without creating a second customer identity.",
+      "order": 21,
+      "reviewedAt": "2026-09-05",
+      "navigationGroup": "customer-relationship-management",
+      "contentType": "guide",
+      "topicIds": [
+        "crm"
+      ],
+      "workflowIds": [
+        "crm"
+      ],
+      "taskKeywords": [
+        "Company requests and approvals",
+        "crm portal handoffs"
+      ],
+      "aliases": [],
+      "applicableRoles": [],
+      "relatedGuideIds": [
+        "phaeno/crm"
+      ],
+      "publicationStatus": "published",
+      "sourcePath": "src/content/docs/phaeno/crm-portal-handoffs.mdx"
+    },
+    {
+      "audience": "phaeno",
+      "locale": null,
+      "slug": "crm-troubleshooting",
+      "parentSlug": "crm",
+      "title": "Troubleshooting and recovery",
+      "summary": "Resolve access, duplicate, stale-update, conversion, stage, import, Task, and handoff problems safely.",
+      "order": 22,
+      "reviewedAt": "2026-09-01",
+      "navigationGroup": "customer-relationship-management",
+      "contentType": "troubleshooting",
+      "topicIds": [
+        "crm",
+        "recovery"
+      ],
+      "workflowIds": [
+        "crm"
+      ],
+      "taskKeywords": [
+        "Troubleshooting and recovery",
+        "crm troubleshooting"
+      ],
+      "aliases": [
+        "error",
+        "troubleshooting"
+      ],
+      "applicableRoles": [],
+      "relatedGuideIds": [
+        "phaeno/crm"
+      ],
+      "publicationStatus": "published",
+      "sourcePath": "src/content/docs/phaeno/crm-troubleshooting.mdx"
+    },
+    {
+      "audience": "phaeno",
+      "locale": null,
+      "slug": "organization-and-user-administration",
+      "title": "Company access and user administration",
+      "summary": "Manage Company Portal requests, readiness, service entitlements, invitations, and access.",
+      "order": 25,
+      "reviewedAt": "2026-09-04",
+      "navigationGroup": "platform-operations",
+      "contentType": "guide",
+      "topicIds": [
+        "access"
+      ],
+      "workflowIds": [
+        "platform-administration"
+      ],
+      "taskKeywords": [
+        "Company access and user administration",
+        "organization and user administration"
+      ],
+      "aliases": [
+        "MFA",
+        "2FA",
+        "admin",
+        "administrator",
+        "permissions"
+      ],
+      "applicableRoles": [],
+      "relatedGuideIds": [],
+      "publicationStatus": "published",
+      "sourcePath": "src/content/docs/phaeno/organization-and-user-administration.mdx"
+    },
+    {
+      "audience": "phaeno",
+      "locale": null,
+      "slug": "data-provisioning-and-accounts",
+      "overviewTitle": "Overview and access",
+      "title": "Data provisioning",
+      "summary": "Manage Phaeno-owned sources, immutable packages, exact-version grants, and governance events.",
+      "order": 30,
+      "reviewedAt": "2026-09-03",
+      "navigationGroup": "data-provisioning",
+      "contentType": "overview",
+      "topicIds": [
+        "access",
+        "data"
+      ],
+      "workflowIds": [
+        "platform-administration",
+        "data-library"
+      ],
+      "taskKeywords": [
+        "Data provisioning",
+        "data provisioning and accounts"
+      ],
+      "aliases": [
+        "MFA",
+        "2FA",
+        "admin",
+        "administrator",
+        "permissions",
+        "download",
+        "files"
+      ],
+      "applicableRoles": [],
+      "relatedGuideIds": [],
+      "publicationStatus": "published",
+      "sourcePath": "src/content/docs/phaeno/data-provisioning-and-accounts.mdx"
+    },
+    {
+      "audience": "phaeno",
+      "locale": null,
+      "slug": "data-source-registry",
+      "parentSlug": "data-provisioning-and-accounts",
+      "title": "Source registry",
+      "summary": "Register Phaeno-owned sources, managed files, evidence, and immutable ready revisions.",
+      "order": 31,
+      "reviewedAt": "2026-07-16",
+      "navigationGroup": "data-provisioning",
+      "contentType": "guide",
+      "topicIds": [
+        "data"
+      ],
+      "workflowIds": [
+        "data-library"
+      ],
+      "taskKeywords": [
+        "Source registry",
+        "data source registry"
+      ],
+      "aliases": [
+        "download",
+        "files"
+      ],
+      "applicableRoles": [],
+      "relatedGuideIds": [
+        "phaeno/data-provisioning-and-accounts"
+      ],
+      "publicationStatus": "published",
+      "sourcePath": "src/content/docs/phaeno/data-source-registry.mdx"
+    },
+    {
+      "audience": "phaeno",
+      "locale": null,
+      "slug": "data-curated-publishing",
+      "parentSlug": "data-provisioning-and-accounts",
+      "title": "Curated catalog and publishing",
+      "summary": "Snapshot ready sources, validate complete packages, publish immutable versions, and retire safely.",
+      "order": 32,
+      "reviewedAt": "2026-07-16",
+      "navigationGroup": "data-provisioning",
+      "contentType": "guide",
+      "topicIds": [
+        "data"
+      ],
+      "workflowIds": [
+        "data-library"
+      ],
+      "taskKeywords": [
+        "Curated catalog and publishing",
+        "data curated publishing"
+      ],
+      "aliases": [
+        "download",
+        "files"
+      ],
+      "applicableRoles": [],
+      "relatedGuideIds": [
+        "phaeno/data-provisioning-and-accounts"
+      ],
+      "publicationStatus": "published",
+      "sourcePath": "src/content/docs/phaeno/data-curated-publishing.mdx"
+    },
+    {
+      "audience": "phaeno",
+      "locale": null,
+      "slug": "data-organization-grants",
+      "parentSlug": "data-provisioning-and-accounts",
+      "title": "Organization grants",
+      "summary": "Grant, upgrade, and revoke exact package versions without implicit access changes.",
+      "order": 33,
+      "reviewedAt": "2026-07-16",
+      "navigationGroup": "data-provisioning",
+      "contentType": "guide",
+      "topicIds": [
+        "data",
+        "governance"
+      ],
+      "workflowIds": [
+        "data-library"
+      ],
+      "taskKeywords": [
+        "Organization grants",
+        "data organization grants"
+      ],
+      "aliases": [
+        "download",
+        "files",
+        "retention",
+        "grace period"
+      ],
+      "applicableRoles": [],
+      "relatedGuideIds": [
+        "phaeno/data-provisioning-and-accounts"
+      ],
+      "publicationStatus": "published",
+      "sourcePath": "src/content/docs/phaeno/data-organization-grants.mdx"
+    },
+    {
+      "audience": "phaeno",
+      "locale": null,
+      "slug": "data-governance-recovery",
+      "parentSlug": "data-provisioning-and-accounts",
+      "title": "Governance and recovery",
+      "summary": "Quarantine unsafe content, investigate with purpose, close out incidents, and retry safely.",
+      "order": 34,
+      "reviewedAt": "2026-09-04",
+      "navigationGroup": "data-provisioning",
+      "contentType": "troubleshooting",
+      "topicIds": [
+        "data",
+        "governance",
+        "recovery"
+      ],
+      "workflowIds": [
+        "data-library"
+      ],
+      "taskKeywords": [
+        "Governance and recovery",
+        "data governance recovery"
+      ],
+      "aliases": [
+        "download",
+        "files",
+        "retention",
+        "grace period",
+        "error",
+        "troubleshooting"
+      ],
+      "applicableRoles": [],
+      "relatedGuideIds": [
+        "phaeno/data-provisioning-and-accounts"
+      ],
+      "publicationStatus": "published",
+      "sourcePath": "src/content/docs/phaeno/data-governance-recovery.mdx"
+    },
+    {
+      "audience": "phaeno",
+      "locale": null,
+      "slug": "order-operations",
+      "overviewTitle": "Overview and queue triage",
+      "title": "Order operations",
+      "summary": "Manage commercial intake, pricing, quotes, staging, governed PSeq release, native AR, and Partner workflows.",
+      "order": 40,
+      "reviewedAt": "2026-09-04",
+      "navigationGroup": "order-operations",
+      "contentType": "overview",
+      "topicIds": [
+        "orders"
+      ],
+      "workflowIds": [
+        "order-operations"
+      ],
+      "taskKeywords": [
+        "Order operations",
+        "order operations"
+      ],
+      "aliases": [],
+      "applicableRoles": [],
+      "relatedGuideIds": [],
+      "publicationStatus": "published",
+      "sourcePath": "src/content/docs/phaeno/order-operations.mdx"
+    },
+    {
+      "audience": "phaeno",
+      "locale": null,
+      "slug": "order-customer-lab-authorization",
+      "parentSlug": "order-operations",
+      "title": "Customer lab authorization",
+      "summary": "Review Job pricing profiles, issue POMS quotes, and authorize Lab work after roster finalization.",
+      "order": 41,
+      "reviewedAt": "2026-09-03",
+      "navigationGroup": "order-operations",
+      "contentType": "guide",
+      "topicIds": [
+        "orders"
+      ],
+      "workflowIds": [
+        "order-operations"
+      ],
+      "taskKeywords": [
+        "Customer lab authorization",
+        "order customer lab authorization"
+      ],
+      "aliases": [],
+      "applicableRoles": [],
+      "relatedGuideIds": [
+        "phaeno/order-operations"
+      ],
+      "publicationStatus": "published",
+      "sourcePath": "src/content/docs/phaeno/order-customer-lab-authorization.mdx"
+    },
+    {
+      "audience": "phaeno",
+      "locale": null,
+      "slug": "order-reagent-fulfillment",
+      "parentSlug": "lab-operations",
+      "title": "PSeq kit fulfillment",
+      "summary": "Consume the Commercial order snapshot, manage substitutions and backorders, and ship immutably.",
+      "order": 52,
+      "reviewedAt": "2026-08-27",
+      "navigationGroup": "laboratory-operations",
+      "contentType": "guide",
+      "topicIds": [
+        "orders"
+      ],
+      "workflowIds": [
+        "order-operations"
+      ],
+      "taskKeywords": [
+        "PSeq kit fulfillment",
+        "order reagent fulfillment"
+      ],
+      "aliases": [],
+      "applicableRoles": [],
+      "relatedGuideIds": [
+        "phaeno/lab-operations"
+      ],
+      "publicationStatus": "published",
+      "sourcePath": "src/content/docs/phaeno/order-reagent-fulfillment.mdx"
+    },
+    {
+      "audience": "phaeno",
+      "locale": null,
+      "slug": "order-data-assembly",
+      "parentSlug": "lab-operations",
+      "title": "Data assembly",
+      "summary": "Validate accepted inputs, record processing, and approve immutable output releases.",
+      "order": 53,
+      "reviewedAt": "2026-08-27",
+      "navigationGroup": "laboratory-operations",
+      "contentType": "guide",
+      "topicIds": [
+        "orders"
+      ],
+      "workflowIds": [
+        "order-operations"
+      ],
+      "taskKeywords": [
+        "Data assembly",
+        "order data assembly"
+      ],
+      "aliases": [],
+      "applicableRoles": [],
+      "relatedGuideIds": [
+        "phaeno/lab-operations"
+      ],
+      "publicationStatus": "published",
+      "sourcePath": "src/content/docs/phaeno/order-data-assembly.mdx"
+    },
+    {
+      "audience": "phaeno",
+      "locale": null,
+      "slug": "order-holds-cancellations-adjustments",
+      "parentSlug": "order-operations",
+      "title": "Holds, cancellations, and adjustments",
+      "summary": "Pause work safely, decide cancellation requests, preserve completed work, and account for adjustments.",
+      "order": 44,
+      "reviewedAt": "2026-08-26",
+      "navigationGroup": "order-operations",
+      "contentType": "guide",
+      "topicIds": [
+        "orders"
+      ],
+      "workflowIds": [
+        "order-operations"
+      ],
+      "taskKeywords": [
+        "Holds, cancellations, and adjustments",
+        "order holds cancellations adjustments"
+      ],
+      "aliases": [],
+      "applicableRoles": [],
+      "relatedGuideIds": [
+        "phaeno/order-operations"
+      ],
+      "publicationStatus": "published",
+      "sourcePath": "src/content/docs/phaeno/order-holds-cancellations-adjustments.mdx"
+    },
+    {
+      "audience": "phaeno",
+      "locale": null,
+      "slug": "order-billing-payment-release",
+      "parentSlug": "order-operations",
+      "title": "PSeq billing, cash, and result release",
+      "summary": "Operate POMS invoices, receipts, allocation, reconciliation, and scientifically governed PSeq release.",
+      "order": 45,
+      "reviewedAt": "2026-09-05",
+      "navigationGroup": "order-operations",
+      "contentType": "guide",
+      "topicIds": [
+        "governance",
+        "orders",
+        "billing"
+      ],
+      "workflowIds": [
+        "order-operations"
+      ],
+      "taskKeywords": [
+        "PSeq billing, cash, and result release",
+        "order billing payment release"
+      ],
+      "aliases": [
+        "retention",
+        "grace period",
+        "invoice",
+        "payment",
+        "credit"
+      ],
+      "applicableRoles": [],
+      "relatedGuideIds": [
+        "phaeno/order-operations",
+        "phaeno/order-customer-lab-authorization",
+        "phaeno/order-holds-cancellations-adjustments"
+      ],
+      "publicationStatus": "published",
+      "sourcePath": "src/content/docs/phaeno/order-billing-payment-release.mdx"
+    },
+    {
+      "audience": "phaeno",
+      "locale": null,
+      "slug": "order-integration-recovery",
+      "parentSlug": "order-operations",
+      "title": "Integration failures and recovery",
+      "summary": "Triage invitation, projection, result-pipeline, notification, and retained legacy-connector failures.",
+      "order": 46,
+      "reviewedAt": "2026-08-29",
+      "navigationGroup": "order-operations",
+      "contentType": "troubleshooting",
+      "topicIds": [
+        "governance",
+        "orders",
+        "recovery"
+      ],
+      "workflowIds": [
+        "order-operations"
+      ],
+      "taskKeywords": [
+        "Integration failures and recovery",
+        "order integration recovery"
+      ],
+      "aliases": [
+        "retention",
+        "grace period",
+        "error",
+        "troubleshooting"
+      ],
+      "applicableRoles": [],
+      "relatedGuideIds": [
+        "phaeno/order-operations"
+      ],
+      "publicationStatus": "published",
+      "sourcePath": "src/content/docs/phaeno/order-integration-recovery.mdx"
+    },
+    {
+      "audience": "phaeno",
+      "locale": null,
+      "slug": "lab-operations",
+      "overviewTitle": "Overview",
+      "title": "Laboratory operations",
+      "summary": "Fulfill kits, receive and accession specimens, execute controlled work, assemble data, and record release readiness.",
+      "order": 50,
+      "reviewedAt": "2026-08-27",
+      "navigationGroup": "laboratory-operations",
+      "contentType": "overview",
+      "topicIds": [
+        "laboratory"
+      ],
+      "workflowIds": [
+        "lab-operations"
+      ],
+      "taskKeywords": [
+        "Laboratory operations",
+        "lab operations"
+      ],
+      "aliases": [
+        "QC",
+        "quality control",
+        "PSeq"
+      ],
+      "applicableRoles": [],
+      "relatedGuideIds": [],
+      "publicationStatus": "published",
+      "sourcePath": "src/content/docs/phaeno/lab-operations.mdx"
+    },
+    {
+      "audience": "phaeno",
+      "locale": null,
+      "slug": "lab-receipt-accession",
+      "parentSlug": "lab-operations",
+      "title": "Receipt and accession",
+      "summary": "Record physical receipt, supplier or POMS barcode accession, intake decisions, and container lineage.",
+      "order": 51,
+      "reviewedAt": "2026-08-27",
+      "navigationGroup": "laboratory-operations",
+      "contentType": "guide",
+      "topicIds": [
+        "access",
+        "shipping",
+        "laboratory"
+      ],
+      "workflowIds": [
+        "platform-administration",
+        "lab-operations"
+      ],
+      "taskKeywords": [
+        "Receipt and accession",
+        "lab receipt accession"
+      ],
+      "aliases": [
+        "MFA",
+        "2FA",
+        "admin",
+        "administrator",
+        "permissions",
+        "tube barcode",
+        "crosswalk",
+        "RNA",
+        "shipment",
+        "QC",
+        "quality control",
+        "PSeq"
+      ],
+      "applicableRoles": [],
+      "relatedGuideIds": [
+        "phaeno/lab-operations"
+      ],
+      "publicationStatus": "published",
+      "sourcePath": "src/content/docs/phaeno/lab-receipt-accession.mdx"
+    },
+    {
+      "audience": "phaeno",
+      "locale": null,
+      "slug": "lab-protocol-execution",
+      "parentSlug": "lab-operations",
+      "title": "Service workflows, protocol control, and execution",
+      "summary": "Stitch protocols into a production service workflow, pin jobs and stages, and preserve controlled history.",
+      "order": 54,
+      "reviewedAt": "2026-09-03",
+      "navigationGroup": "laboratory-operations",
+      "contentType": "guide",
+      "topicIds": [
+        "laboratory"
+      ],
+      "workflowIds": [
+        "lab-operations"
+      ],
+      "taskKeywords": [
+        "Service workflows, protocol control, and execution",
+        "lab protocol execution"
+      ],
+      "aliases": [
+        "QC",
+        "quality control",
+        "PSeq"
+      ],
+      "applicableRoles": [],
+      "relatedGuideIds": [
+        "phaeno/lab-operations"
+      ],
+      "publicationStatus": "published",
+      "sourcePath": "src/content/docs/phaeno/lab-protocol-execution.mdx"
+    },
+    {
+      "audience": "phaeno",
+      "locale": null,
+      "slug": "lab-materials-equipment",
+      "parentSlug": "lab-operations",
+      "title": "Materials and equipment",
+      "summary": "Qualify lots and equipment, record consumption and use, and preserve traceability.",
+      "order": 55,
+      "reviewedAt": "2026-08-26",
+      "navigationGroup": "laboratory-operations",
+      "contentType": "guide",
+      "topicIds": [
+        "laboratory"
+      ],
+      "workflowIds": [
+        "lab-operations"
+      ],
+      "taskKeywords": [
+        "Materials and equipment",
+        "lab materials equipment"
+      ],
+      "aliases": [
+        "QC",
+        "quality control",
+        "PSeq"
+      ],
+      "applicableRoles": [],
+      "relatedGuideIds": [
+        "phaeno/lab-operations"
+      ],
+      "publicationStatus": "published",
+      "sourcePath": "src/content/docs/phaeno/lab-materials-equipment.mdx"
+    },
+    {
+      "audience": "phaeno",
+      "locale": null,
+      "slug": "lab-libraries-batches-sequencing",
+      "parentSlug": "lab-operations",
+      "title": "Libraries, batches, and sequencing",
+      "summary": "Prepare QC-approved libraries, build cross-order batches, and track sendout custody.",
+      "order": 56,
+      "reviewedAt": "2026-07-18",
+      "navigationGroup": "laboratory-operations",
+      "contentType": "guide",
+      "topicIds": [
+        "laboratory"
+      ],
+      "workflowIds": [
+        "lab-operations"
+      ],
+      "taskKeywords": [
+        "Libraries, batches, and sequencing",
+        "lab libraries batches sequencing"
+      ],
+      "aliases": [
+        "QC",
+        "quality control",
+        "PSeq"
+      ],
+      "applicableRoles": [],
+      "relatedGuideIds": [
+        "phaeno/lab-operations"
+      ],
+      "publicationStatus": "published",
+      "sourcePath": "src/content/docs/phaeno/lab-libraries-batches-sequencing.mdx"
+    },
+    {
+      "audience": "phaeno",
+      "locale": null,
+      "slug": "lab-exceptions-rework",
+      "parentSlug": "lab-operations",
+      "title": "Exceptions, rework, and cancellation",
+      "summary": "Classify exceptions, preserve rework history, and respond safely to cancellation requests.",
+      "order": 57,
+      "reviewedAt": "2026-08-26",
+      "navigationGroup": "laboratory-operations",
+      "contentType": "troubleshooting",
+      "topicIds": [
+        "laboratory",
+        "recovery"
+      ],
+      "workflowIds": [
+        "lab-operations"
+      ],
+      "taskKeywords": [
+        "Exceptions, rework, and cancellation",
+        "lab exceptions rework"
+      ],
+      "aliases": [
+        "QC",
+        "quality control",
+        "PSeq",
+        "error",
+        "troubleshooting"
+      ],
+      "applicableRoles": [],
+      "relatedGuideIds": [
+        "phaeno/lab-operations"
+      ],
+      "publicationStatus": "published",
+      "sourcePath": "src/content/docs/phaeno/lab-exceptions-rework.mdx"
+    },
+    {
+      "audience": "phaeno",
+      "locale": null,
+      "slug": "lab-scientific-approval",
+      "parentSlug": "lab-operations",
+      "title": "Scientific approval and release readiness",
+      "summary": "Review complete lineage and clean final artifacts, enforce actor separation, and pin the approved package.",
+      "order": 58,
+      "reviewedAt": "2026-08-29",
+      "navigationGroup": "laboratory-operations",
+      "contentType": "guide",
+      "topicIds": [
+        "laboratory"
+      ],
+      "workflowIds": [
+        "lab-operations"
+      ],
+      "taskKeywords": [
+        "Scientific approval and release readiness",
+        "lab scientific approval"
+      ],
+      "aliases": [
+        "QC",
+        "quality control",
+        "PSeq"
+      ],
+      "applicableRoles": [],
+      "relatedGuideIds": [
+        "phaeno/lab-operations",
+        "phaeno/lab-exceptions-rework",
+        "phaeno/lab-libraries-batches-sequencing"
+      ],
+      "publicationStatus": "published",
+      "sourcePath": "src/content/docs/phaeno/lab-scientific-approval.mdx"
+    },
+    {
+      "audience": "phaeno",
+      "locale": null,
+      "slug": "configuration-and-recovery",
+      "title": "Configuration and accounting recovery",
+      "summary": "Maintain scientific, commercial, accounting, credit, and sample-shipping rules.",
+      "order": 60,
+      "reviewedAt": "2026-09-05",
+      "navigationGroup": "platform-operations",
+      "contentType": "troubleshooting",
+      "topicIds": [
+        "governance",
+        "recovery",
+        "configuration"
+      ],
+      "workflowIds": [
+        "platform-administration"
+      ],
+      "taskKeywords": [
+        "Configuration and accounting recovery",
+        "configuration and recovery"
+      ],
+      "aliases": [
+        "retention",
+        "grace period",
+        "error",
+        "troubleshooting"
+      ],
+      "applicableRoles": [],
+      "relatedGuideIds": [],
+      "publicationStatus": "published",
+      "sourcePath": "src/content/docs/phaeno/configuration-and-recovery.mdx"
+    },
+    {
+      "audience": "phaeno",
+      "locale": null,
+      "slug": "statuses-and-recovery",
+      "title": "Statuses and recovery",
+      "summary": "Triage operational states and safely recover accounting records, files, releases, and notifications.",
+      "order": 70,
+      "reviewedAt": "2026-08-26",
+      "navigationGroup": "support",
+      "contentType": "troubleshooting",
+      "topicIds": [
+        "governance",
+        "recovery"
+      ],
+      "workflowIds": [
+        "onboarding"
+      ],
+      "taskKeywords": [
+        "Statuses and recovery",
+        "statuses and recovery"
+      ],
+      "aliases": [
+        "retention",
+        "grace period",
+        "error",
+        "troubleshooting"
+      ],
+      "applicableRoles": [],
+      "relatedGuideIds": [],
+      "publicationStatus": "published",
+      "sourcePath": "src/content/docs/phaeno/statuses-and-recovery.mdx"
+    }
+  ]
+}

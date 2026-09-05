@@ -39,6 +39,7 @@ import { Route as ReagentOrdersOrderIdRouteImport } from './routes/reagent-order
 import { Route as LabServicesNewRouteImport } from './routes/lab-services.new'
 import { Route as LabServicesOrderIdRouteImport } from './routes/lab-services.$orderId'
 import { Route as LabOperationsWorkOrderIdRouteImport } from './routes/lab-operations.$workOrderId'
+import { Route as DocsSearchRouteImport } from './routes/docs.search'
 import { Route as DemoTanstackQueryRouteImport } from './routes/demo/tanstack-query'
 import { Route as DataLibraryDatasetIdRouteImport } from './routes/data-library.$datasetId'
 import { Route as DataAssemblyNewRouteImport } from './routes/data-assembly.new'
@@ -225,6 +226,11 @@ const LabOperationsWorkOrderIdRoute =
     path: '/$workOrderId',
     getParentRoute: () => LabOperationsRoute,
   } as any)
+const DocsSearchRoute = DocsSearchRouteImport.update({
+  id: '/search',
+  path: '/search',
+  getParentRoute: () => DocsRoute,
+} as any)
 const DemoTanstackQueryRoute = DemoTanstackQueryRouteImport.update({
   id: '/demo/tanstack-query',
   path: '/demo/tanstack-query',
@@ -428,6 +434,7 @@ export interface FileRoutesByFullPath {
   '/data-assembly/new': typeof DataAssemblyNewRoute
   '/data-library/$datasetId': typeof DataLibraryDatasetIdRoute
   '/demo/tanstack-query': typeof DemoTanstackQueryRoute
+  '/docs/search': typeof DocsSearchRoute
   '/lab-operations/$workOrderId': typeof LabOperationsWorkOrderIdRoute
   '/lab-services/$orderId': typeof LabServicesOrderIdRouteWithChildren
   '/lab-services/new': typeof LabServicesNewRoute
@@ -491,6 +498,7 @@ export interface FileRoutesByTo {
   '/data-assembly/new': typeof DataAssemblyNewRoute
   '/data-library/$datasetId': typeof DataLibraryDatasetIdRoute
   '/demo/tanstack-query': typeof DemoTanstackQueryRoute
+  '/docs/search': typeof DocsSearchRoute
   '/lab-operations/$workOrderId': typeof LabOperationsWorkOrderIdRoute
   '/lab-services/$orderId': typeof LabServicesOrderIdRouteWithChildren
   '/lab-services/new': typeof LabServicesNewRoute
@@ -555,6 +563,7 @@ export interface FileRoutesById {
   '/data-assembly/new': typeof DataAssemblyNewRoute
   '/data-library/$datasetId': typeof DataLibraryDatasetIdRoute
   '/demo/tanstack-query': typeof DemoTanstackQueryRoute
+  '/docs/search': typeof DocsSearchRoute
   '/lab-operations/$workOrderId': typeof LabOperationsWorkOrderIdRoute
   '/lab-services/$orderId': typeof LabServicesOrderIdRouteWithChildren
   '/lab-services/new': typeof LabServicesNewRoute
@@ -620,6 +629,7 @@ export interface FileRouteTypes {
     | '/data-assembly/new'
     | '/data-library/$datasetId'
     | '/demo/tanstack-query'
+    | '/docs/search'
     | '/lab-operations/$workOrderId'
     | '/lab-services/$orderId'
     | '/lab-services/new'
@@ -683,6 +693,7 @@ export interface FileRouteTypes {
     | '/data-assembly/new'
     | '/data-library/$datasetId'
     | '/demo/tanstack-query'
+    | '/docs/search'
     | '/lab-operations/$workOrderId'
     | '/lab-services/$orderId'
     | '/lab-services/new'
@@ -746,6 +757,7 @@ export interface FileRouteTypes {
     | '/data-assembly/new'
     | '/data-library/$datasetId'
     | '/demo/tanstack-query'
+    | '/docs/search'
     | '/lab-operations/$workOrderId'
     | '/lab-services/$orderId'
     | '/lab-services/new'
@@ -1013,6 +1025,13 @@ declare module '@tanstack/react-router' {
       fullPath: '/lab-operations/$workOrderId'
       preLoaderRoute: typeof LabOperationsWorkOrderIdRouteImport
       parentRoute: typeof LabOperationsRoute
+    }
+    '/docs/search': {
+      id: '/docs/search'
+      path: '/search'
+      fullPath: '/docs/search'
+      preLoaderRoute: typeof DocsSearchRouteImport
+      parentRoute: typeof DocsRoute
     }
     '/demo/tanstack-query': {
       id: '/demo/tanstack-query'
@@ -1328,10 +1347,12 @@ const DataProvisioningRouteWithChildren =
   DataProvisioningRoute._addFileChildren(DataProvisioningRouteChildren)
 
 interface DocsRouteChildren {
+  DocsSearchRoute: typeof DocsSearchRoute
   DocsAudienceSlugRoute: typeof DocsAudienceSlugRoute
 }
 
 const DocsRouteChildren: DocsRouteChildren = {
+  DocsSearchRoute: DocsSearchRoute,
   DocsAudienceSlugRoute: DocsAudienceSlugRoute,
 }
 

@@ -43,6 +43,7 @@ services:
       GoogleAuthSettings__RecaptchaServiceAccountKeyPath: /app/__DOCUMENTS/private/secrets/recaptcha-enterprise-service-account.json
       WebSearchSettings__SearchIndexLocation: /app/__GREEN_INDEX
       WebsitePreviewSearch__SearchIndexLocation: /app/__PREVIEW_INDEX
+      DocumentationSearch__IndexPath: /app/__DOCUMENTATION_INDEX
     ports:
       - 127.0.0.1:8084:8080
     volumes:
@@ -50,6 +51,7 @@ services:
       - portal_green_app_data:/app/App_Data
       - portal_green_website_index:/app/__GREEN_INDEX
       - portal_green_website_preview_index:/app/__PREVIEW_INDEX
+      - portal_green_documentation_index:/app/__DOCUMENTATION_INDEX
     depends_on:
       db:
         condition: service_healthy
@@ -101,6 +103,7 @@ volumes:
   portal_green_app_data:
   portal_green_website_index:
   portal_green_website_preview_index:
+  portal_green_documentation_index:
 
 networks:
   portal_green:

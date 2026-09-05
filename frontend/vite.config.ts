@@ -4,6 +4,7 @@ import { fileURLToPath } from 'node:url'
 
 import { tanstackStart } from '@tanstack/react-start/plugin/vite'
 import mdx from '@mdx-js/rollup'
+import { documentationMarkdown } from './scripts/documentation-markdown.mjs'
 import { nitro } from 'nitro/vite'
 
 import viteReact from '@vitejs/plugin-react'
@@ -39,7 +40,7 @@ const config = defineConfig(({ command, mode }) => ({
     },
   },
   plugins: [
-    { enforce: 'pre', ...mdx() },
+    { enforce: 'pre', ...mdx({ remarkPlugins: [documentationMarkdown] }) },
     tailwindcss(),
     ...(mode === 'test'
       ? []

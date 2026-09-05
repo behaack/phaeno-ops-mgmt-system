@@ -1,5 +1,28 @@
 # Playwright E2E Test Plan
 
+## Portal documentation search — 2026-09-05
+
+All 14 relevant Playwright cases passed across desktop Chromium and mobile Chrome:
+the existing four documentation journeys plus three search journeys per viewport.
+`documentation-search.spec.ts` verifies the dedicated endpoint and context headers,
+corpus fingerprint, no audience override or Website requests, debounced input and
+focus preservation, metadata filter counts, safe text highlighting, rendered
+heading anchors, browser-back search/filter restoration, topic browsing, no-match
+versus outage, retry, refresh and one-character suppression.
+
+Desktop/light and mobile/dark screenshots were inspected. Checks passed for
+horizontal overflow, focus, reduced motion, framework overlays/page errors, and
+Axe WCAG 2/2.1/2.2 AA rules on the changed main workflow. The mobile sidebar tab
+initially overlapped the search label; the label now reserves that space. Initial
+hydration/context changes also briefly disable the input to prevent lost typing.
+The skill's agent-browser CLI was unavailable; the installed repository Playwright
+runtime performed browser verification. API response fixtures were synthetic;
+separate backend tests exercise the real index and HTTP controller.
+
+Hosted authenticated Clerk/org admission, real production volumes/restarts,
+production latency/load and human assistive-technology acceptance remain release
+checks. Automated accessibility scans are not a full conformance claim.
+
 ## General retention notice acceptance (2026-09-05)
 
 No browser suite was rerun for this backend/help-prose slice. Before shared
