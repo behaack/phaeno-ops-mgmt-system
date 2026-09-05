@@ -8,6 +8,7 @@ public sealed class PSeqOrderToCashOptions
     public bool DerivedReadiness { get; init; }
     public bool BusinessRoles { get; init; }
     public bool GovernedPSeqResults { get; init; }
+    public bool GovernedRetentionProcessing { get; init; }
     public bool NativePSeqAccountsReceivable { get; init; }
     public bool AttentionOperations { get; init; }
     public bool DualControlAuditOnly { get; init; } = true;
@@ -16,6 +17,7 @@ public sealed class PSeqOrderToCashOptions
     public string PipelineServiceSecret { get; init; } = string.Empty;
     public string PipelineProviderKey { get; init; } = string.Empty;
     public string ObjectStorageTransferBaseUrl { get; init; } = string.Empty;
+    // Legacy configuration retained for compatibility. New releases use the versioned File Management policy.
     public int ResultRetentionWarningDays { get; init; }
     public int ResultRetentionCutoffDays { get; init; }
     public int ResultRetentionGraceDays { get; init; }
@@ -33,11 +35,6 @@ public sealed class PSeqOrderToCashOptions
         if (!Uri.TryCreate(ObjectStorageTransferBaseUrl, UriKind.Absolute, out var transferUri)
             || transferUri.Scheme != Uri.UriSchemeHttps)
             errors.Add("The object-storage transfer base URL must be an absolute HTTPS URL.");
-        if (!(ResultRetentionWarningDays > 0
-            && ResultRetentionWarningDays < ResultRetentionCutoffDays
-            && ResultRetentionCutoffDays < ResultRetentionGraceDays
-            && ResultRetentionGraceDays <= ResultRetentionDeleteDays))
-            errors.Add("Result retention offsets must be ordered warning, cutoff, grace, deletion.");
         return errors;
     }
 }

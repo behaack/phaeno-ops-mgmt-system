@@ -1,5 +1,7 @@
 namespace PSeq.Operations.Commercial.OrderManagement.Domain;
 
+using PSeq.Operations.Commercial.FileManagement.Domain;
+
 public enum ResultOutputPackageState
 {
     Uploading,
@@ -249,6 +251,7 @@ public enum ResultRetentionState
 
 public sealed class ResultRetentionSchedule : CommercialReceivableEntity
 {
+    public Guid? RetentionSnapshotId { get; private set; }
     public Guid Id { get; private set; } = Guid.NewGuid();
     public Guid ResultOutputPackageId { get; private set; }
     public DateTime WarningAtUtc { get; private set; }
@@ -273,8 +276,22 @@ public sealed class ResultRetentionSchedule : CommercialReceivableEntity
         DeleteAtUtc = deleteAtUtc;
     }
 
+    public ResultRetentionSchedule(Guid packageId, ReleasedDeliverableRetentionSnapshot snapshot)
+        : this(packageId, snapshot.WarningAtUtc, snapshot.StandardDeletionAtUtc,
+            snapshot.PotentialFinalDeletionAtUtc, snapshot.PotentialFinalDeletionAtUtc)
+    {
+        if (!snapshot.LabResultReleaseId.HasValue)
+            throw new ArgumentException("A laboratory release snapshot is required.", nameof(snapshot));
+        RetentionSnapshotId = snapshot.Id;
+    }
+
+    public bool AllowsLegacyDownload(DateTime utcNow) => !RetentionSnapshotId.HasValue
+        && utcNow < CutoffAtUtc && State is ResultRetentionState.Active or ResultRetentionState.WarningDue;
+
     public ResultDeliveryEvidenceKind? Advance(DateTime utcNow)
     {
+        if (RetentionSnapshotId.HasValue)
+            throw new InvalidOperationException("Snapshot-backed retention must use the shared completion-aware policy.");
         LastProcessedAtUtc = utcNow;
         if (State != ResultRetentionState.Deleted && utcNow >= DeleteAtUtc)
         {

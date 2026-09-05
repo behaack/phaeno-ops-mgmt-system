@@ -15,11 +15,25 @@ public sealed class CompletionTrackedFileStreamResult(
     ReleasedDeliverableDownloadAttemptService attemptService,
     ILogger<CompletionTrackedFileStreamResult> logger) : IActionResult
 {
+    private CancellationTokenSource? monitorCancellation;
+    private Task? monitorTask;
+    private bool monitorFailedOrRevoked;
+
     public async Task ExecuteResultAsync(ActionContext context)
     {
         using var leaseCancellation = CreateLeaseCancellation(
             context.HttpContext.RequestAborted,
             transfer.LeaseExpiresAtUtc);
+        if (transfer.MonitorAccess)
+        {
+            monitorCancellation = new CancellationTokenSource();
+            monitorTask = attemptService.MonitorAccessAsync(transfer, () =>
+            {
+                monitorFailedOrRevoked = true;
+                leaseCancellation.Cancel();
+                context.HttpContext.Abort();
+            }, monitorCancellation.Token);
+        }
         var boundedStream = new LeaseBoundReadStream(stream, leaseCancellation.Token);
         var fileResult = new FileStreamResult(boundedStream, contentType)
         {
@@ -73,6 +87,19 @@ public sealed class CompletionTrackedFileStreamResult(
     {
         try
         {
+            if (monitorCancellation is not null)
+            {
+                await monitorCancellation.CancelAsync();
+                if (monitorTask is not null) await monitorTask;
+                monitorCancellation.Dispose();
+                monitorCancellation = null;
+            }
+            if (monitorFailedOrRevoked)
+            {
+                outcome = OperationalFileDownloadOutcome.Revoked;
+                reasonCode = "result_access_monitor_closed";
+                countsForRetention = false;
+            }
             await attemptService.CompleteAsync(
                 transfer.AttemptIds,
                 outcome,
@@ -117,11 +144,25 @@ public sealed class CompletionTrackedArchiveResult(
     ReleasedDeliverableDownloadAttemptService attemptService,
     ILogger<CompletionTrackedArchiveResult> logger) : IActionResult
 {
+    private CancellationTokenSource? monitorCancellation;
+    private Task? monitorTask;
+    private bool monitorFailedOrRevoked;
+
     public async Task ExecuteResultAsync(ActionContext context)
     {
         using var leaseCancellation = CompletionTrackedFileStreamResult.CreateLeaseCancellation(
             context.HttpContext.RequestAborted,
             transfer.LeaseExpiresAtUtc);
+        if (transfer.MonitorAccess)
+        {
+            monitorCancellation = new CancellationTokenSource();
+            monitorTask = attemptService.MonitorAccessAsync(transfer, () =>
+            {
+                monitorFailedOrRevoked = true;
+                leaseCancellation.Cancel();
+                context.HttpContext.Abort();
+            }, monitorCancellation.Token);
+        }
         var response = context.HttpContext.Response;
         response.StatusCode = StatusCodes.Status200OK;
         response.ContentType = "application/zip";
@@ -150,7 +191,9 @@ public sealed class CompletionTrackedArchiveResult(
             }
 
             await response.Body.FlushAsync(leaseCancellation.Token);
-            await CompleteSafelyAsync(OperationalFileDownloadOutcome.Succeeded, null, true);
+            var fullResponse = !context.HttpContext.Request.Headers.ContainsKey(HeaderNames.Range);
+            await CompleteSafelyAsync(fullResponse ? OperationalFileDownloadOutcome.Succeeded : OperationalFileDownloadOutcome.Failed,
+                fullResponse ? null : "partial_range_request", fullResponse);
         }
         catch (OperationCanceledException) when (context.HttpContext.RequestAborted.IsCancellationRequested)
         {
@@ -176,6 +219,19 @@ public sealed class CompletionTrackedArchiveResult(
     {
         try
         {
+            if (monitorCancellation is not null)
+            {
+                await monitorCancellation.CancelAsync();
+                if (monitorTask is not null) await monitorTask;
+                monitorCancellation.Dispose();
+                monitorCancellation = null;
+            }
+            if (monitorFailedOrRevoked)
+            {
+                outcome = OperationalFileDownloadOutcome.Revoked;
+                reasonCode = "result_access_monitor_closed";
+                countsForRetention = false;
+            }
             await attemptService.CompleteAsync(
                 transfer.AttemptIds,
                 outcome,

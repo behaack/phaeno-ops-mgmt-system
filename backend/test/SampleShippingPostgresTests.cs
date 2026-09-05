@@ -757,6 +757,8 @@ public class SampleShippingPostgresTests
                 await DbContext.SaveChangesAsync();
 
                 await DbContext.AuditEvents.Where(item => item.RequestId == requestId).ExecuteDeleteAsync();
+                await DbContext.OrganizationDepartmentMemberships.Where(item => organizationIds.Contains(item.Department.OrganizationId)).ExecuteDeleteAsync();
+                await DbContext.OrganizationDepartments.Where(item => organizationIds.Contains(item.OrganizationId)).ExecuteDeleteAsync();
                 await DbContext.OrganizationMemberships
                     .Where(item => organizationIds.Contains(item.OrganizationId)).ExecuteDeleteAsync();
                 var userIds = new[] { CustomerUser.Id, OtherCustomerUser.Id, PlatformUser.Id };

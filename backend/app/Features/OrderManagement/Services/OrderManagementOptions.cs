@@ -6,11 +6,17 @@ public sealed class OrderManagementOptions
     public long MaximumFileBytes { get; set; } = 100 * 1024 * 1024;
     public int DownloadLeaseMinutes { get; set; } = 60;
     public int DownloadReconciliationIntervalSeconds { get; set; } = 30;
+    public bool ReleasedDeliverableRetentionEnforcement { get; set; }
+    public bool ReleasedDeliverableRetentionProcessing { get; set; }
+    public bool ReleasedDeliverableByteDeletion { get; set; }
     public bool UseTrustedDevelopmentScanner { get; set; }
     public Dictionary<string, string> AllowedFileKinds { get; set; } = new(StringComparer.OrdinalIgnoreCase);
 
     public TimeSpan DownloadLeaseDuration => TimeSpan.FromMinutes(DownloadLeaseMinutes);
     public TimeSpan DownloadReconciliationInterval => TimeSpan.FromSeconds(DownloadReconciliationIntervalSeconds);
+
+    public bool CanProcessRetention(bool attentionOperations) => ReleasedDeliverableRetentionProcessing
+        && ReleasedDeliverableRetentionEnforcement && attentionOperations;
 
     public bool HasValidDownloadSettings => DownloadLeaseMinutes is >= 1 and <= 24 * 60
         && DownloadReconciliationIntervalSeconds is >= 5 and <= 300;

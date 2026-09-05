@@ -8,6 +8,8 @@ using Microsoft.Extensions.Options;
 using PSeq.Operations.Commercial.OrderManagement.Application;
 using PSeq.Operations.Commercial.OrderManagement.Domain;
 using PhaenoPortal.App.Features.Website;
+using PhaenoPortal.App.Features.Accounts.Services;
+using PhaenoPortal.App.Features.FileManagement.Services;
 using PhaenoPortal.App.Infrastructure.Persistence;
 
 public sealed class LoggingOrderNotificationSender(ILogger<LoggingOrderNotificationSender> logger) : IOrderNotificationSender
@@ -60,6 +62,8 @@ public sealed class MailgunOrderNotificationSender(
 public sealed class OrderNotificationDispatcher(
     IServiceScopeFactory scopeFactory,
     IOptions<PersistenceOptions> persistenceOptions,
+    IOptions<PSeqOrderToCashOptions> retentionOptions,
+    IOptions<OrderManagementOptions> generalRetentionOptions,
     ILogger<OrderNotificationDispatcher> logger) : BackgroundService
 {
     private const int BatchSize = 20;
@@ -87,7 +91,7 @@ public sealed class OrderNotificationDispatcher(
         }
     }
 
-    private async Task<NotificationClaim?> ClaimNextAsync(CancellationToken cancellationToken)
+    internal async Task<NotificationClaim?> ClaimNextAsync(CancellationToken cancellationToken)
     {
         using var scope = scopeFactory.CreateScope();
         var dbContext = scope.ServiceProvider.GetRequiredService<PSeqOperationsDbContext>();
@@ -99,6 +103,12 @@ public sealed class OrderNotificationDispatcher(
             SELECT *
             FROM "{{commercialSchema}}"."order_notifications"
             WHERE "next_attempt_at" <= {0}
+              AND ("workflow_type" <> 'ReleasedDeliverableRetention' OR EXISTS (
+                  SELECT 1 FROM "{{commercialSchema}}"."released_deliverable_retention_snapshots" snapshot
+                  WHERE snapshot."id" = "order_notifications"."workflow_id"
+                    AND snapshot."organization_id" = "order_notifications"."organization_id"
+                    AND (({5} AND EXISTS (SELECT 1 FROM "{{commercialSchema}}"."result_retention_schedules" schedule WHERE schedule."retention_snapshot_id" = snapshot."id"))
+                      OR ({6} AND NOT EXISTS (SELECT 1 FROM "{{commercialSchema}}"."result_retention_schedules" schedule WHERE schedule."retention_snapshot_id" = snapshot."id")))))
               AND (("status" IN ({1}, {2}) AND "attempt_count" < {3})
                    OR "status" = {4})
             ORDER BY "created_at"
@@ -112,7 +122,9 @@ public sealed class OrderNotificationDispatcher(
                 OrderNotificationStatus.Pending.ToString(),
                 OrderNotificationStatus.Failed.ToString(),
                 MaximumAttempts,
-                OrderNotificationStatus.Sending.ToString())
+                OrderNotificationStatus.Sending.ToString(),
+                retentionOptions.Value.GovernedPSeqResults && retentionOptions.Value.GovernedRetentionProcessing,
+                generalRetentionOptions.Value.CanProcessRetention(retentionOptions.Value.AttentionOperations))
             .AsTracking()
             .ToListAsync(cancellationToken);
         var item = candidates.SingleOrDefault();
@@ -151,68 +163,43 @@ public sealed class OrderNotificationDispatcher(
         using var scope = scopeFactory.CreateScope();
         var dbContext = scope.ServiceProvider.GetRequiredService<PSeqOperationsDbContext>();
         var sender = scope.ServiceProvider.GetRequiredService<IOrderNotificationSender>();
+        await DeliverAsync(dbContext, sender, claim.Id, claim.Version, logger, cancellationToken);
+    }
+
+    internal static async Task DeliverAsync(PSeqOperationsDbContext dbContext,
+        IOrderNotificationSender sender, Guid notificationId, long version, ILogger logger,
+        CancellationToken cancellationToken)
+    {
         var item = await dbContext.OrderNotifications.FirstOrDefaultAsync(
-            value => value.Id == claim.Id
-                && value.Version == claim.Version
+            value => value.Id == notificationId
+                && value.Version == version
                 && value.Status == OrderNotificationStatus.Sending,
             cancellationToken);
         if (item is null) return;
+        var isRetention = item.WorkflowType == GovernedRetentionCheckpointService.WorkflowType;
+        await using var transaction = isRetention ? await RetentionTransaction.OpenAsync(dbContext, item.WorkflowId, cancellationToken) : null;
+        if (isRetention)
+        {
+            await dbContext.Entry(item).ReloadAsync(cancellationToken);
+            if (item.Status != OrderNotificationStatus.Sending || item.Version != version) return;
+        }
 
         try
         {
-            var recipients = item.RecipientUserId.HasValue
-                ? await (from membership in dbContext.OrganizationMemberships.AsNoTracking()
-                    join user in dbContext.Users.AsNoTracking() on membership.UserId equals user.Id
-                    where membership.OrganizationId == item.OrganizationId
-                        && membership.UserId == item.RecipientUserId.Value
-                        && membership.IsActive
-                        && (membership.IsOrganizationAdmin
-                            || (item.DepartmentId.HasValue
-                                && dbContext.OrganizationDepartmentMemberships.Any(departmentMembership =>
-                                    departmentMembership.OrganizationMembershipId == membership.Id
-                                    && departmentMembership.DepartmentId == item.DepartmentId.Value
-                                    && departmentMembership.IsActive
-                                    && departmentMembership.IsDepartmentAdmin)))
-                        && user.IsActive
-                        && user.Status == PSeq.Operations.Commercial.Accounts.Domain.UserAccountStatus.Active
-                    select user.Email).Distinct().ToListAsync(cancellationToken)
-                : await (from membership in dbContext.OrganizationMemberships.AsNoTracking()
-                    join user in dbContext.Users.AsNoTracking() on membership.UserId equals user.Id
-                    where membership.OrganizationId == item.OrganizationId
-                        && membership.IsActive
-                        && (membership.IsOrganizationAdmin
-                            || (item.DepartmentId.HasValue
-                                && dbContext.OrganizationDepartmentMemberships.Any(departmentMembership =>
-                                    departmentMembership.OrganizationMembershipId == membership.Id
-                                    && departmentMembership.DepartmentId == item.DepartmentId.Value
-                                    && departmentMembership.IsActive
-                                    && departmentMembership.IsDepartmentAdmin)))
-                        && user.IsActive
-                        && user.Status == PSeq.Operations.Commercial.Accounts.Domain.UserAccountStatus.Active
-                    select user.Email).Distinct().ToListAsync(cancellationToken);
-            if (item.DepartmentId.HasValue)
-            {
-                var departmentNotificationEmail = await dbContext.OrganizationDepartments
-                    .AsNoTracking()
-                    .Where(department => department.Id == item.DepartmentId.Value
-                        && department.OrganizationId == item.OrganizationId
-                        && department.IsActive)
-                    .Select(department => department.NotificationEmail)
-                    .SingleOrDefaultAsync(cancellationToken);
-                if (!string.IsNullOrWhiteSpace(departmentNotificationEmail)
-                    && !recipients.Contains(departmentNotificationEmail, StringComparer.OrdinalIgnoreCase))
-                {
-                    recipients.Add(departmentNotificationEmail);
-                }
-            }
+            var recipients = await OrganizationNotificationRecipients.ReadAsync(dbContext,
+                item.OrganizationId, isRetention ? null : item.DepartmentId, isRetention ? null : item.RecipientUserId,
+                includeDepartmentRouting: !isRetention, cancellationToken);
 
             if (recipients.Count == 0)
             {
-                throw new InvalidOperationException(
-                    "The notification has no active Customer administrator recipient.");
+                item.MarkFailed("No eligible recipients. Review the active organization, department, administrator assignments, and notification routing before retrying.",
+                    DateTime.UtcNow.AddMinutes(Math.Min(60, Math.Pow(2, item.AttemptCount))));
             }
-            await sender.SendAsync(recipients, item.Subject, item.Body, cancellationToken);
-            item.MarkSent(DateTime.UtcNow);
+            else
+            {
+                await sender.SendAsync(recipients, item.Subject, item.Body, cancellationToken);
+                item.MarkSent(DateTime.UtcNow);
+            }
         }
         catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
         {
@@ -220,22 +207,25 @@ public sealed class OrderNotificationDispatcher(
         }
         catch (Exception exception)
         {
-            logger.LogWarning(exception, "Order notification {NotificationId} failed.", claim.Id);
+            logger.LogWarning(exception, "Order notification {NotificationId} failed.", notificationId);
             item.MarkFailed("Notification delivery failed. Phaeno staff can review and retry it.", DateTime.UtcNow.AddMinutes(Math.Min(60, Math.Pow(2, item.AttemptCount))));
         }
 
         try
         {
+            if (isRetention && item.Status == OrderNotificationStatus.Failed)
+                await GovernedRetentionCheckpointService.ReportFailureAsync(dbContext, item, cancellationToken);
             await dbContext.SaveChangesAsync(cancellationToken);
+            if (transaction is not null) await transaction.CommitAsync(cancellationToken);
         }
         catch (DbUpdateConcurrencyException exception)
         {
             logger.LogWarning(
                 exception,
                 "Notification claim {NotificationId} changed before its delivery result could be recorded.",
-                claim.Id);
+                notificationId);
         }
     }
 
-    private sealed record NotificationClaim(Guid Id, long Version, bool ShouldSend);
+    internal sealed record NotificationClaim(Guid Id, long Version, bool ShouldSend);
 }

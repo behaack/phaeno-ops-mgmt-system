@@ -304,10 +304,42 @@ public sealed class ReleasedDeliverableRetentionSnapshot : IAudit, IConcurrency
     public DateTime WarningAtUtc { get; private set; }
     public DateTime StandardDeletionAtUtc { get; private set; }
     public DateTime PotentialFinalDeletionAtUtc { get; private set; }
+    public DateTime? WarningCheckpointAtUtc { get; private set; }
+    public string? WarningCheckpointOutcome { get; private set; }
+    public Guid? WarningNotificationId { get; private set; }
+    public DateTime? StandardCheckpointAtUtc { get; private set; }
+    public Guid? GraceNotificationId { get; private set; }
     public DateTime? GraceActivatedAtUtc { get; private set; }
     public DateTime? DownloadAccessClosedAtUtc { get; private set; }
     public DateTime? ByteDeletedAtUtc { get; private set; }
     public string? DeletionOutcome { get; private set; }
+    public string? ReceiptLineageJson { get; private set; }
+    public void CaptureReceiptLineage(string json)
+    {
+        if (ReceiptLineageJson is not null) throw new InvalidOperationException("Receipt lineage is immutable.");
+        using var document = System.Text.Json.JsonDocument.Parse(json);
+        ReceiptLineageJson = json;
+    }
+    public bool IsQuarantined { get; private set; }
+    public void SetQuarantine(bool active) => IsQuarantined = active;
+    public int DeletionAttemptCount { get; private set; }
+    public DateTime? LastDeletionAttemptAtUtc { get; private set; }
+    public DateTime? NextDeletionAttemptAtUtc { get; private set; }
+
+    public void RecordCleanup(string outcome, DateTime now)
+    {
+        if (now.Kind != DateTimeKind.Utc || ByteDeletedAtUtc.HasValue || !DownloadAccessClosedAtUtc.HasValue || now < DownloadAccessClosedAtUtc.Value)
+            throw new InvalidOperationException("Cleanup requires a due, closed, non-deleted package.");
+        if (outcome is not ("WaitingForLease" or "Preserved" or "SharedSource" or "UnavailablePackage" or "DeletionFailed" or "Deleted"))
+            throw new ArgumentException("Unknown cleanup outcome.");
+        DeletionOutcome = outcome; LastDeletionAttemptAtUtc = now;
+        if (outcome is "Deleted" or "DeletionFailed") DeletionAttemptCount++;
+        NextDeletionAttemptAtUtc = outcome == "Deleted" ? null : now.AddMinutes(outcome == "DeletionFailed" ? 5 : 1);
+        if (outcome == "Deleted") ByteDeletedAtUtc = now;
+    }
+
+    public void RequestCleanupRetry() { if (!ByteDeletedAtUtc.HasValue) NextDeletionAttemptAtUtc = null; }
+
     public DateTime CreatedAt { get; private set; } = DateTime.UtcNow;
     public Guid? CreatedByUserId { get; private set; }
     public DateTime UpdatedAt { get; private set; } = DateTime.UtcNow;
@@ -316,6 +348,38 @@ public sealed class ReleasedDeliverableRetentionSnapshot : IAudit, IConcurrency
 
     private ReleasedDeliverableRetentionSnapshot()
     {
+    }
+
+    public void RecordWarningCheckpoint(DateTime utcNow, string outcome, Guid? notificationId)
+    {
+        if (utcNow.Kind != DateTimeKind.Utc || utcNow < WarningAtUtc)
+            throw new ArgumentException("The warning checkpoint must be due and use UTC.");
+        if (WarningCheckpointAtUtc.HasValue) throw new InvalidOperationException("The warning checkpoint is immutable.");
+        if (outcome is not ("Queued" or "SkippedComplete" or "SkippedUnavailable" or "SkippedPastStandard")
+            || ((outcome == "Queued") != notificationId.HasValue) || notificationId == Guid.Empty)
+            throw new ArgumentException("A queued warning requires its notification; skipped warnings cannot have one.");
+        WarningCheckpointAtUtc = utcNow;
+        WarningCheckpointOutcome = outcome;
+        WarningNotificationId = notificationId;
+    }
+
+    public void ApplyDeadlineDecision(ReleasedDeliverableRetentionDecision decision, DateTime utcNow)
+    {
+        if (utcNow.Kind != DateTimeKind.Utc) throw new ArgumentException("The checkpoint must use UTC.");
+        if (utcNow < StandardDeletionAtUtc) return;
+        if (!StandardCheckpointAtUtc.HasValue)
+        {
+            StandardCheckpointAtUtc = utcNow;
+            GraceActivatedAtUtc = decision.GraceActivatedAtUtc;
+        }
+        DownloadAccessClosedAtUtc ??= decision.DownloadAccessClosedAtUtc;
+    }
+
+    public void RecordGraceNotification(Guid notificationId)
+    {
+        if (!GraceActivatedAtUtc.HasValue || GraceNotificationId.HasValue || notificationId == Guid.Empty)
+            throw new InvalidOperationException("An activated grace period can have only one notice.");
+        GraceNotificationId = notificationId;
     }
 
     public static ReleasedDeliverableRetentionSnapshot ForLabResult(

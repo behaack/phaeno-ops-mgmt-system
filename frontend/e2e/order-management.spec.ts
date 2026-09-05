@@ -47,7 +47,7 @@ test('shows Phaeno operations and configuration workspaces in mock mode', async 
   await openSidebarIfCollapsed(page, 'Order operations')
   await expect(page.getByRole('button', { name: /^Order intake/ })).toHaveAttribute('aria-current', 'page')
   await expect(page.getByRole('button', { name: /^Order staging/ })).toBeVisible()
-  await expect(page.getByRole('button', { name: /^Lab/ })).toBeVisible()
+  await expect(page.getByRole('button', { name: /^Attention/ })).toBeVisible()
   await expect(page.getByRole('button', { name: /^PSeq kits/ })).toBeVisible()
   await expect(page.getByRole('button', { name: /^Assembly/ })).toBeVisible()
   await expect(page.getByRole('button', { name: /^Result release/ })).toBeVisible()

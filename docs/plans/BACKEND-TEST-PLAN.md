@@ -1,5 +1,128 @@
 # Backend Test Plan
 
+## General Lab/Assembly scheduled notices (2026-09-05)
+
+All 111 affected policy/download/PSeq/Department/persistence cases passed with
+zero failures/skips against isolated loopback PostgreSQL with commit tracking.
+`ManagedReleaseRetentionNoticePostgresTests.cs` extends the existing general
+fixture with five cases covering both release families, concurrent warning/grace
+polling, authenticated links without file details, actual ZIP completion before
+and after standard cutoff, unavailable/undated releases, no-admin recovery,
+current recipient selection, repeated provider failure and attention reopening,
+expired final claims, independent family activation, and ordinary-notice claims.
+The focused 14-case general/governed checkpoint run also passed. No new schema
+or external provider was required. Mailbox and hosted acceptance remain open.
+
+
+## General Lab/Assembly retention enforcement (2026-09-05)
+
+The 106-test affected run passed all 104 prior tests and the new commit/revocation
+journey; its other new journey had a fixture-only Department-selection failure.
+After correction, both `ManagedReleaseRetentionPostgresTests` journeys passed.
+They create/drop unique local databases and cover Customer Lab and Partner
+Assembly file/ZIP cutoff, preserved undated/default-off behavior, full completion,
+partial response and failed-ZIP non-counting, frozen grace, completed-before-
+standard closure, cross-Department denial, payment/release/withdrawal gating,
+actual delayed COMMIT admission/completion, and cross-connection ZIP revocation.
+Existing PSeq tests use the generalized monitor name and retain their coverage.
+No schema migration is needed. Hosted/provider acceptance remains separate.
+
+
+## Verified commit-time retention (2026-09-05)
+
+The 104-test affected backend set passed with no failures/skips against an
+isolated loopback PostgreSQL 18.3 cluster with commit tracking enabled. The new
+`GovernedDownloadCommitPostgresTests` holds the actual COMMIT across standard and
+final deadlines; it proves late success preserves grace, late admission opens no
+storage, lost observations recover durably without rewriting dates, repeated
+observation is unchanged, and rollback/uncommitted events cannot create proof.
+Existing rollback workflow fixtures use explicit synthetic observations, not
+claimed commit timestamps. Missing historical evidence produces controlled
+unavailability while revocation still records. Migration/ERD completeness passed.
+Hosted startup/restart/failover and browser/provider acceptance remain open.
+
+
+## Durable governed retention verification (2026-09-04)
+
+- All 103 focused policy/download/PSeq/Department/persistence tests passed with
+  zero failures or skips on guarded localhost. The set includes seven new
+  rollback-backed checkpoint/outbox cases, two new immutable-boundary cases,
+  one independent-connection concurrency/streaming journey, and ERD completeness.
+- `GovernedRetentionCheckpointPostgresTests.cs` covers queued/skipped warnings,
+  one grace notice, frozen dates, safe links/content, missing admins, dispatch-time
+  admin resolution, failed delivery/retry, reopened Operations attention, recovered
+  interrupted final attempts, and immutable completion-versus-revocation outcomes.
+- `GovernedRetentionConcurrencyPostgresTests.cs` creates a uniquely named local
+  database, applies the migration chain, seeds only synthetic records, and drops
+  that database in `finally`. Separate connections exercise competing workers,
+  a completion waiting across a deadline, current-authority revocation, and a real
+  MVC response whose blocked source read is aborted without bytes or counting
+  success. Reinstated access cannot turn the revoked attempt into success.
+- ERD coverage now checks every runtime-model table/column. Regeneration includes
+  primitive collections and previously omitted retention/CRM/model structures.
+- Migration `20260905031439_AddGovernedRetentionCheckpoints` applied only locally;
+  production processing/dispatch remain default-off. These tests do not prove
+  exact PostgreSQL commit-time eligibility across the wall-clock deadline, hosted
+  Clerk/proxy behavior, real provider delivery, byte deletion, or shared rollout.
+
+
+## Governed retention reconciliation (2026-09-04)
+
+- `ReleasedDeliverableRetentionDecisionTests.cs`: 11 cases cover exact warning,
+  standard/final boundaries, complete/incomplete packages, late completion,
+  historical cutoff without worker progress, and old-worker exclusion.
+- `GovernedResultRetentionPostgresTests.cs`: six rollback-backed cases cover
+  governed release policy/Organization override capture with one timestamp,
+  unchanged recapture, full MVC response success, partial/cancelled/failed streams,
+  old non-counting request evidence, grace completion, deadline admission, and
+  historical/new cutoff before storage opens. No real bytes are deleted.
+- The 79-test focused policy/download/PSeq/Department/persistence set passed with
+  no failures/skips on guarded localhost. Backend build passed with zero warnings.
+  Updated Department controller construction and obsolete offset expectations.
+- Migration `20260905022605_UnifyGovernedResultRetentionPolicy` was inspected and
+  applied locally; ERD updated. Concurrent deadline checkpoint ordering, hosted
+  transfer/revocation, real provider delivery/deletion, and shared migration remain
+  open. No automatic warning/grace outbox implementation is claimed.
+
+
+## Secondary department paths checkpoint (2026-09-04)
+
+- `DepartmentSecondaryPathPostgresTests.cs`: 13 rollback-backed cases prove
+  shared-package file/archive event scope, legacy history restrictions, membership
+  reassignment/revocation, wrong-Department non-discovery before storage opens,
+  activity/governance ownership, dispatch-time role/status checks, routing
+  precedence/deduplication, no-recipient failures, suspended-Organization safety
+  follow-up, and Customer Lab/Partner Reagent/Assembly lists/search/counts/CSV.
+- All 68 Department/data-provisioning/operational-download/persistence tests
+  passed with zero failures/skips using guarded `localhost/phaeno_ops`, including
+  the 13 new cases. This set overlaps previous checkpoints. Sender/storage
+  recorders avoid real email and production files. Backend build passed with
+  zero warnings/errors.
+- Additive audit migration `20260905014541_ScopeCuratedDownloadAuditByDepartment`
+  was inspected and applied locally, preserving unknown legacy scope. ERD updated.
+  Shared migration and hosted signed-in two-department acceptance remain deferred.
+
+## Department administration closeout checkpoint (2026-09-04)
+
+- `DepartmentAccessDomainTests.cs`: five domain cases including field-by-field
+  inheritance, explicit false PO overrides, cleared defaults, validation without
+  partial writes, and cross-Organization rejection.
+- `DepartmentAccessPostgresTests.cs`: 18 rollback-backed local database cases.
+  New coverage exercises assigned-admin settings/access, exact active-member
+  lookup, ordinary-member denial, role/version/revocation behavior, Organization
+  defaults audit/concurrency/inheritance, foreign-Organization denial, and
+  protection of Organization-admin access from Department-admin changes.
+- `LabOperationsCommercialHandoffPostgresTests.cs`: added real quote-acceptance
+  proof for inherited PO enforcement, explicit Department override, and frozen
+  accepted snapshots after Organization defaults change.
+- Passed 60 focused Department/PSeq order-to-cash/order-domain tests plus nine
+  quote/staff-initiation integration cases, with no skips. Both commands used
+  guarded `localhost/phaeno_ops`; the two sets are disjoint. Backend build passed.
+- Additive migration `20260905011422_AddOrganizationConfigurationDefaults` was
+  inspected and applied locally. Shared migration, hosted authenticated flows,
+  and full restored-database acceptance remain deferred.
+
+
 Keep this file updated as backend tests are created, changed, or intentionally deferred.
 
 Do not execute this test plan unless explicitly requested.
@@ -30,12 +153,13 @@ and rollback-isolated PostgreSQL coverage.
   quote issue and staff initiation. Other opt-in database suites were not run.
   Updated persistence assertions for separate organization/department grant
   indexes and existing lab workflow entities; fixed handoff fixture cleanup.
-- [ ] Remaining Department PostgreSQL/API coverage - migration backfill, selected-header
-  validation, organization-admin all-Department access, Department-admin and
-  member isolation, invitation acceptance, cross-Department reads/counts/
-  exports/downloads, Department-scoped service entitlements and curated-data
-  grants, and notification-recipient isolation remain required.
-  The tests above do not replace signed-in cross-role acceptance.
+- [x] `backend/test/DepartmentSecondaryPathPostgresTests.cs` - the 13 cases in
+  the secondary-path checkpoint cover curated grants/history/notice recipients
+  and operational reads/counts/search/exports alongside existing Department tests.
+- [ ] Remaining Department acceptance - restored-database migration/backfill,
+  hosted invitation/identity acceptance, in-flight context switching, and signed-in
+  cross-role two-Department workflows. Local controller/database proof does not
+  replace authentication middleware, real provider delivery, or browser acceptance.
 
 - [x] `backend/test/PSeqOrderToCashDomainTests.cs` - invitation retry and hard
   bounce transitions; derived full readiness versus permitted internal staging
@@ -183,7 +307,7 @@ and rollback-isolated PostgreSQL coverage.
 - [x] `backend/test/DataProvisioningDomainTests.cs` -
   `GrantUpgradeSupersedesPriorExactVersionWithoutErasingHistory`.
   The scenario now also preserves the Department access scope across an exact-
-  version upgrade; the source change was not executed on 2026-09-04.
+  version upgrade; it passed in the 2026-09-04 secondary-path regression run.
 - [x] `backend/test/DataProvisioningDomainTests.cs` -
   `GovernanceQuarantineCanRestoreUnchangedContentOrWithdrawUnsafeContent`.
 - [x] `backend/test/DataProvisioningDomainTests.cs` -
@@ -794,3 +918,19 @@ and rollback-isolated PostgreSQL coverage.
   `20260903160117_AddControlledLabServiceWorkflows`; that migration was backed
   up and applied to the local `phaeno_ops` database, and its three workflow
   tables were verified. Automated tests were not requested and were not run.
+
+The commit-evidence migration refuses rollback while evidence exists; the isolated
+database test verifies refusal preserves every evidence row. The additive
+migration also applied to the guarded local development `phaeno_ops` database;
+no shared database or server configuration changed.
+
+### Released lifecycle closeout (2026-09-05)
+
+`ReleasedDeliverableLifecyclePostgresTests.cs` extends the isolated retention
+fixture with immutable hold/reissue validation, Lab/Assembly lease and hold
+blocking, partial-provider deletion retry/idempotency, shared-source deferral,
+governed artifact cleanup with retained evidence, cross-connection quarantine
+revocation, stale version recovery, tenant/auditor privacy and new-object reissue
+lineage. Fixtures use synthetic storage and uniquely named loopback databases.
+Full regression execution is authorized for this closeout. Shipping fixture
+cleanup now deletes its Department assignments/departments before organizations.

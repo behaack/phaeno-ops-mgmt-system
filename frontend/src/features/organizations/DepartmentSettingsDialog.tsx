@@ -2,8 +2,9 @@ import { zodResolver } from '@hookform/resolvers/zod'
 import { useState } from 'react'
 import { useForm } from 'react-hook-form'
 import { z } from 'zod'
+import { departmentErrorMessage as apiErrorMessage, departmentMessages as m } from './department-localization'
 
-import { apiErrorMessage, type Department, type DepartmentInput } from '#/api/organization-management'
+import { type Department, type DepartmentInput } from '#/api/organization-management'
 import { Alert, AlertDescription } from '#/components/ui/alert'
 import { Button } from '#/components/ui/button'
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '#/components/ui/dialog'
@@ -12,18 +13,18 @@ import { Label } from '#/components/ui/label'
 import { RequiredDialogFooter, RequiredFieldName } from '#/components/ui/required-field'
 import { Textarea } from '#/components/ui/textarea'
 
-const optionalEmail = z.string().trim().max(255).refine(
-  (value) => !value || z.email().safeParse(value).success, 'Enter a valid email address.',
+const optionalEmail = z.string().trim().max(255, m.tooLong(255)).refine(
+  (value) => !value || z.email().safeParse(value).success, m.validEmail,
 )
 const schema = z.object({
-  name: z.string().trim().min(1, 'Enter a department name.').max(150),
-  code: z.string().trim().min(1, 'Enter a department code.').max(50),
-  description: z.string().trim().max(1000),
+  name: z.string().trim().min(1, m.nameRequired).max(150, m.tooLong(150)),
+  code: z.string().trim().min(1, m.codeRequired).max(50, m.tooLong(50)),
+  description: z.string().trim().max(1000, m.tooLong(1000)),
   purchaseOrderRequired: z.enum(['inherit', 'required', 'optional']),
   billingContactEmail: optionalEmail,
   notificationEmail: optionalEmail,
-  shippingInstructions: z.string().trim().max(2000),
-  resultDeliveryInstructions: z.string().trim().max(2000),
+  shippingInstructions: z.string().trim().max(2000, m.tooLong(2000)),
+  resultDeliveryInstructions: z.string().trim().max(2000, m.tooLong(2000)),
 })
 type Values = z.infer<typeof schema>
 
@@ -50,9 +51,9 @@ export function DepartmentSettingsDialog({ target, pending, error, onClose, onSu
     else onClose()
   }
   const fields = [
-    ['name', 'Name', 150], ['code', 'Code', 50], ['description', 'Description', 1000],
-    ['billingContactEmail', 'Billing contact email', 255], ['notificationEmail', 'Notification email', 255],
-    ['shippingInstructions', 'Shipping instructions', 2000], ['resultDeliveryInstructions', 'Result delivery instructions', 2000],
+    ['name', m.name, 150], ['code', m.code, 50], ['description', m.description, 1000],
+    ['billingContactEmail', m.billingContactEmail, 255], ['notificationEmail', m.notificationEmail, 255],
+    ['shippingInstructions', m.shippingInstructions, 2000], ['resultDeliveryInstructions', m.resultDeliveryInstructions, 2000],
   ] as const
   return (
     <Dialog open onOpenChange={(open) => { if (!open) close() }}>
@@ -68,16 +69,16 @@ export function DepartmentSettingsDialog({ target, pending, error, onClose, onSu
           shippingInstructions: values.shippingInstructions || null, resultDeliveryInstructions: values.resultDeliveryInstructions || null,
         }))}>
           <DialogHeader>
-            <DialogTitle>{target === 'new' ? 'Add department' : `Edit ${department?.name}`}</DialogTitle>
-            <DialogDescription>Set the department's identity and optional instructions. Blank overrides use the applicable organization or system default.</DialogDescription>
+            <DialogTitle>{target === 'new' ? m.addDepartment : m.editDepartment(department?.name ?? '')}</DialogTitle>
+            <DialogDescription>{m.settingsDescription}</DialogDescription>
           </DialogHeader>
           {error ? <Alert variant="destructive"><AlertDescription>{apiErrorMessage(error)}</AlertDescription></Alert> : null}
           {confirmDiscard ? (
             <div className="space-y-3" role="alert">
-              <p>Discard your unsaved department changes?</p>
+              <p>{m.discardQuestion}</p>
               <div className="flex flex-wrap gap-2">
-                <Button type="button" variant="outline" onClick={() => setConfirmDiscard(false)}>Keep editing</Button>
-                <Button type="button" variant="destructive" onClick={onClose}>Discard changes</Button>
+                <Button type="button" variant="outline" onClick={() => setConfirmDiscard(false)}>{m.keepEditing}</Button>
+                <Button type="button" variant="destructive" onClick={onClose}>{m.discard}</Button>
               </div>
             </div>
           ) : null}
@@ -99,15 +100,15 @@ export function DepartmentSettingsDialog({ target, pending, error, onClose, onSu
               </div>
             })}
             <div className="grid gap-1.5">
-              <Label htmlFor="department-po">Purchase order rule</Label>
+              <Label htmlFor="department-po">{m.purchaseOrderRule}</Label>
               <select id="department-po" className="h-9 w-full cursor-pointer rounded-lg border border-input bg-background px-3 text-sm" {...form.register('purchaseOrderRequired')}>
-                <option value="inherit">Use default (not required)</option>
-                <option value="required">Required</option><option value="optional">Not required</option>
+                <option value="inherit">{m.inheritPo}</option>
+                <option value="required">{m.required}</option><option value="optional">{m.optional}</option>
               </select>
             </div>
           </fieldset>
           <RequiredDialogFooter>
-            <Button type="button" variant="outline" disabled={pending} onClick={close}>Cancel</Button>
+            <Button type="button" variant="outline" disabled={pending} onClick={close}>{m.cancel}</Button>
             <Button type="submit" disabled={pending || (target !== 'new' && !isDirty)}>{pending ? 'Saving…' : target === 'new' ? 'Add department' : 'Save changes'}</Button>
           </RequiredDialogFooter>
         </form>

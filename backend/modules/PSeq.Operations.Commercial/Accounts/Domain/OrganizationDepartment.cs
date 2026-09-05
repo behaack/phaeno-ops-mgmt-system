@@ -77,6 +77,16 @@ public sealed class OrganizationDepartment : IAudit, IConcurrency
     }
 
     public void MakeDefault() => IsDefault = true;
+
+    public DepartmentConfiguration ResolveConfiguration(Organization organization)
+    {
+        if (organization.Id != OrganizationId) throw new ArgumentException("The department must belong to this organization.");
+        return new(PurchaseOrderRequired ?? organization.DefaultPurchaseOrderRequired,
+            BillingContactEmail ?? organization.DefaultBillingContactEmail,
+            NotificationEmail ?? organization.DefaultNotificationEmail,
+            ShippingInstructions ?? organization.DefaultShippingInstructions,
+            ResultDeliveryInstructions ?? organization.DefaultResultDeliveryInstructions);
+    }
     public void ClearDefault() => IsDefault = false;
 
     public void Deactivate()

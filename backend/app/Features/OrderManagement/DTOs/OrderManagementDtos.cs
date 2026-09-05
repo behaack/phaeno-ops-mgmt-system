@@ -168,7 +168,7 @@ public sealed record ReleasedDeliverableRetentionDto(
     DateTime? DownloadAccessClosedAtUtc,
     DateTime? ByteDeletedAtUtc,
     string? DeletionOutcome,
-    ReleasedDeliverableDownloadStateDto? Download);
+    ReleasedDeliverableDownloadStateDto? Download, Guid? SnapshotId = null, bool IsQuarantined = false);
 
 public sealed record ReleasedDeliverableDownloadStateDto(
     int TotalFileCount,
@@ -738,8 +738,8 @@ public static class OrderManagementMappings
         retention.WarningAtUtc,
         retention.StandardDeletionAtUtc,
         retention.PotentialFinalDeletionAtUtc,
-        retention.GraceActivatedAtUtc,
-        retention.DownloadAccessClosedAtUtc,
+        download?.RetentionDecision?.GraceActivatedAtUtc ?? retention.GraceActivatedAtUtc,
+        download?.RetentionDecision?.DownloadAccessClosedAtUtc ?? retention.DownloadAccessClosedAtUtc,
         retention.ByteDeletedAtUtc,
         retention.DeletionOutcome,
         download is null
@@ -749,7 +749,7 @@ public static class OrderManagementMappings
                 download.DownloadedFileCount,
                 download.ActiveAttemptCount,
                 download.Status.ToString(),
-                download.CompletedAtUtc));
+                download.CompletedAtUtc), retention.Id, retention.IsQuarantined);
 
     public static ReagentOrderLineDto ToDto(this PartnerReagentOrderLine line) => new(
         line.Id, line.OfferingId, line.QboCatalogItemId, line.ExternalItemId, line.Description, line.Quantity,

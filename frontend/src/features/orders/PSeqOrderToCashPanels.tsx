@@ -272,6 +272,7 @@ export function OperationalAttentionPanel({
             <option value="OverdueInvoice">Overdue invoices</option>
             <option value="UnappliedCash">Unapplied cash</option>
             <option value="ReconciliationDifference">Reconciliation differences</option>
+            <option value="RetentionNoticeFailure">Retention notices</option>
           </select>
         </div>
       </CardHeader>

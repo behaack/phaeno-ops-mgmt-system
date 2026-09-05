@@ -604,3 +604,24 @@ Do not execute this plan unless explicitly requested.
 - Partner assignment and partner-managed customer invitations.
 - Self-service email change.
 - Runtime local auth bypass outside automated tests.
+
+
+## Organization and Department administration closeout (2026-09-04)
+
+Organization-admin rights belong to the active Organization membership and cover
+all its Departments, including future additions. Department-admin rights belong
+to individual active Department memberships. One User can administer Research,
+be a member in Operations, and have no Finance access, with independent rights
+in another Organization. External administrators use `/departments`; only
+Organization admins control structure/lifecycle/defaults, new invitations, and
+Organization roles. Department admins edit settings and manage existing member
+assignments only within assigned Departments, using exact-email lookup rather
+than an Organization-wide user directory. The backend enforces these boundaries,
+version checks, and the rule that an active member retains an active Department.
+
+Typed PO, billing email, notification email, shipping instructions, and result
+instructions resolve Department override, Organization default, then the existing
+system/commercial fallback. Saved shipping and accepted-quote snapshots retain
+their values. This does not grant services, select a storage destination, or
+change Clerk authentication. See `PEOPLE-DEPARTMENTS-ACCESS-PLAN.md`
+for local evidence and remaining signed-in/shared-environment gates.

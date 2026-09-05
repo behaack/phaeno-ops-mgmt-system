@@ -219,7 +219,7 @@ public class PSeqOrderToCashDomainTests
     }
 
     [Fact]
-    public void ProductionResultConfigurationRequiresSecretStorageEndpointAndOrderedRetention()
+    public void ProductionResultConfigurationRequiresPipelineSettingsWithoutObsoleteRetentionOffsets()
     {
         var invalid = new PSeqOrderToCashOptions { GovernedPSeqResults = true };
         Assert.NotEmpty(invalid.ValidateGovernedResults());
@@ -227,11 +227,7 @@ public class PSeqOrderToCashDomainTests
         {
             PipelineServiceSecret = new string('s', 24),
             PipelineProviderKey = "pseq-pipeline",
-            ObjectStorageTransferBaseUrl = "https://object-storage.example/transfers",
-            ResultRetentionWarningDays = 300,
-            ResultRetentionCutoffDays = 330,
-            ResultRetentionGraceDays = 360,
-            ResultRetentionDeleteDays = 365
+            ObjectStorageTransferBaseUrl = "https://object-storage.example/transfers"
         };
         Assert.Empty(valid.ValidateGovernedResults());
     }

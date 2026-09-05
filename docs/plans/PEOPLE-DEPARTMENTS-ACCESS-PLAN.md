@@ -9,6 +9,44 @@ test execution retain their normal approval boundaries.
 
 ## Status
 
+### Authorized closeout - 2026-09-04
+
+The Product Owner requested execution of the recommended loose-end closeout:
+finish the documented People/Department access experience, reconcile plan
+drift, and execute available local acceptance checks. This covers focused
+backend, frontend, database, and browser verification. Shared environments,
+provider configuration, production feature activation, and Git/release actions
+retain their separate authorization boundaries.
+
+The immediate user outcome is self-service administration inside the selected
+external Organization: Organization administrators manage its Department
+structure and assignments; Department administrators edit settings and manage
+members only in assigned Departments. Existing Organization members are added
+by exact email lookup within that Organization, without exposing its entire
+user directory to Department administrators. Only Organization administrators
+invite new Portal users or change Organization-level roles. Invitations retain
+explicit Department intent, including reviewed Department-admin assignments.
+
+Reuse the existing typed Department settings and API envelope. Department
+records remain bounded configuration children of the Organization, using the
+existing summary-list and explicit modal-edit pattern. Success means no silent
+General assignment from the external invitation form, no unauthorized
+Department administration, preserved entered values after conflict, and
+desktop/mobile keyboard-accessible completion. No new dependency or
+authentication-provider change is needed.
+
+The closeout also implements editable typed Organization defaults for the five
+existing routing/PO settings. Organization administrators own these defaults;
+Department administrators retain only assigned-Department override authority.
+Null defaults preserve current behavior. New shipping/quote commitments resolve
+Department override, then Organization default, then the existing system or
+commercial fallback; historical snapshots remain unchanged. The additive local
+migration and ERD update are part of this authorized persisted-model change.
+Department pricing schedules belong to the configured-price ordering
+implementation; automatic storage routing depends on the held storage
+activation and destination contract. These dependencies must remain explicit
+and may not be marked complete by the access closeout.
+
 - Product direction approved for local implementation on 2026-09-04.
 - The CRM information architecture, linked-person identity, Department access
   model, selected-Department context, and primary operational scoping are
@@ -106,9 +144,10 @@ resolved commercial/configuration facts needed to preserve historical meaning.
 Current implementation is narrower: Department service entitlements and data
 grants, PO requirement (system default: not required), billing email (commercial
 profile fallback), shipping instructions (system fallback), notification email,
-and snapshotted result-delivery instructions. There is no general Organization
-configuration editor, Department pricing schedule, or automatic Department
-storage-destination routing. Those capabilities remain planned, not shipped.
+and snapshotted result-delivery instructions. Organization defaults for the five
+typed PO/routing settings and assigned-Department overrides are implemented.
+Department pricing schedules and automatic storage-destination routing remain
+planned dependencies; they are not shipped by this closeout.
 
 ## Delivery slices
 
@@ -229,14 +268,29 @@ storage-destination routing. Those capabilities remain planned, not shipped.
   The focused backend set overlaps the non-reference set; counts are not additive.
   Remaining opt-in backend and signed-in browser cases are still deferred.
 
+### Closeout verification - 2026-09-04
+
+- External `/departments` supports Organization and assigned-Department admins;
+  the invitation modal carries explicit membership and Department-admin intent.
+- Typed Organization defaults are audited and versioned. Migration
+  `20260905011422_AddOrganizationConfigurationDefaults` adds only five nullable
+  columns and was applied to `localhost/phaeno_ops`; the complete ERD is updated.
+- Backend focused acceptance passed: 60 Department, order-domain, and PSeq
+  order-to-cash tests, including 18 rollback-backed Department database cases,
+  with no skips. No shared environment or production record was changed.
+- Nine additional quote/staff-initiation integration tests passed, including
+  inherited PO enforcement and frozen acceptance snapshots. Frontend lint and
+  typecheck passed; all 144 unit tests and 12 distinct focused desktop/mobile
+  browser cases passed. See the living test plans for scope and fixture limits.
+
 ### Remaining product and release gaps
 
-- Department administration UI currently lives in the Phaeno Company workspace.
-  Dedicated external Department-admin self-service and Department selection in
-  the legacy organization-user invitation form remain unfinished. The latter
-  still defaults to General; use reviewed Company People invitations for scoped
-  intent.
-- Configuration capabilities listed as planned above remain incomplete.
+- External self-service administration and reviewed invitation Department intent
+  are implemented locally. Organization and Department roles remain independent
+  membership permissions; one person may administer one Department and only be
+  a member of another. Department admins cannot promote Organization admins.
+- Configuration gaps are now Department pricing schedules and automatic storage
+  routing, owned by configured-price ordering and the held storage activation.
 - Complete signed-in two-department tests for grant/download history, notices,
   identity link acceptance, in-flight switching, and all secondary operational
   exports before enabling multi-department customer use outside local development.
@@ -257,6 +311,61 @@ storage-destination routing. Those capabilities remain planned, not shipped.
   search, counts, exports, downloads, audit views, or notifications.
 - Quotes and committed orders retain the Department and resolved commercial
   configuration that governed them.
+
+## Next slice: secondary-path isolation (2026-09-04)
+
+The Product Owner requested the next slice after local admin closeout. This
+continues the authorized local implementation and focused verification scope.
+Users are Organization admins, Department admins, and assigned members; success
+means history, queued notifications, and exported records obey the same active
+Organization/Department boundary as the main workflows.
+
+- Capture the selected Department on every new curated file/archive download
+  audit, including Organization-wide grants. Department admins see only downloads
+  initiated in their selected Department. Organization admins retain access to
+  historical unscoped rows for grants available in that Department; legacy rows
+  are preserved and are not guessed from current user memberships.
+- Re-evaluate active Organization, active Department, current membership/admin
+  rights, and active user status at dispatch for operational order/grant notices.
+  Organization-wide governance notices remain Organization-admin-owned and must
+  still reach current active admins of an affected suspended Organization about
+  previously supplied copies. The incident/affected-Organization relationship is
+  checked; this exception grants no Portal access. A revoked or superseded grant
+  may still require a notice; grant inactivity alone does not suppress it.
+- Preserve explicit department notification routing and Organization fallback
+  for order notices, but never use that route from an inactive/wrong scope.
+  No eligible recipients is a retryable delivery failure, not delivery success.
+- Verify department-scoped curated activity, file/archive access, history,
+  Customer/Partner exports and count/search paths, immediate membership
+  revocation, and queued recipients with synthetic rollback-backed fixtures.
+- The nullable audit Department field requires an additive local migration and
+  ERD update. No provider change, dependency, real email, shared migration,
+  Git operation, or release is included. Signed-in hosted acceptance remains open.
+
+### Secondary-path verification
+
+- Implemented event-time Department capture and history filtering, shared current
+  recipient resolution, safe retryable no-recipient failures, and explicit
+  Organization validation for grant activity.
+- Migration `20260905014541_ScopeCuratedDownloadAuditByDepartment` was inspected
+  and applied to `localhost/phaeno_ops`. It adds a nullable audit Department FK
+  with restricted deletion and supporting indexes; legacy rows stay unchanged.
+  The complete ERD includes the field and relationship.
+- All 68 focused Department, data-provisioning, operational-file-download, and
+  persistence tests passed with no skips, including 13 new rollback-backed
+  `DepartmentSecondaryPathPostgresTests` cases. Backend build passed with zero
+  warnings/errors. Counts overlap prior checkpoints and are not additive.
+- Customer Lab, Partner Reagent, and Partner Assembly lists/search/counts/CSV
+  exports already enforced selected-Department scope; added regression proof.
+- Corrected the Data Library's stale Organization-admin-only visibility gate.
+  Assigned Department admins can now see their permitted history; Department
+  cache keys and matching server-confirmed context prevent old-row display while
+  switching. Audience guides describe event scope and unknown historical rows.
+- All 13 focused frontend tests passed, including five new role/context cases;
+  lint/typecheck passed. Two desktop/light and mobile/dark browser instances passed
+  with Axe checks, no overflow/console errors, and inspected screenshots. These
+  use synthetic API/session fixtures. Hosted signed-in testing, shared migration,
+  and release remain separate incomplete gates.
 
 ## Release gates
 

@@ -1,5 +1,81 @@
 # Frontend Test Plan
 
+## General retention notices continuation (2026-09-05)
+
+This slice changes backend scheduling/delivery and audience-specific help prose.
+The existing Retention notices queue and notification retry UI are reused; no
+component, route, API response shape, audience access, help navigation, or renderer
+changed. Frontend suites were intentionally not rerun. Backend PostgreSQL tests
+cover general failure records, retry and current-recipient behavior. The previous
+rendered download-control checks remain recorded below.
+
+
+## General release download controls (2026-09-05)
+
+`LabManagedResultReleases.test.tsx` adds five meaningful cases: release schedule
+and ZIP selection, disabled file/ZIP actions at cutoff without false deletion,
+usable grace plus refresh after failed download, and undated/incomplete legacy
+release behavior, and unavailable-file ZIP refusal. All 14 focused Lab/governed/retention-notice tests passed.
+Lint/typecheck passed. Assembly controls also disable closed/deleted or invalid
+files and refresh after every outcome. No documentation navigation, audience
+filter, or shared API shape changed; help prose/review dates changed.
+
+
+## Commit-time retention continuation (2026-09-05)
+
+This slice changes backend timing/evidence and Customer/Phaeno help prose only.
+The existing completion DTO, components, routes, documentation navigation,
+audience access, and rendering are unchanged. Frontend and browser tests were
+intentionally not rerun; backend controller/database checks cover timing and
+storage admission. The prior 15-test frontend checkpoint remains dated evidence.
+
+
+## Retention recovery queue (2026-09-04)
+
+The existing Operations selector now includes **Retention notices**.
+`PSeqOrderToCashPanels.test.tsx` verifies the filter sends `RetentionNoticeFailure`.
+All 15 focused PSeq/governed-package/retention-notice unit tests passed; lint and
+typecheck passed. Customer and Phaeno help explain reminders, recovery, and
+revocation. No documentation navigation or audience access behavior changed.
+
+
+## Governed retention reconciliation (2026-09-04)
+
+`GovernedResultPackagePanel.test.tsx` adds four cases for frozen date display,
+artifact selection, completed-download grace, closed access without false deletion,
+legacy missing snapshots, and pending actions. All 14 focused governed-panel,
+retention-notice, and PSeq panel tests passed across three files. Lint/typecheck
+passed. The real job page uses the extracted component and invalidates package
+state after each transfer attempt. Audience guide prose and review dates changed;
+documentation navigation/audience/rendering rules are unchanged.
+
+
+## Secondary department paths checkpoint (2026-09-04)
+
+The Data Library now exposes history to admins of the selected Department as well
+as Organization admins, with scope/legacy guidance and Department-specific cache
+keys. Requests wait for matching server-confirmed Department context.
+`DataLibraryPage.test.tsx` has six cases (five new): mock-mode behavior, Department
+and Organization admins, ordinary-member denial, context-confirmation wait,
+immediate old-row removal while the next request is pending, and role revocation.
+All 13 focused Data Library/API-client/documentation tests passed across four
+files. Frontend lint/typecheck passed. Documentation navigation/audience/rendering
+rules remain unchanged; audience prose and review dates are current. Hosted
+signed-in history, notifications, exports, and identity remain release gates.
+
+
+## Department administration closeout checkpoint (2026-09-04)
+
+`OrganizationInvitationDialog.test.tsx` adds four cases for required Department
+intent and admin assignment, changed Department availability with preserved
+inputs, unsaved dismissal, and Organization-admin scope. The full Portal unit
+suite passed: 144 tests across 57 files. Frontend lint and typecheck passed.
+New shared forms use RHF/Zod, the en-US catalog, visible required legends, pending
+guards, accessible field errors, and explicit review after a stale response.
+Organization-default inheritance and API enforcement are covered by backend
+reference tests; their visible edit/conflict flow is covered in the E2E plan.
+
+
 ## Website UI polish checkpoint (2026-09-04)
 
 The separate Astro Website's contact forms received required markers,
@@ -666,3 +742,10 @@ remain incomplete production-activation gates.
   advisory client-chunk and `AcceptInvitePage` route-export warnings remain.
   Frontend tests were updated but were not run because test execution was not
   requested.
+
+### Released lifecycle closeout (2026-09-05)
+
+`ReleasedDeliverableDetailPage.test.tsx` verifies complete receipt metadata,
+frozen/historical lineage, member versus staff actions, and stale-version retry
+with the entered hold reason retained and the refreshed version submitted.
+File management's navigation test includes its new retained-package link.

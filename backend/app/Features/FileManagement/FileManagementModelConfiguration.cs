@@ -5,12 +5,35 @@ using Microsoft.EntityFrameworkCore.Metadata.Builders;
 using PSeq.Operations.Commercial.Accounts.Domain;
 using PSeq.Operations.Commercial.Common.Persistence;
 using PSeq.Operations.Commercial.FileManagement.Domain;
+using PSeq.Operations.Commercial.OrderManagement.Domain;
 using PhaenoPortal.App.Features.OrderManagement.Domain;
 
 public static class FileManagementModelConfiguration
 {
     public static void Configure(ModelBuilder modelBuilder)
     {
+        modelBuilder.Entity<ReleasedDeliverablePreservationHold>(entity =>
+        {
+            entity.HasKey(value => value.Id);
+            entity.Property(value => value.Kind).HasConversion<string>().HasMaxLength(30);
+            entity.Property(value => value.Reason).IsRequired().HasMaxLength(2000);
+            entity.Property(value => value.ReleaseReason).HasMaxLength(2000);
+            entity.Property(value => value.Version).IsConcurrencyToken();
+            entity.HasIndex(value => new { value.RetentionSnapshotId, value.ReleasedAtUtc });
+            entity.HasOne<ReleasedDeliverableRetentionSnapshot>().WithMany().HasForeignKey(value => value.RetentionSnapshotId).OnDelete(DeleteBehavior.Restrict);
+            entity.HasOne<User>().WithMany().HasForeignKey(value => value.PlacedByUserId).OnDelete(DeleteBehavior.Restrict);
+            entity.HasOne<User>().WithMany().HasForeignKey(value => value.ReleasedByUserId).OnDelete(DeleteBehavior.Restrict);
+        });
+        modelBuilder.Entity<ReleasedDeliverableReissue>(entity =>
+        {
+            entity.HasKey(value => value.Id);
+            entity.Property(value => value.Reason).IsRequired().HasMaxLength(2000);
+            entity.HasIndex(value => value.ReplacementSnapshotId).IsUnique();
+            entity.HasOne<ReleasedDeliverableRetentionSnapshot>().WithMany().HasForeignKey(value => value.OriginalSnapshotId).OnDelete(DeleteBehavior.Restrict);
+            entity.HasOne<ReleasedDeliverableRetentionSnapshot>().WithMany().HasForeignKey(value => value.ReplacementSnapshotId).OnDelete(DeleteBehavior.Restrict);
+            entity.HasOne<User>().WithMany().HasForeignKey(value => value.AuthorizedByUserId).OnDelete(DeleteBehavior.Restrict);
+        });
+
         modelBuilder.Entity<ReleasedDeliverablePolicyDefault>(entity =>
         {
             entity.HasKey(item => item.Id);
@@ -68,6 +91,11 @@ public static class FileManagementModelConfiguration
                 .HasConversion<string>()
                 .HasMaxLength(50);
             entity.Property(item => item.DeletionOutcome).HasMaxLength(100);
+            entity.Property(item => item.WarningCheckpointOutcome).HasMaxLength(50);
+            entity.HasOne<OrderNotification>().WithMany().HasForeignKey(item => item.WarningNotificationId).OnDelete(DeleteBehavior.Restrict);
+            entity.HasOne<OrderNotification>().WithMany().HasForeignKey(item => item.GraceNotificationId).OnDelete(DeleteBehavior.Restrict);
+            entity.HasIndex(item => item.WarningAtUtc);
+
             entity.Property(item => item.Version).IsRequired().IsConcurrencyToken();
             entity.HasIndex(item => item.LabResultReleaseId)
                 .IsUnique()

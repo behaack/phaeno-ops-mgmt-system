@@ -30,7 +30,8 @@ public sealed class ResultRetentionWorker(
             var storage = scope.ServiceProvider.GetRequiredService<IOperationalFileStorage>();
             var now = DateTime.UtcNow;
             var schedules = await db.ResultRetentionSchedules
-                .Where(item => item.State != ResultRetentionState.Deleted
+                // The historical worker cannot apply four-offset semantics or delete new policy-backed packages.
+                .Where(item => item.RetentionSnapshotId == null && item.State != ResultRetentionState.Deleted
                     && item.State != ResultRetentionState.Reissued
                     && (item.WarningAtUtc <= now || item.CutoffAtUtc <= now
                         || item.GraceEndsAtUtc <= now || item.DeleteAtUtc <= now))

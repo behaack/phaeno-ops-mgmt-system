@@ -4,9 +4,10 @@
 
 This plan does not currently own raw NGS files, intermediate pipeline
 artifacts, pipeline orchestration, or their scientific provenance and
-retention. The boundary between generated NGS output, Phaeno's existing
-automated data pipeline, and customer output creation is an explicit major TBD
-in `LAB-OPERATIONS-PLAN.md`.
+retention. Raw/intermediate storage and pipeline orchestration remain unassigned
+in `LAB-OPERATIONS-PLAN.md`. The final-deliverable manifest, transfer, scientific
+approval, and publication handoff is implemented behind the governed PSeq flags
+in `PSEQ-ORDER-TO-CASH-GAP-CLOSURE-PLAN.md`.
 
 This plan does own the approved lifecycle of an immutable customer deliverable
 package after it is released through the Portal. The global defaults are 30 days
@@ -17,13 +18,70 @@ Customer-, Partner-, and Prospect-organization overrides.
 
 Do not extend the general file-management design below into raw or intermediate
 scientific pipeline files until the pipeline and file-ownership contract is
-separately approved. The Lab Operations plan currently assumes only that
-approved customer output files eventually become available for controlled
-release through the Portal.
-The implemented `ReadyForRelease` transition deliberately creates no file,
-result release, pipeline run, or customer download. Existing Commercial scan,
-credit/payment, and publication gates remain authoritative until this
-scientific pipeline boundary is separately approved.
+separately approved. The older bare `ReadyForRelease` handoff does not manufacture
+files. Governed PSeq approval pins a clean immutable output package for explicit
+Commercial release. PSeq release is independent of payment/credit; Partner
+payment/publication rules remain owned by their existing workflows.
+
+## Authorized next slice: governed retention reconciliation (2026-09-04)
+
+The Product Owner's next-slice request continues local implementation and focused
+verification. Users are Customer members downloading governed PSeq results and
+Phaeno release operators. The settled product rule is one versioned global plus
+Organization policy, exact frozen UTC dates, and whole-package conditional grace.
+
+- New governed releases capture the existing versioned retention snapshot in the
+  release transaction and link their schedule to it. Existing schedules retain
+  their communicated dates; no historical policy or successful-download backfill.
+- Governed artifact responses use the existing durable completion/lease machinery.
+  Range/failed/cancelled transfers do not count; old request-only evidence remains
+  non-counting. Package completion means every immutable artifact has succeeded.
+- Evaluate standard versus final cutoff from the snapshot and successful events,
+  including delayed processing and completion during grace. Download admission and
+  the tenant projection use the same evaluator, independently of worker state.
+- Show the existing tenant-safe retention component for governed results. Preserve
+  Organization/Department authorization, scientific release/scan/withdrawal gates,
+  policy provenance, immutable earlier releases, and independent corrected clocks.
+- The old four-offset worker must not process snapshot-backed schedules. Automatic
+  warning/grace outbox processing, concurrent checkpoint/stream-revocation proof,
+  and physical cleanup are a later activation slice. This work activates no worker,
+  storage provider, real email, shared migration, Git operation, or deployment.
+- Verify pure policy boundaries, rollback-backed release/stream/controller paths,
+  frontend projection, and rendered desktop/mobile state at a logical checkpoint.
+
+## Continuing remaining work: durable governed retention (2026-09-04)
+
+Authorized local scope: implement and verify warning/grace checkpoints, durable
+outbox creation/retry, urgent missing-recipient Operations follow-up, and
+serialization with governed download admission/completion. The existing product
+rules above settle recipients and fixed dates. Success means repeated/concurrent
+processing creates at most one warning and one grace outbox record, skipped
+warnings remain explained, failures stay recoverable, and late completions do not
+rewrite a frozen standard-deadline decision. Runtime processing uses a separate,
+default-off flag; no provider delivery, cleanup, shared migration, or rollout is
+activated by this implementation. Signed-in staging and physical/provider proof
+remain distinct acceptance work. Exact commit-time and active revocation limits
+must be recorded from verification rather than inferred from local tests.
+
+## Authorized next slice: commit-time deadline evidence (2026-09-05)
+
+The next-slice request continues local implementation and focused verification of
+the remaining timing gap. The settled rule remains that success must commit
+strictly before the standard deadline to avoid grace; an admission must commit
+strictly before its applicable cutoff before any bytes open. Capture the source
+transaction identity atomically with each governed admission/completion, then
+retain PostgreSQL's actual commit timestamp as separate immutable evidence. Read
+paths, checkpoints, and reconciliation use that evidence; missing/untracked
+historical evidence must stop the decision rather than invent a timestamp.
+
+PostgreSQL commit timestamp information requires `track_commit_timestamp` and is
+not retained indefinitely, so promptly copy verified timestamps to durable rows.
+References: [commit information functions](https://www.postgresql.org/docs/18/functions-info.html#FUNCTIONS-COMMIT-TIMESTAMP)
+and [transaction identifiers](https://www.postgresql.org/docs/18/transaction-id.html).
+Use a separate loopback-only local cluster with tracking enabled to verify
+transactions whose commit is deliberately held across the deadline, rollback,
+recovery, and late admission. Do not restart/reconfigure the existing development
+server or activate any shared environment, storage, email, or feature flag.
 
 ## Current Implementation Boundary
 
@@ -56,8 +114,67 @@ now returns a tenant-safe retention projection from authorized laboratory-order,
 assembly-request, and assembly-output APIs and displays the standard deletion
 time plus clearly conditional grace time on Customer result and Partner output
 details. It does not expose policy identifiers, revisions, override sources, or
-change history to external users. The Portal does not yet run warning, grace,
-download-cutoff, notification, or byte-deletion processing.
+change history to external users. General file and ZIP endpoints now enforce
+conditional grace and cutoff when their default-off enforcement switch is enabled.
+General scheduled warning/grace notices and byte-deletion processing remain open.
+
+New governed PSeq releases now capture the same versioned global/Organization
+policy and first release instant as their `LabResultRelease`, then link the
+`ResultRetentionSchedule` to that immutable snapshot. Both staff and Customer
+projections evaluate current completion evidence against its exact standard/final
+deadlines. Grace stays downloadable and a completion at or after the standard
+deadline never shortens it. New requests are denied at the applicable cutoff even
+when worker state has not advanced. Legacy schedules keep their original dates
+and deny at their original cutoff without waiting for the historical worker.
+
+Governed artifact responses now reuse durable leased completion tracking, with
+an exclusive managed-file/result-artifact target constraint. A successful full
+response records counting success plus `ResultDeliveryEvidence.Download` together;
+old request-only download evidence is preserved and never inferred successful.
+Failed opens/streams, cancelled and partial-range responses remain non-counting.
+
+The old `ResultRetentionWorker`, enabled by `GovernedPSeqResults`, handles only
+historical schedules without a policy snapshot; the query excludes new schedules
+and their domain model rejects old-worker advancement. Snapshot-backed warning/grace checkpoints and outboxes are now implemented for
+governed PSeq packages behind the separate, default-off
+`PSeqOrderToCash:GovernedRetentionProcessing` flag. Package admission, successful
+completion, and checkpoint processing share database transaction locks; authority
+rows remain locked through admission/completion commit. The response monitors
+current database authority every second and aborts on revocation or monitor
+failure, including a blocked source read. Ordinary retention cutoff preserves a
+valid existing lease. No lock is held throughout the byte transfer.
+
+Warnings record a single queued or skipped checkpoint; delayed work after the
+standard deadline suppresses the obsolete warning. Grace records its original
+standard instant and one notice even if processing runs late. Both notices use
+the existing recoverable outbox and current active Organization admins only.
+Failed/no-recipient notices create or refresh one urgent Operations item; listing
+the queue also recovers failures left by interrupted final attempts. A resolved
+item reopens when the underlying failed notice still needs recovery. Notice
+retry never changes the deadline. Provider retries retain at-least-once delivery
+semantics; unique outbox rows are not proof of exactly-once mailbox delivery.
+
+Governed admissions and successful completions now capture their full PostgreSQL
+transaction identity atomically with the source event. After commit, verified
+commit time is retained separately; admission must commit strictly before its
+frozen applicable cutoff before storage opens. Retention projections and
+checkpoints use verified completion commit time, so a response recorded before
+the standard deadline but committed afterward cannot cancel grace. Package dates
+and original response audit timestamps are unchanged. A 30-second reconciler and
+read paths recover committed events after an interrupted observation. Missing or
+untracked historical proof returns a controlled unavailable result; it is never
+backfilled from an earlier request/response timestamp. Failure and revocation
+remain recordable while unrelated timing evidence needs recovery.
+
+Governed-results startup and admissions require PostgreSQL commit tracking.
+Copying commit timestamps promptly is required because PostgreSQL eventually
+removes its transaction history. The durable evidence retains the full xid8
+identity and refuses wrapped, future, or unavailable transaction identities.
+Independent-connection tests now hold actual commits across both standard and
+final cutoffs, recover a lost observer, and verify rollback and zero storage
+opens on rejected admission. Hosted configuration/restart/recovery acceptance,
+general scheduled Lab/Assembly processing, cleanup/hold/reissue processing, and provider
+proof remain open. This does not complete the general retention plan.
 
 Completion-aware download evidence is implemented for released Customer
 laboratory results and Partner data-assembly outputs. An individual-file or
@@ -87,7 +204,7 @@ This does not complete the general file-management plan or its proposed general
 folder/file schema. The S3 adapter is implemented, but production bucket,
 credentials, encryption, permissions, monitoring, and runtime validation remain
 incomplete. Production malware-scanner integration, shared folders, general
-file versions, retention processing, and file behavior outside the existing
+file versions, general versioned-policy retention processing, and file behavior outside the existing
 curated-data and order-management flows remain unimplemented.
 
 ### Production S3 activation TODO
@@ -890,15 +1007,53 @@ S3 support uses:
    backfilled. Completion-aware individual-file and full-package ZIP attempts,
    bounded leases, terminal outcomes, timeout reconciliation, and derived
    organization package/file state are complete for Customer laboratory results
-   and Partner assembly outputs. Trial Project release integration, the general
-   retention worker, warning/grace notifications, deadline enforcement, active
-   revocation, and cleanup reconciliation are not started.
+   and Partner assembly outputs. General endpoint deadline enforcement and active
+   revocation are now implemented behind a default-off switch. General scheduled
+   warning/grace processing and Operations recovery are also implemented locally
+   behind a separate default-off switch. Trial Project release integration and
+   cleanup reconciliation remain open.
 7. Local storage and provider-selection tests: created. Released-deliverable
    value, inheritance, history-state, download-attempt transition,
    individual-versus-archive accounting, active-versus-expired projection, and
    EF mapping tests are created. Hosted API authorization, interrupted response
    streaming, concurrent terminal ordering, and retention-expiration coverage
    remains future scope.
+
+## Reconciliation verification checkpoint (2026-09-04)
+
+- Migration `20260905022605_UnifyGovernedResultRetentionPolicy` was inspected and
+  applied only to `localhost/phaeno_ops`. It adds nullable snapshot/artifact links,
+  the exclusive file-target constraint, and supporting indexes; existing rows and
+  deadlines remain unchanged. Downgrade refuses to discard recorded governed
+  evidence. The complete ERD includes both fields, keys, and relationships.
+- Backend solution build passed with zero warnings/errors. All 79 focused policy,
+  download, governed-result, Department, PSeq-domain, and persistence tests passed
+  with no skips. New coverage includes 11 pure boundary cases and six rollback-
+  backed PostgreSQL cases executing real MVC file results over synthetic streams.
+  This is not a hosted network/Clerk/storage-provider journey.
+- All 14 focused frontend tests passed across three files; lint/typecheck passed.
+  Two browser instances (desktop/light and mobile/dark) passed with inspected
+  screenshots, keyboard focus, no overflow or console errors, and Axe checks.
+  The browser-only fixture renders the actual governed package component.
+- Customer and Phaeno help updated. No production storage change, email, physical
+  deletion, shared migration, Git mutation, or deployment ran.
+
+## Durable processing verification checkpoint (2026-09-04)
+
+Migration `20260905031439_AddGovernedRetentionCheckpoints` adds five nullable
+checkpoint/notification fields, two retained outbox foreign keys, and the filtered
+unique notice-sequence index. It was inspected and applied only to
+`localhost/phaeno_ops`; rollback refuses to discard checkpoint evidence. No
+historical dates were rewritten. The complete regenerated ERD now includes 141
+application tables plus migration history, with a runtime-model completeness test.
+
+All 103 focused backend tests and 15 frontend tests passed with no failures/skips.
+Backend compilation, frontend lint/typecheck, and diff checks passed. Independent
+connection tests use a uniquely named disposable local database and synthetic
+senders/storage, including a blocked MVC source stream cancelled after another
+connection revokes the user. No email was sent and no provider bytes were deleted.
+The single new Operations queue filter has component coverage; hosted/browser
+acceptance remained open at that checkpoint. Commit-time proof is recorded below.
 
 ## Current Checkpoint And Recommended Next Slice
 
@@ -908,8 +1063,220 @@ package-level state are implemented locally. Before any retention worker is
 activated, execute the focused domain/component tests plus a hosted
 controller/PostgreSQL streaming journey that proves full file/archive success,
 partial and interrupted responses, timeout reconciliation, tenant denial, and
-first-terminal-writer concurrency. After that verification gate, the next
-code-only slice is the idempotent warning/grace/download-cutoff state machine;
-physical byte deletion remains a later storage-activation gate. This does not
+first-terminal-writer concurrency. Shared policy evaluation and governed PSeq
+cutoff/grace admission are now implemented and locally verified. Durable governed warning/grace checkpoints and outboxes, urgent Operations
+follow-up, and independent-connection stream-revocation checks are now implemented
+locally. Verified PostgreSQL commit-time evidence and delayed-commit boundary
+proof are now implemented locally. Remaining activation work includes hosted
+commit-tracking configuration and recovery acceptance,
+hosted authenticated transfer/revocation and two-department acceptance, and real
+provider delivery evidence. General Lab/Assembly endpoint enforcement now consumes
+the same policy behind its default-off activation switch. General scheduled
+warning/grace processing and recovery are now implemented locally behind their
+separate default-off switch; hosted/mailbox acceptance remains open.
+Physical byte deletion remains a later storage-activation gate. This does not
 authorize the proposed general folder/file model or the separate scientific-
 pipeline file boundary.
+
+
+## Commit-time verification checkpoint (2026-09-05)
+
+`20260905114659_RecordGovernedDownloadCommitEvidence` adds one evidence table,
+its retained attempt foreign key, a unique admission/completion key, and a pending
+observation index. There is no date or historical-success backfill. The ERD now
+covers 142 application tables plus migration history, 2130 application fields,
+and 251 foreign keys. The migration was inspected and verified on an isolated
+loopback PostgreSQL 18.3 cluster with commit tracking enabled.
+
+The 104-test affected backend set passed without failures or skips. The new
+`GovernedDownloadCommitPostgresTests` journey uses independent connections and a
+transaction interceptor that holds the actual COMMIT across the deadline. It
+proves late success preserves grace, admission at both standard and final cutoff
+opens no storage, lost observations recover exactly once, uncommitted events
+cannot be verified, and rollback leaves no evidence. Existing rollback fixtures
+use explicitly synthetic commit observations for workflow tests; they are not
+commit-time proof. Historical success without evidence is rejected, and that
+missing proof cannot block revocation. Customer/staff projections use database
+time. No client component, route, documentation navigation, or audience gate was
+changed; no new browser suite or frontend tests are needed for this backend slice.
+
+The existing local server has tracking off; it was not restarted or reconfigured.
+Governed-results activation requires tracking enabled before governed transactions
+begin and separate hosted recovery/streaming acceptance. Shared migration,
+provider activation, real email/deletion, Git operations, and deployment did not
+run. The next independent implementation gap is general Lab/Assembly retention
+endpoint enforcement using the shared frozen policy.
+
+The commit-evidence migration refuses rollback while evidence exists; the isolated
+database test verifies refusal preserves every evidence row. The additive
+migration also applied to the guarded local development `phaeno_ops` database;
+no shared database or server configuration changed.
+
+Final verification: the 15 affected governed-flow tests passed after the recovery
+edge-case fix, followed by the delayed-commit/rollback-guard journey. Backend
+build passed with zero warnings/errors, EF reports no pending model changes,
+ERD regeneration is stable, and diff/link checks passed. The staging script
+parses and its offline preparation leaves all 14 checkpoints pending. The
+isolated tracking-enabled test server was stopped after verification.
+
+
+## Authorized next slice: general Lab/Assembly endpoint enforcement (2026-09-05)
+
+Users are Customer Lab-result recipients and Partner Assembly-output recipients.
+The existing workflow is a released individual file or whole-package ZIP. Apply
+shared frozen-policy cutoff and conditional whole-package grace to both paths,
+using verified commit evidence and current Organization/Department membership,
+release, scan, and withdrawal checks. A pre-cutoff admitted transfer can finish
+within its original lease; revocation stops both individual and ZIP responses.
+Partner release/payment rules remain unchanged. Historical packages without a
+snapshot gain no invented dates; unverifiable historical completion cannot be
+silently upgraded to commit evidence.
+
+Add a default-off `OrderManagement:ReleasedDeliverableRetentionEnforcement`
+activation switch because these existing endpoints are live independently of the
+governed-PSeq switch. Enabling it requires commit tracking; disabled behavior
+remains compatible. Decisions and displayed dates use the same evaluator. The
+Assembly file set is its retained output rows attached to the immutable release,
+as current approval code implements; its user-supplied scientific ManifestJson
+is not a guaranteed file-ID manifest. Lab uses its immutable file-ID manifest.
+Record this existing distinction rather than changing scientific metadata.
+
+Success criteria: file/ZIP denial before storage at cutoff; complete-before-
+standard closes versus incomplete/late completion preserves grace; exact commit
+admission, non-counting interrupted/range/failed ZIP responses; current tenant,
+Department, release/payment/scan gates; independent-connection revocation; no
+historical date changes. Implement and batch focused backend verification locally.
+General scheduled warnings, physical deletion/holds/reissue, hosted acceptance,
+shared configuration/migrations, Git operations, and deployment remain separate.
+
+
+## General endpoint verification checkpoint (2026-09-05)
+
+Implemented `OrderManagement:ReleasedDeliverableRetentionEnforcement` (default
+false). Enabled Lab-result and Assembly-output individual/ZIP requests serialize
+admission and completion, validate current retained file sets and authority, and
+capture admission/completion commit evidence using the existing table. The
+shared observer now also runs when this switch is enabled and requires database
+commit tracking. No persisted model or migration changed.
+
+The shared evaluator supplies both endpoint decisions and existing retention DTO
+fields. Undated historical releases retain their existing behavior; snapshot
+releases with unverifiable historical success require recovery rather than
+invented proof. Whole-ZIP success counts all admitted files atomically; a failed
+ZIP counts none of that attempt. Revocation cancels file and ZIP transfers from
+current database authority across serving connections. Ordinary cutoff allows
+already-admitted responses to finish within their original lease.
+
+Lab managed results now appear under their release with its schedule and file/ZIP
+actions. Assembly and Lab controls disable closed/deleted or unavailable files;
+both refresh authoritative state after failed as well as successful attempts.
+The existing separate governed-PSeq panel and Partner payment-release rules are
+preserved. Audience guides and their review dates were updated.
+
+The affected 106-test backend set had 105 passes and one new fixture failure; the
+fixture was corrected, then both new managed-retention journeys passed. All 104
+pre-existing affected checks passed in that regression run. New journeys use a
+uniquely named disposable database on the isolated tracking-enabled local cluster
+and prove Lab/Assembly file/ZIP cutoff, undated/default-off compatibility, full
+and partial success, failed ZIP non-counting, immutable grace, complete-before-
+standard closure, other-Department denial, payment/release/withdrawal gating,
+actual delayed admission/completion commits, and independent-connection archive
+revocation. No real storage objects or emails are used.
+
+All 14 focused frontend tests passed (five new Lab release tests), lint/typecheck
+passed, and desktop/light plus mobile/dark Playwright fixtures passed with Axe,
+keyboard focus, no overflow or console errors, and inspected screenshots. Browser
+checks render the real Lab release component; they do not prove hosted sign-in
+or the entire Assembly page. The browser skill's CLI was unavailable, so the
+repository's existing Playwright runtime performed those checks.
+
+No deployment, Git operation, shared database/configuration change, physical
+deletion, or feature activation ran. General scheduled warning/grace outboxes and
+failure recovery are the next implementation slice; storage cleanup/holds/reissue
+and hosted authenticated acceptance remain separately gated.
+
+Final build passed with zero warnings/errors and EF reported no model changes.
+Focused UI tests passed after the unavailable-file ZIP guard was added.
+
+### General Lab/Assembly retention notices slice (2026-09-05)
+
+The next authorized local slice serves Customer Lab-result recipients, Partner
+Assembly-output recipients, and Phaeno Operations. Extend the approved frozen
+package policy with one warning and one conditional grace outbox notice to
+current active Organization admins, tenant-safe authenticated workflow links,
+and the existing urgent Retention notices recovery queue. Repeated/concurrent
+polling and retries must preserve the original snapshot and notification IDs;
+verified whole-package completion suppresses a warning before it is queued.
+
+Reuse the snapshot checkpoints and unique retention outbox contract. Exclude
+governed PSeq projection snapshots from general scheduling and distinguish both
+families when claiming notices. Add a separate default-off general processing
+switch requiring general enforcement and Operations attention. No persisted
+model change is intended. Batch focused local verification of both release
+types, concurrency, current recipients, retry recovery, and switch isolation.
+No Git mutation, deployment, shared configuration, real email, physical byte
+cleanup, holds, or reissue is part of this slice.
+
+### General retention notices verification (2026-09-05)
+
+Implemented the general worker with the existing frozen snapshot checkpoints,
+verified completion evidence, and per-package advisory transactions. Customer Lab
+and Partner Assembly releases queue one warning and one conditional grace notice,
+use their respective authenticated workflow links, skip completed/unavailable/
+obsolete warnings, and close access at the original deadline without deleting
+bytes. Governed projection snapshots are excluded from both direct and polled
+general processing. The existing outbox's unique snapshot/event key is retained.
+
+General processing and dispatch require the new default-off
+`OrderManagement:ReleasedDeliverableRetentionProcessing`, general enforcement,
+and Operations attention. Startup rejects incomplete activation. Dispatcher
+claims classify snapshots so either retention family can remain paused without
+blocking ordinary notifications. Current active Organization admins are resolved
+again at delivery. Missing admins, provider failures, and expired final claims
+use the existing urgent queue and retry record without moving dates.
+
+All 111 affected backend cases passed with no failures/skips on the isolated
+loopback PostgreSQL cluster with commit tracking enabled. The five added cases
+cover both release types, independent-connection duplicate polling, actual file/
+ZIP completion before and after standard cutoff, unavailable and undated releases,
+recipient changes, provider-failure reopening, final-claim recovery, family gate
+isolation, and ordinary notification continuity. The focused 14-case checkpoint/
+general set also passed. Test senders were synthetic; no email was sent.
+
+EF reports no model changes. Customer, Partner, and Phaeno help and Operations
+readiness were updated. No frontend component, route, API response, documentation
+navigation, audience rule, or renderer changed, so frontend/browser suites were
+not rerun for this backend/prose slice. Both activation switches remain false.
+No Git operation, shared configuration/migration, deployment, provider activation,
+or physical deletion ran. Cleanup/holds/reissue, Trial Project integration, and
+hosted authenticated/mailbox/restart acceptance remain separate work.
+
+## Authorized closeout and release (2026-09-05)
+
+The Product Owner requested completion, all tests, technical/user documentation,
+commit, and API/UI deployment. This includes durable package cleanup retries,
+lease-safe and reference-safe deletion, preservation/quarantine holds, retained
+lifecycle receipts, and distinct reissue lineage. Phaeno administrators manage
+holds and reissue links; external members see authorized package facts and
+Organization admins see download audit. Quarantine blocks active/new access;
+preservation never moves dates. Deletion stays default-off under the existing
+production storage hold. Approved Trial integration is separate dependent work.
+
+Engineering: retain immutable snapshot identity, add audited hold/reissue records
+and durable cleanup progress, serialize lifecycle writes with the same package
+lock as downloads, and validate exact file ownership before any object deletion.
+Store only safe failure categories in external lifecycle state. Keep the existing
+scientific release workflows as the authority for replacement package creation.
+
+### Lifecycle implementation checkpoint (2026-09-05)
+
+Implemented durable cleanup state and provider retries, lease/hold/shared-source
+protection, audited preservation and quarantine actions, immutable reissue links,
+and retained printable receipts. New Lab releases freeze sample/accession/tube
+lineage. Assembly receipts identify project-level scope; historical lineage is
+left unknown. Receipt access follows tenant/Department rules and only external
+Organization admins receive downloader audit. Staff reasons remain private.
+Cleanup remains default-off. A replacement is created and scientifically approved
+through the owning release workflow, then explicitly linked; no link regenerates
+or silently restores an old object. Trial Project integration remains dependent
+on the separate Trial workflow and its unresolved scientific criteria.

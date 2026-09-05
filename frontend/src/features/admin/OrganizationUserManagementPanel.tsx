@@ -4,6 +4,7 @@ import { Ellipsis, Mail, Pencil, Trash2, UserPlus } from 'lucide-react'
 import { useEffect, useState } from 'react'
 import { useForm } from 'react-hook-form'
 import { z } from 'zod'
+import { OrganizationInvitationDialog, type OrganizationInviteValues } from '#/features/invitations/OrganizationInvitationDialog'
 
 import {
   apiErrorMessage,
@@ -52,22 +53,6 @@ const roleSchema = z.object({
   role: z.enum(['Member', 'Administrator']),
 })
 type RoleValues = z.infer<typeof roleSchema>
-
-const inviteSchema = z.object({
-  firstName: z
-    .string()
-    .trim()
-    .min(1, 'Enter a first name.')
-    .max(100, 'First name cannot exceed 100 characters.'),
-  lastName: z
-    .string()
-    .trim()
-    .min(1, 'Enter a last name.')
-    .max(100, 'Last name cannot exceed 100 characters.'),
-  email: z.string().trim().email('Enter a valid email address.'),
-  role: z.enum(['Member', 'Administrator']),
-})
-type InviteValues = z.infer<typeof inviteSchema>
 
 type EditTarget = {
   user: OrganizationUser
@@ -121,7 +106,7 @@ export function OrganizationUserManagementPanel({
     },
   })
   const inviteMutation = useMutation({
-    mutationFn: (values: InviteValues) =>
+    mutationFn: (values: OrganizationInviteValues) =>
       createInvitation({
         organizationId,
         firstName: values.firstName,
@@ -129,6 +114,7 @@ export function OrganizationUserManagementPanel({
         email: values.email,
         isOrganizationAdmin: values.role === 'Administrator',
         labRoles: [],
+        departments: values.departments,
       }),
     onSuccess: async () => {
       setInviteOpen(false)
@@ -172,7 +158,7 @@ export function OrganizationUserManagementPanel({
                 Active members and pending invitations for this organization.
               </CardDescription>
             </div>
-            <Button type="button" onClick={() => setInviteOpen(true)}>
+            <Button id="add-organization-user" type="button" onClick={() => { inviteMutation.reset(); setInviteOpen(true) }}>
               <UserPlus data-icon="inline-start" />
               Add user
             </Button>
@@ -362,17 +348,13 @@ export function OrganizationUserManagementPanel({
         }}
         target={editTarget}
       />
-      <OrganizationInviteDialog
-        error={
-          inviteMutation.error
-            ? apiErrorMessage(inviteMutation.error)
-            : undefined
-        }
+      {inviteOpen ? <OrganizationInvitationDialog
+        organizationId={organizationId}
+        error={inviteMutation.error}
         isPending={inviteMutation.isPending}
         onOpenChange={setInviteOpen}
-        onSubmit={(values) => inviteMutation.mutate(values)}
-        open={inviteOpen}
-      />
+        onSubmit={(values) => inviteMutation.mutateAsync(values)}
+      /> : null}
       <Dialog
         open={Boolean(deactivateTarget)}
         onOpenChange={(open) => {
@@ -521,148 +503,6 @@ function MembershipRoleDialog({
             disabled={isPending || !form.formState.isDirty}
           >
             {isPending ? 'Saving…' : 'Save changes'}
-          </Button>
-        </RequiredDialogFooter>
-      </DialogContent>
-    </Dialog>
-  )
-}
-
-function OrganizationInviteDialog({
-  error,
-  isPending,
-  onOpenChange,
-  onSubmit,
-  open,
-}: {
-  error?: string
-  isPending: boolean
-  onOpenChange: (open: boolean) => void
-  onSubmit: (values: InviteValues) => void
-  open: boolean
-}) {
-  const form = useForm<InviteValues>({
-    resolver: zodResolver(inviteSchema),
-    defaultValues: {
-      firstName: '',
-      lastName: '',
-      email: '',
-      role: 'Member',
-    },
-    mode: 'onBlur',
-  })
-
-  return (
-    <Dialog
-      open={open}
-      onOpenChange={(value) => {
-        onOpenChange(value)
-        if (!value) form.reset()
-      }}
-    >
-      <DialogContent>
-        <DialogHeader>
-          <DialogTitle>Add organization user</DialogTitle>
-          <DialogDescription>
-            Portal access begins only after the recipient accepts the
-            invitation.
-          </DialogDescription>
-        </DialogHeader>
-        {error ? (
-          <Alert variant="destructive">
-            <AlertTitle>Invitation was not sent</AlertTitle>
-            <AlertDescription>{error}</AlertDescription>
-          </Alert>
-        ) : null}
-        <form
-          id="invite-organization-user"
-          className="grid gap-4"
-          noValidate
-          onSubmit={form.handleSubmit(onSubmit)}
-        >
-          <div className="grid gap-4 sm:grid-cols-2">
-            <div className="grid gap-1.5">
-              <Label htmlFor="organization-invite-first-name">
-                <RequiredFieldName>First name</RequiredFieldName>
-              </Label>
-              <Input
-                id="organization-invite-first-name"
-                autoComplete="given-name"
-                required
-                aria-invalid={Boolean(form.formState.errors.firstName)}
-                {...form.register('firstName')}
-              />
-              {form.formState.errors.firstName ? (
-                <p role="alert" className="text-sm text-destructive">
-                  {form.formState.errors.firstName.message}
-                </p>
-              ) : null}
-            </div>
-            <div className="grid gap-1.5">
-              <Label htmlFor="organization-invite-last-name">
-                <RequiredFieldName>Last name</RequiredFieldName>
-              </Label>
-              <Input
-                id="organization-invite-last-name"
-                autoComplete="family-name"
-                required
-                aria-invalid={Boolean(form.formState.errors.lastName)}
-                {...form.register('lastName')}
-              />
-              {form.formState.errors.lastName ? (
-                <p role="alert" className="text-sm text-destructive">
-                  {form.formState.errors.lastName.message}
-                </p>
-              ) : null}
-            </div>
-          </div>
-          <div className="grid gap-1.5">
-            <Label htmlFor="organization-invite-email">
-              <RequiredFieldName>Email</RequiredFieldName>
-            </Label>
-            <Input
-              id="organization-invite-email"
-              type="email"
-              required
-              aria-invalid={Boolean(form.formState.errors.email)}
-              {...form.register('email')}
-            />
-            {form.formState.errors.email ? (
-              <p role="alert" className="text-sm text-destructive">
-                {form.formState.errors.email.message}
-              </p>
-            ) : null}
-          </div>
-          <div className="grid gap-1.5">
-            <Label htmlFor="organization-invite-role">
-              <RequiredFieldName>Role</RequiredFieldName>
-            </Label>
-            <select
-              id="organization-invite-role"
-              className="h-9 cursor-pointer rounded-lg border border-input bg-background px-3 text-sm"
-              {...form.register('role')}
-            >
-              <option value="Member">Member</option>
-              <option value="Administrator">
-                Organization administrator
-              </option>
-            </select>
-          </div>
-        </form>
-        <RequiredDialogFooter>
-          <Button
-            type="button"
-            variant="outline"
-            onClick={() => onOpenChange(false)}
-          >
-            Cancel
-          </Button>
-          <Button
-            type="submit"
-            form="invite-organization-user"
-            disabled={isPending}
-          >
-            {isPending ? 'Sending…' : 'Send invitation'}
           </Button>
         </RequiredDialogFooter>
       </DialogContent>

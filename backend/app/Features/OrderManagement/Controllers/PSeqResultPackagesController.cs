@@ -12,6 +12,7 @@ using PSeq.Operations.Commercial.LabOperations.Domain;
 using PSeq.Operations.Commercial.OrderManagement.Application;
 using PSeq.Operations.Commercial.OrderManagement.Domain;
 using PhaenoPortal.App.Features.Accounts.Services;
+using PhaenoPortal.App.Features.FileManagement.Services;
 using PhaenoPortal.App.Features.OrderManagement.Domain;
 using PhaenoPortal.App.Features.OrderManagement.Services;
 using PhaenoPortal.App.Infrastructure.Persistence;
@@ -233,7 +234,9 @@ public sealed class PSeqResultPipelineController(
 public sealed class PSeqResultReleaseController(
     PSeqOperationsDbContext dbContext,
     OrderRequestContext requestContext,
-    IOptions<PSeqOrderToCashOptions> options) : ControllerBase
+    IOptions<PSeqOrderToCashOptions> options,
+    ReleasedDeliverableRetentionSnapshotService retentionSnapshots,
+    GovernedResultRetentionService retentionService) : ControllerBase
 {
     private static readonly JsonSerializerOptions JsonOptions = new(JsonSerializerDefaults.Web);
 
@@ -254,14 +257,12 @@ public sealed class PSeqResultReleaseController(
         var packageIds = packages.Select(item => item.Id).ToList();
         var artifacts = await dbContext.ResultArtifacts.AsNoTracking().Where(item => packageIds.Contains(item.ResultOutputPackageId))
             .OrderBy(item => item.FileName).ToListAsync(cancellationToken);
-        var retention = await dbContext.ResultRetentionSchedules.AsNoTracking()
-            .Where(item => packageIds.Contains(item.ResultOutputPackageId))
-            .ToDictionaryAsync(item => item.ResultOutputPackageId, cancellationToken);
+        var retention = await retentionService.ReadAsync(packages, artifacts, await RetentionTransaction.ClockAsync(dbContext, cancellationToken), cancellationToken);
         return packages.Select(package => PSeqResultPipelineController.Map(package,
             artifacts.Where(item => item.ResultOutputPackageId == package.Id)
                 .Select(item => new ResultArtifactDto(item.Id, item.LogicalRole, item.FileName, item.ContentType,
                     item.SizeBytes, item.Sha256, item.ScanState.ToString(), item.ScanCompletedAtUtc, item.DeletedAtUtc)).ToList(),
-            retention.TryGetValue(package.Id, out var schedule) ? schedule.State.ToString() : null)).ToList();
+            retention[package.Id].State)).ToList();
     }
 
     [HttpPost("{packageId:guid}/release")]
@@ -274,19 +275,17 @@ public sealed class PSeqResultReleaseController(
         var package = await dbContext.ResultOutputPackages.SingleOrDefaultAsync(item => item.Id == packageId, cancellationToken)
             ?? throw new OrderManagementException("result_package_not_found", "The result package was not found.", StatusCodes.Status404NotFound);
         EnsureVersion(package.Version, request.Version);
-        package.Release(actor.Id, DateTime.UtcNow);
+        var now = DateTime.UtcNow;
+        package.Release(actor.Id, now);
         var release = new LabResultRelease(package.OrganizationId, package.LabServiceOrderId,
             package.LabSampleId, package.PackageVersion, "PSeq", package.PipelineProviderKey,
             $"Output package {package.Id}; manifest SHA-256 {package.ManifestSha256}", "ScientificallyApproved",
-            JsonSerializer.Serialize(new { resultOutputPackageId = package.Id }, JsonOptions), DateTime.UtcNow);
+            JsonSerializer.Serialize(new { resultOutputPackageId = package.Id }, JsonOptions), now);
         release.MarkReady(false);
-        release.Release(DateTime.UtcNow);
+        release.Release(now);
         dbContext.LabResultReleases.Add(release);
-        var configured = options.Value;
-        var now = DateTime.UtcNow;
-        dbContext.ResultRetentionSchedules.Add(new ResultRetentionSchedule(package.Id,
-            now.AddDays(configured.ResultRetentionWarningDays), now.AddDays(configured.ResultRetentionCutoffDays),
-            now.AddDays(configured.ResultRetentionGraceDays), now.AddDays(configured.ResultRetentionDeleteDays)));
+        var snapshot = await retentionSnapshots.CaptureLabResultAsync(release, now, cancellationToken);
+        dbContext.ResultRetentionSchedules.Add(new ResultRetentionSchedule(package.Id, snapshot));
         dbContext.ResultDeliveryEvidence.Add(new ResultDeliveryEvidence(package.Id, null,
             ResultDeliveryEvidenceKind.Notification, actor.Id, now,
             JsonSerializer.Serialize(new { status = "queued", paymentGateApplied = false }, JsonOptions)));

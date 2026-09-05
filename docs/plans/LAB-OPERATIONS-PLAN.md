@@ -262,8 +262,10 @@ Ownership and implementation remain TBD for:
 - file provenance, checksums, and lineage across the pipeline
 - scientific file storage and lifecycle
 - raw and intermediate pipeline retention policy
-- the final technical handoff by which customer output files become available
-  to Commercial Operations as an immutable released package
+The former final-output handoff TBD is closed by the governed PSeq manifest,
+package, scientific-approval, and Commercial release implementation described
+at the top of this plan. Its dedicated-staging/provider activation gates remain
+open; this does not claim raw or intermediate pipeline ownership.
 
 No initial Lab Operations design may silently claim this area or create a
 competing scientific file-management system.

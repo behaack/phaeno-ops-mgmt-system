@@ -1187,3 +1187,13 @@ Do not run tests or execute this verification plan until explicitly requested.
 - reuse of Prospect trial samples or results as Phaeno-owned curated data
   without a separately approved ownership, consent, and de-identification
   workflow
+
+## Closeout dependency (2026-09-05)
+
+The Portal closeout now implements shared retention enforcement, durable notices,
+cleanup/holds/reissue and retained receipts for existing Lab/PSeq/Assembly release
+parents. It does not create the missing Trial parent workflow. Completing that
+integration still requires the Trial analyses and scientific acceptance rules;
+the Product Owner was asked whether to adopt current PSeq rules or supply
+trial-specific criteria. No answer has been recorded. Do not treat shared file
+infrastructure or reserved provider identifiers as implemented Trial behavior.

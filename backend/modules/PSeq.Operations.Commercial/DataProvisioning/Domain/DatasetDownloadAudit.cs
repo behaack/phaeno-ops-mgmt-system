@@ -6,6 +6,9 @@ public sealed class DatasetDownloadAudit
 
     public Guid OrganizationId { get; private set; }
 
+    // Null is retained only for historical downloads whose department is unknown.
+    public Guid? DepartmentId { get; private set; }
+
     public Guid OrganizationDatasetGrantId { get; private set; }
 
     public Guid CuratedDatasetVersionId { get; private set; }
@@ -28,6 +31,7 @@ public sealed class DatasetDownloadAudit
 
     public DatasetDownloadAudit(
         Guid organizationId,
+        Guid departmentId,
         Guid organizationDatasetGrantId,
         Guid curatedDatasetVersionId,
         Guid userId,
@@ -37,7 +41,9 @@ public sealed class DatasetDownloadAudit
         string? requestId,
         string? remoteAddress)
     {
+        if (departmentId == Guid.Empty) throw new ArgumentException("A download department is required.", nameof(departmentId));
         OrganizationId = organizationId;
+        DepartmentId = departmentId;
         OrganizationDatasetGrantId = organizationDatasetGrantId;
         CuratedDatasetVersionId = curatedDatasetVersionId;
         UserId = userId;

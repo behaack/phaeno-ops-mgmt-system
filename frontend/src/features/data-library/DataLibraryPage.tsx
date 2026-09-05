@@ -33,21 +33,26 @@ import { ReleasedDeliverableRetentionNotice } from '#/features/orders/ReleasedDe
 import { GovernanceNoticePanel } from './GovernanceNoticePanel'
 
 export function DataLibraryPage({ jobId }: { jobId?: string }) {
-  const { authProvider, session, selectedOrganizationId } = usePhaenoSession()
+  const { authProvider, session, selectedOrganizationId, selectedDepartmentId } = usePhaenoSession()
   const queryClient = useQueryClient()
   const canView = Boolean(session?.capabilities.canViewOrganizationDatasets)
   const canViewLab = Boolean(session?.capabilities.canViewLabServiceOrders)
-  const apiEnabled = canView && authProvider !== 'mock'
   const selectedMembership = getSelectedMembership(session, selectedOrganizationId)
+  const department = session?.selectedDepartment
+  const scopeReady = Boolean(department?.isAvailable
+    && department.organizationId === selectedOrganizationId
+    && department.departmentId === selectedDepartmentId)
+  const apiEnabled = canView && scopeReady && authProvider !== 'mock'
+  const canViewHistory = scopeReady && Boolean(selectedMembership?.isOrganizationAdmin || department?.isDepartmentAdmin)
   const datasetsQuery = useQuery({
-    queryKey: ['curated-data', selectedOrganizationId],
+    queryKey: ['curated-data', selectedOrganizationId, selectedDepartmentId],
     queryFn: listTenantDatasets,
     enabled: apiEnabled && !jobId,
   })
   const historyQuery = useQuery({
-    queryKey: ['curated-data', selectedOrganizationId, 'downloads'],
+    queryKey: ['curated-data', selectedOrganizationId, selectedDepartmentId, 'downloads'],
     queryFn: listDownloadHistory,
-    enabled: apiEnabled && !jobId && Boolean(selectedMembership?.isOrganizationAdmin),
+    enabled: apiEnabled && !jobId && canViewHistory,
   })
   const jobQuery = useQuery({
     queryKey: ['lab-service-order', jobId],
@@ -97,8 +102,8 @@ export function DataLibraryPage({ jobId }: { jobId?: string }) {
         <Badge variant="secondary" className="mb-3">Phaeno curated data</Badge>
         <h1 className="text-3xl font-semibold leading-tight">Data Library</h1>
         <p className="mt-3 max-w-2xl text-sm leading-6 text-muted-foreground sm:text-base">
-          Read-only Phaeno-owned sample data explicitly assigned to this organization.
-          Every active organization user can access these grants.
+          Read-only Phaeno-owned sample data shared across your organization or assigned
+          to your selected department.
         </p>
       </section>
 
@@ -169,15 +174,18 @@ export function DataLibraryPage({ jobId }: { jobId?: string }) {
         </Card>
       ) : null}
 
-      {selectedMembership?.isOrganizationAdmin ? (
+      {canViewHistory ? (
         <Card className="mt-6">
           <CardHeader>
             <div className="flex items-start gap-3">
               <ShieldCheck aria-hidden="true" className="mt-0.5 size-5 text-muted-foreground" />
               <div>
-                <CardTitle>Organization download history</CardTitle>
+                <CardTitle>Department download history</CardTitle>
                 <CardDescription>
-                  Organization administrators can review downloads by their own users only.
+                  Downloads initiated in the selected department.
+                  {selectedMembership?.isOrganizationAdmin
+                    ? ' Older records with an unknown department are also included for grants in this scope.'
+                    : ' Older records with an unknown department are available to organization administrators.'}
                 </CardDescription>
               </div>
             </div>
@@ -193,7 +201,7 @@ export function DataLibraryPage({ jobId }: { jobId?: string }) {
               </div>
             ))}
             {!historyQuery.isLoading && (historyQuery.data?.length ?? 0) === 0 ? (
-              <p className="m-0 rounded-lg border border-dashed p-4 text-sm text-muted-foreground">No downloads recorded for this organization.</p>
+              <p className="m-0 rounded-lg border border-dashed p-4 text-sm text-muted-foreground">No downloads recorded in this scope.</p>
             ) : null}
             {historyQuery.error ? <p className="m-0 text-sm text-destructive" role="alert">{getApiErrorMessage(historyQuery.error, 'Download history could not be loaded.')}</p> : null}
           </CardContent>

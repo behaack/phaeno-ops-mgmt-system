@@ -1,3 +1,4 @@
+import { Link } from '@tanstack/react-router'
 import { CalendarClock } from 'lucide-react'
 
 import type { ReleasedDeliverableRetention } from '#/api/order-management'
@@ -13,7 +14,7 @@ export function ReleasedDeliverableRetentionNotice({
   const graceIsActive = Boolean(retention.graceActivatedAtUtc)
   const downloadsAreClosed = Boolean(retention.downloadAccessClosedAtUtc)
   const bytesAreDeleted = Boolean(retention.byteDeletedAtUtc)
-  const heading = bytesAreDeleted
+  const heading = retention.isQuarantined ? 'Access suspended' : bytesAreDeleted
     ? 'Files deleted'
     : downloadsAreClosed
       ? 'Downloads closed'
@@ -35,6 +36,8 @@ export function ReleasedDeliverableRetentionNotice({
               This release keeps the retention dates that were set when it was released.
             </p>
           </div>
+
+          {retention.snapshotId ? <Link to="/released-deliverables/$snapshotId" params={{ snapshotId: retention.snapshotId }} search={{ q: '', page: 0 }} className="text-sm text-primary underline print:hidden">View retained package receipt</Link> : null}
 
           {downloadSummary ? (
             <p aria-live="polite" className="text-sm font-medium text-foreground">

@@ -40,7 +40,7 @@ export function DataAssemblyDetailPage({ requestId }: { requestId: string }) {
     mutationFn: async (download: AssemblyDownloadRequest) => download.kind === 'package'
       ? downloadAssemblyOutputPackage(requestId, download.releaseId, download.releaseVersion)
       : downloadAssemblyOutput(requestId, download.releaseId, download.file),
-    onSuccess: async () => queryClient.invalidateQueries({ queryKey: ['data-assembly-request', requestId] }),
+    onSettled: async () => queryClient.invalidateQueries({ queryKey: ['data-assembly-request', requestId] }),
   })
 
   if (!apiEnabled) return <main className="page-wrap px-4 py-8"><Alert><AlertTitle>Connected request detail is unavailable</AlertTitle><AlertDescription>Use a signed-in Partner session to review this assembly request.</AlertDescription></Alert></main>
@@ -73,9 +73,9 @@ export function DataAssemblyDetailPage({ requestId }: { requestId: string }) {
                         <p id={`assembly-release-${release.id}`} className="font-medium">Release {release.releaseVersion}</p>
                         <p className="text-xs text-muted-foreground">Pipeline {release.pipelineVersion} · Generated {formatDateTime(release.generatedAt)}</p>
                       </div>
-                      <div className="flex items-center gap-2">
+                      <div className="flex flex-wrap items-center gap-2">
                         <OrderStatusBadge status={release.releaseStatus} />
-                        <Button type="button" size="sm" variant="outline" disabled={downloadAction.isPending} onClick={() => downloadAction.mutate({ kind: 'package', releaseId: release.id, releaseVersion: release.releaseVersion })}><FileArchive data-icon="inline-start" />{downloadAction.isPending && downloadAction.variables?.kind === 'package' && downloadAction.variables.releaseId === release.id ? 'Downloading…' : 'Download package'}</Button>
+                        <Button type="button" size="sm" variant="outline" disabled={downloadAction.isPending || Boolean(release.retention?.isQuarantined || release.retention?.downloadAccessClosedAtUtc || release.retention?.byteDeletedAtUtc) || !release.files.length || release.files.some((file) => file.releaseStatus !== 'Released' || file.scanStatus !== 'Clean')} onClick={() => downloadAction.mutate({ kind: 'package', releaseId: release.id, releaseVersion: release.releaseVersion })}><FileArchive data-icon="inline-start" />{downloadAction.isPending && downloadAction.variables?.kind === 'package' && downloadAction.variables.releaseId === release.id ? 'Downloading…' : 'Download package'}</Button>
                         <Button type="button" size="sm" variant="outline" onClick={() => downloadJson(`${request.requestNumber}-output-r${release.releaseVersion}.json`, release.manifestJson)}><Download data-icon="inline-start" />Manifest</Button>
                       </div>
                     </div>
@@ -87,7 +87,7 @@ export function DataAssemblyDetailPage({ requestId }: { requestId: string }) {
                             <p className="text-sm">{file.fileName}</p>
                             <p className="mt-1 text-xs text-muted-foreground">{fileDownloadStatus(file)}</p>
                           </div>
-                          <Button type="button" variant="outline" disabled={downloadAction.isPending} onClick={() => downloadAction.mutate({ kind: 'file', releaseId: release.id, file })}><Download data-icon="inline-start" />{downloadAction.isPending && downloadAction.variables?.kind === 'file' && downloadAction.variables.file.id === file.id ? 'Downloading…' : 'Download'}</Button>
+                          <Button type="button" variant="outline" disabled={downloadAction.isPending || Boolean(release.retention?.isQuarantined || release.retention?.downloadAccessClosedAtUtc || release.retention?.byteDeletedAtUtc) || file.releaseStatus !== 'Released' || file.scanStatus !== 'Clean'} onClick={() => downloadAction.mutate({ kind: 'file', releaseId: release.id, file })}><Download data-icon="inline-start" />{downloadAction.isPending && downloadAction.variables?.kind === 'file' && downloadAction.variables.file.id === file.id ? 'Downloading…' : 'Download'}</Button>
                         </li>
                       ))}
                     </ul>

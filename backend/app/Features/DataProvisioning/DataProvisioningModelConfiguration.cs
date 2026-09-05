@@ -175,7 +175,11 @@ public static class DataProvisioningModelConfiguration
             entity.Property(e => e.Kind).HasConversion<string>().HasMaxLength(50);
             entity.Property(e => e.RequestId).HasMaxLength(255);
             entity.Property(e => e.RemoteAddress).HasMaxLength(100);
-            entity.HasIndex(e => e.OrganizationId);
+            entity.HasIndex(e => new { e.OrganizationId, e.DepartmentId, e.DownloadedAt });
+            entity.HasOne<OrganizationDepartment>()
+                .WithMany()
+                .HasForeignKey(e => e.DepartmentId)
+                .OnDelete(DeleteBehavior.Restrict);
             entity.HasIndex(e => e.OrganizationDatasetGrantId);
             entity.HasIndex(e => e.DownloadedAt);
             entity.HasOne<Organization>()

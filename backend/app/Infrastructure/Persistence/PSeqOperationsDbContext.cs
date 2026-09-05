@@ -100,6 +100,8 @@ public sealed class PSeqOperationsDbContext(
     public DbSet<OrganizationReleasedDeliverablePolicyOverride> OrganizationReleasedDeliverablePolicyOverrides { get; set; }
 
     public DbSet<ReleasedDeliverableRetentionSnapshot> ReleasedDeliverableRetentionSnapshots { get; set; }
+    public DbSet<ReleasedDeliverablePreservationHold> ReleasedDeliverablePreservationHolds { get; set; }
+    public DbSet<ReleasedDeliverableReissue> ReleasedDeliverableReissues { get; set; }
 
     public DbSet<QboCatalogItem> QboCatalogItems { get; set; }
     public DbSet<AnalysisDefinition> AnalysisDefinitions { get; set; }
@@ -123,6 +125,7 @@ public sealed class PSeqOperationsDbContext(
     public DbSet<ManagedOperationalFile> ManagedOperationalFiles { get; set; }
     public DbSet<OperationalFileDownload> OperationalFileDownloads { get; set; }
     public DbSet<OrderNotification> OrderNotifications { get; set; }
+    public DbSet<OperationalDownloadCommitEvidence> OperationalDownloadCommitEvidence { get; set; }
     public DbSet<OrderStatusEvent> OrderStatusEvents { get; set; }
     public DbSet<OrderCancellationRequest> OrderCancellationRequests { get; set; }
     public DbSet<LabServiceOrder> LabServiceOrders { get; set; }
@@ -234,6 +237,11 @@ public sealed class PSeqOperationsDbContext(
             entity.Property(e => e.PortalReadinessNote).HasMaxLength(2000);
             entity.Property(e => e.IsOperationalReadinessBlocked).IsRequired();
             entity.Property(e => e.OperationalReadinessBlockReason).HasMaxLength(2000);
+            entity.Property(e => e.DefaultPurchaseOrderRequired);
+            entity.Property(e => e.DefaultBillingContactEmail).HasMaxLength(255);
+            entity.Property(e => e.DefaultNotificationEmail).HasMaxLength(255);
+            entity.Property(e => e.DefaultShippingInstructions).HasMaxLength(2000);
+            entity.Property(e => e.DefaultResultDeliveryInstructions).HasMaxLength(2000);
             entity.Property(e => e.IsActive).IsRequired();
             entity.Property(e => e.CreatedAt).IsRequired();
             entity.Property(e => e.CreatedByUserId);

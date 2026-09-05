@@ -45,6 +45,7 @@ public sealed record DepartmentMembershipDto
     public required Guid DepartmentId { get; init; }
     public required string DepartmentName { get; init; }
     public required bool IsDepartmentAdmin { get; init; }
+    public bool IsOrganizationAdmin { get; init; }
     public required bool IsActive { get; init; }
     public required long Version { get; init; }
 }
@@ -52,6 +53,23 @@ public sealed record DepartmentMembershipDto
 public sealed record UpsertDepartmentMembershipRequest(
     bool IsDepartmentAdmin,
     long? Version);
+
+public sealed record LookupDepartmentMemberRequest(string Email);
+
+public sealed record OrganizationConfigurationDto(Guid OrganizationId, bool? PurchaseOrderRequired,
+    string? BillingContactEmail, string? NotificationEmail, string? ShippingInstructions,
+    string? ResultDeliveryInstructions, long Version);
+
+public sealed record UpdateOrganizationConfigurationRequest(bool? PurchaseOrderRequired,
+    string? BillingContactEmail, string? NotificationEmail, string? ShippingInstructions,
+    string? ResultDeliveryInstructions, long Version);
+
+public sealed record DepartmentMemberCandidateDto(
+    Guid OrganizationMembershipId,
+    Guid UserId,
+    string UserName,
+    string UserEmail,
+    bool IsOrganizationAdmin);
 
 public sealed record DepartmentInvitationAccessRequest(
     Guid DepartmentId,

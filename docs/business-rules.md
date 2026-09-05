@@ -13,6 +13,14 @@
   and be available to the current User. Invalid department context fails closed.
 - Customer operational roots, address books, searches, exports, downloads, and
   outbound operational notifications are scoped by Department.
+- New curated download history retains the Department at the time of the event,
+  including Organization-wide packages. Department admins see only their selected
+  Department. Unknown historical Department rows remain Organization-admin-only;
+  later user assignment changes never reclassify earlier downloads.
+- Queued operational notices recheck active scope and current admin assignments.
+  Source-governance safety instructions about previously supplied copies continue
+  to current active Organization admins of affected suspended Organizations;
+  notices do not restore Portal access. No eligible recipients is failed delivery.
 - A platform administrator is an active user with a membership that grants platform-admin capability.
 - Platform administrators can manage organizations broadly.
 - An active organization administrator can manage members and invitations for that active non-Phaeno organization.
@@ -172,9 +180,10 @@ Confirmed Prospect rules:
 - Authorized organization users may download either an individual file or a
   complete archive containing the manifest and every file in the exact
   immutable package version. Both download modes are audited.
-- Organization administrators can see per-user package download history for
-  their own organization. Authorized Phaeno users may review cross-organization
-  history; audit records never contain package contents.
+- Organization and assigned Department administrators can see per-user package
+  download history in the selected Department. Unknown historical Department rows
+  remain Organization-admin-only within that grant scope. Authorized Phaeno users
+  may review cross-organization history; audits never contain package contents.
 - All active organization users can access Phaeno-owned curated Prospect sample
   packages granted to their organization, including after conversion.
 - Customer- or Partner-owned operational data follows Customer/Partner access
@@ -371,3 +380,34 @@ Continued workflow, activation, and ownership requirements are recorded in:
 - `docs/plans/SAMPLE-SHIPPING-AND-INTAKE-PLAN.md`
 
 Treat any remaining proposed entities or statuses in those plans as unimplemented until code and tests establish them.
+
+
+## Organization and Department administration closeout (2026-09-04)
+
+Organization-admin rights belong to the active Organization membership and cover
+all its Departments, including future additions. Department-admin rights belong
+to individual active Department memberships. One User can administer Research,
+be a member in Operations, and have no Finance access, with independent rights
+in another Organization. External administrators use `/departments`; only
+Organization admins control structure/lifecycle/defaults, new invitations, and
+Organization roles. Department admins edit settings and manage existing member
+assignments only within assigned Departments, using exact-email lookup rather
+than an Organization-wide user directory. The backend enforces these boundaries,
+version checks, and the rule that an active member retains an active Department.
+
+Typed PO, billing email, notification email, shipping instructions, and result
+instructions resolve Department override, Organization default, then the existing
+system/commercial fallback. Saved shipping and accepted-quote snapshots retain
+their values. This does not grant services, select a storage destination, or
+change Clerk authentication. See `plans/PEOPLE-DEPARTMENTS-ACCESS-PLAN.md`
+for local evidence and remaining signed-in/shared-environment gates.
+
+Released-deliverable preservation holds protect bytes without extending the
+original download clock. Quarantine additionally suspends access under active
+monitoring. Hold placement/release and reissue authorization retain the actor,
+reason and timestamp. Reissue links require a new scientifically approved release
+created after the old package's deletion, using different storage objects in the
+same organization, workflow and sample where applicable. Deleted bytes are not
+restored by linking. Retained receipts preserve manifest, checksum, completion,
+retention/deletion and lineage facts. External Organization admins may see their
+organization's download audit; staff investigation reasons remain Phaeno-only.

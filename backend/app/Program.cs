@@ -38,6 +38,10 @@ builder.Services.Configure<InvitationOptions>(
     builder.Configuration.GetSection(InvitationOptions.SectionName));
 builder.Services.Configure<PSeqOrderToCashOptions>(
     builder.Configuration.GetSection(PSeqOrderToCashOptions.SectionName));
+builder.Services.AddOptions<PSeqOrderToCashOptions>()
+    .Validate(options => !options.GovernedRetentionProcessing || (options.GovernedPSeqResults && options.AttentionOperations),
+        "Governed retention processing requires governed results and the Operations attention queue.")
+    .ValidateOnStart();
 builder.Services.Configure<DataProvisioningOptions>(
     builder.Configuration.GetSection(DataProvisioningOptions.SectionName));
 builder.Services.AddOptions<OrderManagementOptions>()
@@ -45,6 +49,9 @@ builder.Services.AddOptions<OrderManagementOptions>()
     .Validate(
         options => options.HasValidDownloadSettings,
         "OrderManagement download leases must be 1-1440 minutes and reconciliation must run every 5-300 seconds.")
+    .Validate<IOptions<PSeqOrderToCashOptions>>(
+        (options, operations) => !options.ReleasedDeliverableRetentionProcessing || options.CanProcessRetention(operations.Value.AttentionOperations),
+        "General retention processing requires released-deliverable enforcement and the Operations attention queue.")
     .ValidateOnStart();
 if (builder.Environment.IsDevelopment())
 {
@@ -89,7 +96,16 @@ builder.Services.AddSingleton<DataProvisioningProfile>();
 builder.Services.AddSingleton<IManagedFileScanner, EnvironmentManagedFileScanner>();
 builder.Services.AddSingleton<IOperationalFileScanner, EnvironmentOperationalFileScanner>();
 builder.Services.AddScoped<ReleasedDeliverableRetentionSnapshotService>();
+builder.Services.AddScoped<GovernedResultRetentionService>();
+builder.Services.AddScoped<GovernedRetentionCheckpointService>();
+builder.Services.AddHostedService<GovernedRetentionWorker>();
+builder.Services.AddScoped<ManagedReleaseRetentionCheckpointService>();
+builder.Services.AddHostedService<ManagedReleaseRetentionWorker>();
+builder.Services.AddScoped<ReleasedDeliverableLifecycleService>();
+builder.Services.AddHostedService<ReleasedDeliverableCleanupWorker>();
 builder.Services.AddScoped<ReleasedDeliverableDownloadAttemptService>();
+builder.Services.AddScoped<DownloadCommitEvidenceService>();
+builder.Services.AddHostedService<DownloadCommitEvidenceReconciler>();
 builder.Services.AddScoped<ReleasedDeliverableDownloadProjectionService>();
 builder.Services.AddHostedService<ReleasedDeliverableDownloadAttemptReconciler>();
 builder.Services.AddScoped<OrderRequestContext>();

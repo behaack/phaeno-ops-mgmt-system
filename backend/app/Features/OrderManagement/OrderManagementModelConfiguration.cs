@@ -1,5 +1,7 @@
 namespace PhaenoPortal.App.Features.OrderManagement;
 
+using PSeq.Operations.Commercial.FileManagement.Domain;
+
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 using PSeq.Operations.Commercial.Common.Persistence;
@@ -399,6 +401,7 @@ public static class OrderManagementModelConfiguration
             Text(entity.Property(e => e.LastError), 2000, false);
             entity.HasIndex(e => new { e.WorkflowType, e.WorkflowId, e.Operation, e.IdempotencyKey }).IsUnique();
             entity.HasIndex(e => new { e.Status, e.NextAttemptAt });
+
             Audit(entity);
         });
 
@@ -448,10 +451,26 @@ public static class OrderManagementModelConfiguration
             entity.HasIndex(e => new { e.OrganizationId, e.ReleasedPackageType, e.ReleasedPackageId });
             entity.HasIndex(e => new { e.Outcome, e.LeaseExpiresAtUtc });
             entity.HasIndex(e => e.TransferId);
+            entity.Ignore(e => e.FileId);
+            entity.HasIndex(e => e.ResultArtifactId);
+            entity.HasOne<ResultArtifact>().WithMany().HasForeignKey(e => e.ResultArtifactId).OnDelete(DeleteBehavior.Restrict);
+            entity.ToTable(table => table.HasCheckConstraint("ck_operational_download_file_target",
+                "(managed_operational_file_id IS NOT NULL AND result_artifact_id IS NULL AND released_package_type <> 'PSeqResult') OR (managed_operational_file_id IS NULL AND result_artifact_id IS NOT NULL AND released_package_type = 'PSeqResult')"));
             entity.HasIndex(e => e.ManagedOperationalFileId);
             entity.HasOne<ManagedOperationalFile>().WithMany().HasForeignKey(e => e.ManagedOperationalFileId).OnDelete(DeleteBehavior.Restrict);
             entity.HasOne<Organization>().WithMany().HasForeignKey(e => e.OrganizationId).OnDelete(DeleteBehavior.Restrict);
             entity.HasOne<User>().WithMany().HasForeignKey(e => e.UserId).OnDelete(DeleteBehavior.Restrict);
+        });
+
+        modelBuilder.Entity<OperationalDownloadCommitEvidence>(entity =>
+        {
+            entity.HasKey(e => e.Id);
+            Text(entity.Property(e => e.SourceTransactionId), 20);
+            EnumText(entity.Property(e => e.Phase));
+            entity.Property(e => e.Version).IsConcurrencyToken();
+            entity.HasIndex(e => new { e.OperationalFileDownloadId, e.Phase }).IsUnique();
+            entity.HasIndex(e => e.RecordedAtUtc).HasFilter("committed_at_utc IS NULL");
+            entity.HasOne<OperationalFileDownload>().WithMany().HasForeignKey(e => e.OperationalFileDownloadId).OnDelete(DeleteBehavior.Restrict);
         });
 
         modelBuilder.Entity<OrderNotification>(entity =>
@@ -464,6 +483,8 @@ public static class OrderManagementModelConfiguration
             EnumText(entity.Property(e => e.Status));
             Text(entity.Property(e => e.LastError), 2000, false);
             entity.HasIndex(e => new { e.Status, e.NextAttemptAt });
+            entity.HasIndex(e => new { e.WorkflowType, e.WorkflowId, e.EventType })
+                .IsUnique().HasFilter("workflow_type = 'ReleasedDeliverableRetention'");
             entity.HasIndex(e => new { e.OrganizationId, e.CreatedAt });
             entity.HasOne<Organization>().WithMany().HasForeignKey(e => e.OrganizationId).OnDelete(DeleteBehavior.Restrict);
             entity.HasOne<OrganizationDepartment>().WithMany().HasForeignKey(e => e.DepartmentId).OnDelete(DeleteBehavior.Restrict);
@@ -697,6 +718,8 @@ public static class OrderManagementModelConfiguration
             entity.HasKey(e => e.Id);
             EnumText(entity.Property(e => e.State));
             entity.HasIndex(e => e.ResultOutputPackageId).IsUnique();
+            entity.HasIndex(e => e.RetentionSnapshotId).IsUnique();
+            entity.HasOne<ReleasedDeliverableRetentionSnapshot>().WithMany().HasForeignKey(e => e.RetentionSnapshotId).OnDelete(DeleteBehavior.Restrict);
             entity.HasIndex(e => new { e.State, e.WarningAtUtc, e.DeleteAtUtc });
             entity.HasOne<ResultOutputPackage>().WithMany().HasForeignKey(e => e.ResultOutputPackageId).OnDelete(DeleteBehavior.Restrict);
             Audit(entity);

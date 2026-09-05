@@ -267,11 +267,11 @@ html {
 
 @media print {
   @page {
-    size: 50mm 25mm;
+    size: auto;
     margin: 0;
   }
 
-  body * {
+  body:has(.lab-label-print-surface) * {
     visibility: hidden !important;
   }
 
@@ -280,7 +280,10 @@ html {
     visibility: visible !important;
   }
 
+  @page lab-label { size: 50mm 25mm; margin: 0; }
+
   .lab-label-print-surface {
+    page: lab-label;
     position: absolute;
     inset: 0 auto auto 0;
     width: 50mm;

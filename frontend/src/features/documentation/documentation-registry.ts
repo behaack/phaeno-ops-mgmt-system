@@ -141,7 +141,7 @@ export const documentationEntries: readonly DocumentationEntry[] = [
       'Understand revocation, quarantine, retirement, download history, and safe governance responses.',
     section: 'Data access',
     order: 40,
-    reviewedAt: '2026-07-16',
+    reviewedAt: '2026-09-04',
     Content: ProspectDataGovernanceAndDownloads,
   },
   {
@@ -221,7 +221,7 @@ export const documentationEntries: readonly DocumentationEntry[] = [
     summary: 'Understand governed sample-level result release and POMS invoices, payments, and adjustments.',
     section: 'Laboratory work',
     order: 40,
-    reviewedAt: '2026-09-03',
+    reviewedAt: '2026-09-05',
     Content: CustomerResultsAndBilling,
   },
   {
@@ -232,7 +232,7 @@ export const documentationEntries: readonly DocumentationEntry[] = [
     summary: 'Use released lab-job data, assigned curated packages, and Customer organization access.',
     section: 'Data and access',
     order: 50,
-    reviewedAt: '2026-08-20',
+    reviewedAt: '2026-09-04',
     Content: CustomerDataAndOrganization,
   },
   {
@@ -287,7 +287,7 @@ export const documentationEntries: readonly DocumentationEntry[] = [
     summary: 'Submit inputs, accept a job quote, follow processing, and download outputs.',
     section: 'Partner work',
     order: 40,
-    reviewedAt: '2026-08-26',
+    reviewedAt: '2026-09-05',
     Content: PartnerDataAssembly,
   },
   {
@@ -298,7 +298,7 @@ export const documentationEntries: readonly DocumentationEntry[] = [
     summary: 'Use curated data, understand commercial records, and manage Partner membership.',
     section: 'Data and access',
     order: 50,
-    reviewedAt: '2026-08-26',
+    reviewedAt: '2026-09-04',
     Content: PartnerDataAndOrganization,
   },
   {
@@ -487,7 +487,7 @@ export const documentationEntries: readonly DocumentationEntry[] = [
     summary: 'Quarantine unsafe content, investigate with purpose, close out incidents, and retry safely.',
     section: 'Data provisioning',
     order: 34,
-    reviewedAt: '2026-07-16',
+    reviewedAt: '2026-09-04',
     Content: PhaenoDataGovernanceRecovery,
   },
   {
@@ -559,7 +559,7 @@ export const documentationEntries: readonly DocumentationEntry[] = [
     summary: 'Operate POMS invoices, receipts, allocation, reconciliation, and scientifically governed PSeq release.',
     section: 'Order operations',
     order: 45,
-    reviewedAt: '2026-09-03',
+    reviewedAt: '2026-09-05',
     Content: PhaenoOrderBillingPaymentRelease,
   },
   {
@@ -666,7 +666,7 @@ export const documentationEntries: readonly DocumentationEntry[] = [
     summary: 'Maintain scientific, commercial, accounting, credit, and sample-shipping rules.',
     section: 'Platform operations',
     order: 60,
-    reviewedAt: '2026-09-01',
+    reviewedAt: '2026-09-05',
     Content: PhaenoConfigurationAndRecovery,
   },
   {

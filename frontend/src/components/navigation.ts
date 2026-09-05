@@ -12,9 +12,12 @@ import {
   Package,
   PackageCheck,
   Settings,
+  UsersRound,
   Workflow,
   type LucideIcon,
 } from 'lucide-react'
+
+import { departmentMessages } from '#/features/organizations/department-localization'
 
 import type {
   OrganizationKind,
@@ -42,6 +45,16 @@ type MainMenuItem = {
 }
 
 export const mainMenuItems: readonly MainMenuItem[] = [
+  {
+    label: departmentMessages.departments,
+    to: '/departments',
+    icon: UsersRound,
+    group: 'administration',
+    visibleWhen: (session, context) => session?.state === 'ready'
+      && isExternalOrganizationKind(context.selectedOrganizationKind)
+      && Boolean(context.selectedMembership?.isOrganizationAdmin
+        || context.selectedMembership?.departments?.some((department) => department.isDepartmentAdmin)),
+  },
   {
     label: 'Dashboard',
     to: '/',

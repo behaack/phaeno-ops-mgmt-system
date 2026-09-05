@@ -184,7 +184,7 @@ public sealed class LabServiceOrdersController(
                     sourceGroups.Count == 1 ? sourceGroups[0].BiologicalSource : null,
                     request.StorageRequirements,
                     request.SafetyDeclaration,
-                    tenant.Department.ShippingInstructions
+                    tenant.Configuration.ShippingInstructions
                         ?? config?.SampleSubmissionInstructions
                         ?? string.Empty);
                 Execute(() => order.UpdatePriceProposal(
@@ -350,7 +350,7 @@ public sealed class LabServiceOrdersController(
                     : request.PurchaseOrderNumber.Trim();
                 if (purchaseOrderNumber?.Length > 255)
                     throw Invalid("purchase_order_number_invalid", "The purchase order number must be 255 characters or fewer.");
-                if (tenant.Department.PurchaseOrderRequired == true && purchaseOrderNumber is null)
+                if (tenant.Configuration.PurchaseOrderRequired == true && purchaseOrderNumber is null)
                     throw Invalid("purchase_order_number_required", "A purchase order number is required for this Department.");
                 var placementSnapshot = JsonSerializer.Serialize(new
                 {
@@ -359,11 +359,11 @@ public sealed class LabServiceOrdersController(
                         tenant.Department.Id,
                         tenant.Department.Code,
                         tenant.Department.Name,
-                        tenant.Department.PurchaseOrderRequired,
-                        tenant.Department.BillingContactEmail,
-                        tenant.Department.NotificationEmail,
-                        tenant.Department.ShippingInstructions,
-                        tenant.Department.ResultDeliveryInstructions
+                        tenant.Configuration.PurchaseOrderRequired,
+                        tenant.Configuration.BillingContactEmail,
+                        tenant.Configuration.NotificationEmail,
+                        tenant.Configuration.ShippingInstructions,
+                        tenant.Configuration.ResultDeliveryInstructions
                     },
                     purchaseOrderNumber,
                     order.RequestedSpecimenCount,

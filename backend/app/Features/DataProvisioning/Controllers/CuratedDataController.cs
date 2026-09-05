@@ -76,6 +76,7 @@ public sealed class CuratedDataController(
             AddDownloadAudit(
                 tenant.Actor,
                 tenant.Organization,
+                tenant.Department.Id,
                 grant,
                 DatasetDownloadKind.File,
                 versionFile.ManagedFileId);
@@ -132,6 +133,7 @@ public sealed class CuratedDataController(
             AddDownloadAudit(
                 tenant.Actor,
                 tenant.Organization,
+                tenant.Department.Id,
                 grant,
                 DatasetDownloadKind.Archive,
                 managedFileId: null);
@@ -165,6 +167,9 @@ public sealed class CuratedDataController(
             join grant in dbContext.OrganizationDatasetGrants.AsNoTracking()
                 on download.OrganizationDatasetGrantId equals grant.Id
             where download.OrganizationId == tenant.Organization.Id
+                && grant.OrganizationId == tenant.Organization.Id
+                && (download.DepartmentId == tenant.Department.Id
+                    || (download.DepartmentId == null && tenant.Membership.IsOrganizationAdmin))
                 && (grant.DepartmentId == null || grant.DepartmentId == tenant.Department.Id)
             orderby download.DownloadedAt descending
             select new DatasetDownloadAuditDto
@@ -195,6 +200,7 @@ public sealed class CuratedDataController(
                 && (notice.OrganizationDatasetGrantId == null
                     || dbContext.OrganizationDatasetGrants.Any(grant =>
                         grant.Id == notice.OrganizationDatasetGrantId
+                        && grant.OrganizationId == tenant.Organization.Id
                         && (grant.DepartmentId == null || grant.DepartmentId == tenant.Department.Id))))
             .OrderByDescending(notice => notice.CreatedAt)
             .Take(500)
@@ -325,12 +331,14 @@ public sealed class CuratedDataController(
     private void AddDownloadAudit(
         User actor,
         Organization organization,
+        Guid departmentId,
         OrganizationDatasetGrant grant,
         DatasetDownloadKind kind,
         Guid? managedFileId)
     {
         dbContext.DatasetDownloadAudits.Add(new DatasetDownloadAudit(
             organization.Id,
+            departmentId,
             grant.Id,
             grant.CuratedDatasetVersionId,
             actor.Id,

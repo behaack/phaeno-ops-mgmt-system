@@ -23,6 +23,136 @@ using PSeq.Operations.Commercial.Relationships.Domain;
 public sealed class DepartmentAccessPostgresTests
 {
     [PostgreSqlReferenceFact]
+    public async Task OrganizationDefaultsAreVersionedAuditedAndInheritedByOrderContext()
+    {
+        await using var scope = await Scope.Create();
+        var request = new UpdateOrganizationConfigurationRequest(true, "billing@example.com", "notice@example.com", "Frozen", "Portal", scope.Organization.Version);
+        var saved = Assert.IsType<Ok<OrganizationConfigurationDto>>(await DepartmentEndpoints.UpdateOrganizationConfiguration(
+            scope.Organization.Id, request, scope.Http, scope.Db, scope.Identity, default));
+        Assert.True(saved.Value!.Version > request.Version);
+        Assert.True(await scope.Db.AuditEvents.AnyAsync(value => value.EntityId == scope.Organization.Id.ToString()));
+        var tenant = await scope.Context.RequireTenantAsync(scope.Http, OrganizationKind.Customer, true, default);
+        Assert.True(tenant.Configuration.PurchaseOrderRequired);
+        Assert.Equal("billing@example.com", tenant.Configuration.BillingContactEmail);
+        Assert.Equal("Frozen", tenant.Configuration.ShippingInstructions);
+        await Assert.ThrowsAsync<DbUpdateConcurrencyException>(() => DepartmentEndpoints.UpdateOrganizationConfiguration(
+            scope.Organization.Id, request, scope.Http, scope.Db, scope.Identity, default));
+        scope.General.UpdateConfiguration(false, null, "team@example.com", null, null);
+        await scope.Db.SaveChangesAsync();
+        tenant = await scope.Context.RequireTenantAsync(scope.Http, OrganizationKind.Customer, true, default);
+        Assert.False(tenant.Configuration.PurchaseOrderRequired);
+        Assert.Equal("team@example.com", tenant.Configuration.NotificationEmail);
+        var other = new Organization($"Other {Guid.NewGuid():N}", OrganizationKind.Customer);
+        scope.Db.Add(other);
+        await scope.Db.SaveChangesAsync();
+        Assert.IsType<ForbidHttpResult>(await DepartmentEndpoints.ReadOrganizationConfiguration(other.Id, scope.Http, scope.Db, scope.Identity, default));
+        Assert.IsType<ForbidHttpResult>(await DepartmentEndpoints.UpdateOrganizationConfiguration(other.Id, request, scope.Http, scope.Db, scope.Identity, default));
+    }
+
+    [PostgreSqlReferenceFact]
+    public async Task DepartmentAdminCannotManageOrganizationDefaultsOrOverrideOrganizationAdminAccess()
+    {
+        await using var scope = await Scope.Create();
+        var target = scope.AddMember(scope.General, false);
+        await scope.Db.SaveChangesAsync();
+        target.OrganizationMembership.SetOrganizationAdmin(true);
+        scope.AdminMembership.SetOrganizationAdmin(false);
+        scope.Db.Add(new OrganizationDepartmentMembership(scope.AdminMembership.Id, scope.General.Id, true));
+        await scope.Db.SaveChangesAsync();
+        Assert.IsType<ForbidHttpResult>(await DepartmentEndpoints.ReadOrganizationConfiguration(scope.Organization.Id, scope.Http, scope.Db, scope.Identity, default));
+        Assert.IsType<ForbidHttpResult>(await DepartmentEndpoints.UpdateOrganizationConfiguration(scope.Organization.Id,
+            new(true, null, null, null, null, scope.Organization.Version), scope.Http, scope.Db, scope.Identity, default));
+        await Assert.ThrowsAsync<BadRequestException>(() => DepartmentEndpoints.DeactivateDepartmentMember(scope.Organization.Id,
+            scope.General.Id, target.OrganizationMembershipId, new(false, target.Version), scope.Http, scope.Db, scope.Identity, default));
+        await Assert.ThrowsAsync<BadRequestException>(() => DepartmentEndpoints.UpsertDepartmentMember(scope.Organization.Id,
+            scope.General.Id, target.OrganizationMembershipId, new(true, target.Version), scope.Http, scope.Db, scope.Identity, default));
+        Assert.True(target.IsActive);
+    }
+
+    [PostgreSqlReferenceFact]
+    public async Task DepartmentAdminCanEditAssignedSettingsButCannotChangeStructureOrAnotherDepartment()
+    {
+        await using var scope = await Scope.Create();
+        scope.AdminMembership.SetOrganizationAdmin(false);
+        scope.Db.Add(new OrganizationDepartmentMembership(scope.AdminMembership.Id, scope.Research.Id, true));
+        await scope.Db.SaveChangesAsync();
+        var request = new UpsertDepartmentRequest("RESEARCH", "Research updated", null,
+            true, "billing@example.com", null, "Frozen", "Portal", scope.Research.Version);
+        Assert.IsType<Ok<DepartmentDto>>(await DepartmentEndpoints.UpdateDepartment(scope.Organization.Id,
+            scope.Research.Id, request, scope.Http, scope.Db, scope.Identity, default));
+        Assert.Equal("Research updated", scope.Research.Name);
+        Assert.True(scope.Research.PurchaseOrderRequired);
+        Assert.IsType<ForbidHttpResult>(await DepartmentEndpoints.UpdateDepartment(scope.Organization.Id,
+            scope.General.Id, request with { Version = scope.General.Version }, scope.Http, scope.Db, scope.Identity, default));
+        Assert.IsType<ForbidHttpResult>(await DepartmentEndpoints.CreateDepartment(scope.Organization.Id,
+            request, scope.Http, scope.Db, scope.Identity, default));
+        Assert.IsType<ForbidHttpResult>(await DepartmentEndpoints.SetDefaultDepartment(scope.Organization.Id,
+            scope.Research.Id, new(scope.Research.Version), scope.Http, scope.Db, scope.Identity, default));
+        Assert.IsType<ForbidHttpResult>(await DepartmentEndpoints.ChangeDepartmentActive(scope.Organization.Id,
+            scope.Research.Id, "deactivate", new(scope.Research.Version), scope.Http, scope.Db, scope.Identity, default));
+        await Assert.ThrowsAsync<DbUpdateConcurrencyException>(() => DepartmentEndpoints.UpdateDepartment(scope.Organization.Id,
+            scope.Research.Id, request, scope.Http, scope.Db, scope.Identity, default));
+    }
+
+    [PostgreSqlReferenceFact]
+    public async Task DepartmentMemberCannotEditSettingsOrLookUpOrganizationMembers()
+    {
+        await using var scope = await Scope.Create();
+        scope.AdminMembership.SetOrganizationAdmin(false);
+        scope.Db.Add(new OrganizationDepartmentMembership(scope.AdminMembership.Id, scope.Research.Id, false));
+        await scope.Db.SaveChangesAsync();
+        Assert.IsType<ForbidHttpResult>(await DepartmentEndpoints.UpdateDepartment(scope.Organization.Id, scope.Research.Id,
+            new("RESEARCH", "Denied", null, null, null, null, null, null, scope.Research.Version), scope.Http, scope.Db, scope.Identity, default));
+        Assert.IsType<ForbidHttpResult>(await DepartmentEndpoints.LookupDepartmentMember(scope.Organization.Id, scope.Research.Id,
+            new(scope.Actor.Email), scope.Http, scope.Db, scope.Identity, default));
+    }
+
+    [PostgreSqlReferenceFact]
+    public async Task DepartmentMemberLookupRequiresExactActiveOrganizationMembershipAndAssignedAdminScope()
+    {
+        await using var scope = await Scope.Create();
+        scope.AdminMembership.SetOrganizationAdmin(false);
+        scope.Db.Add(new OrganizationDepartmentMembership(scope.AdminMembership.Id, scope.Research.Id, true));
+        var target = scope.AddMember(scope.General, false);
+        await scope.Db.SaveChangesAsync();
+        var user = await scope.Db.Users.SingleAsync(value => value.Id == target.OrganizationMembership.UserId);
+        var result = Assert.IsType<Ok<List<DepartmentMemberCandidateDto>>>(await DepartmentEndpoints.LookupDepartmentMember(
+            scope.Organization.Id, scope.Research.Id, new($" {user.Email.ToUpperInvariant()} "), scope.Http, scope.Db, scope.Identity, default));
+        Assert.Equal(target.OrganizationMembershipId, Assert.Single(result.Value!).OrganizationMembershipId);
+        Assert.IsType<ForbidHttpResult>(await DepartmentEndpoints.LookupDepartmentMember(scope.Organization.Id, scope.General.Id,
+            new(user.Email), scope.Http, scope.Db, scope.Identity, default));
+        var missing = Assert.IsType<Ok<List<DepartmentMemberCandidateDto>>>(await DepartmentEndpoints.LookupDepartmentMember(
+            scope.Organization.Id, scope.Research.Id, new("unknown@example.com"), scope.Http, scope.Db, scope.Identity, default));
+        Assert.Empty(missing.Value!);
+        user.Deactivate();
+        await scope.Db.SaveChangesAsync();
+        var disabled = Assert.IsType<Ok<List<DepartmentMemberCandidateDto>>>(await DepartmentEndpoints.LookupDepartmentMember(
+            scope.Organization.Id, scope.Research.Id, new(user.Email), scope.Http, scope.Db, scope.Identity, default));
+        Assert.Empty(disabled.Value!);
+    }
+
+    [PostgreSqlReferenceFact]
+    public async Task DepartmentAssignmentRequiresReviewedVersionAndRetainsOtherDepartmentAccess()
+    {
+        await using var scope = await Scope.Create();
+        scope.AdminMembership.SetOrganizationAdmin(false);
+        scope.Db.Add(new OrganizationDepartmentMembership(scope.AdminMembership.Id, scope.Research.Id, true));
+        var target = scope.AddMember(scope.General, false);
+        await scope.Db.SaveChangesAsync();
+        var added = Assert.IsType<Ok<DepartmentMembershipDto>>(await DepartmentEndpoints.UpsertDepartmentMember(scope.Organization.Id,
+            scope.Research.Id, target.OrganizationMembershipId, new(false, null), scope.Http, scope.Db, scope.Identity, default));
+        Assert.True(added.Value!.IsActive);
+        await Assert.ThrowsAsync<DbUpdateConcurrencyException>(() => DepartmentEndpoints.UpsertDepartmentMember(scope.Organization.Id,
+            scope.Research.Id, target.OrganizationMembershipId, new(true, null), scope.Http, scope.Db, scope.Identity, default));
+        var promoted = Assert.IsType<Ok<DepartmentMembershipDto>>(await DepartmentEndpoints.UpsertDepartmentMember(scope.Organization.Id,
+            scope.Research.Id, target.OrganizationMembershipId, new(true, added.Value.Version), scope.Http, scope.Db, scope.Identity, default));
+        Assert.True(promoted.Value!.IsDepartmentAdmin);
+        await DepartmentEndpoints.DeactivateDepartmentMember(scope.Organization.Id, scope.Research.Id,
+            target.OrganizationMembershipId, new(false, promoted.Value.Version), scope.Http, scope.Db, scope.Identity, default);
+        Assert.True(target.IsActive);
+    }
+
+    [PostgreSqlReferenceFact]
     public async Task OrganizationAdminCannotReadAnotherOrganizationsDepartmentMembers()
     {
         await using var scope = await Scope.Create();
@@ -121,7 +251,8 @@ public sealed class DepartmentAccessPostgresTests
         var order = scope.AddOrder(scope.Research);
         await scope.Db.SaveChangesAsync();
         var storage = new RecordingStorage();
-        var controller = new PSeqResultDownloadsController(scope.Db, scope.Context, storage)
+        var controller = new PSeqResultDownloadsController(scope.Db, scope.Context, storage, null!,
+            new PhaenoPortal.App.Features.FileManagement.Services.GovernedResultRetentionService(scope.Db), null!)
             { ControllerContext = new() { HttpContext = scope.Http } };
         var error = await Assert.ThrowsAsync<OrderManagementException>(() => controller.List(order.Id, default));
         Assert.Equal(StatusCodes.Status404NotFound, error.StatusCode);

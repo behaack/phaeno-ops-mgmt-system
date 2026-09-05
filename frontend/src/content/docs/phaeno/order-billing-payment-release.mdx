@@ -18,6 +18,18 @@ A Customer result may be published only when the specific sample package is comp
 
 Corrections create a new package, scientific approval, and release version. Preserve notification, Customer download, retention warning/cutoff/grace/deletion, withdrawal, and authorized reissue evidence.
 
+## Review governed result retention
+
+New PSeq releases use the effective versioned policy from **File management**, including an active Organization override. The package and laboratory release share the same first release instant and freeze their policy and deadlines together. Existing schedules keep their original dates; do not change them by editing current configuration.
+
+The Customer package shows full-response download completion and the frozen standard/final dates. Grace remains usable when any artifact was undownloaded at the standard deadline; later completion does not shorten grace. New download requests close at the applicable deadline even if cleanup has not run. A request-only historical download event is not completion evidence. Success saved after the standard deadline cannot cancel grace. If download timing cannot be verified, ask technical support to recover the retained timing evidence; do not recreate the release or change its dates. This timing-recovery error is separate from the Retention notices queue.
+
+Where governed retention processing is enabled, POMS queues one warning for an incomplete package and one grace notice if grace applies. A delayed warning is skipped once all files have completed or the standard deadline has passed. Queued notices use current active Organization admins; they contain the package reference, deadline, and an authenticated Portal link.
+
+Use **Owned attention queues → Retention notices** to find urgent missing-recipient or delivery failures. Review the organization and administrator access, correct delivery configuration when needed, then retry the existing record in the notification workspace. Recreating a release or notification is not a recovery step. A failure can reopen the Operations item until the underlying notice is recovered. Deadlines remain unchanged.
+
+Physical cleanup remains separately controlled. A closed download window is not proof of byte deletion, and a queued message is not proof of receipt. Access withdrawal or deactivation stops a governed transfer; restoring access does not resume that transfer.
+
 ## Record and reconcile cash
 
 Manual receipt entry requires payer, amount, USD currency, received date, method, bank reference, evidence, and external ID. CSV intake is preview-only until explicit confirmation and must include source, external ID, date, amount, currency, payer, reference, and memo.
@@ -31,3 +43,33 @@ An approved output release must reference the accepted input revision and active
 ## Diagnose a blocked release
 
 Review package completeness, checksum/scan state, scientific approval, release decision, notification, and retention independently from invoice/receipt/allocation/reconciliation. Never bypass a failed package gate by attaching a file manually or changing an unrelated workflow status. Use the owned attention queues for overdue invoices, unapplied cash, and reconciliation differences.
+
+
+## Support general Lab and Assembly downloads
+
+Where general retention enforcement is enabled, individual files and whole ZIPs
+use the release's frozen policy and verified completion. A closed window prevents
+new requests, while an admitted transfer can finish within its time limit. Current
+file withdrawal, scan failure, Organization/Department access removal, or release
+withdrawal stops active downloads. A failed ZIP does not count its files from that
+attempt. Partner payment-release rules still apply.
+
+Recover missing timing evidence through technical support without recreating the
+release or changing dates. General download enforcement does not itself schedule
+warning/grace emails or activate storage cleanup. Preserve the original contract
+for undated historical releases.
+
+Where general Lab/Assembly retention processing is enabled, the same warning,
+grace, and **Retention notices** recovery workflow applies to those releases.
+The Lab notice opens the laboratory job; the Assembly notice opens its assembly
+request. Recipients are current active Organization admins, including admins
+appointed after the notice was queued. Department-only members and notification
+routing aliases are not recipients. Retry the existing failed notification after
+correcting the cause, then review the Operations item. Preserve the original
+release and dates. General and governed PSeq notice processing are activated
+separately; a disabled process does not create or dispatch its scheduled notices.
+
+Released package schedules link to retained receipts. Receipts preserve file
+manifests, checksums, deadline/completion/deletion facts and reissue lineage after
+byte deletion. For preservation, quarantine, or linking a newly approved reissue,
+use [Configuration and recovery](/docs/phaeno/configuration-and-recovery).

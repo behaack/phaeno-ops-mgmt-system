@@ -228,7 +228,7 @@ public sealed class PlatformLabServiceOrdersController(
                     sourceGroups.Count == 1 ? sourceGroups[0].BiologicalSource : null,
                     request.StorageRequirements,
                     request.SafetyDeclaration,
-                    department.ShippingInstructions
+                    department.ResolveConfiguration(department.Organization).ShippingInstructions
                         ?? configuration?.SampleSubmissionInstructions
                         ?? string.Empty,
                     request.SourceRequestId);
@@ -436,10 +436,10 @@ public sealed class PlatformLabServiceOrdersController(
             throw Invalid("quote_lab_service_quantity_mismatch", "The PSeq Lab Service quantity must equal the requested specimen count.");
         var commercial = await dbContext.OrganizationCommercialProfiles.AsNoTracking()
             .FirstOrDefaultAsync(item => item.OrganizationId == order.OrganizationId, cancellationToken);
-        var department = await dbContext.OrganizationDepartments.AsNoTracking()
+        var department = await dbContext.OrganizationDepartments.AsNoTracking().Include(value => value.Organization)
             .SingleAsync(item => item.Id == order.DepartmentId
                 && item.OrganizationId == order.OrganizationId, cancellationToken);
-        var billingContactEmail = department.BillingContactEmail ?? commercial?.BillingContactEmail;
+        var billingContactEmail = department.ResolveConfiguration(department.Organization).BillingContactEmail ?? commercial?.BillingContactEmail;
         if (!nativeReceivables && string.IsNullOrWhiteSpace(commercial?.QboCustomerId))
             throw Conflict("qbo_customer_required", "Link this customer to QuickBooks before issuing a quote.");
         if (nativeReceivables && !string.Equals(request.Currency, "USD", StringComparison.OrdinalIgnoreCase))
@@ -991,7 +991,7 @@ public sealed class PlatformLabServiceOrdersController(
         Guid? departmentId,
         CancellationToken cancellationToken)
     {
-        var query = dbContext.OrganizationDepartments.AsNoTracking()
+        var query = dbContext.OrganizationDepartments.AsNoTracking().Include(value => value.Organization)
             .Where(value => value.OrganizationId == organizationId && value.IsActive);
         var department = departmentId.HasValue
             ? await query.SingleOrDefaultAsync(value => value.Id == departmentId.Value, cancellationToken)

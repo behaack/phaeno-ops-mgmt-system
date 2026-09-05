@@ -5,7 +5,8 @@ using PSeq.Operations.Commercial.Common.Persistence;
 public enum ReleasedDeliverablePackageType
 {
     LabResult = 1,
-    AssemblyOutput = 2
+    AssemblyOutput = 2,
+    PSeqResult = 3
 }
 
 public enum OperationalFileDownloadScope
@@ -28,7 +29,9 @@ public sealed class OperationalFileDownload : IConcurrency
 {
     public Guid Id { get; private set; } = Guid.NewGuid();
     public Guid TransferId { get; private set; }
-    public Guid ManagedOperationalFileId { get; private set; }
+    public Guid? ManagedOperationalFileId { get; private set; }
+    public Guid? ResultArtifactId { get; private set; }
+    public Guid FileId => ManagedOperationalFileId ?? ResultArtifactId!.Value;
     public Guid OrganizationId { get; private set; }
     public Guid UserId { get; private set; }
     public ReleasedDeliverablePackageType ReleasedPackageType { get; private set; }
@@ -59,7 +62,26 @@ public sealed class OperationalFileDownload : IConcurrency
         DateTime leaseExpiresAtUtc,
         string? remoteAddress,
         string? userAgent)
+        : this(transferId, managedOperationalFileId, null, organizationId, userId,
+            releasedPackageType, releasedPackageId, scope, startedAtUtc, leaseExpiresAtUtc, remoteAddress, userAgent)
+    { }
+
+    public static OperationalFileDownload ForPSeqArtifact(Guid transferId, Guid artifactId,
+        Guid organizationId, Guid userId, Guid packageId, DateTime startedAtUtc,
+        DateTime leaseExpiresAtUtc, string? remoteAddress, string? userAgent) =>
+        new(transferId, null, artifactId, organizationId, userId,
+            ReleasedDeliverablePackageType.PSeqResult, packageId, OperationalFileDownloadScope.IndividualFile,
+            startedAtUtc, leaseExpiresAtUtc, remoteAddress, userAgent);
+
+    private OperationalFileDownload(Guid transferId, Guid? managedOperationalFileId, Guid? resultArtifactId,
+        Guid organizationId, Guid userId, ReleasedDeliverablePackageType releasedPackageType,
+        Guid releasedPackageId, OperationalFileDownloadScope scope, DateTime startedAtUtc,
+        DateTime leaseExpiresAtUtc, string? remoteAddress, string? userAgent)
     {
+        if ((managedOperationalFileId.HasValue == resultArtifactId.HasValue)
+            || managedOperationalFileId == Guid.Empty || resultArtifactId == Guid.Empty
+            || (resultArtifactId.HasValue != (releasedPackageType == ReleasedDeliverablePackageType.PSeqResult)))
+            throw new ArgumentException("Exactly one file matching the package type is required.");
         if (transferId == Guid.Empty) throw new ArgumentException("A transfer is required.", nameof(transferId));
         if (managedOperationalFileId == Guid.Empty) throw new ArgumentException("A managed file is required.", nameof(managedOperationalFileId));
         if (organizationId == Guid.Empty) throw new ArgumentException("An organization is required.", nameof(organizationId));
@@ -74,6 +96,7 @@ public sealed class OperationalFileDownload : IConcurrency
 
         TransferId = transferId;
         ManagedOperationalFileId = managedOperationalFileId;
+        ResultArtifactId = resultArtifactId;
         OrganizationId = organizationId;
         UserId = userId;
         ReleasedPackageType = releasedPackageType;

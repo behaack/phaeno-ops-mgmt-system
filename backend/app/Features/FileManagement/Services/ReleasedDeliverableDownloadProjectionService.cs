@@ -2,6 +2,9 @@ namespace PhaenoPortal.App.Features.FileManagement.Services;
 
 using System.Text.Json;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Options;
+using PSeq.Operations.Commercial.FileManagement.Domain;
+using PhaenoPortal.App.Features.OrderManagement.Services;
 using PSeq.Operations.Commercial.OrderManagement.Domain;
 using PhaenoPortal.App.Infrastructure.Persistence;
 
@@ -27,30 +30,35 @@ public sealed record ReleasedDeliverableDownloadProjection(
     DateTime? CompletedAtUtc,
     IReadOnlyDictionary<Guid, ReleasedDeliverableFileDownloadProjection> Files)
 {
+    public ReleasedDeliverableRetentionDecision? RetentionDecision { get; init; }
+
     public static ReleasedDeliverableDownloadProjection Create(
         IReadOnlyCollection<Guid> fileIds,
         IReadOnlyCollection<OperationalFileDownload> attempts,
-        DateTime utcNow)
+        DateTime utcNow,
+        IReadOnlyDictionary<Guid, DateTime>? verifiedCompletionTimes = null)
     {
         if (utcNow.Kind != DateTimeKind.Utc)
             throw new ArgumentException("Projection timestamps must use UTC.", nameof(utcNow));
 
         var distinctFileIds = fileIds.Where(id => id != Guid.Empty).Distinct().ToList();
         var relevantAttempts = attempts
-            .Where(attempt => distinctFileIds.Contains(attempt.ManagedOperationalFileId))
+            .Where(attempt => distinctFileIds.Contains(attempt.FileId))
             .ToList();
         var files = new Dictionary<Guid, ReleasedDeliverableFileDownloadProjection>();
 
         foreach (var fileId in distinctFileIds)
         {
             var fileAttempts = relevantAttempts
-                .Where(attempt => attempt.ManagedOperationalFileId == fileId)
+                .Where(attempt => attempt.FileId == fileId)
                 .ToList();
             var successfulAt = fileAttempts
                 .Where(attempt => attempt.Outcome == OperationalFileDownloadOutcome.Succeeded
                     && attempt.CountsForReleasedPackageRetention
                     && attempt.CompletedAtUtc.HasValue)
-                .Select(attempt => attempt.CompletedAtUtc!.Value)
+                .Select(attempt => verifiedCompletionTimes is null ? attempt.CompletedAtUtc!.Value
+                    : verifiedCompletionTimes.GetValueOrDefault(attempt.Id))
+                .Where(value => value != default && value <= utcNow)
                 .Order()
                 .FirstOrDefault();
             var fileActiveAttemptCount = fileAttempts.Count(attempt =>
@@ -91,7 +99,7 @@ public sealed record ReleasedDeliverableDownloadProjection(
     }
 }
 
-public sealed class ReleasedDeliverableDownloadProjectionService(PSeqOperationsDbContext dbContext)
+public sealed class ReleasedDeliverableDownloadProjectionService(PSeqOperationsDbContext dbContext, IOptions<OrderManagementOptions>? options = null)
 {
     public async Task<IReadOnlyDictionary<Guid, ReleasedDeliverableDownloadProjection>> ReadAsync(
         Guid organizationId,
@@ -111,12 +119,22 @@ public sealed class ReleasedDeliverableDownloadProjectionService(PSeqOperationsD
                 && packageIds.Contains(attempt.ReleasedPackageId))
             .ToListAsync(cancellationToken);
 
-        return fileIdsByPackageId.ToDictionary(
-            item => item.Key,
-            item => ReleasedDeliverableDownloadProjection.Create(
-                item.Value,
-                attempts.Where(attempt => attempt.ReleasedPackageId == item.Key).ToList(),
-                utcNow));
+        var enforce = options?.Value.ReleasedDeliverableRetentionEnforcement == true
+            && packageType is ReleasedDeliverablePackageType.LabResult or ReleasedDeliverablePackageType.AssemblyOutput;
+        if (enforce) utcNow = await RetentionTransaction.ClockAsync(dbContext, cancellationToken);
+        var result = new Dictionary<Guid, ReleasedDeliverableDownloadProjection>();
+        foreach (var item in fileIdsByPackageId)
+        {
+            var packageAttempts = attempts.Where(value => value.ReleasedPackageId == item.Key).ToList();
+            var snapshot = enforce ? await new ManagedReleaseRetentionService(dbContext)
+                .ReadSnapshotAsync(packageType, item.Key, organizationId, cancellationToken) : null;
+            var verified = snapshot is null ? null : await new DownloadCommitEvidenceService(dbContext).ReadCompletionsAsync(packageAttempts, cancellationToken);
+            var download = ReleasedDeliverableDownloadProjection.Create(item.Value, packageAttempts, utcNow, verified);
+            if (snapshot is not null) download = download with { RetentionDecision = ReleasedDeliverableRetentionDecision.Evaluate(snapshot,
+                download.Files.Values.Select(value => value.DownloadedAtUtc).ToList(), utcNow) };
+            result.Add(item.Key, download);
+        }
+        return result;
     }
 }
 

@@ -9,7 +9,8 @@ public enum OperationalAttentionCategory
     ScientificallyApprovedUnreleased,
     OverdueInvoice,
     UnappliedCash,
-    ReconciliationDifference
+    ReconciliationDifference,
+    RetentionNoticeFailure
 }
 
 public enum OperationalAttentionStatus
@@ -57,6 +58,17 @@ public sealed class OperationalAttentionItem : CommercialReceivableEntity
         AttemptCount = Math.Max(AttemptCount, attemptCount);
         Summary = Required(summary, nameof(summary), 1000);
         NextAction = Required(nextAction, nameof(nextAction), 2000);
+    }
+
+    public void ReopenRetentionFailure(int attemptCount, string summary, string nextAction)
+    {
+        if (Category != OperationalAttentionCategory.RetentionNoticeFailure)
+            throw new InvalidOperationException("Only a retention delivery failure can be reopened by this workflow.");
+        Status = OperationalAttentionStatus.Open;
+        Resolution = null;
+        ResolvedByUserId = null;
+        ResolvedAtUtc = null;
+        Refresh(attemptCount, summary, nextAction);
     }
 
     public void Assign(Guid? ownerUserId)

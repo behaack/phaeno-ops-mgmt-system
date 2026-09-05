@@ -5,11 +5,10 @@
 The repository now contains additive, feature-flagged foundations for durable
 invitation delivery, derived readiness, internal order staging, business roles,
 audit-only/enforced dual control, governed PSeq final-result packages, POMS
-accounts receivable, and owned attention queues. This is local implementation
-state until the authorized 2026-08-29 additive release completes. The Product
-Owner authorized commit, push, encrypted-backup migration, and production
-deployment; the new feature flags and dual-control enforcement remain disabled
-pending the activation gates below.
+accounts receivable, and owned attention queues. The owning plan records the
+2026-08-29 additive release as complete. That dated release evidence is separate
+from feature activation; the activation gates below remain open. The 2026-09-04
+plan reconciliation did not redeploy or reverify production flag state.
 
 Production activation requires a dedicated-staging acceptance run with
 Commercial, Lab Operations, Scientific, Finance, security, and accessibility
@@ -28,7 +27,7 @@ This document records how the application operates in the current repository and
 | --- | --- |
 | Frontend | React 19 and TanStack Start, served by Vite in development and built as client plus SSR assets. |
 | API | .NET 10 ASP.NET Core application. |
-| Database | PostgreSQL through one EF Core `PSeqOperationsDbContext`. The current model maps 72 Commercial/current-flow and Lab-projection tables to `commercial_ops`, 27 Laboratory execution tables to `lab_ops`, two public Website intake tables to `website`, and migration history to `public`; the new order-to-cash migration has not been applied to a shared environment. |
+| Database | PostgreSQL through one EF Core `PSeqOperationsDbContext`. The current model maps 112 Commercial/current-flow and Lab-projection tables to `commercial_ops`, 30 Laboratory execution tables to `lab_ops`, two public Website intake tables to `website`, and migration history to `public`; applied migration state remains an environment-specific release check. |
 | Authentication | Clerk-issued bearer JWTs; application authorization comes from internal users, active memberships, and capabilities. |
 | Lab Operations | Feature-complete internal provider with additive Phaeno roles, operator APIs/workspace, receipt and accession, controlled execution, traceability, outsourced NGS sendouts, exceptions, scientific approval, and customer-safe Commercial projections. Production validation and activation remain incomplete. |
 | Curated-data files | `IManagedFileStorage` adapts to the shared `IFileStorage` contract. Development uses local filesystem storage. Production currently selects a non-persisting `Disabled` adapter, so the API starts but file operations return HTTP 503. The S3 adapter is implemented but not configured or live-validated. |
@@ -38,7 +37,7 @@ This document records how the application operates in the current repository and
 | Relationship CRM | Not implemented. HubSpot is selected for the approved future lifecycle in `docs/plans/HUBSPOT-PORTAL-LIFECYCLE-PLAN.md`. |
 | Email and notices | Portal invitations use durable Mailgun attempts plus signed, idempotent delivery/permanent-failure webhooks behind `InvitationDelivery`. Production rejects incomplete Mailgun API/sender, public URL, or webhook-signing configuration; logging invitation delivery is Development/Test only. Invitation HTML and text are embedded, locale-named templates. Public Website contact/order templates use the same configured Mailgun account. |
 | Public Website API | Anonymous `/api/v1/web-ops` search, database ping, contact, and order endpoints plus `/public` document hosting are implemented in Portal. Historical data and public traffic have not been cut over. |
-| Background work | Hosted dispatchers retry invitation delivery, order integrations, order notifications, data-provisioning notices, and Lab-to-Commercial projection delivery. Result retention automatically records warning, cutoff, grace, and deletion evidence. A hosted Website crawler rebuilds the Lucene index on its configured interval. |
+| Background work | Hosted dispatchers retry invitation delivery, order integrations, order notifications, data-provisioning notices, and Lab-to-Commercial projection delivery. The historical governed PSeq worker processes only schedules without a policy snapshot. New governed releases use shared policy/completion-aware deadline admission; snapshot-backed warning/grace outboxes, concurrent checkpoints, stream revocation, general execution, and deletion activation remain incomplete. A hosted Website crawler rebuilds the Lucene index on its configured interval. |
 | Help | Browser-bundled MDX with Customer/Partner locale metadata and Phaeno US-English content. Backend search is not implemented. |
 | Organization/user administration UI | Invitation acceptance and Phaeno organization list/detail, request, entitlement, invitation, membership, conversion, lifecycle, and User management workspaces use durable APIs. Invitations retain the person’s name and intended membership role. Phaeno invitations and user edits consolidate Platform administrator and additive Laboratory roles; pending Laboratory-role intent activates only on acceptance, while external administration remains organization-scoped. |
 
@@ -75,7 +74,7 @@ Keep environment-specific values outside source control. `appsettings.Developmen
 | `Bootstrap` | One-time bootstrap link inputs | Disabled or cleared after the initial administrator is linked. |
 | `Invitations` | Token lifetime, resend cooldown, public URL | Production deployment pins the public URL to `https://portal.phaenobiotech.com`; expiry and resend policy approved. |
 | `EmailServiceSettings` | Mailgun transactional sender and signed invitation delivery/permanent-failure webhooks | Existing protected Mailgun domain sending key and verified sender/domain, official US or EU Mailgun API URL, `messages` resource, protected `PORTAL_MAILGUN_WEBHOOK_SIGNING_KEY`, delivery and failure monitoring. Before deployment, verify in the authenticated Mailgun dashboard that `delivered` and `permanent_fail` target the exact Portal invitation webhook URL. Deployment validates the existing runtime sending settings and atomically installs the signing key. API startup fails closed when these values are absent or malformed. |
-| `PSeqOrderToCash` | Independent rollout flags, service-authenticated result pipeline, object-storage transfer targets, retention offsets, and dual-control audit/enforcement | Enable additive slices independently. Keep dual control audit-only until staffing evidence; require a rotated service secret, approved storage/scanner endpoint, explicit retention schedule, and no production default or placeholder values. |
+| `PSeqOrderToCash` | Independent rollout flags, service-authenticated result pipeline, object-storage transfer targets, legacy retention-offset compatibility, and dual-control audit/enforcement | Enable additive slices independently. Keep dual control audit-only until staffing evidence; require a rotated service secret, approved storage/scanner endpoint, an active versioned File Management retention policy, and no production placeholder values. New releases no longer read the legacy four offsets. |
 | `WebsiteApi`, `GoogleAuthSettings`, and `EmailServiceSettings` | Public origins/documents, technical brief, Google reCAPTCHA Enterprise, and Mailgun templates | Existing production credentials and document volume transferred through the secret/storage platform; CORS, rejection, templates, and PDF delivery verified. |
 | `WebCrawlerSettings`, `WebSearchSettings`, and `ChronJobs:IndexWebsite` | Public-site crawl target, Lucene index path, and rebuild schedule | Durable writable index storage, successful initial crawl, monitoring, and representative search verified. |
 | `WebsitePreviewSearch` | Protected branch crawl target, dedicated Preview Lucene path, Vercel automation bypass, proxy key, and rebuild schedule | Disabled by default; when activated, secrets remain server-side, the index uses its dedicated volume, direct unauthenticated access is denied, and production search remains unchanged. |
@@ -108,6 +107,93 @@ Committed migrations currently cover:
    environment.
 
 Use the repository-local EF tool manifest and commands documented in `README.md`. A migration committed or applied to one developer database is not proof that it ran in another environment. Before a shared-environment migration, record the target, backup/restore point, expected duration, application compatibility, verification query or smoke test, and rollback/forward-fix decision. Never apply a migration to shared, staging, or production data without explicit authorization.
+
+## Governed retention processing activation
+
+`PSeqOrderToCash:GovernedRetentionProcessing` defaults to false. It gates both the
+new minute-interval checkpoint worker and dispatch of its queued notices. Enable
+it only with governed results and Operations attention available. It does not
+enable physical deletion. `Invitations:PublicBaseUrl` supplies the HTTPS Portal
+origin for normal authenticated result-detail links; it must contain no credentials,
+query, or fragment. Notices resolve current active Organization admins at dispatch,
+without Department routing aliases. Review **Retention notices** in Operations and
+retry failed records in the existing notification workspace after recovery.
+
+Governed-results activation requires PostgreSQL `track_commit_timestamp=on`
+before any governed download transactions begin. Startup refuses governed results
+when this prerequisite is absent; admission also checks it before recording a
+lease. This server setting requires a separately approved restart/configuration
+change in a shared environment. It was tested on an isolated local cluster; the
+existing development server remains unchanged with tracking off.
+
+Admissions and successful completions retain their full transaction identity in
+the same transaction as the source event. After commit, the API copies the actual
+commit time into durable evidence. It verifies admission before opening storage;
+completion commit time controls standard-deadline eligibility. Read paths and a
+30-second reconciler recover observations lost after commit. Monitor errors for
+`retention_commit_tracking_unavailable`, `retention_commit_evidence_unavailable`,
+and the evidence identifier; these are backend recovery errors, not Retention
+notices queue items. Check tracking, migration state, database logs, and the source
+transaction promptly. PostgreSQL does not retain commit history indefinitely.
+If the source proof is no longer available, escalate for an approved recovery;
+do not substitute request timestamps, recreate a release, or change deadlines.
+Cached verified evidence is preserved; missing historical evidence is not backfilled.
+
+Local tests hold actual commits across standard/final cutoffs and verify recovery,
+rollback, and denied admission before storage opens. Hosted startup, process
+restart, database restart/failover, retention-history availability, configured
+lease limits, browser/proxy streaming, mailbox delivery, provider cleanup, and
+authenticated acceptance remain separate gates. Provider retry may repeat a
+delivered email after an ambiguous acknowledgement; the database prevents
+duplicate scheduled outbox rows.
+
+## General Lab/Assembly retention enforcement
+
+`OrderManagement:ReleasedDeliverableRetentionEnforcement` defaults to false.
+Enable only after the commit-tracking, recovery, restored-database, and hosted
+acceptance gates above are satisfied. The API requires commit tracking at startup
+when either this switch or governed PSeq results is enabled. This switch enforces
+individual and ZIP admission/completion plus active revocation; it does not
+activate scheduled notices, physical cleanup, storage, or payment confirmation.
+
+Snapshot-backed general releases use their original frozen dates. Previously
+successful attempts without verified commit evidence cause controlled timing
+unavailability; inventory those cases before activation and resolve them through
+approved recovery. Historical releases without snapshots gain no new dates.
+The observer and safe-error support process above apply to general downloads too.
+General cutoff errors use `released_deliverable_retention_cutoff_reached`;
+current-authority failures use `released_deliverable_access_unavailable`.
+
+Validate both current Customer Lab and Partner Assembly file/ZIP paths through
+the real browser/proxy/storage provider. Include a large ZIP revoked from another
+serving instance, interrupted requests, real lease expiration, deadline crossing,
+Partner payment hold, two Departments, and process/database restart recovery.
+Local fixtures verify source behavior but do not close these hosted gates.
+
+`OrderManagement:ReleasedDeliverableRetentionProcessing` separately enables the
+minute-based general checkpoint worker and dispatch of its warning/grace outbox
+rows. It defaults to false and requires general retention enforcement plus
+`PSeqOrderToCash:AttentionOperations`; startup rejects incomplete activation.
+Governed PSeq projections are excluded from this worker and retain their own
+processing gate. Disabling either family's processing gate pauses its pending,
+failed, and expired-claim dispatch while ordinary notifications continue.
+
+Use the same HTTPS Portal-link and current Organization-admin recipient rules
+above. General Lab links open the laboratory job; Assembly links open the assembly
+request. Missing admins and failed provider delivery use the existing urgent
+Retention notices queue and notification retry workspace, including interrupted
+final delivery claims. Retry the original notice after correcting access or
+delivery; no retry changes a frozen deadline or creates a new scheduled notice.
+Late polling skips obsolete warnings and retains conditional grace and cutoff.
+Queued notices describe their original deadline; the linked page shows current
+availability. Mailbox/provider retry can duplicate delivery after an ambiguous
+acknowledgement, even though scheduled outbox rows are de-duplicated.
+
+Before shared activation, verify both families independently with actual admins,
+a Department-only member, an inactive admin, both workflow links, and a provider
+failure/retry. Confirm disabling general processing leaves governed notices and
+ordinary notifications under their existing gates. Local fixtures use a fake
+sender only; they do not establish mailbox delivery or hosted recovery.
 
 ## Durable delivery and recovery
 
@@ -167,4 +253,26 @@ Until these gates are complete, a passing local build or test suite demonstrates
   approved, implemented, and production-validated.
 - A third-party LIMS adapter and ownership cutover unless an approved future
   workflow establishes the need.
-- Exceptional curated-package purge and any automated retention deletion workflow.
+- Exceptional curated-package purge and general versioned-policy retention deletion. New governed PSeq releases use the shared frozen policy and now have durable checkpoints/outboxes plus independently verified access-revocation monitoring. Actual commit-time deadline ordering is verified locally. Hosted commit-tracking recovery, general notice mailbox acceptance, authenticated acceptance, and dedicated-staging deletion evidence remain open.
+
+## Released-package cleanup and retained receipts
+
+`OrderManagement:ReleasedDeliverableByteDeletion` defaults to false and remains
+held in production with FileStorage disabled. Code deployment does not authorize
+storage/scanner activation or physical deletion. Cleanup selects only enabled
+retention families, takes the package lock used by admission, waits for active
+leases, rechecks exact file ownership/scan state, and defers shared objects and
+preservation/quarantine holds. Partial provider failures retain durable retry
+state and retry the same immutable keys. Metadata and evidence are retained.
+
+Phaeno platform administrators manage holds and link freshly approved reissues
+from `/released-deliverables`; external receipts enforce active organization and
+Department scope. Downloader audit is Organization-admin-only externally; hold
+and reissue reasons stay Phaeno-only. New Lab snapshot lineage is frozen at
+release; historical missing lineage is reported rather than backfilled. Assembly
+receipts describe project-level output without inventing sample mapping.
+
+Before cleanup activation, verify actual provider deletion/retry behavior,
+reference/lease protection, quarantine stream termination, mailbox delivery and
+hosted restart recovery in dedicated staging. A recorded local test or deployed
+flag-off worker does not satisfy these activation gates.

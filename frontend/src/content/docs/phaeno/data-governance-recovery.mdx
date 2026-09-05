@@ -18,6 +18,14 @@ Clear quarantine only after recording the investigation outcome and why the unch
 
 If the content is confirmed unsafe, preserve the version as evidence and withdraw it from future use. Track one administrator attestation per affected organization, its due date, reminders, and completion evidence. Phaeno may record an externally received attestation, but the record must identify the organization contact, evidence source, and that it was **Recorded by Phaeno**.
 
+## Review notice delivery
+
+Grant notices use current active organization and department access when dispatched. A revoked or superseded grant may still require a notice. Deactivated users, memberships, and department-admin assignments are excluded. Organization-wide notices go to organization administrators.
+
+Quarantine, clearance, withdrawal, and attestation reminders continue to reach current active organization administrators for affected organizations during suspension, because instructions may apply to copies already held. This does not restore Portal or download access. If no eligible administrator remains, arrange follow-up and record any externally received attestation with its evidence source.
+
+A notice with no eligible recipients remains failed and eligible for retry under the normal retry limits. Review current administrator assignments and the applicable organization or department status before retrying. A successful delivery state records sender acceptance; confirm the recipient's response separately.
+
 ## Recover failed operations
 
 Publication, grants, upgrades, revocations, quarantine, and clearance use version-aware, idempotent commands. Refresh before retrying a failed operation. Retry the existing provisioning or governance run rather than creating a duplicate grant or package version.

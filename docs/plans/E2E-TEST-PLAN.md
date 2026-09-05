@@ -1,5 +1,104 @@
 # Playwright E2E Test Plan
 
+## General retention notice acceptance (2026-09-05)
+
+No browser suite was rerun for this backend/help-prose slice. Before shared
+activation, verify actual Customer Lab and Partner Assembly notice links open
+their current authenticated workflow, all current Organization admins receive
+notices, Department-only and inactive members do not, and provider failure/retry
+is recoverable through Retention notices and the notification workspace. Verify
+both processing families independently and expired final-claim recovery. Local
+synthetic sender/concurrency checks do not prove mailbox or hosted acceptance.
+
+
+## General Lab release rendering (2026-09-05)
+
+`managed-retention.spec.ts` passes desktop/light and mobile/dark for the real Lab
+release component rendered with synthetic release data. Checks cover visible
+standard/grace/cutoff states, file and ZIP disabled after closure, keyboard focus,
+long filenames without horizontal overflow, Axe WCAG checks, no console/overlay
+errors, and inspected screenshots. Playwright uses the repository runtime; the
+browser-verification skill CLI was unavailable. This does not claim full Assembly
+page rendering, authenticated hosted execution, real provider delivery, or shared
+configuration. Add both real Lab/Assembly file/ZIP paths and cross-instance ZIP
+revocation to the signed-in staging acceptance run before activation.
+
+
+## Commit-time retention acceptance (2026-09-05)
+
+Actual delayed COMMIT behavior now has local independent-connection controller/
+PostgreSQL proof for standard/final cutoff, recovery, and rollback. No browser
+suite was rerun for this backend-only slice. Hosted acceptance must confirm commit
+tracking before enabling governed results, process/database restart and failover
+recovery, current authorized result pages, and transfer behavior through the real
+proxy/storage path. Existing signed-in Organization/Department gates remain open.
+
+
+## Durable retention acceptance boundary (2026-09-04)
+
+The added recovery-queue option is covered by a focused component test; no new
+browser suite was run for this single selector addition. Previous rendered
+retention/Department fixtures remain local evidence. Independent database
+connections plus a real MVC response now verify a blocked stream stops on
+revocation; this does not substitute for a hosted browser/proxy/storage journey.
+
+Pending signed-in staging checks: Organization admin versus two distinct
+Department admins; warning and grace links opening current authorized package
+state; missing-recipient recovery through Retention notices and notification
+retry; withdrawal/deactivation during a large transfer; interrupted delivery and
+expired-claim retry; exact commit/deadline ordering; and provider/storage evidence.
+Approved staging URLs and an available two-department test organization were
+requested. Do not mark these checks passed from synthetic sessions or local tests.
+
+
+## Governed retention reconciliation (2026-09-04)
+
+`governed-retention.spec.ts` passed for desktop/light and mobile/dark. The
+browser-only fixture renders the actual governed result component with standard,
+completed-during-grace, and closed states. Both available states retain download
+actions; closed state removes them. Keyboard focus, Axe WCAG 2.2 AA checks, no
+horizontal overflow/error overlay/console errors, and screenshots were verified.
+This is rendered contract proof, not signed-in Clerk, real transfer, or storage
+provider acceptance. Those hosted gates and automatic notices remain open.
+
+
+## Secondary department paths checkpoint (2026-09-04)
+
+`department-history.spec.ts` passed twice: desktop/light and mobile/dark. The real
+Data Library component renders current Department-admin history, sends the
+selected Department header, clears old rows while the next response is delayed,
+and hides history after admin rights are removed. Axe WCAG 2.2 AA checks found no
+violations; screenshots were inspected, no horizontal overflow/error overlay or
+browser console errors were present. These use the browser-only
+`e2e/fixtures/department-history.*` entry and intercepted synthetic API responses;
+no Clerk session or real provider is used. The initial fixture intercepted source
+module paths as API calls; narrowed interception to the API URL prefix and both
+cases passed. This complements 68 backend and 13 focused frontend tests; it does
+not close hosted signed-in two-department/identity acceptance.
+
+
+## Department administration closeout checkpoint (2026-09-04)
+
+- New `department-self-service.spec.ts`: eight desktop/mobile instances cover
+  assigned-Department admin settings/member access without a tenant-wide people
+  query or Organization-default access, Organization admin structure controls,
+  explicit invitation intent and dirty dismissal, and Organization-default
+  conflict recovery preserving inputs until deliberate resubmission.
+- Existing `people-departments.spec.ts`: four desktop/mobile instances passed
+  for Company People/Sales separation, invitation intent, settings/conflicts,
+  focus restoration, and Department lifecycle review. Twelve distinct cases
+  passed across the focused runs; this was not the full Portal E2E suite.
+- Axe WCAG 2.2 AA checks ran on the affected settled dialogs. One initial scan
+  caught a button's disabled-to-enabled color transition; the helper now waits
+  for finite animations, and the complete new eight-case suite passed again.
+  Inspected desktop/light and mobile/dark screenshots, body scrolling, fixed
+  footer, no horizontal overflow, and focus restoration.
+- The actual `/departments` page ran with the existing mock session and API
+  fixtures. The legacy invitation panel uses a test-only HTML/TSX fixture since
+  its production route rejects mock authentication. No real invitation was sent.
+  Browser evidence does not replace signed-in multi-tenant staging acceptance.
+
+
 ## Website UI polish checkpoint (2026-09-04)
 
 Focused local inspection covered the homepage at 1280px, 390px, and 320px;
@@ -689,3 +788,20 @@ the protected deployed-Preview acceptance above.
   the application stopped at `Access check failed` before Lab Operations could
   render. No E2E tests were requested or run; signed-in workflow acceptance
   remains pending after the local API session is restarted.
+
+### Released receipt closeout (2026-09-05)
+
+`release-receipt.spec.ts` renders the real receipt with 35 long Unicode filenames,
+checks desktop/light and mobile/dark reflow, Axe, complete manifest, console
+errors, and printable PDF output. These are synthetic UI fixtures, not hosted
+sign-in or physical deletion acceptance. The full browser suite explicitly uses
+mock sessions and a same-origin intercepted API so local Clerk/API configuration
+cannot send test traffic to a connected environment.
+
+The full-suite closeout refreshed legacy CRM expectations to the current Company
+People and Departments/services tabs and online-access-only approval payload.
+The removed embedded Users-tab flow is no longer asserted on that legacy route;
+reviewed People invitations and Department access are covered by their dedicated
+journeys. Order operations checks its current Attention section. Receipt printing
+uses A4 while named Lab-label pages keep their 50 mm by 25 mm size; dark display
+mode prints receipts on white paper.

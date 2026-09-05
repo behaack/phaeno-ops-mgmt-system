@@ -17,6 +17,27 @@ using PhaenoPortal.App.Features.Website.Entities;
 public class PersistenceTests
 {
     [Fact]
+    public void DatabaseErdIncludesEveryApplicationTableAndColumn()
+    {
+        var directory = new DirectoryInfo(AppContext.BaseDirectory);
+        while (directory is not null && !File.Exists(Path.Combine(directory.FullName, "docs", "database-erd.md"))) directory = directory.Parent;
+        Assert.NotNull(directory);
+        var erd = File.ReadAllText(Path.Combine(directory.FullName, "docs", "database-erd.md"));
+        using var db = CreateDbContext();
+        foreach (var entity in db.Model.GetEntityTypes())
+        {
+            var tableName = entity.GetTableName();
+            if (tableName is null) continue;
+            var table = Microsoft.EntityFrameworkCore.Metadata.StoreObjectIdentifier.Table(tableName, entity.GetSchema());
+            var match = System.Text.RegularExpressions.Regex.Match(erd,
+                $@"(?m)^    {System.Text.RegularExpressions.Regex.Escape(tableName)} \{{\r?\n(?<fields>[\s\S]*?)^    \}}");
+            Assert.True(match.Success, $"Missing ERD entity {entity.GetSchema()}.{tableName}");
+            foreach (var property in entity.GetProperties())
+                Assert.Contains($" {property.GetColumnName(table)} ", match.Groups["fields"].Value);
+        }
+    }
+
+    [Fact]
     public void PSeqOperationsDbContextMapsCompletionAwareOperationalDownloads()
     {
         using var dbContext = CreateDbContext();

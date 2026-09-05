@@ -271,6 +271,30 @@ namespace PSeq.Operations.Api.Migrations
                         .HasColumnType("uuid")
                         .HasColumnName("created_by_user_id");
 
+                    b.Property<string>("DefaultBillingContactEmail")
+                        .HasMaxLength(255)
+                        .HasColumnType("character varying(255)")
+                        .HasColumnName("default_billing_contact_email");
+
+                    b.Property<string>("DefaultNotificationEmail")
+                        .HasMaxLength(255)
+                        .HasColumnType("character varying(255)")
+                        .HasColumnName("default_notification_email");
+
+                    b.Property<bool?>("DefaultPurchaseOrderRequired")
+                        .HasColumnType("boolean")
+                        .HasColumnName("default_purchase_order_required");
+
+                    b.Property<string>("DefaultResultDeliveryInstructions")
+                        .HasMaxLength(2000)
+                        .HasColumnType("character varying(2000)")
+                        .HasColumnName("default_result_delivery_instructions");
+
+                    b.Property<string>("DefaultShippingInstructions")
+                        .HasMaxLength(2000)
+                        .HasColumnType("character varying(2000)")
+                        .HasColumnName("default_shipping_instructions");
+
                     b.Property<string>("Description")
                         .HasMaxLength(1000)
                         .HasColumnType("character varying(1000)")
@@ -3107,6 +3131,10 @@ namespace PSeq.Operations.Api.Migrations
                         .HasColumnType("uuid")
                         .HasColumnName("curated_dataset_version_id");
 
+                    b.Property<Guid?>("DepartmentId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("department_id");
+
                     b.Property<DateTime>("DownloadedAt")
                         .HasColumnType("timestamp with time zone")
                         .HasColumnName("downloaded_at");
@@ -3147,15 +3175,17 @@ namespace PSeq.Operations.Api.Migrations
 
                     b.HasIndex("CuratedDatasetVersionId");
 
+                    b.HasIndex("DepartmentId");
+
                     b.HasIndex("DownloadedAt");
 
                     b.HasIndex("ManagedFileId");
 
                     b.HasIndex("OrganizationDatasetGrantId");
 
-                    b.HasIndex("OrganizationId");
-
                     b.HasIndex("UserId");
+
+                    b.HasIndex("OrganizationId", "DepartmentId", "DownloadedAt");
 
                     b.ToTable("dataset_download_audits", "commercial_ops");
                 });
@@ -3760,6 +3790,107 @@ namespace PSeq.Operations.Api.Migrations
                     b.ToTable("released_deliverable_policy_defaults", "commercial_ops");
                 });
 
+            modelBuilder.Entity("PSeq.Operations.Commercial.FileManagement.Domain.ReleasedDeliverablePreservationHold", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid")
+                        .HasColumnName("id");
+
+                    b.Property<string>("Kind")
+                        .IsRequired()
+                        .HasMaxLength(30)
+                        .HasColumnType("character varying(30)")
+                        .HasColumnName("kind");
+
+                    b.Property<DateTime>("PlacedAtUtc")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("placed_at_utc");
+
+                    b.Property<Guid>("PlacedByUserId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("placed_by_user_id");
+
+                    b.Property<string>("Reason")
+                        .IsRequired()
+                        .HasMaxLength(2000)
+                        .HasColumnType("character varying(2000)")
+                        .HasColumnName("reason");
+
+                    b.Property<string>("ReleaseReason")
+                        .HasMaxLength(2000)
+                        .HasColumnType("character varying(2000)")
+                        .HasColumnName("release_reason");
+
+                    b.Property<DateTime?>("ReleasedAtUtc")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("released_at_utc");
+
+                    b.Property<Guid?>("ReleasedByUserId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("released_by_user_id");
+
+                    b.Property<Guid>("RetentionSnapshotId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("retention_snapshot_id");
+
+                    b.Property<long>("Version")
+                        .IsConcurrencyToken()
+                        .HasColumnType("bigint")
+                        .HasColumnName("version");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("PlacedByUserId");
+
+                    b.HasIndex("ReleasedByUserId");
+
+                    b.HasIndex("RetentionSnapshotId", "ReleasedAtUtc");
+
+                    b.ToTable("released_deliverable_preservation_holds", "commercial_ops");
+                });
+
+            modelBuilder.Entity("PSeq.Operations.Commercial.FileManagement.Domain.ReleasedDeliverableReissue", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid")
+                        .HasColumnName("id");
+
+                    b.Property<DateTime>("AuthorizedAtUtc")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("authorized_at_utc");
+
+                    b.Property<Guid>("AuthorizedByUserId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("authorized_by_user_id");
+
+                    b.Property<Guid>("OriginalSnapshotId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("original_snapshot_id");
+
+                    b.Property<string>("Reason")
+                        .IsRequired()
+                        .HasMaxLength(2000)
+                        .HasColumnType("character varying(2000)")
+                        .HasColumnName("reason");
+
+                    b.Property<Guid>("ReplacementSnapshotId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("replacement_snapshot_id");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("AuthorizedByUserId");
+
+                    b.HasIndex("OriginalSnapshotId");
+
+                    b.HasIndex("ReplacementSnapshotId")
+                        .IsUnique();
+
+                    b.ToTable("released_deliverable_reissues", "commercial_ops");
+                });
+
             modelBuilder.Entity("PSeq.Operations.Commercial.FileManagement.Domain.ReleasedDeliverableRetentionSnapshot", b =>
                 {
                     b.Property<Guid>("Id")
@@ -3783,6 +3914,10 @@ namespace PSeq.Operations.Api.Migrations
                         .HasColumnType("uuid")
                         .HasColumnName("created_by_user_id");
 
+                    b.Property<int>("DeletionAttemptCount")
+                        .HasColumnType("integer")
+                        .HasColumnName("deletion_attempt_count");
+
                     b.Property<string>("DeletionOutcome")
                         .HasMaxLength(100)
                         .HasColumnType("character varying(100)")
@@ -3804,9 +3939,25 @@ namespace PSeq.Operations.Api.Migrations
                         .HasColumnType("timestamp with time zone")
                         .HasColumnName("grace_activated_at_utc");
 
+                    b.Property<Guid?>("GraceNotificationId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("grace_notification_id");
+
+                    b.Property<bool>("IsQuarantined")
+                        .HasColumnType("boolean")
+                        .HasColumnName("is_quarantined");
+
                     b.Property<Guid?>("LabResultReleaseId")
                         .HasColumnType("uuid")
                         .HasColumnName("lab_result_release_id");
+
+                    b.Property<DateTime?>("LastDeletionAttemptAtUtc")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("last_deletion_attempt_at_utc");
+
+                    b.Property<DateTime?>("NextDeletionAttemptAtUtc")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("next_deletion_attempt_at_utc");
 
                     b.Property<Guid>("OrganizationId")
                         .HasColumnType("uuid")
@@ -3824,9 +3975,17 @@ namespace PSeq.Operations.Api.Migrations
                         .HasColumnType("timestamp with time zone")
                         .HasColumnName("potential_final_deletion_at_utc");
 
+                    b.Property<string>("ReceiptLineageJson")
+                        .HasColumnType("text")
+                        .HasColumnName("receipt_lineage_json");
+
                     b.Property<DateTime>("ReleasedAtUtc")
                         .HasColumnType("timestamp with time zone")
                         .HasColumnName("released_at_utc");
+
+                    b.Property<DateTime?>("StandardCheckpointAtUtc")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("standard_checkpoint_at_utc");
 
                     b.Property<DateTime>("StandardDeletionAtUtc")
                         .HasColumnType("timestamp with time zone")
@@ -3879,6 +4038,19 @@ namespace PSeq.Operations.Api.Migrations
                         .HasColumnType("timestamp with time zone")
                         .HasColumnName("warning_at_utc");
 
+                    b.Property<DateTime?>("WarningCheckpointAtUtc")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("warning_checkpoint_at_utc");
+
+                    b.Property<string>("WarningCheckpointOutcome")
+                        .HasMaxLength(50)
+                        .HasColumnType("character varying(50)")
+                        .HasColumnName("warning_checkpoint_outcome");
+
+                    b.Property<Guid?>("WarningNotificationId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("warning_notification_id");
+
                     b.HasKey("Id");
 
                     b.HasIndex("AssemblyOutputReleaseId")
@@ -3887,6 +4059,8 @@ namespace PSeq.Operations.Api.Migrations
 
                     b.HasIndex("GlobalPolicyId");
 
+                    b.HasIndex("GraceNotificationId");
+
                     b.HasIndex("LabResultReleaseId")
                         .IsUnique()
                         .HasFilter("\"lab_result_release_id\" IS NOT NULL");
@@ -3894,6 +4068,10 @@ namespace PSeq.Operations.Api.Migrations
                     b.HasIndex("OrganizationPolicyOverrideId");
 
                     b.HasIndex("PotentialFinalDeletionAtUtc");
+
+                    b.HasIndex("WarningAtUtc");
+
+                    b.HasIndex("WarningNotificationId");
 
                     b.HasIndex("OrganizationId", "StandardDeletionAtUtc");
 
@@ -5058,6 +5236,61 @@ namespace PSeq.Operations.Api.Migrations
                     b.ToTable("operational_attention_items", "commercial_ops");
                 });
 
+            modelBuilder.Entity("PSeq.Operations.Commercial.OrderManagement.Domain.OperationalDownloadCommitEvidence", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid")
+                        .HasColumnName("id");
+
+                    b.Property<DateTime?>("AdmissionCutoffAtUtc")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("admission_cutoff_at_utc");
+
+                    b.Property<DateTime?>("CommittedAtUtc")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("committed_at_utc");
+
+                    b.Property<DateTime?>("ObservedAtUtc")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("observed_at_utc");
+
+                    b.Property<Guid>("OperationalFileDownloadId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("operational_file_download_id");
+
+                    b.Property<string>("Phase")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)")
+                        .HasColumnName("phase");
+
+                    b.Property<DateTime>("RecordedAtUtc")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("recorded_at_utc");
+
+                    b.Property<string>("SourceTransactionId")
+                        .IsRequired()
+                        .HasMaxLength(20)
+                        .HasColumnType("character varying(20)")
+                        .HasColumnName("source_transaction_id");
+
+                    b.Property<long>("Version")
+                        .IsConcurrencyToken()
+                        .HasColumnType("bigint")
+                        .HasColumnName("version");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("RecordedAtUtc")
+                        .HasFilter("committed_at_utc IS NULL");
+
+                    b.HasIndex("OperationalFileDownloadId", "Phase")
+                        .IsUnique();
+
+                    b.ToTable("operational_download_commit_evidence", "commercial_ops");
+                });
+
             modelBuilder.Entity("PSeq.Operations.Commercial.OrderManagement.Domain.OperationalFileDownload", b =>
                 {
                     b.Property<Guid>("Id")
@@ -5077,7 +5310,7 @@ namespace PSeq.Operations.Api.Migrations
                         .HasColumnType("timestamp with time zone")
                         .HasColumnName("lease_expires_at_utc");
 
-                    b.Property<Guid>("ManagedOperationalFileId")
+                    b.Property<Guid?>("ManagedOperationalFileId")
                         .HasColumnType("uuid")
                         .HasColumnName("managed_operational_file_id");
 
@@ -5105,6 +5338,10 @@ namespace PSeq.Operations.Api.Migrations
                         .HasMaxLength(100)
                         .HasColumnType("character varying(100)")
                         .HasColumnName("remote_address");
+
+                    b.Property<Guid?>("ResultArtifactId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("result_artifact_id");
 
                     b.Property<string>("Scope")
                         .IsRequired()
@@ -5147,6 +5384,8 @@ namespace PSeq.Operations.Api.Migrations
 
                     b.HasIndex("ManagedOperationalFileId");
 
+                    b.HasIndex("ResultArtifactId");
+
                     b.HasIndex("TransferId");
 
                     b.HasIndex("UserId");
@@ -5157,7 +5396,10 @@ namespace PSeq.Operations.Api.Migrations
 
                     b.HasIndex("OrganizationId", "ReleasedPackageType", "ReleasedPackageId");
 
-                    b.ToTable("operational_file_downloads", "commercial_ops");
+                    b.ToTable("operational_file_downloads", "commercial_ops", t =>
+                        {
+                            t.HasCheckConstraint("ck_operational_download_file_target", "(managed_operational_file_id IS NOT NULL AND result_artifact_id IS NULL AND released_package_type <> 'PSeqResult') OR (managed_operational_file_id IS NULL AND result_artifact_id IS NOT NULL AND released_package_type = 'PSeqResult')");
+                        });
                 });
 
             modelBuilder.Entity("PSeq.Operations.Commercial.OrderManagement.Domain.OrderCancellationRequest", b =>
@@ -5401,6 +5643,10 @@ namespace PSeq.Operations.Api.Migrations
                     b.HasIndex("OrganizationId", "CreatedAt");
 
                     b.HasIndex("Status", "NextAttemptAt");
+
+                    b.HasIndex("WorkflowType", "WorkflowId", "EventType")
+                        .IsUnique()
+                        .HasFilter("workflow_type = 'ReleasedDeliverableRetention'");
 
                     b.ToTable("order_notifications", "commercial_ops");
                 });
@@ -7339,6 +7585,10 @@ namespace PSeq.Operations.Api.Migrations
                         .HasColumnType("uuid")
                         .HasColumnName("result_output_package_id");
 
+                    b.Property<Guid?>("RetentionSnapshotId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("retention_snapshot_id");
+
                     b.Property<string>("State")
                         .IsRequired()
                         .HasMaxLength(100)
@@ -7365,6 +7615,9 @@ namespace PSeq.Operations.Api.Migrations
                     b.HasKey("Id");
 
                     b.HasIndex("ResultOutputPackageId")
+                        .IsUnique();
+
+                    b.HasIndex("RetentionSnapshotId")
                         .IsUnique();
 
                     b.HasIndex("State", "WarningAtUtc", "DeleteAtUtc");
@@ -12484,6 +12737,11 @@ namespace PSeq.Operations.Api.Migrations
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
 
+                    b.HasOne("PSeq.Operations.Commercial.Accounts.Domain.OrganizationDepartment", null)
+                        .WithMany()
+                        .HasForeignKey("DepartmentId")
+                        .OnDelete(DeleteBehavior.Restrict);
+
                     b.HasOne("PSeq.Operations.Commercial.DataProvisioning.Domain.ManagedFile", null)
                         .WithMany()
                         .HasForeignKey("ManagedFileId")
@@ -12609,6 +12867,48 @@ namespace PSeq.Operations.Api.Migrations
                         .HasConstraintName("fk_released_policy_default_supersedes");
                 });
 
+            modelBuilder.Entity("PSeq.Operations.Commercial.FileManagement.Domain.ReleasedDeliverablePreservationHold", b =>
+                {
+                    b.HasOne("PSeq.Operations.Commercial.Accounts.Domain.User", null)
+                        .WithMany()
+                        .HasForeignKey("PlacedByUserId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("PSeq.Operations.Commercial.Accounts.Domain.User", null)
+                        .WithMany()
+                        .HasForeignKey("ReleasedByUserId")
+                        .OnDelete(DeleteBehavior.Restrict);
+
+                    b.HasOne("PSeq.Operations.Commercial.FileManagement.Domain.ReleasedDeliverableRetentionSnapshot", null)
+                        .WithMany()
+                        .HasForeignKey("RetentionSnapshotId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+                });
+
+            modelBuilder.Entity("PSeq.Operations.Commercial.FileManagement.Domain.ReleasedDeliverableReissue", b =>
+                {
+                    b.HasOne("PSeq.Operations.Commercial.Accounts.Domain.User", null)
+                        .WithMany()
+                        .HasForeignKey("AuthorizedByUserId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("PSeq.Operations.Commercial.FileManagement.Domain.ReleasedDeliverableRetentionSnapshot", null)
+                        .WithMany()
+                        .HasForeignKey("OriginalSnapshotId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("PSeq.Operations.Commercial.FileManagement.Domain.ReleasedDeliverableRetentionSnapshot", null)
+                        .WithMany()
+                        .HasForeignKey("ReplacementSnapshotId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired()
+                        .HasConstraintName("FK_released_deliverable_reissues_released_deliverable_retenti~1");
+                });
+
             modelBuilder.Entity("PSeq.Operations.Commercial.FileManagement.Domain.ReleasedDeliverableRetentionSnapshot", b =>
                 {
                     b.HasOne("PhaenoPortal.App.Features.OrderManagement.Domain.AssemblyOutputRelease", null)
@@ -12623,6 +12923,11 @@ namespace PSeq.Operations.Api.Migrations
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired()
                         .HasConstraintName("fk_released_retention_snapshot_global_policy");
+
+                    b.HasOne("PSeq.Operations.Commercial.OrderManagement.Domain.OrderNotification", null)
+                        .WithMany()
+                        .HasForeignKey("GraceNotificationId")
+                        .OnDelete(DeleteBehavior.Restrict);
 
                     b.HasOne("PhaenoPortal.App.Features.OrderManagement.Domain.LabResultRelease", null)
                         .WithMany()
@@ -12642,6 +12947,12 @@ namespace PSeq.Operations.Api.Migrations
                         .HasForeignKey("OrganizationPolicyOverrideId")
                         .OnDelete(DeleteBehavior.Restrict)
                         .HasConstraintName("fk_released_retention_snapshot_org_override");
+
+                    b.HasOne("PSeq.Operations.Commercial.OrderManagement.Domain.OrderNotification", null)
+                        .WithMany()
+                        .HasForeignKey("WarningNotificationId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .HasConstraintName("FK_released_deliverable_retention_snapshots_order_notificatio~1");
                 });
 
             modelBuilder.Entity("PSeq.Operations.Commercial.OrderManagement.Domain.AnalysisDefinition", b =>
@@ -12762,19 +13073,32 @@ namespace PSeq.Operations.Api.Migrations
                         .OnDelete(DeleteBehavior.Restrict);
                 });
 
+            modelBuilder.Entity("PSeq.Operations.Commercial.OrderManagement.Domain.OperationalDownloadCommitEvidence", b =>
+                {
+                    b.HasOne("PSeq.Operations.Commercial.OrderManagement.Domain.OperationalFileDownload", null)
+                        .WithMany()
+                        .HasForeignKey("OperationalFileDownloadId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+                });
+
             modelBuilder.Entity("PSeq.Operations.Commercial.OrderManagement.Domain.OperationalFileDownload", b =>
                 {
                     b.HasOne("PhaenoPortal.App.Features.OrderManagement.Domain.ManagedOperationalFile", null)
                         .WithMany()
                         .HasForeignKey("ManagedOperationalFileId")
-                        .OnDelete(DeleteBehavior.Restrict)
-                        .IsRequired();
+                        .OnDelete(DeleteBehavior.Restrict);
 
                     b.HasOne("PSeq.Operations.Commercial.Accounts.Domain.Organization", null)
                         .WithMany()
                         .HasForeignKey("OrganizationId")
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
+
+                    b.HasOne("PSeq.Operations.Commercial.OrderManagement.Domain.ResultArtifact", null)
+                        .WithMany()
+                        .HasForeignKey("ResultArtifactId")
+                        .OnDelete(DeleteBehavior.Restrict);
 
                     b.HasOne("PSeq.Operations.Commercial.Accounts.Domain.User", null)
                         .WithMany()
@@ -13074,6 +13398,11 @@ namespace PSeq.Operations.Api.Migrations
                         .HasForeignKey("ResultOutputPackageId")
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
+
+                    b.HasOne("PSeq.Operations.Commercial.FileManagement.Domain.ReleasedDeliverableRetentionSnapshot", null)
+                        .WithMany()
+                        .HasForeignKey("RetentionSnapshotId")
+                        .OnDelete(DeleteBehavior.Restrict);
                 });
 
             modelBuilder.Entity("PSeq.Operations.Commercial.OrderManagement.Domain.SampleReturnKit", b =>

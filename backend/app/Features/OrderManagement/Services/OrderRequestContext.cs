@@ -12,7 +12,10 @@ public sealed record OrderTenantContext(
     Organization Organization,
     OrganizationMembership Membership,
     OrganizationDepartment Department,
-    bool IsDepartmentAdmin);
+    bool IsDepartmentAdmin)
+{
+    public DepartmentConfiguration Configuration => Department.ResolveConfiguration(Organization);
+}
 
 public sealed class OrderRequestContext(
     PSeqOperationsDbContext dbContext,

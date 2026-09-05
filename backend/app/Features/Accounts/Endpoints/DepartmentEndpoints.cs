@@ -12,6 +12,42 @@ using PhaenoPortal.App.Infrastructure.Persistence;
 
 public static class DepartmentEndpoints
 {
+    public static async Task<IResult> ReadOrganizationConfiguration(Guid organizationId, HttpContext httpContext,
+        PSeqOperationsDbContext dbContext, IExternalIdentityContext externalIdentityContext, CancellationToken cancellationToken)
+    {
+        var actor = await RequireActor(httpContext, dbContext, externalIdentityContext, cancellationToken);
+        if (!CanManageOrganization(actor, organizationId)) return TypedResults.Forbid();
+        var organization = await dbContext.Organizations.AsNoTracking()
+            .SingleOrDefaultAsync(value => value.Id == organizationId && value.IsActive, cancellationToken)
+            ?? throw new BadRequestException("The active organization was not found.");
+        return TypedResults.Ok(ConfigurationDto(organization));
+    }
+
+    public static async Task<IResult> UpdateOrganizationConfiguration(Guid organizationId,
+        [FromBody] UpdateOrganizationConfigurationRequest request, HttpContext httpContext,
+        PSeqOperationsDbContext dbContext, IExternalIdentityContext externalIdentityContext, CancellationToken cancellationToken)
+    {
+        var actor = await RequireActor(httpContext, dbContext, externalIdentityContext, cancellationToken);
+        if (!CanManageOrganization(actor, organizationId)) return TypedResults.Forbid();
+        var organization = await dbContext.Organizations
+            .SingleOrDefaultAsync(value => value.Id == organizationId && value.IsActive, cancellationToken)
+            ?? throw new BadRequestException("The active organization was not found.");
+        EnsureVersion(organization.Version, request.Version);
+        var previous = organization.GetConfigurationDefaults();
+        Execute(() => organization.UpdateConfigurationDefaults(new(request.PurchaseOrderRequired,
+            request.BillingContactEmail, request.NotificationEmail, request.ShippingInstructions, request.ResultDeliveryInstructions)));
+        AccountAudit.Add(dbContext, httpContext, nameof(Organization), organization.Id,
+            "OrganizationConfigurationUpdated", organization.Id, actor.Id,
+            new { Before = previous, After = organization.GetConfigurationDefaults() });
+        await dbContext.SaveChangesAsync(cancellationToken);
+        return TypedResults.Ok(ConfigurationDto(organization));
+    }
+
+    private static OrganizationConfigurationDto ConfigurationDto(Organization organization) => new(
+        organization.Id, organization.DefaultPurchaseOrderRequired, organization.DefaultBillingContactEmail,
+        organization.DefaultNotificationEmail, organization.DefaultShippingInstructions,
+        organization.DefaultResultDeliveryInstructions, organization.Version);
+
     public static async Task<IResult> ListDepartments(
         Guid organizationId,
         [FromQuery] bool includeInactive,
@@ -108,7 +144,7 @@ public static class DepartmentEndpoints
         CancellationToken cancellationToken)
     {
         var actor = await RequireActor(httpContext, dbContext, externalIdentityContext, cancellationToken);
-        if (!CanManageOrganization(actor, organizationId))
+        if (!await CanManageDepartment(actor, organizationId, departmentId, dbContext, cancellationToken))
         {
             return TypedResults.Forbid();
         }
@@ -256,11 +292,47 @@ public static class DepartmentEndpoints
             .Include(value => value.Department)
             .Where(value => value.DepartmentId == departmentId
                 && value.Department.OrganizationId == organizationId
-                && value.OrganizationMembership.OrganizationId == organizationId)
+                && value.OrganizationMembership.OrganizationId == organizationId
+                && value.OrganizationMembership.IsActive && value.OrganizationMembership.User!.IsActive)
             .OrderBy(value => value.OrganizationMembership.User!.LastName)
             .ThenBy(value => value.OrganizationMembership.User!.FirstName)
             .ToListAsync(cancellationToken);
         return TypedResults.Ok(assignments.Select(ToDto).ToList());
+    }
+
+    public static async Task<IResult> LookupDepartmentMember(
+        Guid organizationId,
+        Guid departmentId,
+        [FromBody] LookupDepartmentMemberRequest request,
+        HttpContext httpContext,
+        PSeqOperationsDbContext dbContext,
+        IExternalIdentityContext externalIdentityContext,
+        CancellationToken cancellationToken)
+    {
+        var actor = await RequireActor(httpContext, dbContext, externalIdentityContext, cancellationToken);
+        if (!await CanManageDepartment(actor, organizationId, departmentId, dbContext, cancellationToken))
+        {
+            return TypedResults.Forbid();
+        }
+
+        // An exact email in a request body avoids a tenant-wide people directory
+        // and avoids putting personal information in query strings or URLs.
+        var email = request.Email?.Trim();
+        if (string.IsNullOrWhiteSpace(email) || email.Length > 255
+            || !System.Net.Mail.MailAddress.TryCreate(email, out var address)
+            || !string.Equals(address.Address, email, StringComparison.OrdinalIgnoreCase))
+        {
+            throw new BadRequestException("Enter a valid email address.");
+        }
+
+        var normalizedEmail = User.NormalizeEmail(email);
+        var candidates = await dbContext.OrganizationMemberships.AsNoTracking()
+            .Where(value => value.OrganizationId == organizationId && value.IsActive
+                && value.User!.IsActive && value.User.NormalizedEmail == normalizedEmail)
+            .Select(value => new DepartmentMemberCandidateDto(value.Id, value.UserId,
+                value.User!.FirstName + " " + value.User.LastName, value.User.Email, value.IsOrganizationAdmin))
+            .ToListAsync(cancellationToken);
+        return TypedResults.Ok(candidates);
     }
 
     public static async Task<IResult> UpsertDepartmentMember(
@@ -289,8 +361,12 @@ public static class DepartmentEndpoints
             .Include(value => value.User)
             .SingleOrDefaultAsync(value => value.Id == organizationMembershipId
                 && value.OrganizationId == organizationId
-                && value.IsActive, cancellationToken)
+                && value.IsActive && value.User!.IsActive, cancellationToken)
             ?? throw new BadRequestException("The active organization membership was not found.");
+        if (organizationMembership.IsOrganizationAdmin)
+        {
+            throw new BadRequestException("Organization administrators already have access to every department.");
+        }
         var assignment = await dbContext.OrganizationDepartmentMemberships
             .Include(value => value.Department)
             .SingleOrDefaultAsync(value => value.OrganizationMembershipId == organizationMembershipId
@@ -342,6 +418,10 @@ public static class DepartmentEndpoints
             .SingleOrDefaultAsync(value => value.Id == organizationMembershipId
                 && value.OrganizationId == organizationId, cancellationToken)
             ?? throw new BadRequestException("The organization membership was not found.");
+        if (organizationMembership.IsOrganizationAdmin)
+        {
+            throw new BadRequestException("Organization administrators already have access to every department.");
+        }
         var assignment = await dbContext.OrganizationDepartmentMemberships
             .Include(value => value.OrganizationMembership).ThenInclude(value => value.User)
             .Include(value => value.Department)
@@ -373,6 +453,10 @@ public static class DepartmentEndpoints
 
     public static void MapDepartmentEndpoints(this WebApplication app)
     {
+        var configuration = app.MapGroup("/api/organizations/{organizationId:guid}/configuration")
+            .WithTags("Departments").RequireAuthorization();
+        configuration.MapGet("/", ReadOrganizationConfiguration).Produces<OrganizationConfigurationDto>();
+        configuration.MapPut("/", UpdateOrganizationConfiguration).Produces<OrganizationConfigurationDto>();
         var group = app.MapGroup("/api/organizations/{organizationId:guid}/departments")
             .WithTags("Departments")
             .RequireAuthorization();
@@ -383,6 +467,8 @@ public static class DepartmentEndpoints
             .Produces<DepartmentDto>();
         group.MapPost("/{departmentId:guid}/default", SetDefaultDepartment).Produces<DepartmentDto>();
         group.MapGet("/{departmentId:guid}/members", ListDepartmentMembers).Produces<List<DepartmentMembershipDto>>();
+        group.MapPost("/{departmentId:guid}/member-lookup", LookupDepartmentMember)
+            .Produces<List<DepartmentMemberCandidateDto>>();
         group.MapPut("/{departmentId:guid}/members/{organizationMembershipId:guid}", UpsertDepartmentMember)
             .Produces<DepartmentMembershipDto>();
         group.MapPost("/{departmentId:guid}/members/{organizationMembershipId:guid}/deactivate", DeactivateDepartmentMember)
@@ -482,6 +568,7 @@ public static class DepartmentEndpoints
         DepartmentId = value.DepartmentId,
         DepartmentName = value.Department.Name,
         IsDepartmentAdmin = value.IsDepartmentAdmin,
+        IsOrganizationAdmin = value.OrganizationMembership.IsOrganizationAdmin,
         IsActive = value.IsActive,
         Version = value.Version
     };

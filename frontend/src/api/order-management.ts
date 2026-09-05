@@ -164,6 +164,8 @@ export type EligibleCustomerCompany = {
 };
 
 export type ReleasedDeliverableRetention = {
+  snapshotId?: string | null;
+  isQuarantined?: boolean;
   releasedAtUtc: string;
   warningAtUtc: string;
   standardDeletionAtUtc: string;

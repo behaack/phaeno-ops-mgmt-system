@@ -1,3 +1,4 @@
+import type { ReactNode } from 'react'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { fireEvent, render, screen, waitFor } from '@testing-library/react'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
@@ -21,6 +22,8 @@ vi.mock('#/api/file-management', () => ({
   getReleasedDeliverablePolicy: api.getPolicy,
   updateReleasedDeliverablePolicy: api.updatePolicy,
 }))
+
+vi.mock('@tanstack/react-router', () => ({ Link: ({ to, children }: { to: string; children: ReactNode }) => <a href={to}>{children}</a> }))
 
 describe('FileManagementPage', () => {
   beforeEach(() => {

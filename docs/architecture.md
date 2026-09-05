@@ -306,3 +306,42 @@ Generated `dist`, `.astro`, and `node_modules` content is not canonical source.
 - `docs/user-documentation.md`: help authoring, audience, locale, and search rules.
 - `docs/operations-readiness.md`: current runtime and production-activation boundary.
 - Current source and tests: final authority for implemented behavior.
+
+
+## Organization and Department administration closeout (2026-09-04)
+
+Organization-admin rights belong to the active Organization membership and cover
+all its Departments, including future additions. Department-admin rights belong
+to individual active Department memberships. One User can administer Research,
+be a member in Operations, and have no Finance access, with independent rights
+in another Organization. External administrators use `/departments`; only
+Organization admins control structure/lifecycle/defaults, new invitations, and
+Organization roles. Department admins edit settings and manage existing member
+assignments only within assigned Departments, using exact-email lookup rather
+than an Organization-wide user directory. The backend enforces these boundaries,
+version checks, and the rule that an active member retains an active Department.
+
+Typed PO, billing email, notification email, shipping instructions, and result
+instructions resolve Department override, Organization default, then the existing
+system/commercial fallback. Saved shipping and accepted-quote snapshots retain
+their values. This does not grant services, select a storage destination, or
+change Clerk authentication. See `plans/PEOPLE-DEPARTMENTS-ACCESS-PLAN.md`
+for local evidence and remaining signed-in/shared-environment gates.
+
+Curated download audits retain the request Department separately from the grant,
+including shared grants. History uses event scope and preserves unknown legacy
+rows for Organization admins only. Data Library query keys include Department,
+and history waits for matching server-confirmed scope before requesting data.
+Order/grant dispatch resolves current active scope and administrator assignments
+through one recipient reader. Organization-wide source-governance notices validate
+the affected Organization and still reach its active admins during suspension;
+this safety follow-up exception grants no Portal or download access.
+
+Released package lifecycle management uses the frozen retention snapshot as its
+identity. Audited preservation/quarantine holds and immutable reissue links are
+stored separately. The cleanup worker shares package serialization with download
+admission, waits for leases, protects shared objects, and records durable retry
+state. A reissue must use new objects for the same organization, workflow and
+sample (where applicable). New Lab snapshot receipts freeze sample/accession/tube
+lineage; Assembly receipts retain project scope. API-authorized metadata receipts
+remain accessible after byte deletion. Physical deletion defaults off.

@@ -7,6 +7,7 @@ using Microsoft.Extensions.Options;
 using PSeq.Operations.Commercial.Accounts.Domain;
 using PSeq.Operations.Commercial.OrderManagement.Domain;
 using PhaenoPortal.App.Features.Accounts.Services;
+using PhaenoPortal.App.Features.FileManagement.Services;
 using PhaenoPortal.App.Features.OrderManagement.Domain;
 using PhaenoPortal.App.Features.OrderManagement.Services;
 using PhaenoPortal.App.Infrastructure.Persistence;
@@ -84,6 +85,7 @@ public sealed class OperationalAttentionController(
 
     private async Task SynchronizeAsync(CancellationToken cancellationToken)
     {
+        await GovernedRetentionCheckpointService.SynchronizeFailuresAsync(dbContext, cancellationToken);
         var candidates = new List<AttentionCandidate>();
         var invitationFailures = await dbContext.InvitationDeliveryAttempts.AsNoTracking()
             .Where(item => item.State == InvitationDeliveryState.Bounced

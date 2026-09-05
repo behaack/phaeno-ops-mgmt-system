@@ -20,8 +20,57 @@ Each release is immutable and linked to its scientific approval, package version
 
 For a newly released result, the job's **Data & results** tab shows the retention schedule frozen at release. **Standard deletion** is the normal deletion time. **Conditional grace through** is used only when at least one file in that release remains undownloaded at the standard deadline; in that case the whole release receives the stated grace period. The displayed date and time include your browser's local time-zone label. Earlier releases created before retention snapshots were introduced do not show a schedule; contact Phaeno before relying on a deletion date for one of those releases.
 
+For governed PSeq packages, download status counts a file only after its complete response finishes successfully. A partial or interrupted transfer does not count. Completion must be saved successfully before the standard deadline to avoid grace. If availability changes while a download is being prepared, refresh the package before trying again. If the Portal cannot verify download timing, contact Phaeno; the dates already assigned to your package remain unchanged. One successful download by an authorized member satisfies that file for the organization.
+
+If any file was still undownloaded at the standard deadline, **Grace period active** keeps the whole package available through the final date. Completing the remaining files during grace does not shorten that period. **Downloads closed** removes new download access at the applicable deadline; it does not by itself mean that stored bytes have been deleted. Policy changes affect future releases and do not change dates already assigned to a package.
+
+A retention reminder, when enabled for the workflow, is addressed to active Organization admins and links to the normal Portal result page. The page shows current availability even if the email is older. Access withdrawal or deactivation can stop an in-progress transfer; restoring access requires a fresh download while the package is still available.
+
 ## Use POMS invoices
 
 At job completion, POMS issues one numbered invoice. If the accepted quote included tax, the invoice preserves that frozen determination. If the quote was labeled **Pre-tax total**, POMS calculates applicable tax from the approved billing profile at invoicing. The invoice freezes its billing, tax, currency, and payment terms; its due date is the completion date plus those terms. The immutable invoice PDF is available to your organization. POMS does not collect payment-card information or provide online payment processing in this release.
 
 Receipts may be partially or fully applied to the invoice. Overpayments remain visible as unapplied cash until Finance explicitly allocates or resolves them. Corrections appear as retained credits, debits, or write-offs; an issued invoice is never silently rewritten.
+
+
+## Download other laboratory result releases
+
+Other managed laboratory files appear under their result release with the
+retention schedule assigned at release. Use **Download package** for its ZIP or
+**Download** for an individual file. Where retention enforcement is enabled, new
+file and ZIP requests close together at the applicable deadline. An incomplete
+release receives its stated grace period; completing it during grace does not
+shorten that period. The Portal refreshes availability after an unsuccessful
+attempt. Closed downloads do not mean bytes have been deleted.
+
+A file or package withdrawal, failed scan, or access removal can stop an active
+transfer. A failed ZIP does not count any file from that attempt; prior successful
+downloads remain counted. Earlier releases without a schedule keep their existing
+contract; contact Phaeno for guidance instead of inferring a date.
+
+Where scheduled retention notices are enabled for Lab releases, active Organization
+admins receive one download reminder if the release is incomplete at its warning
+checkpoint, and one grace notice if grace applies. A delayed reminder is skipped
+if every file has completed or the standard deadline has passed. There are no
+daily reminders. Notices contain the release reference, deadline, and a sign-in
+link to the laboratory job; open the job for current availability. Delivery
+problems do not extend retention dates. Contact Phaeno if a notice needs support.
+
+## Keep a release receipt
+
+Open **View retained package receipt** beside a release's retention schedule, then choose
+**Print / save PDF**. The receipt retains the complete file manifest, byte sizes,
+checksums, original deadlines, recorded completion and deletion facts, and any
+reissue links. It contains metadata, not copies of the scientific files. Times
+include your display time zone and their UTC value.
+
+For newly captured Lab releases, the receipt also retains the sample identifier,
+recorded supplier tube barcodes, and Phaeno accession as they stood at release.
+Historical releases may show that lineage was not recorded. Organization admins
+can also review the organization's downloader history; other members see the
+release facts available within their Department.
+
+A quarantined package cannot be downloaded. A preservation hold protects retained
+files without extending their download window. Contact Phaeno about either state.
+After deletion, an authorized reissue requires a newly prepared and approved
+package; the original receipt and dates remain unchanged.

@@ -52,6 +52,39 @@ application behavior.
 - This plan treats an account as a tenant organization, not as a login identity.
   That interpretation is confirmed for this feature.
 
+## Department isolation follow-through (2026-09-04)
+
+The authorized next local slice closes secondary paths identified in
+[People and Departments](PEOPLE-DEPARTMENTS-ACCESS-PLAN.md).
+
+- File/archive audits capture the request Department even for Organization-wide
+  grants. History filters event Department plus grant Organization/Department;
+  changing a downloader's assignments does not move historical records.
+- Legacy audits without a recorded Department remain unmodified and visible only
+  to Organization admins for grants in the selected scope. No guessed backfill.
+- Grant notices resolve current active Organization/Department, memberships,
+  administrator assignments, and user status at dispatch. Revoked/superseded
+  grants can still require notices; inactive grants alone do not suppress them.
+- Source-governance instructions remain Organization-wide. Quarantine, clearance,
+  withdrawal, and reminder notices to an affected suspended Organization still
+  reach its current active Organization admins about copies already held. The
+  incident/affected-Organization relationship is verified. This preserves the
+  safety follow-up contract and grants no Portal/download access.
+- No eligible recipient means a failed retryable notice with safe guidance,
+  never successful delivery. Sender exceptions retain safe user-facing errors.
+- Inspected/applied additive migration
+  `20260905014541_ScopeCuratedDownloadAuditByDepartment` to `localhost/phaeno_ops`;
+  nullable Department FK uses restricted deletion and supporting indexes. ERD
+  updated. This extends the historical baseline described above.
+- Backend build: zero warnings/errors. All 68 focused Department/provisioning/
+  operational-download/persistence tests passed, including 13 new rollback-backed
+  secondary-path cases; no skips or real email. Updated Customer/Partner/Prospect
+  and Phaeno guides. The Data Library now exposes the same Department-admin rights,
+  waits for matching Department context, and separates Department history caches.
+  Thirteen focused frontend tests plus two desktop/mobile browser checks passed;
+  lint/typecheck passed, with Axe and inspected screenshots. Hosted identity/
+  recipient delivery, shared migrations, and signed-in acceptance remain open.
+
 ## Confirmed Product Decisions
 
 - `Prospect` is the phase before an organization becomes a Customer or Partner.
@@ -216,8 +249,10 @@ application behavior.
   operational data. Authorized Phaeno administrators may provide audited
   support when necessary.
 - Every download is tenant-authorized and audited.
-- Organization administrators can view per-user download history for their own
-  organization, including user, package/version, and timestamp.
+- Organization and Department administrators can view per-user download history
+  within their selected Department, including user, package/version, and timestamp.
+  Organization admins can select each active Department and review unknown legacy
+  rows for Organization-wide grants or grants assigned to the selected Department.
 - Authorized Phaeno users can review download history across organizations.
   Package contents are never written to download audit records.
 - Revoking a curated sample-package grant immediately ends portal viewing and
@@ -859,7 +894,7 @@ Final contracts depend on the data-semantics gate. A likely split is:
 - retrieve package summary and file metadata without an in-browser file-content
   preview
 - download one authorized file or the complete immutable-version archive
-- organization-admin download history scoped to the selected organization
+- Organization/Department-admin history scoped to the selected Organization and Department
 - obtain authorized short-lived file downloads through the file-management
   abstraction when applicable
 

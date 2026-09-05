@@ -93,6 +93,14 @@ describe('PSeq order-to-cash panels', () => {
     ).toHaveProperty('disabled', true)
   })
 
+  it('filters recoverable retention notices in the Operations queue', async () => {
+    mocks.listOperationalAttention.mockResolvedValue([])
+    renderPanel(<OperationalAttentionPanel apiEnabled userId="operator-user" />)
+    fireEvent.change(screen.getByLabelText('Queue'), { target: { value: 'RetentionNoticeFailure' } })
+    await screen.findByText('No unresolved items in this queue.')
+    expect(mocks.listOperationalAttention).toHaveBeenCalledWith('RetentionNoticeFailure')
+  })
+
   it('exposes an explicit empty attention state after checking the queue', async () => {
     mocks.listOperationalAttention.mockResolvedValue([])
 

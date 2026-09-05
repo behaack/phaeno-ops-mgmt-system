@@ -1,7 +1,7 @@
 import type { AxiosRequestConfig } from 'axios'
 
 import { api } from './client'
-import type { LabSampleWrite, LabServiceOrder } from './order-management'
+import type { LabSampleWrite, LabServiceOrder, ReleasedDeliverableRetention } from './order-management'
 
 type ApiEnvelope<T> = {
   success: boolean
@@ -83,6 +83,7 @@ export type CustomerResultPackage = {
   releasedAtUtc: string | null
   retentionState: string | null
   isDownloadAvailable: boolean
+  retention?: ReleasedDeliverableRetention | null
   artifacts: Array<{
     id: string
     logicalRole: string

@@ -42,6 +42,26 @@ public sealed class Organization : IAudit, IConcurrency
 
     public string? OperationalReadinessBlockReason { get; private set; }
 
+    public bool? DefaultPurchaseOrderRequired { get; private set; }
+    public string? DefaultBillingContactEmail { get; private set; }
+    public string? DefaultNotificationEmail { get; private set; }
+    public string? DefaultShippingInstructions { get; private set; }
+    public string? DefaultResultDeliveryInstructions { get; private set; }
+
+    public DepartmentConfiguration GetConfigurationDefaults() => new(DefaultPurchaseOrderRequired,
+        DefaultBillingContactEmail, DefaultNotificationEmail, DefaultShippingInstructions, DefaultResultDeliveryInstructions);
+
+    public void UpdateConfigurationDefaults(DepartmentConfiguration configuration)
+    {
+        var valid = DepartmentConfiguration.Validate(configuration.PurchaseOrderRequired, configuration.BillingContactEmail,
+            configuration.NotificationEmail, configuration.ShippingInstructions, configuration.ResultDeliveryInstructions);
+        DefaultPurchaseOrderRequired = valid.PurchaseOrderRequired;
+        DefaultBillingContactEmail = valid.BillingContactEmail;
+        DefaultNotificationEmail = valid.NotificationEmail;
+        DefaultShippingInstructions = valid.ShippingInstructions;
+        DefaultResultDeliveryInstructions = valid.ResultDeliveryInstructions;
+    }
+
     /// <summary>
     /// Date and time when the organization was created.
     /// </summary>

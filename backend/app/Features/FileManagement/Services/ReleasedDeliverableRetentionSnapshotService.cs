@@ -1,5 +1,6 @@
 namespace PhaenoPortal.App.Features.FileManagement.Services;
 
+using System.Text.Json;
 using Microsoft.EntityFrameworkCore;
 using PSeq.Operations.Commercial.FileManagement.Domain;
 using PSeq.Operations.Commercial.OrderManagement.Domain;
@@ -36,6 +37,21 @@ public sealed class ReleasedDeliverableRetentionSnapshotService(
             globalPolicy,
             organizationOverride,
             releasedAtUtc);
+        var sample = dbContext.LabSamples.Local.FirstOrDefault(value => value.Id == release.LabSampleId)
+            ?? await dbContext.LabSamples.SingleOrDefaultAsync(value => value.Id == release.LabSampleId && value.LabServiceOrderId == release.LabServiceOrderId, cancellationToken);
+        var tubeIds = await (from item in dbContext.SampleShipmentItems.AsNoTracking()
+            join shipment in dbContext.SampleShipments on item.SampleShipmentId equals shipment.Id
+            where item.SubmittedSpecimenId == release.LabSampleId && shipment.OrganizationId == release.OrganizationId
+                && shipment.AuthorizationSourceId == release.LabServiceOrderId
+            select item.RegisteredSampleTubeId).ToListAsync(cancellationToken);
+        tubeIds.AddRange(await (from slot in dbContext.SampleShipmentTubeSlots.AsNoTracking()
+            join item in dbContext.SampleShipmentItems on slot.SampleShipmentItemId equals item.Id
+            join shipment in dbContext.SampleShipments on item.SampleShipmentId equals shipment.Id
+            where item.SubmittedSpecimenId == release.LabSampleId && shipment.OrganizationId == release.OrganizationId
+                && shipment.AuthorizationSourceId == release.LabServiceOrderId
+            select slot.RegisteredSampleTubeId).ToListAsync(cancellationToken));
+        var barcodes = await dbContext.RegisteredSampleTubes.AsNoTracking().Where(value => tubeIds.Contains(value.Id)).Select(value => value.SupplierBarcode).Distinct().OrderBy(value => value).ToListAsync(cancellationToken);
+        snapshot.CaptureReceiptLineage(JsonSerializer.Serialize(new ReleasedReceiptLineage("Sample", sample is null ? [] : [sample.CustomerSampleId], barcodes, sample?.AccessionId)));
         dbContext.ReleasedDeliverableRetentionSnapshots.Add(snapshot);
         return snapshot;
     }
@@ -67,6 +83,7 @@ public sealed class ReleasedDeliverableRetentionSnapshotService(
             globalPolicy,
             organizationOverride,
             releasedAtUtc);
+        snapshot.CaptureReceiptLineage(JsonSerializer.Serialize(new ReleasedReceiptLineage("Project", [], [], null)));
         dbContext.ReleasedDeliverableRetentionSnapshots.Add(snapshot);
         return snapshot;
     }
@@ -103,3 +120,5 @@ public sealed class ReleasedDeliverableRetentionSnapshotService(
         }
     }
 }
+
+public sealed record ReleasedReceiptLineage(string Scope, IReadOnlyList<string> CustomerSampleIds, IReadOnlyList<string> SupplierTubeBarcodes, string? AccessionId);

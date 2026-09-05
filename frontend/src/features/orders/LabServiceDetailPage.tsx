@@ -1,9 +1,10 @@
+import { LabManagedResultReleases } from './LabManagedResultReleases'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { Link } from '@tanstack/react-router'
 import { Download, FileCheck2 } from 'lucide-react'
 import { useState } from 'react'
 
-import { acceptLabQuote, downloadLabResult, getLabOrder, getOrderErrorMessage, recordLabSampleShipment, requestLabCancellation, submitLabOrder, type Quote, withdrawLabOrder } from '#/api/order-management'
+import { acceptLabQuote, getLabOrder, getOrderErrorMessage, recordLabSampleShipment, requestLabCancellation, submitLabOrder, type Quote, withdrawLabOrder } from '#/api/order-management'
 import { downloadCustomerInvoicePdf, downloadCustomerResultArtifact, listCustomerInvoices, listCustomerResultPackages, type CustomerResultPackage, type InvoiceReceivable } from '#/api/pseq-order-to-cash'
 import { Alert, AlertDescription, AlertTitle } from '#/components/ui/alert'
 import { Button } from '#/components/ui/button'
@@ -13,6 +14,7 @@ import { Input } from '#/components/ui/input'
 import { Label } from '#/components/ui/label'
 import { RequiredDialogFooter, RequiredFieldName } from '#/components/ui/required-field'
 import { usePhaenoSession } from '#/features/auth/session-context'
+import { GovernedResultPackagePanel } from './GovernedResultPackagePanel'
 import { humanizeStatus, OrderStatusBadge } from './OrderStatusBadge'
 
 export function LabServiceDetailPage({ orderId }: { orderId: string }) {
@@ -29,7 +31,7 @@ export function LabServiceDetailPage({ orderId }: { orderId: string }) {
   const invoicesQuery = useQuery({ queryKey: ['customer-invoices'], queryFn: listCustomerInvoices, enabled: apiEnabled })
   const resultPackagesQuery = useQuery({ queryKey: ['customer-result-packages', orderId], queryFn: () => listCustomerResultPackages(orderId), enabled: apiEnabled })
   const invoiceDownload = useMutation({ mutationFn: (invoice: InvoiceReceivable) => downloadCustomerInvoicePdf(invoice) })
-  const resultDownload = useMutation({ mutationFn: ({ resultPackage, artifact }: { resultPackage: CustomerResultPackage; artifact: CustomerResultPackage['artifacts'][number] }) => downloadCustomerResultArtifact(orderId, resultPackage, artifact) })
+  const resultDownload = useMutation({ mutationFn: ({ resultPackage, artifact }: { resultPackage: CustomerResultPackage; artifact: CustomerResultPackage['artifacts'][number] }) => downloadCustomerResultArtifact(orderId, resultPackage, artifact), onSettled: () => queryClient.invalidateQueries({ queryKey: ['customer-result-packages', orderId] }) })
   const action = useMutation({
     mutationFn: async (kind: 'submit' | 'accept' | 'cancel' | 'withdraw' | 'shipment') => {
       const order = orderQuery.data
@@ -89,8 +91,13 @@ export function LabServiceDetailPage({ orderId }: { orderId: string }) {
               {resultPackagesQuery.isLoading ? <p role="status" className="text-sm text-muted-foreground">Checking released result packages…</p> : null}
               {resultPackagesQuery.isFetching && !resultPackagesQuery.isLoading ? <p role="status" className="text-xs text-muted-foreground">Refreshing result availability…</p> : null}
               {resultPackagesQuery.error || resultDownload.error ? <Alert variant="destructive"><AlertTitle>Result files could not be loaded</AlertTitle><AlertDescription>{getOrderErrorMessage(resultPackagesQuery.error ?? resultDownload.error, 'Refresh and try again.')}</AlertDescription></Alert> : null}
-              {resultPackages.length ? <div className="divide-y">{resultPackages.map((resultPackage) => { const sample = order.samples.find((item) => item.id === resultPackage.labSampleId); return <section key={resultPackage.id} className="py-4 first:pt-0 last:pb-0"><div className="flex flex-wrap items-center justify-between gap-2"><div><p className="font-medium">{sample?.customerSampleId ?? 'Sample'} · Result version {resultPackage.packageVersion}</p><p className="mt-1 text-xs text-muted-foreground">Released {resultPackage.releasedAtUtc ? formatDateTime(resultPackage.releasedAtUtc) : '—'} · Retention {resultPackage.retentionState ?? 'Active'}</p></div><OrderStatusBadge status={resultPackage.state} /></div>{resultPackage.isDownloadAvailable ? <ul className="mt-3 divide-y">{resultPackage.artifacts.map((artifact) => <li key={artifact.id} className="flex flex-wrap items-center justify-between gap-3 py-3"><div><p className="text-sm font-medium">{artifact.fileName}</p><p className="text-xs text-muted-foreground">{artifact.logicalRole} · {formatBytes(artifact.sizeBytes)} · SHA-256 {artifact.sha256.slice(0, 12)}…</p></div><Button type="button" size="sm" variant="outline" disabled={resultDownload.isPending} onClick={() => resultDownload.mutate({ resultPackage, artifact })}><Download data-icon="inline-start" />Download result</Button></li>)}</ul> : <p className="mt-3 text-sm text-muted-foreground">This version is no longer downloadable. Contact Phaeno for an authorized reissue.</p>}</section> })}</div> : null}
-              {order.resultFiles.length ? <div className={resultPackages.length ? 'mt-4 border-t pt-4' : ''}><p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">Legacy result files</p><ul className="divide-y">{order.resultFiles.map((file) => <li key={file.id} className="flex flex-wrap items-center justify-between gap-3 py-3"><div><p className="font-medium">{file.fileName}</p><p className="text-xs text-muted-foreground">{formatBytes(file.sizeBytes)} · Released {file.releasedAt ? formatDate(file.releasedAt) : '—'}</p></div><Button type="button" variant="outline" onClick={() => downloadLabResult(order.id, file)}><Download data-icon="inline-start" />Download legacy result</Button></li>)}</ul></div> : null}
+              {resultPackages.length ? <div className="divide-y">{resultPackages.map((resultPackage) => <GovernedResultPackagePanel
+                key={resultPackage.id} resultPackage={resultPackage}
+                sampleName={order.samples.find((item) => item.id === resultPackage.labSampleId)?.customerSampleId ?? 'Sample'}
+                isDownloading={resultDownload.isPending}
+                onDownload={(artifact) => resultDownload.mutate({ resultPackage, artifact })}
+              />)}</div> : null}
+              {order.resultFiles.length ? <LabManagedResultReleases orderId={order.id} releases={order.resultReleases} files={order.resultFiles} /> : null}
               {!resultPackagesQuery.isLoading && !resultPackages.length && !order.resultFiles.length ? <div className="flex flex-col items-center py-8 text-center"><FileCheck2 aria-hidden="true" className="mb-2 size-7 text-muted-foreground" /><p className="font-medium">No released results</p><p className="mt-1 text-sm text-muted-foreground">Results may still be processing, under scientific review, or awaiting a Result Release Manager.</p></div> : null}
             </CardContent>
           </Card>
@@ -152,6 +159,5 @@ function parseLines(value: string): Array<{ description: string; quantity: numbe
 function formatMoney(value: number, currency: string) { return new Intl.NumberFormat('en-US', { style: 'currency', currency }).format(value) }
 function formatDate(value: string) { return new Intl.DateTimeFormat('en-US', { dateStyle: 'medium' }).format(new Date(value)) }
 function formatDateTime(value: string) { return new Intl.DateTimeFormat('en-US', { dateStyle: 'medium', timeStyle: 'short' }).format(new Date(value)) }
-function formatBytes(value: number) { return new Intl.NumberFormat('en-US', { style: 'unit', unit: value >= 1_000_000 ? 'megabyte' : 'kilobyte', maximumFractionDigits: 1 }).format(value >= 1_000_000 ? value / 1_000_000 : value / 1_000) }
 function downloadSnapshot(fileName: string, value: string) { const url = URL.createObjectURL(new Blob([value], { type: 'application/json' })); const link = document.createElement('a'); link.href = url; link.download = fileName; link.click(); URL.revokeObjectURL(url) }
 function prettyJson(value: string) { try { return JSON.stringify(JSON.parse(value), null, 2) } catch { return value } }

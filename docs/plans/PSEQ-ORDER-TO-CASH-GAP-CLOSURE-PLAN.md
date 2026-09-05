@@ -179,6 +179,20 @@ work unless their owning plan is separately changed.
 - Retain a provider-neutral `IPaymentProcessorAdapter` and external-link table
   for future payment processing without implementing it now.
 
+### Governed retention continuation (2026-09-04)
+
+The local continuation now implements durable warning/grace checkpoints, one
+scheduled outbox record per notice, current Organization-admin recipients, urgent
+missing-recipient/delivery recovery, and database-backed response revocation.
+`GovernedRetentionProcessing` is a separate default-off flag and also gates
+outbox dispatch. The owning `FILE-MANAGEMENT-PLAN.md` records local migration and
+104-test backend evidence, independent-connection/MVC cancellation proof, and
+actual commit-time boundary/recovery proof. Governed results now require
+PostgreSQL commit tracking and retain verified transaction commit evidence.
+General Lab/Assembly endpoint enforcement now uses the same policy and commit
+evidence behind its own default-off switch. Hosted configuration/recovery
+acceptance, general scheduled processing, and provider activation remain gates. This work does not enable a flag or release an environment.
+
 ### Attention operations and experience
 
 - Owned attention queues cover invitation failures, readiness blockers, staged
@@ -370,6 +384,33 @@ notification outage, duplicate commands, partial payment, overpayment,
 reversal, and reconciliation mismatch. Dedicated-staging acceptance requires
 Commercial, Lab Operations, Scientific, Finance, security, and accessibility
 signoff.
+
+## Acceptance preparation refresh (2026-09-04)
+
+The local closeout reran 60 focused Department/order-to-cash/order-domain tests
+and nine quote/staff-initiation integration cases, with no skips. These do not
+constitute an authenticated end-to-end order-to-cash acceptance run.
+
+`scripts/acceptance/pseq-order-to-cash-staging.ps1` now supports `-PrepareOnly`
+without URLs, a token, or network requests. Its 14 checkpoints include restored-
+database/recovery evidence and named cross-functional signoff. Live runs require
+explicit setup Organization/Department IDs and verify the selected session;
+production Portal/API hosts and redirects are refused. PASS requires an artifact
+reference, and a complete record is only ready for activation review, never an
+authorization to activate. The prepared local run has 14 pending checkpoints.
+
+The 2026-09-04 retention slice unifies new governed releases with the versioned
+File Management policy. They freeze global/Organization 30/5/5 values or overrides,
+track full-response artifact completion, and use the shared evaluator for usable
+conditional grace and deadline denial. Existing four-offset schedules keep their
+dates. The old worker is excluded from snapshot-backed schedules.
+
+Local evidence: migration `20260905022605_UnifyGovernedResultRetentionPolicy`
+applied to localhost only; zero-warning solution build; 79 focused backend tests,
+14 frontend tests, lint/typecheck, and two desktop/mobile rendered browser checks
+passed. Automatic snapshot-backed warning/grace outboxes, serialized checkpoints,
+active-stream revocation, provider deletion, and dedicated-staging acceptance
+remain open. See `FILE-MANAGEMENT-PLAN.md` and `PORTAL-PLAN-CLOSEOUT.md`.
 
 ## Production Activation Boundary
 

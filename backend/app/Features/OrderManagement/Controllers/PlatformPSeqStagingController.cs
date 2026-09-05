@@ -71,7 +71,7 @@ public sealed class PlatformPSeqStagingController(
             throw new OrderManagementException("analysis_definition_unavailable", "Every staged sample requires an active PSeq analysis offering.");
         var config = await dbContext.OrderSystemConfigurations.AsNoTracking().OrderBy(item => item.CreatedAt)
             .FirstOrDefaultAsync(cancellationToken);
-        var departmentQuery = dbContext.OrganizationDepartments.AsNoTracking()
+        var departmentQuery = dbContext.OrganizationDepartments.AsNoTracking().Include(value => value.Organization)
             .Where(value => value.OrganizationId == request.OrganizationId && value.IsActive);
         var department = request.DepartmentId.HasValue
             ? await departmentQuery.SingleOrDefaultAsync(value => value.Id == request.DepartmentId.Value, cancellationToken)
@@ -96,7 +96,7 @@ public sealed class PlatformPSeqStagingController(
             sharedBiologicalSource: sourceGroups.Count == 1 ? sourceGroups[0].BiologicalSource : null,
             storageRequirements: request.Samples[0].StorageRequirements,
             safetyDeclaration: request.Samples[0].SafetyDeclaration,
-            submissionInstructionsSnapshot: department.ShippingInstructions
+            submissionInstructionsSnapshot: department.ResolveConfiguration(department.Organization).ShippingInstructions
                 ?? config?.SampleSubmissionInstructions
                 ?? string.Empty);
         foreach (var sourceGroup in sourceGroups)

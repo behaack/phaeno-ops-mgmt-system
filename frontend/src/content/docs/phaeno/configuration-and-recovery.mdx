@@ -52,7 +52,7 @@ New Customer laboratory-result and Partner data-assembly output releases now fre
 
 Released-file and full-package ZIP downloads now create a bounded, immutable transfer attempt before storage opens. The attempt counts only after the complete server response succeeds. Partial range responses, failures, cancellations, and timeouts do not count. Abandoned started attempts are reconciled after their frozen lease expires. Existing audit rows from before completion-aware tracking are retained as non-counting `legacy_completion_unverified` failures rather than being reclassified as successful downloads.
 
-Warning delivery, grace activation, download cutoff, and package-byte deletion remain unavailable until the released-package retention worker and production storage are activated. Completion-aware download evidence and package status are active foundations only; they do not run those later retention actions.
+Governed PSeq packages now use this same frozen policy and completion-aware grace/cutoff evaluation. Their download requests obey the applicable deadline independently of cleanup. Existing PSeq schedules retain their original dates. Automatic warning/grace notices, durable checkpoint processing, general release enforcement, and package-byte deletion remain separate activation work. A closed download window does not prove that bytes were deleted.
 
 ## Prepare manual journal entries
 
@@ -65,3 +65,45 @@ QuickBooks Online integration is deferred. Do not configure OAuth, retry histori
 ## Activate production dependencies
 
 Before production use, confirm approved storage and malware scanning, notification delivery, active catalog and scientific profiles, Partner offerings and prices, credit decisions, quote validity, the manual accounting handoff, and operational ownership. Laboratory activation also requires approved bench workflows, label/printer/scanner and degraded-mode procedures, external NGS provider operating details, and the required database-backed verification. A successful application build alone does not prove these production dependencies are ready.
+
+## Recover a retention notice
+
+Filter **Owned attention queues** to **Retention notices**. An urgent item identifies
+the package, deadline, and notification requiring recovery. Confirm active
+Organization administrators, correct the delivery issue, and retry the existing
+notification. A later grace notice uses the original final date. Resolution does
+not extend retention or confirm physical deletion; a persisting delivery failure
+can reopen the item.
+
+## Preserve a release or record a reissue
+
+A Phaeno platform administrator can open **File management → Released packages**,
+find the organization, and open a package's retained receipt. The detail page
+shows its full manifest, checksums, original retention dates, download evidence,
+cleanup outcome and reissue history. Use **Print / save PDF** for a metadata copy.
+A historical release may lack captured sample lineage; do not infer missing facts.
+
+Choose **Place hold**, select the hold type, and record the reason. **Preserve
+bytes** blocks physical cleanup. **Quarantine and suspend access** also stops
+current transfers and blocks new downloads; it is available only where download
+monitoring is active. Neither action resets retention. Hold reasons remain in
+the Phaeno management view rather than the external receipt.
+
+Use **Release hold** with a reason when preservation is no longer needed. If the
+original deadline has passed, cleanup may proceed once every hold is released
+and active transfer leases have ended. A stale-record error refreshes the details
+and preserves your entered reason; review the current state before retrying.
+
+After deletion, first regenerate and approve a new package through the owning
+scientific workflow. Then open the old receipt and choose **Link reissued
+package**, select the eligible new release, and record the authorization reason.
+POMS requires the same organization, workflow and sample where applicable, new
+file objects, and a release
+created after the original deletion. Linking never restores deleted bytes or
+changes the original release dates.
+
+Cleanup can remain pending for active transfers, preservation, shared source
+files, an incomplete package, or provider failure. Provider failures are retried
+against the same objects. **Files deleted** records successful physical cleanup;
+**Downloads closed** alone does not. Escalate repeated failures with the package
+reference and safe status, without copying credentials or scientific files.

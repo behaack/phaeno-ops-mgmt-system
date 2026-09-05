@@ -253,6 +253,10 @@ public static class SessionEndpoints
             || canManagePSeqCash
             || canReconcilePSeqCash;
 
+        var selectedConfiguration = selectedDepartment is not null && selectedMembership?.Organization is not null
+            ? selectedDepartment.ResolveConfiguration(selectedMembership.Organization)
+            : null;
+
         return new SessionDto
         {
             State = state,
@@ -313,11 +317,11 @@ public static class SessionEndpoints
                     OrganizationId = selectedMembership.OrganizationId,
                     IsDepartmentAdmin = isSelectedDepartmentAdmin,
                     IsAvailable = true,
-                    PurchaseOrderRequired = selectedDepartment.PurchaseOrderRequired,
-                    BillingContactEmail = selectedDepartment.BillingContactEmail,
-                    NotificationEmail = selectedDepartment.NotificationEmail,
-                    ShippingInstructions = selectedDepartment.ShippingInstructions,
-                    ResultDeliveryInstructions = selectedDepartment.ResultDeliveryInstructions
+                    PurchaseOrderRequired = selectedConfiguration?.PurchaseOrderRequired,
+                    BillingContactEmail = selectedConfiguration?.BillingContactEmail,
+                    NotificationEmail = selectedConfiguration?.NotificationEmail,
+                    ShippingInstructions = selectedConfiguration?.ShippingInstructions,
+                    ResultDeliveryInstructions = selectedConfiguration?.ResultDeliveryInstructions
                 },
             Capabilities = new SessionCapabilitiesDto
             {

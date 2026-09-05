@@ -40,3 +40,7 @@ Order Ops ends at the Commercial boundary for a Customer laboratory order: it re
 5. Perform the smallest valid next action and preserve the existing record.
 
 POMS checks the latest Job immediately before issuing a quote. If the record changes after that check, POMS reloads it and preserves the entered quote lines; review those values, then issue the quote again. Never repair a failed workflow by creating a duplicate order, quote, invoice, receipt, result package, Lab work order, shipment, or release. Assign an attention item, preserve attempts, and record its resolution.
+
+## Review queued notifications
+
+Order notices check the current active organization, department, user, and administrator assignments when dispatched. The department notification address is included when configured; otherwise the organization notification default applies. An inactive or mismatched department cannot use either route. Review failed notices with no eligible recipients before retrying them; changing an assignment after a notice was queued changes who can receive it.

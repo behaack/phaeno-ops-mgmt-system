@@ -359,6 +359,36 @@ public class LabOperationsCommercialHandoffPostgresTests
     }
 
     [PostgreSqlReferenceFact]
+    public async Task QuoteAcceptanceEnforcesOrganizationPoDefaultAndFreezesResolvedDepartmentOverrides()
+    {
+        await using var scope = await HandoffTestScope.CreateAsync();
+        var fixture = await scope.CreateQuotedOrderAsync();
+        var organization = await scope.DbContext.Organizations.SingleAsync(value => value.Id == scope.CustomerOrganization.Id);
+        organization.UpdateConfigurationDefaults(new(true, "billing@example.com", "notice@example.com", "Frozen", "Portal"));
+        await scope.DbContext.SaveChangesAsync();
+        var error = await Assert.ThrowsAsync<OrderManagementException>(() => scope.AcceptQuoteAsync(fixture));
+        Assert.Equal("purchase_order_number_required", error.ErrorCode);
+
+        var department = await scope.DbContext.OrganizationDepartments.SingleAsync(value => value.OrganizationId == organization.Id && value.IsDefault);
+        department.UpdateConfiguration(false, null, null, null, "Department instructions");
+        await scope.DbContext.SaveChangesAsync();
+        await scope.AcceptQuoteAsync(fixture);
+        scope.DbContext.ChangeTracker.Clear();
+        var order = await scope.DbContext.LabServiceOrders.AsNoTracking().SingleAsync(value => value.Id == fixture.OrderId);
+        var originalSnapshot = order.PlacementSnapshotJson;
+        using var placement = JsonDocument.Parse(originalSnapshot!);
+        var resolved = placement.RootElement.GetProperty("department");
+        Assert.False(resolved.GetProperty("purchaseOrderRequired").GetBoolean());
+        Assert.Equal("billing@example.com", resolved.GetProperty("billingContactEmail").GetString());
+        Assert.Equal("Frozen", resolved.GetProperty("shippingInstructions").GetString());
+        Assert.Equal("Department instructions", resolved.GetProperty("resultDeliveryInstructions").GetString());
+        organization = await scope.DbContext.Organizations.SingleAsync(value => value.Id == organization.Id);
+        organization.UpdateConfigurationDefaults(new(null, null, null, "Changed later", null));
+        await scope.DbContext.SaveChangesAsync();
+        Assert.Equal(originalSnapshot, (await scope.DbContext.LabServiceOrders.AsNoTracking().SingleAsync(value => value.Id == fixture.OrderId)).PlacementSnapshotJson);
+    }
+
+    [PostgreSqlReferenceFact]
     public async Task QuoteAcceptanceOpensSampleRosterWithoutCreatingLabWork()
     {
         await using var scope = await HandoffTestScope.CreateAsync();
@@ -863,6 +893,23 @@ public class LabOperationsCommercialHandoffPostgresTests
                     "uL",
                     DateTime.UtcNow.AddYears(1)),
                 CancellationToken.None);
+
+            // Pin this fixture's approved protocol through an explicit production workflow.
+            // The complete journey must not depend on workflow state from another test.
+            var persistedWorkForExecution = await scope.DbContext.LabWorkOrders.SingleAsync(value => value.Id == workOrderId.Value);
+            var workflowKey = persistedWorkForExecution.ServiceKey.ToLowerInvariant();
+            var serviceWorkflow = await scope.DbContext.LabServiceWorkflows.SingleOrDefaultAsync(value => value.ServiceKey == workflowKey);
+            if (serviceWorkflow is null) { serviceWorkflow = new LabServiceWorkflow(workflowKey, "Synthetic reference workflow", null); scope.DbContext.Add(serviceWorkflow); }
+            var productionVersions = await scope.DbContext.LabServiceWorkflowVersions.Where(value => value.LabServiceWorkflowId == serviceWorkflow.Id && value.Status == LabServiceWorkflowStatus.Production).ToListAsync();
+            foreach (var prior in productionVersions) prior.Retire();
+            await scope.DbContext.SaveChangesAsync();
+            serviceWorkflow.RecordVersion(serviceWorkflow.LatestVersion + 1);
+            var serviceVersion = new LabServiceWorkflowVersion(serviceWorkflow.Id, serviceWorkflow.LatestVersion, staff.User.Id, DateTime.UtcNow);
+            serviceVersion.Approve(protocolApprover.User.Id, DateTime.UtcNow);
+            serviceVersion.PromoteToProduction(protocolApprover.User.Id, DateTime.UtcNow);
+            scope.DbContext.AddRange(serviceVersion, new LabServiceWorkflowStage(serviceVersion.Id, 1, "Reference library preparation", protocolVersion.Id, LabServiceWorkflowStageRequirement.Required, null, null));
+            persistedWorkForExecution.PinServiceWorkflow(serviceVersion.Id);
+            await scope.DbContext.SaveChangesAsync();
 
             var execution = await lab.CreateExecution(
                 workOrderId.Value,
@@ -1440,7 +1487,7 @@ public class LabOperationsCommercialHandoffPostgresTests
                     company.Id,
                     stage,
                     PlatformUser.Id,
-                    "PSeq Lab Service",
+                    CrmProductInterests.PSeqLabService,
                     1000m,
                     "USD",
                     DateOnly.FromDateTime(DateTime.UtcNow),

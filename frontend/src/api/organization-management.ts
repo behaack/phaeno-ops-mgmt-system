@@ -153,6 +153,7 @@ export type DepartmentMember = {
   departmentId: string
   departmentName: string
   isDepartmentAdmin: boolean
+  isOrganizationAdmin?: boolean
   isActive: boolean
   version: number
 }
@@ -535,6 +536,21 @@ export type DepartmentInput = {
   resultDeliveryInstructions: string | null
 }
 
+export type OrganizationConfiguration = Omit<DepartmentInput, 'code' | 'name' | 'description'> & {
+  organizationId: string
+  version: number
+}
+
+export async function getOrganizationConfiguration(organizationId: string) {
+  const response = await api.get<OrganizationConfiguration>(`/organizations/${organizationId}/configuration`)
+  return response.data
+}
+
+export async function updateOrganizationConfiguration(input: OrganizationConfiguration) {
+  const response = await api.put<OrganizationConfiguration>(`/organizations/${input.organizationId}/configuration`, input)
+  return response.data
+}
+
 export async function createDepartment(
   organizationId: string,
   input: DepartmentInput,
@@ -587,6 +603,21 @@ export async function listDepartmentMembers(
 ) {
   const response = await api.get<DepartmentMember[]>(
     `/organizations/${organizationId}/departments/${departmentId}/members`,
+  )
+  return response.data
+}
+
+export type DepartmentMemberCandidate = {
+  organizationMembershipId: string
+  userId: string
+  userName: string
+  userEmail: string
+  isOrganizationAdmin: boolean
+}
+
+export async function lookupDepartmentMember(organizationId: string, departmentId: string, email: string) {
+  const response = await api.post<DepartmentMemberCandidate[]>(
+    `/organizations/${organizationId}/departments/${departmentId}/member-lookup`, { email },
   )
   return response.data
 }

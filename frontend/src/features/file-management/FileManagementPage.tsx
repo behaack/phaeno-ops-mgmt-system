@@ -1,3 +1,4 @@
+import { Link } from '@tanstack/react-router'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { Clock3, Pencil, ShieldCheck } from 'lucide-react'
@@ -102,6 +103,8 @@ export function FileManagementPage() {
           </Button>
         ) : null}
       </section>
+
+      <Link to="/released-deliverables" search={{ q: '', page: 0 }} className="inline-block text-primary underline">Review released packages</Link>
 
       {authProvider === 'mock' ? (
         <Alert>
