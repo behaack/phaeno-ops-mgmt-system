@@ -1,6 +1,6 @@
 import { useQuery } from "@tanstack/react-query";
 import { Search } from "lucide-react";
-import { useEffect, useId, useMemo, useRef, useState } from "react";
+import { useEffect, useId, useMemo, useRef, useState, type KeyboardEvent } from "react";
 
 import { listCrmCompanies, listCrmContacts } from "#/api/crm";
 import { Input } from "#/components/ui/input";
@@ -88,9 +88,19 @@ export function CrmAssociationRecordCombobox({
     inputRef.current?.setCustomValidity("");
   }
 
+  function dismissChoices(event: KeyboardEvent<HTMLElement>) {
+    if (event.key !== "Escape" || !open) return;
+    event.preventDefault();
+    event.stopPropagation();
+    // Focus first: the input's focus handler opens choices, then this closes them.
+    inputRef.current?.focus();
+    setOpen(false);
+  }
+
   return (
     <div
       className="relative"
+      data-searchable-select-open={open || undefined}
       onBlur={(event) => {
         if (!event.currentTarget.contains(event.relatedTarget)) setOpen(false);
       }}
@@ -136,9 +146,7 @@ export function CrmAssociationRecordCombobox({
             } else if (event.key === "Enter" && open && activeOption) {
               event.preventDefault();
               choose(activeOption);
-            } else if (event.key === "Escape") {
-              setOpen(false);
-            }
+            } else dismissChoices(event);
           }}
         />
       </div>
@@ -170,6 +178,7 @@ export function CrmAssociationRecordCombobox({
                 onMouseEnter={() => setActiveIndex(index)}
                 onMouseDown={(event) => event.preventDefault()}
                 onClick={() => choose(option)}
+                onKeyDown={dismissChoices}
               >
                 <span className="block font-medium">{option.label}</span>
                 {option.description ? (

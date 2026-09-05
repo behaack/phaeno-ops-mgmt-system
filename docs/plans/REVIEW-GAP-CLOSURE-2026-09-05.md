@@ -1,12 +1,67 @@
 # Review gap closure — 2026-09-05
 
-Status: the combined code is committed, pushed and released to the production API
-and Portal UI at `541c8759aceaf95f0fe8e64c2bbfacee3fa7744b`. The three explicitly
-approved production migrations completed after encrypted-backup checksum
-verification. Independent health probes and a fresh Portal sign-in render passed.
-Signed-in operator/Trial/download, provider and inbox acceptance remain unverified;
-the separate public Website was not promoted. Earlier local results and the
-separate-unit hold remain historical checkpoints.
+Status: the initial combined API/Portal release is live at
+`541c8759aceaf95f0fe8e64c2bbfacee3fa7744b`, with the three approved migrations
+completed after encrypted-backup checksum verification. Signed-in read paths and
+one explicitly approved technical-brief send now have hosted evidence, including
+destination Inbox receipt. Two narrow CRM corrections are locally verified and
+await production recheck. A Mailgun-template page-count mismatch remains open;
+populated Trial/quote/sample/download workflows remain unverified. The separate
+public Website was not promoted. Earlier checkpoints are retained below.
+
+## Signed-in acceptance and narrow CRM corrections — 2026-09-05
+
+These observations used the production release `541c875`; they do not establish
+that the subsequent CRM source corrections are deployed.
+
+- **Web Operations:** the signed-in operator accessed 12 Mailing List records,
+  two Demo Requests, and the third Email delivery tab. Keyboard tab selection
+  showed one panel at a time. Delivery was Running with queued/sending/failed
+  counts `0/0/0`. Opening Pause review and cancelling retained Running and
+  restored focus; no production pause/resume state change was exercised.
+- **One authorized real email:** the user explicitly approved a technical brief
+  for test intake `54194c95` (Test123 / TestOrg) to `bhaack@cadexgenomics.com`.
+  It was queued at `16:43 PDT` and recorded provider acceptance on the first
+  attempt with staff-requested provenance; the queue returned to `0/0/0`.
+  The user supplied the received email, and Spark independently confirmed
+  destination Inbox message `87697` from Phaeno
+  (`donotreply@phaenobiotech.com`), received at `16:43 PDT / 23:43 UTC`, with an
+  Important label. These are minute-precision timestamps, not a measured
+  second-level delivery latency. This proves this single approved delivery,
+  not every recipient, notification kind or future attempt.
+- **Brief link and remaining content finding:** the exact received link returned
+  **200**, `application/pdf`, **292,851 bytes**, and a `%PDF-1.7` signature.
+  SHA-256: `8C57056BC869090DDADC4BF1A71538E7235488E2753C97D573667C5912430ABB`.
+  PDF inspection reports **three pages**, while the email calls it two pages.
+  That external Mailgun-template copy mismatch remains open; no template or
+  document change is claimed.
+- **CRM and limited workflow admission:** the existing test Company's list and
+  detail, People, empty Sales, and applied onboarding request loaded. Hosted
+  review reproduced misleading Edit Company access copy and the association
+  selector closing its parent on Escape. Trial projects had no Trials or
+  eligible CRM requests; the empty Start Trial selector's first Escape preserved
+  the form, and Cancel worked. Trial configuration showed three default
+  deliverables and no displayed approval authorities. Order intake had no
+  eligible Customers or active work. No quote issuance, accepted Trial, sample
+  authorization/shipping or Trial result download acceptance is claimed from
+  these empty/read-only states.
+- **Narrow CRM source corrections:** Edit Company now uses edit-specific copy
+  without claiming that existing enabled access is disabled. The association
+  chooser uses the existing shared Escape protocol, including empty results and
+  focused options. All **eight focused tests** in
+  `CrmAssociationRecordCombobox.test.tsx` and `CrmCompanyFormDialog.test.tsx`, scoped
+  lint, typecheck and production build passed. Logs:
+  `artifacts/review-gap-closure/acceptance-fix-typecheck.log` and
+  `acceptance-fix-build.log`. There are no authentication, API or dependency
+  changes. The two affected CRM guides were reviewed; these corrections restore
+  expected behavior, so no guide/corpus content change is required. The fixes
+  are **local and verified**, awaiting the new Portal release identity and
+  production recheck. The API remains at `541c875`.
+
+The signed-in observations and approved email resolve part of the original
+acceptance boundary. Actual production pause/resume, multi-instance recovery,
+external alert routing, and the populated scientific/commercial workflows above
+remain outside the proof obtained here.
 
 ## Combined production release checkpoint — 2026-09-05
 
@@ -80,18 +135,18 @@ part of the combined release, rather than another broad implementation pass.
 - **Evidence files:** `artifacts/review-gap-closure/production-api-release.log`,
   `production-api-probes.json`, `production-ui-final.json`,
   `production-ui-probes.json`, and `production-ui-errors.jsonl` retain the release
-  results. All timestamps in this release record are UTC on 2026-09-05.
+  results. Deployment timestamps in this checkpoint are UTC on 2026-09-05.
 - **Public Website boundary:** the separate Website application was not promoted.
   Its contact-form source changes are in the combined source commit, but updated
   queued-success wording and preserved-entry behavior are not claimed live from
   this API/Portal release.
-- **Remaining acceptance boundary:** no signed-in session was available for this
-  release check. Operator admission, hosted Trial/sample/download workflows,
-  provider acceptance and inbox delivery remain unverified. Production
-  pause/recovery behavior and external alert collection/routing are not proved
-  by the health or sign-in checks. Provider acceptance is distinct from inbox
-  delivery; synthetic tests substitute for neither. The migration/startup and
-  rollback constraints in the historical review still apply to this artifact.
+- **Acceptance boundary at initial deployment:** no signed-in session was
+  available for that check, so operator workflows, provider acceptance and Inbox
+  delivery were unverified then. The subsequent signed-in section above records
+  the later evidence and remaining limits. Health or sign-in checks alone do not
+  prove production pause/recovery or external alert routing. Provider acceptance
+  is distinct from Inbox delivery; synthetic tests substitute for neither. The
+  migration/startup and rollback constraints still apply to this artifact.
 
 ## Historical separate review and release units — 2026-09-05
 

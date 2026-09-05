@@ -1,5 +1,35 @@
 # Playwright E2E Test Plan
 
+## Hosted signed-in acceptance and CRM corrections — 2026-09-05
+
+The signed-in production session on release `541c875` exercised all three Web
+Operations tabs using the keyboard, with one panel visible at a time. The live
+queue was Running with queued/sending/failed `0/0/0`; opening Pause review and
+cancelling preserved that state and returned focus. This did not exercise an
+actual pause/resume transition.
+
+The user explicitly approved one test technical brief for intake `54194c95` to
+`bhaack@cadexgenomics.com`. It recorded staff-requested first-attempt provider
+acceptance, and the queue returned to `0/0/0`. The user's received email and
+independent Spark destination Inbox message `87697` confirm receipt at
+`16:43 PDT / 23:43 UTC`, with minute precision. The exact email link returned a
+valid PDF. Its three-page length conflicts with the email's two-page description;
+that external Mailgun-template finding remains open. Detailed byte/hash evidence
+is in the closure plan. This single approved delivery does not establish every
+recipient or notification path.
+
+Existing CRM Company list/detail, People, empty Sales and applied onboarding
+request views loaded. The session exposed association-selector Escape dismissal
+and misleading Edit Company access copy. Their local corrections passed eight
+focused component tests, scoped lint, typecheck and production build; the new
+Portal deployment and hosted recheck remain pending. Trial list and Start Trial
+had no Trials/eligible requests; the empty selector preserved its form on first
+Escape and Cancel worked. Configuration showed three default deliverables and no
+displayed approval authorities. Order intake had no eligible Customers or active
+work, so accepted Trial, quote, sample/shipping and Trial-download workflows were
+not exercised. External alert routing and production pause/recovery remain
+separate acceptance work. The public Website was not promoted.
+
 ## Combined API/Portal release checkpoint — 2026-09-05
 
 The Product Owner authorized a combined commit/push and production API/Portal
@@ -23,11 +53,11 @@ Final desktop/light and mobile/dark Web Operations screenshots were visually
 reviewed. They show the third Email delivery tab, one selected panel, clean
 label/count wrapping and no horizontal overflow.
 
-Local release verification is complete. API/Portal rollout awaits explicit
-approval for the three pending production migrations recorded in the closure
-plan. Commit/push and production deployment outcomes are not yet recorded. The
-release owner will separately record exact production API/Portal artifact
-identity, health and any authenticated acceptance evidence. Local synthetic
+Local verification was complete at this pre-deployment checkpoint; migration
+approval and production deployment outcomes were not yet recorded then. The
+closure plan records the subsequent release identity, health and signed-in
+acceptance evidence. The hosted follow-up above records the later observations
+and remaining gates. Local synthetic
 browser responses do not prove hosted authorization, real email acceptance or
 inbox delivery, external alert routing, or real Trial/storage transfers. The
 separate public Website is not being promoted under this request.

@@ -101,8 +101,9 @@ export function CrmCompanyFormDialog({
         <DialogHeader>
           <DialogTitle>{editing ? "Edit company" : "New company"}</DialogTitle>
           <DialogDescription>
-            This creates the customer Company. Portal access remains disabled
-            until a reviewed request is approved.
+            {editing
+              ? "Update this Company’s details. Manage Portal access through reviewed Company requests."
+              : "This creates the customer Company. Portal access remains disabled until a reviewed request is approved."}
           </DialogDescription>
         </DialogHeader>
         {error ? (

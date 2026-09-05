@@ -1,5 +1,25 @@
 # Frontend Test Plan
 
+## Signed-in acceptance CRM corrections — 2026-09-05
+
+Hosted review of release `541c875` reproduced two narrow issues: the association
+selector could dismiss its parent on Escape, and Edit Company showed copy that
+incorrectly implied existing Portal access was disabled. The local corrections
+reuse the shared selector Escape protocol for empty results and focused options,
+and provide edit-specific Company copy.
+
+All **eight focused tests** across `CrmAssociationRecordCombobox.test.tsx` and
+`CrmCompanyFormDialog.test.tsx` passed. Scoped lint, typecheck and production build
+passed; evidence includes `artifacts/review-gap-closure/acceptance-fix-typecheck.log`
+and `acceptance-fix-build.log`. No authentication, API or dependency changed.
+`crm-companies-contacts.mdx` and `crm-troubleshooting.mdx` were reviewed and remain
+accurate for these corrections; no guide/corpus content change is needed.
+
+The fixes are locally verified and await their Portal deployment identity and
+hosted recheck. The API remains at `541c875`. Earlier combined-release checks
+below are historical checkpoints; the current release and signed-in evidence is
+recorded in `REVIEW-GAP-CLOSURE-2026-09-05.md`.
+
 ## Combined API/Portal release checkpoint — 2026-09-05
 
 The Product Owner authorized the combined commit/push and production API/Portal
@@ -21,11 +41,11 @@ successfully. Documentation freshness passed for all **55 guides**, fingerprint
 Prior frontend, keyboard and local build results remain dated evidence below.
 The verified Portal target is Vercel `cadexgenomics/phaeno-ops-mgmt-system`,
 project `prj_wbE9S9mT46sJxlM3ev0EcaAWJ20R`, repository root directory `frontend`.
-The production API/Portal rollout awaits explicit approval for the three pending
-production migrations documented in the closure plan. Commit/push, released
-artifact identity and production Portal verification remain unrecorded; target
-identification and local builds do not prove promotion. No public Website
-promotion is authorized or claimed by this checkpoint.
+At this pre-deployment checkpoint, rollout still awaited migration approval and
+release identity/production verification. Those later completed deployment
+results and the subsequent CRM acceptance corrections are recorded in the
+closure plan. Target identification and local builds alone did not prove
+promotion. No public Website promotion is claimed by this checkpoint.
 
 ## Option-focused Escape correction — 2026-09-05
 
