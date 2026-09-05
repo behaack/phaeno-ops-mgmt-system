@@ -1,17 +1,18 @@
 # Review gap closure — 2026-09-05
 
-Status: the Product Owner has authorized a combined commit/push and production
-API plus Portal UI release. The bounded Web Operations parent-tab correction is
-implemented and locally verified. Release checks are complete; explicit approval
-for the three pending production migrations remains required before rollout.
-Commit/push and API/Portal deployment results have not yet been recorded. Public
-Website deployment was not requested. Earlier local results and the separate-unit
-hold remain historical checkpoints, not the current release instruction.
+Status: the combined code is committed, pushed and released to the production API
+and Portal UI at `541c8759aceaf95f0fe8e64c2bbfacee3fa7744b`. The three explicitly
+approved production migrations completed after encrypted-backup checksum
+verification. Independent health probes and a fresh Portal sign-in render passed.
+Signed-in operator/Trial/download, provider and inbox acceptance remain unverified;
+the separate public Website was not promoted. Earlier local results and the
+separate-unit hold remain historical checkpoints.
 
 ## Combined production release checkpoint — 2026-09-05
 
 The current authorization covers committing and pushing the combined changes,
-deploying the production API, and promoting the Portal UI. The earlier proposed
+deploying the production API, promoting the Portal UI, and applying the three
+reviewed production migrations with an encrypted backup. The earlier proposed
 A/B separation was a review boundary; no independent artifacts were assembled.
 The narrow parent-tab correction and its integrated regression coverage are now
 part of the combined release, rather than another broad implementation pass.
@@ -39,33 +40,58 @@ part of the combined release, rather than another broad implementation pass.
   their original scope and counts; overlapping checks are not additional tests.
 - **Database:** inspected production workflow `33975386749` at commit `ab2df0a`
   records migration through
-  `20260905140916_FreezeReleasedDeliverableReceiptLineage`. The release has three
-  pending migrations, in order: `20260905172646_AddTrialProjectIntegration`,
+  `20260905140916_FreezeReleasedDeliverableReceiptLineage`. The approved release
+  applied three migrations, in order: `20260905172646_AddTrialProjectIntegration`,
   `20260905213944_AddWebsiteNotificationRecovery`, and
   `20260905222201_AddWebsiteNotificationProcessingControl`. The reviewed
   idempotent SQL is
   `artifacts/review-gap-closure/production-review-migrations.sql`, SHA-256
   `10A12E85A0B0930AA98E5766D3991227B19556E58248FE60D7F33AC1BBC01EA3`.
-  Explicit shared-migration approval is still pending. API/Portal deployment
-  authorization does not establish it, and no application of these migrations
-  to production is claimed. Earlier local migration evidence remains separate.
-- **Git and deployment:** commit/push, exact API/Portal artifact identity and
-  production health/acceptance results are pending release-owner evidence.
-  Earlier local builds and synthetic browser results remain evidence of those
-  checkpoints, not proof of deployment or hosted admission. The verified Portal
-  target is Vercel `cadexgenomics/phaeno-ops-mgmt-system`, project
-  `prj_wbE9S9mT46sJxlM3ev0EcaAWJ20R`, with repository root directory `frontend`.
-  Target identification is not a deployment or promotion result.
-- **Public Website boundary:** public contact-form source changes may be included
-  in the combined source commit, but this request does not promote the separate
-  Website application. Its updated queued-success wording and preserved-entry
-  form must not be described as live from an API/Portal release alone.
-- **Operational acceptance:** record provider configuration/acceptance,
-  persisted processing state, external alert collection/routing, authenticated
-  operator access and hosted Trial/download behavior only where verified.
-  Provider acceptance is distinct from inbox delivery; no synthetic result
-  substitutes for either. The migration/startup and rollback constraints in the
-  historical review still apply to the combined artifact.
+  The Product Owner explicitly approved applying all three to production with
+  an encrypted backup. At `2026-09-05T23:16:41Z`, checksum verification passed for
+  `pre-migration-20260905T231641Z-541c8759acea.dump.enc` and its corresponding
+  encrypted `.key.enc` file. All three migrations applied at `23:16:45Z`.
+  Checksum verification establishes backup-file integrity, not a restore test.
+  Earlier local migration evidence remains a separate checkpoint.
+- **Git and source identity:** the combined source was committed and pushed as
+  `541c8759aceaf95f0fe8e64c2bbfacee3fa7744b`. This is the code release identity;
+  a later documentation-only commit must not be substituted for it when recording
+  the tested/deployed API or Portal artifact.
+- **API deployment completed:** workflow `33998093338` succeeded for
+  source commit `541c8759aceaf95f0fe8e64c2bbfacee3fa7744b`, with migrations enabled
+  (`migrations=true`) and Clerk identity cutover disabled (`Clerk cutover=false`).
+  The deployment reported success at `23:16:56Z`, the matching source revision,
+  and `migrations_requested=true`. Independent probes returned API health **200**,
+  database ping **204**, and public search **200**. Evidence consists of the
+  deployment workflow and independent endpoint health; no separate direct API
+  runtime-log inspection was available.
+- **Portal deployment completed:** Vercel deployment
+  `dpl_52EM3DC2oi4Cr84oN6DbrfHeP6iZ` is **READY**, with `aliasAssigned=true`, at
+  the same source SHA. `portal.phaenobiotech.com` is assigned to that deployment;
+  its deployment URL is
+  `phaeno-ops-mgmt-system-hufj549ht-cadexgenomics.vercel.app`. The target is
+  `cadexgenomics/phaeno-ops-mgmt-system`, project
+  `prj_wbE9S9mT46sJxlM3ev0EcaAWJ20R`, root directory `frontend`. Independent probes
+  returned public Portal **200**, Portal API-proxy health **200**, and **401** for
+  anonymous notification-summary and Trial-configuration requests. A fresh
+  in-app browser rendered sign-in cleanly, with no console warnings/errors.
+  The Vercel release-window error query from `23:17:00Z` returned zero rows;
+  this bounded query does not establish the absence of every runtime error.
+- **Evidence files:** `artifacts/review-gap-closure/production-api-release.log`,
+  `production-api-probes.json`, `production-ui-final.json`,
+  `production-ui-probes.json`, and `production-ui-errors.jsonl` retain the release
+  results. All timestamps in this release record are UTC on 2026-09-05.
+- **Public Website boundary:** the separate Website application was not promoted.
+  Its contact-form source changes are in the combined source commit, but updated
+  queued-success wording and preserved-entry behavior are not claimed live from
+  this API/Portal release.
+- **Remaining acceptance boundary:** no signed-in session was available for this
+  release check. Operator admission, hosted Trial/sample/download workflows,
+  provider acceptance and inbox delivery remain unverified. Production
+  pause/recovery behavior and external alert collection/routing are not proved
+  by the health or sign-in checks. Provider acceptance is distinct from inbox
+  delivery; synthetic tests substitute for neither. The migration/startup and
+  rollback constraints in the historical review still apply to this artifact.
 
 ## Historical separate review and release units — 2026-09-05
 
