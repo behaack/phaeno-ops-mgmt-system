@@ -120,8 +120,9 @@ public sealed partial class LabOperationsController
             LabRole.Operator, LabRole.Supervisor, LabRole.OperationsAdministrator);
         var execution = await dbContext.LabProtocolExecutions.SingleOrDefaultAsync(item => item.Id == executionId, cancellationToken)
             ?? throw Missing();
-        if (execution.Status != LabExecutionStatus.InProgress)
+        if (execution.Status is not (LabExecutionStatus.InProgress or LabExecutionStatus.Blocked))
             throw Conflict("execution_not_active", "Materials can be consumed only during active execution.");
+        await RequireOpenExecutionWorkAsync(execution.LabWorkOrderId, cancellationToken);
         var lot = await dbContext.LabMaterialLots.SingleOrDefaultAsync(item => item.Id == request.LabMaterialLotId, cancellationToken)
             ?? throw Missing();
         EnsureVersion(lot.Version, request.LotVersion);
@@ -138,6 +139,7 @@ public sealed partial class LabOperationsController
         lot.Consume(request.Quantity);
         dbContext.LabMaterialConsumptions.Add(new LabMaterialConsumption(execution.Id, lot.Id,
             request.OutputContainerId, request.Quantity, request.QuantityUnit, actor.User.Id, DateTime.UtcNow));
+        dbContext.Entry(execution).Property(item => item.UpdatedAt).IsModified = true;
         await dbContext.SaveChangesAsync(cancellationToken);
         return MapExecution(execution);
     }
@@ -176,8 +178,9 @@ public sealed partial class LabOperationsController
             LabRole.Operator, LabRole.Supervisor, LabRole.OperationsAdministrator);
         var execution = await dbContext.LabProtocolExecutions.SingleOrDefaultAsync(item => item.Id == executionId, cancellationToken)
             ?? throw Missing();
-        if (execution.Status != LabExecutionStatus.InProgress)
+        if (execution.Status is not (LabExecutionStatus.InProgress or LabExecutionStatus.Blocked))
             throw Conflict("execution_not_active", "Equipment use can be recorded only during active execution.");
+        await RequireOpenExecutionWorkAsync(execution.LabWorkOrderId, cancellationToken);
         var equipment = await dbContext.LabEquipment.AsNoTracking()
             .SingleOrDefaultAsync(item => item.Id == request.LabEquipmentId, cancellationToken) ?? throw Missing();
         if (equipment.Status != LabEquipmentStatus.Active
@@ -185,6 +188,7 @@ public sealed partial class LabOperationsController
             throw Conflict("equipment_unavailable", "The equipment is out of service or calibration is overdue.");
         dbContext.LabEquipmentUsages.Add(new LabEquipmentUsage(execution.Id, equipment.Id,
             request.UsedAtUtc, actor.User.Id, request.RunReference));
+        dbContext.Entry(execution).Property(item => item.UpdatedAt).IsModified = true;
         await dbContext.SaveChangesAsync(cancellationToken);
         return MapExecution(execution);
     }

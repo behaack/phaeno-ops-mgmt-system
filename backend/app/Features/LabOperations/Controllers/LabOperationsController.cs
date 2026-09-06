@@ -291,7 +291,7 @@ public sealed partial class LabOperationsController(
             throw Conflict("protocol_candidate_exists",
                 "Continue or discard the open protocol draft before creating another version.");
         }
-        var definition = NormalizeJson(request.DefinitionJson, "protocol_definition_invalid");
+        var definition = RequireProtocolDefinition(request.DefinitionJson).ToJson();
         var nextVersion = protocol.LatestVersion + 1;
         protocol.RecordVersion(nextVersion);
         dbContext.LabProtocolVersions.Add(new LabProtocolVersion(protocol.Id, nextVersion,
@@ -313,7 +313,7 @@ public sealed partial class LabOperationsController(
             .SingleOrDefaultAsync(item => item.Id == version.LabProtocolId, cancellationToken)
             ?? throw Missing();
         EnsureVersion(protocol.Version, request.ProtocolVersion);
-        var definition = NormalizeJson(request.DefinitionJson, "protocol_definition_invalid");
+        var definition = RequireProtocolDefinition(request.DefinitionJson).ToJson();
         Execute(() => version.UpdateDraft(definition));
         MarkProtocolCandidateChanged(protocol);
         await dbContext.SaveChangesAsync(cancellationToken);

@@ -362,6 +362,12 @@ and rollback-isolated PostgreSQL coverage.
   Operations Administrator capabilities; platform-administrator bootstrap;
   inactive-assignment filtering; external-user denial; disabled-user denial;
   explicit role matching; and `/api/session` capability projection.
+- [x] `backend/test/LabProtocolExecutionTests.cs` - strict definition validation,
+  historical-evidence recovery, empty-results rejection, typed number/date/
+  choice/barcode/reference checks, required roles and confirmations, explicit
+  optional/conditional decisions, sequence and QC gates, resource attestation,
+  repeat permissions, reasoned supervisor corrections, downstream re-review,
+  pinned versions, and immutable completed/abandoned evidence.
 - [x] `backend/test/PersistenceTests.cs` - Commercial and Laboratory assembly
   schema ownership, all 26 Laboratory mappings, and no Laboratory foreign key
   into a Commercial entity.
@@ -525,6 +531,10 @@ and rollback-isolated PostgreSQL coverage.
   sequencing, execution, library lineage, NGS sendout/custody, exception
   resolution, scientific approval, customer-safe projection delivery, and proof
   that Ready for release creates neither a managed file nor a Lab result release.
+  The guided-execution extension rejects invalid definitions, empty and forged
+  completion results, wrong-role and stale step writes, and step/resource
+  evidence on held jobs. It saves a QC hold, appends a supervisor correction,
+  checks retained actors/attempts, and completes using persisted evidence.
   The fixture uses unique
   Customer/Phaeno identities and removes its Commercial, Laboratory, shipping,
   account, idempotency, notification, and audit records. All thirteen sources
@@ -1027,6 +1037,25 @@ revocation, stale version recovery, tenant/auditor privacy and new-object reissu
 lineage. Fixtures use synthetic storage and uniquely named loopback databases.
 Full regression execution is authorized for this closeout. Shipping fixture
 cleanup now deletes its Department assignments/departments before organizations.
+
+## Guided protocol completion checkpoint (2026-09-05)
+
+The focused command passed **79 tests, zero failed or skipped**:
+
+```powershell
+dotnet test backend/test/PSeq.Operations.Test.csproj --no-restore --artifacts-path .artifacts/protocol-completion --filter 'FullyQualifiedName~LabProtocolExecutionTests|FullyQualifiedName~LabOperationsDomainTests|FullyQualifiedName~PSeqOrderToCashDomainTests|FullyQualifiedName~LabOperationsAuthorizationTests|FullyQualifiedName~AuthorizedOrderCompletesTheDatabaseBackedLabOperatorJourney'
+```
+
+The existing opt-in reference connection was supplied from development settings
+only after verifying `localhost` and database `phaeno_ops`. The controller
+journey uses its established isolation and cleanup. This is local PostgreSQL
+proof; shared databases, migrations, deployments, and physical acceptance were
+outside this completion run. The solution compiled with no warnings or errors
+using the isolated artifact directory.
+
+The final compatibility regression verifies that absent optional procedure
+fields remain omitted in saved JSON, so draft resume and formal review retain
+the portable authoring format.
 
 ## Trial integration checkpoint (2026-09-05)
 

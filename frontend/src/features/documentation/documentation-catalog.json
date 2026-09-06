@@ -1640,7 +1640,7 @@
       "title": "Service workflows, protocol control, and execution",
       "summary": "Stitch protocols into a production service workflow, pin jobs and stages, and preserve controlled history.",
       "order": 54,
-      "reviewedAt": "2026-09-03",
+      "reviewedAt": "2026-09-05",
       "navigationGroup": "laboratory-operations",
       "contentType": "guide",
       "topicIds": [

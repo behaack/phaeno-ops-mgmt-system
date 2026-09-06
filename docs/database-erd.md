@@ -2734,6 +2734,18 @@ erDiagram
 
 ### Protocols, libraries, and batches
 
+`lab_protocol_versions.definition_json` stores the validated schema-version-1
+procedure: ordered steps, roles, confirmations, typed captures, resource
+instructions, and explicit QC gates. Controlled versions remain immutable.
+`lab_protocol_executions.captured_results_json` stores schema-version-1 step
+evidence with append-only attempts, server-generated record identifiers,
+recording users/times, typed values, decisions, confirmations, QC outcomes, and
+reasons. Repeats and corrections preserve previous attempts. Each saved step
+also creates an `ExecutionStepRecorded` entry in `lab_work_events`; execution
+and work-order concurrency tokens serialize evidence with completion and job
+holds. Historical unstructured JSON is retained for review. This uses the
+existing mapped JSONB columns and does not introduce a schema migration.
+
 ```mermaid
 erDiagram
     lab_batch_members {

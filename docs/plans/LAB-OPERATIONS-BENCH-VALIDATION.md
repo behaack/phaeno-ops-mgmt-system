@@ -7,6 +7,12 @@ laboratory procedure.
 
 ## Current Result
 
+- Guided protocol software was verified on 2026-09-05: 79 focused backend
+  tests, including the local PostgreSQL operator journey; 15 frontend tests;
+  and six synthetic desktop/mobile browser scenarios passed. Required evidence,
+  typed values, role/sequence/QC gates, held-job denial, saved-progress recovery,
+  and append-only corrections are covered. These results supplement the earlier
+  preflight; they do not record a physical or hosted operator session.
 - Software preflight completed on 2026-07-16 against the migrated local
   `phaeno_ops` development database.
 - The rollback-isolated controller journey passed from accepted Customer quote
@@ -36,6 +42,8 @@ laboratory procedure.
 | Commercial authorization creates Lab work atomically | Pass | PostgreSQL controller journey |
 | Additive Lab roles protect operator actions | Pass | Operator journey assigns Operator, Supervisor, Protocol Administrator, and Scientific Reviewer |
 | Approved and active protocol is pinned to execution | Pass | Protocol lifecycle and execution record |
+| Required typed evidence and explicit QC gate completion | Pass | `LabProtocolExecutionTests`, PostgreSQL operator journey, and guided browser fixture |
+| Corrections retain history and stale writes preserve entered values | Pass | Domain/controller evidence history and desktop/mobile concurrency recovery |
 | Receipt and accession preserve specimen history | Pass | Receipt/accession work events and persisted accession |
 | Submitted-container barcode is unique and retained | Pass | `lab_containers` persistence and database uniqueness |
 | POMS barcode allocation and normalization are deterministic | Pass | Prefix/kind, safe-character, checksum, Code 39 wrapper, case, and altered-value coverage |
@@ -82,6 +90,7 @@ observed result, defects, corrective action, and retest result.
 | Printer interruption | A failed or partial print does not falsely imply a usable label and can be recovered without duplicate identity | Software pass for operator-confirmed outcome; pending hardware |
 | Scanner or network interruption | The approved degraded-mode procedure preserves identity, custody, and later reconciliation | Blocked by procedure decision |
 | Exception and correction | Operator can stop, document, resolve, and resume work without overwriting the original record | Pending bench |
+| Guided protocol execution | Operator follows the approved procedure, records captures and resource traceability, assesses conditional steps and QC, resumes saved work, and reviews corrections | Software pass; pending bench |
 | Sendout custody | Container and manifest checks match the actual shipment handoff and provider acknowledgment | Pending provider session |
 
 ## Remaining Activation Gaps

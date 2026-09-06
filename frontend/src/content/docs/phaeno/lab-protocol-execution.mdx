@@ -36,10 +36,24 @@ Choose **Assign protocol** on a laboratory job. POMS offers only stages from tha
 
 ## Record execution
 
-Start the execution before recording step results, material consumption, or equipment use. Capture required values using the configured types and units. Record optional steps, conditional branches, deviations, and abandoned executions explicitly rather than omitting them from history.
+On the laboratory job's **Execution** tab, open the execution link. The dedicated workspace shows its pinned protocol version, specimen, instructions, resource requirements, saved evidence, and remaining completion blockers. Choose **Start execution** before recording work.
 
-Complete the execution only when required steps and QC gates are satisfied. Store the final captured-results JSON and any deviation note with the execution record.
+Choose **Record** for the next step. Enter the measurements, dates, approved choices, file references, and barcodes required by the procedure. Units appear beside the relevant capture. A file reference records an identifier; it does not upload a file. Confirm performed work when the procedure requires it. POMS checks the saved values against the pinned definition and records your identity and the time.
+
+Use **Material** and **Equipment** on the job to record consumed lots and quantities, output-container references, and equipment use. Before confirming a step's resources, check the listed inputs, outputs, and equipment against that traceability. Resource descriptions and QC acceptance criteria are controlled instructions assessed by the operator; POMS does not infer scientific thresholds or match free-text resource descriptions automatically.
+
+Record every optional and conditional step explicitly. An allowed **Skip with reason** requires the reason or condition assessment. Required steps cannot be skipped, and previously performed work cannot be changed into a skip. A step with a specified Lab role must be recorded by a user with that effective role. Earlier steps must be resolved before later evidence is recorded.
+
+For a QC gate, deliberately choose **Pass**, **Fail**, or **Hold**. Fail and Hold require a reason. They remain visible as saved evidence, mark the execution Blocked, and prevent later steps and completion until resolved through an allowed repeat or correction.
+
+Saved progress remains available when you leave and return. When all steps and QC gates are satisfied, choose **Complete execution**, add an optional deviation note, and confirm completion. POMS rechecks the persisted evidence and locks the completed execution. A held or finished laboratory job cannot accept new execution evidence.
 
 ## Recover safely
 
 Do not edit an Approved definition to repair an execution. If a protocol is wrong, create and approve a new version; update and approve the service workflow separately when its stage composition must change. If execution data is wrong, use the supported correction or repeat-work path while preserving the original record and reason.
+
+**Repeat** is available only when the pinned procedure allows it. **Correct** repairs a data-entry error and requires a Supervisor who also has the step's required role. Both require a reason, fresh confirmations, and a new saved record. Expand **Step history** to review every earlier value, QC outcome, reason, operator, and timestamp. If an earlier step changes, later evidence must be reviewed and recorded again before completion.
+
+If another user changes the execution during a save, POMS reloads the current record and preserves your entered values. Review the latest history before saving again. If the original action is no longer available, close the form and use an allowed repeat or correction.
+
+**Abandon execution** requires a reason, stops the execution, and retains its evidence. Arrange a new execution for replacement work. Historical unstructured definitions or results remain preserved with a recovery message; a Protocol Administrator must prepare a valid new approved version for new work. POMS does not silently rewrite controlled history.

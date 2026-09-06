@@ -342,6 +342,13 @@ remain incomplete production-activation gates.
 - [x] `frontend/src/features/lab-operations/protocol-definition.test.ts` -
   structured definitions round-trip for resume/clone workflows, older empty
   definitions open as one editable step, and invalid JSON is rejected.
+- [x] `frontend/src/features/lab-operations/protocol-execution.test.ts` - typed
+  captures preserve zero, validate real dates/approved choices, require explicit
+  QC and skip reasons, and prefill corrections while requiring fresh evidence
+  confirmations.
+- [x] `frontend/src/features/lab-operations/ProtocolApprovalDialog.test.tsx` -
+  exact ordered review includes permitted choices and explicit approval
+  attestation; unsupported historical definitions cannot be approved.
 - [x] `frontend/src/features/lab-operations/MaterialLotCreateDialog.test.ts` -
   supplier-lot validation accepts date-only expiration, prepared reagents
   require structured component lots, and modal related-reference creation
@@ -890,6 +897,27 @@ remain incomplete production-activation gates.
 frozen/historical lineage, member versus staff actions, and stale-version retry
 with the entered hold reason retained and the refreshed version submitted.
 File management's navigation test includes its new retained-package link.
+
+## Guided protocol completion checkpoint (2026-09-05)
+
+The six-file focused run passed **15 tests**: `protocol-execution.test.ts`,
+`protocol-definition.test.ts`, `protocol-list.test.ts`, `ProtocolList.test.tsx`,
+`ProtocolIdentityDialog.test.tsx`, and `ProtocolApprovalDialog.test.tsx`.
+The installed Vitest Node entry point was used without changing dependencies.
+Full TypeScript checking and focused ESLint for Lab Operations, the API types,
+and the browser fixture/spec also passed. The Vite client and SSR production
+builds completed. The updated Phaeno execution guide was regenerated into the
+documentation version/corpus artifacts, and the generator's `--check` passed.
+The existing client chunk-size advisory remains. Compatibility coverage also
+verifies that explicit null optional fields from API definitions can be resumed
+and reviewed without losing procedure content.
+
+Guided execution now uses a view-first detail route and bounded step dialogs,
+typed RHF/Zod inputs, explicit QC, saved progress, readable history, durable job
+return navigation, and 409 recovery that retains values while reloading the
+authoritative version. Desktop/mobile interaction and accessibility evidence
+are in `E2E-TEST-PLAN.md`. This checkpoint does not close the remaining unrelated
+Lab workspace coverage or hosted acceptance gates.
 
 ## Trial integration checkpoint (2026-09-05)
 

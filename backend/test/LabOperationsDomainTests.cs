@@ -134,7 +134,7 @@ public class LabOperationsDomainTests
     {
         var protocol = new LabProtocol("rna-prep", "RNA preparation", null);
         protocol.RecordVersion(1);
-        var version = new LabProtocolVersion(protocol.Id, 1, "{\"steps\":[]}",
+        var version = new LabProtocolVersion(protocol.Id, 1, LabProtocolTestData.Definition(),
             Guid.NewGuid(), DateTime.UtcNow);
 
         Assert.Throws<InvalidOperationException>(() => version.Activate(Guid.NewGuid()));
@@ -149,17 +149,17 @@ public class LabOperationsDomainTests
     {
         var protocol = new LabProtocol("rna-prep", "RNA preparation", null);
         protocol.RecordVersion(1);
-        var approvedVersion = new LabProtocolVersion(protocol.Id, 1, "{\"steps\":[]}",
+        var approvedVersion = new LabProtocolVersion(protocol.Id, 1, LabProtocolTestData.Definition(),
             Guid.NewGuid(), DateTime.UtcNow);
 
-        approvedVersion.UpdateDraft("""{"steps":[{"key":"verify"}]}""");
+        approvedVersion.UpdateDraft(LabProtocolTestData.Definition("verify"));
         approvedVersion.Approve(Guid.NewGuid(), DateTime.UtcNow);
         Assert.Throws<InvalidOperationException>(() =>
             approvedVersion.UpdateDraft("""{"steps":[{"key":"changed-after-approval"}]}"""));
         Assert.Throws<InvalidOperationException>(approvedVersion.Discard);
 
         protocol.RecordVersion(2);
-        var discardedVersion = new LabProtocolVersion(protocol.Id, 2, "{\"steps\":[]}",
+        var discardedVersion = new LabProtocolVersion(protocol.Id, 2, LabProtocolTestData.Definition(),
             Guid.NewGuid(), DateTime.UtcNow);
         discardedVersion.Discard();
         Assert.Equal(LabProtocolStatus.Discarded, discardedVersion.Status);
@@ -304,14 +304,11 @@ public class LabOperationsDomainTests
     [Fact]
     public void ExecutionCanCompleteWithoutADeviationNote()
     {
-        var execution = new LabProtocolExecution(
-            Guid.NewGuid(),
-            Guid.NewGuid(),
-            Guid.NewGuid(),
-            Guid.NewGuid());
-
+        var protocol = LabProtocolTestData.Version();
+        var execution = new LabProtocolExecution(Guid.NewGuid(), null, protocol.Id, Guid.NewGuid());
         execution.Start(DateTime.UtcNow);
-        execution.Complete("""{"status":"passed"}""", null, DateTime.UtcNow);
+        execution.RecordStep(protocol, LabProtocolTestData.Input(), Guid.NewGuid(), new HashSet<LabRole> { LabRole.Operator }, DateTime.UtcNow);
+        execution.Complete(protocol, null, DateTime.UtcNow);
 
         Assert.Equal(LabExecutionStatus.Completed, execution.Status);
         Assert.Null(execution.DeviationNote);

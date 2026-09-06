@@ -691,10 +691,13 @@ public class LabOperationsCommercialHandoffPostgresTests
             Assert.Equal(immutableProtocolKey, protocol.Key);
             Assert.Equal($"{protocolName} updated", protocol.Name);
             Assert.Equal("Updated database-backed verification protocol.", protocol.Description);
+            var invalidDefinition = await Assert.ThrowsAsync<OrderManagementException>(() => lab.CreateProtocolVersion(
+                protocol.Id, new CreateProtocolVersionRequest("{}", protocol.Version), CancellationToken.None));
+            Assert.Equal("protocol_definition_invalid", invalidDefinition.ErrorCode);
             protocol = await lab.CreateProtocolVersion(
                 protocol.Id,
                 new CreateProtocolVersionRequest(
-                    """{"steps":[{"key":"prepare-library","required":true}]}""",
+                    LabProtocolTestData.Definition("prepare-library"),
                     protocol.Version),
                 CancellationToken.None);
             var protocolVersion = Assert.Single(protocol.Versions);
@@ -702,14 +705,14 @@ public class LabOperationsCommercialHandoffPostgresTests
                 lab.CreateProtocolVersion(
                     protocol.Id,
                     new CreateProtocolVersionRequest(
-                        """{"steps":[{"key":"parallel-draft","required":true}]}""",
+                        LabProtocolTestData.Definition("parallel-draft"),
                         protocol.Version),
                     CancellationToken.None));
             Assert.Equal("protocol_candidate_exists", duplicateCandidate.ErrorCode);
             protocol = await lab.UpdateProtocolVersion(
                 protocolVersion.Id,
                 new UpdateProtocolVersionRequest(
-                    """{"steps":[{"key":"prepare-library-updated","required":true}]}""",
+                    LabProtocolTestData.Definition("prepare-library-updated"),
                     protocol.Version),
                 CancellationToken.None);
             protocolVersion = Assert.Single(protocol.Versions);
@@ -722,7 +725,7 @@ public class LabOperationsCommercialHandoffPostgresTests
             protocol = await lab.CreateProtocolVersion(
                 protocol.Id,
                 new CreateProtocolVersionRequest(
-                    """{"steps":[{"key":"prepare-library-final","required":true}]}""",
+                    LabProtocolTestData.Definition("prepare-library-final"),
                     protocol.Version),
                 CancellationToken.None);
             protocolVersion = Assert.Single(
@@ -742,7 +745,7 @@ public class LabOperationsCommercialHandoffPostgresTests
             protocol = await lab.CreateProtocolVersion(
                 protocol.Id,
                 new CreateProtocolVersionRequest(
-                    """{"steps":[{"key":"discarded-change","required":true}]}""",
+                    LabProtocolTestData.Definition("discarded-change"),
                     protocol.Version),
                 CancellationToken.None);
             var discardedCandidate = Assert.Single(
@@ -938,11 +941,54 @@ public class LabOperationsCommercialHandoffPostgresTests
                     DateTime.UtcNow,
                     "Reference run"),
                 CancellationToken.None);
+            execution = (await lab.ReadExecution(execution.Id, CancellationToken.None)).Execution;
+            var executionWork = await scope.DbContext.LabWorkOrders.SingleAsync(item => item.Id == workOrderId);
+            executionWork.RecordMilestone(LabWorkOrderStatus.OnHold);
+            await scope.DbContext.SaveChangesAsync();
+            var heldEvidence = await Assert.ThrowsAsync<OrderManagementException>(() => lab.RecordExecutionStep(execution.Id,
+                new RecordLabExecutionStepRequest("prepare-library-final", "record", "recorded",
+                    LabProtocolTestData.Input().Captures, true, false, "pass", null, execution.Version), CancellationToken.None));
+            Assert.Equal("execution_work_unavailable", heldEvidence.ErrorCode);
+            Assert.False((await lab.ReadExecution(execution.Id, CancellationToken.None)).CanOperate);
+            var heldEquipment = await Assert.ThrowsAsync<OrderManagementException>(() => lab.RecordEquipmentUsage(
+                execution.Id, new RecordEquipmentUsageRequest(equipment.Id, DateTime.UtcNow, "Held use must fail"), CancellationToken.None));
+            Assert.Equal("execution_work_unavailable", heldEquipment.ErrorCode);
+            var heldMaterial = await Assert.ThrowsAsync<OrderManagementException>(() => lab.ConsumeMaterial(
+                execution.Id, new ConsumeMaterialRequest(Guid.Empty, null, 1, "mL", 1), CancellationToken.None));
+            Assert.Equal("execution_work_unavailable", heldMaterial.ErrorCode);
+            executionWork.RecordMilestone(LabWorkOrderStatus.Processing);
+            await scope.DbContext.SaveChangesAsync();
+            var emptyCompletion = await Assert.ThrowsAsync<OrderManagementException>(() => lab.TransitionExecution(
+                execution.Id, new ExecutionTransitionRequest("complete", "{}", null, execution.Version), CancellationToken.None));
+            Assert.Equal("lab_transition_not_allowed", emptyCompletion.ErrorCode);
+            var forgedCompletion = await Assert.ThrowsAsync<OrderManagementException>(() => lab.TransitionExecution(
+                execution.Id, new ExecutionTransitionRequest("complete", "{\"status\":\"passed\"}", null, execution.Version), CancellationToken.None));
+            Assert.Equal("execution_results_read_only", forgedCompletion.ErrorCode);
+            var wrongRole = await Assert.ThrowsAsync<OrderManagementException>(() => approvalLab.RecordExecutionStep(
+                execution.Id, new RecordLabExecutionStepRequest("prepare-library-final", "record", "recorded",
+                    LabProtocolTestData.Input().Captures, true, false, "pass", null, execution.Version), CancellationToken.None));
+            Assert.Equal("lab_transition_not_allowed", wrongRole.ErrorCode);
+            var recorded = await lab.RecordExecutionStep(execution.Id,
+                new RecordLabExecutionStepRequest("prepare-library-final", "record", "recorded",
+                    LabProtocolTestData.Input().Captures, true, false, "hold", "Waiting for supervisor review", execution.Version), CancellationToken.None);
+            Assert.Equal("Blocked", recorded.Execution.Status);
+            Assert.NotEmpty(recorded.CompletionBlockers);
+            var stale = await Assert.ThrowsAsync<OrderManagementException>(() => lab.RecordExecutionStep(execution.Id,
+                new RecordLabExecutionStepRequest("prepare-library-final", "correct", "recorded",
+                    LabProtocolTestData.Input().Captures, true, false, "pass", "Reviewed evidence", execution.Version), CancellationToken.None));
+            Assert.Equal("concurrency_conflict", stale.ErrorCode);
+            recorded = await lab.RecordExecutionStep(execution.Id,
+                new RecordLabExecutionStepRequest("prepare-library-final", "correct", "recorded",
+                    LabProtocolTestData.Input().Captures, true, false, "pass", "Corrected the recorded QC decision after review", recorded.Execution.Version), CancellationToken.None);
+            Assert.Empty(recorded.CompletionBlockers);
+            Assert.Equal(2, Assert.Single(recorded.Steps).Records.Count);
+            Assert.All(Assert.Single(recorded.Steps).Records, value => Assert.Equal(staff.User.Id, value.RecordedByUserId));
+            execution = recorded.Execution;
             execution = await lab.TransitionExecution(
                 execution.Id,
                 new ExecutionTransitionRequest(
                     "complete",
-                    """{"yieldNg":125,"status":"passed"}""",
+                    null,
                     null,
                     execution.Version),
                 CancellationToken.None);

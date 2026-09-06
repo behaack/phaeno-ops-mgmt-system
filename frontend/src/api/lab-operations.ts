@@ -2,6 +2,7 @@ import axios from 'axios'
 
 import { api } from './client'
 import type { DataAssemblyRequest, OrderListItem, PagedResult, ReagentOrder } from './order-management'
+import type { ProtocolDefinition } from '#/features/lab-operations/protocol-definition'
 
 type ApiEnvelope<T> = {
   success: boolean
@@ -46,6 +47,35 @@ export type LabContainerScan = { labWorkOrderId: string; commercialOrderNumber: 
 export type LabLabelPrintEvent = { id: string; labContainerId: string; outcome: string; reason: string; failureDetails: string | null; printNumber: number | null; actorUserId: string | null; occurredAtUtc: string }
 export type LabContainerLabel = { labWorkOrderId: string; commercialOrderNumber: string | null; accessionNumber: string | null; parentBarcode: string | null; container: LabContainer; printHistory: LabLabelPrintEvent[] }
 export type LabExecution = { id: string; labSpecimenId: string | null; labProtocolVersionId: string; assignedToUserId: string | null; status: string; capturedResultsJson: string; deviationNote: string | null; startedAtUtc: string | null; completedAtUtc: string | null; version: number; labServiceWorkflowStageId: string | null }
+export type LabExecutionStepInput = {
+  stepKey: string
+  action: 'record' | 'repeat' | 'correct'
+  outcome: 'recorded' | 'skipped'
+  captures: Record<string, string | number>
+  operatorConfirmed: boolean
+  resourcesConfirmed: boolean
+  qcOutcome: 'pass' | 'fail' | 'hold' | null
+  reason: string | null
+  version: number
+}
+export type LabExecutionStepRecord = Omit<LabExecutionStepInput, 'version'> & {
+  id: string; recordedByUserId: string; recordedAtUtc: string
+}
+export type LabExecutionStep = {
+  definition: ProtocolDefinition['steps'][number]
+  records: LabExecutionStepRecord[]
+  completionBlocker: string | null
+  canRecord: boolean; canRepeat: boolean; canCorrect: boolean; actionBlocker: string | null
+}
+export type LabExecutionResource = { id: string; name: string; details: string; recordedAtUtc: string }
+export type LabExecutionDetail = {
+  execution: LabExecution
+  workOrderId: string; protocolName: string; protocolVersion: number; accessionNumber: string | null
+  steps: LabExecutionStep[]
+  recorders: { id: string; name: string }[]
+  materialUse: LabExecutionResource[]; equipmentUse: LabExecutionResource[]
+  completionBlockers: string[]; recoveryMessage: string | null; canOperate: boolean; canAbandon: boolean
+}
 export type LabLibrary = { id: string; labSpecimenId: string; sourceContainerId: string; libraryContainerId: string; preparationExecutionId: string; libraryKey: string; status: string; qcResultsJson: string | null; version: number }
 export type LabException = { id: string; labSpecimenId: string | null; labProtocolExecutionId: string | null; audience: string; categoryCode: string; title: string; internalDescription: string; customerSafeSummary: string | null; isBlocking: boolean; status: string; responseDueAtUtc: string | null; resolvedAtUtc: string | null; version: number }
 export type LabScientificApproval = { id: string; approvalVersion: number; releaseDefinitionKey: string; releaseDefinitionVersion: number; approvedByUserId: string; approvedAtUtc: string; projectionVersion: number }
@@ -54,6 +84,9 @@ export type LabPSeqKitOffering = { id: string; partnerOrganizationId: string; it
 
 export const getLabOperationsDashboard = () => get<LabOperationsDashboard>('/platform/lab-operations')
 export const getLabWorkOrder = (id: string) => get<LabWorkOrderDetail>(`/platform/lab-operations/work-orders/${id}`)
+export const getLabExecution = (id: string) => get<LabExecutionDetail>(`/platform/lab-operations/executions/${id}`)
+export const recordLabExecutionStep = (id: string, input: LabExecutionStepInput) =>
+  post<LabExecutionDetail>(`/platform/lab-operations/executions/${id}/steps`, input)
 export const getLabWorkOrderByCommercialOrder = (commercialOrderId: string) => get<LabWorkOrderSummary>(`/platform/lab-operations/work-orders/by-commercial-order/${commercialOrderId}`)
 export const listLabPSeqKitOfferings = (partnerOrganizationId: string) => get<LabPSeqKitOffering[]>('/platform/lab-operations/pseq-kit-offerings', { partnerOrganizationId })
 export const listLabManufacturingOrders = (

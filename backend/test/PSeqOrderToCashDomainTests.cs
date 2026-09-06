@@ -72,7 +72,7 @@ public class PSeqOrderToCashDomainTests
     {
         var author = Guid.NewGuid();
         var reviewer = Guid.NewGuid();
-        var version = new LabProtocolVersion(Guid.NewGuid(), 1, "{}", author, Now);
+        var version = new LabProtocolVersion(Guid.NewGuid(), 1, LabProtocolTestData.Definition(), author, Now);
 
         Assert.Throws<InvalidOperationException>(() => version.Approve(author, Now));
         version.Approve(reviewer, Now);
@@ -86,7 +86,7 @@ public class PSeqOrderToCashDomainTests
     public void ProtocolActorSeparationCanRunInAuditOnlyModeBeforeEnforcement()
     {
         var author = Guid.NewGuid();
-        var version = new LabProtocolVersion(Guid.NewGuid(), 1, "{}", author, Now);
+        var version = new LabProtocolVersion(Guid.NewGuid(), 1, LabProtocolTestData.Definition(), author, Now);
 
         version.Approve(author, Now, enforceActorSeparation: false);
         version.Activate(author, enforceActorSeparation: false);

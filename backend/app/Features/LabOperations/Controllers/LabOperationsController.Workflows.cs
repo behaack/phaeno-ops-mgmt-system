@@ -142,6 +142,7 @@ public sealed partial class LabOperationsController
             .Any(group => group.Select(item => item.Id).Distinct().Count() > 1))
             throw Invalid("service_workflow_protocol_versions_mixed",
                 "A workflow cannot mix multiple versions of the same protocol.");
+        foreach (var protocol in protocolVersions.Values) RequireProtocolDefinition(protocol.DefinitionJson);
 
         return requests.Select((request, index) =>
         {
@@ -174,6 +175,7 @@ public sealed partial class LabOperationsController
             throw Conflict("service_workflow_protocol_not_ready",
                 "Every workflow protocol must still be approved.");
 
+        foreach (var protocol in protocolVersions) RequireProtocolDefinition(protocol.DefinitionJson);
         foreach (var protocolVersion in protocolVersions.Where(item => item.Status == LabProtocolStatus.Approved))
         {
             var current = await dbContext.LabProtocolVersions.Where(item =>

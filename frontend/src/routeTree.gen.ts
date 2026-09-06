@@ -59,6 +59,7 @@ import { Route as OrderOperationsIntakeOrderIdRouteImport } from './routes/order
 import { Route as OrderOperationsWorkflowOrderIdRouteImport } from './routes/order-operations.$workflow.$orderId'
 import { Route as LabServicesOrderIdEditRouteImport } from './routes/lab-services.$orderId.edit'
 import { Route as LabOperationsPseqKitOrdersOrderIdRouteImport } from './routes/lab-operations.pseq-kit-orders.$orderId'
+import { Route as LabOperationsExecutionsExecutionIdRouteImport } from './routes/lab-operations.executions.$executionId'
 import { Route as LabOperationsDataAssemblyOrderIdRouteImport } from './routes/lab-operations.data-assembly.$orderId'
 import { Route as DocsAudienceSlugRouteImport } from './routes/docs.$audience.$slug'
 import { Route as DataProvisioningSourcesSourceSampleIdRouteImport } from './routes/data-provisioning.sources.$sourceSampleId'
@@ -332,6 +333,12 @@ const LabOperationsPseqKitOrdersOrderIdRoute =
     path: '/pseq-kit-orders/$orderId',
     getParentRoute: () => LabOperationsRoute,
   } as any)
+const LabOperationsExecutionsExecutionIdRoute =
+  LabOperationsExecutionsExecutionIdRouteImport.update({
+    id: '/executions/$executionId',
+    path: '/executions/$executionId',
+    getParentRoute: () => LabOperationsRoute,
+  } as any)
 const LabOperationsDataAssemblyOrderIdRoute =
   LabOperationsDataAssemblyOrderIdRouteImport.update({
     id: '/data-assembly/$orderId',
@@ -453,6 +460,7 @@ export interface FileRoutesByFullPath {
   '/data-provisioning/sources/$sourceSampleId': typeof DataProvisioningSourcesSourceSampleIdRoute
   '/docs/$audience/$slug': typeof DocsAudienceSlugRoute
   '/lab-operations/data-assembly/$orderId': typeof LabOperationsDataAssemblyOrderIdRoute
+  '/lab-operations/executions/$executionId': typeof LabOperationsExecutionsExecutionIdRoute
   '/lab-operations/pseq-kit-orders/$orderId': typeof LabOperationsPseqKitOrdersOrderIdRoute
   '/lab-services/$orderId/edit': typeof LabServicesOrderIdEditRoute
   '/order-operations/$workflow/$orderId': typeof OrderOperationsWorkflowOrderIdRoute
@@ -517,6 +525,7 @@ export interface FileRoutesByTo {
   '/data-provisioning/sources/$sourceSampleId': typeof DataProvisioningSourcesSourceSampleIdRoute
   '/docs/$audience/$slug': typeof DocsAudienceSlugRoute
   '/lab-operations/data-assembly/$orderId': typeof LabOperationsDataAssemblyOrderIdRoute
+  '/lab-operations/executions/$executionId': typeof LabOperationsExecutionsExecutionIdRoute
   '/lab-operations/pseq-kit-orders/$orderId': typeof LabOperationsPseqKitOrdersOrderIdRoute
   '/lab-services/$orderId/edit': typeof LabServicesOrderIdEditRoute
   '/order-operations/$workflow/$orderId': typeof OrderOperationsWorkflowOrderIdRoute
@@ -582,6 +591,7 @@ export interface FileRoutesById {
   '/data-provisioning/sources/$sourceSampleId': typeof DataProvisioningSourcesSourceSampleIdRoute
   '/docs/$audience/$slug': typeof DocsAudienceSlugRoute
   '/lab-operations/data-assembly/$orderId': typeof LabOperationsDataAssemblyOrderIdRoute
+  '/lab-operations/executions/$executionId': typeof LabOperationsExecutionsExecutionIdRoute
   '/lab-operations/pseq-kit-orders/$orderId': typeof LabOperationsPseqKitOrdersOrderIdRoute
   '/lab-services/$orderId/edit': typeof LabServicesOrderIdEditRoute
   '/order-operations/$workflow/$orderId': typeof OrderOperationsWorkflowOrderIdRoute
@@ -648,6 +658,7 @@ export interface FileRouteTypes {
     | '/data-provisioning/sources/$sourceSampleId'
     | '/docs/$audience/$slug'
     | '/lab-operations/data-assembly/$orderId'
+    | '/lab-operations/executions/$executionId'
     | '/lab-operations/pseq-kit-orders/$orderId'
     | '/lab-services/$orderId/edit'
     | '/order-operations/$workflow/$orderId'
@@ -712,6 +723,7 @@ export interface FileRouteTypes {
     | '/data-provisioning/sources/$sourceSampleId'
     | '/docs/$audience/$slug'
     | '/lab-operations/data-assembly/$orderId'
+    | '/lab-operations/executions/$executionId'
     | '/lab-operations/pseq-kit-orders/$orderId'
     | '/lab-services/$orderId/edit'
     | '/order-operations/$workflow/$orderId'
@@ -776,6 +788,7 @@ export interface FileRouteTypes {
     | '/data-provisioning/sources/$sourceSampleId'
     | '/docs/$audience/$slug'
     | '/lab-operations/data-assembly/$orderId'
+    | '/lab-operations/executions/$executionId'
     | '/lab-operations/pseq-kit-orders/$orderId'
     | '/lab-services/$orderId/edit'
     | '/order-operations/$workflow/$orderId'
@@ -1166,6 +1179,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof LabOperationsPseqKitOrdersOrderIdRouteImport
       parentRoute: typeof LabOperationsRoute
     }
+    '/lab-operations/executions/$executionId': {
+      id: '/lab-operations/executions/$executionId'
+      path: '/executions/$executionId'
+      fullPath: '/lab-operations/executions/$executionId'
+      preLoaderRoute: typeof LabOperationsExecutionsExecutionIdRouteImport
+      parentRoute: typeof LabOperationsRoute
+    }
     '/lab-operations/data-assembly/$orderId': {
       id: '/lab-operations/data-assembly/$orderId'
       path: '/data-assembly/$orderId'
@@ -1361,6 +1381,7 @@ const DocsRouteWithChildren = DocsRoute._addFileChildren(DocsRouteChildren)
 interface LabOperationsRouteChildren {
   LabOperationsWorkOrderIdRoute: typeof LabOperationsWorkOrderIdRoute
   LabOperationsDataAssemblyOrderIdRoute: typeof LabOperationsDataAssemblyOrderIdRoute
+  LabOperationsExecutionsExecutionIdRoute: typeof LabOperationsExecutionsExecutionIdRoute
   LabOperationsPseqKitOrdersOrderIdRoute: typeof LabOperationsPseqKitOrdersOrderIdRoute
   LabOperationsProtocolsProtocolIdVersionsNewRoute: typeof LabOperationsProtocolsProtocolIdVersionsNewRoute
   LabOperationsWorkflowsWorkflowIdVersionsNewRoute: typeof LabOperationsWorkflowsWorkflowIdVersionsNewRoute
@@ -1371,6 +1392,8 @@ interface LabOperationsRouteChildren {
 const LabOperationsRouteChildren: LabOperationsRouteChildren = {
   LabOperationsWorkOrderIdRoute: LabOperationsWorkOrderIdRoute,
   LabOperationsDataAssemblyOrderIdRoute: LabOperationsDataAssemblyOrderIdRoute,
+  LabOperationsExecutionsExecutionIdRoute:
+    LabOperationsExecutionsExecutionIdRoute,
   LabOperationsPseqKitOrdersOrderIdRoute:
     LabOperationsPseqKitOrdersOrderIdRoute,
   LabOperationsProtocolsProtocolIdVersionsNewRoute:

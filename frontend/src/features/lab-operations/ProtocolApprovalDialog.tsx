@@ -14,7 +14,7 @@ import {
 } from '#/components/ui/dialog'
 import { Label } from '#/components/ui/label'
 
-import { deserializeProtocolDefinition } from './protocol-definition'
+import { deserializeProtocolDefinition, protocolDefinitionFormSchema } from './protocol-definition'
 
 type ProtocolVersion = LabProtocol['versions'][number]
 
@@ -35,7 +35,10 @@ export function ProtocolApprovalDialog({
 }) {
   const [confirmed, setConfirmed] = useState(false)
   const definition = useMemo(
-    () => version ? deserializeProtocolDefinition(version.definitionJson) : null,
+    () => {
+      const parsed = version ? deserializeProtocolDefinition(version.definitionJson) : null
+      return parsed && protocolDefinitionFormSchema.safeParse(parsed).success ? parsed : null
+    },
     [version],
   )
 
@@ -96,7 +99,7 @@ export function ProtocolApprovalDialog({
                   {step.captures.length > 0 ? (
                     <ReviewDetail
                       label="Captured values"
-                      value={step.captures.map((capture) => `${capture.label} (${capture.type}${capture.required ? ', required' : ''}${capture.unit ? `, ${capture.unit}` : ''})`).join('; ')}
+                      value={step.captures.map((capture) => `${capture.label} (${capture.type}${capture.required ? ', required' : ''}${capture.unit ? `, ${capture.unit}` : ''}${capture.type === 'choice' ? `; choices: ${capture.choices}` : ''})`).join('; ')}
                     />
                   ) : null}
                   {step.qcEnabled ? <ReviewDetail label="QC acceptance criteria" value={step.qcCriteria} /> : null}

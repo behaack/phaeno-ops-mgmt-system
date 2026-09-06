@@ -1,5 +1,79 @@
 # Lab Operations Plan
 
+## 2026-09-05 protocol completion scope
+
+The Product Owner requested completion after a source review found that the
+earlier feature-complete label did not cover guided execution or enforcement
+of a protocol's required evidence. Guided protocol execution is now implemented
+and locally verified. This completion record distinguishes software delivery
+from the remaining hosted and physical acceptance gates.
+
+- Users: Phaeno laboratory operators, supervisors, protocol administrators,
+  and scientific reviewers acting under their existing additive Lab roles.
+- Outcome: an operator opens an execution's exact pinned procedure, records
+  each step with typed captures and explicit confirmation/QC decisions, and
+  resumes from durable progress. No operator-authored results JSON is needed.
+- Server rules: validate the structured definition on draft save and controlled
+  approval/use; validate captures, applicable roles, required sequence,
+  optional/conditional skip reasons, and Pass/Fail/Hold evidence. Completion
+  uses persisted step records and rejects missing evidence or unresolved QC.
+- History: record actors and timestamps on the server. Repeats are allowed
+  only by the procedure; corrections require a supervisor, the step's role,
+  and a reason. Both append history. Approved definitions and completed
+  executions remain immutable. Unsupported historical definitions are retained
+  and displayed with a recovery message; they are never silently rewritten.
+- UI: execution identity opens a dedicated view-first page; a bounded modal
+  records one step/attempt. Show instructions, units, permitted choices,
+  resources, prior evidence, completion blockers, and concurrency recovery.
+  Keep the existing work-order material/equipment actions and traceability.
+- Engineering scope: use the existing definition/results JSON and audited
+  work-event storage, with additive Lab-only endpoints. No schema, dependency,
+  authentication-provider, Commercial-provider-contract, or deployment change.
+- Acceptance: focused backend validation/controller tests and frontend tests
+  cover empty-results rejection, typed evidence, sequence/QC/role denial,
+  immutable/repeat/correction history, stale writes, and the approval lifecycle.
+  Browser checks cover guided recording, return navigation, errors, keyboard,
+  narrow layouts, and both themes. Track exact results in the living test plans.
+- Success measures: all focused checks pass; routine execution needs no JSON
+  entry; invalid or incomplete work cannot be completed through the API.
+  Physical bench acceptance, hosted acceptance, and production activation
+  retain their separate gates in `LAB-OPERATIONS-BENCH-VALIDATION.md`.
+
+### Completion evidence
+
+- The dedicated execution page replaces operator-authored results JSON with
+  ordered step forms and durable, typed evidence. Fail/Hold QC blocks progress;
+  required fields, roles, confirmations, skip decisions, repeats, supervisor
+  corrections, and completion are checked against the pinned definition.
+- Every attempt retains its actor, time, values, and reason. Earlier changes
+  invalidate downstream evidence until reviewed again. Held or finished jobs
+  cannot accept step, material, or equipment evidence. Stale writes reload the
+  current version while preserving the operator's entered values.
+- The shared definition validator rejects unsupported or empty procedures at
+  authoring, approval, workflow use, and execution. Historical unsupported
+  records remain preserved and show a recovery path instead of being rewritten.
+- Local verification passed: 79 focused backend tests, including the isolated
+  PostgreSQL operator journey; 15 frontend tests; six desktop/mobile browser
+  scenarios; TypeScript, focused ESLint, and client/SSR production builds.
+  Browser checks include Axe, keyboard/focus, saved-progress navigation, and
+  mobile dark mode with reduced motion. See the three living test plans for
+  sources, commands, and the distinction between fixtures and hosted proof.
+- Updated the Phaeno execution guide and generated documentation corpus.
+  The existing JSONB and work-event fields retain all evidence; no migration
+  was needed. No Git mutation, deployment, or production activation occurred.
+
+### Release authorization
+
+On 2026-09-05, the Product Owner authorized committing, pushing, and deploying
+this protocol completion. Release the API through `Deploy Portal Green` with
+`apply_migrations=false` and `cutover_clerk_identity=false`, then build and
+deploy the same committed revision to the existing Portal Vercel production
+project. Verify the runtime revision, API health/database ping, frontend source
+revision, production alias, and deployed route. Physical bench acceptance and
+changes to production laboratory procedures remain separate from this software
+release. Retain the deployment evidence under ignored
+`artifacts/protocol-release-2026-09-05/`.
+
 ## 2026-08-29 governed-result and dual-control update
 
 `PSEQ-ORDER-TO-CASH-GAP-CLOSURE-PLAN.md` closes the previously unresolved
@@ -838,9 +912,11 @@ remove competing internal write paths. The durable strategy is recorded in
   scan-first lookup, label history, optional retention, and intake disposition.
 - Complete: structured protocol authoring with ordered steps, typed captures,
   resource requirements, QC gates, JSON preview, cloned version creation,
-  resumable draft editing and discard history, approval withdrawal,
-  one-open-candidate enforcement, approval, Production/Retired control, pinned
-  versioning, execution, and system-owned readable protocol-key allocation.
+  resumable draft editing and discard history, one-Draft enforcement,
+  independent irreversible approval, Approved/Superseded history, pinned
+  versioning, guided execution with enforced evidence and QC, and system-owned
+  readable protocol-key allocation. Production/Retired control belongs to
+  service workflows; approved protocol versions cannot be withdrawn.
 - Complete: one canonical controlled workflow per marketed laboratory service,
   ordered Required, Optional, and Conditional protocol stages, workflow
   Draft/Approved/Production/Retired/Discarded lifecycle, atomic protocol

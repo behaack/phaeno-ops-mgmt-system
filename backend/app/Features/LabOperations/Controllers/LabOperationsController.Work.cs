@@ -323,6 +323,9 @@ public sealed partial class LabOperationsController
         if (request.LabProtocolVersionId != stage.LabProtocolVersionId)
             throw Invalid("workflow_stage_protocol_mismatch",
                 "The selected workflow stage and protocol version do not match.");
+        var protocol = await dbContext.LabProtocolVersions.AsNoTracking()
+            .SingleAsync(item => item.Id == stage.LabProtocolVersionId, cancellationToken);
+        RequireProtocolDefinition(protocol.DefinitionJson);
         var priorRequiredStageIds = await dbContext.LabServiceWorkflowStages.AsNoTracking()
             .Where(item => item.LabServiceWorkflowVersionId == workflowVersionId.Value
                 && item.Sequence < stage.Sequence
@@ -358,11 +361,15 @@ public sealed partial class LabOperationsController
         var execution = await dbContext.LabProtocolExecutions
             .SingleOrDefaultAsync(item => item.Id == executionId, cancellationToken) ?? throw Missing();
         EnsureVersion(execution.Version, request.Version);
-        var work = await RequireWorkOrderAsync(execution.LabWorkOrderId, cancellationToken);
+        var work = await RequireOpenExecutionWorkAsync(execution.LabWorkOrderId, cancellationToken,
+            allowHold: string.Equals(request.Action, "abandon", StringComparison.OrdinalIgnoreCase));
         switch (request.Action.Trim().ToLowerInvariant())
         {
             case "start":
-                execution.Start(DateTime.UtcNow);
+                var startedProtocol = await dbContext.LabProtocolVersions.AsNoTracking()
+                    .SingleAsync(item => item.Id == execution.LabProtocolVersionId, cancellationToken);
+                RequireProtocolDefinition(startedProtocol.DefinitionJson);
+                Execute(() => execution.Start(DateTime.UtcNow));
                 if (work.Status is LabWorkOrderStatus.AwaitingSpecimens or LabWorkOrderStatus.Received)
                 {
                     work.RecordMilestone(LabWorkOrderStatus.Processing);
@@ -370,8 +377,14 @@ public sealed partial class LabOperationsController
                 }
                 break;
             case "complete":
-                execution.Complete(NormalizeJson(request.CapturedResultsJson ?? "{}", "execution_results_invalid"),
-                    request.DeviationNote, DateTime.UtcNow);
+                if (!string.IsNullOrWhiteSpace(request.CapturedResultsJson) && request.CapturedResultsJson.Trim() != "{}")
+                    throw Invalid("execution_results_read_only", "Record each step in the guided execution workspace before completing the procedure.");
+                var completedProtocol = await dbContext.LabProtocolVersions.AsNoTracking()
+                    .SingleAsync(item => item.Id == execution.LabProtocolVersionId, cancellationToken);
+                Execute(() => execution.Complete(completedProtocol, request.DeviationNote, DateTime.UtcNow));
+                break;
+            case "abandon":
+                Execute(() => execution.Abandon(request.DeviationNote));
                 break;
             default: throw Invalid("execution_transition_invalid", "The execution transition is invalid.");
         }

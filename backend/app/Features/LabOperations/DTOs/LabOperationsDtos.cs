@@ -1,5 +1,8 @@
 namespace PhaenoPortal.App.Features.LabOperations.DTOs;
 
+using System.Text.Json;
+using PSeq.Operations.Laboratory.Domain;
+
 public sealed record LabRoleAssignmentDto(
     Guid Id, Guid UserId, string UserName, string Email, string Role, bool IsActive, long Version);
 
@@ -110,6 +113,22 @@ public sealed record LabExecutionDto(
     string Status, string CapturedResultsJson, string? DeviationNote,
     DateTime? StartedAtUtc, DateTime? CompletedAtUtc, long Version,
     Guid? LabServiceWorkflowStageId = null);
+
+public sealed record RecordLabExecutionStepRequest(
+    string StepKey, string Action, string Outcome, IReadOnlyDictionary<string, JsonElement> Captures,
+    bool OperatorConfirmed, bool ResourcesConfirmed, string? QcOutcome, string? Reason, long Version);
+
+public sealed record LabExecutionStepDto(LabProtocolStepDefinition Definition,
+    IReadOnlyList<LabProtocolStepRecord> Records, string? CompletionBlocker,
+    bool CanRecord, bool CanRepeat, bool CanCorrect, string? ActionBlocker);
+public sealed record LabExecutionRecorderDto(Guid Id, string Name);
+public sealed record LabExecutionResourceDto(Guid Id, string Name, string Details, DateTime RecordedAtUtc);
+public sealed record LabExecutionDetailDto(
+    LabExecutionDto Execution, Guid WorkOrderId, string ProtocolName, int ProtocolVersion,
+    string? AccessionNumber, IReadOnlyList<LabExecutionStepDto> Steps,
+    IReadOnlyList<LabExecutionRecorderDto> Recorders,
+    IReadOnlyList<LabExecutionResourceDto> MaterialUse, IReadOnlyList<LabExecutionResourceDto> EquipmentUse,
+    IReadOnlyList<string> CompletionBlockers, string? RecoveryMessage, bool CanOperate, bool CanAbandon);
 
 public sealed record LabLibraryDto(
     Guid Id, Guid LabSpecimenId, Guid SourceContainerId, Guid LibraryContainerId,

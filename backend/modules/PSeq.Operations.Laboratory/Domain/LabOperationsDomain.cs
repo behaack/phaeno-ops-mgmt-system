@@ -250,6 +250,7 @@ public sealed class LabProtocolVersion
         if (actorUserId == Guid.Empty) throw new ArgumentException("An approval actor is required.");
         if (enforceActorSeparation && actorUserId == AuthoredByUserId)
             throw new InvalidOperationException("A protocol author cannot approve the same protocol version.");
+        LabProtocolDefinition.Parse(DefinitionJson);
         Status = LabProtocolStatus.Approved;
         ApprovedByUserId = actorUserId;
         ApprovedAtUtc = utcNow;
@@ -273,6 +274,7 @@ public sealed class LabProtocolVersion
         if (actorUserId == Guid.Empty) throw new ArgumentException("An activation actor is required.");
         if (enforceActorSeparation && actorUserId == AuthoredByUserId)
             throw new InvalidOperationException("A protocol author cannot activate the same protocol version.");
+        LabProtocolDefinition.Parse(DefinitionJson);
         Status = LabProtocolStatus.Active;
     }
 
@@ -284,7 +286,7 @@ public sealed class LabProtocolVersion
     }
 
     private static string RequiredDefinition(string value) =>
-        string.IsNullOrWhiteSpace(value) ? throw new ArgumentException("A protocol definition is required.") : value;
+        LabProtocolDefinition.Parse(value).ToJson();
 }
 
 public enum LabExecutionStatus
@@ -332,14 +334,47 @@ public sealed class LabProtocolExecution : LabAuditedEntity
         StartedAtUtc = utcNow;
     }
 
-    public void Complete(string capturedResultsJson, string? deviationNote, DateTime utcNow)
+    public void RecordStep(LabProtocolVersion protocol, LabProtocolStepInput input,
+        Guid actorUserId, IReadOnlySet<LabRole> roles, DateTime utcNow)
     {
-        if (Status is not (LabExecutionStatus.InProgress or LabExecutionStatus.Blocked))
-            throw new InvalidOperationException("Only started work can complete.");
-        CapturedResultsJson = string.IsNullOrWhiteSpace(capturedResultsJson) ? "{}" : capturedResultsJson;
+        RequireStarted();
+        var definition = RequirePinnedDefinition(protocol);
+        var evidence = LabProtocolEvidence.Read(CapturedResultsJson)
+            .Append(definition, input, actorUserId, roles, utcNow);
+        CapturedResultsJson = evidence.ToJson();
+        Status = evidence.HasUnresolvedQc ? LabExecutionStatus.Blocked : LabExecutionStatus.InProgress;
+    }
+
+    public void Complete(LabProtocolVersion protocol, string? deviationNote, DateTime utcNow)
+    {
+        RequireStarted();
+        var blockers = LabProtocolEvidence.Read(CapturedResultsJson)
+            .CompletionBlockers(RequirePinnedDefinition(protocol));
+        if (blockers.Count > 0) throw new InvalidOperationException(string.Join(" ", blockers));
         DeviationNote = Optional(deviationNote, 4000);
         Status = LabExecutionStatus.Completed;
         CompletedAtUtc = utcNow;
+    }
+
+    public void Abandon(string? reason)
+    {
+        if (Status is LabExecutionStatus.Completed or LabExecutionStatus.Abandoned)
+            throw new InvalidOperationException("Finished execution records are immutable.");
+        DeviationNote = Required(reason!, "Abandonment reason", 4000);
+        Status = LabExecutionStatus.Abandoned;
+    }
+
+    private void RequireStarted()
+    {
+        if (Status is not (LabExecutionStatus.InProgress or LabExecutionStatus.Blocked))
+            throw new InvalidOperationException("Only started work can record evidence or complete.");
+    }
+
+    private LabProtocolDefinition RequirePinnedDefinition(LabProtocolVersion protocol)
+    {
+        if (protocol.Id != LabProtocolVersionId)
+            throw new InvalidOperationException("Use the protocol version pinned to this execution.");
+        return LabProtocolDefinition.Parse(protocol.DefinitionJson);
     }
 }
 

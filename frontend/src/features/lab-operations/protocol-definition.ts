@@ -27,6 +27,9 @@ const captureSchema = z.object({
   unit: z.string().trim().max(50),
   choices: z.string().trim().max(1000),
 }).superRefine((capture, context) => {
+  if (capture.type === 'choice' && new Set(splitList(capture.choices)).size !== splitList(capture.choices).length) {
+    context.addIssue({ code: 'custom', message: 'Choices cannot repeat.', path: ['choices'] })
+  }
   if (capture.type === 'choice' && splitList(capture.choices).length === 0) {
     context.addIssue({
       code: 'custom',
@@ -83,17 +86,17 @@ export type ProtocolDefinition = {
     name: string
     instructions: string
     required: boolean
-    condition?: string
+    condition?: string | null
     repeatable: boolean
     operatorConfirmation: boolean
-    requiredRole?: Exclude<ProtocolStepFormValues['requiredRole'], ''>
+    requiredRole?: Exclude<ProtocolStepFormValues['requiredRole'], ''> | null
     captures: Array<{
       key: string
       label: string
       type: typeof protocolCaptureTypes[number]
       required: boolean
-      unit?: string
-      options?: string[]
+      unit?: string | null
+      options?: string[] | null
     }>
     inputMaterials: string[]
     preparedOutputs: string[]
@@ -101,7 +104,7 @@ export type ProtocolDefinition = {
     qcGate?: {
       criteria: string
       outcomes: ['pass', 'fail', 'hold']
-    }
+    } | null
   }>
 }
 
@@ -109,25 +112,25 @@ const storedProtocolCaptureSchema = z.object({
   label: z.string().default(''),
   type: z.enum(protocolCaptureTypes).default('text'),
   required: z.boolean().default(true),
-  unit: z.string().optional(),
-  options: z.array(z.string()).optional(),
+  unit: z.string().nullish(),
+  options: z.array(z.string()).nullish(),
 }).passthrough()
 
 const storedProtocolStepSchema = z.object({
   name: z.string().default(''),
   instructions: z.string().default(''),
   required: z.boolean().default(true),
-  condition: z.string().optional(),
+  condition: z.string().nullish(),
   repeatable: z.boolean().default(false),
   operatorConfirmation: z.boolean().default(false),
-  requiredRole: z.enum(protocolRoleTypes).optional(),
+  requiredRole: z.enum(protocolRoleTypes).nullish(),
   captures: z.array(storedProtocolCaptureSchema).default([]),
   inputMaterials: z.array(z.string()).default([]),
   preparedOutputs: z.array(z.string()).default([]),
   equipmentTypes: z.array(z.string()).default([]),
   qcGate: z.object({
     criteria: z.string().default(''),
-  }).passthrough().optional(),
+  }).passthrough().nullish(),
 }).passthrough()
 
 const storedProtocolDefinitionSchema = z.object({

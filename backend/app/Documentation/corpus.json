@@ -2323,7 +2323,7 @@
       "title": "Service workflows, protocol control, and execution",
       "summary": "Stitch protocols into a production service workflow, pin jobs and stages, and preserve controlled history.",
       "order": 54,
-      "reviewedAt": "2026-09-03",
+      "reviewedAt": "2026-09-05",
       "navigationGroup": "laboratory-operations",
       "contentType": "guide",
       "topicIds": [
@@ -2348,7 +2348,7 @@
       "publicationStatus": "published",
       "id": "phaeno/lab-protocol-execution",
       "route": "/docs/phaeno/lab-protocol-execution",
-      "contentHash": "9ed54da194b1d24a15fb2135eb6dc8d6ef5986a57fcdb269f969d61bcfe7d308",
+      "contentHash": "de169a7e7f7e8f06685132cc711a1113a8edb8efa493be53aed9a1050ec8d263",
       "sections": [
         {
           "heading": "Service workflows, protocol control, and execution",
@@ -2373,12 +2373,12 @@
         {
           "heading": "Record execution",
           "anchor": "record-execution",
-          "text": "Start the execution before recording step results, material consumption, or equipment use. Capture required values using the configured types and units. Record optional steps, conditional branches, deviations, and abandoned executions explicitly rather than omitting them from history. Complete the execution only when required steps and QC gates are satisfied. Store the final captured-results JSON and any deviation note with the execution record."
+          "text": "On the laboratory job's Execution tab, open the execution link. The dedicated workspace shows its pinned protocol version, specimen, instructions, resource requirements, saved evidence, and remaining completion blockers. Choose Start execution before recording work. Choose Record for the next step. Enter the measurements, dates, approved choices, file references, and barcodes required by the procedure. Units appear beside the relevant capture. A file reference records an identifier; it does not upload a file. Confirm performed work when the procedure requires it. POMS checks the saved values against the pinned definition and records your identity and the time. Use Material and Equipment on the job to record consumed lots and quantities, output-container references, and equipment use. Before confirming a step's resources, check the listed inputs, outputs, and equipment against that traceability. Resource descriptions and QC acceptance criteria are controlled instructions assessed by the operator; POMS does not infer scientific thresholds or match free-text resource descriptions automatically. Record every optional and conditional step explicitly. An allowed Skip with reason requires the reason or condition assessment. Required steps cannot be skipped, and previously performed work cannot be changed into a skip. A step with a specified Lab role must be recorded by a user with that effective role. Earlier steps must be resolved before later evidence is recorded. For a QC gate, deliberately choose Pass, Fail, or Hold. Fail and Hold require a reason. They remain visible as saved evidence, mark the execution Blocked, and prevent later steps and completion until resolved through an allowed repeat or correction. Saved progress remains available when you leave and return. When all steps and QC gates are satisfied, choose Complete execution, add an optional deviation note, and confirm completion. POMS rechecks the persisted evidence and locks the completed execution. A held or finished laboratory job cannot accept new execution evidence."
         },
         {
           "heading": "Recover safely",
           "anchor": "recover-safely",
-          "text": "Do not edit an Approved definition to repair an execution. If a protocol is wrong, create and approve a new version; update and approve the service workflow separately when its stage composition must change. If execution data is wrong, use the supported correction or repeat-work path while preserving the original record and reason."
+          "text": "Do not edit an Approved definition to repair an execution. If a protocol is wrong, create and approve a new version; update and approve the service workflow separately when its stage composition must change. If execution data is wrong, use the supported correction or repeat-work path while preserving the original record and reason. Repeat is available only when the pinned procedure allows it. Correct repairs a data-entry error and requires a Supervisor who also has the step's required role. Both require a reason, fresh confirmations, and a new saved record. Expand Step history to review every earlier value, QC outcome, reason, operator, and timestamp. If an earlier step changes, later evidence must be reviewed and recorded again before completion. If another user changes the execution during a save, POMS reloads the current record and preserves your entered values. Review the latest history before saving again. If the original action is no longer available, close the form and use an allowed repeat or correction. Abandon execution requires a reason, stops the execution, and retains its evidence. Arrange a new execution for replacement work. Historical unstructured definitions or results remain preserved with a recovery message; a Protocol Administrator must prepare a valid new approved version for new work. POMS does not silently rewrite controlled history."
         }
       ]
     },
@@ -3643,5 +3643,5 @@
       ]
     }
   ],
-  "corpusHash": "3633301d15162e46280c7f6c337e3bc2fe719fa4caf1235f23347fcdec8836fc"
+  "corpusHash": "0dd29695ab885f1725f4cb91774974fbcf6e1cd73e4ef81c1fdf6e1d5cf52b42"
 }

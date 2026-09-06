@@ -988,6 +988,36 @@ journeys. Order operations checks its current Attention section. Receipt printin
 uses A4 while named Lab-label pages keep their 50 mm by 25 mm size; dark display
 mode prints receipts on white paper.
 
+## Guided protocol completion checkpoint (2026-09-05)
+
+- [x] `e2e/lab-protocol-execution.spec.ts` uses the real job/execution components
+  with synthetic session/data and intercepted APIs. It covers job-to-execution
+  navigation, start, typed required captures, saved progress after leaving and
+  returning, QC Hold and supervisor correction with retained history,
+  conditional skip, completion, and return to the job's Execution tab.
+- [x] Stale writes reload the current execution version, preserve the entered
+  barcode, and submit the refreshed version only on the operator's retry.
+- [x] Keyboard opening, dirty Escape dismissal, and accepted cancellation retain
+  values or restore trigger focus as appropriate. Axe finds no WCAG 2/2.1/2.2
+  A/AA violations in tested states; page errors and horizontal overflow are
+  checked. The mobile journey uses dark mode and reduced motion.
+
+The focused run passed all **six** desktop/mobile scenarios:
+
+```powershell
+$env:PLAYWRIGHT_PORT = '3337'
+node node_modules/@playwright/test/cli.js test e2e/lab-protocol-execution.spec.ts --workers 1 --max-failures=1
+```
+
+Desktop/light and mobile/dark screenshots of the
+typed step and completed execution were reviewed. The isolated Vite server
+also passed its initial page-load check without a runtime overlay or page error.
+
+These are browser fixtures and separate local PostgreSQL controller proof;
+the signed-in, database-backed full laboratory browser journey and physical
+bench acceptance remain open. No external API or production protocol state was
+changed by these browser tests.
+
 ## Trial integration checkpoint (2026-09-05)
 
 `e2e/trials.spec.ts` exercises desktop and mobile Prospect scope review in the

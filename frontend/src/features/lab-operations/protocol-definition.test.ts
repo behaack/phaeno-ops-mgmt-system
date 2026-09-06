@@ -4,6 +4,7 @@ import {
   createLibraryPreparationExample,
   deserializeProtocolDefinition,
   serializeProtocolDefinition,
+  type ProtocolDefinition,
 } from './protocol-definition'
 
 describe('protocol definition authoring', () => {
@@ -20,6 +21,22 @@ describe('protocol definition authoring', () => {
 
     expect(resumed?.steps).toHaveLength(1)
     expect(resumed?.steps[0]?.name).toBe('')
+  })
+
+  it('resumes and reviews API definitions with explicit null optional fields', () => {
+    const example = createLibraryPreparationExample()
+    const stored: ProtocolDefinition = JSON.parse(serializeProtocolDefinition(example))
+    for (const step of stored.steps) {
+      step.condition ??= null
+      step.requiredRole ??= null
+      step.qcGate ??= null
+      for (const capture of step.captures) {
+        capture.unit ??= null
+        capture.options ??= null
+      }
+    }
+
+    expect(deserializeProtocolDefinition(JSON.stringify(stored))).toEqual(example)
   })
 
   it('opens an empty legacy object safely and rejects invalid JSON', () => {
