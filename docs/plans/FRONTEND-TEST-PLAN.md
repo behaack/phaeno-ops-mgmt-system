@@ -15,10 +15,23 @@ and `acceptance-fix-build.log`. No authentication, API or dependency changed.
 `crm-companies-contacts.mdx` and `crm-troubleshooting.mdx` were reviewed and remain
 accurate for these corrections; no guide/corpus content change is needed.
 
-The fixes are locally verified and await their Portal deployment identity and
-hosted recheck. The API remains at `541c875`. Earlier combined-release checks
-below are historical checkpoints; the current release and signed-in evidence is
-recorded in `REVIEW-GAP-CLOSURE-2026-09-05.md`.
+Portal deployment `dpl_D272h4HEkZGM7NmTeS94sFNYzvCx` is READY at
+`portal.phaenobiotech.com`, exact source
+`505c9eb350426e78e8949b67b766fe4a7872c6fd`. Fresh signed-in Company Edit showed
+the corrected wording. Associate Contact with empty results kept its modal open
+and focused Contact when first Escape closed the choices; the same action
+preserved a temporary Job title draft. Second Escape dismissed the dialog;
+no association was submitted. Evidence is
+in `artifacts/review-gap-closure/acceptance-ui-final.json` and
+`acceptance-crm-production-check.json`. Final health/browser/error-query evidence
+and its bounded scope are recorded in the closure plan.
+
+The API remains at `541c875`. The separately approved technical-brief receipt is
+recorded in `artifacts/review-gap-closure/acceptance-email-proof.json`; the
+external email's two-page description versus the three-page PDF remains open.
+Populated Trial/quote/sample/download acceptance remains unverified. Earlier
+combined-release checks below are historical checkpoints; the closure plan
+records current release identities and the precise acceptance boundaries.
 
 ## Combined API/Portal release checkpoint — 2026-09-05
 

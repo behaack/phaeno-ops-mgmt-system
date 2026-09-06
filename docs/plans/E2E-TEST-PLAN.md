@@ -16,19 +16,37 @@ independent Spark destination Inbox message `87697` confirm receipt at
 valid PDF. Its three-page length conflicts with the email's two-page description;
 that external Mailgun-template finding remains open. Detailed byte/hash evidence
 is in the closure plan. This single approved delivery does not establish every
-recipient or notification path.
+recipient or notification path. Evidence is retained in
+`artifacts/review-gap-closure/acceptance-email-proof.json`.
 
 Existing CRM Company list/detail, People, empty Sales and applied onboarding
 request views loaded. The session exposed association-selector Escape dismissal
 and misleading Edit Company access copy. Their local corrections passed eight
-focused component tests, scoped lint, typecheck and production build; the new
-Portal deployment and hosted recheck remain pending. Trial list and Start Trial
+focused component tests, scoped lint, typecheck and production build. Trial list
+and Start Trial
 had no Trials/eligible requests; the empty selector preserved its form on first
 Escape and Cancel worked. Configuration showed three default deliverables and no
 displayed approval authorities. Order intake had no eligible Customers or active
 work, so accepted Trial, quote, sample/shipping and Trial-download workflows were
 not exercised. External alert routing and production pause/recovery remain
 separate acceptance work. The public Website was not promoted.
+
+The narrow Portal correction is now deployed as
+`dpl_D272h4HEkZGM7NmTeS94sFNYzvCx` (READY), alias `portal.phaenobiotech.com`,
+exact source `505c9eb350426e78e8949b67b766fe4a7872c6fd`. A fresh signed-in
+Company Edit showed the corrected wording. In Associate Contact with empty
+results, first Escape closed choices while retaining the modal and focusing
+Contact. Repeating the action with a temporary Job title draft preserved it;
+second Escape dismissed the dialog, and no association was submitted. Portal
+root, Portal API-proxy health and direct API health each returned **200**; the
+browser warning/error log was empty. These are hosted checks of the reported fixes,
+not populated scientific/commercial workflow acceptance. The API remains at
+`541c875`. A bounded 50-entry server error query for the new UI deployment since
+creation at `2026-09-05T23:54:33Z` returned zero entries; this does not establish
+the absence of every runtime error. Evidence in `artifacts/review-gap-closure/`:
+`acceptance-ui-final.json`, `acceptance-crm-production-check.json`,
+`acceptance-final-health.json`, `acceptance-ui-runtime-summary.json` and the empty
+`acceptance-ui-runtime-errors.jsonl`.
 
 ## Combined API/Portal release checkpoint — 2026-09-05
 

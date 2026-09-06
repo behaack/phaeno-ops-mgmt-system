@@ -1,18 +1,20 @@
 # Review gap closure — 2026-09-05
 
-Status: the initial combined API/Portal release is live at
-`541c8759aceaf95f0fe8e64c2bbfacee3fa7744b`, with the three approved migrations
-completed after encrypted-backup checksum verification. Signed-in read paths and
-one explicitly approved technical-brief send now have hosted evidence, including
-destination Inbox receipt. Two narrow CRM corrections are locally verified and
-await production recheck. A Mailgun-template page-count mismatch remains open;
+Status: the production API remains at `541c8759aceaf95f0fe8e64c2bbfacee3fa7744b`,
+with the three approved migrations completed after encrypted-backup checksum
+verification. Portal UI `505c9eb350426e78e8949b67b766fe4a7872c6fd` is deployed;
+both narrow CRM corrections have fresh signed-in production checks. Signed-in
+read paths and one explicitly approved technical-brief send have hosted evidence,
+including destination Inbox receipt. A Mailgun-template page-count mismatch
+remains open;
 populated Trial/quote/sample/download workflows remain unverified. The separate
 public Website was not promoted. Earlier checkpoints are retained below.
 
 ## Signed-in acceptance and narrow CRM corrections — 2026-09-05
 
-These observations used the production release `541c875`; they do not establish
-that the subsequent CRM source corrections are deployed.
+Initial hosted observations used release `541c875`. The subsequent Portal-only
+CRM correction and its fresh production checks are identified separately below;
+the API remains unchanged.
 
 - **Web Operations:** the signed-in operator accessed 12 Mailing List records,
   two Demo Requests, and the third Email delivery tab. Keyboard tab selection
@@ -28,7 +30,8 @@ that the subsequent CRM source corrections are deployed.
   (`donotreply@phaenobiotech.com`), received at `16:43 PDT / 23:43 UTC`, with an
   Important label. These are minute-precision timestamps, not a measured
   second-level delivery latency. This proves this single approved delivery,
-  not every recipient, notification kind or future attempt.
+  not every recipient, notification kind or future attempt. Evidence:
+  `artifacts/review-gap-closure/acceptance-email-proof.json`.
 - **Brief link and remaining content finding:** the exact received link returned
   **200**, `application/pdf`, **292,851 bytes**, and a `%PDF-1.7` signature.
   SHA-256: `8C57056BC869090DDADC4BF1A71538E7235488E2753C97D573667C5912430ABB`.
@@ -54,9 +57,25 @@ that the subsequent CRM source corrections are deployed.
   `artifacts/review-gap-closure/acceptance-fix-typecheck.log` and
   `acceptance-fix-build.log`. There are no authentication, API or dependency
   changes. The two affected CRM guides were reviewed; these corrections restore
-  expected behavior, so no guide/corpus content change is required. The fixes
-  are **local and verified**, awaiting the new Portal release identity and
-  production recheck. The API remains at `541c875`.
+  expected behavior, so no guide/corpus content change is required.
+- **CRM correction deployed and rechecked:** Portal deployment
+  `dpl_D272h4HEkZGM7NmTeS94sFNYzvCx` is **READY**, with
+  `portal.phaenobiotech.com` assigned to exact source
+  `505c9eb350426e78e8949b67b766fe4a7872c6fd`. A fresh signed-in Company Edit
+  displayed the corrected wording. In Associate Contact with empty results,
+  first Escape closed choices, retained the modal and focused Contact. Repeating
+  that action with a temporary Job title draft preserved the draft; the second
+  Escape dismissed the dialog. No association was submitted. Portal root, Portal
+  `/api/health` proxy and direct API `/api/health` each returned **200**, and the
+  browser warning/error log was empty. A bounded 50-entry error query for this
+  UI deployment since its creation at `2026-09-05T23:54:33Z` returned zero entries.
+  Evidence in `artifacts/review-gap-closure/`: `acceptance-ui-final.json`,
+  `acceptance-crm-production-check.json`, `acceptance-final-health.json`,
+  `acceptance-ui-runtime-summary.json` and `acceptance-ui-runtime-errors.jsonl`.
+  The bounded query does not establish the absence of every runtime error.
+  The API remains at
+  `541c875`; this Portal source identity is distinct from a later documentation
+  commit. These specific UI checks do not add populated Trial/download proof.
 
 The signed-in observations and approved email resolve part of the original
 acceptance boundary. Actual production pause/resume, multi-instance recovery,
