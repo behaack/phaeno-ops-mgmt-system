@@ -184,4 +184,79 @@ SELECT jsonb_build_object('section', 'commercial_profile_flags', 'row_count', co
     'synthetic_qbo_reference_count', count(*) FILTER (WHERE qbo_customer_id LIKE 'local-%'))
 FROM commercial_ops.organization_commercial_profiles;
 
+-- Focused evidence for the single production link lost by the table-fold
+-- migration. Fixed identifiers come from the immutable original-link audit.
+WITH target AS (
+    SELECT '6d0f41aa-35e9-4b97-b235-ff1ebf71b293'::uuid AS company_id,
+        '37b12cf9-658b-4e49-b5a7-52a4841f1b24'::uuid AS organization_id,
+        '66de39f7-b424-4923-a8a6-17fe79dd6cfa'::uuid AS source_audit_id
+), source AS (
+    SELECT a.* FROM commercial_ops.audit_events a JOIN target t ON a.id = t.source_audit_id
+        WHERE a.entity_name = 'CrmPortalAccountLink'
+), original_events AS (
+    SELECT a.id, a.occurred_at, a.actor_user_id,
+        CASE WHEN a.operation IN ('Created', 'Updated', 'Deleted') THEN a.operation ELSE 'Other' END AS operation,
+        v.company_old = t.company_id::text AS old_company_matches,
+        v.company_new = t.company_id::text AS new_company_matches,
+        v.organization_old = t.organization_id::text AS old_organization_matches,
+        v.organization_new = t.organization_id::text AS new_organization_matches,
+        CASE WHEN v.active_old IN ('true', 'false') THEN v.active_old::boolean END AS old_active,
+        CASE WHEN v.active_new IN ('true', 'false') THEN v.active_new::boolean END AS new_active,
+        (v.company_old IS NOT NULL AND v.company_old <> t.company_id::text)
+            OR (v.company_new IS NOT NULL AND v.company_new <> t.company_id::text)
+            OR (v.organization_old IS NOT NULL AND v.organization_old <> t.organization_id::text)
+            OR (v.organization_new IS NOT NULL AND v.organization_new <> t.organization_id::text) AS conflicting_pair
+    FROM commercial_ops.audit_events a JOIN source s ON a.entity_name = s.entity_name AND a.entity_id = s.entity_id
+    CROSS JOIN target t CROSS JOIN LATERAL (SELECT
+        coalesce(a.changes_json #>> '{CompanyId,old}', a.changes_json #>> '{companyId,old}') AS company_old,
+        coalesce(a.changes_json #>> '{CompanyId,new}', a.changes_json #>> '{companyId,new}') AS company_new,
+        coalesce(a.changes_json #>> '{OrganizationId,old}', a.changes_json #>> '{organizationId,old}') AS organization_old,
+        coalesce(a.changes_json #>> '{OrganizationId,new}', a.changes_json #>> '{organizationId,new}') AS organization_new,
+        coalesce(a.changes_json #>> '{IsActive,old}', a.changes_json #>> '{isActive,old}') AS active_old,
+        coalesce(a.changes_json #>> '{IsActive,new}', a.changes_json #>> '{isActive,new}') AS active_new) v
+), company_link_events AS (
+    SELECT a.id, a.occurred_at, a.actor_user_id,
+        CASE WHEN a.operation IN ('Created', 'Updated', 'Deleted') THEN a.operation ELSE 'Other' END AS operation,
+        coalesce(a.changes_json #>> '{AccessOrganizationId,old}', a.changes_json #>> '{accessOrganizationId,old}') IS NULL AS old_link_null,
+        coalesce(a.changes_json #>> '{AccessOrganizationId,new}', a.changes_json #>> '{accessOrganizationId,new}') IS NULL AS new_link_null,
+        coalesce(a.changes_json #>> '{AccessOrganizationId,old}', a.changes_json #>> '{accessOrganizationId,old}') = t.organization_id::text AS old_link_matches,
+        coalesce(a.changes_json #>> '{AccessOrganizationId,new}', a.changes_json #>> '{accessOrganizationId,new}') = t.organization_id::text AS new_link_matches
+    FROM commercial_ops.audit_events a CROSS JOIN target t
+    WHERE a.entity_name = 'CrmCompany' AND a.entity_id = t.company_id::text
+        AND (a.changes_json ? 'AccessOrganizationId' OR a.changes_json ? 'accessOrganizationId')
+), related_requests AS (
+    SELECT r.id, r.organization_id, r.request_type, r.status, r.version, r.requested_organization_kind,
+        coalesce((SELECT jsonb_agg(jsonb_build_object('id', h.id, 'company_id', h.company_id) ORDER BY h.id)
+            FROM commercial_ops.crm_handoffs h WHERE h.relationship_request_id = r.id), '[]'::jsonb) AS handoffs,
+        coalesce((SELECT jsonb_agg(rs.service ORDER BY rs.service) FROM commercial_ops.portal_integration_request_services rs
+            WHERE rs.portal_integration_request_id = r.id), '[]'::jsonb) AS requested_services,
+        r.status = 'Approved' AND r.organization_id IS NULL AND r.request_type IN ('Onboarding', 'Evaluation')
+            AND r.requested_organization_kind = 'Customer'
+            AND EXISTS (SELECT 1 FROM commercial_ops.crm_handoffs h WHERE h.relationship_request_id = r.id AND h.company_id = t.company_id) AS canonical_account_recovery_candidate,
+        r.status = 'Approved' AND r.organization_id = t.organization_id
+            AND EXISTS (SELECT 1 FROM commercial_ops.crm_handoffs h WHERE h.relationship_request_id = r.id AND h.company_id = t.company_id) AS canonical_apply_relink_candidate
+    FROM commercial_ops.portal_integration_requests r CROSS JOIN target t
+    WHERE r.organization_id = t.organization_id OR EXISTS (SELECT 1 FROM commercial_ops.crm_handoffs h
+        WHERE h.relationship_request_id = r.id AND h.company_id = t.company_id)
+)
+SELECT jsonb_build_object('section', 'confirmed_link_repair_evidence',
+    'company', (SELECT jsonb_build_object('id', c.id, 'version', c.version, 'is_active', c.is_active,
+        'access_organization_id', c.access_organization_id, 'same_name_as_original_organization', c.name = o.name)
+        FROM target t JOIN commercial_ops.crm_companies c ON c.id = t.company_id
+        JOIN commercial_ops.organizations o ON o.id = t.organization_id),
+    'original_link_event_count', (SELECT count(*) FROM original_events),
+    'original_link_events', coalesce((SELECT jsonb_agg(to_jsonb(e) ORDER BY e.occurred_at, e.id)
+        FROM (SELECT * FROM original_events ORDER BY occurred_at, id LIMIT 250) e), '[]'::jsonb),
+    'original_link_events_truncated', (SELECT count(*) > 250 FROM original_events),
+    'has_tied_original_event_timestamps', (SELECT count(*) <> count(DISTINCT occurred_at) FROM original_events),
+    'latest_original_link_audit_id', (SELECT id FROM original_events ORDER BY occurred_at DESC, id DESC LIMIT 1),
+    'company_link_event_count', (SELECT count(*) FROM company_link_events),
+    'company_link_events', coalesce((SELECT jsonb_agg(to_jsonb(e) ORDER BY e.occurred_at, e.id)
+        FROM (SELECT * FROM company_link_events ORDER BY occurred_at, id LIMIT 250) e), '[]'::jsonb),
+    'company_link_events_truncated', (SELECT count(*) > 250 FROM company_link_events),
+    'related_request_count', (SELECT count(*) FROM related_requests),
+    'related_requests', coalesce((SELECT jsonb_agg(to_jsonb(r) ORDER BY r.id)
+        FROM (SELECT * FROM related_requests ORDER BY id LIMIT 250) r), '[]'::jsonb),
+    'related_requests_truncated', (SELECT count(*) > 250 FROM related_requests));
+
 COMMIT;
