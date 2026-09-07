@@ -1,6 +1,6 @@
 # Portal consistency documentation and production release
 
-Completed September 7, 2026: the final application revision `1c55725dc07ed0213c9d1a796f499239ec436c42` is live on both API and Portal production. All 55 User guides and the 16-page Word guide were reviewed, the audit-proven Company link was restored, temporary tooling was removed, and documentation was checked again. Approved sample-submission instructions and signed-in populated acceptance remain separate outstanding operational work.
+Completed September 7, 2026: the final application revision `1c55725dc07ed0213c9d1a796f499239ec436c42` is live on both API and Portal production. All 55 User guides and the Word guide were reviewed, the audit-proven Company link was restored, temporary tooling was removed, and documentation was checked again. The subsequent screenshot update expands the Word guide to 25 pages with 10 figures, as recorded below. Approved sample-submission instructions and signed-in populated acceptance remain separate outstanding operational work.
 
 ## Authorized scope
 
@@ -71,5 +71,13 @@ Final cleanup checkpoint: TypeScript, full zero-warning ESLint, documentation co
 - [Final API workflow 34158278358](https://github.com/behaack/phaeno-ops-mgmt-system/actions/runs/34158278358): succeeded; running `source_revision` matches the application commit, image tag `sha-1c55725dc07e-run-34158278358-1`. Migrations and identity cutover were false; temporary maintenance inputs no longer exist.
 - [Final Portal deployment](https://vercel.com/cadexgenomics/phaeno-ops-mgmt-system/5UHmcotjbnzdQ24yx1wNaT8szN2k): `dpl_5UHmcotjbnzdQ24yx1wNaT8szN2k`, Ready, Production environment, matching source commit, aliased to `https://portal.phaenobiotech.com`.
 - Independent checks at 20:11 UTC: API health healthy/200, database ping 204, anonymous protected session 401, Portal entry point 200. Final UI runtime logs show that production-domain 200 with zero console Warning/Error/Fatal entries in the observed window.
-- The final Word file and generated 55-guide corpus retain the verified hashes above. No application test suite was run. The unrelated local Website search-index binary was excluded from every commit.
+- At application release, the Word file and generated 55-guide corpus retained the verified hashes above. The subsequent Word screenshot revision is recorded below. No application test suite was run. The unrelated local Website search-index binary was excluded from every commit.
 - The final release-evidence documentation commit does not change application code or bundled User documentation; production intentionally remains on the exact application revision identified above.
+
+## Illustrated Word guide update
+
+At the Product Owner's request, the guide now contains 10 current Portal screenshots across 25 pages: shared defaults, Order intake, the per-order pricing form, shipment-packet lookup, Trial approver assignment, the Trial deliverable catalog, retention policy, receipt recording, receipt importing and reconciliation. Captures came from the signed-in local application; they illustrate controls and draft states, not completed production transactions. No business records were saved during capture.
+
+All 213 original paragraphs and substantive table content are preserved. Each figure is embedded with a numbered caption and alternative text. Wide screens use landscape pages; the contents references match the final pagination. All 25 final pages were rendered and visually reviewed. The accessibility audit returned zero high, medium or low findings; document-package validation confirms 10 embedded inline images and no externally linked images.
+
+Final file: `docs/Phaeno-POMS-Order-to-Cash-Guide.docx`, 479,634 bytes. SHA-256: `072ce9f22dfc85030cddc48f388e01665356439df2dcebe1c5c1ac93f3863c18`. Temporary authoring and rendering helper code was removed after verification. This documentation-only update does not change the deployed application or the 55-guide Portal corpus.
