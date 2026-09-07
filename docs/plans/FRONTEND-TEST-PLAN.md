@@ -965,3 +965,15 @@ New and updated focused coverage includes:
 - `ResultReleasePanel.test.tsx` and `StructuredQcFields.test.tsx`: package identity and permissions, release confirmation/concurrency, structured measurements and validation.
 
 Suites are authored but not run, following repository scope. TypeScript, lint and browser findings are reported separately; these do not substitute for full populated Customer/Partner operational acceptance.
+
+## Portal consistency second pass (September 7, 2026)
+
+Focused regression sources cover CRM incremental association and merge lookup, failed reads versus empty collections, reviewed Contact lifecycle actions and protected drafts; Finance invoice/receipt/selected-invoice snapshots and conflict review, active-section query isolation and reconciliation scope; Trial dirty/pending guards and configuration refresh failures; shipment packet revisions and sample/tube counts; Lab return context; and global/Company retention snapshots with protected cancellation.
+
+Final additions at implementation freeze:
+
+- `CrmRecordEditSnapshots.test.tsx` (**4 cases**) covers Company edit fields and reviewed version surviving background refresh and failed save, fresh loaded details after reopening that editor, Contact communication preference and reviewed version retention, Company lifecycle confirmation retaining its original name/action/version, and Company ownership reassignment retaining its selected owner and reviewed version. The reopen assertions belong to the Company edit case.
+- `CuratedCatalogDialogs.test.tsx` (**4 parameterized cases**) covers dataset creation, detail editing, deactivation and exact-version retirement. Every case exercises declined discard, pending disabled controls and Escape protection, failed-entry retention, header feedback and clean reopening; existing-record actions also assert the version captured before background refresh. Coverage is limited to these four catalog actions.
+- `ExternalOrderDecisionDialogs.test.tsx` (**10 parameterized cases**) covers two scenarios across five dialogs: Customer Lab cancellation, Partner Assembly cancellation, Partner Reagent cancellation, Customer Lab quote acceptance and Partner Assembly quote acceptance. Dirty drafts survive declined Close, footer dismissal, Escape and navigation; browser reload protection is checked through the before-unload guard. Confirmed discard resets entries. Pending requests prevent duplicate submission, editing and dismissal; failed requests retain entries and a successful mocked retry closes the dialog and clears navigation protection.
+
+See [the second-pass tracker](PORTAL-POMS-CONSISTENCY-SECOND-PASS-2026-09-07.md) for source and verification status. These suites are authored and **have not been run**. Static checks and direct browser observations are separate evidence; this entry claims no final verification or deployment. Synthetic component coverage does not establish populated Customer/Partner, financial or physical laboratory acceptance.

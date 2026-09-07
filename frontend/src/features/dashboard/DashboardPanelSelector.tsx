@@ -1,4 +1,4 @@
-import { Link } from '@tanstack/react-router'
+import { Link, useNavigate, useSearch } from '@tanstack/react-router'
 import {
   useMutation,
   useQuery,
@@ -131,7 +131,12 @@ const operationsPanels = {
   },
 } as const
 
-type DashboardSection = 'orders' | 'lab' | 'accounts' | 'webOps'
+export type DashboardSection = 'orders' | 'lab' | 'accounts' | 'webOps'
+
+export function parseDashboardSection(value: unknown): DashboardSection | undefined {
+  return value === 'orders' || value === 'lab' || value === 'accounts' || value === 'webOps'
+    ? value : undefined
+}
 
 const mockMailingListPage: WebOpsPage<WebOpsMailingListContact> = {
   page: 1,
@@ -184,7 +189,12 @@ const mockDemoRequestPage: WebOpsPage<WebOpsDemoRequest> = {
 }
 
 export function DashboardPanelSelector() {
-  const [section, setSection] = useState<DashboardSection>('orders')
+  const search = useSearch({ strict: false })
+  const navigate = useNavigate()
+  const section = parseDashboardSection(search.dashboardSection) ?? 'orders'
+  const setSection = (dashboardSection: DashboardSection) => {
+    void navigate({ to: '/', search: previous => ({ ...previous, dashboardSection }) })
+  }
   const [mailingListPage, setMailingListPage] = useState(1)
   const [demoRequestPage, setDemoRequestPage] = useState(1)
   const { authProvider, session } = usePhaenoSession()

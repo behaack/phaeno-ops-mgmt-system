@@ -25,6 +25,7 @@ export function TrialProjectsPage({ search, status, owner, requestId, fromCompan
   const clearFilters = () => { setSettledSearch(''); onFilter({ q: '', status: '', owner: '' }); searchInputRef.current?.focus() }
   const [creating, setCreating] = useState(Boolean(requestId))
   const createdFromRequest = useRef(false)
+  const createdTrialId = useRef<string | null>(null)
   const mutation = useTrialMutation<TrialDetail>()
   const navigate = useNavigate()
   if (!queries.allowed) return <p className="p-6">Trial projects are unavailable for this organization and department.</p>
@@ -75,7 +76,7 @@ export function TrialProjectsPage({ search, status, owner, requestId, fromCompan
           {!hasFilters && queries.staff ? <Button asChild variant="outline" className="mt-4"><Link to="/crm/companies">View CRM companies</Link></Button> : null}
         </div>}
     </section>
-    {creating && queries.staff ? <TrialCreateDialog requestId={requestId} fromCompanyId={fromCompanyId} onClose={() => { setCreating(false); if (requestId && !createdFromRequest.current) onFilter({ requestId: undefined }) }} onSubmit={async (values, key) => { const created = await mutation.mutateAsync({ path: '', payload: values, key }); createdFromRequest.current = true; await navigate({ to: '/trial-projects/$trialId', params: { trialId: created.id }, search: { fromCompanyId } }) }} /> : null}
+    {creating && queries.staff ? <TrialCreateDialog requestId={requestId} fromCompanyId={fromCompanyId} onClose={() => { setCreating(false); if (createdTrialId.current) { void navigate({ to: '/trial-projects/$trialId', params: { trialId: createdTrialId.current }, search: { q: search, status, owner, fromCompanyId } }); createdTrialId.current = null } else if (requestId && !createdFromRequest.current) onFilter({ requestId: undefined }) }} onSubmit={async (values, key) => { const created = await mutation.mutateAsync({ path: '', payload: values, key }); createdFromRequest.current = true; createdTrialId.current = created.id }} /> : null}
   </main>
 }
 function TrialCreateDialog({ requestId, fromCompanyId, onClose, onSubmit }: { requestId?: string; fromCompanyId?: string; onClose: () => void; onSubmit: (values: Record<string, string>, key: string) => Promise<void> }) {

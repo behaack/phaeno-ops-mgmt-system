@@ -130,7 +130,7 @@ export function LabReceiptAccessionPanel({
                 </div>
                 {!packetScan.data.isVoided ? (
                   <Button asChild>
-                    <Link to="/lab-operations/$workOrderId" params={{ workOrderId: packetScan.data.labWorkOrderId }} search={{ section: undefined }}>
+                    <Link to="/lab-operations/$workOrderId" params={{ workOrderId: packetScan.data.labWorkOrderId }} search={{ section: 'receipt', shipmentId: packetScan.data.shipmentId, tab: 'specimens', packet: packetScan.data.barcode }}>
                       Open Lab work
                     </Link>
                   </Button>
@@ -159,7 +159,7 @@ export function LabReceiptAccessionPanel({
                     <Button type="submit" disabled={!tubeBarcode.trim() || tubeScan.isPending}><ScanLine data-icon="inline-start" />{tubeScan.isPending ? 'Comparing…' : 'Compare tube'}</Button>
                   </form>
                   {tubeScan.error ? <Alert variant="destructive" className="mt-3"><AlertTitle>Tube could not be checked</AlertTitle><AlertDescription>{getOrderErrorMessage(tubeScan.error, 'Check the complete barcode and scan again.')}</AlertDescription></Alert> : null}
-                  {tubeScan.data?.isExpected && !tubeScan.data.isAccessioned ? <Button asChild className="mt-3"><Link to="/lab-operations/$workOrderId" params={{ workOrderId: packetScan.data.labWorkOrderId }} search={{ section: 'receipt', tab: 'specimens', packet: packetScan.data.barcode, tube: tubeScan.data.supplierTubeBarcode }}>Continue to receipt and accession</Link></Button> : null}
+                  {tubeScan.data?.isExpected && !tubeScan.data.isAccessioned ? <Button asChild className="mt-3"><Link to="/lab-operations/$workOrderId" params={{ workOrderId: packetScan.data.labWorkOrderId }} search={{ section: 'receipt', shipmentId: packetScan.data.shipmentId, tab: 'specimens', packet: packetScan.data.barcode, tube: tubeScan.data.supplierTubeBarcode }}>Continue to receipt and accession</Link></Button> : null}
                   {tubeScan.data ? <Alert variant={tubeScan.data.isExpected ? 'default' : 'destructive'} className="mt-3"><AlertTitle>{tubeScan.data.isExpected ? (tubeScan.data.isAccessioned ? 'Tube was already accessioned' : 'Tube matches this packet') : 'Stop: tube does not match this packet'}</AlertTitle><AlertDescription>{tubeScan.data.isExpected ? `${tubeScan.data.supplierTubeBarcode} maps to Customer sample ${tubeScan.data.customerSampleId}. This comparison did not record receipt or accession.` : tubeScanOutcome(tubeScan.data.outcome)}</AlertDescription></Alert> : null}
                 </div>
               )}
@@ -178,12 +178,12 @@ export function LabReceiptAccessionPanel({
             {awaitingSpecimens.map((item) => (
               <div key={item.id} className="flex flex-wrap items-center justify-between gap-3 py-4">
                 <div>
-                  <Link to="/lab-operations/$workOrderId" params={{ workOrderId: item.id }} search={{ section: undefined }} className="font-medium text-primary hover:underline">
+                  <Link to="/lab-operations/$workOrderId" params={{ workOrderId: item.id }} search={{ section: 'receipt', shipmentId }} className="font-medium text-primary hover:underline">
                     {item.commercialOrderNumber ?? item.id}
                   </Link>
                   <p className="mt-1 text-xs text-muted-foreground">{item.specimenCount} expected specimen(s) · updated {formatDateTime(item.updatedAt)}</p>
                 </div>
-                <div className="flex items-center gap-2"><OrderStatusBadge status={item.status} /><Button asChild><Link to="/lab-operations/$workOrderId" params={{ workOrderId: item.id }} search={{ section: undefined }}>Open receipt</Link></Button></div>
+                <div className="flex items-center gap-2"><OrderStatusBadge status={item.status} /><Button asChild><Link to="/lab-operations/$workOrderId" params={{ workOrderId: item.id }} search={{ section: 'receipt', shipmentId }}>Open receipt</Link></Button></div>
               </div>
             ))}
           </div>

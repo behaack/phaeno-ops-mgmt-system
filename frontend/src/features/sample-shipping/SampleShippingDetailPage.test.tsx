@@ -93,12 +93,50 @@ describe('SampleShippingDetailPage', () => {
       },
     ))
   })
+
+  it('shows packet failures inside the dialog and clears them when starting a new attempt', async () => {
+    api.issueSampleShippingPacket.mockRejectedValueOnce(new Error('Packet changed. Review the current revision.'))
+    renderPage()
+    await screen.findByRole('heading', { name: shipment.shipmentNumber })
+    fireEvent.click(screen.getByRole('button', { name: 'Replace packet' }))
+    const dialog = screen.getByRole('dialog', { name: 'Replace shipping packet' })
+    fireEvent.change(within(dialog).getByLabelText(/Replacement reason/), { target: { value: 'Damaged paper copy.' } })
+    fireEvent.click(within(dialog).getByRole('button', { name: 'Void and replace packet' }))
+
+    expect(await within(dialog).findByRole('alert')).toBeTruthy()
+    expect((within(dialog).getByLabelText(/Replacement reason/) as HTMLInputElement).value).toBe('Damaged paper copy.')
+    fireEvent.click(within(dialog).getByRole('button', { name: 'Keep reviewing' }))
+    fireEvent.click(screen.getByRole('button', { name: 'Replace packet' }))
+    expect(within(screen.getByRole('dialog')).queryByRole('alert')).toBeNull()
+  })
+
+  it('counts one sample with multiple tube slots once in packet confirmation', async () => {
+    api.getSampleShipment.mockResolvedValue({ ...shipment, status: 'Preparing', currentPacket: null, crosswalk: [
+      { ...shipment.crosswalk[0], tubeSlotId: 'slot-1', tubeOrdinal: 1, tubeCount: 2 },
+      { ...shipment.crosswalk[0], tubeSlotId: 'slot-2', tubeOrdinal: 2, tubeCount: 2, supplierTubeBarcode: 'TUBE-0002' },
+    ] })
+    renderPage()
+    await screen.findByRole('heading', { name: shipment.shipmentNumber })
+    fireEvent.click(screen.getByRole('button', { name: 'Review and confirm packet' }))
+    expect(screen.getByRole('dialog', { name: 'Confirm shipping packet' }).textContent).toContain('1 sample across 2 tubes')
+  })
+
+  it('invalidates an earlier packet preview after issuing a replacement', async () => {
+    const queryClient = new QueryClient({ defaultOptions: { queries: { retry: false }, mutations: { retry: false } } })
+    queryClient.setQueryData(['sample-shipping-packet', shipment.id], { revision: 1 })
+    renderPage(queryClient)
+    await screen.findByRole('heading', { name: shipment.shipmentNumber })
+    fireEvent.click(screen.getByRole('button', { name: 'Replace packet' }))
+    const dialog = screen.getByRole('dialog', { name: 'Replace shipping packet' })
+    fireEvent.change(within(dialog).getByLabelText(/Replacement reason/), { target: { value: 'Damaged paper copy.' } })
+    fireEvent.click(within(dialog).getByRole('button', { name: 'Void and replace packet' }))
+    await waitFor(() => expect(queryClient.getQueryState(['sample-shipping-packet', shipment.id])?.isInvalidated).toBe(true))
+  })
 })
 
-function renderPage() {
-  const queryClient = new QueryClient({
+function renderPage(queryClient = new QueryClient({
     defaultOptions: { queries: { retry: false }, mutations: { retry: false } },
-  })
+  })) {
   return render(
     <QueryClientProvider client={queryClient}>
       <PhaenoSessionContext.Provider value={customerSession()}>

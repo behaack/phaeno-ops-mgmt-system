@@ -54,6 +54,7 @@ function DialogContent({
   onEscapeKeyDown,
   onOpenAutoFocus,
   onCloseAutoFocus,
+  onMouseDownCapture,
   showCloseButton = true,
   ...props
 }: React.ComponentProps<typeof DialogPrimitive.Content> & {
@@ -67,6 +68,27 @@ function DialogContent({
       <DialogOverlay />
       <DialogPrimitive.Content
         data-slot="dialog-content"
+        onMouseDownCapture={(event) => {
+          onMouseDownCapture?.(event)
+          if (event.defaultPrevented || event.button !== 0) return
+          const action = event.target instanceof Element
+            ? event.target.closest('button')
+            : null
+          const active = document.activeElement
+          if (
+            action && !action.disabled
+            && action.closest('[data-slot="dialog-content"]') === event.currentTarget
+            && (action.closest('[data-slot="dialog-footer"]') || action.matches('[data-slot="dialog-close"]'))
+            && active instanceof HTMLElement
+            && active.closest('[data-slot="dialog-content"]') === event.currentTarget
+            && active.matches('input, select, textarea, [contenteditable="true"]')
+          ) {
+            // Blur validation can resize a centered dialog between mouse-down and
+            // click, moving the intended action away. Let the action handle focus
+            // and submission; ordinary field blur and keyboard navigation remain intact.
+            event.preventDefault()
+          }
+        }}
         onOpenAutoFocus={(event) => {
           const active = document.activeElement
           openerRef.current = active instanceof HTMLElement && active !== document.body ? active : null

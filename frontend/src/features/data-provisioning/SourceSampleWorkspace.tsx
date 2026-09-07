@@ -163,7 +163,7 @@ export function SourceSampleWorkspace({ sourceSampleId }: { sourceSampleId: stri
     onSuccess: async () => {
       discardForm.reset()
       setDiscardOpen(false)
-      await navigate({ to: '/data-provisioning' })
+      await navigate({ to: '/data-provisioning', search: { section: 'sources' } })
       queryClient.removeQueries({
         queryKey: ['data-provisioning', 'source-samples', sourceSampleId],
       })
@@ -469,7 +469,7 @@ function Field({ label, error, errorId, required, children }: { label: string; e
 }
 
 function BackLink() {
-  return <Link to="/data-provisioning" className="inline-flex items-center gap-2 text-sm font-medium text-foreground underline underline-offset-4 hover:no-underline"><ArrowLeft aria-hidden="true" className="size-4" />Back to data provisioning</Link>
+  return <Link to="/data-provisioning" search={{ section: 'sources' }} className="inline-flex items-center gap-2 text-sm font-medium text-foreground underline underline-offset-4 hover:no-underline"><ArrowLeft aria-hidden="true" className="size-4" />Back to Source registry</Link>
 }
 
 function ErrorAlert({ error, fallback }: { error: unknown; fallback: string }) {

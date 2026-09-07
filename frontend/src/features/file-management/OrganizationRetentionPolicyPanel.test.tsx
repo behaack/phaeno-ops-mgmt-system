@@ -1,5 +1,5 @@
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
-import { fireEvent, render, screen, waitFor } from '@testing-library/react'
+import { act, fireEvent, render, screen, waitFor } from '@testing-library/react'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
 import type { OrganizationReleasedDeliverablePolicy } from '#/api/file-management'
@@ -11,6 +11,8 @@ const api = vi.hoisted(() => ({
   removeOverride: vi.fn(),
   upsertOverride: vi.fn(),
 }))
+
+vi.mock('@tanstack/react-router', () => ({ useBlocker: vi.fn() }))
 
 vi.mock('#/api/file-management', () => ({
   fileManagementErrorMessage: (_error: unknown, fallback: string) => fallback,
@@ -78,13 +80,50 @@ describe('OrganizationRetentionPolicyPanel', () => {
       },
     ))
   })
+
+  it('retains the reviewed inheritance and versions after a background policy refresh', async () => {
+    const { client } = renderPanel()
+    await screen.findByRole('button', { name: 'Edit override' })
+    fireEvent.click(screen.getByRole('button', { name: 'Edit override' }))
+    fireEvent.change(screen.getByLabelText(/Change reason/), { target: { value: 'Reviewed exception.' } })
+    act(() => client.setQueryData(['organization-released-deliverable-policy', configuration.organizationId], {
+      ...configuration,
+      global: { ...configuration.global, version: 2, values: { ...configuration.global.values, undownloadedWarningLeadDays: 20 } },
+      override: { ...configuration.override!, version: 2 },
+    }))
+    expect(screen.getAllByText('Leave blank to inherit 5 days.')).toHaveLength(2)
+    fireEvent.click(screen.getByRole('button', { name: 'Save changes' }))
+    await waitFor(() => expect(api.upsertOverride).toHaveBeenCalledWith(configuration.organizationId, expect.objectContaining({ globalVersion: 1, overrideVersion: 1 })))
+  })
+
+  it('removes only the override revision reviewed when the confirmation opened', async () => {
+    const { client } = renderPanel()
+    await screen.findByRole('button', { name: 'Remove override' })
+    fireEvent.click(screen.getByRole('button', { name: 'Remove override' }))
+    fireEvent.change(screen.getByLabelText(/Change reason/), { target: { value: 'Return to global.' } })
+    act(() => client.setQueryData(['organization-released-deliverable-policy', configuration.organizationId], { ...configuration, override: { ...configuration.override!, version: 2 } }))
+    fireEvent.click(screen.getByRole('button', { name: 'Remove override' }))
+    await waitFor(() => expect(api.removeOverride).toHaveBeenCalledWith(configuration.organizationId, { reason: 'Return to global.', version: 1 }))
+  })
+
+  it('focuses an invalid effective warning before starting a save', async () => {
+    renderPanel()
+    await screen.findByRole('button', { name: 'Edit override' })
+    fireEvent.click(screen.getByRole('button', { name: 'Edit override' }))
+    fireEvent.change(screen.getByLabelText(/Undownloaded warning lead/), { target: { value: '50' } })
+    fireEvent.change(screen.getByLabelText(/Change reason/), { target: { value: 'Review warning window.' } })
+    fireEvent.click(screen.getByRole('button', { name: 'Save changes' }))
+    await screen.findByText('The effective warning lead must be shorter than the effective standard retention.')
+    expect(api.upsertOverride).not.toHaveBeenCalled()
+    expect(document.activeElement).toBe(screen.getByLabelText(/Undownloaded warning lead/))
+  })
 })
 
 function renderPanel() {
   const client = new QueryClient({
     defaultOptions: { queries: { retry: false }, mutations: { retry: false } },
   })
-  return render(
+  const rendered = render(
     <QueryClientProvider client={client}>
       <OrganizationRetentionPolicyPanel
         enabled
@@ -93,6 +132,7 @@ function renderPanel() {
       />
     </QueryClientProvider>,
   )
+  return { ...rendered, client }
 }
 
 const configuration: OrganizationReleasedDeliverablePolicy = {

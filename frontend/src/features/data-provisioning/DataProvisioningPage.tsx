@@ -1,6 +1,6 @@
 import { zodResolver } from '@hookform/resolvers/zod'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
-import { Link, useRouterState } from '@tanstack/react-router'
+import { Link } from '@tanstack/react-router'
 import {
   Archive,
   CheckCircle2,
@@ -57,6 +57,7 @@ import {
   DialogClose,
   DialogContent,
   DialogDescription,
+  DialogFeedback,
   DialogFooter,
   DialogHeader,
   DialogTitle,
@@ -65,7 +66,9 @@ import { RequiredDialogFooter, RequiredFieldName } from '#/components/ui/require
 import { Input } from '#/components/ui/input'
 import { Label } from '#/components/ui/label'
 import { usePhaenoSession } from '#/features/auth/session-context'
+import { useOrderDraftGuard } from '#/features/orders/use-order-draft-guard'
 import { GovernancePanel } from './GovernancePanel'
+import type { DataProvisioningSection } from './data-provisioning-sections'
 
 const sourceSchema = z.object({
   label: z.string().trim().min(1, 'Label is required.').max(255),
@@ -112,7 +115,6 @@ type GrantValues = z.infer<typeof grantSchema>
 type UpgradeValues = z.infer<typeof upgradeSchema>
 type RevokeValues = z.infer<typeof revokeSchema>
 type EligibilityRemovalValues = z.infer<typeof eligibilityRemovalSchema>
-type DataProvisioningSection = 'sources' | 'catalog' | 'grants' | 'governance'
 
 const dataProvisioningSections: ReadonlyArray<WorkspaceSidebarItem<DataProvisioningSection>> = [
   { value: 'sources', label: 'Source registry', description: 'Phaeno-owned curation inputs', icon: Database },
@@ -125,10 +127,8 @@ type CatalogLifecycleAction =
   | { kind: 'deactivate'; dataset: CuratedDataset }
   | { kind: 'retire'; dataset: CuratedDataset; datasetVersion: CuratedDatasetVersion }
 
-export function DataProvisioningPage() {
+export function DataProvisioningPage({ section, onSectionChange }: { section: DataProvisioningSection; onSectionChange: (section: DataProvisioningSection) => void }) {
   const { authProvider, session } = usePhaenoSession()
-  const initialSection = useRouterState({ select: state => state.location.search.section })
-  const [section, setSection] = useState<DataProvisioningSection>(initialSection === 'grants' ? 'grants' : 'sources')
   const canManage = Boolean(session?.capabilities.canViewDatasetConfiguration)
   const apiEnabled = canManage && authProvider !== 'mock'
 
@@ -142,7 +142,7 @@ export function DataProvisioningPage() {
         workspaceLabel="Data provisioning"
         items={dataProvisioningSections}
         value={section}
-        onValueChange={setSection}
+        onValueChange={onSectionChange}
       >
         <div className="page-wrap px-4">
           <section className="mb-6 max-w-3xl">
@@ -224,6 +224,7 @@ function SourceRegistryPanel({ apiEnabled }: { apiEnabled: boolean }) {
                 key={source.id}
                 to="/data-provisioning/sources/$sourceSampleId"
                 params={{ sourceSampleId: source.id }}
+                search={{ section: 'sources' }}
                 className="rounded-lg border bg-background p-4 text-inherit no-underline transition-colors hover:bg-muted/50 focus-visible:ring-3 focus-visible:ring-ring/50 focus-visible:outline-none"
               >
                 <div className="flex items-start justify-between gap-3">
@@ -737,18 +738,73 @@ function OrganizationGrantsPanel({ apiEnabled }: { apiEnabled: boolean }) {
 
 // Dialog components keep all data-entry forms out of management lists.
 function DatasetCreateDialog({ open, onOpenChange, form, mutation }: { open: boolean; onOpenChange: (open: boolean) => void; form: ReturnType<typeof useForm<DatasetValues>>; mutation: ReturnType<typeof useMutation<unknown, Error, DatasetValues>> }) {
-  return <Dialog open={open} onOpenChange={onOpenChange}><DialogContent><DialogHeader><DialogTitle>Create curated dataset</DialogTitle><DialogDescription>Create the stable catalog identity. Exact versions are added separately.</DialogDescription></DialogHeader><form className="space-y-4" onSubmit={form.handleSubmit((values) => mutation.mutateAsync(values))}><FormField label="Name" error={form.formState.errors.name?.message} required><Input {...form.register('name')} /></FormField><FormField label="Description" error={form.formState.errors.description?.message} required><textarea className={textareaClass} rows={4} {...form.register('description')} /></FormField><MutationError error={mutation.error} fallback="The curated dataset could not be created." /><RequiredDialogFooter><DialogClose asChild><Button type="button" variant="outline">Cancel</Button></DialogClose><Button type="submit" disabled={mutation.isPending}>{mutation.isPending ? 'Creating' : 'Create dataset'}</Button></RequiredDialogFooter></form></DialogContent></Dialog>
+  useOrderDraftGuard(open && form.formState.isDirty, open && mutation.isPending)
+  function close() {
+    if (mutation.isPending || (form.formState.isDirty && !window.confirm('Discard unsaved dataset changes?'))) return
+    form.reset()
+    mutation.reset()
+    onOpenChange(false)
+  }
+  return <Dialog open={open} onOpenChange={nextOpen => { if (!nextOpen) close() }}>
+    <DialogContent showCloseButton={!mutation.isPending}>
+      <DialogHeader><DialogTitle>Create curated dataset</DialogTitle><DialogDescription>Create the stable catalog identity. Exact versions are added separately.</DialogDescription></DialogHeader>
+      {mutation.error ? <DialogFeedback><MutationError error={mutation.error} fallback="The curated dataset could not be created." /></DialogFeedback> : null}
+      <form id="catalog-create-dataset-form" noValidate onSubmit={form.handleSubmit(values => { if (!mutation.isPending) mutation.mutate(values) })}>
+        <fieldset disabled={mutation.isPending} className="space-y-4">
+          <FormField label="Name" error={form.formState.errors.name?.message} required><Input {...form.register('name')} /></FormField>
+          <FormField label="Description" error={form.formState.errors.description?.message} required><textarea className={textareaClass} rows={4} {...form.register('description')} /></FormField>
+        </fieldset>
+      </form>
+      <RequiredDialogFooter><Button type="button" variant="outline" disabled={mutation.isPending} onClick={close}>Cancel</Button><Button type="submit" form="catalog-create-dataset-form" disabled={mutation.isPending}>{mutation.isPending ? 'Creating' : 'Create dataset'}</Button></RequiredDialogFooter>
+    </DialogContent>
+  </Dialog>
 }
 
 function DatasetEditDialog({ dataset, onOpenChange, form, mutation }: { dataset: CuratedDataset | null; onOpenChange: (open: boolean) => void; form: ReturnType<typeof useForm<DatasetValues>>; mutation: ReturnType<typeof useMutation<unknown, Error, { dataset: CuratedDataset; values: DatasetValues }>> }) {
-  return <Dialog open={Boolean(dataset)} onOpenChange={onOpenChange}><DialogContent><DialogHeader><DialogTitle>Edit curated dataset details</DialogTitle><DialogDescription>This changes catalog metadata only. Immutable version contents and every organization grant remain unchanged.</DialogDescription></DialogHeader>{dataset ? <form className="space-y-4" onSubmit={form.handleSubmit((values) => mutation.mutateAsync({ dataset, values }))}><FormField label="Name" error={form.formState.errors.name?.message} required><Input {...form.register('name')} /></FormField><FormField label="Description" error={form.formState.errors.description?.message} required><textarea className={textareaClass} rows={4} {...form.register('description')} /></FormField><MutationError error={mutation.error} fallback="The curated dataset could not be updated." /><RequiredDialogFooter><DialogClose asChild><Button type="button" variant="outline">Cancel</Button></DialogClose><Button type="submit" disabled={mutation.isPending}>{mutation.isPending ? 'Saving' : 'Save details'}</Button></RequiredDialogFooter></form> : null}</DialogContent></Dialog>
+  useOrderDraftGuard(Boolean(dataset) && form.formState.isDirty, Boolean(dataset) && mutation.isPending)
+  function close() {
+    if (mutation.isPending || (form.formState.isDirty && !window.confirm('Discard unsaved dataset changes?'))) return
+    form.reset()
+    mutation.reset()
+    onOpenChange(false)
+  }
+  return <Dialog open={Boolean(dataset)} onOpenChange={open => { if (!open) close() }}>
+    <DialogContent showCloseButton={!mutation.isPending}>
+      <DialogHeader><DialogTitle>Edit curated dataset details</DialogTitle><DialogDescription>This changes catalog metadata only. Immutable version contents and every organization grant remain unchanged.</DialogDescription></DialogHeader>
+      {mutation.error ? <DialogFeedback><MutationError error={mutation.error} fallback="The curated dataset could not be updated." /></DialogFeedback> : null}
+      {dataset ? <form id="catalog-edit-dataset-form" noValidate onSubmit={form.handleSubmit(values => { if (!mutation.isPending) mutation.mutate({ dataset, values }) })}>
+        <fieldset disabled={mutation.isPending} className="space-y-4">
+          <FormField label="Name" error={form.formState.errors.name?.message} required><Input {...form.register('name')} /></FormField>
+          <FormField label="Description" error={form.formState.errors.description?.message} required><textarea className={textareaClass} rows={4} {...form.register('description')} /></FormField>
+        </fieldset>
+      </form> : null}
+      <RequiredDialogFooter><Button type="button" variant="outline" disabled={mutation.isPending} onClick={close}>Cancel</Button><Button type="submit" form="catalog-edit-dataset-form" disabled={mutation.isPending || !form.formState.isDirty}>{mutation.isPending ? 'Saving' : 'Save details'}</Button></RequiredDialogFooter>
+    </DialogContent>
+  </Dialog>
 }
 
 function CatalogLifecycleDialog({ action, onOpenChange, form, mutation }: { action: CatalogLifecycleAction | null; onOpenChange: (open: boolean) => void; form: ReturnType<typeof useForm<RevokeValues>>; mutation: ReturnType<typeof useMutation<unknown, Error, { action: CatalogLifecycleAction; reason: string }>> }) {
   const isRetirement = action?.kind === 'retire'
-  return <Dialog open={Boolean(action)} onOpenChange={onOpenChange}><DialogContent><DialogHeader><DialogTitle>{isRetirement ? 'Retire this exact version?' : 'Deactivate this curated dataset?'}</DialogTitle><DialogDescription>{isRetirement ? 'The version can never receive a new grant or be made eligible again. Existing grants and tenant access remain active, and all history is preserved.' : 'The dataset disappears from future assignment choices. Existing organization grants and access remain unchanged.'}</DialogDescription></DialogHeader>{action ? <form className="space-y-4" onSubmit={form.handleSubmit((values) => mutation.mutateAsync({ action, reason: values.reason }))}><FormField label="Reason" error={form.formState.errors.reason?.message} required><textarea className={textareaClass} rows={4} {...form.register('reason')} /></FormField><MutationError error={mutation.error} fallback="The lifecycle change could not be completed." /><RequiredDialogFooter><DialogClose asChild><Button type="button" variant="outline">Cancel</Button></DialogClose><Button type="submit" variant="destructive" disabled={mutation.isPending}>{mutation.isPending ? 'Saving' : isRetirement ? 'Retire version' : 'Deactivate dataset'}</Button></RequiredDialogFooter></form> : null}</DialogContent></Dialog>
+  useOrderDraftGuard(Boolean(action) && form.formState.isDirty, Boolean(action) && mutation.isPending)
+  function close() {
+    if (mutation.isPending || (form.formState.isDirty && !window.confirm('Discard the unsaved lifecycle reason?'))) return
+    form.reset()
+    mutation.reset()
+    onOpenChange(false)
+  }
+  return <Dialog open={Boolean(action)} onOpenChange={open => { if (!open) close() }}>
+    <DialogContent showCloseButton={!mutation.isPending}>
+      <DialogHeader><DialogTitle>{isRetirement ? 'Retire this exact version?' : 'Deactivate this curated dataset?'}</DialogTitle><DialogDescription>{isRetirement ? 'The version can never receive a new grant or be made eligible again. Existing grants and tenant access remain active, and all history is preserved.' : 'The dataset disappears from future assignment choices. Existing organization grants and access remain unchanged.'}</DialogDescription></DialogHeader>
+      {mutation.error ? <DialogFeedback><MutationError error={mutation.error} fallback="The lifecycle change could not be completed." /></DialogFeedback> : null}
+      {action ? <form id="catalog-lifecycle-form" noValidate onSubmit={form.handleSubmit(values => { if (!mutation.isPending) mutation.mutate({ action, reason: values.reason }) })}>
+        <fieldset disabled={mutation.isPending} className="space-y-4">
+          <FormField label="Reason" error={form.formState.errors.reason?.message} required><textarea className={textareaClass} rows={4} {...form.register('reason')} /></FormField>
+        </fieldset>
+      </form> : null}
+      <RequiredDialogFooter><Button type="button" variant="outline" disabled={mutation.isPending} onClick={close}>Cancel</Button><Button type="submit" form="catalog-lifecycle-form" variant="destructive" disabled={mutation.isPending}>{mutation.isPending ? 'Saving' : isRetirement ? 'Retire version' : 'Deactivate dataset'}</Button></RequiredDialogFooter>
+    </DialogContent>
+  </Dialog>
 }
-
 function EligibilityRemovalDialog({ dataset, onOpenChange, form, mutation }: { dataset: CuratedDataset | null; onOpenChange: (open: boolean) => void; form: ReturnType<typeof useForm<EligibilityRemovalValues>>; mutation: ReturnType<typeof useMutation<unknown, Error, { dataset: CuratedDataset; values: EligibilityRemovalValues }>> }) {
   const revoke = form.watch('revokeAllActiveGrants')
   return <Dialog open={Boolean(dataset)} onOpenChange={onOpenChange}><DialogContent><DialogHeader><DialogTitle>Remove this version from the eligible catalog?</DialogTitle><DialogDescription>By default this affects future assignments only and preserves every existing organization grant. Bulk revocation is a separate, explicit destructive option.</DialogDescription></DialogHeader>{dataset ? <form className="space-y-4" onSubmit={form.handleSubmit((values) => mutation.mutateAsync({ dataset, values }))}><label className="flex items-start gap-2 rounded-lg border p-3 text-sm"><input type="checkbox" className="mt-0.5 size-4" {...form.register('revokeAllActiveGrants')} /><span><span className="font-medium">Also revoke every active organization grant for this dataset.</span><span className="mt-1 block text-muted-foreground">Access ends immediately. Previously downloaded copies cannot be recalled.</span></span></label>{revoke ? <FormField label="Bulk revocation reason" error={form.formState.errors.reason?.message} required><textarea className={textareaClass} rows={4} {...form.register('reason')} /></FormField> : null}<MutationError error={mutation.error} fallback="Eligibility could not be removed." /><RequiredDialogFooter showLegend={revoke}><DialogClose asChild><Button type="button" variant="outline">Cancel</Button></DialogClose><Button type="submit" variant={revoke ? 'destructive' : 'default'} disabled={mutation.isPending}>{mutation.isPending ? 'Saving' : revoke ? 'Remove and revoke all' : 'Remove eligibility only'}</Button></RequiredDialogFooter></form> : null}</DialogContent></Dialog>

@@ -18,8 +18,9 @@ import { Textarea } from '#/components/ui/textarea'
 import { usePhaenoSession } from '#/features/auth/session-context'
 
 import { ExecutionStepDialog } from './ExecutionStepDialog'
+import type { LabSection } from './lab-sections'
 
-export function LabExecutionPage({ executionId }: { executionId: string }) {
+export function LabExecutionPage({ executionId, returnSection, returnShipmentId }: { executionId: string; returnSection?: LabSection; returnShipmentId?: string }) {
   const { session, authProvider } = usePhaenoSession()
   const canView = Boolean(session?.capabilities.canManageLabOperations)
   const client = useQueryClient()
@@ -54,7 +55,7 @@ export function LabExecutionPage({ executionId }: { executionId: string }) {
   const error = record.error ?? transition.error
   return <LabExecutionWorkspace data={execution.data} pending={record.isPending || transition.isPending}
     error={error ? `${getLabOperationsError(error, 'The laboratory action could not be saved.')} ${recovery ?? ''}` : undefined}
-    returnLink={<Link to="/lab-operations/$workOrderId" params={{ workOrderId: execution.data.workOrderId }} search={{ section: 'work', tab: 'execution' }} className="text-sm text-primary underline underline-offset-4">Back to laboratory job</Link>}
+    returnLink={<Link to="/lab-operations/$workOrderId" params={{ workOrderId: execution.data.workOrderId }} search={{ section: returnSection ?? 'work', shipmentId: returnShipmentId, tab: 'execution' }} className="text-sm text-primary underline underline-offset-4">Back to laboratory job</Link>}
     onRecord={async input => { await record.mutateAsync(input) }}
     onTransition={async (action, note) => { await transition.mutateAsync({ action, note }) }} />
 }

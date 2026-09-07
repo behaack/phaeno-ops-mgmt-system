@@ -1,5 +1,15 @@
 # Lab Operations Plan
 
+## 2026-09-07 follow-up consistency review
+
+Receipt links retain the scanned packet, shipment, exact tube when compared, and
+receiving section. Work-order and execution returns preserve the originating
+section/shipment even after laboratory status changes. An identity-check request
+failure now offers retry separately from a confirmed tube mismatch; receipt and
+accession remain explicit authorized decisions. Focused navigation regression
+source was added in `LabReceiptAccessionPanel.test.tsx`; suites and physical
+scanner/receipt acceptance were not run during this review.
+
 ## 2026-09-07 workspace consolidation
 
 - Commercial kit/assembly order details retain decisions and status; execution/input-validation/fulfillment controls live only in the Lab workspace with reciprocal links.

@@ -16,6 +16,8 @@ POMS assigns the creator as owner unless another supported owner is selected lat
 
 Changing a CRM lifecycle to Active customer or Partner is descriptive only. It does not enable or reclassify Portal access, grant membership, activate services, or authorize orders.
 
+Company and Contact editors keep your entered details when the record refreshes in the background. Company ownership and deactivate/reactivate confirmations also retain the record you reviewed. If saving reports that the record changed, your entries remain available; review the current record before making another attempt. Closing and reopening an editor starts from the latest loaded details.
+
 ## Create and manage a Contact
 
 From a Company’s **People** section, select **New person** to create the Contact and its Company association together. The global **Contacts** directory also provides **New contact** when no Company context is available. First name and last name are required. Record email, phone, Phaeno owner, tags, and the communication controls that apply:
@@ -43,12 +45,16 @@ Each relationship remains visible from the Company's **People** section and the 
 
 Deactivate a Company or Contact when it should leave active directories while its history remains available. Reactivation restores the same CRM identity. Deactivating a Company suspends its attached Portal access scope; reactivating restores it. Contact lifecycle actions do not change Portal users.
 
+On the Contact workspace, **Deactivate** or **Reactivate** opens a confirmation naming the Contact. Review it before confirming; **Cancel** leaves the Contact unchanged. If the change fails, the dialog shows the error. Manage this person's Portal membership and invitations separately from Company **People**.
+
 Use **Merge** only for a confirmed duplicate:
 
 1. Open the duplicate record that should be retired.
-2. Choose the record that should remain authoritative.
+2. Search the active Company or Contact directory and choose the record that should remain authoritative. The duplicate you opened is excluded from the choices.
 3. Record a required merge reason.
 4. Review the consequence and confirm.
+
+The merge dialog names the record being retired. A failed search offers **Retry**; a failed merge keeps the selected target and reason for review. Leaving an edited merge draft asks whether to discard the choices, and the dialog stays open while a merge is being processed. If another user changes the source record, reload and review the current version before submitting again.
 
 POMS retains the source as an inactive alias, moves supported relationships and history, and writes a permanent merge record. If only one Company has Portal access, that access scope follows the surviving Company. POMS blocks a merge when both Companies have Portal access because choosing the surviving tenant requires an explicit data decision. Ordinary CRM UI does not undo a merge. If the records describe different legal entities or people, do not merge them; correct their fields or effective-dated relationships instead.
 

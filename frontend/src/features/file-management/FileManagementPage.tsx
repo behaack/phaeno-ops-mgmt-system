@@ -21,6 +21,7 @@ import { Input } from '#/components/ui/input'
 import { Label } from '#/components/ui/label'
 import { RequiredDialogFooter, RequiredFieldName } from '#/components/ui/required-field'
 import { usePhaenoSession } from '#/features/auth/session-context'
+import { useOrderDraftGuard } from '#/features/orders/use-order-draft-guard'
 
 const policySchema = z.object({
   standardRetentionDays: z.number().int('Enter a whole number of days.').positive('Retention must be at least 1 day.'),
@@ -44,6 +45,7 @@ export function FileManagementPage() {
   const queryClient = useQueryClient()
   const [editOpen, setEditOpen] = useState(false)
   const [saved, setSaved] = useState(false)
+  const [editingVersion, setEditingVersion] = useState<number | null>(null)
   const canManage = Boolean(session?.capabilities.canManageFileManagementConfiguration)
   const apiEnabled = canManage && authProvider !== 'mock'
   const query = useQuery({
@@ -52,6 +54,7 @@ export function FileManagementPage() {
     enabled: apiEnabled,
   })
   const form = useForm<PolicyFormValues>({
+    mode: 'onBlur',
     resolver: zodResolver(policySchema),
     defaultValues: {
       standardRetentionDays: 30,
@@ -64,7 +67,7 @@ export function FileManagementPage() {
     mutationFn: (values: PolicyFormValues) => updateReleasedDeliverablePolicy({
       ...values,
       reason: values.reason.trim(),
-      version: query.data!.global.version,
+      version: editingVersion!,
     }),
     onSuccess: (data) => {
       queryClient.setQueryData(['released-deliverable-policy'], data)
@@ -73,7 +76,13 @@ export function FileManagementPage() {
     },
   })
 
+  useOrderDraftGuard(editOpen && form.formState.isDirty, editOpen && mutation.isPending)
+  function closeEditor() {
+    if (!mutation.isPending && (!form.formState.isDirty || window.confirm('Discard unsaved retention changes?'))) setEditOpen(false)
+  }
+
   function openEditor(configuration: ReleasedDeliverablePolicyConfiguration) {
+    setEditingVersion(configuration.global.version)
     form.reset({
       ...configuration.global.values,
       reason: '',
@@ -115,7 +124,7 @@ export function FileManagementPage() {
       {query.error ? (
         <Alert variant="destructive">
           <AlertTitle>Retention policy could not be loaded</AlertTitle>
-          <AlertDescription>{fileManagementErrorMessage(query.error, 'Try refreshing this page.')}</AlertDescription>
+          <AlertDescription>{fileManagementErrorMessage(query.error, 'Try loading the policy again.')} <Button variant="outline" disabled={query.isFetching} onClick={() => void query.refetch()}>Retry</Button></AlertDescription>
         </Alert>
       ) : null}
       {saved ? (
@@ -179,8 +188,8 @@ export function FileManagementPage() {
         </>
       ) : null}
 
-      <Dialog open={editOpen} onOpenChange={(open) => !mutation.isPending && setEditOpen(open)}>
-        <DialogContent>
+      <Dialog open={editOpen} onOpenChange={(open) => { if (!open) closeEditor() }}>
+        <DialogContent showCloseButton={!mutation.isPending}>
           <DialogHeader>
             <DialogTitle>Edit global retention policy</DialogTitle>
             <DialogDescription>
@@ -188,6 +197,7 @@ export function FileManagementPage() {
             </DialogDescription>
           </DialogHeader>
           <form id="global-retention-policy-form" noValidate className="space-y-4" onSubmit={form.handleSubmit((values) => mutation.mutate(values))}>
+            <fieldset disabled={mutation.isPending} className="space-y-4">
             <NumberField form={form} name="standardRetentionDays" label="Standard retention (days)" />
             <NumberField form={form} name="undownloadedWarningLeadDays" label="Undownloaded warning lead (days)" />
             <NumberField form={form} name="undownloadedGraceDays" label="Conditional grace (days)" />
@@ -203,6 +213,7 @@ export function FileManagementPage() {
               />
               {form.formState.errors.reason ? <p id="global-policy-reason-error" role="alert" className="mt-1 text-sm text-destructive">{form.formState.errors.reason.message}</p> : null}
             </div>
+            </fieldset>
           </form>
           {mutation.error ? (
             <Alert variant="destructive">
@@ -211,7 +222,7 @@ export function FileManagementPage() {
             </Alert>
           ) : null}
           <RequiredDialogFooter>
-            <Button type="button" variant="outline" disabled={mutation.isPending} onClick={() => setEditOpen(false)}>Cancel</Button>
+            <Button type="button" variant="outline" disabled={mutation.isPending} onClick={closeEditor}>Cancel</Button>
             <Button type="submit" form="global-retention-policy-form" disabled={!form.formState.isDirty || mutation.isPending}>
               {mutation.isPending ? 'Saving…' : 'Save changes'}
             </Button>

@@ -1,5 +1,17 @@
 # Sample Shipping and Intake Plan
 
+## 2026-09-07 follow-up consistency review
+
+Packet confirmation distinguishes unique samples from tube slots. Packet issue
+failures remain visible inside the confirmation dialog with entered values
+preserved; opening a fresh attempt clears the earlier failure. Tube corrections,
+packet replacement and shipment updates invalidate the retained packet preview.
+The print page verifies the current revision on entry and withholds printable
+content while loading, offline or failed. It labels the confirmed revision and
+offers return/retry recovery. Shipment detail also links to the authorized list.
+Focused regression source covers those cache, count and failure cases; automated
+suites and physical packet/scanner acceptance were not run in this review.
+
 Keep this file updated as external sample-shipping, printable packet, and
 pre-receipt intake requirements are supplied and decisions are made.
 

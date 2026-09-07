@@ -16,10 +16,10 @@ import {
   apiErrorMessage,
   assignCrmCompanyOwner,
   getCrmCompany,
-  listCrmCompanies,
   mergeCrmCompany,
   setCrmCompanyActive,
   updateCrmCompany,
+  type CrmCompany,
 } from "#/api/crm";
 import { Alert, AlertDescription, AlertTitle } from "#/components/ui/alert";
 import { Badge } from "#/components/ui/badge";
@@ -56,7 +56,7 @@ import { CrmCompanyPeople } from "./CrmCompanyPeople";
 import { CrmCompanySales } from "./CrmCompanySales";
 import { CrmCustomFields } from "./CrmCustomFields";
 import { CrmRecordWork } from "./CrmRecordWork";
-import { CrmMergeDialog } from "./CrmMergeDialog";
+import { CrmMergeDialog, type CrmMergeSource } from "./CrmMergeDialog";
 import { CrmOwnerSelect } from "./CrmOwnerSelect";
 import { toInput } from "./CrmCompaniesPage";
 import { OrganizationDetailPage } from "#/features/organizations/OrganizationDetailPage";
@@ -66,10 +66,13 @@ import { OrganizationDepartmentsPanel } from "#/features/organizations/Organizat
 export function CrmCompanyDetailPage({ companyId }: { companyId: string }) {
   const queryClient = useQueryClient();
   const navigate = useNavigate();
-  const [editOpen, setEditOpen] = useState(false);
-  const [lifecycleOpen, setLifecycleOpen] = useState(false);
-  const [mergeOpen, setMergeOpen] = useState(false);
-  const [ownerOpen, setOwnerOpen] = useState(false);
+  const [editTarget, setEditTarget] = useState<CrmCompany | null>(null);
+  const [lifecycleTarget, setLifecycleTarget] = useState<CrmCompany | null>(null);
+  const [mergeSource, setMergeSource] = useState<CrmMergeSource | null>(null);
+  const [ownerTarget, setOwnerTarget] = useState<CrmCompany | null>(null);
+  const editOpen = Boolean(editTarget);
+  const lifecycleOpen = Boolean(lifecycleTarget);
+  const ownerOpen = Boolean(ownerTarget);
   const [storedSection, setActiveSection] = useCrmState<
     "overview" | "people" | "sales" | "departments" | "requests" | "activity"
   >("section", "overview");
@@ -78,53 +81,46 @@ export function CrmCompanyDetailPage({ companyId }: { companyId: string }) {
     queryKey: ["crm-company", companyId],
     queryFn: () => getCrmCompany(companyId),
   });
-  const mergeCandidates = useQuery({
-    queryKey: ["crm-companies", "merge-choices"],
-    queryFn: () => listCrmCompanies({ pageSize: 100 }),
-    enabled: mergeOpen,
-  });
 
   const refreshDirectory = () =>
     queryClient.invalidateQueries({ queryKey: ["crm-companies"] });
   const editMutation = useMutation({
-    mutationFn: (values: CrmCompanyFormValues) => {
-      if (!companyQuery.data) throw new Error("The company is unavailable.");
-      return updateCrmCompany(companyId, {
+    mutationFn: ({ target, values }: { target: CrmCompany; values: CrmCompanyFormValues }) => {
+      return updateCrmCompany(target.id, {
         ...toInput(values),
-        version: companyQuery.data.version,
+        version: target.version,
       });
     },
     onSuccess: async (company) => {
-      queryClient.setQueryData(["crm-company", companyId], company);
-      setEditOpen(false);
+      queryClient.setQueryData(["crm-company", company.id], company);
+      setEditTarget(null);
       await refreshDirectory();
     },
   });
   const lifecycleMutation = useMutation({
-    mutationFn: () => {
-      if (!companyQuery.data) throw new Error("The company is unavailable.");
+    mutationFn: (target: CrmCompany) => {
       return setCrmCompanyActive(
-        companyId,
-        !companyQuery.data.isActive,
-        companyQuery.data.version,
+        target.id,
+        !target.isActive,
+        target.version,
       );
     },
     onSuccess: async (company) => {
-      queryClient.setQueryData(["crm-company", companyId], company);
-      setLifecycleOpen(false);
+      queryClient.setQueryData(["crm-company", company.id], company);
+      setLifecycleTarget(null);
       await refreshDirectory();
     },
   });
   const mergeMutation = useMutation({
-    mutationFn: ({ targetId, reason }: { targetId: string; reason: string }) =>
+    mutationFn: ({ source, targetId, reason }: { source: CrmMergeSource; targetId: string; reason: string }) =>
       mergeCrmCompany(
-        companyId,
+        source.id,
         targetId,
         reason,
-        companyQuery.data?.version ?? 0,
+        source.version,
       ),
     onSuccess: async (target) => {
-      setMergeOpen(false);
+      setMergeSource(null);
       await refreshDirectory();
       await navigate({
         to: "/crm/companies/$companyId",
@@ -133,15 +129,15 @@ export function CrmCompanyDetailPage({ companyId }: { companyId: string }) {
     },
   });
   const ownerMutation = useMutation({
-    mutationFn: (ownerUserId: string) =>
+    mutationFn: ({ target, ownerUserId }: { target: CrmCompany; ownerUserId: string }) =>
       assignCrmCompanyOwner(
-        companyId,
+        target.id,
         ownerUserId,
-        companyQuery.data?.version ?? 0,
+        target.version,
       ),
     onSuccess: async (company) => {
-      queryClient.setQueryData(["crm-company", companyId], company);
-      setOwnerOpen(false);
+      queryClient.setQueryData(["crm-company", company.id], company);
+      setOwnerTarget(null);
       await refreshDirectory();
     },
   });
@@ -220,21 +216,21 @@ export function CrmCompanyDetailPage({ companyId }: { companyId: string }) {
           </p>
         </div>
         <div className="flex flex-wrap gap-2">
-          <Button variant="outline" onClick={() => setOwnerOpen(true)}>
+          <Button variant="outline" onClick={() => setOwnerTarget(company)}>
             <UserRoundCog data-icon="inline-start" />
             Change owner
           </Button>
-          <Button variant="outline" onClick={() => setEditOpen(true)}>
+          <Button variant="outline" onClick={() => setEditTarget(company)}>
             <Pencil data-icon="inline-start" />
             Edit
           </Button>
-          <Button variant="outline" onClick={() => setMergeOpen(true)}>
+          <Button variant="outline" onClick={() => { mergeMutation.reset(); setMergeSource({ id: company.id, name: company.name, version: company.version }); }}>
             <Combine data-icon="inline-start" />
             Merge
           </Button>
           <Button
             variant={company.isActive ? "destructive" : "outline"}
-            onClick={() => setLifecycleOpen(true)}
+            onClick={() => setLifecycleTarget(company)}
           >
             {company.isActive ? (
               <PowerOff data-icon="inline-start" />
@@ -428,19 +424,18 @@ export function CrmCompanyDetailPage({ companyId }: { companyId: string }) {
 
       <CrmCompanyFormDialog
         open={editOpen}
-        company={company}
+        company={editTarget}
         isPending={editMutation.isPending}
         error={
           editMutation.error ? apiErrorMessage(editMutation.error) : undefined
         }
         onOpenChange={(open) => {
-          setEditOpen(open);
-          if (!open) editMutation.reset();
+          if (!open) { setEditTarget(null); editMutation.reset(); }
         }}
-        onSubmit={(values) => editMutation.mutate(values)}
+        onSubmit={(values) => { if (editTarget) editMutation.mutate({ target: editTarget, values }); }}
       />
       <CrmCompanyLifecycleDialog
-        company={lifecycleOpen ? company : null}
+        company={lifecycleTarget}
         isPending={lifecycleMutation.isPending}
         error={
           lifecycleMutation.error
@@ -448,12 +443,11 @@ export function CrmCompanyDetailPage({ companyId }: { companyId: string }) {
             : undefined
         }
         onOpenChange={(open) => {
-          setLifecycleOpen(open);
-          if (!open) lifecycleMutation.reset();
+          if (!open) { setLifecycleTarget(null); lifecycleMutation.reset(); }
         }}
-        onConfirm={() => lifecycleMutation.mutate()}
+        onConfirm={() => { if (lifecycleTarget) lifecycleMutation.mutate(lifecycleTarget); }}
       />
-      <Dialog open={ownerOpen} onOpenChange={setOwnerOpen}>
+      <Dialog open={ownerOpen} onOpenChange={(open) => { if (!open) { setOwnerTarget(null); ownerMutation.reset(); } }}>
         <DialogContent>
           <form
             onSubmit={(event) => {
@@ -461,7 +455,7 @@ export function CrmCompanyDetailPage({ companyId }: { companyId: string }) {
               const ownerUserId = String(
                 new FormData(event.currentTarget).get("ownerUserId") ?? "",
               );
-              if (ownerUserId) ownerMutation.mutate(ownerUserId);
+              if (ownerUserId && ownerTarget) ownerMutation.mutate({ target: ownerTarget, ownerUserId });
             }}
           >
             <DialogHeader>
@@ -483,8 +477,8 @@ export function CrmCompanyDetailPage({ companyId }: { companyId: string }) {
               <CrmOwnerSelect
                 id="company-owner"
                 enabled={ownerOpen}
-                currentOwnerId={company.ownerUserId}
-                currentOwnerName={company.ownerName}
+                currentOwnerId={ownerTarget?.ownerUserId}
+                currentOwnerName={ownerTarget?.ownerName}
                 defaultLabel="Select owner"
               />
             </div>
@@ -495,7 +489,7 @@ export function CrmCompanyDetailPage({ companyId }: { companyId: string }) {
               <Button
                 type="button"
                 variant="outline"
-                onClick={() => setOwnerOpen(false)}
+                onClick={() => { setOwnerTarget(null); ownerMutation.reset(); }}
               >
                 Cancel
               </Button>
@@ -506,21 +500,18 @@ export function CrmCompanyDetailPage({ companyId }: { companyId: string }) {
           </form>
         </DialogContent>
       </Dialog>
-      <CrmMergeDialog
-        open={mergeOpen}
+      {mergeSource ? <CrmMergeDialog
         recordLabel="Company"
-        candidates={(mergeCandidates.data?.items ?? [])
-          .filter((value) => value.id !== companyId && value.isActive)
-          .map((value) => ({ id: value.id, name: value.name }))}
+        source={mergeSource}
         pending={mergeMutation.isPending}
         error={
           mergeMutation.error ? apiErrorMessage(mergeMutation.error) : undefined
         }
-        onOpenChange={setMergeOpen}
+        onClose={() => { setMergeSource(null); mergeMutation.reset(); }}
         onSubmit={(targetId, reason) =>
-          mergeMutation.mutate({ targetId, reason })
+          mergeMutation.mutate({ source: mergeSource, targetId, reason })
         }
-      />
+      /> : null}
     </main>
   );
 }

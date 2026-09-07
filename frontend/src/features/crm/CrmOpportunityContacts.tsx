@@ -4,14 +4,11 @@ import { Pencil, Plus } from "lucide-react";
 import { useState } from "react";
 import {
   addCrmOpportunityContact,
-  apiErrorMessage,
-  listCrmContacts,
   listCrmOpportunityContacts,
   removeCrmOpportunityContact,
   updateCrmOpportunityContact,
   type CrmOpportunityContact,
 } from "#/api/crm";
-import { Alert, AlertDescription } from "#/components/ui/alert";
 import { Badge } from "#/components/ui/badge";
 import { Button } from "#/components/ui/button";
 import {
@@ -22,17 +19,8 @@ import {
   CardHeader,
   CardTitle,
 } from "#/components/ui/card";
-import { Checkbox } from "#/components/ui/checkbox";
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from "#/components/ui/dialog";
-import { Input } from "#/components/ui/input";
-import { Label } from "#/components/ui/label";
+import { CrmCollectionFeedback } from "./CrmCollectionFeedback";
+import { CrmOpportunityContactDialog } from "./CrmOpportunityContactDialog";
 
 export function CrmOpportunityContacts({
   opportunityId,
@@ -45,10 +33,6 @@ export function CrmOpportunityContacts({
   const associations = useQuery({
     queryKey: ["crm-opportunity-contacts", opportunityId],
     queryFn: () => listCrmOpportunityContacts(opportunityId),
-  });
-  const contacts = useQuery({
-    queryKey: ["crm-contacts", "choices"],
-    queryFn: () => listCrmContacts({ pageSize: 100 }),
   });
   const refresh = () =>
     client.invalidateQueries({
@@ -98,9 +82,7 @@ export function CrmOpportunityContacts({
     },
   });
   const records = associations.data ?? [];
-  const activeContactIds = new Set(
-    records.filter((value) => value.isActive).map((value) => value.contactId),
-  );
+  const activeContactIds = records.filter((value) => value.isActive).map((value) => value.contactId);
   return (
     <>
       <Card>
@@ -110,13 +92,14 @@ export function CrmOpportunityContacts({
             Buying-team members and their role in this Opportunity.
           </CardDescription>
           <CardAction>
-            <Button size="sm" variant="outline" onClick={() => setAddOpen(true)}>
+            <Button size="sm" variant="outline" disabled={associations.isPending || associations.isError} onClick={() => setAddOpen(true)}>
               <Plus data-icon="inline-start" />
               Associate
             </Button>
           </CardAction>
         </CardHeader>
         <CardContent className="space-y-2">
+          <CrmCollectionFeedback name="Opportunity contacts" query={associations} />
           {records.map((association) => (
             <div
               key={association.id}
@@ -142,6 +125,7 @@ export function CrmOpportunityContacts({
                     size="icon"
                     variant="ghost"
                     aria-label={`Manage ${association.contactName} association`}
+                    disabled={associations.isError}
                     onClick={() => setManaging(association)}
                   >
                     <Pencil aria-hidden="true" />
@@ -150,42 +134,29 @@ export function CrmOpportunityContacts({
               </div>
             </div>
           ))}
-          {!associations.isLoading && records.length === 0 ? (
+          {associations.isSuccess && records.length === 0 ? (
             <p className="text-sm text-muted-foreground">
               No contacts associated with this Opportunity.
             </p>
           ) : null}
         </CardContent>
       </Card>
-      <ContactAssociationDialog
-        open={addOpen}
-        title="Associate Opportunity contact"
-        description="Add a buying-team member without duplicating the Contact record."
-        contacts={(contacts.data?.items ?? []).filter(
-          (value) => !activeContactIds.has(value.id),
-        )}
+      {addOpen ? <CrmOpportunityContactDialog
+        excludedIds={activeContactIds}
         pending={add.isPending}
         error={add.error}
-        onOpenChange={(open) => {
-          setAddOpen(open);
-          if (!open) add.reset();
-        }}
+        onClose={() => { setAddOpen(false); add.reset(); }}
         onSubmit={(input) => add.mutate(input)}
-      />
+      /> : null}
       {managing ? (
-        <ContactAssociationDialog
-          open
-          title={`Manage ${managing.contactName}`}
-          description="Update this person's role or remove them from the Opportunity."
+        <CrmOpportunityContactDialog
           association={managing}
           pending={update.isPending || remove.isPending}
           error={update.error ?? remove.error}
-          onOpenChange={(open) => {
-            if (!open) {
-              setManaging(null);
-              update.reset();
-              remove.reset();
-            }
+          onClose={() => {
+            setManaging(null);
+            update.reset();
+            remove.reset();
           }}
           onSubmit={(input) =>
             update.mutate({ association: managing, ...input })
@@ -195,141 +166,4 @@ export function CrmOpportunityContacts({
       ) : null}
     </>
   );
-}
-
-function ContactAssociationDialog({
-  open,
-  title,
-  description,
-  contacts,
-  association,
-  pending,
-  error,
-  onOpenChange,
-  onSubmit,
-  onRemove,
-}: {
-  open: boolean;
-  title: string;
-  description: string;
-  contacts?: Array<{ id: string; displayName: string; email: string | null }>;
-  association?: CrmOpportunityContact;
-  pending: boolean;
-  error: unknown;
-  onOpenChange: (open: boolean) => void;
-  onSubmit: (input: {
-    contactId: string;
-    role: string | null;
-    isPrimary: boolean;
-  }) => void;
-  onRemove?: () => void;
-}) {
-  const [primary, setPrimary] = useState(association?.isPrimary ?? false);
-  return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent>
-        <form
-          onSubmit={(event) => {
-            event.preventDefault();
-            const data = new FormData(event.currentTarget);
-            onSubmit({
-              contactId:
-                association?.contactId ?? String(data.get("contactId")),
-              role: nullable(data, "role"),
-              isPrimary: primary,
-            });
-          }}
-        >
-          <DialogHeader>
-            <DialogTitle>{title}</DialogTitle>
-            <DialogDescription>{description}</DialogDescription>
-          </DialogHeader>
-          {error ? (
-            <Alert variant="destructive">
-              <AlertDescription>{apiErrorMessage(error)}</AlertDescription>
-            </Alert>
-          ) : null}
-          <div className="grid gap-4">
-            {!association ? (
-              <div className="grid gap-1.5">
-                <Label htmlFor="opportunity-contact">Contact *</Label>
-                <select
-                  id="opportunity-contact"
-                  name="contactId"
-                  required
-                  className="h-9 rounded-md border bg-background px-3 text-sm"
-                >
-                  <option value="">Select contact</option>
-                  {(contacts ?? []).map((contact) => (
-                    <option key={contact.id} value={contact.id}>
-                      {contact.displayName}
-                      {contact.email ? ` · ${contact.email}` : ""}
-                    </option>
-                  ))}
-                </select>
-              </div>
-            ) : null}
-            <div className="grid gap-1.5">
-              <Label htmlFor="opportunity-contact-role">Role</Label>
-              <Input
-                id="opportunity-contact-role"
-                name="role"
-                defaultValue={association?.role ?? ""}
-                placeholder="Decision maker, scientific lead, procurement…"
-              />
-            </div>
-            <div className="flex items-center gap-2">
-              <Checkbox
-                id="opportunity-contact-primary"
-                checked={primary}
-                onCheckedChange={(checked) => setPrimary(checked === true)}
-              />
-              <Label
-                htmlFor="opportunity-contact-primary"
-                className="cursor-pointer"
-              >
-                Primary contact for this Opportunity
-              </Label>
-            </div>
-          </div>
-          <DialogFooter>
-            {!association ? (
-              <span className="mr-auto text-xs text-muted-foreground">
-                * Required
-              </span>
-            ) : onRemove ? (
-              <Button
-                type="button"
-                variant="destructive"
-                className="mr-auto"
-                disabled={pending}
-                onClick={onRemove}
-              >
-                Remove association
-              </Button>
-            ) : null}
-            <Button
-              type="button"
-              variant="outline"
-              onClick={() => onOpenChange(false)}
-            >
-              Cancel
-            </Button>
-            <Button type="submit" disabled={pending}>
-              {pending
-                ? "Saving…"
-                : association
-                  ? "Save changes"
-                  : "Associate contact"}
-            </Button>
-          </DialogFooter>
-        </form>
-      </DialogContent>
-    </Dialog>
-  );
-}
-
-function nullable(data: FormData, key: string) {
-  const value = String(data.get(key) ?? "").trim();
-  return value || null;
 }

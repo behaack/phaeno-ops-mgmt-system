@@ -383,7 +383,7 @@
       "publicationStatus": "published",
       "id": "customer/en-US/lab-services",
       "route": "/docs/customer/lab-services",
-      "contentHash": "98d7ab5c1dcd4a5fdeb380ab31578d64e6e1f6829577315d70253ef6292ff1bb",
+      "contentHash": "529588da98ff91f81d9392c0ada37030e0aa9ebc8187f4c35e43bc235c262755",
       "sections": [
         {
           "heading": "Request laboratory services",
@@ -408,7 +408,7 @@
         {
           "heading": "Review and accept a quote",
           "anchor": "review-and-accept-a-quote",
-          "text": "Laboratory services are priced per job. Phaeno issues an itemized, immutable Portal quote for the accepted scope. When your approved billing and tax information is available, the quote includes calculated tax and freezes those commercial terms. Otherwise the quote is labeled Pre-tax total, and applicable tax is calculated when the invoice is issued. A zero tax amount is valid for an exempt, non-taxable, or zero-rate determination. The quote is available after all non-billing readiness items are complete and a Customer administrator is active; billing must be complete before invoicing. Before accepting, confirm the committed sample count, biological-source composition, standard service scope, price, currency, expiration date, and whether the displayed amount includes tax or is pre-tax. A Customer organization administrator or an administrator of the selected Department can accept the current unexpired quote. If the scope changes after acceptance, Phaeno issues a separate change quote. Added work does not begin until the applicable change is accepted."
+          "text": "Laboratory services are priced per job. Phaeno issues an itemized, immutable Portal quote for the accepted scope. When your approved billing and tax information is available, the quote includes calculated tax and freezes those commercial terms. Otherwise the quote is labeled Pre-tax total, and applicable tax is calculated when the invoice is issued. A zero tax amount is valid for an exempt, non-taxable, or zero-rate determination. The quote is available after all non-billing readiness items are complete and a Customer administrator is active; billing must be complete before invoicing. Before accepting, confirm the committed sample count, biological-source composition, standard service scope, price, currency, expiration date, and whether the displayed amount includes tax or is pre-tax. A Customer organization administrator or an administrator of the selected Department can accept the current unexpired quote. If the scope changes after acceptance, Phaeno issues a separate change quote. Added work does not begin until the applicable change is accepted. If accepting, withdrawing, or requesting cancellation fails, review the message in the open dialog. Your entries remain available to correct and retry. Closing the dialog does not confirm the action. You are asked before discarding changed entries. While saving, the dialog stays open and its entries and actions are unavailable until the save finishes."
         },
         {
           "heading": "Ship and track samples",
@@ -533,7 +533,7 @@
       "publicationStatus": "published",
       "id": "customer/en-US/sample-shipping",
       "route": "/docs/customer/sample-shipping",
-      "contentHash": "540f30c8658871806b5585354f94f5b777a344ea8b24da4b5d738bf5acda0918",
+      "contentHash": "505caeb070a6986b300b9b3a369044e8ca65ef0ab289d3dfdbb0fa73696768f8",
       "sections": [
         {
           "heading": "Prepare and ship samples",
@@ -548,7 +548,7 @@
         {
           "heading": "Confirm and ship",
           "anchor": "confirm-and-ship",
-          "text": "Assign exactly one registered tube from the displayed return kit to every expected tube slot. Confirm the crosswalk only after checking every row. The Portal then freezes the destination, instructions, manifest, packet barcode, and tube-to-sample crosswalk for that packet revision. Print the full packet. Follow the preparation and packing instructions, place the manifest inside the package, and use the ship-to page with the carrier label. The Phaeno packet barcode does not buy postage and is not a tube barcode. After handing the package to the carrier, record the carrier, tracking number, and shipment time in the related shipment. Record it once; the Job shows the same shipping facts for its samples. If a tube cannot be matched confidently or its barcode will not scan, stop and contact Phaeno instead of guessing."
+          "text": "Assign exactly one registered tube from the displayed return kit to every expected tube slot. Confirm the crosswalk only after checking every row. The Portal then freezes the destination, instructions, manifest, packet barcode, and tube-to-sample crosswalk for that packet revision. Print the full packet. Follow the preparation and packing instructions, place the manifest inside the package, and use the ship-to page with the carrier label. The Phaeno packet barcode does not buy postage and is not a tube barcode. Confirmation shows both the number of samples and the number of tubes. View packet checks the current revision before offering Print packet; reconnect or use Try again if it cannot be checked. A correction or replacement refreshes the packet. If saving fails, the message appears in the open dialog and your entries stay available for review. After handing the package to the carrier, record the carrier, tracking number, and shipment time in the related shipment. Record it once; the Job shows the same shipping facts for its samples. If a tube cannot be matched confidently or its barcode will not scan, stop and contact Phaeno instead of guessing. Use Back to lab job for the owning Job or All shipments for your authorized shipment list."
         }
       ]
     },
@@ -814,7 +814,7 @@
       "publicationStatus": "published",
       "id": "partner/en-US/data-assembly",
       "route": "/docs/partner/data-assembly",
-      "contentHash": "97eb443108cd307d40ccc8f6b0185167fa7e46dc7f826a74271c41bbd0835da3",
+      "contentHash": "2f5705cb42598932706a94932e7feddecfb3b0803ca913ebfdb3c64295b459e4",
       "sections": [
         {
           "heading": "Request data assembly",
@@ -849,7 +849,7 @@
         {
           "heading": "Find and resume requests",
           "anchor": "find-and-resume-requests",
-          "text": "The list provides search, status/date filters, Submitted by me, total counts, and Previous/Next. Opening a request and returning keeps the filtered page. Clear all removes filters. Failed loads offer retry instead of reporting that no requests exist. Closing a form with unsaved entries asks whether to discard them."
+          "text": "If accepting a quote, withdrawing, or requesting cancellation fails, review the message in the open dialog. Your entries remain available to correct and retry. Closing the dialog does not confirm the action. You are asked before discarding changed entries. While saving, the dialog stays open and its entries and actions are unavailable until the save finishes. Successful changes refresh the request and its status in the list. The list provides search, status/date filters, Submitted by me, total counts, and Previous/Next. Opening a request and returning keeps the filtered page. Clear all removes filters. Failed loads offer retry instead of reporting that no requests exist. Closing a form with unsaved entries asks whether to discard them."
         }
       ]
     },
@@ -954,7 +954,7 @@
       "publicationStatus": "published",
       "id": "partner/en-US/reagent-orders",
       "route": "/docs/partner/reagent-orders",
-      "contentHash": "805cbceb8bd122fd535dfd11ca1989c3758eeeff193e0220bf5343c3fdcbb5fb",
+      "contentHash": "a18bde5ced375b4a8f73036848658ad5a00eba9088d72c13356a991f57c3b763",
       "sections": [
         {
           "heading": "Order reagents",
@@ -989,7 +989,7 @@
         {
           "heading": "Resume after a problem",
           "anchor": "resume-after-a-problem",
-          "text": "If placement fails after a draft was saved, the page identifies that saved draft and provides Open saved draft. Retry continues that same order. An interrupted creation is recovered before a new draft can be created by the same form. Closing with unsaved entries asks whether to discard them. Search, status/date filters, Submitted by me, and Previous/Next apply to the complete matching list. Returning from an order preserves the filtered page. Use Clear all to reset filters or Retry records after a failed load."
+          "text": "If cancellation cannot be saved, review the message in the open dialog. Your reason stays available to correct and retry; closing the dialog does not cancel the order. You are asked before discarding a changed reason. While saving, the dialog stays open and its entries and actions are unavailable until the save finishes. Successful changes refresh the order and its status in the list. If placement fails after a draft was saved, the page identifies that saved draft and provides Open saved draft. Retry continues that same order. An interrupted creation is recovered before a new draft can be created by the same form. Closing with unsaved entries asks whether to discard them. Search, status/date filters, Submitted by me, and Previous/Next apply to the complete matching list. Returning from an order preserves the filtered page. Use Clear all to reset filters or Retry records after a failed load."
         }
       ]
     },
@@ -1124,7 +1124,7 @@
       "publicationStatus": "published",
       "id": "phaeno/configuration-and-recovery",
       "route": "/docs/phaeno/configuration-and-recovery",
-      "contentHash": "1d1c2f7730c571e818ded332598649fa2ba629f573de87dfda30cc05b6b1ecdc",
+      "contentHash": "785d6c7546c27130c34d4a599ad49b7a99cdcc1fd1b3cee8f8a6be41e270ab5c",
       "sections": [
         {
           "heading": "Configuration and file retention",
@@ -1149,7 +1149,7 @@
         {
           "heading": "Maintain released-deliverable retention",
           "anchor": "maintain-released-deliverable-retention",
-          "text": "Open File retention to review or edit the global released-deliverable policy. The starting values are 30 days of standard retention, one undownloaded-package warning 5 days before the standard deadline, and a conditional 5-day grace period when any released file remains undownloaded at that deadline. Every value is a positive whole number of exact 24-hour days, and the warning lead must be shorter than standard retention. Enter a reason for every change. A new revision applies only to packages released afterward; it never changes a deadline already communicated for an existing release. Prior revisions remain visible in policy history. To configure a Company-specific policy, open the Customer, Partner, or Prospect in CRM Companies, open Departments & services, select Retention, and add an override. Leave any value blank to inherit that value from the current global policy. The page shows the effective value and source for each field. Removing an override restores global inheritance for future releases and also requires a reason. Customer laboratory-result and Partner data-assembly output releases freeze the effective policy version and exact UTC warning, standard-deletion, and potential final-deletion times in the same transaction as release. Their authorized external detail views show the standard deadline and label the later date as conditional until grace is actually activated. Repeated payment events preserve the first release time. An older release without captured retention dates shows no automated schedule; do not infer a deadline from today's policy. Released-file and full-package ZIP downloads retain their attempt and outcome. Only a complete successful transfer counts toward the retention condition. Partial downloads, failures, cancellations, and timeouts do not count. Older download records without verified completion remain in history and do not become successful downloads merely because the record exists. Governed PSeq packages use the same frozen policy and verified-download rules. Downloads obey their deadline independently of cleanup, and existing schedules retain their original dates. Automated notices and physical file deletion depend on the enabled retention services. Check the receipt for their recorded outcomes; a closed download window does not prove that files were deleted."
+          "text": "Open File retention to review or edit the global released-deliverable policy. The starting values are 30 days of standard retention, one undownloaded-package warning 5 days before the standard deadline, and a conditional 5-day grace period when any released file remains undownloaded at that deadline. Every value is a positive whole number of exact 24-hour days, and the warning lead must be shorter than standard retention. Enter a reason for every change. A new revision applies only to packages released afterward; it never changes a deadline already communicated for an existing release. Prior revisions remain visible in policy history. To configure a Company-specific policy, open the Customer, Partner, or Prospect in CRM Companies, open Departments & services, select Retention, and add an override. Leave any value blank to inherit that value from the current global policy. The page shows the effective value and source for each field. Removing an override restores global inheritance for future releases and also requires a reason. Retention editors retain the policy revision and inherited values shown when you opened them. A background refresh does not replace the values you are reviewing. If another administrator changes the policy before you save, the save is rejected; close the editor, reload the policy, and review the current values before editing again. Unsaved edits require confirmation before closing or leaving. While a save is underway, editing and dismissal pause. A failed save keeps your entries and shows the error in the dialog; Retry reloads a failed policy view. Customer laboratory-result and Partner data-assembly output releases freeze the effective policy version and exact UTC warning, standard-deletion, and potential final-deletion times in the same transaction as release. Their authorized external detail views show the standard deadline and label the later date as conditional until grace is actually activated. Repeated payment events preserve the first release time. An older release without captured retention dates shows no automated schedule; do not infer a deadline from today's policy. Released-file and full-package ZIP downloads retain their attempt and outcome. Only a complete successful transfer counts toward the retention condition. Partial downloads, failures, cancellations, and timeouts do not count. Older download records without verified completion remain in history and do not become successful downloads merely because the record exists. Governed PSeq packages use the same frozen policy and verified-download rules. Downloads obey their deadline independently of cleanup, and existing schedules retain their original dates. Automated notices and physical file deletion depend on the enabled retention services. Check the receipt for their recorded outcomes; a closed download window does not prove that files were deleted."
         },
         {
           "heading": "Accounting and recovery",
@@ -1311,7 +1311,7 @@
       "publicationStatus": "published",
       "id": "phaeno/crm-companies-contacts",
       "route": "/docs/phaeno/crm-companies-contacts",
-      "contentHash": "914ca67222f6c655d6b225f41a9ecd259351a2d996045957c8e0be8eff3f1529",
+      "contentHash": "4dc9c8c758875c0866e31dfb7e5a9bd5e693666df2a1676429c4706464e00d64",
       "sections": [
         {
           "heading": "Companies and People",
@@ -1321,7 +1321,7 @@
         {
           "heading": "Create and find a Company",
           "anchor": "create-and-find-a-company",
-          "text": "Open Companies from the CRM sidebar. Search by the known organization identity and review possible duplicates before selecting New company. Company name is required; Website and relationship stage remain visible for quick entry. Open Additional details only when you need to record: an explicit normalized domain; when left blank, POMS derives it from Website source, industry, employee count, phone, and postal address tags and a relationship summary Company, Contact, Lead, Opportunity, and Task lists show total counts and pages. Searches update after a short pause; Clear all resets active filters. Opening a record and using its Back link retains the list search, filters, and page. Company sections remain in the URL. POMS assigns the creator as owner unless another supported owner is selected later. The Company name opens a stable, view-first workspace. Use Overview for the Company profile and custom data, People for Contacts and Portal identity/access state, Sales for Opportunities, Departments & services for approved operational access and configuration, Requests for request creation and history, and Activity for the commercial timeline and Tasks. Use CRM's central Requests queue for approve, decline, recovery, application, and completion decisions. Changing a CRM lifecycle to Active customer or Partner is descriptive only. It does not enable or reclassify Portal access, grant membership, activate services, or authorize orders."
+          "text": "Open Companies from the CRM sidebar. Search by the known organization identity and review possible duplicates before selecting New company. Company name is required; Website and relationship stage remain visible for quick entry. Open Additional details only when you need to record: an explicit normalized domain; when left blank, POMS derives it from Website source, industry, employee count, phone, and postal address tags and a relationship summary Company, Contact, Lead, Opportunity, and Task lists show total counts and pages. Searches update after a short pause; Clear all resets active filters. Opening a record and using its Back link retains the list search, filters, and page. Company sections remain in the URL. POMS assigns the creator as owner unless another supported owner is selected later. The Company name opens a stable, view-first workspace. Use Overview for the Company profile and custom data, People for Contacts and Portal identity/access state, Sales for Opportunities, Departments & services for approved operational access and configuration, Requests for request creation and history, and Activity for the commercial timeline and Tasks. Use CRM's central Requests queue for approve, decline, recovery, application, and completion decisions. Changing a CRM lifecycle to Active customer or Partner is descriptive only. It does not enable or reclassify Portal access, grant membership, activate services, or authorize orders. Company and Contact editors keep your entered details when the record refreshes in the background. Company ownership and deactivate/reactivate confirmations also retain the record you reviewed. If saving reports that the record changed, your entries remain available; review the current record before making another attempt. Closing and reopening an editor starts from the latest loaded details."
         },
         {
           "heading": "Create and manage a Contact",
@@ -1336,7 +1336,7 @@
         {
           "heading": "Deactivate, reactivate, and merge",
           "anchor": "deactivate-reactivate-and-merge",
-          "text": "Deactivate a Company or Contact when it should leave active directories while its history remains available. Reactivation restores the same CRM identity. Deactivating a Company suspends its attached Portal access scope; reactivating restores it. Contact lifecycle actions do not change Portal users. Use Merge only for a confirmed duplicate: Open the duplicate record that should be retired. Choose the record that should remain authoritative. Record a required merge reason. Review the consequence and confirm. POMS retains the source as an inactive alias, moves supported relationships and history, and writes a permanent merge record. If only one Company has Portal access, that access scope follows the surviving Company. POMS blocks a merge when both Companies have Portal access because choosing the surviving tenant requires an explicit data decision. Ordinary CRM UI does not undo a merge. If the records describe different legal entities or people, do not merge them; correct their fields or effective-dated relationships instead."
+          "text": "Deactivate a Company or Contact when it should leave active directories while its history remains available. Reactivation restores the same CRM identity. Deactivating a Company suspends its attached Portal access scope; reactivating restores it. Contact lifecycle actions do not change Portal users. On the Contact workspace, Deactivate or Reactivate opens a confirmation naming the Contact. Review it before confirming; Cancel leaves the Contact unchanged. If the change fails, the dialog shows the error. Manage this person's Portal membership and invitations separately from Company People. Use Merge only for a confirmed duplicate: Open the duplicate record that should be retired. Search the active Company or Contact directory and choose the record that should remain authoritative. The duplicate you opened is excluded from the choices. Record a required merge reason. Review the consequence and confirm. The merge dialog names the record being retired. A failed search offers Retry; a failed merge keeps the selected target and reason for review. Leaving an edited merge draft asks whether to discard the choices, and the dialog stays open while a merge is being processed. If another user changes the source record, reload and review the current version before submitting again. POMS retains the source as an inactive alias, moves supported relationships and history, and writes a permanent merge record. If only one Company has Portal access, that access scope follows the surviving Company. POMS blocks a merge when both Companies have Portal access because choosing the surviving tenant requires an explicit data decision. Ordinary CRM UI does not undo a merge. If the records describe different legal entities or people, do not merge them; correct their fields or effective-dated relationships instead."
         },
         {
           "heading": "Complete required custom data",
@@ -1437,7 +1437,7 @@
       "publicationStatus": "published",
       "id": "phaeno/crm-opportunities-pipelines",
       "route": "/docs/phaeno/crm-opportunities-pipelines",
-      "contentHash": "d598973a6491d6c15a1163a02193a4eb168481a7dd6d85d19dd117d496cef900",
+      "contentHash": "a199d46d495430890165f7b285f6cf03b1c93dc8a302c16d516c582f829a6957",
       "sections": [
         {
           "heading": "Opportunities and pipelines",
@@ -1452,7 +1452,7 @@
         {
           "heading": "Work the pipeline",
           "anchor": "work-the-pipeline",
-          "text": "The default board groups Opportunities by active stage. Use Table view when comparison across Company, stage, amount, close date, and owner is more useful. Search by identity and filter by pipeline or stage. Saved views retain the current filters and board/table choice; Export current view uses those same filters. Open the Opportunity name for its view-first workspace. Use Edit for commercial facts. Associate buying-team Contacts with an optional role and one primary Contact when that reflects the pursuit."
+          "text": "The default board groups Opportunities by active stage. Use Table view when comparison across Company, stage, amount, close date, and owner is more useful. Search by identity and filter by pipeline or stage. Saved views retain the current filters and board/table choice; Export current view uses those same filters. Open the Opportunity name for its view-first workspace. Use Edit for commercial facts. Associate buying-team Contacts with an optional role and one primary Contact when that reflects the pursuit. In Opportunity contacts, select Associate and search the Contact directory by name or email. Choose a result, optionally record the person's role, and select Associate contact. Contacts already actively associated with this Opportunity are excluded from the choices. If the section or directory search fails, use its Retry action before continuing; a failed load is not an empty buying team. Use the association's Manage action to change its role or primary designation. Remove association asks for confirmation and retains the Contact and prior association in history. Keep association returns to the editor. Failed saves retain your entries; leaving an edited draft asks whether to discard the unsaved changes."
         },
         {
           "heading": "Move stages deliberately",
@@ -1633,7 +1633,7 @@
       "publicationStatus": "published",
       "id": "phaeno/crm-troubleshooting",
       "route": "/docs/phaeno/crm-troubleshooting",
-      "contentHash": "0ab5374b50047d3a4bd536820bacdcb6dc8dcbe15c688dfebdeb5044bd46e0eb",
+      "contentHash": "f57b51443caee535941bb265b2349620f4f916aadebf90e6ae10aad533c3ae51",
       "sections": [
         {
           "heading": "CRM troubleshooting and recovery",
@@ -1648,7 +1648,7 @@
         {
           "heading": "A list is empty or will not load",
           "anchor": "a-list-is-empty-or-will-not-load",
-          "text": "Clear search and saved-view filters, confirm active/inactive filtering, and refresh once. An empty result differs from a failed request; retain the displayed error when escalating. Do not create a replacement record until search and duplicate review confirm that the record does not exist. The Company's People, Sales, and Requests tabs show a loading message or a specific failure with Retry for the affected records. A refresh failure may leave previously loaded records visible with a warning; it does not mean the Company has no records. Retry the affected section before associating a Contact, preparing an invitation, or choosing an Opportunity for a request."
+          "text": "Clear search and saved-view filters, confirm active/inactive filtering, and refresh once. An empty result differs from a failed request; retain the displayed error when escalating. Do not create a replacement record until search and duplicate review confirm that the record does not exist. The Company's People, Sales, and Requests tabs show a loading message or a specific failure with Retry for the affected records. A refresh failure may leave previously loaded records visible with a warning; it does not mean the Company has no records. Retry the affected section before associating a Contact, preparing an invitation, or choosing an Opportunity for a request. The same distinction applies to a Contact's Company relationships and an Opportunity's Opportunity contacts. Retry a failed collection before adding or changing an association. Contact and Company search controls have their own retry action if the directory search is unavailable. Search the directory rather than creating a replacement Contact simply because it is absent from the initial choices."
         },
         {
           "heading": "A record may be duplicated",
@@ -1926,17 +1926,17 @@
       "publicationStatus": "published",
       "id": "phaeno/data-provisioning-and-accounts",
       "route": "/docs/phaeno/data-provisioning-and-accounts",
-      "contentHash": "d9f69ee79aca7a676346265fc140d9e1b99e86d24de948f36cee4d3d3846cb3a",
+      "contentHash": "f49c1eaa90c534627ff4f510a8ebd60a62d39fc223b1e06da819db2bd1b9ceb4",
       "sections": [
         {
           "heading": "Data provisioning",
           "anchor": "data-provisioning",
-          "text": "Phaeno controls organization access and the lifecycle of Phaeno-owned source samples and curated package versions. Customer and Partner operational data is a separate access class and is never automatically reused for curated packages. Use the far-left sidebar beneath the toolbar to move among Source registry, Curated catalog, Organization grants, and Governance. The sidebar header identifies Data provisioning and, on wider screens, provides the pin or unpin icon. Pointer users can preview an unpinned sidebar by approaching the left edge; keyboard and touch users open it from the edge tab. Choosing a section closes an unpinned sidebar."
+          "text": "Phaeno controls organization access and the lifecycle of Phaeno-owned source samples and curated package versions. Customer and Partner operational data is a separate access class and is never automatically reused for curated packages. Use the far-left sidebar beneath the toolbar to move among Source registry, Curated catalog, Organization grants, and Governance. The sidebar header identifies Data provisioning and, on wider screens, provides the pin or unpin icon. Pointer users can preview an unpinned sidebar by approaching the left edge; keyboard and touch users open it from the edge tab. Choosing a section closes an unpinned sidebar. The selected section remains in the page address, so refresh keeps it open and browser Back returns to the previous section. From a source sample workspace, Back to Source registry returns to its owning list."
         },
         {
           "heading": "Understand the lifecycle",
           "anchor": "understand-the-lifecycle",
-          "text": "Register Phaeno-owned source material and its ownership and de-identification evidence. Complete the editable source revision and mark it ready. Snapshot one exact ready revision into a curated draft. Validate and publish an immutable package version. Mark the version eligible for the intended external audience when appropriate. Explicitly grant one exact version to an organization or one of its Departments. Preserve publication, grant, download, revocation, retirement, and governance history. Each step is explicit. Source readiness does not publish a package. Publication does not grant access. Eligibility does not grant access. A later version does not upgrade an existing grant."
+          "text": "Register Phaeno-owned source material and its ownership and de-identification evidence. Complete the editable source revision and mark it ready. Snapshot one exact ready revision into a curated draft. Validate and publish an immutable package version. Mark the version eligible for the intended external audience when appropriate. Explicitly grant one exact version to an organization or one of its Departments. Preserve publication, grant, download, revocation, retirement, and governance history. Each step is explicit. Source readiness does not publish a package. Publication does not grant access. Eligibility does not grant access. A later version does not upgrade an existing grant. When creating a dataset, editing its details, deactivating it, or retiring an exact version, POMS asks before discarding an edited draft. The dialog stays open while the change is being processed. If saving fails, the error appears at the top and your entries remain available for review. Discarding a draft clears those unsaved entries before the next action."
         },
         {
           "heading": "Use the correct access",
@@ -2037,7 +2037,7 @@
       "publicationStatus": "published",
       "id": "phaeno/getting-started",
       "route": "/docs/phaeno/getting-started",
-      "contentHash": "e5996e7b02659e106508f834a7192e897996264c8d9f6006912b78c6ef268275",
+      "contentHash": "09bec4aa1d9d69dd9326c58bd183e0e5db968b4d3b8347d819fe7233497783ff",
       "sections": [
         {
           "heading": "Phaeno operations guide",
@@ -2062,7 +2062,7 @@
         {
           "heading": "Find platform work",
           "anchor": "find-platform-work",
-          "text": "Dashboard uses the sidebar to show one Order Operations, Lab Operations, Accounts, or Web Operations panel at a time. Counts summarize the work or intake represented by each panel. CRM opens the complete first-party relationship, sales, and customer-access workspace. Its sidebar groups Companies and Contacts under Relationships; Leads and Opportunities under Sales; Tasks and Requests under Follow-up; Reports under Insights; and configuration under Administration. The Company is the canonical Customer, Partner, or Prospect record. Its workspace separates Overview, People, Sales, Departments & services, Requests, and Activity so you can focus on one kind of work at a time. Creating a Company does not grant access. Use the central Requests queue to review Needs decision, carry out Approved / needs work, and review Completed / history; use People for Company contacts, Portal identities, invitations, and reviewed access, and Departments & services for departments, readiness, services, and retention. Online-access approval creates only the internal tenant scope required for sign-in; product and service entitlements are managed separately, and approval never creates another customer record or a user. Web Operations is a Phaeno-administrator view of active public Website intake. Use Mailing List, Demo Requests, or Email delivery to select one panel at a time. Mailing List shows the newest active signups and identifies technical-brief requests; use Unsubscribe and confirm to remove a contact from that active list. Demo Requests shows the inquiry contact, organization, email, and submitted description; use Mark complete and confirm after the inquiry has been handled. Completed or unsubscribed items leave their active list immediately, but the original Website intake and action audit remain in POMS. Each panel paginates independently in groups of 10; its footer paginator appears only when the list has more than one page. These actions preserve Website intake history; create a CRM Company or Company request separately when commercial follow-up requires one. User management is the durable employee-access workspace. Invite a named Phaeno user with their intended Platform administrator and additive laboratory roles, edit accepted users and their roles, deactivate or reactivate accounts, and manage pending invitations there. Data provisioning manages source samples, curated packages, grants, and governance. Order operations contains Order intake, Trial projects, PSeq kits, Assembly, Attention, Result release, Finance, and Legacy integrations. Start each Customer Job from Order intake → New Customer order. Company request decisions remain in CRM; receipt and laboratory execution remain in Lab operations. Lab operations contains Phaeno-only work orders for receipt, accession, protocol execution, materials and equipment, libraries and batches, outsourced sequencing, exceptions, and scientific approval. Its sidebar contains operational work rather than role administration. Access requires an effective Lab role or platform-administrator bootstrap access. Order configuration maintains reusable defaults, the Service catalog, Analyses, Sample shipping, PSeq kits, Assembly, and Legacy links. File retention sets policies for future releases. Trial configuration is reached from Trial projects and owns Trial approvers and deliverable definitions. Docs opens the guide set for the current organization."
+          "text": "Dashboard uses the sidebar to show one Order Operations, Lab Operations, Customer access, or Web Operations panel at a time. The selected panel stays in the page address, so refresh and browser Back retain your place. Counts summarize the work or intake represented by each panel. CRM opens the complete first-party relationship, sales, and customer-access workspace. Its sidebar groups Companies and Contacts under Relationships; Leads and Opportunities under Sales; Tasks and Requests under Follow-up; Reports under Insights; and configuration under Administration. The Company is the canonical Customer, Partner, or Prospect record. Its workspace separates Overview, People, Sales, Departments & services, Requests, and Activity so you can focus on one kind of work at a time. Creating a Company does not grant access. Use the central Requests queue to review Needs decision, carry out Approved / needs work, and review Completed / history; use People for Company contacts, Portal identities, invitations, and reviewed access, and Departments & services for departments, readiness, services, and retention. Online-access approval creates only the internal tenant scope required for sign-in; product and service entitlements are managed separately, and approval never creates another customer record or a user. Web Operations is a Phaeno-administrator view of active public Website intake. Use Mailing List, Demo Requests, or Email delivery to select one panel at a time. Mailing List shows the newest active signups and identifies technical-brief requests; use Unsubscribe and confirm to remove a contact from that active list. Demo Requests shows the inquiry contact, organization, email, and submitted description; use Mark complete and confirm after the inquiry has been handled. Completed or unsubscribed items leave their active list immediately, but the original Website intake and action audit remain in POMS. Each panel paginates independently in groups of 10; its footer paginator appears only when the list has more than one page. These actions preserve Website intake history; create a CRM Company or Company request separately when commercial follow-up requires one. User management is the durable employee-access workspace. Invite a named Phaeno user with their intended Platform administrator and additive laboratory roles, edit accepted users and their roles, deactivate or reactivate accounts, and manage pending invitations there. Data provisioning manages source samples, curated packages, grants, and governance. Order operations contains Order intake, Trial projects, PSeq kits, Assembly, Attention, Result release, Finance, and Legacy integrations. Start each Customer Job from Order intake → New Customer order. Company request decisions remain in CRM; receipt and laboratory execution remain in Lab operations. Lab operations contains Phaeno-only work orders for receipt, accession, protocol execution, materials and equipment, libraries and batches, outsourced sequencing, exceptions, and scientific approval. Its sidebar contains operational work rather than role administration. Access requires an effective Lab role or platform-administrator bootstrap access. Order configuration maintains reusable defaults, the Service catalog, Analyses, Sample shipping, PSeq kits, Assembly, and Legacy links. File retention sets policies for future releases. Trial configuration is reached from Trial projects and owns Trial approvers and deliverable definitions. Docs opens the guide set for the current organization."
         },
         {
           "heading": "Recover Website email",
@@ -2457,7 +2457,7 @@
       "publicationStatus": "published",
       "id": "phaeno/lab-receipt-accession",
       "route": "/docs/phaeno/lab-receipt-accession",
-      "contentHash": "3d18e7775ecea46d948f9f75490a9e41be3784112c1a4617f5f95beccd5c3b9c",
+      "contentHash": "23b7d008915bf62cf6323431605a233d60c61d41ea84cf2679f2c8d14141bbcf",
       "sections": [
         {
           "heading": "Receipt and accession",
@@ -2472,7 +2472,7 @@
         {
           "heading": "Accession the specimen",
           "anchor": "accession-the-specimen",
-          "text": "Accession only after receipt. Choose a unique accession number, then record location, quantity and unit when tracked, and an optional retention date. For a shipment with a frozen registered-tube crosswalk, scan both the packet and each matched tube during accession. POMS validates the exact shipment, specimen, and tube-slot association and adopts every qualified permanent supplier barcode as a submitted-container identity. Multiple submitted tubes for one sample use the same specimen accession and create separate containers linked to that specimen. POMS does not create or print a second label for those tubes. For every other submitted specimen, POMS assigns its own authoritative barcode as before. The label window renders the current container identity as a Code 39 barcode through the browser and installed printer driver. Enter the reason, open the system print dialog, and inspect the physical label before choosing Label printed. POMS increments the print count only after that confirmation. If the label did not print correctly, enter the failure details and choose Record failed attempt; the failure remains in history without falsely counting a usable label. Every POMS-generated label reprint requires a reason and renders the same current container identity. A reprint or failed attempt adds a separate history event; it does not replace the barcode or erase an earlier print. Registered supplier tubes have no POMS print action. Verify readable text, barcode, accession, container, and adhesion using the approved bench procedure before processing continues."
+          "text": "Opening Lab work from a scanned packet retains that shipment. Continue to receipt and accession also carries the matched tube. If checking the current identity fails, use Try again; a connection failure is not a tube mismatch. The Lab operations return link goes back to the originating section and shipment, including after work status changes or a protocol execution is opened. Accession only after receipt. Choose a unique accession number, then record location, quantity and unit when tracked, and an optional retention date. For a shipment with a frozen registered-tube crosswalk, scan both the packet and each matched tube during accession. POMS validates the exact shipment, specimen, and tube-slot association and adopts every qualified permanent supplier barcode as a submitted-container identity. Multiple submitted tubes for one sample use the same specimen accession and create separate containers linked to that specimen. POMS does not create or print a second label for those tubes. For every other submitted specimen, POMS assigns its own authoritative barcode as before. The label window renders the current container identity as a Code 39 barcode through the browser and installed printer driver. Enter the reason, open the system print dialog, and inspect the physical label before choosing Label printed. POMS increments the print count only after that confirmation. If the label did not print correctly, enter the failure details and choose Record failed attempt; the failure remains in history without falsely counting a usable label. Every POMS-generated label reprint requires a reason and renders the same current container identity. A reprint or failed attempt adds a separate history event; it does not replace the barcode or erase an earlier print. Registered supplier tubes have no POMS print action. Verify readable text, barcode, accession, container, and adhesion using the approved bench procedure before processing continues."
         },
         {
           "heading": "Scan and locate a container",
@@ -2599,7 +2599,7 @@
       "publicationStatus": "published",
       "id": "phaeno/order-billing-payment-release",
       "route": "/docs/phaeno/order-billing-payment-release",
-      "contentHash": "805af5bff9af2c0f7a0894b3f3e366b7f97ace0df3cf9f40084b47447eadf836",
+      "contentHash": "0144fd633f47dc976b8f1c3c0d22e75ce0a430778b9da33a891a1be25031a37a",
       "sections": [
         {
           "heading": "PSeq billing, cash, and result release",
@@ -2609,7 +2609,7 @@
         {
           "heading": "Find the Finance record",
           "anchor": "find-the-finance-record",
-          "text": "Finance actions depend on your assigned responsibility: Billing Operators maintain billing and invoice adjustments, Cash Operators record and allocate receipts and submit reconciliations, and Cash Reconcilers independently approve reconciliations. Result Release Manager and file-administration authority remain separate. Open Order Ops → Finance. Choose Invoices and aging, Receipts, Customer billing, Import receipts, or Reconciliation. Open a record by its invoice, receipt, Customer or reconciliation number. The detail shows its current state and permitted actions. Return to Finance to keep the previous Customer filter and section. The Customer filter narrows the displayed records; aging summarizes all Customers, and Export all invoices and Export all receipts include all Customers."
+          "text": "Finance actions depend on your assigned responsibility: Billing Operators maintain billing and invoice adjustments, Cash Operators record and allocate receipts and submit reconciliations, and Cash Reconcilers independently approve reconciliations. Result Release Manager and file-administration authority remain separate. Open Order Ops → Finance. Choose Invoices and aging, Receipts, Customer billing, Import receipts, or Reconciliation. Open a record by its invoice, receipt, Customer or reconciliation number. The detail shows its current state and permitted actions. Return to Finance to keep the previous Customer filter and section. The Customer filter narrows the displayed records; aging summarizes all Customers, and Export all invoices and Export all receipts include all Customers. If a section or its supporting Customer or aging information cannot load, use its Retry action. Other available Finance sections remain usable. A new receipt or import needs the Customer choices to load; a new reconciliation also needs its eligible receipts. An open adjustment, allocation, or reversal keeps the invoice and receipt information you reviewed. If another change prevents saving, the dialog automatically loads the current record and preserves your entries. Review the updated status and balances, then choose Use reviewed record, check your entries and save again. If that refresh fails, use Retry current record. An unavailable invoice must be reselected, and a receipt with no available amount cannot be allocated."
         },
         {
           "heading": "Configure and issue PSeq documents",
@@ -3182,7 +3182,7 @@
       "publicationStatus": "published",
       "id": "phaeno/trial-projects",
       "route": "/docs/phaeno/trial-projects",
-      "contentHash": "4411861f73a9381a53d2b37e355e44481551a08779935d999adba98a50e5b0f0",
+      "contentHash": "f90a978a8952a8698b2cb6e1983be2c97cec94df8f165bb1d0f74d2a7955e853",
       "sections": [
         {
           "heading": "Operate Trial Projects",
@@ -3207,7 +3207,7 @@
         {
           "heading": "Execute the approved work",
           "anchor": "execute-the-approved-work",
-          "text": "The Prospect organization administrator accepts the approved RUO/no-PHI terms and submits samples during the agreed window. Department administrators cannot substitute for that role. Submit samples lets the administrator prepare a roster sharing one RNA type and shipping destination; submitting the roster creates one authorization and shipment. Each sample checks allowance, extracted-RNA metadata, approved analysis inputs, configured quantity units and limits, and active shipping instructions. The form identifies concentration and other inputs required by the approved analyses. Changed forms ask before discarding entries, including when leaving the scope page. During a save or explicit reload, editing, repeat actions, and dismissal are blocked until the operation finishes. The scope page also protects navigation while reloading. Reload current Trial; keep my entries refreshes scope-dependent choices and preserves entries for review, including when the reload fails; a changed scope requires a fresh acceptance confirmation. The shared Lab Operations provider creates Trial-authorized work pinned to the approved workflow version. Existing registered-tube, packet, receipt, accession, protocol, QC, sequencing, and scientific-review controls apply. Use Shipping and packets and each sample's Open laboratory work link. Trial holds and approval changes stop scientific progress and shipping mutations; custody facts and exception handling remain recordable. Schedule estimate communicates an estimate without changing scope. Authorize replacement records the failed sample, responsibility, reason, and approving authority. It permits exactly one replacement and never increases the frozen original allowance. Prospect-caused problems need the same explicit exception approval."
+          "text": "The Prospect organization administrator accepts the approved RUO/no-PHI terms and submits samples during the agreed window. Department administrators cannot substitute for that role. Submit samples lets the administrator prepare a roster sharing one RNA type and shipping destination; submitting the roster creates one authorization and shipment. Each sample checks allowance, extracted-RNA metadata, approved analysis inputs, configured quantity units and limits, and active shipping instructions. The form identifies concentration and other inputs required by the approved analyses. Changed forms ask before discarding entries through Cancel, Escape, or browser navigation. Reloading the browser also warns about unsaved changes. During a save or explicit reload, editing, repeat actions, dismissal, and navigation are blocked until the operation finishes. Required fields in approval, configuration, and other short action dialogs show an issue when you leave them, and clear that issue as you correct it. A failed Trial configuration refresh preserves an open assignment or catalog draft; Retry configuration reloads the configuration. Reload current Trial; keep my entries refreshes scope-dependent choices and preserves entries for review, including when the reload fails; a changed scope requires a fresh acceptance confirmation. The shared Lab Operations provider creates Trial-authorized work pinned to the approved workflow version. Existing registered-tube, packet, receipt, accession, protocol, QC, sequencing, and scientific-review controls apply. Use Shipping and packets and each sample's Open laboratory work link. Trial holds and approval changes stop scientific progress and shipping mutations; custody facts and exception handling remain recordable. Schedule estimate communicates an estimate without changing scope. Authorize replacement records the failed sample, responsibility, reason, and approving authority. It permits exactly one replacement and never increases the frozen original allowance. Prospect-caused problems need the same explicit exception approval."
         },
         {
           "heading": "Review and release results",
@@ -3569,7 +3569,7 @@
       "publicationStatus": "published",
       "id": "prospect/en-US/sample-shipping",
       "route": "/docs/prospect/sample-shipping",
-      "contentHash": "f33fadfd6cb1ed070e68c87b608a2baacf200b4a4b2d2e25821c6df727dba870",
+      "contentHash": "80df269beff5870d30bff79eddea5ba55b2231fa7c14e8620dc79727474c012e",
       "sections": [
         {
           "heading": "Prepare and ship Trial Project samples",
@@ -3584,7 +3584,7 @@
         {
           "heading": "Confirm and ship",
           "anchor": "confirm-and-ship",
-          "text": "Assign exactly one registered tube from the displayed return kit to every expected tube slot. A sample with multiple tubes has one slot per tube, shown as Tube 1 of N. Confirm the crosswalk only after checking every row. The Portal then freezes the destination, instructions, manifest, packet barcode, and tube-to-sample crosswalk for that packet revision. Print the full packet. Follow the preparation and packing instructions, place the manifest inside the package, and use the ship-to page with the carrier label. The Phaeno packet barcode does not buy postage and is not a tube barcode. After handing the package to the carrier, record the carrier, tracking number, and shipment time in Samples & shipping. If a tube cannot be matched confidently or its barcode will not scan, stop and contact Phaeno instead of guessing. Use Back to Trial from the shipment to return to its approved scope and sample progress. Shipping administration may be performed by the Department administrator; accepting Trial scope and submitting original samples remain organization-administrator actions."
+          "text": "Assign exactly one registered tube from the displayed return kit to every expected tube slot. A sample with multiple tubes has one slot per tube, shown as Tube 1 of N. Confirm the crosswalk only after checking every row. The Portal then freezes the destination, instructions, manifest, packet barcode, and tube-to-sample crosswalk for that packet revision. Print the full packet. Follow the preparation and packing instructions, place the manifest inside the package, and use the ship-to page with the carrier label. The Phaeno packet barcode does not buy postage and is not a tube barcode. Confirmation shows both the number of samples and the number of tubes. View packet checks the current revision before offering Print packet; reconnect or use Try again if it cannot be checked. A correction or replacement refreshes the packet. If saving fails, the message appears in the open dialog and your entries stay available for review. After handing the package to the carrier, record the carrier, tracking number, and shipment time in Samples & shipping. If a tube cannot be matched confidently or its barcode will not scan, stop and contact Phaeno instead of guessing. Use Back to Trial from the shipment to return to its approved scope and sample progress, or All shipments for your authorized shipment list. Shipping administration may be performed by the Department administrator; accepting Trial scope and submitting original samples remain organization-administrator actions."
         }
       ]
     },
@@ -3698,5 +3698,5 @@
       ]
     }
   ],
-  "corpusHash": "4c9b63d266d9d568af28612fff9671aded1bb01da6a600252c91cb40f686cbbb"
+  "corpusHash": "d03727c3263581446ab75c3189da1653e28c56ccb0e1694e4a3f8853afd0075e"
 }

@@ -56,6 +56,7 @@ vi.mock('#/api/pseq-order-to-cash', () => mocks)
 vi.mock('#/api/order-management', () => ({
   getOrderConfiguration: mocks.getOrderConfiguration,
   getOrderErrorMessage: (_error: unknown, fallback: string) => fallback,
+  isOrderConcurrencyError: (error: unknown) => Boolean(error && typeof error === 'object' && 'code' in error && error.code === 'concurrency_conflict'),
 }))
 
 describe('PSeq order-to-cash panels', () => {
@@ -156,6 +157,76 @@ describe('PSeq order-to-cash panels', () => {
     expect(mocks.adjustInvoice).toHaveBeenCalledWith(invoice.id, { kind: 'Credit', amount: 35.5, reason: 'Correct duplicate charge', invoiceVersion: invoice.version })
   })
 
+  it('keeps the invoice reviewed at dialog-open when the record refreshes in the background', async () => {
+    mocks.listInvoices.mockResolvedValue([invoice])
+    mocks.adjustInvoice.mockRejectedValue(new Error('Not saved'))
+    const client = renderPanel(<FinanceOperationsPanel apiEnabled canBill canManageCash={false} canReconcile={false} record={{ kind: 'invoice', id: invoice.id }} />)
+    fireEvent.click(await screen.findByRole('button', { name: 'Record adjustment' }))
+    fireEvent.change(screen.getByLabelText(/Amount \(USD\)/), { target: { value: '25' } })
+    fireEvent.change(screen.getByLabelText(/Reason/), { target: { value: 'Reviewed original invoice' } })
+    mocks.listInvoices.mockResolvedValue([{ ...invoice, version: 4, balance: 75 }])
+    await act(async () => { await client.invalidateQueries({ queryKey: ['accounts-receivable', 'invoices'] }) })
+    fireEvent.click(within(screen.getByRole('dialog')).getByRole('button', { name: 'Record adjustment' }))
+    await waitFor(() => expect(mocks.adjustInvoice).toHaveBeenCalledWith(invoice.id, expect.objectContaining({ invoiceVersion: 3, reason: 'Reviewed original invoice' })))
+  })
+
+  it('loads a conflicting invoice automatically but requires review before retrying the retained adjustment', async () => {
+    mocks.listInvoices.mockResolvedValue([invoice])
+    mocks.adjustInvoice.mockRejectedValueOnce({ code: 'concurrency_conflict' }).mockResolvedValue({})
+    renderPanel(<FinanceOperationsPanel apiEnabled canBill canManageCash={false} canReconcile={false} record={{ kind: 'invoice', id: invoice.id }} />)
+    fireEvent.click(await screen.findByRole('button', { name: 'Record adjustment' }))
+    fireEvent.change(screen.getByLabelText(/Amount \(USD\)/), { target: { value: '25' } })
+    fireEvent.change(screen.getByLabelText(/Reason/), { target: { value: 'Retain this explanation' } })
+    mocks.listInvoices.mockResolvedValue([{ ...invoice, version: 4, balance: 75 }])
+    const save = within(screen.getByRole('dialog')).getByRole('button', { name: 'Record adjustment' })
+    fireEvent.click(save)
+    const review = await screen.findByRole('button', { name: 'Use reviewed record' })
+    expect(screen.getByText('Current invoice: Issued · $75.00 outstanding.')).toBeTruthy()
+    expect(save).toHaveProperty('disabled', true)
+    expect(mocks.adjustInvoice).toHaveBeenCalledOnce()
+    expect(screen.getByLabelText(/Reason/)).toHaveProperty('value', 'Retain this explanation')
+    fireEvent.click(review)
+    fireEvent.click(save)
+    await waitFor(() => expect(mocks.adjustInvoice).toHaveBeenLastCalledWith(invoice.id, { kind: 'Credit', amount: 25, reason: 'Retain this explanation', invoiceVersion: 4 }))
+  })
+
+  it('retains a conflict draft when loading the current record fails and supports a local retry', async () => {
+    mocks.listInvoices.mockResolvedValueOnce([invoice]).mockRejectedValueOnce(new Error('Offline')).mockResolvedValue([{ ...invoice, version: 4 }])
+    mocks.adjustInvoice.mockRejectedValue({ code: 'concurrency_conflict' })
+    renderPanel(<FinanceOperationsPanel apiEnabled canBill canManageCash={false} canReconcile={false} record={{ kind: 'invoice', id: invoice.id }} />)
+    fireEvent.click(await screen.findByRole('button', { name: 'Record adjustment' }))
+    fireEvent.change(screen.getByLabelText(/Amount \(USD\)/), { target: { value: '25' } })
+    fireEvent.change(screen.getByLabelText(/Reason/), { target: { value: 'Keep after failed reload' } })
+    fireEvent.click(within(screen.getByRole('dialog')).getByRole('button', { name: 'Record adjustment' }))
+    fireEvent.click(await screen.findByRole('button', { name: 'Retry current record' }))
+    await screen.findByRole('button', { name: 'Use reviewed record' })
+    expect(screen.getByLabelText(/Amount \(USD\)/)).toHaveProperty('value', '25')
+    expect(screen.getByLabelText(/Reason/)).toHaveProperty('value', 'Keep after failed reload')
+    expect(mocks.adjustInvoice).toHaveBeenCalledOnce()
+  })
+
+  it('isolates Customer billing from unrelated Finance collections', async () => {
+    router.search = { financeSection: 'customers' }
+    mocks.listAccountsReceivableCustomers.mockResolvedValue([customer])
+    mocks.listInvoices.mockRejectedValue(new Error('Invoices offline'))
+    mocks.listPaymentReceipts.mockRejectedValue(new Error('Receipts offline'))
+    renderPanel(<FinanceOperationsPanel apiEnabled canBill canManageCash canReconcile />)
+    await screen.findByRole('link', { name: customer.organizationName })
+    expect(mocks.listInvoices).not.toHaveBeenCalled()
+    expect(mocks.listPaymentReceipts).not.toHaveBeenCalled()
+    expect(mocks.listReconciliations).not.toHaveBeenCalled()
+    expect(mocks.getAgingSummary).not.toHaveBeenCalled()
+    expect(screen.queryByText('Finance information is unavailable')).toBeNull()
+  })
+
+  it('does not expose billing actions through a direct Customer URL to a Cash Operator', () => {
+    mocks.listAccountsReceivableCustomers.mockResolvedValue([customer])
+    renderPanel(<FinanceOperationsPanel apiEnabled canBill={false} canManageCash canReconcile={false} record={{ kind: 'customer', id: customer.organizationId }} />)
+    expect(screen.getByText('This record is unavailable in your current Finance view.')).toBeTruthy()
+    expect(screen.queryByRole('button', { name: 'Edit billing and tax' })).toBeNull()
+    expect(mocks.listAccountsReceivableCustomers).not.toHaveBeenCalled()
+  })
+
   it('allocates from a receipt record using current same-Customer suggestions and retains a failed allocation', async () => {
     mocks.listPaymentReceipts.mockResolvedValue([{ id: 'receipt-id', organizationId: customer.organizationId, receiptNumber: 'PAY-100', source: 'Bank', externalId: 'EXT-1', payer: 'Atlas', amount: 100, appliedAmount: 0, unappliedAmount: 100, currency: 'USD', receivedOn: '2026-09-01', method: 'Wire', bankReference: 'BANK-1', status: 'Recorded', version: 7 }])
     mocks.listMatchingInvoices.mockResolvedValue([invoice])
@@ -174,6 +245,30 @@ describe('PSeq order-to-cash panels', () => {
     expect(screen.getByLabelText(/Invoice/)).toHaveProperty('value', invoice.id)
     expect(screen.getByLabelText(/Amount \(USD\)/)).toHaveProperty('value', '25')
     expect(mocks.allocatePayment).toHaveBeenCalledWith('receipt-id', { invoiceId: invoice.id, amount: 25, receiptVersion: 7, invoiceVersion: invoice.version })
+  })
+
+  it('does not carry a hidden Customer filter into eligible reconciliation receipts', async () => {
+    router.search = { financeSection: 'reconciliation', financeCustomer: customer.organizationId }
+    mocks.listAccountsReceivableCustomers.mockResolvedValue([customer])
+    renderPanel(<FinanceOperationsPanel apiEnabled canBill={false} canManageCash canReconcile={false} />)
+    await waitFor(() => expect(screen.getByRole('button', { name: 'New reconciliation' })).toHaveProperty('disabled', false))
+    expect(mocks.listPaymentReceipts).toHaveBeenCalledWith(false, undefined, undefined)
+    expect(screen.queryByLabelText('Customer')).toBeNull()
+  })
+
+  it('keeps both reviewed allocation versions when the receipt and matching invoices refresh', async () => {
+    const receipt = { id: 'receipt-id', organizationId: customer.organizationId, receiptNumber: 'PAY-100', source: 'Bank', externalId: 'EXT-1', payer: 'Atlas', amount: 100, appliedAmount: 0, unappliedAmount: 100, currency: 'USD', receivedOn: '2026-09-01', method: 'Wire', bankReference: 'BANK-1', status: 'Recorded', version: 7 }
+    mocks.listPaymentReceipts.mockResolvedValue([receipt]); mocks.listMatchingInvoices.mockResolvedValue([invoice]); mocks.allocatePayment.mockRejectedValue(new Error('Not saved'))
+    const client = renderPanel(<FinanceOperationsPanel apiEnabled canBill={false} canManageCash canReconcile={false} record={{ kind: 'receipt', id: receipt.id }} />)
+    fireEvent.click(await screen.findByRole('button', { name: 'Allocate to invoice' }))
+    await screen.findByRole('option', { name: /INV-100/ })
+    fireEvent.change(screen.getByLabelText(/Invoice/), { target: { value: invoice.id } })
+    fireEvent.change(screen.getByLabelText(/Amount \(USD\)/), { target: { value: '25' } })
+    mocks.listPaymentReceipts.mockResolvedValue([{ ...receipt, version: 8, unappliedAmount: 75 }]); mocks.listMatchingInvoices.mockResolvedValue([{ ...invoice, version: 4, balance: 75 }])
+    await act(async () => { await client.invalidateQueries({ queryKey: ['accounts-receivable'] }) })
+    expect(screen.getByRole('option', { name: 'INV-100 · $100.00' })).toBeTruthy()
+    fireEvent.click(screen.getByRole('button', { name: 'Allocate payment' }))
+    await waitFor(() => expect(mocks.allocatePayment).toHaveBeenCalledWith(receipt.id, { invoiceId: invoice.id, amount: 25, receiptVersion: 7, invoiceVersion: 3 }))
   })
 
   it('validates an adjustment inline and focuses the first issue without sending a request', async () => {
@@ -254,6 +349,10 @@ describe('PSeq order-to-cash panels', () => {
     renderPanel(<FinanceOperationsPanel apiEnabled canBill canManageCash={false} canReconcile={false} />)
     expect(await screen.findByText('Finance information is unavailable')).toBeTruthy()
     expect(screen.queryByText('No invoices match this view.')).toBeNull()
+    mocks.listInvoices.mockResolvedValue([invoice])
+    fireEvent.click(screen.getByRole('button', { name: 'Retry' }))
+    await screen.findByRole('link', { name: invoice.invoiceNumber })
+    expect(screen.queryByText('Finance information is unavailable')).toBeNull()
   })
 
   it('requires another preview after changing the reviewed import input', async () => {
@@ -307,6 +406,7 @@ function renderPanel(node: ReactNode) {
   render(
     <QueryClientProvider client={queryClient}>{node}</QueryClientProvider>,
   )
+  return queryClient
 }
 
 const customer: AccountsReceivableCustomer = {

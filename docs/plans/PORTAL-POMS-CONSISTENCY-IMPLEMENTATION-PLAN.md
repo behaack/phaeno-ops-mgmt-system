@@ -63,6 +63,8 @@ Repository instructions reserve test-suite execution for an explicit request. No
 
 ## Engineering decisions
 
+The Product Owner requested another application-wide scan after release. Its findings, fixes and separate verification are tracked in [the second pass](PORTAL-POMS-CONSISTENCY-SECOND-PASS-2026-09-07.md).
+
 - Reuse the existing persisted fields and transaction/concurrency model; no schema migration is needed. The [database reference](../database-erd.md) records changed meanings of existing configuration/evidence fields.
 - Preserve separate backend authorization for commercial, laboratory, result, retention, organization and Finance operations. Contextual links open the owning workflow; they do not grant additional permissions.
 - Keep authenticated recovery responses for retired organization/evidence creation paths. Existing records, direct links and historical data remain inspectable under their existing authorization.

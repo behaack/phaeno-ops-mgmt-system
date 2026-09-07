@@ -10,13 +10,14 @@ import { downloadCustomerInvoicePdf, downloadCustomerResultArtifact, listCustome
 import { Alert, AlertDescription, AlertTitle } from '#/components/ui/alert'
 import { Button } from '#/components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '#/components/ui/card'
-import { Dialog, DialogClose, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '#/components/ui/dialog'
+import { Dialog, DialogClose, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '#/components/ui/dialog'
 import { Input } from '#/components/ui/input'
 import { Label } from '#/components/ui/label'
 import { RequiredDialogFooter, RequiredFieldName } from '#/components/ui/required-field'
 import { usePhaenoSession } from '#/features/auth/session-context'
 import { GovernedResultPackagePanel } from './GovernedResultPackagePanel'
 import { humanizeStatus, OrderStatusBadge } from './OrderStatusBadge'
+import { useOrderDraftGuard } from './use-order-draft-guard'
 
 export function LabServiceDetailPage({ orderId }: { orderId: string }) {
   const { authProvider, session } = usePhaenoSession()
@@ -50,6 +51,16 @@ export function LabServiceDetailPage({ orderId }: { orderId: string }) {
     },
   })
 
+  const dialogDirty = dialog === 'accept' ? purchaseOrderNumber !== '' : dialog !== null && cancellationReason !== ''
+  useOrderDraftGuard(dialogDirty, dialog !== null && action.isPending)
+  function openDecision(next: 'accept' | 'cancel' | 'withdraw') {
+    if (action.isPending) return
+    action.reset(); setCancellationReason(''); setPurchaseOrderNumber(''); setDialog(next)
+  }
+  function closeDecision() {
+    if (!action.isPending && (!dialogDirty || window.confirm('Discard unsaved order changes?'))) setDialog(null)
+  }
+
   if (!apiEnabled) return <main className="page-wrap px-4 py-8"><Alert><AlertTitle>Connected order detail is unavailable</AlertTitle><AlertDescription>Use a signed-in Customer session to review this laboratory request.</AlertDescription></Alert></main>
   if (orderQuery.isLoading) return <main className="page-wrap px-4 py-8"><p role="status">Loading laboratory order…</p></main>
   if (orderQuery.error || !orderQuery.data) return <main className="page-wrap px-4 py-8"><Alert variant="destructive"><AlertTitle>Laboratory order could not be loaded</AlertTitle><AlertDescription>{getOrderErrorMessage(orderQuery.error, 'Return to Lab services and try again.')}</AlertDescription></Alert></main>
@@ -63,11 +74,11 @@ export function LabServiceDetailPage({ orderId }: { orderId: string }) {
     <main className="page-wrap px-4 py-8">
       <section className="mb-6 flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
         <div><p className="text-sm text-muted-foreground"><Link to="/lab-services" search={previous => previous} className="hover:underline">Lab services</Link> / <span className="font-mono">{order.orderNumber}</span></p><div className="mt-2 flex flex-wrap items-center gap-3"><h1 className="text-3xl font-semibold">{order.orderNumber}</h1><OrderStatusBadge status={order.status} /></div><p className="mt-2 text-sm text-muted-foreground">{order.customerReference || 'No Customer reference'} · Updated {formatDate(order.updatedAt)}</p></div>
-        <div className="flex flex-wrap gap-2">{order.canEdit ? <Button type="button" variant="outline" asChild><Link to="/lab-services/$orderId/edit" params={{ orderId: order.id }} search={previous => previous}>Edit request</Link></Button> : null}{order.canSubmit ? <Button type="button" onClick={() => action.mutate('submit')} disabled={action.isPending}>Submit for pricing</Button> : null}{order.canAcceptQuote ? <Button type="button" onClick={() => setDialog('accept')}>Accept quote</Button> : null}{order.canWithdraw ? <Button type="button" variant="outline" onClick={() => setDialog('withdraw')}>Withdraw</Button> : null}{order.canRequestCancellation ? <Button type="button" variant="outline" onClick={() => setDialog('cancel')}>Request cancellation</Button> : null}</div>
+        <div className="flex flex-wrap gap-2">{order.canEdit ? <Button type="button" variant="outline" asChild><Link to="/lab-services/$orderId/edit" params={{ orderId: order.id }} search={previous => previous}>Edit request</Link></Button> : null}{order.canSubmit ? <Button type="button" onClick={() => action.mutate('submit')} disabled={action.isPending}>Submit for pricing</Button> : null}{order.canAcceptQuote ? <Button type="button" onClick={() => openDecision('accept')}>Accept quote</Button> : null}{order.canWithdraw ? <Button type="button" variant="outline" onClick={() => openDecision('withdraw')}>Withdraw</Button> : null}{order.canRequestCancellation ? <Button type="button" variant="outline" onClick={() => openDecision('cancel')}>Request cancellation</Button> : null}</div>
       </section>
       {order.tenantSafeReason ? <Alert className="mb-5"><AlertTitle>Action needed</AlertTitle><AlertDescription>{order.tenantSafeReason}</AlertDescription></Alert> : null}
       {order.labCustomerActionSummary ? <Alert className="mb-5"><AlertTitle>Laboratory action needed</AlertTitle><AlertDescription>{order.labCustomerActionSummary}</AlertDescription></Alert> : null}
-      {action.error ? <Alert variant="destructive" className="mb-5"><AlertTitle>Order was not updated</AlertTitle><AlertDescription>{getOrderErrorMessage(action.error, 'Reload and try again.')}</AlertDescription></Alert> : null}
+      {action.error && !dialog ? <Alert variant="destructive" className="mb-5"><AlertTitle>Order was not updated</AlertTitle><AlertDescription>{getOrderErrorMessage(action.error, 'Reload and try again.')}</AlertDescription></Alert> : null}
 
       {order.labMilestone ? <Card className="mb-5"><CardHeader><CardTitle>Laboratory progress</CardTitle><CardDescription>Current customer-safe milestone from the laboratory record.</CardDescription></CardHeader><CardContent><div className="flex flex-wrap items-center gap-3"><OrderStatusBadge status={order.labMilestone} />{order.labScheduleHealth ? <span className="text-sm text-muted-foreground">Schedule: {humanizeStatus(order.labScheduleHealth)}</span> : null}{order.labExpectedCompletionAtUtc ? <span className="text-sm text-muted-foreground">Expected {formatDate(order.labExpectedCompletionAtUtc)}</span> : null}</div>{order.labPermittedQcProjectionJson ? <details className="mt-3"><summary className="cursor-pointer text-sm font-medium">Approved QC summary</summary><pre className="mt-2 overflow-x-auto rounded-md bg-muted p-3 text-xs">{prettyJson(order.labPermittedQcProjectionJson)}</pre></details> : null}{order.labReadyForRelease ? <p className="mt-3 text-sm">Scientific review is complete. Phaeno must still complete the Commercial release before any result file appears here.</p> : null}</CardContent></Card> : null}
 
@@ -106,8 +117,8 @@ export function LabServiceDetailPage({ orderId }: { orderId: string }) {
         </div>
       </div>
 
-      <Dialog open={dialog === 'accept'} onOpenChange={(open) => !open && setDialog(null)}>
-        <DialogContent>
+      <Dialog open={dialog === 'accept'} onOpenChange={(open) => { if (!open) closeDecision() }}>
+        <DialogContent showCloseButton={!action.isPending} aria-busy={action.isPending}>
           <DialogHeader>
             <DialogTitle>Accept quote for {order.orderNumber}?</DialogTitle>
             <DialogDescription>
@@ -115,21 +126,21 @@ export function LabServiceDetailPage({ orderId }: { orderId: string }) {
               {quote?.taxDecisionSnapshotJson ? 'The displayed total includes the current tax determination.' : 'This quote is pre-tax; applicable tax will be calculated at invoicing.'}{' '}
               The accepted Department and commercial settings remain in the order history.
             </DialogDescription>
-          </DialogHeader>
+          </DialogHeader>{action.error ? <Alert variant="destructive"><AlertDescription>{getOrderErrorMessage(action.error, 'Review the details and try again.')}</AlertDescription></Alert> : null}
           {quote ? <QuoteSummary quote={quote} /> : null}
           {requiresPurchaseOrder ? (
             <div>
               <Label htmlFor="labPurchaseOrderNumber"><RequiredFieldName>Purchase order number</RequiredFieldName></Label>
-              <Input id="labPurchaseOrderNumber" className="mt-2" value={purchaseOrderNumber} onChange={(event) => setPurchaseOrderNumber(event.target.value)} />
+              <Input disabled={action.isPending} id="labPurchaseOrderNumber" className="mt-2" value={purchaseOrderNumber} onChange={(event) => setPurchaseOrderNumber(event.target.value)} />
             </div>
           ) : null}
           <RequiredDialogFooter showLegend={requiresPurchaseOrder}>
-            <DialogClose asChild><Button type="button" variant="outline">Keep reviewing</Button></DialogClose>
+            <DialogClose asChild><Button type="button" variant="outline" disabled={action.isPending}>Keep reviewing</Button></DialogClose>
             <Button type="button" onClick={() => action.mutate('accept')} disabled={action.isPending || (requiresPurchaseOrder && !purchaseOrderNumber.trim())}>{action.isPending ? 'Accepting…' : 'Accept quote and place order'}</Button>
           </RequiredDialogFooter>
         </DialogContent>
       </Dialog>
-      <Dialog open={dialog === 'cancel' || dialog === 'withdraw'} onOpenChange={(open) => !open && setDialog(null)}><DialogContent><DialogHeader><DialogTitle>{dialog === 'withdraw' ? 'Withdraw' : 'Request cancellation for'} {order.orderNumber}</DialogTitle><DialogDescription>{dialog === 'withdraw' ? 'This closes the request before work is placed.' : 'Phaeno will review completed work and financial effects before deciding the request.'}</DialogDescription></DialogHeader><div><Label htmlFor="cancellationReason">Reason <span className="text-[var(--ruby-red,#b4233c)]" aria-hidden="true">*</span></Label><textarea id="cancellationReason" value={cancellationReason} onChange={(event) => setCancellationReason(event.target.value)} className="mt-2 min-h-24 w-full rounded-lg border border-input bg-background px-3 py-2 text-sm focus-visible:ring-3 focus-visible:ring-ring/50 focus-visible:outline-none" /></div><DialogFooter><DialogClose asChild><Button type="button" variant="outline">Keep order</Button></DialogClose><Button type="button" variant="destructive" disabled={!cancellationReason.trim() || action.isPending} onClick={() => action.mutate(dialog === 'withdraw' ? 'withdraw' : 'cancel')}>{action.isPending ? 'Updating…' : dialog === 'withdraw' ? 'Withdraw request' : 'Request cancellation'}</Button></DialogFooter></DialogContent></Dialog>
+      <Dialog open={dialog === 'cancel' || dialog === 'withdraw'} onOpenChange={(open) => { if (!open) closeDecision() }}><DialogContent showCloseButton={!action.isPending} aria-busy={action.isPending}><DialogHeader><DialogTitle>{dialog === 'withdraw' ? 'Withdraw' : 'Request cancellation for'} {order.orderNumber}</DialogTitle><DialogDescription>{dialog === 'withdraw' ? 'This closes the request before work is placed.' : 'Phaeno will review completed work and financial effects before deciding the request.'}</DialogDescription></DialogHeader>{action.error ? <Alert variant="destructive"><AlertDescription>{getOrderErrorMessage(action.error, 'Review the details and try again.')}</AlertDescription></Alert> : null}<div><Label htmlFor="cancellationReason"><RequiredFieldName>Reason</RequiredFieldName></Label><textarea disabled={action.isPending} id="cancellationReason" value={cancellationReason} onChange={(event) => setCancellationReason(event.target.value)} className="mt-2 min-h-24 w-full rounded-lg border border-input bg-background px-3 py-2 text-sm focus-visible:ring-3 focus-visible:ring-ring/50 focus-visible:outline-none" /></div><RequiredDialogFooter><DialogClose asChild><Button type="button" variant="outline" disabled={action.isPending}>Keep order</Button></DialogClose><Button type="button" variant="destructive" disabled={!cancellationReason.trim() || action.isPending} onClick={() => action.mutate(dialog === 'withdraw' ? 'withdraw' : 'cancel')}>{action.isPending ? 'Updating…' : dialog === 'withdraw' ? 'Withdraw request' : 'Request cancellation'}</Button></RequiredDialogFooter></DialogContent></Dialog>
 
     </main>
   )

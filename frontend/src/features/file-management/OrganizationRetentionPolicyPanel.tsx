@@ -20,10 +20,11 @@ import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } f
 import { Input } from '#/components/ui/input'
 import { Label } from '#/components/ui/label'
 import { RequiredDialogFooter, RequiredFieldName } from '#/components/ui/required-field'
+import { useOrderDraftGuard } from '#/features/orders/use-order-draft-guard'
 
 const optionalPositiveDays = z.string().trim().refine(
-  (value) => value === '' || (/^\d+$/.test(value) && Number(value) > 0),
-  'Enter a positive whole number of days or leave this blank to inherit.',
+  (value) => value === '' || (/^\d+$/.test(value) && Number.isSafeInteger(Number(value)) && Number(value) > 0 && Number(value) <= 2147483647),
+  'Enter a whole number from 1 to 2,147,483,647, or leave this blank to inherit.',
 )
 const overrideSchema = z.object({
   standardRetentionDays: optionalPositiveDays,
@@ -55,6 +56,7 @@ export function OrganizationRetentionPolicyPanel({
   const [editOpen, setEditOpen] = useState(false)
   const [removeOpen, setRemoveOpen] = useState(false)
   const [savedMessage, setSavedMessage] = useState<string | null>(null)
+  const [editingConfiguration, setEditingConfiguration] = useState<OrganizationReleasedDeliverablePolicy | null>(null)
   const queryKey = ['organization-released-deliverable-policy', organizationId]
   const query = useQuery({
     queryKey,
@@ -62,28 +64,21 @@ export function OrganizationRetentionPolicyPanel({
     enabled,
   })
   const overrideForm = useForm<OverrideFormValues>({
+    mode: 'onBlur',
     resolver: zodResolver(overrideSchema),
     defaultValues: emptyOverride,
   })
   const removalForm = useForm<RemovalFormValues>({
+    mode: 'onBlur',
     resolver: zodResolver(removalSchema),
     defaultValues: { reason: '' },
   })
   const upsert = useMutation({
     mutationFn: (values: OverrideFormValues) => {
-      const configuration = query.data!
+      const configuration = editingConfiguration!
       const standardRetentionDays = readOptionalDays(values.standardRetentionDays)
       const warningDays = readOptionalDays(values.undownloadedWarningLeadDays)
       const graceDays = readOptionalDays(values.undownloadedGraceDays)
-      const resolvedRetention = standardRetentionDays ?? configuration.global.values.standardRetentionDays
-      const resolvedWarning = warningDays ?? configuration.global.values.undownloadedWarningLeadDays
-      if (resolvedWarning >= resolvedRetention) {
-        overrideForm.setError('undownloadedWarningLeadDays', {
-          message: 'The effective warning lead must be shorter than the effective standard retention.',
-        })
-        throw new LocalValidationError()
-      }
-
       return upsertOrganizationReleasedDeliverablePolicyOverride(organizationId, {
         standardRetentionDays,
         undownloadedWarningLeadDays: warningDays,
@@ -102,7 +97,7 @@ export function OrganizationRetentionPolicyPanel({
   const remove = useMutation({
     mutationFn: (values: RemovalFormValues) => removeOrganizationReleasedDeliverablePolicyOverride(
       organizationId,
-      { reason: values.reason.trim(), version: query.data!.override!.version },
+      { reason: values.reason.trim(), version: editingConfiguration!.override!.version },
     ),
     onSuccess: (data) => {
       queryClient.setQueryData(queryKey, data)
@@ -111,7 +106,28 @@ export function OrganizationRetentionPolicyPanel({
     },
   })
 
+  useOrderDraftGuard((editOpen && overrideForm.formState.isDirty) || (removeOpen && removalForm.formState.isDirty), upsert.isPending || remove.isPending)
+  function closeEditor() {
+    if (!upsert.isPending && (!overrideForm.formState.isDirty || window.confirm('Discard unsaved retention changes?'))) setEditOpen(false)
+  }
+  function closeRemoval() {
+    if (!remove.isPending && (!removalForm.formState.isDirty || window.confirm('Discard unsaved retention changes?'))) setRemoveOpen(false)
+  }
+  function saveOverride(values: OverrideFormValues) {
+    const configuration = editingConfiguration!
+    const retention = readOptionalDays(values.standardRetentionDays) ?? configuration.global.values.standardRetentionDays
+    const warning = readOptionalDays(values.undownloadedWarningLeadDays) ?? configuration.global.values.undownloadedWarningLeadDays
+    if (warning >= retention) {
+      overrideForm.setError('undownloadedWarningLeadDays', {
+        message: 'The effective warning lead must be shorter than the effective standard retention.',
+      }, { shouldFocus: true })
+      return
+    }
+    upsert.mutate(values)
+  }
+
   function openEditor(configuration: OrganizationReleasedDeliverablePolicy) {
+    setEditingConfiguration(configuration)
     overrideForm.reset({
       standardRetentionDays: optionalValue(configuration.override?.standardRetentionDays),
       undownloadedWarningLeadDays: optionalValue(configuration.override?.undownloadedWarningLeadDays),
@@ -124,6 +140,7 @@ export function OrganizationRetentionPolicyPanel({
   }
 
   function openRemoval() {
+    setEditingConfiguration(query.data!)
     removalForm.reset({ reason: '' })
     remove.reset()
     setSavedMessage(null)
@@ -132,12 +149,15 @@ export function OrganizationRetentionPolicyPanel({
 
   if (!enabled) return null
   if (query.isLoading) return <p role="status">Loading retention policy…</p>
-  if (query.error) return <Alert variant="destructive"><AlertTitle>Retention policy could not be loaded</AlertTitle><AlertDescription>{fileManagementErrorMessage(query.error, 'Try refreshing this account.')}</AlertDescription></Alert>
+  const loadError = query.error ? <Alert variant="destructive"><AlertTitle>Retention policy could not be loaded</AlertTitle><AlertDescription>{fileManagementErrorMessage(query.error, 'Try loading the policy again.')} <Button variant="outline" disabled={query.isFetching} onClick={() => void query.refetch()}>Retry</Button></AlertDescription></Alert> : null
+  if (query.error && !query.data) return loadError
   if (!query.data) return null
 
   const configuration = query.data
+  const reviewedConfiguration = editingConfiguration ?? configuration
   return (
     <div className="space-y-5">
+      {loadError}
       {savedMessage ? <Alert><AlertTitle>Retention configuration updated</AlertTitle><AlertDescription>{savedMessage}</AlertDescription></Alert> : null}
       <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
         <div>
@@ -166,28 +186,32 @@ export function OrganizationRetentionPolicyPanel({
         </div>
       ) : null}
 
-      <Dialog open={editOpen} onOpenChange={(open) => !upsert.isPending && setEditOpen(open)}>
-        <DialogContent>
-          <DialogHeader><DialogTitle>{configuration.override ? 'Edit retention override' : 'Add retention override'}</DialogTitle><DialogDescription>Leave a value blank to inherit the current global setting. Existing package deadlines do not change.</DialogDescription></DialogHeader>
-          <form id="organization-retention-override-form" noValidate className="space-y-4" onSubmit={overrideForm.handleSubmit((values) => upsert.mutate(values))}>
-            <OptionalDayField form={overrideForm} name="standardRetentionDays" label="Standard retention (days)" inherited={configuration.global.values.standardRetentionDays} />
-            <OptionalDayField form={overrideForm} name="undownloadedWarningLeadDays" label="Undownloaded warning lead (days)" inherited={configuration.global.values.undownloadedWarningLeadDays} />
-            <OptionalDayField form={overrideForm} name="undownloadedGraceDays" label="Conditional grace (days)" inherited={configuration.global.values.undownloadedGraceDays} />
+      <Dialog open={editOpen} onOpenChange={(open) => { if (!open) closeEditor() }}>
+        <DialogContent showCloseButton={!upsert.isPending}>
+          <DialogHeader><DialogTitle>{reviewedConfiguration.override ? 'Edit retention override' : 'Add retention override'}</DialogTitle><DialogDescription>Leave a value blank to inherit the global setting shown below. Existing package deadlines do not change.</DialogDescription></DialogHeader>
+          <form id="organization-retention-override-form" noValidate className="space-y-4" onSubmit={overrideForm.handleSubmit(saveOverride)}>
+            <fieldset disabled={upsert.isPending} className="space-y-4">
+            <OptionalDayField form={overrideForm} name="standardRetentionDays" label="Standard retention (days)" inherited={reviewedConfiguration.global.values.standardRetentionDays} />
+            <OptionalDayField form={overrideForm} name="undownloadedWarningLeadDays" label="Undownloaded warning lead (days)" inherited={reviewedConfiguration.global.values.undownloadedWarningLeadDays} />
+            <OptionalDayField form={overrideForm} name="undownloadedGraceDays" label="Conditional grace (days)" inherited={reviewedConfiguration.global.values.undownloadedGraceDays} />
             <ReasonField id="organization-retention-reason" error={overrideForm.formState.errors.reason} registration={overrideForm.register('reason')} />
+            </fieldset>
           </form>
-          {upsert.error && !(upsert.error instanceof LocalValidationError) ? <Alert variant="destructive"><AlertTitle>Override was not saved</AlertTitle><AlertDescription>{fileManagementErrorMessage(upsert.error, 'Reload the account and try again.')}</AlertDescription></Alert> : null}
-          <RequiredDialogFooter><Button type="button" variant="outline" disabled={upsert.isPending} onClick={() => setEditOpen(false)}>Cancel</Button><Button type="submit" form="organization-retention-override-form" disabled={!overrideForm.formState.isDirty || upsert.isPending}>{upsert.isPending ? 'Saving…' : 'Save changes'}</Button></RequiredDialogFooter>
+          {upsert.error ? <Alert variant="destructive"><AlertTitle>Override was not saved</AlertTitle><AlertDescription>{fileManagementErrorMessage(upsert.error, 'Reload the account and try again.')}</AlertDescription></Alert> : null}
+          <RequiredDialogFooter><Button type="button" variant="outline" disabled={upsert.isPending} onClick={closeEditor}>Cancel</Button><Button type="submit" form="organization-retention-override-form" disabled={upsert.isPending || (Boolean(reviewedConfiguration.override) && !overrideForm.formState.isDirty)}>{upsert.isPending ? 'Saving…' : 'Save changes'}</Button></RequiredDialogFooter>
         </DialogContent>
       </Dialog>
 
-      <Dialog open={removeOpen} onOpenChange={(open) => !remove.isPending && setRemoveOpen(open)}>
-        <DialogContent>
+      <Dialog open={removeOpen} onOpenChange={(open) => { if (!open) closeRemoval() }}>
+        <DialogContent showCloseButton={!remove.isPending}>
           <DialogHeader><DialogTitle>Remove {organizationName}'s retention override?</DialogTitle><DialogDescription>Future releases will inherit all global values. Existing package deadlines will not change.</DialogDescription></DialogHeader>
           <form id="remove-organization-retention-override-form" noValidate onSubmit={removalForm.handleSubmit((values) => remove.mutate(values))}>
+            <fieldset disabled={remove.isPending}>
             <ReasonField id="remove-organization-retention-reason" error={removalForm.formState.errors.reason} registration={removalForm.register('reason')} />
+            </fieldset>
           </form>
           {remove.error ? <Alert variant="destructive"><AlertTitle>Override was not removed</AlertTitle><AlertDescription>{fileManagementErrorMessage(remove.error, 'Reload the account and try again.')}</AlertDescription></Alert> : null}
-          <RequiredDialogFooter><Button type="button" variant="outline" disabled={remove.isPending} onClick={() => setRemoveOpen(false)}>Keep override</Button><Button type="submit" variant="destructive" form="remove-organization-retention-override-form" disabled={remove.isPending}>{remove.isPending ? 'Removing…' : 'Remove override'}</Button></RequiredDialogFooter>
+          <RequiredDialogFooter><Button type="button" variant="outline" disabled={remove.isPending} onClick={closeRemoval}>Keep override</Button><Button type="submit" variant="destructive" form="remove-organization-retention-override-form" disabled={remove.isPending}>{remove.isPending ? 'Removing…' : 'Remove override'}</Button></RequiredDialogFooter>
         </DialogContent>
       </Dialog>
     </div>
@@ -213,4 +237,3 @@ function ReasonField({ id, error, registration }: { id: string; error?: FieldErr
 function readOptionalDays(value: string) { return value === '' ? null : Number(value) }
 function optionalValue(value: number | null | undefined) { return value == null ? '' : String(value) }
 function formatDateTime(value: string) { return new Intl.DateTimeFormat(undefined, { dateStyle: 'medium', timeStyle: 'short' }).format(new Date(value)) }
-class LocalValidationError extends Error {}

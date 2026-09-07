@@ -9,5 +9,6 @@ export const Route = createFileRoute('/lab-operations/$workOrderId')({
 })
 
 function LabWorkOrderRoute() {
-  return <LabWorkOrderPage workOrderId={Route.useParams().workOrderId} selectedTab={Route.useSearch().tab} packetBarcode={Route.useSearch().packet} supplierTubeBarcode={Route.useSearch().tube} />
+  const search = Route.useSearch()
+  return <LabWorkOrderPage workOrderId={Route.useParams().workOrderId} selectedTab={search.tab} packetBarcode={search.packet} supplierTubeBarcode={search.tube} returnSection={search.section} returnShipmentId={search.shipmentId} />
 }

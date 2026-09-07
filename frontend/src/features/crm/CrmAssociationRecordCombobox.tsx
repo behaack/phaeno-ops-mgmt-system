@@ -20,12 +20,18 @@ export function CrmAssociationRecordCombobox({
   kind,
   excludedIds = emptyIds,
   required = false,
+  onValueChange,
+  invalid = false,
+  describedBy,
 }: {
   id: string;
   name: string;
   kind: SearchKind;
   excludedIds?: string[];
   required?: boolean;
+  onValueChange?: (id: string) => void;
+  invalid?: boolean;
+  describedBy?: string;
 }) {
   const generatedId = useId();
   const listboxId = `${id}-${generatedId}-results`;
@@ -74,7 +80,7 @@ export function CrmAssociationRecordCombobox({
     staleTime: 30_000,
   });
 
-  const options = (results.data ?? []).filter(
+  const options = (results.isFetching || results.isError ? [] : results.data ?? []).filter(
     (option) => !excluded.has(option.id),
   );
   const activeOption = options[activeIndex];
@@ -83,6 +89,7 @@ export function CrmAssociationRecordCombobox({
 
   function choose(option: SearchOption) {
     setSelected(option);
+    onValueChange?.(option.id);
     setSearch(option.label);
     setOpen(false);
     inputRef.current?.setCustomValidity("");
@@ -115,6 +122,8 @@ export function CrmAssociationRecordCombobox({
           id={id}
           value={search}
           required={required}
+          aria-invalid={invalid || undefined}
+          aria-describedby={describedBy}
           role="combobox"
           aria-autocomplete="list"
           aria-expanded={open}
@@ -127,6 +136,7 @@ export function CrmAssociationRecordCombobox({
           onChange={(event) => {
             setSearch(event.target.value);
             setSelected(null);
+            onValueChange?.("");
             setActiveIndex(0);
             setOpen(true);
             event.currentTarget.setCustomValidity(
@@ -163,9 +173,10 @@ export function CrmAssociationRecordCombobox({
               Searching…
             </p>
           ) : results.isError ? (
-            <p className="px-3 py-2 text-sm text-destructive" role="alert">
-              {recordLabel} search is unavailable. Try again.
-            </p>
+            <div className="px-3 py-2 text-sm text-destructive" role="alert">
+              <p>{recordLabel} search is unavailable.</p>
+              <button type="button" className="mt-1 cursor-pointer underline" onMouseDown={event => event.preventDefault()} onClick={() => void results.refetch()}>Retry {recordLabel.toLowerCase()} search</button>
+            </div>
           ) : options.length ? (
             options.map((option, index) => (
               <button
@@ -190,7 +201,7 @@ export function CrmAssociationRecordCombobox({
             ))
           ) : (
             <p className="px-3 py-2 text-sm text-muted-foreground" role="status">
-              No available {recordLabel.toLowerCase()}s found.
+              No available {recordPlural} found.
             </p>
           )}
         </div>

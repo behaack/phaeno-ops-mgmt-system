@@ -22,21 +22,28 @@ export function SampleShippingPacketPage({ shipmentId }: { shipmentId: string })
   const query = useQuery({
     queryKey: ['sample-shipping-packet', shipmentId],
     queryFn: () => getSampleShippingPacket(shipmentId),
+    refetchOnMount: 'always',
   })
 
-  if (query.isLoading) {
-    return <main className="page-wrap px-4 py-8"><p role="status">Loading shipping packet…</p></main>
+  if (query.isLoading || query.isFetching) {
+    return <main className="page-wrap space-y-5 px-4 py-8"><PacketReturnLink shipmentId={shipmentId} /><p role="status">Checking the current shipping packet…</p></main>
+  }
+
+  if (query.fetchStatus === 'paused') {
+    return <main className="page-wrap space-y-5 px-4 py-8"><PacketReturnLink shipmentId={shipmentId} /><Alert><AlertTitle>Connection needed</AlertTitle><AlertDescription>Reconnect so the Portal can check the current packet revision before printing.</AlertDescription></Alert></main>
   }
 
   if (query.error || !query.data) {
     return (
-      <main className="page-wrap px-4 py-8">
+      <main className="page-wrap space-y-5 px-4 py-8">
+        <PacketReturnLink shipmentId={shipmentId} />
         <Alert variant="destructive">
           <AlertTitle>Packet unavailable</AlertTitle>
           <AlertDescription>
             {query.error ? apiErrorMessage(query.error) : 'The packet was not found.'}
           </AlertDescription>
         </Alert>
+        <Button variant="outline" onClick={() => void query.refetch()}>Try again</Button>
       </main>
     )
   }
@@ -51,14 +58,7 @@ export function SampleShippingPacketPage({ shipmentId }: { shipmentId: string })
   return (
     <main className="page-wrap px-4 py-8 print:max-w-none print:px-0 print:py-0">
       <div className="mb-6 flex items-center justify-between gap-3 print:hidden">
-        <Link
-          to="/sample-shipping/$shipmentId"
-          params={{ shipmentId }}
-          className="inline-flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground"
-        >
-          <ArrowLeft className="size-4" />
-          Back to shipment
-        </Link>
+        <PacketReturnLink shipmentId={shipmentId} />
         <Button onClick={() => window.print()}>
           <Printer data-icon="inline-start" />
           Print packet
@@ -76,7 +76,7 @@ export function SampleShippingPacketPage({ shipmentId }: { shipmentId: string })
             </div>
           ) : null}
           <p className="mt-3 text-sm">
-            Shipment {shipment.shipmentNumber} · {shipment.authorizationReference}
+            Shipment {shipment.shipmentNumber} · {shipment.authorizationReference} · Revision {packet?.revision}
           </p>
         </header>
 
@@ -227,6 +227,10 @@ function text(value: unknown) {
   if (typeof value === 'string') return value
   if (typeof value === 'number') return String(value)
   return ''
+}
+
+function PacketReturnLink({ shipmentId }: { shipmentId: string }) {
+  return <Link to="/sample-shipping/$shipmentId" params={{ shipmentId }} className="inline-flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground"><ArrowLeft aria-hidden="true" className="size-4" />Back to shipment</Link>
 }
 
 function Instruction({ label, value }: { label: string; value: unknown }) {

@@ -19,7 +19,7 @@ describe('DataProvisioningPage', () => {
     render(
       <QueryClientProvider client={queryClient}>
         <PhaenoSessionContext.Provider value={context}>
-          <DataProvisioningPage />
+          <DataProvisioningPage section="sources" onSectionChange={() => undefined} />
         </PhaenoSessionContext.Provider>
       </QueryClientProvider>,
     )

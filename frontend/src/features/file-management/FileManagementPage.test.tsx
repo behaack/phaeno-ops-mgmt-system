@@ -1,6 +1,6 @@
 import type { ReactNode } from 'react'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
-import { fireEvent, render, screen, waitFor } from '@testing-library/react'
+import { act, fireEvent, render, screen, waitFor } from '@testing-library/react'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
 import type { ReleasedDeliverablePolicyConfiguration } from '#/api/file-management'
@@ -23,7 +23,7 @@ vi.mock('#/api/file-management', () => ({
   updateReleasedDeliverablePolicy: api.updatePolicy,
 }))
 
-vi.mock('@tanstack/react-router', () => ({ Link: ({ to, children }: { to: string; children: ReactNode }) => <a href={to}>{children}</a> }))
+vi.mock('@tanstack/react-router', () => ({ useBlocker: vi.fn(), Link: ({ to, children }: { to: string; children: ReactNode }) => <a href={to}>{children}</a> }))
 
 describe('FileManagementPage', () => {
   beforeEach(() => {
@@ -68,19 +68,39 @@ describe('FileManagementPage', () => {
     expect(screen.getByText('A Phaeno platform administrator is required.')).toBeTruthy()
     expect(api.getPolicy).not.toHaveBeenCalled()
   })
+
+  it('submits the reviewed revision after a background refresh and preserves a declined dirty cancellation', async () => {
+    const { client } = renderPage(platformSession())
+    await screen.findByRole('button', { name: 'Edit global policy' })
+    fireEvent.click(screen.getByRole('button', { name: 'Edit global policy' }))
+    fireEvent.change(screen.getByLabelText(/Standard retention/), { target: { value: '45' } })
+    fireEvent.change(screen.getByLabelText(/Change reason/), { target: { value: 'Reviewed retention change.' } })
+    const confirm = vi.spyOn(window, 'confirm').mockReturnValue(false)
+    fireEvent.click(screen.getByRole('button', { name: 'Cancel' }))
+    expect(screen.getByRole('dialog')).toBeTruthy()
+    expect(confirm).toHaveBeenCalledOnce()
+    confirm.mockRestore()
+    act(() => client.setQueryData(['released-deliverable-policy'], {
+      ...configuration, global: { ...configuration.global, version: 2, values: { ...configuration.global.values, standardRetentionDays: 90 } },
+    }))
+    expect(screen.getByLabelText(/Standard retention/)).toHaveProperty('value', '45')
+    fireEvent.click(screen.getByRole('button', { name: 'Save changes' }))
+    await waitFor(() => expect(api.updatePolicy).toHaveBeenCalledWith(expect.objectContaining({ version: 1, standardRetentionDays: 45 })))
+  })
 })
 
 function renderPage(session: PhaenoSessionContextValue) {
   const client = new QueryClient({
     defaultOptions: { queries: { retry: false }, mutations: { retry: false } },
   })
-  return render(
+  const rendered = render(
     <QueryClientProvider client={client}>
       <PhaenoSessionContext.Provider value={session}>
         <FileManagementPage />
       </PhaenoSessionContext.Provider>
     </QueryClientProvider>,
   )
+  return { ...rendered, client }
 }
 
 function platformSession(): PhaenoSessionContextValue {

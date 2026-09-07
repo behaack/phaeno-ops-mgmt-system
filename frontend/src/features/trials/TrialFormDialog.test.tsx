@@ -8,6 +8,49 @@ const { blocker } = vi.hoisted(() => ({ blocker: vi.fn() }))
 vi.mock('@tanstack/react-router', () => ({ useBlocker: blocker }))
 
 describe('Trial bounded actions', () => {
+  it('validates required fields on blur and clears their existing error while correcting them', async () => {
+    render(<TrialFormDialog title="Schedule" description="Update estimate" fields={[{ name: 'estimate', label: 'Estimate', required: true, help: 'Use an expected completion date.' }]} onClose={vi.fn()} onSubmit={vi.fn()} />)
+    const estimate = screen.getByLabelText('Estimate*')
+    expect(estimate).toHaveProperty('required', true)
+    expect(screen.queryByText('Estimate is required.')).toBeNull()
+    fireEvent.blur(estimate)
+    await screen.findByText('Estimate is required.')
+    expect(estimate.getAttribute('aria-describedby')).toBe('trial-estimate-help trial-estimate-error')
+    fireEvent.change(estimate, { target: { value: 'Next week' } })
+    await waitFor(() => expect(screen.queryByText('Estimate is required.')).toBeNull())
+    expect(estimate.getAttribute('aria-describedby')).toBe('trial-estimate-help')
+  })
+
+  it('protects a dirty Trial draft from navigation and browser reload', () => {
+    const confirm = vi.spyOn(window, 'confirm').mockReturnValue(false)
+    render(<TrialFormDialog title="Schedule" description="Update estimate" fields={[{ name: 'note', label: 'Note' }]} onClose={vi.fn()} onSubmit={vi.fn()} />)
+    expect(blocker.mock.lastCall![0].enableBeforeUnload()).toBe(false)
+    fireEvent.change(screen.getByLabelText('Note'), { target: { value: 'Keep my estimate' } })
+    expect(blocker.mock.lastCall![0].shouldBlockFn()).toBe(true)
+    expect(blocker.mock.lastCall![0].enableBeforeUnload()).toBe(true)
+    expect(screen.getByLabelText('Note')).toHaveProperty('value', 'Keep my estimate')
+    confirm.mockReturnValue(true)
+    expect(blocker.mock.lastCall![0].shouldBlockFn()).toBe(false)
+    confirm.mockRestore()
+  })
+
+  it('blocks navigation during a save and permits the successful close to open its new record', async () => {
+    let resolveSave!: () => void
+    const submit = vi.fn(() => new Promise<void>(resolve => { resolveSave = resolve }))
+    const close = vi.fn(() => {
+      expect(blocker.mock.lastCall![0].shouldBlockFn()).toBe(false)
+      expect(blocker.mock.lastCall![0].enableBeforeUnload()).toBe(false)
+    })
+    render(<TrialFormDialog title="Start Trial" description="Create a Trial" fields={[{ name: 'note', label: 'Note' }]} onClose={close} onSubmit={submit} />)
+    fireEvent.change(screen.getByLabelText('Note'), { target: { value: 'Create this Trial' } })
+    fireEvent.click(screen.getByRole('button', { name: 'Save' }))
+    await waitFor(() => expect(submit).toHaveBeenCalledOnce())
+    expect(blocker.mock.lastCall![0].shouldBlockFn()).toBe(true)
+    expect(blocker.mock.lastCall![0].enableBeforeUnload()).toBe(true)
+    await act(async () => resolveSave())
+    expect(close).toHaveBeenCalledOnce()
+  })
+
   it('requires explicit RUO and no-PHI confirmation', async () => {
     const submit = vi.fn().mockResolvedValue(undefined)
     render(<TrialFormDialog title="Accept Trial" description="Review approved terms" fields={[{ name: 'ruo', label: 'Research use only and no PHI', type: 'checkbox', required: true }]} onClose={vi.fn()} onSubmit={submit}><p>For Research Use Only. Not for use in diagnostic procedures.</p></TrialFormDialog>)
