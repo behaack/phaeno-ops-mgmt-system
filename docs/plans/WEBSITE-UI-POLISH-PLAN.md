@@ -4,8 +4,8 @@
 
 The Product Owner authorized the six presentation improvements in
 [Website clarity and polish](WEBSITE-CLARITY-AND-POLISH-PLAN.md). This follow-up
-was implemented locally, then explicitly authorized for a reversible Website
-release. Its release and rollback record is in the linked follow-up plan;
+was implemented, verified locally, and deployed to Website production after
+explicit authorization. Its release and rollback record is in the linked follow-up plan;
 the historical API release authorization below does not apply to it.
 
 - Mobile homepage cards size to their content with reduced padding; desktop
@@ -27,6 +27,10 @@ the historical API release authorization below does not apply to it.
   follow-up plan. Scientific copy, numerical values, public routes, and
   publication boundaries are preserved. The subsequent Website release uses a
   retained production deployment and source tag as its rollback checkpoint.
+  Public verification passed for all 16 sitemap routes and 25 responsive
+  cases, plus keyboard/contact and publication-boundary checks. The released
+  application commit is `a0d8a96`; the linked plan records exact deployment
+  identifiers and the rollback command. Portal production remains unchanged.
 
 ## Status
 

@@ -2,11 +2,11 @@
 
 ## Execution status
 
-Implemented and verified locally on 2026-09-06 after Product Owner
-authorization. The recommendation below records the original review; its
-inspection statement describes that review. The Product Owner subsequently
-authorized commit, push, and a reversible Website production deployment; the
-release record below supersedes the original Git/deployment hold.
+Implemented, committed, pushed, and deployed to Website production on
+2026-09-06 after Product Owner authorization. Local and public verification
+passed. The recommendation below records the original review; its inspection
+statement describes that review. The release record below supersedes the
+original Git/deployment hold and identifies the retained rollback checkpoint.
 
 ## Recommendation
 
@@ -113,8 +113,8 @@ This is a presentation improvement for prospective research teams and technical 
   science/contact text checks, and screenshots. Ad hoc verification used
   already-installed browser tooling; no test dependencies were added.
 
-Public deployment, real form delivery, and a full accessibility audit were not
-part of this local presentation change.
+These local checks did not validate real form delivery or constitute a full
+accessibility audit. The subsequently authorized public release is recorded below.
 
 ## Reversible Website release — 2026-09-06
 
@@ -146,8 +146,8 @@ changes were made by this polish pass.
 - Retained deployment URL:
   `https://phaeno-website-hijns4bjq-cadexgenomics.vercel.app`.
 - Previous production source: `a70eccf4f857aba1402bfc46c987963c70aeb754`.
-- Preserve that source with annotated Git tag
-  `website/before-clarity-polish-2026-09-06` before promotion.
+- That source was preserved with the annotated Git tag
+  `website/before-clarity-polish-2026-09-06`, pushed before promotion.
 - Pre-release homepage returned HTTP 200. Keep the prior deployment and
   production settings intact; no data migration is involved.
 
@@ -164,4 +164,58 @@ undoes only this pass and retains the earlier `541c875` signup fix; use the
 saved production tag if a full source restoration is required. Avoid force
 pushes and history rewrites.
 
-Release completion and public verification will be recorded after promotion.
+### Completed release and public verification
+
+- Released application commit:
+  `a0d8a96d401000da49fb71592e0bedc5fda9c7f3`
+  (`Improve Website clarity and responsive presentation`). It and the rollback
+  tag were pushed atomically to the existing remote branch
+  `codex/portal-documentation-search-release`; `main` remains at
+  `a70eccf4f857aba1402bfc46c987963c70aeb754`.
+- Production deployment: `dpl_8rLvzbeG96PBh3nXdCZf42VgGvim`, state `READY`,
+  substate `PROMOTED`, built from the exact released commit with production
+  environment settings. Its retained URL is
+  `https://phaeno-website-9vreseoa4-cadexgenomics.vercel.app`.
+- The remote Astro build generated 17 pages in 26.10 seconds; Vercel completed
+  the build in 31 seconds. The prior and new builds both report the same three
+  non-blocking `TS2580` diagnostics for `process` in the existing preview-search
+  function. Empty Blog/Jobs collection warnings also remain. The production
+  preview-search endpoint was verified disabled with HTTP 404.
+- Staged checks passed before promotion. Vercel's alias API then confirmed
+  both `www.phaenobiotech.com` and `phaenobiotech.com` point to the new deployment.
+  The apex retains its HTTP 308 redirect to the canonical `www` origin.
+- All 16 public sitemap landing pages returned HTTP 200. Representative HTML
+  retained production canonicals, analytics, and indexable metadata with no
+  `X-Robots-Tag: noindex` header. Protected Vercel deployment URLs have a
+  platform `noindex` header; the canonical public domain correctly does not.
+- Homepage, all three technology pages, and Contact passed 25 public Chromium
+  cases: 1440, 768, 390, and 320px, plus 320px with 200% root text. Every case
+  returned HTTP 200 with no horizontal page overflow, page JavaScript errors,
+  or HTTP failures for loaded resources. At 390px the four homepage cards are
+  304, 265, 215, and 215px tall. Screenshots were captured and reviewed.
+- Independent live contact/navigation checks passed at desktop and phone
+  widths: Media order, keyboard arrows, visible focus, Escape and restored
+  focus, brief/demo destinations, checkbox helper and changing button label,
+  and the four/five empty-form validation errors. There were no page/console
+  errors and no attempted contact or demo POST requests. Real submission and
+  mailbox delivery were not exercised.
+- `robots.txt`, sitemap, and `llms.txt` remain available. Held publication
+  routes remain HTTP 404 and absent from discovery. The existing Part 1 PDF
+  returns HTTP 200 with `application/pdf` and its intentional
+  `X-Robots-Tag: noindex`; raw PDFs remain outside the sitemap and `llms.txt`.
+- Bounded post-promotion Vercel scans for error logs and HTTP 5xx responses
+  returned no entries for this deployment. This is a release smoke check,
+  not a claim of ongoing monitoring or complete accessibility conformance.
+- Portal production remains `dpl_ChTsgPMUgxEuJxx6TSBSCnhPkWFv`. No Portal/API
+  promotion, API workflow, database migration, authentication, dependency, or
+  environment-setting change was performed.
+- Public evidence is retained locally under ignored `tmp/website-clarity/`:
+  `production-release.json`, `production-build.log`, `production-errors.log`,
+  `production-5xx.log`, `live-publication-verification.json`, and the `public/`
+  and `public-contact/` browser results/screenshots. Public verification ran
+  on September 6 Pacific time (September 7 UTC).
+
+The previous production deployment and source tag remain available. Rollback
+was not exercised against the live site because the release checks passed.
+This release record is committed separately; the deployed application remains
+the exact `a0d8a96d401000da49fb71592e0bedc5fda9c7f3` artifact identified above.
