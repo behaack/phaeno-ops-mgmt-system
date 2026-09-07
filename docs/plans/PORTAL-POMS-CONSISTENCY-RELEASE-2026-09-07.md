@@ -1,5 +1,7 @@
 # Portal consistency documentation and production release
 
+Completed September 7, 2026: the final application revision `1c55725dc07ed0213c9d1a796f499239ec436c42` is live on both API and Portal production. All 55 User guides and the 16-page Word guide were reviewed, the audit-proven Company link was restored, temporary tooling was removed, and documentation was checked again. Approved sample-submission instructions and signed-in populated acceptance remain separate outstanding operational work.
+
 ## Authorized scope
 
 On September 7, 2026 the Product Owner requested complete User documentation, an updated `docs/Phaeno-POMS-Order-to-Cash-Guide.docx`, commit/push/production deployment, and removal of temporary code after verified data repair followed by another documentation review.
@@ -31,7 +33,7 @@ Release the 20-item consistency implementation from the existing `codex/portal-d
 - Production application revision: `cf6995b360fbc9b77bd3ddccf9223e30eb4062b8`, committed and pushed on the existing release branch.
 - [API release 34156823295](https://github.com/behaack/phaeno-ops-mgmt-system/actions/runs/34156823295) succeeded. The running image reports this exact revision and tag `sha-cf6995b360fb-run-34156823295-1`. Migrations and Clerk identity cutover were false. Public API health returned healthy/200, database ping 204, and anonymous session 401 after deployment.
 - [Portal production deployment](https://vercel.com/cadexgenomics/phaeno-ops-mgmt-system/76apddFtbKEAqyVTnVdTNrPZqiMZ) `dpl_76apddFtbKEAqyVTnVdTNrPZqiMZ` rebuilt the same revision with Production environment values and reached Ready on `https://portal.phaenobiotech.com`. Its production entry point renders the sign-in screen with the new Help and documentation footer; a fresh signed-in session is required for protected-workflow acceptance.
-- Runtime logs for this UI deployment show a 200 request on the production domain and no console Error/Fatal entries in the observed window. Automated requests to the unique Vercel deployment hostname returned 404 for `/__clerk` endpoints; the canonical Portal domain is the supported sign-in host. This is limited runtime evidence, not populated workflow acceptance.
+- Runtime logs for this UI deployment show a 200 request on the production domain and no console Error/Fatal entries in the observed window. Automated probes of `/__clerk` paths returned 404; those paths are not configured application routes or a same-origin Clerk proxy. This is limited runtime evidence, not populated sign-in or workflow acceptance.
 
 ## Production inventory and cleanup gate
 
@@ -62,3 +64,12 @@ After that verification, the temporary audit SQL, restore SQL, restore shell hel
 The Word guide was checked again against the repaired workflow and remains current, with its verified document hash unchanged. The final documentation check retains the same 55-guide corpus. Full signed-in production workflow acceptance remains pending a production login; data-level restoration and anonymous production health are verified separately.
 
 Final cleanup checkpoint: TypeScript, full zero-warning ESLint, documentation corpus check and frontend production build passed after removal of the unused frontend code. No temporary maintenance symbols remain in application/deployment source. Test suites were not run, consistent with repository instructions; no new business behavior or persisted model was introduced by this cleanup.
+
+## Final production evidence
+
+- Application commit: `1c55725dc07ed0213c9d1a796f499239ec436c42`, pushed to `codex/portal-documentation-search-release`.
+- [Final API workflow 34158278358](https://github.com/behaack/phaeno-ops-mgmt-system/actions/runs/34158278358): succeeded; running `source_revision` matches the application commit, image tag `sha-1c55725dc07e-run-34158278358-1`. Migrations and identity cutover were false; temporary maintenance inputs no longer exist.
+- [Final Portal deployment](https://vercel.com/cadexgenomics/phaeno-ops-mgmt-system/5UHmcotjbnzdQ24yx1wNaT8szN2k): `dpl_5UHmcotjbnzdQ24yx1wNaT8szN2k`, Ready, Production environment, matching source commit, aliased to `https://portal.phaenobiotech.com`.
+- Independent checks at 20:11 UTC: API health healthy/200, database ping 204, anonymous protected session 401, Portal entry point 200. Final UI runtime logs show that production-domain 200 with zero console Warning/Error/Fatal entries in the observed window.
+- The final Word file and generated 55-guide corpus retain the verified hashes above. No application test suite was run. The unrelated local Website search-index binary was excluded from every commit.
+- The final release-evidence documentation commit does not change application code or bundled User documentation; production intentionally remains on the exact application revision identified above.
