@@ -1,6 +1,7 @@
 ---
 import Layout from '@/layouts/Layout.astro';
 import TopPageBanner from '@/components/TopPageBanner.astro';
+import OnThisPage from '@/components/OnThisPage.astro';
 import SEOMeta from '@/components/meta-data-helpers/SEOMeta.astro';
 import NewSeqCategory from '@/components/NewSeqCategory.astro';
 ---
@@ -15,6 +16,12 @@ import NewSeqCategory from '@/components/NewSeqCategory.astro';
   />  
   <main id="main" class="science-page" tabindex="-1">
     <TopPageBanner title="PSeq Technology" image="image-2" trademark />
+    <OnThisPage links={[
+      { href: '#pseq-technology', label: 'Overview' },
+      { href: '#pseq-clear-signal-architecture-title', label: 'Clear-Signal Architecture' },
+      { href: '#new-insights-in-chemistry', label: 'How PSeq works' },
+      { href: '#pseq-workflow', label: 'Sample-to-data workflow' },
+    ]} />
     <section>
       <h2
         id="pseq-technology"
@@ -63,6 +70,9 @@ import NewSeqCategory from '@/components/NewSeqCategory.astro';
             <p class="clear-signal-architecture__thesis">
               <strong>Identify the molecule. Reconstruct its sequence. Preserve the evidence.</strong>
             </p>
+            <a class="clear-signal-architecture__paper" href="/media/white-papers/pseq-technical-whitepaper-part-1-platform-overview">
+              Read the PSeq platform white paper <span aria-hidden="true">→</span>
+            </a>
           </div>
         </div>
       </section>
@@ -235,7 +245,7 @@ import NewSeqCategory from '@/components/NewSeqCategory.astro';
           <p>Discuss your samples, sequencing setup, and research goals with our team.</p>
         </div>
         <a class="technical-discussion__cta" href="/contact#request-demo">
-          Request a technical discussion <span aria-hidden="true">→</span>
+          Request a demo <span aria-hidden="true">→</span>
         </a>
       </aside>
     </section>
@@ -245,6 +255,14 @@ import NewSeqCategory from '@/components/NewSeqCategory.astro';
 <style lang="scss">
 .science-page {
   container-type: inline-size;
+  overflow-wrap: anywhere;
+}
+
+.science-page > section > h2 {
+  margin-bottom: var(--space-4);
+  padding: 0;
+  font-size: clamp(var(--font-size-2xl), 3vw, var(--font-size-3xl));
+  line-height: var(--line-height-tight);
 }
 
 .category-context {
@@ -252,7 +270,7 @@ import NewSeqCategory from '@/components/NewSeqCategory.astro';
   grid-template-columns: minmax(0, 1.35fr) minmax(18rem, .65fr);
   gap: clamp(2rem, 5vw, 5rem);
   align-items: start;
-  margin: var(--space-3) 0 var(--space-6);
+  margin: 0 0 var(--space-6);
 }
 
 .category-context > p {
@@ -377,6 +395,18 @@ import NewSeqCategory from '@/components/NewSeqCategory.astro';
   line-height: 1.45;
 }
 
+.clear-signal-architecture__paper {
+  display: inline-block;
+  margin-top: var(--space-5);
+  padding-block: var(--space-2);
+  color: var(--color-text-on-dark);
+  text-decoration: underline;
+}
+
+.clear-signal-architecture__paper:hover {
+  color: var(--phaeno-green-200);
+}
+
 #new-insights-in-chemistry,
 #pseq-workflow {
   margin-top: clamp(2rem, 4vw, 3rem);
@@ -384,7 +414,7 @@ import NewSeqCategory from '@/components/NewSeqCategory.astro';
 
 .mechanism-intro {
   max-width: 48rem;
-  margin: var(--space-3) 0 var(--space-7);
+  margin: 0 0 var(--space-6);
   color: var(--color-text-muted);
   font-size: var(--font-size-lg);
 }
@@ -455,7 +485,7 @@ import NewSeqCategory from '@/components/NewSeqCategory.astro';
 }
 
 .mechanism-card h3 {
-  margin: var(--space-7) 0 var(--space-4);
+  margin: var(--space-6) 0 var(--space-4);
   font-size: clamp(1.55rem, 2.25vw, 2rem);
   line-height: 1.08;
 }
@@ -587,9 +617,10 @@ import NewSeqCategory from '@/components/NewSeqCategory.astro';
   align-items: center;
   gap: var(--space-3);
   padding: .8rem 1.15rem;
+  border: 1px solid var(--phaeno-green-200);
   border-radius: var(--radius-pill);
   color: var(--color-text-on-dark);
-  background: var(--color-action-accent);
+  background: transparent;
   font-size: var(--font-size-sm);
   font-weight: var(--font-weight-semibold);
   box-shadow: var(--shadow-sm);
@@ -599,8 +630,8 @@ import NewSeqCategory from '@/components/NewSeqCategory.astro';
 }
 
 .ngs-compatibility__cta:hover {
-  color: var(--color-text-on-dark);
-  background: var(--color-action-accent-hover);
+  color: var(--phaeno-rna-900);
+  background: var(--phaeno-green-200);
   transform: translateY(-1px);
 }
 
@@ -624,7 +655,7 @@ import NewSeqCategory from '@/components/NewSeqCategory.astro';
 
 .workflow-detail-intro {
   max-width: 52rem;
-  margin: var(--space-3) 0 var(--space-6);
+  margin: 0 0 var(--space-6);
   color: var(--color-text-muted);
   font-size: var(--font-size-lg);
   line-height: 1.65;
@@ -925,6 +956,42 @@ import NewSeqCategory from '@/components/NewSeqCategory.astro';
 }
 
 @media (max-width:  725px) {
+  .mechanism-card,
+  .workflow-card__header,
+  .technical-discussion {
+    padding: min(var(--space-6), 6vw);
+  }
+
+  .mechanism-card__step {
+    flex-wrap: wrap;
+  }
+
+  .workflow-card__list,
+  .workflow-card--deliver .workflow-card__list,
+  .workflow-card__list li {
+    padding: min(var(--space-4), 4vw);
+  }
+
+  .workflow-card__list--numbered li {
+    flex-wrap: wrap;
+    align-items: flex-start;
+  }
+
+  .workflow-card__list--numbered li > div {
+    flex: 1 1 8rem;
+    min-width: 0;
+  }
+
+  .clear-signal-architecture h2 {
+    font-size: clamp(var(--font-size-2xl), 6vw, var(--font-size-3xl));
+    line-height: var(--line-height-tight);
+  }
+
+  .clear-signal-architecture__title-line,
+  .workflow-title__nowrap {
+    white-space: normal;
+  }
+
   .category-context {
     grid-template-columns: 1fr;
     gap: var(--space-5);
@@ -961,7 +1028,7 @@ import NewSeqCategory from '@/components/NewSeqCategory.astro';
     align-items: flex-start;
     flex-direction: column;
     margin-top: var(--space-8);
-    padding: var(--space-6);
+    padding: min(var(--space-6), 6vw);
   }
 
   .technical-discussion__cta {

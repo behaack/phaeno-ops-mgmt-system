@@ -1,6 +1,7 @@
 ---
 import Layout from '@/layouts/Layout.astro'
 import TopPageBanner from '@/components/TopPageBanner.astro'
+import OnThisPage from '@/components/OnThisPage.astro'
 import SEOMeta from '@/components/meta-data-helpers/SEOMeta.astro'
 
 const fragilities = [
@@ -83,6 +84,12 @@ const benefits = [
 
   <main id="main" class="multiomics-page" tabindex="-1">
     <TopPageBanner title="PSeq & Multi-omics" image="image-2" />
+    <OnThisPage links={[
+      { href: '#first-line-discovery-layer', label: 'Overview' },
+      { href: '#why-multi-omics-breaks-down', label: 'Integration challenges' },
+      { href: '#resolution-first-workflow', label: 'Resolution-first workflow' },
+      { href: '#how-pseq-improves-multi-omics', label: 'PSeq benefits' },
+    ]} />
 
     <div class="page-shell">
       <section class="intro-section" aria-labelledby="first-line-discovery-layer">
@@ -201,6 +208,7 @@ const benefits = [
 <style>
 .multiomics-page {
   container-type: inline-size;
+  overflow-wrap: anywhere;
   background: var(--color-canvas);
 }
 
@@ -226,7 +234,7 @@ const benefits = [
   grid-template-columns: minmax(0, 1.05fr) minmax(31rem, .95fr);
   gap: clamp(2.5rem, 5vw, 5rem);
   align-items: start;
-  padding: clamp(3.5rem, 7vw, 6rem) 0;
+  padding: var(--page-content-start-space) 0 clamp(3.5rem, 7vw, 6rem);
 }
 
 .intro-section h2,
@@ -234,10 +242,11 @@ const benefits = [
 .foundation-section h2,
 .closing-panel h2 {
   margin: 0;
+  padding: 0;
   color: var(--phaeno-rna-900);
   font-weight: var(--font-weight-medium);
   letter-spacing: -.045em;
-  line-height: 1;
+  line-height: var(--line-height-tight);
 }
 
 .intro-section h2 {
@@ -257,6 +266,7 @@ const benefits = [
 
 .intro-section__copy > p {
   margin: 0;
+  padding: 0;
   color: var(--phaeno-neutral-700);
   font-size: var(--font-size-lg);
   line-height: 1.65;
@@ -525,7 +535,7 @@ const benefits = [
 
 .button-secondary {
   color: var(--phaeno-rna-900);
-  border-color: var(--phaeno-rna-700) !important;
+  border-color: var(--phaeno-rna-800) !important;
 }
 
 .button-secondary:hover {
@@ -580,12 +590,19 @@ const benefits = [
 
 @media (max-width: 640px) {
   .intro-section {
-    gap: var(--space-7, 1.75rem);
-    padding: 2.5rem 0;
+    gap: var(--space-6);
+    padding: var(--space-8) 0;
   }
 
   .intro-section h2 {
-    font-size: clamp(2.5rem, 13vw, 4rem);
+    font-size: clamp(var(--font-size-4xl), 8vw, var(--font-size-5xl));
+    line-height: var(--line-height-tight);
+  }
+
+  .section-heading h2,
+  .foundation-section h2,
+  .closing-panel h2 {
+    font-size: clamp(var(--font-size-2xl), 6vw, var(--font-size-3xl));
   }
 
   .intro-title__first-line {
@@ -596,7 +613,7 @@ const benefits = [
   .benefit-section {
     margin-right: -.25rem;
     margin-left: -.25rem;
-    padding: 1.5rem;
+    padding: min(var(--space-6), 6vw);
     border-radius: var(--radius-xl);
   }
 
@@ -608,6 +625,7 @@ const benefits = [
   .fragility-card,
   .benefit-card {
     min-height: auto;
+    padding: min(var(--space-6), 5vw);
   }
 
   .foundation-section {

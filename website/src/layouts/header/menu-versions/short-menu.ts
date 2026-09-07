@@ -57,14 +57,14 @@ const menu: IMenuItem[] = [
     submenu: [
       {
         index: 3.1,
-        label: 'Blog',
-        path: '/media/blog',
+        label: 'White Papers',
+        path: '/media/white-papers',
         submenu: null
       },
       {
         index: 3.2,
-        label: 'White Papers',
-        path: '/media/white-papers',
+        label: 'Blog',
+        path: '/media/blog',
         submenu: null
       }
     ]

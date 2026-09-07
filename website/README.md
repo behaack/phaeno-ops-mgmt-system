@@ -100,6 +100,28 @@ site. White-paper cards use compact thumbnails and numbered part labels when
 their slugs identify a series; the empty Blog page links to white papers and
 Phaeno updates.
 
+Homepage feature cards size to their content on phones with reduced padding;
+desktop retains the two-column layout. Performance highlights carry the
+existing preliminary-data and RUO qualifications beside the values, with a
+link to the comparison notes. Pending validation uses neutral text. Filled
+orange actions are reserved for demo requests; technology exploration and
+technical-brief links use secondary treatments.
+
+Each technology page has a compact, non-sticky **On this page** navigation to
+its existing sections. Phone headings use the shared typography tokens with
+clearer separation from supporting copy. The PSeq platform page links directly
+to its published platform-overview white paper, and Media navigation lists
+White Papers before Blog.
+
+The contact section **Phaeno updates and technical brief** explains the optional
+brief checkbox. Its button reads **Get updates** or **Get updates and technical
+brief** according to that selection. Demo links consistently read **Request a
+demo**. Fields, consent, validation, and intake behavior are unchanged.
+Form bands, long scientific text, comparison labels, and shared navigation
+reflow for enlarged phone text; anchor scrolling respects reduced motion.
+See `../docs/plans/WEBSITE-CLARITY-AND-POLISH-PLAN.md` for scope and local
+verification evidence.
+
 Searchable pages need meaningful titles, descriptions, `phaeno:document-type`
 metadata, and stable heading IDs. Route, metadata, heading, content, sitemap,
 and RSS changes should be checked together because the Portal-owned crawler

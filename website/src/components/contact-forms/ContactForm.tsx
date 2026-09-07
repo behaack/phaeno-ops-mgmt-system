@@ -47,12 +47,14 @@ export function ContactForm() {
     register,
     handleSubmit,
     reset,
+    watch,
     formState: { errors, isSubmitting },
   } = useForm<FormValues>({
     resolver: zodResolver(schema),
     defaultValues: { sendBrochure: false },
   });
 
+  const sendBrochure = watch("sendBrochure");
   const { executeRecaptcha } = useGoogleReCaptcha();
   const [message, setMessage] = useState<string>("");
   const [isSuccess, setIsSuccess] = useState<boolean>(true);
@@ -234,10 +236,14 @@ export function ContactForm() {
               <input
                 id={`${formId}-sendBrochure`}
                 type="checkbox"
+                aria-describedby={`${formId}-sendBrochure-help`}
                 {...register("sendBrochure")}
               />
-              <span>Please email me the PSeq Technical Brief</span>
+              <span>Also email me the PSeq Technical Brief (optional)</span>
             </label>
+            <p id={`${formId}-sendBrochure-help`} className="mt-1 text-sm text-slate-700">
+              Leave unchecked to receive updates only.
+            </p>
           </div>
 
           {/* MESSAGE */}
@@ -274,7 +280,9 @@ export function ContactForm() {
                 "disabled:cursor-not-allowed disabled:opacity-60",
               ].join(" ")}
             >
-              {isSubmitting ? <Spinner size={21} /> : "Get Updates"}
+              {isSubmitting
+                ? <><Spinner size={21} /><span>Sending request…</span></>
+                : sendBrochure ? "Get updates and technical brief" : "Get updates"}
             </button>
           </div>
         </form>

@@ -76,8 +76,10 @@ footer {
 .top-container-item {
   display: flex;
   flex-direction: column;
+  min-width: 0;
   padding: 0;
   text-align: left;
+  overflow-wrap: anywhere;
 }
 
 .bottom-container {
@@ -112,8 +114,9 @@ footer {
 
 .footer-policies {
   display: flex;
+  max-width: 100%;
   gap: var(--space-6);
-  white-space: nowrap;
+  overflow-wrap: anywhere;
 }
 
 footer :global(a) {

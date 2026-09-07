@@ -109,6 +109,7 @@ const bannerUrl = '/images/home-page-banner.webp'
 }
 
 .hero__content {
+  min-width: 0;
   width: min(100%, var(--content-max-width));
   margin: 0 auto;
   padding: clamp(6rem, 10vw, 9rem) var(--page-gutter) var(--space-8);
@@ -267,7 +268,10 @@ const bannerUrl = '/images/home-page-banner.webp'
   }
 
   .hero__phrase {
-    white-space: nowrap;
+    display: inline-block;
+    max-width: 100%;
+    overflow-wrap: anywhere;
+    vertical-align: top;
   }
 
   .hero h2 {
@@ -289,6 +293,7 @@ const bannerUrl = '/images/home-page-banner.webp'
 
   .hero__proof span {
     font-size: .68rem;
+    overflow-wrap: anywhere;
   }
 }
 </style>

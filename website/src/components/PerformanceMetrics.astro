@@ -59,7 +59,7 @@
         </tr>
         <tr>
           <th scope="row">Mature miRNA</th>
-          <td data-label="PSeq"><span class="status-with-detail"><span class="status status--yes" aria-hidden="true">✓</span><span>validation pending</span></span></td>
+          <td data-label="PSeq"><span class="status--pending">validation pending</span></td>
           <td data-label="Short-Read NGS"><span class="status-with-detail"><span class="status status--partial" aria-hidden="true">◐</span><span>requires small-RNA library</span></span></td>
           <td data-label="Long-Read"><span class="status status--no" aria-hidden="true">✕</span><span class="sr-only">No</span></td>
         </tr>
@@ -121,7 +121,7 @@
     </table>
   </div>
 
-  <div class="comparison__notes">
+  <div class="comparison__notes" id="comparison-notes" tabindex="-1">
     <p><sup>1</sup> Illumina TruSeq Stranded mRNA, STAR + RSEM quantification (v2.7). <sup>2</sup> PacBio Iso-Seq3, SMRT-Link v11, consensus polishing. <sup>3</sup> miRNA precursors are long enough for standard transcript-oriented workflows, although short-read data may require reconstruction. Mature miRNAs are approximately 22 nt and require efficient small-RNA capture. <sup>4</sup> Rare isoforms are &lt;0.01% abundance.</p>
     <p>All data are for research use only (RUO); not validated for clinical diagnostics.</p>
   </div>
@@ -148,6 +148,7 @@
 <style>
 .comparison {
   width: 100%;
+  overflow-wrap: anywhere;
 }
 
 .comparison__header {
@@ -311,6 +312,10 @@ tbody td:nth-child(2) {
   color: #be760b;
 }
 
+.status--pending {
+  color: var(--color-text-muted);
+}
+
 .comparison__notes {
   max-width: 64rem;
   margin-top: var(--space-5);
@@ -382,9 +387,10 @@ tbody td:nth-child(2) {
 
   tbody td {
     display: grid;
-    grid-template-columns: minmax(7.5rem, 42%) 1fr;
+    grid-template-columns: minmax(0, 42%) minmax(0, 1fr);
     gap: var(--space-3);
     padding: .35rem 0;
+    overflow-wrap: anywhere;
   }
 
   tbody td::before {

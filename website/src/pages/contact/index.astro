@@ -59,6 +59,7 @@ import ReCaptchaNotification from '@/components/ReCaptchaNotification.astro';
 <style>
 .contact-page {
   container-type: inline-size;
+  overflow-wrap: anywhere;
 }
 
 .contact-details-container {
@@ -136,6 +137,7 @@ import ReCaptchaNotification from '@/components/ReCaptchaNotification.astro';
   display: inline-flex;
   align-items: center;
   gap: var(--space-2);
+  max-width: 100%;
   color: var(--color-link);
   font-weight: var(--font-weight-medium);
 }
@@ -228,6 +230,7 @@ import ReCaptchaNotification from '@/components/ReCaptchaNotification.astro';
 }
 
 :global(.contact-form-panel) {
+  min-width: 0;
   overflow: hidden;
   border: 1px solid var(--color-border);
   border-radius: var(--radius-xl);
@@ -244,6 +247,7 @@ import ReCaptchaNotification from '@/components/ReCaptchaNotification.astro';
 
 :global(.updates-band) {
   margin: clamp(3rem, 5vw, 4rem) 0 var(--space-8);
+  padding: 0;
   background: var(--phaeno-neutral-50);
 }
 
@@ -267,6 +271,10 @@ import ReCaptchaNotification from '@/components/ReCaptchaNotification.astro';
 
 :global(.contact-form-panel--updates) {
   box-shadow: var(--shadow-sm);
+}
+
+:global(.contact-form-panel label > input[type="checkbox"] + span::before) {
+  flex-shrink: 0;
 }
 
 :global(.contact-input) {
@@ -336,17 +344,22 @@ import ReCaptchaNotification from '@/components/ReCaptchaNotification.astro';
   outline-offset: 3px;
 }
 
+@container (max-width: 56rem) {
+  :global(.demo-band__inner),
+  :global(.updates-band__inner) {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
 .social-media {
   display: flex;
   flex-direction: column;
   align-items: flex-start;
 }
 
-@media (max-width: 725px) {
-  .contact-intro,
-  :global(.demo-band__inner),
-  :global(.updates-band__inner) {
-    grid-template-columns: 1fr;
+@container (max-width: 45.3125rem) {
+  .contact-intro {
+    grid-template-columns: minmax(0, 1fr);
   }
 
   .contact-intro {
@@ -358,7 +371,7 @@ import ReCaptchaNotification from '@/components/ReCaptchaNotification.astro';
   }
 
   .contact-details-container {
-    grid-template-columns: 1fr;
+    grid-template-columns: minmax(0, 1fr);
     gap: var(--space-8);
   }
 
@@ -372,7 +385,11 @@ import ReCaptchaNotification from '@/components/ReCaptchaNotification.astro';
 
   :global(.updates-band__inner) {
     gap: var(--space-8);
-    padding: var(--space-8) var(--space-5);
+    padding: var(--space-8) min(var(--space-5), 4cqw);
+  }
+
+  :global(.contact-form-panel > div) {
+    padding-inline: min(var(--space-6), 5cqw);
   }
 
   :global(.contact-form-actions) {

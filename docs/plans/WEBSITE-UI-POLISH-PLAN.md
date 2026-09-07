@@ -1,5 +1,33 @@
 # Website UI polish
 
+## Clarity follow-up — 2026-09-06
+
+The Product Owner authorized the six presentation improvements in
+[Website clarity and polish](WEBSITE-CLARITY-AND-POLISH-PLAN.md). This follow-up
+was implemented locally, then explicitly authorized for a reversible Website
+release. Its release and rollback record is in the linked follow-up plan;
+the historical API release authorization below does not apply to it.
+
+- Mobile homepage cards size to their content with reduced padding; desktop
+  retains two columns.
+- Technology pages use smaller phone headings, explicit heading/copy spacing,
+  and non-sticky section navigation. PSeq links to the published platform
+  white paper; White Papers precedes Blog in the active header and footer.
+- The updates form names the optional technical brief and reflects its
+  selection in the submit label. Demo links use “Request a demo”.
+- Existing preliminary-data and RUO qualifications appear alongside the
+  performance highlights; a link leads to comparison notes. Pending validation
+  uses neutral text. Filled orange actions are reserved for demo requests.
+- Website README documents the delivered presentation. Build (17 pages),
+  responsive checks at 1440/768/390/320px, 200% text checks, keyboard links and
+  forms, and comparison expansion/no-JavaScript behavior passed locally.
+  Enlarged layouts also correct intrinsic-width constraints in the header,
+  footer, contact bands, and science cards; anchor scrolling respects reduced
+  motion. Detailed evidence and local-preview limitations are recorded in the
+  follow-up plan. Scientific copy, numerical values, public routes, and
+  publication boundaries are preserved. The subsequent Website release uses a
+  retained production deployment and source tag as its rollback checkpoint.
+
 ## Status
 
 Implemented and reviewed locally on 2026-09-04. The owner lifted the release
