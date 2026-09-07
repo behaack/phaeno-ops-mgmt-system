@@ -13,6 +13,11 @@ on:
         required: true
         default: false
         type: boolean
+      restore_verified_company_link:
+        description: Restore the single audit-proven historical Company link after an encrypted backup
+        required: true
+        default: false
+        type: boolean
       cutover_clerk_identity:
         description: Relink the sole bootstrap administrator from the previous Clerk subject to Clerk Production
         required: true
@@ -67,6 +72,7 @@ jobs:
       - name: Validate deployment secrets
         env:
           APPLY_MIGRATIONS: ${{ inputs.apply_migrations }}
+          RESTORE_VERIFIED_COMPANY_LINK: ${{ inputs.restore_verified_company_link }}
           CUTOVER_CLERK_IDENTITY: ${{ inputs.cutover_clerk_identity }}
           DEPLOY_HOST: ${{ secrets.DEPLOY_HOST }}
           DEPLOY_KNOWN_HOSTS: ${{ secrets.DEPLOY_KNOWN_HOSTS }}
@@ -163,9 +169,9 @@ jobs:
             missing=1
           fi
 
-          if [ "$APPLY_MIGRATIONS" = "true" ] \
+          if { [ "$APPLY_MIGRATIONS" = "true" ] || [ "$RESTORE_VERIFIED_COMPANY_LINK" = "true" ]; } \
             && [ -z "$PORTAL_MIGRATION_BACKUP_PUBLIC_KEY" ]; then
-            echo "::error::PORTAL_MIGRATION_BACKUP_PUBLIC_KEY is required when migrations are authorized."
+            echo "::error::PORTAL_MIGRATION_BACKUP_PUBLIC_KEY is required for the authorized database operation."
             missing=1
           fi
 
@@ -387,7 +393,7 @@ jobs:
                 "$RELEASE_PATH/deployment/hetzner/green/install-website-preview-search-runtime-config.sh '$DEPLOY_ROOT'"
 
       - name: Upload migration-backup public key
-        if: ${{ inputs.apply_migrations }}
+        if: ${{ inputs.apply_migrations || inputs.restore_verified_company_link }}
         env:
           BACKUP_KEY_PATH: ${{ steps.release.outputs.backup_key_path }}
           DEPLOY_HOST: ${{ secrets.DEPLOY_HOST }}
@@ -397,6 +403,26 @@ jobs:
           printf '%s\n' "$PORTAL_MIGRATION_BACKUP_PUBLIC_KEY" \
             | ssh -i ~/.ssh/deploy_key "$DEPLOY_USER@$DEPLOY_HOST" \
                 "install -m 600 /dev/stdin '$BACKUP_KEY_PATH'"
+
+      - name: Restore the audit-proven historical Company link
+        if: ${{ inputs.restore_verified_company_link }}
+        env:
+          BACKUP_KEY_PATH: ${{ steps.release.outputs.backup_key_path }}
+          DEPLOY_HOST: ${{ secrets.DEPLOY_HOST }}
+          DEPLOY_USER: ${{ secrets.DEPLOY_USER }}
+          RELEASE_PATH: ${{ steps.release.outputs.release_path }}
+        run: |
+          ssh -i ~/.ssh/deploy_key "$DEPLOY_USER@$DEPLOY_HOST" \
+            bash -s -- "$RELEASE_PATH" "$BACKUP_KEY_PATH" "$GITHUB_SHA" "$GITHUB_RUN_ID" <<'REMOTE'
+          set -Eeuo pipefail
+          release_path="$1"
+          case "$release_path" in
+            /opt/phaeno.portal-green/releases/*) ;;
+            *) printf '%s\n' 'Unexpected release directory.' >&2; exit 1 ;;
+          esac
+          ALLOW_VERIFIED_COMPANY_LINK_RESTORE=YES bash \
+            "$release_path/deployment/hetzner/green/restore-verified-company-link.sh" "$2" "$3" "$4"
+          REMOTE
 
       - name: Inventory Portal consistency data without changes
         if: ${{ inputs.audit_consistency_data }}
