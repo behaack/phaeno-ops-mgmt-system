@@ -1,7 +1,7 @@
 import axios from 'axios'
 
 import { api } from './client'
-import type { DataAssemblyRequest, OrderListItem, PagedResult, ReagentOrder } from './order-management'
+import type { DataAssemblyRequest, OperationalFile, OrderListItem, PagedResult, ReagentOrder } from './order-management'
 import type { ProtocolDefinition } from '#/features/lab-operations/protocol-definition'
 
 type ApiEnvelope<T> = {
@@ -79,7 +79,8 @@ export type LabExecutionDetail = {
 export type LabLibrary = { id: string; labSpecimenId: string; sourceContainerId: string; libraryContainerId: string; preparationExecutionId: string; libraryKey: string; status: string; qcResultsJson: string | null; version: number }
 export type LabException = { id: string; labSpecimenId: string | null; labProtocolExecutionId: string | null; audience: string; categoryCode: string; title: string; internalDescription: string; customerSafeSummary: string | null; isBlocking: boolean; status: string; responseDueAtUtc: string | null; resolvedAtUtc: string | null; version: number }
 export type LabScientificApproval = { id: string; approvalVersion: number; releaseDefinitionKey: string; releaseDefinitionVersion: number; approvedByUserId: string; approvedAtUtc: string; projectionVersion: number }
-export type LabWorkOrderDetail = { workOrder: LabWorkOrderSummary; specimens: LabSpecimen[]; containers: LabContainer[]; executions: LabExecution[]; libraries: LabLibrary[]; exceptions: LabException[]; scientificApprovals: LabScientificApproval[] }
+export type LabWorkOrderDetail = { workOrder: LabWorkOrderSummary; specimens: LabSpecimen[]; containers: LabContainer[]; executions: LabExecution[]; libraries: LabLibrary[]; exceptions: LabException[]; scientificApprovals: LabScientificApproval[]; reviewPackages?: LabReviewPackage[]; requiresResultPackage?: boolean }
+export type LabReviewPackage = { id: string; sampleName: string; packageVersion: number; manifestSha256: string; fileNames: string[] }
 export type LabPSeqKitOffering = { id: string; partnerOrganizationId: string; itemName: string }
 
 export const getLabOperationsDashboard = () => get<LabOperationsDashboard>('/platform/lab-operations')
@@ -104,6 +105,7 @@ export const getLabManufacturingOrder = (workflow: 'reagent' | 'assembly', id: s
     : get<DataAssemblyRequest>(`/platform/lab-operations/data-assembly-requests/${id}`)
 export const runLabManufacturingAction = <T>(workflow: 'reagent' | 'assembly', path: string, input: unknown, idempotent = false) =>
   post<T>(`/platform/lab-operations/${workflow === 'reagent' ? 'pseq-kit-orders' : 'data-assembly-requests'}/${path}`, input, idempotent)
+export const getLabAssemblyOutputs = (requestId: string, runId: string) => get<OperationalFile[]>(`/platform/lab-operations/data-assembly-requests/${requestId}/processing-runs/${runId}/outputs`)
 export async function uploadLabAssemblyOutput(requestId: string, runId: string, file: File) {
   const form = new FormData()
   form.append('file', file)

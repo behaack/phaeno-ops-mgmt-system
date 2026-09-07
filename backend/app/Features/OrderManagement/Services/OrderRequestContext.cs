@@ -244,6 +244,17 @@ public sealed class OrderRequestContext(
         return actor;
     }
 
+    public async Task<User> RequirePackageReaderAsync(HttpContext httpContext,
+        bool enforceBusinessRoles, CancellationToken cancellationToken)
+    {
+        var actor = await AccountAccess.ReadActiveActorAsync(httpContext, dbContext,
+            externalIdentityContext, cancellationToken)
+            ?? throw new OrderManagementException("active_actor_required", "Sign in to view this package.", StatusCodes.Status401Unauthorized);
+        if (AccountAuthorization.IsPlatformAdmin(actor)) return actor;
+        return await RequireBusinessRoleAsync(httpContext, BusinessRole.ResultReleaseManager,
+            enforceBusinessRoles, cancellationToken);
+    }
+
     public async Task<User> RequireAnyBusinessRoleAsync(
         HttpContext httpContext,
         IReadOnlyCollection<BusinessRole> roles,
@@ -306,7 +317,7 @@ public sealed class OrderRequestContext(
         {
             var segments = SplitRelativePath(path, assemblyPrefix);
             if (HttpMethods.IsGet(request.Method))
-                return segments is [] or [_];
+                return segments is [] or [_] or [_, "processing-runs", _, "outputs"];
             if (!HttpMethods.IsPost(request.Method)) return false;
             return segments is [_, "begin-intake"]
                 or [_, "accept-intake"]

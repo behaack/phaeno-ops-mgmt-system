@@ -1,5 +1,27 @@
 # Frontend Test Plan
 
+## Intake consolidation - 2026-09-07
+
+Customer order creation is consolidated in Intake. Updated the existing dialog and Intake mocks, removed the retired staging-panel case, and added stage-grouping and legacy-link regression cases. Scoped TypeScript and lint checks plus synthetic browser review are the verification checkpoint; automated suites were not requested.
+
+## Trial dialog choice scrolling - 2026-09-07
+
+The Trial dialog opts into floating SearchableSelect choices and uses the shared dialog scroll body. Scoped lint and typecheck validate these changes. Existing non-portal SearchableSelect unit scenarios remain unchanged; automated suites were not requested or run. Browser observations are recorded in the E2E plan.
+
+## Optional Trial assignment note - 2026-09-07
+
+Trial approver assignment now labels Reason as Note (optional) for primary and delegate assignment. Typecheck and scoped lint passed. Automated regression coverage was not requested; shared required-field behavior remains unchanged.
+
+## Trial navigation and filter presentation - 2026-09-07
+
+Scoped lint and frontend typecheck cover the shared Order operations navigation,
+existing Trial route wrappers and list toolbar changes. Documentation generation
+and consistency checks are included. Automated suites were not requested and were
+not run for this slice. Deferred regression automation: Phaeno Trial-only access,
+external Trial menu preservation, active Order ops state on Trial child URLs, and
+combined search/status/owner reset. Local browser observations are recorded in the
+E2E plan; they do not establish production acceptance.
+
 ## Signed-in acceptance CRM corrections — 2026-09-05
 
 Hosted review of release `541c875` reproduced two narrow issues: the association
@@ -929,3 +951,17 @@ capabilities control acceptance, submission, commercial closeout and release.
 The staff review queue has URL-backed status and Sales owner filters. Dedicated
 scope editing is the documented complexity exception; other actions use modals.
 See `TRIAL-INTEGRATION-CLOSEOUT.md` for full checks and production gates.
+
+
+## Portal consistency regression coverage (September 7, 2026)
+
+New and updated focused coverage includes:
+
+- `CommercialOrderIntakePanel.test.tsx`: held/history views, server filtering, 25-row pagination, preserved URL state and clear filters.
+- `PSeqOrderToCashPanels.test.tsx`: Finance record navigation, role-appropriate actions, retained failed adjustments/allocations, error versus empty state, exact import review, stale in-flight preview rejection and same-batch confirmation retry, inline Finance validation/focus, unchanged-value restoration, billing approval-note checks and failed-draft retention.
+- `resumable-draft.test.ts`, external list filter tests, and `LabJobSamplesPanel.test.tsx`: uncertain-create recovery, list state, CSV preview and explicit roster finalization.
+- Company workspace/relationship/request tests: administrator invitation, preserved requested relationship, approved request completion and contextual person creation.
+- `SystemConfigurationPanel.test.tsx`: legacy extra/duplicate setting rejection, normalization, pristine restoration, blur validation and failed-draft/focus handling.
+- `ResultReleasePanel.test.tsx` and `StructuredQcFields.test.tsx`: package identity and permissions, release confirmation/concurrency, structured measurements and validation.
+
+Suites are authored but not run, following repository scope. TypeScript, lint and browser findings are reported separately; these do not substitute for full populated Customer/Partner operational acceptance.

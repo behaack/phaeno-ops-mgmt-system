@@ -13,6 +13,7 @@ using PSeq.Operations.Commercial.Accounts.Domain;
 using PSeq.Operations.Commercial.OrderManagement.Domain;
 using PhaenoPortal.App.Features.Accounts.Services;
 using PhaenoPortal.App.Features.OrderManagement.Services;
+using PhaenoPortal.App.Features.OrderManagement.Domain;
 using PhaenoPortal.App.Infrastructure.Persistence;
 
 public sealed record InvoiceReceivableDto(
@@ -99,10 +100,11 @@ public sealed class AccountsReceivableController(
     [HttpGet("invoices")]
     public async Task<IReadOnlyList<InvoiceReceivableDto>> Invoices(
         [FromQuery] Guid? organizationId, [FromQuery] bool openOnly = false,
-        CancellationToken cancellationToken = default)
+        CancellationToken cancellationToken = default, [FromQuery] Guid? invoiceId = null)
     {
         await RequireAsync(BusinessRole.BillingOperator, cancellationToken);
         var query = dbContext.Invoices.AsNoTracking();
+        if (invoiceId.HasValue) query = query.Where(item => item.Id == invoiceId);
         if (organizationId.HasValue) query = query.Where(item => item.OrganizationId == organizationId);
         if (openOnly) query = query.Where(item => item.Status == InvoiceStatus.Issued || item.Status == InvoiceStatus.PartiallyPaid);
         return await query.OrderBy(item => item.DueOn).ThenBy(item => item.InvoiceNumber)
@@ -137,10 +139,11 @@ public sealed class AccountsReceivableController(
     [HttpGet("receipts")]
     public async Task<IReadOnlyList<PaymentReceiptDto>> Receipts(
         [FromQuery] Guid? organizationId, [FromQuery] bool unappliedOnly = false,
-        CancellationToken cancellationToken = default)
+        CancellationToken cancellationToken = default, [FromQuery] Guid? receiptId = null)
     {
         await RequireAsync(BusinessRole.CashOperator, cancellationToken);
         var query = dbContext.PaymentReceipts.AsNoTracking();
+        if (receiptId.HasValue) query = query.Where(item => item.Id == receiptId);
         if (organizationId.HasValue) query = query.Where(item => item.OrganizationId == organizationId);
         if (unappliedOnly) query = query.Where(item => item.UnappliedAmount > 0 && item.Status != PaymentReceiptStatus.Reversed);
         return await query.OrderByDescending(item => item.ReceivedOn).ThenBy(item => item.ReceiptNumber)
@@ -150,6 +153,12 @@ public sealed class AccountsReceivableController(
     [HttpPost("receipts")]
     public async Task<PaymentReceiptDto> RecordReceipt(
         [FromBody] RecordPaymentReceiptRequest request, CancellationToken cancellationToken)
+    {
+        await RequireAsync(BusinessRole.CashOperator, cancellationToken);
+        throw new OrderManagementException("receipt_evidence_upload_required", "Attach evidence using the Record receipt form.", StatusCodes.Status410Gone);
+    }
+
+    private async Task<PaymentReceiptDto> SaveReceiptWithEvidence(RecordPaymentReceiptRequest request, CancellationToken cancellationToken)
     {
         var actor = await RequireAsync(BusinessRole.CashOperator, cancellationToken);
         if (string.IsNullOrWhiteSpace(request.EvidenceStorageKey))
@@ -165,6 +174,87 @@ public sealed class AccountsReceivableController(
         await SaveAsync(cancellationToken);
         Response.StatusCode = StatusCodes.Status201Created;
         return MapReceipt(receipt);
+    }
+
+    [HttpPost("receipts/with-evidence")]
+    [RequestSizeLimit(11 * 1024 * 1024)]
+    public async Task<PaymentReceiptDto> RecordReceiptWithEvidence(
+        [FromForm] string payload, [FromForm] IFormFile file,
+        [FromServices] IOperationalFileStorage fileStorage,
+        [FromServices] IOperationalFileScanner scanner,
+        [FromServices] OrderIdempotencyService idempotency,
+        CancellationToken cancellationToken)
+    {
+        var actor = await RequireAsync(BusinessRole.CashOperator, cancellationToken);
+        RecordPaymentReceiptRequest request;
+        try { request = JsonSerializer.Deserialize<RecordPaymentReceiptRequest>(payload, JsonOptions)
+            ?? throw Invalid("receipt_fields_required", "Complete the receipt details."); }
+        catch (JsonException) { throw Invalid("receipt_fields_invalid", "Review the receipt details."); }
+        request = request with { EvidenceStorageKey = string.Empty };
+        var extension = Path.GetExtension(file.FileName).ToLowerInvariant();
+        if (file.Length is <= 0 or > 10 * 1024 * 1024 || !new[] { ".pdf", ".png", ".jpg", ".jpeg", ".txt" }.Contains(extension))
+            throw Invalid("receipt_evidence_invalid", "Attach a PDF, PNG, JPEG or text file up to 10 MB.");
+        await using var fingerprint = file.OpenReadStream();
+        var checksum = Convert.ToHexString(await SHA256.HashDataAsync(fingerprint, cancellationToken));
+        string? uploadedStorageKey = null;
+        try
+        {
+            var execution = await idempotency.ExecuteAsync(actor.Id, "finance:receipt-with-evidence", idempotency.RequireKey(HttpContext),
+                new { Request = request, Checksum = checksum }, async token =>
+                {
+                    await using var stream = file.OpenReadStream();
+                    var stored = await fileStorage.SaveAsync(stream, extension, 10 * 1024 * 1024, token);
+                    uploadedStorageKey = stored.StorageKey;
+                    var scan = await scanner.ScanAsync(stored.StorageKey, token);
+                    if (scan.Status != OperationalFileScanStatus.Clean)
+                        throw Invalid("receipt_evidence_not_clean", "Evidence could not be cleared by the file scanner. Your receipt has not been recorded. Try again when scanning is available.");
+                    return await SaveReceiptWithEvidence(request with { EvidenceStorageKey = "receipt-evidence:" + stored.StorageKey }, token);
+                }, statusCode: StatusCodes.Status201Created, cancellationToken: cancellationToken);
+            Response.StatusCode = execution.StatusCode;
+            return execution.Response;
+        }
+        catch
+        {
+            if (uploadedStorageKey is not null)
+            {
+                try
+                {
+                    // ExecuteAsync has disposed its transaction. Preserve the evidence
+                    // if a commit succeeded before the response was interrupted.
+                    var evidenceKey = "receipt-evidence:" + uploadedStorageKey;
+                    var committed = await dbContext.PaymentReceipts.AsNoTracking()
+                        .AnyAsync(receipt => receipt.EvidenceStorageKey == evidenceKey, CancellationToken.None);
+                    if (!committed) await fileStorage.DeleteIfExistsAsync(uploadedStorageKey, CancellationToken.None);
+                }
+                catch (Exception cleanupError)
+                {
+                    logger.LogWarning(cleanupError, "Receipt evidence was retained because the upload outcome or cleanup could not be verified.");
+                }
+            }
+            throw;
+        }
+    }
+
+    [HttpGet("receipts/{receiptId:guid}/evidence")]
+    public async Task<IActionResult> DownloadReceiptEvidence(Guid receiptId,
+        [FromServices] IOperationalFileStorage fileStorage, CancellationToken cancellationToken)
+    {
+        await RequireAsync(BusinessRole.CashOperator, cancellationToken);
+        var receipt = await dbContext.PaymentReceipts.AsNoTracking().SingleOrDefaultAsync(item => item.Id == receiptId, cancellationToken)
+            ?? throw Missing("receipt_not_found", "The receipt was not found.");
+        if (string.IsNullOrWhiteSpace(receipt.EvidenceStorageKey)) throw Missing("receipt_evidence_missing", "No attached evidence is available for this receipt.");
+        if (receipt.EvidenceStorageKey.StartsWith("payment-import:", StringComparison.Ordinal)
+            && Guid.TryParse(receipt.EvidenceStorageKey[15..], out var importId))
+        {
+            var import = await dbContext.PaymentImportBatches.AsNoTracking().SingleOrDefaultAsync(item => item.Id == importId, cancellationToken)
+                ?? throw Missing("receipt_evidence_missing", "The original import evidence is unavailable.");
+            return File(Encoding.UTF8.GetBytes(import.PreviewJson), "application/json", $"{receipt.ReceiptNumber}-import.json");
+        }
+        if (!receipt.EvidenceStorageKey.StartsWith("receipt-evidence:", StringComparison.Ordinal))
+            throw Missing("receipt_evidence_legacy", "This historical receipt references external evidence. Contact Finance for the original document.");
+        var storageKey = receipt.EvidenceStorageKey[17..];
+        var stream = await fileStorage.OpenReadAsync(storageKey, cancellationToken);
+        return File(stream, "application/octet-stream", $"{receipt.ReceiptNumber}-evidence{Path.GetExtension(storageKey)}");
     }
 
     [HttpGet("receipts/{receiptId:guid}/matching-suggestions")]
@@ -260,23 +350,31 @@ public sealed class AccountsReceivableController(
         [FromBody] PreviewPaymentImportRequest request, CancellationToken cancellationToken)
     {
         var actor = await RequireAsync(BusinessRole.CashOperator, cancellationToken);
+        var source = request.Source?.Trim() ?? string.Empty;
+        if (source.Length is < 1 or > 100)
+            throw Invalid("payment_import_source_invalid", "Enter a source of up to 100 characters.");
         if (!await dbContext.Organizations.AsNoTracking().AnyAsync(item =>
             item.Id == request.OrganizationId && item.IsActive && item.Kind == OrganizationKind.Customer,
             cancellationToken)) throw Missing("customer_not_found", "The Customer was not found.");
         var payloadHash = Convert.ToHexString(SHA256.HashData(Encoding.UTF8.GetBytes(request.CsvText)));
-        if (await dbContext.PaymentImportBatches.AsNoTracking().AnyAsync(item =>
-            item.Source == request.Source && item.PayloadSha256 == payloadHash, cancellationToken))
-            throw Conflict("payment_import_duplicate", "This payment file was already previewed.");
-        var rows = ParseImport(request.OrganizationId, request.Source, request.CsvText);
+        var existing = await dbContext.PaymentImportBatches.SingleOrDefaultAsync(item =>
+            item.Source == source && item.PayloadSha256 == payloadHash, cancellationToken);
+        if (existing is not null && existing.Status != PaymentImportBatchStatus.Preview)
+            throw Conflict("payment_import_duplicate", "This payment file was already imported.");
+        if (existing is not null && existing.PreviewedByUserId != actor.Id)
+            throw Conflict("payment_import_preview_owned", "Another Cash Operator is reviewing this file. Ask them to complete that review.");
+        var rows = ParseImport(request.OrganizationId, source, request.CsvText);
         var externalIds = rows.Select(item => item.ExternalId).ToList();
         if (await dbContext.PaymentReceipts.AsNoTracking().AnyAsync(item =>
-            item.Source == request.Source && externalIds.Contains(item.ExternalId), cancellationToken))
+            item.Source == source && externalIds.Contains(item.ExternalId), cancellationToken))
             throw Conflict("payment_import_duplicate_external_id", "One or more imported external IDs already exist.");
         var previewJson = JsonSerializer.Serialize(rows, JsonOptions);
-        var batch = new PaymentImportBatch(request.Source, payloadHash, previewJson,
+        var batch = existing ?? new PaymentImportBatch(source, payloadHash, previewJson,
             rows.Count, rows.Sum(item => item.Amount), actor.Id, DateTime.UtcNow);
-        dbContext.PaymentImportBatches.Add(batch);
-        await dbContext.SaveChangesAsync(cancellationToken);
+        if (existing is null) dbContext.PaymentImportBatches.Add(batch);
+        else if (!(JsonSerializer.Deserialize<List<PaymentImportRow>>(existing.PreviewJson, JsonOptions) ?? []).SequenceEqual(rows))
+            Execute(() => existing.RevisePreview(previewJson, rows.Count, rows.Sum(item => item.Amount), actor.Id, DateTime.UtcNow));
+        await SaveAsync(cancellationToken);
         Response.StatusCode = StatusCodes.Status201Created;
         return MapImport(batch);
     }
@@ -289,8 +387,16 @@ public sealed class AccountsReceivableController(
         await using var transaction = await dbContext.Database.BeginTransactionAsync(IsolationLevel.Serializable, cancellationToken);
         var batch = await dbContext.PaymentImportBatches.SingleOrDefaultAsync(item => item.Id == batchId, cancellationToken)
             ?? throw Missing("payment_import_not_found", "The payment import was not found.");
+        if (batch.PreviewedByUserId != actor.Id)
+            throw Conflict("payment_import_preview_owned", "Only the Cash Operator who reviewed this file may confirm it.");
+        if (batch.Status == PaymentImportBatchStatus.Confirmed) return MapImport(batch);
         EnsureVersion(batch.Version, request.Version);
         var rows = JsonSerializer.Deserialize<List<PaymentImportRow>>(batch.PreviewJson, JsonOptions) ?? [];
+        var organizationIds = rows.Select(item => item.OrganizationId).Distinct().ToList();
+        if (rows.Count != batch.RowCount || rows.Sum(item => item.Amount) != batch.TotalAmount
+            || await dbContext.Organizations.AsNoTracking().CountAsync(item => organizationIds.Contains(item.Id)
+                && item.IsActive && item.Kind == OrganizationKind.Customer, cancellationToken) != organizationIds.Count)
+            throw Conflict("payment_import_preview_stale", "The reviewed Customer or import totals changed. Preview the file again before confirming.");
         foreach (var row in rows)
         {
             if (await dbContext.PaymentReceipts.AnyAsync(item => item.Source == row.Source && item.ExternalId == row.ExternalId, cancellationToken))
@@ -300,7 +406,7 @@ public sealed class AccountsReceivableController(
                 row.Reference, $"payment-import:{batch.Id}", row.Memo, actor.Id, DateTime.UtcNow));
         }
         Execute(() => batch.Confirm(actor.Id, DateTime.UtcNow));
-        await dbContext.SaveChangesAsync(cancellationToken);
+        await SaveAsync(cancellationToken);
         await transaction.CommitAsync(cancellationToken);
         return MapImport(batch);
     }
@@ -395,11 +501,11 @@ public sealed class AccountsReceivableController(
     }
 
     [HttpGet("reconciliations")]
-    public async Task<IReadOnlyList<ReconciliationBatchDto>> Reconciliations(CancellationToken cancellationToken)
+    public async Task<IReadOnlyList<ReconciliationBatchDto>> Reconciliations(CancellationToken cancellationToken, [FromQuery] Guid? batchId = null)
     {
         await requestContext.RequireAnyBusinessRoleAsync(HttpContext,
             [BusinessRole.CashOperator, BusinessRole.CashReconciler], EnforceRoles, cancellationToken);
-        return await dbContext.ReconciliationBatches.AsNoTracking().OrderByDescending(item => item.PeriodEnd)
+        return await dbContext.ReconciliationBatches.AsNoTracking().Where(item => !batchId.HasValue || item.Id == batchId).OrderByDescending(item => item.PeriodEnd)
             .Select(item => MapReconciliation(item)).Take(500).ToListAsync(cancellationToken);
     }
 
@@ -490,7 +596,7 @@ public sealed class AccountsReceivableController(
         if (lines.Length < 2) throw Invalid("payment_import_empty", "The import requires a header and at least one row.");
         var headers = ParseCsvLine(lines[0]).Select(item => item.Trim().ToLowerInvariant()).ToList();
         string[] required = ["source", "external_id", "date", "amount", "currency", "payer", "reference", "memo"];
-        if (required.Any(item => !headers.Contains(item)))
+        if (required.Any(item => !headers.Contains(item)) || headers.Distinct(StringComparer.Ordinal).Count() != headers.Count)
             throw Invalid("payment_import_columns_invalid", "The CSV requires source, external_id, date, amount, currency, payer, reference, and memo columns.");
         var rows = new List<PaymentImportRow>();
         for (var index = 1; index < lines.Length; index++)
@@ -502,7 +608,7 @@ public sealed class AccountsReceivableController(
                 throw Invalid("payment_import_source_mismatch", $"CSV row {index + 1} does not match the selected source.");
             if (!DateOnly.TryParseExact(row["date"], "yyyy-MM-dd", CultureInfo.InvariantCulture, DateTimeStyles.None, out var date)
                 || !decimal.TryParse(row["amount"], NumberStyles.Number, CultureInfo.InvariantCulture, out var amount)
-                || amount <= 0 || !string.Equals(row["currency"], "USD", StringComparison.OrdinalIgnoreCase)
+                || decimal.Round(amount, 2, MidpointRounding.AwayFromZero) <= 0 || !string.Equals(row["currency"], "USD", StringComparison.OrdinalIgnoreCase)
                 || string.IsNullOrWhiteSpace(row["external_id"]) || string.IsNullOrWhiteSpace(row["payer"])
                 || string.IsNullOrWhiteSpace(row["reference"]))
                 throw Invalid("payment_import_row_invalid", $"CSV row {index + 1} contains invalid required values or a non-USD currency.");

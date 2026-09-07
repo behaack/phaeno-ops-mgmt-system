@@ -285,6 +285,17 @@ public sealed partial class LabOperationsController
         if (request.LabSpecimenId.HasValue)
             await RequireSpecimenAsync(workOrderId, request.LabSpecimenId.Value, cancellationToken);
 
+        if (request.AssignedToUserId.HasValue)
+        {
+            var assignee = await dbContext.Users.Include(item => item.Memberships).ThenInclude(item => item.Organization)
+                .SingleOrDefaultAsync(item => item.Id == request.AssignedToUserId.Value, cancellationToken);
+            var eligibleRole = await dbContext.LabRoleAssignments.AsNoTracking().AnyAsync(item =>
+                item.UserId == request.AssignedToUserId.Value && item.IsActive
+                && (item.Role == LabRole.Operator || item.Role == LabRole.Supervisor || item.Role == LabRole.OperationsAdministrator), cancellationToken);
+            if (assignee is null || !LabOperationsAuthorization.IsEligibleLabStaff(assignee) || !eligibleRole)
+                throw Invalid("lab_assignee_not_eligible", "Choose an active laboratory operator, supervisor, or operations administrator.");
+        }
+
         var workflowVersionId = work.LabServiceWorkflowVersionId;
         if (!workflowVersionId.HasValue)
         {

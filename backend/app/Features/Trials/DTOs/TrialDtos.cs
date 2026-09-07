@@ -19,7 +19,7 @@ public sealed record TrialActionRequest(long Version, string Reason, TrialStatus
     bool? Hold = null, string? ScheduleEstimate = null, Guid? SampleId = null, bool PhaenoCausedFailure = false,
     string? MaterialDisposition = null, TrialCommercialOutcome? CommercialOutcome = null, Guid? FollowUpOwnerUserId = null, DateTime? FollowUpAtUtc = null);
 public sealed record TrialReleaseRequest(long Version, IReadOnlyList<Guid> OutputPackageIds, bool CompletePackage, string Reason, Guid? SupersedesReleaseId = null);
-public sealed record TrialAuthorityRequest(Guid UserId, TrialApprovalDomain Domain, bool IsPrimary, string Reason);
+public sealed record TrialAuthorityRequest(Guid UserId, TrialApprovalDomain Domain, bool IsPrimary, string? Reason = null);
 public sealed record TrialRevokeAuthorityRequest(long Version, string Reason);
 public sealed record TrialDeliverableRequest(string Key, string Name, bool IsDefault, string Reason);
 public sealed record TrialDecisionDto(string Domain, string Decision, string? Reason, Guid? ActorUserId, bool? AsDelegate, DateTime AtUtc);

@@ -36,7 +36,11 @@ public sealed record ResultPackageDto(
     string PipelineProviderKey, string PipelineSubmissionId, string ManifestSha256,
     int ExpectedArtifactCount, Guid? ScientificApprovalId, DateTime? ReleasedAtUtc,
     string? FailureCode, string? FailureDetail, string? RetentionState, long Version,
-    IReadOnlyList<ResultArtifactDto> Artifacts, Guid? TrialProjectId = null, Guid? TrialSampleId = null);
+    IReadOnlyList<ResultArtifactDto> Artifacts, Guid? TrialProjectId = null, Guid? TrialSampleId = null, ResultPackageContextDto? Context = null);
+public sealed record ResultPackageContextDto(string OrganizationName, string? OrderNumber,
+    string? CustomerReference, string? CustomerSampleId, Guid? RetentionSnapshotId,
+    string? ScientificReviewer, DateTime? ScientificallyApprovedAtUtc,
+    string? ReleaseDefinitionKey, int? ReleaseDefinitionVersion);
 public sealed record ResultArtifactDto(
     Guid Id, string LogicalRole, string FileName, string ContentType, long SizeBytes,
     string Sha256, string ScanState, DateTime? ScanCompletedAtUtc, DateTime? DeletedAtUtc);
@@ -271,11 +275,60 @@ public sealed class PSeqResultReleaseController(
         var artifacts = await dbContext.ResultArtifacts.AsNoTracking().Where(item => packageIds.Contains(item.ResultOutputPackageId))
             .OrderBy(item => item.FileName).ToListAsync(cancellationToken);
         var retention = await retentionService.ReadAsync(packages, artifacts, await RetentionTransaction.ClockAsync(dbContext, cancellationToken), cancellationToken);
+        var contexts = await ReadContextsAsync(packages, cancellationToken);
         return packages.Select(package => PSeqResultPipelineController.Map(package,
             artifacts.Where(item => item.ResultOutputPackageId == package.Id)
                 .Select(item => new ResultArtifactDto(item.Id, item.LogicalRole, item.FileName, item.ContentType,
                     item.SizeBytes, item.Sha256, item.ScanState.ToString(), item.ScanCompletedAtUtc, item.DeletedAtUtc)).ToList(),
-            retention[package.Id].State)).ToList();
+            retention[package.Id].State) with { Context = contexts[package.Id] }).ToList();
+    }
+
+    [HttpGet("{packageId:guid}")]
+    public async Task<ResultPackageDto> Get(Guid packageId, CancellationToken cancellationToken)
+    {
+        RequireGovernedResultsConfiguration();
+        // Release managers review publication; file administrators may inspect the
+        // same package without receiving any additional release authority.
+        await requestContext.RequirePackageReaderAsync(HttpContext,
+            options.Value.BusinessRoles || options.Value.DualControlEnforced, cancellationToken);
+        var package = await dbContext.ResultOutputPackages.AsNoTracking()
+            .SingleOrDefaultAsync(item => item.Id == packageId && item.TrialProjectId == null, cancellationToken)
+            ?? throw new OrderManagementException("result_package_not_found", "The result package was not found.", StatusCodes.Status404NotFound);
+        var artifacts = await dbContext.ResultArtifacts.AsNoTracking().Where(item => item.ResultOutputPackageId == packageId)
+            .OrderBy(item => item.FileName).ToListAsync(cancellationToken);
+        var retention = await retentionService.ReadAsync([package], artifacts,
+            await RetentionTransaction.ClockAsync(dbContext, cancellationToken), cancellationToken);
+        var contexts = await ReadContextsAsync([package], cancellationToken);
+        return PSeqResultPipelineController.Map(package, artifacts.Select(item => new ResultArtifactDto(
+            item.Id, item.LogicalRole, item.FileName, item.ContentType, item.SizeBytes, item.Sha256,
+            item.ScanState.ToString(), item.ScanCompletedAtUtc, item.DeletedAtUtc)).ToList(), retention[package.Id].State)
+            with { Context = contexts[package.Id] };
+    }
+
+    private async Task<Dictionary<Guid, ResultPackageContextDto>> ReadContextsAsync(
+        IReadOnlyList<ResultOutputPackage> packages, CancellationToken token)
+    {
+        var organizationIds = packages.Select(item => item.OrganizationId).Distinct().ToList();
+        var orderIds = packages.Where(item => item.LabServiceOrderId.HasValue).Select(item => item.LabServiceOrderId!.Value).ToList();
+        var sampleIds = packages.Where(item => item.LabSampleId.HasValue).Select(item => item.LabSampleId!.Value).ToList();
+        var packageIds = packages.Select(item => item.Id).ToList();
+        var approvalIds = packages.Where(item => item.ScientificApprovalId.HasValue).Select(item => item.ScientificApprovalId!.Value).ToList();
+        var organizations = await dbContext.Organizations.AsNoTracking().Where(item => organizationIds.Contains(item.Id)).ToDictionaryAsync(item => item.Id, item => item.Name, token);
+        var orders = await dbContext.LabServiceOrders.AsNoTracking().Where(item => orderIds.Contains(item.Id)).ToDictionaryAsync(item => item.Id, token);
+        var samples = await dbContext.LabSamples.AsNoTracking().Where(item => sampleIds.Contains(item.Id)).ToDictionaryAsync(item => item.Id, item => item.CustomerSampleId, token);
+        var snapshots = await dbContext.ResultRetentionSchedules.AsNoTracking().Where(item => packageIds.Contains(item.ResultOutputPackageId)).ToDictionaryAsync(item => item.ResultOutputPackageId, item => item.RetentionSnapshotId, token);
+        var approvals = await dbContext.LabScientificApprovals.AsNoTracking().Where(item => approvalIds.Contains(item.Id)).ToDictionaryAsync(item => item.Id, token);
+        var reviewerIds = approvals.Values.Select(item => item.ApprovedByUserId).Distinct().ToList();
+        var reviewers = await dbContext.Users.AsNoTracking().Where(item => reviewerIds.Contains(item.Id)).ToDictionaryAsync(item => item.Id, item => item.FirstName + " " + item.LastName, token);
+        return packages.ToDictionary(item => item.Id, item => {
+            var order = item.LabServiceOrderId.HasValue ? orders.GetValueOrDefault(item.LabServiceOrderId.Value) : null;
+            var approval = item.ScientificApprovalId.HasValue ? approvals.GetValueOrDefault(item.ScientificApprovalId.Value) : null;
+            return new ResultPackageContextDto(organizations.GetValueOrDefault(item.OrganizationId, "Organization"),
+                order?.OrderNumber, order?.CustomerReference, item.LabSampleId.HasValue ? samples.GetValueOrDefault(item.LabSampleId.Value) : null,
+                snapshots.TryGetValue(item.Id, out var snapshotId) ? snapshotId : null,
+                approval is null ? null : reviewers.GetValueOrDefault(approval.ApprovedByUserId, "Former reviewer"),
+                approval?.ApprovedAtUtc, approval?.ReleaseDefinitionKey, approval?.ReleaseDefinitionVersion);
+        });
     }
 
     [HttpPost("{packageId:guid}/release")]
@@ -311,7 +364,7 @@ public sealed class PSeqResultReleaseController(
             OrderWorkflowTypes.LabService, package.LabServiceOrderId!.Value, "pseq-result-released",
             "PSeq result available", "A scientifically approved PSeq result package is available for download.", departmentId));
         await dbContext.SaveChangesAsync(cancellationToken);
-        return (await List(package.State.ToString(), cancellationToken)).Single(item => item.Id == package.Id);
+        return await Get(package.Id, cancellationToken);
     }
 
     [HttpPost("{packageId:guid}/withdraw")]
@@ -333,7 +386,7 @@ public sealed class PSeqResultReleaseController(
             ResultDeliveryEvidenceKind.Withdrawn, actor.Id, DateTime.UtcNow,
             JsonSerializer.Serialize(new { reason = request.Reason }, JsonOptions)));
         await dbContext.SaveChangesAsync(cancellationToken);
-        return (await List(package.State.ToString(), cancellationToken)).Single(item => item.Id == package.Id);
+        return await Get(package.Id, cancellationToken);
     }
 
     [HttpPost("{packageId:guid}/authorize-reissue")]
@@ -349,6 +402,8 @@ public sealed class PSeqResultReleaseController(
             .SingleOrDefaultAsync(item => item.Id == packageId, cancellationToken)
             ?? throw new OrderManagementException("result_package_not_found",
                 "The result package was not found.", StatusCodes.Status404NotFound);
+        if (package.TrialProjectId.HasValue)
+            throw new OrderManagementException("trial_release_required", "Manage Trial results from the owning Trial Project.", StatusCodes.Status409Conflict);
         EnsureVersion(package.Version, request.Version);
         if (string.IsNullOrWhiteSpace(request.Reason))
             throw new OrderManagementException("result_reissue_reason_required",
@@ -369,8 +424,7 @@ public sealed class PSeqResultReleaseController(
             null, ResultDeliveryEvidenceKind.Reissued, actor.Id, DateTime.UtcNow,
             JsonSerializer.Serialize(new { reason = request.Reason }, JsonOptions)));
         await dbContext.SaveChangesAsync(cancellationToken);
-        return (await List(package.State.ToString(), cancellationToken))
-            .Single(item => item.Id == package.Id);
+        return await Get(package.Id, cancellationToken);
     }
 
     private static void EnsureVersion(long actual, long expected)

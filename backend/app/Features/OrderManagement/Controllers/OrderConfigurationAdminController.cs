@@ -37,7 +37,12 @@ public sealed class OrderConfigurationAdminController(
         await requestContext.RequirePlatformAdminAsync(HttpContext, cancellationToken);
         var system = await EnsureSystemAsync(cancellationToken);
         EnsureVersion(system.Version, request.Version);
-        Execute(() => system.Update(request.QuoteValidityDays, request.SampleSubmissionInstructions, request.ShippingConfigurationJson));
+        Execute(() => {
+            if (request.SampleConfigurationJson is not null || request.ResultDestinationConfigurationJson is not null)
+                system.UpdatePSeqReadinessConfiguration(request.SampleConfigurationJson ?? system.SampleConfigurationJson,
+                    request.ResultDestinationConfigurationJson ?? system.ResultDestinationConfigurationJson);
+            system.Update(request.QuoteValidityDays, request.SampleSubmissionInstructions, request.ShippingConfigurationJson);
+        });
         await dbContext.SaveChangesAsync(cancellationToken);
         return await MapAsync(system, cancellationToken);
     }

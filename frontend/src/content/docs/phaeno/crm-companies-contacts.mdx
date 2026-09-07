@@ -10,13 +10,15 @@ Open **Companies** from the CRM sidebar. Search by the known organization identi
 - source, industry, employee count, phone, and postal address
 - tags and a relationship summary
 
+Company, Contact, Lead, Opportunity, and Task lists show total counts and pages. Searches update after a short pause; **Clear all** resets active filters. Opening a record and using its Back link retains the list search, filters, and page. Company sections remain in the URL.
+
 POMS assigns the creator as owner unless another supported owner is selected later. The Company name opens a stable, view-first workspace. Use **Overview** for the Company profile and custom data, **People** for Contacts and Portal identity/access state, **Sales** for Opportunities, **Departments & services** for approved operational access and configuration, **Requests** for request creation and history, and **Activity** for the commercial timeline and Tasks. Use CRM's central **Requests** queue for approve, decline, recovery, application, and completion decisions.
 
 Changing a CRM lifecycle to Active customer or Partner is descriptive only. It does not enable or reclassify Portal access, grant membership, activate services, or authorize orders.
 
 ## Create and manage a Contact
 
-Open **People** and select **New contact**. First name and last name are required. Record email, phone, Phaeno owner, tags, and the communication controls that apply:
+From a Company’s **People** section, select **New person** to create the Contact and its Company association together. The global **Contacts** directory also provides **New contact** when no Company context is available. First name and last name are required. Record email, phone, Phaeno owner, tags, and the communication controls that apply:
 
 - **Unknown** means permission has not been established.
 - **Permitted** means the recorded commercial basis permits contact.
@@ -27,11 +29,11 @@ Record the lawful-contact basis and communication notes when known. These fields
 
 A Contact is not a Portal user. Email equality does not link identities, issue an invitation, or grant access.
 
-From a Company&apos;s **People** section, use **Invite to Portal** for a reviewed Contact and choose the Departments the person may access. Successful acceptance creates the Portal membership and the explicit Contact/User identity link. If POMS finds an existing Portal user with the same email, it shows **Identity review**; select **Review and link**, verify that both records identify the same person, and record the reason. Never treat the suggestion as proof. Unlinked Portal users and invitations remain visible until staff intentionally resolve them.
+From a Company’s **People** section, use **Invite to Portal** for a reviewed Contact and choose Organization-administrator or explicit Department access. **Manage access** provides role changes, Department access, membership deactivation, and invitation resend/revoke. Successful acceptance creates the Portal membership and the explicit Contact/User identity link. If POMS finds an existing Portal user with the same email, it shows **Identity review**; select **Review and link**, verify that both records identify the same person, and record the reason. Never treat the suggestion as proof. Unlinked Portal users and invitations remain visible until staff intentionally resolve them.
 
 ## Associate Contacts and Companies
 
-Open either record workspace to create the association: use **Associate** in the Company's Contacts area to search incrementally for an existing Contact, or use **Associate** in the Contact's Company relationships area to search incrementally for an existing Company. Record the Contact's free-form job title at that Company and choose the relationship role—Decision maker, Scientific lead, Procurement, Executive sponsor, Champion, Influencer, Technical evaluator, or Other—then record whether this is the Contact's primary Company and the effective-from date. A Contact may be associated with more than one Company, with a different title and relationship role at each.
+Open either record workspace to create the association: use **Add existing person** in the Company's People section to search incrementally for an existing Contact, or use **Associate** in the Contact's Company relationships area to search incrementally for an existing Company. Record the Contact's free-form job title at that Company and choose the relationship role—Decision maker, Scientific lead, Procurement, Executive sponsor, Champion, Influencer, Technical evaluator, or Other—then record whether this is the Contact's primary Company and the effective-from date. A Contact may be associated with more than one Company, with a different title and relationship role at each.
 
 Job title and relationship role are intentionally different. **Job title** is the person's organization-specific position, such as Director of Genomics, and remains free-form. **Relationship role** describes how the person participates in the commercial relationship and uses the controlled choices above. The Contacts directory displays the title and Company from the active primary relationship.
 
@@ -53,3 +55,7 @@ POMS retains the source as an inactive alias, moves supported relationships and 
 ## Complete required custom data
 
 Active custom fields configured for Company or Contact appear in the record workspace; Company custom fields are under **Overview**. Option fields accept only configured choices. A missing required value is shown on the record and contributes to CRM Home data-quality warnings. Complete the value on the authoritative record rather than suppressing the warning with unrelated text.
+
+## Create an Opportunity from its Company
+
+Open **Sales** and select **New opportunity**. The shared Opportunity form retains this Company, so you can capture the pursuit without leaving its workspace. The resulting record appears in Company Sales and the global Opportunity list.

@@ -1,7 +1,7 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Link } from "@tanstack/react-router";
 import { ArrowRight, Pencil, Plus } from "lucide-react";
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import {
   apiErrorMessage,
   associateCompanyContact,
@@ -46,9 +46,11 @@ import { CrmCollectionFeedback as CollectionFeedback, type CrmCollectionQuerySta
 export function CrmCompanyRelationships({
   companyId,
   view,
+  currentRelationship,
 }: {
   companyId: string;
   view: "relationships" | "requests";
+  currentRelationship?: "Prospect" | "Customer" | "Partner" | null;
 }) {
   const client = useQueryClient();
   const [associateOpen, setAssociateOpen] = useState(false);
@@ -279,10 +281,10 @@ export function CrmCompanyRelationships({
                           )}
                         </Button>
                       ) : null}
-                      {value.status === "PendingReview" ? (
+                      {value.status === "PendingReview" || value.status === "Approved" ? (
                         <Button asChild size="sm" variant="outline">
-                          <Link to="/customers">
-                            Review in Requests
+                          <Link to="/customers" search={previous => ({ ...previous, section: value.status === "Approved" ? "work" : "decision", requestId: value.relationshipRequestId })}>
+                            Open in Requests
                             <ArrowRight data-icon="inline-end" />
                           </Link>
                         </Button>
@@ -303,7 +305,7 @@ export function CrmCompanyRelationships({
               ) : null}
             </CardContent>
           </Card>
-          <HandoffDialog
+          <HandoffDialog currentRelationship={currentRelationship}
             open={handoffOpen}
             opportunities={opportunities.data?.items ?? []}
             opportunitiesQuery={opportunities}
@@ -528,6 +530,7 @@ const companyRequestTypeConfig: Record<
 
 export function HandoffDialog({
   open,
+  currentRelationship,
   opportunities,
   opportunitiesQuery,
   pending,
@@ -536,6 +539,7 @@ export function HandoffDialog({
   onSubmit,
 }: {
   open: boolean;
+  currentRelationship?: "Prospect" | "Customer" | "Partner" | null;
   opportunities: Array<{ id: string; name: string }>;
   opportunitiesQuery?: CollectionQueryState;
   pending: boolean;
@@ -552,6 +556,8 @@ export function HandoffDialog({
   }) => void;
 }) {
   const [type, setType] = useState<CrmHandoffType>("PortalOnboarding");
+  const operationKey = useRef(crypto.randomUUID());
+  useEffect(() => { if (open) operationKey.current = crypto.randomUUID(); }, [open]);
   const [requestedServices, setRequestedServices] = useState<string[]>([]);
   const config = companyRequestTypeConfig[type];
   const opportunitiesUnavailable = config.showOpportunity && Boolean(opportunitiesQuery?.isPending || opportunitiesQuery?.isError);
@@ -579,9 +585,9 @@ export function HandoffDialog({
               opportunityId: config.showOpportunity
                 ? nullable(data, "opportunityId")
                 : null,
-              idempotencyKey: crypto.randomUUID(),
+              idempotencyKey: operationKey.current,
               requestedOrganizationKind: config.showRelationship
-                ? nullable(data, "kind")
+                ? (currentRelationship && type !== 'RelationshipChange' ? currentRelationship : nullable(data, "kind"))
                 : null,
               requestedServices: config.showServices ? requestedServices : [],
               summary:
@@ -630,7 +636,7 @@ export function HandoffDialog({
                   }}
                   className="h-9 rounded-md border bg-background px-3 text-sm"
                 >
-                  {companyRequestCategories.map((value) => (
+                  {companyRequestCategories.filter(value => value.value !== "Relationship" || currentRelationship === "Prospect").map((value) => (
                     <option key={value.value} value={value.value}>
                       {value.label}
                     </option>
@@ -657,16 +663,18 @@ export function HandoffDialog({
                 </Field>
               ) : null}
             </div>
+            {type === 'RelationshipChange' ? <p className="text-sm">Current relationship: {currentRelationship}. Approval records the decision; applying the approved request converts the relationship.</p> : null}
             {config.showRelationship ? (
               <Field label="Requested relationship *" id="handoff-kind">
                 <select
                   id="handoff-kind"
                   name="kind"
                   required
-                  defaultValue="Customer"
+                  defaultValue={type === 'RelationshipChange' ? 'Customer' : currentRelationship ?? 'Customer'}
+                  disabled={Boolean(currentRelationship && type !== 'RelationshipChange')}
                   className="h-9 rounded-md border bg-background px-3 text-sm"
                 >
-                  <option>Prospect</option>
+                  {type !== 'RelationshipChange' ? <option>Prospect</option> : null}
                   <option>Customer</option>
                   <option>Partner</option>
                 </select>

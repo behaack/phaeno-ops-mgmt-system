@@ -89,9 +89,12 @@ public sealed class OrderIntegrationDispatcher(
             logger.LogWarning(exception, "Order integration message {MessageId} failed on attempt {AttemptCount}.", message.Id, message.AttemptCount);
             dbContext.ChangeTracker.Clear();
             message = await dbContext.OrderOutboxMessages.FirstAsync(candidate => candidate.Id == messageId, cancellationToken);
-            var needsAttention = message.AttemptCount >= 5;
+            var unconfigured = exception is OrderManagementException { ErrorCode: "quickbooks_not_configured" };
+            var needsAttention = unconfigured || message.AttemptCount >= 5;
             var minutes = Math.Min(60, Math.Pow(2, Math.Max(0, message.AttemptCount - 1)));
-            message.Fail("The external commercial synchronization failed. Review integration details and retry.", DateTime.UtcNow.AddMinutes(minutes), needsAttention);
+            message.Fail(unconfigured
+                ? "QuickBooks is not configured. No external document or payment status was recorded. Review this historical integration before retrying."
+                : "The external commercial synchronization failed. Review integration details and retry.", DateTime.UtcNow.AddMinutes(minutes), needsAttention);
             await MarkDocumentFailedAsync(dbContext, message, cancellationToken);
             await dbContext.SaveChangesAsync(cancellationToken);
         }
@@ -284,6 +287,6 @@ public sealed class OrderIntegrationDispatcher(
         var payload = JsonSerializer.Deserialize<OrderDocumentOutboxPayload>(message.PayloadJson, JsonOptions);
         if (payload == null) return;
         var link = await dbContext.CommercialDocumentLinks.FirstOrDefaultAsync(candidate => candidate.Id == payload.CommercialDocumentLinkId, cancellationToken);
-        link?.MarkFailed("External commercial synchronization failed. Retry from Order integrations.");
+        link?.MarkFailed(message.LastError ?? "External commercial synchronization needs administrator review.");
     }
 }

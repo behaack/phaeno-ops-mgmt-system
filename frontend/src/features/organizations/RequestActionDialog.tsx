@@ -79,7 +79,9 @@ export function RequestActionDialog({
     && !request.organizationId
     && (request.requestType === 'Onboarding' || request.requestType === 'Evaluation')
     && (request.requestedOrganizationKind === 'Prospect' || request.requestedOrganizationKind === 'Customer' || request.requestedOrganizationKind === 'Partner')
-  const content = actionContent(action, enablesAccessOnApproval)
+  const content = action === 'apply' && request.requestType === 'RelationshipChange'
+    ? { title: 'Apply approved relationship change', description: `This converts the Prospect to ${request.requestedOrganizationKind}, preserving users, history, and data grants. Services remain separately authorized.`, label: 'Completed work', submitLabel: 'Apply relationship change' }
+    : actionContent(action, enablesAccessOnApproval)
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -206,28 +208,28 @@ function actionContent(action: RequestAction, enablesAccessOnApproval: boolean) 
             submitLabel: 'Approve and enable access',
           }
         : {
-            title: 'Approve Portal request',
+            title: 'Approve Company request',
             description: 'Approval records the decision but does not provision access, services, or an order.',
             label: 'Approval reason',
             submitLabel: 'Approve request',
           }
     case 'decline':
       return {
-        title: 'Decline Portal request',
+        title: 'Decline Company request',
         description: 'The request will close without applying any operational change.',
         label: 'Decline reason',
         submitLabel: 'Decline request',
       }
     case 'apply':
       return {
-        title: 'Complete Portal access request',
+        title: 'Complete Company request',
         description: 'Confirm the owning Company access, invitation, entitlement, or order work was completed first.',
         label: 'Completed work',
         submitLabel: 'Complete request',
       }
     case 'cancel':
       return {
-        title: 'Cancel Portal request',
+        title: 'Cancel Company request',
         description: 'The request will close without applying further operational change.',
         label: 'Cancellation reason',
         submitLabel: 'Cancel request',

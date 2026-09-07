@@ -1,12 +1,12 @@
 # Request laboratory services
 
-Customer organization administrators use Lab services to describe and price a Job before doing the detailed work of entering its sample list.
+Customer organization administrators and department administrators use Lab services within the selected Department to describe and price a Job before doing the detailed work of entering its sample list.
 
 ## Review a Job initiated by Phaeno
 
 Phaeno may initiate a Customer-owned Job when your organization has already discussed the work with Phaeno. It appears in **Lab services** as **Quote in preparation** while Phaeno prices it. You do not need to submit that Job for pricing.
 
-Open the Job and review its committed sample count, biological-source composition, storage requirements, safety declaration, and notes. When Phaeno issues the quote and it becomes **Quote issued**, an organization administrator can review and accept it in **Quote & billing**. Phaeno cannot accept it for your organization. If the scope is incorrect, do not accept the quote; contact Phaeno so the Job can be returned for a corrected revision.
+Open the Job and review its committed sample count, biological-source composition, storage requirements, safety declaration, and notes. When Phaeno issues the quote and it becomes **Quote issued**, an organization or department administrator can review and accept it in **Quote and billing**. Phaeno cannot accept it for your organization. If the scope is incorrect, do not accept the quote; contact Phaeno so the Job can be returned for a corrected revision.
 
 Individual sample entry remains unavailable until your organization accepts the quote.
 
@@ -19,7 +19,7 @@ Individual sample entry remains unavailable until your organization accepts the 
 3. Select **Create job**. The portal assigns an immutable eight-character **Job number** using unambiguous uppercase letters and numbers.
 4. The new Job opens on its detail page. Individual sample entry remains unavailable until the price is issued and accepted.
 
-Other members can see organization work but cannot create, edit, submit, or commercially approve it unless they are an organization administrator.
+Members can review work in their assigned Department. Organization administrators and department administrators can create, edit, submit, and commercially approve work in that Department. Department authority does not grant access to other Departments.
 
 If an older draft still contains sample rows from the former workflow, the Job identifies them as legacy rows. Remove each row before submitting for pricing; enter the current sample roster again only after accepting the price.
 
@@ -31,21 +31,21 @@ When corrections are requested, create and submit a new revision. The prior revi
 
 ## Review and accept a quote
 
-Laboratory services are priced per job. Phaeno issues an itemized, immutable POMS quote for the accepted scope. When your approved billing and tax information is available, the quote includes calculated tax and freezes those commercial terms. Otherwise the quote is labeled **Pre-tax total**, and applicable tax is calculated when the invoice is issued. A zero tax amount is valid for an exempt, non-taxable, or zero-rate determination. The quote is available after all non-billing readiness items are complete and a Customer administrator is active; billing must be complete before invoicing.
+Laboratory services are priced per job. Phaeno issues an itemized, immutable Portal quote for the accepted scope. When your approved billing and tax information is available, the quote includes calculated tax and freezes those commercial terms. Otherwise the quote is labeled **Pre-tax total**, and applicable tax is calculated when the invoice is issued. A zero tax amount is valid for an exempt, non-taxable, or zero-rate determination. The quote is available after all non-billing readiness items are complete and a Customer administrator is active; billing must be complete before invoicing.
 
-Before accepting, confirm the committed sample count, biological-source composition, standard service scope, price, currency, expiration date, and whether the displayed amount includes tax or is pre-tax. Only a Customer organization administrator can accept the current unexpired quote.
+Before accepting, confirm the committed sample count, biological-source composition, standard service scope, price, currency, expiration date, and whether the displayed amount includes tax or is pre-tax. A Customer organization administrator or an administrator of the selected Department can accept the current unexpired quote.
 
 If the scope changes after acceptance, Phaeno issues a separate change quote. Added work does not begin until the applicable change is accepted.
 
 ## Ship and track samples
 
-After accepting the quote, return to **Samples & shipping**. Add samples manually or download and complete the Job-specific CSV template. The CSV accepts exactly `customer_sample_id`, `biological_source`, and `tube_count`; it does not accept barcodes. Previewing a CSV does not change the Job. Confirming a valid preview atomically replaces the editable draft list.
+After accepting the quote, return to **Samples and shipping**. Use **Add sample**, **Edit sample**, and **Remove sample**, or **Download CSV template** and **Import sample list**. The CSV accepts exactly `customer_sample_id`, `biological_source`, and `tube_count`; it does not accept barcodes. Previewing a CSV does not change the Job. Confirming a valid preview atomically replaces the editable draft list.
 
 Do not ship physical samples before the quote is accepted and the exact roster is finalized. An early or unmatched package is quarantined and escalated by Phaeno; it is not accessioned or attached to active Job work.
 
-The final list must contain exactly the accepted number of unique non-PHI sample IDs, match every accepted source-group count, and give each sample a positive whole-number tube count. Finalize the list only after reviewing the no-PHI confirmation. Finalization authorizes the specimen-specific Lab work and lets Phaeno prepare the registered return kit.
+The final list must contain exactly the accepted number of unique non-PHI sample IDs, match every accepted source-group count, and give each sample a positive whole-number tube count. Select **Review and finalize list**, review every sample, and affirm the no-PHI confirmation before selecting **Finalize sample list**. Finalization authorizes the specimen-specific Lab work and lets Phaeno prepare the registered return kit.
 
-When the kit is fulfilled, match every physical Phaeno-supplied tube to the displayed tube slot. A sample with multiple tubes appears once per tube as **Tube 1 of N**, **Tube 2 of N**, and so on. Review the packet and record carrier details after the package leaves your organization. Shipping remains part of the Job.
+In **Return kit and shipment**, open the related shipment. When the kit is fulfilled, match every physical Phaeno-supplied tube to the displayed tube slot. A sample with multiple tubes appears once per tube as **Tube 1 of N**, **Tube 2 of N**, and so on. Review the packet and record carrier details after the package leaves your organization. Record the shipment once in its packet workflow; carrier and tracking details stay connected to all included samples. **Back to lab job** returns to the owning Job.
 
 The Portal tracks receipt, accessioning, processing, external sequencing, data processing, scientific review, holds, and readiness for release. A job can remain in progress while different samples move through laboratory work.
 
@@ -56,3 +56,7 @@ If Phaeno needs replacement material or clarification, the job shows a Customer-
 ## Cancel work
 
 A draft can be discarded before submission. Before Phaeno accepts work, an administrator can cancel eligible scope. After acceptance, submit a cancellation request. Phaeno records whether the request is approved, partially approved, or declined. Any correction to an issued PSeq invoice is retained as an append-only credit, debit, or write-off adjustment rather than editing the invoice.
+
+## Find and resume work
+
+Search and filter by status, dates, or **Submitted by me**. **Previous** and **Next** show the complete matching result set. Opening a Job and returning keeps the filters and page. **Clear all** removes them. An empty filtered result is distinct from a failed load; use **Retry records** when loading fails.

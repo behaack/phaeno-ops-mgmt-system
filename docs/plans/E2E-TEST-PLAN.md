@@ -1,5 +1,33 @@
 # Playwright E2E Test Plan
 
+## Intake consolidation - 2026-09-07
+
+Updated the Order operations sidebar expectation to exclude Order staging. Old orderSection=staging resolves to Intake. Synthetic browser review covers blocked versus pricing-ready Customers, department switching, later quote/invoice requirements, failure recovery, and narrow layouts. Connected order creation remains unverified; no real orders were submitted.
+
+## Trial dialog choice scrolling - 2026-09-07
+
+Updated the existing Trial request Escape scenario to locate portaled choices at page scope and verify input focus with arrow navigation. The list must be outside the dialog DOM subtree. The automated suite was not run. A temporary synthetic fixture with 40 users verified desktop/light and 390x600 dark layout, one active scroll area, arrow-key scroll visibility, filtering, pointer selection, blank-note save, first Escape, focus return, and Tab between fields. A resize-observer warning reproduced while resizing an open list; animation-frame positioning resolved it, and a clean desktop-to-phone resize reported no window errors. Live assignment was not exercised; the temporary fixture was removed.
+
+## Optional Trial assignment note - 2026-09-07
+
+A temporary local synthetic fixture verified the actual Assign primary approver dialog labels Note (optional), submits an empty reason value, closes after success, and returns focus to Assign primary. No live authority was assigned and no automated suite ran. The fixture was removed after review.
+
+## Trial list local browser review - 2026-09-07
+
+Reviewed actual components with a temporary synthetic local fixture, without a
+real session or business submissions. Desktop/light and 390-pixel phone/light and
+dark review confirmed aligned labeled controls and no phone horizontal overflow.
+Confirmed the active Order ops menu and Trial sidebar selection, navigation to
+Order intake and back, search/status/owner selection, distinct empty states,
+Clear all resetting filters and focusing Search, narrow sidebar Escape, and Start
+Trial dialog open/Escape with focus restored to its invoking button. The narrow
+sidebar tab has clearance above the page heading.
+
+An initial fixture-only Order configuration response mismatch was corrected before
+navigation review; it was not a production API finding. Automated Playwright suites,
+populated list/detail journeys, signed-in API acceptance and deployment remain
+unrun for this presentation slice. Temporary fixture files are removed after review.
+
 ## Hosted signed-in acceptance and CRM corrections — 2026-09-05
 
 The signed-in production session on release `541c875` exercised all three Web
@@ -1029,3 +1057,12 @@ page errors and horizontal overflow; mobile also uses dark mode and reduced
 motion. Synthetic route fixtures are isolated from normal application auth.
 These checks do not substitute for signed-in production or physical lab UAT.
 See `TRIAL-INTEGRATION-CLOSEOUT.md` for full results and activation gates.
+
+
+## Portal consistency browser checkpoint (September 7, 2026)
+
+The authorized 20-item implementation retains regression scenarios for Trial notes/portal choices, Company recovery, and renamed kit-order placement. Added frontend/domain regression tests are not an executed E2E suite. No test suites were requested or run.
+
+Manual signed-in local review checked reachable Service catalog and Sample shipping, structured defaults, Finance Customer list/detail return navigation, receipt validation, billing unchanged-value restoration, connected dashboards and single dialog scrolling. Finance was also inspected at 390 × 844 with no horizontal overflow. Isolated synthetic Company fixtures checked access/request dialogs and contextual editors. Retained import previews, populated held-order filtering, cash writes and external shipping were covered by source review and authored regression cases, not executed browser journeys. The final per-surface results and limitations are in `PORTAL-POMS-CONSISTENCY-IMPLEMENTATION-PLAN.md`. Synthetic fixtures use an explicit adapter; no invitations, actual receipts, order transitions or production changes are performed as browser tests.
+
+Release acceptance still requires the newly built backend to be running, the relevant role sessions, current data and configured scanner/storage. Real laboratory, shipping, mailbox and financial operations remain external acceptance tasks.

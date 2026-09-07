@@ -50,7 +50,8 @@ public sealed record UpsertCrmContactRequest(
     string? LawfulContactBasis,
     string? CommunicationNotes,
     IReadOnlyList<string> Tags,
-    long? Version);
+    long? Version,
+    Guid? CompanyId = null);
 
 public sealed record AssociateCrmContactRequest(
     Guid ContactId,

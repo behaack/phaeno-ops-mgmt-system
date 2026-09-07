@@ -166,9 +166,9 @@ export function SampleShippingConfigurationPanel({ apiEnabled }: { apiEnabled: b
     <div className="space-y-5">
       <Alert>
         <PackageCheck className="size-4" />
-        <AlertTitle>Shared trial and promotional shipping foundation</AlertTitle>
+        <AlertTitle>Sample shipping setup</AlertTitle>
         <AlertDescription>
-          Destinations, sample types, and instruction rules are versioned. New records default to inactive; enter only approved operational content before activation. This setup does not create a Trial Project or Customer promotional order.
+          Destinations, sample types, and instruction rules are versioned. New records default to inactive; enter only approved operational content before activation. Approved Trial and Customer jobs use these definitions when preparing their shipment.
         </AlertDescription>
       </Alert>
 
@@ -285,7 +285,7 @@ function DestinationDialog({ item, onClose }: { item: SampleShippingDestination 
     <Dialog open={item !== undefined} onOpenChange={(open) => { if (!open) onClose() }}>
       <DialogContent className="sm:max-w-3xl">
         <DialogHeader><DialogTitle>{item ? `Create ${item.code} revision ${item.revision + 1}` : 'Add ship-to destination'}</DialogTitle><DialogDescription>{item ? 'The current revision will end when this new immutable revision begins.' : 'New destinations default to inactive until the operational content is approved.'}</DialogDescription></DialogHeader>
-        <form id="sample-shipping-destination-form" noValidate className="grid max-h-[65vh] gap-5 overflow-y-auto px-1 sm:grid-cols-2" onSubmit={form.handleSubmit((values) => mutation.mutate(values))}>
+        <form id="sample-shipping-destination-form" noValidate className="grid gap-5 px-1 sm:grid-cols-2" onSubmit={form.handleSubmit((values) => mutation.mutate(values))}>
           <Field label="Destination code" id="destination-code" required error={form.formState.errors.code?.message}><Input id="destination-code" disabled={Boolean(item)} aria-invalid={Boolean(form.formState.errors.code)} {...form.register('code')} /></Field>
           <Field label="Display name" id="destination-name" required error={form.formState.errors.name?.message}><Input id="destination-name" aria-invalid={Boolean(form.formState.errors.name)} {...form.register('name')} /></Field>
           <Field label="Recipient or receiving team" id="destination-recipient" required error={form.formState.errors.recipientName?.message}><Input id="destination-recipient" {...form.register('recipientName')} /></Field>
@@ -344,7 +344,7 @@ function SampleTypeDialog({ item, onClose }: { item: SampleTypeDefinition | null
     <Dialog open={item !== undefined} onOpenChange={(open) => { if (!open) onClose() }}>
       <DialogContent className="sm:max-w-3xl">
         <DialogHeader><DialogTitle>{item ? `Create ${item.code} revision ${item.revision + 1}` : 'Add sample type'}</DialogTitle><DialogDescription>Describe approved shipment preparation requirements. Do not activate a material type until scientific and operational review is complete.</DialogDescription></DialogHeader>
-        <form id="sample-type-form" noValidate className="grid max-h-[65vh] gap-5 overflow-y-auto px-1 sm:grid-cols-2" onSubmit={form.handleSubmit((values) => mutation.mutate(values))}>
+        <form id="sample-type-form" noValidate className="grid gap-5 px-1 sm:grid-cols-2" onSubmit={form.handleSubmit((values) => mutation.mutate(values))}>
           <Field label="Sample-type code" id="sample-type-code" required error={form.formState.errors.code?.message}><Input id="sample-type-code" disabled={Boolean(item)} {...form.register('code')} /></Field>
           <Field label="Name" id="sample-type-name" required error={form.formState.errors.name?.message}><Input id="sample-type-name" {...form.register('name')} /></Field>
           <Field label="Description" id="sample-type-description" error={form.formState.errors.description?.message} full><TextArea id="sample-type-description" rows={3} registration={form.register('description')} /></Field>
@@ -397,7 +397,7 @@ function InstructionRuleDialog({ configuration, item, onClose }: { configuration
     <Dialog open={item !== undefined} onOpenChange={(open) => { if (!open) onClose() }}>
       <DialogContent className="sm:max-w-3xl">
         <DialogHeader><DialogTitle>{item ? `Create instruction revision ${item.revision + 1}` : 'Add destination and sample instruction rule'}</DialogTitle><DialogDescription>The destination and sample-type revisions are fixed for this rule. Create another rule when either revision changes.</DialogDescription></DialogHeader>
-        <form id="sample-shipping-rule-form" noValidate className="grid max-h-[65vh] gap-5 overflow-y-auto px-1 sm:grid-cols-2" onSubmit={form.handleSubmit((values) => mutation.mutate(values))}>
+        <form id="sample-shipping-rule-form" noValidate className="grid gap-5 px-1 sm:grid-cols-2" onSubmit={form.handleSubmit((values) => mutation.mutate(values))}>
           <Field label="Destination revision" id="shipping-rule-destination" required error={form.formState.errors.destinationId?.message}><select id="shipping-rule-destination" disabled={Boolean(item)} className="h-9 w-full rounded-lg border border-input bg-background px-3 text-sm" {...form.register('destinationId')}><option value="">Select destination…</option>{configuration.destinations.map((destination) => <option key={destination.id} value={destination.id}>{destination.code} · rev {destination.revision} · {destination.name}</option>)}</select></Field>
           <Field label="Sample-type revision" id="shipping-rule-sample" required error={form.formState.errors.sampleTypeDefinitionId?.message}><select id="shipping-rule-sample" disabled={Boolean(item)} className="h-9 w-full rounded-lg border border-input bg-background px-3 text-sm" {...form.register('sampleTypeDefinitionId')}><option value="">Select sample type…</option>{configuration.sampleTypes.map((sampleType) => <option key={sampleType.id} value={sampleType.id}>{sampleType.code} · rev {sampleType.revision} · {sampleType.name}</option>)}</select></Field>
           <Field label="Compatibility group" id="shipping-rule-group" required error={form.formState.errors.compatibilityGroup?.message}><Input id="shipping-rule-group" placeholder="e.g. FROZEN_RNA" {...form.register('compatibilityGroup')} /></Field>

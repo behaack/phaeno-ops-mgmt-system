@@ -25,6 +25,7 @@ export function CrmOpportunityDialog({
   open,
   opportunity,
   companies,
+  companyId,
   pipelines,
   pending,
   error,
@@ -34,6 +35,7 @@ export function CrmOpportunityDialog({
   open: boolean;
   opportunity?: CrmOpportunity | null;
   companies: CrmCompany[];
+  companyId?: string;
   pipelines: CrmPipeline[];
   pending: boolean;
   error?: string;
@@ -108,7 +110,7 @@ export function CrmOpportunityDialog({
                   id="opportunity-company"
                   name="companyId"
                   required
-                  defaultValue={opportunity?.companyId ?? ""}
+                  defaultValue={opportunity?.companyId ?? companyId ?? ""}
                   className="h-9 rounded-md border bg-background px-3 text-sm"
                 >
                   <option value="" disabled>

@@ -432,12 +432,30 @@ public sealed class OrderSystemConfiguration : IAudit, IConcurrency
         string sampleConfigurationJson,
         string resultDestinationConfigurationJson)
     {
-        SampleConfigurationJson = OrderText.Json(sampleConfigurationJson);
-        ResultDestinationConfigurationJson = OrderText.Json(resultDestinationConfigurationJson);
-        if (SampleConfigurationJson == "{}")
-            throw new ArgumentException("Complete sample configuration is required.", nameof(sampleConfigurationJson));
-        if (ResultDestinationConfigurationJson == "{}")
-            throw new ArgumentException("A result destination is required.", nameof(resultDestinationConfigurationJson));
+        var sample = OrderText.Json(sampleConfigurationJson);
+        var destination = OrderText.Json(resultDestinationConfigurationJson);
+        if (!HasSupportedSampleConfiguration(sample))
+            throw new ArgumentException("Select the exact sample roster workflow.", nameof(sampleConfigurationJson));
+        if (!HasSupportedResultDestination(destination))
+            throw new ArgumentException("Select governed Portal delivery for results.", nameof(resultDestinationConfigurationJson));
+        SampleConfigurationJson = sample;
+        ResultDestinationConfigurationJson = destination;
+    }
+
+    public static bool HasSupportedSampleConfiguration(string? value) => HasSetting(value, "mode", "ExactSampleRoster");
+    public static bool HasSupportedResultDestination(string? value) => HasSetting(value, "destination", "GovernedPortal");
+    private static bool HasSetting(string? value, string key, string expected)
+    {
+        if (string.IsNullOrWhiteSpace(value)) return false;
+        try
+        {
+            using var document = System.Text.Json.JsonDocument.Parse(value);
+            return document.RootElement.ValueKind == System.Text.Json.JsonValueKind.Object
+                && document.RootElement.EnumerateObject().Count() == 1
+                && document.RootElement.TryGetProperty(key, out var setting)
+                && setting.ValueKind == System.Text.Json.JsonValueKind.String && setting.GetString() == expected;
+        }
+        catch (System.Text.Json.JsonException) { return false; }
     }
 
     public void MarkCreated(DateTime utcNow, Guid? actorUserId) { CreatedAt = utcNow; CreatedByUserId = actorUserId; }

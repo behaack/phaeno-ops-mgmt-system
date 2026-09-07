@@ -1,5 +1,48 @@
 # Order Management Plan
 
+## External workflow continuity - 2026-09-07
+
+The authorized consistency-review repairs are recorded in
+[External order workflow continuity](EXTERNAL-ORDER-WORKFLOW-CONTINUITY-2026-09-07.md).
+This connects exact Customer sample lists and shared shipments, preserves Partner
+drafts and Assembly corrections, restores Trial shipment context, and aligns
+external list navigation and audience-specific help. No persisted model or
+shared-database change is included.
+
+## Consolidated Customer order creation - 2026-09-07
+
+Product Owner approved one entry point: Order intake > New Customer order.
+Remove the separate staging form/menu and resolve old staging section links to
+Intake. Reuse Job pricing details, its Department selection, CRM handoffs,
+idempotent creation, pricing validation, and post-acceptance sample-roster boundary.
+Show all active Customers in creation, with selected-Department readiness grouped
+into start-pricing, quote, and invoice requirements. Later requirements must not
+disable pricing; unavailable readiness must offer retry and preserve the draft.
+Add read-only Customer options/readiness endpoints under existing platform order
+authorization. No persistence, authentication, migration, or deployment changes.
+Retain legacy staging API compatibility; the application no longer calls it.
+Acceptance: one menu entry, incomplete Customers discoverable, accurate stage
+grouping, blocked pricing prevented, later blockers non-blocking for pricing,
+and existing saved-order detail/queue handoff preserved.
+
+Implemented locally. API build, frontend TypeScript, scoped lint, documentation
+corpus check, and whitespace check passed. Synthetic browser checks covered
+pricing blocks, non-blocking later requirements, Department switching, retry
+with retained entries, synthetic save, desktop/mobile light and dark layouts,
+and two-step Escape with focus restored to the invoking action. Automated suites
+and connected order creation were not run. Restart the API to load the new
+read-only endpoints. No database migration is required.
+
+## Trial navigation placement - 2026-09-07
+
+Trial projects is now a capability-filtered section in the Phaeno Order operations
+sidebar. Existing Trial URLs retain this workspace context and highlight Order ops
+in desktop and narrow navigation. A Trial-only Phaeno user can reach Trials through
+Order ops without gaining paid-order capabilities. Returning to another Order ops
+section uses the optional validated `orderSection` search parameter. Trial projects
+remain no-charge evaluations, not orders. See the current presentation checkpoint
+in `PROSPECT-TRIAL-PROJECT-PLAN.md`.
+
 The 2026-09-05 [review gap closure](REVIEW-GAP-CLOSURE-2026-09-05.md)
 adds explicit discard confirmation to the quote dialog, including Close,
 Cancel and Escape, while preserving price proposals, authoritative conflict

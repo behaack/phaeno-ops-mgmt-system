@@ -1,22 +1,22 @@
-# Configuration and accounting recovery
+# Configuration and file retention
 
 Order configuration controls the active scientific, Partner, commercial, release, and integration rules used by new work. Changes must be audited and should not rewrite immutable order snapshots.
 
-**File management** separately controls the retention policy used by future released result and output packages. Only a Phaeno platform administrator can change these settings.
+**File retention** separately controls the retention policy used by future released result and output packages. Only a Phaeno platform administrator can change these settings.
 
-Use the far-left **Order configuration** sidebar to move among **Defaults**, **Catalog**, **Analyses**, **Sample shipping**, **PSeq kits**, **Assembly**, and **Credit**. On wider screens the sidebar can remain pinned; when it is unpinned or the screen is narrow, open the same non-modal navigation from the edge tab. The selected subject appears in the main pane without duplicating the navigation above the configuration form.
+Use the far-left **Order configuration** sidebar to move among **Defaults**, **Service catalog**, **Analyses**, **Sample shipping**, **PSeq kits**, **Assembly**, and **Legacy links**. On wider screens the sidebar can remain pinned; when it is unpinned or the screen is narrow, open the same non-modal navigation from the edge tab. The selected subject appears in the main pane without duplicating the navigation above the configuration form.
 
 ## Maintain commercial configuration
 
-Maintain active billable items under **Catalog**, including a permanent item code, name, description, sales unit, base price, currency, and availability. Link these Phaeno-owned items to portal analyses, Partner reagent offerings, or assembly profiles.
+Maintain active billable items under **Service catalog**, including a permanent item code, name, description, sales unit, base price, currency, and availability. Link these Phaeno-owned items to portal analyses, Partner reagent offerings, or assembly profiles.
 
 The designated laboratory-service item must use the permanent code `pseq-lab-service`, the sales unit `specimen`, and an active state. The catalog identifies it as **PSeq Lab Service**. POMS blocks laboratory quote issuance when this exact item is missing, inactive, or uses another unit; an unrelated specimen fee cannot replace it.
 
 Configure Partner reagent availability, negotiated price, currency, effective period, quantity rules, and shipping restrictions for each eligible Partner. Overlapping active price periods for the same Partner and item are not allowed.
 
-Configure Customer laboratory and Partner assembly credit separately. Approval means Net 30 release under the applicable workflow. Without credit, ready files remain on payment hold. Manual payment confirmation and release are not part of the current workflow; do not bypass that hold with an order-status change.
+Historical credit and accounting links are retained under **Legacy links**. Partner Assembly payment gates remain in its owning workflow. PSeq Customer result release depends on scientific approval and the Result Release Manager; invoice balance and credit do not gate it. Customer billing, tax, invoices and cash are maintained in **Order Ops → Finance**.
 
-Set the default quote-validity period in configuration. The initial default is 30 days, and an issued quote snapshots its own expiration.
+Open **Defaults → Edit defaults** to maintain quote validity and sample submission instructions. The initial quote validity is 30 days, and an issued quote snapshots its own expiration. The supported sample workflow uses an exact roster after quote acceptance; the supported result destination is governed Portal delivery. Free-form configuration text no longer establishes readiness. Review and save older defaults once, then maintain the effective sample types, destinations and rules in **Sample shipping**. Each order and shipment still checks its specific requirements.
 
 ## Maintain scientific configuration
 
@@ -38,33 +38,31 @@ Use **Instruction preview** before operational use. Select an exact destination 
 
 This configuration is shared infrastructure only. It does not create a Prospect Trial Project, grant a Customer promotion, place an order, or activate any real destination or sample type on its own.
 
-Return-kit fulfillment is operated from **Order intake**, not from configuration. The fulfillment record preserves shipper product/lot facts, the exact registered supplier-tube inventory, and outbound tracking. The current Corning vial and Therapak shipper values are pilot candidates only; activate real work only after representative tubes, shipper fit, returned volume, seal, freezing, dry-ice handling, barcode scanning, and degraded-mode procedures pass the physical validation gate.
+Return-kit fulfillment is operated from **Lab Ops**. Orders and Trials link to their own kit and shipment. The fulfillment record preserves shipper product/lot facts, the exact registered supplier-tube inventory, and outbound tracking. The current Corning vial and Therapak shipper values are pilot candidates only; activate real work only after representative tubes, shipper fit, returned volume, seal, freezing, dry-ice handling, barcode scanning, and degraded-mode procedures pass the physical validation gate.
 
 ## Maintain released-deliverable retention
 
-Open **File management** to review or edit the global released-deliverable policy. The starting values are 30 days of standard retention, one undownloaded-package warning 5 days before the standard deadline, and a conditional 5-day grace period when any released file remains undownloaded at that deadline. Every value is a positive whole number of exact 24-hour days, and the warning lead must be shorter than standard retention.
+Open **File retention** to review or edit the global released-deliverable policy. The starting values are 30 days of standard retention, one undownloaded-package warning 5 days before the standard deadline, and a conditional 5-day grace period when any released file remains undownloaded at that deadline. Every value is a positive whole number of exact 24-hour days, and the warning lead must be shorter than standard retention.
 
 Enter a reason for every change. A new revision applies only to packages released afterward; it never changes a deadline already communicated for an existing release. Prior revisions remain visible in policy history.
 
-To configure a Company-specific policy, open the Customer, Partner, or Prospect in CRM **Companies**, find **Portal access and services**, select **Retention**, and add an override. Leave any value blank to inherit that value from the current global policy. The page shows the effective value and source for each field. Removing an override restores global inheritance for future releases and also requires a reason.
+To configure a Company-specific policy, open the Customer, Partner, or Prospect in CRM **Companies**, open **Departments & services**, select **Retention**, and add an override. Leave any value blank to inherit that value from the current global policy. The page shows the effective value and source for each field. Removing an override restores global inheritance for future releases and also requires a reason.
 
-New Customer laboratory-result and Partner data-assembly output releases now freeze the effective policy version and exact UTC warning, standard-deletion, and potential final-deletion times in the same transaction as release. Their authorized external detail views show the standard deadline and label the later date as conditional until grace is actually activated. Repeated payment events preserve the first release time. Releases created before the snapshot migration are not backfilled and show no automated retention schedule.
+Customer laboratory-result and Partner data-assembly output releases freeze the effective policy version and exact UTC warning, standard-deletion, and potential final-deletion times in the same transaction as release. Their authorized external detail views show the standard deadline and label the later date as conditional until grace is actually activated. Repeated payment events preserve the first release time. An older release without captured retention dates shows no automated schedule; do not infer a deadline from today's policy.
 
-Released-file and full-package ZIP downloads now create a bounded, immutable transfer attempt before storage opens. The attempt counts only after the complete server response succeeds. Partial range responses, failures, cancellations, and timeouts do not count. Abandoned started attempts are reconciled after their frozen lease expires. Existing audit rows from before completion-aware tracking are retained as non-counting `legacy_completion_unverified` failures rather than being reclassified as successful downloads.
+Released-file and full-package ZIP downloads retain their attempt and outcome. Only a complete successful transfer counts toward the retention condition. Partial downloads, failures, cancellations, and timeouts do not count. Older download records without verified completion remain in history and do not become successful downloads merely because the record exists.
 
-Governed PSeq packages now use this same frozen policy and completion-aware grace/cutoff evaluation. Their download requests obey the applicable deadline independently of cleanup. Existing PSeq schedules retain their original dates. Automatic warning/grace notices, durable checkpoint processing, general release enforcement, and package-byte deletion remain separate activation work. A closed download window does not prove that bytes were deleted.
+Governed PSeq packages use the same frozen policy and verified-download rules. Downloads obey their deadline independently of cleanup, and existing schedules retain their original dates. Automated notices and physical file deletion depend on the enabled retention services. Check the receipt for their recorded outcomes; a closed download window does not prove that files were deleted.
 
-## Prepare manual journal entries
+## Accounting and recovery
 
-Open **Order operations**, then **Accounting**, to review the **Journal-entry source report**. Choose an inclusive UTC accounting-date range and download the CSV for manual entry into the accounting system. POMS creates one stable source record when a laboratory job reaches its billing boundary, an assembly output is approved, or a reagent shipment is recorded.
+Use **Order Ops → Finance** for native PSeq invoices, receipts, allocations, imports, aging and reconciliation. Export reports from the owning Finance view. An export does not record payment or mark an invoice as posted elsewhere.
 
-The report provides the stable entry ID, organization, workflow and source references, purchase-order or project reference, currency, gross amount, outstanding balance, payment status, and memo. Finance assigns general-ledger accounts, tax treatment, and posting dates outside POMS. Repeated downloads do not mark a row as posted.
-
-QuickBooks Online integration is deferred. Do not configure OAuth, retry historical QuickBooks messages, or treat a report download as payment confirmation.
+Historical connector mappings and explicit QuickBooks catalog recovery remain in **Legacy links**. A queued recovery request does not prove that the connector is configured or that the catalog synchronized. An unconfigured connector reports unavailable and **Needs attention**; it records no invoice, payment, or successful balance. The active Service catalog can be maintained directly. Consult the owning integration recovery status before retrying a historical connector operation.
 
 ## Activate production dependencies
 
-Before production use, confirm approved storage and malware scanning, notification delivery, active catalog and scientific profiles, Partner offerings and prices, credit decisions, quote validity, the manual accounting handoff, and operational ownership. Laboratory activation also requires approved bench workflows, label/printer/scanner and degraded-mode procedures, external NGS provider operating details, and the required database-backed verification. A successful application build alone does not prove these production dependencies are ready.
+Before production use, confirm approved storage and malware scanning, notification delivery, active catalog and scientific profiles, Partner offerings and prices, applicable Partner credit decisions, quote validity, Finance responsibility, and operational ownership. Laboratory activation also requires approved bench workflows, label/printer/scanner and degraded-mode procedures, external NGS provider operating details, and approved operating procedures. Use only the equipment, destinations, and procedures authorized for real work.
 
 ## Recover a retention notice
 
@@ -77,7 +75,7 @@ can reopen the item.
 
 ## Preserve a release or record a reissue
 
-A Phaeno platform administrator can open **File management → Released packages**,
+A Phaeno platform administrator can open **File retention → Review released packages**,
 find the organization, and open a package's retained receipt. The detail page
 shows its full manifest, checksums, original retention dates, download evidence,
 cleanup outcome and reissue history. Use **Print / save PDF** for a metadata copy.

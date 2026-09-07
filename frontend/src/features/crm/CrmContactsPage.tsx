@@ -1,3 +1,4 @@
+import { CrmClearFilters, useCrmState, useCrmSearch, CrmListPagination } from "./CrmListNavigation";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Link, useNavigate } from "@tanstack/react-router";
 import { Plus, Search } from "lucide-react";
@@ -26,15 +27,15 @@ import { CrmContactDialog } from "./CrmContactDialog";
 import { CrmSavedViewBar } from "./CrmSavedViewBar";
 
 export function CrmContactsPage() {
+  const [page, setPage] = useCrmState<number>("page", 1);
   const navigate = useNavigate();
   const client = useQueryClient();
-  const [draft, setDraft] = useState("");
-  const [search, setSearch] = useState("");
-  const [includeInactive, setIncludeInactive] = useState(false);
+  const [draft, setDraft, search, setSearch] = useCrmSearch();
+  const [includeInactive, setIncludeInactive] = useCrmState<boolean>("includeInactive", false);
   const [open, setOpen] = useState(false);
   const query = useQuery({
-    queryKey: ["crm-contacts", search, includeInactive],
-    queryFn: () => listCrmContacts({ search, includeInactive, pageSize: 100 }),
+    queryKey: ["crm-contacts", search, includeInactive, page],
+    queryFn: () => listCrmContacts({ search, includeInactive, page, pageSize: 25 }),
   });
   const create = useMutation({
     mutationFn: (input: CrmContactInput) => createCrmContact(input),
@@ -112,6 +113,7 @@ export function CrmContactsPage() {
               </Label>
             </div>
           </form>
+          <CrmClearFilters />
           <CrmSavedViewBar
             recordType="Contact"
             currentFilter={{ search, includeInactive }}
@@ -139,7 +141,7 @@ export function CrmContactsPage() {
                   <tr key={contact.id}>
                     <td className="px-4 py-3 font-medium">
                       <Link
-                        to="/crm/contacts/$contactId"
+                        to="/crm/contacts/$contactId" search={previous => previous}
                         params={{ contactId: contact.id }}
                         className="hover:underline"
                       >
@@ -176,12 +178,13 @@ export function CrmContactsPage() {
                 ))}
               </tbody>
             </table>
-            {!query.isLoading && !(query.data?.items.length ?? 0) ? (
+            {!query.isLoading && !query.error && !(query.data?.items.length ?? 0) ? (
               <p className="p-8 text-center text-sm text-muted-foreground">
                 No contacts match this view.
               </p>
             ) : null}
           </div>
+          <CrmListPagination result={query.data} page={page} onPageChange={setPage} busy={query.isFetching} />
         </CardContent>
       </Card>
       <CrmContactDialog

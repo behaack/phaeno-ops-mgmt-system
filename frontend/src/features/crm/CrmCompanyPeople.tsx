@@ -6,6 +6,10 @@ import { useState } from 'react'
 import {
   apiErrorMessage,
   associateCompanyContact,
+  createCrmContact,
+  updateCompanyContact,
+  type CrmCompanyContact,
+  type CrmContactInput,
   linkCrmContactUser,
   listCompanyContacts,
   listCrmCompanyPeople,
@@ -40,6 +44,10 @@ import { Input } from '#/components/ui/input'
 import { Label } from '#/components/ui/label'
 import { RequiredDialogFooter, RequiredFieldName } from '#/components/ui/required-field'
 import { Textarea } from '#/components/ui/textarea'
+import { OrganizationInvitationDialog, type OrganizationInviteValues } from '#/features/invitations/OrganizationInvitationDialog'
+import { CrmPersonAccessDialog } from './CrmPersonAccessDialog'
+import { CrmCompanyContactEditDialog } from './CrmCompanyContactEditDialog'
+import { CrmContactDialog } from './CrmContactDialog'
 import { CrmAssociationRecordCombobox } from './CrmAssociationRecordCombobox'
 import { CrmRelationshipRoleSelect } from './CrmRelationshipRoleSelect'
 import { CrmCollectionFeedback, type CrmCollectionQueryState } from './CrmCollectionFeedback'
@@ -58,6 +66,9 @@ export function CrmCompanyPeople({
 }) {
   const client = useQueryClient()
   const [associateOpen, setAssociateOpen] = useState(false)
+  const [createOpen, setCreateOpen] = useState(false)
+  const [relationshipTarget, setRelationshipTarget] = useState<CrmCompanyContact | null>(null)
+  const [accessTarget, setAccessTarget] = useState<CrmCompanyPerson | null>(null)
   const [inviteTarget, setInviteTarget] = useState<CrmCompanyPerson | null>(null)
   const [identityAction, setIdentityAction] = useState<IdentityAction>(null)
   const people = useQuery({
@@ -95,36 +106,22 @@ export function CrmCompanyPeople({
       await refresh()
     },
   })
+  const editRelationship = useMutation({
+    mutationFn: (input: Parameters<typeof updateCompanyContact>[2]) => updateCompanyContact(companyId, relationshipTarget!.id, input),
+    onSuccess: async () => { setRelationshipTarget(null); await refresh(); await client.invalidateQueries({ queryKey: ['crm-contact'] }) },
+  })
+  const create = useMutation({
+    mutationFn: (input: CrmContactInput) => createCrmContact({ ...input, companyId }),
+    onSuccess: async () => { setCreateOpen(false); await refresh(); await client.invalidateQueries({ queryKey: ['crm-contacts'] }) },
+  })
   const invite = useMutation({
-    mutationFn: ({
-      person,
-      departmentIds,
-    }: {
-      person: CrmCompanyPerson
-      departmentIds: string[]
-    }) => {
-      if (!accessOrganizationId || !person.contactId || !person.email) {
-        throw new Error('This Contact is not ready for a Portal invitation.')
-      }
-      return createInvitation({
-        organizationId: accessOrganizationId,
-        crmContactId: person.contactId,
-        firstName: person.firstName,
-        lastName: person.lastName,
-        email: person.email,
-        isOrganizationAdmin: false,
-        departments: departmentIds.map((departmentId) => ({
-          departmentId,
-          isDepartmentAdmin: false,
-        })),
-        labRoles: [],
-        businessRoles: [],
-      })
+    mutationFn: (values: OrganizationInviteValues) => {
+      if (!accessOrganizationId || !inviteTarget?.contactId) throw new Error('Select a Contact with approved Company access first.')
+      return createInvitation({ organizationId: accessOrganizationId, crmContactId: inviteTarget.contactId,
+        firstName: values.firstName, lastName: values.lastName, email: values.email,
+        isOrganizationAdmin: values.role === 'Administrator', departments: values.departments, labRoles: [], businessRoles: [] })
     },
-    onSuccess: async () => {
-      setInviteTarget(null)
-      await refresh()
-    },
+    onSuccess: async () => { setInviteTarget(null); await refresh() },
   })
   const identity = useMutation({
     mutationFn: async ({ action, reason }: { action: NonNullable<IdentityAction>; reason: string }) => {
@@ -163,11 +160,12 @@ export function CrmCompanyPeople({
           <CardDescription>
             Company contacts, Portal identities, invitations, and department access in one reviewed list.
           </CardDescription>
-          <CardAction>
+          <CardAction className="flex flex-wrap gap-2">
             <Button size="sm" variant="outline" disabled={contactsUnavailable} onClick={() => setAssociateOpen(true)}>
               <Plus data-icon="inline-start" />
-              Associate contact
+              Add existing person
             </Button>
+            <Button size="sm" onClick={() => { create.reset(); setCreateOpen(true) }}>New person</Button>
           </CardAction>
         </CardHeader>
         <CardContent className="space-y-3">
@@ -178,8 +176,10 @@ export function CrmCompanyPeople({
             <PersonRow
               key={`${person.recordKind}-${person.contactAssociationId ?? person.contactId ?? person.portalUserId ?? person.invitationId}`}
               person={person}
-              canInvite={Boolean(people.isSuccess && departments.isSuccess && accessOrganizationId && person.contactId && person.isContactActive && person.email && person.portalAccessState === 'NotInvited' && !person.suggestedPortalUserId && !person.suggestedInvitationId)}
+              canInvite={Boolean(people.isSuccess && departments.isSuccess && accessOrganizationId && person.contactId && person.isContactActive && person.email && ['NotInvited', 'MembershipInactive', 'Inactive'].includes(person.portalAccessState) && !person.suggestedPortalUserId && !person.suggestedInvitationId)}
               onInvite={() => { invite.reset(); setInviteTarget(person) }}
+              onManageAccess={accessOrganizationId ? () => setAccessTarget(person) : undefined}
+              onEditRelationship={contacts.data?.some(value => value.id === person.contactAssociationId) ? () => { editRelationship.reset(); setRelationshipTarget(contacts.data?.find(value => value.id === person.contactAssociationId) ?? null) } : undefined}
               onIdentityAction={(action) => { identity.reset(); setIdentityAction(action) }}
             />
           ))}
@@ -202,18 +202,14 @@ export function CrmCompanyPeople({
         onOpenChange={setAssociateOpen}
         onSubmit={(input) => associate.mutate(input)}
       />
-      <PortalInviteDialog
-        key={inviteTarget?.contactId ?? 'closed-invite'}
-        person={inviteTarget}
-        departments={departments.data ?? []}
-        pending={invite.isPending}
-        error={invite.error}
-        departmentsQuery={departments}
-        onOpenChange={(open) => { if (!open) setInviteTarget(null) }}
-        onSubmit={(departmentIds) => {
-          if (inviteTarget) invite.mutate({ person: inviteTarget, departmentIds })
-        }}
-      />
+      {relationshipTarget ? <CrmCompanyContactEditDialog value={relationshipTarget} pending={editRelationship.isPending} error={editRelationship.error} onOpenChange={open => { if (!open) setRelationshipTarget(null) }} onSubmit={input => editRelationship.mutate({ ...input, version: relationshipTarget.version })} /> : null}
+      <CrmContactDialog open={createOpen} pending={create.isPending} error={create.error ? apiErrorMessage(create.error) : undefined} onOpenChange={setCreateOpen} onSubmit={input => create.mutate(input)} />
+      {inviteTarget?.email && accessOrganizationId ? <OrganizationInvitationDialog
+        key={inviteTarget.contactId} organizationId={accessOrganizationId}
+        contact={{ firstName: inviteTarget.firstName, lastName: inviteTarget.lastName, email: inviteTarget.email }}
+        isPending={invite.isPending} error={invite.error} onOpenChange={open => { if (!open) setInviteTarget(null) }}
+        onSubmit={values => invite.mutateAsync(values)} /> : null}
+      {accessTarget && accessOrganizationId ? <CrmPersonAccessDialog organizationId={accessOrganizationId} person={accessTarget} onClose={() => setAccessTarget(null)} /> : null}
       <IdentityReviewDialog
         key={`${identityAction?.kind ?? ''}-${identityAction?.person.contactId ?? ''}`}
         action={identityAction}
@@ -233,10 +229,14 @@ function PersonRow({
   canInvite,
   onInvite,
   onIdentityAction,
+  onManageAccess,
+  onEditRelationship,
 }: {
   person: CrmCompanyPerson
   canInvite: boolean
   onInvite: () => void
+  onManageAccess?: () => void
+  onEditRelationship?: () => void
   onIdentityAction: (action: NonNullable<IdentityAction>) => void
 }) {
   const identityLabel = person.contactUserLinkId
@@ -295,6 +295,8 @@ function PersonRow({
               Invite to Portal
             </Button>
           ) : null}
+          {onEditRelationship ? <Button size="sm" variant="outline" onClick={onEditRelationship}>Edit relationship</Button> : null}
+          {onManageAccess && (person.organizationMembershipId || person.invitationId || person.suggestedInvitationId) ? <Button size="sm" variant="outline" onClick={onManageAccess}>Manage access</Button> : null}
           {person.suggestedPortalUserId ? (
             <Button size="sm" variant="outline" onClick={() => onIdentityAction({ kind: 'link', person })}>
               <Link2 data-icon="inline-start" />
@@ -310,68 +312,6 @@ function PersonRow({
         </div>
       </div>
     </article>
-  )
-}
-
-function PortalInviteDialog({
-  person,
-  departments,
-  pending,
-  error,
-  departmentsQuery,
-  onOpenChange,
-  onSubmit,
-}: {
-  person: CrmCompanyPerson | null
-  departments: Array<{ id: string; name: string; isDefault: boolean }>
-  pending: boolean
-  error: unknown
-  departmentsQuery: CrmCollectionQueryState
-  onOpenChange: (open: boolean) => void
-  onSubmit: (departmentIds: string[]) => void
-}) {
-  const [validationError, setValidationError] = useState<string | null>(null)
-  return (
-    <Dialog open={Boolean(person)} onOpenChange={(open) => { if (!pending) onOpenChange(open) }}>
-      <DialogContent>
-        <form onSubmit={(event) => {
-          event.preventDefault()
-          if (pending || departmentsQuery.isPending || departmentsQuery.isError) return
-          const data = new FormData(event.currentTarget)
-          const departmentIds = data.getAll('departmentId').map(String)
-          if (!departmentIds.length) {
-            setValidationError('Select at least one department before sending the invitation.')
-            event.currentTarget.querySelector<HTMLElement>('[role="checkbox"]')?.focus()
-            return
-          }
-          setValidationError(null)
-          onSubmit(departmentIds)
-        }}>
-          <DialogHeader>
-            <DialogTitle>Invite Contact to Portal</DialogTitle>
-            <DialogDescription>
-              Invite {person?.displayName} to the selected departments. Access and the Contact/User link begin only after the recipient accepts this reviewed invitation.
-            </DialogDescription>
-          </DialogHeader>
-          {departmentsQuery.isPending || departmentsQuery.isError ? <DialogFeedback><CrmCollectionFeedback name="departments" query={departmentsQuery} /></DialogFeedback> : null}
-          {error ? <Alert variant="destructive"><AlertDescription>{apiErrorMessage(error)}</AlertDescription></Alert> : null}
-          {validationError ? <Alert variant="destructive"><AlertDescription>{validationError}</AlertDescription></Alert> : null}
-          <fieldset disabled={pending} className="grid gap-2">
-            <legend className="text-sm font-medium"><RequiredFieldName>Department access</RequiredFieldName></legend>
-            {departments.map((department) => (
-              <Label key={department.id} className="flex cursor-pointer items-center gap-2 rounded-md border p-3 font-normal">
-                <Checkbox name="departmentId" value={department.id} defaultChecked={department.isDefault} onCheckedChange={() => setValidationError(null)} />
-                {department.name}{department.isDefault ? ' (default)' : ''}
-              </Label>
-            ))}
-          </fieldset>
-          <RequiredDialogFooter>
-            <Button type="button" variant="outline" disabled={pending} onClick={() => onOpenChange(false)}>Cancel</Button>
-            <Button type="submit" disabled={pending || departmentsQuery.isPending || departmentsQuery.isError || !departments.length}>{pending ? 'Sending invitation…' : 'Send invitation'}</Button>
-          </RequiredDialogFooter>
-        </form>
-      </DialogContent>
-    </Dialog>
   )
 }
 

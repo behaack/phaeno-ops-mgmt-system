@@ -1,3 +1,4 @@
+import { CrmClearFilters, useCrmState, useCrmSearch, CrmListPagination } from "./CrmListNavigation";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Link, useNavigate } from "@tanstack/react-router";
 import { List, Plus, Rows3 } from "lucide-react";
@@ -26,22 +27,22 @@ import { CrmOpportunityDialog } from "./CrmOpportunityDialog";
 import { CrmSavedViewBar } from "./CrmSavedViewBar";
 
 export function CrmOpportunitiesPage() {
+  const [page, setPage] = useCrmState<number>("page", 1);
   const navigate = useNavigate();
   const client = useQueryClient();
   const [open, setOpen] = useState(false);
-  const [board, setBoard] = useState(true);
-  const [draftSearch, setDraftSearch] = useState("");
-  const [search, setSearch] = useState("");
-  const [pipelineId, setPipelineId] = useState("");
-  const [stageId, setStageId] = useState("");
+  const [board, setBoard] = useCrmState<boolean>("board", true);
+  const [draftSearch, setDraftSearch, search, setSearch] = useCrmSearch();
+  const [pipelineId, setPipelineId] = useCrmState<string>("pipelineId", "");
+  const [stageId, setStageId] = useCrmState<string>("stageId", "");
   const opportunities = useQuery({
-    queryKey: ["crm-opportunities", search, pipelineId, stageId],
+    queryKey: ["crm-opportunities", search, pipelineId, stageId, page],
     queryFn: () =>
       listCrmOpportunities({
         search,
         pipelineId: pipelineId || undefined,
         stageId: stageId || undefined,
-        pageSize: 100,
+        page, pageSize: 25,
       }),
     enabled: Boolean(pipelineId),
   });
@@ -60,7 +61,7 @@ export function CrmOpportunitiesPage() {
           pipelines.data[0].id,
       );
     }
-  }, [pipelineId, pipelines.data]);
+  }, [pipelineId, pipelines.data, setPipelineId]);
   const create = useMutation({
     mutationFn: (input: CrmOpportunityInput) => createCrmOpportunity(input),
     onSuccess: async (value) => {
@@ -184,6 +185,7 @@ export function CrmOpportunitiesPage() {
               Search
             </Button>
           </form>
+          <CrmClearFilters />
           <CrmSavedViewBar
             recordType="Opportunity"
             currentFilter={{ search, pipelineId, stageId, board }}
@@ -201,6 +203,7 @@ export function CrmOpportunitiesPage() {
               setBoard(filter.board !== false);
             }}
           />
+          <CrmListPagination result={opportunities.data} page={page} onPageChange={setPage} busy={opportunities.isFetching} />
         </CardContent>
       </Card>
       {board ? (
@@ -254,7 +257,7 @@ export function CrmOpportunitiesPage() {
                     <tr key={value.id}>
                       <td className="p-3 font-medium">
                         <Link
-                          to="/crm/opportunities/$opportunityId"
+                          to="/crm/opportunities/$opportunityId" search={previous => previous}
                           params={{ opportunityId: value.id }}
                           className="hover:underline"
                         >
@@ -299,7 +302,7 @@ function OpportunityCard({
 }) {
   return (
     <Link
-      to="/crm/opportunities/$opportunityId"
+      to="/crm/opportunities/$opportunityId" search={previous => previous}
       params={{ opportunityId: value.id }}
       className="block rounded-lg border bg-card p-3 shadow-sm hover:bg-muted/40 focus-visible:ring-3 focus-visible:ring-ring/50 focus-visible:outline-none"
     >

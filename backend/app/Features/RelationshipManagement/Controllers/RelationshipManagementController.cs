@@ -11,6 +11,7 @@ using PSeq.Operations.Commercial.Relationships.Domain;
 using PSeq.Operations.Commercial.OrderManagement.Domain;
 using PhaenoPortal.App.Features.Accounts.DTOs;
 using PhaenoPortal.App.Features.Accounts.Services;
+using PhaenoPortal.App.Features.OrderManagement.Services;
 using PhaenoPortal.App.Features.RelationshipManagement.DTOs;
 using PhaenoPortal.App.Features.RelationshipManagement.Services;
 using PhaenoPortal.App.Infrastructure.Persistence;
@@ -343,6 +344,22 @@ public sealed class RelationshipManagementController(
         var appliedOrganization = await RequireOrganizationAsync(
             value.OrganizationId ?? request.OrganizationId!.Value,
             cancellationToken);
+        if (value.RequestType == PortalIntegrationRequestType.RelationshipChange)
+        {
+            if (value.Status != PortalIntegrationRequestStatus.Approved)
+                throw Conflict("relationship_request_not_approved", "Approve this relationship request before applying the change.");
+            if (appliedOrganization.Kind != value.RequestedOrganizationKind)
+            {
+                if (appliedOrganization.Kind != OrganizationKind.Prospect
+                    || value.RequestedOrganizationKind is not (OrganizationKind.Customer or OrganizationKind.Partner))
+                    throw Conflict("relationship_change_not_supported", "Only a Prospect can be converted to a Customer or Partner. Review the requested relationship.");
+                var priorKind = appliedOrganization.Kind;
+                appliedOrganization.ConvertProspectTo(value.RequestedOrganizationKind.Value);
+                AccountAudit.Add(dbContext, HttpContext, nameof(Organization), appliedOrganization.Id,
+                    AccountAudit.ProspectConverted, appliedOrganization.Id, actor.Id,
+                    new { priorKind, targetKind = appliedOrganization.Kind, requestId = value.Id, preservedDatasetGrants = true });
+            }
+        }
         if (appliedOrganization.Kind == OrganizationKind.Customer
             && value.RequestedServices.Any(service => service.Service == PortalService.PSeqLabService))
         {
@@ -599,53 +616,8 @@ public sealed class RelationshipManagementController(
         Organization organization,
         CancellationToken cancellationToken)
     {
-        var utcNow = DateTime.UtcNow;
-        var hasActiveAdministrator = await dbContext.OrganizationMemberships.AsNoTracking()
-            .AnyAsync(value => value.OrganizationId == organization.Id
-                && value.IsActive
-                && value.IsOrganizationAdmin
-                && value.User != null
-                && value.User.IsActive
-                && value.User.Status == UserAccountStatus.Active,
-                cancellationToken);
-        var hasReadyEntitlement = await dbContext.OrganizationServiceEntitlements.AsNoTracking()
-            .AnyAsync(value => value.OrganizationId == organization.Id
-                && value.Service == PortalService.PSeqLabService
-                && value.ConfigurationStatus == EntitlementConfigurationStatus.Ready
-                && value.EffectiveFrom <= utcNow
-                && (!value.EffectiveTo.HasValue || value.EffectiveTo > utcNow),
-                cancellationToken);
-        var hasActiveOffering = await (
-            from analysis in dbContext.AnalysisDefinitions.AsNoTracking()
-            join catalog in dbContext.QboCatalogItems.AsNoTracking()
-                on analysis.QboCatalogItemId equals catalog.Id
-            where analysis.IsActive && !analysis.IsSynthetic && catalog.IsActive
-            select analysis.Id).AnyAsync(cancellationToken);
-        var system = await dbContext.OrderSystemConfigurations.AsNoTracking()
-            .OrderBy(value => value.CreatedAt)
-            .FirstOrDefaultAsync(cancellationToken);
-        var profile = await dbContext.OrganizationCommercialProfiles.AsNoTracking()
-            .FirstOrDefaultAsync(value => value.OrganizationId == organization.Id, cancellationToken);
-
-        var input = new OperationalReadinessInput(
-            HasActiveCustomerRelationship: organization is
-                { IsActive: true, Kind: OrganizationKind.Customer },
-            HasManualBlock: organization.IsOperationalReadinessBlocked,
-            ManualBlockReason: organization.OperationalReadinessBlockReason,
-            HasActiveCustomerAdministrator: hasActiveAdministrator,
-            HasReadyPSeqEntitlement: hasReadyEntitlement,
-            HasActivePSeqOffering: hasActiveOffering,
-            HasCompleteOrderConfiguration: system != null && system.QuoteValidityDays > 0,
-            HasCompleteSampleConfiguration: system?.SampleConfigurationJson != "{}",
-            HasCompleteShippingConfiguration: system?.ShippingConfigurationJson != "{}",
-            HasCompleteResultDestination: system?.ResultDestinationConfigurationJson != "{}",
-            HasCompleteSubmissionInstructions: !string.IsNullOrWhiteSpace(system?.SampleSubmissionInstructions),
-            HasCompleteBillingContact: profile?.HasCompleteBillingContact == true,
-            HasCompleteBillingAddress: profile?.HasCompleteBillingAddress == true,
-            HasValidPaymentTerms: profile is { PaymentTermsDays: >= 0 and <= 365 },
-            HasEffectiveTaxDecision: profile?.HasEffectiveTaxDecision == true,
-            HasFinanceApprovedTaxDecision: profile?.HasFinanceApprovedTaxDecision == true);
-        var evaluation = OperationalReadinessPolicy.Evaluate(input);
+        var readiness = await new OperationalReadinessService(dbContext).EvaluateAsync(organization, cancellationToken);
+        var evaluation = readiness.Evaluation;
         return new OrganizationOperationalReadinessDto
         {
             OrganizationId = organization.Id,

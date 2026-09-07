@@ -1,5 +1,5 @@
 import { useQuery, useQueryClient } from '@tanstack/react-query'
-import { Link, useNavigate } from '@tanstack/react-router'
+import { Link, useNavigate, useSearch } from '@tanstack/react-router'
 import { Plus } from 'lucide-react'
 import { useMemo, useState } from 'react'
 
@@ -7,7 +7,7 @@ import { listCrmOrderHandoffs, type CrmOrderHandoff } from '#/api/crm'
 import {
   getOrderErrorMessage,
   listCommercialOrders,
-  listEligibleCustomerCompanies,
+  listCustomerOrderOptions,
   type CommercialOrderListItem,
 } from '#/api/order-management'
 import { Alert, AlertDescription, AlertTitle } from '#/components/ui/alert'
@@ -24,12 +24,6 @@ type IntakeQueueItem =
   | { kind: 'order'; updatedAt: string; order: CommercialOrderListItem }
   | { kind: 'handoff'; updatedAt: string; handoff: CrmOrderHandoff }
 
-const activeCommercialStatuses: Record<CommercialOrderListItem['orderType'], ReadonlySet<string>> = {
-  PSeqLabService: new Set(['SubmittedForQuote', 'ChangesRequested', 'QuoteInPreparation', 'QuoteIssued']),
-  PSeqKit: new Set(['Placed', 'UnderReview']),
-  DataAssembly: new Set(['Submitted', 'IntakeValidation', 'ChangesRequested', 'QuoteInPreparation', 'QuoteIssued']),
-}
-
 export function CommercialOrderIntakePanel({
   apiEnabled,
   mock,
@@ -45,10 +39,16 @@ export function CommercialOrderIntakePanel({
   const queryClient = useQueryClient()
   const [createOpen, setCreateOpen] = useState(false)
   const [selectedHandoff, setSelectedHandoff] = useState<CrmOrderHandoff | null>(null)
-  const [search, setSearch] = useState('')
+  const searchState = useSearch({ strict: false })
+  const search = searchState.intakeSearch ?? ''
+  const view = searchState.intakeView ?? 'active'
+  const page = searchState.intakePage ?? 1
+  const setFilters = (changes: { intakeSearch?: string; intakeView?: 'active' | 'holds' | 'all'; intakePage?: number }) => {
+    void navigate({ to: '/order-operations', search: (previous) => ({ ...previous, orderSection: 'intake', intakePage: 1, ...changes }), replace: true })
+  }
   const customers = useQuery({
-    queryKey: ['order-operations', 'eligible-customers'],
-    queryFn: listEligibleCustomerCompanies,
+    queryKey: ['order-operations', 'customer-options'],
+    queryFn: listCustomerOrderOptions,
     enabled: apiEnabled,
   })
   const handoffs = useQuery({
@@ -57,8 +57,8 @@ export function CommercialOrderIntakePanel({
     enabled: apiEnabled,
   })
   const orders = useQuery({
-    queryKey: ['commercial-orders', 'active-intake'],
-    queryFn: () => listCommercialOrders({ activeIntake: true, pageSize: 100 }),
+    queryKey: ['commercial-orders', 'intake', view, search, page],
+    queryFn: () => listCommercialOrders({ activeIntake: view === 'active', holds: view === 'holds', search: search.trim() || undefined, page, pageSize: 25 }),
     enabled: apiEnabled,
   })
   const eligibleCustomers = customers.data ?? []
@@ -69,17 +69,16 @@ export function CommercialOrderIntakePanel({
   const queueItems = useMemo(() => {
     const items: IntakeQueueItem[] = [
       ...(orders.data?.items
-        .filter(isActiveCommercialOrder)
         .map((order) => ({ kind: 'order' as const, updatedAt: order.updatedAt, order })) ?? []),
       ...(handoffs.data
-        ?.filter((item) => !item.handoff.orderId)
+        ?.filter((item) => view === 'active' && page === 1 && !item.handoff.orderId)
         .map((handoff) => ({ kind: 'handoff' as const, updatedAt: handoff.handoff.createdAt, handoff })) ?? []),
     ]
     items.sort((left, right) => right.updatedAt.localeCompare(left.updatedAt))
     const term = search.trim().toLocaleLowerCase()
     if (!term) return items
-    return items.filter((item) => intakeSearchText(item, organizationNames).includes(term))
-  }, [handoffs.data, orders.data?.items, organizationNames, search])
+    return items.filter((item) => item.kind === 'order' || intakeSearchText(item, organizationNames).includes(term))
+  }, [handoffs.data, orders.data?.items, organizationNames, search, view, page])
 
   async function refreshIntake() {
     await Promise.all([
@@ -96,7 +95,7 @@ export function CommercialOrderIntakePanel({
             <div>
               <CardTitle>Commercial order intake</CardTitle>
               <CardDescription className="mt-1">
-                Create Customer work and manage commercial demand through quote acceptance. Authorized laboratory work continues in Lab operations.
+                Create Customer orders, check readiness, and manage pricing through quote acceptance. You can start pricing before a Customer administrator is active. Authorized laboratory work continues in Lab operations.
               </CardDescription>
             </div>
             <Button
@@ -119,9 +118,9 @@ export function CommercialOrderIntakePanel({
         {!customers.isLoading && !customers.isError && apiEnabled && eligibleCustomers.length === 0 ? (
           <CardContent>
             <Alert>
-              <AlertTitle>No eligible Customers</AlertTitle>
+              <AlertTitle>No active Customers</AlertTitle>
               <AlertDescription>
-                A Customer needs an active operational scope, ordering authorization, and an active PSeq Lab Service offering before staff can begin pricing. An online administrator is required later, before the quote can be issued.
+                Activate a Customer relationship in CRM before creating an order. Customers with incomplete service setup remain visible in New Customer order with their next steps.
               </AlertDescription>
             </Alert>
           </CardContent>
@@ -132,17 +131,20 @@ export function CommercialOrderIntakePanel({
         <CardHeader>
           <CardTitle>Intake, pricing, and quotes</CardTitle>
           <CardDescription>
-            One active queue for sales handoffs, commercial review, pricing, and Customer quote decisions. Accepted work leaves this queue and continues in Lab operations.
+            Active intake includes pricing, quote decisions and held orders. Use All orders for accepted, completed and cancelled records. Laboratory execution continues in Lab operations.
           </CardDescription>
-          <div className="mt-3 max-w-md">
+          <div className="mt-3 flex flex-wrap items-end gap-3">
+            <div><Label htmlFor="intake-view">View</Label><select id="intake-view" className="mt-2 block h-9 cursor-pointer rounded-lg border bg-background px-3 text-sm" value={view} onChange={event => setFilters({ intakeView: event.target.value as 'active' | 'holds' | 'all' })}><option value="active">Active intake</option><option value="holds">On hold</option><option value="all">All orders and history</option></select></div>
+            <div className="min-w-60 flex-1">
             <Label htmlFor="commercial-intake-search">Search intake</Label>
             <Input
               id="commercial-intake-search"
               className="mt-2"
               value={search}
-              onChange={(event) => setSearch(event.target.value)}
+              onChange={(event) => setFilters({ intakeSearch: event.target.value })}
               placeholder="Order, Job, Company, or request number"
             />
+            </div><Button variant="outline" onClick={() => setFilters({ intakeView: 'active', intakeSearch: '', intakePage: 1 })}>Clear filters</Button>
           </div>
         </CardHeader>
         <CardContent>
@@ -169,6 +171,7 @@ export function CommercialOrderIntakePanel({
               />
             ))}
           </div>
+          {orders.data && !orders.isError ? <div className="mt-4 flex flex-wrap items-center justify-between gap-3 border-t pt-4"><p className="text-sm text-muted-foreground">{orders.data.totalCount} orders · Page {page} of {Math.max(1, Math.ceil(orders.data.totalCount / 25))}{view === 'active' && page === 1 ? ' · Pending CRM handoffs shown separately on this page' : ''}</p><div className="flex gap-2"><Button variant="outline" disabled={page <= 1 || orders.isFetching} onClick={() => setFilters({ intakePage: page - 1 })}>Previous</Button><Button variant="outline" disabled={page * 25 >= orders.data.totalCount || orders.isFetching} onClick={() => setFilters({ intakePage: page + 1 })}>Next</Button></div></div> : null}
           {!handoffs.isLoading &&
           !orders.isLoading &&
           !handoffs.isError &&
@@ -191,6 +194,7 @@ export function CommercialOrderIntakePanel({
           await navigate({
             to: '/order-operations/$workflow/$orderId',
             params: { workflow: 'lab', orderId: order.id },
+            search: previous => ({ ...previous, orderSection: 'intake' }),
           })
         }}
       />
@@ -212,15 +216,12 @@ export function CommercialOrderIntakePanel({
           await navigate({
             to: '/order-operations/$workflow/$orderId',
             params: { workflow: 'lab', orderId: order.id },
+            search: previous => ({ ...previous, orderSection: 'intake' }),
           })
         }}
       />
     </div>
   )
-}
-
-function isActiveCommercialOrder(order: CommercialOrderListItem) {
-  return activeCommercialStatuses[order.orderType].has(order.status)
 }
 
 function CommercialOrderRow({
@@ -240,6 +241,7 @@ function CommercialOrderRow({
           <Link
             to="/order-operations/$workflow/$orderId"
             params={{ workflow, orderId: order.id }}
+            search={previous => previous}
             className="font-medium text-primary hover:underline"
           >
             {order.reference || order.number}

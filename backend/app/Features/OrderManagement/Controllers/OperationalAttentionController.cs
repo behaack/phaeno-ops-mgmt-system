@@ -120,14 +120,14 @@ public sealed class OperationalAttentionController(
         }
 
         var staged = await dbContext.LabServiceOrders.AsNoTracking().Where(item =>
-            item.Status == LabServiceOrderStatus.QuoteInPreparation || item.Status == LabServiceOrderStatus.QuoteIssued)
+            item.Status == LabServiceOrderStatus.QuoteInPreparation || item.Status == LabServiceOrderStatus.QuoteIssued || item.Status == LabServiceOrderStatus.OnHold)
             .Select(item => new { item.Id, item.OrganizationId, item.OrderNumber, item.Status }).ToListAsync(cancellationToken);
         candidates.AddRange(staged.Select(item => new AttentionCandidate(
             OperationalAttentionCategory.StagedOrderAwaitingAdminOrApproval, item.OrganizationId,
             "LabServiceOrder", item.Id, 0, $"{item.OrderNumber} is {item.Status}.",
             item.Status == LabServiceOrderStatus.QuoteInPreparation
                 ? "Complete readiness and issue the quote."
-                : "Customer administrator approval is required.")));
+                : item.Status == LabServiceOrderStatus.OnHold ? "Open the held order in Order intake, review its hold reason, and resolve the blocker before resuming." : "Customer administrator approval is required.")));
 
         var resultPackages = await dbContext.ResultOutputPackages.AsNoTracking().Where(item =>
             item.State == ResultOutputPackageState.Failed || item.State == ResultOutputPackageState.ReadyForRelease)

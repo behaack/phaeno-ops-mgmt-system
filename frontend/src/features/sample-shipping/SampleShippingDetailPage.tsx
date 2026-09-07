@@ -67,9 +67,9 @@ export function SampleShippingDetailPage({ shipmentId }: { shipmentId: string })
               Back to lab job {shipment.authorizationReference}
             </Link>
           ) : (
-            <Link to="/sample-shipping" className="inline-flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground">
+            <Link to="/trial-projects/$trialId" params={{ trialId: shipment.authorizationSourceId }} className="inline-flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground">
               <ArrowLeft aria-hidden="true" className="size-4" />
-              Samples and shipping
+              Back to Trial {shipment.authorizationReference}
             </Link>
           )}
           <div className="mt-3 flex flex-wrap items-center gap-3">

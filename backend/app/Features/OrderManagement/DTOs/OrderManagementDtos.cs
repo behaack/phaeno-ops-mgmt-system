@@ -51,6 +51,13 @@ public sealed record LabServiceOrderingEligibilityDto(
 
 public sealed record EligibleCustomerCompanyDto(Guid Id, Guid CompanyId, string Name);
 
+public sealed record CustomerOrderOptionDto(Guid Id, string Name);
+public sealed record CustomerOrderReadinessDto(
+    bool CanStartPricing,
+    IReadOnlyList<PSeq.Operations.Commercial.Relationships.Application.OperationalReadinessBlocker> StartPricingBlockers,
+    IReadOnlyList<PSeq.Operations.Commercial.Relationships.Application.OperationalReadinessBlocker> QuoteBlockers,
+    IReadOnlyList<PSeq.Operations.Commercial.Relationships.Application.OperationalReadinessBlocker> InvoiceBlockers);
+
 public sealed record OrderTimelineDto(
     Guid Id,
     string FromStatus,
@@ -612,7 +619,10 @@ public sealed record IssueQuoteRequest(long Version, IReadOnlyList<QuoteLineRequ
 public sealed record AcceptQuoteRequest(long Version, Guid QuoteId, string? PurchaseOrderNumber = null);
 
 public sealed record ReagentLineWriteRequest(Guid OfferingId, decimal Quantity, string? Note);
-public sealed record ReagentOrderWriteRequest(IReadOnlyList<ReagentLineWriteRequest> Lines, long? Version = null);
+public sealed record ReagentDraftDetailsRequest(string? PurchaseOrderNumber, Guid? ShippingAddressId,
+    DateTime? RequestedDeliveryDate, string? ShippingInstructions);
+public sealed record ReagentOrderWriteRequest(IReadOnlyList<ReagentLineWriteRequest> Lines, long? Version = null,
+    ReagentDraftDetailsRequest? Details = null);
 public sealed record PlaceReagentOrderRequest(long Version, string PurchaseOrderNumber, Guid ShippingAddressId, DateTime? RequestedDeliveryDate, string? ShippingInstructions);
 public sealed record ShippingAddressWriteRequest(string Label, string Recipient, string Line1, string? Line2, string City, string Region, string PostalCode, string CountryCode, string? Phone, long? Version = null);
 public sealed record ShipmentAllocationRequest(Guid OrderLineId, decimal Quantity, string LotBatchNumber, DateTime? ExpiresAt);
@@ -626,7 +636,7 @@ public sealed record AssemblyProcessingRequest(long Version, string ProfileVersi
 public sealed record AssemblyProcessingDecisionRequest(long Version, Guid RunId, bool Succeeded, string QcStatusOrReason);
 public sealed record AssemblyOutputReviewRequest(long Version, Guid RunId, string ManifestJson, string PipelineVersion, string Provenance, string QcStatus);
 
-public sealed record UpdateSystemConfigurationRequest(long Version, int QuoteValidityDays, string SampleSubmissionInstructions, string ShippingConfigurationJson);
+public sealed record UpdateSystemConfigurationRequest(long Version, int QuoteValidityDays, string SampleSubmissionInstructions, string ShippingConfigurationJson, string? SampleConfigurationJson = null, string? ResultDestinationConfigurationJson = null);
 public sealed record UpdatePSeqReadinessConfigurationRequest(
     long Version,
     string SampleConfigurationJson,

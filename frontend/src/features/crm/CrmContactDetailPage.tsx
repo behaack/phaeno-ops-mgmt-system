@@ -175,7 +175,7 @@ export function CrmContactDetailPage({ contactId }: { contactId: string }) {
   return (
     <main className="page-wrap space-y-6 px-4 py-8">
       <Button asChild variant="ghost" size="sm">
-        <Link to="/crm/contacts">
+        <Link to="/crm/contacts" search={previous => previous}>
           <ArrowLeft data-icon="inline-start" />
           Back to contacts
         </Link>

@@ -19,10 +19,24 @@ public sealed partial class LabOperationsController
             ?? throw Missing();
         if (batch.Status != LabBatchStatus.InProgress)
             throw Conflict("batch_not_active", "The sequencing batch must be active before sendout.");
-        if (!await dbContext.LabBatchMembers.AnyAsync(item => item.LabOperationalBatchId == batch.Id, cancellationToken))
+        var members = await (from member in dbContext.LabBatchMembers.AsNoTracking()
+            join library in dbContext.LabLibraries.AsNoTracking() on member.LabLibraryId equals library.Id
+            join container in dbContext.LabContainers.AsNoTracking() on library.LibraryContainerId equals container.Id
+            where member.LabOperationalBatchId == batch.Id
+            orderby library.LibraryKey
+            select new { libraryId = library.Id, libraryKey = library.LibraryKey, containerBarcode = container.Barcode })
+            .ToListAsync(cancellationToken);
+        if (members.Count == 0)
             throw Conflict("batch_members_required", "Add at least one library before creating a sendout.");
+        using var supplementalDetails = JsonDocument.Parse(NormalizeJson(request.ManifestJson, "sendout_manifest_invalid"));
+        var manifest = JsonSerializer.Serialize(new
+        {
+            batchNumber = batch.BatchNumber,
+            members,
+            supplementalDetails = supplementalDetails.RootElement
+        });
         var sendout = new LabNgsSendout(batch.Id, request.ProviderName, request.ProviderReference,
-            NormalizeJson(request.ManifestJson, "sendout_manifest_invalid"), request.ExpectedCompletionAtUtc);
+            manifest, request.ExpectedCompletionAtUtc);
         dbContext.LabNgsSendouts.Add(sendout);
         await dbContext.SaveChangesAsync(cancellationToken);
         return (await ReadBatchesAsync(cancellationToken)).Single(item => item.Id == batch.Id);
@@ -139,7 +153,8 @@ public sealed partial class LabOperationsController
             LabRole.ScientificReviewer);
         var work = await RequireWorkOrderAsync(workOrderId, cancellationToken);
         EnsureVersion(work.Version, request.WorkOrderVersion);
-        if (work.Status != LabWorkOrderStatus.ScientificReview && !(work.AuthorizationSource == LabAuthorizationSource.TrialProject && work.Status == LabWorkOrderStatus.ReadyForRelease))
+        if (work.Status != LabWorkOrderStatus.ScientificReview && !(requestContext.GovernedPSeqResultsEnabled
+            && work.Status == LabWorkOrderStatus.ReadyForRelease && request.ResultOutputPackageId.HasValue))
             throw Conflict("scientific_review_not_ready", "The work order must be in scientific review.");
         if (await dbContext.LabExceptions.AnyAsync(item => item.LabWorkOrderId == work.Id
             && item.Status == LabExceptionStatus.Open && item.IsBlocking, cancellationToken))

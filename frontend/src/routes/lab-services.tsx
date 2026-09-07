@@ -1,8 +1,9 @@
+import { parseExternalOrderListSearch } from '#/features/orders/external-order-list-search'
 import { Outlet, createFileRoute, useRouterState } from '@tanstack/react-router'
 
 import { LabServicesPage } from '#/features/orders/LabServicesPage'
 
-export const Route = createFileRoute('/lab-services')({ component: LabServicesRoute })
+export const Route = createFileRoute('/lab-services')({ validateSearch: parseExternalOrderListSearch, component: LabServicesRoute })
 
 function LabServicesRoute() {
   const pathname = useRouterState({ select: (state) => state.location.pathname })

@@ -1,3 +1,4 @@
+import { CrmProvisioningReturn } from "./CrmListNavigation";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Link, useNavigate } from "@tanstack/react-router";
 import {
@@ -59,6 +60,7 @@ import { CrmMergeDialog } from "./CrmMergeDialog";
 import { CrmOwnerSelect } from "./CrmOwnerSelect";
 import { toInput } from "./CrmCompaniesPage";
 import { OrganizationDetailPage } from "#/features/organizations/OrganizationDetailPage";
+import { useCrmState } from './CrmListNavigation';
 import { OrganizationDepartmentsPanel } from "#/features/organizations/OrganizationDepartmentsPanel";
 
 export function CrmCompanyDetailPage({ companyId }: { companyId: string }) {
@@ -68,9 +70,10 @@ export function CrmCompanyDetailPage({ companyId }: { companyId: string }) {
   const [lifecycleOpen, setLifecycleOpen] = useState(false);
   const [mergeOpen, setMergeOpen] = useState(false);
   const [ownerOpen, setOwnerOpen] = useState(false);
-  const [activeSection, setActiveSection] = useState<
+  const [storedSection, setActiveSection] = useCrmState<
     "overview" | "people" | "sales" | "departments" | "requests" | "activity"
-  >("overview");
+  >("section", "overview");
+  const activeSection = ["overview", "people", "sales", "departments", "requests", "activity"].includes(storedSection) ? storedSection : "overview";
   const companyQuery = useQuery({
     queryKey: ["crm-company", companyId],
     queryFn: () => getCrmCompany(companyId),
@@ -173,7 +176,7 @@ export function CrmCompanyDetailPage({ companyId }: { companyId: string }) {
               </Alert>
             ) : null}
             <Button asChild variant="outline">
-              <Link to="/crm/companies">
+              <Link to="/crm/companies" search={previous => previous}>
                 <ArrowLeft data-icon="inline-start" />
                 Back to companies
               </Link>
@@ -186,8 +189,9 @@ export function CrmCompanyDetailPage({ companyId }: { companyId: string }) {
 
   return (
     <main className="page-wrap space-y-6 px-4 py-8">
+      <CrmProvisioningReturn />
       <Button asChild variant="ghost" size="sm">
-        <Link to="/crm/companies">
+        <Link to="/crm/companies" search={previous => previous}>
           <ArrowLeft data-icon="inline-start" />
           Back to companies
         </Link>
@@ -373,11 +377,11 @@ export function CrmCompanyDetailPage({ companyId }: { companyId: string }) {
         </TabsContent>
 
         <TabsContent value="sales">
-          <CrmCompanySales companyId={companyId} />
+          <CrmCompanySales companyId={companyId} company={company} />
         </TabsContent>
 
         <TabsContent value="requests">
-          <CrmCompanyRelationships companyId={companyId} view="requests" />
+          <CrmCompanyRelationships companyId={companyId} view="requests" currentRelationship={company.portalRelationship} />
         </TabsContent>
 
         <TabsContent value="departments" className="space-y-6">

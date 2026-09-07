@@ -20,6 +20,7 @@ import {
   type OrderListItem,
   type PagedResult,
 } from '#/api/order-management'
+import { listTrials } from '#/api/trials'
 import { getSampleShipments } from '#/api/sample-shipping'
 import type { SessionMembership } from '#/api/session'
 import { Alert, AlertDescription, AlertTitle } from '#/components/ui/alert'
@@ -51,6 +52,7 @@ type WorkflowCardProps = {
     | '/phaeno-users'
     | '/reagent-orders'
     | '/sample-shipping'
+    | '/trial-projects'
   icon: LucideIcon
   isLoading: boolean
   mock: boolean
@@ -63,7 +65,7 @@ type WorkflowCardProps = {
 export function ExternalDashboardContent({
   membership,
 }: ExternalDashboardContentProps) {
-  const { authProvider, session, selectedOrganizationId } = usePhaenoSession()
+  const { authProvider, session, selectedOrganizationId, selectedDepartmentId } = usePhaenoSession()
   const capabilities = session?.capabilities
   const kind = membership?.organizationKind
   const apiEnabled = authProvider !== 'mock'
@@ -82,6 +84,11 @@ export function ExternalDashboardContent({
     Boolean(membership?.isOrganizationAdmin) &&
     Boolean(capabilities?.canManageMembers)
 
+  const trials = useQuery({
+    queryKey: ['trials', selectedOrganizationId, selectedDepartmentId, '', '', ''],
+    queryFn: () => listTrials(''),
+    enabled: apiEnabled && Boolean(capabilities?.canViewTrialProjects),
+  })
   const labOrders = useQuery({
     queryKey: ['dashboard', 'lab-service-orders', selectedOrganizationId],
     queryFn: () => listLabOrders({ page: 1, pageSize: 1 }),
@@ -122,6 +129,15 @@ export function ExternalDashboardContent({
   }
 
   const cards: ReactNode[] = []
+
+  if (capabilities?.canViewTrialProjects) {
+    const awaitingAcceptance = trials.data?.filter(trial => trial.status === 'AwaitingAcceptance' && !trial.isOnHold).length ?? 0
+    const awaitingSamples = trials.data?.filter(trial => trial.status === 'AwaitingSamples' && !trial.isOnHold).length ?? 0
+    cards.push(<WorkflowCard key="trials" title="Trial projects" description="Review approved scope, prepare samples, follow progress, and open released results." icon={FlaskConical}
+      href="/trial-projects" actionLabel="Open Trial projects" total={trials.data?.length} totalLabel="Trials"
+      summary={awaitingAcceptance ? `${awaitingAcceptance} ${awaitingAcceptance === 1 ? 'Trial awaits' : 'Trials await'} scope acceptance.` : awaitingSamples ? `${awaitingSamples} ${awaitingSamples === 1 ? 'Trial awaits' : 'Trials await'} samples. Open the Trial to check its approved window.` : trials.data?.length ? 'Review current progress, released results, and retained Trial history.' : 'No Trial projects have been shared in this Department.'}
+      isLoading={trials.isLoading} error={Boolean(trials.error)} mock={!apiEnabled} />)
+  }
 
   if (canViewLab) {
     cards.push(

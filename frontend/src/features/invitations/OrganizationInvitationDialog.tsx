@@ -23,24 +23,26 @@ const schema = z.object({
 })
 export type OrganizationInviteValues = z.infer<typeof schema>
 
-export function OrganizationInvitationDialog({ organizationId, error, isPending, onOpenChange, onSubmit }: {
+export function OrganizationInvitationDialog({ organizationId, error, isPending, onOpenChange, onSubmit, contact }: {
   organizationId: string
   error: unknown
   isPending: boolean
   onOpenChange: (open: boolean) => void
   onSubmit: (values: OrganizationInviteValues) => Promise<unknown>
+  contact?: { firstName: string; lastName: string; email: string }
 }) {
   const departments = useQuery({
     queryKey: ['organization-departments', organizationId, false],
     queryFn: () => listDepartments(organizationId, false),
   })
+  const [openingTrigger] = useState(() => typeof document !== 'undefined' && document.activeElement instanceof HTMLElement ? document.activeElement : null)
   const [dirty, setDirty] = useState(false)
   const [discard, setDiscard] = useState(false)
   const close = () => { if (!isPending) { if (dirty) setDiscard(true); else onOpenChange(false) } }
   return <Dialog open onOpenChange={(open) => { if (!open) close() }}>
     <DialogContent className="max-w-xl" onCloseAutoFocus={(event) => {
-      event.preventDefault()
-      document.getElementById('add-organization-user')?.focus()
+      const trigger = document.getElementById('add-organization-user') ?? openingTrigger
+      if (trigger?.isConnected) { event.preventDefault(); trigger.focus() }
     }}>
       <DialogHeader><DialogTitle>{m.inviteTitle}</DialogTitle><DialogDescription>{m.inviteDescription}</DialogDescription></DialogHeader>
       {error || departments.error ? <Alert variant="destructive"><AlertDescription>{departmentErrorMessage(error ?? departments.error)}</AlertDescription></Alert> : null}
@@ -52,7 +54,7 @@ export function OrganizationInvitationDialog({ organizationId, error, isPending,
       </section> : null}
       {departments.isPending ? <p role="status">{m.loadingDepartments}</p> : null}
       {departments.error ? <Button variant="outline" onClick={() => void departments.refetch()}>{m.retry}</Button> : null}
-      {departments.data ? <InvitationForm departments={departments.data} pending={isPending}
+      {departments.data ? <InvitationForm departments={departments.data} pending={isPending} contact={contact}
         onDirty={setDirty} onSubmit={async (values) => {
           try { await onSubmit(values) } catch { await departments.refetch() }
         }} /> : null}
@@ -64,15 +66,16 @@ export function OrganizationInvitationDialog({ organizationId, error, isPending,
   </Dialog>
 }
 
-function InvitationForm({ departments, pending, onDirty, onSubmit }: {
+function InvitationForm({ departments, pending, onDirty, onSubmit, contact }: {
   departments: Department[]
   pending: boolean
   onDirty: (dirty: boolean) => void
   onSubmit: (values: OrganizationInviteValues) => Promise<void>
+  contact?: { firstName: string; lastName: string; email: string }
 }) {
   const defaultDepartment = departments.find((department) => department.isDefault && department.isActive)
   const form = useForm<OrganizationInviteValues>({ resolver: zodResolver(schema), mode: 'onBlur', defaultValues: {
-    firstName: '', lastName: '', email: '', role: 'Member',
+    firstName: contact?.firstName ?? '', lastName: contact?.lastName ?? '', email: contact?.email ?? '', role: 'Member',
     departments: defaultDepartment ? [{ departmentId: defaultDepartment.id, isDepartmentAdmin: false }] : [],
   } })
   const { isDirty } = form.formState
@@ -98,7 +101,7 @@ function InvitationForm({ departments, pending, onDirty, onSubmit }: {
     <fieldset disabled={pending} className="grid gap-4">
       {(['firstName', 'lastName', 'email'] as const).map((field) => <div key={field} className="grid gap-1.5">
         <Label htmlFor={`organization-invite-${field}`}><RequiredFieldName>{m[field]}</RequiredFieldName></Label>
-        <Input id={`organization-invite-${field}`} required type={field === 'email' ? 'email' : 'text'} maxLength={field === 'email' ? 255 : 100}
+        <Input id={`organization-invite-${field}`} required readOnly={Boolean(contact)} type={field === 'email' ? 'email' : 'text'} maxLength={field === 'email' ? 255 : 100}
           autoComplete={field === 'firstName' ? 'given-name' : field === 'lastName' ? 'family-name' : 'email'}
           aria-invalid={Boolean(form.formState.errors[field])} aria-describedby={form.formState.errors[field] ? `organization-invite-${field}-error` : undefined}
           {...form.register(field)} />

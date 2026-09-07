@@ -76,11 +76,16 @@ public sealed class CrmWorkController(PSeqOperationsDbContext dbContext, IExtern
     }
 
     [HttpGet("tasks")]
-    public async Task<CrmPageDto<CrmTaskDto>> Tasks([FromQuery] CrmTaskStatus? status, [FromQuery] Guid? ownerUserId, [FromQuery] Guid? companyId, [FromQuery] Guid? contactId, [FromQuery] Guid? leadId, [FromQuery] Guid? opportunityId, [FromQuery] bool overdueOnly = false, [FromQuery] int page = 1, [FromQuery] int pageSize = 50, CancellationToken cancellationToken = default)
+    public async Task<CrmPageDto<CrmTaskDto>> Tasks([FromQuery] CrmTaskStatus? status, [FromQuery] Guid? ownerUserId, [FromQuery] Guid? companyId, [FromQuery] Guid? contactId, [FromQuery] Guid? leadId, [FromQuery] Guid? opportunityId, [FromQuery] bool overdueOnly = false, [FromQuery] int page = 1, [FromQuery] int pageSize = 50, CancellationToken cancellationToken = default, [FromQuery] string? search = null)
     {
         await RequireActor(cancellationToken);
         EnsurePagination(page, pageSize);
         var query = TaskQuery().Where(value => value.IsActive);
+        if (!string.IsNullOrWhiteSpace(search))
+        {
+            var term = search.Trim().ToLower();
+            query = query.Where(value => value.Title.ToLower().Contains(term) || (value.Description != null && value.Description.ToLower().Contains(term)));
+        }
         if (status.HasValue) query = query.Where(value => value.Status == status);
         if (ownerUserId.HasValue) query = query.Where(value => value.OwnerUserId == ownerUserId);
         if (companyId.HasValue) query = query.Where(value => value.CompanyId == companyId);

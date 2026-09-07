@@ -37,6 +37,33 @@ public sealed class PlatformLabServiceOrdersController(
 {
     private static readonly JsonSerializerOptions JsonOptions = new(JsonSerializerDefaults.Web);
 
+    [HttpGet("customer-options")]
+    public async Task<IReadOnlyList<CustomerOrderOptionDto>> ListCustomerOptions(CancellationToken cancellationToken)
+    {
+        await requestContext.RequirePlatformAdminAsync(HttpContext, cancellationToken);
+        return await dbContext.Organizations.AsNoTracking()
+            .Where(item => item.IsActive && item.Kind == OrganizationKind.Customer)
+            .OrderBy(item => item.Name)
+            .Select(item => new CustomerOrderOptionDto(item.Id, item.Name))
+            .ToListAsync(cancellationToken);
+    }
+
+    [HttpGet("customer-options/{organizationId:guid}/readiness")]
+    public async Task<CustomerOrderReadinessDto> CustomerReadiness(
+        Guid organizationId, [FromQuery] Guid departmentId, CancellationToken cancellationToken)
+    {
+        await requestContext.RequirePlatformAdminAsync(HttpContext, cancellationToken);
+        if (!await dbContext.OrganizationDepartments.AsNoTracking().AnyAsync(item =>
+            item.Id == departmentId && item.OrganizationId == organizationId && item.IsActive
+            && item.Organization.IsActive && item.Organization.Kind == OrganizationKind.Customer, cancellationToken))
+            throw Conflict("customer_department_not_available", "Select an active Customer department to check readiness.");
+        var readiness = (await new OperationalReadinessService(dbContext)
+            .EvaluateAsync(organizationId, cancellationToken, departmentId)).Evaluation;
+        var stageCodes = readiness.StageBlockers.Select(item => item.Code).ToHashSet();
+        return new CustomerOrderReadinessDto(readiness.CanStageOrder, readiness.StageBlockers,
+            readiness.QuoteBlockers.Where(item => !stageCodes.Contains(item.Code)).ToList(), readiness.InvoiceBlockers);
+    }
+
     [HttpGet("eligible-customers")]
     public async Task<IReadOnlyList<EligibleCustomerCompanyDto>> ListEligibleCustomers(
         CancellationToken cancellationToken)

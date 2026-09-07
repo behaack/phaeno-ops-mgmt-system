@@ -30,7 +30,7 @@ Confirm the destination stage belongs to the Opportunity's pipeline and remains 
 
 ## A Task status will not change
 
-Blocked requires a reason. Completed or Cancelled work may require reopening before another active transition. For a recurring Task, verify whether completing it already created the next occurrence.
+Blocked requires a reason. Completed and Cancelled Tasks do not offer **Update**; create a new follow-up Task when more work is needed. For a recurring Task, verify whether completing it already created the next occurrence.
 
 ## An import cannot commit
 
@@ -40,7 +40,7 @@ If the same file may already have committed, review the batch result and affecte
 
 ## A Company request appears missing or repeated
 
-Refresh the Company workspace and review **Company requests** by the displayed request number. An unchanged retry should resolve to the existing idempotent request. Never create a second CRM Company or change the request identity merely to make another request appear.
+Refresh the Company workspace and open **Requests** to find the displayed request number. A repeated operation key is rejected as an existing handoff; inspect the original request before submitting anything new. Use the central **Requests** queue to follow it through **Needs decision**, **Approved / needs work**, and **Completed / history**. Never create a second CRM Company or change the request identity merely to make another request appear.
 
 ## Protected or scientific information was entered
 

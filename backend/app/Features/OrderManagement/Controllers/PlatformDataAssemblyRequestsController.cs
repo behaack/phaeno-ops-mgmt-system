@@ -186,6 +186,18 @@ public sealed class PlatformDataAssemblyRequestsController(
         await dbContext.SaveChangesAsync(cancellationToken); return await MapAsync(item, cancellationToken);
     }
 
+    [HttpGet("{requestId:guid}/processing-runs/{runId:guid}/outputs")]
+    public async Task<IReadOnlyList<OperationalFileDto>> ListRunOutputs(Guid requestId, Guid runId, CancellationToken cancellationToken)
+    {
+        await requestContext.RequirePlatformAdminAsync(HttpContext, cancellationToken);
+        var item = await ReadAsync(requestId, cancellationToken);
+        if (!item.ProcessingRuns.Any(value => value.Id == runId)) throw Missing();
+        var files = await dbContext.ManagedOperationalFiles.AsNoTracking().Where(file =>
+            file.OrganizationId == item.OrganizationId && file.WorkflowId == item.Id && file.ParentRecordId == runId
+            && file.Purpose == OperationalFilePurpose.AssemblyOutput).OrderBy(file => file.FileName).ToListAsync(cancellationToken);
+        return files.Select(file => file.ToDto()).ToList();
+    }
+
     [HttpPost("{requestId:guid}/processing-runs/{runId:guid}/outputs")]
     [RequestSizeLimit(104_857_600)]
     public async Task<OperationalFileDto> UploadOutput(Guid requestId, Guid runId, [FromForm] IFormFile file, CancellationToken cancellationToken)
@@ -230,8 +242,9 @@ public sealed class PlatformDataAssemblyRequestsController(
                     && file.Purpose == OperationalFilePurpose.AssemblyOutput && file.ReleaseStatus == FileReleaseStatus.Internal).ToListAsync(operationCancellationToken);
                 if (files.Count == 0 || files.Any(file => file.ScanStatus != OperationalFileScanStatus.Clean)) throw Conflict("assembly_output_files_not_clean", "Every output file must pass scanning before approval.");
                 var release = new AssemblyOutputRelease(item.OrganizationId, item.Id, item.CurrentInputRevisionId.Value, run.Id,
-                    item.OutputReleases.Count == 0 ? 1 : item.OutputReleases.Max(value => value.ReleaseVersion) + 1, request.ManifestJson,
-                    request.PipelineVersion, request.Provenance, request.QcStatus, DateTime.UtcNow);
+                    item.OutputReleases.Count == 0 ? 1 : item.OutputReleases.Max(value => value.ReleaseVersion) + 1,
+                    JsonSerializer.Serialize(new { runId = run.Id, files = files.OrderBy(file => file.FileName).Select(file => new { id = file.Id, file.FileName, file.SizeBytes, file.Sha256 }) }, JsonOptions),
+                    run.PipelineVersion, run.Provenance, request.QcStatus, DateTime.UtcNow);
                 release.MarkReady(holdForPayment: true);
                 foreach (var file in files) { file.AttachToParent(release.Id); file.HoldForPayment(); }
                 item.OutputReleases.Add(release);

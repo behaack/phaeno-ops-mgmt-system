@@ -15,7 +15,6 @@ import {
   deactivateMembership,
   endEntitlement,
   getOrganization,
-  getOperationalReadiness,
   getOrganizationSummary,
   listEntitlements,
   listDepartments,
@@ -39,13 +38,15 @@ import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, D
 import { Input } from '#/components/ui/input'
 import { Label } from '#/components/ui/label'
 import { RequiredDialogFooter, RequiredFieldName } from '#/components/ui/required-field'
+import { getCustomerOrderReadiness } from '#/api/order-management'
+import { CustomerOrderReadiness } from '#/features/orders/CustomerOrderReadiness'
 import { usePhaenoSession } from '#/features/auth/session-context'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '#/components/ui/tabs'
 import { OrganizationRetentionPolicyPanel } from '#/features/file-management/OrganizationRetentionPolicyPanel'
 import { EntitlementDialog, type EntitlementFormValues } from './EntitlementDialog'
 import { EditEntitlementDialog, type EditEntitlementFormValues } from './EditEntitlementDialog'
 import { LifecycleActionDialog, type LifecycleAction } from './LifecycleActionDialog'
-import { OrganizationFormDialog, readinessLabel, type OrganizationFormValues } from './OrganizationFormDialog'
+import { OrganizationFormDialog, type OrganizationFormValues } from './OrganizationFormDialog'
 import { OrganizationConversionDialog } from './OrganizationConversionDialog'
 
 export function OrganizationDetailPage({
@@ -60,6 +61,7 @@ export function OrganizationDetailPage({
   const { session } = usePhaenoSession()
   const client = useQueryClient()
   const [editOpen, setEditOpen] = useState(false)
+  const [readinessDepartmentId, setReadinessDepartmentId] = useState('')
   const [activeTab, setActiveTab] = useState('overview')
   const [inviteOpen, setInviteOpen] = useState(false)
   const [entitlementOpen, setEntitlementOpen] = useState(false)
@@ -69,20 +71,18 @@ export function OrganizationDetailPage({
   const [developmentInviteLink, setDevelopmentInviteLink] = useState<DevelopmentInvitationLink | null>(null)
   const organizationQuery = useQuery({ queryKey: ['organization', organizationId], queryFn: () => getOrganization(organizationId) })
   const summaryQuery = useQuery({ queryKey: ['organization-summary', organizationId], queryFn: () => getOrganizationSummary(organizationId) })
-  const readinessQuery = useQuery({
-    queryKey: ['organization-operational-readiness', organizationId],
-    queryFn: () => getOperationalReadiness(organizationId),
-    enabled: organizationQuery.data?.kind === 'Customer',
-  })
   const usersQuery = useQuery({ queryKey: ['organization-users', organizationId], queryFn: () => listOrganizationUsers(organizationId) })
   const invitationsQuery = useQuery({ queryKey: ['organization-invitations', organizationId], queryFn: () => listInvitations(organizationId) })
   const entitlementsQuery = useQuery({ queryKey: ['organization-entitlements', organizationId], queryFn: () => listEntitlements(organizationId) })
   const departmentsQuery = useQuery({ queryKey: ['organization-departments', organizationId, true], queryFn: () => listDepartments(organizationId) })
+  const selectedReadinessDepartment = readinessDepartmentId || departmentsQuery.data?.find(value => value.isDefault && value.isActive)?.id || ''
+  const pricingReadiness = useQuery({ queryKey: ['customer-order-readiness', organizationId, selectedReadinessDepartment], queryFn: () => getCustomerOrderReadiness(organizationId, selectedReadinessDepartment), enabled: organizationQuery.data?.kind === 'Customer' && Boolean(selectedReadinessDepartment) })
   const requestsQuery = useQuery({ queryKey: ['relationship-requests', organizationId], queryFn: () => listRelationshipRequests({ organizationId }) })
   const refresh = () => Promise.all([
     client.invalidateQueries({ queryKey: ['organization', organizationId] }),
     client.invalidateQueries({ queryKey: ['organization-summary', organizationId] }),
     client.invalidateQueries({ queryKey: ['organization-operational-readiness', organizationId] }),
+    client.invalidateQueries({ queryKey: ['customer-order-readiness', organizationId] }),
     client.invalidateQueries({ queryKey: ['organization-users', organizationId] }),
     client.invalidateQueries({ queryKey: ['organization-invitations', organizationId] }),
     client.invalidateQueries({ queryKey: ['organization-entitlements', organizationId] }),
@@ -108,7 +108,7 @@ export function OrganizationDetailPage({
   const errorState = [
     { label: 'Portal access details', error: organizationQuery.error },
     { label: 'Portal access summary', error: summaryQuery.error },
-    { label: 'Operational readiness', error: readinessQuery.error },
+    { label: 'Department readiness', error: pricingReadiness.error },
     { label: 'Portal users', error: usersQuery.error },
     { label: 'Invitations', error: invitationsQuery.error },
     { label: 'Service entitlements', error: entitlementsQuery.error },
@@ -149,10 +149,10 @@ export function OrganizationDetailPage({
         <section className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between"><div><Badge variant="secondary" className="mb-3">{organization.kind}</Badge><h1 className="text-3xl font-semibold leading-tight">{organization.name}</h1><p className="mt-3 max-w-3xl text-sm leading-6 text-muted-foreground sm:text-base">{organization.description || 'No account description has been recorded.'}</p></div><div className="flex flex-wrap gap-2"><Button asChild variant="outline"><Link to="/crm/companies"><ArrowLeft data-icon="inline-start" />Back to Companies</Link></Button><Button variant="outline" onClick={() => setActiveTab('members')}><Users data-icon="inline-start" />Manage users</Button><Button onClick={() => setEditOpen(true)}><Pencil data-icon="inline-start" />Edit access settings</Button></div></section>
       )}
       {errorState ? <Alert variant="destructive"><AlertTitle>{errorState.label} could not be loaded</AlertTitle><AlertDescription>{apiErrorMessage(errorState.error)}</AlertDescription></Alert> : null}
-      <section className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4"><Summary label="Operational readiness" value={readinessQuery.isLoading ? 'Checking…' : readinessQuery.data?.state ?? 'Not applicable'} /><Summary label="Administrator" value={summary?.administratorStatus ?? 'Loading'} /><Summary label="Active users" value={`${summary?.activeMemberCount ?? 0}`} /><Summary label="Usable services" value={`${summary?.effectiveServices.length ?? 0}`} /></section>
+      <section className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4"><Summary label="Start pricing" value={organization.kind !== 'Customer' ? 'Not applicable' : pricingReadiness.isPending ? 'Checking…' : pricingReadiness.data ? pricingReadiness.data.canStartPricing ? 'Ready' : 'Setup required' : 'Unavailable'} /><Summary label="Administrator" value={summary?.administratorStatus ?? 'Loading'} /><Summary label="Active users" value={`${summary?.activeMemberCount ?? 0}`} /><Summary label="Usable services" value={`${summary?.effectiveServices.length ?? 0}`} /></section>
 
       <Card><CardContent className="pt-6"><Tabs value={activeTab} onValueChange={setActiveTab}><TabsList className="flex h-auto flex-wrap"><TabsTrigger value="overview">Overview</TabsTrigger>{showUsers ? <TabsTrigger value="members">Users</TabsTrigger> : null}<TabsTrigger value="services">Services</TabsTrigger><TabsTrigger value="retention">Retention</TabsTrigger></TabsList>
-        <TabsContent value="overview" className="mt-5 space-y-4"><div className="grid gap-4 md:grid-cols-2"><Info label="Portal relationship" value={organization.kind} /><Info label="Access status" value={organization.isActive ? 'Enabled' : 'Suspended'} /><Info label="Setup readiness" value={readinessLabel(organization.portalReadiness)} /><Info label="Pending requests" value={`${summary?.pendingRequestCount ?? 0}`} /></div>{organization.kind === 'Customer' ? <ReadinessChecklist readiness={readinessQuery.data} isLoading={readinessQuery.isLoading} isStale={readinessQuery.isStale} /> : null}<div className="rounded-lg border p-4"><h2 className="font-medium">Readiness note</h2><p className="mt-2 text-sm text-muted-foreground">{organization.portalReadinessNote || 'No readiness note recorded. It does not authorize transactions.'}</p></div>{!embedded && organization.kind === 'Prospect' ? <div className="rounded-lg border p-4"><h2 className="font-medium">Convert qualified prospect</h2><p className="mt-1 text-sm text-muted-foreground">Conversion changes the relationship type only. Access, invitations, and services remain explicit.</p><div className="mt-3 flex gap-2"><Button size="sm" disabled={conversionMutation.isPending} onClick={() => setConversionTarget('Customer')}>Convert to customer</Button><Button size="sm" variant="outline" disabled={conversionMutation.isPending} onClick={() => setConversionTarget('Partner')}>Convert to partner</Button></div></div> : null}</TabsContent>
+        <TabsContent value="overview" className="mt-5 space-y-4"><div className="grid gap-4 md:grid-cols-2"><Info label="Portal relationship" value={organization.kind} /><Info label="Access status" value={organization.isActive ? 'Enabled' : 'Suspended'} /><Info label="Pending requests" value={`${summary?.pendingRequestCount ?? 0}`} /></div>{organization.kind === 'Customer' ? <section className="space-y-3"><Label htmlFor="company-readiness-department">Department readiness</Label><select id="company-readiness-department" className="h-9 rounded-md border bg-background px-3 text-sm" value={selectedReadinessDepartment} onChange={event => setReadinessDepartmentId(event.target.value)}>{departmentsQuery.data?.filter(value => value.isActive).map(value => <option key={value.id} value={value.id}>{value.name}</option>)}</select>{pricingReadiness.isPending ? <p role="status">Checking readiness…</p> : null}{pricingReadiness.error ? <Alert variant="destructive"><AlertDescription>{apiErrorMessage(pricingReadiness.error)}</AlertDescription></Alert> : null}{pricingReadiness.data ? <CustomerOrderReadiness readiness={pricingReadiness.data} /> : null}</section> : null}<div className="rounded-lg border p-4"><h2 className="font-medium">Readiness note</h2><p className="mt-2 text-sm text-muted-foreground">{organization.portalReadinessNote || 'No readiness note recorded. It does not authorize transactions.'}</p></div>{!embedded && organization.kind === 'Prospect' ? <div className="rounded-lg border p-4"><h2 className="font-medium">Convert qualified prospect</h2><p className="mt-1 text-sm text-muted-foreground">Conversion changes the relationship type only. Access, invitations, and services remain explicit.</p><div className="mt-3 flex gap-2"><Button size="sm" disabled={conversionMutation.isPending} onClick={() => setConversionTarget('Customer')}>Convert to customer</Button><Button size="sm" variant="outline" disabled={conversionMutation.isPending} onClick={() => setConversionTarget('Partner')}>Convert to partner</Button></div></div> : null}</TabsContent>
         <TabsContent value="members" className="mt-5 space-y-5"><div className="flex items-center justify-between gap-3"><div><h2 className="font-medium">Portal users and invitations</h2><p className="text-sm text-muted-foreground">Only a Phaeno-reviewed Portal invitation grants access. Email delivery is tracked separately from invitation access.</p></div><Button size="sm" onClick={() => setInviteOpen(true)}><UserPlus data-icon="inline-start" />Invite user</Button></div><div className="space-y-3">{(usersQuery.data ?? []).map((user) => { const membership = user.memberships.find((value) => value.organizationId === organizationId); if (!membership) return null; return <div key={user.id} className="flex flex-col gap-3 rounded-lg border p-4 sm:flex-row sm:items-center sm:justify-between"><div><p className="font-medium">{user.firstName} {user.lastName}</p><p className="text-sm text-muted-foreground">{user.email} · {membership.isOrganizationAdmin ? 'Administrator' : 'Member'} · {membership.isActive ? user.status : 'Membership inactive'}</p></div><div className="flex gap-2">{membership.isActive ? <><Button size="sm" variant="outline" disabled={memberMutation.isPending} onClick={() => memberMutation.mutate({ membershipId: membership.id, action: 'role', isAdmin: !membership.isOrganizationAdmin })}>{membership.isOrganizationAdmin ? 'Make member' : 'Make admin'}</Button>{user.id !== session?.user?.id ? <Button size="sm" variant="destructive" disabled={memberMutation.isPending} onClick={() => setLifecycleTarget({ kind: 'member', membershipId: membership.id, email: user.email })}>Deactivate</Button> : null}</> : null}</div></div> })}{!usersQuery.isLoading && !(usersQuery.data ?? []).length ? <p className="rounded-lg border p-6 text-center text-sm text-muted-foreground">No Portal users yet.</p> : null}</div><div><h3 className="mb-3 font-medium">Pending invitations</h3><div className="space-y-2">{pendingInvitations.map((invite) => <InvitationRow key={invite.id} invitation={invite} isPending={inviteAction.isPending || developmentLinkMutation.isPending} onAction={(action) => inviteAction.mutate({ id: invite.id, action })} onDevelopmentLink={import.meta.env.DEV ? () => developmentLinkMutation.mutate(invite.id) : undefined} />)}{invitationsQuery.isLoading ? <p role="status" className="text-sm text-muted-foreground">Checking invitation delivery…</p> : null}{!invitationsQuery.isLoading && !pendingInvitations.length ? <p className="text-sm text-muted-foreground">No pending invitations.</p> : null}</div></div></TabsContent>
         <TabsContent value="services" className="mt-5 space-y-4">
           <div className="flex items-center justify-between gap-3">
@@ -361,53 +361,6 @@ export function DevelopmentInviteLinkDialog({
 function InviteDialog({ error, isPending, onOpenChange, onSubmit, open }: { error?: string; isPending: boolean; onOpenChange: (open: boolean) => void; onSubmit: (values: InviteValues) => void; open: boolean }) {
   const form = useForm<InviteValues>({ resolver: zodResolver(inviteSchema), defaultValues: { firstName: '', lastName: '', email: '', role: 'Member' } })
   return <Dialog open={open} onOpenChange={(value) => { onOpenChange(value); if (!value) form.reset() }}><DialogContent><DialogHeader><DialogTitle>Invite account user</DialogTitle><DialogDescription>Enter the designated CRM contact after Phaeno review. Portal access begins only after the recipient accepts this invitation.</DialogDescription></DialogHeader>{error ? <Alert variant="destructive"><AlertDescription>{error}</AlertDescription></Alert> : null}<form id="invite-user" className="grid gap-4" noValidate onSubmit={form.handleSubmit(onSubmit)}><div className="grid gap-4 sm:grid-cols-2"><div className="grid gap-1.5"><Label htmlFor="invite-first-name"><RequiredFieldName>First name</RequiredFieldName></Label><Input id="invite-first-name" autoComplete="given-name" required aria-invalid={Boolean(form.formState.errors.firstName)} {...form.register('firstName')} />{form.formState.errors.firstName ? <p className="text-sm text-destructive" role="alert">{form.formState.errors.firstName.message}</p> : null}</div><div className="grid gap-1.5"><Label htmlFor="invite-last-name"><RequiredFieldName>Last name</RequiredFieldName></Label><Input id="invite-last-name" autoComplete="family-name" required aria-invalid={Boolean(form.formState.errors.lastName)} {...form.register('lastName')} />{form.formState.errors.lastName ? <p className="text-sm text-destructive" role="alert">{form.formState.errors.lastName.message}</p> : null}</div></div><div className="grid gap-1.5"><Label htmlFor="invite-email"><RequiredFieldName>Email</RequiredFieldName></Label><Input id="invite-email" type="email" aria-invalid={Boolean(form.formState.errors.email)} {...form.register('email')} />{form.formState.errors.email ? <p className="text-sm text-destructive" role="alert">{form.formState.errors.email.message}</p> : null}</div><div className="grid gap-1.5"><Label htmlFor="invite-role"><RequiredFieldName>Role</RequiredFieldName></Label><select id="invite-role" className="h-9 cursor-pointer rounded-lg border border-input bg-background px-3 text-sm" {...form.register('role')}><option value="Member">Member</option><option value="Administrator">Organization administrator</option></select></div></form><RequiredDialogFooter><Button type="button" variant="outline" onClick={() => onOpenChange(false)}>Cancel</Button><Button type="submit" form="invite-user" disabled={isPending}>{isPending ? 'Sending…' : 'Send invitation'}</Button></RequiredDialogFooter></DialogContent></Dialog>
-}
-
-function ReadinessChecklist({
-  readiness,
-  isLoading,
-  isStale,
-}: {
-  readiness?: Awaited<ReturnType<typeof getOperationalReadiness>>
-  isLoading: boolean
-  isStale: boolean
-}) {
-  if (isLoading) {
-    return <p role="status" className="rounded-lg border p-4 text-sm text-muted-foreground">Checking PSeq operational readiness…</p>
-  }
-  if (!readiness) return null
-  return (
-    <section className="rounded-lg border p-4" aria-labelledby="readiness-checklist-title">
-      <div className="flex flex-wrap items-center justify-between gap-2">
-        <div>
-          <h2 id="readiness-checklist-title" className="font-medium">PSeq operational readiness</h2>
-          <p className="mt-1 text-sm text-muted-foreground">
-            Derived from account, access, service, order, sample, delivery, and billing configuration.
-          </p>
-        </div>
-        <div className="flex items-center gap-2">
-          {isStale ? <Badge variant="outline">Checking for changes</Badge> : null}
-          <Badge variant={readiness.state === 'Ready' ? 'secondary' : 'outline'}>{readiness.state}</Badge>
-        </div>
-      </div>
-      <div className="mt-3 grid gap-2 sm:grid-cols-2">
-        <Info label="Internal staging" value={readiness.canStageOrder ? 'Allowed' : 'Blocked'} />
-        <Info label="Quote and commitment" value={readiness.canIssueQuote ? 'Allowed' : 'Blocked'} />
-      </div>
-      {readiness.blockers.length ? (
-        <ul className="mt-4 space-y-2">
-          {readiness.blockers.map((blocker) => (
-            <li key={blocker.code} className="rounded-md bg-muted/50 p-3 text-sm">
-              <span className="font-medium">{blocker.label}</span>
-              <span className="mt-1 block text-muted-foreground">{blocker.nextAction}</span>
-            </li>
-          ))}
-        </ul>
-      ) : (
-        <p className="mt-4 text-sm text-muted-foreground">All readiness checks are complete.</p>
-      )}
-    </section>
-  )
 }
 
 function InvitationRow({

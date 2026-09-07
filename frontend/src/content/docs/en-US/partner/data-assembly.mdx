@@ -1,6 +1,6 @@
 # Request data assembly
 
-Partner organization administrators submit files and metadata under an active Phaeno assembly profile, receive a per-job quote, and retrieve outputs for delivery through their own customer relationships.
+Partner organization administrators and department administrators submit within their selected Department files and metadata under an active Phaeno assembly profile, receive a per-job quote, and retrieve outputs for delivery through their own customer relationships.
 
 ## Create an input revision
 
@@ -16,11 +16,13 @@ Files must complete the managed upload and clean-scan checks before submission. 
 
 Submission freezes an immutable input revision. Phaeno may accept it for quoting, request field- or file-specific changes, or reject it with a Partner-visible reason.
 
-If changes are requested, create a corrected revision and resubmit. Earlier revisions remain preserved for traceability.
+If changes are requested, open **Edit request**. **Input files** shows every saved input and its scan result. Use **Remove input** to exclude an incorrect or failed-scan file from the editable revision, then select its replacement. Removing a current input preserves earlier submitted revisions. Review the profile's file types and per-file/total limits before uploading.
+
+Save the draft or submit the corrected revision. A failure after draft creation retains the same request. Successfully uploaded files remain listed; retry resumes the remaining work. **Open saved draft** returns to the saved record when final submission has not succeeded. Earlier revisions remain preserved for traceability.
 
 ## Accept the job quote
 
-Assembly work is priced per job. Phaeno issues an itemized POMS quote that becomes visible immediately after issuance. A Partner administrator accepts the current, unexpired quote and supplies the required purchase-order number.
+Assembly work is priced per job. Phaeno issues an itemized Portal quote that becomes visible immediately after issuance. A Partner organization or department administrator accepts the current, unexpired quote and supplies the required purchase-order number.
 
 An accepted quote freezes the validated input, profile, and commercial snapshot. Later scope changes use a separate immutable change quote.
 
@@ -74,3 +76,7 @@ members see authorized release facts within their Department. A quarantine stops
 downloads; a preservation hold does not extend the deadline. Contact Phaeno for
 support or an authorized reissue after deletion. Reissue requires a newly
 prepared, approved package and preserves the earlier receipt and dates.
+
+## Find and resume requests
+
+The list provides search, status/date filters, **Submitted by me**, total counts, and **Previous**/**Next**. Opening a request and returning keeps the filtered page. **Clear all** removes filters. Failed loads offer retry instead of reporting that no requests exist. Closing a form with unsaved entries asks whether to discard them.

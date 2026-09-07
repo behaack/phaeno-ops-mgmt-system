@@ -55,6 +55,7 @@ import { Route as CrmAdministrationRouteImport } from './routes/crm.administrati
 import { Route as TrialProjectsTrialIdScopeRouteImport } from './routes/trial-projects.$trialId.scope'
 import { Route as SampleShippingShipmentIdPacketRouteImport } from './routes/sample-shipping.$shipmentId.packet'
 import { Route as ReagentOrdersOrderIdEditRouteImport } from './routes/reagent-orders.$orderId.edit'
+import { Route as OrderOperationsResultPackagesPackageIdRouteImport } from './routes/order-operations.result-packages.$packageId'
 import { Route as OrderOperationsIntakeOrderIdRouteImport } from './routes/order-operations.intake.$orderId'
 import { Route as OrderOperationsWorkflowOrderIdRouteImport } from './routes/order-operations.$workflow.$orderId'
 import { Route as LabServicesOrderIdEditRouteImport } from './routes/lab-services.$orderId.edit'
@@ -68,6 +69,7 @@ import { Route as CrmOpportunitiesOpportunityIdRouteImport } from './routes/crm.
 import { Route as CrmLeadsLeadIdRouteImport } from './routes/crm.leads_.$leadId'
 import { Route as CrmContactsContactIdRouteImport } from './routes/crm.contacts_.$contactId'
 import { Route as CrmCompaniesCompanyIdRouteImport } from './routes/crm.companies_.$companyId'
+import { Route as OrderOperationsFinanceKindRecordIdRouteImport } from './routes/order-operations.finance.$kind.$recordId'
 import { Route as LabOperationsWorkflowsWorkflowIdVersionsNewRouteImport } from './routes/lab-operations.workflows.$workflowId.versions.new'
 import { Route as LabOperationsProtocolsProtocolIdVersionsNewRouteImport } from './routes/lab-operations.protocols.$protocolId.versions.new'
 import { Route as LabOperationsWorkflowsWorkflowIdVersionsVersionIdEditRouteImport } from './routes/lab-operations.workflows.$workflowId.versions.$versionId.edit'
@@ -310,6 +312,12 @@ const ReagentOrdersOrderIdEditRoute =
     path: '/edit',
     getParentRoute: () => ReagentOrdersOrderIdRoute,
   } as any)
+const OrderOperationsResultPackagesPackageIdRoute =
+  OrderOperationsResultPackagesPackageIdRouteImport.update({
+    id: '/result-packages/$packageId',
+    path: '/result-packages/$packageId',
+    getParentRoute: () => OrderOperationsRoute,
+  } as any)
 const OrderOperationsIntakeOrderIdRoute =
   OrderOperationsIntakeOrderIdRouteImport.update({
     id: '/intake/$orderId',
@@ -383,6 +391,12 @@ const CrmCompaniesCompanyIdRoute = CrmCompaniesCompanyIdRouteImport.update({
   path: '/companies/$companyId',
   getParentRoute: () => CrmRoute,
 } as any)
+const OrderOperationsFinanceKindRecordIdRoute =
+  OrderOperationsFinanceKindRecordIdRouteImport.update({
+    id: '/finance/$kind/$recordId',
+    path: '/finance/$kind/$recordId',
+    getParentRoute: () => OrderOperationsRoute,
+  } as any)
 const LabOperationsWorkflowsWorkflowIdVersionsNewRoute =
   LabOperationsWorkflowsWorkflowIdVersionsNewRouteImport.update({
     id: '/workflows/$workflowId/versions/new',
@@ -465,9 +479,11 @@ export interface FileRoutesByFullPath {
   '/lab-services/$orderId/edit': typeof LabServicesOrderIdEditRoute
   '/order-operations/$workflow/$orderId': typeof OrderOperationsWorkflowOrderIdRoute
   '/order-operations/intake/$orderId': typeof OrderOperationsIntakeOrderIdRoute
+  '/order-operations/result-packages/$packageId': typeof OrderOperationsResultPackagesPackageIdRoute
   '/reagent-orders/$orderId/edit': typeof ReagentOrdersOrderIdEditRoute
   '/sample-shipping/$shipmentId/packet': typeof SampleShippingShipmentIdPacketRoute
   '/trial-projects/$trialId/scope': typeof TrialProjectsTrialIdScopeRoute
+  '/order-operations/finance/$kind/$recordId': typeof OrderOperationsFinanceKindRecordIdRoute
   '/lab-operations/protocols/$protocolId/versions/new': typeof LabOperationsProtocolsProtocolIdVersionsNewRoute
   '/lab-operations/workflows/$workflowId/versions/new': typeof LabOperationsWorkflowsWorkflowIdVersionsNewRoute
   '/lab-operations/protocols/$protocolId/versions/$versionId/edit': typeof LabOperationsProtocolsProtocolIdVersionsVersionIdEditRoute
@@ -530,9 +546,11 @@ export interface FileRoutesByTo {
   '/lab-services/$orderId/edit': typeof LabServicesOrderIdEditRoute
   '/order-operations/$workflow/$orderId': typeof OrderOperationsWorkflowOrderIdRoute
   '/order-operations/intake/$orderId': typeof OrderOperationsIntakeOrderIdRoute
+  '/order-operations/result-packages/$packageId': typeof OrderOperationsResultPackagesPackageIdRoute
   '/reagent-orders/$orderId/edit': typeof ReagentOrdersOrderIdEditRoute
   '/sample-shipping/$shipmentId/packet': typeof SampleShippingShipmentIdPacketRoute
   '/trial-projects/$trialId/scope': typeof TrialProjectsTrialIdScopeRoute
+  '/order-operations/finance/$kind/$recordId': typeof OrderOperationsFinanceKindRecordIdRoute
   '/lab-operations/protocols/$protocolId/versions/new': typeof LabOperationsProtocolsProtocolIdVersionsNewRoute
   '/lab-operations/workflows/$workflowId/versions/new': typeof LabOperationsWorkflowsWorkflowIdVersionsNewRoute
   '/lab-operations/protocols/$protocolId/versions/$versionId/edit': typeof LabOperationsProtocolsProtocolIdVersionsVersionIdEditRoute
@@ -596,9 +614,11 @@ export interface FileRoutesById {
   '/lab-services/$orderId/edit': typeof LabServicesOrderIdEditRoute
   '/order-operations/$workflow/$orderId': typeof OrderOperationsWorkflowOrderIdRoute
   '/order-operations/intake/$orderId': typeof OrderOperationsIntakeOrderIdRoute
+  '/order-operations/result-packages/$packageId': typeof OrderOperationsResultPackagesPackageIdRoute
   '/reagent-orders/$orderId/edit': typeof ReagentOrdersOrderIdEditRoute
   '/sample-shipping/$shipmentId/packet': typeof SampleShippingShipmentIdPacketRoute
   '/trial-projects/$trialId/scope': typeof TrialProjectsTrialIdScopeRoute
+  '/order-operations/finance/$kind/$recordId': typeof OrderOperationsFinanceKindRecordIdRoute
   '/lab-operations/protocols/$protocolId/versions/new': typeof LabOperationsProtocolsProtocolIdVersionsNewRoute
   '/lab-operations/workflows/$workflowId/versions/new': typeof LabOperationsWorkflowsWorkflowIdVersionsNewRoute
   '/lab-operations/protocols/$protocolId/versions/$versionId/edit': typeof LabOperationsProtocolsProtocolIdVersionsVersionIdEditRoute
@@ -663,9 +683,11 @@ export interface FileRouteTypes {
     | '/lab-services/$orderId/edit'
     | '/order-operations/$workflow/$orderId'
     | '/order-operations/intake/$orderId'
+    | '/order-operations/result-packages/$packageId'
     | '/reagent-orders/$orderId/edit'
     | '/sample-shipping/$shipmentId/packet'
     | '/trial-projects/$trialId/scope'
+    | '/order-operations/finance/$kind/$recordId'
     | '/lab-operations/protocols/$protocolId/versions/new'
     | '/lab-operations/workflows/$workflowId/versions/new'
     | '/lab-operations/protocols/$protocolId/versions/$versionId/edit'
@@ -728,9 +750,11 @@ export interface FileRouteTypes {
     | '/lab-services/$orderId/edit'
     | '/order-operations/$workflow/$orderId'
     | '/order-operations/intake/$orderId'
+    | '/order-operations/result-packages/$packageId'
     | '/reagent-orders/$orderId/edit'
     | '/sample-shipping/$shipmentId/packet'
     | '/trial-projects/$trialId/scope'
+    | '/order-operations/finance/$kind/$recordId'
     | '/lab-operations/protocols/$protocolId/versions/new'
     | '/lab-operations/workflows/$workflowId/versions/new'
     | '/lab-operations/protocols/$protocolId/versions/$versionId/edit'
@@ -793,9 +817,11 @@ export interface FileRouteTypes {
     | '/lab-services/$orderId/edit'
     | '/order-operations/$workflow/$orderId'
     | '/order-operations/intake/$orderId'
+    | '/order-operations/result-packages/$packageId'
     | '/reagent-orders/$orderId/edit'
     | '/sample-shipping/$shipmentId/packet'
     | '/trial-projects/$trialId/scope'
+    | '/order-operations/finance/$kind/$recordId'
     | '/lab-operations/protocols/$protocolId/versions/new'
     | '/lab-operations/workflows/$workflowId/versions/new'
     | '/lab-operations/protocols/$protocolId/versions/$versionId/edit'
@@ -1151,6 +1177,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ReagentOrdersOrderIdEditRouteImport
       parentRoute: typeof ReagentOrdersOrderIdRoute
     }
+    '/order-operations/result-packages/$packageId': {
+      id: '/order-operations/result-packages/$packageId'
+      path: '/result-packages/$packageId'
+      fullPath: '/order-operations/result-packages/$packageId'
+      preLoaderRoute: typeof OrderOperationsResultPackagesPackageIdRouteImport
+      parentRoute: typeof OrderOperationsRoute
+    }
     '/order-operations/intake/$orderId': {
       id: '/order-operations/intake/$orderId'
       path: '/intake/$orderId'
@@ -1241,6 +1274,13 @@ declare module '@tanstack/react-router' {
       fullPath: '/crm/companies/$companyId'
       preLoaderRoute: typeof CrmCompaniesCompanyIdRouteImport
       parentRoute: typeof CrmRoute
+    }
+    '/order-operations/finance/$kind/$recordId': {
+      id: '/order-operations/finance/$kind/$recordId'
+      path: '/finance/$kind/$recordId'
+      fullPath: '/order-operations/finance/$kind/$recordId'
+      preLoaderRoute: typeof OrderOperationsFinanceKindRecordIdRouteImport
+      parentRoute: typeof OrderOperationsRoute
     }
     '/lab-operations/workflows/$workflowId/versions/new': {
       id: '/lab-operations/workflows/$workflowId/versions/new'
@@ -1438,11 +1478,17 @@ const LabServicesRouteWithChildren = LabServicesRoute._addFileChildren(
 interface OrderOperationsRouteChildren {
   OrderOperationsWorkflowOrderIdRoute: typeof OrderOperationsWorkflowOrderIdRoute
   OrderOperationsIntakeOrderIdRoute: typeof OrderOperationsIntakeOrderIdRoute
+  OrderOperationsResultPackagesPackageIdRoute: typeof OrderOperationsResultPackagesPackageIdRoute
+  OrderOperationsFinanceKindRecordIdRoute: typeof OrderOperationsFinanceKindRecordIdRoute
 }
 
 const OrderOperationsRouteChildren: OrderOperationsRouteChildren = {
   OrderOperationsWorkflowOrderIdRoute: OrderOperationsWorkflowOrderIdRoute,
   OrderOperationsIntakeOrderIdRoute: OrderOperationsIntakeOrderIdRoute,
+  OrderOperationsResultPackagesPackageIdRoute:
+    OrderOperationsResultPackagesPackageIdRoute,
+  OrderOperationsFinanceKindRecordIdRoute:
+    OrderOperationsFinanceKindRecordIdRoute,
 }
 
 const OrderOperationsRouteWithChildren = OrderOperationsRoute._addFileChildren(

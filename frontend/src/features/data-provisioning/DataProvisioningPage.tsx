@@ -1,6 +1,6 @@
 import { zodResolver } from '@hookform/resolvers/zod'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
-import { Link } from '@tanstack/react-router'
+import { Link, useRouterState } from '@tanstack/react-router'
 import {
   Archive,
   CheckCircle2,
@@ -10,14 +10,13 @@ import {
   ShieldCheck,
   UserRoundCheck,
 } from 'lucide-react'
-import { useMemo, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { useForm } from 'react-hook-form'
 import { z } from 'zod'
 
 import {
   createDataset,
   createDatasetVersion,
-  createProvisionedOrganization,
   createSourceSample,
   deactivateDataset,
   getApiErrorMessage,
@@ -93,13 +92,6 @@ const upgradeSchema = z.object({
   datasetVersionId: z.string().uuid('Select a newer eligible version.'),
 })
 
-const organizationSchema = z.object({
-  name: z.string().trim().min(1, 'Organization name is required.').max(255),
-  description: z.string().trim().max(2000),
-  kind: z.enum(['Prospect', 'Customer', 'Partner']),
-  datasetVersionIds: z.array(z.string().uuid()),
-})
-
 const revokeSchema = z.object({
   reason: z.string().trim().min(1, 'A revocation reason is required.').max(2000),
 })
@@ -118,7 +110,6 @@ type DatasetValues = z.infer<typeof datasetSchema>
 type VersionValues = z.infer<typeof versionSchema>
 type GrantValues = z.infer<typeof grantSchema>
 type UpgradeValues = z.infer<typeof upgradeSchema>
-type OrganizationValues = z.infer<typeof organizationSchema>
 type RevokeValues = z.infer<typeof revokeSchema>
 type EligibilityRemovalValues = z.infer<typeof eligibilityRemovalSchema>
 type DataProvisioningSection = 'sources' | 'catalog' | 'grants' | 'governance'
@@ -136,7 +127,8 @@ type CatalogLifecycleAction =
 
 export function DataProvisioningPage() {
   const { authProvider, session } = usePhaenoSession()
-  const [section, setSection] = useState<DataProvisioningSection>('sources')
+  const initialSection = useRouterState({ select: state => state.location.search.section })
+  const [section, setSection] = useState<DataProvisioningSection>(initialSection === 'grants' ? 'grants' : 'sources')
   const canManage = Boolean(session?.capabilities.canViewDatasetConfiguration)
   const apiEnabled = canManage && authProvider !== 'mock'
 
@@ -535,7 +527,6 @@ function CuratedCatalogPanel({ apiEnabled }: { apiEnabled: boolean }) {
 function OrganizationGrantsPanel({ apiEnabled }: { apiEnabled: boolean }) {
   const queryClient = useQueryClient()
   const [grantOpen, setGrantOpen] = useState(false)
-  const [organizationOpen, setOrganizationOpen] = useState(false)
   const [selectedOrganizationId, setSelectedOrganizationId] = useState('')
   const [revokingGrant, setRevokingGrant] = useState<DatasetGrant | null>(null)
   const [upgradingGrant, setUpgradingGrant] = useState<DatasetGrant | null>(null)
@@ -543,8 +534,14 @@ function OrganizationGrantsPanel({ apiEnabled }: { apiEnabled: boolean }) {
   const datasetsQuery = useQuery({ queryKey: ['data-provisioning', 'datasets'], queryFn: listDatasets, enabled: apiEnabled })
   const grantForm = useForm<GrantValues>({
     resolver: zodResolver(grantSchema),
-    defaultValues: { organizationId: '', departmentId: '', datasetVersionId: '' },
+    defaultValues: readGrantDraft(),
   })
+  useEffect(() => {
+    const subscription = grantForm.watch(values => {
+      try { sessionStorage.setItem('phaeno-pending-data-grant', JSON.stringify(values)) } catch { /* The form remains usable without browser storage. */ }
+    })
+    return () => subscription.unsubscribe()
+  }, [grantForm])
   const grantsQuery = useQuery({
     queryKey: ['data-provisioning', 'grants', selectedOrganizationId],
     queryFn: () => listOrganizationGrants(selectedOrganizationId),
@@ -569,10 +566,6 @@ function OrganizationGrantsPanel({ apiEnabled }: { apiEnabled: boolean }) {
   const upgradeForm = useForm<UpgradeValues>({
     resolver: zodResolver(upgradeSchema),
     defaultValues: { datasetVersionId: '' },
-  })
-  const organizationForm = useForm<OrganizationValues>({
-    resolver: zodResolver(organizationSchema),
-    defaultValues: { name: '', description: '', kind: 'Prospect', datasetVersionIds: [] },
   })
   const revokeForm = useForm<RevokeValues>({ resolver: zodResolver(revokeSchema), defaultValues: { reason: '' } })
   const eligibleVersions = useMemo(
@@ -618,19 +611,6 @@ function OrganizationGrantsPanel({ apiEnabled }: { apiEnabled: boolean }) {
       setUpgradingGrant(null)
     },
   })
-  const createOrganizationMutation = useMutation({
-    mutationFn: (values: OrganizationValues) => createProvisionedOrganization({
-      ...values,
-      description: values.description || undefined,
-    }),
-    onSuccess: async (result) => {
-      await queryClient.invalidateQueries({ queryKey: ['organizations', 'external'] })
-      setSelectedOrganizationId(result.organization.id)
-      await refreshOrganizationData(result.organization.id)
-      organizationForm.reset()
-      setOrganizationOpen(false)
-    },
-  })
   const retryMutation = useMutation({
     mutationFn: (run: ProvisioningRun) => grantDataset({
       organizationId: run.organizationId,
@@ -660,9 +640,7 @@ function OrganizationGrantsPanel({ apiEnabled }: { apiEnabled: boolean }) {
               </CardDescription>
             </div>
             <div className="flex flex-wrap gap-2">
-              <Button type="button" variant="outline" disabled={!apiEnabled} onClick={() => setOrganizationOpen(true)}>
-                <Plus data-icon="inline-start" />New organization
-              </Button>
+              <Button asChild variant="outline"><Link to="/crm/companies" search={{ returnTo: 'data-provisioning' }}>Open Company access setup</Link></Button>
               <Button type="button" disabled={!apiEnabled || eligibleVersions.length === 0} onClick={() => setGrantOpen(true)}>
                 <UserRoundCheck data-icon="inline-start" />Assign data
               </Button>
@@ -751,7 +729,6 @@ function OrganizationGrantsPanel({ apiEnabled }: { apiEnabled: boolean }) {
       </Card>
 
       <GrantDialog open={grantOpen} onOpenChange={setGrantOpen} form={grantForm} organizations={organizationsQuery.data ?? []} departments={grantDepartmentsQuery.data ?? []} eligibleVersions={eligibleVersions} mutation={grantMutation} />
-      <OrganizationCreateDialog open={organizationOpen} onOpenChange={setOrganizationOpen} form={organizationForm} eligibleVersions={eligibleVersions} mutation={createOrganizationMutation} />
       <UpgradeDialog grant={upgradingGrant} onOpenChange={(open) => !open && setUpgradingGrant(null)} form={upgradeForm} eligibleVersions={eligibleVersions} mutation={upgradeMutation} />
       <RevokeDialog grant={revokingGrant} onOpenChange={(open) => !open && setRevokingGrant(null)} form={revokeForm} mutation={revokeMutation} />
     </>
@@ -788,10 +765,6 @@ function PublishDialog({ version, onOpenChange, onConfirm, pending, error }: { v
 function GrantDialog({ open, onOpenChange, form, organizations, departments, eligibleVersions, mutation }: { open: boolean; onOpenChange: (open: boolean) => void; form: ReturnType<typeof useForm<GrantValues>>; organizations: Awaited<ReturnType<typeof listOrganizations>>; departments: Department[]; eligibleVersions: { dataset: CuratedDataset; version: CuratedDatasetVersion }[]; mutation: ReturnType<typeof useMutation<unknown, Error, GrantValues>> }) {
   const organizationField = form.register('organizationId')
   return <Dialog open={open} onOpenChange={onOpenChange}><DialogContent><DialogHeader><DialogTitle>Assign curated sample data</DialogTitle><DialogDescription>Choose whether the exact pinned version is available throughout the organization or only inside one department. Catalog eligibility alone does not grant access.</DialogDescription></DialogHeader><form className="space-y-4" onSubmit={form.handleSubmit((values) => mutation.mutateAsync(values))}><FormField label="Organization" error={form.formState.errors.organizationId?.message} required><select className={selectClass} {...organizationField} onChange={(event) => { void organizationField.onChange(event); form.setValue('departmentId', '') }}><option value="">Select an organization</option>{organizations.map((organization) => <option key={organization.id} value={organization.id}>{organization.name} ({organization.kind})</option>)}</select></FormField><FormField label="Access scope" error={form.formState.errors.departmentId?.message}><select className={selectClass} {...form.register('departmentId')} disabled={!form.watch('organizationId')}><option value="">All departments (organization-wide)</option>{departments.map((department) => <option key={department.id} value={department.id}>{department.name}</option>)}</select></FormField><FormField label="Eligible package version" error={form.formState.errors.datasetVersionId?.message} required><select className={selectClass} {...form.register('datasetVersionId')}><option value="">Select a version</option>{eligibleVersions.map(({ dataset, version }) => <option key={version.id} value={version.id}>{dataset.name} · version {version.versionNumber}</option>)}</select></FormField><MutationError error={mutation.error} fallback="The package could not be assigned." /><RequiredDialogFooter><DialogClose asChild><Button type="button" variant="outline">Cancel</Button></DialogClose><Button type="submit" disabled={mutation.isPending}>{mutation.isPending ? 'Assigning' : 'Assign exact version'}</Button></RequiredDialogFooter></form></DialogContent></Dialog>
-}
-
-function OrganizationCreateDialog({ open, onOpenChange, form, eligibleVersions, mutation }: { open: boolean; onOpenChange: (open: boolean) => void; form: ReturnType<typeof useForm<OrganizationValues>>; eligibleVersions: { dataset: CuratedDataset; version: CuratedDatasetVersion }[]; mutation: ReturnType<typeof useMutation<unknown, Error, OrganizationValues>> }) {
-  return <Dialog open={open} onOpenChange={onOpenChange}><DialogContent><DialogHeader><DialogTitle>Create tenant organization</DialogTitle><DialogDescription>The organization is committed first. Curated packages are optional, exact-version assignments; a failed assignment does not roll back the organization or block invitations.</DialogDescription></DialogHeader><form className="space-y-4" onSubmit={form.handleSubmit((values) => mutation.mutateAsync(values))}><FormField label="Organization name" error={form.formState.errors.name?.message} required><Input {...form.register('name')} /></FormField><FormField label="Organization kind" error={form.formState.errors.kind?.message} required><select className={selectClass} {...form.register('kind')}><option value="Prospect">Prospect</option><option value="Customer">Customer</option><option value="Partner">Partner</option></select></FormField><FormField label="Description" error={form.formState.errors.description?.message}><textarea className={textareaClass} rows={3} {...form.register('description')} /></FormField><fieldset className="space-y-2"><legend className="text-sm font-medium">Optional eligible packages</legend>{eligibleVersions.map(({ dataset, version }) => <label key={version.id} className="flex items-start gap-2 rounded-lg border p-3 text-sm"><input type="checkbox" className="mt-0.5 size-4" value={version.id} {...form.register('datasetVersionIds')} /><span><span className="block font-medium">{dataset.name} · version {version.versionNumber}</span><span className="block text-muted-foreground">One explicit grant pinned to this immutable version.</span></span></label>)}{eligibleVersions.length === 0 ? <p className="m-0 rounded-lg border border-dashed p-3 text-sm text-muted-foreground">No curated versions are currently eligible. The organization can still be created.</p> : null}</fieldset><MutationError error={mutation.error} fallback="The organization could not be created." /><RequiredDialogFooter><DialogClose asChild><Button type="button" variant="outline">Cancel</Button></DialogClose><Button type="submit" disabled={mutation.isPending}>{mutation.isPending ? 'Creating organization' : 'Create organization'}</Button></RequiredDialogFooter></form></DialogContent></Dialog>
 }
 
 function UpgradeDialog({ grant, onOpenChange, form, eligibleVersions, mutation }: { grant: DatasetGrant | null; onOpenChange: (open: boolean) => void; form: ReturnType<typeof useForm<UpgradeValues>>; eligibleVersions: { dataset: CuratedDataset; version: CuratedDatasetVersion }[]; mutation: ReturnType<typeof useMutation<unknown, Error, { grant: DatasetGrant; values: UpgradeValues }>> }) {
@@ -834,3 +807,11 @@ function formatDateTime(value: string) {
 
 const selectClass = 'h-9 w-full rounded-lg border border-input bg-background px-2.5 text-sm outline-none focus-visible:ring-3 focus-visible:ring-ring/50'
 const textareaClass = 'min-h-20 w-full resize-y rounded-lg border border-input bg-background px-3 py-2 text-sm outline-none focus-visible:ring-3 focus-visible:ring-ring/50'
+
+function readGrantDraft(): GrantValues {
+  const empty = { organizationId: '', departmentId: '', datasetVersionId: '' }
+  try {
+    const value = JSON.parse(sessionStorage.getItem('phaeno-pending-data-grant') ?? '{}') as Partial<GrantValues>
+    return { organizationId: typeof value.organizationId === 'string' ? value.organizationId : '', departmentId: typeof value.departmentId === 'string' ? value.departmentId : '', datasetVersionId: typeof value.datasetVersionId === 'string' ? value.datasetVersionId : '' }
+  } catch { return empty }
+}

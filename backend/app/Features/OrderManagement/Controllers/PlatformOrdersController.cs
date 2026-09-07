@@ -38,6 +38,9 @@ public sealed class PlatformOrdersController(
         pageSize = Math.Clamp(pageSize, 1, 100);
         var normalizedType = orderType?.Trim();
         var now = DateTime.UtcNow;
+        var matchingOrganizations = string.IsNullOrWhiteSpace(search) ? new List<Guid>() : await dbContext.Organizations.AsNoTracking()
+            .Where(item => EF.Functions.ILike(item.Name, "%" + search.Trim() + "%"))
+            .Select(item => item.Id).ToListAsync(cancellationToken);
         var items = new List<CommercialOrderListItemDto>();
 
         if (Includes(normalizedType, "PSeqLabService"))
@@ -47,13 +50,14 @@ public sealed class PlatformOrdersController(
                 item.Status == LabServiceOrderStatus.SubmittedForQuote
                 || item.Status == LabServiceOrderStatus.ChangesRequested
                 || item.Status == LabServiceOrderStatus.QuoteInPreparation
-                || item.Status == LabServiceOrderStatus.QuoteIssued);
+                || item.Status == LabServiceOrderStatus.QuoteIssued
+                || item.Status == LabServiceOrderStatus.OnHold);
             if (organizationId.HasValue) query = query.Where(item => item.OrganizationId == organizationId.Value);
             if (!string.IsNullOrWhiteSpace(search))
             {
                 var term = search.Trim();
-                query = query.Where(item => item.OrderNumber.Contains(term)
-                    || item.CustomerReference.Contains(term)
+                query = query.Where(item => matchingOrganizations.Contains(item.OrganizationId) || EF.Functions.ILike(item.OrderNumber, "%" + term + "%")
+                    || EF.Functions.ILike(item.CustomerReference, "%" + term + "%")
                     || (item.Description != null && item.Description.Contains(term)));
             }
             if (assignedToUserId.HasValue) query = query.Where(item => item.AssignedToUserId == assignedToUserId.Value);
@@ -80,13 +84,14 @@ public sealed class PlatformOrdersController(
             var query = dbContext.PartnerReagentOrders.AsNoTracking().Where(item => !item.IsDiscarded);
             if (activeIntake) query = query.Where(item =>
                 item.Status == ReagentOrderStatus.Placed
-                || item.Status == ReagentOrderStatus.UnderReview);
+                || item.Status == ReagentOrderStatus.UnderReview
+                || item.Status == ReagentOrderStatus.OnHold);
             if (organizationId.HasValue) query = query.Where(item => item.OrganizationId == organizationId.Value);
             if (!string.IsNullOrWhiteSpace(search))
             {
                 var term = search.Trim();
-                query = query.Where(item => item.OrderNumber.Contains(term)
-                    || (item.PurchaseOrderNumber != null && item.PurchaseOrderNumber.Contains(term))
+                query = query.Where(item => matchingOrganizations.Contains(item.OrganizationId) || EF.Functions.ILike(item.OrderNumber, "%" + term + "%")
+                    || (item.PurchaseOrderNumber != null && EF.Functions.ILike(item.PurchaseOrderNumber, "%" + term + "%"))
                     || dbContext.PartnerReagentOrderLines.Any(line => line.PartnerReagentOrderId == item.Id
                         && (line.Description.Contains(term) || line.ExternalItemId.Contains(term))));
             }
@@ -116,15 +121,16 @@ public sealed class PlatformOrdersController(
                 || item.Status == AssemblyRequestStatus.IntakeValidation
                 || item.Status == AssemblyRequestStatus.ChangesRequested
                 || item.Status == AssemblyRequestStatus.QuoteInPreparation
-                || item.Status == AssemblyRequestStatus.QuoteIssued);
+                || item.Status == AssemblyRequestStatus.QuoteIssued
+                || item.Status == AssemblyRequestStatus.OnHold);
             if (organizationId.HasValue) query = query.Where(item => item.OrganizationId == organizationId.Value);
             if (!string.IsNullOrWhiteSpace(search))
             {
                 var term = search.Trim();
-                query = query.Where(item => item.RequestNumber.Contains(term)
-                    || item.ProjectReference.Contains(term)
-                    || (item.PurchaseOrderNumber != null && item.PurchaseOrderNumber.Contains(term))
-                    || item.ProfileNameSnapshot.Contains(term));
+                query = query.Where(item => matchingOrganizations.Contains(item.OrganizationId) || EF.Functions.ILike(item.RequestNumber, "%" + term + "%")
+                    || EF.Functions.ILike(item.ProjectReference, "%" + term + "%")
+                    || (item.PurchaseOrderNumber != null && EF.Functions.ILike(item.PurchaseOrderNumber, "%" + term + "%"))
+                    || EF.Functions.ILike(item.ProfileNameSnapshot, "%" + term + "%"));
             }
             if (assignedToUserId.HasValue) query = query.Where(item => item.AssignedToUserId == assignedToUserId.Value);
             if (unassigned) query = query.Where(item => item.AssignedToUserId == null);

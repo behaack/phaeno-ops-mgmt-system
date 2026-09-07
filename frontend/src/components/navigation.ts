@@ -1,5 +1,4 @@
 import {
-  Activity,
   Database,
   BookOpenText,
   Library,
@@ -50,7 +49,7 @@ export const mainMenuItems: readonly MainMenuItem[] = [
     to: '/trial-projects',
     icon: FlaskConical,
     group: 'workspace',
-    visibleWhen: (session) => session?.state === 'ready' && Boolean(session.capabilities.canViewTrialProjects),
+    visibleWhen: (session, context) => session?.state === 'ready' && isExternalOrganizationKind(context.selectedOrganizationKind) && Boolean(session.capabilities.canViewTrialProjects),
   },
   {
     label: departmentMessages.departments,
@@ -141,7 +140,7 @@ export const mainMenuItems: readonly MainMenuItem[] = [
     group: 'workspace',
     visibleWhen: (session, context) =>
       context.selectedOrganizationKind === 'Phaeno' &&
-      Boolean(session?.capabilities.canViewAllOperationalOrders),
+      Boolean(session?.capabilities.canViewAllOperationalOrders || session?.capabilities.canViewTrialProjects),
   },
   {
     label: 'Lab ops',
@@ -162,7 +161,7 @@ export const mainMenuItems: readonly MainMenuItem[] = [
       Boolean(session?.capabilities.canManageOrderConfiguration),
   },
   {
-    label: 'File management',
+    label: 'File retention',
     to: '/file-management',
     icon: FolderClock,
     group: 'administration',
@@ -178,18 +177,6 @@ export const mainMenuItems: readonly MainMenuItem[] = [
     visibleWhen: (_session, context) =>
       isExternalOrganizationKind(context.selectedOrganizationKind) ||
       context.selectedOrganizationKind === 'Phaeno',
-  },
-  {
-    label: 'Project',
-    to: '/about',
-    icon: LayoutDashboard,
-    group: 'resources',
-  },
-  {
-    label: 'Query demo',
-    to: '/demo/tanstack-query',
-    icon: Activity,
-    group: 'resources',
   },
 ] as const
 
@@ -242,4 +229,9 @@ export function isPhaenoEmployee(session: SessionResponse | null) {
       (membership) => membership.organizationKind === 'Phaeno',
     ),
   )
+}
+
+export function isMainMenuRouteActive(pathname: string, to: string, exact?: boolean) {
+  if (to === '/order-operations' && (pathname === '/trial-projects' || pathname.startsWith('/trial-projects/'))) return true
+  return pathname === to || (!exact && pathname.startsWith(`${to}/`))
 }

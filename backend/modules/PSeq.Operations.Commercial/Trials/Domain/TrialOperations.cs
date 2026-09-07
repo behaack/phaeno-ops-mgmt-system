@@ -16,12 +16,12 @@ public sealed class TrialApprovalAuthority : CommercialReceivableEntity
     public Guid? RevokedByUserId { get; private set; }
     public string? RevocationReason { get; private set; }
     private TrialApprovalAuthority() { }
-    public TrialApprovalAuthority(Guid userId, TrialApprovalDomain domain, bool primary, Guid? primaryAuthorityId, Guid actorId, string reason, DateTime now)
+    public TrialApprovalAuthority(Guid userId, TrialApprovalDomain domain, bool primary, Guid? primaryAuthorityId, Guid actorId, string? reason, DateTime now)
     {
         if (userId == Guid.Empty || actorId == Guid.Empty || !Enum.IsDefined(domain) || primary == primaryAuthorityId.HasValue)
             throw new ArgumentException("Select an eligible Phaeno user and the correct primary or delegated authority.");
         TrialRules.Utc(now); UserId = userId; Domain = domain; IsPrimary = primary; PrimaryAuthorityId = primaryAuthorityId;
-        DesignatedByUserId = actorId; Reason = TrialRules.Text(reason); EffectiveAtUtc = now;
+        DesignatedByUserId = actorId; Reason = string.IsNullOrWhiteSpace(reason) ? string.Empty : TrialRules.Text(reason); EffectiveAtUtc = now;
     }
     public void Revoke(Guid actorId, string reason, DateTime now)
     {

@@ -1,6 +1,6 @@
 # Service workflows, protocol control, and execution
 
-Lab Ops uses a canonical service workflow to stitch reusable, versioned protocols into one comprehensive production process. Every laboratory job and execution retains the exact workflow, stage, and protocol versions that governed it.
+Lab Ops uses a controlled service workflow to arrange reusable, versioned protocols into the approved production process. Every laboratory job and execution retains the exact workflow, stage, and protocol versions that governed it.
 
 ## Build the service workflow
 
@@ -57,3 +57,7 @@ Do not edit an Approved definition to repair an execution. If a protocol is wron
 If another user changes the execution during a save, POMS reloads the current record and preserves your entered values. Review the latest history before saving again. If the original action is no longer available, close the form and use an allowed repeat or correction.
 
 **Abandon execution** requires a reason, stops the execution, and retains its evidence. Arrange a new execution for replacement work. Historical unstructured definitions or results remain preserved with a recovery message; a Protocol Administrator must prepare a valid new approved version for new work. POMS does not silently rewrite controlled history.
+
+## Assign an operator
+
+When assigning a protocol stage, choose an active laboratory operator, supervisor, or operations administrator by name. Assignment is optional; POMS retains the selected person with the execution. Select the specimen before choosing its eligible workflow stage so earlier required work is checked in the correct specimen scope.

@@ -7,35 +7,26 @@ using System.Text.Json;
 using Microsoft.Extensions.Options;
 using PSeq.Operations.Commercial.OrderManagement.Application;
 
-public sealed class LoggingQuickBooksGateway(ILogger<LoggingQuickBooksGateway> logger) : IQuickBooksGateway
+public sealed class UnconfiguredQuickBooksGateway : IQuickBooksGateway
 {
     public Task<IReadOnlyList<QuickBooksCatalogItemResult>> FetchCatalogAsync(CancellationToken cancellationToken)
-    {
-        cancellationToken.ThrowIfCancellationRequested();
-        logger.LogInformation("QuickBooks is not configured; catalog sync completed with no external items.");
-        return Task.FromResult<IReadOnlyList<QuickBooksCatalogItemResult>>([]);
-    }
+        => Unavailable<IReadOnlyList<QuickBooksCatalogItemResult>>(cancellationToken);
 
     public Task<QuickBooksDocumentResult> CreateEstimateAsync(QuickBooksDocumentRequest request, CancellationToken cancellationToken)
-        => CreateLocalAsync("EST", request, cancellationToken);
+        => Unavailable<QuickBooksDocumentResult>(cancellationToken);
 
     public Task<QuickBooksDocumentResult> CreateInvoiceAsync(QuickBooksDocumentRequest request, CancellationToken cancellationToken)
-        => CreateLocalAsync("INV", request, cancellationToken);
+        => Unavailable<QuickBooksDocumentResult>(cancellationToken);
 
     public Task<QuickBooksDocumentResult> ReadInvoiceAsync(string externalDocumentId, string currency, CancellationToken cancellationToken)
-    {
-        cancellationToken.ThrowIfCancellationRequested();
-        return Task.FromResult(new QuickBooksDocumentResult(externalDocumentId, externalDocumentId, null, 0, 0, currency));
-    }
+        => Unavailable<QuickBooksDocumentResult>(cancellationToken);
 
-    private Task<QuickBooksDocumentResult> CreateLocalAsync(string prefix, QuickBooksDocumentRequest request, CancellationToken cancellationToken)
+    private static Task<T> Unavailable<T>(CancellationToken cancellationToken)
     {
         cancellationToken.ThrowIfCancellationRequested();
-        var total = request.Lines.Sum(line => decimal.Round(line.Quantity * line.UnitPrice, 2, MidpointRounding.AwayFromZero));
-        var id = $"local-{prefix.ToLowerInvariant()}-{Guid.NewGuid():N}";
-        var number = $"{prefix}-{DateTime.UtcNow:yyyyMMdd}-{Guid.NewGuid():N}"[..(prefix.Length + 1 + 8 + 1 + 8)];
-        logger.LogInformation("Created local QuickBooks {DocumentType} {DocumentNumber} for {ReferenceNumber}.", prefix, number, request.ReferenceNumber);
-        return Task.FromResult(new QuickBooksDocumentResult(id, number, null, total, total, request.Currency));
+        return Task.FromException<T>(new OrderManagementException("quickbooks_not_configured",
+            "QuickBooks is not configured. No external document or payment status has been recorded.",
+            StatusCodes.Status503ServiceUnavailable));
     }
 }
 

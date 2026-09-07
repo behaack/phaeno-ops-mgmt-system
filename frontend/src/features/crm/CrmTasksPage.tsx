@@ -1,3 +1,4 @@
+import { CrmClearFilters, useCrmSearch, useCrmState, CrmListPagination } from "./CrmListNavigation";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Link } from "@tanstack/react-router";
 import { useState } from "react";
@@ -26,25 +27,28 @@ import {
   DialogHeader,
   DialogTitle,
 } from "#/components/ui/dialog";
+import { Input } from "#/components/ui/input";
 import { Label } from "#/components/ui/label";
 import { Textarea } from "#/components/ui/textarea";
 import { CrmSavedViewBar } from "./CrmSavedViewBar";
 
 export function CrmTasksPage() {
+  const [draftSearch, setDraftSearch, search, setSearch] = useCrmSearch();
+  const [page, setPage] = useCrmState<number>("page", 1);
   const client = useQueryClient();
-  const [status, setStatus] = useState<CrmTaskStatus | "">("");
-  const [overdue, setOverdue] = useState(false);
+  const [status, setStatus] = useCrmState<CrmTaskStatus | "">("status", "");
+  const [overdue, setOverdue] = useCrmState<boolean>("overdue", false);
   const [change, setChange] = useState<{
     task: CrmTask;
     status: CrmTaskStatus;
   } | null>(null);
   const query = useQuery({
-    queryKey: ["crm-tasks", status, overdue],
+    queryKey: ["crm-tasks", status, overdue, page, search],
     queryFn: () =>
       listCrmTasks({
-        status: status || undefined,
+        search,        status: status || undefined,
         overdueOnly: overdue,
-        pageSize: 100,
+        page, pageSize: 25,
       }),
   });
   const mutation = useMutation({
@@ -97,6 +101,7 @@ export function CrmTasksPage() {
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
+          <div className="grid gap-1.5"><Label htmlFor="crm-list-search">Search</Label><Input id="crm-list-search" value={draftSearch} onChange={event => setDraftSearch(event.target.value)} /></div>
           <div className="flex flex-wrap items-end gap-4">
             <div className="grid gap-1.5">
               <Label htmlFor="task-status-filter">Status</Label>
@@ -131,10 +136,12 @@ export function CrmTasksPage() {
               Overdue only
             </label>
           </div>
+          <CrmClearFilters />
           <CrmSavedViewBar
             recordType="Task"
-            currentFilter={{ status, overdue }}
+            currentFilter={{ status, overdue, search }}
             onApply={(filter) => {
+              setSearch(typeof filter.search === "string" ? filter.search : "");
               setStatus(isTaskStatus(filter.status) ? filter.status : "");
               setOverdue(filter.overdue === true);
             }}
@@ -200,12 +207,13 @@ export function CrmTasksPage() {
                 ))}
               </tbody>
             </table>
-            {!query.isLoading && !(query.data?.items.length ?? 0) ? (
+            {!query.isLoading && !query.error && !(query.data?.items.length ?? 0) ? (
               <p className="p-8 text-center text-sm text-muted-foreground">
                 No tasks match this view.
               </p>
             ) : null}
           </div>
+          <CrmListPagination result={query.data} page={page} onPageChange={setPage} busy={query.isFetching} />
         </CardContent>
       </Card>
       <TaskStatusDialog
@@ -313,7 +321,7 @@ function recordLink(task: CrmTask) {
   if (task.opportunityId)
     return (
       <Link
-        to="/crm/opportunities/$opportunityId"
+        to="/crm/opportunities/$opportunityId" search={previous => previous}
         params={{ opportunityId: task.opportunityId }}
         className="hover:underline"
       >
@@ -323,7 +331,7 @@ function recordLink(task: CrmTask) {
   if (task.leadId)
     return (
       <Link
-        to="/crm/leads/$leadId"
+        to="/crm/leads/$leadId" search={previous => previous}
         params={{ leadId: task.leadId }}
         className="hover:underline"
       >
@@ -333,7 +341,7 @@ function recordLink(task: CrmTask) {
   if (task.contactId)
     return (
       <Link
-        to="/crm/contacts/$contactId"
+        to="/crm/contacts/$contactId" search={previous => previous}
         params={{ contactId: task.contactId }}
         className="hover:underline"
       >
@@ -343,7 +351,7 @@ function recordLink(task: CrmTask) {
   if (task.companyId)
     return (
       <Link
-        to="/crm/companies/$companyId"
+        to="/crm/companies/$companyId" search={previous => previous}
         params={{ companyId: task.companyId }}
         className="hover:underline"
       >

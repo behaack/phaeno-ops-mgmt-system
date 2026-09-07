@@ -6,7 +6,7 @@ The portal help system is authenticated product documentation. It explains curre
 
 | Audience | Purpose | Visibility |
 | --- | --- | --- |
-| Prospect | Review and download explicitly granted curated data, understand governance actions, and manage Prospect access. | Users working in a Prospect organization. |
+| Prospect | Review and accept approved no-charge Trials, submit authorized samples, download released results and granted curated data, and manage Prospect access. | Users working in a Prospect organization. |
 | Customer | Request laboratory services, track samples, receive results, use assigned data, and manage the customer organization. | Users working in a Customer organization. |
 | Partner | Order reagents, request data assembly, use assigned data, and manage the partner organization. | Users working in a Partner organization. |
 | Phaeno | Operate customer and partner work, provision data, configure commercial workflows, and support users. | Users working in the Phaeno organization. |
@@ -17,10 +17,10 @@ Each supported audience has a maintained guide set. The corpus covers the implem
 
 | Audience | Onboarding and access | Primary workflows | Data and commercial rules | Status and recovery |
 | --- | --- | --- | --- | --- |
-| Prospect | Getting started; account and access | Data Library review and exact-version downloads | Version-specific grants, download history, governance, membership, and relationship transition | Grant, package, quarantine, retirement, checksum, organization, and access troubleshooting |
-| Customer | Getting started; account and access | Laboratory requests, samples, quotes, and cancellations | Results, billing, credit/payment release, Data Library, and membership | Job, sample, quote, scan, payment, and result troubleshooting |
-| Partner | Getting started; account and access | Reagent ordering and data assembly | Negotiated reagent pricing, POMS job quotes, commercial source records, Data Library, and membership | Reagent, shipment, assembly, scan, payment-hold, and output troubleshooting |
-| Phaeno | Operations orientation; organization and user administration | Commercial order intake and management; Data provisioning and governance; Lab receipt, accession, PSeq kit fulfillment, data assembly, and scientific execution | Laboratory roles, protocol control, lineage, materials, equipment, sequencing sendouts, scientific readiness, commercial catalog, manual accounting report, released-deliverable retention configuration, credit, quotes, and release rules | Queue triage and safe accounting, projection, file, release, notification, and access recovery |
+| Prospect | Getting started; organization and Department access | Approved Trial scope and acceptance, sample roster and shared shipping, result downloads; Data Library | Trial allowance, retention, RUO/no-PHI terms, exact-version grants, governance, and conversion continuity | Trial approval and submission gates, shipping, retention, grant, package, checksum, and access troubleshooting |
+| Customer | Getting started; organization and Department access | Per-Job pricing profiles, quote acceptance, exact sample entry or CSV import, shared shipping, cancellation, and retained Trial history | Scientifically governed results independent of payment; invoices, retention receipts, and curated Data Library | Job, quote, roster, scan, invoice, release, retention, and access recovery |
+| Partner | Getting started; organization and Department access | Resumable reagent orders and Assembly drafts, input replacement, quotes, fulfillment, outputs, and retained Trials | Negotiated pricing, immutable commercial records, Assembly credit, curated Data Library, and output retention | Draft recovery, input revisions, shipment, scan, payment-hold, and output recovery |
+| Phaeno | Operations orientation; Company People, requests, access and Department administration | Complete CRM; per-order Intake; Trial configuration and lifecycle; native Finance; Data provisioning; Lab receipt, accession, kit fulfillment, Assembly and scientific work | Staged readiness, roles, controlled protocols, named QC evidence, lineage, scientific approval and separate release, shipping configuration, retention, Partner credit, and immutable commercial records | Context-preserving queues, approved-request completion, invitations, Lab handoffs, receipt evidence/import recovery, release and retention, and unavailable connectors |
 
 This is the documentation baseline for currently implemented workflows. A feature is not documentation-complete when its behavior, permissions, status transitions, business rules, failure states, or support path have changed without a corresponding guide update. Production deployment procedures and confidential incident runbooks remain separate operational artifacts; browser-bundled help must not contain secrets or restricted evidence.
 
@@ -49,7 +49,7 @@ audience-facing help.
 
 **Docs** is a primary menu-bar destination on wide screens and moves into the user menu with other primary navigation on narrow screens. The help shell places the current organization's guide navigation in the shared far-left sidebar beneath the primary toolbar. It does not provide an audience selector or a redundant audience heading. Each guide link has a topic-specific icon.
 
-Phaeno operational guides use one expandable level for **Data provisioning**, **Order operations**, and **Laboratory operations**. Each group contains an overview plus substantive workflow-specific guide pages. The active group opens automatically, and users may expand or collapse a group with its labeled disclosure button. Opening a group collapses the previously open group so only one documentation subject is expanded at a time. Do not add a second nesting level.
+Phaeno operational guides use one expandable level for **CRM**, **Data provisioning**, **Order operations**, and **Laboratory operations**. Each group contains an overview plus substantive workflow-specific guide pages. The active group opens automatically, and users may expand or collapse a group with its labeled disclosure button. Opening a group collapses the previously open group so only one documentation subject is expanded at a time. Do not add a second nesting level.
 
 The sidebar is pinned by default on wide screens and can be unpinned to an edge tab; pin controls are omitted on narrow screens. Fine-pointer users may preview a wide, unpinned rail by approaching the left edge. Keyboard, click, and touch users open the same non-modal rail from the tab. On narrow or coarse-pointer layouts it stays open until the user chooses a guide, toggles the tab, or presses Escape; choosing a guide moves through normal route navigation.
 
@@ -76,7 +76,7 @@ Prospect, Customer, and Partner documentation is internationalization-enabled. `
 
 Translate the entire guide set and shared help-shell messages for an external audience before advertising a locale. Use locale-aware date formatting, design for text expansion, and include pseudolocalization and long-text checks. Scientific, clinical, financial, and regulatory translations require human review before publication.
 
-Phaeno documentation is a system-owner-only surface and may remain US English. Prospect, Customer, and Partner contexts use the localized external corpus and must not treat an unreviewed machine translation as authoritative.
+Phaeno documentation is available in the Phaeno organization context and may remain US English. Individual operational actions still require their enforced role; access to a guide does not grant it. Prospect, Customer, and Partner contexts use the localized external corpus and must not treat an unreviewed machine translation as authoritative.
 
 ## Maintenance workflow
 
@@ -86,13 +86,13 @@ For every user-visible change:
 2. Update each affected guide in the same change as the feature.
 3. Describe only behavior that is implemented and available to that audience.
 4. Keep permissions and commercial rules explicit. Do not imply that every member can perform administrator actions.
-5. Update the registry review date for every materially revised guide.
+5. Update registry summaries and the review date for every guide actually reviewed. A metadata-only review is appropriate when source inspection confirms that the existing instructions remain correct.
 6. Verify links, audience access, keyboard navigation, narrow layouts, and light/dark themes when the help UI changes.
 7. Update `docs/plans/FRONTEND-TEST-PLAN.md` and `docs/plans/E2E-TEST-PLAN.md` when coverage changes.
 
 For every new workflow, confirm that the affected audience can answer all of these questions from help:
 
-- Who can perform the action, and in which selected organization?
+- Who can perform the action, and in which selected organization and Department?
 - What information is required, and what information must not be submitted?
 - What are the normal steps, approvals, and immutable business records?
 - Which operational, commercial, scan, and release statuses can appear?
@@ -101,6 +101,29 @@ For every new workflow, confirm that the affected audience can answer all of the
 - Does the Prospect, Customer, or Partner content require translation before a new locale is considered complete?
 
 Phaeno operational documentation may describe roles, queues, configuration, recovery steps, and safe support workflows. While it is browser-bundled, it must not become a credential store or contain confidential internal information.
+
+## Workflow ownership and whole-corpus review
+
+Use these owning surfaces consistently across overviews, task guides, and troubleshooting:
+
+| User task | Owning surface |
+| --- | --- |
+| External Company identity and People | CRM Company; global Contacts remains the cross-Company directory. |
+| Company request decision and approved-work completion | Central CRM Requests; the Company tab links to the same records. |
+| Each new Customer pricing request | Order intake → New Customer order; Customer self-service uses Lab services. |
+| Reusable commercial and shipping rules | Order configuration; Company Departments & services for scope and service access; Finance for Customer billing. |
+| No-charge Trial scope, approvals, and closure | Trial projects under Order ops; Trial configuration owns authorities and deliverables. |
+| Physical receipt, kit fulfillment, Assembly execution, and scientific review | Lab operations; commercial details link to the same work. |
+| PSeq result publication | Result release package detail; scientific approval and file-retention authority remain distinct. |
+| Customer operational results | The Job's Files and results; curated datasets remain in Data Library. |
+| External packet, tube crosswalk, and dispatch | The shared shipment reached from the owning Job or Trial. |
+| PSeq invoices, receipts, allocations, imports, and reconciliation | Finance; Partner manual accounting-source and Assembly-credit rules remain distinct. |
+
+A cross-application change requires a corpus review, not only editing the guide named after the changed screen. Inspect all audience overviews, access guides, detailed procedures, statuses and recovery, related-guide summaries, and search metadata. Compare visible labels, role and Department boundaries, required fields, retained drafts, retry behavior, and terminal states against current source. An old link may redirect, but instructions should start from the current owning surface.
+
+Document recovery only when the current interface provides the action. Distinguish retained historical records and real guarded retries from temporary administrative repair scripts, migrations, feature activation, and deployment procedures. Keep temporary repair inventories and production evidence out of user help. Do not describe a queued connector action as a completed invoice, payment, or synchronization.
+
+After the review, validate registered identities, same-audience links and anchors, portable Markdown, summaries, and review dates. Regenerate and check the documentation corpus. Content-only edits do not require an application test suite; a help navigation or rendering change needs the scoped UI coverage described above.
 
 ## Future visual documentation
 

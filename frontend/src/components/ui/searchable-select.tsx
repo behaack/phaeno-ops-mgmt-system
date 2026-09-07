@@ -1,3 +1,4 @@
+import { Popover } from "radix-ui";
 import { Search } from "lucide-react";
 import { useEffect, useId, useMemo, useRef, useState, type KeyboardEvent, type Ref } from "react";
 
@@ -23,6 +24,7 @@ export function SearchableSelect({
   selectionMessage = "Select a Customer from the search results.",
   noMatchMessage = "No matching eligible Customers.",
   narrowMessage = (count: number) => `Keep typing to narrow ${count} eligible Customers.`,
+  portal = false,
   disabled = false,
   required = false,
   "aria-describedby": ariaDescribedBy,
@@ -40,6 +42,8 @@ export function SearchableSelect({
   selectionMessage?: string;
   noMatchMessage?: string;
   narrowMessage?: (count: number) => string;
+  /** Float choices outside a scrolling dialog body. */
+  portal?: boolean;
   disabled?: boolean;
   required?: boolean;
   "aria-describedby"?: string;
@@ -50,6 +54,7 @@ export function SearchableSelect({
   const generatedId = useId();
   const listboxId = `${id}-${generatedId}-results`;
   const inputRef = useRef<HTMLInputElement>(null);
+  const listRef = useRef<HTMLDivElement>(null);
   const selectedOption = options.find((option) => option.value === value);
   const [search, setSearch] = useState(selectedOption?.label ?? "");
   const [open, setOpen] = useState(false);
@@ -75,6 +80,7 @@ export function SearchableSelect({
 
   function choose(option: SearchableSelectOption) {
     setSearch(option.label);
+    inputRef.current?.focus();
     setOpen(false);
     onValueChange(option.value);
     inputRef.current?.setCustomValidity("");
@@ -89,120 +95,165 @@ export function SearchableSelect({
     setOpen(false);
   }
 
-  return (
-    <div
-      className={cn("relative", className)}
-      data-searchable-select-open={open || undefined}
-      onBlur={(event) => {
-        if (!event.currentTarget.contains(event.relatedTarget)) setOpen(false);
-      }}
-    >
-      <div className="relative">
-        <Search
-          aria-hidden="true"
-          className="pointer-events-none absolute top-1/2 left-3 size-4 -translate-y-1/2 text-muted-foreground"
-        />
-        <Input
-          ref={(element) => {
-            inputRef.current = element;
-            if (typeof externalInputRef === "function") externalInputRef(element);
-            else if (externalInputRef) externalInputRef.current = element;
-          }}
-          id={id}
-          value={search}
-          disabled={disabled}
-          required={required}
-          role="combobox"
-          aria-autocomplete="list"
-          aria-expanded={open}
-          aria-controls={listboxId}
-          aria-describedby={ariaDescribedBy}
-          aria-invalid={ariaInvalid}
-          aria-activedescendant={
-            open && activeOption
-              ? `${listboxId}-${activeOption.value}`
-              : undefined
-          }
-          autoComplete="off"
-          className="pl-9"
-          placeholder={placeholder}
-          onFocus={() => {
-            if (disabled) return;
-            setActiveIndex(0);
-            setOpen(true);
-          }}
-          onChange={(event) => {
-            setSearch(event.target.value);
-            setActiveIndex(0);
-            setOpen(true);
-            onValueChange("");
-            event.currentTarget.setCustomValidity(
-              selectionMessage,
-            );
-          }}
-          onKeyDown={(event) => {
-            if (event.key === "ArrowDown") {
-              event.preventDefault();
-              setOpen(true);
-              setActiveIndex((current) =>
-                Math.min(current + 1, Math.max(visibleOptions.length - 1, 0)),
-              );
-            } else if (event.key === "ArrowUp") {
-              event.preventDefault();
-              setActiveIndex((current) => Math.max(current - 1, 0));
-            } else if (event.key === "Enter" && open && activeOption) {
-              event.preventDefault();
-              choose(activeOption);
-            } else dismissChoices(event);
-          }}
-        />
-      </div>
+  useEffect(() => {
+    if (portal && open && activeOption) {
+      const option = document.getElementById(`${listboxId}-${activeOption.value}`);
+      if (option && listRef.current) {
+        const list = listRef.current;
+        const top = option.offsetTop;
+        if (top < list.scrollTop) list.scrollTop = top;
+        else if (top + option.offsetHeight > list.scrollTop + list.clientHeight) {
+          list.scrollTop = top + option.offsetHeight - list.clientHeight;
+        }
+      }
+    }
+  }, [portal, open, activeOption, listboxId]);
 
-      {open ? (
-        <div
-          id={listboxId}
-          role="listbox"
-          aria-label={resultsLabel}
-          className="absolute z-50 mt-1 max-h-60 w-full overflow-y-auto rounded-md border bg-popover p-1 text-popover-foreground shadow-md"
-        >
-          {visibleOptions.length ? (
-            <>
-              {visibleOptions.map((option, index) => (
-                <button
-                  key={option.value}
-                  id={`${listboxId}-${option.value}`}
-                  type="button"
-                  role="option"
-                  aria-selected={value === option.value}
-                  className={cn(
-                    "w-full cursor-pointer rounded-sm px-3 py-2 text-left text-sm hover:bg-accent hover:text-accent-foreground",
-                    index === activeIndex &&
-                      "bg-accent text-accent-foreground",
-                  )}
-                  onMouseEnter={() => setActiveIndex(index)}
-                  onMouseDown={(event) => event.preventDefault()}
-                  onClick={() => choose(option)}
-                  onKeyDown={dismissChoices}
-                >
-                  {option.label}
-                </button>
-              ))}
-              {filteredOptions.length > visibleOptions.length ? (
-                <p
-                  className="border-t px-3 py-2 text-xs text-muted-foreground"
-                  role="status"
-                >
-                  {narrowMessage(filteredOptions.length)}
-                </p>
-              ) : null}
-            </>
-          ) : (
-            <p className="px-3 py-2 text-sm text-muted-foreground" role="status">
-              {options.length ? noMatchMessage : emptyMessage}
-            </p>
+  const choices = visibleOptions.length ? (
+    <>
+      {visibleOptions.map((option, index) => (
+        <button
+          key={option.value}
+          id={`${listboxId}-${option.value}`}
+          type="button"
+          role="option"
+          tabIndex={portal ? -1 : undefined}
+          aria-selected={value === option.value}
+          className={cn(
+            "w-full cursor-pointer rounded-sm px-3 py-2 text-left text-sm hover:bg-accent hover:text-accent-foreground",
+            index === activeIndex &&
+              "bg-accent text-accent-foreground",
           )}
-        </div>
+          onMouseEnter={() => setActiveIndex(index)}
+          onMouseDown={(event) => event.preventDefault()}
+          onClick={() => choose(option)}
+          onKeyDown={dismissChoices}
+        >
+          {option.label}
+        </button>
+      ))}
+      {filteredOptions.length > visibleOptions.length ? (
+        <p
+          className="border-t px-3 py-2 text-xs text-muted-foreground"
+          role="status"
+        >
+          {narrowMessage(filteredOptions.length)}
+        </p>
       ) : null}
-    </div>
+    </>
+  ) : (
+    <p className="px-3 py-2 text-sm text-muted-foreground" role="status">
+      {options.length ? noMatchMessage : emptyMessage}
+    </p>
+  );
+
+  return (
+    <Popover.Root open={portal && open} onOpenChange={setOpen}>
+      <div
+        className={cn("relative", className)}
+        data-searchable-select-open={open || undefined}
+        data-searchable-select-portal={portal && open || undefined}
+        onBlur={(event) => {
+          if (!event.currentTarget.contains(event.relatedTarget) && !listRef.current?.contains(event.relatedTarget)) setOpen(false);
+        }}
+      >
+        <Popover.Anchor asChild><div className="relative">
+          <Search
+            aria-hidden="true"
+            className="pointer-events-none absolute top-1/2 left-3 size-4 -translate-y-1/2 text-muted-foreground"
+          />
+          <Input
+            ref={(element) => {
+              inputRef.current = element;
+              if (typeof externalInputRef === "function") externalInputRef(element);
+              else if (externalInputRef) externalInputRef.current = element;
+            }}
+            id={id}
+            value={search}
+            disabled={disabled}
+            required={required}
+            role="combobox"
+            aria-autocomplete="list"
+            aria-expanded={open}
+            aria-controls={listboxId}
+            aria-describedby={ariaDescribedBy}
+            aria-invalid={ariaInvalid}
+            aria-activedescendant={
+              open && activeOption
+                ? `${listboxId}-${activeOption.value}`
+                : undefined
+            }
+            autoComplete="off"
+            className="pl-9"
+            placeholder={placeholder}
+            onFocus={() => {
+              if (disabled) return;
+              setActiveIndex(0);
+              setOpen(true);
+            }}
+            onChange={(event) => {
+              setSearch(event.target.value);
+              setActiveIndex(0);
+              setOpen(true);
+              onValueChange("");
+              event.currentTarget.setCustomValidity(
+                selectionMessage,
+              );
+            }}
+            onKeyDown={(event) => {
+              if (event.key === "ArrowDown") {
+                event.preventDefault();
+                setOpen(true);
+                setActiveIndex((current) =>
+                  Math.min(current + 1, Math.max(visibleOptions.length - 1, 0)),
+                );
+              } else if (event.key === "ArrowUp") {
+                event.preventDefault();
+                setActiveIndex((current) => Math.max(current - 1, 0));
+              } else if (event.key === "Enter" && open && activeOption) {
+                event.preventDefault();
+                choose(activeOption);
+              } else dismissChoices(event);
+            }}
+          />
+        </div></Popover.Anchor>
+
+        {open && portal ? (
+          <Popover.Portal>
+            <Popover.Content
+              ref={listRef}
+              id={listboxId}
+              role="listbox"
+              aria-label={resultsLabel}
+              data-searchable-select-open="true"
+              align="start"
+              sideOffset={4}
+              collisionPadding={12}
+              updatePositionStrategy="always"
+              onOpenAutoFocus={event => event.preventDefault()}
+              onCloseAutoFocus={event => event.preventDefault()}
+              onInteractOutside={event => {
+                if (event.target instanceof Node && inputRef.current?.contains(event.target)) event.preventDefault();
+              }}
+              onEscapeKeyDown={event => {
+                event.preventDefault();
+                inputRef.current?.focus();
+                setOpen(false);
+              }}
+              className="relative z-[60] max-h-[min(15rem,var(--radix-popover-content-available-height))] w-[var(--radix-popover-trigger-width)] overflow-y-auto overscroll-contain rounded-md border bg-popover p-1 text-popover-foreground shadow-md"
+            >{choices}</Popover.Content>
+          </Popover.Portal>
+        ) : open ? (
+          <div
+            id={listboxId}
+            role="listbox"
+            aria-label={resultsLabel}
+            className="absolute z-50 mt-1 max-h-60 w-full overflow-y-auto rounded-md border bg-popover p-1 text-popover-foreground shadow-md"
+          >
+            {choices}
+          </div>
+        ) : null}
+      </div>
+    </Popover.Root>
   );
 }

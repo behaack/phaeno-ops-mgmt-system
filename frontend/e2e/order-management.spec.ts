@@ -32,7 +32,7 @@ test('shows Partner reagent and data-assembly work in mock mode', async ({ page 
 
   await page.goto('/reagent-orders')
   await expect(page.getByRole('heading', { name: 'Reagent orders' })).toBeVisible()
-  await expect(page.getByRole('link', { name: 'Place reagent order' })).toBeVisible()
+  await expect(page.getByRole('link', { name: 'Create reagent order' })).toBeVisible()
 
   await page.goto('/data-assembly')
   await expect(page.getByRole('heading', { name: 'Data assembly' })).toBeVisible()
@@ -46,7 +46,7 @@ test('shows Phaeno operations and configuration workspaces in mock mode', async 
   await expect(page.getByRole('heading', { name: 'Order operations' })).toBeVisible()
   await openSidebarIfCollapsed(page, 'Order operations')
   await expect(page.getByRole('button', { name: /^Order intake/ })).toHaveAttribute('aria-current', 'page')
-  await expect(page.getByRole('button', { name: /^Order staging/ })).toBeVisible()
+  await expect(page.getByRole('button', { name: /^Order staging/ })).toHaveCount(0)
   await expect(page.getByRole('button', { name: /^Attention/ })).toBeVisible()
   await expect(page.getByRole('button', { name: /^PSeq kits/ })).toBeVisible()
   await expect(page.getByRole('button', { name: /^Assembly/ })).toBeVisible()

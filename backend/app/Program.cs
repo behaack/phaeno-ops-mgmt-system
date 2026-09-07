@@ -131,11 +131,11 @@ builder.Services.AddSingleton(services => new QuickBooksAccessTokenProvider(
     services.GetRequiredService<IHttpClientFactory>().CreateClient("QuickBooksOAuth"),
     services.GetRequiredService<IOptions<QuickBooksOptions>>()));
 builder.Services.AddHttpClient<HttpQuickBooksGateway>();
-builder.Services.AddScoped<LoggingQuickBooksGateway>();
+builder.Services.AddScoped<UnconfiguredQuickBooksGateway>();
 builder.Services.AddScoped<IQuickBooksGateway>(services =>
     services.GetRequiredService<IOptions<QuickBooksOptions>>().Value.IsConfigured
         ? services.GetRequiredService<HttpQuickBooksGateway>()
-        : services.GetRequiredService<LoggingQuickBooksGateway>());
+        : services.GetRequiredService<UnconfiguredQuickBooksGateway>());
 builder.Services.AddHostedService<OrderIntegrationDispatcher>();
 builder.Services.AddHttpClient<MailgunOrderNotificationSender>();
 builder.Services.AddScoped<LoggingOrderNotificationSender>();

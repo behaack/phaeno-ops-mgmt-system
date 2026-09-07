@@ -1,6 +1,6 @@
 # Order reagents
 
-Partner organization administrators order from offerings and negotiated prices configured specifically for their organization.
+Partner organization administrators and department administrators order within their selected Department from offerings and negotiated prices configured specifically for their organization.
 
 ## Prepare a draft
 
@@ -8,21 +8,21 @@ Partner organization administrators order from offerings and negotiated prices c
 2. Add only products offered to the selected Partner organization.
 3. Enter quantities that satisfy the offering’s minimum, maximum, and increment rules.
 4. Select an active shipping address from the Partner address book.
-5. Add any delivery note and the required purchase-order number.
+5. Add purchase and delivery details when known. The purchase-order number and shipping address are required to place the order, but may remain incomplete in a saved draft.
 
-You can save and resume a draft or create a new draft from a prior order. The new draft uses current availability and pricing rather than copying stale commercial terms.
+Save draft retains reagent lines, purchase-order number, selected shipping address, requested delivery date, and delivery instructions. You can save and resume a draft or create a new draft from a prior order. The new draft uses current availability and pricing rather than copying stale commercial terms.
 
 ## Place the order
 
 Placement revalidates the item, Partner eligibility, quantity, active negotiated price, shipping address, and purchase-order number. The portal then freezes the offering, price, currency, address, and PO snapshot.
 
-POMS preserves the actual negotiated price used for the order. Each shipment creates a journal-entry source record for Phaeno Finance; tax, freight, discounts, invoice preparation, and billing-address facts are handled outside the Partner workspace.
+Portal preserves the actual negotiated price used for the order. Each shipment creates a journal-entry source record for Phaeno Finance; tax, freight, discounts, invoice preparation, and billing-address facts are handled outside the Partner workspace.
 
 Placement moves the local order directly into Phaeno review. It does not wait for an external accounting synchronization.
 
 ## Review substitutions and changes
 
-Phaeno cannot fulfill a different reagent without explicit approval from a Partner organization administrator. A substitution request shows the original and proposed product and its commercial effect. Declining it preserves the original order facts.
+Phaeno cannot fulfill a different reagent without explicit approval from a Partner organization or department administrator. A substitution request shows the original and proposed product and its commercial effect. Declining it preserves the original order facts.
 
 Any post-placement revision that increases the total requires Partner-administrator approval before Phaeno accepts it.
 
@@ -33,3 +33,9 @@ Orders can be partially shipped. Each shipment can show carrier, service, tracki
 ## Cancel eligible work
 
 A draft or an unaccepted placed order can be cancelled. After Phaeno accepts the order, submit a cancellation request. Shipped quantities are never erased, and approved commercial changes remain in the order history and manual accounting source records.
+
+## Resume after a problem
+
+If placement fails after a draft was saved, the page identifies that saved draft and provides **Open saved draft**. Retry continues that same order. An interrupted creation is recovered before a new draft can be created by the same form. Closing with unsaved entries asks whether to discard them.
+
+Search, status/date filters, **Submitted by me**, and **Previous**/**Next** apply to the complete matching list. Returning from an order preserves the filtered page. Use **Clear all** to reset filters or **Retry records** after a failed load.

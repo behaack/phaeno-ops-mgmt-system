@@ -1,6 +1,6 @@
-import { Link } from '@tanstack/react-router'
+import { Link, useRouterState } from '@tanstack/react-router'
 
-import { getVisibleMainMenuItems } from './navigation'
+import { getVisibleMainMenuItems, isMainMenuRouteActive } from './navigation'
 import {
   getSelectedMembership,
   usePhaenoSession,
@@ -9,6 +9,7 @@ import { useMockAdminData } from '#/features/admin/mock-admin-data'
 
 export function MainMenu() {
   const { signedIn, session, selectedOrganizationId } = usePhaenoSession()
+  const pathname = useRouterState({ select: state => state.location.pathname })
   const { customers } = useMockAdminData()
 
   if (!signedIn) {
@@ -36,7 +37,8 @@ export function MainMenu() {
         <Link
           key={item.to}
           to={item.to}
-          className="nav-link whitespace-nowrap"
+          className={`nav-link whitespace-nowrap${isMainMenuRouteActive(pathname, item.to, item.exact) ? ' is-active' : ''}`}
+          aria-current={isMainMenuRouteActive(pathname, item.to, item.exact) ? 'page' : undefined}
           activeProps={{ className: 'nav-link is-active' }}
           activeOptions={item.exact ? { exact: true } : undefined}
         >

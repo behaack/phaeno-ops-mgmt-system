@@ -9,6 +9,28 @@ public class OrderManagementDomainTests
     private static readonly DateTime Now = new(2026, 7, 14, 12, 0, 0, DateTimeKind.Utc);
 
     [Fact]
+    public void ReagentDraftRetainsPurchaseAndDeliveryWithoutFreezingPlacement()
+    {
+        var order = new PartnerReagentOrder(Guid.NewGuid(), Guid.NewGuid(), "REAGENT-DRAFT");
+        var addressId = Guid.NewGuid();
+        order.UpdateDraftDetails(" PO-17 ", addressId, Now.AddDays(3), " Keep cool ");
+        Assert.Equal("PO-17", order.PurchaseOrderNumber);
+        Assert.Equal(addressId, order.ShippingAddressId);
+        Assert.Equal(Now.AddDays(3), order.RequestedDeliveryDate);
+        Assert.Equal("Keep cool", order.ShippingInstructions);
+        Assert.Equal(ReagentOrderStatus.Draft, order.Status);
+        Assert.Null(order.PlacementSnapshotJson);
+        Assert.Null(order.ShippingAddressSnapshotJson);
+        order.UpdateDraftDetails(null, null, null, null);
+        Assert.Null(order.PurchaseOrderNumber);
+        Assert.Null(order.ShippingAddressId);
+        Assert.Null(order.RequestedDeliveryDate);
+        Assert.Null(order.ShippingInstructions);
+        order.CancelBeforeAcceptance("No longer needed");
+        Assert.Throws<InvalidOperationException>(() => order.UpdateDraftDetails("Changed", addressId, null, null));
+    }
+
+    [Fact]
     public void LabRequestPricesFromJobProfileAndOpensSamplesAfterQuoteAcceptance()
     {
         var actor = Guid.NewGuid();

@@ -8,6 +8,7 @@ import { z } from "zod";
 import {
   createLabOrder,
   getLabOrder,
+  getCustomerOrderReadiness,
   getOrderErrorMessage,
   initiateCustomerLabOrder,
   isOrderConcurrencyError,
@@ -37,6 +38,7 @@ import { SearchableSelect } from "#/components/ui/searchable-select";
 import { Textarea } from "#/components/ui/textarea";
 import { usePhaenoSession } from "#/features/auth/session-context";
 import { listDepartments } from "#/api/organization-management";
+import { CustomerOrderReadiness } from './CustomerOrderReadiness';
 
 const duplicateBiologicalSourcesMessage =
   "Duplicate biological sources are not permitted.";
@@ -171,6 +173,11 @@ export function LabJobDetailsDialog({
   const selectedDepartment = departmentId
     ? departments.data?.find((value) => value.id === departmentId)
     : departments.data?.find((value) => value.isDefault);
+  const readiness = useQuery({
+    queryKey: ['customer-order-readiness', organizationId, selectedDepartment?.id],
+    queryFn: () => getCustomerOrderReadiness(organizationId, selectedDepartment!.id),
+    enabled: open && platformMode && !order && apiEnabled && Boolean(selectedDepartment) && !departments.isError,
+  });
   const form = useForm<JobDetailsFormInput, unknown, JobDetailsValues>({
     resolver: zodResolver(jobDetailsSchema),
     mode: "onBlur",
@@ -192,6 +199,7 @@ export function LabJobDetailsDialog({
   const baseOrderRef = useRef<LabServiceOrder | null>(order ?? null);
   const saveVersionRef = useRef<number | null>(order?.version ?? null);
   const resetKeyRef = useRef<string | null>(null);
+  const openerRef = useRef<HTMLElement | null>(null);
 
   const mutation = useMutation({
     mutationFn: async (values: JobDetailsValues) => {
@@ -219,6 +227,8 @@ export function LabJobDetailsDialog({
             throw new Error("Select a Customer organization.");
           if (!selectedDepartment || departments.isError)
             throw new Error("Select an available Customer department.");
+          if (!readiness.data?.canStartPricing || readiness.isError)
+            throw new Error("Resolve Customer readiness before starting pricing.");
           return initiateCustomerLabOrder({
             organizationId,
             departmentId: selectedDepartment.id,
@@ -335,6 +345,7 @@ export function LabJobDetailsDialog({
     apiEnabled &&
     (!editing || Boolean(order?.canEdit)) &&
     (!platformMode || (Boolean(organizationId && selectedDepartment) && !departments.isError)) &&
+    (!platformMode || editing || (readiness.data?.canStartPricing === true && !readiness.isError && !readiness.isFetching)) &&
     (!platformMode || prohibitedDataConfirmed);
   const watchedSourceGroups = form.watch("sourceGroups");
   const proposesPrice = form.watch("proposePrice");
@@ -366,7 +377,14 @@ export function LabJobDetailsDialog({
 
   return (
     <Dialog open={open} onOpenChange={requestOpenChange}>
-      <DialogContent className="max-h-[90dvh] p-0 [--dialog-inset:0px] sm:max-w-3xl">
+      <DialogContent className="max-h-[90dvh] p-0 [--dialog-inset:0px] sm:max-w-3xl"
+        onOpenAutoFocus={() => { openerRef.current = document.activeElement instanceof HTMLElement ? document.activeElement : null; }}
+        onCloseAutoFocus={(event) => {
+          if (openerRef.current?.isConnected) {
+            event.preventDefault();
+            openerRef.current.focus();
+          }
+        }}>
         <DialogHeader className="pt-5 pr-12 pl-5">
           <DialogTitle>
             {editing
@@ -438,11 +456,12 @@ export function LabJobDetailsDialog({
                   <RequiredFieldName>Customer</RequiredFieldName>
                 </Label>
                 <FieldDescription id={`${formId}-organization-help`}>
-                  Active Customers with a current Ready PSeq Lab Service
-                  authorization appear. An online administrator is required
-                  later, before the quote can be issued.
+                  Choose a Customer to check its setup. You can prepare pricing
+                  before an online administrator is active. Exact sample IDs and
+                  tube counts are entered after quote acceptance.
                 </FieldDescription>
                 <SearchableSelect
+                  portal
                   id={`${formId}-organization`}
                   className="mt-2"
                   options={[
@@ -465,15 +484,15 @@ export function LabJobDetailsDialog({
                   ]}
                   value={organizationId}
                   onValueChange={(value) => { setOrganizationId(value); setDepartmentId(""); }}
-                  placeholder="Search eligible Customers"
-                  emptyMessage="No eligible Customer organizations were provided."
+                  placeholder="Search Customers"
+                  emptyMessage="No active Customers are available."
                   required
                   disabled={Boolean(sourceHandoff)}
                   aria-describedby={`${formId}-organization-help`}
                 />
                 {eligiblePlatformOrganizations.length === 0 ? (
                   <FieldError>
-                    No eligible Customer organizations were provided.
+                    No active Customers are available.
                   </FieldError>
                 ) : null}
                 {organizationId ? <div className="mt-4 grid gap-1.5">
@@ -493,6 +512,16 @@ export function LabJobDetailsDialog({
                   {departments.isError ? <FieldError>Customer departments could not be loaded. Check your connection and reopen the form.</FieldError> : null}
                   {!departments.isPending && !departments.isError && !departments.data?.length ? <FieldError>No active Customer departments are available.</FieldError> : null}
                 </div> : null}
+                {selectedDepartment && !order && apiEnabled ? (
+                  <>
+                    {readiness.isFetching ? <p role="status" className="mt-4 text-sm text-muted-foreground">Checking Customer readiness…</p> : null}
+                    {readiness.isError ? <Alert className="mt-4" variant="destructive">
+                      <AlertTitle>Customer readiness could not be checked</AlertTitle>
+                      <AlertDescription>Your entries are kept. Retry before starting pricing.</AlertDescription>
+                      <Button className="mt-2" type="button" variant="outline" disabled={readiness.isFetching} onClick={() => void readiness.refetch()}>Retry readiness check</Button>
+                    </Alert> : readiness.data ? <CustomerOrderReadiness readiness={readiness.data} /> : null}
+                  </>
+                ) : null}
               </>
             ) : null}
 

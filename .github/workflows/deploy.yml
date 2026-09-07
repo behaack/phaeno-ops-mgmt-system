@@ -8,6 +8,11 @@ on:
         required: true
         default: false
         type: boolean
+      audit_consistency_data:
+        description: Run the temporary read-only Portal consistency data inventory before release
+        required: true
+        default: false
+        type: boolean
       cutover_clerk_identity:
         description: Relink the sole bootstrap administrator from the previous Clerk subject to Clerk Production
         required: true
@@ -392,6 +397,37 @@ jobs:
           printf '%s\n' "$PORTAL_MIGRATION_BACKUP_PUBLIC_KEY" \
             | ssh -i ~/.ssh/deploy_key "$DEPLOY_USER@$DEPLOY_HOST" \
                 "install -m 600 /dev/stdin '$BACKUP_KEY_PATH'"
+
+      - name: Inventory Portal consistency data without changes
+        if: ${{ inputs.audit_consistency_data }}
+        env:
+          DEPLOY_HOST: ${{ secrets.DEPLOY_HOST }}
+          DEPLOY_USER: ${{ secrets.DEPLOY_USER }}
+          RELEASE_PATH: ${{ steps.release.outputs.release_path }}
+        run: |
+          ssh -i ~/.ssh/deploy_key "$DEPLOY_USER@$DEPLOY_HOST" \
+            bash -s -- "$RELEASE_PATH" <<'REMOTE' | tee "$RUNNER_TEMP/portal-consistency-audit.txt"
+          set -Eeuo pipefail
+          release_path="$1"
+          case "$release_path" in
+            /opt/phaeno.portal-green/releases/*) ;;
+            *) printf '%s\n' 'Unexpected release directory.' >&2; exit 1 ;;
+          esac
+          audit_script="$release_path/deployment/hetzner/green/audit-portal-consistency.sql"
+          test -f "$audit_script"
+          test "$(docker inspect --format '{{ index .Config.Labels "com.docker.compose.project" }}' phaeno-portal-green-db)" = "phaeno-portal-green"
+          docker exec -i phaeno-portal-green-db sh -c \
+            'exec psql -X -q -A -t -v ON_ERROR_STOP=1 -U "$POSTGRES_USER" -d "$POSTGRES_DB"' < "$audit_script"
+          REMOTE
+
+      - name: Retain read-only consistency inventory
+        if: ${{ always() && inputs.audit_consistency_data }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: portal-consistency-audit
+          path: ${{ runner.temp }}/portal-consistency-audit.txt
+          if-no-files-found: warn
+          retention-days: 14
 
       - name: Deploy and smoke Portal green
         env:

@@ -17,7 +17,7 @@ import { usePhaenoSession } from '#/features/auth/session-context'
 const schema = z.object({ reason: z.string().trim().min(1, 'Enter a reason.').max(2000, 'Keep the reason under 2,000 characters.'), kind: z.enum(['Preservation', 'Quarantine']), replacementSnapshotId: z.string() })
 type FormValues = z.infer<typeof schema>
 type Action = { type: 'hold' | 'reissue' } | { type: 'release'; hold: ReleaseHold }
-export function ReleasedDeliverableDetailPage({ snapshotId, q, page }: { snapshotId: string; q: string; page: number }) {
+export function ReleasedDeliverableDetailPage({ snapshotId, q, page, embedded = false }: { snapshotId: string; q: string; page: number; embedded?: boolean }) {
   const { session, authProvider } = usePhaenoSession()
   const cache = useQueryClient()
   const query = useQuery({ queryKey: ['release-receipt', snapshotId], queryFn: () => readReleaseReceipt(snapshotId), enabled: Boolean(session) && authProvider !== 'mock' })
@@ -40,8 +40,10 @@ export function ReleasedDeliverableDetailPage({ snapshotId, q, page }: { snapsho
   if (query.isPending) return <main className="page-wrap p-6" role="status">Loading release…</main>
   if (query.error || !query.data) return <main className="page-wrap p-6" role="alert">{fileManagementErrorMessage(query.error, 'The retained release is unavailable.')}</main>
   const data = query.data
-  return <main className="page-wrap space-y-5 px-4 py-8">
-    <div className="flex flex-wrap items-center justify-between gap-3 print:hidden">{data.canManage ? <Link to="/released-deliverables" search={{ q, page }} className="text-primary underline">Released packages</Link> : <a href={data.workflowPath} className="text-primary underline">Back to workflow</a>}<Button variant="outline" onClick={() => window.print()}>Print / save PDF</Button></div>
+  const Container = embedded ? 'section' : 'main'
+  return <Container className={embedded ? "space-y-5 border-t pt-6" : "page-wrap space-y-5 px-4 py-8"}>
+    <div className="flex flex-wrap items-center justify-between gap-3 print:hidden">{embedded ? <span className="font-semibold">Retention and release receipt</span> : data.canManage ? <Link to="/released-deliverables" search={{ q, page }} className="text-primary underline">Released packages</Link> : <a href={data.workflowPath} className="text-primary underline">Back to workflow</a>}<Button variant="outline" onClick={() => window.print()}>Print / save PDF</Button></div>
+    {!embedded && data.canManage && data.release.packageType === 'PSeqResult' ? <Button asChild variant="outline"><Link to="/order-operations/result-packages/$packageId" params={{ packageId: data.release.packageId }}>Open result package</Link></Button> : null}
     <ReleaseReceiptView data={data} />
     {data.canManage ? <section className="space-y-4 print:hidden" aria-label="Release management">
       <h2 className="text-xl font-semibold">Preservation and reissue</h2>
@@ -61,7 +63,7 @@ export function ReleasedDeliverableDetailPage({ snapshotId, q, page }: { snapsho
         <RequiredDialogFooter><Button type="button" variant="outline" disabled={mutation.isPending} onClick={() => setAction(null)}>Cancel</Button><Button type="submit" disabled={mutation.isPending || query.isFetching}>{mutation.isPending ? 'Saving…' : 'Confirm'}</Button></RequiredDialogFooter>
       </form>
     </DialogContent></Dialog>
-  </main>
+  </Container>
 }
 
 export function ReleaseReceiptView({ data }: { data: ReleaseReceipt }) {
@@ -78,7 +80,7 @@ export function ReleaseReceiptView({ data }: { data: ReleaseReceipt }) {
       .retention-receipt li { break-inside: avoid; }
       .retention-receipt h2 { break-after: avoid; }
     }`}</style>
-    <header className="space-y-2"><h1 className="text-2xl font-semibold">Released package receipt</h1><p className="break-all">{data.release.packageType} · {data.release.packageId}</p><p>{data.release.organizationName}</p><p className="text-sm text-muted-foreground">Generated {time(data.generatedAtUtc)}. Display time zone: {zone}.</p></header>
+    <header className="space-y-2"><h1 className="text-2xl font-semibold">Released package receipt</h1><p className="break-all">{data.release.workflowNumber ?? data.release.packageType}{data.release.sampleName ? ` · ${data.release.sampleName}` : ''}</p><p>{data.release.organizationName}</p><p className="text-sm text-muted-foreground">Generated {time(data.generatedAtUtc)}. Display time zone: {zone}.</p></header>
     <ReleasedDeliverableRetentionNotice retention={{ ...data.retention, snapshotId: null }} />
     <dl className="grid gap-3 text-sm sm:grid-cols-2">{([['Released', data.retention.releasedAtUtc], ['Warning', data.retention.warningAtUtc], ['Standard deadline', data.retention.standardDeletionAtUtc], ['Potential final deadline', data.retention.potentialFinalDeletionAtUtc], ['Deletion due', data.deletionDueAtUtc], ['Access closed', data.retention.downloadAccessClosedAtUtc], ['Bytes deleted', data.retention.byteDeletedAtUtc]] as const).map(([label, value]) => <div key={label}><dt className="font-medium">{label}</dt><dd>{time(value)}</dd></div>)}</dl>
     <p className="text-sm">Cleanup: {data.release.deletionOutcome ?? 'Not yet processed'}. Closure and preservation do not by themselves prove physical deletion.</p>

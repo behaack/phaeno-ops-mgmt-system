@@ -633,6 +633,9 @@ public sealed class LabServiceOrdersController(
     {
         var tenant = await requestContext.RequireTenantAsync(HttpContext, OrganizationKind.Customer, true, cancellationToken);
         var order = await ReadOrderAsync(orderId, tenant, cancellationToken);
+        if (await dbContext.SampleShipments.AnyAsync(shipment => shipment.AuthorizationSourceId == order.Id
+            && shipment.AuthorizationSource == SampleShipmentAuthorizationSource.CustomerLabServiceOrder, cancellationToken))
+            throw Conflict("use_shared_sample_shipment", "Record shipping through this Job's return kit and packet so every sample stays linked to the same shipment.");
         var sample = order.Samples.SingleOrDefault(item => item.Id == sampleId) ?? throw Missing();
         EnsureVersion(sample.Version, request.Version);
         Execute(() => sample.RecordCustomerShipment(request.Carrier, request.TrackingNumber, request.ShippedAt));

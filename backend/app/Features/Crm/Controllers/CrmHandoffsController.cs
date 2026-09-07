@@ -91,7 +91,7 @@ public sealed class CrmHandoffsController(PSeqOperationsDbContext dbContext, IEx
         if (request.Type == CrmHandoffType.TrialProject && (opportunity is not { IsActive: true } || request.RequestedServices.Count > 0))
             throw new CrmException("crm_trial_context_invalid", "Link an active Opportunity and keep scientific scope and service selection in the Trial workspace.");
         var organizationId = company.AccessOrganizationId;
-        var requestedKind = company.AccessOrganization?.Kind ?? request.RequestedOrganizationKind;
+        var requestedKind = Execute(() => CrmHandoff.ResolveRequestedRelationship(request.Type, company.AccessOrganization?.Kind, request.RequestedOrganizationKind));
         var (requestType, defaultKind) = RequestType(request.Type);
         requestedKind ??= defaultKind;
         if (request.Type is (

@@ -3151,3 +3151,9 @@ erDiagram
     web_orders o|--o{ web_notification_deliveries : "web_order_id"
     users o|--o{ web_notification_processing_controls : "updated_by_user_id"
 ```
+
+## September 7, 2026 workflow compatibility
+
+The consistency changes add no tables, columns, relationships or EF migration. Existing `sample_configuration_json` now accepts the supported exact-roster mode and `result_destination_configuration_json` the governed Portal destination; arbitrary JSON no longer satisfies operational readiness. Shipping readiness derives from effective sample type, destination and instruction-rule records rather than `shipping_configuration_json`.
+
+New manual payment receipts retain a protected `receipt-evidence:` reference in the existing `evidence_storage_key`, backed by scanned operational storage. CSV receipts retain their `payment-import:` reference. An unconfirmed import may be re-previewed by its original operator; its existing preview payload, timestamp and concurrency version change together. Confirmed preview evidence remains frozen. Historical evidence references and organization records are not rewritten by these changes.

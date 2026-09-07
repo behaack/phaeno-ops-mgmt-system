@@ -1,5 +1,13 @@
 # Backend Test Plan
 
+## Intake consolidation - 2026-09-07
+
+Readiness regression assertions now cover separate pricing and invoice blockers. Customer options/readiness endpoints retain platform authorization and validate the selected active Customer department. Readiness uses the canonical specimen catalog and department entitlement precedence; absent system configuration is incomplete. API build is the local checkpoint; automated suites and database-backed endpoint acceptance were not requested.
+
+## Optional Trial assignment note - 2026-09-07
+
+API build passed with isolated output for the optional Trial authority assignment note; the running Visual Studio/IIS Express process locked normal output. Automated tests for omitted/blank notes, trimming and the existing length limit remain deferred; no test suite was requested.
+
 ## Combined API/Portal release checkpoint — 2026-09-05
 
 The Product Owner authorized committing/pushing the combined change and deploying
@@ -1076,3 +1084,14 @@ remove their own isolated databases. Merely supplying a differently named source
 or a server without commit tracking does not meet those tests' prerequisites.
 Final execution evidence is in `TRIAL-INTEGRATION-CLOSEOUT.md`. Production
 mailbox/scanner/storage and physical acceptance remain separate.
+
+
+## Portal consistency regression coverage (September 7, 2026)
+
+Authorized implementation covers all 20 review items. Added `OrderReadinessConfigurationDomainTests` for arbitrary/malformed JSON and contradictory/duplicate property rejection, supported modes and atomic failed updates; `PaymentImportBatchDomainTests` for owned, unconfirmed corrections; and `AccountsReceivableEvidencePostgresTests` for protected scanned evidence, retired arbitrary-key writes, upload retries/cleanup, corrected previews, ownership/concurrency, duplicate confirmation, deactivated Customers and malformed CSV. Reagent domain coverage verifies draft purchase/delivery retention without placement requirements.
+
+Source review additionally traces held intake visibility, canonical CRM request completion/conversion, contextual Contact association, paid roster/shared-shipment tracking, Assembly file correction/idempotency, result identity/retention and Lab authorization. New PostgreSQL tests are opt-in and require the existing isolated test database setup. Test suites were not requested and have not been executed in this implementation turn. Build and browser evidence is recorded separately in the implementation tracker.
+
+The production preparation review adds `UnconfiguredQuickBooksGatewayTests`: all unconfigured catalog/create/read operations must fail with `503 quickbooks_not_configured`, and cancellation must remain `OperationCanceledException`. The unconfigured dispatcher immediately records NeedsAttention instead of retrying fabricated success. These two regression cases have not been executed. Release solution compilation passed with zero warnings and zero errors on September 7, 2026; compilation is not test execution.
+
+Final source review adds opt-in `AssemblyUploadPostgresTests` for a failed idempotent save rolling back its input and cleaning up uncommitted bytes, followed by a retry retaining one input. `DepartmentSecondaryPathPostgresTests.RelationshipReadinessUsesPendingConversionWithoutSavingItEarly` verifies readiness uses the authorized tracked Customer conversion while the database still contains the prior Prospect kind. Both preserve transaction boundaries; neither regression has been executed.

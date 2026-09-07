@@ -131,6 +131,25 @@ public sealed partial class LabOperationsController(
                 item.ApprovedByUserId, item.ApprovedAtUtc, item.ProjectionVersion,
                 item.ResultOutputPackageId)).ToListAsync(cancellationToken);
 
+        var readyPackages = await dbContext.ResultOutputPackages.AsNoTracking()
+            .Where(item => item.LabWorkOrderId == work.Id && item.State == ResultOutputPackageState.ReadyForReview)
+            .OrderBy(item => item.CreatedAt).ToListAsync(cancellationToken);
+        var readyIds = readyPackages.Select(item => item.Id).ToList();
+        var readyArtifacts = await dbContext.ResultArtifacts.AsNoTracking()
+            .Where(item => readyIds.Contains(item.ResultOutputPackageId)).ToListAsync(cancellationToken);
+        var readySampleIds = readyPackages.Where(item => item.LabSampleId.HasValue).Select(item => item.LabSampleId!.Value).ToList();
+        var readyTrialSampleIds = readyPackages.Where(item => item.TrialSampleId.HasValue).Select(item => item.TrialSampleId!.Value).ToList();
+        var submittedNames = await dbContext.LabSamples.AsNoTracking()
+            .Where(item => readySampleIds.Contains(item.Id))
+            .ToDictionaryAsync(item => item.Id, item => item.CustomerSampleId, cancellationToken);
+        var trialNames = await dbContext.TrialSamples.AsNoTracking()
+            .Where(item => readyTrialSampleIds.Contains(item.Id))
+            .ToDictionaryAsync(item => item.Id, item => item.Reference, cancellationToken);
+        var reviewPackages = readyPackages.Select(item => new LabReviewPackageDto(item.Id,
+            item.LabSampleId.HasValue ? submittedNames.GetValueOrDefault(item.LabSampleId.Value, "Sample")
+                : item.TrialSampleId.HasValue ? trialNames.GetValueOrDefault(item.TrialSampleId.Value, "Trial sample") : "Sample",
+            item.PackageVersion, item.ManifestSha256,
+            readyArtifacts.Where(file => file.ResultOutputPackageId == item.Id).Select(file => file.FileName).ToList())).ToList();
         var authorizationMap = authorization is null
             ? new Dictionary<Guid, CommercialLabAuthorization>()
             : new Dictionary<Guid, CommercialLabAuthorization> { [authorization.AuthorizationId] = authorization };
@@ -140,7 +159,7 @@ public sealed partial class LabOperationsController(
         return new LabWorkOrderDetailDto(
             MapWorkOrder(work, authorizationMap, commercialMap, specimens.Count,
                 exceptions.Count(item => item.Status == LabExceptionStatus.Open.ToString())),
-            specimens, containers, executions, libraries, exceptions, approvals);
+            specimens, containers, executions, libraries, exceptions, approvals, reviewPackages, requestContext.GovernedPSeqResultsEnabled);
     }
 
     [HttpGet("work-orders/by-commercial-order/{commercialOrderId:guid}")]

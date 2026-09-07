@@ -20,10 +20,14 @@ When an authorized operator uses **Start** or **Complete batch**, POMS opens a c
 
 ## Create an outsourced sendout
 
-For outsourced NGS, create a provider-neutral sendout with the provider name, optional provider reference, expected completion, and manifest. Advance it through **Shipped**, **Received by provider**, **Sequencing**, and **Complete** only when the corresponding operational fact is known.
+For outsourced NGS, enter the provider name, optional provider reference, expected completion, and any additional manifest notes. POMS freezes the current batch membership, library identifiers, and library-container barcodes in the sendout manifest. Confirm the physical contents against the batch before saving. Advance it through **Shipped**, **Received by provider**, **Sequencing**, and **Complete** only when the corresponding operational fact is known.
 
-Add custody events whenever responsibility or location changes. Record carrier or shipment references when used by the approved procedure.
+Add custody events whenever responsibility or location changes. Record the event code, location or responsible party, and carrier or tracking reference when used by the approved procedure. An optional custody note captures additional operational facts.
 
 ## Respect the implementation boundary
 
 The sendout tracks material, manifest, timing, provider status, and custody. Raw-file ingestion, pipeline orchestration, intermediate provenance, long-term storage, and final-output publication remain outside the current Lab Ops implementation.
+
+## Record library quality evidence
+
+For library QC, select Pass or Fail and record the observations and decision basis. Add named measurements with their values and units as needed. POMS retains those structured observations with the library; operators do not need to prepare JSON. The applicable method still determines the scientific acceptance criteria.

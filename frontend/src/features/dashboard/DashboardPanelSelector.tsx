@@ -16,6 +16,7 @@ import {
 } from 'lucide-react'
 import { useMemo, useState } from 'react'
 
+import { ConnectedOperationsSummary } from './ConnectedOperationsSummary'
 import { AccountsDashboardContent } from './AccountsDashboardContent'
 import { DashboardHero } from './DashboardHero'
 import { WebOpsDashboardContent } from './WebOpsDashboardContent'
@@ -239,24 +240,24 @@ export function DashboardPanelSelector() {
         value: 'orders',
         label: operationsPanels.orders.tabLabel,
         description: 'Pricing, fulfillment, release, and integration work.',
-        count: operationsPanels.orders.tabCount,
-        countDescription: `${operationsPanels.orders.tabCount} items needing attention`,
+        count: apiEnabled ? undefined : operationsPanels.orders.tabCount,
+        countDescription: apiEnabled ? undefined : `${operationsPanels.orders.tabCount} items needing attention`,
         icon: operationsPanels.orders.icon,
       },
       {
         value: 'lab',
         label: operationsPanels.lab.tabLabel,
         description: 'Receipt, exceptions, and scientific review.',
-        count: operationsPanels.lab.tabCount,
-        countDescription: `${operationsPanels.lab.tabCount} items needing attention`,
+        count: apiEnabled ? undefined : operationsPanels.lab.tabCount,
+        countDescription: apiEnabled ? undefined : `${operationsPanels.lab.tabCount} items needing attention`,
         icon: operationsPanels.lab.icon,
       },
       {
         value: 'accounts',
         label: 'Customer access',
         description: 'Company access, services, readiness, and invitations.',
-        count: 21,
-        countDescription: '21 items needing attention',
+        count: apiEnabled ? undefined : 21,
+        countDescription: apiEnabled ? undefined : '21 items needing attention',
         icon: Building2,
       },
       ...(canViewWebOperations
@@ -272,14 +273,17 @@ export function DashboardPanelSelector() {
           }]
         : []),
     ],
-    [canViewWebOperations, webOperationsCount],
+    [canViewWebOperations, webOperationsCount, apiEnabled],
   )
 
+  const visibleSections = sections.filter(item => !apiEnabled || (item.value === 'orders' ? session?.capabilities.canViewAllOperationalOrders : item.value === 'lab' ? session?.capabilities.canManageLabOperations : item.value === 'accounts' ? session?.capabilities.canManageOrganizations : canViewWebOperations))
+  const activeSection = visibleSections.some(item => item.value === section) ? section : visibleSections[0]?.value
+  if (!activeSection) return <main className="page-wrap px-4 py-8"><DashboardHero /><p>No operational workspaces are assigned to your role.</p></main>
   return (
     <WorkspaceSidebar
       workspaceLabel="POMS dashboard"
-      items={sections}
-      value={section}
+      items={visibleSections}
+      value={activeSection}
       onValueChange={setSection}
     >
       <main className="page-wrap px-4 py-8">
@@ -287,16 +291,16 @@ export function DashboardPanelSelector() {
           <DashboardHero />
         </div>
         <div className="soft-enter soft-enter-delay-1">
-          {section === 'orders' ? (
-            <OperationsPanel panel={operationsPanels.orders} />
+          {activeSection === 'orders' ? (
+            apiEnabled ? <ConnectedOperationsSummary section="orders" /> : <OperationsPanel panel={operationsPanels.orders} />
           ) : null}
-          {section === 'lab' ? (
-            <OperationsPanel panel={operationsPanels.lab} />
+          {activeSection === 'lab' ? (
+            apiEnabled ? <ConnectedOperationsSummary section="lab" /> : <OperationsPanel panel={operationsPanels.lab} />
           ) : null}
-          {section === 'accounts' ? (
-            <AccountsDashboardContent showHeading />
+          {activeSection === 'accounts' ? (
+            apiEnabled ? <ConnectedOperationsSummary section="accounts" /> : <AccountsDashboardContent showHeading />
           ) : null}
-          {section === 'webOps' ? (
+          {activeSection === 'webOps' ? (
             <WebOpsDashboardContent
               mailingList={{
                 data: mailingListData,

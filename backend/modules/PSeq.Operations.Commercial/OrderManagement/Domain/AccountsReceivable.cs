@@ -282,6 +282,7 @@ public sealed class PaymentReceipt : CommercialReceivableEntity
     {
         if (organizationId == Guid.Empty || recordedByUserId == Guid.Empty)
             throw new ArgumentException("Organization and actor identifiers are required.");
+        amount = Money(amount);
         if (amount <= 0) throw new ArgumentOutOfRangeException(nameof(amount));
         if (!string.Equals(OrderText.Currency(currency), "USD", StringComparison.Ordinal))
             throw new ArgumentException("PSeq accounts receivable supports USD only.", nameof(currency));
@@ -406,6 +407,7 @@ public sealed class PaymentImportBatch : CommercialReceivableEntity
     public PaymentImportBatch(string source, string payloadSha256, string previewJson,
         int rowCount, decimal totalAmount, Guid actorUserId, DateTime utcNow)
     {
+        totalAmount = Money(totalAmount);
         if (rowCount < 1 || totalAmount <= 0) throw new ArgumentOutOfRangeException(nameof(rowCount));
         Source = Required(source, nameof(source), 100);
         PayloadSha256 = Required(payloadSha256, nameof(payloadSha256), 64).ToUpperInvariant();
@@ -416,10 +418,22 @@ public sealed class PaymentImportBatch : CommercialReceivableEntity
         PreviewedAtUtc = utcNow;
     }
 
+    public void RevisePreview(string previewJson, int rowCount, decimal totalAmount, Guid actorUserId, DateTime utcNow)
+    {
+        if (Status != PaymentImportBatchStatus.Preview || actorUserId != PreviewedByUserId)
+            throw new InvalidOperationException("Only the original operator may revise an unconfirmed preview.");
+        totalAmount = Money(totalAmount);
+        if (rowCount < 1 || totalAmount <= 0) throw new ArgumentOutOfRangeException(nameof(rowCount));
+        PreviewJson = OrderText.Json(previewJson);
+        RowCount = rowCount;
+        TotalAmount = Money(totalAmount);
+        PreviewedAtUtc = utcNow;
+    }
+
     public void Confirm(Guid actorUserId, DateTime utcNow)
     {
-        if (Status != PaymentImportBatchStatus.Preview)
-            throw new InvalidOperationException("Only a preview batch can be confirmed.");
+        if (Status != PaymentImportBatchStatus.Preview || actorUserId != PreviewedByUserId)
+            throw new InvalidOperationException("Only the original operator may confirm an unconfirmed preview.");
         Status = PaymentImportBatchStatus.Confirmed;
         ConfirmedByUserId = actorUserId;
         ConfirmedAtUtc = utcNow;

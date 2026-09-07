@@ -106,6 +106,7 @@ public sealed class ReagentOrdersController(
                     DateTime.UtcNow,
                     operationCancellationToken);
                 var order = new PartnerReagentOrder(tenant.Organization.Id, tenant.Department.Id, OrderNumberGenerator.Reagent());
+                await SaveDraftDetailsAsync(order, request.Details, tenant, operationCancellationToken);
                 AddLines(order, request.Lines, offerings);
                 dbContext.PartnerReagentOrders.Add(order);
                 Event(order, "Created", order.Status.ToString(), tenant.Actor.Id);
@@ -171,10 +172,23 @@ public sealed class ReagentOrdersController(
         EnsureVersion(order.Version, request.Version);
         if (order.Status != ReagentOrderStatus.Draft) throw Conflict("reagent_order_not_editable", "Only draft reagent orders can be edited.");
         var offerings = await ValidateLinesAsync(tenant.Organization.Id, request.Lines, DateTime.UtcNow, cancellationToken);
+        await SaveDraftDetailsAsync(order, request.Details, tenant, cancellationToken);
         dbContext.PartnerReagentOrderLines.RemoveRange(order.Lines);
         AddLines(order, request.Lines, offerings);
         await dbContext.SaveChangesAsync(cancellationToken);
         return await MapAsync(order, true, false, cancellationToken);
+    }
+
+    private async Task SaveDraftDetailsAsync(PartnerReagentOrder order, ReagentDraftDetailsRequest? details,
+        OrderTenantContext tenant, CancellationToken cancellationToken)
+    {
+        if (details == null) return;
+        if (details.ShippingAddressId.HasValue && !await dbContext.PartnerShippingAddresses.AsNoTracking().AnyAsync(
+            address => address.Id == details.ShippingAddressId.Value && address.OrganizationId == tenant.Organization.Id
+                && address.DepartmentId == tenant.Department.Id && address.IsActive, cancellationToken))
+            throw Invalid("shipping_address_unavailable", "Select an active shipping address in this Department.");
+        Execute(() => order.UpdateDraftDetails(details.PurchaseOrderNumber, details.ShippingAddressId,
+            details.RequestedDeliveryDate, details.ShippingInstructions));
     }
 
     [HttpPost("{orderId:guid}/place")]

@@ -160,6 +160,15 @@ public sealed class SampleShippingWorkflowController(
         EnsureVersion(shipment.Version, request.Version);
         var shippedAt = RequireUtc(request.ShippedAt, "Shipment time");
         Execute(() => shipment.RecordShipment(request.Carrier, request.TrackingNumber, shippedAt));
+        if (shipment.AuthorizationSource == SampleShipmentAuthorizationSource.CustomerLabServiceOrder)
+        {
+            var sampleIds = await dbContext.SampleShipmentItems.Where(item => item.SampleShipmentId == shipment.Id)
+                .Select(item => item.SubmittedSpecimenId).ToListAsync(cancellationToken);
+            var samples = await dbContext.LabSamples.Where(sample => sample.LabServiceOrderId == shipment.AuthorizationSourceId
+                && sampleIds.Contains(sample.Id)).ToListAsync(cancellationToken);
+            foreach (var sample in samples)
+                sample.RecordCustomerShipment(shipment.Carrier, shipment.TrackingNumber, shippedAt);
+        }
         await dbContext.SaveChangesAsync(cancellationToken);
         return await reader.ReadAsync(shipment.Id, tenant.Organization.Id, tenant.Department.Id, cancellationToken);
     }

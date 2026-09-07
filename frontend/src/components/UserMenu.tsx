@@ -12,6 +12,7 @@ import {
 import {
   canManageUserScope,
   getVisibleMainMenuItems,
+  isMainMenuRouteActive,
 } from './navigation'
 import { type ThemeMode, useThemeMode } from './theme-mode'
 import { Avatar, AvatarFallback } from '#/components/ui/avatar'
@@ -170,7 +171,7 @@ export function UserMenu() {
                 key={item.to}
                 asChild
                 className={
-                  isRouteActive(currentPath, item.to, item.exact)
+                  isMainMenuRouteActive(currentPath, item.to, item.exact)
                     ? activeDropdownItemClass
                     : undefined
                 }
@@ -194,7 +195,7 @@ export function UserMenu() {
                   key={item.to}
                   asChild
                   className={
-                    isRouteActive(currentPath, item.to, item.exact)
+                    isMainMenuRouteActive(currentPath, item.to, item.exact)
                       ? activeDropdownItemClass
                       : undefined
                   }
@@ -209,7 +210,7 @@ export function UserMenu() {
                 <DropdownMenuItem
                   asChild
                   className={
-                    isRouteActive(currentPath, '/phaeno-users', true)
+                    isMainMenuRouteActive(currentPath, '/phaeno-users', true)
                       ? activeDropdownItemClass
                       : undefined
                   }
@@ -234,7 +235,7 @@ export function UserMenu() {
                   key={item.to}
                   asChild
                   className={
-                    isRouteActive(currentPath, item.to, item.exact)
+                    isMainMenuRouteActive(currentPath, item.to, item.exact)
                       ? activeDropdownItemClass
                       : undefined
                   }
@@ -274,12 +275,4 @@ function getInitials(firstName?: string, lastName?: string) {
   const first = firstName?.trim().charAt(0) ?? ''
   const last = lastName?.trim().charAt(0) ?? ''
   return `${first}${last}`.toUpperCase() || 'U'
-}
-
-function isRouteActive(pathname: string, to: string, exact?: boolean) {
-  if (exact) {
-    return pathname === to
-  }
-
-  return pathname === to || pathname.startsWith(`${to}/`)
 }

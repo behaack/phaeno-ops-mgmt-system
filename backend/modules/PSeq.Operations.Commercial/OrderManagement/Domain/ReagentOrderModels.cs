@@ -115,6 +115,16 @@ public sealed class PartnerReagentOrder : IAudit, IConcurrency
         OrderNumber = OrderText.Required(orderNumber, nameof(orderNumber), 50);
     }
 
+    public void UpdateDraftDetails(string? purchaseOrderNumber, Guid? shippingAddressId,
+        DateTime? requestedDeliveryDate, string? shippingInstructions)
+    {
+        EnsureStatus(ReagentOrderStatus.Draft);
+        PurchaseOrderNumber = OrderText.Optional(purchaseOrderNumber, 255);
+        ShippingAddressId = shippingAddressId;
+        RequestedDeliveryDate = requestedDeliveryDate;
+        ShippingInstructions = OrderText.Optional(shippingInstructions, 2000);
+    }
+
     public void Place(
         string purchaseOrderNumber,
         Guid shippingAddressId,

@@ -163,6 +163,22 @@ export type EligibleCustomerCompany = {
   name: string;
 };
 
+export type CustomerOrderReadiness = {
+  canStartPricing: boolean;
+  startPricingBlockers: OrderReadinessBlocker[];
+  quoteBlockers: OrderReadinessBlocker[];
+  invoiceBlockers: OrderReadinessBlocker[];
+};
+export type OrderReadinessBlocker = { code: string; label: string; nextAction: string };
+
+export async function listCustomerOrderOptions() {
+  return get<Array<{ id: string; name: string }>>("/platform/lab-service-orders/customer-options");
+}
+
+export async function getCustomerOrderReadiness(organizationId: string, departmentId: string) {
+  return get<CustomerOrderReadiness>(`/platform/lab-service-orders/customer-options/${organizationId}/readiness?departmentId=${encodeURIComponent(departmentId)}`);
+}
+
 export type ReleasedDeliverableRetention = {
   snapshotId?: string | null;
   isQuarantined?: boolean;
@@ -830,10 +846,18 @@ export async function createShippingAddress(
 ) {
   return post<ShippingAddress>("/partner-shipping-addresses", input);
 }
+export type ReagentDraftDetails = {
+  purchaseOrderNumber: string | null;
+  shippingAddressId: string | null;
+  requestedDeliveryDate: string | null;
+  shippingInstructions: string | null;
+};
 export async function createReagentOrder(
   lines: Array<{ offeringId: string; quantity: number; note?: string }>,
+  details?: ReagentDraftDetails,
+  idempotencyKey?: string,
 ) {
-  return post<ReagentOrder>("/reagent-orders", { lines }, true);
+  return post<ReagentOrder>("/reagent-orders", { lines, details }, true, idempotencyKey);
 }
 export async function createReagentDraftFromPrior(id: string) {
   return post<ReagentOrder>(`/reagent-orders/${id}/create-draft`, {}, true);
@@ -842,8 +866,9 @@ export async function updateReagentOrder(
   id: string,
   lines: Array<{ offeringId: string; quantity: number; note?: string }>,
   version: number,
+  details?: ReagentDraftDetails,
 ) {
-  return patch<ReagentOrder>(`/reagent-orders/${id}`, { lines, version });
+  return patch<ReagentOrder>(`/reagent-orders/${id}`, { lines, version, details });
 }
 export async function placeReagentOrder(
   id: string,
@@ -854,8 +879,9 @@ export async function placeReagentOrder(
     requestedDeliveryDate?: string | null;
     shippingInstructions?: string | null;
   },
+  idempotencyKey?: string,
 ) {
-  return post<ReagentOrder>(`/reagent-orders/${id}/place`, input, true);
+  return post<ReagentOrder>(`/reagent-orders/${id}/place`, input, true, idempotencyKey);
 }
 export async function decideReagentAdjustment(
   orderId: string,
@@ -908,8 +934,8 @@ export async function createAssemblyRequest(input: {
   requestedOutput: string;
   processingNotes?: string;
   prohibitedDataConfirmed: boolean;
-}) {
-  return post<DataAssemblyRequest>("/data-assembly-requests", input, true);
+}, idempotencyKey?: string) {
+  return post<DataAssemblyRequest>("/data-assembly-requests", input, true, idempotencyKey);
 }
 export async function updateAssemblyRequest(
   id: string,
@@ -925,13 +951,19 @@ export async function updateAssemblyRequest(
 ) {
   return patch<DataAssemblyRequest>(`/data-assembly-requests/${id}`, input);
 }
-export async function uploadAssemblyInput(id: string, file: File) {
+export async function removeAssemblyInput(id: string, file: OperationalFile) {
+  const response = await api.delete<ApiEnvelope<OperationalFile>>(
+    `/data-assembly-requests/${id}/inputs/${file.id}`, { params: { version: file.version } },
+  );
+  return unwrap(response.data);
+}
+export async function uploadAssemblyInput(id: string, file: File, idempotencyKey?: string) {
   const form = new FormData();
   form.append("file", file);
   const response = await api.post<ApiEnvelope<OperationalFile>>(
     `/data-assembly-requests/${id}/inputs`,
     form,
-    { headers: { "Content-Type": undefined } },
+    { headers: { "Content-Type": undefined, ...(idempotencyKey ? { "Idempotency-Key": idempotencyKey } : {}) } },
   );
   return unwrap(response.data);
 }
@@ -1358,12 +1390,12 @@ async function get<T>(
   return unwrap(response.data);
 }
 
-async function post<T>(url: string, data: unknown, idempotent = false) {
+async function post<T>(url: string, data: unknown, idempotent = false, idempotencyKey?: string) {
   const response = await api.post<ApiEnvelope<T>>(
     url,
     data,
     idempotent
-      ? { headers: { "Idempotency-Key": crypto.randomUUID() } }
+      ? { headers: { "Idempotency-Key": idempotencyKey ?? crypto.randomUUID() } }
       : undefined,
   );
   return unwrap(response.data);

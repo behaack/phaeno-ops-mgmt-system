@@ -1,4 +1,4 @@
-import { Outlet, createFileRoute, useRouterState } from '@tanstack/react-router'
+import { Navigate, Outlet, createFileRoute, useRouterState } from '@tanstack/react-router'
 
 import { DataLibraryPage } from '#/features/data-library/DataLibraryPage'
 
@@ -17,7 +17,8 @@ function DataLibraryRoute() {
   const isChildRoute = useRouterState({
     select: (state) => state.location.pathname !== '/data-library',
   })
-  return isChildRoute ? <Outlet /> : <DataLibraryPage jobId={jobId} />
+  if (!isChildRoute && jobId) return <Navigate to="/lab-services/$orderId" params={{ orderId: jobId }} hash="results" replace />
+  return isChildRoute ? <Outlet /> : <DataLibraryPage />
 }
 
 const uuidPattern = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i

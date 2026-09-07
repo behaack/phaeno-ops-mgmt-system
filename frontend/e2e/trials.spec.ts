@@ -249,7 +249,7 @@ test('Company handoff opens the exact eligible request even outside configuratio
   await expect(page.getByRole('heading', { name: 'RNA transcript evaluation' })).toBeVisible(); expect(created).toBe(true)
 })
 
-test('Trial request choices handle Escape from a focused option before offering to discard the draft', async ({ page }, info) => {
+test('Trial request floating choices handle Escape before offering to discard the draft', async ({ page }, info) => {
   if (info.project.name === 'mobile-chrome') await page.emulateMedia({ colorScheme: 'dark', reducedMotion: 'reduce' })
   const requests = [
     { id: 'handoff-1', companyName: 'Synthetic Research', opportunityName: 'First RNA evaluation', summary: 'First eligible request' },
@@ -274,7 +274,7 @@ test('Trial request choices handle Escape from a focused option before offering 
   await expect(dialog.getByText('2 eligible requests.', { exact: true })).toBeVisible()
   await input.focus(); await input.press('ArrowDown'); await input.press('Enter')
   await expect(input).toHaveValue(label(1)); await expect(input).toBeFocused()
-  await expect(dialog.getByRole('listbox')).toHaveCount(0)
+  await expect(page.getByRole('listbox')).toHaveCount(0)
 
   let confirmations = 0
   let discard = false
@@ -283,22 +283,24 @@ test('Trial request choices handle Escape from a focused option before offering 
     confirmations++
     if (discard) await prompt.accept(); else await prompt.dismiss()
   })
-  await input.press('ArrowDown'); await input.press('Tab')
-  await expect(dialog.getByRole('option', { name: label(1), exact: true })).toBeFocused()
-  await page.keyboard.press('Escape')
+  await input.press('ArrowDown')
+  await expect(input).toBeFocused()
+  await expect(page.getByRole('listbox')).toBeVisible()
   await expect(dialog.getByRole('listbox')).toHaveCount(0)
+  await page.keyboard.press('Escape')
+  await expect(page.getByRole('listbox')).toHaveCount(0)
   await expect(input).toBeFocused(); await expect(input).toHaveValue(label(1))
   await expect(input).toHaveAttribute('aria-expanded', 'false')
   await expect(dialog).toBeVisible(); expect(confirmations).toBe(0)
   expect((await new AxeBuilder({ page }).include('[role="dialog"]').withTags(['wcag2a', 'wcag2aa', 'wcag21aa', 'wcag22aa']).analyze()).violations).toEqual([])
-  await page.screenshot({ path: info.outputPath('option-escape-draft-preserved.png') })
+  await page.screenshot({ path: info.outputPath('floating-choice-escape-draft-preserved.png') })
   await page.keyboard.press('Escape')
   await expect.poll(() => confirmations).toBe(1)
   await expect(dialog).toBeVisible(); await expect(input).toHaveValue(label(1))
 
   await input.fill('Synthetic Research')
-  await dialog.getByRole('option', { name: label(0), exact: true }).click()
-  await expect(input).toHaveValue(label(0)); await expect(dialog.getByRole('listbox')).toHaveCount(0)
+  await page.getByRole('option', { name: label(0), exact: true }).click()
+  await expect(input).toHaveValue(label(0)); await expect(page.getByRole('listbox')).toHaveCount(0)
   await expect(dialog.getByRole('button', { name: 'Start Trial', exact: true })).toBeEnabled()
   discard = true
   await input.press('Escape')

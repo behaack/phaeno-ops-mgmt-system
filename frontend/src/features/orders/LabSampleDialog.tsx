@@ -136,7 +136,7 @@ export function LabSampleDialog({
           </DialogFeedback>
         ) : null}
 
-        <div className="max-h-[65dvh] overflow-y-auto px-4">
+        <div className="px-4">
           <form
             id={formId}
             noValidate
@@ -238,6 +238,7 @@ export function LabSampleDialog({
   )
 
   function requestOpenChange(nextOpen: boolean) {
+    if (!nextOpen && mutation.isPending) return
     if (
       !nextOpen &&
       form.formState.isDirty &&

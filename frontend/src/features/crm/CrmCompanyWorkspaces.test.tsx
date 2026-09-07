@@ -5,9 +5,9 @@ import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { CrmCompanyPeople } from './CrmCompanyPeople'
 import { CrmCompanySales } from './CrmCompanySales'
 
-const api = vi.hoisted(() => ({ listCompanyContacts: vi.fn(), listCrmCompanyPeople: vi.fn(), listCrmOpportunities: vi.fn(), associateCompanyContact: vi.fn(), listDepartments: vi.fn() }))
+const api = vi.hoisted(() => ({ listCompanyContacts: vi.fn(), listCrmCompanyPeople: vi.fn(), listCrmOpportunities: vi.fn(), associateCompanyContact: vi.fn(), listDepartments: vi.fn(), createInvitation: vi.fn() }))
 vi.mock('#/api/crm', async (importOriginal) => ({ ...await importOriginal<typeof import('#/api/crm')>(), listCompanyContacts: api.listCompanyContacts, listCrmCompanyPeople: api.listCrmCompanyPeople, listCrmOpportunities: api.listCrmOpportunities, associateCompanyContact: api.associateCompanyContact }))
-vi.mock('#/api/organization-management', async (importOriginal) => ({ ...await importOriginal<typeof import('#/api/organization-management')>(), listDepartments: api.listDepartments }))
+vi.mock('#/api/organization-management', async (importOriginal) => ({ ...await importOriginal<typeof import('#/api/organization-management')>(), listDepartments: api.listDepartments, createInvitation: api.createInvitation }))
 vi.mock('@tanstack/react-router', () => ({ Link: ({ children }: { children: ReactNode }) => <a href="/record">{children}</a> }))
 vi.mock('./CrmAssociationRecordCombobox', () => ({ CrmAssociationRecordCombobox: ({ id, name }: { id: string; name: string }) => <input id={id} name={name} /> }))
 
@@ -22,6 +22,19 @@ describe('Company People and Sales recovery', () => {
     api.listCrmCompanyPeople.mockResolvedValue([])
     api.listCrmOpportunities.mockResolvedValue({ items: [] })
     api.listDepartments.mockResolvedValue([department])
+    api.createInvitation.mockResolvedValue({ id: "invitation-1" })
+  })
+
+  it('invites the selected Company Contact as its first Organization administrator', async () => {
+    api.listCrmCompanyPeople.mockResolvedValue([person])
+    mount('organization-1')
+    fireEvent.click(await screen.findByRole('button', { name: 'Invite to Portal' }))
+    const dialog = within(screen.getByRole('dialog'))
+    expect(await dialog.findByLabelText(/First name/)).toHaveProperty('value', person.firstName)
+    expect(dialog.getByLabelText('Email', { exact: false })).toHaveProperty('readOnly', true)
+    fireEvent.change(dialog.getByLabelText(/Role/), { target: { value: 'Administrator' } })
+    fireEvent.click(dialog.getByRole('button', { name: 'Send invitation' }))
+    await waitFor(() => expect(api.createInvitation).toHaveBeenCalledWith(expect.objectContaining({ organizationId: 'organization-1', crmContactId: person.contactId, email: person.email, isOrganizationAdmin: true, departments: [{ departmentId: department.id, isDepartmentAdmin: false }] })))
   })
 
   it('announces pending loads and guards association without showing empty collections', () => {
@@ -32,7 +45,7 @@ describe('Company People and Sales recovery', () => {
     for (const name of ['contacts', 'people', 'opportunities']) expect(screen.getByText(`Loading ${name}…`)).toBeTruthy()
     expect(screen.queryByText('No people are associated with this Company.')).toBeNull()
     expect(screen.queryByText('No opportunities recorded.')).toBeNull()
-    expect(screen.getByRole('button', { name: 'Associate contact' })).toHaveProperty('disabled', true)
+    expect(screen.getByRole('button', { name: 'Add existing person' })).toHaveProperty('disabled', true)
   })
 
   it('recovers failed people, contacts and sales independently before reporting a successful empty response', async () => {
@@ -43,9 +56,9 @@ describe('Company People and Sales recovery', () => {
     for (const name of ['people', 'contacts', 'opportunities']) expect(await screen.findByText(`Could not load ${name}`)).toBeTruthy()
     expect(screen.queryByText('No people are associated with this Company.')).toBeNull()
     expect(screen.queryByText('No opportunities recorded.')).toBeNull()
-    expect(screen.getByRole('button', { name: 'Associate contact' })).toHaveProperty('disabled', true)
+    expect(screen.getByRole('button', { name: 'Add existing person' })).toHaveProperty('disabled', true)
     fireEvent.click(screen.getByRole('button', { name: 'Retry contacts' }))
-    await waitFor(() => expect(screen.getByRole('button', { name: 'Associate contact' })).toHaveProperty('disabled', false))
+    await waitFor(() => expect(screen.getByRole('button', { name: 'Add existing person' })).toHaveProperty('disabled', false))
     expect(screen.getByText('Could not load people')).toBeTruthy()
     fireEvent.click(screen.getByRole('button', { name: 'Retry people' }))
     expect(await screen.findByText('No people are associated with this Company.')).toBeTruthy()
@@ -72,8 +85,8 @@ describe('Company People and Sales recovery', () => {
 
   it('preserves an open association form and blocks submission until failed contact exclusions recover', async () => {
     const client = mount()
-    await waitFor(() => expect(screen.getByRole('button', { name: 'Associate contact' })).toHaveProperty('disabled', false))
-    fireEvent.click(screen.getByRole('button', { name: 'Associate contact' }))
+    await waitFor(() => expect(screen.getByRole('button', { name: 'Add existing person' })).toHaveProperty('disabled', false))
+    fireEvent.click(screen.getByRole('button', { name: 'Add existing person' }))
     const dialog = within(screen.getByRole('dialog'))
     fireEvent.change(dialog.getByLabelText('Job title'), { target: { value: 'Lab director' } })
     api.listCompanyContacts.mockRejectedValueOnce(new Error('offline'))
@@ -96,14 +109,14 @@ describe('Company People and Sales recovery', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Retry departments' }))
     fireEvent.click(await screen.findByRole('button', { name: 'Invite to Portal' }))
     const dialog = within(screen.getByRole('dialog'))
-    expect(dialog.getByRole('checkbox', { name: 'Research (default)' }).getAttribute('aria-checked')).toBe('true')
+    expect(dialog.getByRole('checkbox', { name: 'Research (default)' })).toHaveProperty('checked', true)
     api.listDepartments.mockRejectedValueOnce(new Error('offline'))
     await act(async () => { await client.invalidateQueries({ queryKey: ['organization-departments'] }) })
-    expect(await dialog.findByText('Could not load departments')).toBeTruthy()
+    expect(await dialog.findByRole('alert')).toBeTruthy()
     expect(dialog.getByRole('button', { name: 'Send invitation' })).toHaveProperty('disabled', true)
-    fireEvent.click(dialog.getByRole('button', { name: 'Retry departments' }))
+    fireEvent.click(dialog.getByRole('button', { name: 'Retry' }))
     await waitFor(() => expect(dialog.getByRole('button', { name: 'Send invitation' })).toHaveProperty('disabled', false))
-    expect(dialog.getByRole('checkbox', { name: 'Research (default)' }).getAttribute('aria-checked')).toBe('true')
+    expect(dialog.getByRole('checkbox', { name: 'Research (default)' })).toHaveProperty('checked', true)
   })
 })
 

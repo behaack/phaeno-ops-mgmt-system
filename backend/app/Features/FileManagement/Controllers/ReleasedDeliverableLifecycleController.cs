@@ -16,7 +16,7 @@ using PhaenoPortal.App.Features.OrderManagement.Services;
 using PhaenoPortal.App.Infrastructure.Persistence;
 
 public sealed record RetainedReleaseRow(Guid Id, Guid OrganizationId, string OrganizationName, string PackageType, Guid PackageId,
-    DateTime ReleasedAtUtc, DateTime? DownloadAccessClosedAtUtc, DateTime? ByteDeletedAtUtc, string? DeletionOutcome, bool IsQuarantined);
+    DateTime ReleasedAtUtc, DateTime? DownloadAccessClosedAtUtc, DateTime? ByteDeletedAtUtc, string? DeletionOutcome, bool IsQuarantined, string? WorkflowNumber = null, string? SampleName = null);
 public sealed record RetainedReleaseFile(Guid Id, string Name, long SizeBytes, string Sha256, DateTime? DownloadedAtUtc);
 public sealed record RetainedReleaseAttempt(Guid Id, Guid FileId, Guid UserId, string UserName, string Scope, string Outcome,
     DateTime StartedAtUtc, DateTime? CompletedAtUtc, bool CompletedAfterCutoff);
@@ -48,7 +48,7 @@ public sealed class ReleasedDeliverableLifecycleController(PSeqOperationsDbConte
         foreach (var value in values)
         {
             var package = await lifecycle.ReadPackageAsync(value.snapshot, token);
-            if (package is not null) result.Add(Row(value.snapshot, value.Name, package));
+            if (package is not null) result.Add(await EnrichRowAsync(Row(value.snapshot, value.Name, package), package, token));
         }
         return result;
     }
@@ -89,7 +89,7 @@ public sealed class ReleasedDeliverableLifecycleController(PSeqOperationsDbConte
         }
         var name = await db.Organizations.Where(value => value.Id == snapshot.OrganizationId).Select(value => value.Name).SingleAsync(token);
         var path = package.Type == ReleasedDeliverablePackageType.TrialResult ? $"/trial-projects/{package.WorkflowId:D}" : package.Type == ReleasedDeliverablePackageType.AssemblyOutput ? $"/data-assembly/{package.WorkflowId:D}" : $"/lab-services/{package.WorkflowId:D}";
-        return new(Row(snapshot, name, package), snapshot.ToDto(projection) with { GraceActivatedAtUtc = decision.GraceActivatedAtUtc, DownloadAccessClosedAtUtc = decision.DownloadAccessClosedAtUtc },
+        return new(await EnrichRowAsync(Row(snapshot, name, package), package, token), snapshot.ToDto(projection) with { GraceActivatedAtUtc = decision.GraceActivatedAtUtc, DownloadAccessClosedAtUtc = decision.DownloadAccessClosedAtUtc },
             package.WorkflowId, path, snapshot.Version, admin,
             package.Type == ReleasedDeliverablePackageType.PSeqResult ? pseq.Value.GovernedPSeqResults : options.Value.ReleasedDeliverableRetentionEnforcement,
             now, package.Files.Select(value => new RetainedReleaseFile(value.Id, value.Name, value.SizeBytes, value.Sha256, projection.Files[value.Id].DownloadedAtUtc)).ToList(), audit,
@@ -185,6 +185,18 @@ public sealed class ReleasedDeliverableLifecycleController(PSeqOperationsDbConte
         await db.ReleasedDeliverableRetentionSnapshots.SingleOrDefaultAsync(value => value.Id == id, token) ?? throw Missing();
     private static RetainedReleaseRow Row(ReleasedDeliverableRetentionSnapshot value, string name, RetainedPackage package) => new(value.Id, value.OrganizationId, name,
         package.Type.ToString(), package.Id, value.ReleasedAtUtc, value.DownloadAccessClosedAtUtc, value.ByteDeletedAtUtc, value.DeletionOutcome, value.IsQuarantined);
+    private async Task<RetainedReleaseRow> EnrichRowAsync(RetainedReleaseRow row, RetainedPackage package, CancellationToken token)
+    {
+        var number = package.Type == ReleasedDeliverablePackageType.TrialResult
+            ? await db.TrialProjects.Where(item => item.Id == package.WorkflowId).Select(item => item.Number).FirstOrDefaultAsync(token)
+            : package.Type == ReleasedDeliverablePackageType.AssemblyOutput
+                ? await db.DataAssemblyRequests.Where(item => item.Id == package.WorkflowId).Select(item => item.RequestNumber).FirstOrDefaultAsync(token)
+                : await db.LabServiceOrders.Where(item => item.Id == package.WorkflowId).Select(item => item.OrderNumber).FirstOrDefaultAsync(token);
+        var sample = package.SampleId.HasValue && package.Type != ReleasedDeliverablePackageType.TrialResult
+            ? await db.LabSamples.Where(item => item.Id == package.SampleId).Select(item => item.CustomerSampleId).FirstOrDefaultAsync(token)
+            : null;
+        return row with { WorkflowNumber = number, SampleName = sample };
+    }
     private static void Version(long current, long supplied) { if (current != supplied) throw Error("release_version_conflict", "This record changed. Refresh it and review before retrying.", 409); }
     private static string Reason(string value) { try { return ReleasedDeliverablePolicyDefault.NormalizeReason(value); } catch (ArgumentException) { throw Error("release_reason_required", "Enter a reason of 1 to 2,000 characters.", 400); } }
     private static FileManagementException Missing() => Error("released_deliverable_not_found", "The retained release was not found.", 404);

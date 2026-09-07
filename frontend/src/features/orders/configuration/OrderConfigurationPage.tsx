@@ -6,8 +6,10 @@ import {
   RefreshCw,
   Settings,
   Workflow,
+  Truck,
+  BookOpen,
 } from 'lucide-react'
-import { useState } from 'react'
+import { Link, useNavigate, useSearch } from '@tanstack/react-router'
 
 import { getOrderConfiguration, getOrderErrorMessage, syncQuickBooksCatalog } from '#/api/order-management'
 import { WorkspaceSidebar, type WorkspaceSidebarItem } from '#/components/WorkspaceSidebar'
@@ -18,17 +20,22 @@ import { AnalysisConfigurationPanel } from './AnalysisConfigurationPanel'
 import { AssemblyConfigurationPanel } from './AssemblyConfigurationPanel'
 import { CommercialConfigurationPanel } from './CommercialConfigurationPanel'
 import { ReagentConfigurationPanel } from './ReagentConfigurationPanel'
+import { CatalogConfigurationPanel } from './CatalogConfigurationPanel'
+import { SampleShippingConfigurationPanel } from './SampleShippingConfigurationPanel'
 import { SystemConfigurationPanel } from './SystemConfigurationPanel'
 
-type ConfigurationSection = 'system' | 'analyses' | 'reagents' | 'assembly' | 'commercial'
+export type ConfigurationSection = 'system' | 'catalog' | 'shipping' | 'analyses' | 'reagents' | 'assembly' | 'commercial'
+export function parseConfigurationSection(value: unknown): ConfigurationSection { return ['system', 'catalog', 'shipping', 'analyses', 'reagents', 'assembly', 'commercial'].includes(String(value)) ? value as ConfigurationSection : 'system' }
 
 const configurationSections: ReadonlyArray<WorkspaceSidebarItem<ConfigurationSection>> = [
   {
     value: 'system',
     label: 'Defaults',
-    description: 'Quote validity, submission, and shipping rules',
+    description: 'Quote validity and sample submission',
     icon: Settings,
   },
+  { value: 'catalog', label: 'Service catalog', description: 'Active offerings and sales units', icon: BookOpen },
+  { value: 'shipping', label: 'Sample shipping', description: 'Destinations, sample types and instructions', icon: Truck },
   {
     value: 'analyses',
     label: 'Analyses',
@@ -50,7 +57,7 @@ const configurationSections: ReadonlyArray<WorkspaceSidebarItem<ConfigurationSec
   {
     value: 'commercial',
     label: 'Legacy links',
-    description: 'Historical credit and QuickBooks mappings',
+    description: 'Historical credit and connector recovery',
     icon: Landmark,
   },
 ]
@@ -58,7 +65,10 @@ const configurationSections: ReadonlyArray<WorkspaceSidebarItem<ConfigurationSec
 export function OrderConfigurationPage() {
   const { authProvider, session } = usePhaenoSession()
   const queryClient = useQueryClient()
-  const [section, setSection] = useState<ConfigurationSection>('system')
+  const navigate = useNavigate()
+  const search = useSearch({ strict: false })
+  const section = parseConfigurationSection(search.configurationSection)
+  const setSection = (value: ConfigurationSection) => { void navigate({ to: '/order-configuration', search: { configurationSection: value } }) }
   const canManage = Boolean(session?.capabilities.canManageOrderConfiguration)
   const apiEnabled = canManage && authProvider !== 'mock'
   const configuration = useQuery({ queryKey: ['order-configuration'], queryFn: getOrderConfiguration, enabled: apiEnabled })
@@ -83,15 +93,7 @@ export function OrderConfigurationPage() {
                 accounting links. Customer billing and tax approval live in Finance.
               </p>
             </div>
-            <Button
-              type="button"
-              variant="outline"
-              disabled={!apiEnabled || sync.isPending}
-              onClick={() => sync.mutate()}
-            >
-              <RefreshCw data-icon="inline-start" />
-              {sync.isPending ? 'Queueing sync…' : 'Sync QuickBooks catalog'}
-            </Button>
+            <Button asChild variant="outline"><Link to="/file-management">Result retention settings</Link></Button>
           </section>
           {authProvider === 'mock' ? (
             <Alert className="mb-5">
@@ -110,6 +112,9 @@ export function OrderConfigurationPage() {
             </Alert>
           ) : null}
           {configuration.isLoading ? <p role="status">Loading order configuration…</p> : null}
+          {section === 'commercial' ? <div className="mb-5 space-y-3 rounded-lg border p-4"><p className="text-sm text-muted-foreground">Historical accounting mappings and connector recovery. The service catalog is maintained in Service catalog.</p><Button variant="outline" disabled={!apiEnabled || sync.isPending} onClick={() => sync.mutate()}><RefreshCw data-icon="inline-start" />{sync.isPending ? 'Queueing…' : 'Queue QuickBooks catalog recovery'}</Button>{sync.error ? <p role="alert">{getOrderErrorMessage(sync.error, 'Connector recovery is unavailable.')}</p> : null}{sync.isSuccess ? <p role="status">Catalog recovery queued.</p> : null}</div> : null}
+          {configuration.data && section === 'catalog' ? <CatalogConfigurationPanel configuration={configuration.data} /> : null}
+          {configuration.data && section === 'shipping' ? <SampleShippingConfigurationPanel apiEnabled={apiEnabled} /> : null}
           {configuration.data && section === 'system' ? <SystemConfigurationPanel configuration={configuration.data} /> : null}
           {configuration.data && section === 'analyses' ? <AnalysisConfigurationPanel configuration={configuration.data} /> : null}
           {configuration.data && section === 'reagents' ? <ReagentConfigurationPanel configuration={configuration.data} /> : null}

@@ -4,15 +4,28 @@ Use the visible organization, package version, grant state, and safe portal mess
 
 | What you see | Meaning | What to do |
 | --- | --- | --- |
-| No packages | No active package version is currently granted to the organization, or the expected grant is unavailable. | Confirm the organization shown in the user menu, then ask Phaeno to review the exact package version. |
+| No packages | No active package version is granted organization-wide or to the selected Department, or its grant is unavailable. | Confirm the organization and Department shown in the header, clear filters, then ask Phaeno to review the exact package version. |
 | Package or version missing | Grants are version-specific and do not move automatically to a new release. | Provide Phaeno with the expected package and version. |
 | Access revoked | Phaeno ended the organization’s future access to that version. | Stop retrying and follow any governance instruction from Phaeno. |
 | Version quarantined | Future access is blocked while Phaeno reviews the release. | Do not use another link or another organization’s copy. Wait for Phaeno’s instruction. |
-| Package retired | The package is no longer available for new portal use. | Ask Phaeno whether an approved replacement exists. |
+| Package retired | The version is unavailable for new grants; an existing active grant may remain usable. | Ask Phaeno whether an approved replacement exists. |
 | Download failed | The file or archive did not complete successfully. | Retry once. If it fails again, report the file name, package version, time, and safe error message. |
 | Checksum mismatch | The downloaded content is incomplete or changed. | Delete that copy, retry once, and contact Phaeno if the second checksum also fails. |
 | Wrong organization shown | The current session is scoped to a different membership. | Stop before opening or downloading data and contact Phaeno. |
-| Order action missing | Prospect organizations cannot place laboratory, reagent, or data-assembly orders. | Contact Phaeno if the business relationship should be reviewed. |
+| Order action missing | Prospect organizations cannot place paid laboratory, reagent, or data-assembly orders. Approved no-charge Trials use their own workflow. | Contact Phaeno if the business relationship should be reviewed. |
+
+## Trial and shipment questions
+
+| What you see | What to do |
+| --- | --- |
+| Trial awaiting approval | Phaeno Commercial and Scientific Operations must approve the same scope revision before acceptance is available. |
+| Acceptance needed | A Prospect organization administrator must review and accept the exact approved scope and terms. Department administrator access alone is insufficient. |
+| Sample submission unavailable | Check scope acceptance, submission dates, remaining allowance, and any hold. Use the approved replacement action only when Phaeno authorized a specific failed sample. |
+| Shipping is unavailable | The accepted Trial must have authorized samples and a prepared return kit. An organization or authorized Department administrator manages the shared shipment after that handoff. |
+| Results are not downloadable | Check release, withdrawal, and retention status. Trial results have no payment or credit gate. |
+| Trial no longer accepts changes | Closed or completed Trials retain their history. A relationship conversion does not reopen them or extend result-download dates. |
+
+Open the Trial number for its exact scope and status. Clear search and status filters if it is missing from the list. A failed load is different from no matching records; use the displayed retry action before assuming that work is absent. See [Trial Projects](./trial-projects) and [Sample shipping](./sample-shipping).
 
 ## Report a problem safely
 

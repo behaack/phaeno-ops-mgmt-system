@@ -1,44 +1,37 @@
+import { zodResolver } from '@hookform/resolvers/zod'
 import { useMutation, useQuery, useQueryClient, type UseQueryResult } from '@tanstack/react-query'
-import { Link } from '@tanstack/react-router'
-import { Boxes, CircleDollarSign, ClipboardCheck, FileCheck2, ListChecks, PlugZap, RefreshCw, ShoppingCart, Workflow as WorkflowIcon } from 'lucide-react'
+import { Link, Navigate, useNavigate, useSearch } from '@tanstack/react-router'
+import { RefreshCw } from 'lucide-react'
 import { useState } from 'react'
+import { useForm } from 'react-hook-form'
+import { z } from 'zod'
 
 import { getOrderConfiguration, getOrderErrorMessage, getPlatformOrder, listIntegrationMessages, listNotificationMessages, listPlatformOrders, retryIntegrationMessage, retryNotificationMessage, runPlatformAction, updateOperationalAssignment, type DataAssemblyRequest, type IntegrationMessage, type LabServiceOrder, type NotificationMessage, type PagedResult, type Quote, type ReagentOrder } from '#/api/order-management'
 import type { SessionCapabilities } from '#/api/session'
 import { listOrganizations } from '#/api/data-provisioning'
 import { getLabWorkOrderByCommercialOrder } from '#/api/lab-operations'
 import { Alert, AlertDescription, AlertTitle } from '#/components/ui/alert'
-import { WorkspaceSidebar, type WorkspaceSidebarItem } from '#/components/WorkspaceSidebar'
+import { OrderOperationsSidebar } from './OrderOperationsSidebar'
+import { getOrderSections, type OrderSection } from './order-sections'
 import { Button } from '#/components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '#/components/ui/card'
-import { Dialog, DialogClose, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '#/components/ui/dialog'
+import { Dialog, DialogContent, DialogDescription, DialogFeedback, DialogFooter, DialogHeader, DialogTitle } from '#/components/ui/dialog'
 import { Label } from '#/components/ui/label'
 import { Input } from '#/components/ui/input'
-import { usePhaenoSession } from '#/features/auth/session-context'
+import { FieldError } from '#/components/ui/field'
+import { RequiredDialogFooter, RequiredFieldName } from '#/components/ui/required-field'
+import { useOrderDraftGuard } from './use-order-draft-guard'
+import { getSelectedMembership, usePhaenoSession } from '#/features/auth/session-context'
 import { humanizeStatus, OrderStatusBadge } from './OrderStatusBadge'
 import { CommercialOrderIntakePanel } from './CommercialOrderIntakePanel'
-import { AssemblyOperationsPanel } from './operations/AssemblyOperationsPanel'
 import { CancellationDecisionPanel } from './operations/CancellationDecisionPanel'
 import { PlatformQuoteDialog } from './operations/PlatformQuoteDialog'
-import { ReagentOperationsPanel } from './operations/ReagentOperationsPanel'
-import { FinanceOperationsPanel, OperationalAttentionPanel, PSeqStagingPanel, ResultReleasePanel } from './PSeqOrderToCashPanels'
+import { ResultReleasePanel } from './ResultReleasePanel'
+import { FinanceOperationsPanel, OperationalAttentionPanel } from './PSeqOrderToCashPanels'
 
 type Workflow = 'lab' | 'reagent' | 'assembly'
-type OrderSection = Exclude<Workflow, 'lab'> | 'intake' | 'staging' | 'attention' | 'results' | 'finance' | 'integrations'
-
-const orderSections: ReadonlyArray<WorkspaceSidebarItem<OrderSection>> = [
-  { value: 'intake', label: 'Order intake', description: 'Commercial intake, pricing, and quotes', icon: ClipboardCheck },
-  { value: 'staging', label: 'Order staging', description: 'Prepare PSeq work before Customer access is complete', icon: ShoppingCart },
-  { value: 'reagent', label: 'PSeq kits', description: 'Review, processing, and fulfillment', icon: Boxes },
-  { value: 'assembly', label: 'Assembly', description: 'Intake, processing, and output release', icon: WorkflowIcon },
-  { value: 'attention', label: 'Attention', description: 'Owned cross-workflow blockers and failures', icon: ListChecks },
-  { value: 'results', label: 'Result release', description: 'Governed, sample-level PSeq delivery', icon: FileCheck2 },
-  { value: 'finance', label: 'Finance', description: 'Invoices, receipts, allocations, and reconciliation', icon: CircleDollarSign },
-  { value: 'integrations', label: 'Legacy integrations', description: 'Legacy connector and notification recovery', icon: PlugZap },
-]
-
-export function OrderOperationsPage({ workflow, orderId }: { workflow?: Workflow; orderId?: string }) {
-  const { authProvider, session } = usePhaenoSession()
+export function OrderOperationsPage({ workflow, orderId, initialSection }: { workflow?: Workflow; orderId?: string; initialSection?: OrderSection }) {
+  const { authProvider, session, selectedOrganizationId } = usePhaenoSession()
   const capabilities = session?.capabilities
   const canView = Boolean(
     capabilities?.canViewAllOperationalOrders ||
@@ -46,35 +39,28 @@ export function OrderOperationsPage({ workflow, orderId }: { workflow?: Workflow
       capabilities?.canReleasePSeqResults ||
       capabilities?.canManagePSeqBilling ||
       capabilities?.canManagePSeqCash ||
-      capabilities?.canReconcilePSeqCash,
+      capabilities?.canReconcilePSeqCash ||
+      (getSelectedMembership(session, selectedOrganizationId)?.organizationKind === 'Phaeno' && capabilities?.canViewTrialProjects),
   )
   const apiEnabled = canView && authProvider !== 'mock'
   if (!canView) return <main className="page-wrap px-4 py-8"><Alert variant="destructive"><AlertTitle>Order operations unavailable</AlertTitle><AlertDescription>A Phaeno platform administrator is required.</AlertDescription></Alert></main>
   if (workflow && orderId) return <OperationalDetail workflow={workflow} orderId={orderId} apiEnabled={apiEnabled && Boolean(capabilities?.canViewAllOperationalOrders)} userId={session?.user?.id ?? null} />
-  return <OperationalQueues apiEnabled={apiEnabled} mock={authProvider === 'mock'} userId={session?.user?.id ?? null} capabilities={capabilities!} />
+  return <OperationalQueues key={initialSection} initialSection={initialSection} apiEnabled={apiEnabled} mock={authProvider === 'mock'} userId={session?.user?.id ?? null} capabilities={capabilities!} />
 }
 
-function OperationalQueues({ apiEnabled, mock, userId, capabilities }: { apiEnabled: boolean; mock: boolean; userId: string | null; capabilities: SessionCapabilities }) {
-  const availableSections = orderSections.filter((item) => {
-    if (item.value === 'staging') return capabilities.canOperateCommercialWork
-    if (item.value === 'results') return capabilities.canReleasePSeqResults
-    if (item.value === 'finance') return capabilities.canManagePSeqBilling || capabilities.canManagePSeqCash || capabilities.canReconcilePSeqCash
-    if (item.value === 'attention') return capabilities.canOperateCommercialWork || capabilities.canReleasePSeqResults || capabilities.canManagePSeqBilling || capabilities.canManagePSeqCash || capabilities.canReconcilePSeqCash
-    return capabilities.canViewAllOperationalOrders
-  })
-  const [section, setSection] = useState<OrderSection>(availableSections[0]?.value ?? 'attention')
+function OperationalQueues({ apiEnabled, mock, userId, capabilities, initialSection }: { initialSection?: OrderSection; apiEnabled: boolean; mock: boolean; userId: string | null; capabilities: SessionCapabilities }) {
+  const availableSections = getOrderSections(capabilities)
+  const navigate = useNavigate()
+  const section = availableSections.find(item => item.value === initialSection)?.value ?? availableSections[0]?.value ?? 'attention'
+  const setSection = (value: OrderSection) => { void navigate({ to: '/order-operations', search: previous => ({ ...previous, orderSection: value }) }) }
   const organizations = useQuery({ queryKey: ['order-operations', 'organizations'], queryFn: listOrganizations, enabled: apiEnabled && capabilities.canViewAllOperationalOrders })
   const integrations = useQuery({ queryKey: ['order-integrations'], queryFn: () => listIntegrationMessages(), enabled: apiEnabled && capabilities.canViewAllOperationalOrders })
   const notifications = useQuery({ queryKey: ['order-notifications'], queryFn: () => listNotificationMessages(), enabled: apiEnabled && capabilities.canViewAllOperationalOrders })
   const organizationOptions = organizations.data?.map((item) => ({ id: item.id, name: item.name, kind: item.kind })) ?? []
+  if (section === 'trials') return <Navigate to="/trial-projects" replace />
   return (
     <main className="py-8">
-      <WorkspaceSidebar
-        workspaceLabel="Order operations"
-        items={availableSections}
-        value={section}
-        onValueChange={setSection}
-      >
+      <OrderOperationsSidebar section={section} onSectionChange={setSection}>
         <div className="page-wrap px-4">
           <section className="mb-6 max-w-3xl">
             <h1 className="text-3xl font-semibold">Order operations</h1>
@@ -90,7 +76,6 @@ function OperationalQueues({ apiEnabled, mock, userId, capabilities }: { apiEnab
             </Alert>
           ) : null}
           {section === 'intake' ? <CommercialOrderIntakePanel apiEnabled={apiEnabled} mock={mock} userId={userId} organizations={organizationOptions} /> : null}
-          {section === 'staging' ? <PSeqStagingPanel apiEnabled={apiEnabled} /> : null}
           {section === 'reagent' ? <QueueCard title="PSeq kit queue" workflow="reagent" apiEnabled={apiEnabled} userId={userId} organizations={organizationOptions} /> : null}
           {section === 'assembly' ? <QueueCard title="Assembly queue" workflow="assembly" apiEnabled={apiEnabled} userId={userId} organizations={organizationOptions} /> : null}
           {section === 'attention' ? <OperationalAttentionPanel apiEnabled={apiEnabled} userId={userId} /> : null}
@@ -98,25 +83,36 @@ function OperationalQueues({ apiEnabled, mock, userId, capabilities }: { apiEnab
           {section === 'finance' ? <FinanceOperationsPanel apiEnabled={apiEnabled} canBill={capabilities.canManagePSeqBilling} canManageCash={capabilities.canManagePSeqCash} canReconcile={capabilities.canReconcilePSeqCash} /> : null}
           {section === 'integrations' ? <IntegrationQueue query={integrations} notifications={notifications} apiEnabled={apiEnabled} /> : null}
         </div>
-      </WorkspaceSidebar>
+      </OrderOperationsSidebar>
     </main>
   )
 }
 
 function QueueCard({ title, workflow, apiEnabled, userId, organizations }: { title: string; workflow: Workflow; apiEnabled: boolean; userId: string | null; organizations: Array<{ id: string; name: string }> }) {
-  const [search, setSearch] = useState('')
-  const [organizationId, setOrganizationId] = useState('')
-  const [status, setStatus] = useState('')
-  const [view, setView] = useState<'all' | 'mine' | 'unassigned' | 'overdue' | 'holds'>('all')
-  const [updatedFrom, setUpdatedFrom] = useState('')
-  const [updatedTo, setUpdatedTo] = useState('')
-  const query = useQuery({ queryKey: ['platform-orders', workflow, search, organizationId, status, view, updatedFrom, updatedTo], queryFn: () => listPlatformOrders(workflow, {
+  const navigate = useNavigate()
+  const searchState = useSearch({ strict: false })
+  const search = searchState.queueSearch ?? ''
+  const organizationId = searchState.queueOrganization ?? ''
+  const status = searchState.queueStatus ?? ''
+  const view = searchState.queueView ?? 'all'
+  const updatedFrom = searchState.queueFrom ?? ''
+  const updatedTo = searchState.queueTo ?? ''
+  const page = searchState.queuePage ?? 1
+  const setFilter = (patch: { queueSearch?: string; queueOrganization?: string; queueStatus?: string; queueView?: typeof view; queueFrom?: string; queueTo?: string; queuePage?: number }) => { void navigate({ to: '/order-operations', search: previous => ({ ...previous, orderSection: workflow === 'assembly' ? 'assembly' : 'reagent', queuePage: 1, ...patch }), replace: true }) }
+  const setSearch = (value: string) => setFilter({ queueSearch: value })
+  const setOrganizationId = (value: string) => setFilter({ queueOrganization: value })
+  const setStatus = (value: string) => setFilter({ queueStatus: value })
+  const setView = (value: typeof view) => setFilter({ queueView: value })
+  const setUpdatedFrom = (value: string) => setFilter({ queueFrom: value })
+  const setUpdatedTo = (value: string) => setFilter({ queueTo: value })
+  const query = useQuery({ queryKey: ['platform-orders', workflow, search, organizationId, status, view, updatedFrom, updatedTo, page], queryFn: () => listPlatformOrders(workflow, {
+    page, pageSize: 25,
     search: search || undefined, organizationId: organizationId || undefined, status: status || undefined,
     assignedToUserId: view === 'mine' ? userId ?? undefined : undefined, unassigned: view === 'unassigned' || undefined,
     overdue: view === 'overdue' || undefined, holds: view === 'holds' || undefined,
-    updatedFrom: updatedFrom ? `${updatedFrom}T00:00:00.000Z` : undefined, updatedTo: updatedTo ? `${nextDate(updatedTo)}T00:00:00.000Z` : undefined,
+    updatedFrom: updatedFrom ? `${updatedFrom}T00:00:00.000Z` : undefined, updatedTo: updatedTo ? nextDate(updatedTo) : undefined,
   }), enabled: apiEnabled })
-  return <Card><CardHeader><CardTitle>{title}</CardTitle><CardDescription>Newest activity first. Filter actionable work, then open a record to assign and operate it.</CardDescription><div className="mt-3 grid gap-3 sm:grid-cols-2 lg:grid-cols-3"><div><Label htmlFor={`${workflow}-queue-search`}>Search</Label><Input id={`${workflow}-queue-search`} className="mt-2" value={search} onChange={(event) => setSearch(event.target.value)} /></div><div><Label htmlFor={`${workflow}-queue-organization`}>Organization</Label><select id={`${workflow}-queue-organization`} className="mt-2 h-9 w-full rounded-lg border border-input bg-background px-3 text-sm" value={organizationId} onChange={(event) => setOrganizationId(event.target.value)}><option value="">All organizations</option>{organizations.map((item) => <option key={item.id} value={item.id}>{item.name}</option>)}</select></div><div><Label htmlFor={`${workflow}-queue-status`}>Status</Label><select id={`${workflow}-queue-status`} className="mt-2 h-9 w-full rounded-lg border border-input bg-background px-3 text-sm" value={status} onChange={(event) => setStatus(event.target.value)}><option value="">All statuses</option>{workflowStatuses[workflow].map((item) => <option key={item} value={item}>{humanizeStatus(item)}</option>)}</select></div><div><Label htmlFor={`${workflow}-queue-view`}>Queue view</Label><select id={`${workflow}-queue-view`} className="mt-2 h-9 w-full rounded-lg border border-input bg-background px-3 text-sm" value={view} onChange={(event) => setView(event.target.value as typeof view)}><option value="all">All work</option><option value="mine">Assigned to me</option><option value="unassigned">Unassigned</option><option value="overdue">Overdue</option><option value="holds">On hold</option></select></div><div><Label htmlFor={`${workflow}-queue-from`}>Updated from</Label><Input id={`${workflow}-queue-from`} type="date" className="mt-2" value={updatedFrom} onChange={(event) => setUpdatedFrom(event.target.value)} /></div><div><Label htmlFor={`${workflow}-queue-to`}>Updated through</Label><Input id={`${workflow}-queue-to`} type="date" className="mt-2" value={updatedTo} onChange={(event) => setUpdatedTo(event.target.value)} /></div></div></CardHeader><CardContent>{query.error ? <Alert variant="destructive"><AlertTitle>Queue could not be loaded</AlertTitle><AlertDescription>{getOrderErrorMessage(query.error, 'Try refreshing.')}</AlertDescription></Alert> : null}{query.isLoading ? <p role="status">Loading queue…</p> : null}<div className="divide-y">{query.data?.items.map((item) => <div key={item.id} className="flex flex-wrap items-center justify-between gap-3 py-3"><div><Link to="/order-operations/$workflow/$orderId" params={{ workflow, orderId: item.id }} className="font-medium text-primary hover:underline">{item.number}</Link><p className="mt-1 text-xs text-muted-foreground">{organizations.find((org) => org.id === item.organizationId)?.name ?? item.organizationId} · {item.reference ?? 'No reference'}</p><p className="mt-1 text-xs text-muted-foreground">{item.assignedToUserId ? item.assignedToUserId === userId ? 'Assigned to you' : 'Assigned' : 'Unassigned'}{item.dueAt ? ` · Due ${formatDateTime(item.dueAt)}` : ''}</p></div><div className="flex items-center gap-2">{item.isOverdue ? <span className="text-xs font-medium text-destructive">Overdue</span> : null}<OrderStatusBadge status={item.status} /></div></div>)}</div>{!query.isLoading && !query.data?.items.length ? <p className="py-8 text-center text-sm text-muted-foreground">No records in this queue.</p> : null}</CardContent></Card>
+  return <Card><CardHeader><CardTitle>{title}</CardTitle><CardDescription>Newest activity first. Filter actionable work, then open a record to assign and operate it.</CardDescription><div className="mt-3 grid gap-3 sm:grid-cols-2 lg:grid-cols-3"><div><Label htmlFor={`${workflow}-queue-search`}>Search</Label><Input id={`${workflow}-queue-search`} className="mt-2" value={search} onChange={(event) => setSearch(event.target.value)} /></div><div><Label htmlFor={`${workflow}-queue-organization`}>Organization</Label><select id={`${workflow}-queue-organization`} className="mt-2 h-9 w-full rounded-lg border border-input bg-background px-3 text-sm" value={organizationId} onChange={(event) => setOrganizationId(event.target.value)}><option value="">All organizations</option>{organizations.map((item) => <option key={item.id} value={item.id}>{item.name}</option>)}</select></div><div><Label htmlFor={`${workflow}-queue-status`}>Status</Label><select id={`${workflow}-queue-status`} className="mt-2 h-9 w-full rounded-lg border border-input bg-background px-3 text-sm" value={status} onChange={(event) => setStatus(event.target.value)}><option value="">All statuses</option>{workflowStatuses[workflow].map((item) => <option key={item} value={item}>{humanizeStatus(item)}</option>)}</select></div><div><Label htmlFor={`${workflow}-queue-view`}>Queue view</Label><select id={`${workflow}-queue-view`} className="mt-2 h-9 w-full rounded-lg border border-input bg-background px-3 text-sm" value={view} onChange={(event) => setView(event.target.value as typeof view)}><option value="all">All work</option><option value="mine">Assigned to me</option><option value="unassigned">Unassigned</option><option value="overdue">Overdue</option><option value="holds">On hold</option></select></div><div><Label htmlFor={`${workflow}-queue-from`}>Updated from</Label><Input id={`${workflow}-queue-from`} type="date" className="mt-2" value={updatedFrom} onChange={(event) => setUpdatedFrom(event.target.value)} /></div><div><Label htmlFor={`${workflow}-queue-to`}>Updated through</Label><Input id={`${workflow}-queue-to`} type="date" className="mt-2" value={updatedTo} onChange={(event) => setUpdatedTo(event.target.value)} /></div></div></CardHeader><CardContent>{query.error ? <Alert variant="destructive"><AlertTitle>Queue could not be loaded</AlertTitle><AlertDescription>{getOrderErrorMessage(query.error, 'Try refreshing.')}</AlertDescription></Alert> : null}{query.isLoading ? <p role="status">Loading queue…</p> : null}<div className="divide-y">{query.data?.items.map((item) => <div key={item.id} className="flex flex-wrap items-center justify-between gap-3 py-3"><div><Link to="/order-operations/$workflow/$orderId" params={{ workflow, orderId: item.id }} search={previous => previous} className="font-medium text-primary hover:underline">{item.number}</Link><p className="mt-1 text-xs text-muted-foreground">{organizations.find((org) => org.id === item.organizationId)?.name ?? item.organizationId} · {item.reference ?? 'No reference'}</p><p className="mt-1 text-xs text-muted-foreground">{item.assignedToUserId ? item.assignedToUserId === userId ? 'Assigned to you' : 'Assigned' : 'Unassigned'}{item.dueAt ? ` · Due ${formatDateTime(item.dueAt)}` : ''}</p></div><div className="flex items-center gap-2">{item.isOverdue ? <span className="text-xs font-medium text-destructive">Overdue</span> : null}<OrderStatusBadge status={item.status} /></div></div>)}</div>{!query.isLoading && !query.isError && !query.data?.items.length ? <p className="py-8 text-center text-sm text-muted-foreground">No records in this queue.</p> : null}<div className="mt-4 flex flex-wrap items-center justify-between gap-3"><Button variant="outline" onClick={() => setFilter({ queueSearch: '', queueOrganization: '', queueStatus: '', queueView: 'all', queueFrom: '', queueTo: '', queuePage: 1 })}>Clear filters</Button>{query.data ? <><p className="text-sm text-muted-foreground">{query.data.totalCount} records · Page {page} of {Math.max(1, Math.ceil(query.data.totalCount / 25))}</p><div className="flex gap-2"><Button variant="outline" disabled={page <= 1 || query.isFetching} onClick={() => setFilter({ queuePage: page - 1 })}>Previous</Button><Button variant="outline" disabled={page * 25 >= query.data.totalCount || query.isFetching} onClick={() => setFilter({ queuePage: page + 1 })}>Next</Button></div></> : null}</div></CardContent></Card>
 }
 
 function IntegrationQueue({ query, notifications, apiEnabled }: { query: UseQueryResult<PagedResult<IntegrationMessage>, Error>; notifications: UseQueryResult<PagedResult<NotificationMessage>, Error>; apiEnabled: boolean }) {
@@ -129,9 +125,7 @@ function IntegrationQueue({ query, notifications, apiEnabled }: { query: UseQuer
 function OperationalDetail({ workflow, orderId, apiEnabled, userId }: { workflow: Workflow; orderId: string; apiEnabled: boolean; userId: string | null }) {
   const client = useQueryClient()
   const [reasonDialog, setReasonDialog] = useState<string | null>(null)
-  const [reason, setReason] = useState('')
   const [assignmentOpen, setAssignmentOpen] = useState(false)
-  const [assignmentDueAt, setAssignmentDueAt] = useState('')
   const order = useQuery({ queryKey: ['platform-order', workflow, orderId], queryFn: () => getPlatformOrder(workflow, orderId), enabled: apiEnabled })
   const configuration = useQuery({ queryKey: ['order-configuration'], queryFn: getOrderConfiguration, enabled: apiEnabled })
   const labWork = useQuery({
@@ -157,12 +151,12 @@ function OperationalDetail({ workflow, orderId, apiEnabled, userId }: { workflow
       const base = workflow === 'lab' ? `lab-service-orders/${orderId}` : workflow === 'reagent' ? `reagent-orders/${orderId}` : `data-assembly-requests/${orderId}`
       return runPlatformAction(`${base}/${input.action}`, { version: order.data.version, reason: input.reason, internalNote: null })
     },
-    onSuccess: async () => { setReasonDialog(null); setReason(''); await refresh() },
+    onSuccess: async () => { setReasonDialog(null); await refresh() },
   })
   const assignment = useMutation({
-    mutationFn: async (assignToMe: boolean) => {
+    mutationFn: async (input: AssignmentInput) => {
       if (!order.data) throw new Error('The order has not loaded.')
-      return updateOperationalAssignment(workflow, orderId, { version: order.data.version, assignToMe, dueAt: assignToMe && assignmentDueAt ? new Date(assignmentDueAt).toISOString() : null })
+      return updateOperationalAssignment(workflow, orderId, { version: order.data.version, ...input })
     },
     onSuccess: async () => { setAssignmentOpen(false); await refresh() },
   })
@@ -171,10 +165,91 @@ function OperationalDetail({ workflow, orderId, apiEnabled, userId }: { workflow
   if (order.error || !order.data) return <main className="page-wrap px-4 py-8"><Alert variant="destructive"><AlertTitle>Operational record could not be loaded</AlertTitle><AlertDescription>{getOrderErrorMessage(order.error, 'Return to the operations queue.')}</AlertDescription></Alert></main>
   const item = order.data
   const number = 'orderNumber' in item ? item.orderNumber : item.requestNumber
-  const actions = primaryActions(workflow, item.status)
+  const actions = primaryActions(workflow, item.status, 'resumeStatus' in item ? item.resumeStatus : undefined)
   const recordTitle = workflow === 'lab' && 'customerReference' in item ? item.customerReference : number
   const breadcrumb = workflow === 'lab' ? 'Order intake' : humanizeStatus(workflow)
-  return <main className="page-wrap px-4 py-8"><section className="mb-6 flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between"><div><p className="text-sm text-muted-foreground"><Link to="/order-operations" className="hover:underline">Order operations</Link> / {breadcrumb} / <span className="font-mono">{number}</span></p><div className="mt-2 flex items-center gap-3"><h1 className="text-3xl font-semibold">{recordTitle}</h1><OrderStatusBadge status={item.status} /></div><p className="mt-2 text-sm text-muted-foreground">{workflow === 'lab' ? <>Job number <span className="font-mono">{number}</span> · </> : null}Organization {item.organizationId} · {item.assignedToUserId ? item.assignedToUserId === userId ? 'Assigned to you' : 'Assigned to another operator' : 'Unassigned'}{item.dueAt ? ` · Due ${formatDateTime(item.dueAt)}` : ''} · Version {item.version}</p></div><div className="flex flex-wrap gap-2"><Button type="button" variant="outline" onClick={() => { setAssignmentDueAt(item.dueAt ? new Date(item.dueAt).toISOString().slice(0, 16) : ''); setAssignmentOpen(true) }}>Assignment</Button>{workflow === 'lab' && labWork.data ? <Button asChild variant="outline"><Link to="/lab-operations/$workOrderId" params={{ workOrderId: labWork.data.id }} search={{ section: undefined }}>Open Lab work</Link></Button> : null}{actions.map((action) => <Button key={action.path} type="button" variant={action.reason ? 'outline' : 'default'} disabled={mutation.isPending} onClick={() => action.reason ? setReasonDialog(action.path) : mutation.mutate({ action: action.path })}>{action.label}</Button>)}</div></section>{mutation.error || assignment.error ? <Alert variant="destructive" className="mb-5"><AlertTitle>Operation failed</AlertTitle><AlertDescription>{getOrderErrorMessage(mutation.error ?? assignment.error, 'Reload the record and try again.')}</AlertDescription></Alert> : null}{configuration.error ? <Alert variant="destructive" className="mb-5"><AlertTitle>Commercial configuration could not be loaded</AlertTitle><AlertDescription>{getOrderErrorMessage(configuration.error, 'Operational status changes remain available, but quote and catalog actions are paused.')}</AlertDescription></Alert> : null}<OperationalSummary workflow={workflow} item={item} /><CommercialControlPanel workflow={workflow} item={item} catalogItems={configuration.data?.catalogItems ?? []} labWorkOrderId={labWork.data?.id ?? null} onSaved={refresh} />{workflow === 'reagent' && 'lines' in item ? <ReagentOperationsPanel order={item} offerings={[]} onSaved={refresh} /> : null}{workflow === 'assembly' && 'inputFiles' in item ? <AssemblyOperationsPanel request={item} onSaved={refresh} /> : null}<Dialog open={reasonDialog !== null} onOpenChange={(open) => !open && setReasonDialog(null)}><DialogContent><DialogHeader><DialogTitle>{reasonDialog ? humanizeStatus(reasonDialog) : 'Record action'} for {number}</DialogTitle><DialogDescription>Provide a tenant-safe reason. Internal scientific or commercial details must remain in the separate internal record.</DialogDescription></DialogHeader><div><Label htmlFor="operationReason">Tenant-safe reason <span className="text-[var(--ruby-red,#b4233c)]" aria-hidden="true">*</span></Label><textarea id="operationReason" value={reason} onChange={(event) => setReason(event.target.value)} className="mt-2 min-h-24 w-full rounded-lg border border-input bg-background px-3 py-2 text-sm focus-visible:ring-3 focus-visible:ring-ring/50 focus-visible:outline-none" /></div><DialogFooter><DialogClose asChild><Button type="button" variant="outline">Cancel</Button></DialogClose><Button type="button" disabled={!reason.trim() || mutation.isPending} onClick={() => reasonDialog && mutation.mutate({ action: reasonDialog, reason })}>Apply status change</Button></DialogFooter></DialogContent></Dialog><Dialog open={assignmentOpen} onOpenChange={setAssignmentOpen}><DialogContent><DialogHeader><DialogTitle>Operational assignment</DialogTitle><DialogDescription>Assign this record to yourself and set an optional operational due time. Dedicated staff-role routing remains outside the initial release.</DialogDescription></DialogHeader><div><Label htmlFor="assignmentDueAt">Due at</Label><Input id="assignmentDueAt" type="datetime-local" className="mt-2" value={assignmentDueAt} onChange={(event) => setAssignmentDueAt(event.target.value)} /></div><DialogFooter>{item.assignedToUserId ? <Button type="button" variant="outline" disabled={assignment.isPending} onClick={() => assignment.mutate(false)}>Clear assignment</Button> : null}<DialogClose asChild><Button type="button" variant="outline">Cancel</Button></DialogClose><Button type="button" disabled={assignment.isPending} onClick={() => assignment.mutate(true)}>{item.assignedToUserId === userId ? 'Update my assignment' : 'Assign to me'}</Button></DialogFooter></DialogContent></Dialog></main>
+  return <main className="page-wrap px-4 py-8"><section className="mb-6 flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between"><div><p className="text-sm text-muted-foreground"><Link to="/order-operations" search={previous => ({ ...previous, orderSection: previous.orderSection ?? (workflow === 'lab' ? 'intake' : workflow) })} className="hover:underline">Order operations</Link> / {breadcrumb} / <span className="font-mono">{number}</span></p><div className="mt-2 flex items-center gap-3"><h1 className="text-3xl font-semibold">{recordTitle}</h1><OrderStatusBadge status={item.status} /></div><p className="mt-2 text-sm text-muted-foreground">{workflow === 'lab' ? <>Job number <span className="font-mono">{number}</span> · </> : null}Organization {item.organizationId} · {item.assignedToUserId ? item.assignedToUserId === userId ? 'Assigned to you' : 'Assigned to another operator' : 'Unassigned'}{item.dueAt ? ` · Due ${formatDateTime(item.dueAt)}` : ''} · Version {item.version}</p></div><div className="flex flex-wrap gap-2"><Button type="button" variant="outline" onClick={() => { assignment.reset(); setAssignmentOpen(true) }}>Assignment</Button>{workflow === 'lab' && labWork.data ? <Button asChild variant="outline"><Link to="/lab-operations/$workOrderId" params={{ workOrderId: labWork.data.id }} search={{ section: undefined }}>Open Lab work</Link></Button> : null}{actions.map((action) => <Button key={action.path} type="button" variant={action.reason ? 'outline' : 'default'} disabled={mutation.isPending} onClick={() => { mutation.reset(); if (action.reason) setReasonDialog(action.path); else mutation.mutate({ action: action.path }) }}>{action.label}</Button>)}</div></section>{mutation.error && !reasonDialog ? <Alert variant="destructive" className="mb-5"><AlertTitle>Operation failed</AlertTitle><AlertDescription>{getOrderErrorMessage(mutation.error, 'Reload the record and try again.')}</AlertDescription></Alert> : null}{configuration.error ? <Alert variant="destructive" className="mb-5"><AlertTitle>Commercial configuration could not be loaded</AlertTitle><AlertDescription>{getOrderErrorMessage(configuration.error, 'Operational status changes remain available, but quote and catalog actions are paused.')}</AlertDescription></Alert> : null}<OperationalSummary workflow={workflow} item={item} /><CommercialControlPanel workflow={workflow} item={item} catalogItems={configuration.data?.catalogItems ?? []} labWorkOrderId={labWork.data?.id ?? null} onSaved={refresh} />{workflow !== 'lab' ? <Card className="mt-5"><CardHeader><CardTitle>{workflow === 'reagent' ? 'Kit fulfillment' : 'Assembly execution'}</CardTitle><CardDescription>{workflow === 'reagent' ? 'Lab operations prepares, substitutes, ships, and completes the accepted kit order.' : 'Lab operations validates input, processes data, reviews quality, and approves outputs.'} Commercial decisions remain in this order.</CardDescription></CardHeader><CardContent><Button asChild variant="outline"><Link to={workflow === 'reagent' ? '/lab-operations/pseq-kit-orders/$orderId' : '/lab-operations/data-assembly/$orderId'} params={{ orderId: item.id }} search={{ section: undefined }}>Open Lab work</Link></Button></CardContent></Card> : null}{reasonDialog ? <StatusReasonDialog
+    actionLabel={actions.find(action => action.path === reasonDialog)?.label ?? humanizeStatus(reasonDialog)}
+    number={number} pending={mutation.isPending} error={mutation.error}
+    onClose={() => { setReasonDialog(null); mutation.reset() }}
+    onSave={reason => mutation.mutate({ action: reasonDialog, reason })}
+  /> : null}{assignmentOpen ? <AssignmentDialog
+    number={number} initialDueAt={item.dueAt ?? null} hasAssignment={Boolean(item.assignedToUserId)} assignedToMe={item.assignedToUserId === userId}
+    pending={assignment.isPending} error={assignment.error}
+    onClose={() => { setAssignmentOpen(false); assignment.reset() }} onSave={input => assignment.mutate(input)}
+  /> : null}</main>
+}
+
+const statusReasonSchema = z.object({ reason: z.string().trim().min(1, 'A reason is required.').max(2000, 'Use 2,000 characters or fewer.') })
+const assignmentSchema = z.object({ dueAt: z.string().refine(value => !value || isValidLocalDateTime(value), 'Enter a valid local date and time.') })
+type AssignmentInput = { assignToMe: boolean; dueAt: string | null }
+
+function StatusReasonDialog({ actionLabel, number, pending, error, onClose, onSave }: {
+  actionLabel: string; number: string; pending: boolean; error: unknown; onClose: () => void; onSave: (reason: string) => void
+}) {
+  const form = useForm<z.infer<typeof statusReasonSchema>>({ resolver: zodResolver(statusReasonSchema), mode: 'onBlur', defaultValues: { reason: '' } })
+  useOrderDraftGuard(form.formState.isDirty, pending)
+  function requestClose() { if (!pending && (!form.formState.isDirty || window.confirm('Discard this unsaved status-change reason?'))) onClose() }
+  const reasonError = form.formState.errors.reason?.message
+  return <Dialog open onOpenChange={open => { if (!open) requestClose() }}>
+    <DialogContent>
+      <DialogHeader><DialogTitle>{actionLabel} for {number}</DialogTitle><DialogDescription>Explain the change for the Customer or Partner. Keep internal scientific and commercial notes in Internal context.</DialogDescription></DialogHeader>
+      {error ? <DialogFeedback><Alert variant="destructive"><AlertTitle>Status change was not saved</AlertTitle><AlertDescription>{getOrderErrorMessage(error, 'Try again. Your reason is retained.')}</AlertDescription></Alert></DialogFeedback> : null}
+      <form id="operational-status-change" noValidate onSubmit={form.handleSubmit(values => onSave(values.reason))}>
+        <fieldset disabled={pending} className="space-y-1.5">
+          <Label htmlFor="operationReason"><RequiredFieldName>Reason shared with the requester</RequiredFieldName></Label>
+          <textarea id="operationReason" required maxLength={2000} aria-invalid={Boolean(reasonError)} aria-describedby={reasonError ? 'operationReason-error' : undefined} {...form.register('reason')} className="min-h-24 w-full rounded-lg border border-input bg-background px-3 py-2 text-sm focus-visible:ring-3 focus-visible:ring-ring/50 focus-visible:outline-none" />
+          {reasonError ? <FieldError id="operationReason-error">{reasonError}</FieldError> : null}
+        </fieldset>
+      </form>
+      <RequiredDialogFooter><Button type="button" variant="outline" disabled={pending} onClick={requestClose}>Cancel</Button><Button type="submit" form="operational-status-change" disabled={pending}>{pending ? 'Saving…' : 'Apply status change'}</Button></RequiredDialogFooter>
+    </DialogContent>
+  </Dialog>
+}
+
+function AssignmentDialog({ number, initialDueAt, hasAssignment, assignedToMe, pending, error, onClose, onSave }: {
+  number: string; initialDueAt: string | null; hasAssignment: boolean; assignedToMe: boolean; pending: boolean; error: unknown; onClose: () => void; onSave: (input: AssignmentInput) => void
+}) {
+  const form = useForm<z.infer<typeof assignmentSchema>>({ resolver: zodResolver(assignmentSchema), mode: 'onBlur', defaultValues: { dueAt: toLocalDateTime(initialDueAt) } })
+  useOrderDraftGuard(form.formState.isDirty, pending)
+  function requestClose() { if (!pending && (!form.formState.isDirty || window.confirm('Discard these unsaved assignment changes?'))) onClose() }
+  const dueAtError = form.formState.errors.dueAt?.message
+  return <Dialog open onOpenChange={open => { if (!open) requestClose() }}>
+    <DialogContent>
+      <DialogHeader><DialogTitle>Assignment for {number}</DialogTitle><DialogDescription>Take responsibility for this order and optionally set when it is due. Clearing the assignment also removes its due time.</DialogDescription></DialogHeader>
+      {error ? <DialogFeedback><Alert variant="destructive"><AlertTitle>Assignment was not saved</AlertTitle><AlertDescription>{getOrderErrorMessage(error, 'Try again. Your entered date and time are retained.')}</AlertDescription></Alert></DialogFeedback> : null}
+      <form id="operational-assignment" noValidate onSubmit={event => {
+        const input = event.currentTarget.elements.namedItem('dueAt')
+        if (input instanceof HTMLInputElement && input.validity.badInput) {
+          event.preventDefault()
+          form.setError('dueAt', { message: 'Enter a valid local date and time.' }, { shouldFocus: true })
+          return
+        }
+        void form.handleSubmit(values => onSave({ assignToMe: true, dueAt: !form.formState.dirtyFields.dueAt ? initialDueAt : values.dueAt ? new Date(values.dueAt).toISOString() : null }))(event)
+      }}>
+        <fieldset disabled={pending} className="space-y-1.5">
+          <Label htmlFor="assignmentDueAt">Due at (optional)</Label>
+          <Input id="assignmentDueAt" type="datetime-local" aria-invalid={Boolean(dueAtError)} aria-describedby={dueAtError ? 'assignmentDueAt-help assignmentDueAt-error' : 'assignmentDueAt-help'} {...form.register('dueAt')} />
+          <p id="assignmentDueAt-help" className="text-xs text-muted-foreground">Use your local date and time.</p>
+          {dueAtError ? <FieldError id="assignmentDueAt-error">{dueAtError}</FieldError> : null}
+        </fieldset>
+      </form>
+      <DialogFooter>{hasAssignment ? <Button type="button" variant="outline" disabled={pending} onClick={() => onSave({ assignToMe: false, dueAt: null })}>Clear assignment</Button> : null}<Button type="button" variant="outline" disabled={pending} onClick={requestClose}>Cancel</Button><Button type="submit" form="operational-assignment" disabled={pending}>{pending ? 'Saving…' : assignedToMe ? 'Update my assignment' : 'Assign to me'}</Button></DialogFooter>
+    </DialogContent>
+  </Dialog>
+}
+
+function toLocalDateTime(value: string | null) {
+  if (!value) return ''
+  const date = new Date(value)
+  if (!Number.isFinite(date.getTime())) return ''
+  const pad = (part: number) => String(part).padStart(2, '0')
+  return `${String(date.getFullYear()).padStart(4, '0')}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}T${pad(date.getHours())}:${pad(date.getMinutes())}`
+}
+
+function isValidLocalDateTime(value: string) {
+  if (!/^(?!0000)\d{4}-\d{2}-\d{2}T\d{2}:\d{2}$/.test(value)) return false
+  return toLocalDateTime(value) === value
 }
 
 function OperationalSummary({ workflow, item }: { workflow: Workflow; item: LabServiceOrder | ReagentOrder | DataAssemblyRequest }) {
@@ -319,7 +394,7 @@ function CommercialControlPanel({
   )
 }
 
-function primaryActions(workflow: Workflow, status: string) {
+export function primaryActions(workflow: Workflow, status: string, resumeStatus?: string | null) {
   if (workflow === 'lab') {
     if (status === 'SubmittedForQuote') return [{ label: 'Begin quote', path: 'begin-quote', reason: false }, { label: 'Request changes', path: 'request-changes', reason: true }]
     if (status === 'QuoteInPreparation') return [{ label: 'Request changes', path: 'request-changes', reason: true }, { label: 'Decline request', path: 'decline', reason: true }]
@@ -328,16 +403,13 @@ function primaryActions(workflow: Workflow, status: string) {
   }
   if (workflow === 'reagent') {
     if (status === 'UnderReview') return [{ label: 'Accept order', path: 'accept', reason: false }, { label: 'Reject', path: 'reject', reason: true }]
-    if (status === 'Accepted') return [{ label: 'Start processing', path: 'start-processing', reason: false }]
-    if (status === 'Shipped') return [{ label: 'Close fulfilled', path: 'fulfill', reason: false }]
-    if (status === 'OnHold') return [{ label: 'Release hold', path: 'release-hold', reason: true }]
-    if (!['Fulfilled', 'Cancelled', 'Rejected'].includes(status)) return [{ label: 'Place on hold', path: 'hold', reason: true }]
+    if (status === 'OnHold' && ['Placed', 'UnderReview'].includes(resumeStatus ?? '')) return [{ label: 'Release commercial hold', path: 'release-hold', reason: true }]
+    if (status === 'Placed') return [{ label: 'Place on hold', path: 'hold', reason: true }]
   }
   if (workflow === 'assembly') {
-    if (status === 'Submitted') return [{ label: 'Begin intake', path: 'begin-intake', reason: false }]
-    if (status === 'IntakeValidation') return [{ label: 'Accept intake', path: 'accept-intake', reason: false }, { label: 'Request changes', path: 'request-changes', reason: true }, { label: 'Reject', path: 'reject', reason: true }]
-    if (status === 'OnHold') return [{ label: 'Release hold', path: 'release-hold', reason: true }]
-    if (!['Completed', 'Cancelled', 'Rejected'].includes(status)) return [{ label: 'Place on hold', path: 'hold', reason: true }]
+    if (status === 'IntakeValidation') return [{ label: 'Request Customer changes', path: 'request-changes', reason: true }, { label: 'Reject request', path: 'reject', reason: true }]
+    if (status === 'OnHold' && ['ChangesRequested', 'QuoteInPreparation', 'QuoteIssued'].includes(resumeStatus ?? '')) return [{ label: 'Release commercial hold', path: 'release-hold', reason: true }]
+    if (['ChangesRequested', 'QuoteInPreparation', 'QuoteIssued'].includes(status)) return [{ label: 'Place on hold', path: 'hold', reason: true }]
   }
   return []
 }
@@ -345,7 +417,12 @@ function primaryActions(workflow: Workflow, status: string) {
 function formatDateTime(value: string) { return new Intl.DateTimeFormat('en-US', { dateStyle: 'medium', timeStyle: 'short' }).format(new Date(value)) }
 function formatMoney(value: number, currency: string) { return new Intl.NumberFormat('en-US', { style: 'currency', currency }).format(value) }
 function latestQuote(quotes: Quote[]) { return quotes.reduce<Quote | undefined>((latest, quote) => !latest || quote.revision > latest.revision ? quote : latest, undefined) }
-function nextDate(value: string) { const date = new Date(`${value}T00:00:00.000Z`); date.setUTCDate(date.getUTCDate() + 1); return date.toISOString().slice(0, 10) }
+function nextDate(value: string) {
+  const date = new Date(`${value}T00:00:00.000Z`)
+  if (!Number.isFinite(date.getTime()) || date.toISOString().slice(0, 10) !== value) return undefined
+  date.setUTCDate(date.getUTCDate() + 1)
+  return date.getUTCFullYear() <= 9999 ? date.toISOString() : undefined
+}
 
 const workflowStatuses: Record<Workflow, string[]> = {
   lab: ['DraftRequest', 'SubmittedForQuote', 'ChangesRequested', 'QuoteInPreparation', 'QuoteIssued', 'PlacedAwaitingSamples', 'InProgress', 'ResultsAvailable', 'OnHold', 'CancellationRequested', 'Completed', 'Cancelled', 'Declined'],

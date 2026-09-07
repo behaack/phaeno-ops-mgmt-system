@@ -1,5 +1,13 @@
 # First-Party CRM Plan
 
+## Portal consistency closeout — 2026-09-07
+
+Authorized by the Product Owner's “Address all items” instruction. Company People now owns external membership and invitation lifecycle actions using existing authorized APIs and the shared invitation editor, including first Organization-admin designation, Department roles, resend/revoke, and deactivation. Company Contact creation saves its association atomically; Sales opens the shared Opportunity editor with Company context. Existing Contact/User identities remain distinct.
+
+The Requests queue retains approved work and completed history. Approved Prospect-to-Customer/Partner conversion preserves the requested target and is applied with request completion in one transaction. Other reclassifications remain unsupported. Company readiness reuses the department-aware Intake checks and staged requirement presentation; historical manual readiness is no longer shown as an executable status. CRM primary lists page server results, retain URL context, and debounce searches. Data provisioning links to canonical Company access creation and preserves pending grant selections; its old creation endpoint is retired without changing existing organizations or grants.
+
+No database model, authentication boundary, dependency, migration, deployment, or Git mutation is part of this closeout. Focused regression coverage was added/updated; suite execution remains unrequested. A separate desktop browser fixture with all API writes disabled verified administrator invitation choices, unsent-draft protection, access-change confirmations and keyboard focus, invitation recovery actions, approved request completion/conversion dialogs, and contextual Contact/Opportunity editors. It sent no invitations and saved no business records. The temporary fixture/server/tab were removed after review. Parent task records final build, lint, and remaining live acceptance evidence.
+
 Keep this file updated as POMS's standalone customer-relationship-management
 capability is discovered, designed, implemented, and verified.
 

@@ -1,3 +1,5 @@
+import { CrmProvisioningReturn } from "./CrmListNavigation";
+import { CrmClearFilters, useCrmState, useCrmSearch } from "./CrmListNavigation";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Link, useNavigate } from "@tanstack/react-router";
 import { ChevronLeft, ChevronRight, Plus, Search } from "lucide-react";
@@ -33,10 +35,9 @@ const pageSize = 25;
 export function CrmCompaniesPage() {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
-  const [draftSearch, setDraftSearch] = useState("");
-  const [search, setSearch] = useState("");
-  const [includeInactive, setIncludeInactive] = useState(false);
-  const [page, setPage] = useState(1);
+  const [draftSearch, setDraftSearch, search, setSearch] = useCrmSearch();
+  const [includeInactive, setIncludeInactive] = useCrmState<boolean>("includeInactive", false);
+  const [page, setPage] = useCrmState<number>("page", 1);
   const [createOpen, setCreateOpen] = useState(false);
 
   const companiesQuery = useQuery({
@@ -52,6 +53,7 @@ export function CrmCompaniesPage() {
       await queryClient.invalidateQueries({ queryKey: ["crm-companies"] });
       await navigate({
         to: "/crm/companies/$companyId",
+        search: previous => previous,
         params: { companyId: company.id },
       });
     },
@@ -65,6 +67,7 @@ export function CrmCompaniesPage() {
 
   return (
     <main className="page-wrap space-y-6 px-4 py-8">
+      <CrmProvisioningReturn />
       <section className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
         <div className="max-w-3xl">
           <Badge variant="secondary" className="mb-3">
@@ -147,6 +150,7 @@ export function CrmCompaniesPage() {
             </div>
           </form>
 
+          <CrmClearFilters />
           <CrmSavedViewBar
             recordType="Company"
             currentFilter={{ search, includeInactive }}
@@ -189,7 +193,7 @@ export function CrmCompaniesPage() {
                   <tr key={company.id}>
                     <td className="px-4 py-3 font-medium">
                       <Link
-                        to="/crm/companies/$companyId"
+                        to="/crm/companies/$companyId" search={previous => previous}
                         params={{ companyId: company.id }}
                         className="cursor-pointer underline-offset-4 hover:underline focus-visible:rounded-sm focus-visible:ring-3 focus-visible:ring-ring/50 focus-visible:outline-none"
                       >
@@ -233,7 +237,7 @@ export function CrmCompaniesPage() {
                 ))}
               </tbody>
             </table>
-            {!companiesQuery.isLoading && !(result?.items.length ?? 0) ? (
+            {!companiesQuery.isLoading && !companiesQuery.error && !(result?.items.length ?? 0) ? (
               <p className="p-8 text-center text-sm text-muted-foreground">
                 {search || includeInactive
                   ? "No companies match these filters."

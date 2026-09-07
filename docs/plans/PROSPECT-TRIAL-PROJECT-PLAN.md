@@ -1,5 +1,52 @@
 # Prospect Trial Project Plan
 
+## External workflow continuity - 2026-09-07
+
+The authorized consistency-review repairs are recorded in
+[External order workflow continuity](EXTERNAL-ORDER-WORKFLOW-CONTINUITY-2026-09-07.md).
+This connects exact Customer sample lists and shared shipments, preserves Partner
+drafts and Assembly corrections, restores Trial shipment context, and aligns
+external list navigation and audience-specific help. No persisted model or
+shared-database change is included.
+
+## Trial dialog choice scrolling - 2026-09-07
+
+Trial bounded-action selectors now use the existing Radix popover primitive to render choices outside the scrolling dialog body. The redundant inner form scroll region is removed. While a floating choice list is open, the containing dialog body pauses scrolling; after dismissal it resumes. Keyboard focus stays on the input for arrow/Enter selection, Tab moves to the next field, and first Escape dismisses only the choices. Other selector consumers retain their existing presentation. No dependency, API or authority changes.
+
+## Optional approver assignment note - 2026-09-07
+
+The Product Owner replaced the required assignment Reason with an optional Note.
+Both primary assignment and delegate designation accept omitted, empty or
+whitespace-only notes. Provided notes retain the existing trim and length rules.
+The existing reason storage/API field is retained for compatibility; no persisted
+model or migration changes. Authority eligibility, actor/time history, independent
+approvals and revocation reasons are unchanged. Verification is limited to build,
+typecheck, scoped lint, documentation consistency and a synthetic dialog review;
+automated suites and live authority assignment are not part of this change.
+
+## Trial navigation and list presentation - 2026-09-07
+
+The Product Owner requested that Phaeno Trial projects sit under Order ops and
+that the list presentation be corrected. Phaeno users now reach Trials through
+the shared Order operations sidebar; the existing Trial list, configuration,
+detail and scope URLs remain valid and keep Order ops active. Authorized external
+organizations retain their Trial navigation and existing capabilities.
+
+The list uses the standard page width, an aligned responsive search/status/owner
+toolbar, debounced search requests, Clear all with focus returned to Search,
+separate unfiltered and filtered empty states, and owner-choice failure recovery.
+The narrow sidebar trigger has space above the heading. Existing CRM intake,
+scientific scope, approvals and sample/result rules are unchanged. Success for
+this slice is discoverable navigation, aligned controls, and recoverable filters
+without changing the Trial's commercial or scientific meaning.
+
+Validation: frontend typecheck, scoped lint, generated documentation and whitespace
+checks; local synthetic browser review at desktop and 390-pixel phone width in
+light/dark themes, filter reset, sidebar navigation, Escape and dialog focus return.
+Automated test suites were not run, per repository scope. Populated records,
+real-session acceptance and production deployment are outside this presentation
+checkpoint. No backend behavior, migration, dependency or Git mutation is included.
+
 The authorized 2026-09-05 [review gap closure](REVIEW-GAP-CLOSURE-2026-09-05.md)
 extends the existing Trial workflow with batch sample entry, visible sample-type
 requirements, current-scope conflict recovery, download availability and

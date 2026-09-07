@@ -92,7 +92,7 @@ export function FileManagementPage() {
     <main className="page-wrap space-y-6 px-4 py-8">
       <section className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
         <div>
-          <h1 className="text-3xl font-semibold">File management</h1>
+          <h1 className="text-3xl font-semibold">File retention policy</h1>
           <p className="mt-2 max-w-3xl text-sm leading-6 text-muted-foreground">
             Control the retention schedule applied to future released result and output packages.
           </p>

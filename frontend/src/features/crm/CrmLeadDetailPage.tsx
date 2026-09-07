@@ -113,7 +113,7 @@ export function CrmLeadDetailPage({ leadId }: { leadId: string }) {
   return (
     <main className="page-wrap space-y-6 px-4 py-8">
       <Button asChild variant="ghost" size="sm">
-        <Link to="/crm/leads">
+        <Link to="/crm/leads" search={previous => previous}>
           <ArrowLeft data-icon="inline-start" />
           Back to leads
         </Link>

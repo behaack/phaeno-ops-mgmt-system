@@ -157,6 +157,7 @@ export type CrmContact = {
 };
 
 export type CrmContactInput = {
+  companyId?: string;
   firstName: string;
   lastName: string;
   email: string | null;
@@ -1019,6 +1020,7 @@ export async function createCrmActivity(input: {
   return unwrap(response.data);
 }
 export async function listCrmTasks(input: {
+  search?: string;
   status?: CrmTaskStatus;
   ownerUserId?: string;
   companyId?: string;

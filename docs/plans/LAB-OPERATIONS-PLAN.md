@@ -1,5 +1,14 @@
 # Lab Operations Plan
 
+## 2026-09-07 workspace consolidation
+
+- Commercial kit/assembly order details retain decisions and status; execution/input-validation/fulfillment controls live only in the Lab workspace with reciprocal links.
+- Packet/tube comparison carries validated identity into the receiving work order; explicit receipt continues to accession with known fields retained. Receipt and accession remain separate recorded decisions.
+- Protocol assignment selects named active Lab operators. Library QC captures observations and named measurements without raw JSON. Scientific review selects the exact ready output package; the service workflow supplies the release definition and optional Customer-safe prose supplies the projection.
+- Each ready sample package receives its own scientific approval, including packages reviewed after another package moved the work order to ReadyForRelease. Existing actor-separation and clean-artifact gates remain enforced.
+- Assembly output review lists uploaded files, including prior-session uploads. The server derives manifest, pipeline and provenance from stored files/run facts. No persisted-model change or migration.
+- Focused frontend regression cases added for package confirmation/retry, independent permissions and structured QC; automated suites intentionally not run under the repository verification policy. Root task batches build/type/lint/documentation checks. Physical scanner/printer and hosted populated acceptance remain outstanding.
+
 ## 2026-09-05 protocol completion scope
 
 The Product Owner requested completion after a source review found that the

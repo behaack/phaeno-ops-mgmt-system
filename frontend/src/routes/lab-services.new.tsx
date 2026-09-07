@@ -13,12 +13,13 @@ function LabServiceCreateRoute() {
     <LabJobDetailsDialog
       open
       onOpenChange={(open) => {
-        if (!open) void navigate({ to: '/lab-services' })
+        if (!open) void navigate({ to: '/lab-services', search: previous => previous })
       }}
       onSaved={(order) =>
         navigate({
           to: '/lab-services/$orderId',
           params: { orderId: order.id },
+          search: previous => previous,
         })
       }
     />

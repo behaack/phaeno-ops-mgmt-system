@@ -1,10 +1,11 @@
+import { LabJobSamplesPanel } from './LabJobSamplesPanel'
 import { LabManagedResultReleases } from './LabManagedResultReleases'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { Link } from '@tanstack/react-router'
 import { Download, FileCheck2 } from 'lucide-react'
 import { useState } from 'react'
 
-import { acceptLabQuote, getLabOrder, getOrderErrorMessage, recordLabSampleShipment, requestLabCancellation, submitLabOrder, type Quote, withdrawLabOrder } from '#/api/order-management'
+import { acceptLabQuote, getLabOrder, getOrderErrorMessage, requestLabCancellation, submitLabOrder, type Quote, withdrawLabOrder } from '#/api/order-management'
 import { downloadCustomerInvoicePdf, downloadCustomerResultArtifact, listCustomerInvoices, listCustomerResultPackages, type CustomerResultPackage, type InvoiceReceivable } from '#/api/pseq-order-to-cash'
 import { Alert, AlertDescription, AlertTitle } from '#/components/ui/alert'
 import { Button } from '#/components/ui/button'
@@ -20,11 +21,8 @@ import { humanizeStatus, OrderStatusBadge } from './OrderStatusBadge'
 export function LabServiceDetailPage({ orderId }: { orderId: string }) {
   const { authProvider, session } = usePhaenoSession()
   const queryClient = useQueryClient()
-  const [dialog, setDialog] = useState<'accept' | 'cancel' | 'withdraw' | 'shipment' | null>(null)
+  const [dialog, setDialog] = useState<'accept' | 'cancel' | 'withdraw' | null>(null)
   const [cancellationReason, setCancellationReason] = useState('')
-  const [shipmentSampleId, setShipmentSampleId] = useState('')
-  const [carrier, setCarrier] = useState('')
-  const [trackingNumber, setTrackingNumber] = useState('')
   const [purchaseOrderNumber, setPurchaseOrderNumber] = useState('')
   const apiEnabled = Boolean(session?.capabilities.canViewLabServiceOrders) && authProvider !== 'mock'
   const orderQuery = useQuery({ queryKey: ['lab-service-order', orderId], queryFn: () => getLabOrder(orderId), enabled: apiEnabled })
@@ -33,7 +31,7 @@ export function LabServiceDetailPage({ orderId }: { orderId: string }) {
   const invoiceDownload = useMutation({ mutationFn: (invoice: InvoiceReceivable) => downloadCustomerInvoicePdf(invoice) })
   const resultDownload = useMutation({ mutationFn: ({ resultPackage, artifact }: { resultPackage: CustomerResultPackage; artifact: CustomerResultPackage['artifacts'][number] }) => downloadCustomerResultArtifact(orderId, resultPackage, artifact), onSettled: () => queryClient.invalidateQueries({ queryKey: ['customer-result-packages', orderId] }) })
   const action = useMutation({
-    mutationFn: async (kind: 'submit' | 'accept' | 'cancel' | 'withdraw' | 'shipment') => {
+    mutationFn: async (kind: 'submit' | 'accept' | 'cancel' | 'withdraw') => {
       const order = orderQuery.data
       if (!order) throw new Error('The order has not loaded.')
       if (kind === 'submit') return submitLabOrder(order.id, order.version)
@@ -43,15 +41,10 @@ export function LabServiceDetailPage({ orderId }: { orderId: string }) {
         return acceptLabQuote(order.id, quote.id, order.version, purchaseOrderNumber)
       }
       if (kind === 'withdraw') return withdrawLabOrder(order.id, order.version, cancellationReason)
-      if (kind === 'shipment') {
-        const sample = order.samples.find((item) => item.id === shipmentSampleId)
-        if (!sample) throw new Error('Select a sample before recording shipment.')
-        return recordLabSampleShipment(order.id, sample.id, { version: sample.version, carrier: carrier || null, trackingNumber: trackingNumber || null, shippedAt: new Date().toISOString() })
-      }
       return requestLabCancellation(order.id, order.version, cancellationReason)
     },
     onSuccess: async () => {
-      setDialog(null); setCancellationReason(''); setShipmentSampleId(''); setCarrier(''); setTrackingNumber(''); setPurchaseOrderNumber('')
+      setDialog(null); setCancellationReason(''); setPurchaseOrderNumber('')
       await queryClient.invalidateQueries({ queryKey: ['lab-service-order', orderId] })
       await queryClient.invalidateQueries({ queryKey: ['lab-service-orders'] })
     },
@@ -69,8 +62,8 @@ export function LabServiceDetailPage({ orderId }: { orderId: string }) {
   return (
     <main className="page-wrap px-4 py-8">
       <section className="mb-6 flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
-        <div><p className="text-sm text-muted-foreground"><Link to="/lab-services" className="hover:underline">Lab services</Link> / <span className="font-mono">{order.orderNumber}</span></p><div className="mt-2 flex flex-wrap items-center gap-3"><h1 className="text-3xl font-semibold">{order.orderNumber}</h1><OrderStatusBadge status={order.status} /></div><p className="mt-2 text-sm text-muted-foreground">{order.customerReference || 'No Customer reference'} · Updated {formatDate(order.updatedAt)}</p></div>
-        <div className="flex flex-wrap gap-2">{order.canEdit ? <Button type="button" variant="outline" asChild><Link to="/lab-services/$orderId/edit" params={{ orderId: order.id }}>Edit request</Link></Button> : null}{order.canSubmit ? <Button type="button" onClick={() => action.mutate('submit')} disabled={action.isPending}>Submit for pricing</Button> : null}{order.canAcceptQuote ? <Button type="button" onClick={() => setDialog('accept')}>Accept quote</Button> : null}{order.canWithdraw ? <Button type="button" variant="outline" onClick={() => setDialog('withdraw')}>Withdraw</Button> : null}{order.canRequestCancellation ? <Button type="button" variant="outline" onClick={() => setDialog('cancel')}>Request cancellation</Button> : null}</div>
+        <div><p className="text-sm text-muted-foreground"><Link to="/lab-services" search={previous => previous} className="hover:underline">Lab services</Link> / <span className="font-mono">{order.orderNumber}</span></p><div className="mt-2 flex flex-wrap items-center gap-3"><h1 className="text-3xl font-semibold">{order.orderNumber}</h1><OrderStatusBadge status={order.status} /></div><p className="mt-2 text-sm text-muted-foreground">{order.customerReference || 'No Customer reference'} · Updated {formatDate(order.updatedAt)}</p></div>
+        <div className="flex flex-wrap gap-2">{order.canEdit ? <Button type="button" variant="outline" asChild><Link to="/lab-services/$orderId/edit" params={{ orderId: order.id }} search={previous => previous}>Edit request</Link></Button> : null}{order.canSubmit ? <Button type="button" onClick={() => action.mutate('submit')} disabled={action.isPending}>Submit for pricing</Button> : null}{order.canAcceptQuote ? <Button type="button" onClick={() => setDialog('accept')}>Accept quote</Button> : null}{order.canWithdraw ? <Button type="button" variant="outline" onClick={() => setDialog('withdraw')}>Withdraw</Button> : null}{order.canRequestCancellation ? <Button type="button" variant="outline" onClick={() => setDialog('cancel')}>Request cancellation</Button> : null}</div>
       </section>
       {order.tenantSafeReason ? <Alert className="mb-5"><AlertTitle>Action needed</AlertTitle><AlertDescription>{order.tenantSafeReason}</AlertDescription></Alert> : null}
       {order.labCustomerActionSummary ? <Alert className="mb-5"><AlertTitle>Laboratory action needed</AlertTitle><AlertDescription>{order.labCustomerActionSummary}</AlertDescription></Alert> : null}
@@ -80,9 +73,9 @@ export function LabServiceDetailPage({ orderId }: { orderId: string }) {
 
       <div className="grid gap-5 lg:grid-cols-[minmax(0,1.5fr)_minmax(18rem,1fr)]">
         <div className="space-y-5">
-          <Card><CardHeader><CardTitle>Samples</CardTitle><CardDescription>Each sample progresses independently after physical receipt and accession.</CardDescription></CardHeader><CardContent className="divide-y">{order.samples.map((sample) => <section key={sample.id} className="py-4 first:pt-0 last:pb-0"><div className="flex flex-wrap items-start justify-between gap-2"><div><h2 className="font-medium">{sample.customerSampleId}</h2><p className="mt-1 text-sm text-muted-foreground">{sample.materialType} · {sample.quantity} {sample.quantityUnit} · {sample.biologicalSource}</p></div><div className="flex flex-wrap items-center gap-2"><OrderStatusBadge status={sample.status} />{!sample.receivedAt && order.placedAt ? <Button type="button" size="sm" variant="outline" onClick={() => { setShipmentSampleId(sample.id); setCarrier(sample.carrier ?? ''); setTrackingNumber(sample.trackingNumber ?? ''); setDialog('shipment') }}>Record shipment</Button> : null}</div></div>{sample.accessionId ? <p className="mt-2 text-sm">Accession <span className="font-mono">{sample.accessionId}</span></p> : null}{sample.trackingNumber ? <p className="mt-2 text-sm">Shipment {sample.carrier ?? ''} <span className="font-mono">{sample.trackingNumber}</span></p> : null}{sample.receiptCondition ? <p className="mt-1 text-sm text-muted-foreground">Receipt: {sample.receiptCondition}</p> : null}{sample.tenantSafeReason ? <p className="mt-2 text-sm text-destructive">{sample.tenantSafeReason}</p> : null}</section>)}</CardContent></Card>
+          <LabJobSamplesPanel order={order} />
 
-          <Card>
+          <Card id="results">
             <CardHeader>
               <CardTitle>Files and results</CardTitle>
               <CardDescription>Scientific approval and release are governed in POMS. Payment balance and credit status never gate PSeq result release.</CardDescription>
@@ -118,7 +111,7 @@ export function LabServiceDetailPage({ orderId }: { orderId: string }) {
           <DialogHeader>
             <DialogTitle>Accept quote for {order.orderNumber}?</DialogTitle>
             <DialogDescription>
-              This places the complete quoted scope and authorizes Phaeno to perform the work.{' '}
+              This accepts the quoted scope and opens sample entry. Laboratory work and shipping are authorized after you finalize the exact sample list.{' '}
               {quote?.taxDecisionSnapshotJson ? 'The displayed total includes the current tax determination.' : 'This quote is pre-tax; applicable tax will be calculated at invoicing.'}{' '}
               The accepted Department and commercial settings remain in the order history.
             </DialogDescription>
@@ -137,7 +130,7 @@ export function LabServiceDetailPage({ orderId }: { orderId: string }) {
         </DialogContent>
       </Dialog>
       <Dialog open={dialog === 'cancel' || dialog === 'withdraw'} onOpenChange={(open) => !open && setDialog(null)}><DialogContent><DialogHeader><DialogTitle>{dialog === 'withdraw' ? 'Withdraw' : 'Request cancellation for'} {order.orderNumber}</DialogTitle><DialogDescription>{dialog === 'withdraw' ? 'This closes the request before work is placed.' : 'Phaeno will review completed work and financial effects before deciding the request.'}</DialogDescription></DialogHeader><div><Label htmlFor="cancellationReason">Reason <span className="text-[var(--ruby-red,#b4233c)]" aria-hidden="true">*</span></Label><textarea id="cancellationReason" value={cancellationReason} onChange={(event) => setCancellationReason(event.target.value)} className="mt-2 min-h-24 w-full rounded-lg border border-input bg-background px-3 py-2 text-sm focus-visible:ring-3 focus-visible:ring-ring/50 focus-visible:outline-none" /></div><DialogFooter><DialogClose asChild><Button type="button" variant="outline">Keep order</Button></DialogClose><Button type="button" variant="destructive" disabled={!cancellationReason.trim() || action.isPending} onClick={() => action.mutate(dialog === 'withdraw' ? 'withdraw' : 'cancel')}>{action.isPending ? 'Updating…' : dialog === 'withdraw' ? 'Withdraw request' : 'Request cancellation'}</Button></DialogFooter></DialogContent></Dialog>
-      <Dialog open={dialog === 'shipment'} onOpenChange={(open) => !open && setDialog(null)}><DialogContent><DialogHeader><DialogTitle>Record sample shipment</DialogTitle><DialogDescription>Add the carrier and tracking number after the sample leaves your organization.</DialogDescription></DialogHeader><div className="grid gap-4"><div><Label htmlFor="sampleCarrier">Carrier</Label><input id="sampleCarrier" value={carrier} onChange={(event) => setCarrier(event.target.value)} className="mt-2 h-9 w-full rounded-lg border border-input bg-background px-3 text-sm" /></div><div><Label htmlFor="sampleTrackingNumber">Tracking number</Label><input id="sampleTrackingNumber" value={trackingNumber} onChange={(event) => setTrackingNumber(event.target.value)} className="mt-2 h-9 w-full rounded-lg border border-input bg-background px-3 text-sm" /></div></div><DialogFooter><DialogClose asChild><Button type="button" variant="outline">Cancel</Button></DialogClose><Button type="button" disabled={action.isPending} onClick={() => action.mutate('shipment')}>{action.isPending ? 'Saving…' : 'Record shipment'}</Button></DialogFooter></DialogContent></Dialog>
+
     </main>
   )
 }

@@ -2,13 +2,13 @@
 
 Order Ops owns the Commercial Data Assembly order, quote, approval, cancellation, and accounting source record. Lab Ops owns input validation, processing milestones, quality review, and immutable output release. Inputs and outputs are manufacturing records; they are not source samples for Data Provisioning.
 
-Find the Commercial order in **Order operations** > **Orders** with order type **Data Assembly**. Open **Lab operations** > **Data assembly** to validate the submitted input and perform the manufacturing workflow. When Lab accepts the input, Commercial staff issue the quote from the linked order; manufacturing continues after Partner acceptance.
+Find the Commercial order in **Order operations** > **Assembly**. Open **Lab operations** > **Data assembly** to validate the submitted input and perform the manufacturing workflow. When Lab accepts the input, Commercial staff issue the quote from the linked order; manufacturing continues after Partner acceptance.
 
 ## Validate the submission
 
 Confirm the active Partner, project reference, purchase-order requirement, selected active assembly profile, required metadata, and uploaded input revision. Validate file type, size, completeness, malware-scan state, and every profile-specific requirement.
 
-When the submission cannot pass input validation, Lab staff place the manufacturing record on hold and document the issue. Commercial staff use the linked order to request a targeted Customer correction or reject work that is unsafe, unsupported, or outside the offered profile. A correction creates a new input revision; it must not rewrite the revision that was reviewed previously.
+When the submission cannot pass input validation, Lab staff place the manufacturing record on hold and document the issue. Commercial staff use the linked order to request a targeted Partner correction or reject work that is unsafe, unsupported, or outside the offered profile. A correction creates a new input revision; it must not rewrite the revision that was reviewed previously.
 
 ## Quote and accept the job
 
@@ -16,7 +16,7 @@ Prepare the per-job quote from the current assembly offering and preserve its pr
 
 ## Process and review
 
-Record processing milestones against the accepted input revision and selected profile. Internal implementation details and intermediate files remain internal. When processing is complete, perform the configured quality review and document any hold or required correction.
+Record processing milestones against the accepted input revision and selected profile. Internal implementation details and intermediate files remain internal. When processing is complete, perform the configured quality review and document any hold or required correction. Open **Review outputs** to inspect every uploaded output and its scan state, including files uploaded in an earlier session. POMS builds the output manifest from the uploaded files and pinned processing run; operators do not type a manifest or repeat the pipeline provenance.
 
 ## Approve an output release
 

@@ -2,6 +2,7 @@ namespace PhaenoPortal.App.Features.OrderManagement.Services;
 
 using Microsoft.EntityFrameworkCore;
 using PSeq.Operations.Commercial.Accounts.Domain;
+using PSeq.Operations.Commercial.OrderManagement.Domain;
 using PSeq.Operations.Commercial.Relationships.Application;
 using PSeq.Operations.Commercial.Relationships.Domain;
 using PhaenoPortal.App.Infrastructure.Persistence;
@@ -14,11 +15,17 @@ public sealed record PSeqCustomerReadiness(
 public sealed class OperationalReadinessService(PSeqOperationsDbContext dbContext)
 {
     public async Task<PSeqCustomerReadiness> EvaluateAsync(
-        Guid organizationId, CancellationToken cancellationToken)
+        Guid organizationId, CancellationToken cancellationToken, Guid? departmentId = null)
     {
         var organization = await dbContext.Organizations.AsNoTracking()
             .SingleOrDefaultAsync(item => item.Id == organizationId, cancellationToken)
             ?? throw new OrderManagementException("customer_not_found", "The Customer was not found.", StatusCodes.Status404NotFound);
+        return await EvaluateAsync(organization, cancellationToken, departmentId);
+    }
+
+    public async Task<PSeqCustomerReadiness> EvaluateAsync(
+        Organization organization, CancellationToken cancellationToken, Guid? departmentId = null)
+    {
         var now = DateTime.UtcNow;
         var hasAdministrator = await dbContext.OrganizationMemberships.AsNoTracking().AnyAsync(item =>
             item.OrganizationId == organization.Id && item.IsActive && item.IsOrganizationAdmin
@@ -28,14 +35,27 @@ public sealed class OperationalReadinessService(PSeqOperationsDbContext dbContex
             item.OrganizationId == organization.Id && item.Service == PortalService.PSeqLabService
             && item.ConfigurationStatus == EntitlementConfigurationStatus.Ready
             && item.EffectiveFrom <= now && (!item.EffectiveTo.HasValue || item.EffectiveTo > now), cancellationToken);
-        var hasOffering = await (from analysis in dbContext.AnalysisDefinitions.AsNoTracking()
-            join catalog in dbContext.QboCatalogItems.AsNoTracking() on analysis.QboCatalogItemId equals catalog.Id
-            where analysis.IsActive && !analysis.IsSynthetic && catalog.IsActive
-            select analysis.Id).AnyAsync(cancellationToken);
+        if (departmentId.HasValue)
+        {
+            var eligibility = await LabServiceOrderingEligibility.ReadAsync(
+                dbContext, organization.Id, now, cancellationToken, departmentId);
+            hasEntitlement = eligibility.OrderingAuthorized;
+        }
+        var hasOffering = await dbContext.QboCatalogItems.AsNoTracking().AnyAsync(item =>
+            item.IsActive && item.ExternalItemId.ToLower() == OrderServiceKeys.PSeqLabService
+            && item.SalesUnit.ToLower() == OrderSalesUnits.Specimen, cancellationToken);
         var system = await dbContext.OrderSystemConfigurations.AsNoTracking().OrderBy(item => item.CreatedAt)
             .FirstOrDefaultAsync(cancellationToken);
         var profile = await dbContext.OrganizationCommercialProfiles.AsNoTracking()
             .SingleOrDefaultAsync(item => item.OrganizationId == organization.Id, cancellationToken);
+        var hasSampleTypes = await dbContext.SampleTypeDefinitions.AsNoTracking().AnyAsync(item => item.IsActive
+            && item.EffectiveFrom <= now && (!item.EffectiveTo.HasValue || item.EffectiveTo > now), cancellationToken);
+        var hasShipping = await dbContext.SampleShippingInstructionRules.AsNoTracking().AnyAsync(rule => rule.IsActive
+            && rule.EffectiveFrom <= now && (!rule.EffectiveTo.HasValue || rule.EffectiveTo > now)
+            && dbContext.SampleShippingDestinations.Any(destination => destination.Id == rule.DestinationId && destination.IsActive
+                && destination.EffectiveFrom <= now && (!destination.EffectiveTo.HasValue || destination.EffectiveTo > now))
+            && dbContext.SampleTypeDefinitions.Any(sample => sample.Id == rule.SampleTypeDefinitionId && sample.IsActive
+                && sample.EffectiveFrom <= now && (!sample.EffectiveTo.HasValue || sample.EffectiveTo > now)), cancellationToken);
         var evaluation = OperationalReadinessPolicy.Evaluate(new OperationalReadinessInput(
             organization is { IsActive: true, Kind: OrganizationKind.Customer },
             organization.IsOperationalReadinessBlocked,
@@ -43,10 +63,10 @@ public sealed class OperationalReadinessService(PSeqOperationsDbContext dbContex
             hasAdministrator,
             hasEntitlement,
             hasOffering,
-            system is { QuoteValidityDays: > 0 },
-            system?.SampleConfigurationJson != "{}",
-            system?.ShippingConfigurationJson != "{}",
-            system?.ResultDestinationConfigurationJson != "{}",
+            system is { QuoteValidityDays: > 0 } && OrderSystemConfiguration.HasSupportedSampleConfiguration(system.SampleConfigurationJson),
+            hasSampleTypes,
+            hasShipping,
+            OrderSystemConfiguration.HasSupportedResultDestination(system?.ResultDestinationConfigurationJson),
             !string.IsNullOrWhiteSpace(system?.SampleSubmissionInstructions),
             profile?.HasCompleteBillingContact == true,
             profile?.HasCompleteBillingAddress == true,

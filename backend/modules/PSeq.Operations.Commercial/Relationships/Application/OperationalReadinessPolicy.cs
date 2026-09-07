@@ -53,11 +53,16 @@ public sealed record OperationalReadinessEvaluation(
     OperationalReadiness State,
     IReadOnlyList<OperationalReadinessBlocker> Blockers)
 {
-    public bool CanStageOrder => Blockers.All(blocker => blocker.Code is not (
+    public IReadOnlyList<OperationalReadinessBlocker> StageBlockers => Blockers.Where(blocker => blocker.Code is (
         OperationalReadinessBlockerCode.ActiveCustomerRelationshipRequired
         or OperationalReadinessBlockerCode.ManualBlock
         or OperationalReadinessBlockerCode.PSeqServiceEntitlementNotReady
-        or OperationalReadinessBlockerCode.ActivePSeqOfferingRequired));
+        or OperationalReadinessBlockerCode.ActivePSeqOfferingRequired)).ToArray();
+
+    public bool CanStageOrder => StageBlockers.Count == 0;
+
+    public IReadOnlyList<OperationalReadinessBlocker> InvoiceBlockers => Blockers
+        .Where(blocker => IsPostAcceptanceBillingBlocker(blocker.Code)).ToArray();
 
     public IReadOnlyList<OperationalReadinessBlocker> QuoteBlockers => Blockers
         .Where(blocker => !IsPostAcceptanceBillingBlocker(blocker.Code))

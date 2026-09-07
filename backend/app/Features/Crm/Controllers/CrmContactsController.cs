@@ -96,6 +96,12 @@ public sealed class CrmContactsController(
             request.CommunicationNotes,
             request.Tags));
         dbContext.CrmContacts.Add(value);
+        if (request.CompanyId.HasValue)
+        {
+            if (!await dbContext.CrmCompanies.AnyAsync(company => company.Id == request.CompanyId.Value && company.IsActive, cancellationToken))
+                throw CrmAccess.NotFound("crm_company_not_found", "The active CRM Company was not found.");
+            dbContext.CrmCompanyContacts.Add(new CrmCompanyContact(request.CompanyId.Value, value.Id, null, null, true, DateOnly.FromDateTime(DateTime.UtcNow)));
+        }
         await dbContext.SaveChangesAsync(cancellationToken);
         return Created($"/api/platform/crm/contacts/{value.Id}", ToDto(value, owner));
     }

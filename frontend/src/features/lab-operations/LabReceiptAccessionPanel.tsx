@@ -18,8 +18,10 @@ import { ReturnKitFulfillmentPanel } from '#/features/orders/ReturnKitFulfillmen
 export function LabReceiptAccessionPanel({
   apiEnabled,
   workOrders,
+  shipmentId,
 }: {
   apiEnabled: boolean
+  shipmentId?: string
   workOrders: LabWorkOrderSummary[]
 }) {
   const packetBarcodeInput = useRef<HTMLInputElement>(null)
@@ -57,7 +59,7 @@ export function LabReceiptAccessionPanel({
         </CardHeader>
       </Card>
 
-      <ReturnKitFulfillmentPanel apiEnabled={apiEnabled} />
+      <ReturnKitFulfillmentPanel apiEnabled={apiEnabled} shipmentId={shipmentId} />
 
       <Card>
         <CardHeader>
@@ -157,6 +159,7 @@ export function LabReceiptAccessionPanel({
                     <Button type="submit" disabled={!tubeBarcode.trim() || tubeScan.isPending}><ScanLine data-icon="inline-start" />{tubeScan.isPending ? 'Comparing…' : 'Compare tube'}</Button>
                   </form>
                   {tubeScan.error ? <Alert variant="destructive" className="mt-3"><AlertTitle>Tube could not be checked</AlertTitle><AlertDescription>{getOrderErrorMessage(tubeScan.error, 'Check the complete barcode and scan again.')}</AlertDescription></Alert> : null}
+                  {tubeScan.data?.isExpected && !tubeScan.data.isAccessioned ? <Button asChild className="mt-3"><Link to="/lab-operations/$workOrderId" params={{ workOrderId: packetScan.data.labWorkOrderId }} search={{ section: 'receipt', tab: 'specimens', packet: packetScan.data.barcode, tube: tubeScan.data.supplierTubeBarcode }}>Continue to receipt and accession</Link></Button> : null}
                   {tubeScan.data ? <Alert variant={tubeScan.data.isExpected ? 'default' : 'destructive'} className="mt-3"><AlertTitle>{tubeScan.data.isExpected ? (tubeScan.data.isAccessioned ? 'Tube was already accessioned' : 'Tube matches this packet') : 'Stop: tube does not match this packet'}</AlertTitle><AlertDescription>{tubeScan.data.isExpected ? `${tubeScan.data.supplierTubeBarcode} maps to Customer sample ${tubeScan.data.customerSampleId}. This comparison did not record receipt or accession.` : tubeScanOutcome(tubeScan.data.outcome)}</AlertDescription></Alert> : null}
                 </div>
               )}

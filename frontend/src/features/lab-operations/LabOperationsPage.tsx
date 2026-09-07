@@ -53,7 +53,8 @@ import { ServiceWorkflowList } from './ServiceWorkflowList'
 
 type CreateKind = 'protocol' | 'material' | 'equipment' | 'batch' | null
 type SimpleCreateKind = Exclude<CreateKind, 'material' | 'equipment'>
-export type LabSection = 'receipt' | 'work' | 'kits' | 'assembly' | 'protocols' | 'materials' | 'equipment' | 'batches'
+export type { LabSection } from './lab-sections'
+import type { LabSection } from './lab-sections'
 
 const labSections: ReadonlyArray<WorkspaceSidebarItem<LabSection>> = [
   { value: 'receipt', label: 'Receipt & accession', description: 'Kits, shipment intake, and accession', icon: ScanLine },
@@ -66,7 +67,7 @@ const labSections: ReadonlyArray<WorkspaceSidebarItem<LabSection>> = [
   { value: 'batches', label: 'Batches', description: 'Operational and sequencing batches', icon: Layers3 },
 ]
 
-export function LabOperationsPage({ section, onSectionChange }: { section: LabSection; onSectionChange: (section: LabSection) => void }) {
+export function LabOperationsPage({ section, shipmentId, onSectionChange }: { section: LabSection; shipmentId?: string; onSectionChange: (section: LabSection) => void }) {
   const { authProvider, session } = usePhaenoSession()
   const navigate = useNavigate()
   const canView = Boolean(session?.capabilities.canManageLabOperations)
@@ -102,7 +103,7 @@ export function LabOperationsPage({ section, onSectionChange }: { section: LabSe
           {authProvider === 'mock' ? <Alert className="mb-5"><AlertTitle>Connected Lab operations are paused</AlertTitle><AlertDescription>Use a real Phaeno session to load or change laboratory records.</AlertDescription></Alert> : null}
           {dashboard.error ? <Alert className="mb-5" variant="destructive"><AlertTitle>Lab operations could not be loaded</AlertTitle><AlertDescription>{getLabOperationsError(dashboard.error, 'Try refreshing the workspace.')}</AlertDescription></Alert> : null}
           {dashboard.isLoading ? <p role="status">Loading laboratory workspace…</p> : null}
-          {dashboard.data && section === 'receipt' ? <LabReceiptAccessionPanel apiEnabled={apiEnabled} workOrders={dashboard.data.workOrders} /> : null}
+          {dashboard.data && section === 'receipt' ? <LabReceiptAccessionPanel shipmentId={shipmentId} apiEnabled={apiEnabled} workOrders={dashboard.data.workOrders} /> : null}
           {dashboard.data && section === 'work' ? <div className="space-y-5"><LabBarcodeLookup /><WorkQueue items={dashboard.data.workOrders.filter((item) => item.status !== 'AwaitingSpecimens')} /></div> : null}
           {section === 'kits' ? <LabManufacturingQueue workflow="reagent" apiEnabled={apiEnabled} /> : null}
           {section === 'assembly' ? <LabManufacturingQueue workflow="assembly" apiEnabled={apiEnabled} /> : null}
@@ -770,9 +771,10 @@ function BatchList({ items, canManage, onCreate, refresh }: { items: Awaited<Ret
   const sendoutTransition = useMutation({ mutationFn: ({ item, status }: { item: LabBatch; status: string }) => transitionLabSendout(item.sendoutId!, { status, version: item.sendoutVersion }), onSuccess: refresh })
   const save = useMutation({ mutationFn: async () => {
     if (!dialog) throw new Error('Choose a batch action.')
-    if (dialog.kind === 'sendout') return createLabSendout(dialog.batch.id, { providerName: form.providerName, providerReference: form.providerReference || null, manifestJson: form.manifestJson || '{}', expectedCompletionAtUtc: form.expectedCompletionAtUtc ? new Date(form.expectedCompletionAtUtc).toISOString() : null })
-    return recordLabCustody(dialog.batch.sendoutId!, { labContainerId: null, eventCode: form.eventCode, locationOrParty: form.locationOrParty, detailsJson: form.detailsJson || '{}' })
+    if (dialog.kind === 'sendout') return createLabSendout(dialog.batch.id, { providerName: form.providerName, providerReference: form.providerReference || null, manifestJson: JSON.stringify({ notes: form.manifestNotes?.trim() || null }), expectedCompletionAtUtc: form.expectedCompletionAtUtc ? new Date(form.expectedCompletionAtUtc).toISOString() : null })
+    return recordLabCustody(dialog.batch.sendoutId!, { labContainerId: null, eventCode: form.eventCode, locationOrParty: form.locationOrParty, detailsJson: JSON.stringify({ carrierReference: form.carrierReference?.trim() || null, notes: form.custodyNotes?.trim() || null }) })
   }, onSuccess: async () => { setDialog(null); setForm({}); await refresh() } })
+  const openBatchAction = (batch: LabBatch, kind: 'sendout' | 'custody') => { save.reset(); setForm({}); setDialog({ batch, kind }) }
   const nextStatus = (status: string | null) => status === 'Preparing' ? 'Shipped' : status === 'Shipped' ? 'ReceivedByProvider' : status === 'ReceivedByProvider' ? 'Sequencing' : status === 'Sequencing' ? 'Complete' : null
   const set = (key: string) => (event: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => setForm((current) => ({ ...current, [key]: event.target.value }))
   const filteredItems = statusFilter === 'All' ? items : items.filter((item) => item.status === statusFilter)
@@ -835,8 +837,8 @@ function BatchList({ items, canManage, onCreate, refresh }: { items: Awaited<Ret
                       <div className="flex flex-wrap items-center gap-2">
                         <Status value={item.status} />
                         {canManage && item.status === 'Draft' ? <Button type="button" size="sm" disabled={transition.isPending} onClick={() => openTransition(item, 'start')}>Start</Button> : null}
-                        {canManage && item.status === 'InProgress' && !item.sendoutId && item.memberCount > 0 ? <Button type="button" size="sm" onClick={() => setDialog({ batch: item, kind: 'sendout' })}>Create sendout</Button> : null}
-                        {canManage && item.sendoutId ? <Button type="button" size="sm" variant="outline" onClick={() => setDialog({ batch: item, kind: 'custody' })}>Custody event</Button> : null}
+                        {canManage && item.status === 'InProgress' && !item.sendoutId && item.memberCount > 0 ? <Button type="button" size="sm" onClick={() => openBatchAction(item, 'sendout')}>Create sendout</Button> : null}
+                        {canManage && item.sendoutId ? <Button type="button" size="sm" variant="outline" onClick={() => openBatchAction(item, 'custody')}>Custody event</Button> : null}
                         {canManage && item.sendoutId && next ? <Button type="button" size="sm" disabled={sendoutTransition.isPending} onClick={() => sendoutTransition.mutate({ item, status: next })}>Mark {humanize(next)}</Button> : null}
                         {canManage && item.status === 'InProgress' && (!item.sendoutId || item.sendoutStatus === 'Complete') ? <Button type="button" size="sm" disabled={transition.isPending} onClick={() => openTransition(item, 'complete')}>Complete batch</Button> : null}
                       </div>
@@ -879,13 +881,15 @@ function BatchList({ items, canManage, onCreate, refresh }: { items: Awaited<Ret
                 <Field label="Provider name" value={form.providerName} onChange={set('providerName')} required />
                 <Field label="Provider reference" value={form.providerReference} onChange={set('providerReference')} />
                 <Field label="Expected completion" type="datetime-local" value={form.expectedCompletionAtUtc} onChange={set('expectedCompletionAtUtc')} />
-                <TextField label="Manifest JSON" value={form.manifestJson || '{}'} onChange={set('manifestJson')} />
+                <p className="text-sm text-muted-foreground">POMS freezes the current {dialog.batch.memberCount} libraries and their container barcodes in the sendout manifest for {dialog.batch.batchNumber}. Confirm the physical contents against the batch before saving.</p>
+                <TextField label="Additional manifest notes (optional)" value={form.manifestNotes} onChange={set('manifestNotes')} />
               </>
             ) : (
               <>
                 <Field label="Event code" value={form.eventCode} onChange={set('eventCode')} required />
                 <Field label="Location or party" value={form.locationOrParty} onChange={set('locationOrParty')} required />
-                <TextField label="Details JSON" value={form.detailsJson || '{}'} onChange={set('detailsJson')} />
+                <Field label="Carrier or tracking reference (optional)" value={form.carrierReference} onChange={set('carrierReference')} />
+                <TextField label="Custody note (optional)" value={form.custodyNotes} onChange={set('custodyNotes')} />
               </>
             )}
           </div>

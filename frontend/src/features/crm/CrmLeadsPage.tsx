@@ -1,3 +1,4 @@
+import { CrmClearFilters, useCrmSearch, useCrmState, CrmListPagination } from "./CrmListNavigation";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Link, useNavigate } from "@tanstack/react-router";
 import { Plus } from "lucide-react";
@@ -19,18 +20,21 @@ import {
   CardHeader,
   CardTitle,
 } from "#/components/ui/card";
+import { Input } from "#/components/ui/input";
 import { Label } from "#/components/ui/label";
 import { CrmLeadDialog } from "./CrmLeadDialog";
 import { CrmSavedViewBar } from "./CrmSavedViewBar";
 
 export function CrmLeadsPage() {
+  const [draftSearch, setDraftSearch, search, setSearch] = useCrmSearch();
+  const [page, setPage] = useCrmState<number>("page", 1);
   const navigate = useNavigate();
   const client = useQueryClient();
   const [open, setOpen] = useState(false);
-  const [status, setStatus] = useState<CrmLeadStatus | "">("");
+  const [status, setStatus] = useCrmState<CrmLeadStatus | "">("status", "");
   const query = useQuery({
-    queryKey: ["crm-leads", status],
-    queryFn: () => listCrmLeads({ status: status || undefined, pageSize: 100 }),
+    queryKey: ["crm-leads", status, page, search],
+    queryFn: () => listCrmLeads({ search, status: status || undefined, page, pageSize: 25 }),
   });
   const create = useMutation({
     mutationFn: (input: CrmLeadInput) => createCrmLead(input),
@@ -72,6 +76,7 @@ export function CrmLeadsPage() {
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
+          <div className="grid gap-1.5"><Label htmlFor="crm-list-search">Search</Label><Input id="crm-list-search" value={draftSearch} onChange={event => setDraftSearch(event.target.value)} /></div>
           <div className="grid max-w-xs gap-1.5">
             <Label htmlFor="lead-status">Status</Label>
             <select
@@ -90,12 +95,11 @@ export function CrmLeadsPage() {
               )}
             </select>
           </div>
+          <CrmClearFilters />
           <CrmSavedViewBar
             recordType="Lead"
-            currentFilter={{ status }}
-            onApply={(filter) =>
-              setStatus(isLeadStatus(filter.status) ? filter.status : "")
-            }
+            currentFilter={{ status, search }}
+            onApply={(filter) => { setStatus(isLeadStatus(filter.status) ? filter.status : ""); setSearch(typeof filter.search === 'string' ? filter.search : '') }}
           />
           <div className="overflow-x-auto rounded-lg border">
             <table className="w-full text-left text-sm">
@@ -114,7 +118,7 @@ export function CrmLeadsPage() {
                   <tr key={lead.id}>
                     <td className="px-4 py-3 font-medium">
                       <Link
-                        to="/crm/leads/$leadId"
+                        to="/crm/leads/$leadId" search={previous => previous}
                         params={{ leadId: lead.id }}
                         className="hover:underline"
                       >
@@ -148,12 +152,13 @@ export function CrmLeadsPage() {
                 ))}
               </tbody>
             </table>
-            {!query.isLoading && !(query.data?.items.length ?? 0) ? (
+            {!query.isLoading && !query.error && !(query.data?.items.length ?? 0) ? (
               <p className="p-8 text-center text-sm text-muted-foreground">
                 No leads match this view.
               </p>
             ) : null}
           </div>
+          <CrmListPagination result={query.data} page={page} onPageChange={setPage} busy={query.isFetching} />
         </CardContent>
       </Card>
       <CrmLeadDialog

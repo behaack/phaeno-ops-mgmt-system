@@ -1,6 +1,6 @@
 # Accounting and notification recovery
 
-Order Ops uses durable invitation, notification, Lab projection, and provider-neutral result-pipeline records. A failed delivery remains attached to the original workflow with its idempotency key, attempt history, last error, and provider identifier when one exists. The retained accounting-connector queue is legacy/non-PSeq context; native PSeq AR remains local to POMS.
+A failed notice or integration remains attached to the original business record with its attempts and error history. Use Company **People** for invitation access and delivery recovery, **Attention** for operational follow-up, and the owning Lab, Trial, or release record for scientific publication. Native PSeq accounts receivable is maintained in **Finance**; retained accounting connectors serve historical or non-PSeq work.
 
 ## Triage the failure
 
@@ -16,7 +16,9 @@ Common states include:
 
 Refresh the workflow before investigating a missing accounting row. Do not recreate the order, quote, shipment, output approval, or result completion to force another row. Use the stable source ID when reconciling repeated report downloads.
 
-If an invitation hard-bounced, revoke and reissue to a corrected address rather than retrying it. If a pipeline submission or signed Mailgun webhook is replayed, use the stored idempotency/provider event identity rather than creating another package or delivery. If a notification failed, retry it without repeating the underlying business transition.
+If an invitation hard-bounced, revoke and reissue to a corrected address rather than retrying it. If a result or delivery already exists, inspect that original record instead of creating another package or delivery. If a notification failed, retry it without repeating the underlying business transition.
+
+If QuickBooks is not configured, catalog, document, or payment recovery reports the connector as unavailable and records **Needs attention**. It does not create an invoice, payment, or successful zero balance. Preserve the existing record and ask the responsible administrator to resolve the connector; repeating the request cannot configure it. Maintain the active Service catalog directly in **Order configuration → Service catalog**. Partner Assembly credit settings remain applicable to their own workflow.
 
 ## Communicate the boundary
 

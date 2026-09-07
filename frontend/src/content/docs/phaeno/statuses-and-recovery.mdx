@@ -1,55 +1,49 @@
 # Statuses and recovery
 
-Treat operational work, accounting source records, notifications, file scanning, and file release as separate lifecycles. Recover the failed lifecycle without rewriting accepted scope or creating duplicate records.
+Recover the failed step from the record that owns it. Company access, order pricing, laboratory work, scientific release, billing, notifications, and retention have separate lifecycles. Repeating a successful earlier action can create duplicate work without fixing the failure.
 
-## Triage order operations
+## Find the owning workspace
 
-Use Customer lab, Partner reagent, and Partner assembly queues to find work by its current status. Prioritize:
+| Work needing attention | Where to continue |
+| --- | --- |
+| Company access, invitation, or relationship request | **CRM → Companies → People** or the central **Requests** queue. Use **Approved / needs work** for approved requests awaiting completion. |
+| Customer pricing, quote, hold, or cancellation | **Order operations → Order intake**, then the Job. **New Customer order** starts each order; it is not configuration. |
+| Trial scope, approvals, acceptance, allowance, or closure | **Order operations → Trial projects**, then the Trial. |
+| Partner reagent or Assembly commercial review | **Order operations → PSeq kits** or **Assembly**. **Open Lab work** continues fulfillment or execution. |
+| Package, tube match, accession, execution, or scientific exception | The linked record in **Lab operations**. |
+| Scientifically approved PSeq package awaiting publication | **Order operations → Result release**, then the package. |
+| PSeq invoice, receipt, allocation, or reconciliation | The appropriate tab in **Order operations → Finance**. |
+| Cross-workflow follow-up or failed notice | **Order operations → Attention**; follow the item to its record. |
+| Curated-package grants, quarantine, or governance | **Data provisioning**, separate from the Customer Job's results. |
 
-1. scan or safety failures that block intake or release;
-2. payment or release-state conflicts that affect a ready result;
-3. missing or unexpected accounting source records;
-4. Customer- or Partner-visible holds and requested corrections;
-5. notifications that remain pending or failed.
+Check search, status, date, owner, and Department filters before creating another record. A failed load differs from an empty list. **Active intake** includes held work; use **On hold** to focus on it, or **All orders and history** for accepted and terminal records. Lists preserve filters when you return from a record.
 
-The overall order status is not sufficient evidence. Check sample or shipment progress, the current quote, commercial document, scan state, release state, cancellation request, and notification record separately.
+## Recover Company readiness
 
-## Recover Lab projections and exceptions
+Open the Company's **Departments & services** and select the affected Department in **Department readiness**. The same checks appear during **New Customer order**. Requirements are separated into before pricing, before quote issuance, and before invoicing. Follow the setup link beside the requirement; a historical readiness label does not satisfy it.
 
-Lab execution events are delivered durably to Commercial projections. If a Customer milestone, schedule, action request, or permitted QC summary is delayed, verify the Lab work order and event state, then retry the existing delivery path. Do not recreate the authorization, create a second work order, or copy Laboratory facts directly into Commercial records.
+An active Customer, effective Ready service entitlement, valid offering, and no operational block allow pricing to begin. Quote issuance also requires operational configuration and an active Customer organization administrator. Billing and Finance approval may follow acceptance but must be complete before invoicing. See [Customer lab authorization](./order-customer-lab-authorization).
 
-Internal and Customer-action-required exceptions are separate. Resolve the existing blocking exception with an authorized Supervisor action and a retained resolution note. Never copy an internal investigation description into the Customer-safe summary. Ready for release is a scientific milestone only; recover file scanning, payment, and publication through their own lifecycles.
+## Recover laboratory and release work
 
-## Review manual accounting source records
+Packet and tube matching identifies authorized work; it does not record receipt. Continue to the linked Lab work, **Record receipt**, then **Confirm accession**. Resolve an unmatched or unsafe item through the receipt exception process.
 
-POMS creates stable journal-entry source rows at the implemented billing boundaries. The report itself does not post entries or choose general-ledger accounts.
+Resolve blocked execution and scientific exceptions in Lab operations using the authorized role. Keep internal investigation detail separate from the Customer summary. If a milestone publication fails, retry the existing event where recovery is offered; do not recreate the authorization, approval, or Lab work order.
 
-1. Open **Order operations**, then **Accounting**.
-2. Select the inclusive accounting-date range.
-3. Compare the organization, workflow number, source document, reference, currency, gross amount, and balance with the operational record.
-4. Download the CSV and complete account selection, tax treatment, and posting in the accounting system.
-5. Preserve the stable entry ID during reconciliation; downloading the same range again does not mark a source row as posted.
+Review the complete, checksummed, malware-clean package and scientific approval in **Result release** before publication. Payment, invoice balance, and Customer credit do not gate PSeq results. Partner Assembly retains its separate credit and payment-hold rules. See [Scientific approval](./lab-scientific-approval) and [Data assembly review](./order-data-assembly).
 
-QuickBooks Online integration is deferred. Historical integration messages cannot be retried, and the manual source report is not a payment-confirmation workflow.
+Do not mark rejected files clean or change an order status to bypass a file gate. Correct the storage or scanning issue for failed or unavailable scans. Use the owning release action to withdraw a package that must no longer be delivered.
 
-## Recover files and releases
+## Recover Finance and notifications
 
-Files progress through **Pending**, **Scanning**, **Clean**, **Rejected**, **Failed**, or **Unavailable** scan states. Only clean files can continue to a valid release state.
+Use **Finance** for native PSeq invoices, receipts, allocations, corrections, imports, and reconciliation. An export does not record payment or mark an invoice posted elsewhere. Partner reagent shipments and Assembly outputs retain separate commercial source records for the manual accounting handoff.
 
-- Investigate a rejected scan as a safety event; do not mark it clean manually.
-- Retry a failed or unavailable scan only after the scanner or storage dependency is healthy.
-- Keep output **Internal** while review is incomplete.
-- Use **Ready** when operational review is complete, **Payment hold** when commercial release is blocked, and **Released** only when every applicable gate passes.
-- Use **Withdrawn** when a previously available file must no longer be delivered; preserve the record and audit history.
+Before retrying a receipt or import, check whether it succeeded. Correct changed import input and preview it again; only the operator who reviewed the preview can confirm it. A receipt is recorded from accepted evidence, not from a successful email or connector retry. See [Billing, payment, and release](./order-billing-payment-release).
 
-Credit approval permits Net 30 release for the applicable Customer lab or Partner assembly workflow. Without credit, files remain on payment hold until a separately approved payment-confirmation workflow is implemented. Do not use an order-status change to bypass this rule.
+Failed notifications do not reverse the underlying action. Correct eligible recipients or delivery issues and retry the existing notice where offered. For a hard-bounced invitation, use Company **People** to revoke it and issue a new invitation to the corrected Contact address. A queued recovery request is not proof of delivery or an available accounting connector.
 
-## Recover notifications
+## Respect retained history
 
-Notification records use **Pending**, **Sending**, **Sent**, and **Failed**. Correct the delivery configuration or address, then retry the existing durable message. Confirm the final delivery state and avoid sending a separate untracked message as though it were the portal notification.
+Expired quotes require a current quote. Cancelled work, closed Trials, withdrawn files, completed Tasks, and expired downloads retain their history; follow the applicable new request, replacement, reissue, or correction workflow. Retention holds preserve or quarantine a release without extending its dates.
 
-## Respect terminal and superseded states
-
-Do not retry business actions that are rejected, declined, cancelled, withdrawn, or based on an expired or superseded quote. Start the documented replacement workflow when new scope, a new quote, or a corrected input revision is required.
-
-For escalation, record the portal identifiers, lifecycle and visible status, safe error category, timestamps, retry count, and whether the external dependency is healthy. Keep credentials, webhook secrets, access tokens, Customer-confidential data, protected health information, and raw scientific files out of tickets and browser-bundled documentation.
+Escalate with the record number, status, safe error, time, and action attempted. Keep credentials, invitation tokens, patient identifiers, investigations, and scientific files out of ordinary support notes.

@@ -1,9 +1,10 @@
+import { validateCrmNavigationSearch } from '#/features/crm/CrmListNavigation'
 import { Outlet, createFileRoute, useRouterState } from '@tanstack/react-router'
 
 import { CrmPortalAccessPage } from '#/features/crm/CrmPortalAccessPage'
 import { CrmShell } from '#/features/crm/CrmShell'
 
-export const Route = createFileRoute('/customers')({
+export const Route = createFileRoute('/customers')({ validateSearch: validateCrmNavigationSearch,
   component: LegacyCompaniesRoute,
 })
 

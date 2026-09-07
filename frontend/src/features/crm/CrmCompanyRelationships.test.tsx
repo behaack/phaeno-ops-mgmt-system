@@ -123,10 +123,21 @@ function renderRelationships(view: "relationships" | "requests") {
 }
 
 describe("Company request dialog", () => {
+  it('shows the current Prospect and submits the selected conversion target', () => {
+    const onSubmit = vi.fn()
+    render(<HandoffDialog open currentRelationship="Prospect" opportunities={[]} pending={false} error={null} onOpenChange={vi.fn()} onSubmit={onSubmit} />)
+    fireEvent.change(screen.getByRole('combobox', { name: 'What does this Company need?' }), { target: { value: 'Relationship' } })
+    expect(screen.getByText(/Current relationship: Prospect/)).toBeTruthy()
+    fireEvent.change(screen.getByRole('combobox', { name: 'Requested relationship' }), { target: { value: 'Partner' } })
+    fireEvent.click(screen.getByRole('button', { name: 'Create pending request' }))
+    expect(onSubmit).toHaveBeenCalledWith(expect.objectContaining({ type: 'RelationshipChange', requestedOrganizationKind: 'Partner' }))
+  })
+
   it("shows only the fields relevant to the selected request category and type", () => {
     const onSubmit = vi.fn();
     render(
       <HandoffDialog
+        currentRelationship="Prospect"
         open
         opportunities={[
           {

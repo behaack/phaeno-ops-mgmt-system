@@ -1,8 +1,11 @@
+import { CrmProvisioningReturn } from "./CrmListNavigation";
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { Link } from '@tanstack/react-router'
 
 import {
   apiErrorMessage,
+  applyRelationshipRequest,
+  listOrganizations,
   cancelRelationshipRequest,
   completeRelationshipRequestAccountCreation,
   decideRelationshipRequest,
@@ -25,9 +28,15 @@ import {
   type RequestAction,
 } from '#/features/organizations/RequestActionDialog'
 import { useState } from 'react'
+import { useCrmState, CrmClearFilters } from './CrmListNavigation'
+import { Tabs, TabsList, TabsTrigger } from '#/components/ui/tabs'
 
 export function CrmPortalAccessPage() {
   const client = useQueryClient()
+  const [storedView, setView] = useCrmState<string>('section', 'decision')
+  const view = ['decision', 'work', 'history'].includes(storedView) ? storedView : 'decision'
+  const [requestId] = useCrmState<string>('requestId', '')
+  const organizations = useQuery({ queryKey: ['organizations', 'all'], queryFn: () => listOrganizations(true) })
   const [actionTarget, setActionTarget] = useState<{
     action: RequestAction
     request: RelationshipRequest
@@ -52,13 +61,17 @@ export function CrmPortalAccessPage() {
       existingOrganizationId,
       request,
       reason,
+      organizationId,
     }: {
       action: RequestAction
       existingOrganizationId?: string
       request: RelationshipRequest
       reason: string
+      organizationId?: string
     }) =>
-      action === 'cancel'
+      action === 'apply'
+        ? applyRelationshipRequest(request.id, { notes: reason, organizationId, version: request.version })
+        : action === 'cancel'
         ? cancelRelationshipRequest(request.id, {
             reason,
             version: request.version,
@@ -87,16 +100,15 @@ export function CrmPortalAccessPage() {
     },
   })
 
-  const reviewQueue = (requests.data ?? []).filter(
-    (request) =>
-      request.source === 'FirstPartyCrm' &&
-      (request.status === 'PendingReview' ||
-        (request.status === 'Approved' && !request.organizationId)),
-  )
+  const allRequests = (requests.data ?? []).filter(request => request.source === 'FirstPartyCrm')
+  const reviewQueue = allRequests.filter(request => requestId ? request.id === requestId : view === 'decision'
+    ? request.status === 'PendingReview'
+    : view === 'work' ? request.status === 'Approved' : !['PendingReview', 'Approved'].includes(request.status))
   const error = requests.error
 
   return (
     <main className="page-wrap space-y-6 px-4 py-8">
+      <CrmProvisioningReturn />
       <section className="max-w-3xl">
         <Badge variant="secondary" className="mb-3">
           Phaeno CRM
@@ -120,7 +132,8 @@ export function CrmPortalAccessPage() {
 
       <Card>
         <CardHeader>
-          <CardTitle>Review queue</CardTitle>
+          <CardTitle>Company requests</CardTitle><CrmClearFilters />
+          <Tabs value={view} onValueChange={setView}><TabsList className="flex h-auto flex-wrap"><TabsTrigger value="decision">Needs decision ({allRequests.filter(r => r.status === 'PendingReview').length})</TabsTrigger><TabsTrigger value="work">Approved / needs work ({allRequests.filter(r => r.status === 'Approved').length})</TabsTrigger><TabsTrigger value="history">Completed / history</TabsTrigger></TabsList></Tabs>
           <CardDescription>
             Requests originate from their owning Company or Opportunity. Open
             the Company for its full relationship, access, service, and user
@@ -143,6 +156,7 @@ export function CrmPortalAccessPage() {
                           <Link
                             to="/crm/companies/$companyId"
                             params={{ companyId: request.companyId }}
+                            search={previous => ({ ...previous, section: 'requests' })}
                             className="cursor-pointer font-medium underline-offset-4 hover:underline focus-visible:rounded-sm focus-visible:ring-3 focus-visible:ring-ring/50 focus-visible:outline-none"
                           >
                             {request.candidateOrganizationName}
@@ -166,8 +180,10 @@ export function CrmPortalAccessPage() {
                         </Badge>
                       </div>
                       <p className="mt-2 text-sm">{request.summary}</p>
+                      {request.decisionReason ? <p className="mt-1 text-sm text-muted-foreground">Decision: {request.decisionReason}</p> : null}
+                      {request.applicationNotes ? <p className="mt-1 text-sm text-muted-foreground">Completed work: {request.applicationNotes}</p> : null}
                       <p className="mt-1 text-xs text-muted-foreground">
-                        {spaced(request.requestType)} ·{' '}
+                        {spaced(request.requestType)}{request.requestedOrganizationKind ? ` → ${request.requestedOrganizationKind}` : ''} ·{' '}
                         {request.requestedServices.length
                           ? request.requestedServices
                               .map(serviceLabel)
@@ -200,7 +216,7 @@ export function CrmPortalAccessPage() {
                             Decline
                           </Button>
                         </>
-                      ) : (
+                      ) : request.status === 'Approved' && enablesAccess(request) ? (
                         <Button
                           size="sm"
                           disabled={recovery.isPending}
@@ -208,8 +224,9 @@ export function CrmPortalAccessPage() {
                         >
                           Complete access enablement
                         </Button>
-                      )}
-                      <Button
+                      ) : request.status === 'Approved' ? <Button size="sm" disabled={action.isPending} onClick={() => { action.reset(); setActionTarget({ action: 'apply', request }) }}>{request.requestType === 'RelationshipChange' ? `Apply ${request.requestedOrganizationKind} relationship` : 'Complete request'}</Button> : null}
+                      {request.companyId && request.status === 'Approved' ? <Button asChild size="sm" variant="outline"><Link to="/crm/companies/$companyId" params={{ companyId: request.companyId }} search={previous => ({ ...previous, section: request.requestType === 'Onboarding' || request.requestType === 'Evaluation' ? 'people' : 'departments' })}>Open Company setup</Link></Button> : null}
+                      {['PendingReview', 'Approved'].includes(request.status) ? <Button
                         size="sm"
                         variant="outline"
                         disabled={action.isPending}
@@ -218,21 +235,22 @@ export function CrmPortalAccessPage() {
                         }
                       >
                         Cancel
-                      </Button>
+                      </Button> : null}
                     </div>
                   </div>
                 </div>
               ))}
             </div>
-          ) : (
+          ) : !error ? (
             <p className="rounded-lg border p-6 text-center text-sm text-muted-foreground">
-              No Company requests are waiting for review.
+              No Company requests in this view.
             </p>
-          )}
+          ) : null}
         </CardContent>
       </Card>
 
       <RequestActionDialog
+        organizations={organizations.data ?? []}
         action={actionTarget?.action ?? null}
         request={actionTarget?.request ?? null}
         isPending={action.isPending}
@@ -243,11 +261,12 @@ export function CrmPortalAccessPage() {
             action.reset()
           }
         }}
-        onSubmit={({ existingOrganizationId, explanation }) => {
+        onSubmit={({ existingOrganizationId, explanation, organizationId }) => {
           if (actionTarget) {
             action.mutate({
               ...actionTarget,
               existingOrganizationId,
+              organizationId,
               reason: explanation,
             })
           }

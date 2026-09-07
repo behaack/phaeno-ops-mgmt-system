@@ -1,5 +1,13 @@
 # File Management Plan
 
+## 2026-09-07 connected package workspace
+
+- Result release queues now open a dedicated package detail with Customer, job, sample, scientific reviewer, manifest, file evidence and release state. Release/withdraw/reissue are bounded confirmations in that record context.
+- File administrators can read the same governed PSeq package and use the existing retention receipt/preservation controls in its detail; independent release authority is unchanged. Receipt pages link back to the owning package. Retained-release list labels identify the job and sample instead of shortened UUIDs.
+- The global policy screen is titled File retention policy. Existing policy revisions, frozen deadlines, preservation/quarantine, deletion and reissue semantics remain unchanged.
+- Legacy job-specific Data Library links redirect to the owning Customer job results section. Curated example datasets retain their distinct source ownership, grants and governance model.
+- No migration or live state changes. Focused frontend coverage added; automated suites not run. Root task owns shared validation results and documentation registry generation.
+
 ## Scientific Pipeline Boundary
 
 This plan does not currently own raw NGS files, intermediate pipeline

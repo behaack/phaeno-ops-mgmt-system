@@ -10,7 +10,9 @@ The Scientific Reviewer should be able to trace the submitted specimen through c
 
 ## Record the approval
 
-Record the release-definition key and version, reviewer identity, approval time, permitted QC projection, and exact output-package identifier/version. Approval pins that immutable package; it does not upload or alter artifacts.
+Choose **Record scientific approval**, then select the complete output package by Customer sample, version, and file count. Review its file names and manifest checksum. POMS uses the service workflow for the release definition and records the reviewer and approval time. Enter an optional Customer-visible QC summary using ordinary text. Approval pins that immutable package; it does not upload or alter artifacts.
+
+If several sample packages are ready, approve each package separately. Previously approved packages remain pinned while later packages undergo their own review. When no complete, checksummed, malware-clean package is available, the approval action remains blocked.
 
 The reviewer must be different from every actor who recorded receipt, accessioning, execution, QC, library, batch, or sendout work in scope. A protocol author cannot approve or activate that protocol version. If either actor-separation or scientific gates fail, leave the work in review and create the appropriate exception or rework action.
 
@@ -23,3 +25,7 @@ Approval moves the Lab work order to **Ready for release** and publishes the con
 Ready for release automatically creates the Commercial release candidate for the approved package. It does not publish the result. A Result Release Manager still controls Customer visibility, and payment/credit facts never gate PSeq release.
 
 If the Lab-to-Commercial event fails, retry the existing durable projection. Do not duplicate the approval, recreate the work order, or manually mark the Customer file released.
+
+## Review the Customer release
+
+A Result Release Manager opens **Order operations** > **Result release**, chooses the recognizable job and sample, and reviews the package detail before confirming publication. The detail joins scientific approval, file evidence, and release state. File administrators also see the retention receipt and preservation controls there; those permissions do not grant release authority.

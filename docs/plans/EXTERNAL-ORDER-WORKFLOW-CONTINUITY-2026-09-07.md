@@ -1,0 +1,15 @@
+# External order workflow continuity
+
+The Product Owner authorized all findings in the September 7 Portal/POMS consistency review. This slice addresses items 2, 3, 7, 15 and the external portions of 16, 17 and 20.
+
+Customer Jobs own the exact sample roster, CSV preview/replacement, explicit no-PHI finalization and related return-kit/shipment links. The shared shipment owns carrier, tracking and dispatch time and projects those facts onto its included paid-job samples. Legacy per-sample shipping writes are rejected when a shared shipment exists. Quote acceptance remains distinct from roster finalization and laboratory authorization. Legacy pre-pricing sample rows can be removed through the same sample list.
+
+Partner reagent drafts retain all entered purchase and delivery values in existing fields, without freezing a placement snapshot. PO and address are required at placement, not draft save. Existing line-only clients remain compatible. New form retries preserve the original creation request and key until the saved record is recovered, then continue that record. Placement keeps its existing backend validation and price checks.
+
+Assembly draft inputs show saved files, scan results, removal and replacement choices. Earlier submitted revisions remain retained. Creation is recovered before continuing against the same saved request. Successful uploads are removed from the local pending list. Optional upload idempotency fingerprints file name, size, content type and SHA-256, preventing an ambiguous-response retry from inserting the same upload again. Uploads and submission remain separate checks; a failed final step identifies the saved draft. Removing a current input uses the existing authorized withdrawal endpoint.
+
+Trial and paid Job workspaces show their related shipments. External shipments return to the owning Trial or Job; staff links open the identified shipment in Lab receiving when authorized. The external dashboard includes Trial acceptance/sample attention. Trial scope acceptance and sample submission remain organization-administrator actions; paid orders and shared shipping preserve existing Department-administrator authority.
+
+The three external order lists share server filtering, total counts, 25-record paging, debounced search, Clear all, URL-retained list context and distinct failure/no-record/no-match states. Their separate business workflows remain intact. The complex Partner creation/edit pages remain dedicated pages because reagent line/delivery review and Assembly file/metadata correction require multiple substantive sections and resumability.
+
+No persisted model, migration, dependency, authorization grant, deployment or live business write is included. Customer, Partner and Prospect guides are updated alongside these changes. New source regressions cover reagent draft retention, stable uncertain creation, sample-finalization confirmation, import preview/replacement, and list URL validation. Automated suites have not run; the coordinating task batches build, type, lint, documentation and visual checks.

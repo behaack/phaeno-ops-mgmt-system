@@ -148,7 +148,12 @@ public sealed record LabWorkOrderDetailDto(
     IReadOnlyList<LabExecutionDto> Executions,
     IReadOnlyList<LabLibraryDto> Libraries,
     IReadOnlyList<LabExceptionDto> Exceptions,
-    IReadOnlyList<LabScientificApprovalDto> ScientificApprovals);
+    IReadOnlyList<LabScientificApprovalDto> ScientificApprovals,
+    IReadOnlyList<LabReviewPackageDto>? ReviewPackages = null,
+    bool RequiresResultPackage = false);
+
+public sealed record LabReviewPackageDto(Guid Id, string SampleName, int PackageVersion,
+    string ManifestSha256, IReadOnlyList<string> FileNames);
 
 public sealed record LabScientificApprovalDto(
     Guid Id, int ApprovalVersion, string ReleaseDefinitionKey,

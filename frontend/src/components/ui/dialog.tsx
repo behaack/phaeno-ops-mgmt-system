@@ -52,18 +52,33 @@ function DialogContent({
   onInteractOutside,
   onPointerDownOutside,
   onEscapeKeyDown,
+  onOpenAutoFocus,
+  onCloseAutoFocus,
   showCloseButton = true,
   ...props
 }: React.ComponentProps<typeof DialogPrimitive.Content> & {
   showCloseButton?: boolean
 }) {
   const arrangedChildren = arrangeDialogChildren(children)
+  const openerRef = React.useRef<HTMLElement | null>(null)
 
   return (
     <DialogPortal>
       <DialogOverlay />
       <DialogPrimitive.Content
         data-slot="dialog-content"
+        onOpenAutoFocus={(event) => {
+          const active = document.activeElement
+          openerRef.current = active instanceof HTMLElement && active !== document.body ? active : null
+          onOpenAutoFocus?.(event)
+        }}
+        onCloseAutoFocus={(event) => {
+          onCloseAutoFocus?.(event)
+          if (!event.defaultPrevented && openerRef.current?.isConnected) {
+            event.preventDefault()
+            openerRef.current.focus()
+          }
+        }}
         onEscapeKeyDown={(event) => {
           // Radix handles Escape in capture, before the combobox closes its list.
           if (event.target instanceof Element && event.target.closest('[data-searchable-select-open="true"]')) {
@@ -140,7 +155,7 @@ function scrollableDialogBody(children: React.ReactNode, key: string) {
     <div
       key={key}
       data-slot="dialog-body"
-      className="grid min-h-0 flex-1 gap-4 overflow-y-auto overscroll-contain p-[var(--dialog-inset)]"
+      className="grid min-h-0 flex-1 gap-4 overflow-y-auto has-[[data-searchable-select-portal=true]]:overflow-y-hidden overscroll-contain p-[var(--dialog-inset)]"
     >
       {children}
     </div>

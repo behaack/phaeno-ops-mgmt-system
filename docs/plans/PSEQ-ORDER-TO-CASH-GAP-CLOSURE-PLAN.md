@@ -1,5 +1,9 @@
 # PSeq Order-to-Cash Gap-Closure Plan
 
+## Intake consolidation - 2026-09-07
+
+Order intake > New Customer order replaces the separate Order staging screen. The same pricing form serves direct creation and CRM handoffs. All active Customers are visible; selected-Department readiness separates pricing blockers from additional quote and invoice requirements. The legacy staging API remains for compatibility but has no frontend entry point. Readiness offering checks now match the canonical specimen service used by order creation, and missing system configuration reports incomplete setup.
+
 This is the approved implementation authority for closing the gaps found in the
 2026-08-29 live PSeq Order-to-Cash walkthrough. Keep this plan current as each
 slice is implemented and verified.
@@ -422,3 +426,14 @@ it. The new order-to-cash flags and dual-control enforcement remain off until
 the restored-database, dedicated-staging, provider, staffing, security, and
 accessibility gates are satisfied. Local builds and tests do not satisfy those
 activation gates.
+
+
+## Portal consistency implementation (September 7, 2026)
+
+The Product Owner authorized every finding in `PORTAL-POMS-CONSISTENCY-REVIEW-2026-09-07.md`; detailed delivery tracking is in `PORTAL-POMS-CONSISTENCY-IMPLEMENTATION-PLAN.md`.
+
+Finance now has view-first Invoice, Receipt, Customer and Reconciliation records under `/order-operations/finance/{kind}/{id}`, with bounded actions and preserved list context. Receipt evidence is uploaded and scanned using existing operational storage; new arbitrary evidence-key writes are retired. Historical references remain intact. The old receipt API returns a recovery message rather than accepting an unverified object key. Import review binds Customer, source and file to the confirmed batch; same-operator unconfirmed corrections use concurrency and confirmed retries cannot create duplicate receipts.
+
+Order configuration exposes Service catalog and Sample shipping. Supported sample/result choices serialize into the existing fields in one atomic defaults write. Readiness uses effective sample types and compatible shipping configuration; unsupported historical JSON does not count as ready. Setup links identify the owning configuration or Finance section. No persisted columns or migration are added.
+
+The configured production malware scanner must be available before activating new manual receipt uploads. Static checks and local browser fixtures do not establish provider, shared-database or real financial acceptance.

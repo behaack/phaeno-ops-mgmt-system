@@ -11,15 +11,15 @@ Open the CRM Company, select **Requests**, and then select **Create request**. S
 - **Work:** Trial Project or custom work
 - **Relationship:** relationship change
 
-The form asks for a more specific request type only when the selected outcome has more than one. It then shows only fields relevant to that request. Choose the requested Prospect, Customer, or Partner relationship when required. Link an Opportunity when evaluation or work arose from a specific commercial pursuit; Customer order handoffs still begin from the Opportunity workspace.
+The form asks for a more specific request type only when the selected outcome has more than one. It then shows only fields relevant to that request. For new online access, choose Prospect, Customer, or Partner. Requests for an existing relationship show its current kind. An existing Prospect can use **Change the relationship** to request Customer or Partner; the selected target is preserved for review. Link an Opportunity when evaluation or work arose from a specific commercial pursuit; Customer order handoffs still begin from the Opportunity workspace.
 
-An **Online access** request never asks for a product or service. It creates or changes the Company's sign-in scope, and users can reach only the products and services the Company is separately entitled to use. Choose **Products and services** and **Service change** when product or ordering eligibility must change. Add a tenant-safe summary only when the reviewer needs more context; POMS supplies a short request label when the summary is blank.
+An **Online access** request never asks for a product or service. It creates or changes the Company's sign-in scope, and users can reach only the products and services the Company is separately entitled to use. Choose **Products and services** and **Service change** when product or ordering eligibility must change. Add a relationship summary suitable for the affected Company only when the reviewer needs more context; POMS supplies a short request label when the summary is blank.
 
 Do not include patient information, sample identifiers, scientific results, credentials, confidential file contents, or laboratory investigation detail. The handoff summary is relationship context for review, not an unrestricted notes field.
 
 ## Understand what is created
 
-Submitting creates one pending, idempotent Company request. It appears in CRM's **Requests** review queue and, when applicable, Order operations intake. The Company workspace shows the request number, type, status, and creation time.
+Submitting creates one pending Company request with a retained operation identity. It appears in CRM's **Requests** review queue and, when applicable, Order operations intake. The Company workspace shows the request number, type, status, and creation time.
 
 The handoff does not by itself:
 
@@ -30,17 +30,17 @@ The handoff does not by itself:
 - create a quote, order, sample roster, shipment, or Lab work order
 - approve offboarding or revoke existing access
 
-An authorized reviewer owns those consequences in the destination workflow. Online access is one possible request outcome, not the parent of every request. When onboarding or evaluation is approved, POMS attaches one internal tenant scope to the existing Company. That scope provides tenant isolation and sign-in controls; it is not another Company or customer identity and does not add or remove any product or service entitlement.
+An authorized reviewer owns those consequences in the destination workflow. Online access is one possible request outcome, not the parent of every request. When onboarding or evaluation is approved, POMS attaches one internal tenant scope to the existing Company. That access scope keeps the Company's records and sign-in rights separate; it is not another Company or customer identity and does not add or remove any product or service entitlement.
 
 ## Review and follow up
 
-Open CRM's central **Requests** section to review onboarding, evaluation, products and services, relationship, work, or offboarding requests. The Company's **Requests** tab keeps the history in context and links pending items to that queue; it does not repeat approve, decline, or completion controls. Open **Order operations** for custom-work or order-intake review when the request is applicable there. Keep CRM Activities and Tasks focused on commercial follow-up; record each decision in its owning workflow.
+Open CRM's central **Requests** section to review onboarding, evaluation, products and services, relationship, work, or offboarding requests. Use **Needs decision** for pending review, **Approved / needs work** for fulfillment and access recovery, and **Completed / history** for finished decisions. The Company's **Requests** tab keeps history and links both pending and approved items to the same queue. After performing the approved work, select **Complete request** and record what was completed. For an approved relationship change, **Apply Customer relationship** or **Apply Partner relationship** performs the Prospect conversion and completes the request in one action. Open **Order operations** for custom-work or order-intake review when the request is applicable there. Keep CRM Activities and Tasks focused on commercial follow-up; record each decision in its owning workflow.
 
 For Customer PSeq Lab Service, a Won Opportunity can create a dedicated **Customer order handoff** from its detail page. After Company request review approves the request and confirms the active Company operational scope, Ready ordering entitlement, available service offering, and no manual operational block, **Start Customer order** appears in both the Opportunity and Order intake. An online Customer administrator is not required to begin pricing, but every non-billing readiness item and an active administrator are required before the quote can be issued. Billing readiness may be completed after acceptance and must be complete before invoicing. Starting the order creates one order, marks the request Applied in the same transaction, and links both records. Open the resulting order from either surface. Create a separate reviewed handoff when the same Opportunity legitimately produces another order; never retry by creating a duplicate handoff.
 
 Trial Project and Portal Evaluation handoffs do not start Customer orders. Company-level Customer order handoffs may start an order without an Opportunity, but they follow the same approval and eligibility checks.
 
-If the Company already has active online access, choose the appropriate change or offboarding request instead of creating a second onboarding request. If the same submission is retried, POMS returns the existing request through its idempotency boundary rather than creating duplicate work.
+If the Company already has active online access, choose the appropriate change or offboarding request instead of creating a second onboarding request. If a submission outcome is uncertain, check Company request history before creating another request. A repeated operation key is rejected as an existing handoff.
 
 CRM lifecycle labels and Opportunity Won status never substitute for this reviewed boundary.
 

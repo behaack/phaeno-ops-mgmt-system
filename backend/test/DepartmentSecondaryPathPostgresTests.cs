@@ -26,6 +26,18 @@ using PhaenoPortal.App.Infrastructure.Persistence.Auditing;
 public sealed class DepartmentSecondaryPathPostgresTests
 {
     [PostgreSqlReferenceFact]
+    public async Task RelationshipReadinessUsesPendingConversionWithoutSavingItEarly()
+    {
+        await using var scope = await Scope.Create(OrganizationKind.Prospect);
+        scope.Organization.ConvertProspectTo(OrganizationKind.Customer);
+        var readiness = await new OperationalReadinessService(scope.Db).EvaluateAsync(scope.Organization, default);
+        Assert.DoesNotContain(readiness.Evaluation.Blockers, blocker => blocker.Code ==
+            PSeq.Operations.Commercial.Relationships.Application.OperationalReadinessBlockerCode.ActiveCustomerRelationshipRequired);
+        Assert.Equal(OrganizationKind.Prospect, await scope.Db.Organizations.AsNoTracking()
+            .Where(item => item.Id == scope.Organization.Id).Select(item => item.Kind).SingleAsync());
+    }
+
+    [PostgreSqlReferenceFact]
     public async Task SharedPackageFileAndArchiveCaptureRequestDepartmentAndHistoryNeverFollowsUserReassignment()
     {
         await using var scope = await Scope.Create();

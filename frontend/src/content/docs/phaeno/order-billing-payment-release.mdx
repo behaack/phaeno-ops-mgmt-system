@@ -2,6 +2,12 @@
 
 POMS owns operational accounts receivable for PSeq Lab Service. Result release is scientifically governed and never gated by payment balance or credit. Partner PSeq Kit and Partner data-assembly payment/release rules remain unchanged.
 
+## Find the Finance record
+
+Finance actions depend on your assigned responsibility: Billing Operators maintain billing and invoice adjustments, Cash Operators record and allocate receipts and submit reconciliations, and Cash Reconcilers independently approve reconciliations. Result Release Manager and file-administration authority remain separate.
+
+Open **Order Ops → Finance**. Choose **Invoices and aging**, **Receipts**, **Customer billing**, **Import receipts**, or **Reconciliation**. Open a record by its invoice, receipt, Customer or reconciliation number. The detail shows its current state and permitted actions. Return to Finance to keep the previous Customer filter and section. The Customer filter narrows the displayed records; aging summarizes all Customers, and **Export all invoices** and **Export all receipts** include all Customers.
+
 ## Configure and issue PSeq documents
 
 - Record billing contact/address and Net 30 terms by default.
@@ -14,13 +20,13 @@ POMS calculates the approved tax rate without a tax engine. Never edit an issued
 
 ## Release PSeq results
 
-A Customer result may be published only when the specific sample package is complete, checksummed, malware-clean, and scientifically approved. The Result Release Manager releases or withdraws a version. Other samples may remain in progress. Do not consult invoice balance or credit status for this decision.
+Open **Order Ops → Result release**, then open the package identified by its Customer, Job and sample. The detail connects scientific review, manifest, release, retention and receipt. A Customer result may be published only when the specific sample package is complete, checksummed, malware-clean, and scientifically approved. The Result Release Manager releases or withdraws a version. Other samples may remain in progress. Do not consult invoice balance or credit status for this decision.
 
 Corrections create a new package, scientific approval, and release version. Preserve notification, Customer download, retention warning/cutoff/grace/deletion, withdrawal, and authorized reissue evidence.
 
 ## Review governed result retention
 
-New PSeq releases use the effective versioned policy from **File management**, including an active Organization override. The package and laboratory release share the same first release instant and freeze their policy and deadlines together. Existing schedules keep their original dates; do not change them by editing current configuration.
+New PSeq releases use the effective versioned policy from **File retention**, including an active Organization override. The package and laboratory release share the same first release instant and freeze their policy and deadlines together. Existing schedules keep their original dates; do not change them by editing current configuration.
 
 The Customer package shows full-response download completion and the frozen standard/final dates. Grace remains usable when any artifact was undownloaded at the standard deadline; later completion does not shorten grace. New download requests close at the applicable deadline even if cleanup has not run. A request-only historical download event is not completion evidence. Success saved after the standard deadline cannot cancel grace. If download timing cannot be verified, ask technical support to recover the retained timing evidence; do not recreate the release or change its dates. This timing-recovery error is separate from the Retention notices queue.
 
@@ -32,7 +38,9 @@ Physical cleanup remains separately controlled. A closed download window is not 
 
 ## Record and reconcile cash
 
-Manual receipt entry requires payer, amount, USD currency, received date, method, bank reference, evidence, and external ID. CSV intake is preview-only until explicit confirmation and must include source, external ID, date, amount, currency, payer, reference, and memo.
+In **Receipts**, choose **Record receipt**. Enter Customer, payer, amount, received date, payment method, bank reference and external reference. Attach evidence as PDF, PNG, JPEG or text, up to 10 MB. The file must pass the configured scanner before the receipt is recorded; an unavailable scanner leaves the receipt unsaved and preserves your entries. An optional note adds context. Open a saved receipt to download its evidence, allocate it to a same-Customer invoice, or reverse it when no allocation remains.
+
+In **Import receipts**, select Customer and source, then choose a CSV file or paste its contents. Required headers are source, external_id, date, amount, currency, payer, reference and memo. **Preview import** validates the file. Review the frozen Customer, source, rows and total, then confirm. Only the operator who reviewed that preview can confirm it. If another operator already owns the file review, ask them to complete it; do not change the file identity to bypass that ownership. If the Customer, totals, or saved version changed, review a fresh preview before confirmation. **Change input** returns to editing and requires a fresh preview. An earlier response cannot replace a preview for changed input. Repeating your unconfirmed preview resumes the same batch; confirmed files cannot be imported twice. Imports create unapplied receipts and retain their source evidence.
 
 Matching suggestions never apply cash. Allocate explicitly so partial, one-receipt/many-invoice, many-receipt/one-invoice, overpayment, and unapplied cash remain visible. Reversals retain actor and reason. A Cash Operator submits a balanced reconciliation; a different Cash Reconciler who contributed none of its activity approves the immutable closeout report.
 

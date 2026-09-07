@@ -73,6 +73,12 @@ export type ResultPackage = {
   retentionState: string | null
   version: number
   artifacts: ResultArtifact[]
+  context?: {
+    organizationName: string; orderNumber: string | null; customerReference: string | null;
+    customerSampleId: string | null; retentionSnapshotId: string | null;
+    scientificReviewer: string | null; scientificallyApprovedAtUtc: string | null;
+    releaseDefinitionKey: string | null; releaseDefinitionVersion: number | null;
+  } | null
 }
 
 export type CustomerResultPackage = {
@@ -239,6 +245,10 @@ export async function listResultPackages(state?: string) {
   })
 }
 
+export async function getResultPackage(id: string) {
+  return getJson<ResultPackage>(`/platform/pseq-result-packages/${id}`)
+}
+
 export async function releaseResultPackage(id: string, version: number) {
   return postJson<ResultPackage>(`/platform/pseq-result-packages/${id}/release`, {
     version,
@@ -290,9 +300,9 @@ export async function downloadCustomerResultArtifact(
   URL.revokeObjectURL(url)
 }
 
-export async function listInvoices(openOnly = false) {
+export async function listInvoices(openOnly = false, invoiceId?: string, organizationId?: string) {
   return getJson<InvoiceReceivable[]>('/platform/accounts-receivable/invoices', {
-    params: { openOnly },
+    params: { openOnly, invoiceId, organizationId },
   })
 }
 
@@ -353,9 +363,9 @@ export async function getAgingSummary() {
   return getJson<AgingSummary>('/platform/accounts-receivable/aging')
 }
 
-export async function listPaymentReceipts(unappliedOnly = false) {
+export async function listPaymentReceipts(unappliedOnly = false, receiptId?: string, organizationId?: string) {
   return getJson<PaymentReceipt[]>('/platform/accounts-receivable/receipts', {
-    params: { unappliedOnly },
+    params: { unappliedOnly, receiptId, organizationId },
   })
 }
 
@@ -372,6 +382,23 @@ export async function recordPaymentReceipt(input: {
   memo?: string | null
 }) {
   return postJson<PaymentReceipt>('/platform/accounts-receivable/receipts', input)
+}
+
+export async function recordPaymentReceiptWithEvidence(input: Omit<Parameters<typeof recordPaymentReceipt>[0], 'evidenceStorageKey'>, file: File, idempotencyKey: string) {
+  const data = new FormData()
+  data.append('payload', JSON.stringify({ ...input, evidenceStorageKey: '' }))
+  data.append('file', file)
+  return unwrap((await api.post<ApiEnvelope<PaymentReceipt>>('/platform/accounts-receivable/receipts/with-evidence', data, { headers: { 'Idempotency-Key': idempotencyKey } })).data)
+}
+
+export async function downloadPaymentEvidence(receipt: PaymentReceipt) {
+  const response = await api.get<Blob>(`/platform/accounts-receivable/receipts/${receipt.id}/evidence`, { responseType: 'blob' })
+  const url = URL.createObjectURL(response.data)
+  const link = document.createElement('a')
+  link.href = url
+  link.download = `${receipt.receiptNumber}-evidence`
+  link.click()
+  URL.revokeObjectURL(url)
 }
 
 export async function listMatchingInvoices(receiptId: string) {
@@ -449,9 +476,9 @@ export async function confirmPaymentImport(id: string, version: number) {
   )
 }
 
-export async function listReconciliations() {
+export async function listReconciliations(batchId?: string) {
   return getJson<ReconciliationBatch[]>(
-    '/platform/accounts-receivable/reconciliations',
+    '/platform/accounts-receivable/reconciliations', { params: { batchId } },
   )
 }
 
