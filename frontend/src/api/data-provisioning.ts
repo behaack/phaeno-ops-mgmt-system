@@ -557,18 +557,6 @@ export async function listProvisioningActivity(organizationId?: string) {
   return unwrap(response.data)
 }
 
-export async function createProvisionedOrganization(input: {
-  name: string
-  description?: string
-  kind: Exclude<OrganizationKind, 'Phaeno'>
-  datasetVersionIds: string[]
-}) {
-  const response = await api.post<
-    ApiEnvelope<{ organization: Organization; packageGrants: ProvisioningResult[] }>
-  >('/data-provisioning/organizations', input)
-  return unwrap(response.data)
-}
-
 export async function listGovernanceIncidents(status?: GovernanceIncidentStatus) {
   const response = await api.get<ApiEnvelope<GovernanceIncident[]>>(
     '/data-provisioning/governance/incidents',

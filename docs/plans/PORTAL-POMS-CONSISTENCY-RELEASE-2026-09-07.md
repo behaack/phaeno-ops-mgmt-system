@@ -39,7 +39,7 @@ The September 7 inventory completed in a read-only transaction before the API re
 
 The single Order defaults row still has unconfigured sample/result settings and no submission instructions. Effective service catalog and shipping definitions exist. Missing submission instructions require approved operational content; they must not be invented merely to clear readiness. One old Lab-credit flag remains historical; it is not a PSeq result-release gate.
 
-Temporary inventory tooling remains pending verified repair and final removal. The unconfigured QuickBooks simulator has already been removed from application source; its replacement explicitly reports unavailable operations. Durable authorization, audit history, supported compatibility responses and validation are not temporary repair code.
+The unconfigured QuickBooks simulator has been removed from application source; its replacement explicitly reports unavailable operations. Durable authorization, audit history, supported compatibility responses and validation are not temporary repair code. Temporary inventory/restoration tooling was removed after the verified repair below.
 
 ### Exact restoration prepared
 
@@ -50,3 +50,15 @@ The temporary restoration therefore changes only the original Company's access-o
 The protected workflow defaults this action to false. An explicitly selected repair first creates, validates and encrypts a complete database backup using the established deployment backup format. The SQL parsed and rejected an invalid authorization value locally before record reads or writes; no data was changed by that validation. Workflow and helper shell syntax checks passed. After the repair commits, the same read-only inventory must show the restored association before all temporary inventory/restoration files and workflow inputs/steps are removed.
 
 The second review of all 55 User guides found no additional changes needed: temporary maintenance instructions are absent, supported access lifecycle actions and unconfigured readiness requirements remain accurate, and the corpus fingerprint is unchanged.
+
+### Repair completed and temporary tooling removed
+
+[Repair run 34157930613](https://github.com/behaack/phaeno-ops-mgmt-system/actions/runs/34157930613) succeeded from `128587cc63a9a5ebb3ac5634acc560fa87181aaa` on September 7, 2026. The full encrypted backup is retained on the host at `/var/backups/phaeno-portal-deploy/pre-company-link-20260907T200522Z-34157930613` with `.dump.enc`, `.key.enc` and checksum files. Dump readability and encrypted checksums passed before the repair; plaintext temporary files were removed.
+
+The original Company reference was restored at 20:05:23 UTC, Company version advanced from 1 to 2, and system audit `1a94a689-aff1-49e4-8efb-9c10ee0c3768` records the exact old/new association and original audit reference. Post-repair inventory shows zero unassociated Customer organizations, the original link audit unchanged, and the same Applied request at version 3 with unchanged services and handoff. No organization, membership, order, billing, scientific or request state was rewritten.
+
+After that verification, the temporary audit SQL, restore SQL, restore shell helper and both workflow inputs/steps were removed. The deployment workflow is restored to its pre-maintenance form. Local temporary repair/shell helper code was removed; private audit and backup evidence is retained. The unused HubSpot simulation dialog and obsolete direct organization-creation client wrapper are also retired. Supported access recovery and incomplete-configuration feedback remain.
+
+The Word guide was checked again against the repaired workflow and remains current, with its verified document hash unchanged. The final documentation check retains the same 55-guide corpus. Full signed-in production workflow acceptance remains pending a production login; data-level restoration and anonymous production health are verified separately.
+
+Final cleanup checkpoint: TypeScript, full zero-warning ESLint, documentation corpus check and frontend production build passed after removal of the unused frontend code. No temporary maintenance symbols remain in application/deployment source. Test suites were not run, consistent with repository instructions; no new business behavior or persisted model was introduced by this cleanup.
