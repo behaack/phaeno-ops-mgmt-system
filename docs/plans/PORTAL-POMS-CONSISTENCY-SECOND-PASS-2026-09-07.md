@@ -12,7 +12,7 @@ Success criteria: clear recovery for failed loads and saves, reliable single-cli
 
 ## Findings and implementation
 
-Source fixes, affected user guides and the illustrated Word guide are complete. Local verification passed; production release is in progress. Regression sources are authored; test suites were not run.
+Source fixes, affected user guides and the illustrated Word guide are complete and deployed to production. Local verification passed. Regression sources are authored; test suites were not run.
 
 | Area | Finding and implemented outcome | Main source |
 |---|---|---|
@@ -51,3 +51,13 @@ The final TypeScript, repository-wide ESLint, frontend production build, documen
 Direct browser observations confirmed shared Cancel, opener focus, normal Tab validation, Save validation/first-error focus, Enter and Escape dismissal and a measured 390 × 844 layout with one dialog-body scroll region and no horizontal overflow. Dashboard Lab and Data provisioning Catalog selections survived reload through their URL state. The catalog dirty-draft confirmation appeared; the browser connection stalled before the declined-confirmation outcome could be verified. It recovered after closing the unsaved review tab. These observations used synthetic input and read-only local data; no orders, payments, invitations, merges or laboratory records were submitted.
 
 Fourteen affected audience guides were updated. The regenerated search corpus contains 55 guides, fingerprint `d03727c3263581446ab75c3189da1653e28c56ccb0e1694e4a3f8853afd0075e`. `docs/Phaeno-POMS-Order-to-Cash-Guide.docx` retains 25 pages and 10 screenshots; every rendered page was visually reviewed. SHA-256: `dc49fd2ad26dea177dee072e1728899bbb51a460bb43f74359dab9e094729527`. Temporary document authoring helpers were removed.
+
+## Production release evidence
+
+- Application revision: [`f9e9b3fb65b1a2ea6b3b24e602552b9ce239bbfd`](https://github.com/behaack/phaeno-ops-mgmt-system/commit/f9e9b3fb65b1a2ea6b3b24e602552b9ce239bbfd), committed and pushed to `codex/portal-documentation-search-release`.
+- API: [Deploy Portal Green run 34165666685](https://github.com/behaack/phaeno-ops-mgmt-system/actions/runs/34165666685) succeeded at 22:12 UTC on September 7, 2026. Image `phaeno-portal-green-api:sha-f9e9b3fb65b1-run-34165666685-1`; image digest `sha256:ffb1e50308edebee4171c0fcfef59387a0e38e89ed69185f4b953622470b0b90`. The deployment verified the running image and revision label, container health and smoke checks. Both migration and identity-cutover inputs were false; website row counts remained `12,4`.
+- Frontend: [deployment `dpl_HWq8ybfWcrLibeW9n4Sd71LDhMr7`](https://vercel.com/cadexgenomics/phaeno-ops-mgmt-system/HWq8ybfWcrLibeW9n4Sd71LDhMr7), Ready, built with **Production** settings from the same application revision; assigned to [portal.phaenobiotech.com](https://portal.phaenobiotech.com) at 22:11 UTC. This was a production rebuild of preview `dpl_3GdLFq74SWojKMwp8UpTYwKimVX1`.
+- Live probes at 22:12:59 UTC: Portal HTML 200; API health 200 with `healthy`; database ping 204; anonymous protected session 401. The production sign-in screen rendered and its observed browser error log was empty. Deployment runtime rows showed production-domain GET `/` responses of 200 and no 5xx in the observed window. Automated deployment-host requests to unconfigured `/__clerk/v1/client` and `/__clerk/v1/environment` routes returned 404, as in the prior release; there is no same-origin Clerk proxy configured in this application.
+- The temporary isolated dialog-review server was stopped, the unsaved synthetic catalog draft was closed, and document authoring helpers were removed. No temporary repair implementation was reintroduced. The unrelated local search-index binary was excluded from both commits.
+
+Remaining acceptance limits: the production browser has no signed-in Portal session. Populated authenticated Customer/Partner/Phaeno journeys, actual payments, quote decisions, merges, physical sample/bench work and the new unit/integration/E2E regression suites remain unverified. These limits do not change the recorded build, local interaction and deployment evidence.
