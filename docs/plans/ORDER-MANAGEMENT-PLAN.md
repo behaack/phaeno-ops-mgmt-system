@@ -1,5 +1,9 @@
 # Order Management Plan
 
+## Current feature status review - 2026-09-07
+
+Use [Portal feature readiness](../feature-readiness.md) for the current distinction between implemented behavior, deployment and operational acceptance. Dated verification sections below retain their historical evidence. The configured direct Lab Service and Kit-linked Assembly direction remains roadmap work; the current application still uses Customer quotes and independent historical Partner Assembly workflows. The completed September production releases do not establish populated scientific or Finance acceptance.
+
 ## External workflow continuity - 2026-09-07
 
 The authorized consistency-review repairs are recorded in
@@ -198,9 +202,12 @@ by `FILE-MANAGEMENT-PLAN.md`.
   5-day whole-package grace period when any file is still undownloaded at the
   standard deadline. Authorized Phaeno users can configure Customer-, Partner-,
   or Prospect-organization overrides, and release snapshots the effective
-  settings and dates. Warning, grace, download-cutoff, notification, and byte-
-  deletion processing remain unimplemented. Trial Project release integration
-  remains future scope because the Trial Project aggregate is not implemented.
+  settings and dates. Warning, grace, download-cutoff, notification and byte-
+  deletion processing are implemented behind independent activation gates.
+  Trial Projects and complete-package Trial release integration are implemented;
+  partial Trial release does not start the complete-package retention clock.
+  See `FILE-MANAGEMENT-PLAN.md` and `PROSPECT-TRIAL-PROJECT-PLAN.md` for the
+  current contracts and remaining hosted acceptance.
 - `SAMPLE-SHIPPING-AND-INTAKE-PLAN.md` owns a shared pre-receipt
   shipment-packet workflow for an accepted Prospect Trial Project and a future
   Customer promotional no-charge order. It includes versioned destinations,
@@ -209,9 +216,9 @@ by `FILE-MANAGEMENT-PLAN.md`.
   configuration, return-kit and registered supplier-tube inventory, external
   assignment/correction crosswalk, printable packet and retained CSV, packet-
   plus-tube comparison scan, and Lab supplier-barcode adoption are implemented.
-  Trial/freebie parent authorization and issuance remain later phases. This
-  foundation does not alter the current paid-order or Trial Project boundaries
-  by itself.
+  Trial parent authorization and issuance are integrated with the accepted
+  Trial scope. Customer promotional no-charge ordering remains a distinct
+  future capability; Trial authority does not confer general ordering access.
 - Initial ordering authority is organization-admin-only. Active Customer
   organization administrators may create and place Customer lab service orders;
   active Partner organization administrators may create and place enabled

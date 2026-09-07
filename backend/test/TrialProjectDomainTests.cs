@@ -6,6 +6,44 @@ using PSeq.Operations.Commercial.FileManagement.Domain;
 
 public sealed class TrialProjectDomainTests
 {
+    [Fact] public void IncompleteDraftDoesNotCreateScopeOrAuthorizeWorkAndSubmissionClearsIt()
+    {
+        var trial = Project(); var actor = Guid.NewGuid();
+        trial.SaveScopeDraft(new(Name: "Research idea", MaterialDisposition: TrialMaterialDisposition.Return), actor, Now);
+        Assert.Equal("Research idea", trial.ReadScopeDraft()!.Name);
+        Assert.Equal(actor, trial.DraftSavedByUserId); Assert.Equal(Now, trial.DraftSavedAtUtc);
+        Assert.Equal(TrialStatus.Requested, trial.Status); Assert.Equal(0, trial.CurrentScopeRevision);
+        Assert.Empty(trial.Scopes); Assert.Null(trial.ApprovedScopeRevision); Assert.Null(trial.AcceptedScopeRevision);
+        Assert.NotNull(trial.SubmissionBlocker(Now));
+        Assert.Throws<ArgumentException>(() => trial.Propose(Scope() with { Objective = "" }, "Ready", actor, Now));
+        Assert.NotNull(trial.ReadScopeDraft());
+        trial.Propose(Scope(), "Ready for review", actor, Now);
+        Assert.Null(trial.ReadScopeDraft()); Assert.Null(trial.DraftSavedByUserId); Assert.Null(trial.DraftSavedAtUtc);
+        Assert.Equal(TrialStatus.UnderReview, trial.Status); Assert.Equal(1, trial.CurrentScopeRevision);
+    }
+    [Fact] public void SharedDraftPreservesAcceptedScopeAndHoldUntilAnAmendmentIsSubmitted()
+    {
+        var trial = Accepted(); var frozen = trial.CurrentScope().ValuesJson;
+        trial.SaveScopeDraft(new(Name: "Possible amendment"), Guid.NewGuid(), Now);
+        Assert.Equal(TrialStatus.AwaitingSamples, trial.Status); Assert.Equal(1, trial.CurrentScopeRevision);
+        Assert.Equal(1, trial.ApprovedScopeRevision); Assert.Equal(1, trial.AcceptedScopeRevision);
+        Assert.Equal(frozen, trial.CurrentScope().ValuesJson); Assert.Null(trial.SubmissionBlocker(Now));
+        trial.SetHold(true, "Review logistics");
+        trial.SaveScopeDraft(new(Objective: "Preparing a correction during hold"), Guid.NewGuid(), Now);
+        Assert.True(trial.IsOnHold); Assert.Contains("hold", trial.SubmissionBlocker(Now));
+    }
+    [Fact] public void DraftRejectsInvalidEnteredValuesAndCannotChangeAClosedTrial()
+    {
+        var trial = Project(); var actor = Guid.NewGuid();
+        Assert.Throws<ArgumentException>(() => trial.SaveScopeDraft(new(Name: new string('x', 256)), actor, Now));
+        Assert.Throws<ArgumentException>(() => trial.SaveScopeDraft(new(SampleAllowance: 0), actor, Now));
+        var id = Guid.NewGuid();
+        Assert.Throws<ArgumentException>(() => trial.SaveScopeDraft(new(AnalysisIds: [id, id]), actor, Now));
+        trial.SaveScopeDraft(new(Objective: "Retained draft"), actor, Now);
+        trial.Close(TrialStatus.Cancelled, "Not proceeding", Now);
+        Assert.Throws<InvalidOperationException>(() => trial.SaveScopeDraft(new(Objective: "Changed"), actor, Now));
+        Assert.Equal("Retained draft", trial.ReadScopeDraft()!.Objective);
+    }
     internal static readonly DateTime Now = new(2026, 9, 5, 12, 0, 0, DateTimeKind.Utc);
     internal static TrialScopeValues Scope(int allowance = 2) => new("PSeq evaluation", "Evaluate research RNA", allowance, Now.AddDays(-1), Now.AddDays(10), Guid.NewGuid(),
         [new(Guid.NewGuid(), 2, "Existing PSeq analysis", "RNA instructions", "[\"biologicalSource\"]", "{}")],

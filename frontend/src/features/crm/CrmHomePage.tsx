@@ -1,3 +1,4 @@
+import { useCrmPermissions } from './use-crm-permissions';
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Link } from "@tanstack/react-router";
 import { AlertTriangle, ArrowRight, Search } from "lucide-react";
@@ -21,8 +22,11 @@ import {
 } from "#/components/ui/card";
 import { Input } from "#/components/ui/input";
 import { Label } from "#/components/ui/label";
+import { CrmCollectionFeedback } from './CrmCollectionFeedback';
+import type { CrmNavigationSearch } from './CrmListNavigation';
 
 export function CrmHomePage() {
+  const { canAdminister } = useCrmPermissions();
   const client = useQueryClient();
   const [draftSearch, setDraftSearch] = useState("");
   const [search, setSearch] = useState("");
@@ -102,13 +106,14 @@ export function CrmHomePage() {
           </form>
           {search.length >= 2 ? (
             <div className="grid gap-2" aria-live="polite">
+              <CrmCollectionFeedback name="CRM search results" query={results} />
               {(results.data ?? []).map((result) => (
                 <SearchResult
                   key={`${result.recordType}-${result.id}`}
                   result={result}
                 />
               ))}
-              {!results.isLoading && !(results.data?.length ?? 0) ? (
+              {results.isSuccess && !(results.data?.length ?? 0) ? (
                 <p className="text-sm text-muted-foreground">
                   No CRM records match this search.
                 </p>
@@ -125,32 +130,36 @@ export function CrmHomePage() {
             Needs attention
           </h2>
         </div>
-        <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-5">
+        <div className={`grid gap-3 sm:grid-cols-2 ${canAdminister ? 'lg:grid-cols-5' : 'lg:grid-cols-4'}`}>
           <Metric
             label="Overdue tasks"
+            search={{ overdue: true, page: 1 }}
             value={attention?.overdueTasks}
             to="/crm/tasks"
           />
           <Metric
             label="Due in 7 days"
+            search={{ dueSoon: true, page: 1 }}
             value={attention?.dueSoonTasks}
             to="/crm/tasks"
           />
           <Metric
             label="Leads needing next action"
+            search={{ needsNextAction: true, page: 1 }}
             value={attention?.leadsNeedingNextAction}
             to="/crm/leads"
           />
           <Metric
             label="Stale opportunities"
+            search={{ stale: true, board: false, page: 1 }}
             value={attention?.staleOpportunities}
             to="/crm/opportunities"
           />
-          <Metric
+          {canAdminister ? <Metric
             label="Data warnings"
             value={attention?.dataQualityWarnings}
             to="/crm/administration"
-          />
+          /> : null}
         </div>
       </section>
 
@@ -247,14 +256,17 @@ function Metric({
   label,
   value,
   to,
+  search,
 }: {
   label: string;
   value?: number;
   to: string;
+  search?: CrmNavigationSearch;
 }) {
   return (
     <Link
       to={to}
+      search={search ?? {}}
       className="cursor-pointer rounded-lg border bg-card p-4 hover:bg-muted/50 focus-visible:ring-3 focus-visible:ring-ring/50 focus-visible:outline-none"
     >
       <p className="text-2xl font-semibold">{value ?? "—"}</p>

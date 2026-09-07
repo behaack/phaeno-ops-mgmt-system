@@ -65,6 +65,7 @@ public static class StorageServiceCollectionExtensions
 
         services.AddSingleton<IManagedFileStorage, ManagedFileStorageAdapter>();
         services.AddSingleton<IOperationalFileStorage, OperationalFileStorageAdapter>();
+        services.AddHostedService<LocalFileStorageStartupCheck>();
         return services;
     }
 }

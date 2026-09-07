@@ -12,14 +12,80 @@ It does not change Nginx or expose the Portal database on the host.
 
 The Portal API reads public Website documents and private Website credentials
 from `/opt/phaeno.portal-green/documents`. Its Lucene index and Portal-owned
-legacy application files use separate Portal volumes. New production managed
-file storage is currently disabled: the API starts, but file operations return
-HTTP 503 and no bytes are written. Amazon S3 remains the production target.
+legacy application files use separate Portal volumes. Managed file storage may
+explicitly use Local on its own persistent volume, remain Disabled, or later select
+S3. The previously recorded production selection was Disabled; source changes
+alone do not activate runtime storage or scanning.
 Keep the legacy `portal_green_app_data` volume until existing curated-data and
-order-file rows and bytes have been inventoried and, if necessary, migrated to
-S3.
+order-file rows and bytes have been inventoried and, if necessary, explicitly
+migrated to the chosen provider.
 
 ## Runtime files
+
+### Local storage activation and recovery
+
+Before selecting Local, inventory file metadata and referenced bytes in any existing
+provider or legacy volume. The installer refuses to repoint a recorded different
+local root or an active S3 provider. Any byte migration must be deliberate, preserve
+area/key identity, verify checksums and retain the prior store until acceptance.
+The new Local setting uses these protected `portal.env` values:
+
+```text
+FileStorage__Provider=Local
+FileStorage__LocalRootPath=/var/lib/phaeno-portal/files
+FileStorage__LocalPersistentVolumeConfirmed=true
+```
+
+The deployment's explicit Local choice installs those values; later runs should use
+Preserve. `portal_green_managed_files` is a dedicated Docker named volume mounted
+into the API and migration service. It is separate from `/app`, Website documents,
+public roots, source checkouts and the retained legacy app-data volume. Keep volume
+access limited to the API and trusted administrators. Do not mount it through a
+static file server or remove it during releases. Include its bytes in encrypted
+backups together with a coordinated database snapshot; verify restoration of both
+metadata and files before claiming disaster recovery. A database dump alone is not
+a file backup. Multi-host deployment requires shared storage or the later S3 provider.
+
+### Scanner setup
+
+File storage and malware scanning are separate. The code supports ClamAV's
+[INSTREAM protocol](https://docs.clamav.net/manual/Usage/ClamdProtocol.html) over a
+private TCP connection. No daemon is installed by this repository change. Operate a
+supported ClamAV service with current signatures, a privately reachable hostname,
+and no public TCP exposure; [ClamAV documents that this socket is unauthenticated](https://docs.clamav.net/manual/Usage/Scanning.html).
+It does not need access to the file volume because POMS streams the bytes.
+
+Configure the approved private endpoint and limits in protected runtime settings:
+`FileScanning__Provider=ClamAv`, `FileScanning__Host`, `FileScanning__Port` (normally
+3310), `FileScanning__TimeoutSeconds` (default 120), and
+`FileScanning__MaximumStreamBytes` (default 104857600). Verify the daemon's
+`StreamMaxLength`, `MaxFileSize`, `MaxScanSize`, archive recursion/file limits and
+timeouts against the approved uploads. Enable `AlertExceedsMax yes` and
+`AlertEncrypted yes` so skipped/over-limit/encrypted content cannot masquerade as
+clean; keep scanning for the approved content formats enabled. These switches are
+documented in the [official daemon configuration](https://github.com/Cisco-Talos/clamav/blob/main/etc/clamd.conf.sample).
+Only then set `FileScanning__ClamAvLimitsConfirmed=true`. Startup rejects an
+unconfirmed ClamAV configuration. Set the approved `DataProvisioning__AllowedFileKinds`
+and `OrderManagement__AllowedFileKinds` separately; no scientific formats are guessed.
+
+Verify representative clean, harmless antivirus-test, encrypted, oversize, nested
+archive, interrupted, timeout and unavailable-daemon cases through authenticated
+uploads before activation. An unavailable or incomplete scan blocks the existing
+clean-file gates and shows a retry/support message; it never records Clean. Disabled
+scanning is the production default. DevelopmentFixture is restricted to Development.
+Retention enforcement/notices/deletion retain their independent activation gates.
+
+The image prepares the managed mount point with mode 0700 under its existing user;
+no process UID change is included. Startup sets the configured Unix root to owner-
+only access and verifies create/write/delete with a temporary probe. Inspect the
+deployed image/container UID and named-volume ownership before activating Local,
+especially if a custom image or existing volume changes the owner. Never make the
+volume world-writable to work around a mismatch. The first activation is covered by
+a protected storage-settings-only rollback receipt: a failed non-migration release
+restores the previous provider/root before reverting the API image. A successful
+release clears that receipt. Concurrently changed settings are not overwritten;
+after a migration, recovery remains the release's explicit forward-fix decision.
+No rollback deletes or moves the managed or legacy volume.
 
 Create these server-only files under `/opt/phaeno.portal-green/runtime` with
 directory mode `700` and file mode `600`:
@@ -27,7 +93,7 @@ directory mode `700` and file mode `600`:
 - `compose.env`: versioned image tag and source revision
 - `database.env`: PostgreSQL database, role, and random password
 - `portal.env`: the Portal connection string, transferred Website runtime
-  configuration, and the explicit disabled file-storage provider setting
+  configuration, and the selected file-storage provider and scanner settings
 
 These files are ignored and must never be committed or printed.
 
@@ -148,17 +214,18 @@ atomically installs the signing key and fixed production invitation URL without
 printing credentials. Other configured
 values are streamed over the pinned SSH connection without placing them in the
 release archive and update only their corresponding entries in the
-root-protected `runtime/portal.env`. The workflow also installs
-`FileStorage__Provider=Disabled` and removes stale S3/AWS entries. The API
-recreation then loads the updated values. The workflow never prints secret
-values. The server-side release script accepts the explicit disabled stub or a
-complete S3 configuration; it continues to reject local production storage.
+root-protected `runtime/portal.env`. The workflow's `file_storage_provider` choice
+defaults to Preserve: ordinary releases leave provider/configuration untouched.
+Explicit Local or Disabled selections update only the relevant storage settings,
+without deleting S3 credentials or moving bytes. The API recreation then loads
+the selected values. The workflow never prints secret values. The server-side
+release script validates Disabled, persistent Local, or complete S3 configuration.
 
 S3 activation is a TODO in `docs/plans/FILE-MANAGEMENT-PLAN.md`. It includes
 obtaining protected least-privilege AWS keys or an approved workload identity.
 Before the first S3-backed deployment, inventory the existing managed-file
-database records and the retained `portal_green_app_data` volume. Copy any
-referenced legacy objects to
+database records, the selected Local store and the retained `portal_green_app_data`
+volume. Copy any referenced objects to
 `{PORTAL_S3_KEY_PREFIX}/{provisioning-files|order-files}/{storageKey}` and verify
 representative authorized downloads before considering the local volume
 retired. Do not remove the volume as part of an ordinary application release.

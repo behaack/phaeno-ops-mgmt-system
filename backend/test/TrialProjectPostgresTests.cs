@@ -25,6 +25,39 @@ using PhaenoPortal.App.Infrastructure.Persistence.Auditing;
 public sealed class TrialProjectPostgresTests
 {
     [PostgreSqlReferenceFact]
+    public async Task ScopeDraftIsSharedAmongStaffVersionedAndHiddenFromProspectWithoutNewAuthority()
+    {
+        await using var scope = await Fixture.Create(); var trial = await scope.CreateApprovedTrial();
+        var version = trial.Version; var frozen = trial.CurrentScope().ValuesJson;
+        var events = await scope.Db.TrialEvents.CountAsync(value => value.TrialProjectId == trial.Id);
+        var notices = await scope.Db.OrderNotifications.CountAsync();
+        var values = new TrialScopeDraftValues(DepartmentId: scope.Department.Id, Objective: "Staff planning only");
+        await scope.Workflow.SaveDraftAsync(trial, scope.Commercial, new(version, values), default); await scope.Db.SaveChangesAsync();
+        await scope.Db.Entry(trial).ReloadAsync();
+        Assert.True(trial.Version > version); Assert.Equal(frozen, trial.CurrentScope().ValuesJson);
+        Assert.Equal(TrialStatus.AwaitingAcceptance, trial.Status); Assert.Equal(1, trial.CurrentScopeRevision);
+        Assert.Equal(1, trial.ApprovedScopeRevision); Assert.Null(trial.AcceptedScopeRevision); Assert.Empty(trial.Samples);
+        var staff = await scope.Reader.DetailAsync(trial, scope.Scientific, default);
+        Assert.Equal(values, staff.ScopeDraft!.Values); Assert.Equal(scope.Commercial.User.Id, staff.ScopeDraft.SavedByUserId);
+        Assert.Null((await scope.Reader.DetailAsync(trial, scope.Prospect, default)).ScopeDraft);
+        await Assert.ThrowsAsync<OrderManagementException>(() => scope.Workflow.SaveDraftAsync(trial, scope.Prospect, new(trial.Version, values), default));
+        await Assert.ThrowsAsync<OrderManagementException>(() => scope.Workflow.SaveDraftAsync(trial, scope.Scientific, new(version, values), default));
+        await Assert.ThrowsAsync<OrderManagementException>(() => scope.Workflow.SaveDraftAsync(trial, scope.Scientific, new(trial.Version, values with { DepartmentId = Guid.NewGuid() }), default));
+        Assert.Equal(events, await scope.Db.TrialEvents.CountAsync(value => value.TrialProjectId == trial.Id));
+        Assert.Equal(notices, await scope.Db.OrderNotifications.CountAsync());
+        Assert.False(await scope.Db.LabWorkOrders.AnyAsync(value => value.AuthorizationSourceId == trial.Id));
+    }
+
+    [PostgreSqlReferenceFact]
+    public async Task FirstScopeDraftCanBeSavedBeforeTrialOrganizationBinding()
+    {
+        await using var scope = await Fixture.Create();
+        var trial = await scope.Workflow.CreateAsync(scope.Commercial, new(scope.Handoff.Id), default); await scope.Db.SaveChangesAsync();
+        await scope.Workflow.SaveDraftAsync(trial, scope.Commercial, new(trial.Version, new(Name: "Early discussion")), default); await scope.Db.SaveChangesAsync();
+        Assert.Null(trial.OrganizationId); Assert.Null(trial.DepartmentId); Assert.Empty(trial.Scopes);
+        Assert.Equal(TrialStatus.Requested, trial.Status); Assert.NotNull(trial.SubmissionBlocker(DateTime.UtcNow));
+    }
+    [PostgreSqlReferenceFact]
     public async Task BatchSubmissionUsesOneAuthorizationAndShipmentAndExposesQuantityRules()
     {
         await using var scope = await Fixture.Create(); var trial = await scope.CreateApprovedTrial();

@@ -1,4 +1,5 @@
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
+import { createMemoryHistory, createRootRoute, createRoute, createRouter, RouterProvider } from '@tanstack/react-router'
 import { fireEvent, render, screen } from '@testing-library/react'
 import { describe, expect, it } from 'vitest'
 
@@ -10,20 +11,23 @@ import { noSessionCapabilities } from '#/test-helpers/session'
 import { OrderConfigurationPage } from './OrderConfigurationPage'
 
 describe('OrderConfigurationPage', () => {
-  it('moves all configuration subjects into the shared workspace sidebar', () => {
+  it('moves all configuration subjects into the shared workspace sidebar', async () => {
     const queryClient = new QueryClient({
       defaultOptions: { queries: { retry: false } },
     })
+    const root = createRootRoute()
+    const route = createRoute({ getParentRoute: () => root, path: '/order-configuration', component: OrderConfigurationPage })
+    const router = createRouter({ routeTree: root.addChildren([route]), history: createMemoryHistory({ initialEntries: ['/order-configuration'] }) })
 
     render(
       <QueryClientProvider client={queryClient}>
         <PhaenoSessionContext.Provider value={createPlatformContext()}>
-          <OrderConfigurationPage />
+          <RouterProvider router={router} />
         </PhaenoSessionContext.Provider>
       </QueryClientProvider>,
     )
 
-    expect(screen.getByRole('heading', { name: 'Order configuration' })).toBeTruthy()
+    expect(await screen.findByRole('heading', { name: 'Order configuration' })).toBeTruthy()
     fireEvent.click(screen.getByRole('button', {
       name: 'Open Order configuration navigation; current selection: Defaults',
     }))
@@ -38,7 +42,7 @@ describe('OrderConfigurationPage', () => {
     expect(screen.getByRole('button', { name: /^Legacy links/ })).toBeTruthy()
 
     fireEvent.click(screen.getByRole('button', { name: /^PSeq kits/ }))
-    expect(screen.getByRole('button', {
+    expect(await screen.findByRole('button', {
       name: 'Open Order configuration navigation; current selection: PSeq kits',
     })).toBeTruthy()
   })

@@ -95,8 +95,7 @@ if (builder.Environment.IsDevelopment())
     });
 }
 builder.Services.AddSingleton<DataProvisioningProfile>();
-builder.Services.AddSingleton<IManagedFileScanner, EnvironmentManagedFileScanner>();
-builder.Services.AddSingleton<IOperationalFileScanner, EnvironmentOperationalFileScanner>();
+builder.Services.AddFileScanning(builder.Configuration, builder.Environment);
 builder.Services.AddScoped<ReleasedDeliverableRetentionSnapshotService>();
 builder.Services.AddScoped<GovernedResultRetentionService>();
 builder.Services.AddScoped<GovernedRetentionCheckpointService>();

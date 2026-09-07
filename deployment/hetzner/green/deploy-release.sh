@@ -65,8 +65,18 @@ for secret_file in "${COMPOSE_ENV}" "${DATABASE_ENV}" "${PORTAL_ENV}"; do
         || fail "${secret_file} must not be accessible by group or other users."
 done
 
+[[ "$(grep -c '^FileStorage__Provider=' "${PORTAL_ENV}" || true)" == 1 ]] \
+    || fail "Runtime must contain exactly one explicit FileStorage__Provider entry."
 if grep --fixed-strings --line-regexp 'FileStorage__Provider=Disabled' "${PORTAL_ENV}" > /dev/null; then
     printf 'File storage is disabled; file operations will return service unavailable.\n'
+elif grep --fixed-strings --line-regexp 'FileStorage__Provider=Local' "${PORTAL_ENV}" > /dev/null; then
+    [[ "$(grep -c '^FileStorage__LocalRootPath=' "${PORTAL_ENV}" || true)" == 1 && "$(grep -c '^FileStorage__LocalPersistentVolumeConfirmed=' "${PORTAL_ENV}" || true)" == 1 ]] \
+        || fail "Local storage root and persistent-volume acknowledgement must each be configured once."
+    grep --fixed-strings --line-regexp 'FileStorage__LocalRootPath=/var/lib/phaeno-portal/files' "${PORTAL_ENV}" > /dev/null \
+        || fail "Local storage must use the dedicated persistent file volume."
+    grep --fixed-strings --line-regexp 'FileStorage__LocalPersistentVolumeConfirmed=true' "${PORTAL_ENV}" > /dev/null \
+        || fail "Local storage requires explicit persistent-volume confirmation."
+    printf 'File storage uses the dedicated persistent Local volume; scanning is configured independently.\n'
 elif grep --fixed-strings --line-regexp 'FileStorage__Provider=S3' "${PORTAL_ENV}" > /dev/null; then
     for key in \
         FileStorage__S3__BucketName \
@@ -78,7 +88,7 @@ elif grep --fixed-strings --line-regexp 'FileStorage__Provider=S3' "${PORTAL_ENV
             || fail "Portal S3 runtime is missing ${key}."
     done
 else
-    fail "Portal production runtime must configure FileStorage__Provider=Disabled or S3."
+    fail "Portal production runtime must configure FileStorage__Provider=Disabled, Local or S3."
 fi
 
 exec 9>"${RUNTIME_DIR}/deploy.lock"
@@ -96,6 +106,11 @@ cleanup() {
     local status=$?
     trap - EXIT
 
+    if [[ "${status}" -ne 0 && "${migrations_ran}" == false ]]; then
+        printf 'Restore\n' | FILE_STORAGE_DEPLOY_LOCK_HELD=true \
+            "${SCRIPT_DIR}/install-file-storage-runtime-config.sh" "${DEPLOY_ROOT}" >&2 || \
+            printf 'Storage runtime recovery requires manual review; the protected rollback receipt is retained.\n' >&2
+    fi
     if [[ "${status}" -ne 0 && "${api_replaced}" == true && "${migrations_ran}" == false ]]; then
         printf 'Deployment failed; restoring the previous green API image.\n' >&2
         docker compose \
@@ -378,6 +393,9 @@ mv -T "${link_path}" "${CURRENT_LINK}"
     printf 'website_counts=%s\n' "${website_counts_after//$'\n'/,}"
 } > "${DEPLOYMENT_MANIFEST}"
 chmod 600 "${DEPLOYMENT_MANIFEST}"
+
+printf 'Complete\n' | FILE_STORAGE_DEPLOY_LOCK_HELD=true \
+    "${SCRIPT_DIR}/install-file-storage-runtime-config.sh" "${DEPLOY_ROOT}"
 
 printf 'Portal green deployment succeeded.\n'
 printf 'source_revision=%s\n' "${SOURCE_REVISION}"

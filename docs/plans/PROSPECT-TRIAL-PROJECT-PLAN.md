@@ -1,5 +1,40 @@
 # Prospect Trial Project Plan
 
+## Resumable shared staff scope draft - 2026-09-07
+
+The authorized remaining-work review adds explicit **Save draft** and **Resume
+draft** separately from **Submit scope for approval**. The existing immutable
+`TrialScope` revisions require full scientific validation and cannot safely serve
+as incomplete drafts. A Trial therefore retains one shared staff draft in
+nullable `DraftScopeJson`, `DraftSavedByUserId`, and `DraftSavedAtUtc` fields.
+The typed JSON bounds text, catalog selections, identifiers, and entered numeric
+and date values while allowing missing information. A selected Department must
+belong to the Company's active Prospect access; an approved Trial's Department
+cannot change. Initial draft planning does not require binding Portal access.
+
+Existing authorized Trial staff may save and resume the shared draft, using the
+Trial's optimistic version and idempotent mutation boundary. The last saver and
+time appear only to staff. Draft saves record account audit metadata without
+creating a scientific scope, approval milestone, invitation, Lab authorization,
+shipment, or external timeline entry. Current/approved/accepted revisions and
+status remain unchanged. Full versioned submission performs the existing
+scientific, access, allowance, and frozen-material checks, then creates the
+immutable revision and clears the draft atomically. Terminal Trials reject both
+actions; held Trials retain existing scope-planning behavior while approval and
+operational hold rules remain enforced.
+
+The dedicated scope route remains justified by its scientific sections and
+resumability. Draft/resume, action-specific validation, dirty/pending protection,
+failed-save retention, and reviewed-version concurrency are covered in authored
+frontend regression sources. Domain sources cover incomplete draft isolation,
+accepted-scope/hold preservation, terminal/value rejection, and successful
+submission clearing. PostgreSQL reference sources cover durable shared draft
+readback, staff/Prospect separation, version and Department guards, lack of new
+authority, and pre-binding draft planning. Suites have not been run for this
+slice. The additive migration and ERD update are coordinated with the parent
+remaining-work change; this section does not claim migration application,
+deployment, or populated acceptance.
+
 ## External workflow continuity - 2026-09-07
 
 The authorized consistency-review repairs are recorded in

@@ -18,7 +18,7 @@ using static PhaenoPortal.App.Features.Crm.Services.CrmAccess;
 public sealed class CrmOpportunitiesController(PSeqOperationsDbContext dbContext, IExternalIdentityContext externalIdentityContext) : ControllerBase
 {
     [HttpGet]
-    public async Task<CrmPageDto<CrmOpportunityDto>> List([FromQuery] string? search, [FromQuery] Guid? companyId, [FromQuery] Guid? pipelineId, [FromQuery] Guid? stageId, [FromQuery] bool includeInactive = false, [FromQuery] int page = 1, [FromQuery] int pageSize = 100, CancellationToken cancellationToken = default)
+    public async Task<CrmPageDto<CrmOpportunityDto>> List([FromQuery] string? search, [FromQuery] Guid? companyId, [FromQuery] Guid? pipelineId, [FromQuery] Guid? stageId, [FromQuery] bool includeInactive = false, [FromQuery] int page = 1, [FromQuery] int pageSize = 100, CancellationToken cancellationToken = default, [FromQuery] bool staleOnly = false)
     {
         await RequireActor(cancellationToken);
         EnsurePagination(page, pageSize);
@@ -27,6 +27,7 @@ public sealed class CrmOpportunitiesController(PSeqOperationsDbContext dbContext
         if (companyId.HasValue) query = query.Where(value => value.CompanyId == companyId);
         if (pipelineId.HasValue) query = query.Where(value => value.PipelineId == pipelineId);
         if (stageId.HasValue) query = query.Where(value => value.StageId == stageId);
+        if (staleOnly) query = CrmAttentionFilters.StaleOpportunities(query, DateTime.UtcNow);
         if (!string.IsNullOrWhiteSpace(search))
         {
             var pattern = $"%{EscapeLike(search.Trim())}%";
@@ -202,7 +203,7 @@ public sealed class CrmOpportunitiesController(PSeqOperationsDbContext dbContext
             ?? throw NotFound("crm_open_stage_not_found", "The selected pipeline has no active open stage.");
     }
 
-    private async Task<User> RequireActor(CancellationToken cancellationToken) => await RequirePlatformAdminAsync(HttpContext, dbContext, externalIdentityContext, cancellationToken);
+    private async Task<User> RequireActor(CancellationToken cancellationToken) => await RequireCrmAccessAsync(HttpContext, dbContext, externalIdentityContext, cancellationToken);
 
     internal static CrmOpportunityDto ToDto(CrmOpportunity value, User? owner = null)
     {

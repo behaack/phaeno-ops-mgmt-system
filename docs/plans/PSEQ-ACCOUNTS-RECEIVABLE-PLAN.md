@@ -47,6 +47,39 @@ acceptance gates remain in `PSEQ-ORDER-TO-CASH-GAP-CLOSURE-PLAN.md`.
 
 ## Operations and rollout
 
+### Finance correction workflow - 2026-09-07
+
+The authorized remaining-work slice exposes receipt allocation history and the
+existing versioned allocation-reversal endpoint. History retains the original
+allocation, invoice/receipt identity, actor/time and reversal reason. The
+reversal dialog captures all three reviewed versions, preserves failed entries,
+and requires explicit review after a conflict. Cash Operators can search
+same-Customer open invoices by number and page beyond the first 25 suggestions;
+the selected invoice remains pinned while browsing other matches. Refreshing a
+conflicted selection resolves that exact invoice within the same Customer scope.
+
+Reconciliation detail now displays included sources and draft change history.
+Only Draft batches permit reasoned **Edit draft** or **Cancel draft**. Editing
+recalculates ledger and difference values and atomically replaces current source
+links. Existing allocation/adjustment sources are retained by the receipt-focused
+editor. Nullable `DraftChangesJson` stores append-only before/after period,
+totals, all three source-ID sets, actor, timestamp and reason. Every historical
+draft editor participates in the existing enforced/audit-only separation rule.
+Submitted/approved records cannot be corrected or cancelled; cancelled drafts
+retain financial sources/history and do not generate new difference attention.
+Balancing or cancelling a draft resolves only that batch's open difference
+attention in the same transaction, retaining its owner and recording the acting
+operator, timestamp and correction reason.
+The coordinated additive migration/ERD changes are owned by the parent work.
+
+Authored regression sources cover reversal validation, reviewed versions,
+conflict recovery, pending/dirty guards, retained failed reconciliation edits,
+submitted-state rejection, cancellation, matching search/paging, durable
+source/history persistence and actor exclusion. Existing billing-pristine
+coverage waits for React Hook Form's asynchronous form-state update after the
+original value is restored. This subsection records implementation and coverage,
+not a suite pass, live financial acceptance, or deployment.
+
 The Finance workspace exposes aging, invoices, receipts, explicit allocation,
 preview/confirm import, and reconciliation. Overdue invoices, unapplied cash,
 and reconciliation differences create owned attention items. Historical manual

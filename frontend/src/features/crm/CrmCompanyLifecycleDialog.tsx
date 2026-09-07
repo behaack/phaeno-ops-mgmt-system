@@ -27,7 +27,7 @@ export function CrmCompanyLifecycleDialog({
   const action = active ? "Deactivate" : "Reactivate";
 
   return (
-    <Dialog open={Boolean(company)} onOpenChange={onOpenChange}>
+    <Dialog open={Boolean(company)} onOpenChange={open => { if (!isPending) onOpenChange(open) }}>
       <DialogContent>
         <DialogHeader>
           <DialogTitle>{action} company</DialogTitle>
@@ -43,14 +43,17 @@ export function CrmCompanyLifecycleDialog({
           </Alert>
         ) : null}
         <p className="text-sm text-muted-foreground">
-          {active
-            ? "This also suspends the Company’s Portal access. Users, service entitlements, orders, and history are retained."
-            : "This restores the Company and its existing Portal access. Review readiness before starting new work."}
+          {company?.accessOrganizationId
+            ? active
+              ? `This suspends access to ${company.name} for all of its Portal users. Users, service entitlements, orders, and history are retained.`
+              : `This restores access to ${company.name} under its existing memberships and service entitlements. Review readiness before starting new work.`
+            : 'This Company has no Portal access scope. This action changes the CRM directory record only; it does not create Portal access.'}
         </p>
         <DialogFooter>
           <Button
             type="button"
             variant="outline"
+            disabled={isPending}
             onClick={() => onOpenChange(false)}
           >
             Cancel

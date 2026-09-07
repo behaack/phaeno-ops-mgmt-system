@@ -1,6 +1,6 @@
 import { zodResolver } from '@hookform/resolvers/zod'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
-import { useRef, useState, type ChangeEvent } from 'react'
+import { useEffect, useRef, useState, type ChangeEvent } from 'react'
 import { useForm } from 'react-hook-form'
 import { z } from 'zod'
 import * as finance from '#/api/pseq-order-to-cash'
@@ -35,7 +35,16 @@ export function FinanceActionDialog({ action, apiEnabled, customerId, customers,
   const [matchingInvoice, setMatchingInvoice] = useState<finance.InvoiceReceivable>()
   const [reviewNeeded, setReviewNeeded] = useState(false)
   const [reviewed, setReviewed] = useState(false)
-  const suggestions = useQuery({ queryKey: ['accounts-receivable', 'matching', payment?.id], queryFn: () => finance.listMatchingInvoices(payment!.id), enabled: apiEnabled && action === 'allocation' && Boolean(payment) })
+  const [invoiceSearch, setInvoiceSearch] = useState('')
+  const [matchingSearch, setMatchingSearch] = useState('')
+  const [matchingPage, setMatchingPage] = useState(0)
+  useEffect(() => {
+    const search = invoiceSearch.trim()
+    if (search === matchingSearch) return
+    const timer = window.setTimeout(() => { setMatchingSearch(search); setMatchingPage(0) }, 250)
+    return () => window.clearTimeout(timer)
+  }, [invoiceSearch, matchingSearch])
+  const suggestions = useQuery({ queryKey: ['accounts-receivable', 'matching', payment?.id, matchingSearch, matchingPage], queryFn: () => finance.listMatchingInvoices(payment!.id, matchingSearch, matchingPage), enabled: apiEnabled && action === 'allocation' && Boolean(payment) })
   const reload = useMutation({ mutationFn: async () => {
     if (action === 'adjustment' && invoice) {
       const current = (await finance.listInvoices(false, invoice.id)).find(item => item.id === invoice.id)
@@ -43,7 +52,7 @@ export function FinanceActionDialog({ action, apiEnabled, customerId, customers,
       return { invoice: current, payment, matching: matchingInvoice, matches: undefined }
     }
     if ((action === 'allocation' || action === 'reversal') && payment) {
-      const [currentReceipts, matches] = await Promise.all([finance.listPaymentReceipts(false, payment.id), action === 'allocation' ? finance.listMatchingInvoices(payment.id) : Promise.resolve([])])
+      const [currentReceipts, matches] = await Promise.all([finance.listPaymentReceipts(false, payment.id), action === 'allocation' && matchingInvoice ? finance.listMatchingInvoices(payment.id, undefined, 0, matchingInvoice.id) : Promise.resolve([])])
       const current = currentReceipts.find(item => item.id === payment.id)
       if (!current) throw new Error('This receipt is no longer available. Your entered values are retained.')
       return { invoice, payment: current, matching: matches.find(item => item.id === matchingInvoice?.id), matches }
@@ -117,14 +126,14 @@ export function FinanceActionDialog({ action, apiEnabled, customerId, customers,
     if (!reload.data) return
     setRecord({ invoice: reload.data.invoice, payment: reload.data.payment }); setMatchingInvoice(reload.data.matching)
     if (action === 'allocation') {
-      client.setQueryData(['accounts-receivable', 'matching', payment?.id], reload.data.matches)
+      void client.invalidateQueries({ queryKey: ['accounts-receivable', 'matching', payment?.id] })
       if (!reload.data.matching) form.setValue('invoiceId', '')
     }
     setReviewNeeded(false); setReviewed(true); save.reset(); reload.reset(); form.clearErrors()
   }
   const props = (name: keyof Values) => ({ ...form.register(name), onChange: (event: ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => { void form.register(name).onChange(event); if (form.getFieldState(name).error) void form.trigger(name) } })
   function chooseInvoice(value: string) {
-    const selected = suggestions.data?.find(item => item.id === value)
+    const selected = invoiceChoices.find(item => item.id === value)
     setMatchingInvoice(selected); form.setValue('invoiceId', value, { shouldDirty: true })
     if (form.getFieldState('invoiceId').error) {
       if (selected) form.clearErrors('invoiceId')
@@ -140,7 +149,7 @@ export function FinanceActionDialog({ action, apiEnabled, customerId, customers,
         {action === 'adjustment' && invoice ? <p className="text-sm">{invoice.invoiceNumber} · {invoice.status} · {money(invoice.balance)} outstanding when reviewed.</p> : null}
         {action === 'reversal' && payment ? <p className="text-sm">{payment.receiptNumber} · {payment.payer} · {money(payment.unappliedAmount)} unapplied when reviewed.</p> : null}
         {action === 'receipt' ? <><FinanceField id="receipt-organization" label="Customer" required error={errors.organizationId?.message}><select required className={financeSelectClass} {...props('organizationId')}><option value="">Select Customer</option>{customers.map(item => <option key={item.organizationId} value={item.organizationId}>{item.organizationName}</option>)}</select></FinanceField><div className="grid gap-4 sm:grid-cols-2">{receiptFields.map(field => <FinanceField key={field.name} id={`receipt-${field.name}`} label={field.label} required={field.name !== 'memo'} error={errors[field.name]?.message}><Input required={field.name !== 'memo'} type={'type' in field ? field.type : 'text'} step={field.name === 'amount' ? '0.01' : undefined} {...props(field.name)} /></FinanceField>)}</div><FinanceField id="receipt-evidence" label="Receipt evidence" required error={errors.evidence?.message}><Input type="file" accept=".pdf,.png,.jpg,.jpeg,.txt" required ref={form.register('evidence').ref} name="evidence" onBlur={() => { void form.trigger('evidence') }} onChange={event => form.setValue('evidence', event.target.files?.[0] ?? null, { shouldDirty: true, shouldValidate: Boolean(errors.evidence) })} /></FinanceField>{evidence ? <p className="text-sm">Attached: {evidence.name}</p> : null}<p className="text-xs text-muted-foreground">PDF, PNG, JPEG or text, up to 10 MB. Evidence must pass file scanning before the receipt is recorded.</p></> : null}
-        {action === 'allocation' ? <><p>{payment?.payer} · {money(payment?.unappliedAmount ?? 0)} available when reviewed</p>{suggestions.error ? <Alert variant="destructive"><AlertTitle>Matching invoices unavailable</AlertTitle><AlertDescription><Button type="button" variant="outline" onClick={() => { void suggestions.refetch() }}>Retry matching invoices</Button></AlertDescription></Alert> : null}<FinanceField id="allocation-invoice" label="Invoice" required error={errors.invoiceId?.message}><select required className={financeSelectClass} disabled={suggestions.isLoading || suggestions.isError || reviewNeeded} {...props('invoiceId')} onChange={event => chooseInvoice(event.target.value)}><option value="">Select a same-Customer invoice</option>{invoiceChoices.map(item => <option key={item.id} value={item.id}>{item.invoiceNumber} · {money(item.balance)}</option>)}</select></FinanceField>{!suggestions.isLoading && !suggestions.isError && !invoiceChoices.length ? <p>No open invoices for this Customer.</p> : null}</> : null}
+        {action === 'allocation' ? <><p>{payment?.payer} · {money(payment?.unappliedAmount ?? 0)} available when reviewed</p><FinanceField id="allocation-search" label="Search invoices"><Input value={invoiceSearch} maxLength={100} placeholder="Invoice number" disabled={reviewNeeded} onChange={event => setInvoiceSearch(event.target.value)} /></FinanceField>{suggestions.error ? <Alert variant="destructive"><AlertTitle>Matching invoices unavailable</AlertTitle><AlertDescription><Button type="button" variant="outline" onClick={() => { void suggestions.refetch() }}>Retry matching invoices</Button></AlertDescription></Alert> : null}<FinanceField id="allocation-invoice" label="Invoice" required error={errors.invoiceId?.message}><select required className={financeSelectClass} disabled={suggestions.isLoading || suggestions.isError || reviewNeeded} {...props('invoiceId')} onChange={event => chooseInvoice(event.target.value)}><option value="">Select a same-Customer invoice</option>{invoiceChoices.map(item => <option key={item.id} value={item.id}>{item.invoiceNumber} · {money(item.balance)}</option>)}</select></FinanceField><div className="flex items-center gap-3"><Button type="button" variant="outline" disabled={matchingPage === 0 || suggestions.isFetching || reviewNeeded} onClick={() => setMatchingPage(page => page - 1)}>Previous invoices</Button><span className="text-sm">Page {matchingPage + 1}</span><Button type="button" variant="outline" disabled={suggestions.isFetching || (suggestions.data?.length ?? 0) < 25 || reviewNeeded} onClick={() => setMatchingPage(page => page + 1)}>Next invoices</Button></div>{suggestions.isFetching ? <p role="status">Loading matching invoices…</p> : !suggestions.isError && !suggestions.data?.length ? <p>{matchingSearch ? 'No open invoices match this search.' : matchingPage ? 'No further invoices. Return to the previous page.' : 'No open invoices for this Customer.'}</p> : null}</> : null}
         {action === 'adjustment' ? <FinanceField id="adjustment-kind" label="Adjustment" required error={errors.adjustmentKind?.message}><select required className={financeSelectClass} {...props('adjustmentKind')}><option value="Credit">Credit</option><option value="Debit">Debit</option><option value="WriteOff">Write-off</option></select></FinanceField> : null}
         {action === 'allocation' || action === 'adjustment' ? <FinanceField id="finance-amount" label="Amount (USD)" required error={errors.amount?.message}><Input required type="number" min="0.01" step="0.01" max={action === 'allocation' ? Math.min(payment?.unappliedAmount ?? 0, matchingInvoice?.balance ?? 0) : undefined} {...props('amount')} /></FinanceField> : null}
         {action === 'reversal' || action === 'adjustment' ? <FinanceField id="finance-reason" label="Reason" required error={errors.reason?.message}><textarea required className={financeTextareaClass} {...props('reason')} /></FinanceField> : null}

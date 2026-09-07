@@ -32,9 +32,10 @@ export function CrmLeadsPage() {
   const client = useQueryClient();
   const [open, setOpen] = useState(false);
   const [status, setStatus] = useCrmState<CrmLeadStatus | "">("status", "");
+  const [needsNextAction, setNeedsNextAction] = useCrmState<boolean>('needsNextAction', false);
   const query = useQuery({
-    queryKey: ["crm-leads", status, page, search],
-    queryFn: () => listCrmLeads({ search, status: status || undefined, page, pageSize: 25 }),
+    queryKey: ["crm-leads", status, needsNextAction, page, search],
+    queryFn: () => listCrmLeads({ search, status: status || undefined, needsNextAction, page, pageSize: 25 }),
   });
   const create = useMutation({
     mutationFn: (input: CrmLeadInput) => createCrmLead(input),
@@ -96,10 +97,11 @@ export function CrmLeadsPage() {
             </select>
           </div>
           <CrmClearFilters />
+          <label className="flex cursor-pointer items-center gap-2 text-sm"><input type="checkbox" checked={needsNextAction} onChange={event => setNeedsNextAction(event.target.checked)} />Needs next action</label>
           <CrmSavedViewBar
             recordType="Lead"
-            currentFilter={{ status, search }}
-            onApply={(filter) => { setStatus(isLeadStatus(filter.status) ? filter.status : ""); setSearch(typeof filter.search === 'string' ? filter.search : '') }}
+            currentFilter={{ status, search, needsNextAction }}
+            onApply={(filter) => { setStatus(isLeadStatus(filter.status) ? filter.status : ""); setSearch(typeof filter.search === 'string' ? filter.search : ''); setNeedsNextAction(filter.needsNextAction === true); }}
           />
           <div className="overflow-x-auto rounded-lg border">
             <table className="w-full text-left text-sm">

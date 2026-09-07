@@ -208,6 +208,43 @@ public class PSeqOrderToCashDomainTests
     }
 
     [Fact]
+    public void ReconciliationDraftCorrectionsRetainSourceHistoryAndAllEditorsForIndependentApproval()
+    {
+        var creator = Guid.NewGuid(); var firstEditor = Guid.NewGuid(); var secondEditor = Guid.NewGuid();
+        var receipt = Guid.NewGuid(); var allocation = Guid.NewGuid(); var adjustment = Guid.NewGuid();
+        var batch = new ReconciliationBatch("REC-DRAFT", new(2026, 9, 7), 100, 90, creator);
+        var before = new ReconciliationDraftSnapshot(batch.PeriodEnd, 100, 90, [receipt], [allocation], [adjustment]);
+        var first = before with { BankTotal = 100 };
+        batch.ReviseDraft(before, first, firstEditor, "Correct bank total", Now);
+        var second = first with { PaymentAllocationIds = [], InvoiceAdjustmentIds = [] };
+        batch.ReviseDraft(first, second, secondEditor, "Remove incorrect supporting sources", Now);
+        Assert.Equal(0, batch.Difference); Assert.Equal(2, batch.ReadDraftChanges().Count);
+        Assert.Equal(allocation, Assert.Single(batch.ReadDraftChanges()[1].Before.PaymentAllocationIds));
+        Assert.Equal(adjustment, Assert.Single(batch.ReadDraftChanges()[1].Before.InvoiceAdjustmentIds));
+        batch.Submit(creator, Now);
+        Assert.Throws<InvalidOperationException>(() => batch.ReviseDraft(second, first, creator, "Too late", Now));
+        Assert.Throws<InvalidOperationException>(() => batch.CancelDraft(second, creator, "Too late", Now));
+        Assert.Throws<InvalidOperationException>(() => batch.Approve(firstEditor, [], "{}", Now));
+        Assert.Throws<InvalidOperationException>(() => batch.Approve(secondEditor, [], "{}", Now));
+        batch.Approve(Guid.NewGuid(), [], "{}", Now);
+        Assert.Equal(ReconciliationBatchStatus.Approved, batch.Status);
+    }
+
+    [Fact]
+    public void CancellingDraftRequiresReasonPreservesTotalsAndCannotBeSubmitted()
+    {
+        var creator = Guid.NewGuid(); var batch = new ReconciliationBatch("REC-CANCEL", new(2026, 9, 7), 100, 90, creator);
+        var snapshot = new ReconciliationDraftSnapshot(batch.PeriodEnd, 100, 90, [Guid.NewGuid()], [], []);
+        Assert.Throws<ArgumentException>(() => batch.CancelDraft(snapshot, creator, " ", Now));
+        Assert.Equal(ReconciliationBatchStatus.Draft, batch.Status); Assert.Empty(batch.ReadDraftChanges());
+        batch.CancelDraft(snapshot, creator, "Duplicate draft", Now);
+        Assert.Equal(ReconciliationBatchStatus.Cancelled, batch.Status); Assert.Equal(-10, batch.Difference);
+        Assert.Equal(snapshot.PaymentReceiptIds, Assert.Single(batch.ReadDraftChanges()).Before.PaymentReceiptIds);
+        Assert.Throws<InvalidOperationException>(() => batch.Submit(creator, Now));
+        Assert.Throws<InvalidOperationException>(() => batch.CancelDraft(snapshot, creator, "Again", Now));
+    }
+
+    [Fact]
     public void ReconciliationActorSeparationCanRunInAuditOnlyModeBeforeEnforcement()
     {
         var cashOperator = Guid.NewGuid();

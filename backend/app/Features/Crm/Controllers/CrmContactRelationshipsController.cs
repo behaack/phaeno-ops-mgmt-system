@@ -77,7 +77,7 @@ public sealed class CrmContactRelationshipsController(PSeqOperationsDbContext db
     }
 
     private IQueryable<CrmCompanyContact> Query() => dbContext.CrmCompanyContacts.AsNoTracking().Include(value => value.Company).Include(value => value.Contact);
-    private async Task RequireActor(CancellationToken cancellationToken) => _ = await RequirePlatformAdminAsync(HttpContext, dbContext, externalIdentityContext, cancellationToken);
+    private async Task RequireActor(CancellationToken cancellationToken) => _ = await RequireCrmAccessAsync(HttpContext, dbContext, externalIdentityContext, cancellationToken);
     private static CrmException NotFound(string code, string message) => CrmAccess.NotFound(code, message);
     private static CrmException Conflict(string code, string message) => CrmAccess.Conflict(code, message);
 

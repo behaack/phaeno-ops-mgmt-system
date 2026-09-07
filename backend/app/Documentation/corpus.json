@@ -1200,7 +1200,7 @@
       "publicationStatus": "published",
       "id": "phaeno/crm",
       "route": "/docs/phaeno/crm",
-      "contentHash": "d7bc5128904b354ee825cba5c8ab0d3aa777596ba087e63f9699a77ccb4f197e",
+      "contentHash": "8de72279666f799a7ba1f47ae5c656f1764f5aad930bf53041943cf059012922",
       "sections": [
         {
           "heading": "Customer relationship management",
@@ -1210,12 +1210,12 @@
         {
           "heading": "Access CRM",
           "anchor": "access-crm",
-          "text": "Open CRM from the Phaeno toolbar. CRM access requires an active Phaeno platform-administrator account. External organization users cannot see CRM navigation or CRM data. Use the far-left sidebar beneath the toolbar to move among the complete CRM workspace. Relationships contains Companies and Contacts; Sales contains Leads and Opportunities; Follow-up contains Tasks and Requests; Insights contains Reports; and Administration contains CRM configuration. Home remains the starting summary. The sidebar header identifies CRM and, on wider screens, provides the pin or unpin icon. Pointer users can preview an unpinned sidebar from the left edge; keyboard and touch users open it from the edge tab. Choosing a section closes an unpinned sidebar."
+          "text": "Open CRM from the Phaeno toolbar while working in the Phaeno organization. An active Phaeno account with the Commercial operator role or platform-administrator access can use CRM. External organization users cannot see CRM navigation or CRM data. Use the far-left sidebar beneath the toolbar to move among the CRM sections available to your role. Relationships contains Companies and People; Sales contains Leads and Opportunities; Follow-up contains Tasks and, for administrators, Requests; Insights contains Reports; and administrators also see Administration for CRM configuration. Home remains the starting summary. The sidebar header identifies CRM and, on wider screens, provides the pin or unpin icon. Pointer users can preview an unpinned sidebar from the left edge; keyboard and touch users open it from the edge tab. Choosing a section closes an unpinned sidebar."
         },
         {
           "heading": "Start from Home",
           "anchor": "start-from-home",
-          "text": "Home answers what needs attention. It shows overdue and due-soon Tasks, Leads without a next action, stale Opportunities, required-data warnings, your next Tasks, and recently changed Opportunities. Use Find anything to search active Companies, Contacts, Leads, Opportunities, and Tasks. Enter at least two characters, then choose a result to open its owning workspace. Search does not cross into Portal users, specimens, files, or laboratory records."
+          "text": "Home answers what needs attention. It shows overdue and due-soon Tasks, Leads without a next action, stale Opportunities, your next Tasks, and recently changed Opportunities. Administrators also see required-data warnings. Use Find anything to search active Companies, Contacts, Leads, Opportunities, and Tasks. Enter at least two characters, then choose a result to open its owning workspace. Search does not cross into Portal users, specimens, files, or laboratory records. Commercial staff can maintain Companies, Contacts, relationships, Leads, Opportunities, Tasks, ordinary Internal Activities, personal saved views, and Internal custom values, and read Reports. A platform administrator manages Company and Contact deactivation/reactivation and merges, Portal identity and access, Company Requests, pipelines and field definitions, imports, exports, shared-view publication, and Restricted Activities and custom values. Administrative sections and actions are shown only to administrators."
         },
         {
           "heading": "Keep the domain boundaries clear",
@@ -1253,7 +1253,7 @@
       "publicationStatus": "published",
       "id": "phaeno/crm-activities-tasks",
       "route": "/docs/phaeno/crm-activities-tasks",
-      "contentHash": "18a4ac99013e1f5f7c662abfac444de8f8674657b104b445a558ee4b68bc5938",
+      "contentHash": "299148ae3937b2310b8e16eb3784168de3a720e0b73f740023af2cf2c3187980",
       "sections": [
         {
           "heading": "Activities and Tasks",
@@ -1263,7 +1263,7 @@
         {
           "heading": "Log an Activity",
           "anchor": "log-an-activity",
-          "text": "Select Log activity from the record workspace. Choose Note, Call, Meeting, Email, or Status change; enter the required subject and optional details. POMS records the current time and signed-in actor. Choose visibility deliberately: Internal is ordinary Phaeno commercial context. Restricted flags material requiring careful handling. It does not limit visibility to a smaller set of CRM administrators; every user with CRM access can read the activity. Keep confidential procedures and scientific evidence in their authorized owning system. Manually logged Email means a user recorded that an email occurred. It does not send or retrieve email. Connected email and calendar capture are deferred. System, Portal, and Task events may also appear in the timeline. They are written by POMS and cannot be edited as ordinary notes. Never place patient information, sample identifiers, credentials, scientific results, file contents, or laboratory investigation detail in an Activity."
+          "text": "Select Log activity from the record workspace. Choose Note, Call, Meeting, Email, or Status change; enter the required subject and optional details. POMS records the current time and signed-in actor. Choose visibility deliberately: Internal is ordinary Phaeno commercial context. Restricted is available only to platform administrators. Commercial staff cannot read, create, edit, or deactivate Restricted Activities. Keep confidential procedures and scientific evidence in their authorized owning system. Manually logged Email means a user recorded that an email occurred. It does not send or retrieve email. Connected email and calendar capture are deferred. System, Portal, and Task events may also appear in the timeline. They are written by POMS and cannot be edited as ordinary notes. Never place patient information, sample identifiers, credentials, scientific results, file contents, or laboratory investigation detail in an Activity."
         },
         {
           "heading": "Create a Task",
@@ -1273,12 +1273,12 @@
         {
           "heading": "Manage the Task queue",
           "anchor": "manage-the-task-queue",
-          "text": "Open Tasks from the CRM sidebar to search by title or description, filter by status or overdue state, page through results, apply saved views, and export the current view. Search and filters remain when you return from a record. Statuses are: Open: not started. In progress: actively owned. Blocked: unable to proceed; a reason is required. Completed: finished. Cancelled: intentionally stopped. Use Update to change status. A blocked Task requires the blocking reason. Completed and Cancelled Tasks retain their history and no longer offer Update. Create a new follow-up Task when more work is needed. Completing a recurring Task creates its next occurrence according to the stored rule. Confirm the new occurrence and due date rather than changing the completed historical Task."
+          "text": "Open Tasks from the CRM sidebar to search by title or description, filter by status, overdue state, or due within seven days, page through results, and apply saved views. Administrators can also export the current view. Search and filters remain when you return from a record. Statuses are: Open: not started. In progress: actively owned. Blocked: unable to proceed; a reason is required. Completed: finished. Cancelled: intentionally stopped. Use Update to change status. A blocked Task requires the blocking reason. Completed and Cancelled Tasks retain their history and no longer offer Update. Create a new follow-up Task when more work is needed. Completing a recurring Task creates its next occurrence according to the stored rule. Confirm the new occurrence and due date rather than changing the completed historical Task."
         },
         {
           "heading": "Use Home attention safely",
           "anchor": "use-home-attention-safely",
-          "text": "CRM Home shows overdue Tasks, Tasks due within seven days, and your next assigned Tasks. Completing a Task from Home uses the same durable status transition as the record workspace. If the Task has changed since Home loaded, refresh before retrying so a newer owner's work is not overwritten."
+          "text": "CRM Home shows overdue Tasks, Tasks due within seven days, and your next assigned Tasks. Completing a Task from Home uses the same durable status transition as the record workspace. If the Task has changed since Home loaded, refresh before retrying so a newer owner's work is not overwritten. Selecting an attention card opens its matching filtered list. Overdue Tasks are unfinished Tasks due before now; Due in 7 days includes unfinished Tasks due from now through the next seven days. Leads needing a next action excludes Converted and Disqualified Leads. Stale Opportunities are active, open Opportunities unchanged for more than 30 days, across all pipelines. The list shows these filters and lets you clear or save them. A failed Home search offers Retry CRM search results; no matches is shown only after a successful search."
         }
       ]
     },
@@ -1311,12 +1311,12 @@
       "publicationStatus": "published",
       "id": "phaeno/crm-companies-contacts",
       "route": "/docs/phaeno/crm-companies-contacts",
-      "contentHash": "4dc9c8c758875c0866e31dfb7e5a9bd5e693666df2a1676429c4706464e00d64",
+      "contentHash": "18930c7f40b4149c8204801675de2b1484028d9f7fab99fc666bc4c52e768954",
       "sections": [
         {
           "heading": "Companies and People",
           "anchor": "companies-and-people",
-          "text": "Companies and Contacts are durable relationship records. The Company is also the canonical Customer, Partner, or Prospect identity. A Company does not become accessible to external users until Portal access is reviewed and enabled; a Contact never becomes a Portal user automatically."
+          "text": "Companies and Contacts are durable relationship records. The Company is also the canonical Customer, Partner, or Prospect identity. A Company does not become accessible to external users until Portal access is reviewed and enabled; a Contact never becomes a Portal user automatically. Commercial staff can maintain identity, ownership, Company relationships, Sales, and ordinary Activity. Company People shows Contact relationships for Commercial staff. Portal identities, invitations, memberships, Departments & services, Requests, merge, and Company/Contact deactivation or reactivation are administrator-only."
         },
         {
           "heading": "Create and find a Company",
@@ -1495,12 +1495,12 @@
       "publicationStatus": "published",
       "id": "phaeno/crm-portal-handoffs",
       "route": "/docs/phaeno/crm-portal-handoffs",
-      "contentHash": "a77cd165dfb8f5db98720aa99cab606461caf52ae92e8a25563a2d1858656a12",
+      "contentHash": "3ac05a34ef10062f903e99296fa02cdc42c0205b198669e143e48cc3a3b354c0",
       "sections": [
         {
           "heading": "Company requests and approvals",
           "anchor": "company-requests-and-approvals",
-          "text": "A Company request carries commercial context into an audited review queue. It can propose online access, products and services, a relationship change, or reviewed work without creating another customer identity."
+          "text": "A Company request carries commercial context into an audited review queue. It can propose online access, products and services, a relationship change, or reviewed work without creating another customer identity. Company Requests, approval/completion, and Portal-access changes are available to platform administrators. Commercial staff should keep the Company and Opportunity context current and ask an administrator to prepare or complete the reviewed handoff."
         },
         {
           "heading": "Create a Company request",
@@ -1561,12 +1561,12 @@
       "publicationStatus": "published",
       "id": "phaeno/crm-reports-administration",
       "route": "/docs/phaeno/crm-reports-administration",
-      "contentHash": "ba7077ac2cd93c7c8bfda41ef0b60692b9f963450668c7787068dccdc64c109a",
+      "contentHash": "77c62ad8fe8dc360fc1cef68781ce4a29e6b6cbff74d0a79f972a355efacb801",
       "sections": [
         {
           "heading": "Reports and administration",
           "anchor": "reports-and-administration",
-          "text": "Reports explain current commercial state. Administration controls pipelines, stages, custom fields, saved views, duplicate review, imports, and audited exports."
+          "text": "Reports explain current commercial state. Administration controls pipelines, stages, custom fields, saved views, duplicate review, imports, and audited exports. Commercial staff and administrators can read Reports and save personal views. Administration, imports, exports, shared-view publication, and Restricted custom fields are administrator-only. Commercial staff see and maintain Internal custom values in the owning record."
         },
         {
           "heading": "Read Reports",
@@ -1586,7 +1586,7 @@
         {
           "heading": "Save and export views",
           "anchor": "save-and-export-views",
-          "text": "Company, Contact, Lead, Opportunity, and Task directories can save the current filters as a personal or shared view. Applying a saved view replaces the current supported filters. Export current view uses the same filters and creates an audited export record. Administration lists saved views and supports full audited exports for Company, Contact, Lead, Opportunity, and Task. Treat every downloaded CSV according to Phaeno's commercial-data handling rules."
+          "text": "Company, Contact, Lead, Opportunity, and Task directories can save the current filters as a personal view. Administrators can also publish a shared view; Commercial staff can apply existing shared views. Applying a saved view replaces the current supported filters. Export current view uses the same filters and creates an audited export record. Administration lists saved views and supports full audited exports for Company, Contact, Lead, Opportunity, and Task. Treat every downloaded CSV according to Phaeno's commercial-data handling rules."
         },
         {
           "heading": "Review possible duplicates",
@@ -1633,7 +1633,7 @@
       "publicationStatus": "published",
       "id": "phaeno/crm-troubleshooting",
       "route": "/docs/phaeno/crm-troubleshooting",
-      "contentHash": "f57b51443caee535941bb265b2349620f4f916aadebf90e6ae10aad533c3ae51",
+      "contentHash": "073e106b34c6eb599044fb7e88a24edd9f6b4ba435eccf91dda3d17afa6a8a46",
       "sections": [
         {
           "heading": "CRM troubleshooting and recovery",
@@ -1643,7 +1643,7 @@
         {
           "heading": "CRM is unavailable",
           "anchor": "crm-is-unavailable",
-          "text": "CRM requires an active Phaeno platform-administrator account in the Phaeno organization context. If the toolbar item is absent, confirm the selected organization and your account role. If the page reports that CRM access is required, ask a platform administrator to review your authorization rather than sharing credentials or using another person's session."
+          "text": "CRM requires an active Phaeno account with Commercial operator or platform-administrator access in the Phaeno organization context. If the toolbar item is absent, confirm the selected organization and your account role. If the page reports that CRM access is required, ask a platform administrator to review your authorization rather than sharing credentials or using another person's session."
         },
         {
           "heading": "A list is empty or will not load",
@@ -2599,7 +2599,7 @@
       "publicationStatus": "published",
       "id": "phaeno/order-billing-payment-release",
       "route": "/docs/phaeno/order-billing-payment-release",
-      "contentHash": "0144fd633f47dc976b8f1c3c0d22e75ce0a430778b9da33a891a1be25031a37a",
+      "contentHash": "14649b6792bb2167fd02fcfe26b0deab5312596953139f909e9073d8044d7451",
       "sections": [
         {
           "heading": "PSeq billing, cash, and result release",
@@ -2629,7 +2629,7 @@
         {
           "heading": "Record and reconcile cash",
           "anchor": "record-and-reconcile-cash",
-          "text": "In Receipts, choose Record receipt. Enter Customer, payer, amount, received date, payment method, bank reference and external reference. Attach evidence as PDF, PNG, JPEG or text, up to 10 MB. The file must pass the configured scanner before the receipt is recorded; an unavailable scanner leaves the receipt unsaved and preserves your entries. An optional note adds context. Open a saved receipt to download its evidence, allocate it to a same-Customer invoice, or reverse it when no allocation remains. In Import receipts, select Customer and source, then choose a CSV file or paste its contents. Required headers are source, external_id, date, amount, currency, payer, reference and memo. Preview import validates the file. Review the frozen Customer, source, rows and total, then confirm. Only the operator who reviewed that preview can confirm it. If another operator already owns the file review, ask them to complete it; do not change the file identity to bypass that ownership. If the Customer, totals, or saved version changed, review a fresh preview before confirmation. Change input returns to editing and requires a fresh preview. An earlier response cannot replace a preview for changed input. Repeating your unconfirmed preview resumes the same batch; confirmed files cannot be imported twice. Imports create unapplied receipts and retain their source evidence. Matching suggestions never apply cash. Allocate explicitly so partial, one-receipt/many-invoice, many-receipt/one-invoice, overpayment, and unapplied cash remain visible. Reversals retain actor and reason. A Cash Operator submits a balanced reconciliation; a different Cash Reconciler who contributed none of its activity approves the immutable closeout report."
+          "text": "In Receipts, choose Record receipt. Enter Customer, payer, amount, received date, payment method, bank reference and external reference. Attach evidence as PDF, PNG, JPEG or text, up to 10 MB. The file must pass the configured scanner before the receipt is recorded; an unavailable scanner leaves the receipt unsaved and preserves your entries. An optional note adds context. Open a saved receipt to download its evidence, allocate it to a same-Customer invoice, or reverse it when no allocation remains. In Import receipts, select Customer and source, then choose a CSV file or paste its contents. Required headers are source, external_id, date, amount, currency, payer, reference and memo. Preview import validates the file. Review the frozen Customer, source, rows and total, then confirm. Only the operator who reviewed that preview can confirm it. If another operator already owns the file review, ask them to complete it; do not change the file identity to bypass that ownership. If the Customer, totals, or saved version changed, review a fresh preview before confirmation. Change input returns to editing and requires a fresh preview. An earlier response cannot replace a preview for changed input. Repeating your unconfirmed preview resumes the same batch; confirmed files cannot be imported twice. Imports create unapplied receipts and retain their source evidence. Matching suggestions never apply cash. Allocate explicitly so partial, one-receipt/many-invoice, many-receipt/one-invoice, overpayment, and unapplied cash remain visible. Reversals retain actor and reason. A Cash Operator submits a balanced reconciliation; a different Cash Reconciler who contributed none of its activity approves the immutable closeout report. In Allocate to invoice, search by invoice number and use Next invoices or Previous invoices to find more open invoices for the same Customer. The selected invoice and its reviewed balance remain visible while you browse other results. Selecting or searching never records an allocation. The receipt's Allocation history shows each allocation, its invoice, amount, actor and any reversal. Use Reverse allocation on an active allocation, review its receipt and invoice, and enter the correction reason. Reversal restores the receipt's unapplied amount and the invoice's outstanding balance while preserving the original allocation. A fully reversed allocation cannot be reversed again. Reverse receipt remains available only when no allocation remains. In Reconciliation, open the batch number to review its selected receipts and other contributing records. Before submission, a Cash Operator may choose Edit draft to correct the period end, bank total or selected receipts, or Cancel draft to retain an unused batch as cancelled. Both actions require a reason and the current version. Editing recalculates totals and retains the before-and-after selections. Draft change history shows the actor, reason and changes to the period and totals. Balancing or cancelling the draft resolves its open reconciliation-difference attention item. Cancellation does not reverse receipts or allocations. Submit the batch only when balanced. Submitted and approved batches cannot be edited or cancelled through these draft actions. Independent approval excludes the creator, submitter, contributing actors and every recorded draft editor wherever dual control is enforced. A conflict preserves your entries: review the refreshed batch before applying them. The immutable closeout remains the evidence for the approved batch."
         },
         {
           "heading": "Apply Partner assembly release gates",
@@ -3182,7 +3182,7 @@
       "publicationStatus": "published",
       "id": "phaeno/trial-projects",
       "route": "/docs/phaeno/trial-projects",
-      "contentHash": "f90a978a8952a8698b2cb6e1983be2c97cec94df8f165bb1d0f74d2a7955e853",
+      "contentHash": "2b0bd33dd6a8d497c760486b7d49f346a690169cfade5985000a5faf30e96ed5",
       "sections": [
         {
           "heading": "Operate Trial Projects",
@@ -3197,7 +3197,7 @@
         {
           "heading": "Prepare the commercial request and scope",
           "anchor": "prepare-the-commercial-request-and-scope",
-          "text": "From a CRM Company's Requests tab, create a Work → Trial Project request linked to an active Opportunity. Include commercial context only. Prepare the Company's active Prospect Portal access and department through the separate access workflow. A CRM request or an approved access request does not approve scientific Trial work. Select Start Trial beside the Company's request to carry that request into Trial creation and retain a route back to the Company. From Trial projects, you can also search and page through eligible requests. A request can create only one Trial; its link opens the existing workspace once started. Select Define scope. The dedicated scope page captures the objective, numeric original sample allowance, explicit submission window, current production PSeq workflow, active PSeq analysis definitions, and versioned deliverables. FASTQ, FASTA, and BAM are configurable initial defaults. Select the deliverables required for this evaluation; approved scopes preserve the selected definitions and versions. Record RNA submission instructions, success criteria, Prospect terms, residual-material retention and disposition, and internal estimated retail value and anticipated cost. Return arrangements require destination, handling, and shipping payer. They become immutable after the first sample submission. Internal costs never appear in the Prospect view."
+          "text": "From a CRM Company's Requests tab, create a Work → Trial Project request linked to an active Opportunity. Include commercial context only. Prepare the Company's active Prospect Portal access and department through the separate access workflow. A CRM request or an approved access request does not approve scientific Trial work. Select Start Trial beside the Company's request to carry that request into Trial creation and retain a route back to the Company. From Trial projects, you can also search and page through eligible requests. A request can create only one Trial; its link opens the existing workspace once started. Select Define scope. The dedicated scope page captures the objective, numeric original sample allowance, explicit submission window, current production PSeq workflow, active PSeq analysis definitions, and versioned deliverables. FASTQ, FASTA, and BAM are configurable initial defaults. Select the deliverables required for this evaluation; approved scopes preserve the selected definitions and versions. Record RNA submission instructions, success criteria, Prospect terms, residual-material retention and disposition, and internal estimated retail value and anticipated cost. Return arrangements require destination, handling, and shipping payer. They become immutable after the first sample submission. Internal costs never appear in the Prospect view. Choose Save draft to keep unfinished scope work and return to the Trial. Drafts may omit fields required for approval, including dates, scientific selections, return arrangements, terms, and the revision reason. Entered numbers and text still need to be valid. The draft is shared with authorized Phaeno Trial staff; the workspace shows who last saved it and when. Choose Resume draft to continue. Prospect users cannot see the draft. Saving does not change the current scope, existing approvals or acceptance, or authorize samples or laboratory work. Choose Submit scope for approval only when all required fields and scientific choices are complete. Submission creates a scope revision for review and clears the saved draft. An amendment then needs new approval and acceptance. A failed save or submission preserves your entries; if someone else changed the Trial or shared draft, reload the current record and review it before retrying. Scope planning remains available during a hold, but the hold still blocks approval and operational work. Closed Trials cannot save or submit scope changes."
         },
         {
           "heading": "Assign and record approval responsibilities",
@@ -3698,5 +3698,5 @@
       ]
     }
   ],
-  "corpusHash": "d03727c3263581446ab75c3189da1653e28c56ccb0e1694e4a3f8853afd0075e"
+  "corpusHash": "4d82da08d384782a7e8749b6629be0dbdfdc7493927f90ddeb968a64d5932be4"
 }

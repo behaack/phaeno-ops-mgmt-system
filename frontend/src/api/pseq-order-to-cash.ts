@@ -199,6 +199,11 @@ export type ReconciliationBatch = {
   version: number
 }
 
+export type PaymentAllocation = { id: string; paymentReceiptId: string; invoiceId: string; amount: number; allocatedByUserId: string; allocatedAtUtc: string; isReversed: boolean; version: number; reversedByUserId: string | null; reversedAtUtc: string | null; reversalReason: string | null }
+export type PaymentAllocationHistory = { allocation: PaymentAllocation; invoice: InvoiceReceivable; receipt: PaymentReceipt; allocatedByName: string; reversedByName: string | null }
+export type ReconciliationDraftSnapshot = { periodEnd: string; ledgerReceiptTotal: number; bankTotal: number; paymentReceiptIds: string[]; paymentAllocationIds: string[]; invoiceAdjustmentIds: string[] }
+export type ReconciliationDetail = { batch: ReconciliationBatch; receipts: PaymentReceipt[]; items: { sourceType: string; sourceId: string; reference: string; amount: number }[]; changes: { actorName: string; change: { action: string; actorUserId: string; atUtc: string; reason: string; before: ReconciliationDraftSnapshot; after: ReconciliationDraftSnapshot } }[] }
+
 export async function listStageEligibleCustomers() {
   return getJson<StageEligibleCustomer[]>('/platform/pseq-staging/customers')
 }
@@ -401,11 +406,21 @@ export async function downloadPaymentEvidence(receipt: PaymentReceipt) {
   URL.revokeObjectURL(url)
 }
 
-export async function listMatchingInvoices(receiptId: string) {
+export async function listMatchingInvoices(receiptId: string, search?: string, page?: number, invoiceId?: string) {
   return getJson<InvoiceReceivable[]>(
     `/platform/accounts-receivable/receipts/${receiptId}/matching-suggestions`,
+    { params: { search, page, invoiceId } },
   )
 }
+
+export const listPaymentAllocations = (receiptId: string) => getJson<PaymentAllocationHistory[]>(`/platform/accounts-receivable/receipts/${receiptId}/allocations`)
+export const reversePaymentAllocation = (allocationId: string, input: { reason: string; allocationVersion: number; receiptVersion: number; invoiceVersion: number }) =>
+  postJson<PaymentAllocation>(`/platform/accounts-receivable/allocations/${allocationId}/reverse`, input)
+export const getReconciliation = (batchId: string) => getJson<ReconciliationDetail>(`/platform/accounts-receivable/reconciliations/${batchId}`)
+export const editReconciliationDraft = (batchId: string, input: { version: number; reason: string; periodEnd: string; bankTotal: number; paymentReceiptIds: string[]; paymentAllocationIds: string[]; invoiceAdjustmentIds: string[] }) =>
+  postJson<ReconciliationDetail>(`/platform/accounts-receivable/reconciliations/${batchId}/draft`, input)
+export const cancelReconciliationDraft = (batchId: string, version: number, reason: string) =>
+  postJson<ReconciliationDetail>(`/platform/accounts-receivable/reconciliations/${batchId}/cancel`, { version, reason })
 
 export async function allocatePayment(
   receiptId: string,

@@ -19,7 +19,7 @@ public sealed class CrmPipelinesController(PSeqOperationsDbContext dbContext, IE
     [HttpGet]
     public async Task<IReadOnlyList<CrmPipelineDto>> List([FromQuery] bool includeInactive = false, CancellationToken cancellationToken = default)
     {
-        await RequireActor(cancellationToken);
+        await RequireCrmAccessAsync(HttpContext, dbContext, externalIdentityContext, cancellationToken);
         var query = dbContext.CrmPipelines.AsNoTracking().Include(value => value.Stages).AsQueryable();
         if (!includeInactive) query = query.Where(value => value.IsActive);
         return (await query.OrderByDescending(value => value.IsDefault).ThenBy(value => value.Name).ToListAsync(cancellationToken)).Select(ToDto).ToList();

@@ -11,6 +11,7 @@ import {
   UserSearch,
 } from 'lucide-react'
 import type { ReactNode } from 'react'
+import { useCrmPermissions } from './use-crm-permissions'
 
 import {
   WorkspaceSidebar,
@@ -105,16 +106,20 @@ const crmSections = [
 >
 
 export function CrmShell({ children }: { children: ReactNode }) {
+  const { canAccess, canAdminister } = useCrmPermissions()
   const navigate = useNavigate()
   const pathname = useRouterState({
     select: (state) => state.location.pathname,
   })
   const activeSection = getActiveSection(pathname)
+  const sections = crmSections.filter(section => canAdminister || !['portalAccess', 'administration'].includes(section.value))
+
+  if (!canAccess) return <main className="page-wrap px-4 py-8"><h1 className="text-2xl font-semibold">CRM access required</h1><p className="mt-3 text-muted-foreground">Select your Phaeno organization. Commercial or administrator access is required to use CRM.</p></main>
 
   return (
     <WorkspaceSidebar
       workspaceLabel="CRM"
-      items={crmSections}
+      items={sections}
       value={activeSection}
       onValueChange={(value) => {
         const destination = crmSections.find(
@@ -123,7 +128,7 @@ export function CrmShell({ children }: { children: ReactNode }) {
         if (destination) void navigate({ to: destination.to })
       }}
     >
-      {children}
+      {!canAdminister && activeSection === 'administration' ? <main className="page-wrap px-4 py-8"><h1 className="text-2xl font-semibold">CRM administration</h1><p className="mt-3 text-muted-foreground">A Phaeno administrator manages pipelines, imports, exports, and sensitive configuration. Use the CRM sections to continue your commercial work.</p></main> : children}
     </WorkspaceSidebar>
   )
 }

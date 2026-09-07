@@ -1,5 +1,17 @@
 # Backend Test Plan
 
+## Portal completion integration — 2026-09-07
+
+The completion checkpoint passed **506 tests, zero failures and one Linux-only skip (507 total)** in the full Release suite. The filesystem-link test is explicitly skipped on Windows; its Linux execution and production volume ownership remain target acceptance. Evidence: `artifacts/portal-completion-20260907/backend-final.trx`.
+
+Coverage includes private Local storage and restart persistence, stream limits/checksums and failed-write cleanup, explicit scanner verdicts and unavailable/error rejection, ordinary Commercial Operator CRM access with active membership, restricted administration and exact attention filters, partial Trial scope drafts and approval separation, allocation correction, append-only reconciliation draft history, independent approval and resolved attention after balancing/cancellation. Earlier focused counts overlap this full checkpoint and must not be added to it.
+
+The usual development PostgreSQL instance has commit-timestamp tracking disabled, so retention verification initially failed on that environmental prerequisite. The final suite used an isolated loopback PostgreSQL 18 reference cluster with commit tracking enabled and the entire migration history applied. That cluster was stopped and removed after verification; the normal development server was not reconfigured or restarted.
+
+Release build passed with zero warnings/errors. EF reports no pending model changes. Additive migration `20260907232219_AddTrialAndReconciliationDrafts` was applied only to configured local development and the isolated reference database. It adds four nullable columns, one index and one restrictive foreign key, with no historical-row rewriting. The complete ERD was regenerated. Reviewed idempotent SQL: `artifacts/portal-completion-20260907/add-drafts.sql`, SHA-256 `2B56AC6801CD7147F19BC25E462A6152BD804972561A2D7B10108B18B94CFFFA`.
+
+Production migration application remains explicitly unapproved. No production financial, scientific or customer records were created by these checks. Real scanner service, target volume backup/restore, authenticated role journeys, upstream scientific output and physical bench acceptance remain separate.
+
 ## Intake consolidation - 2026-09-07
 
 Readiness regression assertions now cover separate pricing and invoice blockers. Customer options/readiness endpoints retain platform authorization and validate the selected active Customer department. Readiness uses the canonical specimen catalog and department entitlement precedence; absent system configuration is incomplete. API build is the local checkpoint; automated suites and database-backed endpoint acceptance were not requested.

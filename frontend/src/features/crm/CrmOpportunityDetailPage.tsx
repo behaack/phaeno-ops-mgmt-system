@@ -1,3 +1,4 @@
+import { useCrmPermissions } from './use-crm-permissions';
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Link } from "@tanstack/react-router";
 import { ArrowLeft, Pencil } from "lucide-react";
@@ -35,6 +36,7 @@ export function CrmOpportunityDetailPage({
 }: {
   opportunityId: string;
 }) {
+  const { canAdminister } = useCrmPermissions();
   const client = useQueryClient();
   const [editOpen, setEditOpen] = useState(false);
   const [stageId, setStageId] = useState("");
@@ -245,7 +247,7 @@ export function CrmOpportunityDetailPage({
         </CardContent>
       </Card>
       <CrmOpportunityContacts opportunityId={opportunityId} />
-      <CrmOpportunityOrderHandoffCard opportunity={opportunity} />
+      {canAdminister ? <CrmOpportunityOrderHandoffCard opportunity={opportunity} /> : null}
       <CrmCustomFields recordType="Opportunity" recordId={opportunityId} />
       <CrmRecordWork links={{ opportunityId }} />
       <CrmOpportunityDialog

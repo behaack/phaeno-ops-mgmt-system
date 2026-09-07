@@ -1,7 +1,10 @@
 # Portal documentation search operations
 
-Implemented locally on 2026-09-05. Production deployment and signed-in hosted
-acceptance have not been performed for this feature.
+Implemented on 2026-09-05 and included in the completed September production
+application releases. The [September 7 release record](plans/PORTAL-POMS-CONSISTENCY-SECOND-PASS-2026-09-07.md)
+identifies the matching API and Portal revision. Authenticated audience-specific
+search acceptance and cold-index recovery must still be verified separately;
+anonymous application health does not establish search readiness.
 
 ## Sources and release preparation
 

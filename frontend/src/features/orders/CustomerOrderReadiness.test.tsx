@@ -1,7 +1,10 @@
 import { render, screen, within } from '@testing-library/react'
-import { describe, expect, it } from 'vitest'
+import type { ReactNode } from 'react'
+import { describe, expect, it, vi } from 'vitest'
 import { CustomerOrderReadiness } from './CustomerOrderReadiness'
 import { parseOrderSection } from './order-sections'
+
+vi.mock('@tanstack/react-router', () => ({ Link: ({ to, children }: { to: string; children: ReactNode }) => <a href={to}>{children}</a> }))
 
 describe('Customer order readiness', () => {
   it('keeps quote and billing requirements out of the start-pricing alert', () => {

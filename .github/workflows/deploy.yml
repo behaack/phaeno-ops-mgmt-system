@@ -3,6 +3,15 @@ name: Deploy Portal Green
 on:
   workflow_dispatch:
     inputs:
+      file_storage_provider:
+        description: Preserve the selected storage provider, or explicitly select persistent Local storage or Disabled; no bytes are migrated
+        required: true
+        default: Preserve
+        type: choice
+        options:
+          - Preserve
+          - Local
+          - Disabled
       apply_migrations:
         description: Apply pending Portal migrations after creating an encrypted database backup
         required: true
@@ -304,7 +313,7 @@ jobs:
             "$release_path/deployment/hetzner/green/deploy-release.sh" \
             "$release_path/deployment/hetzner/green/install-bootstrap-runtime-config.sh" \
             "$release_path/deployment/hetzner/green/install-clerk-runtime-secret.sh" \
-            "$release_path/deployment/hetzner/green/install-disabled-file-storage-runtime-config.sh" \
+            "$release_path/deployment/hetzner/green/install-file-storage-runtime-config.sh" \
             "$release_path/deployment/hetzner/green/install-mailgun-invitation-runtime-config.sh" \
             "$release_path/deployment/hetzner/green/install-s3-runtime-config.sh" \
             "$release_path/deployment/hetzner/green/install-website-preview-search-runtime-config.sh"
@@ -354,15 +363,16 @@ jobs:
             | ssh -i ~/.ssh/deploy_key "$DEPLOY_USER@$DEPLOY_HOST" \
                 "$RELEASE_PATH/deployment/hetzner/green/install-mailgun-invitation-runtime-config.sh '$DEPLOY_ROOT'"
 
-      - name: Install disabled file-storage runtime configuration
+      - name: Preserve or explicitly select file-storage runtime configuration
         env:
           DEPLOY_HOST: ${{ secrets.DEPLOY_HOST }}
           DEPLOY_USER: ${{ secrets.DEPLOY_USER }}
           RELEASE_PATH: ${{ steps.release.outputs.release_path }}
+          FILE_STORAGE_PROVIDER: ${{ inputs.file_storage_provider }}
         run: |
-          printf 'FileStorage__Provider=Disabled\n' \
+          printf '%s\n' "$FILE_STORAGE_PROVIDER" \
             | ssh -i ~/.ssh/deploy_key "$DEPLOY_USER@$DEPLOY_HOST" \
-                "$RELEASE_PATH/deployment/hetzner/green/install-disabled-file-storage-runtime-config.sh '$DEPLOY_ROOT'"
+                "$RELEASE_PATH/deployment/hetzner/green/install-file-storage-runtime-config.sh '$DEPLOY_ROOT'"
 
       - name: Install Website Preview search runtime configuration
         if: ${{ vars.WEBSITE_PREVIEW_SEARCH_URL != '' }}

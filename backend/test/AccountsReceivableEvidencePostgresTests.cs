@@ -22,6 +22,66 @@ using PhaenoPortal.App.Infrastructure.Persistence.Auditing;
 public sealed class AccountsReceivableEvidencePostgresTests
 {
     [PostgreSqlReferenceFact]
+    public async Task AllocationHistoryReversalUsesAllVersionsAndMatchingPagesRemainCustomerScoped()
+    {
+        await using var scope = await Scope.Create(); var controller = scope.Controller();
+        var receipt = await scope.Upload(controller, scope.ReceiptRequest());
+        var invoices = new List<Invoice>();
+        for (var index = 0; index < 31; index++) invoices.Add(await scope.AddInvoice($"MATCH-{index:D3}"));
+        await scope.AddInvoice("MATCH-OTHER", scope.OtherCustomer);
+        var page = await controller.MatchingSuggestions(receipt.Id, default, page: 1);
+        Assert.Equal(6, page.Count); Assert.All(page, item => Assert.Equal(scope.Customer.Id, item.OrganizationId));
+        Assert.Equal(invoices[30].Id, Assert.Single(await controller.MatchingSuggestions(receipt.Id, default, "MATCH-030")).Id);
+        Assert.Empty(await controller.MatchingSuggestions(receipt.Id, default, "MATCH-OTHER"));
+        var allocation = await controller.Allocate(receipt.Id, new(invoices[30].Id, 10, receipt.Version, invoices[30].Version), default);
+        var history = Assert.Single(await controller.AllocationHistory(receipt.Id, default));
+        Assert.Equal(allocation.Id, history.Allocation.Id); Assert.Equal(90, history.Invoice.Balance); Assert.Equal(2.5m, history.Receipt.UnappliedAmount);
+        var stale = await Assert.ThrowsAsync<OrderManagementException>(() => controller.ReverseAllocation(allocation.Id,
+            new("Wrong match", allocation.Version - 1, history.Receipt.Version, history.Invoice.Version), default));
+        Assert.Equal(StatusCodes.Status409Conflict, stale.StatusCode);
+        await controller.ReverseAllocation(allocation.Id, new("Wrong match", history.Allocation.Version, history.Receipt.Version, history.Invoice.Version), default);
+        var reversed = Assert.Single(await controller.AllocationHistory(receipt.Id, default));
+        Assert.True(reversed.Allocation.IsReversed); Assert.Equal("Wrong match", reversed.Allocation.ReversalReason);
+        Assert.Equal(100, reversed.Invoice.Balance); Assert.Equal(12.5m, reversed.Receipt.UnappliedAmount);
+        Assert.Equal(StatusCodes.Status403Forbidden, (await Assert.ThrowsAsync<OrderManagementException>(() => scope.Controller(scope.UnassignedIdentity).AllocationHistory(receipt.Id, default))).StatusCode);
+    }
+
+    [PostgreSqlReferenceFact]
+    public async Task DraftCorrectionAndCancellationPersistHistoryAndPreserveFinancialSources()
+    {
+        await using var scope = await Scope.Create(); var controller = scope.Controller();
+        var receipt = await scope.Upload(controller, scope.ReceiptRequest()); var invoice = await scope.AddInvoice("DRAFT-SOURCE");
+        var allocation = await controller.Allocate(receipt.Id, new(invoice.Id, 10, receipt.Version, invoice.Version), default);
+        var adjustment = new InvoiceAdjustment(invoice.Id, InvoiceAdjustmentKind.Credit, 1, "Fixture adjustment source", scope.Operator.Id, DateTime.UtcNow);
+        scope.Db.Add(adjustment); await scope.Db.SaveChangesAsync();
+        var batch = await controller.CreateReconciliation(new(new(2026, 9, 7), 10, [receipt.Id], [allocation.Id], [adjustment.Id]), default);
+        var attention = new OperationalAttentionItem(OperationalAttentionCategory.ReconciliationDifference, scope.Customer.Id, "ReconciliationBatch", batch.Id, 0, "Bank difference", "Correct the draft");
+        attention.Assign(scope.Operator.Id); scope.Db.Add(attention); await scope.Db.SaveChangesAsync();
+        var edited = await scope.Controller(scope.SecondOperatorIdentity).EditReconciliationDraft(batch.Id,
+            new(batch.Version, "Correct the bank total", batch.PeriodEnd, 12.5m, [receipt.Id], [allocation.Id], [adjustment.Id]), default);
+        Assert.Equal(0, edited.Batch.Difference); Assert.True(edited.Batch.Version > batch.Version);
+        Assert.Equal(OperationalAttentionStatus.Resolved, attention.Status); Assert.Equal(scope.Operator.Id, attention.OwnerUserId);
+        Assert.Equal("Correct the bank total", attention.Resolution); Assert.NotEqual(scope.Operator.Id, attention.ResolvedByUserId);
+        var change = Assert.Single(edited.Changes).Change;
+        Assert.Equal(allocation.Id, Assert.Single(change.Before.PaymentAllocationIds)); Assert.Equal(adjustment.Id, Assert.Single(change.After.InvoiceAdjustmentIds));
+        Assert.Equal(10, change.Before.BankTotal); Assert.Equal(12.5m, change.After.BankTotal);
+        Assert.Equal(3, edited.Items.Count);
+        await Assert.ThrowsAsync<OrderManagementException>(() => controller.CancelReconciliationDraft(batch.Id, new(batch.Version, "Stale request"), default));
+        var cancelled = await controller.CancelReconciliationDraft(batch.Id, new(edited.Batch.Version, "Duplicate working batch"), default);
+        Assert.Equal("Cancelled", cancelled.Batch.Status); Assert.Equal(2, cancelled.Changes.Count);
+        Assert.Equal(3, cancelled.Items.Count); Assert.Equal("Duplicate working batch", cancelled.Changes[1].Change.Reason);
+        Assert.False((await scope.Db.PaymentAllocations.SingleAsync(item => item.Id == allocation.Id)).IsReversed);
+        Assert.Equal(2.5m, (await scope.Db.PaymentReceipts.SingleAsync(item => item.Id == receipt.Id)).UnappliedAmount);
+        await Assert.ThrowsAsync<OrderManagementException>(() => controller.SubmitReconciliation(batch.Id, new(cancelled.Batch.Version), default));
+        Assert.Equal("Cancelled", (await controller.ReconciliationDetail(batch.Id, default)).Batch.Status);
+        var another = await controller.CreateReconciliation(new(new(2026, 9, 7), 0, [receipt.Id], [], []), default);
+        var cancelAttention = new OperationalAttentionItem(OperationalAttentionCategory.ReconciliationDifference, scope.Customer.Id, "ReconciliationBatch", another.Id, 0, "Duplicate batch difference", "Review the draft");
+        cancelAttention.Assign(scope.Operator.Id); scope.Db.Add(cancelAttention); await scope.Db.SaveChangesAsync();
+        await controller.CancelReconciliationDraft(another.Id, new(another.Version, "Duplicate reconciliation"), default);
+        Assert.Equal(OperationalAttentionStatus.Resolved, cancelAttention.Status); Assert.Equal(scope.Operator.Id, cancelAttention.OwnerUserId);
+        Assert.Equal(scope.Operator.Id, cancelAttention.ResolvedByUserId); Assert.Equal("Duplicate reconciliation", cancelAttention.Resolution);
+    }
+    [PostgreSqlReferenceFact]
     public async Task IdempotencySaveFailureRollsBackCashAndRemovesUnreferencedEvidence()
     {
         await using var scope = await Scope.Create();
@@ -215,6 +275,15 @@ public sealed class AccountsReceivableEvidencePostgresTests
         public RecordPaymentReceiptRequest ReceiptRequest() => new(Customer.Id, Guid.NewGuid().ToString(), "Fixture payer", 12.50m,
             "USD", new(2026, 9, 7), "Transfer", "Bank reference", "untrusted", "Fixture evidence");
         public string Csv(string amount = "12.50") => $"source,external_id,date,amount,currency,payer,reference,memo\n{Source},external-1,2026-09-07,{amount},USD,Fixture payer,Bank reference,Fixture memo";
+        public async Task<Invoice> AddInvoice(string suffix, Organization? customer = null)
+        {
+            customer ??= Customer; var now = DateTime.UtcNow; var reference = Guid.NewGuid().ToString("N");
+            var order = new LabServiceOrder(customer.Id, customer.Departments.Single().Id, "FIN-" + reference, reference, "Finance source fixture", 1, false, "Synthetic RNA", "Frozen", "Research only", "Fixture");
+            var quote = new LabServiceQuote(order.Id, 1, QuotePurpose.Initial, "[]", 100, 0, "USD", now, now.AddDays(30));
+            var invoice = new Invoice(customer.Id, order.Id, quote.Id, Source + "-" + suffix, new(2026, 9, 7), 30,
+                "{}", "{}", "{}", 100, 0, "fixture.pdf", new string('A', 64), Operator.Id, now);
+            Db.AddRange(order, quote, invoice); await Db.SaveChangesAsync(); return invoice;
+        }
         public async Task<PaymentReceiptDto> Upload(AccountsReceivableController controller, RecordPaymentReceiptRequest request)
         {
             await using var bytes = new MemoryStream(Encoding.UTF8.GetBytes("Receipt evidence"));
@@ -229,6 +298,17 @@ public sealed class AccountsReceivableEvidencePostgresTests
                 Db.ChangeTracker.Clear();
                 var users = new[] { Operator.Id, SecondOperator.Id, Unassigned.Id };
                 var organizations = new[] { Customer.Id, OtherCustomer.Id, Phaeno.Id };
+                var batchIds = Db.ReconciliationBatches.Where(item => users.Contains(item.CreatedByUserIdValue)).Select(item => item.Id);
+                await Db.OperationalAttentionItems.Where(item => item.OrganizationId != null && organizations.Contains(item.OrganizationId.Value)).ExecuteDeleteAsync();
+                await Db.ReconciliationBatchItems.Where(item => batchIds.Contains(item.ReconciliationBatchId)).ExecuteDeleteAsync();
+                await Db.ReconciliationBatches.Where(item => users.Contains(item.CreatedByUserIdValue)).ExecuteDeleteAsync();
+                var invoiceIds = Db.Invoices.Where(item => organizations.Contains(item.OrganizationId)).Select(item => item.Id);
+                await Db.PaymentAllocations.Where(item => invoiceIds.Contains(item.InvoiceId)).ExecuteDeleteAsync();
+                await Db.InvoiceAdjustments.Where(item => invoiceIds.Contains(item.InvoiceId)).ExecuteDeleteAsync();
+                await Db.Invoices.Where(item => organizations.Contains(item.OrganizationId)).ExecuteDeleteAsync();
+                var orderIds = Db.LabServiceOrders.Where(item => organizations.Contains(item.OrganizationId)).Select(item => item.Id);
+                await Db.LabServiceQuotes.Where(item => orderIds.Contains(item.LabServiceOrderId)).ExecuteDeleteAsync();
+                await Db.LabServiceOrders.Where(item => organizations.Contains(item.OrganizationId)).ExecuteDeleteAsync();
                 await Db.PaymentReceipts.Where(item => organizations.Contains(item.OrganizationId)).ExecuteDeleteAsync();
                 await Db.PaymentImportBatches.Where(item => item.Source == Source).ExecuteDeleteAsync();
                 await Db.OrderIdempotencyRecords.Where(item => users.Contains(item.ActorUserId)).ExecuteDeleteAsync();

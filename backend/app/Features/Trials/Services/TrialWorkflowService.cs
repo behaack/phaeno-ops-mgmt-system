@@ -38,6 +38,23 @@ public sealed class TrialWorkflowService(PSeqOperationsDbContext db, ILabOperati
         return project;
     }
 
+    public async Task SaveDraftAsync(TrialProject trial, TrialActor actor, TrialScopeDraftRequest request, CancellationToken token)
+    {
+        RequireStaff(actor); Version(trial.Version, request.Version);
+        if (request.Values is null) throw Error("trial_draft_invalid", "Provide the draft scope values.");
+        request.Values.Validate();
+        if (request.Values.DepartmentId.HasValue && !await (from company in db.CrmCompanies
+            join department in db.OrganizationDepartments on company.AccessOrganizationId equals department.OrganizationId
+            where company.Id == trial.CompanyId && company.IsActive && department.Id == request.Values.DepartmentId
+                && department.IsActive && company.AccessOrganization != null && company.AccessOrganization.IsActive
+                && company.AccessOrganization.Kind == OrganizationKind.Prospect
+            select department.Id).AnyAsync(token))
+            throw Error("trial_department_invalid", "Select an active Department of this Company's Prospect organization, or leave it blank in the draft.");
+        if (trial.ApprovedScopeRevision.HasValue && request.Values.DepartmentId.HasValue && trial.DepartmentId != request.Values.DepartmentId)
+            throw Error("trial_department_immutable", "The approved Trial's Department cannot change.");
+        trial.SaveScopeDraft(request.Values, actor.User.Id, DateTime.UtcNow);
+    }
+
     public async Task ProposeAsync(TrialProject trial, TrialActor actor, TrialScopeRequest request, CancellationToken token)
     {
         RequireStaff(actor); Version(trial.Version, request.Version);

@@ -1,6 +1,7 @@
 namespace PSeq.Operations.Commercial.OrderManagement.Domain;
 
 using System.ComponentModel.DataAnnotations.Schema;
+using System.Text.Json;
 using PSeq.Operations.Commercial.Common.Persistence;
 
 [NotMapped]
@@ -388,6 +389,11 @@ public enum PaymentImportBatchStatus
     Rejected
 }
 
+public sealed record ReconciliationDraftSnapshot(DateOnly PeriodEnd, decimal LedgerReceiptTotal, decimal BankTotal,
+    IReadOnlyList<Guid> PaymentReceiptIds, IReadOnlyList<Guid> PaymentAllocationIds, IReadOnlyList<Guid> InvoiceAdjustmentIds);
+public sealed record ReconciliationDraftChange(string Action, Guid ActorUserId, DateTime AtUtc, string Reason,
+    ReconciliationDraftSnapshot Before, ReconciliationDraftSnapshot After);
+
 public sealed class PaymentImportBatch : CommercialReceivableEntity
 {
     public Guid Id { get; private set; } = Guid.NewGuid();
@@ -445,7 +451,8 @@ public enum ReconciliationBatchStatus
     Draft,
     Submitted,
     Approved,
-    Rejected
+    Rejected,
+    Cancelled
 }
 
 public sealed class ReconciliationBatch : CommercialReceivableEntity
@@ -463,6 +470,7 @@ public sealed class ReconciliationBatch : CommercialReceivableEntity
     public Guid? ApprovedByUserId { get; private set; }
     public DateTime? ApprovedAtUtc { get; private set; }
     public string? CloseoutReportJson { get; private set; }
+    public string? DraftChangesJson { get; private set; }
 
     private ReconciliationBatch() { }
 
@@ -476,6 +484,41 @@ public sealed class ReconciliationBatch : CommercialReceivableEntity
         BankTotal = Money(bankTotal);
         Difference = Money(BankTotal - LedgerReceiptTotal);
         CreatedByUserIdValue = createdByUserId != Guid.Empty ? createdByUserId : throw new ArgumentException("An actor is required.");
+    }
+
+    public IReadOnlyList<ReconciliationDraftChange> ReadDraftChanges() => DraftChangesJson is null
+        ? [] : JsonSerializer.Deserialize<List<ReconciliationDraftChange>>(DraftChangesJson)!;
+
+    public void ReviseDraft(ReconciliationDraftSnapshot before, ReconciliationDraftSnapshot after, Guid actorUserId, string reason, DateTime utcNow)
+    {
+        EnsureDraft();
+        if (after.PeriodEnd == default || after.LedgerReceiptTotal < 0 || after.BankTotal < 0)
+            throw new ArgumentException("A valid period and non-negative ledger and bank totals are required.");
+        AppendDraftChange("Edited", before, after, actorUserId, reason, utcNow);
+        PeriodEnd = after.PeriodEnd; LedgerReceiptTotal = Money(after.LedgerReceiptTotal); BankTotal = Money(after.BankTotal);
+        Difference = Money(BankTotal - LedgerReceiptTotal);
+    }
+
+    public void CancelDraft(ReconciliationDraftSnapshot snapshot, Guid actorUserId, string reason, DateTime utcNow)
+    {
+        EnsureDraft(); AppendDraftChange("Cancelled", snapshot, snapshot, actorUserId, reason, utcNow);
+        Status = ReconciliationBatchStatus.Cancelled;
+    }
+
+    private void EnsureDraft()
+    {
+        if (Status != ReconciliationBatchStatus.Draft) throw new InvalidOperationException("Only a draft reconciliation can be changed or cancelled.");
+    }
+
+    private void AppendDraftChange(string action, ReconciliationDraftSnapshot before, ReconciliationDraftSnapshot after, Guid actorUserId, string reason, DateTime utcNow)
+    {
+        if (actorUserId == Guid.Empty || utcNow.Kind != DateTimeKind.Utc || utcNow == default)
+            throw new ArgumentException("An acting user and UTC timestamp are required.");
+        if (before.PeriodEnd != PeriodEnd || before.BankTotal != BankTotal || before.LedgerReceiptTotal != LedgerReceiptTotal)
+            throw new InvalidOperationException("Review the current reconciliation before changing it.");
+        var changes = ReadDraftChanges().ToList();
+        changes.Add(new(action, actorUserId, utcNow, Required(reason, nameof(reason), 2000), before, after));
+        DraftChangesJson = JsonSerializer.Serialize(changes);
     }
 
     public void Submit(Guid actorUserId, DateTime utcNow)
@@ -496,9 +539,9 @@ public sealed class ReconciliationBatch : CommercialReceivableEntity
             throw new InvalidOperationException("Resolve reconciliation differences before approval.");
         if (enforceActorSeparation && (actorUserId == CreatedByUserIdValue
             || actorUserId == SubmittedByUserId
-            || contributingActors.Contains(actorUserId)))
+            || contributingActors.Contains(actorUserId) || ReadDraftChanges().Any(change => change.ActorUserId == actorUserId)))
             throw new InvalidOperationException(
-                "Reconciliation approval requires an actor who did not create, submit, receive, import, allocate, reverse, or adjust included cash.");
+                "Reconciliation approval requires an actor who did not create or edit the batch, submit, receive, import, allocate, reverse, or adjust included cash.");
         Status = ReconciliationBatchStatus.Approved;
         ApprovedByUserId = actorUserId;
         ApprovedAtUtc = utcNow;

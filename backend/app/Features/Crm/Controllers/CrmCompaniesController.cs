@@ -26,7 +26,7 @@ public sealed class CrmCompaniesController(
         [FromQuery] int pageSize = 25,
         CancellationToken cancellationToken = default)
     {
-        await RequirePlatformAdminAsync(cancellationToken);
+        await CrmAccess.RequireCrmAccessAsync(HttpContext, dbContext, externalIdentityContext, cancellationToken);
         EnsurePagination(page, pageSize);
 
         var query = dbContext.CrmCompanies
@@ -69,7 +69,7 @@ public sealed class CrmCompaniesController(
     [HttpGet("{companyId:guid}")]
     public async Task<CrmCompanyDto> GetCompany(Guid companyId, CancellationToken cancellationToken)
     {
-        await RequirePlatformAdminAsync(cancellationToken);
+        await CrmAccess.RequireCrmAccessAsync(HttpContext, dbContext, externalIdentityContext, cancellationToken);
         return ToDto(await RequireCompanyAsync(companyId, tracking: false, cancellationToken));
     }
 
@@ -78,7 +78,7 @@ public sealed class CrmCompaniesController(
         Guid organizationId,
         CancellationToken cancellationToken)
     {
-        await RequirePlatformAdminAsync(cancellationToken);
+        await CrmAccess.RequireCrmAccessAsync(HttpContext, dbContext, externalIdentityContext, cancellationToken);
         var company = await dbContext.CrmCompanies
             .AsNoTracking()
             .Include(value => value.Owner)
@@ -97,7 +97,7 @@ public sealed class CrmCompaniesController(
         [FromBody] CreateCrmCompanyRequest request,
         CancellationToken cancellationToken)
     {
-        var actor = await RequirePlatformAdminAsync(cancellationToken);
+        var actor = await CrmAccess.RequireCrmAccessAsync(HttpContext, dbContext, externalIdentityContext, cancellationToken);
         await EnsureUniqueNameAsync(request.Name, null, cancellationToken);
         var company = Execute(() => new CrmCompany(
             request.Name,
@@ -129,7 +129,7 @@ public sealed class CrmCompaniesController(
         [FromBody] UpdateCrmCompanyRequest request,
         CancellationToken cancellationToken)
     {
-        await RequirePlatformAdminAsync(cancellationToken);
+        await CrmAccess.RequireCrmAccessAsync(HttpContext, dbContext, externalIdentityContext, cancellationToken);
         var company = await RequireCompanyAsync(companyId, tracking: true, cancellationToken);
         EnsureVersion(company.Version, request.Version);
         await EnsureUniqueNameAsync(request.Name, companyId, cancellationToken);
@@ -203,7 +203,7 @@ public sealed class CrmCompaniesController(
         [FromBody] AssignCrmOwnerRequest request,
         CancellationToken cancellationToken)
     {
-        await RequirePlatformAdminAsync(cancellationToken);
+        await CrmAccess.RequireCrmAccessAsync(HttpContext, dbContext, externalIdentityContext, cancellationToken);
         var company = await RequireCompanyAsync(companyId, tracking: true, cancellationToken);
         EnsureVersion(company.Version, request.Version);
         var owner = await dbContext.Users.FirstOrDefaultAsync(

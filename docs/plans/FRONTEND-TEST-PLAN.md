@@ -1,5 +1,13 @@
 # Frontend Test Plan
 
+## Portal completion integration — 2026-09-07
+
+The full frontend suite passed **321 tests across 86 files**, with zero failures. Evidence: `artifacts/crm-integration-vitest-final.json`. This checkpoint includes the earlier consistency tests whose execution was deferred in the historical entries below.
+
+New and updated coverage includes ordinary CRM permissions and hidden administrative actions, failed-search Retry and exact attention destinations, shared Trial draft save/resume and full submission validation, receipt allocation reversal and review snapshots, reconciliation draft editing/cancellation/history, and same-Customer invoice search and paging. Integration exposed an actual invoice picker race: an unchanged initial search debounce reset page 2 to page 1. The controlled-timer regression failed before the fix and now passes. Finance focused verification passed 32 cases; those overlap the full total.
+
+Outdated test fixtures were aligned with current router context, session capabilities, required-field labels, asynchronous form initialization and API arguments. Full TypeScript checking and zero-warning lint passed. Documentation generation/check validates 55 audience-specific guides; the production build and synthetic browser evidence are recorded in the completion plan and E2E plan. No identity provider, package dependency or Customer/Partner permission was changed.
+
 ## Intake consolidation - 2026-09-07
 
 Customer order creation is consolidated in Intake. Updated the existing dialog and Intake mocks, removed the retired staging-panel case, and added stage-grouping and legacy-link regression cases. Scoped TypeScript and lint checks plus synthetic browser review are the verification checkpoint; automated suites were not requested.

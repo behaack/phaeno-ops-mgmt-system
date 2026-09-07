@@ -1,3 +1,5 @@
+const permissions = vi.hoisted(() => ({ canAccess: true, canAdminister: true }))
+vi.mock('./use-crm-permissions', () => ({ useCrmPermissions: () => permissions }))
 import { fireEvent, render, screen, within } from '@testing-library/react'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
@@ -14,6 +16,8 @@ vi.mock('@tanstack/react-router', () => ({
 describe('CrmShell', () => {
   beforeEach(() => {
     navigate.mockReset()
+    permissions.canAccess = true
+    permissions.canAdminister = true
     window.localStorage.clear()
     vi.stubGlobal('matchMedia', () => ({
       matches: true,
@@ -29,6 +33,20 @@ describe('CrmShell', () => {
 
   afterEach(() => vi.unstubAllGlobals())
 
+  it('shows Commercial sections without Requests or Administration', () => {
+    permissions.canAdminister = false
+    render(<CrmShell><h1>Commercial records</h1></CrmShell>)
+    expect(screen.getByRole('button', { name: /^Companies/ })).toBeTruthy()
+    expect(screen.queryByRole('button', { name: /^Requests/ })).toBeNull()
+    expect(screen.queryByRole('button', { name: /^Administration/ })).toBeNull()
+  })
+
+  it('does not mount CRM record content when the session lacks CRM access', () => {
+    permissions.canAccess = false
+    render(<CrmShell><h1>Protected records</h1></CrmShell>)
+    expect(screen.getByRole('heading', { name: 'CRM access required' })).toBeTruthy()
+    expect(screen.queryByRole('heading', { name: 'Protected records' })).toBeNull()
+  })
   it('uses the shared sidebar and preserves route-based section selection', () => {
     render(
       <CrmShell>

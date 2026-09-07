@@ -512,8 +512,7 @@ Owner identifies a different product need.
 - One seeded **General Sales** pipeline provides Discovery, Qualified,
   Proposal, Negotiation, Won, Lost, and Abandoned stages. Administrators can
   add pipelines and stages without changing the domain model.
-- CRM access uses the existing active Phaeno platform-administrator boundary.
-  A future broader commercial role requires an explicit capability decision.
+- CRM access permits active Phaeno CommercialOperator staff and platform administrators. The September 7 remaining-items authorization approved the narrow matrix recorded below; no Clerk, role schema, or feature-flag dependency was added.
 - Required identity and transition fields are enforced by domain and API
   validation; typed custom fields may add required internal metadata.
 - Activities are Internal or Restricted. CRM data remains unavailable to
@@ -538,3 +537,22 @@ These capabilities are not rejected from the first-party CRM. They follow the
 core CRM and require explicit privacy, consent, authorization, operational, and
 provider decisions before implementation. External CRM synchronization remains
 a separate optional-adapter decision rather than a first-party CRM phase.
+
+## September 7 remaining-items closeout: Commercial CRM and attention continuity
+
+Authorized by the Product Owner's “Address remaining items as appropriate” and the settled minimum Commercial permission matrix. CRM now reuses the existing active `CommercialOperator` assignment with an active user and active Phaeno membership, independently of the order-to-cash feature flag. Additive Session `canAccessCrm` and `canAdministerCrm` capabilities drive CRM navigation and visible actions. The API independently enforces the same active membership/role checks. There is no persisted-model, role-assignment, Clerk authentication, or migration change in this CRM scope.
+
+| Surface/action | CommercialOperator | Platform administrator |
+| --- | --- | --- |
+| Company/Contact profile, ownership, associations; Leads and conversion; Opportunities, stage/contact roles; Tasks | Read and maintain | Read and maintain |
+| Internal Activities and Internal custom values; configured pipelines; Reports and CRM search | Read and maintain values/activity; read configuration/reports | Full existing access |
+| Personal saved views; apply existing shared views | Own personal views; read shared views | Existing management and publication |
+| Company/Contact active-state lifecycle and merges | Denied | Existing administrative rules |
+| Portal identities, memberships, invitations, Departments/services, Company Requests and completion | Denied | Existing administrative rules |
+| Pipelines/field definitions, Restricted Activity/custom values, imports/exports, shared-view publication | Denied | Existing administrative rules |
+
+A minimal CRM-owned owner directory returns only active Phaeno names/email/identifiers and does not expose the User administration endpoint. Commercial Company People queries the existing Contact relationships, without requesting Portal membership, invitation, or identity data. Administrative Company tabs, lifecycle/merge, Opportunity handoff, export/shared publication, and Restricted visibility controls are hidden for Commercial staff. External staff, inactive memberships/users, and revoked roles remain denied. Company lifecycle confirmation now distinguishes a CRM-only record from actual suspension/restoration of the Company's existing Portal access and cannot dismiss while pending.
+
+Home attention cards use the same backend predicates as their filtered lists and exports: unfinished overdue Tasks, unfinished Tasks due now through seven days, active Leads lacking a next action excluding Converted/Disqualified, and active open Opportunities unchanged for more than 30 days across pipelines. Filters remain in URL state and saved views; Home search failures are announced with a local retry and cannot masquerade as a successful empty search.
+
+Focused regression sources cover nonadministrator positive CRM writes and negative administrative/Portal/sensitive access, role revocation/external admin denial, flag-independent Session capabilities, exact attention boundaries, Home links and retry, and Commercial People without forbidden background requests. Scope also updates existing administrator fixtures. Root coordinates integrated regression execution, release evidence, documentation metadata/corpus generation, and living test plans. Signed-in production Commercial acceptance remains separate from local checks.

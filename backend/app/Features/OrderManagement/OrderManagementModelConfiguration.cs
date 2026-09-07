@@ -612,6 +612,7 @@ public static class OrderManagementModelConfiguration
             Money(entity.Property(e => e.Difference));
             EnumText(entity.Property(e => e.Status));
             Json(entity.Property(e => e.CloseoutReportJson), false);
+            Json(entity.Property(e => e.DraftChangesJson), false);
             entity.HasIndex(e => e.BatchNumber).IsUnique();
             entity.HasIndex(e => new { e.Status, e.PeriodEnd });
             Audit(entity);

@@ -7118,6 +7118,10 @@ namespace PSeq.Operations.Api.Migrations
                         .HasColumnType("numeric(18,2)")
                         .HasColumnName("difference");
 
+                    b.Property<string>("DraftChangesJson")
+                        .HasColumnType("jsonb")
+                        .HasColumnName("draft_changes_json");
+
                     b.Property<decimal>("LedgerReceiptTotal")
                         .HasPrecision(18, 2)
                         .HasColumnType("numeric(18,2)")
@@ -9268,6 +9272,18 @@ namespace PSeq.Operations.Api.Migrations
                         .HasColumnType("uuid")
                         .HasColumnName("department_id");
 
+                    b.Property<DateTime?>("DraftSavedAtUtc")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("draft_saved_at_utc");
+
+                    b.Property<Guid?>("DraftSavedByUserId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("draft_saved_by_user_id");
+
+                    b.Property<string>("DraftScopeJson")
+                        .HasColumnType("jsonb")
+                        .HasColumnName("draft_scope_json");
+
                     b.Property<DateTime?>("FollowUpAtUtc")
                         .HasColumnType("timestamp with time zone")
                         .HasColumnName("follow_up_at_utc");
@@ -9353,6 +9369,8 @@ namespace PSeq.Operations.Api.Migrations
                         .IsUnique();
 
                     b.HasIndex("DepartmentId");
+
+                    b.HasIndex("DraftSavedByUserId");
 
                     b.HasIndex("FollowUpOwnerUserId");
 
@@ -14834,6 +14852,11 @@ namespace PSeq.Operations.Api.Migrations
                     b.HasOne("PSeq.Operations.Commercial.Accounts.Domain.OrganizationDepartment", null)
                         .WithMany()
                         .HasForeignKey("DepartmentId")
+                        .OnDelete(DeleteBehavior.Restrict);
+
+                    b.HasOne("PSeq.Operations.Commercial.Accounts.Domain.User", null)
+                        .WithMany()
+                        .HasForeignKey("DraftSavedByUserId")
                         .OnDelete(DeleteBehavior.Restrict);
 
                     b.HasOne("PSeq.Operations.Commercial.Accounts.Domain.User", null)

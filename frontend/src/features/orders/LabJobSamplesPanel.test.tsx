@@ -33,7 +33,7 @@ describe('Customer sample-list authorization', () => {
     api.preview.mockResolvedValue({ previewId: 'preview', validRowCount: 1, blankRowCount: 0, rows: [{ rowNumber: 2, customerSampleId: 'S-2', biologicalSource: 'Human PBMCs', tubeCount: 3 }], errors: [] })
     renderPanel()
     fireEvent.click(screen.getByRole('button', { name: 'Import sample list' }))
-    fireEvent.change(screen.getByLabelText('Sample CSV'), { target: { files: [new File(['customer_sample_id,biological_source,tube_count\nS-2,Human PBMCs,3'], 'samples.csv')] } })
+    fireEvent.change(screen.getByLabelText(/^Sample CSV/), { target: { files: [new File(['customer_sample_id,biological_source,tube_count\nS-2,Human PBMCs,3'], 'samples.csv')] } })
     fireEvent.click(screen.getByRole('button', { name: 'Preview CSV' }))
     await screen.findByText('S-2')
     expect(api.confirm).not.toHaveBeenCalled()

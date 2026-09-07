@@ -4,6 +4,8 @@ using PSeq.Operations.Commercial.Trials.Domain;
 using PhaenoPortal.App.Features.OrderManagement.DTOs;
 
 public sealed record TrialCreateRequest(Guid CrmHandoffId);
+public sealed record TrialScopeDraftRequest(long Version, TrialScopeDraftValues Values);
+public sealed record TrialScopeDraftDto(TrialScopeDraftValues Values, Guid SavedByUserId, string SavedByName, DateTime SavedAtUtc);
 public sealed record TrialScopeRequest(long Version, Guid DepartmentId, string Name, string Objective, int SampleAllowance,
     DateTime SubmissionOpensAtUtc, DateTime SubmissionClosesAtUtc, Guid WorkflowVersionId,
     IReadOnlyList<Guid> AnalysisIds, IReadOnlyList<Guid> DeliverableIds, string SubmissionInstructions,
@@ -46,7 +48,8 @@ public sealed record TrialDetailDto(Guid Id, string Number, string CompanyName, 
     string? CommercialOutcome, string? CommercialOutcomeReason, Guid? FollowUpOwnerUserId, DateTime? FollowUpAtUtc,
     int? ApprovedScopeRevision, int? AcceptedScopeRevision, TrialScopeDto? Scope, IReadOnlyList<TrialScopeDto> ScopeHistory,
     IReadOnlyList<TrialSampleDto> Samples, IReadOnlyList<TrialReplacementDto> Replacements,
-    IReadOnlyList<TrialReleaseDto> Releases, IReadOnlyList<TrialTimelineDto> Timeline, int CrmPendingMilestones = 0, bool CanRecordCommercialOutcome = false, bool CanDeactivateProspect = false, bool CanReleaseResults = false);
+    IReadOnlyList<TrialReleaseDto> Releases, IReadOnlyList<TrialTimelineDto> Timeline, int CrmPendingMilestones = 0, bool CanRecordCommercialOutcome = false, bool CanDeactivateProspect = false, bool CanReleaseResults = false,
+    TrialScopeDraftDto? ScopeDraft = null);
 public sealed record TrialChoiceDto(Guid Id, string Name, long Version = 1);
 public sealed record TrialSampleTypeDto(Guid Id, string Name, long Version, string QuantityUnit, decimal? MinimumQuantity, decimal? MaximumQuantity);
 public sealed record TrialHandoffPageDto(IReadOnlyList<TrialHandoffChoiceDto> Items, int Total, int Page, int PageSize);

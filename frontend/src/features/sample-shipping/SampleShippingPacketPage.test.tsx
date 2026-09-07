@@ -24,7 +24,7 @@ function show() {
 }
 
 describe('SampleShippingPacketPage', () => {
-  beforeEach(() => api.getPacket.mockReset())
+  beforeEach(() => { api.getPacket.mockReset() })
 
   it('checks even a fresh cached packet before allowing it to be printed', async () => {
     let resolvePacket!: (value: typeof packet) => void

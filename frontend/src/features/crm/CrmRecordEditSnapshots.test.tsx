@@ -1,3 +1,4 @@
+vi.mock('./use-crm-permissions', () => ({ useCrmPermissions: () => ({ canAccess: true, canAdminister: true }) }))
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { act, fireEvent, render, screen, waitFor, within } from '@testing-library/react'
 import type { ReactNode } from 'react'
@@ -94,13 +95,13 @@ describe('CRM reviewed record snapshots', () => {
     vi.mocked(api.assignCrmCompanyOwner).mockRejectedValue(new Error('Company changed'))
     const client = mount(<CrmCompanyDetailPage companyId={company.id} />)
     fireEvent.click(await screen.findByRole('button', { name: 'Change owner' }))
-    fireEvent.change(screen.getByLabelText('Owner *'), { target: { value: 'owner-2' } })
+    fireEvent.change(screen.getByRole('textbox', { name: 'Owner' }), { target: { value: 'owner-2' } })
     act(() => client.setQueryData(['crm-company', company.id], { ...company, ownerUserId: 'owner-3', ownerName: 'Refreshed owner', version: 2 }))
     const dialog = within(screen.getByRole('dialog', { name: 'Change Company owner' }))
     expect(dialog.getByText('Reviewed owner: Reviewed owner')).toBeTruthy()
     fireEvent.click(dialog.getByRole('button', { name: 'Change owner' }))
     await waitFor(() => expect(api.assignCrmCompanyOwner).toHaveBeenCalledWith(company.id, 'owner-2', 1))
     await screen.findByText('Company changed')
-    expect(screen.getByLabelText('Owner *')).toHaveProperty('value', 'owner-2')
+    expect(screen.getByRole('textbox', { name: 'Owner' })).toHaveProperty('value', 'owner-2')
   })
 })

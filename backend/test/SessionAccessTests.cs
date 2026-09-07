@@ -3,9 +3,29 @@ namespace PhaenoPortal.Test;
 using System.Reflection;
 using PSeq.Operations.Commercial.Accounts.Domain;
 using PhaenoPortal.App.Features.Accounts.Endpoints;
+using PhaenoPortal.App.Features.Crm.Services;
 
 public class SessionAccessTests
 {
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public void CommercialCrmAccessDoesNotDependOnBusinessRoleFeatureFlag(bool featureEnabled)
+    {
+        var organization = new Organization("Phaeno", OrganizationKind.Phaeno);
+        var user = new User("commercial@example.test", "Commercial", "Staff"); user.Activate();
+        var membership = new OrganizationMembership(user.Id, organization.Id, false); AttachOrganization(membership, organization); user.Memberships.Add(membership);
+        var session = SessionEndpoints.ToSession(user, [], "ready", membership, [BusinessRole.CommercialOperator], featureEnabled);
+        Assert.True(session.Capabilities.CanAccessCrm);
+        Assert.False(session.Capabilities.CanAdministerCrm);
+        Assert.False(session.IsPlatformAdmin);
+        Assert.False(session.Capabilities.CanManageOrganizations);
+        Assert.False(session.Capabilities.CanManageAllUsers);
+        Assert.False(CrmAccess.CanAccess(user, [BusinessRole.CashOperator]));
+        membership.Deactivate();
+        Assert.False(CrmAccess.CanAccess(user, [BusinessRole.CommercialOperator]));
+    }
+
     [Fact]
     public void GetActiveMembershipsReturnsOnlyActiveMembershipsInActiveOrganizations()
     {

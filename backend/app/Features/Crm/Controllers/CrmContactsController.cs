@@ -137,7 +137,7 @@ public sealed class CrmContactsController(
     [HttpPost("{contactId:guid}/{lifecycleAction:regex(^(deactivate|reactivate)$)}")]
     public async Task<CrmContactDto> ChangeActive(Guid contactId, string lifecycleAction, [FromBody] ChangeCrmCompanyActiveRequest request, CancellationToken cancellationToken)
     {
-        await RequireActor(cancellationToken);
+        RequireAdministration(await RequireActor(cancellationToken));
         var value = await Require(contactId, tracking: true, cancellationToken);
         EnsureVersion(value.Version, request.Version);
         Execute(lifecycleAction == "reactivate" ? value.Reactivate : value.Deactivate);
@@ -151,6 +151,7 @@ public sealed class CrmContactsController(
     {
         var actor = await RequireActor(cancellationToken);
         var source = await Require(contactId, tracking: true, cancellationToken);
+        RequireAdministration(actor);
         EnsureVersion(source.Version, request.Version);
         var target = await Require(request.TargetId, tracking: true, cancellationToken);
         if (!target.IsActive || target.MergedIntoContactId.HasValue)
@@ -201,7 +202,7 @@ public sealed class CrmContactsController(
     }
 
     private async Task<PSeq.Operations.Commercial.Accounts.Domain.User> RequireActor(CancellationToken cancellationToken) =>
-        await RequirePlatformAdminAsync(HttpContext, dbContext, externalIdentityContext, cancellationToken);
+        await RequireCrmAccessAsync(HttpContext, dbContext, externalIdentityContext, cancellationToken);
 
     private async Task<CrmContact> Require(Guid id, bool tracking, CancellationToken cancellationToken)
     {

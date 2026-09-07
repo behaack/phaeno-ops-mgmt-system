@@ -48,6 +48,14 @@ In **Import receipts**, select Customer and source, then choose a CSV file or pa
 
 Matching suggestions never apply cash. Allocate explicitly so partial, one-receipt/many-invoice, many-receipt/one-invoice, overpayment, and unapplied cash remain visible. Reversals retain actor and reason. A Cash Operator submits a balanced reconciliation; a different Cash Reconciler who contributed none of its activity approves the immutable closeout report.
 
+In **Allocate to invoice**, search by invoice number and use **Next invoices** or **Previous invoices** to find more open invoices for the same Customer. The selected invoice and its reviewed balance remain visible while you browse other results. Selecting or searching never records an allocation.
+
+The receipt's **Allocation history** shows each allocation, its invoice, amount, actor and any reversal. Use **Reverse allocation** on an active allocation, review its receipt and invoice, and enter the correction reason. Reversal restores the receipt's unapplied amount and the invoice's outstanding balance while preserving the original allocation. A fully reversed allocation cannot be reversed again. **Reverse receipt** remains available only when no allocation remains.
+
+In **Reconciliation**, open the batch number to review its selected receipts and other contributing records. Before submission, a Cash Operator may choose **Edit draft** to correct the period end, bank total or selected receipts, or **Cancel draft** to retain an unused batch as cancelled. Both actions require a reason and the current version. Editing recalculates totals and retains the before-and-after selections. **Draft change history** shows the actor, reason and changes to the period and totals. Balancing or cancelling the draft resolves its open reconciliation-difference attention item. Cancellation does not reverse receipts or allocations.
+
+Submit the batch only when balanced. Submitted and approved batches cannot be edited or cancelled through these draft actions. Independent approval excludes the creator, submitter, contributing actors and every recorded draft editor wherever dual control is enforced. A conflict preserves your entries: review the refreshed batch before applying them. The immutable closeout remains the evidence for the approved batch.
+
 ## Apply Partner assembly release gates
 
 An approved output release must reference the accepted input revision and active assembly profile. Its accounting source record is created at output approval. A Partner with approved assembly credit may receive the output under its terms; otherwise the files remain on payment hold until a separately approved payment-confirmation workflow exists.

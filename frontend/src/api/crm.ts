@@ -8,6 +8,11 @@ type ApiEnvelope<T> = {
   error: null | { code: string; message: string; details?: unknown };
 };
 
+export async function listCrmOwners() {
+  const response = await api.get<ApiEnvelope<Array<{ id: string; firstName: string; lastName: string; email: string }>>>("/platform/crm/owners");
+  return unwrap(response.data);
+}
+
 export type CrmCompany = {
   id: string;
   name: string;
@@ -719,6 +724,7 @@ export async function updateCompanyContact(
 }
 
 export async function listCrmLeads(input: {
+  needsNextAction?: boolean;
   search?: string;
   status?: CrmLeadStatus;
   includeInactive?: boolean;
@@ -882,6 +888,7 @@ export async function changeCrmPipelineStageActive(
 }
 
 export async function listCrmOpportunities(input: {
+  staleOnly?: boolean;
   search?: string;
   pipelineId?: string;
   stageId?: string;
@@ -1020,6 +1027,7 @@ export async function createCrmActivity(input: {
   return unwrap(response.data);
 }
 export async function listCrmTasks(input: {
+  dueSoonOnly?: boolean;
   search?: string;
   status?: CrmTaskStatus;
   ownerUserId?: string;

@@ -44,6 +44,13 @@ public sealed class TrialReader(PSeqOperationsDbContext db, TrialWorkflowService
     public async Task<TrialDetailDto> DetailAsync(TrialProject trial, TrialActor actor, CancellationToken token)
     {
         var now = DateTime.UtcNow;
+        TrialScopeDraftDto? draft = null;
+        if (actor.IsStaff && trial.ReadScopeDraft() is { } draftValues && trial.DraftSavedByUserId.HasValue && trial.DraftSavedAtUtc.HasValue)
+        {
+            var savedBy = await db.Users.AsNoTracking().Where(value => value.Id == trial.DraftSavedByUserId)
+                .Select(value => value.FirstName + " " + value.LastName).SingleAsync(token);
+            draft = new(draftValues, trial.DraftSavedByUserId.Value, savedBy, trial.DraftSavedAtUtc.Value);
+        }
         var name = await db.CrmCompanies.AsNoTracking().Where(value => value.Id == trial.CompanyId).Select(value => value.Name).SingleAsync(token);
         var domains = actor.IsStaff ? await db.TrialApprovalAuthorities.AsNoTracking().Where(value => value.UserId == actor.User.Id && value.RevokedAtUtc == null && value.EffectiveAtUtc <= now
             && (value.IsPrimary || db.TrialApprovalAuthorities.Any(primary => primary.Id == value.PrimaryAuthorityId && primary.RevokedAtUtc == null)))
@@ -113,7 +120,8 @@ public sealed class TrialReader(PSeqOperationsDbContext db, TrialWorkflowService
             actor.IsPlatformAdmin && trial.IsTerminal && trial.CommercialOutcome == TrialCommercialOutcome.ClosedWithoutConversion
                 && await db.Organizations.AnyAsync(value => value.Id == trial.OrganizationId && value.IsActive && value.Kind == OrganizationKind.Prospect, token),
             actor.IsStaff && (actor.IsPlatformAdmin && !(pseq?.Value.BusinessRoles == true || pseq?.Value.DualControlEnforced == true)
-                || await db.BusinessRoleAssignments.AnyAsync(value => value.UserId == actor.User.Id && value.IsActive && value.Role == BusinessRole.ResultReleaseManager, token)));
+                || await db.BusinessRoleAssignments.AnyAsync(value => value.UserId == actor.User.Id && value.IsActive && value.Role == BusinessRole.ResultReleaseManager, token)),
+            ScopeDraft: draft);
     }
     public async Task<TrialConfigurationDto> ConfigurationAsync(TrialActor actor, Guid? companyId, CancellationToken token)
     {

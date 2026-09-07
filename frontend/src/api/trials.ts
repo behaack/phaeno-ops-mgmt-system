@@ -18,9 +18,19 @@ export type TrialScope = Omit<TrialScopeValues, 'workflowVersionId' | 'estimated
   revision: number; internalValues: TrialScopeValues | null; termsVersion: string; ruoStatement: string
   decisions: { domain: string; decision: string; reason: string | null; actorUserId: string | null; asDelegate: boolean | null; atUtc: string }[]
 }
+export type TrialScopeDraftValues = {
+  departmentId: string | null; name: string | null; objective: string | null; sampleAllowance: number | null
+  submissionOpensAtUtc: string | null; submissionClosesAtUtc: string | null; workflowVersionId: string | null
+  analysisIds: string[] | null; deliverableIds: string[] | null; submissionInstructions: string | null
+  successCriteria: string | null; estimatedRetailValue: number | null; anticipatedInternalCost: number | null
+  residualRetentionDays: number | null; materialDisposition: 'Destroy' | 'Return' | null
+  returnDestination: string | null; returnHandling: string | null; returnShippingPayer: string | null; terms: string | null; reason: string | null
+}
+export type TrialScopeDraft = { values: TrialScopeDraftValues; savedByUserId: string; savedByName: string; savedAtUtc: string }
 export type TrialRow = { salesOwnerUserId?: string; salesOwnerName?: string; requestedAtUtc?: string; dueAtUtc?: string; id: string; number: string; name: string; companyName: string; status: string; isOnHold: boolean; sampleCount: number; sampleAllowance: number | null; submissionClosesAtUtc: string | null; updatedAtUtc: string; version: number }
 export type TrialRelease = { id: string; releaseVersion: number; scopeRevision: number; isCompletePackage: boolean; isWithdrawn: boolean; releasedAtUtc: string; retentionSnapshotId: string | null; isDownloadAvailable: boolean; downloadUnavailableReason: string | null; retention: ReleasedDeliverableRetention | null; files: { id: string; fileName: string; fileKind: string; sizeBytes: number; sha256: string }[] }
 export type TrialDetail = {
+  scopeDraft?: TrialScopeDraft | null
   crmPendingMilestones?: number; canRecordCommercialOutcome?: boolean; canDeactivateProspect?: boolean; canReleaseResults?: boolean; id: string; number: string; companyName: string; companyId: string; opportunityId: string; organizationId: string | null; departmentId: string | null
   status: string; version: number; isStaff: boolean; canManage: boolean; canAccept: boolean; canSubmit: boolean; submissionBlocker: string | null
   approvalDomains: string[]; originalSamplesRemaining: number; isOnHold: boolean; holdReason: string | null; scheduleEstimate: string | null

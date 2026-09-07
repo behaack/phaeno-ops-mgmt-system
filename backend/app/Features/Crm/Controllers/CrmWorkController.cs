@@ -17,12 +17,26 @@ using static PhaenoPortal.App.Features.Crm.Services.CrmAccess;
 [Route("api/platform/crm")]
 public sealed class CrmWorkController(PSeqOperationsDbContext dbContext, IExternalIdentityContext externalIdentityContext) : ControllerBase
 {
+    [HttpGet("owners")]
+    public async Task<IReadOnlyList<CrmOwnerDto>> Owners(CancellationToken cancellationToken)
+    {
+        await RequireActor(cancellationToken);
+        return await dbContext.Users.AsNoTracking()
+            .Where(user => user.IsActive && user.Status == UserAccountStatus.Active
+                && user.Memberships.Any(membership => membership.IsActive && membership.Organization!.IsActive
+                    && membership.Organization.Kind == OrganizationKind.Phaeno))
+            .OrderBy(user => user.FirstName).ThenBy(user => user.LastName)
+            .Select(user => new CrmOwnerDto(user.Id, user.FirstName, user.LastName, user.Email))
+            .ToListAsync(cancellationToken);
+    }
+
     [HttpGet("activities")]
     public async Task<CrmPageDto<CrmActivityDto>> Activities([FromQuery] CrmActivityType? type, [FromQuery] Guid? companyId, [FromQuery] Guid? contactId, [FromQuery] Guid? leadId, [FromQuery] Guid? opportunityId, [FromQuery] int page = 1, [FromQuery] int pageSize = 50, CancellationToken cancellationToken = default)
     {
-        await RequireActor(cancellationToken);
+        var actor = await RequireActor(cancellationToken);
         EnsurePagination(page, pageSize);
         var query = ActivityQuery().Where(value => value.IsActive);
+        if (!AccountAuthorization.IsPlatformAdmin(actor)) query = query.Where(value => value.Visibility == CrmActivityVisibility.Internal);
         if (type.HasValue) query = query.Where(value => value.Type == type);
         if (companyId.HasValue) query = query.Where(value => value.CompanyId == companyId);
         if (contactId.HasValue) query = query.Where(value => value.ContactId == contactId);
@@ -37,6 +51,7 @@ public sealed class CrmWorkController(PSeqOperationsDbContext dbContext, IExtern
     public async Task<ActionResult<CrmActivityDto>> CreateActivity([FromBody] UpsertCrmActivityRequest request, CancellationToken cancellationToken)
     {
         var actor = await RequireActor(cancellationToken);
+        if (request.Visibility != CrmActivityVisibility.Internal) RequireAdministration(actor);
         await ValidateLinks(request.CompanyId, request.ContactId, request.LeadId, request.OpportunityId, cancellationToken);
         if (request.Type is CrmActivityType.System or CrmActivityType.PortalEvent or CrmActivityType.TaskEvent)
         {
@@ -52,12 +67,13 @@ public sealed class CrmWorkController(PSeqOperationsDbContext dbContext, IExtern
     [HttpPut("activities/{activityId:guid}")]
     public async Task<CrmActivityDto> UpdateActivity(Guid activityId, [FromBody] UpsertCrmActivityRequest request, CancellationToken cancellationToken)
     {
-        await RequireActor(cancellationToken);
+        var actor = await RequireActor(cancellationToken);
         if (request.Type is CrmActivityType.System or CrmActivityType.PortalEvent or CrmActivityType.TaskEvent)
         {
             throw new CrmException("crm_activity_type_reserved", "Select Note, Call, Meeting, Email, or Status Change for manual logging.");
         }
         var value = await RequireActivity(activityId, true, cancellationToken);
+        if (request.Visibility != CrmActivityVisibility.Internal || value.Visibility != CrmActivityVisibility.Internal) RequireAdministration(actor);
         EnsureVersion(value.Version, request.Version ?? 0);
         Execute(() => value.Update(request.Type, request.Subject, request.Body, request.OccurredAt, request.Visibility));
         await dbContext.SaveChangesAsync(cancellationToken);
@@ -67,8 +83,9 @@ public sealed class CrmWorkController(PSeqOperationsDbContext dbContext, IExtern
     [HttpPost("activities/{activityId:guid}/deactivate")]
     public async Task<CrmActivityDto> DeactivateActivity(Guid activityId, [FromBody] ChangeCrmCompanyActiveRequest request, CancellationToken cancellationToken)
     {
-        await RequireActor(cancellationToken);
+        var actor = await RequireActor(cancellationToken);
         var value = await RequireActivity(activityId, true, cancellationToken);
+        if (value.Visibility != CrmActivityVisibility.Internal) RequireAdministration(actor);
         EnsureVersion(value.Version, request.Version);
         Execute(value.Deactivate);
         await dbContext.SaveChangesAsync(cancellationToken);
@@ -76,7 +93,7 @@ public sealed class CrmWorkController(PSeqOperationsDbContext dbContext, IExtern
     }
 
     [HttpGet("tasks")]
-    public async Task<CrmPageDto<CrmTaskDto>> Tasks([FromQuery] CrmTaskStatus? status, [FromQuery] Guid? ownerUserId, [FromQuery] Guid? companyId, [FromQuery] Guid? contactId, [FromQuery] Guid? leadId, [FromQuery] Guid? opportunityId, [FromQuery] bool overdueOnly = false, [FromQuery] int page = 1, [FromQuery] int pageSize = 50, CancellationToken cancellationToken = default, [FromQuery] string? search = null)
+    public async Task<CrmPageDto<CrmTaskDto>> Tasks([FromQuery] CrmTaskStatus? status, [FromQuery] Guid? ownerUserId, [FromQuery] Guid? companyId, [FromQuery] Guid? contactId, [FromQuery] Guid? leadId, [FromQuery] Guid? opportunityId, [FromQuery] bool overdueOnly = false, [FromQuery] int page = 1, [FromQuery] int pageSize = 50, CancellationToken cancellationToken = default, [FromQuery] string? search = null, [FromQuery] bool dueSoonOnly = false)
     {
         await RequireActor(cancellationToken);
         EnsurePagination(page, pageSize);
@@ -92,11 +109,7 @@ public sealed class CrmWorkController(PSeqOperationsDbContext dbContext, IExtern
         if (contactId.HasValue) query = query.Where(value => value.ContactId == contactId);
         if (leadId.HasValue) query = query.Where(value => value.LeadId == leadId);
         if (opportunityId.HasValue) query = query.Where(value => value.OpportunityId == opportunityId);
-        if (overdueOnly)
-        {
-            var now = DateTime.UtcNow;
-            query = query.Where(value => value.DueAt < now && value.Status != CrmTaskStatus.Completed && value.Status != CrmTaskStatus.Cancelled);
-        }
+        query = CrmAttentionFilters.Tasks(query, overdueOnly, dueSoonOnly, DateTime.UtcNow);
 
         var total = await query.CountAsync(cancellationToken);
         var values = await query.OrderBy(value => value.Status == CrmTaskStatus.Completed || value.Status == CrmTaskStatus.Cancelled).ThenBy(value => value.DueAt).ThenByDescending(value => value.Priority)
@@ -173,15 +186,13 @@ public sealed class CrmWorkController(PSeqOperationsDbContext dbContext, IExtern
     {
         var actor = await RequireActor(cancellationToken);
         var now = DateTime.UtcNow;
-        var dueSoon = now.AddDays(7);
-        var staleCutoff = now.AddDays(-30);
         var activeTaskQuery = dbContext.CrmTasks.Where(value => value.IsActive && value.Status != CrmTaskStatus.Completed && value.Status != CrmTaskStatus.Cancelled);
         var attention = new CrmAttentionDto(
-            await activeTaskQuery.CountAsync(value => value.DueAt < now, cancellationToken),
-            await activeTaskQuery.CountAsync(value => value.DueAt >= now && value.DueAt <= dueSoon, cancellationToken),
-            await dbContext.CrmLeads.CountAsync(value => value.IsActive && value.Status != CrmLeadStatus.Converted && value.Status != CrmLeadStatus.Disqualified && (value.NextAction == null || value.NextAction == ""), cancellationToken),
-            await dbContext.CrmOpportunities.CountAsync(value => value.IsActive && value.UpdatedAt < staleCutoff && value.Stage.Category == CrmPipelineStageCategory.Open, cancellationToken),
-            await DataQualityWarningCount(cancellationToken));
+            await CrmAttentionFilters.Tasks(activeTaskQuery, true, false, now).CountAsync(cancellationToken),
+            await CrmAttentionFilters.Tasks(activeTaskQuery, false, true, now).CountAsync(cancellationToken),
+            await CrmAttentionFilters.MissingNextAction(dbContext.CrmLeads).CountAsync(cancellationToken),
+            await CrmAttentionFilters.StaleOpportunities(dbContext.CrmOpportunities, now).CountAsync(cancellationToken),
+            AccountAuthorization.IsPlatformAdmin(actor) ? await DataQualityWarningCount(cancellationToken) : 0);
         var tasks = await TaskQuery().Where(value => value.IsActive && value.OwnerUserId == actor.Id && value.Status != CrmTaskStatus.Completed && value.Status != CrmTaskStatus.Cancelled).OrderBy(value => value.DueAt).Take(10).ToListAsync(cancellationToken);
         var opportunities = await dbContext.CrmOpportunities.AsNoTracking().Include(value => value.Company).Include(value => value.Pipeline).Include(value => value.Stage).Include(value => value.Owner).Where(value => value.IsActive).OrderByDescending(value => value.UpdatedAt).Take(8).ToListAsync(cancellationToken);
         return new CrmDashboardDto(attention, tasks.Select(value => ToDto(value)).ToList(), opportunities.Select(value => CrmOpportunitiesController.ToDto(value)).ToList(), await PipelineReport(cancellationToken));
@@ -190,7 +201,8 @@ public sealed class CrmWorkController(PSeqOperationsDbContext dbContext, IExtern
     [HttpGet("reports")]
     public async Task<CrmReportsDto> Reports(CancellationToken cancellationToken)
     {
-        await RequireActor(cancellationToken);
+        var actor = await RequireActor(cancellationToken);
+        var isAdmin = AccountAuthorization.IsPlatformAdmin(actor);
         var now = DateTime.UtcNow;
         var owners = await dbContext.Users.AsNoTracking().Where(value => value.IsActive && value.Memberships.Any(membership => membership.IsActive && membership.Organization!.Kind == OrganizationKind.Phaeno))
             .Select(value => new { value.Id, Name = value.FirstName + " " + value.LastName }).ToListAsync(cancellationToken);
@@ -206,7 +218,7 @@ public sealed class CrmWorkController(PSeqOperationsDbContext dbContext, IExtern
 
         var leadSources = await dbContext.CrmLeads.AsNoTracking().GroupBy(value => value.Source ?? "Unspecified").Select(group => new { Source = group.Key, Leads = group.Count(), Qualified = group.Count(value => value.Status == CrmLeadStatus.Qualified || value.Status == CrmLeadStatus.Converted), Converted = group.Count(value => value.Status == CrmLeadStatus.Converted) }).ToListAsync(cancellationToken);
         var sourcePerformance = leadSources.Select(value => new CrmSourcePerformanceDto(value.Source ?? "Unspecified", value.Leads, value.Qualified, value.Converted, value.Leads == 0 ? 0 : Math.Round(value.Converted * 100d / value.Leads, 1))).ToList();
-        var activityCount = await dbContext.CrmActivities.CountAsync(value => value.IsActive && value.OccurredAt >= now.AddDays(-30), cancellationToken);
+        var activityCount = await dbContext.CrmActivities.CountAsync(value => value.IsActive && value.OccurredAt >= now.AddDays(-30) && (isAdmin || value.Visibility == CrmActivityVisibility.Internal), cancellationToken);
         return new CrmReportsDto(await PipelineReport(cancellationToken), workloads, sourcePerformance, activityCount);
     }
 
@@ -296,7 +308,7 @@ public sealed class CrmWorkController(PSeqOperationsDbContext dbContext, IExtern
     }
 
     private async Task<User> RequireOwner(Guid id, CancellationToken cancellationToken) => await dbContext.Users.FirstOrDefaultAsync(value => value.Id == id && value.IsActive && value.Memberships.Any(membership => membership.IsActive && membership.Organization!.Kind == OrganizationKind.Phaeno), cancellationToken) ?? throw NotFound("crm_owner_not_found", "The selected active Phaeno owner was not found.");
-    private async Task<User> RequireActor(CancellationToken cancellationToken) => await RequirePlatformAdminAsync(HttpContext, dbContext, externalIdentityContext, cancellationToken);
+    private async Task<User> RequireActor(CancellationToken cancellationToken) => await RequireCrmAccessAsync(HttpContext, dbContext, externalIdentityContext, cancellationToken);
 
     private static CrmActivityDto ToDto(CrmActivity value) => new(value.Id, value.Type, value.Subject, value.Body, value.OccurredAt, value.Visibility, value.ActorUserId, Name(value.ActorUser), value.CompanyId, value.Company?.Name, value.ContactId, value.Contact?.DisplayName, value.LeadId, value.Lead?.DisplayName, value.OpportunityId, value.Opportunity?.Name, value.IsActive, value.Version);
     private static CrmTaskDto ToDto(CrmTask value, User? owner = null) => new(value.Id, value.Title, value.Description, value.OwnerUserId, Name(owner ?? value.Owner), value.Priority, value.Status, value.DueAt, value.ReminderAt, value.RecurrenceRule, value.BlockedReason, value.CompletedAt, value.CompanyId, value.Company?.Name, value.ContactId, value.Contact?.DisplayName, value.LeadId, value.Lead?.DisplayName, value.OpportunityId, value.Opportunity?.Name, value.IsActive, value.Version);

@@ -1,3 +1,4 @@
+import { useCrmPermissions } from './use-crm-permissions';
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { CalendarPlus, MessageSquarePlus } from "lucide-react";
 import { useState } from "react";
@@ -220,6 +221,7 @@ function ActivityDialog({
     visibility: "Internal" | "Restricted";
   }) => void;
 }) {
+  const { canAdminister } = useCrmPermissions();
   const [type, setType] = useState<CrmActivityType>("Note");
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -300,7 +302,7 @@ function ActivityDialog({
                 className="h-9 rounded-md border bg-background px-3 text-sm"
               >
                 <option value="Internal">Internal</option>
-                <option value="Restricted">Restricted</option>
+                {canAdminister ? <option value="Restricted">Restricted</option> : null}
               </select>
             </Field>
           </div>

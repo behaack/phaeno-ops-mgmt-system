@@ -76,7 +76,7 @@ export const mainMenuItems: readonly MainMenuItem[] = [
     visibleWhen: (session, context) =>
       isPhaenoEmployee(session) &&
       context.selectedOrganizationKind === 'Phaeno' &&
-      Boolean(session?.capabilities.canManageOrganizations),
+      Boolean(session?.capabilities.canAccessCrm),
   },
   {
     label: 'Data provisioning',

@@ -2,11 +2,11 @@ import { Link, useNavigate, useRouterState } from '@tanstack/react-router'
 import { useCallback, useEffect, useState, type Dispatch, type SetStateAction } from 'react'
 import { Button } from '#/components/ui/button'
 
-export type CrmNavigationSearch = { search?: string; requestId?: string; page?: number; includeInactive?: boolean; status?: string; pipelineId?: string; stageId?: string; board?: boolean; overdue?: boolean; section?: string; returnTo?: 'data-provisioning' }
+export type CrmNavigationSearch = { search?: string; requestId?: string; page?: number; includeInactive?: boolean; status?: string; pipelineId?: string; stageId?: string; board?: boolean; overdue?: boolean; dueSoon?: boolean; needsNextAction?: boolean; stale?: boolean; section?: string; returnTo?: 'data-provisioning' }
 export function validateCrmNavigationSearch(input: Record<string, unknown>): CrmNavigationSearch {
   const result: CrmNavigationSearch = {}
   for (const key of ['search', 'status', 'pipelineId', 'stageId', 'section', 'requestId'] as const) if (typeof input[key] === 'string' && input[key]) result[key] = input[key]
-  for (const key of ['includeInactive', 'board', 'overdue'] as const) if (typeof input[key] === 'boolean') result[key] = input[key]
+  for (const key of ['includeInactive', 'board', 'overdue', 'dueSoon', 'needsNextAction', 'stale'] as const) if (typeof input[key] === 'boolean') result[key] = input[key]
   if (Number.isSafeInteger(Number(input.page)) && Number(input.page) > 0) result.page = Number(input.page)
   if (input.returnTo === 'data-provisioning') result.returnTo = input.returnTo
   return result
@@ -25,8 +25,10 @@ export function useCrmState<T extends string | number | boolean>(key: keyof CrmN
         return {
           ...previous,
           [key]: resolved,
+          ...(key === 'overdue' && resolved === true ? { dueSoon: false } : {}),
+          ...(key === 'dueSoon' && resolved === true ? { overdue: false } : {}),
           ...(key === 'section' ? { requestId: undefined } : {}),
-          ...(['search', 'status', 'includeInactive', 'pipelineId', 'stageId', 'overdue'].includes(key) ? { page: 1 } : {}),
+          ...(['search', 'status', 'includeInactive', 'pipelineId', 'stageId', 'overdue', 'dueSoon', 'needsNextAction', 'stale'].includes(key) ? { page: 1 } : {}),
         }
       },
       replace: true,
@@ -56,7 +58,7 @@ export function CrmListPagination({ result, page, onPageChange, busy }: { result
 export function CrmClearFilters() {
   const search = useRouterState({ select: state => state.location.search }) as CrmNavigationSearch
   const navigate = useNavigate()
-  if (!search.search && !search.requestId && !search.status && !search.includeInactive && !search.stageId && !search.overdue && !(search.page && search.page > 1)) return null
+  if (!search.search && !search.requestId && !search.status && !search.includeInactive && !search.stageId && !search.overdue && !search.dueSoon && !search.needsNextAction && !search.stale && !(search.page && search.page > 1)) return null
   return <Button type="button" size="sm" variant="ghost" onClick={() => void navigate({ to: '.', search: { pipelineId: search.pipelineId, board: search.board, section: search.section, returnTo: search.returnTo }, replace: true, resetScroll: false })}>Clear all</Button>
 }
 

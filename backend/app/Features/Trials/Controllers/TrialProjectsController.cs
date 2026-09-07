@@ -37,6 +37,14 @@ public sealed class TrialProjectsController(PSeqOperationsDbContext db, TrialAcc
             return await reader.DetailAsync(trial, actor, token);
         }, token);
     }
+    [HttpPost("{id:guid}/scope/draft")]
+    public Task<TrialDetailDto> SaveScopeDraft(Guid id, [FromBody] TrialScopeDraftRequest request, CancellationToken token) =>
+        MutateAsync(id, request, async (trial, actor) =>
+        {
+            await workflow.SaveDraftAsync(trial, actor, request, token);
+            PhaenoPortal.App.Features.Accounts.Services.AccountAudit.Add(db, HttpContext, nameof(TrialProject), trial.Id,
+                "TrialScopeDraftSaved", null, actor.User.Id, new { trial.CurrentScopeRevision, trial.DraftSavedAtUtc });
+        }, token);
     [HttpPost("{id:guid}/scope")]
     public Task<TrialDetailDto> Scope(Guid id, [FromBody] TrialScopeRequest request, CancellationToken token) =>
         MutateAsync(id, request, (trial, actor) => workflow.ProposeAsync(trial, actor, request, token), token);

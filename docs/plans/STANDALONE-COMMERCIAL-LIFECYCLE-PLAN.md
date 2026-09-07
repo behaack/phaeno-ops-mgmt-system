@@ -36,11 +36,14 @@ retain their normal approval boundaries.
   entitlements, operational work, results, and audit history. Preserve those
   boundaries and extend them instead of adding a parallel commercial system.
 - QuickBooks Online integration is deferred. POMS owns the active commercial
-  catalog, immutable quote and billing-source facts, credit/release state, and
-  the Phaeno-only manual journal-entry source report. Finance prepares and
-  posts journal entries and invoices outside POMS under a separately approved
-  reconciliation procedure. Dormant QuickBooks adapter and compatibility types
-  are not active runtime dependencies and do not establish payment state.
+  catalog, immutable quote and billing-source facts, and the Phaeno-only manual
+  journal-entry source report. Native PSeq accounts receivable now also owns
+  invoice issuance, receipts, allocations and independently approved
+  reconciliation behind its activation flag. The manual accounting-source
+  workflow remains relevant to the other implemented commercial paths.
+  Dormant QuickBooks compatibility types are not active dependencies and do
+  not establish payment state. Native PSeq and Trial scientific release is
+  independent of payment. See [current feature readiness](../feature-readiness.md).
 
 ## Product Need
 

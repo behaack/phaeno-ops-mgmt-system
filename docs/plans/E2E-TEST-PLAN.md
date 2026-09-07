@@ -1,5 +1,13 @@
 # Playwright E2E Test Plan
 
+## Portal completion browser and document checkpoint — 2026-09-07
+
+A temporary local fixture used the actual Trial detail/scope components with synthetic API responses and rejected all unrelated requests. Desktop and narrow-layout browser review confirmed partial Save draft, shared last-editor/time, Resume draft with retained values, busy-state controls, and preservation of approval-requested status without creating a proposed approval scope. Empty numeric input remains empty instead of becoming zero. No browser console errors were observed. No production API/business request was made.
+
+Evidence: `artifacts/portal-completion-20260907/trial-draft-controls.png` and `trial-draft-mobile.png`. The fixture files, server and review tab were removed and the temporary browser viewport was reset. This is synthetic component/browser evidence; the full Playwright suite, connected multi-role Trial/CRM/Finance journeys and target storage/scanner acceptance were not run at this checkpoint.
+
+The updated `docs/Phaeno-POMS-Order-to-Cash-Guide.docx` contains 26 pages and 11 screenshots, including the new Trial save/resume controls. All final pages were visually reviewed. The ten prior screenshots and three tables were retained. This is document presentation verification, not production workflow acceptance.
+
 ## Intake consolidation - 2026-09-07
 
 Updated the Order operations sidebar expectation to exclude Order staging. Old orderSection=staging resolves to Intake. Synthetic browser review covers blocked versus pricing-ready Customers, department switching, later quote/invoice requirements, failure recovery, and narrow layouts. Connected order creation remains unverified; no real orders were submitted.

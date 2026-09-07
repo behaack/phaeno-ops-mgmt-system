@@ -48,8 +48,17 @@ describe("CRM Company lifecycle dialog", () => {
       />,
     );
 
-    expect(screen.getByText(/suspends the Company’s Portal access/)).toBeTruthy();
+    expect(screen.getByText(/This Company has no Portal access scope/)).toBeTruthy();
     fireEvent.click(screen.getByRole("button", { name: "Deactivate company" }));
     expect(onConfirm).toHaveBeenCalledOnce();
+  });
+
+  it("identifies the affected Company access and blocks dismissal while saving", () => {
+    const onOpenChange = vi.fn();
+    render(<CrmCompanyLifecycleDialog company={{ ...company, accessOrganizationId: 'scope-id' }} isPending onConfirm={vi.fn()} onOpenChange={onOpenChange} />);
+    expect(screen.getByText(/suspends access to Example Biosciences for all of its Portal users/)).toBeTruthy();
+    expect(screen.getByRole('button', { name: 'Cancel' })).toHaveProperty('disabled', true);
+    fireEvent.keyDown(screen.getByRole('dialog'), { key: 'Escape' });
+    expect(onOpenChange).not.toHaveBeenCalled();
   });
 });

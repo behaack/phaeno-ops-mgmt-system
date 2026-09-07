@@ -1,3 +1,4 @@
+import { useCrmPermissions } from './use-crm-permissions';
 import { CrmProvisioningReturn } from "./CrmListNavigation";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Link, useNavigate } from "@tanstack/react-router";
@@ -64,6 +65,7 @@ import { useCrmState } from './CrmListNavigation';
 import { OrganizationDepartmentsPanel } from "#/features/organizations/OrganizationDepartmentsPanel";
 
 export function CrmCompanyDetailPage({ companyId }: { companyId: string }) {
+  const { canAdminister } = useCrmPermissions();
   const queryClient = useQueryClient();
   const navigate = useNavigate();
   const [editTarget, setEditTarget] = useState<CrmCompany | null>(null);
@@ -76,7 +78,8 @@ export function CrmCompanyDetailPage({ companyId }: { companyId: string }) {
   const [storedSection, setActiveSection] = useCrmState<
     "overview" | "people" | "sales" | "departments" | "requests" | "activity"
   >("section", "overview");
-  const activeSection = ["overview", "people", "sales", "departments", "requests", "activity"].includes(storedSection) ? storedSection : "overview";
+  const allowedSections = canAdminister ? ["overview", "people", "sales", "departments", "requests", "activity"] : ["overview", "people", "sales", "activity"];
+  const activeSection = allowedSections.includes(storedSection) ? storedSection : "overview";
   const companyQuery = useQuery({
     queryKey: ["crm-company", companyId],
     queryFn: () => getCrmCompany(companyId),
@@ -224,7 +227,7 @@ export function CrmCompanyDetailPage({ companyId }: { companyId: string }) {
             <Pencil data-icon="inline-start" />
             Edit
           </Button>
-          <Button variant="outline" onClick={() => { mergeMutation.reset(); setMergeSource({ id: company.id, name: company.name, version: company.version }); }}>
+          {canAdminister ? <><Button variant="outline" onClick={() => { mergeMutation.reset(); setMergeSource({ id: company.id, name: company.name, version: company.version }); }}>
             <Combine data-icon="inline-start" />
             Merge
           </Button>
@@ -238,7 +241,7 @@ export function CrmCompanyDetailPage({ companyId }: { companyId: string }) {
               <Power data-icon="inline-start" />
             )}
             {company.isActive ? "Deactivate" : "Reactivate"}
-          </Button>
+          </Button></> : null}
         </div>
       </section>
 
@@ -262,19 +265,19 @@ export function CrmCompanyDetailPage({ companyId }: { companyId: string }) {
           <TabsTrigger className="min-w-fit flex-none px-3 py-1.5" value="sales">
             Sales
           </TabsTrigger>
-          <TabsTrigger className="min-w-fit flex-none px-3 py-1.5" value="departments">
+          {canAdminister ? <><TabsTrigger className="min-w-fit flex-none px-3 py-1.5" value="departments">
             Departments &amp; services
           </TabsTrigger>
           <TabsTrigger className="min-w-fit flex-none px-3 py-1.5" value="requests">
             Requests
-          </TabsTrigger>
+          </TabsTrigger></> : null}
           <TabsTrigger className="min-w-fit flex-none px-3 py-1.5" value="activity">
             Activity
           </TabsTrigger>
         </TabsList>
 
         <TabsContent value="overview" className="space-y-6">
-          {!company.accessOrganizationId ? (
+          {canAdminister && !company.accessOrganizationId ? (
             <Alert>
               <AlertTitle>Online access is not enabled</AlertTitle>
               <AlertDescription className="flex flex-wrap items-center justify-between gap-3">
@@ -376,11 +379,11 @@ export function CrmCompanyDetailPage({ companyId }: { companyId: string }) {
           <CrmCompanySales companyId={companyId} company={company} />
         </TabsContent>
 
-        <TabsContent value="requests">
+        {canAdminister ? <TabsContent value="requests">
           <CrmCompanyRelationships companyId={companyId} view="requests" currentRelationship={company.portalRelationship} />
-        </TabsContent>
+        </TabsContent> : null}
 
-        <TabsContent value="departments" className="space-y-6">
+        {canAdminister ? <TabsContent value="departments" className="space-y-6">
           {company.accessOrganizationId ? (
             <>
               <OrganizationDepartmentsPanel organizationId={company.accessOrganizationId} />
@@ -405,7 +408,7 @@ export function CrmCompanyDetailPage({ companyId }: { companyId: string }) {
               </CardContent>
             </Card>
           )}
-        </TabsContent>
+        </TabsContent> : null}
 
         <TabsContent value="activity">
           <CrmRecordWork links={{ companyId }} />

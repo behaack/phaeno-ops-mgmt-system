@@ -18,7 +18,7 @@ describe('Company request fulfillment queue', () => {
     api.listOrganizations.mockResolvedValue([])
     api.applyRelationshipRequest.mockResolvedValue({ status: 'Applied' })
     render(<QueryClientProvider client={new QueryClient({ defaultOptions: { queries: { retry: false }, mutations: { retry: false } } })}><CrmPortalAccessPage /></QueryClientProvider>)
-    fireEvent.click(await screen.findByRole('tab', { name: 'Approved / needs work (1)' }))
+    fireEvent.keyDown(await screen.findByRole('tab', { name: 'Approved / needs work (1)' }), { key: 'Enter' })
     fireEvent.click(screen.getByRole('button', { name: 'Complete request' }))
     fireEvent.change(screen.getByLabelText('Completed work', { exact: false }), { target: { value: 'Reviewed service authorization and completed setup.' } })
     fireEvent.click(screen.getByRole('button', { name: 'Complete request' }))

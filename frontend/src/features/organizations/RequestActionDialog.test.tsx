@@ -132,7 +132,7 @@ describe('RequestActionDialog', () => {
       />,
     )
 
-    expect(screen.getByRole('dialog', { name: 'Approve Portal request' })).toBeTruthy()
+    expect(screen.getByRole('dialog', { name: 'Approve Company request' })).toBeTruthy()
     expect(screen.getByRole('button', { name: 'Approve request' })).toBeTruthy()
   })
 
@@ -151,7 +151,7 @@ describe('RequestActionDialog', () => {
       />,
     )
 
-    expect(screen.getByRole('dialog', { name: 'Complete Portal access request' })).toBeTruthy()
+    expect(screen.getByRole('dialog', { name: 'Complete Company request' })).toBeTruthy()
     expect(screen.getByRole('button', { name: 'Complete request' })).toBeTruthy()
   })
 })

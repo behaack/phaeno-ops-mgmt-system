@@ -13,10 +13,10 @@ Generated from [PSeqOperationsDbContextModelSnapshot.cs](../backend/app/Migratio
 | Schema | Entities | Fields | Foreign keys |
 | --- | ---: | ---: | ---: |
 | `public` | 1 | 2 | 0 |
-| `commercial_ops` | 122 | 1942 | 270 |
+| `commercial_ops` | 122 | 1946 | 271 |
 | `lab_ops` | 30 | 344 | 43 |
 | `website` | 5 | 49 | 4 |
-| **Total** | **158** | **2337** | **317** |
+| **Total** | **158** | **2341** | **318** |
 
 ## `public` schema
 
@@ -1713,6 +1713,7 @@ erDiagram
         uuid created_by_user_id "nullable"
         uuid created_by_user_id_value "not null"
         numeric_18_2 difference "not null"
+        jsonb draft_changes_json "nullable"
         numeric_18_2 ledger_receipt_total "not null"
         date period_end "not null"
         character_varying_100 status "not null"
@@ -2435,6 +2436,9 @@ erDiagram
         uuid crm_handoff_id FK,UK "not null"
         integer current_scope_revision "not null"
         uuid department_id FK "nullable"
+        timestamp_with_time_zone draft_saved_at_utc "nullable"
+        uuid draft_saved_by_user_id FK "nullable"
+        jsonb draft_scope_json "nullable"
         timestamp_with_time_zone follow_up_at_utc "nullable"
         uuid follow_up_owner_user_id FK "nullable"
         character_varying_4000 hold_reason "nullable"
@@ -2554,6 +2558,7 @@ erDiagram
     users o|--o{ trial_projects : "created_by_user_id"
     crm_handoffs ||--o{ trial_projects : "crm_handoff_id"
     organization_departments o|--o{ trial_projects : "department_id"
+    users o|--o{ trial_projects : "draft_saved_by_user_id"
     users o|--o{ trial_projects : "follow_up_owner_user_id"
     users o|--o{ trial_projects : "material_disposed_by_user_id"
     crm_opportunities ||--o{ trial_projects : "opportunity_id"
@@ -2733,18 +2738,6 @@ erDiagram
 ```
 
 ### Protocols, libraries, and batches
-
-`lab_protocol_versions.definition_json` stores the validated schema-version-1
-procedure: ordered steps, roles, confirmations, typed captures, resource
-instructions, and explicit QC gates. Controlled versions remain immutable.
-`lab_protocol_executions.captured_results_json` stores schema-version-1 step
-evidence with append-only attempts, server-generated record identifiers,
-recording users/times, typed values, decisions, confirmations, QC outcomes, and
-reasons. Repeats and corrections preserve previous attempts. Each saved step
-also creates an `ExecutionStepRecorded` entry in `lab_work_events`; execution
-and work-order concurrency tokens serialize evidence with completion and job
-holds. Historical unstructured JSON is retained for review. This uses the
-existing mapped JSONB columns and does not introduce a schema migration.
 
 ```mermaid
 erDiagram
@@ -3151,9 +3144,3 @@ erDiagram
     web_orders o|--o{ web_notification_deliveries : "web_order_id"
     users o|--o{ web_notification_processing_controls : "updated_by_user_id"
 ```
-
-## September 7, 2026 workflow compatibility
-
-The consistency changes add no tables, columns, relationships or EF migration. Existing `sample_configuration_json` now accepts the supported exact-roster mode and `result_destination_configuration_json` the governed Portal destination; arbitrary JSON no longer satisfies operational readiness. Shipping readiness derives from effective sample type, destination and instruction-rule records rather than `shipping_configuration_json`.
-
-New manual payment receipts retain a protected `receipt-evidence:` reference in the existing `evidence_storage_key`, backed by scanned operational storage. CSV receipts retain their `payment-import:` reference. An unconfirmed import may be re-previewed by its original operator; its existing preview payload, timestamp and concurrency version change together. Confirmed preview evidence remains frozen. Historical evidence references and organization records are not rewritten by these changes.

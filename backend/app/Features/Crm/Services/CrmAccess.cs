@@ -8,6 +8,34 @@ using PhaenoPortal.App.Infrastructure.Persistence;
 
 public static class CrmAccess
 {
+    public static bool CanAccess(User user, IReadOnlyCollection<BusinessRole> activeRoles) =>
+        AccountAuthorization.IsPlatformAdmin(user)
+        || (user is { IsActive: true, Status: UserAccountStatus.Active }
+            && user.Memberships.Any(membership => membership.IsActive
+                && membership.Organization is { IsActive: true, Kind: OrganizationKind.Phaeno })
+            && activeRoles.Contains(BusinessRole.CommercialOperator));
+
+    public static async Task<User> RequireCrmAccessAsync(
+        HttpContext httpContext,
+        PSeqOperationsDbContext dbContext,
+        IExternalIdentityContext externalIdentityContext,
+        CancellationToken cancellationToken)
+    {
+        var actor = await AccountAccess.ReadActiveActorAsync(httpContext, dbContext, externalIdentityContext, cancellationToken);
+        var roles = actor is null ? [] : await dbContext.BusinessRoleAssignments.AsNoTracking()
+            .Where(assignment => assignment.UserId == actor.Id && assignment.IsActive)
+            .Select(assignment => assignment.Role).ToListAsync(cancellationToken);
+        if (actor is null || !CanAccess(actor, roles))
+            throw new CrmException("crm_access_forbidden", "Phaeno Commercial or administrator access is required.", StatusCodes.Status403Forbidden);
+        return actor;
+    }
+
+    public static void RequireAdministration(User actor)
+    {
+        if (!AccountAuthorization.IsPlatformAdmin(actor))
+            throw new CrmException("crm_administration_forbidden", "Phaeno administrator access is required for this action.", StatusCodes.Status403Forbidden);
+    }
+
     public static async Task<User> RequirePlatformAdminAsync(
         HttpContext httpContext,
         PSeqOperationsDbContext dbContext,

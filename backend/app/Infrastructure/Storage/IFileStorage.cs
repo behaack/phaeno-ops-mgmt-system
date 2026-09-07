@@ -84,6 +84,8 @@ internal static class FileStorageKeys
         var segments = storageKey.Split('/', StringSplitOptions.RemoveEmptyEntries);
         if (segments.Length == 0
             || segments.Any(segment => segment is "." or "..")
+            || segments.Any(segment => segment.EndsWith('.') || segment.EndsWith(' ')
+                || segment.Any(character => !char.IsAsciiLetterOrDigit(character) && character is not '.' and not '-' and not '_'))
             || !string.Equals(string.Join('/', segments), storageKey, StringComparison.Ordinal))
         {
             throw new ArgumentException("Storage key is invalid.", nameof(storageKey));

@@ -1,3 +1,4 @@
+import { useCrmPermissions } from './use-crm-permissions';
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Link, useNavigate } from "@tanstack/react-router";
 import { ArrowLeft, Combine, Pencil, Plus, Power, PowerOff } from "lucide-react";
@@ -49,6 +50,7 @@ import { CrmRecordWork } from "./CrmRecordWork";
 import { CrmRelationshipRoleSelect } from "./CrmRelationshipRoleSelect";
 
 export function CrmContactDetailPage({ contactId }: { contactId: string }) {
+  const { canAdminister } = useCrmPermissions();
   const client = useQueryClient();
   const navigate = useNavigate();
   const [editTarget, setEditTarget] = useState<CrmContact | null>(null);
@@ -194,7 +196,7 @@ export function CrmContactDetailPage({ contactId }: { contactId: string }) {
             <Pencil data-icon="inline-start" />
             Edit
           </Button>
-          <Button variant="outline" onClick={() => { merge.reset(); setMergeSource({ id: contact.id, name: contact.displayName, version: contact.version }); }}>
+          {canAdminister ? <><Button variant="outline" onClick={() => { merge.reset(); setMergeSource({ id: contact.id, name: contact.displayName, version: contact.version }); }}>
             <Combine data-icon="inline-start" />
             Merge
           </Button>
@@ -209,7 +211,7 @@ export function CrmContactDetailPage({ contactId }: { contactId: string }) {
               <Power data-icon="inline-start" />
             )}
             {contact.isActive ? "Deactivate" : "Reactivate"}
-          </Button>
+          </Button></> : null}
         </div>
       </section>
       {(edit.error && !editOpen) || (lifecycle.error && !lifecycleTarget) || (merge.error && !mergeSource) ? (

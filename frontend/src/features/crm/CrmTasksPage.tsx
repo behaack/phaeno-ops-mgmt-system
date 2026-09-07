@@ -38,16 +38,19 @@ export function CrmTasksPage() {
   const client = useQueryClient();
   const [status, setStatus] = useCrmState<CrmTaskStatus | "">("status", "");
   const [overdue, setOverdue] = useCrmState<boolean>("overdue", false);
+  const [dueSoon, setDueSoon] = useCrmState<boolean>("dueSoon", false);
   const [change, setChange] = useState<{
     task: CrmTask;
     status: CrmTaskStatus;
   } | null>(null);
   const query = useQuery({
-    queryKey: ["crm-tasks", status, overdue, page, search],
+    queryKey: ["crm-tasks", status, overdue, dueSoon, page, search],
     queryFn: () =>
       listCrmTasks({
-        search,        status: status || undefined,
+        search,
+        status: status || undefined,
         overdueOnly: overdue,
+        dueSoonOnly: dueSoon,
         page, pageSize: 25,
       }),
   });
@@ -135,14 +138,16 @@ export function CrmTasksPage() {
               />
               Overdue only
             </label>
+            <label className="flex h-9 cursor-pointer items-center gap-2 rounded-md border px-3 text-sm"><input type="checkbox" checked={dueSoon} onChange={event => setDueSoon(event.target.checked)} />Due in 7 days</label>
           </div>
           <CrmClearFilters />
           <CrmSavedViewBar
             recordType="Task"
-            currentFilter={{ status, overdue, search }}
+            currentFilter={{ status, overdue, dueSoon, search }}
             onApply={(filter) => {
               setSearch(typeof filter.search === "string" ? filter.search : "");
               setStatus(isTaskStatus(filter.status) ? filter.status : "");
+              setDueSoon(filter.dueSoon === true);
               setOverdue(filter.overdue === true);
             }}
           />

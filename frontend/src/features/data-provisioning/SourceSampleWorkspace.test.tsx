@@ -81,7 +81,7 @@ describe('SourceSampleWorkspace', () => {
         7,
       )
     })
-    expect(mocks.navigate).toHaveBeenCalledWith({ to: '/data-provisioning' })
+    expect(mocks.navigate).toHaveBeenCalledWith({ to: '/data-provisioning', search: { section: 'sources' } })
   })
 })
 

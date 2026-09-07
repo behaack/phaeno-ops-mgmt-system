@@ -52,6 +52,9 @@ public sealed class TrialProject : CommercialReceivableEntity
     public int CurrentScopeRevision { get; private set; }
     public int? ApprovedScopeRevision { get; private set; }
     public int? AcceptedScopeRevision { get; private set; }
+    public string? DraftScopeJson { get; private set; }
+    public Guid? DraftSavedByUserId { get; private set; }
+    public DateTime? DraftSavedAtUtc { get; private set; }
     public DateTime? AcceptedAtUtc { get; private set; }
     public Guid? AcceptedByUserId { get; private set; }
     public string? AcceptedTermsVersion { get; private set; }
@@ -80,6 +83,13 @@ public sealed class TrialProject : CommercialReceivableEntity
             throw new ArgumentException("A CRM request, Company, Opportunity and Sales owner are required.");
         CrmHandoffId = handoffId; CompanyId = companyId; OpportunityId = opportunityId; SalesOwnerUserId = salesOwnerUserId;
     }
+    public TrialScopeDraftValues? ReadScopeDraft() => DraftScopeJson is null ? null : JsonSerializer.Deserialize<TrialScopeDraftValues>(DraftScopeJson);
+    public void SaveScopeDraft(TrialScopeDraftValues values, Guid actorId, DateTime now)
+    {
+        EnsureOpen(); values.Validate(); TrialRules.Utc(now);
+        if (actorId == Guid.Empty) throw new ArgumentException("A draft author is required.");
+        DraftScopeJson = JsonSerializer.Serialize(values); DraftSavedByUserId = actorId; DraftSavedAtUtc = now;
+    }
     public TrialScope Propose(TrialScopeValues values, string reason, Guid actorId, DateTime now)
     {
         EnsureOpen(); values.Validate();
@@ -91,7 +101,9 @@ public sealed class TrialProject : CommercialReceivableEntity
             || values.ReturnShippingPayer != approved.ReturnShippingPayer))
             throw new InvalidOperationException("Return terms cannot change after the first sample submission.");
         var scope = new TrialScope(Id, ++CurrentScopeRevision, values, reason, actorId, now);
-        Scopes.Add(scope); Status = TrialStatus.UnderReview; return scope;
+        Scopes.Add(scope); Status = TrialStatus.UnderReview;
+        DraftScopeJson = null; DraftSavedByUserId = null; DraftSavedAtUtc = null;
+        return scope;
     }
     public void BindOrganization(Guid organizationId, Guid departmentId)
     {

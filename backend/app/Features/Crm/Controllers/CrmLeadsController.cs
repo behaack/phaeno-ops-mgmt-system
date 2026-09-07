@@ -18,13 +18,14 @@ using static PhaenoPortal.App.Features.Crm.Services.CrmAccess;
 public sealed class CrmLeadsController(PSeqOperationsDbContext dbContext, IExternalIdentityContext externalIdentityContext) : ControllerBase
 {
     [HttpGet]
-    public async Task<CrmPageDto<CrmLeadDto>> List([FromQuery] string? search, [FromQuery] CrmLeadStatus? status, [FromQuery] bool includeInactive = false, [FromQuery] int page = 1, [FromQuery] int pageSize = 25, CancellationToken cancellationToken = default)
+    public async Task<CrmPageDto<CrmLeadDto>> List([FromQuery] string? search, [FromQuery] CrmLeadStatus? status, [FromQuery] bool includeInactive = false, [FromQuery] int page = 1, [FromQuery] int pageSize = 25, CancellationToken cancellationToken = default, [FromQuery] bool needsNextAction = false)
     {
         await RequireActor(cancellationToken);
         EnsurePagination(page, pageSize);
         var query = dbContext.CrmLeads.AsNoTracking().Include(value => value.Owner).AsQueryable();
         if (!includeInactive) query = query.Where(value => value.IsActive);
         if (status.HasValue) query = query.Where(value => value.Status == status);
+        if (needsNextAction) query = CrmAttentionFilters.MissingNextAction(query);
         if (!string.IsNullOrWhiteSpace(search))
         {
             var pattern = $"%{EscapeLike(search.Trim())}%";
@@ -171,7 +172,7 @@ public sealed class CrmLeadsController(PSeqOperationsDbContext dbContext, IExter
         return warnings;
     }
 
-    private async Task<User> RequireActor(CancellationToken cancellationToken) => await RequirePlatformAdminAsync(HttpContext, dbContext, externalIdentityContext, cancellationToken);
+    private async Task<User> RequireActor(CancellationToken cancellationToken) => await RequireCrmAccessAsync(HttpContext, dbContext, externalIdentityContext, cancellationToken);
     private async Task<User> RequireOwner(Guid id, CancellationToken cancellationToken) => await dbContext.Users.FirstOrDefaultAsync(value => value.Id == id && value.IsActive && value.Memberships.Any(membership => membership.IsActive && membership.Organization!.Kind == OrganizationKind.Phaeno), cancellationToken) ?? throw NotFound("crm_owner_not_found", "The selected active Phaeno owner was not found.");
     private async Task<CrmLead> Require(Guid id, bool tracking, CancellationToken cancellationToken)
     {

@@ -1,3 +1,4 @@
+import { useCrmPermissions } from './use-crm-permissions';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { Link } from '@tanstack/react-router'
 import { Link2, Plus, Send, Unlink } from 'lucide-react'
@@ -64,6 +65,7 @@ export function CrmCompanyPeople({
   companyId: string
   accessOrganizationId: string | null
 }) {
+  const { canAdminister } = useCrmPermissions();
   const client = useQueryClient()
   const [associateOpen, setAssociateOpen] = useState(false)
   const [createOpen, setCreateOpen] = useState(false)
@@ -74,6 +76,7 @@ export function CrmCompanyPeople({
   const people = useQuery({
     queryKey: ['crm-company-people', companyId],
     queryFn: () => listCrmCompanyPeople(companyId),
+    enabled: canAdminister,
   })
   const contacts = useQuery({
     queryKey: ['crm-company-contacts', companyId],
@@ -82,7 +85,7 @@ export function CrmCompanyPeople({
   const departments = useQuery({
     queryKey: ['organization-departments', accessOrganizationId, false],
     queryFn: () => listDepartments(accessOrganizationId!, false),
-    enabled: Boolean(accessOrganizationId),
+    enabled: canAdminister && Boolean(accessOrganizationId),
   })
 
   const refresh = async () => {
@@ -158,7 +161,7 @@ export function CrmCompanyPeople({
         <CardHeader>
           <CardTitle>People</CardTitle>
           <CardDescription>
-            Company contacts, Portal identities, invitations, and department access in one reviewed list.
+            {canAdminister ? 'Company contacts, Portal identities, invitations, and department access in one reviewed list.' : 'Company contacts and their roles. A Phaeno administrator manages Portal invitations and access.'}
           </CardDescription>
           <CardAction className="flex flex-wrap gap-2">
             <Button size="sm" variant="outline" disabled={contactsUnavailable} onClick={() => setAssociateOpen(true)}>
@@ -169,10 +172,11 @@ export function CrmCompanyPeople({
           </CardAction>
         </CardHeader>
         <CardContent className="space-y-3">
-          <CrmCollectionFeedback name="people" query={people} />
+          {canAdminister ? <CrmCollectionFeedback name="people" query={people} /> : null}
           <CrmCollectionFeedback name="contacts" query={contacts} />
-          {accessOrganizationId ? <CrmCollectionFeedback name="departments" query={departments} /> : null}
-          {(people.data ?? []).map((person) => (
+          {canAdminister && accessOrganizationId ? <CrmCollectionFeedback name="departments" query={departments} /> : null}
+          {!canAdminister ? (contacts.data ?? []).map(contact => <div key={contact.id} className="flex flex-wrap items-center justify-between gap-3 rounded-lg border p-3"><div><Link to="/crm/contacts/$contactId" params={{ contactId: contact.contactId }} className="font-medium underline underline-offset-4">{contact.contactName}</Link><p className="text-sm text-muted-foreground">{[contact.jobTitle, contact.relationshipRole, contact.isPrimaryCompany ? 'Primary Company' : null, contact.isActive ? null : 'Ended relationship'].filter(Boolean).join(' · ') || 'Company contact'}</p></div><Button size="sm" variant="outline" onClick={() => { editRelationship.reset(); setRelationshipTarget(contact) }}>Manage relationship</Button></div>) : null}
+          {(canAdminister ? people.data ?? [] : []).map((person) => (
             <PersonRow
               key={`${person.recordKind}-${person.contactAssociationId ?? person.contactId ?? person.portalUserId ?? person.invitationId}`}
               person={person}
@@ -183,7 +187,7 @@ export function CrmCompanyPeople({
               onIdentityAction={(action) => { identity.reset(); setIdentityAction(action) }}
             />
           ))}
-          {people.isSuccess && people.data.length === 0 ? (
+          {(canAdminister ? people.isSuccess && people.data.length === 0 : contacts.isSuccess && contacts.data.length === 0) ? (
             <p className="rounded-lg border p-6 text-center text-sm text-muted-foreground">
               No people are associated with this Company.
             </p>

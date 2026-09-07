@@ -31,6 +31,8 @@ const mocks = vi.hoisted(() => ({
   listAccountsReceivableCustomers: vi.fn(),
   listInvoices: vi.fn(),
   listMatchingInvoices: vi.fn(),
+  listPaymentAllocations: vi.fn(),
+  getReconciliation: vi.fn(),
   listPaymentReceipts: vi.fn(),
   listReconciliations: vi.fn(),
   previewPaymentImport: vi.fn(),
@@ -70,6 +72,8 @@ describe('PSeq order-to-cash panels', () => {
     mocks.getAgingSummary.mockResolvedValue({ current: 0, days1To30: 0, days31To60: 0, days61To90: 0, over90: 0, organizations: [] })
     mocks.listPaymentReceipts.mockResolvedValue([])
     mocks.listReconciliations.mockResolvedValue([])
+    mocks.listPaymentAllocations.mockResolvedValue([])
+    mocks.getReconciliation.mockResolvedValue({ batch, items: [], changes: [], receipts: [] })
   })
 
   it('filters recoverable retention notices in the Operations queue', async () => {
@@ -237,7 +241,7 @@ describe('PSeq order-to-cash panels', () => {
     expect(screen.queryByLabelText(/Invoice/)).toBeNull()
     fireEvent.click(screen.getByRole('button', { name: 'Allocate to invoice' }))
     await screen.findByRole('option', { name: /INV-100/ })
-    expect(mocks.listMatchingInvoices).toHaveBeenCalledWith('receipt-id')
+    expect(mocks.listMatchingInvoices).toHaveBeenCalledWith('receipt-id', '', 0)
     fireEvent.change(screen.getByLabelText(/Invoice/), { target: { value: invoice.id } })
     fireEvent.change(screen.getByLabelText(/Amount \(USD\)/), { target: { value: '25' } })
     fireEvent.click(within(screen.getByRole('dialog')).getByRole('button', { name: 'Allocate payment' }))
@@ -316,7 +320,7 @@ describe('PSeq order-to-cash panels', () => {
     expect(name).toHaveProperty('value', 'New Finance Contact')
     expect(screen.getByRole('button', { name: 'Approve current tax decision' })).toHaveProperty('disabled', true)
     fireEvent.change(name, { target: { value: customer.billingContactName } })
-    expect(screen.getByRole('button', { name: 'Save changes' })).toHaveProperty('disabled', true)
+    await waitFor(() => expect(screen.getByRole('button', { name: 'Save changes' })).toHaveProperty('disabled', true))
   })
 
   it('validates Finance approval notes instead of silently disabling the action', async () => {

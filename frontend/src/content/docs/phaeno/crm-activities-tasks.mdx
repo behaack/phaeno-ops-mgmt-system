@@ -9,7 +9,7 @@ Select **Log activity** from the record workspace. Choose Note, Call, Meeting, E
 Choose visibility deliberately:
 
 - **Internal** is ordinary Phaeno commercial context.
-- **Restricted** flags material requiring careful handling. It does not limit visibility to a smaller set of CRM administrators; every user with CRM access can read the activity. Keep confidential procedures and scientific evidence in their authorized owning system.
+- **Restricted** is available only to platform administrators. Commercial staff cannot read, create, edit, or deactivate Restricted Activities. Keep confidential procedures and scientific evidence in their authorized owning system.
 
 Manually logged Email means a user recorded that an email occurred. It does not send or retrieve email. Connected email and calendar capture are deferred.
 
@@ -23,7 +23,7 @@ Priorities are Low, Normal, High, and Urgent. Use them to communicate commercial
 
 ## Manage the Task queue
 
-Open **Tasks** from the CRM sidebar to search by title or description, filter by status or overdue state, page through results, apply saved views, and export the current view. Search and filters remain when you return from a record. Statuses are:
+Open **Tasks** from the CRM sidebar to search by title or description, filter by status, overdue state, or due within seven days, page through results, and apply saved views. Administrators can also export the current view. Search and filters remain when you return from a record. Statuses are:
 
 - **Open:** not started.
 - **In progress:** actively owned.
@@ -38,3 +38,5 @@ Completing a recurring Task creates its next occurrence according to the stored 
 ## Use Home attention safely
 
 CRM Home shows overdue Tasks, Tasks due within seven days, and your next assigned Tasks. Completing a Task from Home uses the same durable status transition as the record workspace. If the Task has changed since Home loaded, refresh before retrying so a newer owner's work is not overwritten.
+
+Selecting an attention card opens its matching filtered list. Overdue Tasks are unfinished Tasks due before now; **Due in 7 days** includes unfinished Tasks due from now through the next seven days. Leads needing a next action excludes Converted and Disqualified Leads. Stale Opportunities are active, open Opportunities unchanged for more than 30 days, across all pipelines. The list shows these filters and lets you clear or save them. A failed Home search offers **Retry CRM search results**; no matches is shown only after a successful search.

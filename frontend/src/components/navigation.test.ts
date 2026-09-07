@@ -7,6 +7,14 @@ import {
 import type { OrganizationKind, SessionResponse } from '#/api/session'
 
 describe('data navigation permissions', () => {
+  it('shows CRM for Commercial staff without giving them administration navigation', () => {
+    const session = createSession('Phaeno', { canAccessCrm: true, canAdministerCrm: false, canManageOrganizations: false, canManageAllUsers: false, canViewDatasetConfiguration: false })
+    session.isPlatformAdmin = false
+    session.memberships[0].isOrganizationAdmin = false
+    const labels = getVisibleMainMenuItems(session, { selectedOrganizationKind: 'Phaeno', selectedMembership: session.memberships[0] }).map(item => item.label)
+    expect(labels).toContain('CRM')
+    expect(labels).not.toContain('Data provisioning')
+  })
   it('shows provisioning only in the Phaeno context', () => {
     const session = createSession('Phaeno', {
       canViewDatasetConfiguration: true,
@@ -92,7 +100,7 @@ describe('order navigation permissions', () => {
     expect(labels).toContain('Order ops')
     expect(labels).toContain('Lab ops')
     expect(labels).toContain('Order configuration')
-    expect(labels).toContain('File management')
+    expect(labels).toContain('File retention')
     expect(labels).not.toContain('Lab services')
     expect(labels).not.toContain('Reagent orders')
   })
@@ -174,12 +182,12 @@ describe('navigation placement', () => {
       getVisibleMainMenuItems(session, context, 'administration').map(
         (item) => item.label,
       ),
-    ).toEqual(['Order configuration', 'File management'])
+    ).toEqual(['Order configuration', 'File retention'])
     expect(
       getVisibleMainMenuItems(session, context, 'resources').map(
         (item) => item.label,
       ),
-    ).toEqual(['Data provisioning', 'Project', 'Query demo'])
+    ).toEqual(['Data provisioning'])
   })
 })
 
@@ -226,6 +234,8 @@ function createSession(
       isAvailable: true,
     },
     capabilities: {
+      canAccessCrm: true,
+      canAdministerCrm: true,
       canInviteUsers: true,
       canManageMembers: true,
       canChangeMemberRoles: true,

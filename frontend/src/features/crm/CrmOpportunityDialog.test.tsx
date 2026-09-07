@@ -3,11 +3,11 @@ import { render, screen } from "@testing-library/react";
 import { describe, expect, it, vi } from "vitest";
 
 import type { CrmPipeline } from "#/api/crm";
-import { listPhaenoUsers } from "#/api/organization-management";
+import { listCrmOwners } from "#/api/crm";
 import { CrmOpportunityDialog } from "./CrmOpportunityDialog";
 
-vi.mock("#/api/organization-management", () => ({
-  listPhaenoUsers: vi.fn(),
+vi.mock("#/api/crm", async importOriginal => ({ ...await importOriginal<typeof import("#/api/crm")>(),
+  listCrmOwners: vi.fn(),
 }));
 
 const pipeline: CrmPipeline = {
@@ -22,7 +22,7 @@ const pipeline: CrmPipeline = {
 
 describe("CRM Opportunity dialog", () => {
   it("uses the product domain and keeps the Owner control within the modal", () => {
-    vi.mocked(listPhaenoUsers).mockResolvedValue([]);
+    vi.mocked(listCrmOwners).mockResolvedValue([]);
     const client = new QueryClient({
       defaultOptions: { queries: { retry: false } },
     });

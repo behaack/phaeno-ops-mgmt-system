@@ -35,16 +35,18 @@ export function CrmOpportunitiesPage() {
   const [draftSearch, setDraftSearch, search, setSearch] = useCrmSearch();
   const [pipelineId, setPipelineId] = useCrmState<string>("pipelineId", "");
   const [stageId, setStageId] = useCrmState<string>("stageId", "");
+  const [stale, setStale] = useCrmState<boolean>('stale', false);
   const opportunities = useQuery({
-    queryKey: ["crm-opportunities", search, pipelineId, stageId, page],
+    queryKey: ["crm-opportunities", search, pipelineId, stageId, stale, page],
     queryFn: () =>
       listCrmOpportunities({
         search,
         pipelineId: pipelineId || undefined,
         stageId: stageId || undefined,
+        staleOnly: stale,
         page, pageSize: 25,
       }),
-    enabled: Boolean(pipelineId),
+    enabled: Boolean(pipelineId) || stale,
   });
   const pipelines = useQuery({
     queryKey: ["crm-pipelines"],
@@ -55,13 +57,13 @@ export function CrmOpportunitiesPage() {
     queryFn: () => listCrmCompanies({ pageSize: 100 }),
   });
   useEffect(() => {
-    if (!pipelineId && pipelines.data?.length) {
+    if (!pipelineId && !stale && pipelines.data?.length) {
       setPipelineId(
         pipelines.data.find((value) => value.isDefault)?.id ??
           pipelines.data[0].id,
       );
     }
-  }, [pipelineId, pipelines.data, setPipelineId]);
+  }, [pipelineId, pipelines.data, setPipelineId, stale]);
   const create = useMutation({
     mutationFn: (input: CrmOpportunityInput) => createCrmOpportunity(input),
     onSuccess: async (value) => {
@@ -156,6 +158,7 @@ export function CrmOpportunitiesPage() {
                 }}
                 className="h-9 rounded-md border bg-background px-3 text-sm"
               >
+                {stale ? <option value="">All pipelines</option> : null}
                 {(pipelines.data ?? [])
                   .filter((value) => value.isActive)
                   .map((pipeline) => (
@@ -186,10 +189,12 @@ export function CrmOpportunitiesPage() {
             </Button>
           </form>
           <CrmClearFilters />
+          <label className="flex cursor-pointer items-center gap-2 text-sm"><input type="checkbox" checked={stale} onChange={event => setStale(event.target.checked)} />Open opportunities unchanged for 30 days</label>
           <CrmSavedViewBar
             recordType="Opportunity"
-            currentFilter={{ search, pipelineId, stageId, board }}
+            currentFilter={{ search, pipelineId, stageId, board, stale }}
             onApply={(filter) => {
+              setStale(filter.stale === true);
               const nextSearch =
                 typeof filter.search === "string" ? filter.search : "";
               setDraftSearch(nextSearch);

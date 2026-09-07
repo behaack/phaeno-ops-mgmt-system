@@ -1,3 +1,5 @@
+const permissions = vi.hoisted(() => ({ canAccess: true, canAdminister: true }))
+vi.mock('./use-crm-permissions', () => ({ useCrmPermissions: () => permissions }))
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { act, fireEvent, render, screen, waitFor, within } from '@testing-library/react'
 import type { ReactNode } from 'react'
@@ -18,6 +20,7 @@ const department = { id: 'department-1', name: 'Research', isDefault: true, isAc
 describe('Company People and Sales recovery', () => {
   beforeEach(() => {
     vi.resetAllMocks()
+    permissions.canAdminister = true
     api.listCompanyContacts.mockResolvedValue([])
     api.listCrmCompanyPeople.mockResolvedValue([])
     api.listCrmOpportunities.mockResolvedValue({ items: [] })
@@ -25,6 +28,17 @@ describe('Company People and Sales recovery', () => {
     api.createInvitation.mockResolvedValue({ id: "invitation-1" })
   })
 
+  it('shows Commercial staff Contact relationships without querying Portal access or invitations', async () => {
+    permissions.canAdminister = false
+    api.listCompanyContacts.mockResolvedValue([{ id: 'association-1', contactId: 'contact-1', contactName: 'Avery Scientist', jobTitle: 'Scientist', relationshipRole: null, isPrimaryCompany: true, isActive: true }])
+    mount('organization-1')
+    expect(await screen.findByRole('link', { name: 'Avery Scientist' })).toBeTruthy()
+    expect(screen.getByRole('button', { name: 'Manage relationship' })).toBeTruthy()
+    expect(screen.getByRole('button', { name: 'New person' })).toBeTruthy()
+    expect(api.listCrmCompanyPeople).not.toHaveBeenCalled()
+    expect(api.listDepartments).not.toHaveBeenCalled()
+    expect(screen.queryByRole('button', { name: 'Invite to Portal' })).toBeNull()
+  })
   it('invites the selected Company Contact as its first Organization administrator', async () => {
     api.listCrmCompanyPeople.mockResolvedValue([person])
     mount('organization-1')

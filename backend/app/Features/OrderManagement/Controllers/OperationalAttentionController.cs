@@ -162,7 +162,7 @@ public sealed class OperationalAttentionController(
             "Review matching suggestions and explicitly allocate or leave the cash unapplied.")));
 
         var differences = await dbContext.ReconciliationBatches.AsNoTracking().Where(item =>
-            item.Difference != 0 && item.Status != ReconciliationBatchStatus.Approved)
+            item.Difference != 0 && item.Status != ReconciliationBatchStatus.Approved && item.Status != ReconciliationBatchStatus.Cancelled)
             .Select(item => new { item.Id, item.BatchNumber, item.Difference }).ToListAsync(cancellationToken);
         candidates.AddRange(differences.Select(item => new AttentionCandidate(
             OperationalAttentionCategory.ReconciliationDifference, null, "ReconciliationBatch", item.Id, 0,
