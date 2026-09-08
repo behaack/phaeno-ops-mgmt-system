@@ -57,7 +57,7 @@ public sealed class OperationalReadinessService(PSeqOperationsDbContext dbContex
             && dbContext.SampleTypeDefinitions.Any(sample => sample.Id == rule.SampleTypeDefinitionId && sample.IsActive
                 && sample.EffectiveFrom <= now && (!sample.EffectiveTo.HasValue || sample.EffectiveTo > now)), cancellationToken);
         var evaluation = OperationalReadinessPolicy.Evaluate(new OperationalReadinessInput(
-            organization is { IsActive: true, Kind: OrganizationKind.Customer },
+            organization is { IsActive: true, Kind: OrganizationKind.Customer or OrganizationKind.Partner },
             organization.IsOperationalReadinessBlocked,
             organization.OperationalReadinessBlockReason,
             hasAdministrator,

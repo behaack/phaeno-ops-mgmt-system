@@ -1,5 +1,11 @@
 # Playwright E2E Test Plan
 
+## Configured Lab and Partner Kit journeys — 2026-09-08
+
+The permanent isolated bundle fixture exercises Customer and Partner standard final-price review/placement/sample handoff, purchased Kit case preparation with interrupted-upload recovery and same-case resubmission, offering version configuration, and staff timing/deadline dialogs. Five journeys passed on desktop and mobile (10 cases), including keyboard-accessible controls, Axe checks, no horizontal overflow, no page errors and rejection of unexpected API requests. This is populated browser evidence using intercepted synthetic responses, not Clerk sign-in, production transactions, scientific-provider receipt or physical Lab acceptance. The owning [completion plan](PORTAL-OPERATIONAL-COMPLETION-2026-09-08.md) records separate persistence and release gates.
+
+The illustrated Word guide contains 32 pages, 17 screenshots and three tables. All pages were visually reviewed after rendering. Six new screenshots cover offering configuration, final-price commitment, timing changes, purchased cases and included input preparation; narrower recaptures preserve print readability. Synthetic images are labeled. This verifies document presentation and navigation, not production workflow acceptance.
+
 ## Portal completion browser and document checkpoint — 2026-09-07
 
 A temporary local fixture used the actual Trial detail/scope components with synthetic API responses and rejected all unrelated requests. Desktop and narrow-layout browser review confirmed partial Save draft, shared last-editor/time, Resume draft with retained values, busy-state controls, and preservation of approval-requested status without creating a proposed approval scope. Empty numeric input remains empty instead of becoming zero. No browser console errors were observed. No production API/business request was made.

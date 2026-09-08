@@ -31,12 +31,13 @@ test('shows Partner reagent and data-assembly work in mock mode', async ({ page 
   await selectOrganization(page, 'genome-partner')
 
   await page.goto('/reagent-orders')
-  await expect(page.getByRole('heading', { name: 'Reagent orders' })).toBeVisible()
-  await expect(page.getByRole('link', { name: 'Create reagent order' })).toBeVisible()
+  await expect(page.getByRole('heading', { name: 'PSeq Kit orders' })).toBeVisible()
+  await expect(page.getByRole('link', { name: 'Create PSeq Kit order' })).toBeVisible()
 
   await page.goto('/data-assembly')
-  await expect(page.getByRole('heading', { name: 'Data assembly' })).toBeVisible()
-  await expect(page.getByRole('link', { name: 'Request data assembly' })).toBeVisible()
+  await expect(page.getByRole('heading', { name: 'Assembly cases' })).toBeVisible()
+  await expect(page.getByRole('link', { name: 'Request data assembly' })).toHaveCount(0)
+  await expect(page.getByRole('link', { name: 'Open PSeq Kit orders' })).toBeVisible()
 })
 
 test('shows Phaeno operations and configuration workspaces in mock mode', async ({ page }) => {

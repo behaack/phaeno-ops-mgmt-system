@@ -1,6 +1,7 @@
 import axios from "axios";
 
 import { api } from "./client";
+import type { KitAssemblyCase, KitUnit, LabServiceCommercialSnapshot, LabServiceOffering, LabServiceTiming } from './order-bundles';
 
 type ApiEnvelope<T> = {
   success: boolean;
@@ -231,6 +232,10 @@ export type LabRequestRevision = {
 };
 
 export type LabServiceOrder = {
+  entryMode?: 'ManualQuote' | 'ConfiguredDirect' | 'SalesAssisted';
+  standardCommercialSnapshot?: LabServiceCommercialSnapshot | null;
+  canPlaceStandardOrder?: boolean;
+  timing?: LabServiceTiming | null;
   id: string;
   organizationId: string;
   orderNumber: string;
@@ -295,6 +300,9 @@ export type LabServiceOrder = {
 };
 
 export type ReagentOrderLine = {
+  includedOfferingVersion?: number | null;
+  includedAssemblyProfileId?: string | null;
+  includedAssemblyProfileVersion?: number | null;
   id: string;
   offeringId: string;
   qboCatalogItemId: string;
@@ -345,6 +353,10 @@ export type ReagentAdjustment = {
 };
 
 export type ReagentOrder = {
+  isKitBundle?: boolean;
+  kitUnits?: KitUnit[];
+  assemblyCases?: KitAssemblyCase[];
+  operationalSummary?: string;
   id: string;
   organizationId: string;
   orderNumber: string;
@@ -424,6 +436,9 @@ export type AnalysisDefinition = {
 };
 
 export type ReagentOffering = {
+  includedAssemblyProfileId?: string | null;
+  includedAssemblyProfileName?: string | null;
+  includedAssemblyProfileVersion?: number | null;
   id: string;
   partnerOrganizationId: string;
   qboCatalogItemId: string;
@@ -459,6 +474,11 @@ export type AssemblyOutputRelease = {
 };
 
 export type DataAssemblyRequest = {
+  kitAssemblyCaseId?: string | null;
+  kitOrderId?: string | null;
+  kitOrderNumber?: string | null;
+  kitCaseNumber?: string | null;
+  isIncludedAssembly?: boolean;
   id: string;
   organizationId: string;
   requestNumber: string;
@@ -571,6 +591,7 @@ export type ManualJournalEntryRow = {
 };
 
 export type OrderConfiguration = {
+  labServiceOfferings?: LabServiceOffering[];
   system: { id: string; quoteValidityDays: number; sampleSubmissionInstructions: string; shippingConfigurationJson: string; sampleConfigurationJson: string; resultDestinationConfigurationJson: string; version: number }
   catalogItems: Array<{ id: string; externalItemId: string; name: string; description: string; salesUnit: string; basePrice: number; currency: string; isActive: boolean; isPSeqLabService: boolean; lastSyncedAt: string; version: number }>
   analyses: AnalysisDefinition[]
@@ -1297,6 +1318,7 @@ export async function saveAnalysisDefinition(
 export async function saveReagentOffering(
   id: string | null,
   input: {
+    includedAssemblyProfileId?: string | null;
     partnerOrganizationId: string;
     qboCatalogItemId: string;
     negotiatedUnitPrice: number;

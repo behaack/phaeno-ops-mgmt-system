@@ -139,6 +139,7 @@ public sealed partial class LabOperationsController
         var specimen = await RequireSpecimenAsync(work.Id, specimenId, cancellationToken);
         EnsureVersion(specimen.Version, request.Version);
         Execute(() => specimen.RecordIntakeDisposition(disposition, request.ReasonCode));
+        work.RefreshAcceptedSpecimenTargets();
         dbContext.LabWorkEvents.Add(new LabWorkEvent(work.Id, specimen.Id, "SpecimenIntakeDispositionRecorded",
             DateTime.UtcNow, actor.User.Id, JsonSerializer.Serialize(new { disposition, request.ReasonCode }, JsonOptions)));
         var remaining = await dbContext.LabSpecimens.AnyAsync(item => item.LabWorkOrderId == work.Id
@@ -149,6 +150,11 @@ public sealed partial class LabOperationsController
         {
             work.RecordMilestone(LabWorkOrderStatus.Received);
             await EmitProjectionAsync(work, actor.User.Id, "IntakeCompleted", cancellationToken);
+        }
+        else if (disposition == LabSpecimenIntakeDisposition.Accepted && work.MaximumTurnaroundDays.HasValue)
+        {
+            work.AdvanceProjectionVersion();
+            await EmitProjectionAsync(work, actor.User.Id, "SpecimenAccepted", cancellationToken);
         }
         await dbContext.SaveChangesAsync(cancellationToken);
         return await WorkOrder(work.Id, cancellationToken);

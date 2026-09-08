@@ -1,5 +1,14 @@
 # Order Management Plan
 
+## Authorized bundle implementation — September 7, 2026
+
+The Product Owner has requested completion of the configured Lab Service and
+Partner Kit bundles. The exact transition, pricing, persistence, API/UI and
+compatibility boundaries are recorded in
+[Portal operational completion](PORTAL-OPERATIONAL-COMPLETION-2026-09-08.md).
+This executes the approved rules below and preserves historical manual/standalone
+records. New production scientific offerings are not inferred from test fixtures.
+
 ## Current feature status review - 2026-09-07
 
 Use [Portal feature readiness](../feature-readiness.md) for the current distinction between implemented behavior, deployment and operational acceptance. Dated verification sections below retain their historical evidence. The configured direct Lab Service and Kit-linked Assembly direction remains roadmap work; the current application still uses Customer quotes and independent historical Partner Assembly workflows. The completed September production releases do not establish populated scientific or Finance acceptance.

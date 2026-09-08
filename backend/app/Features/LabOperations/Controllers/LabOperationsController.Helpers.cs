@@ -4,6 +4,7 @@ using System.Text.Json;
 using Microsoft.EntityFrameworkCore;
 using PSeq.Operations.Commercial.LabOperations.Application;
 using PSeq.Operations.Commercial.LabOperations.Domain;
+using PSeq.Operations.Commercial.OrderManagement.Domain;
 using PSeq.Operations.Laboratory.Domain;
 using PhaenoPortal.App.Features.LabOperations.DTOs;
 using PhaenoPortal.App.Features.LabOperations.Services;
@@ -13,7 +14,7 @@ using PhaenoPortal.App.Features.OrderManagement.Services;
 public sealed partial class LabOperationsController
 {
     private async Task<LabWorkOrder> RequireWorkOrderAsync(Guid workOrderId, CancellationToken cancellationToken) =>
-        await dbContext.LabWorkOrders.SingleOrDefaultAsync(item => item.Id == workOrderId, cancellationToken) ?? throw Missing();
+        await dbContext.LabWorkOrders.Include(value => value.Specimens).SingleOrDefaultAsync(item => item.Id == workOrderId, cancellationToken) ?? throw Missing();
 
     private async Task<LabSpecimen> RequireSpecimenAsync(Guid workOrderId, Guid specimenId, CancellationToken cancellationToken) =>
         await dbContext.LabSpecimens.SingleOrDefaultAsync(item => item.Id == specimenId
@@ -124,8 +125,7 @@ public sealed partial class LabOperationsController
         var scheduleHealth = work.Status is LabWorkOrderStatus.ReadyForRelease or LabWorkOrderStatus.Cancelled
             ? LabScheduleHealth.Complete
             : hasBlockingException ? LabScheduleHealth.Delayed
-            : work.Status == LabWorkOrderStatus.OnHold ? LabScheduleHealth.AtRisk
-            : LabScheduleHealth.OnTrack;
+            : Enum.Parse<LabScheduleHealth>(work.ScheduleHealth(DateTime.UtcNow));
         var customerSummary = customerActions.OrderBy(item => item.CreatedAt)
             .Select(item => item.CustomerSafeSummary).FirstOrDefault();
         var payload = JsonSerializer.Serialize(new
@@ -133,7 +133,7 @@ public sealed partial class LabOperationsController
             authorizationVersion = work.CurrentAuthorizationVersion,
             milestone = milestone.ToString(),
             scheduleHealth = scheduleHealth.ToString(),
-            currentExpectedCompletionAtUtc = expectedCompletionAtUtc,
+            currentExpectedCompletionAtUtc = expectedCompletionAtUtc ?? work.ExpectedCompletionAtUtc,
             activeCustomerActionCount = customerActions.Count,
             customerSafeSummary = customerSummary,
             permittedQcProjectionJson,
@@ -145,6 +145,13 @@ public sealed partial class LabOperationsController
             eventType, payload, DateTime.UtcNow));
         dbContext.LabWorkEvents.Add(new LabWorkEvent(work.Id, null, eventType,
             DateTime.UtcNow, actorUserId, payload));
+        if (work.AuthorizationSource == LabAuthorizationSource.CommercialOrder)
+        {
+            var summary = await dbContext.Set<CommercialSaleSummary>().SingleOrDefaultAsync(value =>
+                value.WorkflowType == OrderWorkflowTypes.LabService && value.OrderId == work.AuthorizationSourceId
+                && value.OrganizationId == work.SubmittingOrganizationId, cancellationToken);
+            summary?.SetSchedule(expectedCompletionAtUtc ?? work.ExpectedCompletionAtUtc, scheduleHealth.ToString(), DateTime.UtcNow);
+        }
     }
 
     private async Task<List<LabProtocolDto>> ReadProtocolsAsync(CancellationToken cancellationToken)

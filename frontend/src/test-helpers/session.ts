@@ -16,6 +16,7 @@ export const noSessionCapabilities: SessionCapabilities = {
   canProvisionOrganizationData: false,
   canViewOrganizationDatasets: false,
   canViewLabServiceOrders: false,
+    canViewLabServiceInvoices: false,
   canCreateLabServiceRequests: false,
   canSubmitLabServiceRequests: false,
   canAcceptLabServiceQuotes: false,

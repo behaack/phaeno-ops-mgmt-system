@@ -26,7 +26,7 @@ describe('documentation registry', () => {
             ? [10, 20, 24, 25, 30, 40, 50, 60]
             : audience === 'customer'
               ? [10, 20, 30, 35, 40, 45, 50, 60]
-              : [10, 20, 30, 40, 45, 50, 60]),
+              : [10, 20, 25, 30, 40, 45, 50, 60]),
       ])
       expect(entries.every((entry) => entry.audience === audience)).toBe(true)
     }
@@ -99,7 +99,11 @@ describe('documentation registry', () => {
     expect(
       getDocumentationEntry('phaeno', 'data-organization-grants')?.parentSlug,
     ).toBe('data-provisioning-and-accounts')
-    expect(getDocumentationEntry('partner', 'lab-services')).toBeUndefined()
+    expect(getDocumentationEntry('partner', 'lab-services')?.audience).toBe('partner')
+    expect(getDocumentationEntry('customer', 'lab-services')?.audience).toBe('customer')
+    expect(getDocumentationEntry('partner', 'lab-services')).not.toBe(
+      getDocumentationEntry('customer', 'lab-services'),
+    )
     expect(getDocumentationEntry('prospect', 'lab-services')).toBeUndefined()
   })
 })

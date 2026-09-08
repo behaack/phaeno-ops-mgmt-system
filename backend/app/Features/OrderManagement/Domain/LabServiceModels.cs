@@ -3,6 +3,7 @@ namespace PhaenoPortal.App.Features.OrderManagement.Domain;
 using PSeq.Operations.Commercial.Common.Persistence;
 using PSeq.Operations.Commercial.OrderManagement.Domain;
 using PSeq.Operations.Commercial.Relationships.Domain;
+using System.Text.Json;
 
 public sealed class LabServiceOrder : IAudit, IConcurrency
 {
@@ -22,6 +23,9 @@ public sealed class LabServiceOrder : IAudit, IConcurrency
     public string SafetyDeclaration { get; private set; } = null!;
     public string SubmissionInstructionsSnapshot { get; private set; } = string.Empty;
     public string? PlacementSnapshotJson { get; private set; }
+    public LabServiceEntryMode EntryMode { get; private set; } = LabServiceEntryMode.ManualQuote;
+    public Guid? LabServiceOfferingId { get; private set; }
+    public string? ConfiguredCommercialSnapshotJson { get; private set; }
     public decimal? ProposedUnitPrice { get; private set; }
     public string? PriceProposalNote { get; private set; }
     public Guid? PriceProposedByUserId { get; private set; }
@@ -73,6 +77,7 @@ public sealed class LabServiceOrder : IAudit, IConcurrency
         OrganizationId = organizationId;
         DepartmentId = departmentId;
         SourceRequestId = sourceRequestId;
+        EntryMode = sourceRequestId.HasValue ? LabServiceEntryMode.SalesAssisted : LabServiceEntryMode.ManualQuote;
         OrderNumber = OrderText.Required(orderNumber, nameof(orderNumber), 50);
         CustomerReference = OrderText.Required(customerReference, "Job name", 255);
         NormalizedJobName = NormalizeJobName(CustomerReference);
@@ -174,6 +179,29 @@ public sealed class LabServiceOrder : IAudit, IConcurrency
     }
 
     public void BeginQuotePreparation() => Transition(LabServiceOrderStatus.SubmittedForQuote, LabServiceOrderStatus.QuoteInPreparation);
+
+    public ConfiguredLabServiceSnapshot? ReadConfiguredSnapshot() => ConfiguredCommercialSnapshotJson is null
+        ? null : JsonSerializer.Deserialize<ConfiguredLabServiceSnapshot>(ConfiguredCommercialSnapshotJson);
+
+    public void PlaceStandard(Guid quoteId, ConfiguredLabServiceSnapshot snapshot, string placementSnapshotJson, DateTime utcNow)
+    {
+        EnsureStatus(LabServiceOrderStatus.DraftRequest, LabServiceOrderStatus.ChangesRequested);
+        if (SourceRequestId.HasValue || ProposedUnitPrice.HasValue)
+            throw new InvalidOperationException("Sales-assisted work and negotiated prices require the manual quote path.");
+        if (Samples.Count != 0 || SourceGroups.Count == 0 || SourceGroups.Sum(group => group.SpecimenCount) != RequestedSpecimenCount
+            || snapshot.SpecimenCount != RequestedSpecimenCount || snapshot.OfferingId == Guid.Empty
+            || snapshot.CommittedAtUtc != utcNow || utcNow.Kind != DateTimeKind.Utc)
+            throw new InvalidOperationException("Review a complete Job profile and current standard offering before placement.");
+        var quote = Quotes.SingleOrDefault(value => value.Id == quoteId);
+        if (quote?.Status != QuoteStatus.Accepted || quote.Total != snapshot.Total || quote.Currency != snapshot.Currency)
+            throw new InvalidOperationException("An accepted matching standard commercial snapshot is required.");
+        EntryMode = LabServiceEntryMode.ConfiguredDirect;
+        LabServiceOfferingId = snapshot.OfferingId;
+        ConfiguredCommercialSnapshotJson = JsonSerializer.Serialize(snapshot);
+        CurrentQuoteId = quoteId; AcceptedQuoteId = quoteId; PlacedAt = utcNow;
+        PlacementSnapshotJson = OrderText.Json(placementSnapshotJson);
+        SetStatus(LabServiceOrderStatus.PlacedAwaitingSamples, null, null);
+    }
 
     public void RequestChanges(string tenantSafeReason, string? internalNote)
     {

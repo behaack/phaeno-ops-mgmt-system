@@ -948,6 +948,8 @@ public sealed class PlatformLabServiceOrdersController(
                     item.Opportunity == null ? null : item.Opportunity.Name))
                 .SingleOrDefaultAsync(cancellationToken);
         }
+        var timing = await new LabServiceTimingService(dbContext).ReadAsync(order.Id, order.OrganizationId, true,
+            await new LabServiceTimingService(dbContext).CanOverrideAsync(HttpContext, orderToCashOptions.Value.DualControlEnforced, cancellationToken), cancellationToken);
         return new LabServiceOrderDto(order.Id, order.OrganizationId, order.OrderNumber, order.CustomerReference, order.Description,
             order.HasMixedBiologicalSources, order.SharedBiologicalSource,
             order.StorageRequirements, order.SafetyDeclaration, order.SubmissionInstructionsSnapshot,
@@ -959,8 +961,8 @@ public sealed class PlatformLabServiceOrdersController(
             RequestRevisions: order.Revisions.OrderByDescending(item => item.Revision).Select(item => new LabRequestRevisionDto(item.Id,
                 item.Revision, item.PreviousRevisionId, item.SnapshotJson, item.CorrectionReason, item.SubmittedByUserId, item.SubmittedAt)).ToList(),
             LabMilestone: projection?.Milestone,
-            LabScheduleHealth: projection?.ScheduleHealth,
-            LabExpectedCompletionAtUtc: projection?.ExpectedCompletionAtUtc,
+            LabScheduleHealth: timing?.ScheduleHealth ?? projection?.ScheduleHealth,
+            LabExpectedCompletionAtUtc: timing?.ExpectedCompletionAtUtc ?? projection?.ExpectedCompletionAtUtc,
             LabCustomerActionCount: projection?.ActiveCustomerActionCount ?? 0,
             LabCustomerActionSummary: projection?.CustomerSafeSummary,
             LabPermittedQcProjectionJson: projection?.PermittedQcProjectionJson,
@@ -976,7 +978,10 @@ public sealed class PlatformLabServiceOrdersController(
             ProposedCurrency: order.ProposedUnitPrice.HasValue ? "USD" : null,
             PriceProposalNote: order.PriceProposalNote,
             PriceProposedByUserId: order.PriceProposedByUserId,
-            PriceProposedAt: order.PriceProposedAt);
+            PriceProposedAt: order.PriceProposedAt,
+            EntryMode: order.EntryMode.ToString(),
+            StandardCommercialSnapshot: LabServiceTimingService.CommercialSnapshot(order.ReadConfiguredSnapshot()),
+            Timing: timing);
     }
 
     private static IReadOnlyList<LabServiceSourceGroupWriteRequest> ValidatePricingProfile(

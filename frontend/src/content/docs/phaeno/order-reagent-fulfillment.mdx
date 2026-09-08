@@ -1,8 +1,12 @@
-# Partner reagent fulfillment
+# Partner PSeq Kit fulfillment
 
 Partner reagent orders use the offering and negotiated price available to the active Partner at placement. The placed order preserves an immutable Commercial snapshot even if catalog or pricing configuration changes later.
 
 Find the Commercial order in **Order operations** > **PSeq kits**. Perform the Commercial review and order acceptance there. After acceptance, perform physical preparation, substitutions, shipping, and fulfillment in **Lab operations** > **PSeq kits**. The Lab workflow consumes the Commercial snapshot; it does not rewrite the ordered items or negotiated price.
+
+## Included bundle scope
+
+Every new whole Kit unit includes one assembly case. **PSeq kits** configuration binds the negotiated offering to an active, validated Assembly profile. The draft retains the reviewed offering and profile versions; changed price or scope requires another review before placement. Only a Partner organization administrator commits the new Kit purchase. Department administrators may prepare a draft.
 
 ## Review a placed order
 
@@ -35,3 +39,11 @@ Reagent fulfillment creates a separate journal-entry source record for each ship
 ## Move between Commercial and Lab work
 
 Use the Commercial order to accept or reject the kit order and decide Partner-facing changes or cancellation. Choose **Open Lab work** to prepare, substitute, ship, and complete the kit. The same order identity and history remain visible on both sides; fulfillment actions appear only in Lab operations.
+
+## Manage the included cases
+
+The Commercial order's **Included assembly cases** panel shows each purchased unit, current case, frozen profile, shipment facts, submission deadline and event history. After shipment, the Partner prepares inputs from that exact case. Input corrections preserve the case and request; intake validation and processing continue in the existing Lab Assembly workspace without another quote or sale.
+
+Unused cases expire 90 days after labeled kit expiration, or 12 months after shipment if no expiration was recorded. An authorized operator may **Extend deadline**, **Replace kit**, or **Cancel unused case** only when the case permits the action. Review the current case and deadline, and record a reason suitable for the Partner history. Replacement requires actual lot, ship date, carrier and tracking facts; it transfers the existing case to the replacement kit without another purchase, billing source or entitlement.
+
+The operational summary keeps fulfillment and assembly progress separate. A shipped Kit may still have pending assembly. Completion requires the included cases to finish or close; an unused expired or cancelled case does not automatically create a refund. Finance history remains separate.

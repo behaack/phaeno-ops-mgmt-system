@@ -16,6 +16,10 @@ public sealed record LabServiceOrderingEligibilitySnapshot(
 
 public static class LabServiceOrderingEligibility
 {
+    public static async Task<bool> HasPartnerAccessAsync(PSeqOperationsDbContext db, Guid organizationId, Guid departmentId, CancellationToken token)
+        => (await ReadAsync(db, organizationId, DateTime.UtcNow, token, departmentId)).OrderingAuthorized
+            || await db.LabServiceOrders.AsNoTracking().AnyAsync(value => value.OrganizationId == organizationId
+                && value.DepartmentId == departmentId && !value.IsDiscarded, token);
     public static async Task<LabServiceOrderingEligibilitySnapshot> ReadAsync(
         PSeqOperationsDbContext dbContext,
         Guid organizationId,

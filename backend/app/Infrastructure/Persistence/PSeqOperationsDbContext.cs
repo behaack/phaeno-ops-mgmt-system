@@ -164,6 +164,12 @@ public sealed class PSeqOperationsDbContext(
     public DbSet<OperationalAttentionItem> OperationalAttentionItems { get; set; }
     public DbSet<PartnerShippingAddress> PartnerShippingAddresses { get; set; }
     public DbSet<PartnerReagentOrder> PartnerReagentOrders { get; set; }
+    public DbSet<PartnerKitUnit> PartnerKitUnits { get; set; }
+    public DbSet<KitAssemblyCase> KitAssemblyCases { get; set; }
+    public DbSet<KitCaseEvent> KitCaseEvents { get; set; }
+    public DbSet<LabServiceOffering> LabServiceOfferings { get; set; }
+    public DbSet<CommercialSaleSummary> CommercialSaleSummaries { get; set; }
+    public DbSet<LabWorkTimingChange> LabWorkTimingChanges { get; set; }
     public DbSet<PartnerReagentOrderLine> PartnerReagentOrderLines { get; set; }
     public DbSet<ReagentShipment> ReagentShipments { get; set; }
     public DbSet<ReagentShipmentLine> ReagentShipmentLines { get; set; }
@@ -518,6 +524,8 @@ public sealed class PSeqOperationsDbContext(
         DataProvisioningModelConfiguration.Configure(modelBuilder);
         FileManagementModelConfiguration.Configure(modelBuilder);
         OrderManagementModelConfiguration.Configure(modelBuilder, this.persistenceOptions.CommercialSchema);
+        KitBundleModelConfiguration.Configure(modelBuilder, this.persistenceOptions.CommercialSchema);
+        LabServiceBundleModelConfiguration.Configure(modelBuilder, this.persistenceOptions.CommercialSchema, this.persistenceOptions.LaboratorySchema);
         CommercialLabOperationsModelConfiguration.Configure(modelBuilder, this.persistenceOptions.CommercialSchema);
         CrmModelConfiguration.Configure(modelBuilder);
         TrialModelConfiguration.Configure(modelBuilder);

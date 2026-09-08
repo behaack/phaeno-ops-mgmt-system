@@ -72,9 +72,9 @@ export function ExternalDashboardContent({
   const isCustomer = kind === 'Customer'
   const isPartner = kind === 'Partner'
   const canViewData = Boolean(capabilities?.canViewOrganizationDatasets)
-  const canViewLab = isCustomer && Boolean(capabilities?.canViewLabServiceOrders)
+  const canViewLab = (isCustomer || isPartner) && Boolean(capabilities?.canViewLabServiceOrders)
   const canViewShipping =
-    (kind === 'Prospect' || isCustomer) &&
+    (kind === 'Prospect' || isCustomer || isPartner) &&
     Boolean(capabilities?.canViewSampleShipping)
   const canViewReagents =
     isPartner && Boolean(capabilities?.canViewReagentOrders)
@@ -181,14 +181,14 @@ export function ExternalDashboardContent({
     cards.push(
       <WorkflowCard
         key="reagent-orders"
-        title="Reagent orders"
+        title="PSeq Kit orders"
         description="Place Partner-eligible orders and track fulfillment."
         icon={Package}
         href="/reagent-orders"
-        actionLabel="Open reagent orders"
+        actionLabel="Open PSeq Kit orders"
         total={reagentOrders.data?.totalCount}
         totalLabel="orders"
-        summary={orderSummary(reagentOrders.data, 'No reagent orders yet.')}
+        summary={orderSummary(reagentOrders.data, 'No PSeq Kit orders yet.')}
         isLoading={reagentOrders.isLoading}
         error={Boolean(reagentOrders.error)}
         mock={!apiEnabled}
@@ -200,11 +200,11 @@ export function ExternalDashboardContent({
     cards.push(
       <WorkflowCard
         key="data-assembly"
-        title="Data assembly"
+        title="Assembly cases"
         description="Submit scientific inputs and retrieve released output packages."
         icon={Workflow}
         href="/data-assembly"
-        actionLabel="Open data assembly"
+        actionLabel="Open assembly cases"
         total={assemblyRequests.data?.totalCount}
         totalLabel="requests"
         summary={orderSummary(assemblyRequests.data, 'No assembly requests yet.')}

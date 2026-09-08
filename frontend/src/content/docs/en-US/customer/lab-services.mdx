@@ -1,6 +1,6 @@
 # Request laboratory services
 
-Customer organization administrators and department administrators use Lab services within the selected Department to describe and price a Job before doing the detailed work of entering its sample list.
+Use Lab services within the selected Department to describe and price a Job before entering its exact sample list. Organization and Department administrators may prepare a Job. Only an organization administrator may place a configured standard order; existing Department authority for manual quote workflows remains available.
 
 ## Review a Job initiated by Phaeno
 
@@ -8,7 +8,7 @@ Phaeno may initiate a Customer-owned Job when your organization has already disc
 
 Open the Job and review its committed sample count, biological-source composition, storage requirements, safety declaration, and notes. When Phaeno issues the quote and it becomes **Quote issued**, an organization or department administrator can review and accept it in **Quote and billing**. Phaeno cannot accept it for your organization. If the scope is incorrect, do not accept the quote; contact Phaeno so the Job can be returned for a corrected revision.
 
-Individual sample entry remains unavailable until your organization accepts the quote.
+For a manually quoted Job, individual sample entry remains unavailable until your organization accepts the quote.
 
 ## Create a draft
 
@@ -17,11 +17,21 @@ Individual sample entry remains unavailable until your organization accepts the 
 1. Open **Lab services** and select **Request lab service**.
 2. In **Job pricing details**, enter a unique **Job name** and each **Biological source** with its sample count. The Portal calculates the Job's total sample count from those source groups. Enter the **Storage requirements** and **Safety declaration** shared by every sample, and any optional **Job notes**. Do not enter a patient name or identifier.
 3. Select **Create job**. The portal assigns an immutable eight-character **Job number** using unambiguous uppercase letters and numbers.
-4. The new Job opens on its detail page. Individual sample entry remains unavailable until the price is issued and accepted.
+4. The new Job opens on its detail page. Review an available configured offering on the Job, or submit for manual pricing when that workflow applies. Individual sample entry becomes available after commercial commitment.
 
-Members can review work in their assigned Department. Organization administrators and department administrators can create, edit, submit, and commercially approve work in that Department. Department authority does not grant access to other Departments.
+Members can review work in their assigned Department. Organization and Department administrators may create, edit, submit and accept applicable manual quotes in that Department. New configured standard orders require an organization administrator. Department authority does not grant access to other Departments.
 
 If an older draft still contains sample rows from the former workflow, the Job identifies them as legacy rows. Remove each row before submitting for pricing; enter the current sample roster again only after accepting the price.
+
+## Place a configured standard order
+
+In **Standard PSeq Lab Service**, choose an available **Offering**. Review its allowed material types and biological sources, included scientific outputs, published turnaround range, specimen count, and unit price. The bundle includes laboratory processing and data assembly; it does not require a separate assembly purchase.
+
+Choose **Review standard order**. The review shows the current subtotal, approved tax, and final total. An organization administrator supplies a PO when required, confirms the scope and prohibited-data statement, and selects **Place standard order**. The offering, scope, price and approved tax are retained with the Job. Detailed samples are entered afterward.
+
+If a readiness or billing requirement is incomplete, the displayed blockers explain why placement is unavailable. Phaeno must resolve the relevant service, shipping, billing or tax setup. A standard order cannot be committed with an unknown final total. If the offering, scientific definitions, price or organization settings change while reviewing, select **Refresh terms and review again** and affirm the new terms before placing.
+
+For different sources, outputs, quantities or timing, an organization administrator can select **Request custom work**. Describe the requirement without PHI or sensitive files. The confirmation supplies a Sales reference. This request preserves the original Job and Department; it does not accept a price or place an additional order.
 
 ## Submit for review
 
@@ -41,9 +51,9 @@ If accepting, withdrawing, or requesting cancellation fails, review the message 
 
 ## Ship and track samples
 
-After accepting the quote, return to **Samples and shipping**. Use **Add sample**, **Edit sample**, and **Remove sample**, or **Download CSV template** and **Import sample list**. The CSV accepts exactly `customer_sample_id`, `biological_source`, and `tube_count`; it does not accept barcodes. Previewing a CSV does not change the Job. Confirming a valid preview atomically replaces the editable draft list.
+After placing the standard order or accepting the manual quote, return to **Samples and shipping**. Use **Add sample**, **Edit sample**, and **Remove sample**, or **Download CSV template** and **Import sample list**. The CSV accepts exactly `customer_sample_id`, `biological_source`, and `tube_count`; it does not accept barcodes. Previewing a CSV does not change the Job. Confirming a valid preview atomically replaces the editable draft list.
 
-Do not ship physical samples before the quote is accepted and the exact roster is finalized. An early or unmatched package is quarantined and escalated by Phaeno; it is not accessioned or attached to active Job work.
+Do not ship physical samples before the order is commercially committed and the exact roster is finalized. An early or unmatched package is quarantined and escalated by Phaeno; it is not accessioned or attached to active Job work.
 
 The final list must contain exactly the accepted number of unique non-PHI sample IDs, match every accepted source-group count, and give each sample a positive whole-number tube count. Select **Review and finalize list**, review every sample, and affirm the no-PHI confirmation before selecting **Finalize sample list**. Finalization authorizes the specimen-specific Lab work and lets Phaeno prepare the registered return kit.
 
@@ -54,6 +64,12 @@ The Portal tracks receipt, accessioning, processing, external sequencing, data p
 If Phaeno needs replacement material or clarification, the job shows a Customer-safe action and the current schedule health. Internal scientific investigation details are not shown.
 
 **Ready for release** means Phaeno's scientific review is complete and the final deliverable package is complete, checksummed, and malware-clean. It does not mean a file is downloadable until an authorized Result Release Manager publishes that sample. Invoice balance and credit status never gate PSeq result release.
+
+## Understand turnaround
+
+**Turnaround and progress** shows first receipt, scientific acceptance, the original target, current expected completion, and actual completion. The published turnaround starts at scientific acceptance, not the day the package first arrives. Receipt-to-acceptance elapsed time remains visible separately.
+
+Phaeno may update the expected completion with a recorded reason. The original target remains visible. A later expected date queues a notice; an earlier date updates the Portal. Read the customer-safe explanation and current dates on the Job rather than treating an earlier message as the current schedule.
 
 ## Cancel work
 

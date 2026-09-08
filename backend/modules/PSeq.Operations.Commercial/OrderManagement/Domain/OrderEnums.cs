@@ -29,7 +29,9 @@ public enum ReagentOrderStatus
     CancellationRequested,
     Fulfilled,
     Cancelled,
-    Rejected
+    Rejected,
+    KitFulfilledAssemblyPending,
+    Completed
 }
 
 public enum ReagentAdjustmentStatus

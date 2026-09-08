@@ -9,6 +9,8 @@ retain their normal approval boundaries.
 
 ## Status
 
+- The Product Owner's September 7 completion instruction authorizes the configured Lab/Partner Kit and first-party custom-work implementation. Current decisions, local migration and remaining activation/acceptance gates are tracked in [Portal operational completion](PORTAL-OPERATIONAL-COMPLETION-2026-09-08.md). Historical proposal wording below does not supersede that implementation evidence or imply production acceptance.
+
 - Product direction changed on 2026-08-26: develop POMS as a complete
   standalone application without a HubSpot runtime integration.
 - POMS must support its core Customer, Prospect, Partner, Trial Project,

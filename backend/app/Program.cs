@@ -136,6 +136,7 @@ builder.Services.AddHostedService<ReleasedDeliverableDownloadAttemptReconciler>(
 builder.Services.AddScoped<OrderRequestContext>();
 builder.Services.AddScoped<IPSeqResultPipelineAdapter, ConfiguredPSeqResultPipelineAdapter>();
 builder.Services.AddScoped<OrderIdempotencyService>();
+builder.Services.AddScoped<CustomWorkRequestService>();
 builder.Services.AddScoped<ManualCommercialReleaseService>();
 builder.Services.AddScoped<SampleShippingPacketService>();
 builder.Services.AddScoped<SampleShippingWorkflowReader>();
@@ -167,6 +168,9 @@ builder.Services.AddScoped<IOrderNotificationSender>(services =>
         ? services.GetRequiredService<MailgunOrderNotificationSender>()
         : services.GetRequiredService<LoggingOrderNotificationSender>());
 builder.Services.AddHostedService<OrderNotificationDispatcher>();
+builder.Services.AddHostedService<CommercialSaleSummaryWorker>();
+builder.Services.Configure<KitCaseLifecycleOptions>(builder.Configuration.GetSection("KitCaseLifecycle"));
+builder.Services.AddHostedService<KitCaseLifecycleWorker>();
 builder.Services.AddHostedService<ResultRetentionWorker>();
 builder.Services.AddHttpClient<MailgunDataProvisioningNoticeSender>();
 builder.Services.AddScoped<LoggingDataProvisioningNoticeSender>();

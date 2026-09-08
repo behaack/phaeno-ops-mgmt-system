@@ -23,9 +23,10 @@ import { ReagentConfigurationPanel } from './ReagentConfigurationPanel'
 import { CatalogConfigurationPanel } from './CatalogConfigurationPanel'
 import { SampleShippingConfigurationPanel } from './SampleShippingConfigurationPanel'
 import { SystemConfigurationPanel } from './SystemConfigurationPanel'
+import { LabServiceOfferingsPanel } from './LabServiceOfferingsPanel'
 
-export type ConfigurationSection = 'system' | 'catalog' | 'shipping' | 'analyses' | 'reagents' | 'assembly' | 'commercial'
-export function parseConfigurationSection(value: unknown): ConfigurationSection { return ['system', 'catalog', 'shipping', 'analyses', 'reagents', 'assembly', 'commercial'].includes(String(value)) ? value as ConfigurationSection : 'system' }
+export type ConfigurationSection = 'system' | 'catalog' | 'lab-service-offerings' | 'shipping' | 'analyses' | 'reagents' | 'assembly' | 'commercial'
+export function parseConfigurationSection(value: unknown): ConfigurationSection { return ['system', 'catalog', 'lab-service-offerings', 'shipping', 'analyses', 'reagents', 'assembly', 'commercial'].includes(String(value)) ? value as ConfigurationSection : 'system' }
 
 const configurationSections: ReadonlyArray<WorkspaceSidebarItem<ConfigurationSection>> = [
   {
@@ -35,6 +36,7 @@ const configurationSections: ReadonlyArray<WorkspaceSidebarItem<ConfigurationSec
     icon: Settings,
   },
   { value: 'catalog', label: 'Service catalog', description: 'Active offerings and sales units', icon: BookOpen },
+  { value: 'lab-service-offerings', label: 'Lab Service offerings', description: 'Included scope and published turnaround', icon: ChartSpline },
   { value: 'shipping', label: 'Sample shipping', description: 'Destinations, sample types and instructions', icon: Truck },
   {
     value: 'analyses',
@@ -51,7 +53,7 @@ const configurationSections: ReadonlyArray<WorkspaceSidebarItem<ConfigurationSec
   {
     value: 'assembly',
     label: 'Assembly',
-    description: 'Versioned profiles, outputs, and pricing',
+    description: 'Included input profiles and outputs',
     icon: Workflow,
   },
   {
@@ -114,6 +116,7 @@ export function OrderConfigurationPage() {
           {configuration.isLoading ? <p role="status">Loading order configuration…</p> : null}
           {section === 'commercial' ? <div className="mb-5 space-y-3 rounded-lg border p-4"><p className="text-sm text-muted-foreground">Historical accounting mappings and connector recovery. The service catalog is maintained in Service catalog.</p><Button variant="outline" disabled={!apiEnabled || sync.isPending} onClick={() => sync.mutate()}><RefreshCw data-icon="inline-start" />{sync.isPending ? 'Queueing…' : 'Queue QuickBooks catalog recovery'}</Button>{sync.error ? <p role="alert">{getOrderErrorMessage(sync.error, 'Connector recovery is unavailable.')}</p> : null}{sync.isSuccess ? <p role="status">Catalog recovery queued.</p> : null}</div> : null}
           {configuration.data && section === 'catalog' ? <CatalogConfigurationPanel configuration={configuration.data} /> : null}
+          {configuration.data && section === 'lab-service-offerings' ? <LabServiceOfferingsPanel configuration={configuration.data} apiEnabled={apiEnabled} /> : null}
           {configuration.data && section === 'shipping' ? <SampleShippingConfigurationPanel apiEnabled={apiEnabled} /> : null}
           {configuration.data && section === 'system' ? <SystemConfigurationPanel configuration={configuration.data} /> : null}
           {configuration.data && section === 'analyses' ? <AnalysisConfigurationPanel configuration={configuration.data} /> : null}

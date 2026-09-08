@@ -1,10 +1,10 @@
 # Order operations
 
-Order operations is the Commercial workspace for Customer laboratory orders, Partner PSeq kit orders, and Partner data assembly requests. Use it for each order's pricing, commercial decisions, follow-up, Finance, and result publication. Reusable defaults and scientific offerings are maintained in **Order configuration**.
+Order operations is the Commercial workspace for Customer and Partner laboratory orders, Partner PSeq Kit orders, and Partner data assembly requests. Use it for each order's pricing, commercial decisions, follow-up, Finance, and result publication. Reusable defaults and scientific offerings are maintained in **Order configuration**.
 
 When starting a Customer Job, select its Company and Department. A single available Department is selected automatically. The Department owns the Job and determines Customer access and the applicable service rule; a Blocked Department rule cannot be bypassed by a Ready organization default.
 
-Use the far-left sidebar beneath the toolbar to move among **Order intake**, **Trial projects**, **PSeq kits**, **Assembly**, **Attention**, **Result release**, **Finance**, and **Legacy integrations**, subject to your explicit roles. **Order intake** is the single entry point for paid Customer orders, sales handoffs, commercial review, pricing, and quotes. **Trial projects** handles no-charge evaluations.
+Use the far-left sidebar beneath the toolbar to move among **Order intake**, **Trial projects**, **PSeq kits**, **Assembly**, **Attention**, **Result release**, **Finance**, and **Legacy integrations**, subject to your explicit roles. **Order intake** owns staff-assisted Customer order creation, Sales handoffs, commercial review, pricing and manual quotes. Eligible organizations can place a configured standard Lab Service bundle from their own Job; that accepted commitment is shown on the same order. **Trial projects** handles no-charge evaluations.
 
 Choose **New Customer order** in Order intake. Select the Customer and Department, then review **Customer readiness**. Active Customers remain selectable even when their setup is incomplete. Requirements under **Before starting pricing** must be resolved first. Expand **Later requirements** for additional quote and invoice setup; those items do not block creating the order for pricing. Retry a failed readiness check without discarding your entries.
 
@@ -23,6 +23,12 @@ The sidebar header identifies Order operations and, on wider screens, provides t
 - **Legacy integrations** covers retained accounting-connector and notification recovery outside the active native PSeq AR workflow.
 
 Search Order intake by order, Job, Company, or request number. Order search runs across all matching records, with 25 orders per page. Pending CRM handoffs appear on the first active-intake page. The view, search and page stay in the address so you can return to the same queue. **Clear filters** restores active intake. A PSeq Lab Service row identifies an optional proposed price so Commercial users can find pricing decisions without opening every record. On the order, **Review proposed price** compares the proposed USD price per specimen with the active catalog price, requested quantity, difference, and subtotal. **Approve price and issue quote** preserves the proposal unchanged; **Amend price and issue quote** requires an internal reason. Tax is system-calculated: include and freeze it when the billing and tax profile is complete and Finance-approved, or issue an explicitly pre-tax quote and calculate tax at invoicing. The issued quote, not the proposal, is the offer a Customer administrator may accept. The operational detail shows the current quote value, revision, and status. **Internal context** in the audit timeline explains Phaeno-only decisions; it is informational, not a Customer-facing warning. Assign an owner and due date when the workflow supports them. A queue assignment coordinates work; it does not grant authorization or change the workflow state.
+
+## Review configured bundles
+
+A standard Lab Service order includes specimen processing and data assembly in one accepted scope. Review its saved offering version, final price and **Turnaround and progress** on the order. Exact sample entry still follows commitment; roster finalization owns Lab and shipping authorization.
+
+A PSeq Kit purchase includes one assembly case per whole kit unit. Its order shows unit shipment facts, frozen profiles, deadlines and case history. Partner input corrections stay with the same case; included Assembly does not create a second quote or sale. **Open Lab work** leads to the existing execution workspace.
 
 ## Keep state boundaries visible
 

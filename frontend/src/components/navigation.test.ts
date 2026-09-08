@@ -51,19 +51,19 @@ describe('data navigation permissions', () => {
 })
 
 describe('order navigation permissions', () => {
-  it('shows laboratory services only in an authorized Customer context', () => {
-    const session = createSession('Customer', {
+  it.each<OrganizationKind>(['Customer', 'Partner'])('shows laboratory services in an authorized %s context', (kind) => {
+    const session = createSession(kind, {
       canViewLabServiceOrders: true,
     })
 
     const labels = getVisibleMainMenuItems(session, {
-      selectedOrganizationKind: 'Customer',
+      selectedOrganizationKind: kind,
       selectedMembership: session.memberships[1],
     }).map((item) => item.label)
 
     expect(labels).toContain('Lab services')
-    expect(labels).not.toContain('Reagent orders')
-    expect(labels).not.toContain('Data assembly')
+    expect(labels).not.toContain('PSeq Kit orders')
+    expect(labels).not.toContain('Assembly cases')
     expect(labels).not.toContain('Order ops')
   })
 
@@ -78,8 +78,8 @@ describe('order navigation permissions', () => {
       selectedMembership: session.memberships[1],
     }).map((item) => item.label)
 
-    expect(labels).toContain('Reagent orders')
-    expect(labels).toContain('Data assembly')
+    expect(labels).toContain('PSeq Kit orders')
+    expect(labels).toContain('Assembly cases')
     expect(labels).not.toContain('Lab services')
     expect(labels).not.toContain('Order configuration')
   })
@@ -102,7 +102,7 @@ describe('order navigation permissions', () => {
     expect(labels).toContain('Order configuration')
     expect(labels).toContain('File retention')
     expect(labels).not.toContain('Lab services')
-    expect(labels).not.toContain('Reagent orders')
+    expect(labels).not.toContain('PSeq Kit orders')
   })
 })
 

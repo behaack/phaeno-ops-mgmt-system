@@ -118,6 +118,12 @@ public sealed class AnalysisDefinition : IAudit, IConcurrency
 
 public sealed class PartnerReagentOffering : IAudit, IConcurrency
 {
+    public Guid? IncludedAssemblyProfileId { get; private set; }
+    public void SetIncludedAssemblyProfile(Guid? profileId)
+    {
+        if (profileId == Guid.Empty) throw new ArgumentException("Select a valid included Assembly profile.");
+        IncludedAssemblyProfileId = profileId;
+    }
     public Guid Id { get; private set; } = Guid.NewGuid();
     public Guid PartnerOrganizationId { get; private set; }
     public Guid QboCatalogItemId { get; private set; }

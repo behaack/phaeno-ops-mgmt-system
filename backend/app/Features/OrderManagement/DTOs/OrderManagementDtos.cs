@@ -47,7 +47,8 @@ public sealed record LabServiceOrderingEligibilityDto(
     bool OrderingAuthorized,
     bool OfferingAvailable,
     bool CanOrder,
-    string? BlockingReason);
+    string? BlockingReason,
+    bool CanPlaceStandardOrder = false);
 
 public sealed record EligibleCustomerCompanyDto(Guid Id, Guid CompanyId, string Name);
 
@@ -270,7 +271,11 @@ public sealed record LabServiceOrderDto(
     string? ProposedCurrency = null,
     string? PriceProposalNote = null,
     Guid? PriceProposedByUserId = null,
-    DateTime? PriceProposedAt = null);
+    DateTime? PriceProposedAt = null,
+    string EntryMode = "ManualQuote",
+    LabServiceCommercialSnapshotDto? StandardCommercialSnapshot = null,
+    bool CanPlaceStandardOrder = false,
+    LabServiceTimingDto? Timing = null);
 
 public sealed record ReagentOrderLineDto(
     Guid Id,
@@ -288,7 +293,10 @@ public sealed record ReagentOrderLineDto(
     decimal CancelledQuantity,
     decimal RemainingQuantity,
     DateTime? EstimatedShipDate,
-    long Version);
+    long Version,
+    long? IncludedOfferingVersion = null,
+    Guid? IncludedAssemblyProfileId = null,
+    int? IncludedAssemblyProfileVersion = null);
 
 public sealed record ShipmentLineDto(Guid Id, Guid OrderLineId, decimal Quantity, string LotBatchNumber, DateTime? ExpiresAt);
 
@@ -346,7 +354,11 @@ public sealed record PartnerReagentOrderDto(
     Guid? AssignedToUserId = null,
     DateTime? DueAt = null,
     string? PlacementSnapshotJson = null,
-    string? ResumeStatus = null);
+    string? ResumeStatus = null,
+    bool IsKitBundle = false,
+    IReadOnlyList<KitUnitDto>? KitUnits = null,
+    IReadOnlyList<KitAssemblyCaseDto>? AssemblyCases = null,
+    string? OperationalSummary = null);
 
 public sealed record ShippingAddressDto(
     Guid Id,
@@ -439,7 +451,12 @@ public sealed record DataAssemblyRequestDto(
     IReadOnlyList<OrderTimelineDto> Timeline,
     Guid? AssignedToUserId = null,
     DateTime? DueAt = null,
-    string? ResumeStatus = null);
+    string? ResumeStatus = null,
+    Guid? KitAssemblyCaseId = null,
+    Guid? KitOrderId = null,
+    string? KitOrderNumber = null,
+    string? KitCaseNumber = null,
+    bool IsIncludedAssembly = false);
 
 public sealed record AnalysisDefinitionDto(
     Guid Id,
@@ -468,7 +485,10 @@ public sealed record ReagentOfferingDto(
     DateTime EffectiveFrom,
     DateTime? EffectiveUntil,
     bool IsActive,
-    long Version);
+    long Version,
+    Guid? IncludedAssemblyProfileId = null,
+    string? IncludedAssemblyProfileName = null,
+    int? IncludedAssemblyProfileVersion = null);
 
 public sealed record AssemblyProfileDto(
     Guid Id,
@@ -642,7 +662,7 @@ public sealed record UpdatePSeqReadinessConfigurationRequest(
     string SampleConfigurationJson,
     string ResultDestinationConfigurationJson);
 public sealed record AnalysisDefinitionWriteRequest(Guid QboCatalogItemId, string Name, string Description, string SubmissionInstructions, string RequiredIntakeFieldsJson, string ResultContractJson, bool IsActive, bool IsSynthetic, long? Version = null);
-public sealed record ReagentOfferingWriteRequest(Guid PartnerOrganizationId, Guid QboCatalogItemId, decimal NegotiatedUnitPrice, string Currency, string SellingUnit, decimal OrderIncrement, decimal MinimumQuantity, decimal? MaximumQuantity, string ShippingRestrictionsJson, DateTime EffectiveFrom, DateTime? EffectiveUntil, bool IsActive, long? Version = null);
+public sealed record ReagentOfferingWriteRequest(Guid PartnerOrganizationId, Guid QboCatalogItemId, decimal NegotiatedUnitPrice, string Currency, string SellingUnit, decimal OrderIncrement, decimal MinimumQuantity, decimal? MaximumQuantity, string ShippingRestrictionsJson, DateTime EffectiveFrom, DateTime? EffectiveUntil, bool IsActive, long? Version = null, Guid? IncludedAssemblyProfileId = null);
 public sealed record AssemblyProfileWriteRequest(Guid QboCatalogItemId, string Name, int ProfileVersion, string Description, string Instructions, string MetadataSchemaJson, string AllowedFileKindsJson, string OutputContractJson, long MaximumFileSizeBytes, long MaximumTotalSizeBytes, bool IsActive, bool IsSynthetic, long? Version = null);
 public sealed record CommercialProfileWriteRequest(Guid OrganizationId, bool LabCreditApproved, bool AssemblyCreditApproved, string? QboCustomerId, long? Version = null);
 public sealed record BillingProfileWriteRequest(
@@ -764,7 +784,8 @@ public static class OrderManagementMappings
     public static ReagentOrderLineDto ToDto(this PartnerReagentOrderLine line) => new(
         line.Id, line.OfferingId, line.QboCatalogItemId, line.ExternalItemId, line.Description, line.Quantity,
         line.Unit, line.UnitPrice, line.Currency, line.LineTotal, line.Note, line.ShippedQuantity,
-        line.CancelledQuantity, line.RemainingQuantity, line.EstimatedShipDate, line.Version);
+        line.CancelledQuantity, line.RemainingQuantity, line.EstimatedShipDate, line.Version,
+        line.IncludedOfferingVersion, line.IncludedAssemblyProfileId, line.IncludedAssemblyProfileVersion);
 
     public static ReagentShipmentDto ToDto(this ReagentShipment shipment) => new(
         shipment.Id, shipment.ShipmentNumber, shipment.PackingSlipNumber, shipment.Carrier, shipment.Service,

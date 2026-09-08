@@ -1,36 +1,35 @@
-# Request data assembly
+# Included assembly inputs and outputs
 
-Partner organization administrators and department administrators submit within their selected Department files and metadata under an active Phaeno assembly profile, receive a per-job quote, and retrieve outputs for delivery through their own customer relationships.
+Each purchased PSeq Kit unit includes one assembly case. Organization and Department administrators prepare its files and metadata within the selected Department. The case belongs to your Partner organization; Portal does not collect the downstream customer's identity.
 
-## Create an input revision
+## Prepare an included case
 
-1. Open **Data assembly** and create a draft.
-2. Enter the Partner project or reference name.
-3. Choose an active assembly profile available to the selected Partner.
-4. Provide every required metadata value and data declaration.
-5. Upload allowed file types within the stated size limits.
+1. Open **PSeq Kit orders**, select the order, and find **Included assembly cases**.
+2. After the kit is shipped, select **Prepare inputs** on the intended case. Check its kit label, lot and submission deadline.
+3. Enter the Partner project or reference and required metadata.
+4. Review the read-only included profile and outputs. These are frozen from purchase and cannot be replaced with another catalog profile.
+5. Choose allowed input files within the displayed per-file and total limits, and confirm the prohibited-data statement.
+6. Select **Save draft** or **Submit for intake validation**.
 
-Files must complete the managed upload and clean-scan checks before submission. The current workflow does not authorize protected health information.
+Files must complete managed upload and clean-scan checks before submission. Do not include patient identifiers, PHI or unnecessary personal data. **Assembly cases** is a list of included cases and retained historical requests; new standalone assembly purchases are not created from that list.
 
 ## Submit and correct
 
-Submission freezes an immutable input revision. Phaeno may accept it for quoting, request field- or file-specific changes, or reject it with a Partner-visible reason.
+Submission freezes an immutable input revision. Phaeno validates the input and may request field- or file-specific changes or reject it with a Partner-visible reason. Valid included work proceeds to the processing queue without a second quote or purchase.
 
 If changes are requested, open **Edit request**. **Input files** shows every saved input and its scan result. Use **Remove input** to exclude an incorrect or failed-scan file from the editable revision, then select its replacement. Removing a current input preserves earlier submitted revisions. Review the profile's file types and per-file/total limits before uploading.
 
 Save the draft or submit the corrected revision. A failure after draft creation retains the same request. Successfully uploaded files remain listed; retry resumes the remaining work. **Open saved draft** returns to the saved record when final submission has not succeeded. Earlier revisions remain preserved for traceability.
 
-## Accept the job quote
+## Historical standalone requests
 
-Assembly work is priced per job. Phaeno issues an itemized Portal quote that becomes visible immediately after issuance. A Partner organization or department administrator accepts the current, unexpired quote and supplies the required purchase-order number.
-
-An accepted quote freezes the validated input, profile, and commercial snapshot. Later scope changes use a separate immutable change quote.
+Earlier standalone assembly requests retain their original per-job quote, PO, approval and commercial history. Their existing quote controls remain available when applicable. Those historical terms do not introduce another quote or sale for a purchased Kit case.
 
 ## Track and download outputs
 
 The request shows intake review, queued work, processing, output review, output availability, holds, and completion. An approved output release contains an immutable manifest and one or more checksummed files tied to the source input revision and assembly profile.
 
-Credit-approved Partners use Net 30 and may download scientifically ready outputs after the commercial source record is created. Partners without approved assembly credit can see that outputs are ready but cannot download them; the current portal has no payment-confirmation action, so contact Phaeno about the request.
+For included cases, scientifically ready outputs use the original Kit shipment commercial source and the Partner assembly-credit or recorded-payment decision. No second invoice, commercial source or sale is created. Credit-approved Partners may download under their approved credit terms. Partners whose original purchase has neither approved assembly credit nor sufficient recorded payment can see that outputs are ready but cannot download them; contact Phaeno about the original Kit payment or credit decision.
 
 Use **Download package** to retrieve every file in a release as one ZIP, or download a file individually. Only a complete server response counts. Partial, cancelled, failed, and timed-out transfers remain undownloaded, and an active transfer is shown as in progress until it reaches a terminal outcome. One completed download by any currently authorized Partner member satisfies that file for the organization; the Partner view does not expose the member's identity.
 
@@ -38,7 +37,7 @@ Each newly released output shows the retention schedule frozen when that release
 
 A corrected output is a new release. Partner users download the release and deliver it through their own customer process; Portal does not collect the Partner’s end-customer identity or deliver directly to that customer.
 
-Before quote acceptance, an administrator may withdraw the request. After acceptance, use the cancellation-request workflow so completed work and financial history remain preserved.
+Use the available withdrawal or cancellation-request action on the request. Phaeno records unused-case cancellation from the Kit order; completed work and the original purchase history remain preserved.
 
 
 Where retention enforcement is enabled, file and ZIP requests close at the same

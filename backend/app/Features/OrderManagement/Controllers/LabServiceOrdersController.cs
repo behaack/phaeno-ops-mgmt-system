@@ -24,7 +24,7 @@ using PhaenoPortal.App.Infrastructure.Persistence;
 [ApiController]
 [Authorize]
 [Route("api/lab-service-orders")]
-public sealed class LabServiceOrdersController(
+public sealed partial class LabServiceOrdersController(
     PSeqOperationsDbContext dbContext,
     OrderRequestContext requestContext,
     OrderIdempotencyService idempotency,
@@ -51,7 +51,7 @@ public sealed class LabServiceOrdersController(
         [FromQuery] int pageSize = 25,
         CancellationToken cancellationToken = default)
     {
-        var tenant = await requestContext.RequireTenantAsync(HttpContext, OrganizationKind.Customer, false, cancellationToken);
+        var tenant = await requestContext.RequireLabServiceTenantAsync(HttpContext, false, cancellationToken);
         page = Math.Max(1, page);
         pageSize = Math.Clamp(pageSize, 1, 100);
         var query = dbContext.LabServiceOrders.AsNoTracking()
@@ -90,7 +90,7 @@ public sealed class LabServiceOrdersController(
         [FromQuery] DateTime? createdFrom, [FromQuery] DateTime? createdTo, [FromQuery] Guid? submitterId,
         CancellationToken cancellationToken = default)
     {
-        var tenant = await requestContext.RequireTenantAsync(HttpContext, OrganizationKind.Customer, false, cancellationToken);
+        var tenant = await requestContext.RequireLabServiceTenantAsync(HttpContext, false, cancellationToken);
         var query = dbContext.LabServiceOrders.AsNoTracking()
             .Where(order => order.OrganizationId == tenant.Organization.Id
                 && order.DepartmentId == tenant.Department.Id
@@ -122,7 +122,7 @@ public sealed class LabServiceOrdersController(
     [HttpGet("{orderId:guid}")]
     public async Task<LabServiceOrderDto> Get(Guid orderId, CancellationToken cancellationToken)
     {
-        var tenant = await requestContext.RequireTenantAsync(HttpContext, OrganizationKind.Customer, false, cancellationToken);
+        var tenant = await requestContext.RequireLabServiceTenantAsync(HttpContext, false, cancellationToken);
         var order = await ReadOrderAsync(orderId, tenant, cancellationToken);
         return await MapAsync(order, tenant.IsDepartmentAdmin, platform: false, cancellationToken);
     }
@@ -130,9 +130,8 @@ public sealed class LabServiceOrdersController(
     [HttpGet("eligibility")]
     public async Task<LabServiceOrderingEligibilityDto> GetEligibility(CancellationToken cancellationToken)
     {
-        var tenant = await requestContext.RequireTenantAsync(
+        var tenant = await requestContext.RequireLabServiceTenantAsync(
             HttpContext,
-            OrganizationKind.Customer,
             false,
             cancellationToken);
         var eligibility = await LabServiceOrderingEligibility.ReadAsync(
@@ -150,13 +149,14 @@ public sealed class LabServiceOrdersController(
             eligibility.OrderingAuthorized,
             eligibility.OfferingAvailable,
             eligibility.CanOrder,
-            reason);
+            reason,
+            tenant.Membership.IsOrganizationAdmin && eligibility.CanOrder);
     }
 
     [HttpPost]
     public async Task<LabServiceOrderDto> Create([FromBody] LabOrderWriteRequest request, CancellationToken cancellationToken)
     {
-        var tenant = await requestContext.RequireTenantAsync(HttpContext, OrganizationKind.Customer, true, cancellationToken);
+        var tenant = await requestContext.RequireLabServiceTenantAsync(HttpContext, true, cancellationToken);
         var key = idempotency.RequireKey(HttpContext);
         var execution = await idempotency.ExecuteAsync(
             tenant.Actor.Id,
@@ -202,13 +202,14 @@ public sealed class LabServiceOrdersController(
             StatusCodes.Status201Created,
             cancellationToken);
         Response.StatusCode = execution.StatusCode;
+        await ReadOrderAsync(execution.Response.Id, tenant, cancellationToken);
         return execution.Response;
     }
 
     [HttpPatch("{orderId:guid}")]
     public async Task<LabServiceOrderDto> Update(Guid orderId, [FromBody] LabOrderWriteRequest request, CancellationToken cancellationToken)
     {
-        var tenant = await requestContext.RequireTenantAsync(HttpContext, OrganizationKind.Customer, true, cancellationToken);
+        var tenant = await requestContext.RequireLabServiceTenantAsync(HttpContext, true, cancellationToken);
         var order = await ReadOrderAsync(orderId, tenant, cancellationToken);
         EnsureVersion(order.Version, request.Version);
         if (orderToCashOptions.Value.DerivedReadiness)
@@ -265,9 +266,10 @@ public sealed class LabServiceOrdersController(
     [HttpPost("{orderId:guid}/submit-for-quote")]
     public async Task<LabServiceOrderDto> Submit(Guid orderId, [FromBody] VersionRequest request, CancellationToken cancellationToken)
     {
-        var tenant = await requestContext.RequireTenantAsync(HttpContext, OrganizationKind.Customer, true, cancellationToken);
+        var tenant = await requestContext.RequireLabServiceTenantAsync(HttpContext, true, cancellationToken);
         var key = idempotency.RequireKey(HttpContext);
         var scope = $"lab-order:{orderId}:submit";
+        await ReadOrderAsync(orderId, tenant, cancellationToken);
         var execution = await idempotency.ExecuteAsync(
             tenant.Actor.Id,
             scope,
@@ -310,7 +312,7 @@ public sealed class LabServiceOrdersController(
     [HttpPost("{orderId:guid}/withdraw")]
     public async Task<LabServiceOrderDto> Withdraw(Guid orderId, [FromBody] ReasonRequest request, CancellationToken cancellationToken)
     {
-        var tenant = await requestContext.RequireTenantAsync(HttpContext, OrganizationKind.Customer, true, cancellationToken);
+        var tenant = await requestContext.RequireLabServiceTenantAsync(HttpContext, true, cancellationToken);
         var order = await ReadOrderAsync(orderId, tenant, cancellationToken);
         EnsureVersion(order.Version, request.Version);
         var before = order.Status.ToString();
@@ -323,10 +325,11 @@ public sealed class LabServiceOrdersController(
     [HttpPost("{orderId:guid}/quotes/{quoteId:guid}/accept")]
     public async Task<LabServiceOrderDto> AcceptQuote(Guid orderId, Guid quoteId, [FromBody] AcceptQuoteRequest request, CancellationToken cancellationToken)
     {
-        var tenant = await requestContext.RequireTenantAsync(HttpContext, OrganizationKind.Customer, true, cancellationToken);
+        var tenant = await requestContext.RequireLabServiceTenantAsync(HttpContext, true, cancellationToken);
         if (request.QuoteId != quoteId) throw Invalid("quote_mismatch", "The quote identifier does not match the route.");
         var key = idempotency.RequireKey(HttpContext);
         var scope = $"lab-order:{orderId}:quote:{quoteId}:accept";
+        await ReadOrderAsync(orderId, tenant, cancellationToken);
         var execution = await idempotency.ExecuteAsync(
             tenant.Actor.Id,
             scope,
@@ -405,7 +408,7 @@ public sealed class LabServiceOrdersController(
     [HttpGet("{orderId:guid}/samples/template.csv")]
     public async Task<FileContentResult> DownloadSampleTemplate(Guid orderId, CancellationToken cancellationToken)
     {
-        var tenant = await requestContext.RequireTenantAsync(HttpContext, OrganizationKind.Customer, false, cancellationToken);
+        var tenant = await requestContext.RequireLabServiceTenantAsync(HttpContext, false, cancellationToken);
         var order = await ReadOrderAsync(orderId, tenant, cancellationToken);
         if (order.Status != LabServiceOrderStatus.PlacedAwaitingSamples)
             throw Conflict("sample_template_not_available", "The sample-list template is available after the Job price is accepted.");
@@ -421,7 +424,7 @@ public sealed class LabServiceOrdersController(
     public async Task<LabServiceOrderDto> AddSample(Guid orderId, [FromBody] LabSampleRosterWriteRequest request,
         CancellationToken cancellationToken)
     {
-        var tenant = await requestContext.RequireTenantAsync(HttpContext, OrganizationKind.Customer, true, cancellationToken);
+        var tenant = await requestContext.RequireLabServiceTenantAsync(HttpContext, true, cancellationToken);
         var order = await ReadOrderAsync(orderId, tenant, cancellationToken);
         EnsureVersion(order.Version, request.OrderVersion);
         Execute(order.EnsureSampleRosterEditable);
@@ -440,7 +443,7 @@ public sealed class LabServiceOrdersController(
     public async Task<LabServiceOrderDto> UpdateSample(Guid orderId, Guid sampleId,
         [FromBody] LabSampleRosterWriteRequest request, CancellationToken cancellationToken)
     {
-        var tenant = await requestContext.RequireTenantAsync(HttpContext, OrganizationKind.Customer, true, cancellationToken);
+        var tenant = await requestContext.RequireLabServiceTenantAsync(HttpContext, true, cancellationToken);
         var order = await ReadOrderAsync(orderId, tenant, cancellationToken);
         Execute(order.EnsureSampleRosterEditable);
         var sample = order.Samples.SingleOrDefault(item => item.Id == sampleId) ?? throw Missing();
@@ -458,7 +461,7 @@ public sealed class LabServiceOrdersController(
     public async Task<LabServiceOrderDto> DeleteSample(Guid orderId, Guid sampleId,
         [FromBody] VersionRequest request, CancellationToken cancellationToken)
     {
-        var tenant = await requestContext.RequireTenantAsync(HttpContext, OrganizationKind.Customer, true, cancellationToken);
+        var tenant = await requestContext.RequireLabServiceTenantAsync(HttpContext, true, cancellationToken);
         var order = await ReadOrderAsync(orderId, tenant, cancellationToken);
         var isLegacyDraftCleanup = order.Status is LabServiceOrderStatus.DraftRequest
             or LabServiceOrderStatus.ChangesRequested;
@@ -475,7 +478,7 @@ public sealed class LabServiceOrdersController(
     public async Task<LabSampleImportPreviewDto> PreviewSampleImport(Guid orderId, [FromForm] IFormFile file,
         [FromForm] long version, CancellationToken cancellationToken)
     {
-        var tenant = await requestContext.RequireTenantAsync(HttpContext, OrganizationKind.Customer, true, cancellationToken);
+        var tenant = await requestContext.RequireLabServiceTenantAsync(HttpContext, true, cancellationToken);
         var order = await ReadOrderAsync(orderId, tenant, cancellationToken);
         EnsureVersion(order.Version, version);
         Execute(order.EnsureSampleRosterEditable);
@@ -506,7 +509,7 @@ public sealed class LabServiceOrdersController(
     public async Task<LabServiceOrderDto> ConfirmSampleImport(Guid orderId, Guid previewId,
         [FromBody] ConfirmLabSampleImportRequest request, CancellationToken cancellationToken)
     {
-        var tenant = await requestContext.RequireTenantAsync(HttpContext, OrganizationKind.Customer, true, cancellationToken);
+        var tenant = await requestContext.RequireLabServiceTenantAsync(HttpContext, true, cancellationToken);
         await using var transaction = await dbContext.Database.BeginTransactionAsync(IsolationLevel.Serializable, cancellationToken);
         var order = await ReadOrderAsync(orderId, tenant, cancellationToken);
         EnsureVersion(order.Version, request.Version);
@@ -537,9 +540,10 @@ public sealed class LabServiceOrdersController(
     public async Task<LabServiceOrderDto> FinalizeSampleRoster(Guid orderId, [FromBody] VersionRequest request,
         CancellationToken cancellationToken)
     {
-        var tenant = await requestContext.RequireTenantAsync(HttpContext, OrganizationKind.Customer, true, cancellationToken);
+        var tenant = await requestContext.RequireLabServiceTenantAsync(HttpContext, true, cancellationToken);
         var key = idempotency.RequireKey(HttpContext);
         var scope = $"lab-order:{orderId}:sample-roster:finalize";
+        await ReadOrderAsync(orderId, tenant, cancellationToken);
         var execution = await idempotency.ExecuteAsync(
             tenant.Actor.Id,
             scope,
@@ -564,7 +568,12 @@ public sealed class LabServiceOrdersController(
                     order.Samples.Select(sample => new AuthorizedSpecimen(
                         sample.Id, sample.CustomerSampleId, sample.MaterialType, sample.BiologicalSource,
                         sample.Quantity, sample.QuantityUnit, sample.StorageRequirements, sample.SafetyDeclaration,
-                        sample.CollectionDate, sample.Concentration, sample.Notes, [OrderServiceKeys.PSeqLabService])).ToList());
+                        sample.CollectionDate, sample.Concentration, sample.Notes, [OrderServiceKeys.PSeqLabService])).ToList(),
+                    MinimumTurnaroundDays: order.ReadConfiguredSnapshot()?.MinimumTurnaroundDays,
+                    MaximumTurnaroundDays: order.ReadConfiguredSnapshot()?.MaximumTurnaroundDays,
+                    IncludedScientificScopeJson: order.ReadConfiguredSnapshot() is { } configured ? JsonSerializer.Serialize(new {
+                        configured.AnalysisIds, configured.AnalysesSnapshotJson, configured.IncludedOutputContract
+                    }, JsonSerializerOptions) : null);
                 var authorization = new CommercialLabAuthorization(authorizationId, order.Id, order.OrganizationId, 1,
                     commandId, JsonSerializer.Serialize(command, JsonSerializerOptions));
                 dbContext.CommercialLabAuthorizations.Add(authorization);
@@ -603,9 +612,10 @@ public sealed class LabServiceOrdersController(
     [HttpPost("{orderId:guid}/cancellation-requests")]
     public async Task<LabServiceOrderDto> RequestCancellation(Guid orderId, [FromBody] CancellationRequestBody request, CancellationToken cancellationToken)
     {
-        var tenant = await requestContext.RequireTenantAsync(HttpContext, OrganizationKind.Customer, true, cancellationToken);
+        var tenant = await requestContext.RequireLabServiceTenantAsync(HttpContext, true, cancellationToken);
         var key = idempotency.RequireKey(HttpContext);
         var scope = $"lab-order:{orderId}:cancellation";
+        await ReadOrderAsync(orderId, tenant, cancellationToken);
         var execution = await idempotency.ExecuteAsync(
             tenant.Actor.Id,
             scope,
@@ -631,7 +641,7 @@ public sealed class LabServiceOrdersController(
     [HttpPut("{orderId:guid}/samples/{sampleId:guid}/shipment")]
     public async Task<LabServiceOrderDto> RecordShipment(Guid orderId, Guid sampleId, [FromBody] SampleShipmentRequest request, CancellationToken cancellationToken)
     {
-        var tenant = await requestContext.RequireTenantAsync(HttpContext, OrganizationKind.Customer, true, cancellationToken);
+        var tenant = await requestContext.RequireLabServiceTenantAsync(HttpContext, true, cancellationToken);
         var order = await ReadOrderAsync(orderId, tenant, cancellationToken);
         if (await dbContext.SampleShipments.AnyAsync(shipment => shipment.AuthorizationSourceId == order.Id
             && shipment.AuthorizationSource == SampleShipmentAuthorizationSource.CustomerLabServiceOrder, cancellationToken))
@@ -646,7 +656,7 @@ public sealed class LabServiceOrdersController(
     [HttpGet("{orderId:guid}/samples/{sampleId:guid}/results")]
     public async Task<IReadOnlyList<OperationalFileDto>> ListResults(Guid orderId, Guid sampleId, CancellationToken cancellationToken)
     {
-        var tenant = await requestContext.RequireTenantAsync(HttpContext, OrganizationKind.Customer, false, cancellationToken);
+        var tenant = await requestContext.RequireLabServiceTenantAsync(HttpContext, false, cancellationToken);
         var order = await ReadOrderAsync(orderId, tenant, cancellationToken);
         var exists = order.Samples.Any(sample => sample.Id == sampleId);
         if (!exists) throw Missing();
@@ -661,7 +671,7 @@ public sealed class LabServiceOrdersController(
     [SkipApiEnvelope]
     public async Task<IActionResult> Download(Guid orderId, Guid artifactId, CancellationToken cancellationToken)
     {
-        var tenant = await requestContext.RequireTenantAsync(HttpContext, OrganizationKind.Customer, false, cancellationToken);
+        var tenant = await requestContext.RequireLabServiceTenantAsync(HttpContext, false, cancellationToken);
         _ = await ReadOrderAsync(orderId, tenant, cancellationToken);
         var file = await dbContext.ManagedOperationalFiles.FirstOrDefaultAsync(item => item.Id == artifactId
             && item.WorkflowId == orderId && item.OrganizationId == tenant.Organization.Id
@@ -731,9 +741,8 @@ public sealed class LabServiceOrdersController(
         Guid releaseId,
         CancellationToken cancellationToken)
     {
-        var tenant = await requestContext.RequireTenantAsync(
+        var tenant = await requestContext.RequireLabServiceTenantAsync(
             HttpContext,
-            OrganizationKind.Customer,
             false,
             cancellationToken);
         var order = await ReadOrderAsync(orderId, tenant, cancellationToken);
@@ -811,7 +820,7 @@ public sealed class LabServiceOrdersController(
         => new(order.Id, request.CustomerSampleId, StandardMaterialType,
             ResolveRosterSource(order, request.BiologicalSource), request.TubeCount, StandardQuantityUnit,
             order.StorageRequirements, order.SafetyDeclaration, request.CollectionDate, request.Concentration,
-            request.Notes, "[]");
+            request.Notes, JsonSerializer.Serialize(order.ReadConfiguredSnapshot()?.AnalysisIds ?? [], JsonSerializerOptions));
 
     private static string ResolveRosterSource(LabServiceOrder order, string? requestedSource)
     {
@@ -949,6 +958,7 @@ public sealed class LabServiceOrdersController(
                 DateTime.UtcNow,
                 cancellationToken,
                 order.DepartmentId)).CanOrder;
+        var timing = await new LabServiceTimingService(dbContext).ReadAsync(order.Id, order.OrganizationId, false, false, cancellationToken);
         return new LabServiceOrderDto(order.Id, order.OrganizationId, order.OrderNumber, order.CustomerReference, order.Description,
             order.HasMixedBiologicalSources, order.SharedBiologicalSource,
             order.StorageRequirements, order.SafetyDeclaration,
@@ -971,8 +981,8 @@ public sealed class LabServiceOrdersController(
             RequestRevisions: order.Revisions.OrderByDescending(item => item.Revision).Select(item => new LabRequestRevisionDto(item.Id,
                 item.Revision, item.PreviousRevisionId, item.SnapshotJson, item.CorrectionReason, item.SubmittedByUserId, item.SubmittedAt)).ToList(),
             LabMilestone: projection?.Milestone,
-            LabScheduleHealth: projection?.ScheduleHealth,
-            LabExpectedCompletionAtUtc: projection?.ExpectedCompletionAtUtc,
+            LabScheduleHealth: timing?.ScheduleHealth ?? projection?.ScheduleHealth,
+            LabExpectedCompletionAtUtc: timing?.ExpectedCompletionAtUtc ?? projection?.ExpectedCompletionAtUtc,
             LabCustomerActionCount: projection?.ActiveCustomerActionCount ?? 0,
             LabCustomerActionSummary: projection?.CustomerSafeSummary,
             LabPermittedQcProjectionJson: projection?.PermittedQcProjectionJson,
@@ -987,7 +997,12 @@ public sealed class LabServiceOrdersController(
             ProposedCurrency: order.ProposedUnitPrice.HasValue ? "USD" : null,
             PriceProposalNote: order.PriceProposalNote,
             PriceProposedByUserId: order.PriceProposedByUserId,
-            PriceProposedAt: order.PriceProposedAt);
+            PriceProposedAt: order.PriceProposedAt,
+            EntryMode: order.EntryMode.ToString(),
+            StandardCommercialSnapshot: LabServiceTimingService.CommercialSnapshot(order.ReadConfiguredSnapshot()),
+            CanPlaceStandardOrder: editable && orderingEligible && order.SourceRequestId is null && order.ProposedUnitPrice is null
+                && (await requestContext.RequireLabServiceTenantAsync(HttpContext, false, cancellationToken)).Membership.IsOrganizationAdmin,
+            Timing: timing);
     }
 
     private async Task<string> BuildRequestSnapshotAsync(LabServiceOrder order, CancellationToken cancellationToken)

@@ -29,6 +29,11 @@ vi.mock('#/api/pseq-order-to-cash', () => ({
   listCustomerInvoices: async () => [], listCustomerResultPackages: async () => [],
   downloadCustomerInvoicePdf: vi.fn(), downloadCustomerResultArtifact: vi.fn(),
 }))
+// Bundle panels have independent draft guards, covered in BundledOrders.
+vi.mock('./StandardLabServicePanel', () => ({ StandardLabServicePanel: () => null }))
+vi.mock('./LabServiceTimingPanel', () => ({ LabServiceTimingPanel: () => null }))
+vi.mock('./KitAssemblyCasesPanel', () => ({ KitAssemblyCasesPanel: () => null }))
+vi.mock('./RequestCustomWorkButton', () => ({ RequestCustomWorkButton: () => null }))
 vi.mock('./LabJobSamplesPanel', () => ({ LabJobSamplesPanel: () => null }))
 vi.mock('./LabManagedResultReleases', () => ({ LabManagedResultReleases: () => null }))
 vi.mock('./GovernedResultPackagePanel', () => ({ GovernedResultPackagePanel: () => null }))

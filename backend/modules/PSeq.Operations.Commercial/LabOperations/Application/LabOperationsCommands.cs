@@ -43,7 +43,10 @@ public sealed record AuthorizeLabWorkCommand(
     string TurnaroundPolicyKey,
     string? OpaqueSubmitterReference,
     IReadOnlyList<AuthorizedSpecimen> Specimens,
-    Guid? ApprovedWorkflowVersionId = null);
+    Guid? ApprovedWorkflowVersionId = null,
+    int? MinimumTurnaroundDays = null,
+    int? MaximumTurnaroundDays = null,
+    string? IncludedScientificScopeJson = null);
 
 public sealed record AmendLabWorkAuthorizationCommand(
     LabOperationsCommandMetadata Metadata,

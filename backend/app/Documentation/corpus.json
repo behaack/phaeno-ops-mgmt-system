@@ -355,7 +355,7 @@
       "locale": "en-US",
       "slug": "lab-services",
       "title": "Request laboratory services",
-      "summary": "Price a Job from its sample profile, then enter or import, finalize, and ship its sample list.",
+      "summary": "Review configured pricing or a manual quote, then finalize and ship the exact sample roster.",
       "order": 30,
       "reviewedAt": "2026-09-07",
       "navigationGroup": "laboratory-work",
@@ -383,22 +383,27 @@
       "publicationStatus": "published",
       "id": "customer/en-US/lab-services",
       "route": "/docs/customer/lab-services",
-      "contentHash": "529588da98ff91f81d9392c0ada37030e0aa9ebc8187f4c35e43bc235c262755",
+      "contentHash": "e789e2d8619b57e81a9654879600051f7cda54e668cad1e0217c0761c37787f7",
       "sections": [
         {
           "heading": "Request laboratory services",
           "anchor": "request-laboratory-services",
-          "text": "Customer organization administrators and department administrators use Lab services within the selected Department to describe and price a Job before doing the detailed work of entering its sample list."
+          "text": "Use Lab services within the selected Department to describe and price a Job before entering its exact sample list. Organization and Department administrators may prepare a Job. Only an organization administrator may place a configured standard order; existing Department authority for manual quote workflows remains available."
         },
         {
           "heading": "Review a Job initiated by Phaeno",
           "anchor": "review-a-job-initiated-by-phaeno",
-          "text": "Phaeno may initiate a Customer-owned Job when your organization has already discussed the work with Phaeno. It appears in Lab services as Quote in preparation while Phaeno prices it. You do not need to submit that Job for pricing. Open the Job and review its committed sample count, biological-source composition, storage requirements, safety declaration, and notes. When Phaeno issues the quote and it becomes Quote issued, an organization or department administrator can review and accept it in Quote and billing. Phaeno cannot accept it for your organization. If the scope is incorrect, do not accept the quote; contact Phaeno so the Job can be returned for a corrected revision. Individual sample entry remains unavailable until your organization accepts the quote."
+          "text": "Phaeno may initiate a Customer-owned Job when your organization has already discussed the work with Phaeno. It appears in Lab services as Quote in preparation while Phaeno prices it. You do not need to submit that Job for pricing. Open the Job and review its committed sample count, biological-source composition, storage requirements, safety declaration, and notes. When Phaeno issues the quote and it becomes Quote issued, an organization or department administrator can review and accept it in Quote and billing. Phaeno cannot accept it for your organization. If the scope is incorrect, do not accept the quote; contact Phaeno so the Job can be returned for a corrected revision. For a manually quoted Job, individual sample entry remains unavailable until your organization accepts the quote."
         },
         {
           "heading": "Create a draft",
           "anchor": "create-a-draft",
-          "text": "Request lab service is available only while your organization has current ordering authorization and PSeq Lab Service is offered. If new Jobs are unavailable, the page explains whether Phaeno must enable ordering authorization or the service is temporarily unavailable. Existing accepted Jobs remain available and follow their normal hold or cancellation workflow. Open Lab services and select Request lab service. In Job pricing details, enter a unique Job name and each Biological source with its sample count. The Portal calculates the Job's total sample count from those source groups. Enter the Storage requirements and Safety declaration shared by every sample, and any optional Job notes. Do not enter a patient name or identifier. Select Create job. The portal assigns an immutable eight-character Job number using unambiguous uppercase letters and numbers. The new Job opens on its detail page. Individual sample entry remains unavailable until the price is issued and accepted. Members can review work in their assigned Department. Organization administrators and department administrators can create, edit, submit, and commercially approve work in that Department. Department authority does not grant access to other Departments. If an older draft still contains sample rows from the former workflow, the Job identifies them as legacy rows. Remove each row before submitting for pricing; enter the current sample roster again only after accepting the price."
+          "text": "Request lab service is available only while your organization has current ordering authorization and PSeq Lab Service is offered. If new Jobs are unavailable, the page explains whether Phaeno must enable ordering authorization or the service is temporarily unavailable. Existing accepted Jobs remain available and follow their normal hold or cancellation workflow. Open Lab services and select Request lab service. In Job pricing details, enter a unique Job name and each Biological source with its sample count. The Portal calculates the Job's total sample count from those source groups. Enter the Storage requirements and Safety declaration shared by every sample, and any optional Job notes. Do not enter a patient name or identifier. Select Create job. The portal assigns an immutable eight-character Job number using unambiguous uppercase letters and numbers. The new Job opens on its detail page. Review an available configured offering on the Job, or submit for manual pricing when that workflow applies. Individual sample entry becomes available after commercial commitment. Members can review work in their assigned Department. Organization and Department administrators may create, edit, submit and accept applicable manual quotes in that Department. New configured standard orders require an organization administrator. Department authority does not grant access to other Departments. If an older draft still contains sample rows from the former workflow, the Job identifies them as legacy rows. Remove each row before submitting for pricing; enter the current sample roster again only after accepting the price."
+        },
+        {
+          "heading": "Place a configured standard order",
+          "anchor": "place-a-configured-standard-order",
+          "text": "In Standard PSeq Lab Service, choose an available Offering. Review its allowed material types and biological sources, included scientific outputs, published turnaround range, specimen count, and unit price. The bundle includes laboratory processing and data assembly; it does not require a separate assembly purchase. Choose Review standard order. The review shows the current subtotal, approved tax, and final total. An organization administrator supplies a PO when required, confirms the scope and prohibited-data statement, and selects Place standard order. The offering, scope, price and approved tax are retained with the Job. Detailed samples are entered afterward. If a readiness or billing requirement is incomplete, the displayed blockers explain why placement is unavailable. Phaeno must resolve the relevant service, shipping, billing or tax setup. A standard order cannot be committed with an unknown final total. If the offering, scientific definitions, price or organization settings change while reviewing, select Refresh terms and review again and affirm the new terms before placing. For different sources, outputs, quantities or timing, an organization administrator can select Request custom work. Describe the requirement without PHI or sensitive files. The confirmation supplies a Sales reference. This request preserves the original Job and Department; it does not accept a price or place an additional order."
         },
         {
           "heading": "Submit for review",
@@ -413,7 +418,12 @@
         {
           "heading": "Ship and track samples",
           "anchor": "ship-and-track-samples",
-          "text": "After accepting the quote, return to Samples and shipping. Use Add sample, Edit sample, and Remove sample, or Download CSV template and Import sample list. The CSV accepts exactly customer_sample_id, biological_source, and tube_count; it does not accept barcodes. Previewing a CSV does not change the Job. Confirming a valid preview atomically replaces the editable draft list. Do not ship physical samples before the quote is accepted and the exact roster is finalized. An early or unmatched package is quarantined and escalated by Phaeno; it is not accessioned or attached to active Job work. The final list must contain exactly the accepted number of unique non-PHI sample IDs, match every accepted source-group count, and give each sample a positive whole-number tube count. Select Review and finalize list, review every sample, and affirm the no-PHI confirmation before selecting Finalize sample list. Finalization authorizes the specimen-specific Lab work and lets Phaeno prepare the registered return kit. In Return kit and shipment, open the related shipment. When the kit is fulfilled, match every physical Phaeno-supplied tube to the displayed tube slot. A sample with multiple tubes appears once per tube as Tube 1 of N, Tube 2 of N, and so on. Review the packet and record carrier details after the package leaves your organization. Record the shipment once in its packet workflow; carrier and tracking details stay connected to all included samples. Back to lab job returns to the owning Job. The Portal tracks receipt, accessioning, processing, external sequencing, data processing, scientific review, holds, and readiness for release. A job can remain in progress while different samples move through laboratory work. If Phaeno needs replacement material or clarification, the job shows a Customer-safe action and the current schedule health. Internal scientific investigation details are not shown. Ready for release means Phaeno's scientific review is complete and the final deliverable package is complete, checksummed, and malware-clean. It does not mean a file is downloadable until an authorized Result Release Manager publishes that sample. Invoice balance and credit status never gate PSeq result release."
+          "text": "After placing the standard order or accepting the manual quote, return to Samples and shipping. Use Add sample, Edit sample, and Remove sample, or Download CSV template and Import sample list. The CSV accepts exactly customer_sample_id, biological_source, and tube_count; it does not accept barcodes. Previewing a CSV does not change the Job. Confirming a valid preview atomically replaces the editable draft list. Do not ship physical samples before the order is commercially committed and the exact roster is finalized. An early or unmatched package is quarantined and escalated by Phaeno; it is not accessioned or attached to active Job work. The final list must contain exactly the accepted number of unique non-PHI sample IDs, match every accepted source-group count, and give each sample a positive whole-number tube count. Select Review and finalize list, review every sample, and affirm the no-PHI confirmation before selecting Finalize sample list. Finalization authorizes the specimen-specific Lab work and lets Phaeno prepare the registered return kit. In Return kit and shipment, open the related shipment. When the kit is fulfilled, match every physical Phaeno-supplied tube to the displayed tube slot. A sample with multiple tubes appears once per tube as Tube 1 of N, Tube 2 of N, and so on. Review the packet and record carrier details after the package leaves your organization. Record the shipment once in its packet workflow; carrier and tracking details stay connected to all included samples. Back to lab job returns to the owning Job. The Portal tracks receipt, accessioning, processing, external sequencing, data processing, scientific review, holds, and readiness for release. A job can remain in progress while different samples move through laboratory work. If Phaeno needs replacement material or clarification, the job shows a Customer-safe action and the current schedule health. Internal scientific investigation details are not shown. Ready for release means Phaeno's scientific review is complete and the final deliverable package is complete, checksummed, and malware-clean. It does not mean a file is downloadable until an authorized Result Release Manager publishes that sample. Invoice balance and credit status never gate PSeq result release."
+        },
+        {
+          "heading": "Understand turnaround",
+          "anchor": "understand-turnaround",
+          "text": "Turnaround and progress shows first receipt, scientific acceptance, the original target, current expected completion, and actual completion. The published turnaround starts at scientific acceptance, not the day the package first arrives. Receipt-to-acceptance elapsed time remains visible separately. Phaeno may update the expected completion with a recorded reason. The original target remains visible. A later expected date queues a notice; an earlier date updates the Portal. Read the customer-safe explanation and current dates on the Job rather than treating an earlier message as the current schedule."
         },
         {
           "heading": "Cancel work",
@@ -683,12 +693,12 @@
       "publicationStatus": "published",
       "id": "partner/en-US/account-and-access",
       "route": "/docs/partner/account-and-access",
-      "contentHash": "b6dfb98123a01081831da76d50afb52a08a0d6fb76e73f0805c59a31aafa87ff",
+      "contentHash": "17158bde3712ff7ff6d336dead0c3d2399144167fba0b77db4e4dab789ad9745",
       "sections": [
         {
           "heading": "Account and access",
           "anchor": "account-and-access",
-          "text": "Your Portal access is created through an invitation to a specific Partner organization. The current organization, selected Department, and your role determine which reagent, assembly, data, and administrative actions are available."
+          "text": "Your Portal access is created through an invitation to a specific Partner organization. The current organization, selected Department, and your role determine which Lab Service, Kit, assembly, data, and administrative actions are available."
         },
         {
           "heading": "Accept an invitation",
@@ -729,6 +739,11 @@
           "heading": "Resolve common access states",
           "anchor": "resolve-common-access-states",
           "text": "| What you see | What to do | | --- | --- | | Access unavailable after sign-in | Choose Continue invitation if it is shown, then review and accept the saved invitation. Otherwise, sign out and reopen the newest invitation link. | | Invitation link unavailable | Ask an administrator to confirm it is pending and resend it. Use only the newest link. | | Email does not match | Sign in with the invited email or request a corrected invitation. | | No active memberships | Ask your Partner administrator to coordinate a fresh invitation with Phaeno. | | Wrong organization shown | Stop before opening records and contact Phaeno to verify the active membership. | | Organization unavailable | Ask Phaeno whether the organization is inactive. | | Account disabled | Contact Phaeno; a Partner administrator cannot override this state. | | Authenticator lost, backup code available | Use one backup code to sign in, then contact Phaeno for an MFA reset. | | Authenticator and backup codes lost | Contact Phaeno for identity verification and an MFA reset. Do not send old codes. | | Offering or action missing | Confirm the current organization, then ask an administrator to review your role or Phaeno to review Partner eligibility. | Never send a password, sign-in code, invitation token, or browser storage value in a support message."
+        },
+        {
+          "heading": "Prepare work and commit a purchase",
+          "anchor": "prepare-work-and-commit-a-purchase",
+          "text": "Organization and Department administrators may prepare drafts and perform permitted operational actions within their selected Department. New configured Lab Service or PSeq Kit purchases, and custom-work requests to Sales, require an organization administrator. A Department administrator can save the draft for that review. These rules do not widen access to another Department or Partner. Existing manual-quote actions retain their displayed permissions."
         }
       ]
     },
@@ -789,8 +804,8 @@
       "audience": "partner",
       "locale": "en-US",
       "slug": "data-assembly",
-      "title": "Request data assembly",
-      "summary": "Save and revise input files, recover the same draft, accept pricing, and download approved outputs.",
+      "title": "Prepare included Assembly",
+      "summary": "Prepare a purchased Kit case, correct inputs and download governed outputs without another purchase.",
       "order": 40,
       "reviewedAt": "2026-09-07",
       "navigationGroup": "partner-work",
@@ -814,32 +829,32 @@
       "publicationStatus": "published",
       "id": "partner/en-US/data-assembly",
       "route": "/docs/partner/data-assembly",
-      "contentHash": "2f5705cb42598932706a94932e7feddecfb3b0803ca913ebfdb3c64295b459e4",
+      "contentHash": "0b6ab74fd52c1101a2e8b0b709413ae0f86dacedfaa01b6b0312f32d5ce232dd",
       "sections": [
         {
-          "heading": "Request data assembly",
-          "anchor": "request-data-assembly",
-          "text": "Partner organization administrators and department administrators submit within their selected Department files and metadata under an active Phaeno assembly profile, receive a per-job quote, and retrieve outputs for delivery through their own customer relationships."
+          "heading": "Included assembly inputs and outputs",
+          "anchor": "included-assembly-inputs-and-outputs",
+          "text": "Each purchased PSeq Kit unit includes one assembly case. Organization and Department administrators prepare its files and metadata within the selected Department. The case belongs to your Partner organization; Portal does not collect the downstream customer's identity."
         },
         {
-          "heading": "Create an input revision",
-          "anchor": "create-an-input-revision",
-          "text": "Open Data assembly and create a draft. Enter the Partner project or reference name. Choose an active assembly profile available to the selected Partner. Provide every required metadata value and data declaration. Upload allowed file types within the stated size limits. Files must complete the managed upload and clean-scan checks before submission. The current workflow does not authorize protected health information."
+          "heading": "Prepare an included case",
+          "anchor": "prepare-an-included-case",
+          "text": "Open PSeq Kit orders, select the order, and find Included assembly cases. After the kit is shipped, select Prepare inputs on the intended case. Check its kit label, lot and submission deadline. Enter the Partner project or reference and required metadata. Review the read-only included profile and outputs. These are frozen from purchase and cannot be replaced with another catalog profile. Choose allowed input files within the displayed per-file and total limits, and confirm the prohibited-data statement. Select Save draft or Submit for intake validation. Files must complete managed upload and clean-scan checks before submission. Do not include patient identifiers, PHI or unnecessary personal data. Assembly cases is a list of included cases and retained historical requests; new standalone assembly purchases are not created from that list."
         },
         {
           "heading": "Submit and correct",
           "anchor": "submit-and-correct",
-          "text": "Submission freezes an immutable input revision. Phaeno may accept it for quoting, request field- or file-specific changes, or reject it with a Partner-visible reason. If changes are requested, open Edit request. Input files shows every saved input and its scan result. Use Remove input to exclude an incorrect or failed-scan file from the editable revision, then select its replacement. Removing a current input preserves earlier submitted revisions. Review the profile's file types and per-file/total limits before uploading. Save the draft or submit the corrected revision. A failure after draft creation retains the same request. Successfully uploaded files remain listed; retry resumes the remaining work. Open saved draft returns to the saved record when final submission has not succeeded. Earlier revisions remain preserved for traceability."
+          "text": "Submission freezes an immutable input revision. Phaeno validates the input and may request field- or file-specific changes or reject it with a Partner-visible reason. Valid included work proceeds to the processing queue without a second quote or purchase. If changes are requested, open Edit request. Input files shows every saved input and its scan result. Use Remove input to exclude an incorrect or failed-scan file from the editable revision, then select its replacement. Removing a current input preserves earlier submitted revisions. Review the profile's file types and per-file/total limits before uploading. Save the draft or submit the corrected revision. A failure after draft creation retains the same request. Successfully uploaded files remain listed; retry resumes the remaining work. Open saved draft returns to the saved record when final submission has not succeeded. Earlier revisions remain preserved for traceability."
         },
         {
-          "heading": "Accept the job quote",
-          "anchor": "accept-the-job-quote",
-          "text": "Assembly work is priced per job. Phaeno issues an itemized Portal quote that becomes visible immediately after issuance. A Partner organization or department administrator accepts the current, unexpired quote and supplies the required purchase-order number. An accepted quote freezes the validated input, profile, and commercial snapshot. Later scope changes use a separate immutable change quote."
+          "heading": "Historical standalone requests",
+          "anchor": "historical-standalone-requests",
+          "text": "Earlier standalone assembly requests retain their original per-job quote, PO, approval and commercial history. Their existing quote controls remain available when applicable. Those historical terms do not introduce another quote or sale for a purchased Kit case."
         },
         {
           "heading": "Track and download outputs",
           "anchor": "track-and-download-outputs",
-          "text": "The request shows intake review, queued work, processing, output review, output availability, holds, and completion. An approved output release contains an immutable manifest and one or more checksummed files tied to the source input revision and assembly profile. Credit-approved Partners use Net 30 and may download scientifically ready outputs after the commercial source record is created. Partners without approved assembly credit can see that outputs are ready but cannot download them; the current portal has no payment-confirmation action, so contact Phaeno about the request. Use Download package to retrieve every file in a release as one ZIP, or download a file individually. Only a complete server response counts. Partial, cancelled, failed, and timed-out transfers remain undownloaded, and an active transfer is shown as in progress until it reaches a terminal outcome. One completed download by any currently authorized Partner member satisfies that file for the organization; the Partner view does not expose the member's identity. Each newly released output shows the retention schedule frozen when that release became available. Standard deletion is the normal deletion time. Conditional grace through applies only when at least one file in the release remains undownloaded at the standard deadline; when that happens, the whole release receives the displayed grace period. Dates and times include the browser's local time-zone label. An earlier output created before retention snapshots were introduced does not show a schedule; contact Phaeno before relying on a deletion date for that release. A corrected output is a new release. Partner users download the release and deliver it through their own customer process; Portal does not collect the Partner’s end-customer identity or deliver directly to that customer. Before quote acceptance, an administrator may withdraw the request. After acceptance, use the cancellation-request workflow so completed work and financial history remain preserved. Where retention enforcement is enabled, file and ZIP requests close at the same frozen deadline. Grace period active keeps an incomplete release available through its stated final date; later completion does not shorten grace. A transfer admitted before cutoff may finish within its original time limit. File withdrawal, a failed scan, or removal of your access can stop an active ZIP. A failed ZIP counts none of its files from that attempt, while earlier successful downloads remain. Closed download controls do not indicate physical deletion. The page refreshes availability after an unsuccessful attempt. If timing cannot be verified, contact Phaeno; do not infer new dates for earlier releases without a schedule. These rules do not bypass payment holds or scientific release approval. Where scheduled retention notices are enabled for Assembly releases, active Organization admins receive one download reminder for an incomplete release and one grace notice if grace applies. A delayed reminder is skipped if every file has completed or the standard deadline has passed. There are no daily reminders. Notices identify the release and deadline and link to the authenticated assembly request; open it for current availability. Delivery problems do not extend the dates. Contact Phaeno if a notice needs support. Notices follow your Partner organization's admins and do not go to its end customers."
+          "text": "The request shows intake review, queued work, processing, output review, output availability, holds, and completion. An approved output release contains an immutable manifest and one or more checksummed files tied to the source input revision and assembly profile. For included cases, scientifically ready outputs use the original Kit shipment commercial source and the Partner assembly-credit or recorded-payment decision. No second invoice, commercial source or sale is created. Credit-approved Partners may download under their approved credit terms. Partners whose original purchase has neither approved assembly credit nor sufficient recorded payment can see that outputs are ready but cannot download them; contact Phaeno about the original Kit payment or credit decision. Use Download package to retrieve every file in a release as one ZIP, or download a file individually. Only a complete server response counts. Partial, cancelled, failed, and timed-out transfers remain undownloaded, and an active transfer is shown as in progress until it reaches a terminal outcome. One completed download by any currently authorized Partner member satisfies that file for the organization; the Partner view does not expose the member's identity. Each newly released output shows the retention schedule frozen when that release became available. Standard deletion is the normal deletion time. Conditional grace through applies only when at least one file in the release remains undownloaded at the standard deadline; when that happens, the whole release receives the displayed grace period. Dates and times include the browser's local time-zone label. An earlier output created before retention snapshots were introduced does not show a schedule; contact Phaeno before relying on a deletion date for that release. A corrected output is a new release. Partner users download the release and deliver it through their own customer process; Portal does not collect the Partner’s end-customer identity or deliver directly to that customer. Use the available withdrawal or cancellation-request action on the request. Phaeno records unused-case cancellation from the Kit order; completed work and the original purchase history remain preserved. Where retention enforcement is enabled, file and ZIP requests close at the same frozen deadline. Grace period active keeps an incomplete release available through its stated final date; later completion does not shorten grace. A transfer admitted before cutoff may finish within its original time limit. File withdrawal, a failed scan, or removal of your access can stop an active ZIP. A failed ZIP counts none of its files from that attempt, while earlier successful downloads remain. Closed download controls do not indicate physical deletion. The page refreshes availability after an unsuccessful attempt. If timing cannot be verified, contact Phaeno; do not infer new dates for earlier releases without a schedule. These rules do not bypass payment holds or scientific release approval. Where scheduled retention notices are enabled for Assembly releases, active Organization admins receive one download reminder for an incomplete release and one grace notice if grace applies. A delayed reminder is skipped if every file has completed or the standard deadline has passed. There are no daily reminders. Notices identify the release and deadline and link to the authenticated assembly request; open it for current availability. Delivery problems do not extend the dates. Contact Phaeno if a notice needs support. Notices follow your Partner organization's admins and do not go to its end customers."
         },
         {
           "heading": "Keep an output receipt",
@@ -879,12 +894,12 @@
       "publicationStatus": "published",
       "id": "partner/en-US/getting-started",
       "route": "/docs/partner/getting-started",
-      "contentHash": "f50ccfc19bc1b486b5137d7b7b337547760603bdfd662c2f4fb936379ff1f025",
+      "contentHash": "7c8150a5f6fc1b65b0db3ec04b216365209e370fc7b362a6b164e12cfd63902e",
       "sections": [
         {
           "heading": "Getting started",
           "anchor": "getting-started",
-          "text": "Portal gives Partner organizations a workspace for your Partner organization for reagent orders, data-assembly requests, released outputs, curated data, and organization access."
+          "text": "Portal gives Partner organizations a workspace for your Partner organization for PSeq Kit orders, Lab Service Jobs, included assembly cases, released outputs, curated data, and organization access."
         },
         {
           "heading": "Navigate the help center",
@@ -899,12 +914,12 @@
         {
           "heading": "Know your access level",
           "anchor": "know-your-access-level",
-          "text": "Partner organization administrators and department administrators can create and place reagent orders, submit data-assembly requests, accept applicable commercial changes, decide substitutions, and request cancellations within their operational Department. Organization administrators manage organization-wide invitations and roles. Other active Partner members have read, progress-tracking, and eligible output-download access."
+          "text": "Partner organization administrators and department administrators may prepare Kit and Lab drafts, submit included assembly inputs, accept applicable manual quotes or changes, decide substitutions, and request cancellations within their operational Department. Only organization administrators place new configured Lab Service and PSeq Kit purchases or request custom work. Organization administrators also manage organization-wide invitations and roles. Other active Partner members have read, progress-tracking, and eligible output-download access."
         },
         {
           "heading": "Find your work",
           "anchor": "find-your-work",
-          "text": "Dashboard summarizes reagent orders and data-assembly requests, assigned data, and any retained Trial history for the selected Department. Follow its links to the owning records; administrators also have a User management starting point. Reagent orders contains the organization’s available products, drafts, placed orders, substitutions, and shipments. Data assembly contains input revisions, quotes, processing status, and released outputs. Data Library contains Phaeno-curated packages explicitly assigned to the Partner. For organization administrators, User management manages durable invitations, Member or Organization administrator roles, and membership deactivation. Docs opens the Partner guides."
+          "text": "Dashboard summarizes reagent orders and data-assembly requests, assigned data, and any retained Trial history for the selected Department. Follow its links to the owning records; administrators also have a User management starting point. PSeq Kit orders contains the organization’s available products, drafts, placed orders, substitutions, and shipments. Assembly cases contains included input revisions, processing status and outputs, plus historical standalone requests. Lab services contains Lab Jobs, configured offering reviews, samples, shipping and released PSeq results. See Partner Lab services. Data Library contains Phaeno-curated packages explicitly assigned to the Partner. For organization administrators, User management manages durable invitations, Member or Organization administrator roles, and membership deactivation. Docs opens the Partner guides."
         },
         {
           "heading": "Protect submitted data",
@@ -931,9 +946,96 @@
     {
       "audience": "partner",
       "locale": "en-US",
+      "slug": "lab-services",
+      "title": "Use Partner Lab services",
+      "summary": "Review configured Lab Service pricing, place a Partner-owned Job, then finalize and ship samples.",
+      "order": 25,
+      "reviewedAt": "2026-09-07",
+      "navigationGroup": "partner-work",
+      "contentType": "guide",
+      "topicIds": [
+        "laboratory"
+      ],
+      "workflowIds": [
+        "lab-services"
+      ],
+      "taskKeywords": [
+        "Request laboratory services",
+        "lab services"
+      ],
+      "aliases": [
+        "QC",
+        "quality control",
+        "PSeq"
+      ],
+      "applicableRoles": [],
+      "relatedGuideIds": [
+        "partner/en-US/reagent-orders",
+        "partner/en-US/data-assembly"
+      ],
+      "publicationStatus": "published",
+      "id": "partner/en-US/lab-services",
+      "route": "/docs/partner/lab-services",
+      "contentHash": "f40aa4245dc15bcca6defdde257575390e38b14f749abf2ae728c4b11d330a12",
+      "sections": [
+        {
+          "heading": "Use Partner Lab services",
+          "anchor": "use-partner-lab-services",
+          "text": "Use Lab services within the selected Department to describe and price a Job before entering its exact sample list. Organization and Department administrators may prepare a Job. Only an organization administrator may place a configured standard order; existing Department authority for manual quote workflows remains available."
+        },
+        {
+          "heading": "Review an existing Job",
+          "anchor": "review-an-existing-job",
+          "text": "If Phaeno has prepared a Job after discussing the scope with your organization, it appears in Lab services as Quote in preparation while Phaeno prices it. You do not need to submit that Job for pricing. Open the Job and review its committed sample count, biological-source composition, storage requirements, safety declaration, and notes. When Phaeno issues the quote and it becomes Quote issued, an organization or department administrator can review and accept it in Quote and billing. Phaeno cannot accept it for your organization. If the scope is incorrect, do not accept the quote; contact Phaeno so the Job can be returned for a corrected revision. For a manually quoted Job, individual sample entry remains unavailable until your organization accepts the quote. Lab Service records belong to your Partner organization and selected Department. Do not enter your downstream customer’s identity. Partner Lab results follow the Lab Service workflow described here. Contact Phaeno for billing records. Included Kit assembly cases are managed from their purchased PSeq Kit order."
+        },
+        {
+          "heading": "Create a draft",
+          "anchor": "create-a-draft",
+          "text": "Request lab service is available only while your organization has current ordering authorization and PSeq Lab Service is offered. If new Jobs are unavailable, the page explains whether Phaeno must enable ordering authorization or the service is temporarily unavailable. Existing accepted Jobs remain available and follow their normal hold or cancellation workflow. Open Lab services and select Request lab service. In Job pricing details, enter a unique Job name and each Biological source with its sample count. The Portal calculates the Job's total sample count from those source groups. Enter the Storage requirements and Safety declaration shared by every sample, and any optional Job notes. Do not enter a patient name or identifier. Select Create job. The portal assigns an immutable eight-character Job number using unambiguous uppercase letters and numbers. The new Job opens on its detail page. Review an available configured offering on the Job, or submit for manual pricing when that workflow applies. Individual sample entry becomes available after commercial commitment. Members can review work in their assigned Department. Organization and Department administrators may create, edit, submit and accept applicable manual quotes in that Department. New configured standard orders require an organization administrator. Department authority does not grant access to other Departments. If an older draft still contains sample rows from the former workflow, the Job identifies them as legacy rows. Remove each row before submitting for pricing; enter the current sample roster again only after accepting the price."
+        },
+        {
+          "heading": "Place a configured standard order",
+          "anchor": "place-a-configured-standard-order",
+          "text": "In Standard PSeq Lab Service, choose an available Offering. Review its allowed material types and biological sources, included scientific outputs, published turnaround range, specimen count, and unit price. The bundle includes laboratory processing and data assembly; it does not require a separate assembly purchase. Choose Review standard order. The review shows the current subtotal, approved tax, and final total. An organization administrator supplies a PO when required, confirms the scope and prohibited-data statement, and selects Place standard order. The offering, scope, price and approved tax are retained with the Job. Detailed samples are entered afterward. If a readiness or billing requirement is incomplete, the displayed blockers explain why placement is unavailable. Phaeno must resolve the relevant service, shipping, billing or tax setup. A standard order cannot be committed with an unknown final total. If the offering, scientific definitions, price or organization settings change while reviewing, select Refresh terms and review again and affirm the new terms before placing. For different sources, outputs, quantities or timing, an organization administrator can select Request custom work. Describe the requirement without PHI or sensitive files. The confirmation supplies a Sales reference. This request preserves the original Job and Department; it does not accept a price or place an additional order."
+        },
+        {
+          "heading": "Submit for review",
+          "anchor": "submit-for-review",
+          "text": "Complete the Job pricing details, then select Submit for pricing. Confirm that those details contain no patient identifiers, PHI, or unnecessary personal data. No individual sample list is required or permitted at this stage. Submission freezes the pricing profile revision. Phaeno can prepare pricing, request specific corrections, or reject work that cannot be performed. When corrections are requested, create and submit a new revision. The prior revision remains in the job history; it is not silently overwritten."
+        },
+        {
+          "heading": "Review and accept a quote",
+          "anchor": "review-and-accept-a-quote",
+          "text": "Laboratory services are priced per job. Phaeno issues an itemized, immutable Portal quote for the accepted scope. When your approved billing and tax information is available, the quote includes calculated tax and freezes those commercial terms. Otherwise the quote is labeled Pre-tax total, and applicable tax is calculated when the invoice is issued. A zero tax amount is valid for an exempt, non-taxable, or zero-rate determination. The quote is available after all non-billing readiness items are complete and a Partner administrator is active; billing must be complete before invoicing. Before accepting, confirm the committed sample count, biological-source composition, standard service scope, price, currency, expiration date, and whether the displayed amount includes tax or is pre-tax. A Partner organization administrator or an administrator of the selected Department can accept the current unexpired quote. If the scope changes after acceptance, Phaeno issues a separate change quote. Added work does not begin until the applicable change is accepted. If accepting, withdrawing, or requesting cancellation fails, review the message in the open dialog. Your entries remain available to correct and retry. Closing the dialog does not confirm the action. You are asked before discarding changed entries. While saving, the dialog stays open and its entries and actions are unavailable until the save finishes."
+        },
+        {
+          "heading": "Ship and track samples",
+          "anchor": "ship-and-track-samples",
+          "text": "After placing the standard order or accepting the manual quote, return to Samples and shipping. Use Add sample, Edit sample, and Remove sample, or Download CSV template and Import sample list. The CSV accepts exactly customer_sample_id, biological_source, and tube_count; it does not accept barcodes. Previewing a CSV does not change the Job. Confirming a valid preview atomically replaces the editable draft list. Do not ship physical samples before the order is commercially committed and the exact roster is finalized. An early or unmatched package is quarantined and escalated by Phaeno; it is not accessioned or attached to active Job work. The final list must contain exactly the accepted number of unique non-PHI sample IDs, match every accepted source-group count, and give each sample a positive whole-number tube count. Select Review and finalize list, review every sample, and affirm the no-PHI confirmation before selecting Finalize sample list. Finalization authorizes the specimen-specific Lab work and lets Phaeno prepare the registered return kit. In Return kit and shipment, open the related shipment. When the kit is fulfilled, match every physical Phaeno-supplied tube to the displayed tube slot. A sample with multiple tubes appears once per tube as Tube 1 of N, Tube 2 of N, and so on. Review the packet and record carrier details after the package leaves your organization. Record the shipment once in its packet workflow; carrier and tracking details stay connected to all included samples. Back to lab job returns to the owning Job. The Portal tracks receipt, accessioning, processing, external sequencing, data processing, scientific review, holds, and readiness for release. A job can remain in progress while different samples move through laboratory work. If Phaeno needs replacement material or clarification, the job shows a Partner-safe action and the current schedule health. Internal scientific investigation details are not shown. Ready for release means Phaeno's scientific review is complete and the final deliverable package is complete, checksummed, and malware-clean. It does not mean a file is downloadable until an authorized Result Release Manager publishes that sample. Invoice balance and credit status never gate PSeq result release."
+        },
+        {
+          "heading": "Understand turnaround",
+          "anchor": "understand-turnaround",
+          "text": "Turnaround and progress shows first receipt, scientific acceptance, the original target, current expected completion, and actual completion. The published turnaround starts at scientific acceptance, not the day the package first arrives. Receipt-to-acceptance elapsed time remains visible separately. Phaeno may update the expected completion with a recorded reason. The original target remains visible. A later expected date queues a notice; an earlier date updates the Portal. Read the customer-safe explanation and current dates on the Job rather than treating an earlier message as the current schedule."
+        },
+        {
+          "heading": "Cancel work",
+          "anchor": "cancel-work",
+          "text": "A draft can be discarded before submission. Before Phaeno accepts work, an administrator can cancel eligible scope. After acceptance, submit a cancellation request. Phaeno records whether the request is approved, partially approved, or declined. Any correction to an issued PSeq invoice is retained as an append-only credit, debit, or write-off adjustment rather than editing the invoice."
+        },
+        {
+          "heading": "Find and resume work",
+          "anchor": "find-and-resume-work",
+          "text": "Search and filter by status, dates, or Submitted by me. Previous and Next show the complete matching result set. Opening a Job and returning keeps the filters and page. Clear all removes them. An empty filtered result is distinct from a failed load; use Retry records when loading fails."
+        }
+      ]
+    },
+    {
+      "audience": "partner",
+      "locale": "en-US",
       "slug": "reagent-orders",
-      "title": "Order reagents",
-      "summary": "Save and resume reagent drafts, place orders using negotiated offerings, approve changes, and track shipments.",
+      "title": "Order PSeq Kits",
+      "summary": "Review negotiated Kit bundles, track each shipped unit and prepare its included Assembly case.",
       "order": 30,
       "reviewedAt": "2026-09-07",
       "navigationGroup": "partner-work",
@@ -954,22 +1056,22 @@
       "publicationStatus": "published",
       "id": "partner/en-US/reagent-orders",
       "route": "/docs/partner/reagent-orders",
-      "contentHash": "a18bde5ced375b4a8f73036848658ad5a00eba9088d72c13356a991f57c3b763",
+      "contentHash": "7900b656bd286728e301ff7f277ebeef2acf68a3be78cf3cd9c685ca9a1d0cf3",
       "sections": [
         {
-          "heading": "Order reagents",
-          "anchor": "order-reagents",
-          "text": "Partner organization administrators and department administrators order within their selected Department from offerings and negotiated prices configured specifically for their organization."
+          "heading": "Order PSeq Kits",
+          "anchor": "order-pseq-kits",
+          "text": "Organization and Department administrators prepare PSeq Kit drafts within their selected Department using offerings negotiated for their Partner organization. Only an organization administrator places a new Kit purchase. Each whole kit unit includes one assembly case with a frozen profile and output contract."
         },
         {
           "heading": "Prepare a draft",
           "anchor": "prepare-a-draft",
-          "text": "Open Reagent orders and create a draft. Add only products offered to the selected Partner organization. Enter quantities that satisfy the offering’s minimum, maximum, and increment rules. Select an active shipping address from the Partner address book. Add purchase and delivery details when known. The purchase-order number and shipping address are required to place the order, but may remain incomplete in a saved draft. Save draft retains reagent lines, purchase-order number, selected shipping address, requested delivery date, and delivery instructions. You can save and resume a draft or create a new draft from a prior order. The new draft uses current availability and pricing rather than copying stale commercial terms."
+          "text": "Open PSeq Kit orders and choose Create PSeq Kit order. Add only products offered to the selected Partner organization. Enter quantities that satisfy the offering’s minimum, maximum, and increment rules. Select an active shipping address from the Partner address book. Add purchase and delivery details when known. The purchase-order number and shipping address are required to place the order, but may remain incomplete in a saved draft. Save draft retains Kit lines, purchase-order number, selected shipping address, requested delivery date, and delivery instructions. You can save and resume a draft or create a new draft from a prior order. The new draft uses current availability and pricing rather than copying stale commercial terms."
         },
         {
           "heading": "Place the order",
           "anchor": "place-the-order",
-          "text": "Placement revalidates the item, Partner eligibility, quantity, active negotiated price, shipping address, and purchase-order number. The portal then freezes the offering, price, currency, address, and PO snapshot. Portal preserves the actual negotiated price used for the order. Each shipment creates a journal-entry source record for Phaeno Finance; tax, freight, discounts, invoice preparation, and billing-address facts are handled outside the Partner workspace. Placement moves the local order directly into Phaeno review. It does not wait for an external accounting synchronization."
+          "text": "Choose Review PSeq Kit order and compare the quantity, per-unit bundle price, included assembly profile and version, number of included cases, PO and delivery details. An organization administrator selects Place PSeq Kit order from this review. Placement revalidates the item, Partner eligibility, quantity, active negotiated price, shipping address, and purchase-order number. The portal then freezes the offering, included profile, price, currency, address, and PO snapshot. If a price or profile changes, refresh the offerings, save changes and review the updated bundle before placing. Portal preserves the actual negotiated price used for the order. Each shipment creates a journal-entry source record for Phaeno Finance; tax, freight, discounts, invoice preparation, and billing-address facts are handled outside the Partner workspace. Placement moves the local order directly into Phaeno review. It does not wait for an external accounting synchronization."
         },
         {
           "heading": "Review substitutions and changes",
@@ -980,6 +1082,11 @@
           "heading": "Track fulfillment",
           "anchor": "track-fulfillment",
           "text": "Orders can be partially shipped. Each shipment can show carrier, service, tracking information, quantities, lot, expiration, and packing-slip details. The order keeps shipped and remaining quantities visible, including backordered units."
+        },
+        {
+          "heading": "Use the included assembly cases",
+          "anchor": "use-the-included-assembly-cases",
+          "text": "Open Included assembly cases on the Kit order. Each purchased unit has its own case, kit label, lot, shipment details, current deadline and history. After shipment, select Prepare inputs on the intended case. The case uses the included profile and outputs from purchase even if the current catalog later changes. See Included assembly inputs and outputs. Unused cases expire 90 days after the kit's labeled expiration, or 12 months after shipment if no expiration was recorded. Phaeno may grant a recorded extension or replace a kit. A replacement transfers the same case to the replacement kit; it does not create another included case or sale. An expired or cancelled unused case does not automatically create a refund. The order's operational summary distinguishes Kit fulfilled / assembly pending from completed assembly. Shipping completion alone does not mean the included outputs are released. For scope outside the offering, an organization administrator can select Request custom work from the list or order. Describe the need without PHI or a downstream customer identity. A Sales reference confirms the request; the original Kit order remains unchanged and no new purchase is made."
         },
         {
           "heading": "Cancel eligible work",
@@ -1022,7 +1129,7 @@
       "publicationStatus": "published",
       "id": "partner/en-US/statuses-and-troubleshooting",
       "route": "/docs/partner/statuses-and-troubleshooting",
-      "contentHash": "856e242a90d29997c1dbc8efa356e74d32830c182c38d3d9e5fad0e57c93175b",
+      "contentHash": "3b8b30873066aa9a4d6cec5fd8bf1d933fbe0ffbda80c2b62b9fa9e18f107c86",
       "sections": [
         {
           "heading": "Statuses and troubleshooting",
@@ -1030,24 +1137,29 @@
           "text": "Partner work has separate operational, commercial, file-scan, and release statuses. A completed workflow does not by itself mean every file is downloadable."
         },
         {
-          "heading": "Reagent order statuses",
-          "anchor": "reagent-order-statuses",
+          "heading": "PSeq Kit order statuses",
+          "anchor": "pseq-kit-order-statuses",
           "text": "| Status | Meaning and next action | | --- | --- | | Draft | An administrator can continue editing or discard the order. | | Placed or under review | Phaeno is validating the frozen order and commercial terms. | | Accepted or processing | Phaeno accepted the order and fulfillment is underway. | | Partially shipped | Review shipments and the quantities still open or backordered. | | Shipped | All current quantities have shipment records; use the tracking details shown. | | On hold | Read the Partner-safe reason and complete the requested action. | | Cancellation requested | Phaeno is reviewing the request; shipped work is not erased. | | Fulfilled | Fulfillment is complete. | | Cancelled or rejected | The order will not proceed. Review the history and any commercial adjustment. | A proposed substitution is a separate decision. A Partner administrator must approve it before Phaeno can replace the ordered reagent. A declined substitution preserves the original order facts."
         },
         {
           "heading": "Assembly request statuses",
           "anchor": "assembly-request-statuses",
-          "text": "Draft is editable. Submitted and Intake validation mean Phaeno is checking the frozen input revision. Changes requested requires a corrected revision. Quote in preparation and Quote issued cover job-specific pricing. After quote acceptance, Placed/queued, Processing, and Output review track work. Output available means an output exists but it may still have a release or payment gate. On hold, Cancellation requested, Completed, Cancelled, and Rejected describe the remaining outcomes."
+          "text": "Draft is editable. Submitted and Intake validation mean Phaeno is checking the frozen input revision. Changes requested requires a corrected revision. Quote in preparation and Quote issued apply to retained standalone requests. Included Kit work skips another quote. Placed/queued, Processing, and Output review track work. Output available means an output exists but it may still have a release or payment gate. On hold, Cancellation requested, Completed, Cancelled, and Rejected describe the remaining outcomes."
+        },
+        {
+          "heading": "Included case statuses",
+          "anchor": "included-case-statuses",
+          "text": "Awaiting shipment becomes Awaiting submission when the kit ships. Preparing inputs identifies an existing saved input request. In progress follows submitted work; Results released, Expired, and Cancelled are case outcomes. Open the request or Prepare inputs from the owning Kit order. Corrections stay with the same case."
         },
         {
           "heading": "Commercial and file states",
           "anchor": "commercial-and-file-states",
-          "text": "Superseded or Expired quotes cannot be accepted; review the current quote or request a new one. Credit-approved Partner assembly work uses Net 30 release. Otherwise output remains on Payment hold; the current portal does not provide payment confirmation, so contact Phaeno about the request. Assembly inputs and outputs must complete validation and a clean scan. Rejected, Failed, or Unavailable scan states prevent submission. An authorized administrator can remove an incorrect input from an editable draft and provide a valid replacement; contact Phaeno when a valid input continues to fail. A file is downloadable only when its release status is Released. Ready does not bypass a payment gate, and Withdrawn files remain unavailable. Reagent orders use the negotiated price captured at placement. Assembly work uses an accepted per-job quote. Phaeno Finance uses manual accounting source records outside the Partner workspace to prepare invoices and journal entries; the portal does not collect payment-card information."
+          "text": "Superseded or Expired quotes cannot be accepted; review the current quote or request a new one. Credit-approved Partner assembly work uses Net 30 release. Otherwise output remains on Payment hold; the current portal does not provide payment confirmation, so contact Phaeno about the request. Assembly inputs and outputs must complete validation and a clean scan. Rejected, Failed, or Unavailable scan states prevent submission. An authorized administrator can remove an incorrect input from an editable draft and provide a valid replacement; contact Phaeno when a valid input continues to fail. A file is downloadable only when its release status is Released. Ready does not bypass a payment gate, and Withdrawn files remain unavailable. PSeq Kit orders use the negotiated bundle price and included profile captured at placement. Included Assembly proceeds through input validation without another quote or sale. Historical standalone Assembly retains its accepted per-job quote. Phaeno Finance uses manual accounting source records outside the Partner workspace to prepare invoices and journal entries; the portal does not collect payment-card information."
         },
         {
           "heading": "Troubleshoot common problems",
           "anchor": "troubleshoot-common-problems",
-          "text": "Cannot place a reagent order: confirm the Partner organization, administrator role, active offering, quantity rules, shipping address, and purchase-order number. Cannot accept a quote: confirm it is the current issued, unexpired quote and that you are a Partner administrator. Upload rejected: compare the file name, type, size, and metadata with the assembly profile. Remove an incorrect saved input through Edit request → Input files before adding a replacement. Do not repeatedly upload a file rejected by scanning. Output missing: check output review, scan, release, and payment states separately. Order changed while open: refresh and review the latest version before attempting the action again. Shipment incomplete: review shipped and remaining quantities; a partial shipment can leave backordered units open. For support, provide the portal order or assembly reference, visible status, and last-action time. Do not send credentials, tokens, confidential data files, or customer information in a support message."
+          "text": "Cannot place a PSeq Kit order: confirm the Partner organization, organization-administrator role, active offering, quantity rules, shipping address, and purchase-order number. Cannot accept a quote: confirm it is the current issued, unexpired quote and that you are a Partner administrator. Upload rejected: compare the file name, type, size, and metadata with the assembly profile. Remove an incorrect saved input through Edit request → Input files before adding a replacement. Do not repeatedly upload a file rejected by scanning. Output missing: check output review, scan, release, and payment states separately. Order changed while open: refresh and review the latest version before attempting the action again. Shipment incomplete: review shipped and remaining quantities; a partial shipment can leave backordered units open. For support, provide the portal order or assembly reference, visible status, and last-action time. Do not send credentials, tokens, confidential data files, or customer information in a support message."
         }
       ]
     },
@@ -1124,17 +1236,22 @@
       "publicationStatus": "published",
       "id": "phaeno/configuration-and-recovery",
       "route": "/docs/phaeno/configuration-and-recovery",
-      "contentHash": "785d6c7546c27130c34d4a599ad49b7a99cdcc1fd1b3cee8f8a6be41e270ab5c",
+      "contentHash": "1f31ce6d560d16f4256a0de98752f256b607666b4ff4a29e5e5b0f718da75b49",
       "sections": [
         {
           "heading": "Configuration and file retention",
           "anchor": "configuration-and-file-retention",
-          "text": "Order configuration controls the active scientific, Partner, commercial, release, and integration rules used by new work. Changes must be audited and should not rewrite immutable order snapshots. File retention separately controls the retention policy used by future released result and output packages. Only a Phaeno platform administrator can change these settings. Use the far-left Order configuration sidebar to move among Defaults, Service catalog, Analyses, Sample shipping, PSeq kits, Assembly, and Legacy links. On wider screens the sidebar can remain pinned; when it is unpinned or the screen is narrow, open the same non-modal navigation from the edge tab. The selected subject appears in the main pane without duplicating the navigation above the configuration form."
+          "text": "Order configuration controls the active scientific, Partner, commercial, release, and integration rules used by new work. Changes must be audited and should not rewrite immutable order snapshots. File retention separately controls the retention policy used by future released result and output packages. Only a Phaeno platform administrator can change these settings. Use the far-left Order configuration sidebar to move among Defaults, Service catalog, Lab Service offerings, Analyses, Sample shipping, PSeq kits, Assembly, and Legacy links. On wider screens the sidebar can remain pinned; when it is unpinned or the screen is narrow, open the same non-modal navigation from the edge tab. The selected subject appears in the main pane without duplicating the navigation above the configuration form."
         },
         {
           "heading": "Maintain commercial configuration",
           "anchor": "maintain-commercial-configuration",
-          "text": "Maintain active billable items under Service catalog, including a permanent item code, name, description, sales unit, base price, currency, and availability. Link these Phaeno-owned items to portal analyses, Partner reagent offerings, or assembly profiles. The designated laboratory-service item must use the permanent code pseq-lab-service, the sales unit specimen, and an active state. The catalog identifies it as PSeq Lab Service. POMS blocks laboratory quote issuance when this exact item is missing, inactive, or uses another unit; an unrelated specimen fee cannot replace it. Configure Partner reagent availability, negotiated price, currency, effective period, quantity rules, and shipping restrictions for each eligible Partner. Overlapping active price periods for the same Partner and item are not allowed. Historical credit and accounting links are retained under Legacy links. Partner Assembly payment gates remain in its owning workflow. PSeq Customer result release depends on scientific approval and the Result Release Manager; invoice balance and credit do not gate it. Customer billing, tax, invoices and cash are maintained in Order Ops → Finance. Open Defaults → Edit defaults to maintain quote validity and sample submission instructions. The initial quote validity is 30 days, and an issued quote snapshots its own expiration. The supported sample workflow uses an exact roster after quote acceptance; the supported result destination is governed Portal delivery. Free-form configuration text no longer establishes readiness. Review and save older defaults once, then maintain the effective sample types, destinations and rules in Sample shipping. Each order and shipment still checks its specific requirements."
+          "text": "Maintain active billable items under Service catalog, including a permanent item code, name, description, sales unit, base price, currency, and availability. Link these Phaeno-owned items to portal analyses, Partner reagent offerings, or assembly profiles. The designated laboratory-service item must use the permanent code pseq-lab-service, the sales unit specimen, and an active state. The catalog identifies it as PSeq Lab Service. POMS blocks laboratory quote issuance when this exact item is missing, inactive, or uses another unit; an unrelated specimen fee cannot replace it. Configure Partner PSeq Kit availability, negotiated bundle price, currency, effective period, whole-unit quantity rules and shipping restrictions. Bind each active Kit offering to an active, validated included Assembly profile. Each unit creates one included case at purchase; existing orders keep their frozen profile and outputs. Overlapping active price periods for the same Partner and item are not allowed. Historical credit and accounting links are retained under Legacy links. Partner Assembly payment gates remain in its owning workflow. PSeq Customer result release depends on scientific approval and the Result Release Manager; invoice balance and credit do not gate it. Customer billing, tax, invoices and cash are maintained in Order Ops → Finance. Open Defaults → Edit defaults to maintain quote validity and sample submission instructions. The initial quote validity is 30 days, and an issued quote snapshots its own expiration. The supported sample workflow uses an exact roster after quote acceptance; the supported result destination is governed Portal delivery. Free-form configuration text no longer establishes readiness. Review and save older defaults once, then maintain the effective sample types, destinations and rules in Sample shipping. Each order and shipment still checks its specific requirements."
+        },
+        {
+          "heading": "Maintain configured Lab Service offerings",
+          "anchor": "maintain-configured-lab-service-offerings",
+          "text": "Use Lab Service offerings to define the specimen-priced bundle: catalog item, included analyses, allowed material types and biological sources, included outputs, published minimum and maximum turnaround, availability dates and active state. The price comes from the selected catalog item. New offerings start inactive; activate only approved complete definitions. Synthetic test offerings cannot be purchased. Edit availability changes when the existing version can be selected. Create new version records changed scientific scope as a new version. Accepted orders retain the version, scope, price and tax reviewed at commitment; later catalog or profile changes do not silently alter them. Review all final terms after a concurrent configuration change."
         },
         {
           "heading": "Maintain scientific configuration",
@@ -2677,12 +2794,17 @@
       "publicationStatus": "published",
       "id": "phaeno/order-customer-lab-authorization",
       "route": "/docs/phaeno/order-customer-lab-authorization",
-      "contentHash": "c35c1e9fa670fbd6e677ac5c89284eae5dae8fbb86bd0000038f0284c5ec467b",
+      "contentHash": "a57989ab90343dd4503e3e9a81caa835a8eea5c137a913b4e451a09b2b10fc43",
       "sections": [
         {
-          "heading": "Customer lab authorization",
-          "anchor": "customer-lab-authorization",
-          "text": "Customer laboratory work enters Order Ops as a Commercial request. Order Ops validates the Job-level specimen count, biological-source composition, storage, safety, and service profile before pricing. Individual samples do not exist yet."
+          "heading": "Lab Service authorization",
+          "anchor": "lab-service-authorization",
+          "text": "Customer and Partner Lab Service work shares the Department-scoped Job, specimen, shipping and scientific-release workflow. Manual Customer work enters Order Ops as a Commercial request. Order Ops validates the Job-level specimen count, biological-source composition, storage, safety, and service profile before pricing. Individual samples do not exist yet."
+        },
+        {
+          "heading": "Configured standard orders",
+          "anchor": "configured-standard-orders",
+          "text": "An eligible Customer or Partner organization administrator may select a configured offering and place its standard Lab Service bundle directly from the Job. Department administrators may prepare the Job but cannot commit a new configured purchase. The review includes the specimen count, frozen scientific scope, unit price, approved tax and final total. Complete billing and Finance-approved tax are required for this direct commitment; manual quote readiness remains as described below. Order Ops displays the accepted Standard PSeq Lab Service terms. Do not issue a second quote or sell assembly separately for the same bundle. The accepted Job opens exact sample-list preparation; roster finalization creates the normal Lab and shipping authorization. Partner Lab work stays within the Partner's organization and Department. Custom-work requests create a Sales Opportunity and preserve the originating order and Department. They do not place an order or approve a price. Review their scope in CRM and follow the existing Sales handoff when ready."
         },
         {
           "heading": "Initiate an order for a Customer",
@@ -2703,6 +2825,11 @@
           "heading": "Respect the Lab boundary",
           "anchor": "respect-the-lab-boundary",
           "text": "After acceptance, Order Ops continues to own Customer communication, Commercial holds, cancellation review, billing, files, and publication. Open the linked work from the order or from Lab operations > Receipt & accession. Lab Ops owns return-kit preparation, shipment identification, receipt, accession, physical lineage, controlled execution, exceptions, and scientific approval. The Lab milestone Ready for release means the scientific gate passed. It does not upload, scan, attach, or publish a result. PSeq result publication still requires the governed file and release checks. PSeq scientific result release is independent of invoice balance, credit status, and payment; Partner workflows retain their separate commercial rules."
+        },
+        {
+          "heading": "Track and change expected completion",
+          "anchor": "track-and-change-expected-completion",
+          "text": "Turnaround and progress shows first receipt, scientific acceptance, the original target, current expected completion, actual completion and receipt-to-acceptance elapsed time. Published turnaround begins at scientific acceptance. The original target is never overwritten by an operational delay. An authorized Lab operator, supervisor or Operations administrator uses Change expected completion from the order. Choose the new date and a controlled reason. Other operational delay also requires a customer-safe explanation. Keep internal investigation notes in Internal note. A later date queues a notice; an earlier date updates the Portal. The history distinguishes the timing change from notification delivery. Failed notices remain available to authorized notification recovery."
         }
       ]
     },
@@ -2735,21 +2862,21 @@
       "publicationStatus": "published",
       "id": "phaeno/order-data-assembly",
       "route": "/docs/phaeno/order-data-assembly",
-      "contentHash": "a0dd461c97d4984780faf330ece7e8fd868f2a5c61b43b238096f35f8652e4ff",
+      "contentHash": "fd1ccab67eb492f4991b82eb990f820b3d2e3fce2c2802de57d81b56dc44bdf0",
       "sections": [
         {
           "heading": "Partner data assembly",
           "anchor": "partner-data-assembly",
-          "text": "Order Ops owns the Commercial Data Assembly order, quote, approval, cancellation, and accounting source record. Lab Ops owns input validation, processing milestones, quality review, and immutable output release. Inputs and outputs are manufacturing records; they are not source samples for Data Provisioning. Find the Commercial order in Order operations > Assembly. Open Lab operations > Data assembly to validate the submitted input and perform the manufacturing workflow. When Lab accepts the input, Commercial staff issue the quote from the linked order; manufacturing continues after Partner acceptance."
+          "text": "New Partner Assembly is included with a purchased PSeq Kit case. Order Ops owns the original Kit purchase and case administration. Historical standalone Assembly keeps its original Commercial quote, cancellation and accounting source record. Lab Ops owns input validation, processing milestones, quality review, and immutable output release. Inputs and outputs are manufacturing records; they are not source samples for Data Provisioning. Find the Commercial order in Order operations > Assembly. Open Lab operations > Data assembly to validate the submitted input and perform the manufacturing workflow. For included cases, accepted intake proceeds to the processing queue without another quote or purchase. Historical standalone requests retain their quote and Partner-acceptance steps."
         },
         {
           "heading": "Validate the submission",
           "anchor": "validate-the-submission",
-          "text": "Confirm the active Partner, project reference, purchase-order requirement, selected active assembly profile, required metadata, and uploaded input revision. Validate file type, size, completeness, malware-scan state, and every profile-specific requirement. When the submission cannot pass input validation, Lab staff place the manufacturing record on hold and document the issue. Commercial staff use the linked order to request a targeted Partner correction or reject work that is unsafe, unsupported, or outside the offered profile. A correction creates a new input revision; it must not rewrite the revision that was reviewed previously."
+          "text": "Confirm the active Partner, project reference, purchase-order requirement, included frozen assembly profile, or the historical request profile, required metadata, and uploaded input revision. Validate file type, size, completeness, malware-scan state, and every profile-specific requirement. When the submission cannot pass input validation, Lab staff place the manufacturing record on hold and document the issue. Commercial staff use the linked order to request a targeted Partner correction or reject work that is unsafe, unsupported, or outside the offered profile. A correction creates a new input revision; it must not rewrite the revision that was reviewed previously."
         },
         {
-          "heading": "Quote and accept the job",
-          "anchor": "quote-and-accept-the-job",
+          "heading": "Historical standalone quotes",
+          "anchor": "historical-standalone-quotes",
           "text": "Prepare the per-job quote from the current assembly offering and preserve its profile, price, currency, and expiration snapshot. Issuing the POMS quote makes it available to the Partner immediately. Acceptance records the immutable Commercial commitment and queues the work."
         },
         {
@@ -2760,7 +2887,7 @@
         {
           "heading": "Approve an output release",
           "anchor": "approve-an-output-release",
-          "text": "An output release is immutable and identifies: the exact source input revision; the assembly profile and version; the output manifest and included files; checksums, scan state, and generation time; and the quality-review and approval facts. Approve a new release rather than replacing a prior release. POMS creates the accounting source record, then applies the Partner’s assembly-credit gate. Credit-approved work can be released under Net 30; work without approved credit remains on payment hold because manual payment confirmation is not yet implemented."
+          "text": "An output release is immutable and identifies: the exact source input revision; the assembly profile and version; the output manifest and included files; checksums, scan state, and generation time; and the quality-review and approval facts. Approve a new release rather than replacing a prior release. Included outputs use the original Kit shipment commercial source; they create no second invoice, commercial source or sale. Historical standalone output approval retains its original accounting-source step. Both apply the appropriate recorded balance or Partner assembly-credit gate. Credit-approved work can be released under Net 30; work without approved credit remains on payment hold because manual payment confirmation is not yet implemented."
         }
       ]
     },
@@ -2858,7 +2985,7 @@
       "publicationStatus": "published",
       "id": "phaeno/order-integration-recovery",
       "route": "/docs/phaeno/order-integration-recovery",
-      "contentHash": "70cc0d67a8425c8b2ecd1141eecc427110632f3752de261e8ec08f489bf1a05f",
+      "contentHash": "95aa0f7c384ff068db7e6e62c4378f825e29074154c40fcb4e480f36940e2c0b",
       "sections": [
         {
           "heading": "Accounting and notification recovery",
@@ -2873,7 +3000,7 @@
         {
           "heading": "Retry safely",
           "anchor": "retry-safely",
-          "text": "Refresh the workflow before investigating a missing accounting row. Do not recreate the order, quote, shipment, output approval, or result completion to force another row. Use the stable source ID when reconciling repeated report downloads. If an invitation hard-bounced, revoke and reissue to a corrected address rather than retrying it. If a result or delivery already exists, inspect that original record instead of creating another package or delivery. If a notification failed, retry it without repeating the underlying business transition. If QuickBooks is not configured, catalog, document, or payment recovery reports the connector as unavailable and records Needs attention. It does not create an invoice, payment, or successful zero balance. Preserve the existing record and ask the responsible administrator to resolve the connector; repeating the request cannot configure it. Maintain the active Service catalog directly in Order configuration → Service catalog. Partner Assembly credit settings remain applicable to their own workflow."
+          "text": "For a configured Lab order or Kit bundle, a platform administrator can open Order Ops → Attention → CRM sale summaries. Follow the order link, correct the reported commercial setup problem, then choose Retry publication. The original order stays committed while the same summary is queued again. Publication updates first-party CRM; it does not create another purchase or transmit specimen details, internal Lab notes or batch membership. Refresh the workflow before investigating a missing accounting row. Do not recreate the order, quote, shipment, output approval, or result completion to force another row. Use the stable source ID when reconciling repeated report downloads. If an invitation hard-bounced, revoke and reissue to a corrected address rather than retrying it. If a result or delivery already exists, inspect that original record instead of creating another package or delivery. If a notification failed, retry it without repeating the underlying business transition. If QuickBooks is not configured, catalog, document, or payment recovery reports the connector as unavailable and records Needs attention. It does not create an invoice, payment, or successful zero balance. Preserve the existing record and ask the responsible administrator to resolve the connector; repeating the request cannot configure it. Maintain the active Service catalog directly in Order configuration → Service catalog. Partner Assembly credit settings remain applicable to their own workflow."
         },
         {
           "heading": "Communicate the boundary",
@@ -2909,17 +3036,22 @@
       "publicationStatus": "published",
       "id": "phaeno/order-operations",
       "route": "/docs/phaeno/order-operations",
-      "contentHash": "5ce2c71425b54054fac8c72518f820817b5e1bd73b2f62a2d47270ead4415a69",
+      "contentHash": "de3616f50af4ad56a92db3752f09beb1070dfa14013854b74d4cd34eafd63e8e",
       "sections": [
         {
           "heading": "Order operations",
           "anchor": "order-operations",
-          "text": "Order operations is the Commercial workspace for Customer laboratory orders, Partner PSeq kit orders, and Partner data assembly requests. Use it for each order's pricing, commercial decisions, follow-up, Finance, and result publication. Reusable defaults and scientific offerings are maintained in Order configuration. When starting a Customer Job, select its Company and Department. A single available Department is selected automatically. The Department owns the Job and determines Customer access and the applicable service rule; a Blocked Department rule cannot be bypassed by a Ready organization default. Use the far-left sidebar beneath the toolbar to move among Order intake, Trial projects, PSeq kits, Assembly, Attention, Result release, Finance, and Legacy integrations, subject to your explicit roles. Order intake is the single entry point for paid Customer orders, sales handoffs, commercial review, pricing, and quotes. Trial projects handles no-charge evaluations. Choose New Customer order in Order intake. Select the Customer and Department, then review Customer readiness. Active Customers remain selectable even when their setup is incomplete. Requirements under Before starting pricing must be resolved first. Expand Later requirements for additional quote and invoice setup; those items do not block creating the order for pricing. Retry a failed readiness check without discarding your entries. Enter the Job name, sample counts by biological source, shared storage requirements, and safety declaration. You may also record a proposed price and optional notes. Start pricing saves the order and opens its detail workspace. An active Customer administrator is required before quote issuance. Exact sample IDs and tube counts are entered after quote acceptance; sample-list finalization authorizes the laboratory and shipping workflow. Billing setup may be completed after acceptance, before invoicing. Order intake owns this per-order process; reusable setup is maintained in Order configuration and the Company workspace. The sidebar header identifies Order operations and, on wider screens, provides the pin or unpin icon. Pointer users can preview an unpinned sidebar by approaching the left edge; keyboard and touch users open it from the edge tab. Choosing a section closes an unpinned sidebar."
+          "text": "Order operations is the Commercial workspace for Customer and Partner laboratory orders, Partner PSeq Kit orders, and Partner data assembly requests. Use it for each order's pricing, commercial decisions, follow-up, Finance, and result publication. Reusable defaults and scientific offerings are maintained in Order configuration. When starting a Customer Job, select its Company and Department. A single available Department is selected automatically. The Department owns the Job and determines Customer access and the applicable service rule; a Blocked Department rule cannot be bypassed by a Ready organization default. Use the far-left sidebar beneath the toolbar to move among Order intake, Trial projects, PSeq kits, Assembly, Attention, Result release, Finance, and Legacy integrations, subject to your explicit roles. Order intake owns staff-assisted Customer order creation, Sales handoffs, commercial review, pricing and manual quotes. Eligible organizations can place a configured standard Lab Service bundle from their own Job; that accepted commitment is shown on the same order. Trial projects handles no-charge evaluations. Choose New Customer order in Order intake. Select the Customer and Department, then review Customer readiness. Active Customers remain selectable even when their setup is incomplete. Requirements under Before starting pricing must be resolved first. Expand Later requirements for additional quote and invoice setup; those items do not block creating the order for pricing. Retry a failed readiness check without discarding your entries. Enter the Job name, sample counts by biological source, shared storage requirements, and safety declaration. You may also record a proposed price and optional notes. Start pricing saves the order and opens its detail workspace. An active Customer administrator is required before quote issuance. Exact sample IDs and tube counts are entered after quote acceptance; sample-list finalization authorizes the laboratory and shipping workflow. Billing setup may be completed after acceptance, before invoicing. Order intake owns this per-order process; reusable setup is maintained in Order configuration and the Company workspace. The sidebar header identifies Order operations and, on wider screens, provides the pin or unpin icon. Pointer users can preview an unpinned sidebar by approaching the left edge; keyboard and touch users open it from the edge tab. Choosing a section closes an unpinned sidebar."
         },
         {
           "heading": "Enter and find orders",
           "anchor": "enter-and-find-orders",
           "text": "Order intake covers Customer and Partner commercial requests through review, pricing, quote issuance, and Customer acceptance. Held orders remain in active intake. Use On hold to focus on blockers and All orders and history to find accepted, completed or cancelled work. Laboratory execution continues in Lab Ops. PSeq kits shows commercial status and opens the same order in Lab Ops for review, substitutions, backorders, shipments and fulfillment. Assembly shows commercial context and opens the same request in Lab Ops for processing, quality review and output release. Attention owns invitation, readiness, staged-order, projection/scan, unreleased-result, overdue-invoice, unapplied-cash, and reconciliation-difference exceptions. Result release publishes a scientifically approved, complete PSeq package per sample without a payment gate. Finance owns PSeq invoices, receipts/import, explicit allocation, aging, and reconciliation. Legacy integrations covers retained accounting-connector and notification recovery outside the active native PSeq AR workflow. Search Order intake by order, Job, Company, or request number. Order search runs across all matching records, with 25 orders per page. Pending CRM handoffs appear on the first active-intake page. The view, search and page stay in the address so you can return to the same queue. Clear filters restores active intake. A PSeq Lab Service row identifies an optional proposed price so Commercial users can find pricing decisions without opening every record. On the order, Review proposed price compares the proposed USD price per specimen with the active catalog price, requested quantity, difference, and subtotal. Approve price and issue quote preserves the proposal unchanged; Amend price and issue quote requires an internal reason. Tax is system-calculated: include and freeze it when the billing and tax profile is complete and Finance-approved, or issue an explicitly pre-tax quote and calculate tax at invoicing. The issued quote, not the proposal, is the offer a Customer administrator may accept. The operational detail shows the current quote value, revision, and status. Internal context in the audit timeline explains Phaeno-only decisions; it is informational, not a Customer-facing warning. Assign an owner and due date when the workflow supports them. A queue assignment coordinates work; it does not grant authorization or change the workflow state."
+        },
+        {
+          "heading": "Review configured bundles",
+          "anchor": "review-configured-bundles",
+          "text": "A standard Lab Service order includes specimen processing and data assembly in one accepted scope. Review its saved offering version, final price and Turnaround and progress on the order. Exact sample entry still follows commitment; roster finalization owns Lab and shipping authorization. A PSeq Kit purchase includes one assembly case per whole kit unit. Its order shows unit shipment facts, frozen profiles, deadlines and case history. Partner input corrections stay with the same case; included Assembly does not create a second quote or sale. Open Lab work leads to the existing execution workspace."
         },
         {
           "heading": "Keep state boundaries visible",
@@ -2972,12 +3104,17 @@
       "publicationStatus": "published",
       "id": "phaeno/order-reagent-fulfillment",
       "route": "/docs/phaeno/order-reagent-fulfillment",
-      "contentHash": "469b71d2753fee9979341a5cb5c6fa4aeb0fc17c9e635a718dccb0e6f9b4bde8",
+      "contentHash": "e9a0c6497341d1ee9216c976da4796b7167466c58b7aaa0b504e683e3f74e090",
       "sections": [
         {
-          "heading": "Partner reagent fulfillment",
-          "anchor": "partner-reagent-fulfillment",
+          "heading": "Partner PSeq Kit fulfillment",
+          "anchor": "partner-pseq-kit-fulfillment",
           "text": "Partner reagent orders use the offering and negotiated price available to the active Partner at placement. The placed order preserves an immutable Commercial snapshot even if catalog or pricing configuration changes later. Find the Commercial order in Order operations > PSeq kits. Perform the Commercial review and order acceptance there. After acceptance, perform physical preparation, substitutions, shipping, and fulfillment in Lab operations > PSeq kits. The Lab workflow consumes the Commercial snapshot; it does not rewrite the ordered items or negotiated price."
+        },
+        {
+          "heading": "Included bundle scope",
+          "anchor": "included-bundle-scope",
+          "text": "Every new whole Kit unit includes one assembly case. PSeq kits configuration binds the negotiated offering to an active, validated Assembly profile. The draft retains the reviewed offering and profile versions; changed price or scope requires another review before placement. Only a Partner organization administrator commits the new Kit purchase. Department administrators may prepare a draft."
         },
         {
           "heading": "Review a placed order",
@@ -3003,6 +3140,11 @@
           "heading": "Move between Commercial and Lab work",
           "anchor": "move-between-commercial-and-lab-work",
           "text": "Use the Commercial order to accept or reject the kit order and decide Partner-facing changes or cancellation. Choose Open Lab work to prepare, substitute, ship, and complete the kit. The same order identity and history remain visible on both sides; fulfillment actions appear only in Lab operations."
+        },
+        {
+          "heading": "Manage the included cases",
+          "anchor": "manage-the-included-cases",
+          "text": "The Commercial order's Included assembly cases panel shows each purchased unit, current case, frozen profile, shipment facts, submission deadline and event history. After shipment, the Partner prepares inputs from that exact case. Input corrections preserve the case and request; intake validation and processing continue in the existing Lab Assembly workspace without another quote or sale. Unused cases expire 90 days after labeled kit expiration, or 12 months after shipment if no expiration was recorded. An authorized operator may Extend deadline, Replace kit, or Cancel unused case only when the case permits the action. Review the current case and deadline, and record a reason suitable for the Partner history. Replacement requires actual lot, ship date, carrier and tracking facts; it transfers the existing case to the replacement kit without another purchase, billing source or entitlement. The operational summary keeps fulfillment and assembly progress separate. A shipped Kit may still have pending assembly. Completion requires the included cases to finish or close; an unused expired or cancelled case does not automatically create a refund. Finance history remains separate."
         }
       ]
     },
@@ -3698,5 +3840,5 @@
       ]
     }
   ],
-  "corpusHash": "4d82da08d384782a7e8749b6629be0dbdfdc7493927f90ddeb968a64d5932be4"
+  "corpusHash": "28556cf5a10510d8dec3d196992adb30c26caa54ff85b522d001a47872a3daa9"
 }

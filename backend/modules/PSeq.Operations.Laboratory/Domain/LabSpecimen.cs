@@ -19,6 +19,9 @@ public sealed class LabSpecimen : IAudit, IConcurrency
     public Guid SubmittedSpecimenId { get; private set; }
     public string? AccessionNumber { get; private set; }
     public DateTime? ReceivedAtUtc { get; private set; }
+    public DateTime? AcceptedAtUtc { get; private set; }
+    public DateTime? OriginalTargetAtUtc { get; private set; }
+    public DateTime? CompletedAtUtc { get; private set; }
     public LabSpecimenIntakeDisposition IntakeDisposition { get; private set; } = LabSpecimenIntakeDisposition.AwaitingReceipt;
     public string? ReceiptCondition { get; private set; }
     public string? IntakeReasonCode { get; private set; }
@@ -74,7 +77,7 @@ public sealed class LabSpecimen : IAudit, IConcurrency
             : accessionNumber.Trim();
     }
 
-    public void RecordIntakeDisposition(LabSpecimenIntakeDisposition disposition, string? reasonCode)
+    public void RecordIntakeDisposition(LabSpecimenIntakeDisposition disposition, string? reasonCode, DateTime? utcNow = null)
     {
         if (ReceivedAtUtc is null)
         {
@@ -101,6 +104,19 @@ public sealed class LabSpecimen : IAudit, IConcurrency
 
         IntakeDisposition = disposition;
         IntakeReasonCode = Optional(reasonCode);
+        if (disposition == LabSpecimenIntakeDisposition.Accepted) AcceptedAtUtc ??= utcNow ?? DateTime.UtcNow;
+    }
+
+    public void SetOriginalTarget(int maximumTurnaroundDays)
+    {
+        if (AcceptedAtUtc is null || maximumTurnaroundDays is < 1 or > 365)
+            throw new InvalidOperationException("A valid accepted specimen and turnaround range are required.");
+        OriginalTargetAtUtc ??= AcceptedAtUtc.Value.AddDays(maximumTurnaroundDays);
+    }
+
+    public void Complete(DateTime utcNow)
+    {
+        if (AcceptedAtUtc.HasValue && IntakeDisposition != LabSpecimenIntakeDisposition.Rejected) CompletedAtUtc ??= utcNow;
     }
 
     public void CancelBeforeReceipt(string reasonCode)

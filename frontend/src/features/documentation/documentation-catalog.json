@@ -540,7 +540,7 @@
       "locale": "en-US",
       "slug": "lab-services",
       "title": "Request laboratory services",
-      "summary": "Price a Job from its sample profile, then enter or import, finalize, and ship its sample list.",
+      "summary": "Review configured pricing or a manual quote, then finalize and ship the exact sample roster.",
       "order": 30,
       "reviewedAt": "2026-09-07",
       "navigationGroup": "laboratory-work",
@@ -755,8 +755,8 @@
       "audience": "partner",
       "locale": "en-US",
       "slug": "reagent-orders",
-      "title": "Order reagents",
-      "summary": "Save and resume reagent drafts, place orders using negotiated offerings, approve changes, and track shipments.",
+      "title": "Order PSeq Kits",
+      "summary": "Review negotiated Kit bundles, track each shipped unit and prepare its included Assembly case.",
       "order": 30,
       "reviewedAt": "2026-09-07",
       "navigationGroup": "partner-work",
@@ -781,8 +781,8 @@
       "audience": "partner",
       "locale": "en-US",
       "slug": "data-assembly",
-      "title": "Request data assembly",
-      "summary": "Save and revise input files, recover the same draft, accept pricing, and download approved outputs.",
+      "title": "Prepare included Assembly",
+      "summary": "Prepare a purchased Kit case, correct inputs and download governed outputs without another purchase.",
       "order": 40,
       "reviewedAt": "2026-09-07",
       "navigationGroup": "partner-work",
@@ -1866,6 +1866,39 @@
       "relatedGuideIds": [],
       "publicationStatus": "published",
       "sourcePath": "src/content/docs/phaeno/statuses-and-recovery.mdx"
+    },
+    {
+      "audience": "partner",
+      "locale": "en-US",
+      "slug": "lab-services",
+      "title": "Use Partner Lab services",
+      "summary": "Review configured Lab Service pricing, place a Partner-owned Job, then finalize and ship samples.",
+      "order": 25,
+      "reviewedAt": "2026-09-07",
+      "navigationGroup": "partner-work",
+      "contentType": "guide",
+      "topicIds": [
+        "laboratory"
+      ],
+      "workflowIds": [
+        "lab-services"
+      ],
+      "taskKeywords": [
+        "Request laboratory services",
+        "lab services"
+      ],
+      "aliases": [
+        "QC",
+        "quality control",
+        "PSeq"
+      ],
+      "applicableRoles": [],
+      "relatedGuideIds": [
+        "partner/en-US/reagent-orders",
+        "partner/en-US/data-assembly"
+      ],
+      "publicationStatus": "published",
+      "sourcePath": "src/content/docs/en-US/partner/lab-services.mdx"
     }
   ]
 }

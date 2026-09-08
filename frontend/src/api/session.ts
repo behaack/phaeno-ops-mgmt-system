@@ -71,6 +71,7 @@ export type SessionCapabilities = {
   canProvisionOrganizationData: boolean
   canViewOrganizationDatasets: boolean
   canViewLabServiceOrders: boolean
+  canViewLabServiceInvoices?: boolean
   canCreateLabServiceRequests: boolean
   canSubmitLabServiceRequests: boolean
   canAcceptLabServiceQuotes: boolean

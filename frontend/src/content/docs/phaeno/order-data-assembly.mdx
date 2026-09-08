@@ -1,16 +1,16 @@
 # Partner data assembly
 
-Order Ops owns the Commercial Data Assembly order, quote, approval, cancellation, and accounting source record. Lab Ops owns input validation, processing milestones, quality review, and immutable output release. Inputs and outputs are manufacturing records; they are not source samples for Data Provisioning.
+New Partner Assembly is included with a purchased PSeq Kit case. Order Ops owns the original Kit purchase and case administration. Historical standalone Assembly keeps its original Commercial quote, cancellation and accounting source record. Lab Ops owns input validation, processing milestones, quality review, and immutable output release. Inputs and outputs are manufacturing records; they are not source samples for Data Provisioning.
 
-Find the Commercial order in **Order operations** > **Assembly**. Open **Lab operations** > **Data assembly** to validate the submitted input and perform the manufacturing workflow. When Lab accepts the input, Commercial staff issue the quote from the linked order; manufacturing continues after Partner acceptance.
+Find the Commercial order in **Order operations** > **Assembly**. Open **Lab operations** > **Data assembly** to validate the submitted input and perform the manufacturing workflow. For included cases, accepted intake proceeds to the processing queue without another quote or purchase. Historical standalone requests retain their quote and Partner-acceptance steps.
 
 ## Validate the submission
 
-Confirm the active Partner, project reference, purchase-order requirement, selected active assembly profile, required metadata, and uploaded input revision. Validate file type, size, completeness, malware-scan state, and every profile-specific requirement.
+Confirm the active Partner, project reference, purchase-order requirement, included frozen assembly profile, or the historical request profile, required metadata, and uploaded input revision. Validate file type, size, completeness, malware-scan state, and every profile-specific requirement.
 
 When the submission cannot pass input validation, Lab staff place the manufacturing record on hold and document the issue. Commercial staff use the linked order to request a targeted Partner correction or reject work that is unsafe, unsupported, or outside the offered profile. A correction creates a new input revision; it must not rewrite the revision that was reviewed previously.
 
-## Quote and accept the job
+## Historical standalone quotes
 
 Prepare the per-job quote from the current assembly offering and preserve its profile, price, currency, and expiration snapshot. Issuing the POMS quote makes it available to the Partner immediately. Acceptance records the immutable Commercial commitment and queues the work.
 
@@ -28,4 +28,4 @@ An output release is immutable and identifies:
 - checksums, scan state, and generation time; and
 - the quality-review and approval facts.
 
-Approve a new release rather than replacing a prior release. POMS creates the accounting source record, then applies the Partner’s assembly-credit gate. Credit-approved work can be released under Net 30; work without approved credit remains on payment hold because manual payment confirmation is not yet implemented.
+Approve a new release rather than replacing a prior release. Included outputs use the original Kit shipment commercial source; they create no second invoice, commercial source or sale. Historical standalone output approval retains its original accounting-source step. Both apply the appropriate recorded balance or Partner assembly-credit gate. Credit-approved work can be released under Net 30; work without approved credit remains on payment hold because manual payment confirmation is not yet implemented.

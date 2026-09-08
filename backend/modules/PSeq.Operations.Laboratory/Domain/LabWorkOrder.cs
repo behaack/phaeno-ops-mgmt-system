@@ -33,6 +33,12 @@ public sealed class LabWorkOrder : IAudit, IConcurrency
     public int ServiceVersion { get; private set; }
     public Guid? LabServiceWorkflowVersionId { get; private set; }
     public string TurnaroundPolicyKey { get; private set; } = null!;
+    public int? MinimumTurnaroundDays { get; private set; }
+    public int? MaximumTurnaroundDays { get; private set; }
+    public DateTime? OriginalTargetAtUtc { get; private set; }
+    public DateTime? ExpectedCompletionAtUtc { get; private set; }
+    public DateTime? CompletedAtUtc { get; private set; }
+    public bool HasTimingOverride { get; private set; }
     public string? OpaqueSubmitterReference { get; private set; }
     public LabWorkOrderStatus Status { get; private set; } = LabWorkOrderStatus.AwaitingSpecimens;
     public long ProjectionVersion { get; private set; } = 1;
@@ -61,7 +67,9 @@ public sealed class LabWorkOrder : IAudit, IConcurrency
         int serviceVersion,
         string turnaroundPolicyKey,
         string? opaqueSubmitterReference,
-        Guid? labServiceWorkflowVersionId = null)
+        Guid? labServiceWorkflowVersionId = null,
+        int? minimumTurnaroundDays = null,
+        int? maximumTurnaroundDays = null)
     {
         if (authorizationId == Guid.Empty
             || authorizationSourceId == Guid.Empty
@@ -88,6 +96,12 @@ public sealed class LabWorkOrder : IAudit, IConcurrency
             labServiceWorkflowVersionId, nameof(labServiceWorkflowVersionId));
         TurnaroundPolicyKey = Required(turnaroundPolicyKey, nameof(turnaroundPolicyKey));
         OpaqueSubmitterReference = Optional(opaqueSubmitterReference);
+        if (minimumTurnaroundDays.HasValue != maximumTurnaroundDays.HasValue
+            || minimumTurnaroundDays is < 1 or > 365 || maximumTurnaroundDays is < 1 or > 365
+            || minimumTurnaroundDays > maximumTurnaroundDays)
+            throw new ArgumentException("A complete valid turnaround range is required.");
+        MinimumTurnaroundDays = minimumTurnaroundDays;
+        MaximumTurnaroundDays = maximumTurnaroundDays;
     }
 
     public void RecordAuthorizationVersion(
@@ -167,8 +181,38 @@ public sealed class LabWorkOrder : IAudit, IConcurrency
         }
 
         Status = status;
+        if (status == LabWorkOrderStatus.ReadyForRelease)
+        {
+            CompletedAtUtc ??= DateTime.UtcNow;
+            foreach (var specimen in Specimens) specimen.Complete(CompletedAtUtc.Value);
+        }
         ProjectionVersion++;
     }
+
+    public void RefreshAcceptedSpecimenTargets()
+    {
+        if (!MaximumTurnaroundDays.HasValue) return;
+        foreach (var specimen in Specimens.Where(value => value.AcceptedAtUtc.HasValue))
+            specimen.SetOriginalTarget(MaximumTurnaroundDays.Value);
+        OriginalTargetAtUtc = Specimens.Select(value => value.OriginalTargetAtUtc).Max();
+        if (!HasTimingOverride) ExpectedCompletionAtUtc = OriginalTargetAtUtc;
+    }
+
+    public void OverrideExpectedCompletion(DateTime expectedAtUtc)
+    {
+        if (Status is LabWorkOrderStatus.ReadyForRelease or LabWorkOrderStatus.Cancelled || !OriginalTargetAtUtc.HasValue)
+            throw new InvalidOperationException("Only an accepted, unfinished Job with a quoted turnaround can change its expected completion.");
+        if (expectedAtUtc.Kind != DateTimeKind.Utc || expectedAtUtc <= DateTime.UtcNow)
+            throw new ArgumentException("Expected completion must be a future UTC date.");
+        if (ExpectedCompletionAtUtc == expectedAtUtc) throw new InvalidOperationException("Choose a different expected completion date.");
+        ExpectedCompletionAtUtc = expectedAtUtc;
+        HasTimingOverride = true;
+        ProjectionVersion++;
+    }
+
+    public string ScheduleHealth(DateTime now) => Status is LabWorkOrderStatus.ReadyForRelease or LabWorkOrderStatus.Cancelled ? "Complete"
+        : ExpectedCompletionAtUtc < now ? "Delayed"
+        : Status == LabWorkOrderStatus.OnHold || ExpectedCompletionAtUtc > OriginalTargetAtUtc ? "AtRisk" : "OnTrack";
 
     public void AdvanceProjectionVersion() => ProjectionVersion++;
 

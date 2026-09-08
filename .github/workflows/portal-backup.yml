@@ -1,0 +1,215 @@
+name: Back Up Portal Database and Files
+
+on:
+  workflow_dispatch:
+    inputs:
+      mode:
+        description: Create and collect a verified backup, install the daily host timer after verification, or collect the latest backup
+        required: true
+        default: backup-and-collect
+        type: choice
+        options:
+          - backup-and-collect
+          - install-and-backup
+          - collect-latest
+          - status
+  # This off-server collection activates only when this workflow is on main.
+  # 10:47 UTC follows both local-time variants and the bounded restore check.
+  schedule:
+    - cron: '47 10 * * *'
+
+permissions:
+  contents: read
+
+concurrency:
+  group: phaeno-portal-green-production
+  cancel-in-progress: false
+
+env:
+  DEPLOY_ROOT: /opt/phaeno.portal-green
+
+jobs:
+  backup:
+    runs-on: ubuntu-latest
+    timeout-minutes: 40
+    environment:
+      name: production
+    defaults:
+      run:
+        shell: bash
+    steps:
+      - name: Check out verified maintenance source
+        uses: actions/checkout@v6
+
+      - name: Validate protected connection and operation
+        env:
+          DEPLOY_HOST: ${{ secrets.DEPLOY_HOST }}
+          DEPLOY_USER: ${{ secrets.DEPLOY_USER }}
+          DEPLOY_KNOWN_HOSTS: ${{ secrets.DEPLOY_KNOWN_HOSTS }}
+          DEPLOY_SSH_KEY: ${{ secrets.DEPLOY_SSH_KEY }}
+          BACKUP_PUBLIC_KEY: ${{ secrets.PORTAL_MIGRATION_BACKUP_PUBLIC_KEY }}
+          REQUESTED_MODE: ${{ inputs.mode }}
+        run: |
+          set -euo pipefail
+          for name in DEPLOY_HOST DEPLOY_USER DEPLOY_KNOWN_HOSTS DEPLOY_SSH_KEY BACKUP_PUBLIC_KEY; do
+            [[ -n "${!name}" ]] || { echo "::error::Missing protected backup configuration $name."; exit 1; }
+          done
+          mode="${REQUESTED_MODE:-collect-latest}"
+          case "$mode" in backup-and-collect|install-and-backup|collect-latest|status) ;; *) exit 1 ;; esac
+          echo "BACKUP_MODE=$mode" >> "$GITHUB_ENV"
+          [[ "$GITHUB_SHA" =~ ^[0-9a-f]{40}$ && "$GITHUB_RUN_ID" =~ ^[0-9]+$ && "$GITHUB_RUN_ATTEMPT" =~ ^[0-9]+$ ]]
+          echo "REMOTE_PACKAGE=$DEPLOY_ROOT/maintenance/backup-upload-$GITHUB_RUN_ID-$GITHUB_RUN_ATTEMPT.tar.gz" >> "$GITHUB_ENV"
+          echo "REMOTE_KEY=$DEPLOY_ROOT/runtime/backup-upload-$GITHUB_RUN_ID-$GITHUB_RUN_ATTEMPT.pub" >> "$GITHUB_ENV"
+          install -d -m 700 ~/.ssh
+          printf '%s\n' "$DEPLOY_SSH_KEY" > ~/.ssh/deploy_key
+          printf '%s\n' "$DEPLOY_KNOWN_HOSTS" > ~/.ssh/known_hosts
+          chmod 600 ~/.ssh/deploy_key ~/.ssh/known_hosts
+
+      - name: Upload immutable backup helpers and public key
+        env:
+          DEPLOY_HOST: ${{ secrets.DEPLOY_HOST }}
+          DEPLOY_USER: ${{ secrets.DEPLOY_USER }}
+          BACKUP_PUBLIC_KEY: ${{ secrets.PORTAL_MIGRATION_BACKUP_PUBLIC_KEY }}
+        run: |
+          set -euo pipefail
+          tar --create --gzip --sort=name --mtime=@0 --owner=0 --group=0 --numeric-owner \
+            --file "$RUNNER_TEMP/portal-backup-helpers.tar.gz" \
+            --directory deployment/hetzner/green coordinated-backup.sh verify-database-backup.sh \
+            restore-backup-envelope.sh install-coordinated-backup-timer.sh record-backup-export.sh backup
+          package_hash="$(sha256sum "$RUNNER_TEMP/portal-backup-helpers.tar.gz" | cut -d ' ' -f 1)"
+          ssh -i ~/.ssh/deploy_key "$DEPLOY_USER@$DEPLOY_HOST" \
+            "install -d -m 700 '$DEPLOY_ROOT/maintenance' '$DEPLOY_ROOT/maintenance/backup'"
+          scp -q -i ~/.ssh/deploy_key "$RUNNER_TEMP/portal-backup-helpers.tar.gz" "$DEPLOY_USER@$DEPLOY_HOST:$REMOTE_PACKAGE"
+          printf '%s\n' "$BACKUP_PUBLIC_KEY" | ssh -i ~/.ssh/deploy_key "$DEPLOY_USER@$DEPLOY_HOST" \
+            "install -m 600 /dev/stdin '$REMOTE_KEY'"
+          ssh -i ~/.ssh/deploy_key "$DEPLOY_USER@$DEPLOY_HOST" bash -s -- \
+            "$DEPLOY_ROOT" "$GITHUB_SHA" "$REMOTE_PACKAGE" "$package_hash" <<'REMOTE'
+          set -euo pipefail
+          umask 077
+          root="$1"; revision="$2"; package="$3"; expected="$4"
+          [[ "$root" == /opt/phaeno.portal-green && "$revision" =~ ^[0-9a-f]{40}$ && "$expected" =~ ^[0-9a-f]{64}$ && $EUID == 0 ]]
+          [[ -f "$package" && ! -L "$package" && "$(sha256sum "$package" | cut -d ' ' -f 1)" == "$expected" ]]
+          target="$root/maintenance/backup/$revision"
+          [[ ! -L "$target" ]]
+          if [[ -e "$target" ]]; then
+            [[ -d "$target" && -f "$target/package.sha256" && "$(cat "$target/package.sha256")" == "$expected" ]]
+          else
+            mkdir -m 700 "$target"
+            tar --extract --gzip --file "$package" --directory "$target" --no-same-owner --no-same-permissions
+            printf '%s\n' "$expected" > "$target/package.sha256"
+            chmod -R go-rwx "$target"
+          fi
+          REMOTE
+
+      - name: Capture or locate a verified coordinated backup
+        id: snapshot
+        env:
+          DEPLOY_HOST: ${{ secrets.DEPLOY_HOST }}
+          DEPLOY_USER: ${{ secrets.DEPLOY_USER }}
+        run: |
+          set -euo pipefail
+          case "$BACKUP_MODE" in
+            backup-and-collect|install-and-backup) operation=backup ;;
+            collect-latest) operation=latest ;;
+            status) operation=status ;;
+          esac
+          output="$(ssh -i ~/.ssh/deploy_key "$DEPLOY_USER@$DEPLOY_HOST" \
+            "bash '$DEPLOY_ROOT/maintenance/backup/$GITHUB_SHA/coordinated-backup.sh' '$operation' '$DEPLOY_ROOT' '$REMOTE_KEY' '$GITHUB_SHA'")"
+          printf '%s\n' "$output"
+          backup_id="$(printf '%s\n' "$output" | sed -n 's/^backup_id=//p')"
+          [[ "$backup_id" =~ ^snapshot-[0-9]{8}T[0-9]{6}Z-[0-9a-f-]{36}$ ]]
+          echo "backup_id=$backup_id" >> "$GITHUB_OUTPUT"
+
+      - name: Copy only encrypted backup artifacts off the production server
+        if: ${{ env.BACKUP_MODE != 'status' }}
+        env:
+          DEPLOY_HOST: ${{ secrets.DEPLOY_HOST }}
+          DEPLOY_USER: ${{ secrets.DEPLOY_USER }}
+          BACKUP_ID: ${{ steps.snapshot.outputs.backup_id }}
+        run: |
+          set -euo pipefail
+          install -d -m 700 "$RUNNER_TEMP/portal-backup-export"
+          for leaf in snapshot.tar.enc snapshot.key.enc receipt.env encrypted.sha256; do
+            scp -q -i ~/.ssh/deploy_key \
+              "$DEPLOY_USER@$DEPLOY_HOST:/var/backups/phaeno-portal-coordinated/$BACKUP_ID/$leaf" \
+              "$RUNNER_TEMP/portal-backup-export/$leaf"
+          done
+          cd "$RUNNER_TEMP/portal-backup-export"
+          sha256sum --check --strict --status encrypted.sha256
+
+
+      - name: Retain the encrypted off-server backup
+        if: ${{ env.BACKUP_MODE != 'status' }}
+        id: artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: portal-${{ steps.snapshot.outputs.backup_id }}
+          path: ${{ runner.temp }}/portal-backup-export/
+          if-no-files-found: error
+          retention-days: 35
+          compression-level: 0
+
+      - name: Record verified off-server copy and rotate expired exported snapshots
+        if: ${{ env.BACKUP_MODE != 'status' }}
+        env:
+          DEPLOY_HOST: ${{ secrets.DEPLOY_HOST }}
+          DEPLOY_USER: ${{ secrets.DEPLOY_USER }}
+          BACKUP_ID: ${{ steps.snapshot.outputs.backup_id }}
+          ARTIFACT_ID: ${{ steps.artifact.outputs.artifact-id }}
+          ARTIFACT_DIGEST: ${{ steps.artifact.outputs.artifact-digest }}
+        run: |
+          set -euo pipefail
+          [[ "$ARTIFACT_ID" =~ ^[0-9]+$ && "$ARTIFACT_DIGEST" =~ ^[0-9a-f]{64}$ ]]
+          manifest_digest="$(sha256sum "$RUNNER_TEMP/portal-backup-export/encrypted.sha256" | cut -d ' ' -f 1)"
+          ssh -i ~/.ssh/deploy_key "$DEPLOY_USER@$DEPLOY_HOST" \
+            "bash '$DEPLOY_ROOT/maintenance/backup/$GITHUB_SHA/record-backup-export.sh' '$DEPLOY_ROOT' '$BACKUP_ID' '$ARTIFACT_ID' '$ARTIFACT_DIGEST' '$manifest_digest' '$GITHUB_RUN_ID'"
+
+      - name: Enable daily maintenance after the first verified off-server copy
+        if: ${{ env.BACKUP_MODE == 'install-and-backup' }}
+        env:
+          DEPLOY_HOST: ${{ secrets.DEPLOY_HOST }}
+          DEPLOY_USER: ${{ secrets.DEPLOY_USER }}
+        run: |
+          set -euo pipefail
+          ssh -i ~/.ssh/deploy_key "$DEPLOY_USER@$DEPLOY_HOST" \
+            "bash '$DEPLOY_ROOT/maintenance/backup/$GITHUB_SHA/install-coordinated-backup-timer.sh' '$DEPLOY_ROOT' '$GITHUB_SHA' '$REMOTE_KEY'"
+
+      - name: Record protected recovery evidence
+        env:
+          BACKUP_ID: ${{ steps.snapshot.outputs.backup_id }}
+          ARTIFACT_URL: ${{ steps.artifact.outputs.artifact-url }}
+          ARTIFACT_DIGEST: ${{ steps.artifact.outputs.artifact-digest }}
+        run: |
+          {
+            echo '## Coordinated Portal backup'
+            echo
+            printf -- '- Snapshot: `%s`\n' "$BACKUP_ID"
+            printf -- '- Mode: `%s`\n' "$BACKUP_MODE"
+            if [[ "$BACKUP_MODE" == status || "$BACKUP_MODE" == collect-latest ]]; then
+              echo '- The latest previously verified database/file snapshot passed freshness and encrypted checksum checks; no new capture was performed.'
+            else
+              echo '- Database and Local files were captured with API writers stopped and restored in isolation.'
+            fi
+            echo '- Production database records and managed file bytes were not restored, changed, or deleted.'
+            if [[ -n "$ARTIFACT_URL" ]]; then
+              printf -- '- Encrypted off-server artifact: %s\n' "$ARTIFACT_URL"
+              printf -- '- Artifact digest: `%s`\n' "$ARTIFACT_DIGEST"
+            fi
+            if [[ "$BACKUP_MODE" == install-and-backup ]]; then
+              echo '- Host timer enabled at 2 a.m. America/Los_Angeles, with a 3 a.m. spring-DST fallback.'
+            else
+              echo '- This operation does not change host timer activation.'
+            fi
+            echo '- Automatic off-server collection requires this workflow on the repository default branch.'
+          } >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Remove this run's uploaded public key and package
+        if: ${{ always() }}
+        env:
+          DEPLOY_HOST: ${{ secrets.DEPLOY_HOST }}
+          DEPLOY_USER: ${{ secrets.DEPLOY_USER }}
+        run: |
+          if [[ -n "${REMOTE_KEY:-}" && -n "${REMOTE_PACKAGE:-}" && -f ~/.ssh/deploy_key ]]; then
+            ssh -i ~/.ssh/deploy_key "$DEPLOY_USER@$DEPLOY_HOST" \
+              "rm -f -- '$REMOTE_KEY' '$REMOTE_PACKAGE'" || true
+          fi

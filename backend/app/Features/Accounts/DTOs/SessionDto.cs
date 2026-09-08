@@ -109,6 +109,7 @@ public sealed record SessionCapabilitiesDto
     public required bool CanViewOrganizationDatasets { get; init; }
 
     public required bool CanViewLabServiceOrders { get; init; }
+    public required bool CanViewLabServiceInvoices { get; init; }
 
     public required bool CanCreateLabServiceRequests { get; init; }
 

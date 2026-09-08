@@ -398,7 +398,7 @@ export function LabJobDetailsDialog({
           <DialogDescription>
             {platformMode
               ? "Select the Customer, enter the price-bearing Job scope, and optionally record the price discussed by Sales. Phaeno reviews that proposal before issuing the Customer quote."
-              : "Enter each biological source and its sample count. You may propose a price for Phaeno to approve or amend before issuing the quote."}
+              : "Enter each biological source and its sample count. Save the Job to review configured PSeq Lab Service pricing or request custom pricing. Individual sample details follow acceptance."}
           </DialogDescription>
         </DialogHeader>
 
@@ -410,7 +410,7 @@ export function LabJobDetailsDialog({
                 <AlertDescription>
                   {platformMode
                     ? "Connect a real Phaeno session to initiate a Customer order."
-                    : "Connect a real Customer session to create a laboratory job."}
+                    : "Connect a Customer or Partner session to create a laboratory Job."}
                 </AlertDescription>
               </Alert>
             ) : null}
@@ -420,7 +420,7 @@ export function LabJobDetailsDialog({
                 <AlertDescription>
                   {platformMode
                     ? "Phaeno order-pricing authority is required."
-                    : "An active Customer organization administrator is required."}
+                    : "An active organization or Department administrator is required to maintain Job details."}
                 </AlertDescription>
               </Alert>
             ) : null}

@@ -9,6 +9,7 @@ using PSeq.Operations.Laboratory.Domain;
 using PhaenoPortal.App.Features.Accounts.DTOs;
 using PhaenoPortal.App.Features.Accounts.Services;
 using PhaenoPortal.App.Features.LabOperations.Services;
+using PhaenoPortal.App.Features.OrderManagement.Services;
 using PhaenoPortal.App.Infrastructure.Persistence;
 using PhaenoPortal.App.Infrastructure.Persistence.Auditing;
 
@@ -160,7 +161,9 @@ public static class SessionEndpoints
             businessRoles,
             orderToCashOptions.Value.BusinessRoles,
             orderToCashOptions.Value.DualControlEnforced,
-            selectedDepartment);
+            selectedDepartment,
+            partnerLabAccess: selectedMembership?.Organization?.Kind == OrganizationKind.Partner && selectedDepartment is not null
+                && await LabServiceOrderingEligibility.HasPartnerAccessAsync(dbContext, selectedMembership.OrganizationId, selectedDepartment.Id, cancellationToken));
         return TypedResults.Ok(readySession with { Capabilities = readySession.Capabilities with { CanViewTrialProjects = trialStaff || trialViewer, CanManageTrialProjects = trialStaff } });
     }
 
@@ -214,7 +217,8 @@ public static class SessionEndpoints
         IReadOnlyCollection<BusinessRole>? businessRoles = null,
         bool businessRolesEnabled = false,
         bool labRolesEnforced = false,
-        OrganizationDepartment? selectedDepartment = null)
+        OrganizationDepartment? selectedDepartment = null,
+        bool partnerLabAccess = false)
     {
         var memberships = GetActiveMemberships(user);
         var isPlatformAdmin = IsPlatformAdmin(user);
@@ -230,9 +234,10 @@ public static class SessionEndpoints
             IsActive: true
         } selectedOrganization && selectedOrganization.IsExternalOrganization();
         var selectedKind = selectedMembership?.Organization?.Kind;
-        var canViewLabOrders = selectedKind == OrganizationKind.Customer;
+        var canViewLabOrders = selectedKind == OrganizationKind.Customer || selectedKind == OrganizationKind.Partner && partnerLabAccess;
         var canManageLabOrders = canViewLabOrders && isSelectedDepartmentAdmin;
-        var canViewSampleShipping = selectedKind is OrganizationKind.Prospect or OrganizationKind.Customer;
+        var canViewSampleShipping = selectedKind is OrganizationKind.Prospect or OrganizationKind.Customer
+            || selectedKind == OrganizationKind.Partner && partnerLabAccess;
         var canManageSampleShipping = canViewSampleShipping && isSelectedDepartmentAdmin;
         var canViewPartnerOrders = selectedKind == OrganizationKind.Partner;
         var canManagePartnerOrders = canViewPartnerOrders && isSelectedDepartmentAdmin;
@@ -347,6 +352,7 @@ public static class SessionEndpoints
                 CanProvisionOrganizationData = isPlatformAdmin,
                 CanViewOrganizationDatasets = canViewOrganizationDatasets,
                 CanViewLabServiceOrders = canViewLabOrders,
+                CanViewLabServiceInvoices = selectedKind == OrganizationKind.Customer,
                 CanCreateLabServiceRequests = canManageLabOrders,
                 CanSubmitLabServiceRequests = canManageLabOrders,
                 CanAcceptLabServiceQuotes = canManageLabOrders,
@@ -408,6 +414,7 @@ public static class SessionEndpoints
             CanProvisionOrganizationData = false,
             CanViewOrganizationDatasets = false,
             CanViewLabServiceOrders = false,
+            CanViewLabServiceInvoices = false,
             CanCreateLabServiceRequests = false,
             CanSubmitLabServiceRequests = false,
             CanAcceptLabServiceQuotes = false,

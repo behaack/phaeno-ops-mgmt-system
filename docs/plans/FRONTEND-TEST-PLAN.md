@@ -1,5 +1,18 @@
 # Frontend Test Plan
 
+## Configured Lab Service and included PSeq Kit bundles - 2026-09-07
+
+The integration run covered **333 tests across 88 files**: 332 passed and the sole failure was the old documentation assertion that Partners have no Lab Service guide. After correcting that assertion, the focused registry checks passed. Evidence: `artifacts/bundled-orders-full-frontend-final.json` and `artifacts/bundled-orders-registry-corrected.json`. This is combined checkpoint evidence, not a claim that a single full run was entirely green.
+
+New `BundledOrders.test.tsx` and `KitPurchaseReview.test.tsx` cover 11 cases: final approved tax/total and exact reviewed commercial/scientific token; fresh acceptance after changed terms; denied incomplete billing; org-admin Kit commitment versus Department draft preparation; same-price included-profile changes; exact purchased-case handoff; retained case version on extension; no standalone Assembly creation; frozen inactive profile editing; controlled timing reasons and reviewed timing version; and exclusion of internal notes from external timing. Navigation covers Customer and Partner Lab access using the server capability. Legacy decision-dialog tests isolate the independent new bundle panel guards while retaining their original dirty/pending/focus behavior assertions.
+
+A later bounded invoice-capability change adds `LabInvoiceCapability.test.tsx`: native AR is queried and shown only with explicit `canViewLabServiceInvoices`; absent authority never uses general Lab access as a fallback and cannot reveal cached invoice data. The two new cases and ten existing external decision-dialog cases passed together (`artifacts/lab-invoice-capability-focused.json`). These two additional cases were checked after the 333-test integration run. TypeScript and zero-warning scoped lint passed at the final checkpoint.
+
+`e2e/bundled-orders.spec.ts` and its separate fixture exercise real components with intercepted synthetic API state. Ten cases passed across desktop and narrow mobile: Customer and Partner configured review/commitment/sample-entry handoff; exact Kit case input preparation, interrupted upload, same-request retry and submission without another quote; offering-version configuration; and staff timing/deadline review. Each checks settled WCAG 2.2 AA Axe results, horizontal overflow, page errors and unexpected API calls. The browser run exposed and corrected deferred FileList capture after input clearing and a refreshed case hiding the retained new draft. Screenshot copies live in `artifacts/bundled-orders-browser-2026-09-07`.
+
+The synthetic fixture simulates signed-in rendering; it does not verify Clerk, real memberships, production authorization, payment, file storage or scanning, physical shipment/bench work, or external notification delivery. API-backed and operational acceptance remain separate. E2E living-plan ownership stays with the coordinating agent; no public Website files were changed.
+
+
 ## Portal completion integration — 2026-09-07
 
 The full frontend suite passed **321 tests across 86 files**, with zero failures. Evidence: `artifacts/crm-integration-vitest-final.json`. This checkpoint includes the earlier consistency tests whose execution was deferred in the historical entries below.

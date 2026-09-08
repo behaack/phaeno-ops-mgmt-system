@@ -27,7 +27,7 @@ using PhaenoPortal.App.Infrastructure.Persistence;
 using PhaenoPortal.App.Infrastructure.Persistence.Auditing;
 
 [Collection(PostgreSqlReferenceCollection.Name)]
-public class LabOperationsCommercialHandoffPostgresTests
+public partial class LabOperationsCommercialHandoffPostgresTests
 {
     [PostgreSqlReferenceFact]
     public async Task AuthorizedPhaenoUserInitiatesCustomerOrderBeforeCustomerAdministratorActivation()
@@ -1167,7 +1167,7 @@ public class LabOperationsCommercialHandoffPostgresTests
             .CountAsync(item => item.LabWorkOrderId == workOrderId.Value));
     }
 
-    private sealed class HandoffTestScope : IAsyncDisposable
+    private sealed partial class HandoffTestScope : IAsyncDisposable
     {
         private const string ConnectionEnvironmentVariable =
             "PSEQ_OPERATIONS_REFERENCE_CONNECTION";
@@ -1205,7 +1205,7 @@ public class LabOperationsCommercialHandoffPostgresTests
         public User CustomerUser { get; }
         public User PlatformUser { get; }
 
-        public static async Task<HandoffTestScope> CreateAsync()
+        public static async Task<HandoffTestScope> CreateAsync(OrganizationKind organizationKind = OrganizationKind.Customer)
         {
             var connectionString = Environment.GetEnvironmentVariable(
                 ConnectionEnvironmentVariable)
@@ -1240,7 +1240,7 @@ public class LabOperationsCommercialHandoffPostgresTests
                 var suffix = Guid.NewGuid().ToString("N");
                 var customerOrganization = new Organization(
                     $"Lab handoff customer {suffix}",
-                    OrganizationKind.Customer);
+                    organizationKind);
                 var customerIdentity = new ExternalIdentity(
                     "test", $"customer-{suffix}", $"customer-{suffix}@example.com", true);
                 var customerUser = CreateUser(customerIdentity);
@@ -1828,10 +1828,13 @@ public class LabOperationsCommercialHandoffPostgresTests
                     .ToArrayAsync();
 
                 await DbContext.AuditEvents.Where(item => item.RequestId == requestId).ExecuteDeleteAsync();
+                await DbContext.LabWorkTimingChanges.Where(item => workOrderIds.Contains(item.LabWorkOrderId)).ExecuteDeleteAsync();
+                await DbContext.CommercialSaleSummaries.Where(item => organizationIds.Contains(item.OrganizationId)).ExecuteDeleteAsync();
                 await DbContext.LabOperationsEventReceipts.Where(item => authorizationIds.Contains(item.AuthorizationId)).ExecuteDeleteAsync();
                 await DbContext.CommercialLabWorkProjections.Where(item => authorizationIds.Contains(item.AuthorizationId)).ExecuteDeleteAsync();
                 await DbContext.LabProviderCommandReceipts.Where(item => authorizationIds.Contains(item.AuthorizationId)).ExecuteDeleteAsync();
-                await DbContext.LabOperationsOutboxEvents.Where(item => authorizationIds.Contains(item.AuthorizationId)).ExecuteDeleteAsync();
+                await DbContext.LabOperationsOutboxEvents.Where(item => authorizationIds.Contains(item.AuthorizationId)
+                    || workOrderIds.Contains(item.LabWorkOrderId)).ExecuteDeleteAsync();
                 await DbContext.LabWorkEvents.Where(item => workOrderIds.Contains(item.LabWorkOrderId)).ExecuteDeleteAsync();
                 await DbContext.LabScientificApprovals.Where(item => workOrderIds.Contains(item.LabWorkOrderId)).ExecuteDeleteAsync();
                 await DbContext.LabWorkAuthorizationVersions.Where(item => workOrderIds.Contains(item.LabWorkOrderId)).ExecuteDeleteAsync();
@@ -1853,6 +1856,10 @@ public class LabOperationsCommercialHandoffPostgresTests
                 await DbContext.LabSamples.Where(item => orderIds.Contains(item.LabServiceOrderId)).ExecuteDeleteAsync();
                 await DbContext.LabServiceSourceGroups.Where(item => orderIds.Contains(item.LabServiceOrderId)).ExecuteDeleteAsync();
                 await DbContext.LabServiceOrders.Where(item => orderIds.Contains(item.Id)).ExecuteDeleteAsync();
+                await DbContext.LabServiceOfferings.Where(item => configuredOfferingIds.Contains(item.Id)).ExecuteDeleteAsync();
+                await DbContext.AnalysisDefinitions.Where(item => configuredAnalysisIds.Contains(item.Id)).ExecuteDeleteAsync();
+                await DbContext.OrderSystemConfigurations.Where(item => configuredSystemIds.Contains(item.Id)).ExecuteDeleteAsync();
+                await DbContext.OrganizationCommercialProfiles.Where(item => organizationIds.Contains(item.OrganizationId)).ExecuteDeleteAsync();
                 await DbContext.CrmActivities.Where(item => item.CompanyId.HasValue && createdCrmCompanyIds.Contains(item.CompanyId.Value)).ExecuteDeleteAsync();
                 await DbContext.CrmHandoffs.Where(item => createdCrmCompanyIds.Contains(item.CompanyId)).ExecuteDeleteAsync();
                 await DbContext.CrmOpportunities.Where(item => createdCrmOpportunityIds.Contains(item.Id)).ExecuteDeleteAsync();

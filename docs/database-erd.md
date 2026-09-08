@@ -13,10 +13,10 @@ Generated from [PSeqOperationsDbContextModelSnapshot.cs](../backend/app/Migratio
 | Schema | Entities | Fields | Foreign keys |
 | --- | ---: | ---: | ---: |
 | `public` | 1 | 2 | 0 |
-| `commercial_ops` | 122 | 1946 | 271 |
-| `lab_ops` | 30 | 344 | 43 |
+| `commercial_ops` | 127 | 2054 | 305 |
+| `lab_ops` | 31 | 363 | 46 |
 | `website` | 5 | 49 | 4 |
-| **Total** | **158** | **2341** | **318** |
+| **Total** | **164** | **2468** | **355** |
 
 ## `public` schema
 
@@ -546,6 +546,7 @@ erDiagram
         uuid id PK "not null"
         character_varying_2000 correction_reason "nullable"
         uuid data_assembly_request_id FK,UK "not null"
+        uuid kit_unit_id FK "nullable"
         jsonb manifest_json "not null"
         uuid previous_revision_id FK "nullable"
         integer revision UK "not null"
@@ -649,6 +650,8 @@ erDiagram
         integer input_revision "not null"
         character_varying_4000 internal_note "nullable"
         boolean is_discarded "not null"
+        uuid kit_assembly_case_id FK,UK "nullable"
+        jsonb kit_profile_snapshot_json "nullable"
         jsonb metadata_json "not null"
         uuid organization_id FK "not null"
         timestamp_with_time_zone placed_at "nullable"
@@ -669,6 +672,7 @@ erDiagram
         bigint version "not null"
     }
     data_assembly_requests ||--o{ assembly_input_revisions : "data_assembly_request_id"
+    partner_kit_units o|--o{ assembly_input_revisions : "kit_unit_id"
     assembly_input_revisions o|--o{ assembly_input_revisions : "previous_revision_id"
     users ||--o{ assembly_input_revisions : "submitted_by_user_id"
     data_assembly_requests ||--o{ assembly_output_releases : "data_assembly_request_id"
@@ -683,6 +687,7 @@ erDiagram
     assembly_profiles ||--o{ data_assembly_requests : "assembly_profile_id"
     users o|--o{ data_assembly_requests : "assigned_to_user_id"
     organization_departments ||--o{ data_assembly_requests : "department_id"
+    kit_assembly_cases o|--o{ data_assembly_requests : "kit_assembly_case_id"
     organizations ||--o{ data_assembly_requests : "organization_id"
 ```
 
@@ -1211,6 +1216,7 @@ erDiagram
         uuid accepted_quote_id "nullable"
         uuid assigned_to_user_id FK "nullable"
         timestamp_with_time_zone completed_at "nullable"
+        jsonb configured_commercial_snapshot_json "nullable"
         timestamp_with_time_zone created_at "not null"
         uuid created_by_user_id "nullable"
         uuid current_quote_id "nullable"
@@ -1218,9 +1224,11 @@ erDiagram
         uuid department_id FK,UK "not null"
         character_varying_2000 description "nullable"
         timestamp_with_time_zone due_at "nullable"
+        character_varying_40 entry_mode "not null"
         boolean has_mixed_biological_sources "not null"
         character_varying_4000 internal_note "nullable"
         boolean is_discarded "not null"
+        uuid lab_service_offering_id FK "nullable"
         character_varying_255 normalized_job_name UK "not null"
         character_varying_50 order_number UK "not null"
         uuid organization_id FK,UK "not null"
@@ -1327,6 +1335,7 @@ erDiagram
     lab_samples o|--o{ lab_samples : "replacement_for_sample_id"
     users o|--o{ lab_service_orders : "assigned_to_user_id"
     organization_departments ||--o{ lab_service_orders : "department_id"
+    lab_service_offerings o|--o{ lab_service_orders : "lab_service_offering_id"
     organizations ||--o{ lab_service_orders : "organization_id"
     users o|--o{ lab_service_orders : "price_proposed_by_user_id"
     users o|--o{ lab_service_orders : "sample_roster_finalized_by_user_id"
@@ -1521,6 +1530,90 @@ erDiagram
 
 ```mermaid
 erDiagram
+    commercial_sale_summaries {
+        uuid id PK "not null"
+        integer attempt_count "not null"
+        uuid commitment_actor_user_id FK "not null"
+        timestamp_with_time_zone committed_at_utc "not null"
+        timestamp_with_time_zone created_at "not null"
+        uuid created_by_user_id "nullable"
+        character_varying_3 currency "not null"
+        timestamp_with_time_zone expected_completion_at_utc "nullable"
+        character_varying_100 failure_code "nullable"
+        timestamp_with_time_zone next_attempt_at_utc "not null"
+        uuid opportunity_id FK "nullable"
+        uuid order_id UK "not null"
+        uuid organization_id FK "not null"
+        character_varying_500 product_summary "not null"
+        uuid projected_activity_id FK "nullable"
+        integer projected_revision "not null"
+        numeric_18_2 quantity "not null"
+        integer revision "not null"
+        character_varying_20 schedule_health "not null"
+        numeric_18_2 total "not null"
+        timestamp_with_time_zone updated_at "not null"
+        uuid updated_by_user_id "nullable"
+        bigint version "not null"
+        character_varying_50 workflow_type UK "not null"
+    }
+    kit_assembly_cases {
+        uuid id PK "not null"
+        uuid assembly_profile_id FK "not null"
+        uuid assembly_request_id FK,UK "nullable"
+        uuid billing_document_id FK "nullable"
+        uuid billing_shipment_id FK "nullable"
+        character_varying_105 case_number UK "not null"
+        timestamp_with_time_zone created_at "not null"
+        uuid created_by_user_id FK "nullable"
+        uuid current_kit_unit_id FK,UK "not null"
+        character_varying_200 deadline_basis "not null"
+        uuid department_id FK "not null"
+        timestamp_with_time_zone first_submitted_at "nullable"
+        uuid organization_id FK "not null"
+        uuid original_kit_unit_id FK,UK "not null"
+        uuid partner_reagent_order_id FK "not null"
+        jsonb profile_snapshot_json "not null"
+        character_varying_40 status "not null"
+        timestamp_with_time_zone submission_deadline_at "nullable"
+        timestamp_with_time_zone updated_at "not null"
+        uuid updated_by_user_id FK "nullable"
+        bigint version "not null"
+    }
+    kit_case_events {
+        uuid id PK "not null"
+        uuid actor_user_id FK "nullable"
+        timestamp_with_time_zone at "not null"
+        timestamp_with_time_zone current_deadline_at "nullable"
+        uuid current_kit_unit_id FK "nullable"
+        character_varying_60 event_type "not null"
+        uuid kit_assembly_case_id FK "not null"
+        timestamp_with_time_zone previous_deadline_at "nullable"
+        uuid previous_kit_unit_id FK "nullable"
+        character_varying_2000 reason "not null"
+    }
+    lab_service_offerings {
+        uuid id PK "not null"
+        jsonb allowed_biological_sources_json "not null"
+        jsonb allowed_material_types_json "not null"
+        jsonb analysis_ids_json "not null"
+        uuid catalog_item_id FK "not null"
+        timestamp_with_time_zone created_at "not null"
+        uuid created_by_user_id "nullable"
+        character_varying_4000 description "not null"
+        timestamp_with_time_zone effective_from "not null"
+        timestamp_with_time_zone effective_to "nullable"
+        uuid family_id UK "not null"
+        character_varying_8000 included_output_contract "not null"
+        boolean is_active "not null"
+        boolean is_synthetic "not null"
+        integer maximum_turnaround_days "not null"
+        integer minimum_turnaround_days "not null"
+        character_varying_255 name "not null"
+        integer offering_version UK "not null"
+        timestamp_with_time_zone updated_at "not null"
+        uuid updated_by_user_id "nullable"
+        bigint version "not null"
+    }
     operational_download_commit_evidence {
         uuid id PK "not null"
         timestamp_with_time_zone admission_cutoff_at_utc "nullable"
@@ -1532,7 +1625,58 @@ erDiagram
         character_varying_20 source_transaction_id "not null"
         bigint version "not null"
     }
+    partner_kit_units {
+        uuid id PK "not null"
+        character_varying_255 carrier "nullable"
+        timestamp_with_time_zone created_at "not null"
+        uuid created_by_user_id FK "nullable"
+        uuid department_id FK "not null"
+        timestamp_with_time_zone expires_at "nullable"
+        character_varying_100 label UK "not null"
+        character_varying_255 lot_batch_number "nullable"
+        uuid organization_id FK "not null"
+        uuid partner_reagent_order_id FK "not null"
+        uuid partner_reagent_order_line_id FK "not null"
+        uuid reagent_shipment_id FK "nullable"
+        uuid replaced_by_kit_unit_id FK "nullable"
+        uuid replaces_kit_unit_id FK,UK "nullable"
+        timestamp_with_time_zone shipped_at "nullable"
+        character_varying_40 status "not null"
+        character_varying_255 tracking_number "nullable"
+        timestamp_with_time_zone updated_at "not null"
+        uuid updated_by_user_id FK "nullable"
+        bigint version "not null"
+    }
+    users ||--o{ commercial_sale_summaries : "commitment_actor_user_id"
+    crm_opportunities o|--o{ commercial_sale_summaries : "opportunity_id"
+    organizations ||--o{ commercial_sale_summaries : "organization_id"
+    crm_activities o|--o{ commercial_sale_summaries : "projected_activity_id"
+    assembly_profiles ||--o{ kit_assembly_cases : "assembly_profile_id"
+    data_assembly_requests o|--o{ kit_assembly_cases : "assembly_request_id"
+    commercial_document_links o|--o{ kit_assembly_cases : "billing_document_id"
+    reagent_shipments o|--o{ kit_assembly_cases : "billing_shipment_id"
+    users o|--o{ kit_assembly_cases : "created_by_user_id"
+    partner_kit_units ||--o{ kit_assembly_cases : "current_kit_unit_id"
+    organization_departments ||--o{ kit_assembly_cases : "department_id"
+    organizations ||--o{ kit_assembly_cases : "organization_id"
+    partner_kit_units ||--o{ kit_assembly_cases : "original_kit_unit_id"
+    partner_reagent_orders ||--o{ kit_assembly_cases : "partner_reagent_order_id"
+    users o|--o{ kit_assembly_cases : "updated_by_user_id"
+    users o|--o{ kit_case_events : "actor_user_id"
+    partner_kit_units o|--o{ kit_case_events : "current_kit_unit_id"
+    kit_assembly_cases ||--o{ kit_case_events : "kit_assembly_case_id"
+    partner_kit_units o|--o{ kit_case_events : "previous_kit_unit_id"
+    qbo_catalog_items ||--o{ lab_service_offerings : "catalog_item_id"
     operational_file_downloads ||--o{ operational_download_commit_evidence : "operational_file_download_id"
+    users o|--o{ partner_kit_units : "created_by_user_id"
+    organization_departments ||--o{ partner_kit_units : "department_id"
+    organizations ||--o{ partner_kit_units : "organization_id"
+    partner_reagent_orders ||--o{ partner_kit_units : "partner_reagent_order_id"
+    partner_reagent_order_lines ||--o{ partner_kit_units : "partner_reagent_order_line_id"
+    reagent_shipments o|--o{ partner_kit_units : "reagent_shipment_id"
+    partner_kit_units o|--o{ partner_kit_units : "replaced_by_kit_unit_id"
+    partner_kit_units o|--o{ partner_kit_units : "replaces_kit_unit_id"
+    users o|--o{ partner_kit_units : "updated_by_user_id"
 ```
 
 ### PSeq accounts receivable and operational attention
@@ -1746,6 +1890,7 @@ erDiagram
         character_varying_3 currency "not null"
         timestamp_with_time_zone effective_from "not null"
         timestamp_with_time_zone effective_to "nullable"
+        uuid included_assembly_profile_id FK "nullable"
         boolean is_active "not null"
         numeric_18_6 maximum_quantity "nullable"
         numeric_18_6 minimum_quantity "nullable"
@@ -1768,6 +1913,10 @@ erDiagram
         character_varying_1000 description "not null"
         timestamp_with_time_zone estimated_ship_date "nullable"
         character_varying_255 external_item_id "not null"
+        uuid included_assembly_profile_id FK "nullable"
+        jsonb included_assembly_profile_snapshot_json "nullable"
+        integer included_assembly_profile_version "nullable"
+        bigint included_offering_version "nullable"
         numeric_18_2 line_total "not null"
         character_varying_2000 note "nullable"
         uuid offering_id FK "not null"
@@ -1792,6 +1941,7 @@ erDiagram
         timestamp_with_time_zone fulfilled_at "nullable"
         character_varying_4000 internal_note "nullable"
         boolean is_discarded "not null"
+        boolean is_kit_bundle "not null"
         character_varying_50 order_number UK "not null"
         uuid organization_id FK "not null"
         timestamp_with_time_zone placed_at "nullable"
@@ -1869,8 +2019,10 @@ erDiagram
         uuid updated_by_user_id "nullable"
         bigint version "not null"
     }
+    assembly_profiles o|--o{ partner_reagent_offerings : "included_assembly_profile_id"
     organizations ||--o{ partner_reagent_offerings : "partner_organization_id"
     qbo_catalog_items ||--o{ partner_reagent_offerings : "qbo_catalog_item_id"
+    assembly_profiles o|--o{ partner_reagent_order_lines : "included_assembly_profile_id"
     partner_reagent_offerings ||--o{ partner_reagent_order_lines : "offering_id"
     partner_reagent_orders ||--o{ partner_reagent_order_lines : "partner_reagent_order_id"
     qbo_catalog_items ||--o{ partner_reagent_order_lines : "qbo_catalog_item_id"
@@ -2597,6 +2749,27 @@ erDiagram
 
 ## `lab_ops` schema
 
+### Domain
+
+```mermaid
+erDiagram
+    lab_work_timing_changes {
+        uuid id PK "not null"
+        character_varying_2000 customer_safe_note "nullable"
+        timestamp_with_time_zone expected_at_utc "not null"
+        character_varying_4000 internal_note "nullable"
+        uuid lab_work_order_id FK "not null"
+        uuid notification_id FK "nullable"
+        timestamp_with_time_zone occurred_at_utc "not null"
+        timestamp_with_time_zone previous_expected_at_utc "not null"
+        character_varying_100 reason "not null"
+        uuid timing_changed_by_user_id FK "not null"
+    }
+    lab_work_orders ||--o{ lab_work_timing_changes : "lab_work_order_id"
+    order_notifications o|--o{ lab_work_timing_changes : "notification_id"
+    users ||--o{ lab_work_timing_changes : "timing_changed_by_user_id"
+```
+
 ### Laboratory roles
 
 ```mermaid
@@ -2738,18 +2911,6 @@ erDiagram
 ```
 
 ### Protocols, libraries, and batches
-
-`lab_protocol_versions.definition_json` stores the validated schema-version-1
-procedure: ordered steps, roles, confirmations, typed captures, resource
-instructions, and explicit QC gates. Controlled versions remain immutable.
-`lab_protocol_executions.captured_results_json` stores schema-version-1 step
-evidence with append-only attempts, server-generated record identifiers,
-recording users/times, typed values, decisions, confirmations, QC outcomes, and
-reasons. Repeats and corrections preserve previous attempts. Each saved step
-also creates an `ExecutionStepRecorded` entry in `lab_work_events`; execution
-and work-order concurrency tokens serialize evidence with completion and job
-holds. Historical unstructured JSON is retained for review. This uses the
-existing mapped JSONB columns and does not introduce a schema migration.
 
 ```mermaid
 erDiagram
@@ -3008,13 +3169,16 @@ erDiagram
     }
     lab_specimens {
         uuid id PK "not null"
+        timestamp_with_time_zone accepted_at_utc "nullable"
         character_varying_100 accession_number UK "nullable"
+        timestamp_with_time_zone completed_at_utc "nullable"
         timestamp_with_time_zone created_at "not null"
         uuid created_by_user_id "nullable"
         character_varying_255 current_location "nullable"
         character_varying_50 intake_disposition "not null"
         character_varying_100 intake_reason_code "nullable"
         uuid lab_work_order_id FK,UK "not null"
+        timestamp_with_time_zone original_target_at_utc "nullable"
         character_varying_1000 receipt_condition "nullable"
         timestamp_with_time_zone received_at_utc "nullable"
         uuid submitted_specimen_id UK "not null"
@@ -3047,11 +3211,17 @@ erDiagram
         uuid authorization_id UK "not null"
         character_varying_50 authorization_source "not null"
         uuid authorization_source_id "not null"
+        timestamp_with_time_zone completed_at_utc "nullable"
         timestamp_with_time_zone created_at "not null"
         uuid created_by_user_id "nullable"
         integer current_authorization_version "not null"
+        timestamp_with_time_zone expected_completion_at_utc "nullable"
+        boolean has_timing_override "not null"
         uuid lab_service_workflow_version_id FK "nullable"
+        integer maximum_turnaround_days "nullable"
+        integer minimum_turnaround_days "nullable"
         character_varying_500 opaque_submitter_reference "nullable"
+        timestamp_with_time_zone original_target_at_utc "nullable"
         bigint projection_version "not null"
         character_varying_255 service_key "not null"
         integer service_version "not null"
@@ -3156,9 +3326,3 @@ erDiagram
     web_orders o|--o{ web_notification_deliveries : "web_order_id"
     users o|--o{ web_notification_processing_controls : "updated_by_user_id"
 ```
-
-## September 7, 2026 workflow compatibility
-
-The earlier consistency changes added no tables, columns, relationships or EF migration. Existing `sample_configuration_json` now accepts the supported exact-roster mode and `result_destination_configuration_json` the governed Portal destination; arbitrary JSON no longer satisfies operational readiness. Shipping readiness derives from effective sample type, destination and instruction-rule records rather than `shipping_configuration_json`. The later completion change adds the Trial draft and reconciliation draft-history fields shown above.
-
-New manual payment receipts retain a protected `receipt-evidence:` reference in the existing `evidence_storage_key`, backed by scanned operational storage. CSV receipts retain their `payment-import:` reference. An unconfirmed import may be re-previewed by its original operator; its existing preview payload, timestamp and concurrency version change together. Confirmed preview evidence remains frozen. Historical evidence references and organization records are not rewritten by these changes.

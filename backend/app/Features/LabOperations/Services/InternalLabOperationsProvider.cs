@@ -123,8 +123,8 @@ public sealed class InternalLabOperationsProvider(PSeqOperationsDbContext dbCont
             workOrder.Id,
             workOrder.CurrentAuthorizationVersion,
             MapMilestone(workOrder.Status),
-            MapScheduleHealth(workOrder.Status),
-            CurrentExpectedCompletionAtUtc: null,
+            Enum.Parse<LabScheduleHealth>(workOrder.ScheduleHealth(DateTime.UtcNow)),
+            CurrentExpectedCompletionAtUtc: workOrder.ExpectedCompletionAtUtc,
             ActiveCustomerActionCount: 0,
             workOrder.UpdatedAt,
             workOrder.ProjectionVersion);
@@ -175,7 +175,7 @@ public sealed class InternalLabOperationsProvider(PSeqOperationsDbContext dbCont
             command.ServiceVersion,
             command.TurnaroundPolicyKey,
             command.OpaqueSubmitterReference,
-            workflowVersionId);
+            workflowVersionId, command.MinimumTurnaroundDays, command.MaximumTurnaroundDays);
 
         workOrder.AuthorizationVersions.Add(new LabWorkAuthorizationVersion(
             workOrder.Id,
@@ -469,7 +469,7 @@ public sealed class InternalLabOperationsProvider(PSeqOperationsDbContext dbCont
                     authorizationVersion = workOrder.CurrentAuthorizationVersion,
                     milestone = LabWorkMilestone.Cancelled.ToString(),
                     scheduleHealth = LabScheduleHealth.Complete.ToString(),
-                    currentExpectedCompletionAtUtc = (DateTime?)null,
+                    currentExpectedCompletionAtUtc = workOrder.ExpectedCompletionAtUtc,
                     activeCustomerActionCount = 0,
                     customerSafeSummary = (string?)null
                 }, SerializerOptions),
@@ -641,6 +641,10 @@ public sealed class InternalLabOperationsProvider(PSeqOperationsDbContext dbCont
         && command.ServiceVersion > 0
         && HasValue(command.ServiceKey)
         && HasValue(command.TurnaroundPolicyKey)
+        && command.MinimumTurnaroundDays.HasValue == command.MaximumTurnaroundDays.HasValue
+        && command.MinimumTurnaroundDays is null or (>= 1 and <= 365)
+        && command.MaximumTurnaroundDays is null or (>= 1 and <= 365)
+        && (!command.MinimumTurnaroundDays.HasValue || command.MinimumTurnaroundDays <= command.MaximumTurnaroundDays)
         && command.Specimens is { Count: > 0 }
         && command.Specimens.All(IsValidSpecimen)
         && command.Specimens.Select(specimen => specimen.SubmittedSpecimenId).Distinct().Count()

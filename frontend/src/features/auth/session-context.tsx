@@ -646,6 +646,7 @@ const mockSession: SessionResponse = {
     canProvisionOrganizationData: true,
     canViewOrganizationDatasets: false,
     canViewLabServiceOrders: false,
+    canViewLabServiceInvoices: false,
     canCreateLabServiceRequests: false,
     canSubmitLabServiceRequests: false,
     canAcceptLabServiceQuotes: false,
@@ -779,20 +780,21 @@ function MockSessionProvider({ children }: { children: ReactNode }) {
       capabilities: {
         ...mockSession.capabilities,
         canViewOrganizationDatasets: selectedIsExternal,
-        canViewLabServiceOrders: selectedMembership?.organizationKind === 'Customer',
+        canViewLabServiceOrders: (selectedMembership?.organizationKind === 'Customer' || selectedMembership?.organizationKind === 'Partner'),
+        canViewLabServiceInvoices: selectedMembership?.organizationKind === 'Customer',
         canCreateLabServiceRequests:
-          selectedMembership?.organizationKind === 'Customer' && selectedMembership.isOrganizationAdmin,
+          (selectedMembership?.organizationKind === 'Customer' || selectedMembership?.organizationKind === 'Partner') && selectedMembership.isOrganizationAdmin,
         canSubmitLabServiceRequests:
-          selectedMembership?.organizationKind === 'Customer' && selectedMembership.isOrganizationAdmin,
+          (selectedMembership?.organizationKind === 'Customer' || selectedMembership?.organizationKind === 'Partner') && selectedMembership.isOrganizationAdmin,
         canAcceptLabServiceQuotes:
-          selectedMembership?.organizationKind === 'Customer' && selectedMembership.isOrganizationAdmin,
+          (selectedMembership?.organizationKind === 'Customer' || selectedMembership?.organizationKind === 'Partner') && selectedMembership.isOrganizationAdmin,
         canRequestLabServiceCancellation:
-          selectedMembership?.organizationKind === 'Customer' && selectedMembership.isOrganizationAdmin,
-        canViewSampleProgress: selectedMembership?.organizationKind === 'Customer',
+          (selectedMembership?.organizationKind === 'Customer' || selectedMembership?.organizationKind === 'Partner') && selectedMembership.isOrganizationAdmin,
+        canViewSampleProgress: (selectedMembership?.organizationKind === 'Customer' || selectedMembership?.organizationKind === 'Partner'),
         canViewSampleShipping:
           selectedMembership?.organizationKind === 'Prospect' ||
-          selectedMembership?.organizationKind === 'Customer',
-        canDownloadLabResults: selectedMembership?.organizationKind === 'Customer',
+          (selectedMembership?.organizationKind === 'Customer' || selectedMembership?.organizationKind === 'Partner'),
+        canDownloadLabResults: (selectedMembership?.organizationKind === 'Customer' || selectedMembership?.organizationKind === 'Partner'),
         canViewReagentOrders: selectedMembership?.organizationKind === 'Partner',
         canCreateReagentOrders:
           selectedMembership?.organizationKind === 'Partner' && selectedMembership.isOrganizationAdmin,

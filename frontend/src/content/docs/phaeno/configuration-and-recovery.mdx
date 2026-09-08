@@ -4,7 +4,7 @@ Order configuration controls the active scientific, Partner, commercial, release
 
 **File retention** separately controls the retention policy used by future released result and output packages. Only a Phaeno platform administrator can change these settings.
 
-Use the far-left **Order configuration** sidebar to move among **Defaults**, **Service catalog**, **Analyses**, **Sample shipping**, **PSeq kits**, **Assembly**, and **Legacy links**. On wider screens the sidebar can remain pinned; when it is unpinned or the screen is narrow, open the same non-modal navigation from the edge tab. The selected subject appears in the main pane without duplicating the navigation above the configuration form.
+Use the far-left **Order configuration** sidebar to move among **Defaults**, **Service catalog**, **Lab Service offerings**, **Analyses**, **Sample shipping**, **PSeq kits**, **Assembly**, and **Legacy links**. On wider screens the sidebar can remain pinned; when it is unpinned or the screen is narrow, open the same non-modal navigation from the edge tab. The selected subject appears in the main pane without duplicating the navigation above the configuration form.
 
 ## Maintain commercial configuration
 
@@ -12,11 +12,17 @@ Maintain active billable items under **Service catalog**, including a permanent 
 
 The designated laboratory-service item must use the permanent code `pseq-lab-service`, the sales unit `specimen`, and an active state. The catalog identifies it as **PSeq Lab Service**. POMS blocks laboratory quote issuance when this exact item is missing, inactive, or uses another unit; an unrelated specimen fee cannot replace it.
 
-Configure Partner reagent availability, negotiated price, currency, effective period, quantity rules, and shipping restrictions for each eligible Partner. Overlapping active price periods for the same Partner and item are not allowed.
+Configure Partner PSeq Kit availability, negotiated bundle price, currency, effective period, whole-unit quantity rules and shipping restrictions. Bind each active Kit offering to an active, validated included Assembly profile. Each unit creates one included case at purchase; existing orders keep their frozen profile and outputs. Overlapping active price periods for the same Partner and item are not allowed.
 
 Historical credit and accounting links are retained under **Legacy links**. Partner Assembly payment gates remain in its owning workflow. PSeq Customer result release depends on scientific approval and the Result Release Manager; invoice balance and credit do not gate it. Customer billing, tax, invoices and cash are maintained in **Order Ops → Finance**.
 
 Open **Defaults → Edit defaults** to maintain quote validity and sample submission instructions. The initial quote validity is 30 days, and an issued quote snapshots its own expiration. The supported sample workflow uses an exact roster after quote acceptance; the supported result destination is governed Portal delivery. Free-form configuration text no longer establishes readiness. Review and save older defaults once, then maintain the effective sample types, destinations and rules in **Sample shipping**. Each order and shipment still checks its specific requirements.
+
+## Maintain configured Lab Service offerings
+
+Use **Lab Service offerings** to define the specimen-priced bundle: catalog item, included analyses, allowed material types and biological sources, included outputs, published minimum and maximum turnaround, availability dates and active state. The price comes from the selected catalog item. New offerings start inactive; activate only approved complete definitions. Synthetic test offerings cannot be purchased.
+
+**Edit availability** changes when the existing version can be selected. **Create new version** records changed scientific scope as a new version. Accepted orders retain the version, scope, price and tax reviewed at commitment; later catalog or profile changes do not silently alter them. Review all final terms after a concurrent configuration change.
 
 ## Maintain scientific configuration
 

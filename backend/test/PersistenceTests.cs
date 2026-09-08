@@ -214,6 +214,9 @@ public class PersistenceTests
             .ToList();
 
         Assert.Equal(30, laboratoryEntities.Count);
+        var timingHistory = dbContext.Model.FindEntityType(typeof(LabWorkTimingChange));
+        Assert.Equal("lab_work_timing_changes", timingHistory?.GetTableName());
+        Assert.Equal(typeof(LabServiceOrder).Assembly, timingHistory?.ClrType.Assembly);
         Assert.Equal("lab_service_workflows", dbContext.Model.FindEntityType(typeof(LabServiceWorkflow))?.GetTableName());
         Assert.Equal("lab_service_workflow_versions", dbContext.Model.FindEntityType(typeof(LabServiceWorkflowVersion))?.GetTableName());
         Assert.Equal("lab_service_workflow_stages", dbContext.Model.FindEntityType(typeof(LabServiceWorkflowStage))?.GetTableName());

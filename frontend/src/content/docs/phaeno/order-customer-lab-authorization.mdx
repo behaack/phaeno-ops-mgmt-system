@@ -1,6 +1,14 @@
-# Customer lab authorization
+# Lab Service authorization
 
-Customer laboratory work enters Order Ops as a Commercial request. Order Ops validates the Job-level specimen count, biological-source composition, storage, safety, and service profile before pricing. Individual samples do not exist yet.
+Customer and Partner Lab Service work shares the Department-scoped Job, specimen, shipping and scientific-release workflow. Manual Customer work enters Order Ops as a Commercial request. Order Ops validates the Job-level specimen count, biological-source composition, storage, safety, and service profile before pricing. Individual samples do not exist yet.
+
+## Configured standard orders
+
+An eligible Customer or Partner organization administrator may select a configured offering and place its standard Lab Service bundle directly from the Job. Department administrators may prepare the Job but cannot commit a new configured purchase. The review includes the specimen count, frozen scientific scope, unit price, approved tax and final total. Complete billing and Finance-approved tax are required for this direct commitment; manual quote readiness remains as described below.
+
+Order Ops displays the accepted **Standard PSeq Lab Service** terms. Do not issue a second quote or sell assembly separately for the same bundle. The accepted Job opens exact sample-list preparation; roster finalization creates the normal Lab and shipping authorization. Partner Lab work stays within the Partner's organization and Department.
+
+Custom-work requests create a Sales Opportunity and preserve the originating order and Department. They do not place an order or approve a price. Review their scope in CRM and follow the existing Sales handoff when ready.
 
 ## Initiate an order for a Customer
 
@@ -44,3 +52,9 @@ Physical samples must not arrive before quote acceptance and exact roster finali
 After acceptance, Order Ops continues to own Customer communication, Commercial holds, cancellation review, billing, files, and publication. Open the linked work from the order or from **Lab operations** > **Receipt & accession**. Lab Ops owns return-kit preparation, shipment identification, receipt, accession, physical lineage, controlled execution, exceptions, and scientific approval.
 
 The Lab milestone **Ready for release** means the scientific gate passed. It does not upload, scan, attach, or publish a result. PSeq result publication still requires the governed file and release checks. PSeq scientific result release is independent of invoice balance, credit status, and payment; Partner workflows retain their separate commercial rules.
+
+## Track and change expected completion
+
+**Turnaround and progress** shows first receipt, scientific acceptance, the original target, current expected completion, actual completion and receipt-to-acceptance elapsed time. Published turnaround begins at scientific acceptance. The original target is never overwritten by an operational delay.
+
+An authorized Lab operator, supervisor or Operations administrator uses **Change expected completion** from the order. Choose the new date and a controlled reason. **Other operational delay** also requires a customer-safe explanation. Keep internal investigation notes in **Internal note**. A later date queues a notice; an earlier date updates the Portal. The history distinguishes the timing change from notification delivery. Failed notices remain available to authorized notification recovery.

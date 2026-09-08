@@ -91,7 +91,9 @@ internal sealed class ManagedReleaseRetentionService(PSeqOperationsDbContext db)
             && member.UserId == userId && member.IsActive && member.Organization!.IsActive
             && (type == ReleasedDeliverablePackageType.TrialResult
                 ? member.Organization.Kind == OrganizationKind.Prospect || member.Organization.Kind == OrganizationKind.Customer || member.Organization.Kind == OrganizationKind.Partner
-                : member.Organization.Kind == (type == ReleasedDeliverablePackageType.LabResult ? OrganizationKind.Customer : OrganizationKind.Partner))
+                : type == ReleasedDeliverablePackageType.LabResult
+                    ? member.Organization.Kind == OrganizationKind.Customer || member.Organization.Kind == OrganizationKind.Partner
+                    : member.Organization.Kind == OrganizationKind.Partner)
             && member.User!.IsActive
             && member.User.Status == UserAccountStatus.Active
             && db.OrganizationDepartments.Any(department => department.Id == package.DepartmentId && department.OrganizationId == organizationId && department.IsActive)

@@ -1,5 +1,46 @@
 # File Management Plan
 
+## Coordinated backup implementation (authorized September 7 follow-up)
+
+The remaining database/Local-file backup item now has a bounded maintenance
+implementation: `portal-backup.yml`, a host systemd timer, coordinated capture,
+isolated database/file restoration, private reference verification, encrypted
+envelope recovery and guarded exported-backup rotation. It reuses the existing
+protected SSH/public-key envelope and adds no application dependencies, migration,
+provider switch or retention activation. See the
+[backup runbook](../../deployment/hetzner/green/BACKUP-RUNBOOK.md).
+
+Capture takes the deployment lock, gracefully stops the API, requires no remaining
+database clients and no other volume writer, and records a matching database dump
+plus both Local areas. The API resumes before restore checks/encryption. An
+independent 180-second watchdog and ordinary cleanup restore the exact original
+container; capture has a separate 120-second budget. This maintenance creates a
+brief API interruption, including public Website API routes, and is scheduled for
+2 a.m. America/Los_Angeles with a spring-DST fallback. It does not alter business
+records, live file bytes, release permissions or worker activation.
+
+The restored database produces a private reference manifest. Every required object
+must match restored bytes and checksums; explicit completed deletions permit absent
+historical bytes. Unknown/orphan bytes remain backed up and counted. Every run also
+restores a nonempty synthetic two-area archive in an isolated helper, separately
+from its actual source-file count. Recovery rejects unsafe archive entries and
+creates new private review directories rather than overwriting live storage.
+
+Encrypted GitHub artifacts retain 35 days. Server copies are rotated only when
+older than 35 days, successfully exported, checksum verified, and composed of the
+exact five owned encrypted/receipt files; the newest and unexported copies remain.
+The host timer works independently of the Git branch. Automatic daily off-server
+collection requires this workflow on the default branch (`main`); until then it
+is a manual verified export, not complete automatic disaster recovery.
+
+Local evidence: 15 synthetic file/archive cases, 5 OpenSSL envelope cases and 6
+cleanup/restart/interruption cases pass. The nonempty two-area shell recovery
+fixture passes, and the private-reference SQL passes guarded read-only local
+EXPLAIN. Shell syntax and workflow YAML checks pass. No production activation,
+timer installation, API pause, off-server export or real-data recovery was run by
+this implementation slice; those remain the root release's explicit acceptance
+gates. Test-plan updates are coordinated with the root release.
+
 ## September 7 production outcome
 
 Local storage and the private ClamAV service were activated by successful

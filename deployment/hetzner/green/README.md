@@ -301,8 +301,12 @@ The restore check uses no network or published ports, a read-only dump, 512 MiB
 of temporary database memory storage and a 1 GiB container memory limit. It
 requires 1.5 GiB available host memory and removes only its uniquely owned
 container. A failed restore or cleanup stops deployment before migration. This
-proves database recovery from that snapshot; it does not establish coordinated
-recovery of future managed file bytes or recurring backup retention.
+proves database recovery from that snapshot. Coordinated database/Local-file
+snapshots, isolated populated-file restoration, daily host scheduling, encrypted
+off-server collection and guarded 35-day exported-backup rotation have a separate
+[backup runbook](BACKUP-RUNBOOK.md). Their new protected workflow must be activated
+and its actual outage/restore/schedule/artifact evidence recorded before those
+operational gates are marked complete. Ordinary release backups remain unchanged.
 
 The first Clerk Production transition has a separate one-time gate:
 `cutover_clerk_identity=true` plus the exact

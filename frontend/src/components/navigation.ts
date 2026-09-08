@@ -103,7 +103,7 @@ export const mainMenuItems: readonly MainMenuItem[] = [
     icon: FlaskConical,
     group: 'workspace',
     visibleWhen: (session, context) =>
-      context.selectedOrganizationKind === 'Customer' &&
+      (context.selectedOrganizationKind === 'Customer' || context.selectedOrganizationKind === 'Partner') &&
       Boolean(session?.capabilities.canViewLabServiceOrders),
   },
   {
@@ -116,7 +116,7 @@ export const mainMenuItems: readonly MainMenuItem[] = [
       Boolean(session?.capabilities.canViewSampleShipping),
   },
   {
-    label: 'Reagent orders',
+    label: 'PSeq Kit orders',
     to: '/reagent-orders',
     icon: Package,
     group: 'workspace',
@@ -125,7 +125,7 @@ export const mainMenuItems: readonly MainMenuItem[] = [
       Boolean(session?.capabilities.canViewReagentOrders),
   },
   {
-    label: 'Data assembly',
+    label: 'Assembly cases',
     to: '/data-assembly',
     icon: Workflow,
     group: 'workspace',

@@ -1,5 +1,7 @@
 # Portal completion implementation — September 7, 2026
 
+The subsequent authorized commercial-bundle and coordinated-backup work is tracked in [Portal operational and commercial completion](PORTAL-OPERATIONAL-COMPLETION-2026-09-08.md). The results below describe the earlier deployed checkpoint; they are not the status of the later implementation.
+
 ## Authorized outcome
 
 The Product Owner requested an injected file-management interface with local storage now and the option of S3 later, and asked to address the remaining completion items as appropriate. This continues the completed consistency releases. Reuse existing interfaces and workflows; do not introduce parallel file management, CRM search, queues or financial records.

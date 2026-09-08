@@ -55,9 +55,18 @@ trap cleanup EXIT
 trap 'exit 130' INT
 trap 'exit 143' TERM
 
-[[ "$#" == 2 ]] || fail
+[[ "$#" == 2 || "$#" == 3 ]] || fail
 dump_path="$1"
 expected_migration="$2"
+reference_output="${3:-}"
+if [[ -n "$reference_output" ]]; then
+    [[ "$reference_output" == /* && ! -e "$reference_output" && ! -L "$reference_output" \
+        && "$reference_output" != *$'\n'* && "$reference_output" != *$'\r'* ]] || fail
+    reference_parent="$(dirname -- "$reference_output")"
+    [[ -d "$reference_parent" && ! -L "$reference_parent" ]] || fail
+    reference_parent_mode="$(stat -c '%a' -- "$reference_parent")"
+    (( (8#${reference_parent_mode} & 077) == 0 )) || fail
+fi
 [[ "${dump_path}" == /* && "${dump_path}" != *','* && "${dump_path}" != *$'\n'* \
     && "${dump_path}" != *$'\r'* && -f "${dump_path}" && ! -L "${dump_path}" && -r "${dump_path}" ]] || fail
 [[ "${expected_migration}" =~ ^[0-9]{14}_[A-Za-z0-9_]+$ ]] || fail
@@ -196,4 +205,12 @@ for source in managed_files managed_operational_files invoices result_artifacts;
     [[ "${references}" =~ ^[0-9]+$ ]] || fail
     printf 'backup_restore_file_refs.%s=%s\n' "${source}" "${references}"
 done
+if [[ -n "$reference_output" ]]; then
+    phase=private_file_reference_manifest
+    reference_sql="$(dirname -- "$(readlink -f -- "${BASH_SOURCE[0]}")")/backup/file-references.sql"
+    [[ -f "$reference_sql" && ! -L "$reference_sql" ]] || fail
+    (set -o noclobber; query "$(cat "$reference_sql")" > "$reference_output") || fail
+    chmod 600 "$reference_output"
+    printf 'backup_restore_private_reference_manifest=PASS\n'
+fi
 phase=complete

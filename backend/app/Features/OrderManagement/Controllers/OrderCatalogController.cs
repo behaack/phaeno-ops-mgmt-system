@@ -17,7 +17,7 @@ public sealed class OrderCatalogController(PSeqOperationsDbContext dbContext, Or
     [HttpGet("analyses")]
     public async Task<IReadOnlyList<AnalysisDefinitionDto>> Analyses(CancellationToken cancellationToken)
     {
-        _ = await requestContext.RequireTenantAsync(HttpContext, OrganizationKind.Customer, false, cancellationToken);
+        _ = await requestContext.RequireLabServiceTenantAsync(HttpContext, false, cancellationToken);
         return await dbContext.AnalysisDefinitions.AsNoTracking().Where(item => item.IsActive && !item.IsSynthetic)
             .OrderBy(item => item.Name).Select(item => new AnalysisDefinitionDto(item.Id, item.QboCatalogItemId, item.Name,
                 item.Description, item.SubmissionInstructions, item.RequiredIntakeFieldsJson, item.ResultContractJson,
@@ -31,13 +31,14 @@ public sealed class OrderCatalogController(PSeqOperationsDbContext dbContext, Or
         var now = DateTime.UtcNow;
         return await (from offering in dbContext.PartnerReagentOfferings.AsNoTracking()
             join item in dbContext.QboCatalogItems.AsNoTracking() on offering.QboCatalogItemId equals item.Id
-            where offering.PartnerOrganizationId == tenant.Organization.Id && offering.IsActive && item.IsActive
+            join profile in dbContext.AssemblyProfiles.AsNoTracking() on offering.IncludedAssemblyProfileId equals profile.Id
+            where profile.IsActive && !profile.IsSynthetic && offering.PartnerOrganizationId == tenant.Organization.Id && offering.IsActive && item.IsActive
                 && offering.EffectiveFrom <= now && (!offering.EffectiveTo.HasValue || offering.EffectiveTo > now)
             orderby item.Name
             select new ReagentOfferingDto(offering.Id, offering.PartnerOrganizationId, offering.QboCatalogItemId,
                 item.Name, offering.NegotiatedUnitPrice, offering.Currency, offering.SellingUnit, offering.OrderIncrement,
                 offering.MinimumQuantity ?? offering.OrderIncrement, offering.MaximumQuantity, offering.ShippingRestrictionsJson,
-                offering.EffectiveFrom, offering.EffectiveTo, offering.IsActive, offering.Version)).ToListAsync(cancellationToken);
+                offering.EffectiveFrom, offering.EffectiveTo, offering.IsActive, offering.Version, profile.Id, profile.Name, profile.ProfileVersion)).ToListAsync(cancellationToken);
     }
 
     [HttpGet("assembly-profiles")]

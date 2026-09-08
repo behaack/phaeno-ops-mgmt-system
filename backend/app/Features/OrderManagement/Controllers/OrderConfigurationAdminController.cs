@@ -88,8 +88,9 @@ public sealed class OrderConfigurationAdminController(
     {
         await requestContext.RequirePlatformAdminAsync(HttpContext, cancellationToken);
         await RequirePartnerAsync(request.PartnerOrganizationId, cancellationToken); var catalog = await RequireCatalogItemAsync(request.QboCatalogItemId, cancellationToken);
+        await ValidateIncludedProfileAsync(request, cancellationToken);
         await EnsureNoOfferingOverlapAsync(request, null, cancellationToken);
-        var item = ConstructOffering(request); dbContext.PartnerReagentOfferings.Add(item);
+        var item = ConstructOffering(request); item.SetIncludedAssemblyProfile(request.IncludedAssemblyProfileId); dbContext.PartnerReagentOfferings.Add(item);
         await dbContext.SaveChangesAsync(cancellationToken); Response.StatusCode = StatusCodes.Status201Created; return Offering(item, catalog.Name);
     }
 
@@ -101,6 +102,8 @@ public sealed class OrderConfigurationAdminController(
         EnsureVersion(item.Version, request.Version); if (item.PartnerOrganizationId != request.PartnerOrganizationId || item.QboCatalogItemId != request.QboCatalogItemId)
             throw Conflict("offering_identity_frozen", "Create a new offering to change its Partner or commercial catalog item.");
         var catalog = await RequireCatalogItemAsync(request.QboCatalogItemId, cancellationToken);
+        await ValidateIncludedProfileAsync(request, cancellationToken);
+        item.SetIncludedAssemblyProfile(request.IncludedAssemblyProfileId);
         await EnsureNoOfferingOverlapAsync(request, offeringId, cancellationToken);
         Execute(() => item.Update(request.NegotiatedUnitPrice, request.Currency, request.SellingUnit, request.OrderIncrement,
             request.MinimumQuantity, request.MaximumQuantity, request.ShippingRestrictionsJson, request.EffectiveFrom,
@@ -299,7 +302,7 @@ public sealed class OrderConfigurationAdminController(
         return new OrderConfigurationDto(new OrderSystemConfigurationDto(system.Id, system.QuoteValidityDays, system.SampleSubmissionInstructions,
             system.ShippingConfigurationJson, system.SampleConfigurationJson,
             system.ResultDestinationConfigurationJson, system.Version), catalog.Select(Catalog).ToList(), analyses.Select(Analysis).ToList(),
-            offerings.Select(value => Offering(value.Offering, value.ItemName)).ToList(), assemblies.Select(Assembly).ToList(),
+            offerings.Select(value => Offering(value.Offering, value.ItemName, assemblies.FirstOrDefault(p => p.Id == value.Offering.IncludedAssemblyProfileId))).ToList(), assemblies.Select(Assembly).ToList(),
             commercial.Select(value => Commercial(value.Profile, value.OrganizationName)).ToList());
     }
 
@@ -325,6 +328,19 @@ public sealed class OrderConfigurationAdminController(
             request.RequiredIntakeFieldsJson, request.ResultContractJson, request.IsActive, request.IsSynthetic); }
         catch (ArgumentException exception) { throw Invalid("analysis_invalid", exception.Message); }
     }
+    private async Task ValidateIncludedProfileAsync(ReagentOfferingWriteRequest request, CancellationToken cancellationToken)
+    {
+        if (request.IsActive && !request.IncludedAssemblyProfileId.HasValue)
+            throw Invalid("included_profile_required", "An active Kit offering must include an Assembly profile.");
+        if (!request.IncludedAssemblyProfileId.HasValue) return;
+        if (request.OrderIncrement != decimal.Truncate(request.OrderIncrement)
+            || request.MinimumQuantity != decimal.Truncate(request.MinimumQuantity)
+            || (request.MaximumQuantity.HasValue && request.MaximumQuantity != decimal.Truncate(request.MaximumQuantity.Value)))
+            throw Invalid("kit_quantity_invalid", "Kit increments and limits must be whole units.");
+        if (!await dbContext.AssemblyProfiles.AsNoTracking().AnyAsync(p => p.Id == request.IncludedAssemblyProfileId && p.IsActive && !p.IsSynthetic, cancellationToken))
+            throw Invalid("included_profile_unavailable", "Select an active, reviewed Assembly profile.");
+    }
+
     private static PartnerReagentOffering ConstructOffering(ReagentOfferingWriteRequest request)
     {
         try { return new PartnerReagentOffering(request.PartnerOrganizationId, request.QboCatalogItemId, request.NegotiatedUnitPrice,
@@ -356,10 +372,10 @@ public sealed class OrderConfigurationAdminController(
         item.LastSyncedAt, item.Version);
     private static AnalysisDefinitionDto Analysis(AnalysisDefinition item) => new(item.Id, item.QboCatalogItemId, item.Name,
         item.Description, item.SubmissionInstructions, item.RequiredIntakeFieldsJson, item.ResultContractJson, item.IsActive, item.IsSynthetic, item.Version);
-    private static ReagentOfferingDto Offering(PartnerReagentOffering item, string name) => new(item.Id, item.PartnerOrganizationId,
+    private static ReagentOfferingDto Offering(PartnerReagentOffering item, string name, AssemblyProfile? profile = null) => new(item.Id, item.PartnerOrganizationId,
         item.QboCatalogItemId, name, item.NegotiatedUnitPrice, item.Currency, item.SellingUnit, item.OrderIncrement,
         item.MinimumQuantity ?? item.OrderIncrement, item.MaximumQuantity, item.ShippingRestrictionsJson, item.EffectiveFrom,
-        item.EffectiveTo, item.IsActive, item.Version);
+        item.EffectiveTo, item.IsActive, item.Version, item.IncludedAssemblyProfileId, profile?.Name, profile?.ProfileVersion);
     private static AssemblyProfileDto Assembly(AssemblyProfile item) => new(item.Id, item.QboCatalogItemId, item.Name, item.ProfileVersion,
         item.Description, item.Instructions, item.MetadataSchemaJson, item.AllowedFileKindsJson, item.OutputContractJson,
         item.MaximumFileSizeBytes, item.MaximumTotalSizeBytes, item.IsActive, item.IsSynthetic, item.Version);

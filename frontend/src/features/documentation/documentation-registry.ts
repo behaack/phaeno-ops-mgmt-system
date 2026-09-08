@@ -21,6 +21,7 @@ import ProspectSampleShipping from '#/content/docs/en-US/prospect/sample-shippin
 import ProspectStatusesAndTroubleshooting from '#/content/docs/en-US/prospect/statuses-and-troubleshooting.mdx'
 import PartnerAccountAndAccess from '#/content/docs/en-US/partner/account-and-access.mdx'
 import PartnerDataAndOrganization from '#/content/docs/en-US/partner/data-and-organization.mdx'
+import PartnerLabServices from '#/content/docs/en-US/partner/lab-services.mdx'
 import PartnerDataAssembly from '#/content/docs/en-US/partner/data-assembly.mdx'
 import PartnerGettingStarted from '#/content/docs/en-US/partner/getting-started.mdx'
 import PartnerReagentOrders from '#/content/docs/en-US/partner/reagent-orders.mdx'
@@ -100,6 +101,7 @@ const documentationComponents: Record<string, DocumentationContent> = {
   'customer/en-US/statuses-and-troubleshooting': CustomerStatusesAndTroubleshooting,
   'partner/en-US/getting-started': PartnerGettingStarted,
   'partner/en-US/account-and-access': PartnerAccountAndAccess,
+  'partner/en-US/lab-services': PartnerLabServices,
   'partner/en-US/reagent-orders': PartnerReagentOrders,
   'partner/en-US/data-assembly': PartnerDataAssembly,
   'partner/en-US/data-and-organization': PartnerDataAndOrganization,

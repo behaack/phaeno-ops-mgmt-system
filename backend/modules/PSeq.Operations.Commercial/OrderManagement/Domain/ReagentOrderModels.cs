@@ -86,6 +86,7 @@ public sealed class PartnerReagentOrder : IAudit, IConcurrency
     public Guid? ShippingAddressId { get; private set; }
     public string? ShippingAddressSnapshotJson { get; private set; }
     public string? PlacementSnapshotJson { get; private set; }
+    public bool IsKitBundle { get; private set; }
     public DateTime? RequestedDeliveryDate { get; private set; }
     public string? ShippingInstructions { get; private set; }
     public DateTime? PlacedAt { get; private set; }
@@ -106,13 +107,14 @@ public sealed class PartnerReagentOrder : IAudit, IConcurrency
 
     private PartnerReagentOrder() { }
 
-    public PartnerReagentOrder(Guid organizationId, Guid departmentId, string orderNumber)
+    public PartnerReagentOrder(Guid organizationId, Guid departmentId, string orderNumber, bool isKitBundle = false)
     {
         if (organizationId == Guid.Empty || departmentId == Guid.Empty)
             throw new ArgumentException("An organization and department are required.");
         OrganizationId = organizationId;
         DepartmentId = departmentId;
         OrderNumber = OrderText.Required(orderNumber, nameof(orderNumber), 50);
+        IsKitBundle = isKitBundle;
     }
 
     public void UpdateDraftDetails(string? purchaseOrderNumber, Guid? shippingAddressId,
@@ -175,7 +177,14 @@ public sealed class PartnerReagentOrder : IAudit, IConcurrency
         EnsureStatus(ReagentOrderStatus.Shipped);
         if (Lines.Any(line => line.RemainingQuantity > 0)) throw new InvalidOperationException("All active quantities must be shipped or cancelled.");
         FulfilledAt = utcNow;
-        SetStatus(ReagentOrderStatus.Fulfilled, null, null);
+        SetStatus(IsKitBundle ? ReagentOrderStatus.KitFulfilledAssemblyPending : ReagentOrderStatus.Fulfilled, null, null);
+    }
+
+    public void RefreshIncludedAssemblyCompletion(bool allCasesTerminal)
+    {
+        if (!IsKitBundle || !FulfilledAt.HasValue || Status is not (ReagentOrderStatus.KitFulfilledAssemblyPending or ReagentOrderStatus.Completed)) return;
+        var expected = allCasesTerminal ? ReagentOrderStatus.Completed : ReagentOrderStatus.KitFulfilledAssemblyPending;
+        if (Status != expected) SetStatus(expected, null, null);
     }
 
     public void PutOnHold(string reason, string? internalNote)
@@ -228,7 +237,7 @@ public sealed class PartnerReagentOrder : IAudit, IConcurrency
 
     public void DiscardDraft() { EnsureStatus(ReagentOrderStatus.Draft); IsDiscarded = true; }
     public void Assign(Guid? userId, DateTime? dueAt) { AssignedToUserId = userId; DueAt = userId.HasValue ? dueAt : null; }
-    public bool IsTerminal() => Status is ReagentOrderStatus.Fulfilled or ReagentOrderStatus.Cancelled or ReagentOrderStatus.Rejected;
+    public bool IsTerminal() => Status is ReagentOrderStatus.Fulfilled or ReagentOrderStatus.Completed or ReagentOrderStatus.Cancelled or ReagentOrderStatus.Rejected;
 
     private void Transition(ReagentOrderStatus from, ReagentOrderStatus to) { EnsureStatus(from); SetStatus(to, null, null); }
     private void SetStatus(ReagentOrderStatus status, string? reason, string? internalNote) { Status = status; TenantSafeReason = OrderText.Optional(reason, 2000); InternalNote = OrderText.Optional(internalNote, 4000); }
@@ -240,6 +249,16 @@ public sealed class PartnerReagentOrder : IAudit, IConcurrency
 
 public sealed class PartnerReagentOrderLine : IAudit, IConcurrency
 {
+    public Guid? IncludedAssemblyProfileId { get; private set; }
+    public int? IncludedAssemblyProfileVersion { get; private set; }
+    public long? IncludedOfferingVersion { get; private set; }
+    public string? IncludedAssemblyProfileSnapshotJson { get; private set; }
+    public void SnapshotIncludedProfile(Guid profileId, int profileVersion, long offeringVersion, string profileSnapshotJson)
+    {
+        if (ShippedQuantity > 0) throw new InvalidOperationException("A shipped Kit's included scope cannot change.");
+        IncludedAssemblyProfileId = profileId; IncludedAssemblyProfileVersion = profileVersion;
+        IncludedOfferingVersion = offeringVersion; IncludedAssemblyProfileSnapshotJson = OrderText.Json(profileSnapshotJson);
+    }
     public Guid Id { get; private set; } = Guid.NewGuid();
     public Guid PartnerReagentOrderId { get; private set; }
     public Guid OfferingId { get; private set; }

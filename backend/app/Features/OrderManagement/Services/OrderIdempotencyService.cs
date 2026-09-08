@@ -46,11 +46,12 @@ public sealed class OrderIdempotencyService(PSeqOperationsDbContext dbContext)
         Func<CancellationToken, Task<T>> operation,
         int statusCode = StatusCodes.Status200OK,
         CancellationToken cancellationToken = default,
-        string? concurrencyScope = null)
+        string? concurrencyScope = null,
+        IsolationLevel isolationLevel = IsolationLevel.ReadCommitted)
         where T : class
     {
         await using var transaction = await dbContext.Database.BeginTransactionAsync(
-            IsolationLevel.ReadCommitted,
+            isolationLevel,
             cancellationToken);
 
         await AcquireTransactionLockAsync(
