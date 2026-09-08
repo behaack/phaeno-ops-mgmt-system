@@ -32,7 +32,7 @@ Backend Lab/TAT, frontend workflows/docs and backup tooling proceed independentl
 
 ## Status
 
-Implementation and acceptance work are in progress. Migration `20260908015114_AddConfiguredLabAndPartnerKitBundles` adds 21 columns and six tables without drops. Existing Lab orders default to `ManualQuote`; existing reagent orders default to `IsKitBundle=false`. The migration was applied to the verified local development database only, and the ERD was regenerated. Production application requires separate explicit approval.
+Implementation is deployed; the activation and acceptance gates below remain open. Migration `20260908015114_AddConfiguredLabAndPartnerKitBundles` adds 21 columns and six tables without drops. Existing Lab orders default to `ManualQuote`; existing reagent orders default to `IsKitBundle=false`. After local verification and ERD regeneration, the Product Owner authorized the production migration and matching API/UI deployment. The production release evidence below records completion.
 
 Partner Lab Service access was explicitly approved by the Product Owner. Automatic approval review separately rejected the proposed Partner Finance expansion and always-on Kit expiry/payment-release worker; exact authorization questions remain pending. The Kit worker has been prepared as a separately configurable, **disabled-by-default** service (`KitCaseLifecycle:Enabled=false` when omitted). No production activation is inferred. Scientific upstream/physical validation contacts remain requested; production sign-in is a separate acceptance checkpoint.
 
@@ -70,3 +70,42 @@ Backup helpers passed 26 focused checks and an isolated populated file/metadata 
 Reviewed migration `20260908015114_AddConfiguredLabAndPartnerKitBundles` is additive: 21 columns, six tables, 43 indexes (nine unique), and 37 restrictive foreign keys. Eighteen columns are nullable; the other defaults preserve historical false/false/ManualQuote semantics. The idempotent SQL has no drops, business-row updates or explicit historical backfill, and only inserts its migration-history row. SQL evidence: `artifacts/portal-operational-completion-20260908/bundle-migration.sql`, SHA-256 `E93B6E9E45A5F162D6063C48666D091383713021AFD165E0E7C33F96E37A2FEF`. It was generated and reviewed without production execution.
 
 The final Word guide was rendered with installed Word and Poppler after diagnosing unavailable LibreOffice in the packaged renderer. All 32 pages were visually reviewed; narrow screenshot recaptures and restored table formatting resolved legibility and pagination issues. Its 17 screenshots and three tables have corrected sequential captions and page references. Final DOCX SHA-256: `8C06C17D7A31995FEA5BDCE3BECE765E85F500A4BEC1398CB6B3CEDA21106A11`. Portal documentation generation/check passes with 56 guides, corpus `28556cf5a105`.
+
+## Production release evidence — 2026-09-08 UTC
+
+Following the explicit migration-approval question, the Product Owner requested
+deployment of both Portal API and UI. Both now serve application revision
+`00959f5600e065714166232b2f579b3b4b2eff57`, which includes the bundle implementation
+from `7d1f7f760996653710bf38bccc060b69e6444bda`.
+
+- API workflow [34185311152](https://github.com/behaack/phaeno-ops-mgmt-system/actions/runs/34185311152)
+  succeeded with migrations enabled, Clerk identity cutover disabled, and storage
+  and scanner providers preserved. Its release check verified the image revision.
+- Before migration, isolated database restoration and cleanup both passed. The
+  encrypted dump and wrapped key for
+  `pre-migration-20260908T040112Z-00959f5600e0` passed checksum verification.
+  The workflow then applied `20260908015114_AddConfiguredLabAndPartnerKitBundles`.
+  This is the deployment database backup; it does not activate coordinated
+  file/database scheduling or prove off-server collection.
+- UI deployment `dpl_3YWXWbw8GQiobhnpuXrDzkLxf9G9` built with production settings
+  and custom-domain assignment held until API success. It is now `READY` and
+  `PROMOTED`; the alias API confirms `portal.phaenobiotech.com` points to it.
+- Public API health returned HTTP 200, database ping HTTP 204, and the Portal
+  root plus sampled JavaScript/CSS assets HTTP 200. The existing signed-in browser
+  reached the POMS dashboard and Order operations; the new CRM sale-summary
+  recovery panel returned its empty state. No business record was submitted.
+- The attention queue explicitly reports that operational attention queues are
+  not enabled. That existing activation setting was preserved. `/auth/sign-in`
+  is not a current route; the root `/` is the current sign-in entry point.
+- Bounded UI error and HTTP 5xx scans returned no entries. This does not establish
+  full populated production, Partner, scientific, or physical acceptance.
+- Previous UI deployment `dpl_DCKnBwZN27ANKkp2x8rD5mNkyDa7` remains identifiable
+  for recovery. A UI rollback alone would not roll back the API or database;
+  no down migration was run.
+
+Ignored evidence is under `artifacts/portal-operational-completion-20260908/`:
+`api-production-release.log`, `ui-production-build.log`,
+`ui-production-status.json`, `portal-alias.json`, `portal-root-probe.json`,
+`public-release-probes.json`, and the bounded UI error/5xx logs. Partner Finance,
+automatic Kit lifecycle processing, active scientific offerings, coordinated
+backup activation, and populated workflow acceptance retain their separate gates.
