@@ -22,18 +22,23 @@ Company and Contact editors keep your entered details when the record refreshes 
 
 ## Create and manage a Contact
 
-From a Company’s **People** section, select **New person** to create the Contact and its Company association together. The global **Contacts** directory also provides **New contact** when no Company context is available. First name and last name are required. Record email, phone, Phaeno owner, tags, and the communication controls that apply:
+From a Company’s **People** section, select **New person** to create the Contact and its Company association together. The global **Contacts** directory also provides **New contact** when no Company context is available. First name and last name are required. Record email, phone, Phaeno owner, and tags. **Sales and marketing outreach** shows a separate decision:
 
-- **Unknown** means permission has not been established.
-- **Permitted** means the recorded commercial basis permits contact.
-- **Opted out** records a preference not to receive the applicable communication.
-- **Do not contact** is the strongest operational stop.
+- **Not established** means staff have not recorded a supported outreach decision.
+- **Allowed** means staff have recorded the supporting source, evidence date, and explanation of the outreach covered for this email address.
+- **Suppressed** records an unsubscribe, direct request to stop, or internal restriction.
 
-Record the lawful-contact basis and communication notes when known. These fields are commercial compliance context, not legal advice and not a substitute for any required campaign-specific consent process.
+Select **Record or update outreach decision** only when making that decision. Choose its status and supporting source, enter the evidence date and an explanation of its scope, and give a reason for suppression. Saving an email or other profile detail does not establish permission. Changing an Allowed email resets the decision to Not established unless you explicitly record a new decision for the replacement address. Cancelling an edited draft asks whether to discard it; a failed save retains your entries.
+
+The Contact workspace and directory show the current outreach status. The Activity timeline retains each changed decision, its previous and new evidence, and the staff member and time. System history cannot be edited or deactivated. Contact exports include the status and evidence. Earlier Opted out and Do not contact values appear as Suppressed. Earlier Permitted values need evidence review before appearing as Allowed; historical values and contact-basis text remain retained.
+
+These decisions are recorded for staff reference. CRM does not currently send sales or marketing outreach, and this setting does not automatically block messages sent through other tools. Staff must check the current decision before using an external sending tool. Requested Portal invitations, order updates, results, and security messages are managed separately. Requesting a Portal invitation does not grant sales or marketing permission.
 
 A Contact is not a Portal user. Email equality does not link identities, issue an invitation, or grant access.
 
 From a Company’s **People** section, use **Invite to Portal** for a reviewed Contact and choose Organization-administrator or explicit Department access. **Manage access** provides role changes, Department access, membership deactivation, and invitation resend/revoke. Successful acceptance creates the Portal membership and the explicit Contact/User identity link. If POMS finds an existing Portal user with the same email, it shows **Identity review**; select **Review and link**, verify that both records identify the same person, and record the reason. Never treat the suggestion as proof. Unlinked Portal users and invitations remain visible until staff intentionally resolve them.
+
+The **Invite to Portal** dialog shows the reviewed Contact and Company as a recipient summary. Under **Access after acceptance**, review the role descriptions and selected Departments; the indented administrator option applies only to its Department. **Send invitation** sends the email invitation. It does not immediately grant Portal access. For a Member, selecting no Department disables Send invitation and immediately explains that at least one Department is required.
 
 ## Associate Contacts and Companies
 
@@ -59,6 +64,8 @@ Use **Merge** only for a confirmed duplicate:
 The merge dialog names the record being retired. A failed search offers **Retry**; a failed merge keeps the selected target and reason for review. Leaving an edited merge draft asks whether to discard the choices, and the dialog stays open while a merge is being processed. If another user changes the source record, reload and review the current version before submitting again.
 
 POMS retains the source as an inactive alias, moves supported relationships and history, and writes a permanent merge record. If only one Company has Portal access, that access scope follows the surviving Company. POMS blocks a merge when both Companies have Portal access because choosing the surviving tenant requires an explicit data decision. Ordinary CRM UI does not undo a merge. If the records describe different legal entities or people, do not merge them; correct their fields or effective-dated relationships instead.
+
+Contact merging preserves suppression if either record is suppressed. It does not transfer an Allowed decision from the retired Contact to a different surviving email address.
 
 ## Complete required custom data
 

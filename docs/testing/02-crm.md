@@ -16,6 +16,8 @@ Use [shared prerequisites](TEST-DATA.md). All CRM data is fictional commercial c
 
 **Handoff:** Keep Company and primary Contact for onboarding and commercial work.
 
+**Outreach variants:** Edit a Contact email without selecting **Record or update outreach decision**: new contacts stay Not established, and changing an Allowed email resets permission. Record Allowed with source/date/scope, rejecting missing evidence and future dates; then record Suppressed with a reason. Check directory/detail/export and immutable Activity history with staff/time and before/after evidence. Review legacy Permitted (needs review), Opted out/Do not contact (Suppressed), and merge a suppressed duplicate into an allowed target (suppression survives). Verify the screen explains that external sending tools are not automatically blocked. No invitation or outreach email should be sent during these variants.
+
 ## CRM-02 — Lead qualification, duplicate review and conversion
 
 **Setup:** P-SALES; existing Company/Contact duplicate candidate; active default pipeline.

@@ -31,36 +31,18 @@ shared migration, production deployment, invitation or business submission is
 included. Verification will use focused checks at one checkpoint, then restore
 the same unsaved Contact editor for the observed walkthrough.
 
-## Outreach decision completion — September 8, 2026
-
-The Product Owner approved completing Communication preference during the guided
-ACC-01 walkthrough. Sales staff need a clear outreach decision and its evidence;
-Portal invitees and customers must keep their separately requested operational
-messages. The walkthrough is paused with Joe Blow's email edit unsaved.
-
-Scope: three visible states (Not established, Allowed, Suppressed), explicit
-permission source/date/explanation and suppression reason, immutable system
-activity for each decision, legacy-value preservation, fail-closed eligibility,
-and consistent editor/detail/list/export/help presentation. Legacy permission
-without reviewed evidence is not eligible. An email change invalidates an allowed
-decision; merging cannot silently remove suppression. Ordinary profile edits do
-not manufacture evidence or turn an invitation request into outreach permission.
-
-CRM currently has no outreach queue/sender. Existing invitation, quote, order,
-result, security and requested Website-brief delivery remain separate. The UI
-explicitly states that recorded outreach decisions do not block sending in other
-tools. No new sender/campaign integration or automatic Website-consent linkage is
-authorized here. Future outreach must re-evaluate eligibility at enqueue and send,
-including already queued work after suppression; there is no current CRM queue to
-cancel. This is not represented as implemented delivery enforcement.
-
-Use additive nullable Contact evidence fields and existing immutable System
-activities for actor/time and before/after evidence; retain old preference/basis
-values. Apply reviewed migration only to verified local development database.
-Update ERD, guide/catalog and focused living test coverage. No Git mutation,
-shared migration, production deployment, invitation or business submission is
-included. Verification will use focused checks at one checkpoint, then restore
-the same unsaved Contact editor for the observed walkthrough.
+Completed local checkpoint: migration `20260908161948_AddCrmOutreachEvidence`
+was reviewed (three nullable columns only), applied to verified
+`localhost/phaeno_ops`, and confirmed in EF history. Release build, frontend
+typecheck/lint, documentation freshness, and diff whitespace checks passed.
+Focused tests passed: 13 frontend and 30 backend, including one transactional
+database persistence/history check that rolled back its fixtures. ERD, staff
+guide, catalog/corpus, manual CRM-01 variants and living test plans are updated.
+Signed-in Contact loading recovered after the migration. The editor was visually
+verified at the user's desktop size and restored with Joe Blow's unsaved
+`bhaack@emmaus-ocia.org` email, Not established status, and decision checkbox
+unchecked. No Contact save or invitation was submitted by this task. Populated
+outreach acceptance variants and responsive/device receipt checks remain open.
 
 ## Portal consistency closeout — 2026-09-07
 

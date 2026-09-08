@@ -350,6 +350,7 @@ export function OrganizationUserManagementPanel({
       />
       {inviteOpen ? <OrganizationInvitationDialog
         organizationId={organizationId}
+        organizationName={organizationName}
         error={inviteMutation.error}
         isPending={inviteMutation.isPending}
         onOpenChange={setInviteOpen}

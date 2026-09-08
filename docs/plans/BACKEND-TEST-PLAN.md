@@ -1,5 +1,18 @@
 # Backend Test Plan
 
+## CRM outreach decisions — September 8, 2026
+
+`CrmOutreachTests` covers legacy permission requiring review, legacy suppression,
+required source/date/explanation/email, future dates, inactive/merged eligibility,
+email-change invalidation, and preservation of suppression. The transactional
+`CrmCommercialAccessPostgresTests.OutreachDecisionsPersistWithImmutableHistoryAndCannotBeChangedThroughLegacyFields`
+checks API legacy-field bypass rejection, persisted evidence, actor history,
+immutable activity, and email-change history. Focused checkpoint: 30 passed,
+zero failed/skipped (includes `CrmCompanyDomainTests`); PostgreSQL fixture rolled
+back. Migration `20260908161948_AddCrmOutreachEvidence` applied only to verified
+local `localhost/phaeno_ops`. ERD regenerated. No outreach sender exists; queue,
+dispatch, and provider receipt enforcement remain a future integration gate.
+
 ## Manual major-workflow companion — September 8, 2026
 
 The [major-workflow acceptance pack](../testing/README.md) adds 60 human-run

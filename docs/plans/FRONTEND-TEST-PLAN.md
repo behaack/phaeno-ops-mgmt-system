@@ -1,5 +1,23 @@
 # Frontend Test Plan
 
+Invitation readiness follow-up: updated existing validation/recovery checks to assert Send invitation is disabled immediately for empty or unavailable Department selections and re-enabled for valid selections. All four existing invitation tests passed; focused lint passed.
+
+## Invitation clarity — September 8, 2026
+
+Updated the existing OrganizationInvitationDialog role-choice test for visible radio choices. All four existing invitation tests passed, covering Department validation, failed-save recovery, dirty-draft dismissal, and organization-administrator intent. Focused lint and TypeScript checks passed. Recipient identity still uses reviewed form defaults and the existing invitation payload.
+
+
+## CRM outreach decisions — September 8, 2026
+
+`CrmContactEditor.test.tsx`, `CrmRecordEditSnapshots.test.tsx`, and
+`CrmContactDetailPage.test.tsx`: 13 passed, zero failures. Coverage includes saving
+email without creating permission, conditional evidence/reason validation,
+legacy review presentation, declined discard, pending controls, retained
+decision drafts and reviewed version after background refresh/save failure.
+The Contact form uses React Hook Form/Zod and existing modal/draft protections.
+The staff guide and generated documentation corpus describe the three outreach
+states, immutable history, and the external sending boundary.
+
 ## Manual major-workflow companion — September 8, 2026
 
 The [major-workflow acceptance pack](../testing/README.md) adds 60 human-run

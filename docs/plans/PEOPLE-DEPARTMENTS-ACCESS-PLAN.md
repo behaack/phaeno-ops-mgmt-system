@@ -1,5 +1,23 @@
 # People and Department Access Plan
 
+Invitation readiness follow-up: Send invitation now stays disabled for a Member with no Department or stale Department selections, with an immediate inline explanation; selecting valid access re-enables it. Organization-administrator intent requires the existing active default Department. Existing validation and invitation payload remain unchanged.
+
+## Invitation clarity — September 8, 2026
+
+The Product Owner approved clarifying the invitation step during guided ACC-01:
+name the action Invite to Portal (personalized for an existing CRM Contact),
+show the reviewed recipient and Company as a summary, and group role and
+Department choices under Access after acceptance. Explain the two role choices
+inline, tighten the Department legend spacing, and indent its administrator
+option. Preserve current invitation payload, defaults, validation, permissions,
+acceptance timing, pending controls and draft recovery. This is a presentation
+change; no API, authentication, migration, delivery or Git action is included.
+Return to Joe Blow's unsent invitation after focused existing checks and visual
+review. Success: the screen clearly identifies who is invited, which Company
+they join, and the access they would receive only after accepting.
+
+Local verification: four existing invitation tests, TypeScript and focused lint passed. The signed-in desktop dialog was visually checked and restored with Joe, Member, General, and no Department-administrator access. Nothing was sent. Help and generated documentation metadata were updated.
+
 ## Portal consistency closeout — 2026-09-07
 
 Authorized by the Product Owner's “Address all items” instruction. Company People now owns external membership and invitation lifecycle actions using existing authorized APIs and the shared invitation editor, including first Organization-admin designation, Department roles, resend/revoke, and deactivation. Company Contact creation saves its association atomically; Sales opens the shared Opportunity editor with Company context. Existing Contact/User identities remain distinct.

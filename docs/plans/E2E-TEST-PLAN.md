@@ -1,5 +1,24 @@
 # Playwright E2E Test Plan
 
+Invitation readiness follow-up: signed-in desktop verification confirmed General unchecked immediately shows the required-Department explanation and disables Send invitation. The fixed footer remains intact; General is left unchecked for user review. Automated checks cover re-enabling valid selections. No invitation was sent.
+
+## Invitation clarity — September 8, 2026
+
+Visually verified the signed-in local Invite Joe Blow to Portal dialog: recipient name/email/Company summary, Access after acceptance, explained role choices, compact Department spacing and indented administrator option. Restored Member plus General with Department administrator unchecked. No invitation sent. Mobile acceptance and actual invitation receipt remain unverified.
+
+
+## CRM outreach decisions — September 8, 2026
+
+Manual CRM-01 now includes outreach evidence, invalid inputs, legacy values,
+directory/detail/export/history, email changes, and suppression after merge.
+These populated acceptance variants remain Not run. The guided ACC-01 session
+is paused at Joe Blow's unsaved email edit. Local signed-in recovery and the new
+editor were visually verified at the user's desktop size; the email draft was
+restored with outreach Not established without saving the business record or
+sending an invitation. Automated form and transactional database checks are recorded in
+the frontend/backend plans. External outreach delivery is not implemented;
+physical receipt and enforcement at future enqueue/dispatch remain unverified.
+
 ## Manual major-workflow companion — September 8, 2026
 
 The [major-workflow acceptance pack](../testing/README.md) provides 60 human-run

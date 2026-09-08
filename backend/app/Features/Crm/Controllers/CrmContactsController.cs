@@ -120,6 +120,7 @@ public sealed class CrmContactsController(
             || request.LawfulContactBasis != value.LawfulContactBasis || request.CommunicationNotes != value.CommunicationNotes)
             throw new CrmException("crm_outreach_review_required", "Reload the Contact and record a reviewed outreach decision; legacy preference fields cannot change it.");
         var previousOutreach = OutreachEvidence(value);
+        var previousOutreachStatus = value.OutreachStatus;
         await EnsureEmailWarningOnly(request.Email, contactId, cancellationToken);
         Execute(() => value.UpdateProfile(
             request.FirstName,
@@ -130,7 +131,7 @@ public sealed class CrmContactsController(
             request.LawfulContactBasis,
             request.CommunicationNotes,
             request.Tags));
-        if (previousOutreach != OutreachEvidence(value))
+        if (previousOutreachStatus == "Allowed" && value.OutreachStatus == "NotEstablished")
             RecordOutreachHistory(value, actor.Id, "Email changed; outreach permission needs review", previousOutreach);
         ApplyOutreachDecision(value, request.OutreachDecision, actor.Id);
         PSeq.Operations.Commercial.Accounts.Domain.User? updatedOwner = null;
@@ -287,7 +288,7 @@ public sealed class CrmContactsController(
             DateTime.UtcNow, CrmActivityVisibility.Internal, actorId, contactId: contact.Id));
 
     private static string OutreachEvidence(CrmContact contact) =>
-        $"Status: {contact.OutreachStatus} ({contact.CommunicationPreference})\nSource: {contact.OutreachPermissionSource ?? "Not recorded"}\nEvidence date: {contact.OutreachRecordedOn?.ToString("yyyy-MM-dd") ?? "Not recorded"}\nSuppression reason: {contact.OutreachSuppressionReason ?? "Not recorded"}\nExplanation: {contact.CommunicationNotes ?? "Not recorded"}\nLegacy basis: {contact.LawfulContactBasis ?? "Not recorded"}";
+        $"Status: {contact.OutreachStatus} ({contact.CommunicationPreference})\nEmail: {contact.Email ?? "Not recorded"}\nSource: {contact.OutreachPermissionSource ?? "Not recorded"}\nEvidence date: {contact.OutreachRecordedOn?.ToString("yyyy-MM-dd") ?? "Not recorded"}\nSuppression reason: {contact.OutreachSuppressionReason ?? "Not recorded"}\nExplanation: {contact.CommunicationNotes ?? "Not recorded"}\nLegacy basis: {contact.LawfulContactBasis ?? "Not recorded"}";
 
     private sealed record PrimaryCompanyPosition(Guid ContactId, string CompanyName, string? JobTitle);
 

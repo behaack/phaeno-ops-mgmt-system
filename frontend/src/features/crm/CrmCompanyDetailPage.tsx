@@ -371,6 +371,7 @@ export function CrmCompanyDetailPage({ companyId }: { companyId: string }) {
         <TabsContent value="people">
           <CrmCompanyPeople
             companyId={companyId}
+            companyName={company.name}
             accessOrganizationId={company.accessOrganizationId}
           />
         </TabsContent>

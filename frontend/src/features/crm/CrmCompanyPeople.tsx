@@ -60,9 +60,11 @@ type IdentityAction =
 
 export function CrmCompanyPeople({
   companyId,
+  companyName,
   accessOrganizationId,
 }: {
   companyId: string
+  companyName?: string
   accessOrganizationId: string | null
 }) {
   const { canAdminister } = useCrmPermissions();
@@ -209,7 +211,7 @@ export function CrmCompanyPeople({
       {relationshipTarget ? <CrmCompanyContactEditDialog value={relationshipTarget} pending={editRelationship.isPending} error={editRelationship.error} onOpenChange={open => { if (!open) setRelationshipTarget(null) }} onSubmit={input => editRelationship.mutate({ ...input, version: relationshipTarget.version })} /> : null}
       <CrmContactDialog open={createOpen} pending={create.isPending} error={create.error ? apiErrorMessage(create.error) : undefined} onOpenChange={setCreateOpen} onSubmit={input => create.mutate(input)} />
       {inviteTarget?.email && accessOrganizationId ? <OrganizationInvitationDialog
-        key={inviteTarget.contactId} organizationId={accessOrganizationId}
+        key={inviteTarget.contactId} organizationId={accessOrganizationId} organizationName={companyName}
         contact={{ firstName: inviteTarget.firstName, lastName: inviteTarget.lastName, email: inviteTarget.email }}
         isPending={invite.isPending} error={invite.error} onOpenChange={open => { if (!open) setInviteTarget(null) }}
         onSubmit={values => invite.mutateAsync(values)} /> : null}
