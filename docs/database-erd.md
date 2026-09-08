@@ -13,10 +13,10 @@ Generated from [PSeqOperationsDbContextModelSnapshot.cs](../backend/app/Migratio
 | Schema | Entities | Fields | Foreign keys |
 | --- | ---: | ---: | ---: |
 | `public` | 1 | 2 | 0 |
-| `commercial_ops` | 127 | 2054 | 305 |
+| `commercial_ops` | 127 | 2057 | 305 |
 | `lab_ops` | 31 | 363 | 46 |
 | `website` | 5 | 49 | 4 |
-| **Total** | **164** | **2468** | **355** |
+| **Total** | **164** | **2471** | **355** |
 
 ## `public` schema
 
@@ -269,6 +269,9 @@ erDiagram
         character_varying_150 legacy_job_title "nullable"
         uuid merged_into_contact_id FK "nullable"
         character_varying_255 normalized_email "nullable"
+        character_varying_50 outreach_permission_source "nullable"
+        date outreach_recorded_on "nullable"
+        character_varying_50 outreach_suppression_reason "nullable"
         uuid owner_user_id FK "not null"
         character_varying_50 phone "nullable"
         text_array tags "not null"

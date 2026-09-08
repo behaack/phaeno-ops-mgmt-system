@@ -24,7 +24,12 @@ public sealed record CrmContactDto(
     bool IsActive,
     DateTime CreatedAt,
     DateTime UpdatedAt,
-    long Version);
+    long Version,
+    string? OutreachPermissionSource = null,
+    DateOnly? OutreachRecordedOn = null,
+    string? OutreachSuppressionReason = null,
+    string OutreachStatus = "NotEstablished",
+    bool CanReceiveOutreach = false);
 
 public sealed record CrmCompanyContactDto(
     Guid Id,
@@ -51,7 +56,15 @@ public sealed record UpsertCrmContactRequest(
     string? CommunicationNotes,
     IReadOnlyList<string> Tags,
     long? Version,
-    Guid? CompanyId = null);
+    Guid? CompanyId = null,
+    CrmOutreachDecisionInput? OutreachDecision = null);
+
+public sealed record CrmOutreachDecisionInput(
+    CrmCommunicationPreference Preference,
+    string? PermissionSource,
+    DateOnly? RecordedOn,
+    string? SuppressionReason,
+    string? Explanation);
 
 public sealed record AssociateCrmContactRequest(
     Guid ContactId,

@@ -1,5 +1,67 @@
 # First-Party CRM Plan
 
+## Outreach decision completion — September 8, 2026
+
+The Product Owner approved completing Communication preference during the guided
+ACC-01 walkthrough. Sales staff need a clear outreach decision and its evidence;
+Portal invitees and customers must keep their separately requested operational
+messages. The walkthrough is paused with Joe Blow's email edit unsaved.
+
+Scope: three visible states (Not established, Allowed, Suppressed), explicit
+permission source/date/explanation and suppression reason, immutable system
+activity for each decision, legacy-value preservation, fail-closed eligibility,
+and consistent editor/detail/list/export/help presentation. Legacy permission
+without reviewed evidence is not eligible. An email change invalidates an allowed
+decision; merging cannot silently remove suppression. Ordinary profile edits do
+not manufacture evidence or turn an invitation request into outreach permission.
+
+CRM currently has no outreach queue/sender. Existing invitation, quote, order,
+result, security and requested Website-brief delivery remain separate. The UI
+explicitly states that recorded outreach decisions do not block sending in other
+tools. No new sender/campaign integration or automatic Website-consent linkage is
+authorized here. Future outreach must re-evaluate eligibility at enqueue and send,
+including already queued work after suppression; there is no current CRM queue to
+cancel. This is not represented as implemented delivery enforcement.
+
+Use additive nullable Contact evidence fields and existing immutable System
+activities for actor/time and before/after evidence; retain old preference/basis
+values. Apply reviewed migration only to verified local development database.
+Update ERD, guide/catalog and focused living test coverage. No Git mutation,
+shared migration, production deployment, invitation or business submission is
+included. Verification will use focused checks at one checkpoint, then restore
+the same unsaved Contact editor for the observed walkthrough.
+
+## Outreach decision completion — September 8, 2026
+
+The Product Owner approved completing Communication preference during the guided
+ACC-01 walkthrough. Sales staff need a clear outreach decision and its evidence;
+Portal invitees and customers must keep their separately requested operational
+messages. The walkthrough is paused with Joe Blow's email edit unsaved.
+
+Scope: three visible states (Not established, Allowed, Suppressed), explicit
+permission source/date/explanation and suppression reason, immutable system
+activity for each decision, legacy-value preservation, fail-closed eligibility,
+and consistent editor/detail/list/export/help presentation. Legacy permission
+without reviewed evidence is not eligible. An email change invalidates an allowed
+decision; merging cannot silently remove suppression. Ordinary profile edits do
+not manufacture evidence or turn an invitation request into outreach permission.
+
+CRM currently has no outreach queue/sender. Existing invitation, quote, order,
+result, security and requested Website-brief delivery remain separate. The UI
+explicitly states that recorded outreach decisions do not block sending in other
+tools. No new sender/campaign integration or automatic Website-consent linkage is
+authorized here. Future outreach must re-evaluate eligibility at enqueue and send,
+including already queued work after suppression; there is no current CRM queue to
+cancel. This is not represented as implemented delivery enforcement.
+
+Use additive nullable Contact evidence fields and existing immutable System
+activities for actor/time and before/after evidence; retain old preference/basis
+values. Apply reviewed migration only to verified local development database.
+Update ERD, guide/catalog and focused living test coverage. No Git mutation,
+shared migration, production deployment, invitation or business submission is
+included. Verification will use focused checks at one checkpoint, then restore
+the same unsaved Contact editor for the observed walkthrough.
+
 ## Portal consistency closeout — 2026-09-07
 
 Authorized by the Product Owner's “Address all items” instruction. Company People now owns external membership and invitation lifecycle actions using existing authorized APIs and the shared invitation editor, including first Organization-admin designation, Department roles, resend/revoke, and deactivation. Company Contact creation saves its association atomically; Sales opens the shared Opportunity editor with Company context. Existing Contact/User identities remain distinct.

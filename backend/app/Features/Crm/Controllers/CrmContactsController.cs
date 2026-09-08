@@ -81,6 +81,9 @@ public sealed class CrmContactsController(
     public async Task<ActionResult<CrmContactDto>> Create([FromBody] UpsertCrmContactRequest request, CancellationToken cancellationToken)
     {
         var actor = await RequireActor(cancellationToken);
+        if (request.CommunicationPreference != CrmCommunicationPreference.Unknown
+            || !string.IsNullOrWhiteSpace(request.LawfulContactBasis) || !string.IsNullOrWhiteSpace(request.CommunicationNotes))
+            throw new CrmException("crm_outreach_review_required", "Use the reviewed outreach decision fields when creating a Contact.");
         await EnsureEmailWarningOnly(request.Email, null, cancellationToken);
         var owner = request.OwnerUserId.HasValue
             ? await RequireOwner(request.OwnerUserId.Value, cancellationToken)
@@ -96,6 +99,7 @@ public sealed class CrmContactsController(
             request.CommunicationNotes,
             request.Tags));
         dbContext.CrmContacts.Add(value);
+        ApplyOutreachDecision(value, request.OutreachDecision, actor.Id);
         if (request.CompanyId.HasValue)
         {
             if (!await dbContext.CrmCompanies.AnyAsync(company => company.Id == request.CompanyId.Value && company.IsActive, cancellationToken))
@@ -109,9 +113,13 @@ public sealed class CrmContactsController(
     [HttpPut("{contactId:guid}")]
     public async Task<CrmContactDto> Update(Guid contactId, [FromBody] UpsertCrmContactRequest request, CancellationToken cancellationToken)
     {
-        await RequireActor(cancellationToken);
+        var actor = await RequireActor(cancellationToken);
         var value = await Require(contactId, tracking: true, cancellationToken);
         EnsureVersion(value.Version, request.Version ?? 0);
+        if (request.CommunicationPreference != value.CommunicationPreference
+            || request.LawfulContactBasis != value.LawfulContactBasis || request.CommunicationNotes != value.CommunicationNotes)
+            throw new CrmException("crm_outreach_review_required", "Reload the Contact and record a reviewed outreach decision; legacy preference fields cannot change it.");
+        var previousOutreach = OutreachEvidence(value);
         await EnsureEmailWarningOnly(request.Email, contactId, cancellationToken);
         Execute(() => value.UpdateProfile(
             request.FirstName,
@@ -122,6 +130,9 @@ public sealed class CrmContactsController(
             request.LawfulContactBasis,
             request.CommunicationNotes,
             request.Tags));
+        if (previousOutreach != OutreachEvidence(value))
+            RecordOutreachHistory(value, actor.Id, "Email changed; outreach permission needs review", previousOutreach);
+        ApplyOutreachDecision(value, request.OutreachDecision, actor.Id);
         PSeq.Operations.Commercial.Accounts.Domain.User? updatedOwner = null;
         if (request.OwnerUserId.HasValue && request.OwnerUserId.Value != value.OwnerUserId)
         {
@@ -194,6 +205,10 @@ public sealed class CrmContactsController(
             dbContext.CrmCustomFieldValues.Add(Execute(() => new CrmCustomFieldValue(fieldValue.DefinitionId, target.Id, fieldValue.ValueJson)));
         }
         target.AddAlias(source.DisplayName);
+        var previousOutreach = OutreachEvidence(target);
+        target.PreserveSuppressionFrom(source);
+        if (previousOutreach != OutreachEvidence(target))
+            RecordOutreachHistory(target, actor.Id, $"Outreach suppression retained from merged Contact {source.DisplayName}", previousOutreach);
         source.MergeInto(target.Id);
         dbContext.CrmMergeRecords.Add(new CrmMergeRecord(CrmRecordType.Contact, source.Id, target.Id, request.Reason, actor.Id, DateTime.UtcNow));
         await dbContext.SaveChangesAsync(cancellationToken);
@@ -251,8 +266,28 @@ public sealed class CrmContactsController(
             primaryPosition?.CompanyName, primaryPosition?.JobTitle,
             value.OwnerUserId, $"{resolvedOwner.FirstName} {resolvedOwner.LastName}".Trim(), value.CommunicationPreference,
             value.LawfulContactBasis, value.CommunicationNotes, value.Tags, value.Aliases, value.MergedIntoContactId,
-            value.IsActive, value.CreatedAt, value.UpdatedAt, value.Version);
+            value.IsActive, value.CreatedAt, value.UpdatedAt, value.Version,
+            value.OutreachPermissionSource, value.OutreachRecordedOn, value.OutreachSuppressionReason,
+            value.OutreachStatus, value.CanReceiveOutreach);
     }
+
+    private void ApplyOutreachDecision(CrmContact contact, CrmOutreachDecisionInput? decision, Guid actorId)
+    {
+        if (decision is null) return;
+        var previous = OutreachEvidence(contact);
+        Execute(() => contact.RecordOutreachDecision(decision.Preference, decision.PermissionSource,
+            decision.RecordedOn, decision.SuppressionReason, decision.Explanation, DateTime.UtcNow));
+        if (previous != OutreachEvidence(contact))
+            RecordOutreachHistory(contact, actorId, "Sales and marketing outreach decision recorded", previous);
+    }
+
+    private void RecordOutreachHistory(CrmContact contact, Guid actorId, string subject, string previous) =>
+        dbContext.CrmActivities.Add(new CrmActivity(CrmActivityType.System, subject,
+            $"Previous decision:\n{previous}\n\nCurrent decision:\n{OutreachEvidence(contact)}\n\nRequested Portal and operational messages are managed separately.",
+            DateTime.UtcNow, CrmActivityVisibility.Internal, actorId, contactId: contact.Id));
+
+    private static string OutreachEvidence(CrmContact contact) =>
+        $"Status: {contact.OutreachStatus} ({contact.CommunicationPreference})\nSource: {contact.OutreachPermissionSource ?? "Not recorded"}\nEvidence date: {contact.OutreachRecordedOn?.ToString("yyyy-MM-dd") ?? "Not recorded"}\nSuppression reason: {contact.OutreachSuppressionReason ?? "Not recorded"}\nExplanation: {contact.CommunicationNotes ?? "Not recorded"}\nLegacy basis: {contact.LawfulContactBasis ?? "Not recorded"}";
 
     private sealed record PrimaryCompanyPosition(Guid ContactId, string CompanyName, string? JobTitle);
 

@@ -383,7 +383,7 @@ public sealed class CrmAdministrationController(PSeqOperationsDbContext dbContex
                 rows.AddRange((await companyQuery.OrderBy(value => value.Name).ToListAsync(cancellationToken)).Select(value => new[] { value.Id.ToString(), value.Name, value.DomainName ?? "", value.Phone ?? "", value.Industry ?? "", value.LifecycleState.ToString(), value.Source ?? "", value.IsActive.ToString() }));
                 break;
             case CrmRecordType.Contact:
-                rows.Add(["id", "first_name", "last_name", "email", "phone", "primary_company", "primary_company_title", "preference", "active"]);
+                rows.Add(["id", "first_name", "last_name", "email", "phone", "primary_company", "primary_company_title", "preference", "active", "outreach_status", "outreach_eligible", "permission_source", "evidence_date", "suppression_reason"]);
                 var contactQuery = dbContext.CrmContacts.AsNoTracking().AsQueryable();
                 if (!FilterBool(filters, "includeInactive")) contactQuery = contactQuery.Where(value => value.IsActive);
                 var contactSearch = FilterText(filters, "search");
@@ -401,7 +401,7 @@ public sealed class CrmAdministrationController(PSeqOperationsDbContext dbContex
                 rows.AddRange(contactValues.Select(value =>
                 {
                     var primary = primaryPositions.GetValueOrDefault(value.Id);
-                    return new[] { value.Id.ToString(), value.FirstName, value.LastName, value.Email ?? "", value.Phone ?? "", primary?.CompanyName ?? "", primary?.JobTitle ?? "", value.CommunicationPreference.ToString(), value.IsActive.ToString() };
+                    return new[] { value.Id.ToString(), value.FirstName, value.LastName, value.Email ?? "", value.Phone ?? "", primary?.CompanyName ?? "", primary?.JobTitle ?? "", value.CommunicationPreference.ToString(), value.IsActive.ToString(), value.OutreachStatus, value.CanReceiveOutreach.ToString(), value.OutreachPermissionSource ?? "", value.OutreachRecordedOn?.ToString("yyyy-MM-dd") ?? "", value.OutreachSuppressionReason ?? "" };
                 }));
                 break;
             case CrmRecordType.Lead:

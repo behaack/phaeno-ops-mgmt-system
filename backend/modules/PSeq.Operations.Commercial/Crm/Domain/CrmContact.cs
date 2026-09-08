@@ -19,6 +19,9 @@ public sealed class CrmContact : IAudit, IConcurrency
     public CrmCommunicationPreference CommunicationPreference { get; private set; }
     public string? LawfulContactBasis { get; private set; }
     public string? CommunicationNotes { get; private set; }
+    public string? OutreachPermissionSource { get; private set; }
+    public DateOnly? OutreachRecordedOn { get; private set; }
+    public string? OutreachSuppressionReason { get; private set; }
     public string[] Tags { get; private set; } = [];
     public string[] Aliases { get; private set; } = [];
     public Guid? MergedIntoContactId { get; private set; }
@@ -59,6 +62,53 @@ public sealed class CrmContact : IAudit, IConcurrency
 
     public string DisplayName => $"{FirstName} {LastName}".Trim();
 
+    public bool IsOutreachSuppressed => CommunicationPreference is
+        CrmCommunicationPreference.Suppressed or CrmCommunicationPreference.OptedOut or CrmCommunicationPreference.DoNotContact;
+
+    public bool HasReviewedOutreachPermission => CommunicationPreference == CrmCommunicationPreference.Permitted
+        && OutreachPermissionSource is not null && OutreachRecordedOn.HasValue && !string.IsNullOrWhiteSpace(CommunicationNotes);
+
+    public string OutreachStatus => IsOutreachSuppressed ? "Suppressed"
+        : HasReviewedOutreachPermission ? "Allowed" : "NotEstablished";
+
+    // This is an eligibility decision, not a sender. Any future CRM outreach
+    // delivery must read the current record at both queue and dispatch time.
+    public bool CanReceiveOutreach => IsActive && !MergedIntoContactId.HasValue
+        && NormalizedEmail is not null && HasReviewedOutreachPermission;
+
+    public void RecordOutreachDecision(CrmCommunicationPreference preference, string? source,
+        DateOnly? recordedOn, string? suppressionReason, string? explanation, DateTime utcNow)
+    {
+        if (preference is not (CrmCommunicationPreference.Unknown or CrmCommunicationPreference.Permitted or CrmCommunicationPreference.Suppressed))
+            throw new ArgumentException("Choose Not established, Allowed, or Suppressed.");
+        if (source is not ("DirectRequest" or "RecordedConsent" or "ReviewedRelationship" or "StaffReview"))
+            throw new ArgumentException("Select the permission source supporting this decision.");
+        if (!recordedOn.HasValue || recordedOn > DateOnly.FromDateTime(utcNow))
+            throw new ArgumentException("Enter the evidence date, no later than today (UTC).");
+        var reason = Required(explanation, nameof(explanation), 1000);
+        if (preference == CrmCommunicationPreference.Suppressed
+            && suppressionReason is not ("Unsubscribed" or "DirectRequest" or "InternalRestriction"))
+            throw new ArgumentException("Select why outreach is suppressed.");
+        if (preference == CrmCommunicationPreference.Permitted && NormalizedEmail is null)
+            throw new ArgumentException("Record the contact email before allowing outreach.");
+
+        CommunicationPreference = preference;
+        OutreachPermissionSource = source;
+        OutreachRecordedOn = recordedOn;
+        OutreachSuppressionReason = preference == CrmCommunicationPreference.Suppressed ? suppressionReason : null;
+        CommunicationNotes = reason;
+    }
+
+    public void PreserveSuppressionFrom(CrmContact source)
+    {
+        if (!source.IsOutreachSuppressed || IsOutreachSuppressed) return;
+        CommunicationPreference = source.CommunicationPreference;
+        OutreachPermissionSource = source.OutreachPermissionSource;
+        OutreachRecordedOn = source.OutreachRecordedOn;
+        OutreachSuppressionReason = source.OutreachSuppressionReason;
+        CommunicationNotes = source.CommunicationNotes;
+    }
+
     public void UpdateProfile(
         string firstName,
         string lastName,
@@ -69,14 +119,24 @@ public sealed class CrmContact : IAudit, IConcurrency
         string? communicationNotes,
         IEnumerable<string>? tags)
     {
+        if (!Enum.IsDefined(communicationPreference)) throw new ArgumentException("Select a valid outreach status.");
+        var normalizedEmail = NormalizeEmail(email);
+        var emailChanged = !string.Equals(Email, normalizedEmail, StringComparison.OrdinalIgnoreCase);
         FirstName = Required(firstName, nameof(firstName), 100);
         LastName = Required(lastName, nameof(lastName), 100);
-        Email = NormalizeEmail(email);
+        Email = normalizedEmail;
         NormalizedEmail = Email?.ToUpperInvariant();
         Phone = Optional(phone, 50);
         CommunicationPreference = communicationPreference;
         LawfulContactBasis = Optional(lawfulContactBasis, 255);
         CommunicationNotes = Optional(communicationNotes, 1000);
+        if (emailChanged && OutreachRecordedOn.HasValue && communicationPreference == CrmCommunicationPreference.Permitted)
+        {
+            CommunicationPreference = CrmCommunicationPreference.Unknown;
+            OutreachPermissionSource = null;
+            OutreachRecordedOn = null;
+            OutreachSuppressionReason = null;
+        }
         Tags = NormalizeTags(tags);
     }
 

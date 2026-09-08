@@ -67,6 +67,12 @@ public static class CrmModelConfiguration
             ConfigureEnum(entity.Property(value => value.CommunicationPreference), 50);
             entity.Property(value => value.LawfulContactBasis).HasMaxLength(255);
             entity.Property(value => value.CommunicationNotes).HasMaxLength(1000);
+            entity.Property(value => value.OutreachPermissionSource).HasMaxLength(50);
+            entity.Property(value => value.OutreachSuppressionReason).HasMaxLength(50);
+            entity.Ignore(value => value.IsOutreachSuppressed);
+            entity.Ignore(value => value.HasReviewedOutreachPermission);
+            entity.Ignore(value => value.OutreachStatus);
+            entity.Ignore(value => value.CanReceiveOutreach);
             ConfigureTags(entity.Property(value => value.Tags));
             ConfigureTags(entity.Property(value => value.Aliases));
             ConfigureAudit(entity);

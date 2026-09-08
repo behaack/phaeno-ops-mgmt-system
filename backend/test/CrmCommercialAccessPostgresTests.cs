@@ -18,6 +18,40 @@ using PhaenoPortal.App.Infrastructure.Persistence.Auditing;
 public sealed class CrmCommercialAccessPostgresTests
 {
     [PostgreSqlReferenceFact]
+    public async Task OutreachDecisionsPersistWithImmutableHistoryAndCannotBeChangedThroughLegacyFields()
+    {
+        await using var scope = await Scope.Create();
+        var controller = scope.Controller(new CrmContactsController(scope.Db, scope.Identity));
+        var created = await controller.Create(new("Test", "Outreach", "outreach@example.test", null, null,
+            CrmCommunicationPreference.Unknown, null, null, [], null), default);
+        var contact = Assert.IsType<CrmContactDto>(Assert.IsType<CreatedResult>(created.Result).Value);
+        Assert.False(contact.CanReceiveOutreach);
+        var request = new UpsertCrmContactRequest(contact.FirstName, contact.LastName, contact.Email, null, null,
+            contact.CommunicationPreference, contact.LawfulContactBasis, contact.CommunicationNotes, [], contact.Version);
+        Assert.Equal("crm_outreach_review_required", (await Assert.ThrowsAsync<CrmException>(() => controller.Update(contact.Id,
+            request with { CommunicationPreference = CrmCommunicationPreference.Permitted }, default))).ErrorCode);
+        var allowed = await controller.Update(contact.Id, request with { OutreachDecision = new(CrmCommunicationPreference.Permitted,
+            "RecordedConsent", DateOnly.FromDateTime(DateTime.UtcNow), null, "Product update email requested") }, default);
+        Assert.True(allowed.CanReceiveOutreach);
+        scope.Db.ChangeTracker.Clear();
+        Assert.Equal("Allowed", (await controller.Get(contact.Id, default)).OutreachStatus);
+        var history = Assert.Single(await scope.Db.CrmActivities.Where(a => a.ContactId == contact.Id).ToListAsync());
+        Assert.Equal(CrmActivityType.System, history.Type);
+        Assert.Equal(scope.Actor.Id, history.ActorUserId);
+        Assert.Contains("Previous decision:", history.Body);
+        Assert.Contains("Product update email requested", history.Body);
+        var work = scope.Controller(new CrmWorkController(scope.Db, scope.Identity));
+        await Assert.ThrowsAsync<CrmException>(() => work.DeactivateActivity(history.Id, new() { Version = history.Version }, default));
+        await Assert.ThrowsAsync<CrmException>(() => work.UpdateActivity(history.Id, new(CrmActivityType.Note, "Erase decision", null,
+            DateTime.UtcNow, CrmActivityVisibility.Internal, null, contact.Id, null, null, history.Version), default));
+        var changedEmail = await controller.Update(contact.Id, request with { Email = "replacement@example.test", Version = allowed.Version,
+            CommunicationPreference = allowed.CommunicationPreference, CommunicationNotes = allowed.CommunicationNotes }, default);
+        Assert.Equal("NotEstablished", changedEmail.OutreachStatus);
+        Assert.False(changedEmail.CanReceiveOutreach);
+        Assert.Equal(2, await scope.Db.CrmActivities.CountAsync(a => a.ContactId == contact.Id));
+    }
+
+    [PostgreSqlReferenceFact]
     public async Task CommercialCanMaintainCrmWithoutAdministrationOrPortalAccessPowers()
     {
         await using var scope = await Scope.Create();

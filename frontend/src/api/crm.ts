@@ -82,7 +82,8 @@ export type CrmCommunicationPreference =
   | "Unknown"
   | "Permitted"
   | "OptedOut"
-  | "DoNotContact";
+  | "DoNotContact"
+  | "Suppressed";
 export type CrmLeadKind = "Individual" | "Company";
 export type CrmLeadStatus =
   | "New"
@@ -152,6 +153,11 @@ export type CrmContact = {
   communicationPreference: CrmCommunicationPreference;
   lawfulContactBasis: string | null;
   communicationNotes: string | null;
+  outreachPermissionSource?: string | null;
+  outreachRecordedOn?: string | null;
+  outreachSuppressionReason?: string | null;
+  outreachStatus?: 'NotEstablished' | 'Allowed' | 'Suppressed';
+  canReceiveOutreach?: boolean;
   tags: string[];
   aliases: string[];
   mergedIntoContactId: string | null;
@@ -173,6 +179,13 @@ export type CrmContactInput = {
   communicationNotes: string | null;
   tags: string[];
   version?: number;
+  outreachDecision?: {
+    preference: 'Unknown' | 'Permitted' | 'Suppressed';
+    permissionSource: string;
+    recordedOn: string;
+    suppressionReason: string | null;
+    explanation: string;
+  };
 };
 
 export type CrmCompanyContact = {

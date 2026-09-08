@@ -24,6 +24,7 @@ import { Checkbox } from "#/components/ui/checkbox";
 import { Input } from "#/components/ui/input";
 import { Label } from "#/components/ui/label";
 import { CrmContactDialog } from "./CrmContactDialog";
+import { outreachLabel, outreachStatus } from './crm-outreach';
 import { CrmSavedViewBar } from "./CrmSavedViewBar";
 
 export function CrmContactsPage() {
@@ -132,7 +133,7 @@ export function CrmContactsPage() {
                   <th className="px-4 py-3">Contact</th>
                   <th className="px-4 py-3">Email</th>
                   <th className="px-4 py-3">Primary position</th>
-                  <th className="px-4 py-3">Preference</th>
+                  <th className="px-4 py-3">Outreach</th>
                   <th className="px-4 py-3">Owner</th>
                 </tr>
               </thead>
@@ -162,13 +163,12 @@ export function CrmContactsPage() {
                     <td className="px-4 py-3">
                       <Badge
                         variant={
-                          contact.communicationPreference === "DoNotContact" ||
-                          contact.communicationPreference === "OptedOut"
+                          outreachStatus(contact) === 'Suppressed'
                             ? "destructive"
                             : "outline"
                         }
                       >
-                        {spaced(contact.communicationPreference)}
+                        {outreachLabel(contact)}
                       </Badge>
                     </td>
                     <td className="px-4 py-3 text-muted-foreground">
@@ -199,7 +199,4 @@ export function CrmContactsPage() {
       />
     </main>
   );
-}
-function spaced(value: string) {
-  return value.replace(/([a-z])([A-Z])/g, "$1 $2");
 }

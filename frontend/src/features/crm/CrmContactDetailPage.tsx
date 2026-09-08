@@ -44,6 +44,7 @@ import { CrmAssociationRecordCombobox } from "./CrmAssociationRecordCombobox";
 import { CrmCollectionFeedback } from "./CrmCollectionFeedback";
 import { CrmCompanyContactEditDialog } from "./CrmCompanyContactEditDialog";
 import { CrmContactDialog } from "./CrmContactDialog";
+import { outreachBoundary, outreachLabel, outreachSourceLabel, suppressionLabel } from './crm-outreach';
 import { CrmCustomFields } from "./CrmCustomFields";
 import { CrmMergeDialog, type CrmMergeSource } from "./CrmMergeDialog";
 import { CrmRecordWork } from "./CrmRecordWork";
@@ -91,6 +92,7 @@ export function CrmContactDetailPage({ contactId }: { contactId: string }) {
       client.setQueryData(["crm-contact", contactId], contact);
       setLifecycleTarget(null);
       await client.invalidateQueries({ queryKey: ["crm-contacts"] });
+      await client.invalidateQueries({ queryKey: ["crm-activities", contact.id] });
     },
   });
   const merge = useMutation({
@@ -231,19 +233,25 @@ export function CrmContactDetailPage({ contactId }: { contactId: string }) {
               <Info label="Email" value={contact.email ?? "Not recorded"} />
               <Info label="Phone" value={contact.phone ?? "Not recorded"} />
               <Info
-                label="Communication preference"
-                value={spaced(contact.communicationPreference)}
+                label="Sales and marketing outreach"
+                value={outreachLabel(contact)}
               />
               <Info
-                label="Lawful basis"
-                value={contact.lawfulContactBasis ?? "Not recorded"}
+                label="Permission source"
+                value={outreachSourceLabel(contact.outreachPermissionSource)}
               />
               <Info
-                label="Communication notes"
+                label="Decision explanation and scope"
                 value={contact.communicationNotes ?? "No notes"}
                 wide
               />
+              <Info label="Evidence date" value={contact.outreachRecordedOn ?? 'Not recorded'} />
+              <Info label="Suppression reason" value={suppressionLabel(contact)} />
+              {contact.lawfulContactBasis ? <Info label="Legacy contact basis (retained)" value={contact.lawfulContactBasis} wide /> : null}
+              {contact.communicationPreference === 'Permitted' && !contact.outreachPermissionSource
+                ? <Info label="Legacy permission needs review" value="The earlier Permitted value is retained. Record current permission evidence before outreach is allowed." wide /> : null}
             </dl>
+            <p className="mt-4 text-sm text-muted-foreground">{outreachBoundary} Decision changes are retained in the Activity timeline with the recording staff member and time.</p>
           </CardContent>
         </Card>
         <Card>
@@ -513,9 +521,6 @@ function Info({
       <dd className="mt-1 whitespace-pre-wrap text-sm font-medium">{value}</dd>
     </div>
   );
-}
-function spaced(value: string) {
-  return value.replace(/([a-z])([A-Z])/g, "$1 $2");
 }
 function primaryPosition(contact: CrmContact) {
   if (!contact.primaryCompanyName) return "No primary Company";
