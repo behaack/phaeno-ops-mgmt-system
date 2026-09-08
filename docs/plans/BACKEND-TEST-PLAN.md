@@ -1,5 +1,15 @@
 # Backend Test Plan
 
+## Manual major-workflow companion — September 8, 2026
+
+The [major-workflow acceptance pack](../testing/README.md) adds 60 human-run
+cases with role/tenant boundaries, duplicate and stale-command checks, persisted
+handoff expectations, scientific/financial separation, and provider/restore gates.
+See the [owning plan](MAJOR-WORKFLOW-ACCEPTANCE-PLAN.md) and
+[run record](../testing/RUN-RECORD.md). These are authored manual scripts, all
+initially Not run; no backend tests were added or executed for this documentation
+task, and existing automated coverage/results remain unchanged.
+
 ## Final isolated retention checkpoint — September 8, 2026
 
 All 12 `ManagedReleaseRetentionPostgresTests` passed with zero failures/skips on an owned, temporary loopback PostgreSQL 18 cluster with `track_commit_timestamp=on`. This resolves the four environmental prerequisite failures in the bundle integration run below. The cluster and its generated test databases were stopped and removed; the normal development instance was neither restarted nor reconfigured. Evidence: `artifacts/portal-operational-completion-20260908/retention-isolated.trx`. These cases overlap the selected PostgreSQL checkpoint and are not an additional unique-test total.

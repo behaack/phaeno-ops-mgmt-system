@@ -1,5 +1,15 @@
 # Frontend Test Plan
 
+## Manual major-workflow companion — September 8, 2026
+
+The [major-workflow acceptance pack](../testing/README.md) adds 60 human-run
+cases covering audience-specific forms, list/detail return paths, approval and
+release controls, failure/draft recovery, and keyboard/responsive checks.
+See the [owning plan](MAJOR-WORKFLOW-ACCEPTANCE-PLAN.md) and
+[run record](../testing/RUN-RECORD.md). These are authored manual scripts, all
+initially Not run; no frontend tests were added or executed for this documentation
+task, and existing automated coverage/results remain unchanged.
+
 ## Configured Lab Service and included PSeq Kit bundles - 2026-09-07
 
 The integration run covered **333 tests across 88 files**: 332 passed and the sole failure was the old documentation assertion that Partners have no Lab Service guide. After correcting that assertion, the focused registry checks passed. Evidence: `artifacts/bundled-orders-full-frontend-final.json` and `artifacts/bundled-orders-registry-corrected.json`. This is combined checkpoint evidence, not a claim that a single full run was entirely green.

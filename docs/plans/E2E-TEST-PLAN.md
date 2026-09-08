@@ -1,5 +1,15 @@
 # Playwright E2E Test Plan
 
+## Manual major-workflow companion — September 8, 2026
+
+The [major-workflow acceptance pack](../testing/README.md) provides 60 human-run
+scripts, reusable role/data prerequisites, connected journey sequences, expected
+results, cleanup/handoffs and a [run record](../testing/RUN-RECORD.md).
+The [owning plan](MAJOR-WORKFLOW-ACCEPTANCE-PLAN.md) distinguishes connected
+application, intercepted browser, provider, destination receipt, physical bench
+and restore evidence. All new manual cases start Not run. No Playwright tests or
+business workflows were executed, and existing automated results remain unchanged.
+
 ## Configured Lab and Partner Kit journeys — 2026-09-08
 
 The permanent isolated bundle fixture exercises Customer and Partner standard final-price review/placement/sample handoff, purchased Kit case preparation with interrupted-upload recovery and same-case resubmission, offering version configuration, and staff timing/deadline dialogs. Five journeys passed on desktop and mobile (10 cases), including keyboard-accessible controls, Axe checks, no horizontal overflow, no page errors and rejection of unexpected API requests. This is populated browser evidence using intercepted synthetic responses, not Clerk sign-in, production transactions, scientific-provider receipt or physical Lab acceptance. The owning [completion plan](PORTAL-OPERATIONAL-COMPLETION-2026-09-08.md) records separate persistence and release gates.
