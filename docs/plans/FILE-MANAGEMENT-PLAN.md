@@ -1,5 +1,19 @@
 # File Management Plan
 
+## September 7 production outcome
+
+Local storage and the private ClamAV service were activated by successful
+[release 34174323588](https://github.com/behaack/phaeno-ops-mgmt-system/actions/runs/34174323588)
+at `ac0a773e93fe452acc57a47c682d727fc0fadfda`. Initial metadata references and
+managed/legacy file areas were empty. The native clean/EICAR/encrypted/direct-limit
+checks and both-area application write/checksum/readback/scan/deletion check passed.
+The database backup restored successfully before migration; all synthetic check
+files and the isolated restore container were removed. See the
+[release evidence](PORTAL-COMPLETION-IMPLEMENTATION-2026-09-07.md#production-release-evidence).
+Use Preserve for ordinary later deployments. Authenticated approved-format journeys,
+recurring coordinated file/database backups and populated file recovery remain
+acceptance work; S3 and retention activation remain separate.
+
 ## 2026-09-07 private scanner deployment activation
 
 The approved production-completion work adds an optional managed ClamAV 1.4 LTS
@@ -20,7 +34,7 @@ repointing. The scanner budget is 4 GiB; first activation requires a further 1 G
 host-memory reserve and 3 GiB free Docker disk space.
 
 Deployment builds the new API, waits for scanner readiness and requires ephemeral
-container-native clean/EICAR/encrypted-ZIP/101-MiB stream-limit checks. It then runs
+container-native clean/EICAR/encrypted-ZIP/direct oversized-INSTREAM limit checks. It then runs
 the API's `--verify-file-services` adapter/volume check before API replacement or
 migrations when storage and scanning are active. Scanner settings use an independent
 guarded rollback receipt; successful releases clear it, failed non-migration releases

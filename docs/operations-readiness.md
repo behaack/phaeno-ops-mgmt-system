@@ -23,6 +23,16 @@ with the approved commercial roadmap. The [September 7 second release](plans/POR
 records the completed matching API/Portal deployment; the [completion change](plans/PORTAL-COMPLETION-IMPLEMENTATION-2026-09-07.md)
 has its own verification and deployment checkpoint.
 
+The September 7 completion release is now deployed on matching API/Portal source
+`ac0a773e93fe452acc57a47c682d727fc0fadfda`, with the four-field draft migration
+applied and private persistent Local storage plus ClamAV activated. The
+[release evidence](plans/PORTAL-COMPLETION-IMPLEMENTATION-2026-09-07.md#production-release-evidence)
+records the empty-store inventory, native scanner and injected-adapter checks,
+isolated database restoration, encrypted backup checksums and anonymous health
+results. Signed-in role/workflow acceptance, recurring coordinated file/database
+backups, populated file restoration and real scientific/physical validation remain
+separate. No retention processing, enforcement or deletion switch was activated.
+
 Production activation requires a dedicated-staging acceptance run with
 Commercial, Lab Operations, Scientific, Finance, security, and accessibility
 signoff. It also requires Mailgun sender and webhook-signature validation, final
@@ -46,8 +56,9 @@ it does not replace an approved environment-specific deployment or incident runb
 | Database | PostgreSQL through one EF Core `PSeqOperationsDbContext`, with Commercial/current-flow and Lab projections in `commercial_ops`, Laboratory execution in `lab_ops`, Website intake/delivery/control in `website`, and migration history in `public`. Use the complete [database ERD](database-erd.md) and [EF snapshot](../backend/app/Migrations/PSeqOperationsDbContextModelSnapshot.cs) for current entities, fields, keys and relationships; applied migration state is environment-specific. |
 | Authentication | Clerk-issued bearer JWTs; application authorization comes from internal users, active memberships, and capabilities. |
 | Lab Operations | Feature-complete internal provider with additive Phaeno roles, operator APIs/workspace, receipt and accession, controlled execution, traceability, outsourced NGS sendouts, exceptions, scientific approval, and customer-safe Commercial projections. Production validation and activation remain incomplete. |
-| Curated-data files | `IManagedFileStorage` adapts to shared `IFileStorage`, with Local, Disabled, and S3 providers. Production Local requires an explicit private absolute root and persistent-volume acknowledgement. The recorded prior production hold uses Disabled, which permits startup but returns HTTP 503 for file operations; inspect the target configuration before activation. File bytes and metadata must be backed up together. |
+| Curated-data files | `IManagedFileStorage` adapts to shared `IFileStorage`, with Local, Disabled, and S3 providers. Production Local is active on a private persistent volume with explicit acknowledgement. Both managed areas passed write/checksum/readback/scan/deletion checks. File bytes and metadata must be backed up together; populated recovery remains an acceptance gate. |
 | Order files | `IOperationalFileStorage` uses the same provider contract and environment boundary, while retaining its own file ownership, scanning, authorization and release rules. A healthy API with Disabled storage is not evidence of usable file delivery. |
+| Malware scanning | The private managed ClamAV service is active, with persistent definitions, updater/signature-age health checks and confirmed complete-scan limits. Clean text, EICAR rejection, encrypted ZIP rejection and oversized stream rejection passed in production. Authenticated approved-format and failure/recovery journeys remain to be accepted. |
 | File scanning | A shared ClamAV INSTREAM adapter streams managed/operational bytes through the selected storage interface, with bounded limits and explicit verdicts. Production defaults to Disabled scanning; only Development may select trusted fixtures. A configured private daemon, current definitions, approved file kinds and hosted acceptance are required before clean-file workflows work. |
 | PSeq accounts receivable | POMS-owned Customer billing/tax/terms snapshots, immutable invoice/PDF issue at job completion, receipt/import/allocation, aging, adjustments, and independently approved reconciliation behind `NativePSeqAccountsReceivable`. QuickBooks remains legacy/non-PSeq context only. |
 | Relationship CRM | Implemented first-party Companies, Contacts, Leads, Opportunities, pipelines, Activities, Tasks, reporting, administration, and controlled Company requests. CRM is standalone-first; HubSpot runtime integration is not implemented or required. See [CRM](plans/CRM-PLAN.md) and [standalone commercial lifecycle](plans/STANDALONE-COMMERCIAL-LIFECYCLE-PLAN.md). |
