@@ -110,7 +110,9 @@ Retention enforcement/notices/deletion retain their independent activation gates
 Before API replacement or migrations, deployment waits for scanner health and runs
 `scanner/smoke.sh` inside that container. It requires a clean text verdict, rejection
 of the harmless EICAR antivirus test, rejection of a valid encrypted ZIP containing
-only synthetic text, and the specific stream-limit failure for a sparse 101 MiB file.
+only synthetic text, and the exact daemon stream-limit error for an INSTREAM header
+declaring a chunk one byte larger than 100 MiB. This direct protocol check avoids
+`clamdscan` silently truncating its own outgoing stream at the configured limit.
 Only sanitized pass markers are emitted; all fixtures are removed from container
 temporary storage. It then runs the new API image with `--verify-file-services` when
 storage is Local/S3 and scanning is ClamAv, exercising the injected adapters and both
