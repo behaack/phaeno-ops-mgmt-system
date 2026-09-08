@@ -2739,6 +2739,18 @@ erDiagram
 
 ### Protocols, libraries, and batches
 
+`lab_protocol_versions.definition_json` stores the validated schema-version-1
+procedure: ordered steps, roles, confirmations, typed captures, resource
+instructions, and explicit QC gates. Controlled versions remain immutable.
+`lab_protocol_executions.captured_results_json` stores schema-version-1 step
+evidence with append-only attempts, server-generated record identifiers,
+recording users/times, typed values, decisions, confirmations, QC outcomes, and
+reasons. Repeats and corrections preserve previous attempts. Each saved step
+also creates an `ExecutionStepRecorded` entry in `lab_work_events`; execution
+and work-order concurrency tokens serialize evidence with completion and job
+holds. Historical unstructured JSON is retained for review. This uses the
+existing mapped JSONB columns and does not introduce a schema migration.
+
 ```mermaid
 erDiagram
     lab_batch_members {
@@ -3144,3 +3156,9 @@ erDiagram
     web_orders o|--o{ web_notification_deliveries : "web_order_id"
     users o|--o{ web_notification_processing_controls : "updated_by_user_id"
 ```
+
+## September 7, 2026 workflow compatibility
+
+The earlier consistency changes added no tables, columns, relationships or EF migration. Existing `sample_configuration_json` now accepts the supported exact-roster mode and `result_destination_configuration_json` the governed Portal destination; arbitrary JSON no longer satisfies operational readiness. Shipping readiness derives from effective sample type, destination and instruction-rule records rather than `shipping_configuration_json`. The later completion change adds the Trial draft and reconciliation draft-history fields shown above.
+
+New manual payment receipts retain a protected `receipt-evidence:` reference in the existing `evidence_storage_key`, backed by scanned operational storage. CSV receipts retain their `payment-import:` reference. An unconfirmed import may be re-previewed by its original operator; its existing preview payload, timestamp and concurrency version change together. Confirmed preview evidence remains frozen. Historical evidence references and organization records are not rewritten by these changes.
