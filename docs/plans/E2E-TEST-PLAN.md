@@ -325,6 +325,17 @@ not close hosted signed-in two-department/identity acceptance.
 
 ## Website UI polish checkpoint (2026-09-04)
 
+Follow-up on 2026-09-07: 20 focused local Chromium checks verified the
+Clear-Signal Architecture anchor-spacing correction at 1540/768/390/320px.
+Click, refresh, direct heading URL, section URL, and keyboard activation with
+reduced motion preserve panel offsets and zero internal scroll, with no page
+overflow or JavaScript errors. Desktop/phone screenshots were reviewed.
+No automated suite was added or run. After authorized Website deployment
+`dpl_DgmU8XF3biL7Cx8FuoFUywaDSyUC`, the same 20 checks passed on the public
+domain, both aliases were verified, and error/5xx scans returned no entries.
+See `WEBSITE-CLARITY-AND-POLISH-PLAN.md` and ignored
+`tmp/website-anchor/` for evidence.
+
 Focused local inspection covered the homepage at 1280px, 390px, and 320px;
 comparison expansion/collapse and keyboard focus; contact required markers
 and empty-form errors; the real technical-brief checkbox; white-paper part

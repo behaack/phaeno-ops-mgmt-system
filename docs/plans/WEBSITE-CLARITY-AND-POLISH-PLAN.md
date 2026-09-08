@@ -8,6 +8,52 @@ passed. The recommendation below records the original review; its inspection
 statement describes that review. The release record below supersedes the
 original Git/deployment hold and identifies the retained rollback checkpoint.
 
+## Anchor-spacing correction and release — 2026-09-07
+
+Visitors following the Clear-Signal Architecture heading link should retain
+the same panel spacing as a refresh. Production reproduction confirmed that
+`overflow: hidden` allowed fragment navigation to scroll the panel itself
+112px vertically at 1540px, while refresh reset that internal scroll position.
+The local correction uses `overflow: clip` to retain decorative clipping
+without creating a scroll container. Both existing section and heading IDs,
+scientific content, and navigation destinations are preserved.
+
+The Website build passed (17 pages; existing empty Blog/Jobs warnings).
+Twenty focused Chromium checks passed at 1540, 768, 390, and 320px: link click,
+refresh, direct heading URL, section URL, and keyboard activation with reduced
+motion. All retained baseline heading offsets within the panel, zero internal
+scroll, no horizontal page overflow, and no page JavaScript errors. Desktop
+and phone screenshots were visually reviewed. Evidence is under ignored
+`tmp/website-anchor/`. Website README is updated; Portal guides are unaffected.
+No automated suite was added or run.
+
+The Product Owner subsequently authorized deployment. The correction was
+released only to `phaeno-website` (`prj_74BUPcAQrif32FkYoH6gI5c0Qlqm`):
+
+- Deployment `dpl_DgmU8XF3biL7Cx8FuoFUywaDSyUC`, URL
+  `https://phaeno-website-drd02tjqx-cadexgenomics.vercel.app`, is `READY` and
+  `PROMOTED`. Both public domain aliases were confirmed on this deployment.
+- Source was an isolated archive of the tracked `website/` tree from
+  `b2477bfddf09859d0b2b6d44583e500df757a8d9`, overlaid with the reviewed page
+  correction and Website README. The changed page's SHA-256 is
+  `e7924d1ac23f5607584579c8541115eeff082fb9a6f66810cb83930f028065b3`.
+  This is a working-source release, not a new committed revision. No Git
+  mutation, Portal/API deployment, or database change was performed.
+- Vercel built with production settings and automatic custom-domain promotion
+  disabled. The Astro build produced 17 pages in 25.71 seconds; the complete
+  Vercel build took 36 seconds. Existing empty Blog/Jobs warnings and three
+  non-blocking preview-search `TS2580` diagnostics remain unchanged.
+- Before promotion, the staged page and stylesheet returned HTTP 200 and
+  retained `overflow: clip`, both anchors, the production canonical, and
+  indexable page metadata. After promotion, all 20 anchor browser checks passed
+  again on `www.phaenobiotech.com`; the public desktop screenshot was reviewed.
+- Bounded post-release error and HTTP 5xx scans returned no entries. This is
+  deployment verification, not ongoing monitoring or real form-delivery proof.
+- Rollback remains available to `dpl_8rLvzbeG96PBh3nXdCZf42VgGvim`, confirmed
+  as the live production deployment immediately before this release.
+  Evidence, upload manifest, source patch, build log, deployment/alias records,
+  and public browser results remain under ignored `tmp/website-anchor/`.
+
 ## Recommendation
 
 Retain the current navy, green, imagery, and prominent demo buttons. The strongest improvements are tighter layouts, easier navigation, and clearer labels.

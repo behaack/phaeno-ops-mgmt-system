@@ -119,6 +119,9 @@ brief** according to that selection. Demo links consistently read **Request a
 demo**. Fields, consent, validation, and intake behavior are unchanged.
 Form bands, long scientific text, comparison labels, and shared navigation
 reflow for enlarged phone text; anchor scrolling respects reduced motion.
+The Clear-Signal Architecture panel clips its decorative artwork without
+creating an internal scroll container, preserving its spacing when following
+either its section link or heading link.
 See `../docs/plans/WEBSITE-CLARITY-AND-POLISH-PLAN.md` for scope and local
 verification evidence.
 

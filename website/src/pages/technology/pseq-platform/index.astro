@@ -322,7 +322,8 @@ import NewSeqCategory from '@/components/NewSeqCategory.astro';
 
 .clear-signal-architecture {
   position: relative;
-  overflow: hidden;
+  /* Clip the artwork without letting heading links scroll the panel's contents. */
+  overflow: clip;
   width: 100cqw;
   max-width: none;
   margin-inline: calc(50% - 50cqw);
