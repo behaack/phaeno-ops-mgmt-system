@@ -1,5 +1,11 @@
 # Backend Test Plan
 
+## Approved file-service activation — 2026-09-07
+
+Added the permanent operator-only `--verify-file-services` command for the approved production activation. It starts no HTTP listener or background workers, accesses no database, and uses injected storage/scanning for uniquely owned synthetic files in both managed areas. It verifies size, checksum, exact readback, clean scan and deletion, with cleanup even after failure or cancellation. It requires the configured ClamAV provider; fixture/Disabled scanning cannot establish readiness. This command is reusable deployment verification, not temporary data-repair code.
+
+Five new cases cover both areas and owned cleanup, rejected/unavailable scan failure, corrupt readback and incomplete deletion. The focused storage/scanner/verification checkpoint passed **34 tests, one Linux-only skip, zero failures (35 total)**. Evidence: `artifacts/portal-completion-20260907/storage-activation.trx`. Release build passed with zero warnings/errors. The prior full 506-backend/321-frontend checkpoint below remains the full-suite evidence; this targeted follow-up does not claim a new full-suite run. Live daemon/volume evidence belongs in the completion release plan.
+
 ## Portal completion integration — 2026-09-07
 
 The completion checkpoint passed **506 tests, zero failures and one Linux-only skip (507 total)** in the full Release suite. The filesystem-link test is explicitly skipped on Windows; its Linux execution and production volume ownership remain target acceptance. Evidence: `artifacts/portal-completion-20260907/backend-final.trx`.

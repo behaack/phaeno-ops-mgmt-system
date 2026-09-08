@@ -79,6 +79,7 @@ services:
         max-file: "3"
     networks:
       - portal_green
+      - portal_scanning
 
   migrate:
     image: phaeno-portal-green-api:${PORTAL_GREEN_IMAGE_TAG:?PORTAL_GREEN_IMAGE_TAG is required}
@@ -101,10 +102,45 @@ services:
     networks:
       - portal_green
 
+  scanner:
+    image: clamav/clamav:1.4_base
+    container_name: phaeno-portal-green-scanner
+    profiles:
+      - scanner
+    restart: unless-stopped
+    entrypoint: ["/sbin/tini", "--", "/bin/sh", "/opt/portal-scanner/supervise.sh"]
+    environment:
+      FRESHCLAM_CHECKS: "12"
+      CLAMD_STARTUP_TIMEOUT: "1200"
+      CLAMAV_NO_MILTERD: "true"
+    mem_limit: 4g
+    cpus: 2
+    volumes:
+      - portal_green_scanner_signatures:/var/lib/clamav
+      - ./scanner/clamd.conf:/etc/clamav/clamd.conf:ro
+      - ./scanner:/opt/portal-scanner:ro
+    healthcheck:
+      test: ["CMD", "/bin/sh", "/opt/portal-scanner/health.sh"]
+      interval: 20s
+      timeout: 10s
+      retries: 3
+      start_period: 10m
+    stop_grace_period: 30s
+    security_opt:
+      - no-new-privileges:true
+    logging:
+      options:
+        max-size: 5m
+        max-file: "3"
+    networks:
+      - portal_scanning
+      - scanner_updates
+
 volumes:
   portal_green_postgres_data:
   portal_green_app_data:
   portal_green_managed_files:
+  portal_green_scanner_signatures:
   portal_green_website_index:
   portal_green_website_preview_index:
   portal_green_documentation_index:
@@ -112,3 +148,8 @@ volumes:
 networks:
   portal_green:
     name: phaeno-portal-green
+  portal_scanning:
+    name: phaeno-portal-green-scanning
+    internal: true
+  scanner_updates:
+    name: phaeno-portal-green-scanner-updates

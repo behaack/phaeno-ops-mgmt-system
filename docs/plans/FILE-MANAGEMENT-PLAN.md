@@ -1,5 +1,43 @@
 # File Management Plan
 
+## 2026-09-07 private scanner deployment activation
+
+The approved production-completion work adds an optional managed ClamAV 1.4 LTS
+Compose service. Explicit `file_scanning_provider=ClamAv` activation installs the
+reviewed private endpoint and limits; ordinary deployments default to Preserve.
+The scanner has no published port, shares an internal network with the API and has
+a separate scanner-only egress network for FreshClam. Signatures persist in their
+own volume and update 12 times daily. Health checks verify the loaded database age,
+daemon responsiveness and updater liveness; supervision restarts a service that
+loses readiness. Neither managed-file volume is mounted by the scanner.
+
+A read-only remote preflight precedes runtime changes: capacity and UID, all nonempty
+references in managed files, operational files, invoice PDFs and result artifacts,
+and exact managed/legacy area file/link counts. It also inspects an existing target
+volume read-only when the old API has not mounted it. Initial Local activation with
+any reference or byte requires explicit inventory/migration instead of automatic
+repointing. The scanner budget is 4 GiB; first activation requires a further 1 GiB
+host-memory reserve and 3 GiB free Docker disk space.
+
+Deployment builds the new API, waits for scanner readiness and requires ephemeral
+container-native clean/EICAR/encrypted-ZIP/101-MiB stream-limit checks. It then runs
+the API's `--verify-file-services` adapter/volume check before API replacement or
+migrations when storage and scanning are active. Scanner settings use an independent
+guarded rollback receipt; successful releases clear it, failed non-migration releases
+restore reviewed prior settings, and migrations retain the forward-fix boundary.
+No signatures or managed bytes are removed during rollback. Retention remains gated.
+
+Local verification: all new/changed shell files pass syntax checks; Compose validates
+with host-specific environment-file references omitted from a temporary parser copy;
+the original Compose and workflow YAML parse and satisfy isolation, Preserve-default
+and preflight-order checks. A disposable synthetic runtime fixture verifies scanner
+Preserve, activation, restore, completion, disable and concurrent-change refusal.
+These checks do not prove a running Linux daemon or production activation. The root
+release owns protected-host capacity evidence, actual scanner smoke/adapter outcomes
+and signed-in acceptance. No application package dependencies or migrations were
+added by this deployment slice. See the green deployment runbook for the exact
+configuration and primary ClamAV references.
+
 ## 2026-09-07 persistent Local storage and scanning
 
 The Product Owner selected local file storage now, with the option of S3 later.
@@ -33,9 +71,10 @@ storage interface. Managed curation and operational uploads share its verdict wh
 retaining their separate authorization and release rules. Only a complete clean
 reply records Clean; rejection, malformed replies, timeouts, size limits and service
 failures never count as clean. Production defaults to unavailable scanning; trusted
-fixture scanning is restricted to Development. A private ClamAV daemon, updated
-definitions, matching stream/archive limits and approved file kinds must be configured
-and verified separately. Local storage alone does not enable publication or release.
+fixture scanning is restricted to Development. The optional managed deployment above
+provides the private daemon and reviewed stream/archive limits. Its runtime activation,
+updated definitions and approved file kinds must still be verified. Local storage
+alone does not enable publication or release.
 
 The final integrated backend checkpoint passed 506 tests, with one Linux-only
 linked-area case skipped on Windows (507 total). Storage and scanner coverage includes

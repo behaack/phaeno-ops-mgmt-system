@@ -108,6 +108,9 @@ cleanup() {
 
     if [[ "${status}" -ne 0 && "${migrations_ran}" == false ]]; then
         printf 'Restore\n' | FILE_STORAGE_DEPLOY_LOCK_HELD=true \
+            "${SCRIPT_DIR}/install-file-scanning-runtime-config.sh" "${DEPLOY_ROOT}" >&2 || \
+            printf 'Scanner runtime recovery requires manual review; its protected receipt is retained.\n' >&2
+        printf 'Restore\n' | FILE_STORAGE_DEPLOY_LOCK_HELD=true \
             "${SCRIPT_DIR}/install-file-storage-runtime-config.sh" "${DEPLOY_ROOT}" >&2 || \
             printf 'Storage runtime recovery requires manual review; the protected rollback receipt is retained.\n' >&2
     fi
@@ -181,6 +184,24 @@ compose() {
 
 compose config --quiet
 compose build api
+if grep -qx 'FileScanning__Provider=ClamAv' "${PORTAL_ENV}"; then
+    if grep -qx 'FileScanning__Host=scanner' "${PORTAL_ENV}"; then
+        for setting in \
+            'FileScanning__Port=3310' \
+            'FileScanning__TimeoutSeconds=120' \
+            'FileScanning__MaximumStreamBytes=104857600' \
+            'FileScanning__ClamAvLimitsConfirmed=true'; do
+            grep -qx "${setting}" "${PORTAL_ENV}" || fail 'Managed scanner limits do not match the reviewed deployment configuration.'
+        done
+        compose --profile scanner pull scanner
+        compose --profile scanner up --detach --wait --wait-timeout 1200 scanner
+        compose --profile scanner exec -T scanner /bin/sh /opt/portal-scanner/smoke.sh
+        docker inspect phaeno-portal-green-scanner --format 'scanner_image_id={{.Image}}'
+    fi
+    if grep -Eq '^FileStorage__Provider=(Local|S3)$' "${PORTAL_ENV}"; then
+        compose run --rm --no-deps api --verify-file-services
+    fi
+fi
 compose up --detach --wait db
 
 website_counts_before="$(
@@ -217,6 +238,14 @@ if [[ "${APPLY_MIGRATIONS}" == "true" ]]; then
     readonly ENCRYPTED_KEY="${BACKUP_BASE}.key.enc"
     readonly ENCRYPTED_CHECKSUMS="${BACKUP_BASE}.encrypted.sha256"
 
+    expected_backup_migration="$(
+        timeout --kill-after=5s 20s docker exec phaeno-portal-green-db \
+            psql --username phaeno_portal_green --dbname phaeno_portal_green \
+            --no-psqlrc --tuples-only --no-align --set ON_ERROR_STOP=1 \
+            --command 'SELECT "MigrationId" FROM public.__ef_migrations_history ORDER BY "MigrationId" DESC LIMIT 1;'
+    )"
+    [[ "${expected_backup_migration}" =~ ^[0-9]{14}_[A-Za-z0-9_]+$ ]] \
+        || fail 'The current migration identity could not be verified for backup restoration.'
     docker exec phaeno-portal-green-db \
         pg_dump \
         --username phaeno_portal_green \
@@ -226,13 +255,8 @@ if [[ "${APPLY_MIGRATIONS}" == "true" ]]; then
         --no-privileges \
         > "${migration_dump}"
 
-    docker run \
-        --rm \
-        --user 0:0 \
-        --volume "${migration_dump}:/backup/database.dump:ro" \
-        postgres:17 \
-        pg_restore --list /backup/database.dump \
-        > /dev/null
+    bash "${SCRIPT_DIR}/verify-database-backup.sh" \
+        "${migration_dump}" "${expected_backup_migration}"
 
     openssl rand -base64 48 > "${migration_passphrase}"
     openssl enc \
@@ -396,6 +420,8 @@ chmod 600 "${DEPLOYMENT_MANIFEST}"
 
 printf 'Complete\n' | FILE_STORAGE_DEPLOY_LOCK_HELD=true \
     "${SCRIPT_DIR}/install-file-storage-runtime-config.sh" "${DEPLOY_ROOT}"
+printf 'Complete\n' | FILE_STORAGE_DEPLOY_LOCK_HELD=true \
+    "${SCRIPT_DIR}/install-file-scanning-runtime-config.sh" "${DEPLOY_ROOT}"
 
 printf 'Portal green deployment succeeded.\n'
 printf 'source_revision=%s\n' "${SOURCE_REVISION}"

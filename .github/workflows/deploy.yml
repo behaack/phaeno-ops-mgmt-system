@@ -12,6 +12,15 @@ on:
           - Preserve
           - Local
           - Disabled
+      file_scanning_provider:
+        description: Preserve scanning, or explicitly activate the private managed ClamAV scanner or disable scanning
+        required: true
+        default: Preserve
+        type: choice
+        options:
+          - Preserve
+          - ClamAv
+          - Disabled
       apply_migrations:
         description: Apply pending Portal migrations after creating an encrypted database backup
         required: true
@@ -314,10 +323,24 @@ jobs:
             "$release_path/deployment/hetzner/green/install-bootstrap-runtime-config.sh" \
             "$release_path/deployment/hetzner/green/install-clerk-runtime-secret.sh" \
             "$release_path/deployment/hetzner/green/install-file-storage-runtime-config.sh" \
+            "$release_path/deployment/hetzner/green/install-file-scanning-runtime-config.sh" \
+            "$release_path/deployment/hetzner/green/preflight-file-services.sh" \
             "$release_path/deployment/hetzner/green/install-mailgun-invitation-runtime-config.sh" \
             "$release_path/deployment/hetzner/green/install-s3-runtime-config.sh" \
             "$release_path/deployment/hetzner/green/install-website-preview-search-runtime-config.sh"
           REMOTE
+
+      - name: Check file-service capacity and existing references before changing runtime settings
+        env:
+          DEPLOY_HOST: ${{ secrets.DEPLOY_HOST }}
+          DEPLOY_USER: ${{ secrets.DEPLOY_USER }}
+          RELEASE_PATH: ${{ steps.release.outputs.release_path }}
+          FILE_STORAGE_PROVIDER: ${{ inputs.file_storage_provider }}
+          FILE_SCANNING_PROVIDER: ${{ inputs.file_scanning_provider }}
+        run: |
+          printf '%s\n%s\n' "$FILE_STORAGE_PROVIDER" "$FILE_SCANNING_PROVIDER" \
+            | ssh -i ~/.ssh/deploy_key "$DEPLOY_USER@$DEPLOY_HOST" \
+                "$RELEASE_PATH/deployment/hetzner/green/preflight-file-services.sh '$DEPLOY_ROOT'"
 
       - name: Install Clerk runtime secret
         env:
@@ -373,6 +396,17 @@ jobs:
           printf '%s\n' "$FILE_STORAGE_PROVIDER" \
             | ssh -i ~/.ssh/deploy_key "$DEPLOY_USER@$DEPLOY_HOST" \
                 "$RELEASE_PATH/deployment/hetzner/green/install-file-storage-runtime-config.sh '$DEPLOY_ROOT'"
+
+      - name: Preserve or explicitly select file-scanning runtime configuration
+        env:
+          DEPLOY_HOST: ${{ secrets.DEPLOY_HOST }}
+          DEPLOY_USER: ${{ secrets.DEPLOY_USER }}
+          RELEASE_PATH: ${{ steps.release.outputs.release_path }}
+          FILE_SCANNING_PROVIDER: ${{ inputs.file_scanning_provider }}
+        run: |
+          printf '%s\n' "$FILE_SCANNING_PROVIDER" \
+            | ssh -i ~/.ssh/deploy_key "$DEPLOY_USER@$DEPLOY_HOST" \
+                "$RELEASE_PATH/deployment/hetzner/green/install-file-scanning-runtime-config.sh '$DEPLOY_ROOT'"
 
       - name: Install Website Preview search runtime configuration
         if: ${{ vars.WEBSITE_PREVIEW_SEARCH_URL != '' }}

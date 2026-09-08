@@ -28,6 +28,30 @@ using PhaenoPortal.App.Middleware;
 
 var builder = WebApplication.CreateBuilder(args);
 
+if (args.Contains("--verify-file-services", StringComparer.Ordinal))
+{
+    // Operator command only: no HTTP listener, database or background workers.
+    builder.Services.AddFileStorage(builder.Configuration, builder.Environment);
+    builder.Services.AddFileScanning(builder.Configuration, builder.Environment);
+    await using var verificationApp = builder.Build();
+    try
+    {
+        if (args.Length != 1 || verificationApp.Services.GetRequiredService<IOptions<FileScanningOptions>>().Value.Provider != "ClamAv")
+            throw new InvalidOperationException("File-service verification requires the configured ClamAv provider and no other command.");
+        await FileServicesVerification.VerifyAsync(
+            verificationApp.Services.GetRequiredService<IFileStorage>(),
+            verificationApp.Services.GetRequiredService<IFileMalwareScanner>(),
+            CancellationToken.None);
+        Console.WriteLine("File services verified: both storage areas, checksums, readback, clean scanning and deletion. No business records or HTTP requests were created.");
+    }
+    catch (Exception failure)
+    {
+        Console.Error.WriteLine($"File-service verification failed ({failure.GetType().Name}); activation must stop. No paths, credentials or provider replies are logged.");
+        Environment.ExitCode = 1;
+    }
+    return;
+}
+
 builder.Services.AddPersistence(builder.Configuration);
 builder.Services.AddFileStorage(builder.Configuration, builder.Environment);
 builder.Services.AddWebsiteApi(builder.Configuration, builder.Environment);

@@ -50,10 +50,37 @@ a file backup. Multi-host deployment requires shared storage or the later S3 pro
 
 File storage and malware scanning are separate. The code supports ClamAV's
 [INSTREAM protocol](https://docs.clamav.net/manual/Usage/ClamdProtocol.html) over a
-private TCP connection. No daemon is installed by this repository change. Operate a
-supported ClamAV service with current signatures, a privately reachable hostname,
-and no public TCP exposure; [ClamAV documents that this socket is unauthenticated](https://docs.clamav.net/manual/Usage/Scanning.html).
-It does not need access to the file volume because POMS streams the bytes.
+private TCP connection. The optional `scanner` Compose profile runs the official
+`clamav/clamav:1.4_base` image from the supported
+[1.4 LTS line](https://docs.clamav.net/faq/faq-eol.html), with a persistent
+`portal_green_scanner_signatures` volume. The API and scanner share only the dedicated
+internal `portal_scanning` network. The scanner alone also joins `scanner_updates`
+for outbound signature downloads; it publishes no host port. Keep these network
+boundaries intact because [the scanner socket is unauthenticated](https://docs.clamav.net/manual/Usage/Scanning.html).
+The scanner never mounts managed file bytes: POMS streams them over the private connection.
+
+Use `file_scanning_provider=ClamAv` with the existing Deploy Portal Green workflow
+for explicit first activation; use `file_storage_provider=Local` when the reviewed
+empty-store inventory permits first Local activation. Both inputs default to Preserve.
+The preflight runs before any runtime-setting installer and emits only capacity,
+current-provider classification, process UID and scoped metadata/file counts. Initial
+Local activation refuses nonempty metadata references or managed/legacy byte areas,
+including a target volume not mounted in the old API. No reference or byte migration
+is inferred. First scanner activation requires at least 5 GiB available host memory
+(4 GiB scanner budget plus 1 GiB reserve) and 3 GiB free Docker disk space. An existing
+scanner requires the 1 GiB reserve. Confirm outbound DNS and HTTPS access to Docker Hub
+and the ClamAV signature service; respect provider download limits.
+
+The official image's FreshClam daemon checks signatures 12 times daily, not just when
+the image is deployed. The selected LTS feature tag is pulled on managed-scanner
+releases to pick up patch/security updates. See the
+[official container guidance](https://docs.clamav.net/manual/Installing/Docker.html)
+for persistent databases, update frequency and memory requirements. Loaded-signature
+health checks require PONG, a running FreshClam process and a database version no older
+than three days. The scanner supervisor restarts the container after three failed
+checks following readiness; startup refuses expired databases and waits up to 20
+minutes for initial downloads. A missed update or unavailable scanner must be resolved
+through its health/logs and network access; never record a clean verdict manually.
 
 Configure the approved private endpoint and limits in protected runtime settings:
 `FileScanning__Provider=ClamAv`, `FileScanning__Host`, `FileScanning__Port` (normally
@@ -65,7 +92,12 @@ timeouts against the approved uploads. Enable `AlertExceedsMax yes` and
 clean; keep scanning for the approved content formats enabled. These switches are
 documented in the [official daemon configuration](https://github.com/Cisco-Talos/clamav/blob/main/etc/clamd.conf.sample).
 Only then set `FileScanning__ClamAvLimitsConfirmed=true`. Startup rejects an
-unconfirmed ClamAV configuration. Set the approved `DataProvisioning__AllowedFileKinds`
+unconfirmed ClamAV configuration. The managed installer sets Host=`scanner`, Port=3310,
+TimeoutSeconds=120, MaximumStreamBytes=104857600 and ClamAvLimitsConfirmed=true against
+the reviewed `scanner/clamd.conf`: 100 MiB stream/file limit, 400 MiB expanded scan,
+90-second scan limit, recursion 16, 10,000 contained files and encrypted/limit alerts.
+Two scan threads and non-concurrent database reloads bound resource use; reloads can
+temporarily make scanning unavailable. Set the approved `DataProvisioning__AllowedFileKinds`
 and `OrderManagement__AllowedFileKinds` separately; no scientific formats are guessed.
 
 Verify representative clean, harmless antivirus-test, encrypted, oversize, nested
@@ -74,6 +106,24 @@ uploads before activation. An unavailable or incomplete scan blocks the existing
 clean-file gates and shows a retry/support message; it never records Clean. Disabled
 scanning is the production default. DevelopmentFixture is restricted to Development.
 Retention enforcement/notices/deletion retain their independent activation gates.
+
+Before API replacement or migrations, deployment waits for scanner health and runs
+`scanner/smoke.sh` inside that container. It requires a clean text verdict, rejection
+of the harmless EICAR antivirus test, rejection of a valid encrypted ZIP containing
+only synthetic text, and the specific stream-limit failure for a sparse 101 MiB file.
+Only sanitized pass markers are emitted; all fixtures are removed from container
+temporary storage. It then runs the new API image with `--verify-file-services` when
+storage is Local/S3 and scanning is ClamAv, exercising the injected adapters and both
+real storage areas without HTTP, background workers or database access. The operator
+verification uses and removes only its own synthetic files. Container checks do not
+replace signed-in workflow, approved-format or real scientific acceptance.
+
+Scanner configuration has its own protected rollback receipt. Failed non-migration
+releases restore prior scanner settings along with storage settings before API-image
+rollback; successful releases clear both receipts. Settings changed concurrently are
+not overwritten. After migrations, recovery remains an explicit forward fix. Disabled
+scanning prevents new clean verdicts but does not delete signatures, managed bytes or
+historical scan records; stopping the optional service is an explicit operator action.
 
 The image prepares the managed mount point with mode 0700 under its existing user;
 no process UID change is included. Startup sets the configured Unix root to owner-
@@ -239,9 +289,18 @@ configured on the server.
 The workflow input `apply_migrations` defaults to `false`. Selecting `true` is
 the explicit shared-database approval gate. Before running the migration
 container, the server creates a root-only custom-format PostgreSQL dump,
-validates its catalog, encrypts it with a random passphrase, wraps that
+restores it into an isolated ephemeral PostgreSQL container, verifies its schemas,
+latest migration and selected table counts against that dump, then encrypts it
+with a random passphrase and wraps that
 passphrase to `PORTAL_MIGRATION_BACKUP_PUBLIC_KEY`, verifies encrypted
 checksums, and removes the plaintext dump and passphrase.
+
+The restore check uses no network or published ports, a read-only dump, 512 MiB
+of temporary database memory storage and a 1 GiB container memory limit. It
+requires 1.5 GiB available host memory and removes only its uniquely owned
+container. A failed restore or cleanup stops deployment before migration. This
+proves database recovery from that snapshot; it does not establish coordinated
+recovery of future managed file bytes or recurring backup retention.
 
 The first Clerk Production transition has a separate one-time gate:
 `cutover_clerk_identity=true` plus the exact
