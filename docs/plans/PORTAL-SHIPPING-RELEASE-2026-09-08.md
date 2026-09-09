@@ -11,10 +11,11 @@ container catalog/packing/stock, Customer delivery locations and kit ordering,
 receipt gates, container reset/selection and synchronized dispatch fulfillment.
 The public Website has no change in this release.
 
-Documentation and local verification are complete. Commit/push and deployment
-identities will be recorded below. Production migration approval was requested
-separately under `AGENTS.md:67`; no migration or production promotion is claimed
-at this preparation checkpoint. Existing storage/scanning providers, Clerk
+Documentation and local verification are complete and the application source is
+committed/pushed as `989830a62cfcba2deb4d3b5f0d86ea6ece9025dc`. The matching Vercel
+production-settings build is READY with live-domain promotion held. Production
+migration approval was requested separately under `AGENTS.md:67` and is still
+pending; no production database migration or API/domain switch occurred. Existing storage/scanning providers, Clerk
 identity configuration and independent processing/retention flags are preserved.
 
 ## Tomorrow's starting point
@@ -104,4 +105,30 @@ provisioned in production by this release.
 
 ## Deployment evidence
 
-Pending the authorized release steps and explicit production migration approval.
+- Application commit `989830a62cfcba2deb4d3b5f0d86ea6ece9025dc` was pushed to
+  `codex/portal-documentation-search-release`; it includes all final source,
+  guide, plan, test and walkthrough changes. The generated local search-index
+  cache was excluded and its working file preserved.
+- Vercel candidate `dpl_CA8GZUFR3Jw6XonEKchT4ToB7JUf` is **READY**, target
+  production, built from the exact application commit above:
+  `phaeno-ops-mgmt-system-jvm9ye8vr-cadexgenomics.vercel.app`.
+  `autoAssignCustomDomains=false`; this is a held release, not a live promotion.
+- The alias API independently confirms `portal.phaenobiotech.com` still points to
+  `dpl_3YWXWbw8GQiobhnpuXrDzkLxf9G9`, the existing `00959f5` release.
+  Current production API health is 200, database ping 204 and Portal root 200.
+  The Vercel connector could not see the new deployment; the authenticated CLI
+  that created it verified both candidate and live alias.
+- No new **Deploy Portal Green** run was started: explicit approval for the four
+  reviewed production migrations is still pending. Do not promote the candidate
+  against the old API/schema. After approval, deploy matching API/UI source and
+  record backup verification, applied migration IDs and final runtime checks.
+  If the selected source changes, build a matching new UI candidate rather than
+  treating the held `989830a` build as that newer revision.
+- Release evidence files are under `artifacts/end-of-day-release-preflight/`:
+  `create-ui-deployment.json`, `ui-deployment-created.json`,
+  `ui-deployment-status.json`, `production-alias.json`, and preflight build/check
+  logs. The read-only migration review is under
+  `artifacts/release-migration-audit-20260908/`.
+
+The only remaining release authorization is the production migration approval.
+Customer receipt testing remains tomorrow's separate local workflow step.

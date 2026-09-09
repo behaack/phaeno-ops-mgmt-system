@@ -14,6 +14,10 @@ and barcodes. It is not a production fixture, a real delivery assertion or proof
 that a release has been deployed. Production release evidence is maintained
 separately from this acceptance run.
 
+The [end-of-day release record](../../plans/PORTAL-SHIPPING-RELEASE-2026-09-08.md)
+records committed/pushed application source and a READY held UI build. Production
+migration approval remains pending; production has not switched to this release.
+
 | Record | Latest verified stopping point |
 | --- | --- |
 | Customer Job | **HS5Y7DB7**, `88967799-264c-490d-abe2-17e7833c6065`; finalized **9 samples / 18 tubes**. Preserve this roster and the accepted quote. |
