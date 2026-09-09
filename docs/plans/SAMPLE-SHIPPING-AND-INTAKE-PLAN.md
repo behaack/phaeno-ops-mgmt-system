@@ -1,5 +1,189 @@
 # Sample Shipping and Intake Plan
 
+## End-of-day acceptance handoff — September 8, 2026
+
+The [local walkthrough handoff](../testing/runs/2026-09-08-hs5y7db7-local-walkthrough.md#end-of-day-handoff--resume-september-9-2026)
+is the precise September 9 resume point: Customer Job **HS5Y7DB7**, Request
+**D20018AA**, **Dispatched, 1 sent, 0 received**. Its one TRANS-20 kit has all
+20 synthetic barcodes; its original FedEx dispatch is unchanged and now linked
+to the request. Next, acknowledge that test kit as Customer, then verify only
+received same-Job supply enables container configuration and scanning.
+Successful scans, packets, split-shipment variants and physical acceptance
+remain pending. Do not reorder or redispatch the existing kit. Local test
+fixtures and acceptance evidence are separate from production rollout evidence.
+
+## 2026-09-08 active walkthrough incident: dispatched kit missing from its request
+
+At the incident checkpoint, the owner recorded dispatch from the standard kit
+detail page. That page showed **Sent to customer**, while Request D20018AA still
+showed **Pending, 0 of 1 sent**. Read-only verification confirmed the kit had the
+correct Job and saved dispatch facts but no transportation-kit request line or
+delivery-location link. This was a synchronization defect between two dispatch
+entry points, not an unsubmitted dispatch or a reason to send another kit.
+
+Required correction:
+
+- Dispatching a kit for an accepted Customer Job must fulfill the compatible
+  open transportation-kit request in the same transaction, whichever dispatch
+  entry point was used. Validate requested revision/quantity, ownership and
+  location; keep request, kit and customer supply views consistent.
+- An already-recorded, unused dispatch may be linked to its matching request
+  through a guarded reconciliation. Preserve its original carrier, tracking
+  number, dispatch time, barcode roster and kit identity. Do not record a second
+  physical dispatch or acknowledge Customer receipt.
+- Reject ambiguous, mismatched, excess, already-bound or conflicting links and
+  make retries idempotent. Refresh the stock, request and supply views after
+  either entry point succeeds.
+- Retain the requirement for a Job-specific order and later Customer receipt;
+  preparation/registration alone is not fulfillment. Record focused evidence and
+  the local walkthrough repair separately from physical delivery acceptance.
+
+Implemented and reconciled locally through **Update kit request** on the saved
+kit. Request D20018AA now shows **Dispatched: 1 requested, 1 sent, 0 received**.
+Read-only comparison confirms the original dispatch facts and all 20 permanent
+tube identities/barcodes are unchanged. The kit now links to the request line
+and its delivery location; Customer receipt and sample-shipment binding remain
+unset. One dispatch event and one logical Customer dispatch notification were
+recorded. See the [local run record](../testing/runs/2026-09-08-hs5y7db7-local-walkthrough.md).
+Focused verification passed 68 backend cases, 28 staff component cases and
+7 responsive recovery-dialog cases. No migration or direct database patch was
+needed. Customer delivery acknowledgement and physical acceptance remain pending.
+
+## 2026-09-08 product correction: require kits ordered for the Customer Job
+
+The owner confirmed that Customer container configuration must use transportation
+kits ordered for that Job. The current dispatch model associates physical stock
+with its originating Job; general customer stock is therefore not an alternative
+entry point. This decision supersedes the earlier **I already have kits** action
+and the no-request preparation allowance. Cross-Job inventory reuse remains
+deferred.
+
+Customer workflow and acceptance criteria:
+
+- With no active kit order, show **Order transportation kits**, its recommended
+  sizes and the included-cost confirmation. Do not expose **I already have kits**
+  or let the Customer configure containers using assumed stock.
+- Pending and in-transit orders show fulfillment/receipt progress. Received kits
+  ordered for the same Job and delivery location unlock preparation, limited to
+  the compatible quantities actually available. Partial receipt unlocks only
+  that received supply.
+- Enforce the same prerequisites on the server, including direct requests,
+  cancelled orders and unbound containers created before this correction. Keep
+  ordering recommendations available before receipt so ordering has no circular
+  dependency on container preparation.
+- Existing unbound container links provide an ordering or delivery-status path
+  instead of exposing the scanner prematurely. Already-bound historical
+  shipments retain their recorded lineage and supported completion flow.
+- Phaeno continues preparing standard kits into unassigned stock and fulfilling
+  requests from that stock. This change concerns Customer preparation; it does
+  not introduce new Trial or Partner ordering policy, database fields, commercial
+  charges or physical inventory movements.
+
+Implemented locally. Focused verification passed 62 Customer component cases
+and 28 responsive actual-component browser cases, plus backend supply-guard
+coverage in the 68-case checkpoint above. Build, full frontend typecheck and
+scoped lint passed. Customer and Phaeno guides and the generated 56-guide corpus
+are current (`e81c712bcb04`). The owning test plans distinguish this automated
+evidence from remaining connected Customer receipt/preparation acceptance.
+
+## 2026-09-08 active walkthrough incident: kit-order save failure
+
+SHP-03-001 is resolved locally; the connected Customer retry saved one Pending
+TRANS-20 request, corroborated by the signed-in staff queue and read-only data.
+The owner attempted Order transportation kits; the screenshot shows Kit order
+could not be saved / An unexpected error occurred. The API's fulfillment routing
+queried an active Phaeno organization with `SingleOrDefault`, encountered multiple
+matches and rolled back the transaction. The 20:53:42 PDT read-only check found
+no Job request/notification, corroborated by the empty staff queue. This is not
+evidence of a different user action. Routing now uses the exact active Phaeno
+organization named in the existing bootstrap configuration; other Phaeno
+organizations are excluded, and missing/ambiguous routing fails with a controlled
+message. The modal's error aligns with the form width and replaces generic
+unexpected errors with retry guidance. Seven isolated backend cases, 25 frontend
+cases and seven synthetic responsive dialog cases passed, plus build/typecheck
+and scoped lint. The local API was reloaded successfully. The
+[local run record](../testing/runs/2026-09-08-hs5y7db7-local-walkthrough.md)
+retains the chronology and successful retry evidence. Exactly one logical
+notification is recorded Sent; inbox receipt and physical fulfillment remain
+to be checked.
+
+## 2026-09-08 local implementation: Shipping container selector
+
+A full-width native **Shipping container** selector sits at the top of shipment
+detail, above the kit/preparation/scanning area. Options identify each active
+sibling by container name/identifier, tube count and status, including pools with
+remaining unallocated tubes. Cancelled siblings and empty pools are excluded.
+Selection navigates directly within the same Job or Trial and replaces the
+repeated bottom related-shipment list only on shipment detail; the owning
+Lab/Trial lists retain their existing layout.
+
+The scanner's route guard asks before discarding an unsaved barcode and blocks
+navigation during a save. **Reset container configuration** is likewise disabled while local
+barcode input is unsaved or saving, so reset cannot precede resolution of that
+input. Discarding an unsaved entry is distinct from clearing a persisted scan:
+historical scans continue to lock the whole plan.
+
+Five focused selector cases passed. Final synthetic detail review passed six
+viewport/theme cases in `artifacts/container-controls-review/review.json`,
+including guarded switching and reset-to-pool navigation. These are not signed-in
+Customer results. SHP-09 remains Not run.
+
+## 2026-09-08 local implementation: Reset container configuration before scanning
+
+Status: locally implemented and checked; connected manual acceptance Not run.
+An organization or selected-Department administrator may use **Reset container configuration**
+to return the entire order's prepared container plan to selection before scanning
+starts. This is an order-wide reset, not removal of an isolated shipment.
+The action sits beside the top **Shipping container** selector. Customer and Partner Lab
+Jobs and authorized Trial shipment plans share this workflow. Eligibility is
+read from the server; confirmation submits the reviewed shipment-family versions
+and returns to the appropriate packing pool after success.
+
+Acceptance criteria:
+
+- Confirmation identifies the order and the number of affected containers and
+  tubes, explains that the full plan returns to selection, and permits dismissal
+  without changing anything.
+- Finalized sample identities, total tube counts and global tube ordinals remain
+  intact. Existing prepared shipments are retained as cancelled audit history;
+  their tubes return to the unallocated selection without duplication or loss.
+  Destination and handling separation remain intact across the resulting pools.
+- No quote, accepted price, sample authorization, kit request or physical
+  inventory movement is changed by resetting the plan.
+- Any scan, physical-kit binding, packet, dispatch or receipt anywhere in the
+  order's shipment family blocks the whole reset. Historical immutable scan
+  events and ReturnKit/physical-kit links also block it even after current scan
+  fields are cleared. Once scanning has started it cannot be undone to regain
+  this action. The server enforces the rule as well
+  as the UI, including work that starts after confirmation was opened.
+- Stale versions and concurrent reset/scan/packing attempts cannot partly reset
+  the order, duplicate tubes or replace a newer plan. Failure keeps the current
+  state reviewable and provides a clear refresh/recovery message.
+- Local unsaved barcode input or an in-flight scan disables Reset container configuration
+  before any reset mutation can start. A saved scan permanently invokes the
+  family-wide lock; clearing local input cannot undo its historical evidence.
+- Test both the successful pre-scan reset and each blocking milestone on
+  separate fixtures. The current walkthrough must not lose its prepared plan
+  merely to demonstrate a negative case. SHP-09's reset variant remains Not run.
+
+Customer, Partner and Prospect guides describe the supported entry points and
+lock conditions. The focused backend checkpoint passed 61/61, including eight
+reset cases. Reset UI 12 and detail 5 passed again after the final label/layout;
+scanner 6, selector 5 and kit-panel 22 also passed their focused checkpoints.
+Six synthetic detail browser cases verified guarded navigation and one reset
+POST returning to the pool. No successful live Customer reset or physical workflow
+is claimed; no schema change or EF migration was planned for this workflow.
+
+### Kit ordering versus container scanning
+
+The general **Transportation kits** ordering card belongs to unallocated
+pool/preparation pages. Physical container pages show **Kit delivery** for an
+outstanding Pending, PartiallyDispatched or Dispatched request, with tracking
+and permitted receipt actions. Once delivery is resolved and preparation is
+allowed, that card is hidden. Loading/error or blocked preparation still provides
+an explanation/retry path; hiding the general ordering card never bypasses
+receipt/scanning gates. Direct physical-container links do not reopen ordering.
+
 ## 2026-09-08 implementation: Customer transportation-kit ordering
 
 The owner approved a short ordering flow from an accepted Customer Lab Job:
@@ -10,11 +194,26 @@ delivery are included with the accepted laboratory order at no additional
 charge. Confirmation creates a durable Job-scoped order in Phaeno fulfillment;
 retries, multiple tabs and sibling sample shipments must not create duplicates.
 
+The original implementation placed Order transportation kits and I already have
+kits on one action row. The product correction above removes that existing-stock
+alternative: kits must be ordered for this Job before preparation. Earlier
+screenshots and verification counts describe the preceding implementation.
+
 Delivery locations are Customer/Department-owned records managed from the
 Customer/Department workspace, with bounded create/edit modals and a default
 location. The order freezes the confirmed address and container revisions.
 Missing address setup must be explicit; the general CRM address and Phaeno's
 inbound sample destinations must not be silently substituted.
+
+Customer helper text addresses the reader directly: "Phaeno will send your
+department’s transportation kits to this address." The Phaeno staff view keeps
+its operational description.
+
+The location detail remains view-first. The page header keeps the **Actions**
+menu, including **Edit location** and deactivation. The **Delivery address**
+card spans the available content width. Permissions, bounded edit dialogs and
+frozen request addresses are unchanged. SHP-02 records this layout check; it
+remains Not run and does not alter prior verification results.
 
 The confirmed fulfillment sequence is:
 
@@ -79,6 +278,12 @@ kit, quantity, shipment and manifest evidence at each handoff. This documentatio
 update changes no implementation, test result, database or runtime.
 
 ## 2026-09-08 additional planning scope: transportation-kit inventory and fulfillment
+
+Status after the Job-order correction: deferred inventory expansion. The
+location balances and cross-Job reservation/reuse proposals in this section do
+not authorize Customers to use general stock in the current workflow. Current
+Customer orders require their own request, fulfillment and acknowledged receipt.
+Revisit this deferred scope explicitly before replacing that product rule.
 
 The owner requested this addition during implementation of container selection
 and scanning. The ordering slice above supplies Job-scoped location records and
@@ -160,6 +365,8 @@ implementation of these behaviors.
 
 Status: implemented locally on September 8, 2026. This section supersedes the
 earlier requirement to prepare a separate kit from scratch for every order.
+Phaeno may prepare standard stock in advance; Customers must still order the
+kits for each Job under the product correction at the top of this plan.
 Production release and a physical scanner/printer walkthrough remain separate
 acceptance steps. Broader cross-Job location inventory and automatic
 replenishment remain the additional planning scope above; the newer ordering
@@ -177,6 +384,36 @@ reviewed without changing the approved draft definitions.
 Container row action menus size to their option text, with a viewport width
 limit, so Preview recommendation remains readable without a cramped menu.
 
+The approved **Adjust containers** editor replaces the all-size quantity fields
+and separate allocation list with **Containers to use**, prepopulated as one
+editable row per recommended container. Each row has a compatible size selector,
+SKU/capacity, tube count and targeted Remove action. Size choices include the
+smaller compatible sizes and the smallest size that covers the remaining need,
+calculated from total tubes minus the capacities of the other selected rows.
+If no size covers that need, consider all compatible sizes. Also exclude any
+choice that makes an existing row redundant. **Add container** chooses the
+smallest permitted fitting size, or the largest permitted size when none fits,
+and is disabled once selected capacity covers the tube total. Three remaining
+tubes offer only a 5 when sizes are 5/10/20. For 30 tubes with 10+5 already
+selected, Add chooses 10, then 5; adding 20 would make the existing 5 redundant.
+Changing or removing one row preserves the others' entered counts.
+**Use recommendation** explicitly rebuilds the rows and their counts.
+
+There are no manual availability fields or disclosure. Recorded-stock and kit
+receipt guards remain automatic. A single compact **Summary** totals grid stays
+in place during recalculation, with **Updating** inside the grid and confirmation
+blocked until the current preview returns. Do not repeat its explanation,
+container breakdown or capacity totals elsewhere in the dialog. Each container
+remains one row on desktop and phone. Whole-number, capacity, total-allocation,
+partial-supply and empty-shipment validation remain. The shared editor serves Customer, Partner
+Lab and authorized Trial shipments without changing audience permissions or
+commercial terms. This replacement passed 20 focused packing tests, TypeScript,
+scoped ESLint and six synthetic viewport/theme cases. The final review is in
+`artifacts/smart-container-review/review.json`; aligned inputs, no overflow and
+0px pending-to-resolved Summary reflow were verified without real Customer
+writes. SHP-09 remains Not run; these results do not verify the new order-wide
+Reset container configuration reset.
+
 - Phaeno can configure versioned container types with immutable unique SKUs,
   common names, usable tube capacities and controlled compatibility rules;
   preview recommendations; and explicitly deactivate future use.
@@ -185,10 +422,12 @@ limit, so Preview recommendation remains readable without a cramped menu.
   dispatched physical kit to a compatible return shipment, using the existing
   fulfillment safeguards. Required ownership relationships remain intact.
 - Preparation recommends the fewest containers and then the least unused
-  capacity. Available quantities constrain the recommendation. Customers can
-  choose alternatives and set each container's tube allocation, including
-  15 + 15 in two 20-tube containers or 10 + 10 + 10 in three. Empty selected
-  containers create no shipments; a shortfall stays in an explicit packing pool.
+  capacity. The current editor permits smaller needed sizes, such as six 5s
+  or three 10s for 30 tubes, while filtering oversized/redundant additions.
+  The earlier backend checkpoint also exercised 15+15 in two 20s; that remains
+  historical API evidence, not a current editor option with 5/10/20 configured.
+  No API contract changes with this UI restriction. Empty containers create no
+  shipments; a shortfall stays in an explicit packing pool.
 - Physical tube identities and sample ordinals survive allocation across
   shipments. Inline scans save before advancing, retain errors on the current
   tube, and show readable values with Code 128 graphics. One stock kit cannot
@@ -317,24 +556,24 @@ package count is a proxy for shipping cost:
 1. Resolve the unallocated physical tubes for the selected dispatch. Count
    tubes, not unique samples, and honor destination/handling separation rules.
 2. Consider only active, effective, compatible container definitions. Capacity
-   alone cannot make an incompatible container eligible. Let the Customer
-   identify the sizes and quantities available for this dispatch; an entered
-   zero excludes that size. Unknown availability must not be presented as
-   verified stock. Entering availability does not change global configuration
-   or imply that organization-wide inventory tracking already exists.
+   alone cannot make an incompatible container eligible. Apply recorded-stock
+   and kit-receipt guards automatically; the editor has no manual availability
+   inputs. Selected rows do not establish unrecorded inventory or change global
+   configuration.
 3. Prefer the fewest containers that accommodate those tubes; among equally
-   sized sets, prefer the least unused tube capacity. Respect any entered
-   availability limits and use a stable tie-breaker. Do not claim a cheapest
-   option without a separately defined cost model. Available quantities are
-   upper limits, not a requirement to use every container on hand.
+   sized sets, prefer the least unused tube capacity and use a stable tie-breaker.
+   Do not claim a cheapest option without a separately defined cost model.
+   Recorded stock is not a requirement to use every container on hand.
 4. Explain the recommendation in plain language, showing each container's size,
-   assigned tubes and capacity. Provide an **Adjust containers** action to
-   select compatible types by common name/SKU and enter their quantities. The
-   Customer may confirm another valid plan without a warning or an approval
-   merely because it differs from the recommendation. Show total tubes,
-   containers, usable capacity, unused slots and any unallocated tubes.
-   Recalculate the allocation preview when the selection changes; exceeding
-   capacity, availability limits or duplicate tube allocation remain invalid.
+   assigned tubes and capacity. **Adjust containers** opens individual rows with
+   compatible size selectors and tube counts. **Add container** and each row's
+   Remove action change the selected containers without resetting other rows.
+   Filter choices and Add by the remaining-capacity and existing-row rules above.
+   **Use recommendation** explicitly rebuilds the rows. Another permitted plan
+   needs no separate approval. Show tubes, containers, usable capacity, unused
+   slots and unallocated tubes once in the stable Summary grid. Recalculate on
+   change, keep an in-grid Updating indicator, and require the latest preview
+   before confirmation. Capacity, stock and duplicate-allocation guards remain.
 5. After the user confirms the actual containers, scan through the sample/tube
    rows in the active shipment. Save successful scans before advancing focus;
    keep failures on the current row with an actionable message. Show progress
@@ -344,18 +583,19 @@ package count is a proxy for shipping cost:
    unused slots do not create expected samples or expected returns.
 
 The owner's example is 30 tubes with configured compatible container sizes of
-20, 10 and 5. All of these are valid packing plans:
+20, 10 and 5. Current editor examples are:
 
 | Containers selected | Example tube allocation | Unused capacity |
 | --- | --- | --- |
 | One 20 and one 10 | 20 + 10 | 0 |
-| Two 20s | 20 + 10 (15 + 15 is also valid) | 10 |
+| Three 10s | 10 + 10 + 10 | 0 |
 | Six 5s | 5 + 5 + 5 + 5 + 5 + 5 | 0 |
 
-The first is the default recommendation when those containers are available.
-If only two 20s are available, recommend that combination; if only six 5s are
-available, recommend those. More shipments or unused capacity alone must not
-block the Customer. These are acceptance examples, not seeded product records.
+The first is the default recommendation. Smaller needed sizes remain selectable,
+including six 5s. With all three sizes configured, two 20s for 30 tubes is
+superseded: a 10 covers the remaining need after the first 20. The earlier
+15+15 alternative remains historical backend/print evidence only. These are
+acceptance examples, not seeded product records.
 Unused capacity means empty permitted slots, not missing sample tubes; it is
 also distinct from any actual unused supply tubes remaining in a physical kit.
 

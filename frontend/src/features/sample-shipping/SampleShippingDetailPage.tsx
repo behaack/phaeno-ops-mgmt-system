@@ -26,7 +26,8 @@ import { RequiredDialogFooter, RequiredFieldName } from '#/components/ui/require
 import { getSelectedMembership, usePhaenoSession } from '#/features/auth/session-context'
 import { SampleTubeScanner } from './SampleTubeScanner'
 import { SampleShipmentPackingPanel } from './SampleShipmentPackingPanel'
-import { RelatedSampleShipments } from './RelatedSampleShipments'
+import { SampleShipmentResetPacking } from './SampleShipmentResetPacking'
+import { ShippingContainerSelector } from './ShippingContainerSelector'
 import { TransportationKitsPanel } from './TransportationKitsPanel'
 import { getShipmentKitSupply } from '#/api/transportation-kit-requests'
 
@@ -44,6 +45,7 @@ export function SampleShippingDetailPage({ shipmentId, autoOpenKitOrder = false 
   const customerKitSupply = query.data?.authorizationSource === 'CustomerLabServiceOrder' && getSelectedMembership(session, selectedOrganizationId)?.organizationKind === 'Customer'
   const kitSupply = useQuery({ queryKey: ['transportation-kit-supply', query.data?.authorizationSourceId, shipmentId], queryFn: () => getShipmentKitSupply(shipmentId), enabled: customerKitSupply && canView && authProvider !== 'mock' })
   const [assignmentItem, setAssignmentItem] = useState<SampleShippingCrosswalkItem | null>(null)
+  const [scanActive, setScanActive] = useState(false)
   const [shipmentOpen, setShipmentOpen] = useState(false)
   const [packetAction, setPacketAction] = useState<'confirm' | 'replace' | null>(null)
   const refresh = async () => { await Promise.all([client.invalidateQueries({ queryKey: ['sample-shipment', shipmentId] }), client.invalidateQueries({ queryKey: ['sample-shipments'] }), client.invalidateQueries({ queryKey: ['sample-shipping-packet', shipmentId] })]) }
@@ -57,10 +59,11 @@ export function SampleShippingDetailPage({ shipmentId, autoOpenKitOrder = false 
   if (query.error || !query.data) return <main className="page-wrap px-4 py-8"><Alert variant="destructive"><AlertTitle>Shipment unavailable</AlertTitle><AlertDescription>{query.error ? apiErrorMessage(query.error) : 'The requested shipment was not found.'}</AlertDescription></Alert></main>
   const shipment = query.data
   const matchedCount = shipment.crosswalk.filter((item) => item.supplierTubeBarcode).length
-  const preparationAllowed = !customerKitSupply || Boolean(kitSupply.data?.canPrepareSamples)
+  const availableKits = customerKitSupply ? (kitSupply.data?.recordedStock ?? []).map(item => ({ containerDefinitionId: item.containerDefinitionId, quantity: item.availableQuantity })) : undefined
+  const preparationAllowed = !customerKitSupply || !kitSupply.error && Boolean(kitSupply.data?.canPrepareSamples) && (Boolean(shipment.returnKit) || Boolean(availableKits?.some(item => item.quantity > 0)))
   const readyToConfirm = preparationAllowed && !shipment.isPackingPool && (Boolean(shipment.container) || shipment.returnKit?.status === 'Fulfilled') && matchedCount === shipment.crosswalk.length && shipment.crosswalk.length > 0 && shipment.status === 'Preparing'
   const error = download.error
-  const preparation = shipment.isPackingPool ? <SampleShipmentPackingPanel shipment={shipment} canManage={canManage} /> : <SampleTubeScanner key={shipment.id} shipment={shipment} canManage={canManage} onCorrect={item => { assignment.reset(); setAssignmentItem(item) }} onAssign={async (item, barcode) => {
+  const preparation = shipment.isPackingPool ? <SampleShipmentPackingPanel shipment={shipment} canManage={canManage} availableKits={availableKits} /> : <SampleTubeScanner key={shipment.id} shipment={shipment} canManage={canManage} onScanActivityChange={setScanActive} onCorrect={item => { assignment.reset(); setAssignmentItem(item) }} onAssign={async (item, barcode) => {
     const saved = await assignSampleTube(shipment.id, item.shipmentItemId, { supplierBarcode: barcode, reason: null, version: item.version, tubeSlotId: item.tubeSlotId ?? null })
     client.setQueryData(['sample-shipment', shipment.id], saved)
     await refresh()
@@ -93,7 +96,6 @@ export function SampleShippingDetailPage({ shipmentId, autoOpenKitOrder = false 
           <p className="mt-2 text-sm text-muted-foreground">{shipment.authorizationReference} · {shipment.destinationName}</p>
         </div>
         <div className="flex flex-wrap gap-2">
-          <Button variant="outline" asChild><Link to="/sample-shipping">All shipments</Link></Button>
           {shipment.currentPacket ? (
             <>
               <Button variant="outline" asChild><Link to="/sample-shipping/$shipmentId/packet" params={{ shipmentId }}><Printer data-icon="inline-start" />View packet</Link></Button>
@@ -106,6 +108,7 @@ export function SampleShippingDetailPage({ shipmentId, autoOpenKitOrder = false 
         </div>
       </section>
       {error ? <Alert variant="destructive" className="mb-5"><AlertTitle>Crosswalk download failed</AlertTitle><AlertDescription>{apiErrorMessage(error)}</AlertDescription></Alert> : null}
+      <ShippingContainerSelector shipment={shipment} action={shipment.container && !shipment.isPackingPool ? <SampleShipmentResetPacking key={shipment.id} shipment={shipment} canManage={canManage} scanActive={scanActive} /> : undefined} />
 
       <div className="grid gap-5 lg:grid-cols-[minmax(0,1.6fr)_minmax(18rem,0.8fr)]">
         {customerKitSupply ? <TransportationKitsPanel key={shipment.id} shipment={shipment} canManage={canManage} autoOpenOrder={autoOpenKitOrder}>{preparation}</TransportationKitsPanel> : preparation}
@@ -116,8 +119,6 @@ export function SampleShippingDetailPage({ shipmentId, autoOpenKitOrder = false 
           {!shipment.isPackingPool ? <Card><CardHeader><CardTitle>Before confirming</CardTitle></CardHeader><CardContent><ul className="list-disc space-y-2 pl-5 text-sm text-muted-foreground"><li>Verify every Customer sample ID is non-PHI and matches your internal records.</li><li>Verify each physical tube barcode matches the row shown here.</li><li>Keep the packet or download the CSV for your records.</li></ul><p className="mt-4 text-sm font-medium">{matchedCount} of {shipment.crosswalk.length} tubes matched</p></CardContent></Card> : null}
         </div>
       </div>
-
-      <div className="mt-6"><RelatedSampleShipments sourceId={shipment.authorizationSourceId} /></div>
 
       <TubeAssignmentDialog item={assignmentItem} replacesPacket={Boolean(shipment.currentPacket)} isPending={assignment.isPending} error={assignment.error ? apiErrorMessage(assignment.error) : undefined} onOpenChange={(open) => { if (!open) setAssignmentItem(null) }} onSubmit={(values) => { if (assignmentItem) assignment.mutate({ item: assignmentItem, values }) }} />
       <ConfirmPacketDialog action={packetAction} shipmentNumber={shipment.shipmentNumber} sampleCount={new Set(shipment.crosswalk.map((item) => item.shipmentItemId)).size} tubeCount={shipment.crosswalk.length} isPending={issue.isPending} error={issue.error ? apiErrorMessage(issue.error) : undefined} onOpenChange={(open) => { if (!open) setPacketAction(null) }} onConfirm={(reason) => issue.mutate(reason)} />

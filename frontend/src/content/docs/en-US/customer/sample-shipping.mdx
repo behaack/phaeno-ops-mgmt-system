@@ -4,35 +4,47 @@ For a normal Lab Service Job, sample entry begins after the price is accepted. S
 
 ## Order and receive transportation kits
 
-Open **Choose containers** for the tubes awaiting containers. If no usable kits are recorded, use **Order transportation kits**. The confirmation starts with the recommended kit sizes and quantities and your Department's default delivery location, when one is saved. Review the delivery address, then select **Confirm kit order**. Transportation kits and outbound delivery are included with the accepted laboratory order at no additional charge.
+Every Customer Job requires its own transportation-kit order. Open **Choose containers** for the tubes awaiting containers, then use **Order transportation kits**. The confirmation starts with the recommended kit sizes and quantities and your Department's default delivery location, when one is saved. Review the delivery address, then select **Confirm kit order**. Transportation kits and outbound delivery are included with the accepted laboratory order at no additional charge. Container configuration and scanning open only after Phaeno fulfills that Job's order and you confirm receipt of its kits.
 
 Use **Add a delivery location** or **Manage delivery locations** when an address needs setup or correction. Delivery locations belong to your organization and Department. Administrators can maintain them from the Department workspace. The confirmed order retains the address shown at confirmation even if the saved location changes later.
 
 **Kits ordered** means Phaeno has received the order for fulfillment. Reopening the page or repeating the same confirmation does not place a second order. An order can be cancelled before any of its kits are dispatched. Once dispatched, the kit number, carrier and tracking appear as **On the way**. This is provisional inventory and is not yet available for preparing samples.
 
-When the kits arrive, select **Confirm kits received** and acknowledge only those you have actually received. Each acknowledged kit becomes available for sample preparation. If delivery is partial, use the received kits while the remaining kits stay outstanding. An organization or Department administrator records receipt; ordinary members can review the status.
+When the kits arrive, select **Confirm kits received** and acknowledge only those you have actually received. Each acknowledged kit becomes available for that Job's sample preparation. If delivery is partial, prepare only with the received kits while the remaining kits stay outstanding. An organization or Department administrator records receipt; ordinary members can review the status.
 
-The recorded inventory covers kits supplied for this Job and delivery location. An absent inventory record does not prove there are no physical kits on site. **I already have kits** retains the existing preparation route when no outstanding kit order blocks it; Phaeno must have registered those physical kits and their permanent tube barcodes before they can be used.
+The **Transportation kits** ordering area appears while preparing tubes that still need containers. A physical container's page focuses on scanning. If its Job still has pending or partly delivered kits, **Kit delivery** shows the outstanding order, tracking and available receipt actions; scanning still depends on confirmed kit availability. An older container link with no usable Job supply offers **Order transportation kits** so you can complete the required sequence. Once delivery is resolved and preparation is permitted, that card is hidden from the physical container page.
 
-## Choose the containers you have
+Only kits ordered, fulfilled and received for this Job may be used for its containers and tube scans. General stock, previously held kits and kits supplied for another Job do not satisfy this requirement, even at the same delivery location. Reuse between Jobs is not available in this workflow. If the required supply is missing, continue this Job's kit order or contact Phaeno; container configuration does not provide an existing-stock bypass.
 
-After confirming kit receipt, use **Prepare samples** to choose containers. The Portal recommends compatible sizes using the fewest containers, then the least spare capacity. Each size shows its common name, SKU number and usable tube capacity. A recommendation does not reserve materials or prove that unrecorded kits are available.
+## Configure the supplied containers
 
-Use **Adjust containers** to enter the number of each size you will use. You may also enter **Available to you** as an upper limit; leave it blank when unknown, or enter zero to exclude a size. **Use recommendation for these quantities** recalculates within those limits. Another compatible choice needs no approval or explanation. For example, when configured sizes permit 30 tubes, one 20-tube and one 10-tube container, two 20-tube containers, or six 5-tube containers are all valid.
+After confirming receipt of this Job's kits, **Choose shipping containers** appears directly for the tubes awaiting containers. The Portal recommends compatible sizes using the fewest containers, then the least spare capacity. Each size shows its common name, SKU number and usable tube capacity. Compatibility alone does not make a kit available: the size and quantity must be supported by this Job's received supply.
+
+Open **Adjust containers** to review **Containers to use**. The recommendation starts as one row per container. Each row lets you select a compatible size, review its SKU and capacity, and enter how many tubes it will hold. **Add container** chooses a size for the capacity still needed and assigns the remaining tubes up to its capacity. A row's **Remove** action removes only that container; changing or removing it preserves the other rows' tube counts.
+
+Size choices include smaller containers and the smallest size that covers the remaining capacity needed. Choices that would make another selected container unnecessary are omitted. Where the corresponding sizes and quantities were supplied for this Job, three remaining tubes offer a 5, not a 10 or 20; 30 tubes may use 20+10 or six 5s, but two 20s are not offered. If 10+5 are already selected, Add chooses another 10 and then a 5. **Add container** is disabled when selected capacity covers all tubes, even if you reduce the tube counts. **Use recommendation** replaces the current rows and tube counts. Same-Job supply and receipt requirements apply automatically; there are no quantities of general stock to enter here.
 
 The preview shows tubes, containers, usable capacity, spare slots and unallocated tubes. **Confirm containers** creates a shipment for each container that has allocated tubes. Empty containers do not become shipments. If there is insufficient capacity, the exact shortfall remains visible; **Prepare available containers** prepares the allocated tubes while the others remain awaiting containers. Spare slots are empty capacity, not missing samples.
 
 A sample's tubes may be split among shipments. Container choices do not change accepted sample counts or pricing. Assigned tubes and confirmed packets are not silently rearranged if configuration changes. Contact Phaeno when existing assignments or a dispatched shipment need reconciliation.
 
-**Tubes in each container** lets you adjust the distribution, such as 15 + 15 across two 20-tube containers. Each count must fit its container, and the combined count must equal the tubes allocated in the preview. Enter zero for a selected container you will leave empty; it will not create a shipment.
+Adjust each row's tube count as needed. Counts must be whole numbers, fit each container and together equal the tubes allocated in the preview. The **Summary** stays visible while updating; confirmation becomes available when the current allocation has been checked.
 
 ## Scan and retain tube identities
+
+Use **Shipping container** at the top of the shipment page to switch between this Job's containers or return to remaining tubes awaiting containers. Each option shows the container identity, tube count and status. If a scan is unsaved, switching asks whether to discard it; switching is blocked while the scan saves.
+
+Before scanning starts, an organization or Department administrator can use **Reset container configuration** beside the **Shipping container** selector. Review the confirmation: it returns **all containers and tubes for the Job** to container selection, not just the shipment you opened. Your finalized sample list stays intact, and the previous containers remain in history. Cancelling the confirmation changes nothing.
+
+**Reset container configuration** is also unavailable while a barcode entry is unsaved or saving. Discard an unsaved entry before revising the plan; saving the first scan locks the plan as described below.
+
+The action is locked once any container for the Job has a scan, linked physical kit, packet, dispatch or receipt. Clearing a scan does not restore it. If another user starts work while your confirmation is open, the change is rejected; refresh and review the current state. A successful change returns you to container selection without changing the quote, kit order or physical kit inventory.
 
 Use a stable **Customer sample ID** that your organization can connect to its own sample record. Do not enter patient names, medical-record numbers, dates of birth or other direct identifiers.
 
 Open a prepared shipment and work through **Scan tubes into this shipment**. For the displayed sample and tube number, scan its permanent manufacturer barcode and press Enter or **Save scan**. A successful match displays the exact saved number and barcode graphic, updates progress, and moves focus to the next tube. Each match is saved separately, so returning later resumes at the next unmatched tube. Long lists have **Previous tubes** and **Next tubes** controls.
 
-Use registered tubes from a fulfilled kit supplied for this Job. The first successful scan connects the physical kit to the selected container; its remaining tubes must come from that same kit. An unknown, ineligible, duplicate or already-used barcode cannot advance the step. A failed scan keeps the entered value and current sample available for correction and retry. Do not cover, alter or remove the manufacturer barcode.
+Use registered tubes from a kit ordered, fulfilled and acknowledged as received for this Job. The first successful scan connects that physical kit to the selected container; its remaining tubes must come from the same kit. General stock, another Job's kit, an unreceived kit, or an unknown, duplicate or already-used barcode cannot advance the step. A failed scan keeps the entered value and current sample available for correction and retry. Do not cover, alter or remove the manufacturer barcode.
 
 If the wrong tube was assigned, use **Change tube** or **Correct tube** and record why the assignment changed. The earlier association remains in history. A correction after packet confirmation, but before dispatch, voids that packet and issues a corrected revision. Destroy unused copies of the old packet and print the replacement.
 
@@ -48,4 +60,4 @@ Print the full packet and follow its preparation and packing instructions. Put t
 
 After handing each package to the carrier, record its carrier, tracking number and shipment time. Repeat for each physical shipment. Receipt progress shows tubes received per shipment, across the Job and for each sample. A sample split across containers remains partly received until all its expected tubes have been recorded; receiving the first package does not mark the entire sample received.
 
-Use **Back to lab job** for the owning Job or **All shipments** for your authorized list. If a tube cannot be matched confidently, a printed barcode cannot be read, or there is no compatible container, contact Phaeno with the Job and shipment references instead of guessing.
+Use **Back to lab job** for the owning Job or **Shipping container** to move between its containers. If a tube cannot be matched confidently, a printed barcode cannot be read, or there is no compatible container, contact Phaeno with the Job and shipment references instead of guessing.

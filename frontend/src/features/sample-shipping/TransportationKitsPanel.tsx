@@ -22,7 +22,6 @@ export function TransportationKitsPanel({ shipment, canManage, autoOpenOrder = f
   const client = useQueryClient()
   const { selectedDepartmentId } = usePhaenoSession()
   const [action, setAction] = useState<'order' | 'receive' | 'cancel' | null>(autoOpenOrder ? 'order' : null)
-  const [showPreparation, setShowPreparation] = useState(false)
   const [operationKeys] = useState(() => new Map<string, string>())
   const [operationVersion, setOperationVersion] = useState(0)
   const queryKey = ['transportation-kit-supply', shipment.authorizationSourceId, shipment.id]
@@ -44,27 +43,30 @@ export function TransportationKitsPanel({ shipment, canManage, autoOpenOrder = f
   const request = supply.data?.request
   const activeRequest = request && request.status !== 'Cancelled' ? request : null
   const available = supply.data?.recordedStock.reduce((sum, item) => sum + item.availableQuantity, 0) ?? 0
-  const canPrepare = Boolean(supply.data?.canPrepareSamples)
+  const canPrepare = !supply.error && Boolean(supply.data?.canPrepareSamples) && (available > 0 || Boolean(shipment.returnKit))
+  const showOrderOptions = !activeRequest && (Boolean(shipment.isPackingPool) || !canPrepare)
+    || Boolean(shipment.isPackingPool) && activeRequest?.status === 'Received' && Boolean(supply.data?.canRequestKits)
+  const outstandingDelivery = Boolean(activeRequest && activeRequest.status !== 'Received')
+  const showKitCard = Boolean(shipment.isPackingPool) || supply.isPending || Boolean(supply.error) || !supply.data || !canPrepare || outstandingDelivery
   const open = (next: typeof action) => { order.reset(); receive.reset(); cancel.reset(); operationKeys.clear(); setOperationVersion(supply.data?.request?.version ?? 0); setAction(next) }
   return <div className="space-y-5">
-    <Card><CardHeader><CardTitle>Transportation kits</CardTitle><CardDescription>Transportation kits and outbound delivery are included. No additional charge.</CardDescription></CardHeader><CardContent className="space-y-4">
+    {showKitCard ? <Card><CardHeader><CardTitle>{shipment.isPackingPool ? 'Transportation kits' : 'Kit delivery'}</CardTitle>{shipment.isPackingPool ? <CardDescription>Transportation kits and outbound delivery are included. No additional charge.</CardDescription> : null}</CardHeader><CardContent className="space-y-4">
       {supply.isPending ? <p role="status">Checking transportation kits…</p> : supply.error || !supply.data ? <Alert variant="destructive"><AlertTitle>Kit information unavailable</AlertTitle><AlertDescription>{apiErrorMessage(supply.error)} <Button variant="outline" onClick={() => void supply.refetch()}>Retry kit information</Button></AlertDescription></Alert> : <>
         {activeRequest ? <KitRequestSummary request={activeRequest} /> : null}
-        {!activeRequest || supply.data.canRequestKits ? <>
+        {showOrderOptions ? <>
           {activeRequest?.status === 'Received' ? <p className="font-medium">Additional kits for the remaining tubes</p> : null}
           {request?.status === 'Cancelled' ? <p role="status" className="font-medium">Kit order cancelled.</p> : null}
-          <p className="text-sm">{supply.data.inventoryStatus === 'Unknown' ? 'We do not have a confirmed kit balance for this location. If you need kits, order the recommended sizes below.' : available > 0 ? `${available} registered ${available === 1 ? 'kit is' : 'kits are'} available for this Job.` : 'No usable registered kits are currently available for this Job at this location.'}</p>
+          <p className="text-sm">{!canPrepare && !activeRequest ? supply.data.preparationBlockedReason ?? 'Order transportation kits for this Job before configuring containers or scanning tubes.' : available > 0 ? `${available} registered ${available === 1 ? 'kit is' : 'kits are'} available for this Job.` : 'No usable registered kits are currently available for this Job at this location.'}</p>
           <KitLines lines={supply.data.recommendation.containers.map(item => ({ ...item, requestedQuantity: item.quantity, tubeCapacity: item.capacity }))} />
           {canManage ? <><Button disabled={!supply.data.canRequestKits} onClick={() => open('order')}><Truck data-icon="inline-start" />Order transportation kits</Button>{!supply.data.canRequestKits ? <p className="text-sm text-muted-foreground">{supply.data.requestBlockedReason}</p> : null}{!supply.data.locations.length ? <p><Link to="/delivery-locations" search={{ organizationId: shipment.organizationId, departmentId: selectedDepartmentId ?? '', shipmentId: shipment.id }} className="text-sm text-primary underline">Add a delivery location</Link></p> : null}</> : <p className="text-sm text-muted-foreground">An organization or Department administrator can order transportation kits.</p>}
         </> : null}
         {canManage && activeRequest?.canConfirmReceipt ? <Button onClick={() => open('receive')}><PackageCheck data-icon="inline-start" />Confirm kits received</Button> : null}
         {canManage && activeRequest?.canCancel ? <Button variant="outline" onClick={() => open('cancel')}>Cancel kit order</Button> : null}
-        {activeRequest && !canPrepare ? <p className="text-sm text-muted-foreground">{supply.data.preparationBlockedReason ?? 'Sample preparation opens after you confirm which kits have arrived. Kits on the way are not available stock.'}</p> : null}
-        {canManage && canPrepare && !showPreparation && shipment.isPackingPool ? <div><Button variant="outline" onClick={() => setShowPreparation(true)}>{available > 0 || activeRequest?.status === 'Received' ? 'Prepare samples' : 'I already have kits'}</Button>{!activeRequest && available === 0 ? <p className="mt-2 text-xs text-muted-foreground">Your kit and permanent tube barcodes must be registered with Phaeno before they can be matched to samples.</p> : null}</div> : null}
+        {!canPrepare && !showOrderOptions ? <p className="text-sm text-muted-foreground">{supply.data.preparationBlockedReason ?? 'Confirm which kits have arrived before configuring containers or scanning tubes.'}</p> : null}
       </>}
-    </CardContent></Card>
-    {canPrepare && (showPreparation || !shipment.isPackingPool) ? children : null}
-    {action === 'order' && supply.data && canManage && supply.data.locations.length > 0 && (!activeRequest || activeRequest.status === 'Received') ? <TransportationKitOrderDialog shipmentId={shipment.id} organizationId={shipment.organizationId} departmentId={selectedDepartmentId ?? ''} initial={supply.data} busy={order.isPending} error={order.error} onClose={() => setAction(null)} onConfirm={input => order.mutate(input)} /> : null}
+    </CardContent></Card> : null}
+    {canPrepare ? children : null}
+    {showOrderOptions && action === 'order' && supply.data && canManage && supply.data.locations.length > 0 ? <TransportationKitOrderDialog shipmentId={shipment.id} organizationId={shipment.organizationId} departmentId={selectedDepartmentId ?? ''} initial={supply.data} busy={order.isPending} error={order.error} onClose={() => setAction(null)} onConfirm={input => order.mutate(input)} /> : null}
     {action === 'receive' && activeRequest ? <KitReceiptDialog request={activeRequest} busy={receive.isPending} error={receive.error} onClose={() => setAction(null)} onConfirm={ids => receive.mutate(ids)} /> : null}
     {action === 'cancel' && activeRequest ? <KitCancellationDialog busy={cancel.isPending} error={cancel.error} onClose={() => setAction(null)} onConfirm={reason => cancel.mutate(reason)} /> : null}
   </div>
@@ -89,15 +91,22 @@ export function TransportationKitOrderDialog({ shipmentId, organizationId, depar
   const close = () => { if (!busy && (!isDirty || window.confirm('Discard the unsaved kit order?'))) onClose() }
   useBlocker({ shouldBlockFn: () => busy || isDirty && !window.confirm('Discard the unsaved kit order?'), enableBeforeUnload: busy || isDirty })
   const submit = form.handleSubmit(() => { if (!busy && !query.isFetching && !query.error && current?.canRequestKits && location) onConfirm({ shipmentVersion: current.shipmentVersion, deliveryLocationId: location.id, deliveryLocationVersion: location.version, containers: current.recommendation.containers.map(item => ({ containerDefinitionId: item.containerDefinitionId, quantity: item.quantity })) }) })
-  return <Dialog open onOpenChange={open => { if (!open) close() }}><DialogContent onEscapeKeyDown={event => { if (busy) event.preventDefault() }} showCloseButton={!busy}><DialogHeader><DialogTitle>Order transportation kits</DialogTitle><DialogDescription>Review the kits and delivery location for {initial.jobNumber}. Transportation kits and outbound delivery are included, with no additional charge.</DialogDescription></DialogHeader>
+  return <Dialog open onOpenChange={open => { if (!open) close() }}><DialogContent onEscapeKeyDown={event => { if (busy) event.preventDefault() }} showCloseButton={!busy}><DialogHeader className="pr-[var(--dialog-inset)]"><DialogTitle className="pr-8">Order transportation kits</DialogTitle><DialogDescription className="pr-8">Review the kits and delivery location for {initial.jobNumber}. Transportation kits and outbound delivery are included, with no additional charge.</DialogDescription></DialogHeader>
     <form id="transportation-kit-order" className="space-y-4" noValidate onSubmit={submit}><fieldset disabled={busy} className="space-y-4">
       <div className="space-y-1.5"><Label htmlFor="kit-delivery-location"><RequiredFieldName>Delivery location</RequiredFieldName></Label><select id="kit-delivery-location" className="h-9 w-full cursor-pointer rounded-md border bg-background px-3 text-sm" aria-invalid={Boolean(form.formState.errors.deliveryLocationId)} aria-describedby="kit-location-error" {...form.register('deliveryLocationId')}><option value="">Select a delivery location</option>{initial.locations.filter(item => item.isActive).map(item => <option key={item.id} value={item.id}>{item.label}{item.isDefault ? ' (default)' : ''}</option>)}</select>{form.formState.errors.deliveryLocationId ? <p id="kit-location-error" role="alert" className="text-sm text-destructive">{form.formState.errors.deliveryLocationId.message}</p> : null}</div>
       {location ? <DeliveryAddress location={location} /> : <p className="text-sm text-muted-foreground">{initial.locations.length ? 'Choose where Phaeno should deliver these kits.' : 'Add a delivery location before ordering kits.'}</p>}
       <Link to="/delivery-locations" search={{ organizationId, departmentId, shipmentId }} onClick={event => { if (busy) event.preventDefault() }} aria-disabled={busy} className="text-sm text-primary underline">Manage delivery locations</Link>
       {query.isFetching ? <p role="status" className="text-sm">Checking kits for this location…</p> : query.error ? <Alert variant="destructive"><AlertTitle>Kit recommendation unavailable</AlertTitle><AlertDescription>{apiErrorMessage(query.error)} <Button type="button" variant="outline" onClick={() => void query.refetch()}>Retry recommendation</Button></AlertDescription></Alert> : current ? <><KitLines lines={current.recommendation.containers.map(item => ({ ...item, requestedQuantity: item.quantity, tubeCapacity: item.capacity }))} />{!current.canRequestKits ? <p role="status" className="text-sm text-muted-foreground">{current.requestBlockedReason}</p> : null}</> : null}
-    </fieldset></form>{error ? <Alert variant="destructive"><AlertTitle>Kit order could not be saved</AlertTitle><AlertDescription>{apiErrorMessage(error)}</AlertDescription></Alert> : null}
+    </fieldset></form>{error ? <Alert variant="destructive" className="min-w-0 self-stretch"><AlertTitle>Kit order could not be saved</AlertTitle><AlertDescription className="min-w-0 wrap-anywhere">{kitOrderErrorMessage(error)}</AlertDescription></Alert> : null}
     <RequiredDialogFooter><Button type="button" variant="outline" disabled={busy} onClick={close}>Keep reviewing</Button><Button type="submit" form="transportation-kit-order" disabled={busy || query.isFetching || Boolean(query.error) || !current?.canRequestKits || !current.recommendation.containerCount}>{busy ? 'Ordering kits…' : 'Confirm kit order'}</Button></RequiredDialogFooter>
   </DialogContent></Dialog>
+}
+
+function kitOrderErrorMessage(error: unknown) {
+  const message = apiErrorMessage(error).trim()
+  return !message || /^(an unexpected error occurred|the request could not be completed|request failed with status code 5\d\d)[.!]?$/i.test(message)
+    ? 'We couldn’t place your kit order. Your selections are still here. Please try again.'
+    : message
 }
 
 const receiptSchema = z.object({ stockKitIds: z.array(z.string()).min(1, 'Select the kits that have arrived.') })

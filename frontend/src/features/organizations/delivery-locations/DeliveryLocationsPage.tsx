@@ -30,7 +30,7 @@ function useLocationContext() {
   const canManage = Boolean(canRead && (staff || membership?.isOrganizationAdmin || department?.isDepartmentAdmin))
   const departments = useQuery({ queryKey: ['organization-departments', organizationId, true], queryFn: () => listDepartments(organizationId), enabled: Boolean(canRead) })
   const organization = useQuery({ queryKey: ['organization', organizationId], queryFn: () => getOrganization(organizationId), enabled: Boolean(canRead && staff) })
-  return { scope: { organizationId, departmentId }, search: { ...search, organizationId, departmentId }, canRead: Boolean(canRead), canManage,
+  return { scope: { organizationId, departmentId }, search: { ...search, organizationId, departmentId }, canRead: Boolean(canRead), canManage, isStaff: staff,
     departmentName: departments.data?.find(value => value.id === departmentId)?.name ?? department?.departmentName ?? 'this department',
     organizationName: organization.data?.name ?? membership?.organizationName ?? 'Customer',
   }
@@ -74,8 +74,20 @@ export function DeliveryLocationDetailPage({ locationId }: { locationId: string 
   const deactivate = useMutation({ mutationFn: (value: CustomerDeliveryLocation) => deactivateCustomerDeliveryLocation(value.id, value.version), onSuccess: saved })
   return <main className="page-wrap space-y-5 px-4 py-8"><div className="flex flex-wrap gap-2"><Button asChild variant="ghost" size="sm"><Link to="/delivery-locations" search={context.search}><ArrowLeft aria-hidden="true" />Back to delivery locations</Link></Button>{context.search.shipmentId ? <LocationReturn search={context.search} /> : null}</div>
     {!context.canRead ? <Unavailable /> : query.error ? <LocationError error={query.error} retry={() => void query.refetch()} /> : query.isLoading ? <p role="status">Loading delivery location…</p> : !location ? <Unavailable /> : <>
-      <div className="flex flex-wrap items-start justify-between gap-3"><div className="min-w-0"><div className="flex flex-wrap items-center gap-2"><h1 className="text-2xl font-semibold wrap-anywhere">{location.label}</h1>{location.isDefault ? <Badge variant="outline">Default</Badge> : null}{!location.isActive ? <Badge variant="outline">Inactive</Badge> : null}</div><p className="mt-1 text-sm text-muted-foreground">{context.organizationName} · {context.departmentName}</p></div>{context.canManage && location.isActive ? <div className="flex gap-2"><Button onClick={() => setEditing(location)}>Edit location</Button><DropdownMenu><DropdownMenuTrigger asChild><Button variant="outline" aria-label="Location actions">Actions</Button></DropdownMenuTrigger><DropdownMenuContent align="end" className="w-max max-w-[calc(100vw-2rem)]"><DropdownMenuItem onSelect={() => { deactivate.reset(); setDeactivating(location) }}>Deactivate location</DropdownMenuItem></DropdownMenuContent></DropdownMenu></div> : null}</div>
-      <Card className="max-w-2xl"><CardHeader><CardTitle>Delivery address</CardTitle><CardDescription>Used for transportation-kit deliveries to this customer department.</CardDescription></CardHeader><CardContent><DeliveryLocationAddress location={location} /></CardContent></Card>
+      <div className="flex flex-wrap items-start justify-between gap-3">
+        <div className="min-w-0"><div className="flex flex-wrap items-center gap-2"><h1 className="text-2xl font-semibold wrap-anywhere">{location.label}</h1>{location.isDefault ? <Badge variant="outline">Default</Badge> : null}{!location.isActive ? <Badge variant="outline">Inactive</Badge> : null}</div><p className="mt-1 text-sm text-muted-foreground">{context.organizationName} · {context.departmentName}</p></div>
+        {context.canManage && location.isActive ? <DropdownMenu>
+          <DropdownMenuTrigger asChild><Button variant="outline" aria-label="Location actions">Actions</Button></DropdownMenuTrigger>
+          <DropdownMenuContent align="end" className="w-max max-w-[calc(100vw-2rem)]">
+            <DropdownMenuItem onSelect={() => setEditing(location)}>Edit location</DropdownMenuItem>
+            <DropdownMenuItem onSelect={() => { deactivate.reset(); setDeactivating(location) }}>Deactivate location</DropdownMenuItem>
+          </DropdownMenuContent>
+        </DropdownMenu> : null}
+      </div>
+      <Card>
+        <CardHeader><CardTitle>Delivery address</CardTitle><CardDescription>{context.isStaff ? 'Used for transportation-kit deliveries to this customer department.' : 'Phaeno will send your department’s transportation kits to this address.'}</CardDescription></CardHeader>
+        <CardContent><DeliveryLocationAddress location={location} /></CardContent>
+      </Card>
       {editing ? <DeliveryLocationEditor scope={context.scope} source={editing} departmentName={context.departmentName} onClose={() => setEditing(null)} onSaved={saved} /> : null}
     </>}
     <Dialog open={Boolean(deactivating)} onOpenChange={open => { if (!open && !deactivate.isPending) setDeactivating(null) }}><DialogContent><DialogHeader><DialogTitle>Deactivate delivery location</DialogTitle><DialogDescription>{deactivating?.label} will no longer be offered for new kit requests. Existing requests keep their saved delivery address.</DialogDescription></DialogHeader>{deactivate.error ? <LocationError error={deactivate.error} /> : null}<DialogFooter><Button variant="outline" disabled={deactivate.isPending} onClick={() => setDeactivating(null)}>Cancel</Button><Button variant="destructive" disabled={deactivate.isPending} onClick={() => { if (deactivating) deactivate.mutate(deactivating) }}>{deactivate.isPending ? 'Deactivating…' : 'Deactivate location'}</Button></DialogFooter></DialogContent></Dialog>

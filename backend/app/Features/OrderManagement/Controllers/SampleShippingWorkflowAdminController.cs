@@ -40,6 +40,11 @@ public sealed class SampleShippingWorkflowAdminController(
         CancellationToken cancellationToken)
     {
         await requestContext.RequirePlatformAdminAsync(HttpContext, cancellationToken);
+        var authorizationId = await dbContext.SampleShipments.AsNoTracking().Where(item => item.Id == shipmentId)
+            .Select(item => (Guid?)item.AuthorizationSourceId).SingleOrDefaultAsync(cancellationToken)
+            ?? throw Missing("sample_shipment_not_found", "The sample shipment was not found.");
+        await using var transaction = await SampleShippingPackingData.BeginAsync(dbContext,
+            $"sample-shipping:{authorizationId}", cancellationToken);
         var shipment = await dbContext.SampleShipments
             .Include(item => item.ReturnKit)
             .Include(item => item.Items)
@@ -50,6 +55,7 @@ public sealed class SampleShippingWorkflowAdminController(
             throw Conflict("sample_return_kit_not_allowed", "A return kit can be prepared only for a shipment still being prepared.");
         if (shipment.ReturnKit != null)
             throw Conflict("sample_return_kit_exists", "This shipment already has a return kit.");
+        await TransportationKitSupplyGuard.EnsureRequestFulfillmentAsync(dbContext, shipment, cancellationToken);
         var requiredTubeCount = shipment.Items.Sum(item => item.TubeSlots.Count > 0 ? item.TubeSlots.Count : 1);
         if (request.RequiredTubeCount != requiredTubeCount)
             throw Conflict("sample_return_kit_tube_count_frozen",
@@ -67,7 +73,9 @@ public sealed class SampleShippingWorkflowAdminController(
             request.ShipperProductNumber,
             requiredTubeCount));
         dbContext.SampleReturnKits.Add(kit);
+        dbContext.Entry(shipment).Property(item => item.Version).IsModified = true;
         await dbContext.SaveChangesAsync(cancellationToken);
+        if (transaction is not null) await transaction.CommitAsync(cancellationToken);
         return Created($"/api/platform/sample-shipping/workflow/shipments/{shipment.Id}",
             await reader.ReadAsync(shipment.Id, null, cancellationToken));
     }

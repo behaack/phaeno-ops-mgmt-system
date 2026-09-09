@@ -8,6 +8,10 @@ public sealed record ShipmentPackingPreviewRequest(IReadOnlyList<ContainerQuanti
     IReadOnlyList<ContainerQuantityRequest>? Selection = null);
 public sealed record ConfirmShipmentPackingRequest(long Version, IReadOnlyList<ContainerQuantityRequest> Containers,
     IReadOnlyList<ContainerQuantityRequest>? Availability = null, IReadOnlyList<int>? ContainerTubeCounts = null);
+public sealed record ShipmentPackingVersionDto(Guid ShipmentId, long Version);
+public sealed record ShipmentPackingResetContextDto(bool CanReset, string? BlockedReason, int ContainerCount,
+    int TubeCount, IReadOnlyList<ShipmentPackingVersionDto> Shipments);
+public sealed record ShipmentPackingResetRequest(IReadOnlyList<ShipmentPackingVersionDto> Shipments);
 public sealed record StockKitTubeDto(Guid Id, string SupplierBarcode);
 public sealed record StockKitDto(Guid Id, string KitNumber, ShipmentContainerDto Container,
     string TubeSupplierName, string TubeProductNumber, string? TubeLotNumber,

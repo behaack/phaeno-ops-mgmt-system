@@ -6,7 +6,7 @@ import type { SampleShipmentWorkflow } from '#/api/sample-shipping'
 import { shippingFixture, shippingTube } from '#/test-helpers/sample-shipping'
 import { SampleTubeScanner } from './SampleTubeScanner'
 
-const mocks = vi.hoisted(() => ({ assign: vi.fn(), correct: vi.fn(), blocker: vi.fn() }))
+const mocks = vi.hoisted(() => ({ assign: vi.fn(), correct: vi.fn(), blocker: vi.fn(), activity: vi.fn() }))
 vi.mock('@tanstack/react-router', () => ({ useBlocker: mocks.blocker }))
 beforeEach(() => vi.clearAllMocks())
 afterEach(() => vi.restoreAllMocks())
@@ -15,10 +15,10 @@ function show(initial = shippingFixture, canManage = true) {
   function Harness() {
     const [shipment, setShipment] = useState(initial)
     refresh = setShipment
-    return <SampleTubeScanner shipment={shipment} canManage={canManage} onCorrect={mocks.correct} onAssign={async (item, barcode) => { const saved = await mocks.assign(item, barcode) as SampleShipmentWorkflow; setShipment(saved); return saved }} />
+    return <SampleTubeScanner shipment={shipment} canManage={canManage} onScanActivityChange={mocks.activity} onCorrect={mocks.correct} onAssign={async (item, barcode) => { const saved = await mocks.assign(item, barcode) as SampleShipmentWorkflow; setShipment(saved); return saved }} />
   }
-  render(<QueryClientProvider client={new QueryClient({ defaultOptions: { mutations: { retry: false } } })}><Harness /></QueryClientProvider>)
-  return { refresh: (shipment: SampleShipmentWorkflow) => act(() => refresh(shipment)) }
+  const rendered = render(<QueryClientProvider client={new QueryClient({ defaultOptions: { mutations: { retry: false } } })}><Harness /></QueryClientProvider>)
+  return { refresh: (shipment: SampleShipmentWorkflow) => act(() => refresh(shipment)), unmount: rendered.unmount }
 }
 
 describe('guided tube scanning', () => {
@@ -29,8 +29,10 @@ describe('guided tube scanning', () => {
     const input = screen.getByLabelText(/Scan tube barcode/)
     await waitFor(() => expect(document.activeElement).toBe(input))
     fireEvent.change(input, { target: { value: 'TUBE_0001' } })
+    expect(mocks.activity).toHaveBeenLastCalledWith(true)
     fireEvent.submit(input.closest('form')!)
     await waitFor(() => expect(input).toHaveProperty('disabled', true))
+    expect(mocks.activity).toHaveBeenLastCalledWith(true)
     expect(screen.getByRole('heading', { name: 'RNA-1' })).toBeTruthy()
     expect(screen.getByText('0 of 2 tubes matched')).toBeTruthy()
     await act(async () => resolve({ ...shippingFixture, crosswalk: [{ ...shippingFixture.crosswalk[0], supplierTubeBarcode: 'TUBE_0001', version: 2 }, shippingFixture.crosswalk[1]] }))
@@ -39,6 +41,21 @@ describe('guided tube scanning', () => {
     expect(screen.getByLabelText(/Scan tube barcode/)).toHaveProperty('value', '')
     await waitFor(() => expect(document.activeElement).toBe(screen.getByLabelText(/Scan tube barcode/)))
     expect(screen.getByText('1 of 2 tubes matched')).toBeTruthy()
+    expect(mocks.activity).toHaveBeenLastCalledWith(false)
+  })
+
+  it('clears reported scan activity when a draft is discarded or the scanner unmounts', () => {
+    const { unmount } = show()
+    const input = screen.getByLabelText(/Scan tube barcode/)
+    expect(mocks.activity).toHaveBeenLastCalledWith(false)
+    fireEvent.change(input, { target: { value: 'UNSAVED-TUBE' } })
+    expect(mocks.activity).toHaveBeenLastCalledWith(true)
+    fireEvent.change(input, { target: { value: '' } })
+    expect(mocks.activity).toHaveBeenLastCalledWith(false)
+    fireEvent.change(input, { target: { value: 'ANOTHER-DRAFT' } })
+    unmount()
+    expect(mocks.activity).toHaveBeenLastCalledWith(false)
+    expect(mocks.assign).not.toHaveBeenCalled()
   })
 
   it('retains a rejected scan on the same sample and allows a retry', async () => {

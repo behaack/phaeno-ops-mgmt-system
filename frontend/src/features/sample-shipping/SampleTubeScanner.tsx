@@ -19,11 +19,12 @@ const scanSchema = z.object({ barcode: z.string().trim().min(4, 'Scan or enter t
 type ScanValues = z.infer<typeof scanSchema>
 const pageSize = 8
 
-export function SampleTubeScanner({ shipment, canManage, onAssign, onCorrect }: {
+export function SampleTubeScanner({ shipment, canManage, onAssign, onCorrect, onScanActivityChange }: {
   shipment: SampleShipmentWorkflow
   canManage: boolean
   onAssign: (item: SampleShippingCrosswalkItem, barcode: string) => Promise<SampleShipmentWorkflow>
   onCorrect: (item: SampleShippingCrosswalkItem) => void
+  onScanActivityChange?: (active: boolean) => void
 }) {
   const form = useForm<ScanValues>({ resolver: zodResolver(scanSchema), defaultValues: { barcode: '' } })
   const [page, setPage] = useState(() => Math.floor(Math.max(0, shipment.crosswalk.findIndex(item => !item.supplierTubeBarcode)) / pageSize))
@@ -48,6 +49,10 @@ export function SampleTubeScanner({ shipment, canManage, onAssign, onCorrect }: 
     },
   })
   const isDirty = form.formState.isDirty
+  useEffect(() => {
+    onScanActivityChange?.(isDirty || mutation.isPending)
+    return () => onScanActivityChange?.(false)
+  }, [isDirty, mutation.isPending, onScanActivityChange])
   useBlocker({ shouldBlockFn: () => mutation.isPending || isDirty && !window.confirm('Discard the unsaved tube scan?'), enableBeforeUnload: () => mutation.isPending || isDirty, disabled: !mutation.isPending && !isDirty })
   useEffect(() => {
     if (canScan && currentKey && !mutation.isPending && (lastFocusedSlot.current !== currentKey || mutation.error)) {

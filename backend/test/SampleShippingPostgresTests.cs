@@ -714,7 +714,7 @@ public partial class SampleShippingPostgresTests
                     .Select(item => item.Id)
                     .ToArrayAsync();
                 var destinationIds = await DbContext.SampleShippingDestinations
-                    .Where(item => item.Code == $"REF_{Suffix}_DEST")
+                    .Where(item => item.Code == $"REF_{Suffix}_DEST" || item.Code == $"REF_{Suffix}_DEST_RESET")
                     .Select(item => item.Id)
                     .ToArrayAsync();
                 var sampleTypeIds = await DbContext.SampleTypeDefinitions

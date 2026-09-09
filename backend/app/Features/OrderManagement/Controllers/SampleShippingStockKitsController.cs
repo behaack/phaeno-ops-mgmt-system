@@ -13,7 +13,7 @@ using PhaenoPortal.App.Infrastructure.Persistence;
 [ServiceFilter(typeof(PhaenoPortal.App.Features.Trials.Services.TrialWorkGuard))]
 [Route("api/platform/sample-shipping/stock-kits")]
 public sealed class SampleShippingStockKitsController(PSeqOperationsDbContext db, OrderRequestContext context,
-    SampleShippingContainerCatalogService catalog) : ControllerBase
+    SampleShippingContainerCatalogService catalog, TransportationKitRequestService requestService) : ControllerBase
 {
     [HttpGet]
     public async Task<IReadOnlyList<StockKitDto>> List(CancellationToken ct)
@@ -88,12 +88,19 @@ public sealed class SampleShippingStockKitsController(PSeqOperationsDbContext db
     [HttpPost("{id:guid}/dispatch")]
     public async Task<StockKitDto> Dispatch(Guid id, [FromBody] DispatchStockKitRequest request, CancellationToken ct)
     {
-        await context.RequirePlatformAdminAsync(HttpContext, ct);
+        var actor = await context.RequirePlatformAdminAsync(HttpContext, ct);
+        var shipment = await db.SampleShipments.AsNoTracking().Include(item => item.Items).ThenInclude(item => item.TubeSlots)
+            .SingleOrDefaultAsync(item => item.Id == request.ShipmentId, ct) ?? throw Missing();
+        if (await TransportationKitSupplyGuard.RequiresOrderedKitsAsync(db, shipment, ct))
+        {
+            await using var requestTransaction = await SampleShippingPackingData.BeginAsync(db, $"sample-shipping:{shipment.AuthorizationSourceId}", ct);
+            await requestService.DispatchFromStockAsync(id, actor.Id, shipment, request, ct);
+            if (requestTransaction is not null) await requestTransaction.CommitAsync(ct);
+            return await ReadAsync(id, ct);
+        }
         await using var transaction = await SampleShippingPackingData.BeginAsync(db, $"stock-kit:{id}", ct);
         var kit = await db.SampleShippingStockKits.Include(item => item.Tubes).SingleOrDefaultAsync(item => item.Id == id, ct) ?? throw Missing();
         Version(kit.Version, request.Version);
-        var shipment = await db.SampleShipments.Include(item => item.Items).ThenInclude(item => item.TubeSlots)
-            .SingleOrDefaultAsync(item => item.Id == request.ShipmentId, ct) ?? throw Missing();
         var pairs = await SampleShippingPackingData.ContextsAsync(db, shipment, ct);
         var options = await catalog.ReadCompatibleAsync(pairs, ct);
         if (!options.Any(item => item.Id == kit.ContainerDefinitionId))

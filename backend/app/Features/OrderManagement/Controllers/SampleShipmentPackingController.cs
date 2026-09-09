@@ -12,7 +12,7 @@ using PhaenoPortal.App.Infrastructure.Persistence;
 [Authorize]
 [ServiceFilter(typeof(PhaenoPortal.App.Features.Trials.Services.TrialWorkGuard))]
 [Route("api/sample-shipping/{shipmentId:guid}/packing")]
-public sealed class SampleShipmentPackingController(PSeqOperationsDbContext db, OrderRequestContext context,
+public sealed partial class SampleShipmentPackingController(PSeqOperationsDbContext db, OrderRequestContext context,
     SampleShippingContainerCatalogService catalog, SampleShippingWorkflowReader reader) : ControllerBase
 {
     [HttpGet]

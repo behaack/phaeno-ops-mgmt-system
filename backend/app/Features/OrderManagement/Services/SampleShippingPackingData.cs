@@ -114,6 +114,7 @@ public static class SampleShippingPackingData
         await db.Entry(stock).ReloadAsync(ct);
         if (stock.TransportationKitRequestLineId.HasValue && !stock.CustomerReceivedAt.HasValue)
             throw new OrderManagementException("transportation_kit_receipt_required", "Confirm receipt of the transportation kit before scanning its tubes for a sample shipment.", 409);
+        await TransportationKitSupplyGuard.EnsureOrderedStockAsync(db, shipment, stock, ct);
         if (stock.BoundSampleShipmentId.HasValue || !stock.FulfilledAt.HasValue || stock.ContainerDefinitionId != shipment.ContainerDefinitionId)
             throw new OrderManagementException("stock_kit_not_available", "This kit is already in use or does not match the selected container size.", 409);
         if (TubeCount(shipment) > stock.TubeCapacity)

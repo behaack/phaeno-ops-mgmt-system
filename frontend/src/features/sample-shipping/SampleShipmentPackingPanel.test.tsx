@@ -1,134 +1,398 @@
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
-import { fireEvent, render, screen, waitFor, within } from '@testing-library/react'
+import { act, fireEvent, render, screen, waitFor, within } from '@testing-library/react'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
-import type { SampleContainerQuantity } from '#/api/sample-shipping'
+import type { SampleContainerQuantity, SampleShipmentPacking } from '#/api/sample-shipping'
 import type { ContainerRecommendation } from '#/api/shipping-containers'
-import { packingFixture, packingRecommendation, shippingContainers } from '#/test-helpers/sample-shipping'
-import { PackingDialog } from './SampleShipmentPackingPanel'
+import { packingFixture, packingRecommendation, shippingContainers, shippingFixture } from '#/test-helpers/sample-shipping'
+import { PackingDialog, SampleShipmentPackingPanel } from './SampleShipmentPackingPanel'
 
-const mocks = vi.hoisted(() => ({ preview: vi.fn(), confirm: vi.fn(), close: vi.fn() }))
-vi.mock('#/api/sample-shipping', () => ({ previewSampleShipmentPacking: mocks.preview }))
+const mocks = vi.hoisted(() => ({ preview: vi.fn(), confirm: vi.fn(), close: vi.fn(), packing: vi.fn() }))
+vi.mock('#/api/sample-shipping', () => ({ previewSampleShipmentPacking: mocks.preview, getSampleShipmentPacking: mocks.packing, confirmSampleShipmentPacking: mocks.confirm }))
 vi.mock('@tanstack/react-router', () => ({ useNavigate: () => vi.fn() }))
-type PreviewInput = { selection?: SampleContainerQuantity[]; availability?: SampleContainerQuantity[] }
-function preview(input: PreviewInput): ContainerRecommendation {
-  const containers = (input.selection ?? packingRecommendation.containers.map(item => ({ containerDefinitionId: item.containerDefinitionId, quantity: item.quantity }))).map(item => {
+
+type PreviewInput = { selection?: SampleContainerQuantity[] }
+let currentPacking = packingFixture
+let currentRecommendation = packingRecommendation
+function preview(input: PreviewInput, tubeCount = currentPacking.tubeCount): ContainerRecommendation {
+  const containers = (input.selection ?? currentRecommendation.containers.map(item => ({ containerDefinitionId: item.containerDefinitionId, quantity: item.quantity }))).map(item => {
     const type = shippingContainers.find(container => container.id === item.containerDefinitionId)!
-    const available = input.availability?.find(row => row.containerDefinitionId === item.containerDefinitionId)
-    if (available && item.quantity > available.quantity) throw new Error('The selection exceeds the quantity available to you.')
     return { containerDefinitionId: item.containerDefinitionId, sku: type.sku, commonName: type.commonName, capacity: type.tubeCapacity, quantity: item.quantity, assignedTubes: 0, unusedCapacity: 0 }
   })
-  let remaining = 30
+  let remaining = tubeCount
   for (const item of containers) { item.assignedTubes = Math.min(remaining, item.capacity * item.quantity); item.unusedCapacity = item.capacity * item.quantity - item.assignedTubes; remaining -= item.assignedTubes }
   const totalCapacity = containers.reduce((sum, item) => sum + item.capacity * item.quantity, 0)
-  return { tubeCount: 30, containerCount: containers.reduce((sum, item) => sum + item.quantity, 0), totalCapacity, unusedCapacity: Math.max(0, totalCapacity - 30), unallocatedTubes: remaining, isComplete: remaining === 0, containers, explanation: 'Allocation for the containers selected.' }
+  return { tubeCount, containerCount: containers.reduce((sum, item) => sum + item.quantity, 0), totalCapacity, unusedCapacity: Math.max(0, totalCapacity - tubeCount), unallocatedTubes: remaining, isComplete: remaining === 0, containers, explanation: 'Allocation for the containers selected.' }
 }
-beforeEach(() => { vi.clearAllMocks(); mocks.preview.mockImplementation(async (_: string, input: PreviewInput) => preview(input)) })
+beforeEach(() => {
+  vi.clearAllMocks()
+  currentPacking = packingFixture
+  currentRecommendation = packingRecommendation
+  mocks.preview.mockImplementation(async (_: string, input: PreviewInput) => preview(input))
+  mocks.packing.mockResolvedValue(packingFixture)
+})
 afterEach(() => vi.restoreAllMocks())
-function show(busy = false, error: unknown = null) {
-  const client = new QueryClient({ defaultOptions: { queries: { retry: false } } })
-  const view = (packing = packingFixture) => <QueryClientProvider client={client}><PackingDialog packing={packing} initial={packingRecommendation} busy={busy} error={error} onClose={mocks.close} onConfirm={mocks.confirm} /></QueryClientProvider>
-  const rendered = render(view())
-  return { refresh: () => rendered.rerender(view({ ...packingFixture, version: 4 })) }
-}
-function quantity(capacity: number) { return within(screen.getByRole('group', { name: `${capacity}-tube container` })).getByLabelText(/Containers to use/) }
-function available(capacity: number) { return within(screen.getByRole('group', { name: `${capacity}-tube container` })).getByLabelText(/Available to you/) }
 
-describe('container adjustment', () => {
-  it.each([
-    { quantities: [1, 1, 0], tubeCounts: [20, 10] },
-    { quantities: [2, 0, 0], tubeCounts: [20, 10] },
-    { quantities: [0, 0, 6], tubeCounts: [5, 5, 5, 5, 5, 5] },
-  ])('accepts $quantities for 30 tubes without asking why the recommendation changed', async ({ quantities, tubeCounts }) => {
-    show()
-    for (const [index, capacity] of [20, 10, 5].entries()) fireEvent.change(quantity(capacity), { target: { value: quantities[index] } })
-    const confirm = screen.getByRole('button', { name: 'Confirm containers' })
-    await waitFor(() => expect(confirm).toHaveProperty('disabled', false))
-    fireEvent.click(confirm)
-    await waitFor(() => expect(mocks.confirm).toHaveBeenCalledWith({ version: packingFixture.version, selection: quantities.flatMap((value, index) => value ? [{ containerDefinitionId: `container-${[20, 10, 5][index]}`, quantity: value }] : []), containerTubeCounts: tubeCounts }))
-    expect(screen.queryByLabelText(/reason/i)).toBeNull()
-    expect(screen.getByText('SKU 000-20 · 20 tubes per container')).toBeTruthy()
+function show(busy = false, error: unknown = null, packing: SampleShipmentPacking = packingFixture, initial = packingRecommendation, availableKits?: SampleContainerQuantity[]) {
+  currentPacking = packing
+  currentRecommendation = initial
+  const client = new QueryClient({ defaultOptions: { queries: { retry: false } } })
+  const view = (value = packing, kits = availableKits) => <QueryClientProvider client={client}><PackingDialog packing={value} initial={initial} availableKits={kits} busy={busy} error={error} onClose={mocks.close} onConfirm={mocks.confirm} /></QueryClientProvider>
+  const rendered = render(view())
+  return { refresh: () => rendered.rerender(view({ ...packing, version: packing.version + 1 })), refreshKits: (kits: SampleContainerQuantity[]) => rendered.rerender(view(packing, kits)) }
+}
+function showCount(tubeCount: number, selection: SampleContainerQuantity[]) {
+  return show(false, null, { ...packingFixture, tubeCount }, preview({ selection }, tubeCount))
+}
+function container(number: number) { return screen.getByRole('group', { name: `Container ${number}` }) }
+function size(number: number) { return within(container(number)).getByRole('combobox', { name: `Container size for container ${number}` }) }
+function tubes(number: number) { return within(container(number)).getByRole('spinbutton', { name: /^Tubes to pack/ }) }
+function offeredSizes(number: number) { return Array.from((size(number) as HTMLSelectElement).options).map(option => Number(option.value.replace('container-', ''))).sort((left, right) => left - right) }
+function changeSize(number: number, capacity: number) { fireEvent.change(size(number), { target: { value: `container-${capacity}` } }) }
+function pack(number: number, count: number) { fireEvent.change(tubes(number), { target: { value: count } }) }
+function remove(number: number) { fireEvent.click(screen.getByRole('button', { name: `Remove container ${number}` })) }
+function addButton() { return screen.getByRole('button', { name: 'Add container' }) }
+async function add(number: number) {
+  fireEvent.click(addButton())
+  await waitFor(() => expect(size(number)).toBe(document.activeElement))
+}
+async function confirm() {
+  const button = screen.getByRole('button', { name: 'Confirm containers' })
+  await waitFor(() => expect(button).toHaveProperty('disabled', false))
+  fireEvent.click(button)
+}
+
+
+describe('individual shipping-container adjustment', () => {
+  it('offers only received Job sizes and never adds more than the received quantity', async () => {
+    show(false, null, packingFixture, packingRecommendation, [{ containerDefinitionId: 'container-20', quantity: 1 }, { containerDefinitionId: 'container-10', quantity: 1 }])
+    expect(offeredSizes(1)).toEqual([20])
+    expect(offeredSizes(2)).toEqual([10])
+    remove(2)
+    expect(addButton()).toHaveProperty('disabled', false)
+    await add(2)
+    expect(size(2)).toHaveProperty('value', 'container-10')
+    expect(addButton()).toHaveProperty('disabled', true)
+    await confirm()
+    await waitFor(() => expect(mocks.confirm).toHaveBeenCalledWith(expect.objectContaining({ selection: [{ containerDefinitionId: 'container-20', quantity: 1 }, { containerDefinitionId: 'container-10', quantity: 1 }] })))
   })
 
-  it('shows the exact shortfall and permits preparing only the allocated tubes', async () => {
+  it('uses only an acknowledged partial delivery and leaves remaining tubes unallocated', async () => {
+    show(false, null, packingFixture, packingRecommendation, [{ containerDefinitionId: 'container-10', quantity: 1 }])
+    expect(size(1)).toHaveProperty('value', 'container-10')
+    expect(tubes(1)).toHaveProperty('value', '10')
+    expect(screen.queryByRole('group', { name: 'Container 2' })).toBeNull()
+    expect(addButton()).toHaveProperty('disabled', true)
+    const submit = await screen.findByRole('button', { name: 'Prepare available containers' })
+    await waitFor(() => expect(submit).toHaveProperty('disabled', false))
+    fireEvent.click(submit)
+    await waitFor(() => expect(mocks.confirm).toHaveBeenCalledWith(expect.objectContaining({ selection: [{ containerDefinitionId: 'container-10', quantity: 1 }], containerTubeCounts: [10] })))
+  })
+
+  it('retains row edits when received supply changes and blocks unavailable selection until refreshed', async () => {
+    const kits = [{ containerDefinitionId: 'container-20', quantity: 1 }, { containerDefinitionId: 'container-10', quantity: 1 }]
+    const view = show(false, null, packingFixture, packingRecommendation, kits)
+    pack(1, 19)
+    view.refreshKits([{ containerDefinitionId: 'container-20', quantity: 1 }])
+    expect(screen.getByText('Received kits changed')).toBeTruthy()
+    expect(tubes(1)).toHaveProperty('value', '19')
+    expect(size(2)).toHaveProperty('value', 'container-10')
+    expect(screen.getByRole('button', { name: /Confirm containers|Prepare available containers/ })).toHaveProperty('disabled', true)
+    expect(mocks.confirm).not.toHaveBeenCalled()
+    view.refreshKits(kits)
+    expect(screen.queryByText('Received kits changed')).toBeNull()
+    pack(1, 20)
+    await confirm()
+    await waitFor(() => expect(mocks.confirm).toHaveBeenCalledTimes(1))
+  })
+
+  it('cannot add containers with zero received supply even when the compatible catalog is populated', () => {
+    show(false, null, packingFixture, packingRecommendation, [])
+    expect(screen.queryByRole('group', { name: 'Container 1' })).toBeNull()
+    expect(addButton()).toHaveProperty('disabled', true)
+    expect(screen.getByRole('button', { name: 'Confirm containers' })).toHaveProperty('disabled', true)
+  })
+
+  it('waits for the received-supply recommendation before opening configuration', async () => {
+    let resolve!: (value: ContainerRecommendation) => void
+    mocks.preview.mockReturnValue(new Promise<ContainerRecommendation>(done => { resolve = done }))
+    render(<QueryClientProvider client={new QueryClient({ defaultOptions: { queries: { retry: false } } })}><SampleShipmentPackingPanel shipment={{ ...shippingFixture, isPackingPool: true }} canManage availableKits={[{ containerDefinitionId: 'container-20', quantity: 1 }, { containerDefinitionId: 'container-10', quantity: 1 }]} /></QueryClientProvider>)
+    const adjust = await screen.findByRole('button', { name: 'Adjust containers' })
+    expect(adjust).toHaveProperty('disabled', true)
+    fireEvent.click(adjust)
+    expect(screen.queryByRole('dialog')).toBeNull()
+    await act(async () => resolve(packingRecommendation))
+    await waitFor(() => expect(adjust).toHaveProperty('disabled', false))
+    fireEvent.click(adjust)
+    expect(size(1)).toHaveProperty('value', 'container-20')
+    expect(size(2)).toHaveProperty('value', 'container-10')
+  })
+
+  it.each([
+    { capacities: [20, 10], tubeCounts: [20, 10], selection: [{ containerDefinitionId: 'container-20', quantity: 1 }, { containerDefinitionId: 'container-10', quantity: 1 }] },
+    { capacities: [5, 5, 5, 5, 5, 5], tubeCounts: [5, 5, 5, 5, 5, 5], selection: [{ containerDefinitionId: 'container-5', quantity: 6 }] },
+  ])('accepts $capacities for 30 tubes without requiring a reason', async ({ capacities, tubeCounts, selection }) => {
     show()
-    fireEvent.change(quantity(20), { target: { value: 0 } })
-    const prepare = await screen.findByRole('button', { name: 'Prepare available containers' })
+    expect(size(1)).toHaveProperty('value', 'container-20')
+    expect(size(2)).toHaveProperty('value', 'container-10')
+    expect(tubes(1)).toHaveProperty('value', '20')
+    expect(tubes(2)).toHaveProperty('value', '10')
+    for (const [index, capacity] of capacities.entries()) {
+      if (index >= 2) await add(index + 1)
+      if ((size(index + 1) as HTMLSelectElement).value !== `container-${capacity}`) changeSize(index + 1, capacity)
+    }
+    await confirm()
+    await waitFor(() => expect(mocks.confirm).toHaveBeenCalledWith({ version: packingFixture.version, selection, containerTubeCounts: tubeCounts }))
+    expect(screen.queryByLabelText(/reason/i)).toBeNull()
+    expect(screen.queryByRole('spinbutton', { name: /Containers to use/ })).toBeNull()
+  })
+
+  it('offers only the five-tube size for three tubes and focuses the added row', async () => {
+    showCount(3, [{ containerDefinitionId: 'container-5', quantity: 1 }])
+    expect(offeredSizes(1)).toEqual([5])
+    expect(tubes(1)).toHaveProperty('value', '3')
+    expect(addButton()).toHaveProperty('disabled', true)
+    remove(1)
+    await add(1)
+    expect(size(1)).toHaveProperty('value', 'container-5')
+    expect(offeredSizes(1)).toEqual([5])
+    expect(tubes(1)).toHaveProperty('value', '3')
+  })
+
+  it('narrows the second container to ten or five when eight of eighteen tubes still need capacity', async () => {
+    showCount(18, [{ containerDefinitionId: 'container-20', quantity: 1 }])
+    expect(offeredSizes(1)).toEqual([5, 10, 20])
+    changeSize(1, 10)
+    expect(tubes(1)).toHaveProperty('value', '10')
+    expect(addButton()).toHaveProperty('disabled', false)
+    await add(2)
+    expect(size(2)).toHaveProperty('value', 'container-10')
+    expect(offeredSizes(2)).toEqual([5, 10])
+    expect(tubes(2)).toHaveProperty('value', '8')
+    expect(addButton()).toHaveProperty('disabled', true)
+    remove(2)
+    expect(addButton()).toHaveProperty('disabled', false)
+  })
+
+  it('does not offer an oversized second container or add more capacity when tube counts are lowered', () => {
+    show()
+    expect(offeredSizes(2)).toEqual([5, 10])
+    pack(1, 12)
+    expect(addButton()).toHaveProperty('disabled', true)
+    remove(2)
+    expect(addButton()).toHaveProperty('disabled', false)
+  })
+
+  it('adds twenty then ten for an empty thirty-tube packing plan', async () => {
+    showCount(30, [])
+    await add(1)
+    expect(size(1)).toHaveProperty('value', 'container-20')
+    expect(tubes(1)).toHaveProperty('value', '20')
+    await add(2)
+    expect(size(2)).toHaveProperty('value', 'container-10')
+    expect(tubes(2)).toHaveProperty('value', '10')
+    expect(addButton()).toHaveProperty('disabled', true)
+  })
+
+  it('adds ten then five beside existing ten and five without invalidating any row', async () => {
+    showCount(30, [{ containerDefinitionId: 'container-10', quantity: 1 }, { containerDefinitionId: 'container-5', quantity: 1 }])
+    await add(3)
+    expect(size(3)).toHaveProperty('value', 'container-10')
+    expect(tubes(1)).toHaveProperty('value', '10')
+    expect(tubes(2)).toHaveProperty('value', '5')
+    expect(tubes(3)).toHaveProperty('value', '10')
+    expect(offeredSizes(3)).toEqual([5, 10])
+    for (const [index, capacity] of [10, 5, 10].entries()) {
+      expect(size(index + 1)).toHaveProperty('value', `container-${capacity}`)
+      expect(offeredSizes(index + 1)).toContain(capacity)
+    }
+    await add(4)
+    expect(size(4)).toHaveProperty('value', 'container-5')
+    expect(offeredSizes(4)).toEqual([5])
+    for (const [index, capacity] of [10, 5, 10, 5].entries()) {
+      expect(size(index + 1)).toHaveProperty('value', `container-${capacity}`)
+      expect(offeredSizes(index + 1)).toContain(capacity)
+      expect(tubes(index + 1)).toHaveProperty('value', String(capacity))
+    }
+    expect(addButton()).toHaveProperty('disabled', true)
+    await confirm()
+    await waitFor(() => expect(mocks.confirm).toHaveBeenCalledWith({ version: 3, selection: [{ containerDefinitionId: 'container-10', quantity: 2 }, { containerDefinitionId: 'container-5', quantity: 2 }], containerTubeCounts: [10, 10, 5, 5] }))
+  })
+
+  it('shows the exact shortfall and prepares only the allocated tubes after removing a container', async () => {
+    show()
+    remove(1)
+    expect(size(1)).toHaveProperty('value', 'container-10')
+    expect(tubes(1)).toHaveProperty('value', '10')
     expect(await screen.findByText(/20 tubes still need a container/)).toBeTruthy()
+    const prepare = await screen.findByRole('button', { name: 'Prepare available containers' })
+    await waitFor(() => expect(prepare).toHaveProperty('disabled', false))
     fireEvent.click(prepare)
     await waitFor(() => expect(mocks.confirm).toHaveBeenCalledWith({ version: 3, selection: [{ containerDefinitionId: 'container-10', quantity: 1 }], containerTubeCounts: [10] }))
   })
 
-  it('keeps explicit zero availability and blocks a selection exceeding it', async () => {
+  it('blocks confirmation after a stock preview failure and allows a successful retry', async () => {
+    mocks.preview.mockRejectedValueOnce(new Error('The selection exceeds the quantity available to you.'))
     show()
-    fireEvent.change(available(20), { target: { value: 0 } })
     expect(await screen.findByText(/selection exceeds the quantity available/)).toBeTruthy()
-    expect(mocks.preview).toHaveBeenLastCalledWith(packingFixture.shipmentId, expect.objectContaining({ availability: [{ containerDefinitionId: 'container-20', quantity: 0 }] }))
     expect(screen.getByRole('button', { name: 'Confirm containers' })).toHaveProperty('disabled', true)
+    expect(screen.queryByText('Available quantities (optional)')).toBeNull()
+    expect(screen.queryByRole('spinbutton', { name: /Available to you/ })).toBeNull()
+    expect(mocks.confirm).not.toHaveBeenCalled()
+    fireEvent.click(screen.getByRole('button', { name: 'Retry preview' }))
+    await waitFor(() => expect(screen.getByRole('button', { name: 'Confirm containers' })).toHaveProperty('disabled', false))
     expect(mocks.confirm).not.toHaveBeenCalled()
   })
 
-  it('does not create shipments from an empty selection', async () => {
+  it('keeps allocation totals visible while recalculating and blocks stale confirmation', async () => {
     show()
-    fireEvent.change(quantity(20), { target: { value: 0 } })
-    fireEvent.change(quantity(10), { target: { value: 0 } })
-    expect(await screen.findByText('Choose at least one compatible container to prepare a shipment.')).toBeTruthy()
-    expect(screen.getByRole('button', { name: 'Prepare available containers' })).toHaveProperty('disabled', true)
+    const summary = screen.getByRole('region', { name: 'Summary' })
+    await waitFor(() => expect(screen.getByRole('button', { name: 'Confirm containers' })).toHaveProperty('disabled', false))
+    const totalLabels = ['Tubes', 'Containers', 'Usable capacity', 'Spare slots', 'Unallocated tubes']
+    for (const label of totalLabels) expect(within(summary).getByText(label)).toBeTruthy()
+    let resolvePreview!: (result: ContainerRecommendation) => void
+    mocks.preview.mockImplementationOnce(() => new Promise<ContainerRecommendation>(resolve => { resolvePreview = resolve }))
+    remove(2)
+    expect(within(summary).getByText('Updating…')).toBeTruthy()
+    for (const label of totalLabels) expect(within(summary).getByText(label)).toBeTruthy()
+    expect(summary.getAttribute('aria-busy')).toBe('true')
+    expect(screen.getByRole('button', { name: 'Confirm containers' })).toHaveProperty('disabled', true)
+    await waitFor(() => expect(resolvePreview).toBeTypeOf('function'))
+    for (const label of totalLabels) expect(within(summary).getByText(label)).toBeTruthy()
+    await act(async () => { resolvePreview(preview({ selection: [{ containerDefinitionId: 'container-20', quantity: 1 }] })) })
+    await waitFor(() => expect(within(summary).queryByText('Updating…')).toBeNull())
+    for (const label of totalLabels) expect(within(summary).getByText(label)).toBeTruthy()
+    expect(within(summary).getByText(/10 tubes still need a container/)).toBeTruthy()
+    expect(summary.getAttribute('aria-busy')).toBe('false')
+    expect(screen.getByRole('button', { name: 'Prepare available containers' })).toHaveProperty('disabled', false)
+    expect(mocks.confirm).not.toHaveBeenCalled()
   })
 
-  it('retains adjustments after a declined discard and exposes a server error with the draft', () => {
-    const confirm = vi.spyOn(window, 'confirm').mockReturnValue(false)
+  it('does not create shipments after all individual containers are removed', async () => {
+    show()
+    remove(2)
+    remove(1)
+    expect(screen.queryByRole('group', { name: /^Container \d+$/ })).toBeNull()
+    expect(await screen.findByText('Choose at least one compatible container to prepare a shipment.')).toBeTruthy()
+    expect(screen.getByRole('button', { name: 'Prepare available containers' })).toHaveProperty('disabled', true)
+    expect(mocks.confirm).not.toHaveBeenCalled()
+  })
+
+  it('retains adjusted rows after a declined discard and exposes the server error with the draft', () => {
+    const discard = vi.spyOn(window, 'confirm').mockReturnValue(false)
     show(false, new Error('The shipment changed. Review the current tube list.'))
-    fireEvent.change(quantity(20), { target: { value: 2 } })
+    changeSize(1, 10)
+    pack(1, 8)
+    pack(2, 7)
     fireEvent.keyDown(screen.getByRole('dialog'), { key: 'Escape' })
-    expect(confirm).toHaveBeenCalledWith('Discard the unsaved container selection?')
-    expect(quantity(20)).toHaveProperty('value', '2')
+    expect(discard).toHaveBeenCalledWith('Discard the unsaved container selection?')
+    expect(size(1)).toHaveProperty('value', 'container-10')
+    expect(tubes(1)).toHaveProperty('value', '8')
+    expect(tubes(2)).toHaveProperty('value', '7')
     expect(mocks.close).not.toHaveBeenCalled()
     expect(screen.getByText(/shipment changed/)).toBeTruthy()
   })
 
-  it('blocks dismissal and edits while confirming containers', () => {
+  it('blocks row edits, recommendation, removal, addition and dismissal while confirming', () => {
     show(true)
-    expect(quantity(20)).toHaveProperty('disabled', true)
+    expect(size(1)).toHaveProperty('disabled', true)
+    expect(tubes(1)).toHaveProperty('disabled', true)
+    expect(screen.getByRole('button', { name: 'Remove container 1' })).toHaveProperty('disabled', true)
+    expect(addButton()).toHaveProperty('disabled', true)
+    expect(screen.getByRole('button', { name: 'Use recommendation' })).toHaveProperty('disabled', true)
     expect(screen.getByRole('button', { name: 'Keep reviewing' })).toHaveProperty('disabled', true)
     fireEvent.keyDown(screen.getByRole('dialog'), { key: 'Escape' })
     fireEvent.click(screen.getByRole('button', { name: 'Close' }))
     expect(mocks.close).not.toHaveBeenCalled()
   })
 
-  it('permits a 15+15 distribution across two 20-tube containers', async () => {
+  it('preserves unaffected allocations when adding, removing and changing a row', async () => {
     show()
-    fireEvent.change(quantity(20), { target: { value: 2 } })
-    fireEvent.change(quantity(10), { target: { value: 0 } })
-    await waitFor(() => expect(screen.getByRole('button', { name: 'Confirm containers' })).toHaveProperty('disabled', false))
-    fireEvent.change(screen.getByLabelText(/Tubes to pack · 20-tube container #1/), { target: { value: 15 } })
-    fireEvent.change(screen.getByLabelText(/Tubes to pack · 20-tube container #2/), { target: { value: 15 } })
-    fireEvent.click(screen.getByRole('button', { name: 'Confirm containers' }))
-    await waitFor(() => expect(mocks.confirm).toHaveBeenCalledWith({ version: 3, selection: [{ containerDefinitionId: 'container-20', quantity: 2 }], containerTubeCounts: [15, 15] }))
+    pack(1, 12)
+    pack(2, 7)
+    changeSize(1, 10)
+    expect(tubes(1)).toHaveProperty('value', '10')
+    expect(tubes(2)).toHaveProperty('value', '7')
+    await add(3)
+    expect(size(3)).toHaveProperty('value', 'container-10')
+    expect(tubes(1)).toHaveProperty('value', '10')
+    expect(tubes(2)).toHaveProperty('value', '7')
+    expect(tubes(3)).toHaveProperty('value', '10')
+    changeSize(3, 5)
+    expect(tubes(1)).toHaveProperty('value', '10')
+    expect(tubes(2)).toHaveProperty('value', '7')
+    expect(tubes(3)).toHaveProperty('value', '5')
+    remove(1)
+    expect(tubes(1)).toHaveProperty('value', '7')
+    expect(size(2)).toHaveProperty('value', 'container-5')
+    expect(tubes(2)).toHaveProperty('value', '5')
+    await add(3)
+    expect(size(3)).toHaveProperty('value', 'container-10')
+    expect(tubes(1)).toHaveProperty('value', '7')
+    expect(tubes(2)).toHaveProperty('value', '5')
+    expect(tubes(3)).toHaveProperty('value', '10')
+  })
+
+  it('groups interleaved types for confirmation without mixing their per-container counts', async () => {
+    showCount(41, [{ containerDefinitionId: 'container-20', quantity: 2 }])
+    changeSize(2, 5)
+    pack(1, 19)
+    await add(3)
+    expect(size(1)).toHaveProperty('value', 'container-20')
+    expect(size(2)).toHaveProperty('value', 'container-5')
+    expect(size(3)).toHaveProperty('value', 'container-20')
+    expect(tubes(3)).toHaveProperty('value', '17')
+    await confirm()
+    await waitFor(() => expect(mocks.confirm).toHaveBeenCalledWith({ version: 3, selection: [{ containerDefinitionId: 'container-20', quantity: 2 }, { containerDefinitionId: 'container-5', quantity: 1 }], containerTubeCounts: [19, 17, 5] }))
+    expect(tubes(2)).toHaveProperty('value', '5')
+  })
+
+  it('replaces edited rows with a fresh recommendation without manual availability inputs', async () => {
+    show()
+    remove(2)
+    changeSize(1, 5)
+    fireEvent.click(screen.getByRole('button', { name: 'Use recommendation' }))
+    await waitFor(() => expect(mocks.preview).toHaveBeenCalledWith(packingFixture.shipmentId, {}))
+    await waitFor(() => expect(size(1)).toHaveProperty('value', 'container-20'))
+    expect(size(2)).toHaveProperty('value', 'container-10')
+    expect(tubes(1)).toHaveProperty('value', '20')
+    expect(tubes(2)).toHaveProperty('value', '10')
+    expect(screen.queryByRole('group', { name: 'Container 3' })).toBeNull()
+    expect(screen.queryByText('Available quantities (optional)')).toBeNull()
+    expect(screen.queryByRole('spinbutton', { name: /Available to you/ })).toBeNull()
   })
 
   it('blocks overfilled containers and a tube allocation with the wrong total', async () => {
     show()
-    await waitFor(() => expect(screen.getByRole('button', { name: 'Confirm containers' })).toHaveProperty('disabled', false))
-    fireEvent.change(screen.getByLabelText(/Tubes to pack · 20-tube container #1/), { target: { value: 21 } })
-    fireEvent.click(screen.getByRole('button', { name: 'Confirm containers' }))
+    pack(1, 21)
+    await confirm()
     expect(await screen.findByText('This container holds at most 20 tubes.')).toBeTruthy()
-    fireEvent.change(screen.getByLabelText(/Tubes to pack · 20-tube container #1/), { target: { value: 19 } })
-    fireEvent.click(screen.getByRole('button', { name: 'Confirm containers' }))
+    pack(1, 19)
+    await confirm()
     expect(await screen.findByText(/Assign exactly 30 tubes across these containers/)).toBeTruthy()
     expect(mocks.confirm).not.toHaveBeenCalled()
   })
 
-  it('preserves a typed distribution and original concurrency version during background refresh', async () => {
-    const { refresh } = show()
-    fireEvent.change(quantity(20), { target: { value: 2 } })
-    fireEvent.change(quantity(10), { target: { value: 0 } })
-    await waitFor(() => expect(screen.getByRole('button', { name: 'Confirm containers' })).toHaveProperty('disabled', false))
-    fireEvent.change(screen.getByLabelText(/Tubes to pack · 20-tube container #1/), { target: { value: 15 } })
-    fireEvent.change(screen.getByLabelText(/Tubes to pack · 20-tube container #2/), { target: { value: 15 } })
+  it.each([{ count: -1, error: 'Enter zero or more tubes.' }, { count: 1.5, error: 'Enter a whole number of tubes.' }])('rejects invalid tube count $count without confirming a shipment', async ({ count, error }) => {
+    show()
+    pack(1, count)
+    await confirm()
+    expect(await screen.findByText(error)).toBeTruthy()
+    expect(mocks.confirm).not.toHaveBeenCalled()
+  })
+
+  it('preserves typed rows and the original concurrency version through background refresh', async () => {
+    const { refresh } = showCount(41, [{ containerDefinitionId: 'container-20', quantity: 2 }])
+    changeSize(2, 5)
+    await add(3)
+    pack(1, 18)
+    pack(2, 4)
+    pack(3, 19)
     refresh()
-    expect(screen.getByLabelText(/Tubes to pack · 20-tube container #1/)).toHaveProperty('value', '15')
-    expect(screen.getByLabelText(/Tubes to pack · 20-tube container #2/)).toHaveProperty('value', '15')
-    fireEvent.click(screen.getByRole('button', { name: 'Confirm containers' }))
-    await waitFor(() => expect(mocks.confirm).toHaveBeenCalledWith(expect.objectContaining({ version: 3, containerTubeCounts: [15, 15] })))
+    expect(size(2)).toHaveProperty('value', 'container-5')
+    expect(tubes(1)).toHaveProperty('value', '18')
+    expect(tubes(2)).toHaveProperty('value', '4')
+    expect(tubes(3)).toHaveProperty('value', '19')
+    await confirm()
+    await waitFor(() => expect(mocks.confirm).toHaveBeenCalledWith(expect.objectContaining({ version: 3, containerTubeCounts: [18, 19, 4] })))
   })
 })

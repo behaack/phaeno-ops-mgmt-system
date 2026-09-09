@@ -6,13 +6,23 @@ Open the approved Trial and its **Shipping containers** section. Phaeno creates 
 
 Open **Choose containers** for tubes awaiting allocation. Review the recommended sizes by common name, SKU and usable tube capacity. The recommendation prefers the fewest containers and then the least spare capacity; it does not verify or reserve stock.
 
-Use **Adjust containers** to enter the sizes and quantities you actually have. **Available to you** is an optional upper limit; blank means unknown and zero excludes that size. **Use recommendation for these quantities** recalculates within those limits. Any compatible alternative is allowed without an explanation. The preview shows the tube count, container count, capacity, spare slots and exact unallocated tube count.
+Open **Adjust containers** to review **Containers to use**. The recommendation starts as one row per container, with a compatible size selector, SKU/capacity and tube count. **Add container** chooses a size for the capacity still needed and assigns the remaining tubes up to its capacity. A row's **Remove** action removes only that container; changing or removing it preserves the other rows' tube counts.
+
+Size choices include smaller containers and the smallest size that covers the remaining capacity needed, excluding choices that make another selected container unnecessary. With sizes 5/10/20, three remaining tubes offer only a 5. For 30 tubes, 20+10 or six 5s are valid; two 20s are not offered. With 10+5 already selected, Add chooses another 10 and then a 5. **Add container** is disabled once selected capacity covers all tubes. **Use recommendation** replaces the current rows and tube counts. Stock requirements apply automatically; no manual stock quantities are entered here. The preview shows tubes, containers, capacity, spare slots and unallocated tubes.
 
 **Confirm containers** creates one shipment for each container with allocated tubes. A partly filled container is valid and empty containers do not become shipments. If capacity is insufficient, **Prepare available containers** prepares the allocated tubes while the remaining tubes stay visible. The accepted Trial sample count and no-charge scope do not change. Tubes from one sample may occupy different containers.
 
-**Tubes in each container** lets you adjust the distribution, such as 15 + 15 across two 20-tube containers. Each count must fit its container, and the combined count must equal the tubes allocated in the preview. Enter zero for a selected container you will leave empty; it will not create a shipment.
+Adjust each row's tube count as needed. Counts must be whole numbers, fit each container and together equal the tubes allocated in the preview. The **Summary** stays visible while updating; confirmation becomes available when the current allocation has been checked.
 
 ## Scan permanent tube barcodes
+
+Use **Shipping container** at the top of the shipment page to switch between this Trial's containers or return to remaining tubes awaiting containers. Each option shows the container identity, tube count and status. Switching with an unsaved scan asks whether to discard it; switching is blocked while saving.
+
+Before scanning starts, an organization or Department administrator can use **Reset container configuration** beside the **Shipping container** selector. The confirmation covers **all containers and tubes for the Trial's shipment plan**, not just the shipment you opened. The submitted sample list stays intact, and the previous containers remain in history. Cancelling the confirmation changes nothing.
+
+**Reset container configuration** is also unavailable while a barcode entry is unsaved or saving. Discard an unsaved entry before revising the plan; saving the first scan locks the plan as described below.
+
+The action is locked once any container in that plan has a scan, linked physical kit, packet, dispatch or receipt. Clearing a scan does not restore it. If work starts while your confirmation is open, the change is rejected; refresh and review the current state. A successful change returns you to container selection while preserving approved Trial scope, tube identities and physical kit inventory.
 
 Your organization must retain the connection between each coded sample ID and its own sample record. Do not enter patient names, medical-record numbers, dates of birth or other direct identifiers. Phaeno retains the permanent-tube-to-sample crosswalk used for shipping and intake.
 
@@ -32,4 +42,4 @@ Print the full packet and place its manifest inside the corresponding container.
 
 After handing each package to the carrier, record its carrier, tracking number and shipment time. Receipt progress aggregates tubes across shipments. The first received package does not mark all tubes of a split sample received, and a barcode lookup is not proof that physical material arrived.
 
-Use **Back to Trial** for approved scope and current progress or **All shipments** for your authorized shipment list. Contact Phaeno with the Trial and shipment references if no compatible container exists, a tube cannot be matched confidently, or existing assignments need repacking. Do not guess a tube identity or change approved scope through shipping.
+Use **Back to Trial** for approved scope and current progress or **Shipping container** to move between its containers. Contact Phaeno with the Trial and shipment references if no compatible container exists, a tube cannot be matched confidently, or existing assignments need repacking. Do not guess a tube identity or change approved scope through shipping.

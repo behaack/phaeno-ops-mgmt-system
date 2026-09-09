@@ -19,10 +19,13 @@ const api = vi.hoisted(() => ({
   issueSampleShippingPacket: vi.fn(),
   recordSampleShipment: vi.fn(),
   getSampleShipments: vi.fn(),
+  getKitSupply: vi.fn(),
 }))
+vi.mock('#/api/transportation-kit-requests', () => ({ getShipmentKitSupply: api.getKitSupply, orderTransportationKits: vi.fn(), confirmTransportationKitsReceived: vi.fn(), cancelTransportationKitRequest: vi.fn() }))
 
 vi.mock('@tanstack/react-router', () => ({
   useBlocker: vi.fn(),
+  useNavigate: () => vi.fn(),
   Link: ({ children }: { children: ReactNode }) => <a href="#sample-shipping">{children}</a>,
 }))
 
@@ -42,6 +45,27 @@ describe('SampleShippingDetailPage', () => {
     api.getSampleShipments.mockResolvedValue([shipment])
     api.assignSampleTube.mockResolvedValue(shipment)
     api.issueSampleShippingPacket.mockResolvedValue(shipment)
+    api.getKitSupply.mockResolvedValue({ shipmentId: shipment.id, jobId: shipment.authorizationSourceId, request: null, recordedStock: [], inventoryStatus: 'Unknown', canRequestKits: true, canPrepareSamples: true, preparationBlockedReason: 'Order kits for this Job first.', locations: [], recommendation: { containers: [] } })
+  })
+
+  it('blocks Customer Lab container scanning without received Job kits even with a stale permissive flag', async () => {
+    api.getSampleShipment.mockResolvedValue({ ...shipment, authorizationSource: 'CustomerLabServiceOrder', status: 'Preparing', currentPacket: null, returnKit: null })
+    renderPage()
+    expect(await screen.findByRole('button', { name: 'Order transportation kits' })).toBeTruthy()
+    expect(screen.getByText('Order kits for this Job first.')).toBeTruthy()
+    expect(screen.queryByRole('button', { name: 'Correct tube' })).toBeNull()
+    expect(screen.queryByRole('button', { name: 'Review and confirm packet' })).toBeNull()
+    expect(api.assignSampleTube).not.toHaveBeenCalled()
+  })
+
+  it.each(['Partner', 'Prospect'] as const)('leaves %s shipping outside Customer Job kit-order gating', async organizationKind => {
+    api.getSampleShipment.mockResolvedValue({ ...shipment, authorizationSource: organizationKind === 'Partner' ? 'CustomerLabServiceOrder' : 'TrialProject' })
+    const session = customerSession()
+    session.session!.memberships[0].organizationKind = organizationKind
+    renderPage(undefined, session)
+    expect(await screen.findByRole('button', { name: 'Correct tube' })).toBeTruthy()
+    expect(api.getKitSupply).not.toHaveBeenCalled()
+    expect(screen.queryByRole('button', { name: 'Order transportation kits' })).toBeNull()
   })
 
   it('shows the exact pilot products and replaces a frozen tube mapping with an audited packet revision', async () => {
@@ -140,10 +164,10 @@ describe('SampleShippingDetailPage', () => {
 
 function renderPage(queryClient = new QueryClient({
     defaultOptions: { queries: { retry: false }, mutations: { retry: false } },
-  })) {
+  }), session = customerSession()) {
   return render(
     <QueryClientProvider client={queryClient}>
-      <PhaenoSessionContext.Provider value={customerSession()}>
+      <PhaenoSessionContext.Provider value={session}>
         <SampleShippingDetailPage shipmentId={shipment.id} />
       </PhaenoSessionContext.Provider>
     </QueryClientProvider>,

@@ -1,5 +1,89 @@
 # Backend Test Plan
 
+## Customer Job kit requirement and dispatch synchronization — September 8, 2026
+
+The final isolated checkpoint passed **68/68** shipping, kit, location, packing,
+reset and legacy-boundary cases. It includes six new cases in
+[TransportationKitOrderRequiredPostgresTests.cs](../../backend/test/TransportationKitOrderRequiredPostgresTests.cs).
+The solution build completed with zero warnings/errors. Evidence:
+`artifacts/kit-order-required-tests/kit-order-required.trx` and `latest-run.log`.
+The scratch database was removed and zero remaining synthetic notification rows
+were verified. These totals overlap earlier checkpoints; they are not additive.
+An initial run passed 65/66 and exposed an incompatible quantity unit in the new
+historical-shipment fixture; the fixture was corrected before the final run.
+
+For accepted Customer Lab Jobs, no request or only cancelled requests must block
+unbound container preparation, first tube scanning, packet confirmation and
+shipping. Ordering recommendations remain available before an order exists.
+Only acknowledged kits ordered for the same Job and delivery location provide
+preparation capacity. Existing bound shipments and Trial/Partner policies retain
+their prior behavior. New direct shipment-bound legacy kit creation must direct
+staff to the Customer Job's kit order.
+
+Both staff dispatch entry points must update the stock kit, matching request
+line, request status and one customer dispatch notice in the same transaction.
+An already-recorded, unused dispatch may be linked through the same dispatch
+endpoint only with its saved Job/carrier/tracking/time unchanged. An identical
+retry must not repeat the status event or notice. The shared mutation lock order
+is Job, then request, then stock kit; concurrent entry points must not overfill a
+request or partly dispatch another kit.
+
+| ID | Trigger and required invariant | Exact test method in TransportationKitOrderRequiredPostgresTests.cs | Evidence |
+| --- | --- | --- | --- |
+| KIT-B20 | Open or mutate an unbound physical container before ordering, then after cancelling its only request. Reject preparation/scanning/packet/shipping without changing shipment versions, slots or histories; retain a complete order recommendation and enabled eligible ordering. | `TransportationKitMissingOrCancelledOrderBlocksUnboundPreparationWithoutBlockingOrdering` | Passed in the 68-case isolated checkpoint |
+| KIT-B21 | Try direct dispatch without an order or new legacy return-kit creation, then scan old unlinked stock despite having another received ordered kit. Reject bypasses; bind the correctly ordered and received kit successfully. | `TransportationKitReceivedOrderCannotBeBypassedWithUnorderedStockOrLegacyDispatch` | Passed in the 68-case isolated checkpoint |
+| KIT-B22 | Continue an already-bound historical Customer shipment with no kit request. Retain tube matching, packet confirmation and recorded return shipping. | `TransportationKitOrderRulePreservesAlreadyBoundHistoricalCustomerShipment` | Passed in the 68-case isolated checkpoint |
+| KIT-B23 | Evaluate the order requirement for Partner, Trial and unaccepted legacy contexts. Keep the new Customer rule out of those policies. | `TransportationKitOrderRuleRetainsPartnerTrialAndUnacceptedLegacyPreparationPolicies` | Passed in the 68-case isolated checkpoint; existing shared-shipping journeys also rerun |
+| KIT-B24 | Race kit-detail dispatch against request fulfillment for the same kit, then replay and attempt an extra kit. Reconcile one line/status/event/notice, accept an unchanged retry and leave excess stock undispatched. | `TransportationKitDirectAndRequestDispatchSynchronizeOnceUnderConcurrentRequests` | Passed in the 68-case isolated checkpoint |
+| KIT-B25 | Reconcile an existing direct dispatch with its request. Reject altered saved facts; preserve the original dispatch and every permanent barcode, add the request/location links once, and leave customer receipt unset. | `TransportationKitRecordedDispatchReconcilesWithoutRewritingFactsOrDuplicatingNotices` | Passed in the 68-case isolated checkpoint |
+
+The walkthrough kit's pre-reconciliation dispatch/barcode fingerprints were
+captured read-only in `artifacts/kit-order-required-tests/local-kit-before-reconciliation.json`.
+This checkpoint did not mutate that kit, reload the local API or send a provider
+notification. Record connected reconciliation, delivery acknowledgement and
+physical scanning separately in the [E2E test plan](E2E-TEST-PLAN.md) and the
+[local walkthrough record](../testing/runs/2026-09-08-hs5y7db7-local-walkthrough.md).
+
+## SHP-03-001 fulfillment routing failure — September 8, 2026
+
+Locally corrected and verified; connected Customer retry saved one request. The
+failed unscoped Phaeno lookup now resolves the exact active organization named by
+the existing bootstrap configuration, with a controlled conflict for unavailable
+or ambiguous routing. Existing administrator-recipient routing is retained.
+All **7 focused TransportationKit PostgreSQL tests passed**, including multiple
+active Phaeno organizations with concurrent/replayed request creation and only
+the configured organization's fake recipient, plus inactive/missing/non-Phaeno
+routing rollback. Build had zero warnings/errors. Evidence:
+`artifacts/kit-order-routing-tests/kit-order-routing.trx`. The isolated database
+was removed and zero remaining synthetic notifications verified. Local API was
+reloaded and health returned 200. No live order or provider send was performed
+by the isolated checks. Later user confirmation saved request D20018AA and one
+logical fulfillment notice recorded Sent, corroborated read-only. Inbox and
+physical fulfillment are not yet verified.
+See the [incident run record](../testing/runs/2026-09-08-hs5y7db7-local-walkthrough.md).
+
+## Reset container configuration before scanning — September 8, 2026
+
+The focused checkpoint passed **61/61**, including **eight reset cases** in
+addition to the previous 53 shipping/kit/location cases. The order-wide packing
+reset checks target the new eligibility/read and versioned confirmation/write
+paths: tenant and Department isolation; organization/Department administrators
+versus members; exact family snapshot versions; whole-plan retirement to
+cancelled shipment history; and restoration of the correct selection pools.
+Assert preserved specimen/tube IDs, global ordinals, counts, destination/handling
+separation, quotes, kit requests and physical inventory.
+
+Exercise every family-wide blocker independently: current scan, immutable past
+scan with cleared fields, ReturnKit/physical-kit binding, packet, dispatch and
+receipt. Race reset against scanning, packing and another reset; stale or changed
+families must produce a conflict without partial moves or duplicate tube slots.
+Dialog cancellation/no-write behavior is covered in frontend checks. No migration
+was planned; model consistency remains part of implementation verification.
+The 61-case checkpoint is distinct from older passing totals, and this
+documentation update runs no tests itself.
+Connected acceptance is the [SHP-09 reset variant](../testing/11-transportation-kits.md),
+currently Not run.
+
 ## Customer transportation-kit ordering and receipt — September 8, 2026
 
 The focused checkpoint passed **53/53** cases against a newly migrated,

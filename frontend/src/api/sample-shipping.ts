@@ -268,6 +268,24 @@ export type SampleShipmentPacking = {
 
 export type SampleContainerQuantity = { containerDefinitionId: string; quantity: number }
 
+export type SampleShipmentPackingReset = {
+  canReset: boolean
+  blockedReason: string | null
+  containerCount: number
+  tubeCount: number
+  shipments: { shipmentId: string; version: number }[]
+}
+
+export async function getSampleShipmentPackingReset(shipmentId: string) {
+  const response = await api.get<ApiEnvelope<SampleShipmentPackingReset>>(`/sample-shipping/${shipmentId}/packing/reset`)
+  return unwrap(response.data)
+}
+
+export async function resetSampleShipmentPacking(shipmentId: string, input: Pick<SampleShipmentPackingReset, 'shipments'>) {
+  const response = await api.post<ApiEnvelope<SampleShipmentWorkflow>>(`/sample-shipping/${shipmentId}/packing/reset`, input)
+  return unwrap(response.data)
+}
+
 export async function getSampleShipmentPacking(shipmentId: string) {
   const response = await api.get<ApiEnvelope<SampleShipmentPacking>>(`/sample-shipping/${shipmentId}/packing`)
   return unwrap(response.data)

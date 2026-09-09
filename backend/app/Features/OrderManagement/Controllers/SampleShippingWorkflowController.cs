@@ -77,6 +77,7 @@ public sealed class SampleShippingWorkflowController(
         EnsureVersion(slot?.Version ?? item.Version, request.Version);
         if (!SupplierTubeBarcode.TryNormalize(request.SupplierBarcode, out var normalized))
             throw Invalid("supplier_tube_barcode_invalid", "Scan or enter the complete barcode from a Phaeno-supplied tube.");
+        await TransportationKitSupplyGuard.EnsurePreparationAsync(dbContext, shipment, cancellationToken);
         SampleReturnKit kit;
         if (shipment.ReturnKit is { Status: SampleReturnKitStatus.Fulfilled } existingKit) kit = existingKit;
         else if (shipment.ReturnKit is null && shipment.ContainerDefinitionId.HasValue)

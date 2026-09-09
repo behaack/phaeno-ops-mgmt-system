@@ -4,6 +4,7 @@ using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging.Abstractions;
+using Microsoft.Extensions.Options;
 using PhaenoPortal.App.Features.OrderManagement.Controllers;
 using PhaenoPortal.App.Features.OrderManagement.Domain;
 using PhaenoPortal.App.Features.OrderManagement.DTOs;
@@ -20,6 +21,7 @@ public partial class SampleShippingPostgresTests
     [PostgreSqlReferenceFact]
     public async Task TransportationKitConcurrentRequestsFreezeFactsAndNotifyPhaenoOnlyOnce()
     {
+        await using var unrelated = await ShippingTestScope.CreateAsync();
         await using var scope = await ShippingTestScope.CreateAsync();
         var fixture = await scope.CreateTransportationShipmentAsync(18);
         var size = await scope.CreateContainerAsync(fixture, 20);
@@ -50,6 +52,7 @@ public partial class SampleShippingPostgresTests
         var sender = new TransportationNoticeSender();
         await OrderNotificationDispatcher.DeliverAsync(scope.DbContext, sender, notice.Id, notice.Version, NullLogger.Instance, default);
         Assert.Equal(scope.PlatformUser.Email, Assert.Single(sender.Emails));
+        Assert.DoesNotContain(unrelated.PlatformUser.Email, sender.Emails);
         var savedLocation = await scope.DbContext.CustomerDeliveryLocations.SingleAsync(item => item.Id == location.Id);
         savedLocation.Update("Changed later", savedLocation.Recipient, "2 Changed Lane", null, savedLocation.City,
             savedLocation.Region, savedLocation.PostalCode, savedLocation.CountryCode, null, null, true);
@@ -59,6 +62,42 @@ public partial class SampleShippingPostgresTests
         Assert.Equal(20, Assert.Single(detail.Request.Lines).TubeCapacity);
         Assert.Equal("transportation_kit_not_found", (await Assert.ThrowsAsync<OrderManagementException>(() =>
             scope.KitCustomer(otherTenant: true).Supply(fixture.Shipment.Id, null, default))).ErrorCode);
+    }
+
+    [PostgreSqlReferenceFact]
+    public async Task TransportationKitUnavailableCanonicalFulfillmentRoutingRollsBackTheEntireRequest()
+    {
+        await using var unrelated = await ShippingTestScope.CreateAsync();
+        foreach (var routing in new[] { "inactive", "missing", "customer" })
+        {
+            await using var scope = await ShippingTestScope.CreateAsync();
+            var fixture = await scope.CreateTransportationShipmentAsync(18);
+            var size = await scope.CreateContainerAsync(fixture, 20);
+            var location = await scope.CreateTransportationLocationAsync();
+            if (routing == "inactive")
+            {
+                var organization = await scope.DbContext.Organizations.SingleAsync(item => item.Id == scope.PlatformOrganization.Id);
+                organization.Deactivate();
+                await scope.DbContext.SaveChangesAsync();
+                scope.ClearTrackedState();
+            }
+            var configuredName = routing switch
+            {
+                "missing" => $"Missing fulfillment {scope.Suffix}",
+                "customer" => scope.CustomerOrganization.Name,
+                _ => scope.PlatformOrganization.Name
+            };
+            var failure = await Assert.ThrowsAsync<OrderManagementException>(() =>
+                scope.KitCustomer(fulfillmentName: configuredName).Create(fixture.Shipment.Id,
+                    new(fixture.Shipment.Version, location.Id, location.Version, [new(size.Id, 1)]), default));
+            Assert.Equal("transportation_kit_conflict", failure.ErrorCode);
+            scope.ClearTrackedState();
+            Assert.False(await scope.DbContext.TransportationKitRequests.AnyAsync(item => item.LabServiceOrderId == fixture.WorkOrder.AuthorizationSourceId));
+            Assert.False(await scope.DbContext.OrderNotifications.AnyAsync(item => item.WorkflowType == "TransportationKit"));
+            Assert.False(await scope.DbContext.OrderStatusEvents.AnyAsync(item => item.OrganizationId == scope.CustomerOrganization.Id && item.WorkflowType == "TransportationKit"));
+            Assert.False(await scope.DbContext.OrderIdempotencyRecords.AnyAsync(item => item.ActorUserId == scope.CustomerUser.Id));
+            Assert.Equal(18, await scope.DbContext.SampleShipmentTubeSlots.CountAsync(item => item.SampleShipmentItemId == fixture.Item.Id));
+        }
     }
 
     [PostgreSqlReferenceFact]
@@ -286,20 +325,24 @@ public partial class SampleShippingPostgresTests
             var codes = Enumerable.Range(1, size.TubeCapacity).Select(index => $"TK-{created.Id:N}-{index:00}").ToArray();
             var ready = await stock.Register(created.Id, new(codes, created.Version), default); ClearTrackedState(); return ready;
         }
-        public TransportationKitRequestsController KitCustomer(bool otherTenant = false, PSeqOperationsDbContext? dbOverride = null)
+        public TransportationKitRequestsController KitCustomer(bool otherTenant = false, PSeqOperationsDbContext? dbOverride = null,
+            string? fulfillmentName = null)
         {
             var db = dbOverride ?? DbContext;
             var http = new DefaultHttpContext(); http.Request.Headers["X-Organization-Id"] = (otherTenant ? OtherCustomerOrganization.Id : CustomerOrganization.Id).ToString();
             http.Request.Headers["Idempotency-Key"] = Guid.NewGuid().ToString("N");
             return new(new OrderRequestContext(db, new FixedIdentityContext(otherTenant ? otherCustomerIdentity : customerIdentity)),
-                new OrderIdempotencyService(db), new TransportationKitRequestService(db, new SampleShippingContainerCatalogService(db)))
+                new OrderIdempotencyService(db), new TransportationKitRequestService(db, new SampleShippingContainerCatalogService(db),
+                    Options.Create(new BootstrapOptions { PhaenoOrganizationName = $"  {fulfillmentName ?? PlatformOrganization.Name}  " })))
                 { ControllerContext = new() { HttpContext = http } };
         }
-        public PlatformTransportationKitRequestsController KitStaff(bool customer = false)
+        public PlatformTransportationKitRequestsController KitStaff(bool customer = false, PSeqOperationsDbContext? dbOverride = null)
         {
+            var db = dbOverride ?? DbContext;
             var http = new DefaultHttpContext(); http.Request.Headers["Idempotency-Key"] = Guid.NewGuid().ToString("N");
-            return new(DbContext, new OrderRequestContext(DbContext, new FixedIdentityContext(customer ? customerIdentity : platformIdentity)),
-                new OrderIdempotencyService(DbContext), new TransportationKitRequestService(DbContext, ContainerCatalog()))
+            return new(db, new OrderRequestContext(db, new FixedIdentityContext(customer ? customerIdentity : platformIdentity)),
+                new OrderIdempotencyService(db), new TransportationKitRequestService(db, new SampleShippingContainerCatalogService(db),
+                    Options.Create(new BootstrapOptions { PhaenoOrganizationName = PlatformOrganization.Name })))
                 { ControllerContext = new() { HttpContext = http } };
         }
         private async Task CleanupTransportationRequestsAsync(Guid[] organizationIds)

@@ -1,5 +1,148 @@
 # Playwright E2E Test Plan
 
+## September 9 connected walkthrough resume
+
+Continue **SHP-08 Customer kit receipt** from the
+[end-of-day handoff](../testing/runs/2026-09-08-hs5y7db7-local-walkthrough.md#end-of-day-handoff--resume-september-9-2026).
+Job HS5Y7DB7 has Request D20018AA **Dispatched, 1 sent, 0 received**; its one
+TRANS-20 kit retains all 20 synthetic barcodes and the original FedEx dispatch.
+After acknowledging that test kit, verify received same-Job sizes/quantities,
+then successful scanning and packet generation. Split-shipment/partial-supply
+variants remain separate fixtures and pending connected checks. Do not repeat
+kit ordering, dispatch or the completed reconciliation. This local continuation
+does not prove physical delivery, production fixture readiness or deployment.
+
+## SHP-07-001 dispatch synchronization recovery — September 8, 2026
+
+The already-sent walkthrough kit was reconciled once through the signed-in local
+**Update kit request** confirmation. A fresh Request D20018AA detail shows
+**Dispatched: 1 requested, 1 sent, 0 received**, with the existing kit and dispatch
+facts. Read-only before/after hashes confirm the original dispatch facts and all
+20 permanent tube identities/barcodes are preserved. Request-line/location links
+are saved, with one dispatch event/notice; receipt and sample-shipment binding
+remain unset. See the [run record](../testing/runs/2026-09-08-hs5y7db7-local-walkthrough.md).
+This completes the connected incident recovery only. New direct-dispatch,
+missing-request, concurrency and Customer receipt variants remain separately
+unexecuted in the connected walkthrough; backend/component passes are not their
+physical acceptance evidence.
+
+Seven actual recovery-dialog synthetic browser cases passed desktop/phone,
+short-height, light/dark and error presentation, including one original-facts
+adapter submission and dismissal without a write. Evidence:
+[`kit-request-sync/review.json`](../../artifacts/kit-request-sync/review.json).
+The Customer supply changes separately passed 28 actual-component synthetic
+browser cases for no-order/cancelled/pending/in-transit/received/partial/unbound
+states at 1280 and 390 pixels, light/dark; evidence:
+[`job-kit-gating-review/review.json`](../../artifacts/job-kit-gating-review/review.json).
+These synthetic cases used no nonlocal requests or real data writes and had no
+page errors. Temporary fixtures and the isolated server were removed.
+
+## Required Customer Job kit supply — September 8, 2026
+
+The current Customer sequence is kit order for this Job → Phaeno fulfillment →
+Customer receipt → configure containers/scan the same Job's supplied tubes.
+There is no **I already have kits** or general-stock bypass. New acceptance
+variants in SHP-03/08/09/10 are **Not run**: general stock, legacy unlinked kits,
+another Job's received kits and same-location stock must not unlock preparation,
+including direct-route/API attempts. Pending/dispatched supply stays unavailable;
+partial receipt allows only its acknowledged portion. Verify order/setup/retry
+recovery and completion using the actual current-Job request and physical-kit IDs.
+After receipt, **Choose shipping containers** appears directly: no separate
+**Prepare samples** toggle. Size/quantity choices use received same-Job supply.
+An old unbound container route with no active order offers the required order
+confirmation instead of bypassing supply. Staff registration alone leaves a
+request Pending; **Fulfill request → Record dispatch** supplies it. The kit's
+**Record dispatch** entry must also link its matching open Job request and update
+both records together. Missing-request rejection and new direct-dispatch
+synchronization remain unrun SHP-06/07 connected variants. Reconciliation of the
+walkthrough's older already-sent kit, preserving its saved dispatch facts without
+a second physical dispatch, was verified in the incident checkpoint above; other variants remain
+Not run. Customer receipt remains separate; Trial/Partner workflows stay unchanged.
+
+Trial and Partner flows remain unchanged. Broader cross-Job reuse is deferred.
+Earlier fixtures that allowed Customer preparation without a Job kit order are
+historical evidence for the preceding behavior, not passes for this restriction.
+The subsequent implementation and connected recovery evidence are recorded above.
+
+## SHP-03-001 kit-order error layout — September 8, 2026
+
+Seven synthetic actual-dialog browser cases passed at 688×835, 390×835 and
+390×480 in light/dark themes, plus a long specific error. Alert and form bounds
+match exactly; no horizontal overflow or unreachable fixed actions was found.
+Evidence: `artifacts/kit-order-error-review/review.json`. There were no writes,
+nonlocal requests or page errors. Temporary fixtures and the isolated server
+were removed. This proves error presentation, not a saved live kit request;
+the later connected Customer retry is separately recorded as saved, with a
+fresh signed-in Phaeno queue and read-only database corroboration.
+
+## Reset container configuration before scanning — September 8, 2026
+
+Final synthetic detail review passed **6/6 cases** at 1280×835, 390×835 and
+390×480 in light/dark themes. **Reset container configuration** appears beside
+Shipping container, above scanning. Review verified selector order, an unsaved
+scan retained after cancelled navigation, successful subsequent switching, one
+synthetic reset POST returning to the pool, a visible scan-history lock, and no
+horizontal overflow, browser errors or nonlocal network calls. Evidence:
+[`artifacts/container-controls-review/review.json`](../../artifacts/container-controls-review/review.json)
+and settled screenshots. These are synthetic component journeys, not signed-in
+Customer or physical-shipment acceptance.
+
+Connected acceptance still needs Customer/Partner Lab/Trial role variants,
+whole-family before/after evidence and real server concurrency. With usable
+same-Job supply, physical-container pages omit the general Transportation kits
+ordering card, retaining Kit delivery status/receipt actions for outstanding
+delivery and its scanning gates. The later required-Job-order rule adds ordering
+recovery for unbound container links without usable supply; the earlier six
+synthetic cases do not verify that new variant.
+
+The [SHP-09 reset variant](../testing/11-transportation-kits.md) owns the connected
+before/after evidence for the whole family, preserved sample/tube identities,
+cancelled shipment history and destination/handling separation. Verify a scan
+starting after confirmation opens, and historical scans whose current fields
+were cleared: neither permits a reset. The manual status remains Not run despite
+the synthetic passes. Use disposable fixtures for destructive-path
+testing, preserving the owner's current walkthrough plan.
+
+## Individual shipping-container rows — September 8, 2026
+
+Final synthetic browser review passed **6/6 cases** at 688×835, 390×835 and
+390×480 in light/dark themes. Evidence is
+[`artifacts/smart-container-review/review.json`](../../artifacts/smart-container-review/review.json).
+It verified aligned size/tube controls (0px vertical offset), no overflow,
+keyboard focus and the 3/18/30-tube size-selection edges. The Summary grid had
+0px pending-to-resolved reflow. An immediate actionable shortfall message adds
+52px or 72px depending on viewport; this is not an asynchronous preview jump.
+No real Customer write was performed. **Containers to use** retains one editable
+row per physical container. In [SHP-09](../testing/11-transportation-kits.md),
+review desktop/phone and light/dark layouts, size selectors with SKU/capacity,
+compact tube inputs, row-specific Remove names, and keyboard focus after Add
+or Remove. Long lists must remain navigable; validation must reveal and focus
+the affected row without resetting other entries. There are no manual availability
+fields or disclosure; recorded-stock and receipt gates remain automatic.
+
+Exercise 20+10 and six 5s. Three remaining tubes must offer only 5 with sizes
+5/10/20; for 30 with 10+5, Add chooses 10 then 5, preserving existing rows' validity.
+Add stops when capacity covers the total. Two 20s/15+15 for 30 is no longer a
+current editor alternative. Changing/removing one row preserves the others;
+**Use recommendation** deliberately rebuilds all rows. Verify one compact Summary
+grid, no duplicate breakdown/prose or spacer bands, and an in-grid Updating
+indicator while the current preview is pending. Confirmation must await that
+preview without hiding the totals. Retain stock, capacity, exact-total and empty-row checks,
+dirty dismissal, busy/error recovery, and Customer/Partner/Trial scope. Use
+synthetic fixtures for browser checks; any connected physical fulfillment
+remains in the guided journey. SHP-09 stays Not run; these six synthetic layout
+cases do not prove physical fulfillment or the new Reset container configuration reset.
+Earlier screenshots show the preceding editor.
+
+## Delivery-location action layout — September 8, 2026
+
+Signed-in local Phaeno review verified the Main laboratory detail's full-width
+address card and page-header Actions menu. Edit location opens the existing
+populated modal; Cancel closes it without saving. No address or kit-order write
+was performed. This desktop check does not complete the Customer/phone variants
+of SHP-02; those remain in the guided walkthrough. Customer-specific helper
+copy and unchanged permissions are reflected in the frontend implementation.
+
 ## Active transportation-kit acceptance sequence — September 8, 2026
 
 The executable human steps now live in
@@ -15,13 +158,15 @@ notes do not supersede the module's current resume instructions.
 | Configuration and destination | SHP-01/02 | Effective 20/10/5-tube definitions; Customer/Department delivery location; save-to-shipment return without ordering. |
 | Order and fulfillment handoff | SHP-03–06 | Reviewed included-cost request, one logical order/notice, staff queue, full-capacity registered physical stock. Queue, provider and inbox receipt are distinct. |
 | Kit dispatch and Customer receipt | SHP-07/08 | Per-SKU partial dispatch, tracking and provisional On the way counts; only acknowledged kits become available. |
-| Packing and identity | SHP-09–11 | 20+10/two-20/six-5 alternatives from actual acknowledged stock; residual capacity; exact saved tube scans; branded split-sample manifests. |
+| Packing and identity | SHP-09–11 | Permitted alternatives such as 20+10 or six 5s from this Job's ordered, fulfilled and received kits; residual capacity; exact saved tube scans; branded split-sample manifests. |
 | Sample return and Lab intake | SHP-12/13 → LAB-02 | Separate shipment facts per container; current packet comparison; per-tube receipt with correct sample/Job totals and no duplicate accession. |
 | Access and recovery | SHP-04/14 | Department/member boundaries, stale/failed retries, duplicate protection, long lists, keyboard/phone/theme behavior. |
 
-Resume HS5Y7DB7 at **SHP-02**, using its recorded nine finalized samples and 18
-tubes. Review one TRANS-20 at SHP-03 after saving the actual Department delivery
-location. Use separate 30-tube/split/failure fixtures from
+Resume HS5Y7DB7 from the latest
+[local run entry](../testing/runs/2026-09-08-hs5y7db7-local-walkthrough.md), using
+its recorded nine finalized samples and 18 tubes. Kit dispatch is already
+reconciled; acknowledge Customer receipt next without repeating the order or
+dispatch. Use separate 30-tube/split/failure fixtures from
 [TEST-DATA.md](../testing/TEST-DATA.md); preserve the accepted quote and finalized
 roster. Record observations and stock/request/shipment identities in
 [RUN-RECORD.md](../testing/RUN-RECORD.md), rather than promoting prior screenshots
@@ -82,7 +227,7 @@ drafts remain the only configuration records created during this walkthrough.
 The synthetic checkpoint passed 44 cases: 12 Customer and 32 Phaeno cases.
 Actual-component synthetic browser review covers Customer packing, inline tube
 scanning and split manifests at 1280/390px in light/dark themes. It verifies a
-15 + 15 allocation, rejected scan retention, save-before-advance focus, explicit
+15 + 15 allocation (historical; superseded in the current editor), rejected scan retention, save-before-advance focus, explicit
 other-shipment/unallocated references, and bounded responsive layouts. Phaeno
 review covers the catalog and stock lists/details, create/prepare/register/
 dispatch/preview modals, dirty Escape, duplicate validation, fixed modal

@@ -17,6 +17,7 @@ import { DeliveryLocationAddress } from '#/features/organizations/delivery-locat
 import { KitRequestDispatchDialog } from './KitRequestDispatchDialog'
 import { kitRequestReference, kitRequestStatus } from './kit-request-navigation'
 import { useOrderDraftGuard } from '../use-order-draft-guard'
+import { refreshStockKitSupply } from '../stock-kits/stock-kit-request-sync'
 
 export function KitRequestDetailPage({ requestId }: { requestId: string }) {
   const { session } = usePhaenoSession(), client = useQueryClient(), search = useSearch({ strict: false })
@@ -25,7 +26,7 @@ export function KitRequestDetailPage({ requestId }: { requestId: string }) {
   const [dispatch, setDispatch] = useState<TransportationKitRequestDetail | null>(null)
   const [cancelling, setCancelling] = useState<TransportationKitRequest | null>(null)
   const detail = query.data, request = detail?.request
-  async function refresh() { await Promise.all([client.invalidateQueries({ queryKey: ['platform-transportation-kit-requests'] }), client.invalidateQueries({ queryKey: ['shipping-stock-kits'] }), client.invalidateQueries({ queryKey: ['transportation-kit-supply'] }), query.refetch()]) }
+  async function refresh() { await refreshStockKitSupply(client) }
   async function dispatched(value: TransportationKitRequestDetail) { setDispatch(null); client.setQueryData(['platform-transportation-kit-request', requestId], value); await refresh() }
   const shortage = detail?.request.lines.filter(line => line.requestedQuantity - line.dispatchedQuantity > detail.availableStockKits.filter(kit => kit.containerDefinitionId === line.containerDefinitionId).length) ?? []
   return <main className="page-wrap space-y-5 px-4 py-8"><Button asChild variant="ghost" size="sm"><Link to="/lab-operations" search={{ ...search, section: 'receipt' }} hash="transportation-kit-requests"><ArrowLeft aria-hidden="true" />Back to kit requests</Link></Button>

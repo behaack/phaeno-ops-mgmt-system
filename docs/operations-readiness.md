@@ -2,6 +2,13 @@
 
 ## Repository implementation and rollout evidence
 
+The [September 8 shipping release and overnight handoff](plans/PORTAL-SHIPPING-RELEASE-2026-09-08.md)
+records the complete next release, including four additive migrations after the
+last successful production source. Its deployment evidence is authoritative for
+that release's status. The local walkthrough resumes at Customer receipt; local
+synthetic kit records are not production inventory. New Customer shipping needs
+approved production catalog/compatibility and fulfillment setup after migration.
+
 The repository implements first-party CRM, durable invitation delivery, derived
 readiness, internal order staging, business roles, dual-control review, governed
 PSeq final-result packages, POMS accounts receivable, Trial Projects, and owned

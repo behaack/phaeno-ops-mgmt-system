@@ -1,5 +1,140 @@
 # Frontend Test Plan
 
+## Stock-kit dispatch and request synchronization — September 8, 2026
+
+Both staff dispatch entry points refresh stock, request, Job and Customer supply
+queries. An unused already-sent kit with one compatible outstanding request offers
+**Update kit request**. Its confirmation uses the original dispatch facts; it
+does not record Customer receipt or send another physical kit. Pending/error,
+close/navigation guards, repeated-click prevention, eligibility and cache-refresh
+coverage passed **28/28 cases** (standard kits 9, recovery 11, requests 8).
+Scoped lint and the full frontend typecheck passed after the final changes.
+
+**7/7 actual-dialog synthetic browser cases** passed at 1280×835, 390×835 and
+390×480, in light/dark themes and a long specific error. Checks covered the exact
+saved-facts payload, a single adapter write, dismissal without a write, visible
+fixed actions, a full-width error and no overflow, page errors or external calls.
+Evidence: [`kit-request-sync/review.json`](../../artifacts/kit-request-sync/review.json).
+Temporary browser fixtures and the isolated server were removed. Connected
+reconciliation of Request D20018AA then succeeded through the signed-in local UI;
+its fresh detail shows Dispatched, 1 sent, 0 received. Independent read-only
+evidence confirms unchanged dispatch facts and 20 barcodes. This does not establish
+Customer receipt or physical scanner acceptance.
+
+## Customer containers require received Job kits — September 8, 2026
+
+The latest Customer decision supersedes the earlier existing-kit bypass below.
+There is no **I already have kits** or separate **Prepare samples** action.
+No order/cancelled order with no received supply offers **Order transportation
+kits** only, including an unbound physical-container deep link. Pending/on-way
+kits retain their status and receipt actions; server-authorized acknowledged
+same-Job supply reveals container configuration directly. Partial delivery
+permits only its available portion. Older received stock remains usable when a
+later replenishment request is cancelled, and server-permitted already-bound
+historical kits retain their scanning path. Trial and Partner gates are unchanged.
+
+The checkpoint passed **62/62 focused component cases**: Customer kit panel 29,
+packing 25, and shipment detail 8. Added coverage checks stale permissive flags,
+cancelled/deep-link order recovery, received quantities and exhausted sizes,
+partial capacity, draft preservation after a stock refresh, a fresh recommendation
+before opening configuration, and unchanged Trial/Partner access. Existing Smart
+Add, stable Summary, concurrency, dirty/busy and packet behavior remains covered.
+Customer options/counts use received Job quantities automatically; no editable
+availability controls were reintroduced. Specific server errors remain authoritative.
+
+**28/28 actual-component synthetic browser cases** passed at 1280 and 390 pixels
+in light/dark themes for no-order, cancelled, pending, in-transit, received,
+partial-received and unbound physical-container states. Keyboard opening/Escape,
+confirmation without a write, stock-limited options, no overflow and retained
+receipt controls were checked. Representative images were visually inspected.
+Evidence: [`job-kit-gating-review/review.json`](../../artifacts/job-kit-gating-review/review.json).
+There were no real data writes, nonlocal requests or browser errors. This is local
+synthetic evidence, not signed-in receipt/scanner acceptance. Scoped lint and
+the final full frontend typecheck passed.
+
+## SHP-03-001 kit-order error feedback — September 8, 2026
+
+The actual Customer confirmation failed with Kit order could not be saved /
+An unexpected error occurred; backend evidence confirms a routing exception and
+rollback, not a user misclick. The failure alert now spans the same width as the
+form; title/description alone reserve close-button space. Generic unexpected
+errors give retry guidance while specific validation/concurrency messages remain.
+The kit-panel suite passed **25/25**, scoped lint and the full frontend typecheck
+passed, and **7/7 actual-dialog synthetic browser cases** verified desktop/phone,
+short height, light/dark and a long specific error. Alert/form bounds matched
+exactly, without overflow or inaccessible fixed actions. Evidence:
+`artifacts/kit-order-error-review/review.json`. No writes or nonlocal requests
+occurred; temporary fixtures/server were removed. The later connected Customer
+retry saved one Pending request, corroborated by the signed-in Phaeno queue.
+See the
+[local run record](../testing/runs/2026-09-08-hs5y7db7-local-walkthrough.md).
+
+## Reset container configuration before scanning — September 8, 2026
+
+The focused checkpoints passed **50 cases**: reset UI 12, detail 5, scanner 6,
+selector 5 and kit panel 22. The reset/detail subset passed **17/17** again after
+the final label/layout: **Reset container configuration** sits beside the top
+Shipping container selector. Coverage includes organization/Department administrator access,
+server eligibility loading/error/retry, the whole-order container/tube totals,
+dismissal without a write, submitted snapshot versions, pending/error states,
+and successful navigation/cache refresh to the correct selection pool.
+Customer, Partner Lab and Trial entry points remain. The blocking explanation applies when
+any sibling has current or historical scans, kit binding, a packet, dispatch or
+receipt; clearing a scan must not reopen the action. Stale confirmation and a
+scan beginning in another session also have server-backed reset coverage. The
+[SHP-09 reset variant](../testing/11-transportation-kits.md) remains Not run;
+the documentation task ran no tests itself. Six final synthetic detail browser
+cases are recorded in the E2E plan; they are not signed-in Customer acceptance.
+
+That checkpoint distinguished preparation pools from physical containers, with
+ordering limited to pools. The later mandatory Job-kit decision above supersedes
+that restriction for unbound physical links missing received supply. Outstanding
+delivery keeps status/receipt actions, and server-permitted received/bound physical
+containers show scanning without a redundant order card. Unsaved/saving scan
+guards still block both route changes and resets as appropriate.
+
+## Individual shipping-container rows — September 8, 2026
+
+The final implementation checkpoint passed **20 focused packing tests**, full
+frontend TypeScript and scoped ESLint. **Containers to use** replaces the all-size
+quantity form and separate allocation list. Coverage targets recommended rows,
+remaining-capacity Add defaults, size changes, targeted removal, preserved counts,
+explicit recommendation rebuild, whole-number/capacity/total validation and
+dirty/busy/error recovery. Size options retain smaller needed containers plus
+the smallest fit, while preserving every existing row's validity: three remaining
+tubes offer only 5 with sizes 5/10/20; 30 with 10+5 adds 10 then 5. Add stops once
+capacity covers all tubes. Six 5s remain allowed; two 20s/15+15 for 30 is superseded
+in the current editor, though older API tests remain historical evidence.
+
+Manual availability controls are removed; recorded-stock/receipt checks remain
+automatic. The stable Summary grid has an in-grid Updating indicator, and
+confirmation requires the current preview. The shared dialog retains Customer,
+Partner Lab and authorized Trial permissions. The final six synthetic layout
+browser cases passed as recorded in the [E2E plan](E2E-TEST-PLAN.md); SHP-09
+remains Not run. Updated
+audience guides and catalog summaries are ready for corpus regeneration by the
+implementation task. This documentation follow-up itself runs no tests.
+
+## Transportation-kit action row and wording — September 8, 2026
+
+Historical checkpoint, superseded by mandatory Job-kit ordering above: Order
+transportation kits and the then-eligible existing-kit/preparation action shared
+a wrapping row. Registration guidance remained below; pending, partial and
+received states keep their existing server-controlled gates without duplicate
+actions. Unrecorded supply uses the owner-approved wording, "Our records indicate
+you have no transportation kits." The 14 existing Customer kit cases passed with the updated wording
+assertion; TypeScript and scoped ESLint passed. No cosmetic-only test was added.
+Desktop/phone acceptance of the row remains in SHP-03.
+
+## Delivery-location action layout — September 8, 2026
+
+The address card now spans the available content width. The page-header Actions
+menu contains Edit location and Deactivate location; the separate Edit button
+is removed. Customer copy addresses "your department" while Phaeno retains
+its operational description. The eight existing location cases, full TypeScript
+and scoped ESLint passed after the final adjustment. No cosmetic-only tests
+were added. The audience guides and generated 56-guide corpus are current.
+
 ## Customer transportation-kit ordering and fulfillment — September 8, 2026
 
 Historical checkpoint: the September 8 focused checks passed **42 tests**: 19 Customer cases
@@ -40,14 +175,14 @@ or acceptance check, not a failed result.
 
 | ID | Scenario and expected behavior | Existing evidence and remaining coverage |
 | --- | --- | --- |
-| KIT-F01 | Unknown inventory offers Order transportation kits without claiming verified zero; the explicit existing-kit path remains available only when preparation is permitted. | Automated: [Customer kit tests]. Browser evidence: unknown-stock fixtures. |
+| KIT-F01 | No received Job supply offers Order transportation kits only; no existing-kit bypass. Unbound physical links and cancelled requests provide the order pathway, even with a stale permissive preparation flag. | Automated: [Customer kit tests] and shipment-detail cases. Browser evidence: job-kit-gating no-order/cancelled/physical fixtures. |
 | KIT-F02 | Confirmation shows recommended sizes/quantities, the default delivery location and included delivery/no additional charge; nothing is ordered before confirmation. | Automated: [Customer kit tests], including submitted location/shipment versions and recommended quantities. Browser evidence: order modal. |
 | KIT-F03 | With no locations, Add a delivery location provides recovery; returning to the shipment reopens confirmation without placing an order. | Automated: [Customer kit tests] cover the setup link and auto-open behavior separately. Gap: real-router save, return context and refreshed location must be verified together in the guided journey. |
 | KIT-F04 | Multiple locations without a default still allow opening confirmation; blank submit shows the required error and focuses the chooser. | Automated: [Customer kit tests]. Browser evidence: no-default fixtures and keyboard selection. |
 | KIT-F05 | Changing the delivery location refreshes the recommendation and submits that location's displayed version, not the prior default. | Automated: [Customer kit tests]. Gap: full route/query-cache refresh after location editing and a stale-location rejection through the order flow. |
 | KIT-F06 | A failed order retains the draft and reuses the same retry key; busy state prevents duplicate submission/dismissal; success shows Kits ordered. | Automated: [Customer kit tests]. Gap: simultaneous browser tabs and sibling-shipment ordering require server/integration evidence; component mocks do not prove deduplication. |
 | KIT-F07 | Pending and dispatched requests suppress another order; tracking is visible; kits on the way do not enable preparation. | Automated: [Customer kit tests]. Browser evidence: pending and in-transit fixtures. Gap: authoritative reload after a real dispatch. |
-| KIT-F08 | Partial receipt leaves undelivered kits On the way and permits preparation only for the server-authorized available portion. | Automated: [Customer kit tests]. Browser evidence: partial-receipt fixture. Gap: actual packing/scanning with only acknowledged physical kits. |
+| KIT-F08 | Partial receipt leaves undelivered kits On the way and permits preparation only for the server-authorized available portion. Configuration offers only received Job sizes and quantities, preserving drafts and blocking confirmation if supply changes. | Automated: [Customer kit tests] and packing cases. Browser evidence: job-kit-gating partial-received configuration. Gap: actual packing/scanning with only acknowledged physical kits. |
 | KIT-F09 | Receipt requires at least one arrived kit, submits only selected IDs, and preserves the selection/error after declined discard. | Automated: [Customer kit tests]. Browser evidence: receipt selection/validation. Gap: async receipt failure/retry, stale request version and busy receipt dismissal have no dedicated component assertions. |
 | KIT-F10 | A completed Received request retains its summary; server-authorized residual tubes can start an additional order; the new Pending request suppresses duplicates again. | Automated: [Customer kit tests], residual-order regression. The final fix was not rerun in browser fixtures; populated signed-in acceptance remains open. |
 | KIT-F11 | Members remain view-only; Customer administrators manage kits/locations; unauthorized staff or Department viewers do not load protected records. | Automated: [Customer kit tests], [staff kit tests] and [delivery-location tests]. Backend authorization remains authoritative; these UI assertions do not prove tenant isolation. |

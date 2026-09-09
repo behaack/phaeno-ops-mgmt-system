@@ -426,8 +426,11 @@ public partial class SampleShippingPostgresTests
         public SampleShippingContainersAdminController ContainerAdminController(bool customer = false) => new(
             new OrderRequestContext(DbContext, new FixedIdentityContext(customer ? customerIdentity : platformIdentity)), ContainerCatalog())
             { ControllerContext = new() { HttpContext = new DefaultHttpContext() } };
-        public SampleShippingStockKitsController StockController() => new(DbContext,
-            new OrderRequestContext(DbContext, new FixedIdentityContext(platformIdentity)), ContainerCatalog())
+        public SampleShippingStockKitsController StockController(PSeqOperationsDbContext? dbOverride = null) => new(dbOverride ?? DbContext,
+            new OrderRequestContext(dbOverride ?? DbContext, new FixedIdentityContext(platformIdentity)),
+            new SampleShippingContainerCatalogService(dbOverride ?? DbContext),
+            new TransportationKitRequestService(dbOverride ?? DbContext, new SampleShippingContainerCatalogService(dbOverride ?? DbContext),
+                Microsoft.Extensions.Options.Options.Create(new PhaenoPortal.App.Features.Accounts.Services.BootstrapOptions { PhaenoOrganizationName = PlatformOrganization.Name })))
             { ControllerContext = new() { HttpContext = new DefaultHttpContext() } };
         public SampleShippingIdentityController IdentityController() => new(DbContext,
             new OrderRequestContext(DbContext, new FixedIdentityContext(platformIdentity)), new SampleShippingWorkflowReader(DbContext))
